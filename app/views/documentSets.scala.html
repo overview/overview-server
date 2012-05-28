@@ -1,0 +1,21 @@
+@(documentSets: List[DocumentSet], documentSetForm: Form[DocumentSet])
+
+@import helper._
+
+@main("Document Sets") {
+
+  <h1>Document Sets</h1>
+  
+  <ul>
+  	@for(documentSet <- documentSets) {
+  		<li> @documentSet.query</li>
+  	}
+  </ul>
+
+  @form(routes.Application.newDocumentSet()) {
+     
+      @inputText(documentSetForm("query"))
+
+      <input type="submit" value="Add">
+  }
+}
