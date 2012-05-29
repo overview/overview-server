@@ -1,0 +1,12 @@
+@(query: String, titles: List[String])
+
+@main("Document Set Viewer") {
+
+	<h1>Query: @query </h1>
+
+	<ul>
+		@for(title <- titles) {
+			<li> @title </li>
+		}	
+	</ul>
+}

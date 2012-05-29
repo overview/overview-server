@@ -9,7 +9,7 @@
   <ul>
   	@for(documentSet <- documentSets) {
   		<li> 
-  			@documentSet.query
+  			<a href="/documentsets/@documentSet.id/view">@documentSet.query</a>
   			
   			@form(routes.Application.deleteDocumentSet(documentSet.id)) {
   				<input type="submit" value="Delete">
