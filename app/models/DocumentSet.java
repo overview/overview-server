@@ -24,4 +24,8 @@ public class DocumentSet extends Model {
     public static void create(DocumentSet documentSet) {
     	documentSet.save();
     }
+    
+    public static void delete(Long id) {
+    	find.ref(id).delete();
+    }
 }

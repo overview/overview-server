@@ -8,7 +8,13 @@
   
   <ul>
   	@for(documentSet <- documentSets) {
-  		<li> @documentSet.query</li>
+  		<li> 
+  			@documentSet.query
+  			
+  			@form(routes.Application.deleteDocumentSet(documentSet.id)) {
+  				<input type="submit" value="Delete">
+  			}
+  		</li>
   	}
   </ul>
 

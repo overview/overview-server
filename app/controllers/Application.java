@@ -23,9 +23,24 @@ public class Application extends Controller {
 
     public static Result newDocumentSet() {
     	Form<DocumentSet> filledForm = documentSetForm.bindFromRequest();
-    	DocumentSet.create(filledForm.get());
+    	
+    	if(filledForm.hasErrors()) {
+    		return badRequest(
+    				views.html.documentSets.render(DocumentSet.all(), filledForm)
+    				);
+    	}
+    	else {
+    		DocumentSet.create(filledForm.get());
 
+    		return redirect(routes.Application.showDocumentSets());
+    	}
+    }
+    
+    public static Result deleteDocumentSet(Long id) {
+    	DocumentSet.delete(id);
+    	
     	return redirect(routes.Application.showDocumentSets());
+    	
     }
     
 }
