@@ -58,12 +58,12 @@ public class Application extends Controller {
     					new Function<WS.Response, Result>() {
     						public Result apply(WS.Response response) {
     							JsonNode documentReferences = response.asJson().get("documents");
-    							List<String> documents = new ArrayList<String>();
-    							
+    							List<Document> documents = new ArrayList<Document>();
+/*    							
     							for (JsonNode document : documentReferences) {
-    								documents.add(document.get("title").toString());
+    								documents.add(document.ring());
     							}
-    							
+  */  							
     							return ok(views.html.viewDocumentSet.render(queryString, documents));
     						}
     					}

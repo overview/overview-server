@@ -33,14 +33,18 @@ public class ViewDocumentSetTest {
 		
 		String query = "this is the query";
 		
-		String doc1Title = "document1";
-		String doc2Title = "document2";
+		List<String> titles = Arrays.asList("document1", "document2");
 		
-		Pattern pattern = Pattern.compile(".*<li>\\s*" + doc1Title + "\\s*</li>.*", Pattern.DOTALL);		
+		String patternString = ".*";
+		for (String title : titles) {
+			patternString += "<li>\\s*" + 
+					"<a href=\""title + "\\s*</li>.*";
+		}
+		Pattern pattern = Pattern.compile(patternString, Pattern.DOTALL);		
 		
 		List<Document> documents = new ArrayList<Document>();
-		documents.add(new Document("", doc1Title, ""));
-		documents.add(new Document("", doc2Title, ""));
+		documents.add(new Document("", titles.get(0), ""));
+		documents.add(new Document("", titles.get(1), ""));
 		Content html = viewDocumentSet.render(query, documents);
 		
 		Matcher matcher = pattern.matcher(html.body());
