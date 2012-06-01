@@ -9,6 +9,8 @@ POST	/documentsets		        controllers.Application.newDocumentSet()
 POST	/documentsets/:id/delete	controllers.Application.deleteDocumentSet(id: Long)
 
 GET		/documentsets/:id/view		controllers.Application.viewDocumentSet(id: Long)
+GET		/documentsets/:id/:b/view controllers.Application.viewDocumentSet2(id: Long, b: Integer)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
