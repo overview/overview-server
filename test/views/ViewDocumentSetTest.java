@@ -23,7 +23,7 @@ public class ViewDocumentSetTest {
 		String header = "<h1>Query: " + query + " </h1>";
 		
 		List<Document> documents = new ArrayList<Document>();
-		Content html = viewDocumentSet.render(query, documents);
+		Content html = viewDocumentSet.render(query, documents, 0);
 		assertThat(contentAsString(html)).contains(header);
 				
 	}
@@ -37,20 +37,34 @@ public class ViewDocumentSetTest {
 		
 		String patternString = ".*";
 		for (String title : titles) {
-			patternString += "<li>\\s*" + 
-					"<a href=\""title + "\\s*</li>.*";
+			patternString += "<li>\\s*" + title + "\\s*</li>.*";
 		}
 		Pattern pattern = Pattern.compile(patternString, Pattern.DOTALL);		
 		
 		List<Document> documents = new ArrayList<Document>();
 		documents.add(new Document("", titles.get(0), ""));
 		documents.add(new Document("", titles.get(1), ""));
-		Content html = viewDocumentSet.render(query, documents);
+		Content html = viewDocumentSet.render(query, documents, 0);
 		
 		Matcher matcher = pattern.matcher(html.body());
 		assertThat(matcher.matches()).overridingErrorMessage(html.body() + "[" + matcher.pattern() + "]").isTrue();	
 	}
 	
+	
+	@Test 
+	public void viewerInIframe() {
+		String canonicalUrl = "http://documentcloud.org/canonicalURL";
+		String iframe = "<iframe src=" + canonicalUrl + "></iframe>";
+		
+		Document doc = new Document("id", "title", canonicalUrl);
+		
+		List<Document> documents = new ArrayList<Document>();
+		
+		documents.add(doc);
+		Content html = viewDocumentSet.render("query", documents, 0);
+		assertThat(html.body()).contains(iframe);
+		
+	}
 	
 
 }
