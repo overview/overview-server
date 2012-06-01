@@ -47,24 +47,40 @@ public class Application extends Controller {
     	return redirect(routes.Application.showDocumentSets());
     }
 
-    
-    public static Result viewDocumentSet(Long id) {
+    public static Result viewDocumentSet2(Long id, Integer currentDocument) {
     	DocumentSet documentSet = DocumentSet.find.byId(id);
-    	final String queryString = documentSet.query;
-    	String documentCloudQuery = "http://www.documentcloud.org/api/search.json?q=" + queryString; 
+
+    	return ok(viewDocumentSet.render(documentSet, currentDocument));
+
+    }
+    
+        
+    public static Result viewDocumentSet(Long id) {
+    	final DocumentSet documentSet = DocumentSet.find.byId(id);
+    	String queryString = documentSet.query;
+    	String documentCloudQuery = "http://www.documentcloud.org/api/search.json";
+
+    	final Long dsId = id;
     	
     	return async(
-    			WS.url(documentCloudQuery).get().map(
+    			WS.url(documentCloudQuery).setQueryParameter("q", queryString).get().map(
     					new Function<WS.Response, Result>() {
     						public Result apply(WS.Response response) {
     							JsonNode documentReferences = response.asJson().get("documents");
-    							List<Document> documents = new ArrayList<Document>();
-/*    							
+						
     							for (JsonNode document : documentReferences) {
-    								documents.add(document.ring());
+    								String documentId = document.get("id").toString();
+    								String title = document.get("title").toString();
+    								title = title.replace("\"", "");
+    								String canonicalUrl = document.get("canonical_url").toString();
+    								canonicalUrl = canonicalUrl.replace("\"", "");
+    								Document newDoc = new Document(documentId, title, canonicalUrl);
+    								newDoc.save();
+    								
+    								documentSet.addDocument(newDoc);
     							}
-  */  							
-    							return ok(views.html.viewDocumentSet.render(queryString, documents));
+    							documentSet.update(dsId);
+    							return redirect(routes.Application.viewDocumentSet2(dsId, 0));
     						}
     					}
     				)
