@@ -22,8 +22,9 @@ public class ViewDocumentSetTest {
 		String query = "this is the query";
 		String header = "<h1>Query: " + query + " </h1>";
 		
-		List<Document> documents = new ArrayList<Document>();
-		Content html = viewDocumentSet.render(query, documents, 0);
+		DocumentSet documentSet = new DocumentSet();
+		documentSet.query = query;
+		Content html = viewDocumentSet.render(documentSet, 0);
 		assertThat(contentAsString(html)).contains(header);
 				
 	}
@@ -31,38 +32,53 @@ public class ViewDocumentSetTest {
 	@Test 
 	public void documentLinks() {
 		
-		String query = "this is the query";
+		running(fakeApplication(inMemoryDatabase()), new Runnable() {
+			public void run() {
+				String query = "this is the query";
 		
-		List<String> titles = Arrays.asList("document1", "document2");
+				List<String> titles = Arrays.asList("document1", "document2");
 		
-		String patternString = ".*";
-		for (String title : titles) {
-			patternString += "<li>\\s*" + title + "\\s*</li>.*";
-		}
-		Pattern pattern = Pattern.compile(patternString, Pattern.DOTALL);		
+				String patternString = ".*";
+				for (String title : titles) {
+					patternString += "<li>.*" + title + ".*</li>.*";
+				}
+				Pattern pattern = Pattern.compile(patternString, Pattern.DOTALL);		
 		
-		List<Document> documents = new ArrayList<Document>();
-		documents.add(new Document("", titles.get(0), ""));
-		documents.add(new Document("", titles.get(1), ""));
-		Content html = viewDocumentSet.render(query, documents, 0);
+				DocumentSet documentSet = new DocumentSet();
+				documentSet.save();
+				Document doc1 = new Document("", titles.get(0), "");
+				Document doc2 = new Document("", titles.get(1), "");
+				doc1.save();
+				doc2.save();
+				documentSet.addDocument(doc1);
+				documentSet.addDocument(doc2);
+				Content html = viewDocumentSet.render(documentSet, 0);
 		
-		Matcher matcher = pattern.matcher(html.body());
-		assertThat(matcher.matches()).overridingErrorMessage(html.body() + "[" + matcher.pattern() + "]").isTrue();	
+				Matcher matcher = pattern.matcher(html.body());
+				assertThat(matcher.matches()).overridingErrorMessage(html.body() + "[" + matcher.pattern() + "]").isTrue();
+				
+			}
+		});
 	}
 	
 	
 	@Test 
 	public void viewerInIframe() {
-		String canonicalUrl = "http://documentcloud.org/canonicalURL";
-		String iframe = "<iframe src=" + canonicalUrl + "></iframe>";
+		running(fakeApplication(inMemoryDatabase()), new Runnable() {
+			public void run() {
+				
+				String canonicalUrl = "http://documentcloud.org/canonicalURL";
+				String iframe = "<iframe width=\"800px\" height=\"2000px\" src=" + canonicalUrl + "></iframe>";
 		
-		Document doc = new Document("id", "title", canonicalUrl);
-		
-		List<Document> documents = new ArrayList<Document>();
-		
-		documents.add(doc);
-		Content html = viewDocumentSet.render("query", documents, 0);
-		assertThat(html.body()).contains(iframe);
+				Document doc = new Document("id", "title", canonicalUrl);
+				doc.save();
+				DocumentSet documentSet = new DocumentSet();
+				documentSet.save();
+				documentSet.addDocument(doc);
+				Content html = viewDocumentSet.render(documentSet, 0);
+				assertThat(html.body()).contains(iframe);
+			}
+		});
 		
 	}
 	
