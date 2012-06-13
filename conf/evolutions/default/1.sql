@@ -5,17 +5,11 @@
 
 create table document (
   id                        bigint not null,
-  document_cloud_id         varchar(255),
   title                     varchar(255),
-  canonical_url             varchar(255),
+  text_url                  varchar(255),
+  view_url                  varchar(255),
+  document_set_id           bigint,
   constraint pk_document primary key (id))
-;
-
-create table document_reference (
-  id                        bigint not null,
-  document_set_id_id        bigint,
-  document_id               bigint,
-  constraint pk_document_reference primary key (id))
 ;
 
 create table document_set (
@@ -24,16 +18,36 @@ create table document_set (
   constraint pk_document_set primary key (id))
 ;
 
-create sequence document_seq;
+create table tag (
+  id                        bigint not null,
+  name                      varchar(255),
+  document_set_id           bigint,
+  constraint uq_tag_1 unique (document_set_id,name),
+  constraint pk_tag primary key (id))
+;
 
-create sequence document_reference_seq;
+
+create table document_tag (
+  document_id                    bigint not null,
+  tag_id                         bigint not null,
+  constraint pk_document_tag primary key (document_id, tag_id))
+;
+create sequence document_seq;
 
 create sequence document_set_seq;
 
-alter table document_reference add constraint fk_document_reference_document_1 foreign key (document_set_id_id) references document_set (id) on delete restrict on update restrict;
-create index ix_document_reference_document_1 on document_reference (document_set_id_id);
+create sequence tag_seq;
+
+alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
+create index ix_document_documentSet_1 on document (document_set_id);
+alter table tag add constraint fk_tag_documentSet_2 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
+create index ix_tag_documentSet_2 on tag (document_set_id);
 
 
+
+alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id) on delete restrict on update restrict;
+
+alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id) on delete restrict on update restrict;
 
 # --- !Downs
 
@@ -41,15 +55,17 @@ SET REFERENTIAL_INTEGRITY FALSE;
 
 drop table if exists document;
 
-drop table if exists document_reference;
+drop table if exists document_tag;
 
 drop table if exists document_set;
+
+drop table if exists tag;
 
 SET REFERENTIAL_INTEGRITY TRUE;
 
 drop sequence if exists document_seq;
 
-drop sequence if exists document_reference_seq;
-
 drop sequence if exists document_set_seq;
+
+drop sequence if exists tag_seq;
 

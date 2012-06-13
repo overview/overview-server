@@ -1,17 +1,11 @@
-@(documentSet: DocumentSet, currentDocument: Integer)
+@(documentSet: DocumentSet, currentDocumentId: Integer)
 
 @main("Document Set Viewer") {
-
 	<h1>Query: @documentSet.query </h1>
 
 	<ul>
-		@for((document, i) <- documentSet.getDocuments().zipWithIndex) {
-			<li> <a href=@routes.Application.viewDocumentSet2(documentSet.id, i)>@document.title</a> </li>
-		}	
-
+		@for((document) <- documentSet.documents) {
+			<li><a href=@routes.Application.viewDocument(document.id)>@document.title</a></li>
+		}
 	</ul>
-	
-	@if(documentSet.getDocuments().length > 0) {
-		<iframe width="800px" height="2000px" src=@documentSet.getDocuments()(currentDocument).canonicalUrl></iframe>
-	}
 }

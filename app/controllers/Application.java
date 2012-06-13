@@ -15,7 +15,6 @@ import models.*;
 import java.util.*;
 
 public class Application extends Controller {
-
     static Form<DocumentSet> documentSetForm = form(DocumentSet.class);
 
     public static Result index() {
@@ -23,7 +22,7 @@ public class Application extends Controller {
     }
 
     public static Result showDocumentSets() {
-    	return ok(documentSets.render(DocumentSet.all(), documentSetForm));
+    	return ok(documentSets.render(DocumentSet.find.all(), documentSetForm));
     }
 
     public static Result newDocumentSet() {
@@ -31,56 +30,57 @@ public class Application extends Controller {
     	
     	if(filledForm.hasErrors()) {
     		return badRequest(
-    				views.html.documentSets.render(DocumentSet.all(), filledForm)
+    				views.html.documentSets.render(DocumentSet.find.all(), filledForm)
     				);
     	}
     	else {
-    		DocumentSet.create(filledForm.get());
+    		filledForm.get().save();
 
     		return redirect(routes.Application.showDocumentSets());
     	}
     }
     
     public static Result deleteDocumentSet(Long id) {
-    	DocumentSet.delete(id);
+    	DocumentSet documentSet = DocumentSet.find.ref(id);
+    	documentSet.delete();
     	
     	return redirect(routes.Application.showDocumentSets());
     }
 
-    public static Result viewDocumentSet2(Long id, Integer currentDocument) {
-    	DocumentSet documentSet = DocumentSet.find.byId(id);
+    public static Result viewDocument(Long id) {
+    	Document document = Document.find.byId(id);
 
-    	return ok(viewDocumentSet.render(documentSet, currentDocument));
-
+    	return ok(viewDocument.render(document));
     }
-    
         
     public static Result viewDocumentSet(Long id) {
     	final DocumentSet documentSet = DocumentSet.find.byId(id);
     	String queryString = documentSet.query;
     	String documentCloudQuery = "http://www.documentcloud.org/api/search.json";
-
-    	final Long dsId = id;
     	
     	return async(
     			WS.url(documentCloudQuery).setQueryParameter("q", queryString).get().map(
     					new Function<WS.Response, Result>() {
     						public Result apply(WS.Response response) {
     							JsonNode documentReferences = response.asJson().get("documents");
-						
+    							
+    							Document documentToView = null;
+    							
     							for (JsonNode document : documentReferences) {
     								String documentId = document.get("id").toString();
     								String title = document.get("title").toString();
     								title = title.replace("\"", "");
     								String canonicalUrl = document.get("canonical_url").toString();
     								canonicalUrl = canonicalUrl.replace("\"", "");
-    								Document newDoc = new Document(documentId, title, canonicalUrl);
+    								Document newDoc = new Document(documentSet, documentId, title, canonicalUrl);
     								newDoc.save();
     								
-    								documentSet.addDocument(newDoc);
+    								if (documentToView == null) documentToView = newDoc;
+    								
+    								documentSet.documents.add(newDoc);
     							}
-    							documentSet.update(dsId);
-    							return redirect(routes.Application.viewDocumentSet2(dsId, 0));
+    							documentSet.update();
+    							return redirect(routes.Application.viewDocument(documentToView.id));
     						}
     					}
     				)
