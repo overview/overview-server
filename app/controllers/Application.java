@@ -5,6 +5,7 @@ import org.codehaus.jackson.JsonNode;
 import play.*;
 import play.data.*;
 import play.libs.F.Function;
+import play.libs.F.Promise;
 import play.libs.WS;
 import play.mvc.*;
 
@@ -50,6 +51,8 @@ public class Application extends Controller {
     public static Result viewDocument(Long id) {
     	Document document = Document.find.byId(id);
 
+//		System.out.println(document.title);
+		
     	return ok(viewDocument.render(document));
     }
         
@@ -58,33 +61,34 @@ public class Application extends Controller {
     	String queryString = documentSet.query;
     	String documentCloudQuery = "http://www.documentcloud.org/api/search.json";
     	
-    	return async(
-    			WS.url(documentCloudQuery).setQueryParameter("q", queryString).get().map(
-    					new Function<WS.Response, Result>() {
-    						public Result apply(WS.Response response) {
-    							JsonNode documentReferences = response.asJson().get("documents");
-    							
-    							Document documentToView = null;
-    							
-    							for (JsonNode document : documentReferences) {
-    								String documentId = document.get("id").toString();
-    								String title = document.get("title").toString();
-    								title = title.replace("\"", "");
-    								String canonicalUrl = document.get("canonical_url").toString();
-    								canonicalUrl = canonicalUrl.replace("\"", "");
-    								Document newDoc = new Document(documentSet, documentId, title, canonicalUrl);
-    								newDoc.save();
-    								
-    								if (documentToView == null) documentToView = newDoc;
-    								
-    								documentSet.documents.add(newDoc);
-    							}
-    							documentSet.update();
-    							return redirect(routes.Application.viewDocument(documentToView.id));
-    						}
-    					}
-    				)
-    			);
-    			
+    	Promise<WS.Response> DCcall= WS.url(documentCloudQuery).setQueryParameter("q", queryString).get();
+    	WS.Response response = DCcall.get();	// blocks until result comes back. but does it tie up the thread? not sure, async() may be better
+    	
+		JsonNode documentReferences = response.asJson().get("documents");
+		
+		Document documentToView = null;
+		
+		for (JsonNode document : documentReferences) {
+			String documentId = document.get("id").toString();
+			String title = document.get("title").toString();
+			title = title.replace("\"", "");
+			String canonicalUrl = document.get("canonical_url").toString();
+			canonicalUrl = canonicalUrl.replace("\"", "");
+			
+			DocumentSetIndexer titleObj = new DocumentSetIndexer(title);
+			title = titleObj.munge();
+			
+			//System.out.println(title);
+			
+			Document newDoc = new Document(documentSet, title, canonicalUrl, canonicalUrl);
+			newDoc.save();
+			
+			if (documentToView == null) documentToView = newDoc;
+			
+			documentSet.documents.add(newDoc);
+		}
+		
+		documentSet.update();
+		return redirect(routes.Application.viewDocument(documentToView.id));
     }
 }
