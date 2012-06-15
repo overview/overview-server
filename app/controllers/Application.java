@@ -51,8 +51,6 @@ public class Application extends Controller {
     public static Result viewDocument(Long id) {
     	Document document = Document.find.byId(id);
 
-//		System.out.println(document.title);
-		
     	return ok(viewDocument.render(document));
     }
         
@@ -69,18 +67,19 @@ public class Application extends Controller {
 		Document documentToView = null;
 		
 		for (JsonNode document : documentReferences) {
-			String documentId = document.get("id").toString();
+			//String documentId = document.get("id").toString();
 			String title = document.get("title").toString();
 			title = title.replace("\"", "");
 			String canonicalUrl = document.get("canonical_url").toString();
 			canonicalUrl = canonicalUrl.replace("\"", "");
+
+			String textUrl = document.get("resources").get("text").toString();
 			
-			DocumentSetIndexer titleObj = new DocumentSetIndexer(title);
-			title = titleObj.munge();
+			// Test calling into Scala
+			DocumentSetIndexer titleObj = new DocumentSetIndexer(textUrl);
+			titleObj.munge();
 			
-			//System.out.println(title);
-			
-			Document newDoc = new Document(documentSet, title, canonicalUrl, canonicalUrl);
+			Document newDoc = new Document(documentSet, title, textUrl, canonicalUrl);
 			newDoc.save();
 			
 			if (documentToView == null) documentToView = newDoc;
