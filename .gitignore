@@ -9,3 +9,4 @@ dist
 .project
 .settings/
 *~
+*.swp
