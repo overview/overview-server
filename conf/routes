@@ -13,3 +13,5 @@ GET   /documents/:id/view controllers.Application.viewDocument(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+
+GET /documentsets/:id/tree/root controllers.Tree.root(id: Long)

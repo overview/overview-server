@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    { "id": 1, "doclist": { "docids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "n": 22 }, "children": [ 2, 3, 4 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 2, "doclist": { "docids": [1, 2, 3], "n": 3 }, "children": [ 5 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 3, "doclist": { "docids": [4, 5, 6, 7, 8, 9], "n": 6 }, "children": [ 6, 7, 8 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 4, "doclist": { "docids": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19], "n": 13 }, "children": [ 9, 10, 11, 12, 13 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 5, "doclist": { "docids": [1, 2, 3], "n": 3 }, "children": [ 14 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 6, "doclist": { "docids": [4, 5], "n": 2 }, "children": [ 15 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 7, "doclist": { "docids": [6], "n": 1 }, "children": [ 16 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 8, "doclist": { "docids": [7, 8, 9], "n": 3 }, "children": [ 17 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 9, "doclist": { "docids": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19], "n": 10 }, "children": [ 18 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 10, "doclist": { "docids": [20], "n": 1 }, "children": [ 19 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 11, "doclist": { "docids": [21], "n": 1 }, "children": [ 20 ], "taglist": { "full": [], "partial": [] }, "description": "root" },
+    { "id": 12, "doclist": { "docids": [22], "n": 1 }, "children": [ 21 ], "taglist": { "full": [], "partial": [] }, "description": "root" }
+  ],
+  "tags": [
+  ],
+  "documents": [
+    { "id": 1, "description": "document 1", "tagids": [] },
+    { "id": 2, "description": "document 2", "tagids": [] },
+    { "id": 3, "description": "document 3", "tagids": [] },
+    { "id": 4, "description": "document 4", "tagids": [] },
+    { "id": 5, "description": "document 5", "tagids": [] },
+    { "id": 6, "description": "document 6", "tagids": [] },
+    { "id": 7, "description": "document 7", "tagids": [] },
+    { "id": 8, "description": "document 8", "tagids": [] },
+    { "id": 9, "description": "document 9", "tagids": [] },
+    { "id": 10, "description": "document 10", "tagids": [] },
+    { "id": 11, "description": "document 11", "tagids": [] },
+    { "id": 12, "description": "document 12", "tagids": [] },
+    { "id": 13, "description": "document 13", "tagids": [] },
+    { "id": 14, "description": "document 14", "tagids": [] },
+    { "id": 15, "description": "document 15", "tagids": [] },
+    { "id": 16, "description": "document 16", "tagids": [] },
+    { "id": 17, "description": "document 17", "tagids": [] },
+    { "id": 18, "description": "document 18", "tagids": [] },
+    { "id": 19, "description": "document 19", "tagids": [] },
+    { "id": 20, "description": "document 20", "tagids": [] },
+    { "id": 21, "description": "document 21", "tagids": [] },
+    { "id": 22, "description": "document 22", "tagids": [] }
+  ]
+}
