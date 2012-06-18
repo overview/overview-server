@@ -1,7 +1,11 @@
 app = require('app')
+globals = require('globals')
 
 state = new app.models.State()
-state.set('document_store', new app.models.DocumentStore())
-state.set('tree', new app.models.PartialTree())
 
-console.log("State", state)
+needs_resolver = new app.models.NeedsResolver()
+tree = new app.models.PartialTree(needs_resolver)
+
+jQuery ($) ->
+  $('#tree').each () ->
+    app.controllers.tree_controller(this, tree)

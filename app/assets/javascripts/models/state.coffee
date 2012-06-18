@@ -1,4 +1,4 @@
-PROPERTIES = [ 'tree', 'document_store' ]
+PROPERTIES = []
 
 class State
   constructor: () ->
