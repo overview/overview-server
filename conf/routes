@@ -2,7 +2,7 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Home page
+# Interim URLs
 GET     /                           controllers.Application.index()
 GET	    /documentsets		        controllers.Application.showDocumentSets()
 POST	/documentsets		        controllers.Application.newDocumentSet()
@@ -11,6 +11,8 @@ POST	/documentsets/:id/delete	controllers.Application.deleteDocumentSet(id: Long
 GET		/documentsets/:id/view		controllers.Application.viewDocumentSet(id: Long)
 GET   /documents/:id/view controllers.Application.viewDocument(id: Long)
 
+# Good URLs
+GET /documentsets/:id controllers.DocumentSet.index(id: Long)
 GET /documentsets/:id/tree/root controllers.Tree.root(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
