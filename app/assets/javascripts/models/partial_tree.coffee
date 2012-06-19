@@ -25,7 +25,8 @@ class PartialTree
 
     rootid = nodes_json[0].id
     @root = nodes[rootid]
-    console.log(@root)
+    @_nodes = nodes
+
     this._trigger('change')
 
   on: (event_name, callback) ->
@@ -34,6 +35,9 @@ class PartialTree
   _trigger: (event_name) ->
     for callback in @callbacks[event_name]
       callback()
+
+  get_node: (nodeid) ->
+    @_nodes[nodeid]
 
 exports = require.make_export_object('models/partial_tree')
 exports.PartialTree = PartialTree

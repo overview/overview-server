@@ -1,9 +1,16 @@
+Selection = require('models/selection').Selection
+
 PROPERTIES = []
 
 class State
   constructor: () ->
     @properties = {}
     @callbacks = {}
+    @selection = new Selection()
+
+    @selection.on_change () =>
+      this._changed('selection')
+    @callbacks.selection = []
 
     for property in PROPERTIES
       @properties[property] = undefined
@@ -22,7 +29,7 @@ class State
     @properties[property] = value
     this._changed(property)
 
-  onChange: (property, callback) ->
+  on_change: (property, callback) ->
     @callbacks[property].push(callback)
 
   _changed: (property) ->

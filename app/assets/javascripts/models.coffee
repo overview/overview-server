@@ -4,5 +4,6 @@ exports.DocumentStore = require('models/document_store').DocumentStore
 exports.NeedsResolver = require('models/needs_resolver').NeedsResolver
 exports.PartialTree = require('models/partial_tree').PartialTree
 exports.Router = require('models/router').Router
+exports.Selection = require('models/selection').Selection
 exports.Server = require('models/server').Server
 exports.State = require('models/state').State

@@ -8,4 +8,4 @@ tree = new app.models.PartialTree(needs_resolver)
 
 jQuery ($) ->
   $('#tree').each () ->
-    app.controllers.tree_controller(this, tree)
+    app.controllers.tree_controller(this, tree, state)
