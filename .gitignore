@@ -10,3 +10,6 @@ dist
 .settings/
 *~
 *.swp
+
+test/assets/javascripts/src-js
+test/assets/javascripts/test-js
