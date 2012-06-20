@@ -16,9 +16,9 @@ mkdir -p "$DIR/src-js" "$DIR/test-js"
 cp -a "$SOURCE_DIR/vendor" "$DIR/src-js/vendor"
 
 echo 'Watching CoffeeScript sources and tests and compiling as they change...'
-coffee -c -o src-js -w "$SOURCE_DIR" &
+coffee -c -o "$DIR/src"-js -w "$SOURCE_DIR" &
 COFFEE_PID1=$!
-coffee -c -o test-js -w "$DIR" &
+coffee -c -o "$DIR/test-js" -w "$DIR" &
 COFFEE_PID2=$!
 
 echo 'Waiting for JavaScript files to appear...'
