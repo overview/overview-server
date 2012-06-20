@@ -1,8 +1,12 @@
 import sbt._
 import Keys._
 import PlayProject._
+import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build {
+
+    override def settings = super.settings ++ 
+      Seq(EclipseKeys.skipParents in ThisBuild := false)
 
     val appName         = "overview-server"
     val appVersion      = "1.0-SNAPSHOT"
