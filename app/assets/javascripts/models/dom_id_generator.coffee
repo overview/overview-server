@@ -8,7 +8,7 @@ class DomIdGenerator
 
     "#{@base}-#{n}"
 
-  nodeToGuaranteedDomId: (node) ->
+  node_to_guaranteed_dom_id: (node) ->
     node.id ||= this.next()
 
 exports = require.make_export_object('models/dom_id_generator')
