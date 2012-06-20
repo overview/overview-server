@@ -18,6 +18,12 @@ create table document_set (
   constraint pk_document_set primary key (id))
 ;
 
+create table node (
+  id                        bigint not null,
+  description               varchar(255),
+  constraint pk_node primary key (id))
+;
+
 create table tag (
   id                        bigint not null,
   name                      varchar(255),
@@ -36,32 +42,42 @@ create sequence document_seq;
 
 create sequence document_set_seq;
 
+create sequence node_seq;
+
 create sequence tag_seq;
 
-alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id);
+alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
 create index ix_document_documentSet_1 on document (document_set_id);
-alter table tag add constraint fk_tag_documentSet_2 foreign key (document_set_id) references document_set (id);
+alter table tag add constraint fk_tag_documentSet_2 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
 create index ix_tag_documentSet_2 on tag (document_set_id);
 
 
 
-alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id);
+alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id) on delete restrict on update restrict;
 
-alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id);
+alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id) on delete restrict on update restrict;
 
 # --- !Downs
 
-drop table if exists document cascade;
+SET REFERENTIAL_INTEGRITY FALSE;
 
-drop table if exists document_tag cascade;
+drop table if exists document;
 
-drop table if exists document_set cascade;
+drop table if exists document_tag;
 
-drop table if exists tag cascade;
+drop table if exists document_set;
+
+drop table if exists node;
+
+drop table if exists tag;
+
+SET REFERENTIAL_INTEGRITY TRUE;
 
 drop sequence if exists document_seq;
 
 drop sequence if exists document_set_seq;
+
+drop sequence if exists node_seq;
 
 drop sequence if exists tag_seq;
 
