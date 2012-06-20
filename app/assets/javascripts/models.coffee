@@ -1,5 +1,6 @@
 exports = require.make_export_object('models')
 exports.observable = require('models/observable').observable
+exports.DomIdGenerator = require('models/dom_id_generator').DomIdGenerator
 exports.Document = require('models/document').Document
 exports.DocumentStore = require('models/document_store').DocumentStore
 exports.NeedsResolver = require('models/needs_resolver').NeedsResolver
