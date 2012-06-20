@@ -7,7 +7,7 @@ tree_controller = (div, partial_tree, state) ->
     state.selection.update({ node: node })
 
   view.redraw()
-  partial_tree.on('change', view.redraw)
+  partial_tree.observe('change', view.redraw)
 
 exports = require.make_export_object('controllers/tree_controller')
 exports.tree_controller = tree_controller

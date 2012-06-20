@@ -1,7 +1,10 @@
+observable = require('models/observable').observable
+
 class PartialTree
+  observable(this)
+
   constructor: (@needs_resolver) ->
     @root = undefined
-    @callbacks = { change: [] }
 
     @needs_resolver.get_deferred('root').done (json) =>
       nodes_json = json.nodes
@@ -27,14 +30,7 @@ class PartialTree
     @root = nodes[rootid]
     @_nodes = nodes
 
-    this._trigger('change')
-
-  on: (event_name, callback) ->
-    @callbacks[event_name].push(callback)
-
-  _trigger: (event_name) ->
-    for callback in @callbacks[event_name]
-      callback()
+    this._notify('change')
 
   get_node: (nodeid) ->
     @_nodes[nodeid]
