@@ -8,7 +8,7 @@ RESOLVERS = {
 }
 
 class NeedsResolver
-  constructor: (server=undefined) ->
+  constructor: (@store, server=undefined) ->
     @server = server || new Server()
 
     @needs = {}
