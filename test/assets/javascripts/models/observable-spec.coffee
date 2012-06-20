@@ -63,3 +63,13 @@ describe 'models/', ->
       o.observe('event', -> _this = this)
       o._notify('event')
       expect(_this).toBe(o)
+
+    it 'should work simplified (that is, with no events)', ->
+      class O
+        observable(this)
+
+      x = 0
+      o = new O()
+      o.observe(-> x = 1)
+      o._notify()
+      expect(x).toEqual(1)

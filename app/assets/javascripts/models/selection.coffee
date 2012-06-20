@@ -1,25 +1,30 @@
+observable = require('models/observable').observable
+
 class Selection
+  observable(this)
+
   constructor: () ->
     @nodes = []
     @tags = []
     @documents = []
-    @callbacks = []
 
   update: (options) ->
-    if options.nodes?
+    changed1 = if options.nodes?
       this._update_one('nodes', options.nodes)
     else if options.node?
       this._update_one('nodes', [options.node])
 
-    if options.tags?
+    changed2 = if options.tags?
       this._update_one('tags', options.tags)
     else if options.tag?
       this._update_one('tags', [options.tag])
 
-    if options.documents?
+    changed3 = if options.documents?
       this._update_one('documents', options.documents)
     else if options.document?
       this._update_one('documents', [options.document])
+
+    this._notify() if changed1 || changed2 || changed3
 
   _update_one: (key, new_value) ->
     old_value = this[key]
@@ -40,14 +45,6 @@ class Selection
     return if equal
 
     this[key] = new_value
-    this._changed()
-
-  on_change: (callback) ->
-    @callbacks.push(callback)
-
-  _changed: () ->
-    for callback in @callbacks
-      callback()
 
 exports = require.make_export_object('models/selection')
 exports.Selection = Selection

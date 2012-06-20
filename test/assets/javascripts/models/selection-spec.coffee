@@ -1,4 +1,4 @@
-Selection = require('app/models').Selection
+Selection = require('models/selection').Selection
 
 describe 'models/', ->
   describe 'Selection', ->

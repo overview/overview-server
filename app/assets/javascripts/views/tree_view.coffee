@@ -47,7 +47,7 @@ tree_view = (div, partial_tree, state) ->
   on_ = (event, callback) ->
     $(div).on("tree_view:#{event}", (e, node) -> callback(node))
 
-  state.on_change 'selection', () ->
+  state.observe 'selection', () ->
     refresh_selection()
 
   {
