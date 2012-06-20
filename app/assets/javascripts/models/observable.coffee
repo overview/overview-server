@@ -1,0 +1,31 @@
+# Call this in your class, even CoffeeScript-style classes:
+#
+#   class MyClass
+#     observable(this)
+#     ...
+#
+# It will add observe(event, callback) and unobserve(event, callback) methods.
+# Then there's the _notify(event) method, which should be called from within
+# other methods.
+observable = (klass) ->
+  klass.prototype.observe = (event, callback) ->
+    all_observers = (@_observers ||= {})
+    observers_for_event = (all_observers[event] ||= [])
+    observers_for_event.push(callback)
+    undefined
+
+  klass.prototype.unobserve = (event, callback) ->
+    observers_for_event = @_observers[event]
+    index = observers_for_event.indexOf(callback)
+    observers_for_event.splice(index, 1)
+    undefined
+
+  klass.prototype._notify = (event) ->
+    all_observers = (@_observers ||= {})
+    observers_for_event = (all_observers[event] ||= [])
+    for observer in observers_for_event
+      observer.call(this)
+    undefined
+
+exports = require.make_export_object('models/observable')
+exports.observable = observable
