@@ -18,6 +18,12 @@ create table document_set (
   constraint pk_document_set primary key (id))
 ;
 
+create table node (
+  id                        bigint not null,
+  description               varchar(255),
+  constraint pk_node primary key (id))
+;
+
 create table tag (
   id                        bigint not null,
   name                      varchar(255),
@@ -35,6 +41,8 @@ create table document_tag (
 create sequence document_seq;
 
 create sequence document_set_seq;
+
+create sequence node_seq;
 
 create sequence tag_seq;
 
@@ -59,6 +67,8 @@ drop table if exists document_tag;
 
 drop table if exists document_set;
 
+drop table if exists node;
+
 drop table if exists tag;
 
 SET REFERENTIAL_INTEGRITY TRUE;
@@ -66,6 +76,8 @@ SET REFERENTIAL_INTEGRITY TRUE;
 drop sequence if exists document_seq;
 
 drop sequence if exists document_set_seq;
+
+drop sequence if exists node_seq;
 
 drop sequence if exists tag_seq;
 
