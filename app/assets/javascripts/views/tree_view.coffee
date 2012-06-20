@@ -1,48 +1,84 @@
 $ = jQuery
 
-tree_view = (div, partial_tree, state) ->
-  node_to_div = (node) ->
-    $ret = $('<div><span class="description"></span></div>')
-    $ret.children('.description').text(node.description)
-    $ret.attr('id', "tree-node-#{node.id}")
+COLOR_UNSELECTED = '#ccd'
+COLOR_SELECTED = '#bbb'
 
-    if node.children?.length
-      $ul = $('<ul></ul>')
-      for child_node in node.children
-        $li = $('<li></li>')
-        if child_node?.id? # it's a node
-          $li.append(node_to_div(child_node))
-        else # it's a nodeid -- unresolved
-          $li.append("<div><span class=\"description\">(unresolved Node ##{child_node})</span></div>")
-          $li.children('div').attr('id', "tree-node-#{child_node}")
-        $ul.append($li)
-      $ret.append($ul)
-    $ret[0]
+DomIdGenerator = require('models/dom_id_generator').DomIdGenerator
+tree_view_id_generator = new DomIdGenerator('tree-view')
+
+tree_view = (div, partial_tree, state) ->
+  icicle = undefined
+
+  tree_node_to_icicle_node = (node) ->
+    if node?.id?
+      {
+        id: node.id,
+        name: node.description,
+        data: {
+          '$area': node.doclist?.n || 1,
+          '$dim': node.doclist?.n || 1,
+          '$color': COLOR_UNSELECTED,
+        },
+        children: (tree_node_to_icicle_node(child_node) for child_node in (node.children || [])),
+      }
+    else
+      {
+        id: node || 0,
+        name: '(not yet loaded)',
+        data: {
+          '$area': 1,
+          '$dim': 1,
+          '$color': COLOR_UNSELECTED,
+        },
+        children: []
+      }
+
+  selected_nodeids = []
 
   refresh_selection = () ->
-    $div = $(div)
-    $div.find('[id]').removeClass('selected')
-    for node in state.selection.nodes
-      nodeid = node.id? && node.id || node
-      $div.find("#tree-node-#{nodeid}").addClass('selected')
+    for nodeid in selected_nodeids
+      node = icicle.graph.getNode(nodeid)
+      if node
+        node.setData('color', COLOR_UNSELECTED)
+
+    selected_nodeids = ((node?.id? && node.id || node) for node in state.selection.nodes)
+
+    for nodeid in selected_nodeids
+      node = icicle.graph.getNode(nodeid)
+      if node
+        node.setData('color', COLOR_SELECTED)
+
+    icicle.fx.animate({ modes: ['node-property:color'] })
 
   redraw = () ->
     $div = $(div)
 
     $div.empty()
+    $child = $('<div></div>')
+    $child.css({
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+    })
+    $div.append($child)
 
-    $div.append(node_to_div(partial_tree.root)) if partial_tree?.root?
-    refresh_selection()
+    icicle = new $jit.Icicle({
+      injectInto: tree_view_id_generator.node_to_guaranteed_dom_id($child[0]),
+      offset: 1,
+      cushion: false,
+      Events: {
+        enable: true,
+        onClick: (icicle_node) ->
+          node = icicle_node?.id && partial_tree.get_node(icicle_node.id) || icicle_node
+          $(div).trigger('tree_view:node_clicked', [node])
+      },
+    })
 
-  $(div).on 'click', (e) ->
-    $elem = $(e.target).closest('[id]')
-    id = $elem.attr('id')
-    id_parts = id.split(/-/g)
-
-    nodeid = + id_parts[id_parts.length - 1]
-    node = partial_tree.get_node(nodeid)
-
-    $(div).trigger('tree_view:node_clicked', [node || nodeid])
+    icicle_data = tree_node_to_icicle_node(partial_tree.root)
+    icicle.loadJSON(icicle_data)
+    icicle.refresh()
 
   on_ = (event, callback) ->
     $(div).on("tree_view:#{event}", (e, node) -> callback(node))
