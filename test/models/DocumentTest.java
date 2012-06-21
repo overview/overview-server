@@ -1,7 +1,5 @@
 package models;
 
-import play.mvc.*;
-import play.test.*;
 
 import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;

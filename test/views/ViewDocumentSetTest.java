@@ -1,12 +1,7 @@
 package views;
 
-import java.util.*;
-import java.util.regex.*;
-
-import javassist.runtime.DotClass;
 
 import play.mvc.*;
-import play.test.*;
 import views.html.*;
 import models.*;
 

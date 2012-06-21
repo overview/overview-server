@@ -2,9 +2,6 @@ package models;
 
 import java.util.*;
 
-import play.mvc.*;
-import play.test.*;
-
 
 import org.junit.Before;
 import org.junit.Test;

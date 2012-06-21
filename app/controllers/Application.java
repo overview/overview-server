@@ -1,19 +1,13 @@
 package controllers;
 
-import org.codehaus.jackson.JsonNode;
-
-import play.*;
 import play.data.*;
-import play.libs.F.Function;
-import play.libs.F.Promise;
-import play.libs.WS;
+
 import play.mvc.*;
 
 import views.html.*; // TODO: remove this (or, preferably, remove most of the Application class
 
 import models.*;
 
-import java.util.*;
 
 public class Application extends Controller {
     static Form<models.DocumentSet> documentSetForm = form(models.DocumentSet.class);

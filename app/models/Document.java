@@ -7,7 +7,6 @@ import java.util.Set;
 
 import play.data.validation.Constraints;
 import play.db.ebean.*;
-import scala.util.matching.Regex;
 
 import javax.persistence.*;
 
