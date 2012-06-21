@@ -2,10 +2,10 @@ package models;
 
 import java.util.*;
 
-
 import org.junit.Before;
 import org.junit.Test;
 
+import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
 
 public class NodeTest {
@@ -17,23 +17,24 @@ public class NodeTest {
 		root = new Node();
 		
 		root.id = 1l;
+		root.description = "description";
 		
 		for (long i = 10l; i < 13l; i++) {
 			Node level1ChildNode = new Node();
 			level1ChildNode.id = i;
-			root.children.add(level1ChildNode);
-			
+			root.addChild(level1ChildNode);
+						
 			for (int j = 1; j < 5l; j++) {
 				Node level2ChildNode = new Node();
 				level2ChildNode.id = 10L * i + j;
-				level1ChildNode.children.add(level2ChildNode);
+				level1ChildNode.addChild(level2ChildNode);
 			}
 		}
 				
 	}
 	
 	@Test
-	public void getFistLevelNodesBreadthFirst() {
+	public void getFirstLevelNodesBreadthFirst() {
 				
 		List<Node> onlyLevel1 = root.getNodesBreadthFirst(4);
 		assertThat(onlyLevel1.size()).isEqualTo(4);
@@ -69,6 +70,40 @@ public class NodeTest {
 	public void includeMoreThanWhole() {
 		List<Node> wholeTree = root.getNodesBreadthFirst(26);
 		assertThat(wholeTree.size()).isEqualTo(16);
+	}
+	
+	@Test
+	public void saveToDatabase() {
+		running(fakeApplication(inMemoryDatabase()), new Runnable() {
+			public void run() {
+				for (int i = 0; i < 5; i++) {
+					Document document = new Document(null, "title:" + i, "textUrl-" + i, "viewUrl-" + i);
+					root.addDocument(document);
+					document.save();
+				}
+				root.save();
+				for (Node level1Child: root.children) {
+					level1Child.save();
+					for (Node level2Child: level1Child.children) {
+						level2Child.save();
+					}
+				}
+				Node foundNode = Node.find.byId(root.id);
+				
+				assertThat(foundNode.id).isEqualTo(root.id);
+				assertThat(foundNode.description).isEqualTo(root.description);
+				assertThat(foundNode.children).isNotNull();
+				assertThat(foundNode.children.size()).isEqualTo(root.children.size());
+				for (Node child: foundNode.children) {
+					child.refresh();
+					assertThat(child.children.size()).isEqualTo(4);
+				}
+				assertThat(foundNode.documents.size()).isEqualTo(5);
+				
+
+			}
+		}
+		);
 		
 	}
 

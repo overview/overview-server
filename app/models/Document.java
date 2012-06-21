@@ -32,6 +32,9 @@ public class Document extends Model {
     @ManyToMany(cascade=CascadeType.ALL)
     public Set<Tag> tags;
 
+    @ManyToMany(mappedBy="documents")
+    public Set<Node> nodes;
+    
 	public static Finder<Long, Document> find = new Finder<Long, Document>(Long.class, Document.class);
 	
 	public Document(DocumentSet documentSet, String title, String textUrl, String viewUrl) {

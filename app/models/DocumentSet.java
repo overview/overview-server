@@ -22,6 +22,9 @@ public class DocumentSet extends Model {
 
     @OneToMany(cascade=CascadeType.ALL)
     public Set<Document> documents = new HashSet<Document>();
+    
+    @ManyToMany(mappedBy="documents")
+    public Set<Node> nodes = new HashSet<Node>();
 
     public static Finder<Long, DocumentSet> find = new Finder<Long, DocumentSet>(Long.class, DocumentSet.class);
 }

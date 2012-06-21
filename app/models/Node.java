@@ -15,9 +15,28 @@ public class Node extends Model {
 
     public String description;
     
+    @ManyToOne
+    public Node parent;
+    
+    @OneToMany(cascade=CascadeType.ALL,mappedBy="parent")
     public Set<Node> children = new HashSet<Node>();
  
+    @ManyToMany(cascade=CascadeType.ALL)
     public Set<Document> documents = new HashSet<Document>();
+    
+    public static Finder<Long, Node> find = new Finder<Long, Node>(Long.class, Node.class);
+    
+    public void addDocument(Document document)
+    {
+    	document.nodes.add(this);
+    	documents.add(document);
+    }
+    
+    public void addChild(Node child) 
+    {
+    	child.parent = this;
+    	children.add(child);
+    }
     
     public List<Node> getNodesBreadthFirst(int maxNumberOfNodes)
     {
