@@ -4,7 +4,8 @@ import java.util.*;
 import javax.persistence.*;
 
 
-import play.db.ebean.Model;
+import play.db.ebean.*;
+import play.db.ebean.Model.*; // for some reason this is needed, otherwise clean compile fails
 
 
 @Entity
