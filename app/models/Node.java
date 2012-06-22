@@ -47,6 +47,7 @@ public class Node extends Model {
     	boolean continueExpanding = true;
     	
     	while (continueExpanding) {
+    		nodesToExpand.get(0).refresh();
     		nodes.add(nodesToExpand.get(0));
     		nodesToExpand.addAll(nodesToExpand.get(0).children);
     		nodesToExpand.remove(0);
