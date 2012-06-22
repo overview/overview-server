@@ -11,6 +11,7 @@ dist
 *~
 *.swp
 .env
+.cache
 
 test/assets/javascripts/src-js
 test/assets/javascripts/test-js
