@@ -1,10 +1,10 @@
 package models;
 
 import java.util.*;
+import javax.persistence.*;
+
 
 import play.db.ebean.*;
-
-import javax.persistence.*;
 
 @Entity
 public class Node extends Model {

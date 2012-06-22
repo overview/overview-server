@@ -33,6 +33,12 @@ create table tag (
   constraint pk_tag primary key (id))
 ;
 
+create table tree (
+  id                        bigint not null,
+  root_id                   bigint,
+  constraint pk_tree primary key (id))
+;
+
 
 create table document_tag (
   document_id                    bigint not null,
@@ -53,12 +59,16 @@ create sequence node_seq;
 
 create sequence tag_seq;
 
+create sequence tree_seq;
+
 alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
 create index ix_document_documentSet_1 on document (document_set_id);
 alter table node add constraint fk_node_parent_2 foreign key (parent_id) references node (id) on delete restrict on update restrict;
 create index ix_node_parent_2 on node (parent_id);
 alter table tag add constraint fk_tag_documentSet_3 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
 create index ix_tag_documentSet_3 on tag (document_set_id);
+alter table tree add constraint fk_tree_root_4 foreign key (root_id) references node (id) on delete restrict on update restrict;
+create index ix_tree_root_4 on tree (root_id);
 
 
 
@@ -86,6 +96,8 @@ drop table if exists node;
 
 drop table if exists tag;
 
+drop table if exists tree;
+
 SET REFERENTIAL_INTEGRITY TRUE;
 
 drop sequence if exists document_seq;
@@ -95,4 +107,6 @@ drop sequence if exists document_set_seq;
 drop sequence if exists node_seq;
 
 drop sequence if exists tag_seq;
+
+drop sequence if exists tree_seq;
 
