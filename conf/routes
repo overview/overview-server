@@ -9,6 +9,7 @@ POST	/documentsets		        controllers.DocumentSet.newDocumentSet()
 POST	/documentsets/:id/delete	controllers.Application.deleteDocumentSet(id: Long)
 
 GET		/init						controllers.Tree.temporarySetup()
+GET	    /showJobs					controllers.Application.showJobs()
 
 GET		/documentsets/:id/view		controllers.Application.viewDocumentSet(id: Long)
 GET   /documents/:id/view controllers.Application.viewDocument(id: Long)

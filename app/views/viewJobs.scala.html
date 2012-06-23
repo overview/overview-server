@@ -1,0 +1,14 @@
+@(jobs: List[DocumentSetCreationJob])
+
+@main("DocumentSet Creation Jobs") {
+
+	<ul>
+	@for(j<-jobs) {
+		<li>
+			@j.id: @j.query [@j.state]
+		</li>
+	}
+	</ul>
+}
+
+

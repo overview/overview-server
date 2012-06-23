@@ -62,4 +62,9 @@ public class Application extends Controller {
 	   	Document doc = documentSet.documents.iterator().next();
 		return redirect(routes.Application.viewDocument(doc.id));
     }
+    
+    public static Result showJobs() {
+    	return ok(viewJobs.render(DocumentSetCreationJob.find.all()));
+    	
+    }
 }
