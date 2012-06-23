@@ -29,7 +29,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    val node = new Node()
 	    node.id = 5
 	    node.description = "This is my description"
-	      success
+
 	    val nodeJson = toJson(node)
 	    
 	    nodeJson.toString must / ("description" -> node.description)
@@ -47,7 +47,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    val nodeJson = toJson(rootNode)
 	    
 	    // I think Specs2 Json matcher should allow something like:
-	    //    nodeJson.toString must /("children") /("1.0")
+	    //nodeJson.toString must /("children") "/(1.0)"
 	    // but I can't get it to work, so am using the fragile test below. - JK
 	    nodeJson.toString must contain ("\"children\":[1,2,3]" )
 	    
