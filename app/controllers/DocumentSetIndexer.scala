@@ -81,18 +81,31 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     }
     
     // Now that we've read all documents, transform the document count into idf
+    // Drop all terms where count < 3 or count == N
+    idf = idf.filter(kv => (kv._2 > 2) && (kv._2 < N))
     idf = idf.mapValues(count => math.log10(N / count).toFloat)
     
     // Now we have to run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
-    for ((docid, tf) <- tf) {
-      val tfidf = tf.map({case (term,tf) => (term, tf * idf(term))})
-      val length = math.sqrt(tfidf.values.fold(0f) { (sumsq, weight) => sumsq + weight*weight }).toFloat
+    for ((docid, doctf) <- tf) {
+
+      var tfidf = Map[String,Float]()
+      var length = 0f
+      for ((term,termfreq) <- doctf) {
+        if (idf.contains(term)) {               // term might have been eliminated in previous step
+          val weight = termfreq * idf(term)
+          tfidf += (term -> weight)
+          length += weight*weight
+        }
+      }
+      length = math.sqrt(length).toFloat
+      
       val normalized = tfidf.mapValues(weight => weight/length)
       
-      println("------------")
-
-      println(normalized.toList.sorted)
+      println("---------------------------")
+      println(normalized.toList.sortBy(-_._2))  // sort by decreasing weight
     }
     
+    println("---------------------------")
+    println("Indexed " + N + " documents.")
   }
 }
