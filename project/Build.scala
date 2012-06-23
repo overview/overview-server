@@ -15,13 +15,18 @@ object ApplicationBuild extends Build {
    	"postgresql" % "postgresql" % "9.1-901.jdbc4"
     )
 
-    val worker = Project("overview-worker", 
-    file("worker"), settings =
-     Defaults.defaultSettings ++ 
-     Seq(libraryDependencies ++= appDependencies ++ Seq("play" %% "play" % "2.0.1")))
+    
+    val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA)
+    
+    val worker = Project("overview-worker", file("worker"), settings =
+      Defaults.defaultSettings ++ 
+      Seq(libraryDependencies ++= appDependencies ++ 
+      							  Seq("play" %% "play" % "2.0.1") ++  
+         						  Seq("org.specs2" %% "specs2" % "1.11" % "test"))).dependsOn(common).aggregate(common)
+         						 
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = JAVA).settings(
       // Add your own project settings here      
-    ).dependsOn(worker).aggregate(worker)
+    ).dependsOn(common, worker).aggregate(common,worker)
 
 }
