@@ -1,4 +1,3 @@
-package controllers
 
 import play._
 import play.libs.WS

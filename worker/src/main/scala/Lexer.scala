@@ -9,18 +9,18 @@
  * 
  */
 
-package controllers
 
 import play._
 import scala.util.matching.Regex
+import scala.io.Source
 
 object Lexer {
 
   
   // Load stopwords on startup
   var stopWords = Set[String]()
-  val stopWordsFile = Play.application.getFile("conf/stopwords.csv")
-  for (l <- io.Source.fromFile(stopWordsFile).getLines)
+  val stopWordsFileName = "conf/stopwords.csv"
+  for (l <- io.Source.fromFile(stopWordsFileName).getLines)
     stopWords += l
   
   // Remove certain types of terms. At the moment:

@@ -25,16 +25,6 @@ class DocumentSetSpec extends Specification {
       }
     }
     
-    "create a DocumentSet" in {
-      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        val result = controllers.DocumentSet.newDocumentSet() (FakeRequest().
-            withFormUrlEncodedBody(("query", "foo")))
-          
-        val foundDocumentSet = models.DocumentSet.find.where().eq("query", "foo").findUnique
-        
-        foundDocumentSet must not beNull;
-      }
-    }
       
     "redirect to documentsets view" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {

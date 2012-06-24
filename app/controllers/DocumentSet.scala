@@ -22,11 +22,6 @@ object DocumentSet extends Controller {
       val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
       documentSetCreationJob.save
       
-      val documentSet = new models.DocumentSet()
-      documentSet.query = documentSetCreationJob.query
-      documentSet.save
-      
-      
       Redirect(routes.Application.showDocumentSets())
     }
 }

@@ -20,26 +20,6 @@ public class Application extends Controller {
     	return ok(documentSets.render(models.DocumentSet.find.all(), documentSetForm));
     }
 
-    public static Result newDocumentSet() {
-    	Form<models.DocumentSet> filledForm = documentSetForm.bindFromRequest();
-    	
-    	if(filledForm.hasErrors()) {
-    		return badRequest(
-    				views.html.documentSets.render(models.DocumentSet.find.all(), filledForm)
-    				);
-    	}
-    	else {
-    	  	final models.DocumentSet documentSet = filledForm.get();
-    		documentSet.save();
-
-    		// Now retrieve all the documents within this set, creating document objects
-			DocumentSetIndexer indexer = new DocumentSetIndexer(documentSet);
-			indexer.createDocuments();
-			indexer.indexDocuments();
-			    		
-    		return redirect(routes.Application.showDocumentSets());
-    	}
-    }
     
     public static Result deleteDocumentSet(Long id) {
     	models.DocumentSet documentSet = models.DocumentSet.find.ref(id);
