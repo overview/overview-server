@@ -11,7 +11,6 @@ document_list_controller = (div, store, resolver, state) ->
     view.set_document_list(document_list)
 
   view.on 'need_more_documents', (start, end) ->
-    console.log("YAY")
     document_list.slice(start, end).done (documents) ->
       view.add_slice(start, end, documents)
 

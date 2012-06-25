@@ -41,7 +41,6 @@ class NeedsResolver
     ret = RESOLVERS[type](this, arg)
 
     @needs[full_key] = ret if full_key?
-    console.log("Returning:", ret)
     ret
 
 exports = require.make_export_object('models/needs_resolver')
