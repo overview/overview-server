@@ -19,6 +19,7 @@ object TreeJsonWrapper {
 
       for (node <- includedNodes) {
         for (document <- node.documents) {
+          document.refresh
           includedDocumentIds.add(document)
         }
       }
