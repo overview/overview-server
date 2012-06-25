@@ -49,14 +49,13 @@ class DocumentList
     deferred = if end < @documents.length
       new Deferred().resolve(@documents.slice(start, end))
     else
-      @resolver.get_selection_documents_slice(@selection, start, end)
+      @resolver.get_selection_documents_slice(@selection, start, end).done((ret) =>
+        for document, i in ret.documents
+          @documents[start+i] = document
+        @n = ret.total_items
+      ).pipe((ret) -> ret.documents)
 
-    deferred.done (documents, n) =>
-      for document, i in documents
-        @documents[start+i] = document
-      @n = n
-
-    @deferreds[deferred_key] = deferred.pipe((documents, n) -> documents)
+    @deferreds[deferred_key] = deferred
 
 
 exports = require.make_export_object('models/document_list')

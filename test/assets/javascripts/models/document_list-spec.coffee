@@ -89,6 +89,7 @@ describe 'models/document_list', ->
       it 'should return documents it already has, without a server call', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
         dl.documents = [ '1', '2', '3', '4', '5' ]
+        dl.n = 5
         deferred = dl.slice(0, 3)
         expect(deferred.isResolved()).toBe(true)
         arr = undefined
@@ -108,7 +109,7 @@ describe 'models/document_list', ->
         expect(deferred.isResolved()).toBe(false)
         arr = undefined
         deferred.done((x) -> arr = x)
-        resolver.deferreds[0].resolve([ '1', '2' ])
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
         expect(arr).toEqual(['1', '2'])
 
       it 'should cache unresolved values', ->
@@ -120,29 +121,29 @@ describe 'models/document_list', ->
       it 'should cache resolved values', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
         d1 = dl.slice(0, 2)
-        resolver.deferreds[0].resolve([ '1', '2' ])
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
         d2 = dl.slice(0, 2)
         expect(d2).toBe(d1)
 
       it 'should populate @documents', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
         deferred = dl.slice(0, 2)
-        resolver.deferreds[0].resolve([ '1', '2' ])
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
         expect(dl.documents).toEqual(['1', '2'])
 
       it 'should populate @documents with undefined if a later request comes in before an earlier one', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
         d1 = dl.slice(0, 2)
         d2 = dl.slice(2, 4)
-        resolver.deferreds[1].resolve([ '3', '4' ])
+        resolver.deferreds[1].resolve({ documents: [ '3', '4' ] })
         expect(dl.documents).toEqual([undefined, undefined, '3', '4'])
-        resolver.deferreds[0].resolve([ '1', '2' ])
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
         expect(dl.documents).toEqual([ '1', '2', '3', '4' ])
 
       it 'should populate @n', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
         deferred = dl.slice(0, 2)
-        resolver.deferreds[0].resolve([ '1', '2' ], 2)
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ], total_items: 2 })
         expect(dl.n).toEqual(2)
 
     describe 'n', ->
