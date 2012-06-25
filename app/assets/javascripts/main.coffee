@@ -10,3 +10,5 @@ tree = new app.models.PartialTree(needs_resolver)
 jQuery ($) ->
   $('#tree').each () ->
     app.controllers.tree_controller(this, tree, state)
+  $('#document-list').each () ->
+    app.controllers.document_list_controller(this, store, needs_resolver, state)
