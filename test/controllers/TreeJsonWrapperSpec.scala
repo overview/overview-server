@@ -45,7 +45,48 @@ class TreeJsonWrapperSpec extends Specification {
 //
 //    }
 //    
-//    "fakes Document and Tags list" in {
+//    "return documents in nodes" in {
+//
+//      val documentSet = new models.DocumentSet()
+//      
+//      val tree = new models.Tree()
+//      
+//      val root = new Node()
+//      root.id = 1
+//      
+//
+//      
+//      for (i <- 1 to 20) {
+//        val document = new models.Document(documentSet, "document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
+//        document.id = i
+//        documentSet.documents.add(document)
+//        
+//        root.addDocument(document)
+//      }
+//
+//      for (i <- 0 to 2) {
+//      	val child = new Node()
+//      	child.id = i + root.id
+//      	
+//      	documentSet.documents.slice(7 * i, 7 * i + 7).foreach{child.addDocument}
+//      	root.addChild(child)
+//      }
+//      
+//      tree.root = root
+//      
+//      val treeJson = toJson(tree)
+//      
+//      for (i <- 1 to 20 ) {
+//    	  treeJson.toString must /("documents") */("id" -> 1)
+//    	  val title = "document[" + i + "]"
+//    	  treeJson.toString must /("documents") */("description" -> title)
+//    	  treeJson.toString.indexOf(title) must be equalTo(
+//    	      treeJson.toString.lastIndexOf(title))
+//      }
+//    }
+//    
+//    
+//    "fake Tags list" in {
 //    	val tree = new models.Tree()
 //
 //    	val root = new Node()
@@ -54,7 +95,6 @@ class TreeJsonWrapperSpec extends Specification {
 //    	tree.root = root;
 //    	val treeJson = toJson(tree)
 //    	
-//    	treeJson.toString must contain ("documents")
 //    	treeJson.toString must contain ("tags")
 //    }
 //  }
