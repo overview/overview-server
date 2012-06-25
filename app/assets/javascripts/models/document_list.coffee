@@ -49,7 +49,7 @@ class DocumentList
     deferred = if end < @documents.length
       new Deferred().resolve(@documents.slice(start, end))
     else
-      @resolver.get_selection_documents_slice({ selection: @selection, start: start, end: end }).done((ret) =>
+      @resolver.get_deferred('selection_documents_slice', { selection: @selection, start: start, end: end }).done((ret) =>
         for document, i in ret.documents
           @documents[start+i] = document
         @n = ret.total_items
