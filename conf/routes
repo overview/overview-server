@@ -16,7 +16,8 @@ GET   /documents/:id/view controllers.Application.viewDocument(id: Long)
 
 # Good URLs
 GET /documentsets/:id controllers.DocumentSet.index(id: Long)
-GET /documentsets/:id/tree/root controllers.Tree.root(id: Long)
+GET /tree/:id/root controllers.Tree.root(id: Long)
+GET /tree/:id/documents controllers.DocumentListController.index(id: Long, nodeids: String ?= "", tagids: String ?= "", documentids: String ?= "", start: Long ?= 0, end: Long ?= 20)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
