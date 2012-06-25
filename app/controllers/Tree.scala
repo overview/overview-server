@@ -2,15 +2,14 @@ package controllers
 
 import scala.collection.JavaConversions._
 import scala.io
-
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
-
 import controllers.TreeJsonWrapper._
 import models.Node
+
 
 object Tree extends Controller {
 	
@@ -28,6 +27,14 @@ object Tree extends Controller {
 	    generateNextLevel(grandkids, child.children.toSeq, 30)
 	  }
 	  
+	  val documentSet = new models.DocumentSet()
+	  for (i <- 1 to 22) {
+	    val document = new models.Document(documentSet, "document-" + i, "textUrl-" + i, "viewUrl-" + i)
+	    documentSet.documents.add(document)
+	    root.addDocument(document)
+	  }
+	  
+
 	  val tree = new models.Tree()
 	  tree.root = root
 	  tree.save()
