@@ -11,7 +11,7 @@ object DocumentSet extends Controller {
         Ok(views.html.DocumentSet.index())
     }
     
-    def newDocumentSet() = Action { implicit request =>
+    def createDocumentSet() = Action { implicit request =>
       val queryForm = Form(
           mapping(
               "query" -> text

@@ -13,7 +13,7 @@ class DocumentSetSpec extends Specification {
   "The DocumentSet Controller" should {
     "submit a DocumentSetCreationJob when a new query is received" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-        val result = controllers.DocumentSet.newDocumentSet() (FakeRequest().
+        val result = controllers.DocumentSet.createDocumentSet() (FakeRequest().
             withFormUrlEncodedBody(("query", "foo")))
 
             
@@ -28,7 +28,7 @@ class DocumentSetSpec extends Specification {
       
     "redirect to documentsets view" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-    	  val result = controllers.DocumentSet.newDocumentSet() (FakeRequest().
+    	  val result = controllers.DocumentSet.createDocumentSet() (FakeRequest().
             withFormUrlEncodedBody(("query", "foo")))
       
           redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
