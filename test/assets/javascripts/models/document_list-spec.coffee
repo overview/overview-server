@@ -21,8 +21,8 @@ class MockResolver
     @deferreds = []
     @args = []
 
-  get_selection_documents_slice: (selection, start, end) ->
-    @args.push({ selection: selection, start: start, end: end })
+  get_selection_documents_slice: (obj) ->
+    @args.push(obj)
     @deferreds.push(ret = new jQuery.Deferred())
     ret
 
@@ -101,7 +101,7 @@ describe 'models/document_list', ->
         dl = new DocumentList(store, selection, resolver)
         spyOn(resolver, 'get_selection_documents_slice').andCallThrough()
         deferred = dl.slice(0, 2)
-        expect(resolver.get_selection_documents_slice).toHaveBeenCalledWith(selection, 0, 2)
+        expect(resolver.get_selection_documents_slice).toHaveBeenCalledWith({ selection: selection, start: 0, end: 2 })
 
       it 'should give the return value of get_selection_documents_slice', ->
         dl = new DocumentList(store, new MockSelection(), resolver)
