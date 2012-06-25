@@ -1,5 +1,14 @@
 Deferred = jQuery.Deferred
 
+# Stores a possibly-incomplete list of selected documents
+#
+# When you create a DocumentList (from a Store, a Selection and a
+# NeedsResolver), its @documents property is empty and @n is undefined.
+# Call get_placeholder_documents() to get some documents we know to exist that
+# match the selection; call .slice() to get a Deferred that will (or has been)
+# resolved to the Documents. When documents have been found, @documents will
+# be populated with this (possibly-incomplete) list, and @n will be the total
+# number of documents.
 class DocumentList
   constructor: (@store, @selection, @resolver) ->
     @documents = []
