@@ -40,3 +40,36 @@ describe 'models/document_list', ->
         })
         documents = dl.get_placeholder_documents()
         expect(documents).toEqual(['foo'])
+
+      it 'should return a document when a tag is selected', ->
+        dl = new DocumentList(new MockStore({
+          documents: { 1: 'foo' },
+        }), {
+          nodes: [],
+          documents: [],
+          tags: [{ id: 1, count: 1, doclist: { docids: [1], n: 1 }}],
+        })
+        documents = dl.get_placeholder_documents()
+        expect(documents).toEqual(['foo'])
+
+      it 'should return no documents when the tag and nodes point to different documents', ->
+        dl = new DocumentList(new MockStore({
+          documents: { 1: 'foo', 2: 'bar' }
+        }), {
+          nodes: [{id: 1, doclist: { docids: [1], n: 1 }}],
+          documents: [],
+          tags: [{ id: 1, count: 1, doclist: { docids: [2], n: 1 }}],
+        })
+        documents = dl.get_placeholder_documents()
+        expect(documents).toEqual([])
+
+      it 'should return a document when both tags and nodes match it', ->
+        dl = new DocumentList(new MockStore({
+          documents: { 1: 'foo', 2: 'bar' }
+        }), {
+          nodes: [{id: 1, doclist: { docids: [2], n: 1 }}],
+          documents: [],
+          tags: [{ id: 1, count: 1, doclist: { docids: [2], n: 1 }}],
+        })
+        documents = dl.get_placeholder_documents()
+        expect(documents).toEqual(['bar'])
