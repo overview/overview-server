@@ -1,5 +1,7 @@
 DocumentList = require('models/document_list').DocumentList
 
+Deferred = jQuery.Deferred
+
 class MockStore
   constructor: (properties={}) ->
     _nodes = (properties.nodes || {})
@@ -21,7 +23,7 @@ class MockResolver
     @deferreds = []
 
   get_deferred: (key, obj) ->
-    @deferreds.push(ret = new jQuery.Deferred())
+    @deferreds.push(ret = new Deferred())
     ret
 
 describe 'models/document_list', ->
@@ -143,6 +145,14 @@ describe 'models/document_list', ->
         deferred = dl.slice(0, 2)
         resolver.deferreds[0].resolve({ documents: [ '1', '2' ], total_items: 2 })
         expect(dl.n).toEqual(2)
+
+      it 'should notify observers', ->
+        dl = new DocumentList(store, new MockSelection(), resolver)
+        deferred = dl.slice(0, 2)
+        called = false
+        dl.observe(-> called = true)
+        resolver.deferreds[0].resolve({ documents: [ '1', '2' ], total_items: 2 })
+        expect(called).toBeTruthy()
 
     describe 'n', ->
       store = new MockStore()

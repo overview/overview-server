@@ -1,5 +1,7 @@
 Deferred = jQuery.Deferred
 
+observable = require('models/observable').observable
+
 # Stores a possibly-incomplete list of selected documents
 #
 # When you create a DocumentList (from a Store, a Selection and a
@@ -9,7 +11,13 @@ Deferred = jQuery.Deferred
 # resolved to the Documents. When documents have been found, @documents will
 # be populated with this (possibly-incomplete) list, and @n will be the total
 # number of documents.
+#
+# DocumentList is almost immutable. In weird circumstances its @n may change,
+# and its @documents will grow until it reaches @n elements and every element
+# is defined. But that's it.
 class DocumentList
+  observable(this)
+
   constructor: (@store, @selection, @resolver) ->
     @documents = []
     @deferreds = {}
@@ -53,6 +61,7 @@ class DocumentList
         for document, i in ret.documents
           @documents[start+i] = document
         @n = ret.total_items
+        this._notify()
       ).pipe((ret) -> ret.documents)
 
     @deferreds[deferred_key] = deferred
