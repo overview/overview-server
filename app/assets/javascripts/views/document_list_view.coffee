@@ -2,16 +2,13 @@ observable = require('models/observable').observable
 
 $ = jQuery
 
-DOCUMENT_LIST_REQUEST_SIZE = 20 # number of documents per request
-
 class DocumentListView
   observable(this)
 
   constructor: (@div, @document_list, @selection, options={}) ->
-    @document_list_request_size = options.document_list_request_size || DOCUMENT_LIST_REQUEST_SIZE
-    # TODO: DocumentList only depends on tags/nodes, *not* documents.
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
+    @_redraw_used_placeholders = false
 
     this._attach()
     this._redraw()
@@ -117,7 +114,7 @@ class DocumentListView
       index++
 
     this._refresh_selection()
-    this._maybe_notify_need_documents()
+    this._refresh_need_documents()
 
   _refresh_selection: () ->
     $div = $(@div)
@@ -126,21 +123,54 @@ class DocumentListView
       documentid = document_or_id.id? && document_or_id.id || document_or_id
       $div.find("a[href=#document-#{documentid}]").addClass('selected')
 
-  _maybe_notify_need_documents: () ->
-    # TODO
-    if !@document_list.n?
-      this._notify_need_documents()
-    #if showing_placeholders
-    #  start = $ul.find('.placeholder:eq(0)').prevAll().length
-    #  end = start + @document_list_request_size
-    #  $div.trigger('document_list_view:need_more_documents', start, end)
+  _refresh_need_documents: () ->
+    documents = @document_list.documents
+    n = @document_list.n
 
-  _notify_need_documents: () ->
-    this._notify('need-documents')
+    if !n?
+      this._set_need_documents([[0, undefined]])
+      return
+
+    need_documents = []
+
+    start = undefined
+
+    for cur in [0...n]
+      if cur >= documents.length
+        need_documents.push([cur, n])
+        break
+      if !start?
+        if !documents[cur]?
+          start = cur
+      else
+        if documents[cur]?
+          need_documents.push([start, cur])
+          start = undefined
+
+    this._set_need_documents(need_documents)
+
+  _set_need_documents: (need_documents) ->
+    changed = (need_documents.length != @need_documents.length)
+
+    if !changed
+      for i in [0...need_documents.length]
+        a = need_documents[i]
+        b = @need_documents[i]
+        if a[0] != b[0] || a[1] != b[1]
+          changed = true
+          break
+
+    if changed
+      @need_documents = need_documents
+      this._notify('need-documents')
 
   set_document_list: (document_list) ->
     this._detach_document_list()
     @document_list = document_list
+    this._attach_document_list()
+    $(@div).empty()
+    @_redraw_used_placeholders = false
+    @need_documents = []
     this._redraw()
 
   last_document_id_clicked: () ->

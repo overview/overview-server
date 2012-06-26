@@ -24,6 +24,7 @@ class DocumentList
     @n = undefined
 
   get_placeholder_documents: () ->
+    # Set up "ids_so_far" to the Documents list, then filter it by tags and nodes
     ids_so_far = (document.id? && document.id || document for document in (@selection.documents || []))
     excludes_something = @selection.documents?.length
 

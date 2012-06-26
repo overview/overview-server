@@ -49,10 +49,33 @@ describe 'views/document_list_view', ->
       view = create_view()
       expect($(view.div).children().length).toEqual(0)
 
+    it 'should unobserve when setting a new DocumentList', ->
+      view = create_view()
+      expect(document_list._observers._.length).toEqual(1) # if this fails, the test is broken
+      view.set_document_list(new MockDocumentList(selection))
+      expect(document_list._observers._.length).toEqual(0)
+
+    it 'should observe the new DocumentList', ->
+      view = create_view()
+      document_list2 = new MockDocumentList(selection)
+      view.set_document_list(document_list2)
+      expect(document_list2._observers._.length).toEqual(1)
+
+    it 'should ask for placeholder data when a new list is set', ->
+      view = create_view()
+      document_list2 = new MockDocumentList(selection)
+      spyOn(document_list2, 'get_placeholder_documents').andCallThrough()
+      view.set_document_list(document_list2)
+      expect(document_list2.get_placeholder_documents).toHaveBeenCalled()
+
     describe 'starting with a complete list', ->
       beforeEach ->
         document_list.documents = mock_document_array(2)
         document_list.n = 2
+
+      it 'should set need_documents to []', ->
+        view = create_view()
+        expect(view.need_documents).toEqual([])
 
       it 'should show the documents in a list', ->
         view = create_view()
@@ -113,7 +136,6 @@ describe 'views/document_list_view', ->
 
     describe 'starting with an incomplete list', ->
       beforeEach ->
-        options.document_list_request_size = 4
         document_list.documents = mock_document_array(4)
         document_list.n = 10
 
@@ -122,6 +144,41 @@ describe 'views/document_list_view', ->
         $div = $(view.div)
         expect($div.find('a[href=#document-4]').length).toEqual(1)
         expect($div.find('a[href=#document-5]').length).toEqual(0)
+
+      it 'should set need_documents', ->
+        view = create_view()
+        expect(view.need_documents).toEqual([[4, 10]])
+
+      it 'should set need_documents when gaps get in the document list', ->
+        view = create_view()
+        document_list.documents.push(undefined)
+        document_list.documents.push(undefined)
+        for document in mock_document_array(2, 7)
+          document_list.documents.push(document)
+        document_list._notify()
+        expect(view.need_documents).toEqual([[4, 6], [8, 10]])
+
+      it 'should make need_documents empty when it is', ->
+        view = create_view()
+        for document in mock_document_array(6, 5)
+          document_list.documents.push(document)
+        document_list._notify()
+        expect(view.need_documents).toEqual([])
+
+      it 'should notify need-documents when it changes', ->
+        view = create_view()
+        called = false
+        view.observe('need-documents', -> called = true)
+        document_list.documents.push(mock_document_array(1, 5)[0])
+        document_list._notify()
+        expect(called).toBeTruthy()
+
+      it 'should not notify need-documents when it does not change', ->
+        view = create_view()
+        called = false
+        view.observe('need-documents', -> called = true)
+        document_list._notify()
+        expect(called).toBeFalsy()
 
       it 'should show a placeholder at the end of the list', ->
         view = create_view()
@@ -182,3 +239,7 @@ describe 'views/document_list_view', ->
         document_list.n = 3
         document_list._notify()
         expect($(view.div).find('.placeholder').length).toEqual(0)
+
+      it 'should set need_documents', ->
+        view = create_view()
+        expect(view.need_documents).toEqual([[0, undefined]])
