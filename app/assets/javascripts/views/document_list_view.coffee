@@ -21,6 +21,8 @@ class DocumentListView
   _attach_click: () ->
     $div = $(@div)
     $div.on 'click', (e) =>
+      e.preventDefault()
+
       $a = $(e.target).closest('a')
       last_a_clicked = if !$a.length
         undefined
@@ -29,7 +31,7 @@ class DocumentListView
 
       if @_last_a_clicked != last_a_clicked
         @_last_a_clicked = last_a_clicked
-        this._notify('document_clicked')
+        this._notify('document-clicked')
 
   _attach_selection: () ->
     @selection.observe( => this._refresh_selection())

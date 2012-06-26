@@ -100,11 +100,11 @@ describe 'views/document_list_view', ->
         $a.parent().click()
         expect(view.last_document_id_clicked()).toBeUndefined()
 
-      it 'should notify "document_clicked"', ->
+      it 'should notify "document-clicked"', ->
         view = create_view()
         $a = $(view.div).find('a[href=#document-1]')
         called = false
-        view.observe('document_clicked', () -> called = true)
+        view.observe('document-clicked', () -> called = true)
         $a.click()
         expect(called).toBeTruthy()
 
