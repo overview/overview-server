@@ -18,7 +18,7 @@ module_name_to_export_object = (module_name) ->
   exports = exports_root
 
   for part in parts
-    exports = (exports[part] ||= {})
+    exports = (exports["_#{part}"] ||= {})
 
   exports
 
