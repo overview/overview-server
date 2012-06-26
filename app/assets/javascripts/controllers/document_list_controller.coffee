@@ -54,5 +54,10 @@ document_list_controller = (div, store, resolver, state) ->
 
   view.observe('need-documents', fetch)
 
+  view.observe 'document-clicked', ->
+    documentid = view.last_document_id_clicked()
+    document = store.documents.get(documentid)
+    state.selection.update({ document: document })
+
 exports = require.make_export_object('controllers/document_list_controller')
 exports.document_list_controller = document_list_controller
