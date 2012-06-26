@@ -1,7 +1,15 @@
 Server = require('models/server').Server
 
 resolve_root = (needs_resolver) ->
-  needs_resolver.server.get('root')
+  needs_resolver.server.get('root').done (obj) ->
+    store = needs_resolver.store
+    for node in obj.nodes
+      store.nodes.add(node)
+    for tag in obj.tags
+      store.tags.add(tag)
+    for document in obj.documents
+      store.documents.add(document)
+    console.log(store)
 
 resolve_selection_documents_slice = (needs_resolver, obj) ->
   list_to_param = (list) ->
