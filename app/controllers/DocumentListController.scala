@@ -28,7 +28,7 @@ object DocumentListController extends Controller {
                     )
                 ))
             ),
-            "total_items" -> JsNumber(JBigDecimal.valueOf(selection.count()))
+            "total_items" -> JsNumber(JBigDecimal.valueOf(selection.count))
         )))
     }
 
@@ -65,9 +65,9 @@ object DocumentListController extends Controller {
         val documents = idStringToSet(models.Document.find, documentids)
 
         val selection = new models.Selection(tree)
-        selection.nodes.addAll(nodes)
-        selection.tags.addAll(tags)
-        selection.documents.addAll(documents)
+//        selection.nodes.addAll(nodes)
+//        selection.tags.addAll(tags)
+//        selection.documents.addAll(documents)
 
         return selection
     }
