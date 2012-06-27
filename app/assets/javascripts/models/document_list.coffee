@@ -50,7 +50,7 @@ class DocumentList
     (@store.documents.get(docid) for docid in ids_so_far)
 
   # Returns a Deferred which, when resolved, will be a slice of this.documents
-  slice: (start=0, end=20) ->
+  slice: (start, end) ->
     deferred_key = "#{start}..#{end}"
 
     return @deferreds[deferred_key] if @deferreds[deferred_key]?
