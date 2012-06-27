@@ -9,7 +9,6 @@ resolve_root = (needs_resolver) ->
       store.tags.add(tag)
     for document in obj.documents
       store.documents.add(document)
-    console.log(store)
 
 resolve_selection_documents_slice = (needs_resolver, obj) ->
   list_to_param = (list) ->
@@ -24,7 +23,9 @@ resolve_selection_documents_slice = (needs_resolver, obj) ->
     if list?.length
       params[key] = list_to_param(obj.selection[key])
 
-  needs_resolver.server.get('documents', { data: params })
+  needs_resolver.server.get('documents', { data: params }).done (obj) ->
+    for document in obj.documents
+      needs_resolver.store.documents.add(document)
 
 RESOLVERS = {
   root: resolve_root,
