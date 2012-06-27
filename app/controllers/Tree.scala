@@ -2,6 +2,8 @@ package controllers
 
 import scala.collection.JavaConversions._
 import scala.io
+import scala.util.Random
+
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc._
@@ -20,39 +22,62 @@ object Tree extends Controller {
 	  
 	  val root = new Node()
 	  root.description = "root"
-	    
-	  generateNextLevel(level1, Seq(root), 10)
-	  generateNextLevel(level2, root.children.toSeq, 20)
-	  for ((child, grandkids) <- root.children.zip(level3)) {
-	    generateNextLevel(grandkids, child.children.toSeq, 30)
-	  }
-	  
+
 	  val documentSet = new models.DocumentSet()
 	  for (i <- 1 to 22) {
 	    val document = new models.Document(documentSet, "document-" + i, "textUrl-" + i, "viewUrl-" + i)
+	    document.save
 	    documentSet.documents.add(document)
-	    root.addDocument(document)
 	  }
-	  
 
+	  generateTreeLevel(root, documentSet.documents.toSeq, 4)
+	  
 	  val tree = new models.Tree()
 	  tree.root = root
 	  tree.save()
 	  Ok(views.html.index.render(toJson(tree).toString))
 	}
 	
-	def generateNextLevel(numberOfNodes: Seq[Int], roots: Seq[Node], prefixStart: Int) {
-	  var prefix = prefixStart
-	  for ((n, root) <- numberOfNodes.zip(roots)) {
-	    for (i <- 1 to n) {
-	      val child = new Node()
-	      child.description = "Node " + prefix + i
-	      root.addChild(child)
-	    }
-	    prefix += 1
+	def generateTreeLevel(root: Node, documents: Seq[models.Document], depth: Int) : Node = {
+	  if ((depth == 1) || (documents.size == 1)) {
+	    documents.foreach(d => root.addDocument(d))
+	   
+	  }
+	  else {
+	    val numberOfChildren = Random.nextInt(scala.math.min(5, documents.size)) + 1
+	    val children = generateChildren(numberOfChildren, documents, depth)
+	    children.foreach(c => root.addChild(c))
+	    documents.foreach(d => root.addDocument(d))
+	  }
+	    
+	    
+	  root
+	}
+
+	def generateChildren(numberOfSiblings: Int, documents: Seq[models.Document], depth: Int) : Seq[Node] = {
+	  val siblings = Seq[models.Node]()
+	  if (numberOfSiblings > 0) {
+	    val splitPoint = 
+	      if (documents.size == numberOfSiblings) {
+	    	  1
+	      }
+	      else {
+	    	  Random.nextInt(documents.size - numberOfSiblings) + 1
+	      }
+	    
+	    val childDocuments = documents.slice(0, splitPoint)
+	    val siblingDocuments = documents.slice(splitPoint, documents.size)
+	    val child = new Node()
+	    child.description = "node height " + depth
+	    generateTreeLevel(child, childDocuments, depth - 1)
+	    
+	    Seq[models.Node](child) ++ generateChildren(numberOfSiblings - 1, siblingDocuments, depth)
+	  }
+	  else {
+		siblings
 	  }
 	}
-  
+	
     def root(documentSetId: Long) = Action {
 // Leaving this here in case the complete JSON from the file is needed in testing the UI      
 //        val file = Play.application.getFile("conf/stub-tree-root.json")
