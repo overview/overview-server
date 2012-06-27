@@ -66,6 +66,7 @@ tree_view = (div, partial_tree, state) ->
 
     icicle = new $jit.Icicle({
       injectInto: tree_view_id_generator.node_to_guaranteed_dom_id($child[0]),
+      orientation: 'v',
       offset: 1,
       cushion: false,
       Events: {
