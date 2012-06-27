@@ -5,7 +5,7 @@
 
 	<ul>
 		@for((document) <- documentSet.documents) {
-			<li><a href=@routes.Application.viewDocument(document.id)>@document.title</a></li>
+			<li><a href=@routes.DocumentController.show(document.id)>@document.title</a></li>
 		}
 	</ul>
 }
