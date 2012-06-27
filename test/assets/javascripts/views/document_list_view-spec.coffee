@@ -68,6 +68,17 @@ describe 'views/document_list_view', ->
       view.set_document_list(document_list2)
       expect(document_list2.get_placeholder_documents).toHaveBeenCalled()
 
+    describe 'get_top_need_documents', ->
+      it 'should return the most pressing need_documents', ->
+        view = create_view()
+        view.need_documents = [[0, 10], [20, undefined]]
+        expect(view.get_top_need_documents()).toEqual([0, 10])
+
+      it 'should return undefined when there are no need_documents', ->
+        view = create_view()
+        view.need_documents = []
+        expect(view.get_top_need_documents()).toBeUndefined()
+
     describe 'starting with a complete list', ->
       beforeEach ->
         document_list.documents = mock_document_array(2)

@@ -175,6 +175,10 @@ class DocumentListView
     @need_documents = []
     this._redraw()
 
+  get_top_need_documents: () ->
+    return undefined if !@need_documents
+    @need_documents[0]
+
   last_document_id_clicked: () ->
     return undefined if !@_last_a_clicked
 
