@@ -81,6 +81,43 @@ class SelectionSpec extends Specification {
       }
       
     }
+    
+    "return only documents under a node" in new DbContext {
+      
+      val tree = Tree.find.all().get(0)
+            
+
+      val documentsInChild1 = tree.getRoot.getDocuments.toSeq.slice(20, 40)
+      val documentsInChild2 = tree.getRoot.getDocuments.toSeq.slice(10, 15)
+      val documentsInChild3 = tree.getRoot.getDocuments.toSeq.slice(50, 70)
+      
+      val documentsInChildren = Seq(documentsInChild1, 
+    		  						documentsInChild2,
+    		  						documentsInChild3)
+      val childNodes = Seq.fill(3)(new Node)
+      
+      
+      for ((child, documents) <- childNodes.zip(documentsInChildren)) {
+        documents.foreach(child.addDocument(_))
+        tree.getRoot.addChild(child)
+      }
+
+      tree.update
+      
+      val childNodeIds = childNodes.map(_.getId.longValue).toSet
+      
+      val selection =  new Selection(tree, nodeids = childNodeIds)
+      val selectedDocuments = selection.findDocumentsSlice(0, 99)
+      
+      val allDocumentsInChildren = documentsInChildren.flatten
+      selectedDocuments.size must beEqualTo(allDocumentsInChildren.size)
+      
+      for ((sd, cd) <- selectedDocuments.zip(allDocumentsInChildren.sortBy(_.getTitle))) {
+        sd.getTitle must beEqualTo(cd.getTitle)
+      }
+      
+      
+    }
   }
 
 }
