@@ -37,15 +37,15 @@ class SelectionSpec extends Specification {
     	tree.save()
       }
   
-      def createTitle(n: Long) = "document[" + n + "]"
+      def createTitle(n: Int) = "document[" + n + "]"
 	  
     "return all documents in tree, with no other constraints" in new DbContext {
       val tree = Tree.find.all().get(0)
       
       val selection =  new Selection(tree)
 
-      val allDocuments = selection.slice(0, 89)
         
+      val allDocuments = selection.findDocumentsSlice(0, 91)
       allDocuments.size must beEqualTo(90)
     }
     
@@ -54,7 +54,7 @@ class SelectionSpec extends Specification {
       
       val selection =  new Selection(tree)
 
-      val allDocuments = selection.slice(0, 89)
+      val allDocuments = selection.findDocumentsSlice(0, 91).toSeq
 
       for (i <- 10 to 99) {
         allDocuments.get(i - 10).getTitle  must beEqualTo(createTitle(i))
@@ -66,16 +66,16 @@ class SelectionSpec extends Specification {
       
       val selection =  new Selection(tree)
 
-      val start = 15l;
-      val end = 45l;
+      val start = 15;
+      val end = 45;
       
       val titleStart = start + 10
       val titleEnd = end + 10
       val titles = (titleStart to titleEnd).map(createTitle)
       
-      val allDocuments = selection.slice(start, end)
+      val allDocuments = selection.findDocumentsSlice(start, end + 1)
 
-      allDocuments.size must beEqualTo(end - start + 1)
+      allDocuments.size must beEqualTo(end - start)
       for ((d, t) <- allDocuments.zip(titles)) {
         d.getTitle must beEqualTo(t)
       }
