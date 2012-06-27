@@ -30,7 +30,7 @@ object TreeJsonWrapper {
     				   JsObject(
     				       Seq(
     				           "id" -> JsNumber(d.id.longValue),
-    				           "description" -> JsString(d.title)
+    				           "description" -> JsString(d.getTitle)
     				           )
     				   )
     				 )
