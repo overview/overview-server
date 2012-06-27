@@ -17,7 +17,7 @@ case class Selection(
     def findDocumentsSlice(start: Int, end: Int): Iterable[Document] = {
         val query = buildQuery()
             .setFirstRow(start)
-            .setMaxRows(end - start - 1)
+            .setMaxRows(end - start)
 
         return query.findList()
     }
