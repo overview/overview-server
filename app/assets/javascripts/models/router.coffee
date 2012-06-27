@@ -18,7 +18,7 @@ class Router
     "/tree/#{@document_set_id}/documents"
 
   _document_view_path: (id) ->
-    "/tree/#{@document_set_id}/document/#{id}/view"
+    "/documents/#{id}"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router
