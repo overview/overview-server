@@ -24,7 +24,7 @@ object NodeJsonWrapper {
     		  "doclist" -> JsObject(Seq(
     		      "docids" -> JsArray(partialDocumentList.
     		          map(d => JsNumber(d.getId.longValue))),
-    		      "n" -> JsNumber(min(maxElementsInList, partialDocumentList.size).intValue())
+    		      "n" -> JsNumber(node.getDocuments.size.intValue())
     		  )),
     		  "taglist" -> JsObject(Seq(
     		      "full" -> JsArray(Seq()),

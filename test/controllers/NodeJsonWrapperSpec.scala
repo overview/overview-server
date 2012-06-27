@@ -90,8 +90,8 @@ class NodeJsonWrapperSpec extends Specification {
 		val rootNode = new Node()
 	    rootNode.id = 5
 	    
-	    for (i <- 1 to 25) {
-	    	val document = new Document(null, "title", "textUrl", "viewUrl")
+	    for (i <- 10 to 35) {
+	    	val document = new Document(null, "title" + i, "textUrl", "viewUrl")
 	    	document.id = i
 	    	rootNode.documents.add(document)
 	    }
@@ -99,7 +99,9 @@ class NodeJsonWrapperSpec extends Specification {
 		rootNode.save
 	    val nodeJson = toJson(rootNode)
 	    
-	    nodeJson.toString must /("doclist") /("n" -> 10)
+
+	    nodeJson.toString must contain ("10,11,12,13,14,15,16,17,18,19]")
+	    nodeJson.toString must /("doclist") /("n" -> 26)
 	  }
 	  
 	  "fakes the tags list" in new DbContext {
