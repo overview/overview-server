@@ -6,7 +6,6 @@ import com.avaje.ebean.Ebean
 
 import org.specs2.mutable._
 
-
 import play.api.libs.json.Json._
 
 
@@ -63,16 +62,17 @@ class TreeJsonWrapperSpec extends Specification {
       
       val root = new Node()
       
-      for (i <- 1 to 20) {
+      for (i <- 10 to 30) {
         val document = new models.Document(documentSet, "document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
         documentSet.documents.add(document)
         
         root.addDocument(document)
+        
       }
 
       for (i <- 0 to 2) {
       	val child = new Node()
-      	documentSet.documents.slice(7 * i, 7 * i + 7).foreach{child.addDocument}
+      	documentSet.getDocuments.slice(5 * i, 5 * i + 5).foreach{child.addDocument}
       	root.addChild(child)
       }
       
@@ -81,12 +81,17 @@ class TreeJsonWrapperSpec extends Specification {
 
       val treeJson = toJson(tree)
 
-      for (document <- documentSet.documents) {
+      for (document <- documentSet.getDocuments.slice(0, 15)) {
         treeJson.toString must /("documents") */("id" -> document.id)
         treeJson.toString must /("documents") */("description" -> document.title)
     	  treeJson.toString.indexOf(document.title) must be equalTo(
     	      treeJson.toString.lastIndexOf(document.title))
       }
+      
+      for (document <- documentSet.getDocuments.slice(15, 21)) {
+    	  treeJson.toString must not contain("document[" + document.id + "]")
+      }
+      
     }
     
     

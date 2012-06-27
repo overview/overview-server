@@ -1,13 +1,11 @@
 package controllers
 
 import scala.collection.JavaConversions._
-
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import scala.collection.mutable.HashSet
-
-
 import NodeJsonWrapper._
+import models.PartiallyLoadedNode
 
 object TreeJsonWrapper {
 
@@ -18,8 +16,9 @@ object TreeJsonWrapper {
       val includedDocumentIds  =  HashSet[models.Document]()
 
       for (node <- includedNodes) {
-        for (document <- node.documents) {
-          document.refresh
+        val partialNode = new PartiallyLoadedNode(node.getId)
+        
+        for (document <- partialNode.getDocuments(0, 10)) {
           includedDocumentIds.add(document)
         }
       }
