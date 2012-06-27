@@ -5,16 +5,20 @@ class Router
     if match = /(\d+)[^\d]*$/.exec(@start_path)
       @document_set_id = +match[0]
 
-  route_to_path: (route) ->
+  route_to_path: (route, id=undefined) ->
     switch (route)
       when 'root' then this._root_path()
-      when 'documents' then this._documents_path(this._tree_id)
+      when 'documents' then this._documents_path()
+      when 'document_view' then this._document_view_path(id)
 
   _root_path: () ->
     "/tree/#{@document_set_id}/root"
 
   _documents_path: () ->
     "/tree/#{@document_set_id}/documents"
+
+  _document_view_path: (id) ->
+    "/tree/#{@document_set_id}/document/#{id}/view"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router
