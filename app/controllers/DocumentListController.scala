@@ -16,19 +16,21 @@ import play.api.libs.json.Json._
 import play.db.ebean.Model
 
 object DocumentListController extends Controller {
-    def index(treeId: Long, nodeids: String, tagids: String, documentids: String, start: Long, end: Long) = Action {
+    def index(treeId: Long, nodeids: String, tagids: String, documentids: String, start: Int, end: Int) = Action {
         val selection = paramsToSelection(treeId, nodeids, tagids, documentids)
+        val documents = selection.findDocumentsSlice(start, end)
+        val count = selection.findDocumentCount()
         Ok(JsObject(Seq(
             "documents" -> JsArray(
-                selection.slice(start, end).toSeq.map(document => JsObject(
+                documents.toSeq.map(document => JsObject(
                     Seq(
                         "id" -> JsNumber(JBigDecimal.valueOf(document.id)),
-                        "title" -> toJson(document.title),
+                        "title" -> JsString(document.title),
                         "tagids" -> JsArray(document.tags.toSeq.map(tag => JsNumber(JBigDecimal.valueOf(tag.id))))
                     )
                 ))
             ),
-            "total_items" -> JsNumber(JBigDecimal.valueOf(selection.count))
+            "total_items" -> JsNumber(JBigDecimal.valueOf(count))
         )))
     }
 
@@ -36,10 +38,10 @@ object DocumentListController extends Controller {
 
     // TODO: move Selection construction to a static method in Selection
     // (I only didn't because Selection is Java and this is Scala)
-    def idStringToSet[T](finder: Model.Finder[JLong, T], idsString: String) : Set[T] = {
-        val Long = "[0-9]{1,18}".r
+    def idStringToIds(idsString: String) : Set[Long] = {
+        val Long = """(\d{1,18})""".r
         val idStrings = idsString.split(',')
-        val ret = new HashSet[T]()
+        val ret = new HashSet[Long]()
 
         for (idString <- idStrings) {
             val id = idString match {
@@ -48,26 +50,20 @@ object DocumentListController extends Controller {
             }
 
             if (id != 0L) {
-                val obj = finder.ref(id)
-                if (obj != null) {
-                    ret.add(obj)
-                }
+                ret.add(id)
             }
         }
 
         return ret
     }
 
-    def paramsToSelection(treeId: Long, nodeids: String, tagids: String, documentids: String) : models.Selection = {
+    def paramsToSelection(treeId: Long, nodeidsString: String, tagidsString: String, documentidsString: String) : models.Selection = {
         val tree = models.Tree.find.byId(treeId)
-        val nodes = idStringToSet(models.Node.find, nodeids)
-        val tags = idStringToSet(models.Tag.find, tagids)
-        val documents = idStringToSet(models.Document.find, documentids)
+        val nodeids = idStringToIds(nodeidsString)
+        val tagids = idStringToIds(tagidsString)
+        val documentids = idStringToIds(documentidsString)
 
-        val selection = new models.Selection(tree)
-//        selection.nodes.addAll(nodes)
-//        selection.tags.addAll(tags)
-//        selection.documents.addAll(documents)
+        val selection = new models.Selection(tree, nodeids, tagids, documentids)
 
         return selection
     }
