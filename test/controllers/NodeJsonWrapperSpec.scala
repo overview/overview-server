@@ -1,7 +1,9 @@
 package controllers
 
+import com.avaje.ebean.Ebean
+
 import org.specs2.mutable._
-import org.specs2.specification._
+
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 
@@ -16,26 +18,33 @@ class NodeJsonWrapperSpec extends Specification {
 
 	"The generated JSON for Node" should {
 	  
-	  "contain the id" in {
+      trait DbContext extends BeforeAfter {
+		def before = Ebean.beginTransaction
+        def after = Ebean.endTransaction
+      }
+	  
+	  "contain the id" in new DbContext {
 	    val node = new Node()
 	    node.id = 5
 	    
+	    node.save
 	    val nodeJson = toJson(node)
 	    
 	    nodeJson.toString must / ("id" -> node.id)
 	  }
 	  
-	  "contain the description" in {
+	  "contain the description" in new DbContext {
 	    val node = new Node()
 	    node.id = 5
 	    node.description = "This is my description"
-
+	      
+	    node.save
 	    val nodeJson = toJson(node)
 	    
 	    nodeJson.toString must / ("description" -> node.description)
 	  }
 	  
-	  "contain children node Ids" in {
+	  "contain children node Ids" in new DbContext {
 	    val rootNode = new Node()
 	    rootNode.id = 5
 	    for (i <- 1 to 3) {
@@ -44,6 +53,7 @@ class NodeJsonWrapperSpec extends Specification {
 	      rootNode.children.add(childNode)
 	    }
 	    
+	    rootNode.save
 	    val nodeJson = toJson(rootNode)
 	    
 	    // I think Specs2 Json matcher should allow something like:
@@ -53,7 +63,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    
 	  }
 	  
-	  "contains doclist with docIds and count" in {
+	  "contains doclist with docIds and count" in new DbContext {
 	    val rootNode = new Node()
 	    rootNode.id = 5
 	    for (i <- 1 to 3) {
@@ -67,6 +77,8 @@ class NodeJsonWrapperSpec extends Specification {
 	    	document.id = i
 	    	rootNode.documents.add(document)
 	    }
+	    
+	    rootNode.save
 	    val nodeJson = toJson(rootNode)
 
 	    //nodeJson.toString must /("doclist") /("docids") /(10.0)
@@ -74,7 +86,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    nodeJson.toString must /("doclist") /("n" -> 6)
 	  }
 	  
-	  "doclist lists at most first 10 docids" in {
+	  "doclist lists at most first 10 docids" in new DbContext {
 		val rootNode = new Node()
 	    rootNode.id = 5
 	    
@@ -83,15 +95,18 @@ class NodeJsonWrapperSpec extends Specification {
 	    	document.id = i
 	    	rootNode.documents.add(document)
 	    }
+		
+		rootNode.save
 	    val nodeJson = toJson(rootNode)
 	    
 	    nodeJson.toString must /("doclist") /("n" -> 10)
 	  }
 	  
-	  "fakes the tags list" in {
+	  "fakes the tags list" in new DbContext {
 	    val rootNode = new Node()
 	    rootNode.id = 5
 	    
+	    rootNode.save
 	    val nodeJson = toJson(rootNode)
 	    
 	    nodeJson.toString must contain("\"taglist\":{\"full\":[],\"partial\":[]}")

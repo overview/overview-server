@@ -2,10 +2,9 @@ package controllers
 
 import scala.collection.JavaConversions._
 import scala.math.min
-
 import play.api.libs.json._
-
 import models.Node
+import models.PartiallyLoadedNode
 
 
 object NodeJsonWrapper {
@@ -14,21 +13,25 @@ object NodeJsonWrapper {
 
 	val maxElementsInList = 10
 	
-    def writes(node: Node) : JsValue =
+    def writes(node: Node) : JsValue = {
+      val partialNode = new PartiallyLoadedNode(node.getId)
+      val partialDocumentList = partialNode.getDocuments(0, maxElementsInList - 1)
+      
       JsObject(Seq(
     		  "id" -> JsNumber(node.id.longValue),
-    		  "description" -> JsString(node.description),
-    		  "children" -> JsArray(node.children.toSeq.map(n => JsNumber(n.id.longValue))),
+    		  "description" -> JsString(node.getDescription),
+    		  "children" -> JsArray(node.getChildren.toSeq.map(n => JsNumber(n.id.longValue))),
     		  "doclist" -> JsObject(Seq(
-    		      "docids" -> JsArray(node.documents.toSeq.take(maxElementsInList).
-    		          map(d => JsNumber(d.id.longValue))),
-    		      "n" -> JsNumber(min(maxElementsInList, node.documents.size()).intValue())
+    		      "docids" -> JsArray(partialDocumentList.
+    		          map(d => JsNumber(d.getId.longValue))),
+    		      "n" -> JsNumber(min(maxElementsInList, partialDocumentList.size).intValue())
     		  )),
     		  "taglist" -> JsObject(Seq(
     		      "full" -> JsArray(Seq()),
     		      "partial" -> JsArray(Seq())
     		  ))
       ))
+	}
   }
 
 }
