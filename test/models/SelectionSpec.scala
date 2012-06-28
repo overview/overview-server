@@ -71,9 +71,9 @@ class SelectionSpec extends Specification {
       
       val titleStart = start + 10
       val titleEnd = end + 10
-      val titles = (titleStart to titleEnd).map(createTitle)
+      val titles = (titleStart until titleEnd).map(createTitle)
       
-      val allDocuments = selection.findDocumentsSlice(start, end + 1)
+      val allDocuments = selection.findDocumentsSlice(start, end)
 
       allDocuments.size must beEqualTo(end - start)
       for ((d, t) <- allDocuments.zip(titles)) {
