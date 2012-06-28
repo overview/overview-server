@@ -19,9 +19,9 @@ class DatabaseConfiguration {
 	val databaseSetting = sys.props.get(DATABASE_URL)
 	databaseSetting match {
       case Some(databaseInfo) => {
-        val urlPattern = "\\w+://(\\w+):(\\w+)@(\\w+)/(\\w+)".r
+        val urlPattern = "\\w+://(\\w+):(\\w+)@([\\w-.]+)/(\\w+)".r
     
-        val urlPattern(user, password, host, database) = sys.props.get(DATABASE_URL).get
+        val urlPattern(user, password, host, database) = databaseInfo
         ("jdbc:postgresql://"+host+"/"+database, user, password)
       }
       case None => {

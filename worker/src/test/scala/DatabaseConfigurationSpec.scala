@@ -38,7 +38,7 @@ class DatabaseConfigurationSpec extends Specification {
       
       val username = "DbUser"
       val password = "DbPassword"
-      val host = "DbHost"
+      val host = "DbHost29.fo-bar.com"
       val database = "Database"
         
       val databaseUrl = "postgres://"+username+":"+password+"@"+host+"/"+database
