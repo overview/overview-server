@@ -33,24 +33,26 @@ class DatabaseConfigurationSpec extends Specification {
       dbConfig.password must beEqualTo(defaultPassword)
     }
   
-    "be read from DATABASE_URL environment variable, if set" in {
+    "be read from datasource.default.url property, if set" in {
+      val defaultDriver = GlobalProperties.get("datasource.default.databaseDriver", null)
+      
       val username = "DbUser"
       val password = "DbPassword"
       val host = "DbHost:port"
       val database = "Database"
         
       val databaseUrl = "postgres://"+username+":"+password+"@"+host+"/"+database
-      sys.props += ("DATABASE_URL" -> databaseUrl)
+      sys.props += ("datasource.default.url" -> databaseUrl)
       
       val expectedUrl = "jdbc:postgresql://"+host+"/"+database
       val dbConfig = new DatabaseConfiguration()
       
-      sys.props -= "DATABASE_URL"
+      sys.props -= "datasource.default.url"
 
       dbConfig.databaseUrl must beEqualTo(expectedUrl)
       dbConfig.username must beEqualTo(username)
       dbConfig.password must beEqualTo(password)
-      
+      dbConfig.databaseDriver must beEqualTo(defaultDriver) 
     }
   }
 

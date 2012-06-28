@@ -6,7 +6,7 @@ class DatabaseConfiguration {
   val DatabaseUrlProperty =    "datasource.default.databaseUrl"
   val UsernameProperty =       "datasource.default.username"
   val PasswordProperty =       "datasource.default.password"
-  val DATABASE_URL = 		   "DATABASE_URL"
+  val DATABASE_URL = 		   "datasource.default.url"
    
   var postgresDbUrl: String = null
 
