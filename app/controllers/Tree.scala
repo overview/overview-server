@@ -38,35 +38,25 @@ object Tree extends Controller {
 	  Ok(views.html.index.render(toJson(tree).toString))
 	}
 	
-	def generateTreeLevel(root: Node, documents: Seq[models.Document], depth: Int) : Node = {
-	  if ((depth == 1) || (documents.size == 1)) {
-	    documents.foreach(d => root.addDocument(d))
-	   
-	  }
-	  else {
+	def generateTreeLevel(root: Node, documents: Seq[models.Document], depth: Int) = {
+	  
+      documents.foreach(d => root.addDocument(d))
+
+	  if ((depth > 1) && (documents.size > 1)) {
 	    val numberOfChildren = Random.nextInt(scala.math.min(5, documents.size)) + 1
 	    val children = generateChildren(numberOfChildren, documents, depth)
 	    children.foreach(c => root.addChild(c))
-	    documents.foreach(d => root.addDocument(d))
 	  }
-	    
-	    
-	  root
 	}
 
 	def generateChildren(numberOfSiblings: Int, documents: Seq[models.Document], depth: Int) : Seq[Node] = {
 	  val siblings = Seq[models.Node]()
 	  if (numberOfSiblings > 0) {
 	    val splitPoint = 
-	      if (documents.size == numberOfSiblings) {
-	    	  1
-	      }
-	      else {
-	    	  Random.nextInt(documents.size - numberOfSiblings) + 1
-	      }
+	      if (documents.size > numberOfSiblings) Random.nextInt(documents.size - numberOfSiblings) + 1 else 1 
 	    
-	    val childDocuments = documents.slice(0, splitPoint)
-	    val siblingDocuments = documents.slice(splitPoint, documents.size)
+	    val (childDocuments, siblingDocuments) = documents.splitAt(splitPoint)
+	    
 	    val child = new Node()
 	    child.description = "node height " + depth
 	    generateTreeLevel(child, childDocuments, depth - 1)
