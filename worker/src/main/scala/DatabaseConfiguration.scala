@@ -8,14 +8,10 @@ class DatabaseConfiguration {
   val PasswordProperty =       "datasource.default.password"
   val DATABASE_URL = 		   "datasource.default.url"
    
-  var postgresDbUrl: String = null
-
-  
-
   val databaseDriver = GlobalProperties.get(DatabaseDriverProperty, null) 
-  val (databaseUrl, username, password) = getSettings
+  val (databaseUrl, username, password) = readSettings()
     
-  def getSettings() = {
+  def readSettings() : (String, String, String) = {
 	val databaseSetting = sys.props.get(DATABASE_URL)
 	databaseSetting match {
       case Some(databaseInfo) => {

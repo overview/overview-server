@@ -2,7 +2,7 @@
 
 import com.avaje.ebean.config.GlobalProperties
 
-import org.specs2.mutable._
+import org.specs2.mutable.Specification
 import org.specs2.specification._
 
 
@@ -12,9 +12,9 @@ import org.specs2.specification._
 class DatabaseConfigurationSpec extends Specification {
   
   "DatabaseConfiguration properties" should {
-    
+
+
     "be read from ebean.properties by default" in {
-     
       val defaultDriver = GlobalProperties.get("datasource.default.databaseDriver", null)
       val defaultDatabaseUrl = GlobalProperties.get("datasource.default.databaseUrl", null)
       val defaultUsername = GlobalProperties.get("datasource.default.username", null)
@@ -34,20 +34,21 @@ class DatabaseConfigurationSpec extends Specification {
     }
   
     "be read from datasource.default.url property, if set" in {
-      val defaultDriver = GlobalProperties.get("datasource.default.databaseDriver", null)
-      
-      val username = "DbUser"
-      val password = "DbPassword"
+      val username = "DbUsername"
+      val password = "DbPassword"      
       val host = "DbHost29.fo-bar.com"
       val database = "Database"
-        
+
       val databaseUrl = "postgres://"+username+":"+password+"@"+host+"/"+database
+    
       sys.props += ("datasource.default.url" -> databaseUrl)
-      
+
+      val defaultDriver = GlobalProperties.get("datasource.default.databaseDriver", null)
       val expectedUrl = "jdbc:postgresql://"+host+"/"+database
-      val dbConfig = new DatabaseConfiguration()
       
-      sys.props -= "datasource.default.url"
+      val dbConfig = new DatabaseConfiguration()
+
+      sys.props -= "datasource.default.url" 
 
       dbConfig.databaseUrl must beEqualTo(expectedUrl)
       dbConfig.username must beEqualTo(username)
