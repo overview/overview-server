@@ -99,11 +99,39 @@ class SelectionSpec extends Specification {
       for ((sd, cd) <- selectedDocuments.zip(allDocumentsInChildren.sortBy(_.getTitle))) {
         sd.getTitle must beEqualTo(cd.getTitle)
       }
-      
-      
+
     }
+    
+      
+    "return document and node intersection in sorted order" in new DbContext {
+      addExtraChildrenToTree()
+      val tree = Tree.find.all().get(0)
+      val childNodes = tree.getRoot.getChildren
+
+      val firstDocuments = childNodes.map(_.getDocuments.toSeq.get(0))
+      val firstDocumentIds = firstDocuments.map(_.getId.longValue).toSet
+      
+      val childNodeIds = childNodes.map(_.getId.longValue).toSet
+
+      val selection =  new Selection(tree, nodeids = childNodeIds,
+    		  						       documentids = firstDocumentIds)
+      
+      val selectedDocuments = selection.findDocumentsSlice(0, 99)
+      
+      selectedDocuments.size must beEqualTo(firstDocuments.size)
+      
+      val sortedDocuments = firstDocuments.toSeq.sortBy(_.getTitle)
+
+      for ((sd, cd) <- selectedDocuments.zip(sortedDocuments)) {
+        sd.getTitle must beEqualTo(cd.getTitle)
+      }
+    
   }
   
+
+    
+  }
+
   def addExtraChildrenToTree() = {
     val tree = Tree.find.all().get(0)
             
