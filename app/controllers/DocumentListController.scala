@@ -17,8 +17,10 @@ import play.db.ebean.Model
 
 object DocumentListController extends Controller {
     def index(treeId: Long, nodeids: String, tagids: String, documentids: String, start: Int, end: Int) = Action {
+        val saneEnd = if (end <= start) start + 2 else end;
+
         val selection = paramsToSelection(treeId, nodeids, tagids, documentids)
-        val documents = selection.findDocumentsSlice(start, end)
+        val documents = selection.findDocumentsSlice(start, saneEnd)
         val count = selection.findDocumentCount()
         Ok(JsObject(Seq(
             "documents" -> JsArray(

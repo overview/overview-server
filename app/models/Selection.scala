@@ -15,22 +15,37 @@ case class Selection(
 
     // Returns selection documents [start, end)
     def findDocumentsSlice(start: Int, end: Int): Iterable[Document] = {
-        val query = buildQuery()
+        val sql = buildSql("id, title, text_url, view_url")
+
+        val rawSql = RawSqlBuilder.parse(sql)
+            .columnMapping("id", "id")
+            .columnMapping("title", "title")
+            .columnMapping("text_url", "textUrl")
+            .columnMapping("view_url", "viewUrl")
+            .create()
+
+        val query = Ebean.find(classOf[Document])
+            .setRawSql(rawSql)
+            .orderBy("title, id")
             .setFirstRow(start)
-            .setMaxRows(end - start - 1)
+            .setMaxRows(end - start)
 
         return query.findList()
     }
 
     def findDocumentCount(): Long = {
-        val query = buildQuery()
+        val sql = buildSql("COUNT(*) AS c")
 
-        return query.findRowCount()
+        val query = Ebean.createSqlQuery(sql)
+
+        val row = query.findUnique()
+
+        return row.getInteger("c").longValue();
     }
 
     private
 
-    def buildQuery() : Query[Document] = {
+    def buildSql(whatToSelect: String) : String = {
         val wheres = new ArrayBuffer[String]()
 
         if (!nodeids.isEmpty()) {
@@ -43,23 +58,13 @@ case class Selection(
             wheres += "document.id IN (" + documentids.mkString(",") + ")"
         }
 
-        val sql = new StringBuilder("SELECT id, title, text_url, view_url FROM document")
+        val sql = new StringBuilder("SELECT " + whatToSelect + " FROM document")
+
         if (!wheres.isEmpty()) {
             sql.append(" WHERE ").append(wheres.mkString(" AND "))
         }
 
-        val rawSql = RawSqlBuilder.parse(sql.toString())
-            .columnMapping("id", "id")
-            .columnMapping("title", "title")
-            .columnMapping("text_url", "textUrl")
-            .columnMapping("view_url", "viewUrl")
-            .create()
-
-        val query = Ebean.find(classOf[Document])
-            .setRawSql(rawSql)
-            .orderBy("title, id")
-
-        return query
+        return sql.toString()
     }
 }
 
