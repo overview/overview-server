@@ -1,12 +1,8 @@
 
 import scala.collection.JavaConversions._
 import scala.io.Source
-
 import com.avaje.ebean.{Ebean, EbeanServerFactory}
 import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
-
-
-
 import models.{DocumentSet,DocumentSetCreationJob}
 import models.DocumentSetCreationJob.JobState
 
@@ -43,15 +39,18 @@ object JobHandler {
   }
 
   def configureDatabaseConnection() = {
+    val databaseConfig = new DatabaseConfiguration()
+    
     val config = new ServerConfig();  
 	config.setName("default");  
 	
 	  // Define DataSource parameters  
 	val postgresDb = new DataSourceConfig()  
-	postgresDb.setDriver("org.postgresql.Driver")  
-	postgresDb.setUsername("overview")  
-	postgresDb.setPassword("overview") 
-	postgresDb.setUrl("jdbc:postgresql://localhost/overviewDB")
+	postgresDb.setDriver(databaseConfig.databaseDriver)  
+	postgresDb.setUsername(databaseConfig.username)  
+	postgresDb.setPassword(databaseConfig.password) 
+	postgresDb.setUrl(databaseConfig.databaseUrl)
+	
 	postgresDb.setHeartbeatSql("select count(*) from tree")
   
 	config.setDataSourceConfig(postgresDb)
