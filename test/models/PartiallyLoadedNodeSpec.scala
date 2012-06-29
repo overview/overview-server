@@ -32,8 +32,8 @@ class PartiallyLoadedNodeSpec extends Specification {
       
       for (i <- 10 to 30) {
         val id = "[" + i + "]"
-        val document = new Document(documentSet, "document" + id, "textUrl" + id, "viewUrl" + id)
-        documentSet.getDocuments().add(document)
+        val document = new Document("document" + id, "textUrl" + id, "viewUrl" + id)
+        documentSet.addDocument(document)
         
         node.addDocument(document)
       }
