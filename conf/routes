@@ -5,18 +5,18 @@
 # Interim URLs
 GET     /                           controllers.Application.index()
 GET	    /documentsets		        controllers.Application.showDocumentSets()
-POST	/documentsets		        controllers.DocumentSet.createDocumentSet()
+POST	/documentsets		        controllers.DocumentSetController.createDocumentSet()
 POST	/documentsets/:id/delete	controllers.Application.deleteDocumentSet(id: Long)
 
-GET		/init						controllers.Tree.temporarySetup()
+GET		/init						controllers.TreeController.temporarySetup()
 GET	    /showJobs					controllers.Application.showJobs()
 
 GET		/documentsets/:id/view		controllers.Application.viewDocumentSet(id: Long)
 GET   /documents/:id/view controllers.Application.viewDocument(id: Long)
 
 # Good URLs
-GET /documentsets/:id controllers.DocumentSet.index(id: Long)
-GET /tree/:id/root controllers.Tree.root(id: Long)
+GET /documentsets/:id 	controllers.DocumentSetController.index(id: Long)
+GET /tree/:id/root 		controllers.TreeController.root(id: Long)
 GET /tree/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 
 # Map static resources from the /public folder to the /assets URL path
