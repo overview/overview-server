@@ -63,8 +63,8 @@ class TreeJsonWrapperSpec extends Specification {
       val root = new Node()
       
       for (i <- 10 to 30) {
-        val document = new models.Document(documentSet, "document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
-        documentSet.documents.add(document)
+        val document = new models.Document("document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
+        documentSet.addDocument(document)
         
         root.addDocument(document)
         

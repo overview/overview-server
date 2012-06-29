@@ -12,12 +12,9 @@ public class DocumentTest {
 	public void saveDocument() {
 	  running(fakeApplication(inMemoryDatabase()), new Runnable() {
 		public void run() {
-		  DocumentSet documentSet = new DocumentSet();
-          documentSet.save();
-
-          Document document = new Document(documentSet, "title", "http://text", "http://view");
-		
+          Document document = new Document("title", "http://text", "http://view");
           document.save();
+          
           Document storedDocument = Document.find.byId(document.id);
 				
           assertThat(storedDocument.title).isEqualTo("title");
@@ -29,12 +26,14 @@ public class DocumentTest {
   public void createTags() {
     running(fakeApplication(inMemoryDatabase()), new Runnable() {
       public void run() {
-        DocumentSet documentSet = new DocumentSet();
-        documentSet.save();
 
-        Document document = new Document(documentSet, "title", "http://text", "http://view");
+        Document document = new Document("title", "http://text", "http://view");
         document.save();
 
+        DocumentSet documentSet = new DocumentSet();
+        documentSet.addDocument(document);
+        documentSet.save();
+        
         document.setTags("  foo , bar");
         document.save();
 

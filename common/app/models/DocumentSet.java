@@ -27,4 +27,9 @@ public class DocumentSet extends Model {
     public Set<Node> nodes = new HashSet<Node>();
 
     public static Finder<Long, DocumentSet> find = new Finder<Long, DocumentSet>(Long.class, DocumentSet.class);
+    
+    public void addDocument(Document document) {
+    	documents.add(document);
+    	document.documentSet = this;
+    }
 }

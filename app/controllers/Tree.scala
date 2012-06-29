@@ -25,9 +25,9 @@ object Tree extends Controller {
 
 	  val documentSet = new models.DocumentSet()
 	  for (i <- 1 to 22) {
-	    val document = new models.Document(documentSet, "document-" + i, "textUrl-" + i, "viewUrl-" + i)
+	    val document = new models.Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
+	    documentSet.addDocument(document)
 	    document.save
-	    documentSet.documents.add(document)
 	  }
 
 	  generateTreeLevel(root, documentSet.documents.toSeq, 4)

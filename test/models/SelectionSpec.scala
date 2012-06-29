@@ -26,8 +26,8 @@ class SelectionSpec extends Specification {
     	documentSet.setQuery("foo")
       
     	for (i <- 10 to 99) {
-    	  val document = new Document(documentSet, createTitle(i), "texturl", "viewurl")
-    	  documentSet.getDocuments.add(document)
+    	  val document = new Document(createTitle(i), "texturl", "viewurl")
+    	  documentSet.addDocument(document)
     	  node.addDocument(document)
     	}
       

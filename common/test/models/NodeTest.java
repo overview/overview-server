@@ -77,7 +77,7 @@ public class NodeTest {
 		running(fakeApplication(inMemoryDatabase()), new Runnable() {
 			public void run() {
 				for (int i = 0; i < 5; i++) {
-					Document document = new Document(null, "title:" + i, "textUrl-" + i, "viewUrl-" + i);
+					Document document = new Document("title:" + i, "textUrl-" + i, "viewUrl-" + i);
 					root.addDocument(document);
 					document.save();
 				}

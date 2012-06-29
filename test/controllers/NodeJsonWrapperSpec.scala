@@ -73,7 +73,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    }
 	    
 	    for (i <- 10 to 15) {
-	    	val document = new Document(null, "title", "textUrl", "viewUrl")
+	    	val document = new Document("title", "textUrl", "viewUrl")
 	    	document.id = i
 	    	rootNode.documents.add(document)
 	    }
@@ -91,7 +91,7 @@ class NodeJsonWrapperSpec extends Specification {
 	    rootNode.id = 5
 	    
 	    for (i <- 10 to 35) {
-	    	val document = new Document(null, "title" + i, "textUrl", "viewUrl")
+	    	val document = new Document("title" + i, "textUrl", "viewUrl")
 	    	document.id = i
 	    	rootNode.documents.add(document)
 	    }
