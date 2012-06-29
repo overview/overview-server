@@ -5,15 +5,15 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import scala.collection.mutable.HashSet
 import NodeJsonWrapper._
-import models.PartiallyLoadedNode
+import models.{Document, PartiallyLoadedNode, Tree}
 
 object TreeJsonWrapper {
 
-  implicit object TreeWrites extends Writes[models.Tree] {
+  implicit object TreeWrites extends Writes[Tree] {
     
-    def writes(tree: models.Tree) : JsValue = {
+    def writes(tree: Tree) : JsValue = {
       val includedNodes = tree.root.getNodesBreadthFirst(12).toSeq
-      val includedDocumentIds  =  HashSet[models.Document]()
+      val includedDocumentIds  =  HashSet[Document]()
 
       for (node <- includedNodes) {
         val partialNode = new PartiallyLoadedNode(node.getId)
