@@ -4,6 +4,9 @@ package models;
 import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
 
+import java.util.Set;
+
+
 import org.junit.Test;
 
 public class DocumentTest {
@@ -28,21 +31,24 @@ public class DocumentTest {
       public void run() {
 
         Document document = new Document("title", "http://text", "http://view");
-        document.save();
 
         DocumentSet documentSet = new DocumentSet();
         documentSet.addDocument(document);
+        Set<Tag> tags = documentSet.findOrCreateTags("  foo , bar");
+
+        document.addTags(tags);
+
         documentSet.save();
-        
-        document.setTags("  foo , bar");
-        document.save();
+
+
 
         assertThat(document.tags).onProperty("name")
         						 .contains("foo")
         						 .contains("bar");
 
-        // DO NOT document.save(); -- workaround EBean double-saving bug #380, fixed in 2.7.5
 
+        
+        
         documentSet.refresh();
         assertThat(documentSet.tags.size()).isEqualTo(2);
 

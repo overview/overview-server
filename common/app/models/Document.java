@@ -45,27 +45,7 @@ public class Document extends Model {
 	  this.tags = new HashSet<Tag>();
 	}
 	
-	public void setTags(String tagsString) {
-	  String[] tagNames = tagsString.split(",");
-		
-	  Map<String, Tag> allTags = new HashMap<String, Tag>();
-		
-	  for (Tag tag : documentSet.tags) {
-		allTags.put(tag.name, tag);
-	  }
-		
-	  tags.clear();
-	  for (String uglyTagName : tagNames) {
-		String tagName = uglyTagName.trim();
-
-		Tag tag = allTags.get(tagName);
-		if (tag == null) {
-		  tag = new Tag(documentSet, tagName);
-		  tag.save(); // XXX find a way not to do this
-		}
-
-		tags.add(tag);
-			//tag.documents.add(this);
-	  }
+	public void addTags(Set<Tag> newTags) {
+      tags.addAll(newTags);
 	}
 }

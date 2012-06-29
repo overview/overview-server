@@ -1,13 +1,12 @@
 package models;
 
-
 import static org.fest.assertions.Assertions.*;
+import static play.test.Helpers.*;
 
+import java.util.Set;
 
 import com.avaje.ebean.Ebean;
 import org.junit.Test;
-
-import static play.test.Helpers.*;
 
 
 public class DocumentSetTest {
@@ -53,6 +52,25 @@ public class DocumentSetTest {
 		  Ebean.endTransaction();
 		}
 	  });
+	}
+	
+	@Test
+	public void findTags() {
+	  
+	  DocumentSet documentSet = new DocumentSet();
+	  
+	  Set<Tag> tags = documentSet.findOrCreateTags("  foo, bar  , baz  ");
+	  
+	  assertThat(tags).hasSize(3);
+	  assertThat(tags).onProperty("name")
+	                  .contains("foo", "bar", "baz");
+	  
+	  Set<Tag> moreTags = documentSet.findOrCreateTags("foo, faz, baz");
+	  assertThat(moreTags).hasSize(3);
+	  assertThat(moreTags).onProperty("name")
+	                      .contains("foo", "faz", "baz");
+
+	  assertThat(documentSet.tags).hasSize(4);
 	}
 
 }
