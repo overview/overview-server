@@ -25,6 +25,8 @@ public class DocumentTest {
 	  });
 	}
 
+  // TODO: Remove or fix this test when we start dealing with tags, since it duplicates 
+  //       tests in DocumentSet  
   @Test
   public void createTags() {
     running(fakeApplication(inMemoryDatabase()), new Runnable() {
