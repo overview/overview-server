@@ -10,10 +10,9 @@ import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import controllers.TreeJsonWrapper._
-import models.Node
+import models.{Node,Tree}
 
-
-object Tree extends Controller {
+object TreeController extends Controller {
 	
 	def temporarySetup() = Action {
 	  val level1 = Seq(3)
