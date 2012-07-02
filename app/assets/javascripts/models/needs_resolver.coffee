@@ -1,14 +1,21 @@
 Server = require('models/server').Server
 
+handle_node_resolved = (needs_resolver, obj) ->
+  store = needs_resolver.store
+  for node in obj.nodes
+    store.nodes.add(node)
+  for tag in obj.tags
+    store.tags.add(tag)
+  for document in obj.documents
+    store.documents.add(document)
+
 resolve_root = (needs_resolver) ->
   needs_resolver.server.get('root').done (obj) ->
-    store = needs_resolver.store
-    for node in obj.nodes
-      store.nodes.add(node)
-    for tag in obj.tags
-      store.tags.add(tag)
-    for document in obj.documents
-      store.documents.add(document)
+    handle_node_resolved(needs_resolver, obj)
+
+resolve_node = (needs_resolver, id) ->
+  needs_resolver.server.get('node', { path_argument: id }).done (obj) ->
+    handle_node_resolved(needs_resolver, obj)
 
 resolve_selection_documents_slice = (needs_resolver, obj) ->
   list_to_param = (list) ->
@@ -29,6 +36,7 @@ resolve_selection_documents_slice = (needs_resolver, obj) ->
 
 RESOLVERS = {
   root: resolve_root,
+  node: resolve_node,
   selection_documents_slice: resolve_selection_documents_slice,
 }
 

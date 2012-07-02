@@ -5,15 +5,17 @@ class PartialTree
 
   constructor: (@needs_resolver) ->
     @root = undefined
+    @_nodes = {}
+    @_child_id_to_parent_id = {}
 
     @needs_resolver.get_deferred('root').done (json) =>
       nodes_json = json.nodes
       this.add_nodes_json(nodes_json)
 
   add_nodes_json: (nodes_json) ->
-    nodes = {}
-
     for node_json in nodes_json
+      continue if @_nodes[node_json.id]
+
       node = {
         id: node_json.id,
         children: node_json.children,
@@ -21,14 +23,16 @@ class PartialTree
         doclist: node_json.doclist,
         taglist: node_json.taglist,
       }
-      nodes[node.id] = node
+      @_nodes[node.id] = node
 
-    for _, node of nodes
-      node.children = (nodes[id] || id for id in node.children)
+      for child_id in node.children
+        @_child_id_to_parent_id[child_id] = node.id
+
+    for _, node of @_nodes
+      node.children = (@_nodes[node_or_id] || node_or_id for node_or_id in node.children)
 
     rootid = nodes_json[0].id
-    @root = nodes[rootid]
-    @_nodes = nodes
+    @root ||= @_nodes[rootid]
 
     this._notify('change')
 

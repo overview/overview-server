@@ -8,11 +8,15 @@ class Router
   route_to_path: (route, id=undefined) ->
     switch (route)
       when 'root' then this._root_path()
+      when 'node' then this._node_path(id)
       when 'documents' then this._documents_path()
       when 'document_view' then this._document_view_path(id)
 
   _root_path: () ->
     "/trees/#{@document_set_id}/root"
+
+  _node_path: (id) ->
+    "/trees/#{@document_set_id}/nodes/#{id}"
 
   _documents_path: () ->
     "/trees/#{@document_set_id}/documents"

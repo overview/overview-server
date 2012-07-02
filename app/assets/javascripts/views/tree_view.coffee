@@ -81,6 +81,8 @@ tree_view = (div, partial_tree, state) ->
     icicle.loadJSON(icicle_data)
     icicle.refresh()
 
+    refresh_selection()
+
   on_ = (event, callback) ->
     $(div).on("tree_view:#{event}", (e, node) -> callback(node))
 

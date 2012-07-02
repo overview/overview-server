@@ -7,7 +7,7 @@ class Server
     @router = router || new Router()
 
   get: (route, options=undefined) ->
-    path = @router.route_to_path(route)
+    path = @router.route_to_path(route, options?.path_argument)
 
     $.ajax($.extend({
       dataType: 'json',
