@@ -6,7 +6,7 @@ import play.api.mvc.{Action,Controller}
 import models.DocumentSetCreationJob
 import models.DocumentSetCreationJob
 
-object DocumentSet extends Controller {
+object DocumentSetController extends Controller {
     def index(documentSetId: Long) = Action {
         Ok(views.html.DocumentSet.index())
     }

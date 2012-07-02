@@ -4,78 +4,64 @@ package models;
 import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
 
+import java.util.Set;
+
+
 import org.junit.Test;
 
 public class DocumentTest {
 
 	@Test
 	public void saveDocument() {
-		running(fakeApplication(inMemoryDatabase()), new Runnable() {
-			public void run() {
-        DocumentSet documentSet = new DocumentSet();
-        documentSet.save();
-
-				Document document = new Document(documentSet, "title", "http://text", "http://view");
-		
-				document.save();
-				Document storedDocument = Document.find.byId(document.id);
+	  running(fakeApplication(inMemoryDatabase()), new Runnable() {
+		public void run() {
+          Document document = new Document("title", "http://text", "http://view");
+          document.save();
+          
+          Document storedDocument = Document.find.byId(document.id);
 				
-				assertThat(storedDocument.title).isEqualTo("title");
-			}
-		});
+          assertThat(storedDocument.title).isEqualTo("title");
+	    }
+	  });
 	}
 
+  // TODO: Remove or fix this test when we start dealing with tags, since it duplicates 
+  //       tests in DocumentSet  
   @Test
   public void createTags() {
     running(fakeApplication(inMemoryDatabase()), new Runnable() {
       public void run() {
+
+        Document document = new Document("title", "http://text", "http://view");
+
         DocumentSet documentSet = new DocumentSet();
+        documentSet.addDocument(document);
+        Set<Tag> tags = documentSet.findOrCreateTags("  foo , bar");
+
+        document.addTags(tags);
+
         documentSet.save();
 
-        Document document = new Document(documentSet, "title", "http://text", "http://view");
-        document.save();
 
-        document.setTags("  foo , bar");
-        document.save();
 
-        int fooCount = 0;
-        int barCount = 0;
-        int otherCount = 0;
+        assertThat(document.tags).onProperty("name")
+        						 .contains("foo")
+        						 .contains("bar");
 
-        for (Tag tag : document.tags) {
-          if ("foo".equals(tag.name)) fooCount++;
-          if ("bar".equals(tag.name)) barCount++;
-          else otherCount++;
-        }
 
-        assertThat(fooCount).isEqualTo(1);
-        assertThat(barCount).isEqualTo(1);
-        assertThat(otherCount).isEqualTo(1);
-
-        // DO NOT document.save(); -- workaround EBean double-saving bug #380, fixed in 2.7.5
-
+        
+        
         documentSet.refresh();
         assertThat(documentSet.tags.size()).isEqualTo(2);
-        documentSet.tags.toString(); // Resolves the set, somehow. (Play bug?)
-        for (Tag tag : documentSet.tags) {
-          if ("foo".equals(tag.name)) fooCount++;
-          if ("bar".equals(tag.name)) barCount++;
-          else otherCount++;
-        }
 
-        assertThat(fooCount).overridingErrorMessage("DocumentSet is missing 'foo' tag").isEqualTo(2);
-        assertThat(barCount).isEqualTo(2);
-        assertThat(otherCount).isEqualTo(2);
+        assertThat(documentSet.tags).onProperty("name")
+        							.contains("foo")
+        							.contains("bar");
+        
 
-        for (Tag tag : Tag.find.all()) {
-          if ("foo".equals(tag.name)) fooCount++;
-          if ("bar".equals(tag.name)) barCount++;
-          else otherCount++;
-        }
-
-        assertThat(fooCount).isEqualTo(3);
-        assertThat(barCount).isEqualTo(3);
-        assertThat(otherCount).isEqualTo(3);
+        assertThat(Tag.find.all()).onProperty("name")
+        						  .contains("foo")
+        						  .contains("bar");
       }
     });
   }

@@ -37,35 +37,15 @@ public class Document extends Model {
     
 	public static Finder<Long, Document> find = new Finder<Long, Document>(Long.class, Document.class);
 	
-	public Document(DocumentSet documentSet, String title, String textUrl, String viewUrl) {
-    this.documentSet = documentSet;
-		this.title = title;
-		this.textUrl = textUrl;
-		this.viewUrl = viewUrl;
-		this.tags = new HashSet<Tag>();
+	
+	public Document(String title, String textUrl, String viewUrl) {
+      this.title = title;
+	  this.textUrl = textUrl;
+	  this.viewUrl = viewUrl;
+	  this.tags = new HashSet<Tag>();
 	}
 	
-	public void setTags(String tagsString) {
-		String[] tagNames = tagsString.split(",");
-		
-		Map<String, Tag> allTags = new HashMap<String, Tag>();
-		
-		for (Tag tag : documentSet.tags) {
-			allTags.put(tag.name, tag);
-		}
-		
-		tags.clear();
-		for (String uglyTagName : tagNames) {
-            String tagName = uglyTagName.trim();
-
-			Tag tag = allTags.get(tagName);
-			if (tag == null) {
-				tag = new Tag(documentSet, tagName);
-                tag.save(); // XXX find a way not to do this
-			}
-
-			tags.add(tag);
-			//tag.documents.add(this);
-		}
+	public void addTags(Set<Tag> newTags) {
+      tags.addAll(newTags);
 	}
 }

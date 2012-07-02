@@ -35,9 +35,9 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
       var textUrl = document.get("resources").get("text").toString()
       textUrl = textUrl.substring(1,textUrl.length-1) // remove quotes
                       
-      val newDoc = new Document(documentSet, title, textUrl, canonicalUrl)
+      val newDoc = new Document(title, textUrl, canonicalUrl)
+      documentSet.addDocument(newDoc)
       newDoc.save()
-      documentSet.documents.add(newDoc)
     }
    
     documentSet.update();     

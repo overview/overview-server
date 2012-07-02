@@ -9,7 +9,7 @@ import org.specs2.mutable._
 import play.api.libs.json.Json._
 
 
-import models.Node
+import models.{Document, DocumentSet, Node, Tree}
 import TreeJsonWrapper._
 
 
@@ -26,7 +26,7 @@ class TreeJsonWrapperSpec extends Specification {
     
     
     "contain the nodes" in new DbContext {
-    	val tree = new models.Tree()
+    	val tree = new Tree()
 
     	val root = new Node()
 
@@ -56,15 +56,15 @@ class TreeJsonWrapperSpec extends Specification {
     }
     
     "return documents in nodes" in new DbContext {
-      val documentSet = new models.DocumentSet()
+      val documentSet = new DocumentSet()
       
-      val tree = new models.Tree()
+      val tree = new Tree()
       
       val root = new Node()
       
       for (i <- 10 to 30) {
-        val document = new models.Document(documentSet, "document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
-        documentSet.documents.add(document)
+        val document = new Document("document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
+        documentSet.addDocument(document)
         
         root.addDocument(document)
         
@@ -97,7 +97,7 @@ class TreeJsonWrapperSpec extends Specification {
     
     "fake Tags list" in new DbContext {
 
-    	val tree = new models.Tree()
+    	val tree = new Tree()
 
     	val root = new Node()
     	tree.root = root;

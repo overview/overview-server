@@ -8,7 +8,7 @@ import play.api.test.Helpers._
 
 import models.DocumentSetCreationJob
 //
-//class DocumentSetSpec extends Specification {
+//class DocumentSetControllerSpec extends Specification {
 //  
 //  "The DocumentSet Controller" should {
 //    "submit a DocumentSetCreationJob when a new query is received" in {
