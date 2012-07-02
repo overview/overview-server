@@ -254,3 +254,69 @@ describe 'views/document_list_view', ->
       it 'should set need_documents', ->
         view = create_view()
         expect(view.need_documents).toEqual([[0, undefined]])
+
+    describe 'considering div and font height', ->
+      beforeEach ->
+        document_list.documents = mock_document_array(10)
+        document_list.n = 1000
+        $(div).css({
+          height: 100,
+          overflow: 'scroll',
+        })
+        options = {
+          buffer_documents: 10,
+          ul_style: 'margin:0;padding:0;list-style:none;',
+          li_style: 'display:block;margin:0;padding:0;height:10px;line-height:1;overflow:hidden;',
+        }
+
+      it 'should limit need_documents to the scroll length + 10 documents', ->
+        view = create_view()
+        expect(view.need_documents).toEqual([[10, 20]])
+
+      it 'should set no need_documents if we have enough to fill the view', ->
+        document_list.documents = mock_document_array(20)
+        view = create_view()
+        expect(view.need_documents).toEqual([])
+
+      it 'should make need_documents longer after scrolling', ->
+        document_list.documents = mock_document_array(15) # so we can scroll down
+        view = create_view()
+        div.scrollTop = 50 # scroll down 5 documents
+        $(div).scroll() # trigger listener
+        expect(view.need_documents).toEqual([[15, 25]])
+
+      it 'should still start with [0, undefined]', ->
+        document_list.documents = []
+        document_list.n = undefined
+        view = create_view()
+        expect(view.need_documents).toEqual([[0, undefined]])
+
+      it 'should trigger need-documents after scrolling', ->
+        document_list.documents = mock_document_array(15) # so we can scroll down
+        view = create_view()
+
+        called = false
+        view.observe('need-documents', -> called = true)
+
+        div.scrollTop = 50 # scroll down 5 documents
+        $(div).scroll() # trigger listener
+
+        expect(called).toBeTruthy()
+
+      it 'should not trigger need-documents after scrolling if we have enough', ->
+        document_list.documents = mock_document_array(21) # so we can scroll down
+        view = create_view()
+
+        called = false
+        view.observe('need-documents', -> called = view.need_documents)
+
+        div.scrollTop = 10 # that's 1 doc. Another 10 doc are visible, 10 doc buffered = 21
+        $(div).scroll()
+
+        expect(called).toBeFalsy()
+
+      it 'should not create fractional needs', ->
+        view = create_view()
+        div.scrollTop = 5 # half a line
+        $(div).scroll()
+        expect(view.need_documents).toEqual([[10, 21]])

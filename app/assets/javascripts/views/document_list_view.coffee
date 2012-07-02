@@ -1,5 +1,11 @@
 observable = require('models/observable').observable
 
+DEFAULT_OPTIONS = {
+  buffer_documents: undefined, # retrieve all documents
+  ul_style: undefined, # CSS applied to main <ul> -- used for testing
+  li_style: undefined, # CSS applied to every <li> -- used for testing
+}
+
 $ = jQuery
 
 class DocumentListView
@@ -10,6 +16,10 @@ class DocumentListView
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
 
+    @_buffer_documents = options.buffer_documents || DEFAULT_OPTIONS.buffer_documents
+    @_ul_style = options.ul_style || DEFAULT_OPTIONS.ul_style
+    @_li_style = options.li_style || DEFAULT_OPTIONS.li_style
+
     this._attach()
     this._redraw()
 
@@ -17,6 +27,7 @@ class DocumentListView
     this._attach_click()
     this._attach_selection()
     this._attach_document_list()
+    this._attach_scroll()
 
   _attach_click: () ->
     $div = $(@div)
@@ -32,6 +43,30 @@ class DocumentListView
       if @_last_a_clicked != last_a_clicked
         @_last_a_clicked = last_a_clicked
         this._notify('document-clicked')
+
+  _get_document_height: () ->
+    return @_document_height if @_document_height?
+    $ul = $('<ul></ul>')
+    $ul.attr('style', @_ul_style) if @_ul_style?
+    $li = $('<li>&nbsp;</li>')
+    $li.attr('style', @_li_style) if @_li_style?
+    $ul.append($li)
+    $(@div).append($ul)
+    @_document_height = $li.height()
+    $ul.remove()
+    return @_document_height
+
+  _attach_scroll: () ->
+    $(@div).scroll(=> this._refresh_need_documents())
+
+
+  _get_bottom_need_document_index: () ->
+    return undefined if !@_buffer_documents?
+    # Assumes there's no padding between documents
+    document_height = this._get_document_height()
+    $div = $(@div)
+    div_bottom = $div.height() + $div.scrollTop()
+    Math.ceil(div_bottom / (document_height || 1)) + @_buffer_documents
 
   _attach_selection: () ->
     @selection.observe( => this._refresh_selection())
@@ -55,6 +90,7 @@ class DocumentListView
 
   _create_li: (document_or_index) ->
     $li = $('<li></li>')
+    $li.attr('style', @_li_style) if @_li_style?
 
     $node = if document_or_index.id?
       this._document_to_dom_node(document_or_index)
@@ -86,6 +122,7 @@ class DocumentListView
 
     if $ul.length == 0
       $ul = $('<ul></ul>')
+      $ul.attr('style', @_ul_style) if @_ul_style?
       $div.append($ul)
 
     index = 0
@@ -133,21 +170,28 @@ class DocumentListView
       this._set_need_documents([[0, undefined]])
       return
 
+    limit = n
+    if @_buffer_documents?
+      limit = _.min([n, this._get_bottom_need_document_index()])
+
     need_documents = []
 
     start = undefined
 
-    for cur in [0...n]
-      if cur >= documents.length
-        need_documents.push([cur, n])
-        break
-      if !start?
-        if !documents[cur]?
-          start = cur
-      else
-        if documents[cur]?
-          need_documents.push([start, cur])
-          start = undefined
+    for cur in [0...limit]
+      need = (cur >= documents.length || !documents[cur]?)
+
+      if !start? && need
+        start = cur
+
+      if start? && !need
+        need_documents.push([start, cur])
+        start = undefined
+
+      break if cur >= documents.length
+
+    if start?
+      need_documents.push([start, limit])
 
     this._set_need_documents(need_documents)
 
