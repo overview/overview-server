@@ -14,9 +14,18 @@ class SelectionSpec extends Specification {
 
 		def before = { 
 		  Ebean.beginTransaction
+		  clearDatabase
 		  createTree
 		}
         def after = Ebean.endTransaction
+      }
+
+      def clearDatabase() {
+        Ebean.createSqlUpdate("TRUNCATE document_set CASCADE").execute()
+        // The following will handle inconsistencies, where the above didn't propagate
+        Ebean.createSqlUpdate("TRUNCATE tree CASCADE").execute()
+        Ebean.createSqlUpdate("TRUNCATE node CASCADE").execute()
+        Ebean.createSqlUpdate("TRUNCATE document CASCADE").execute()
       }
       
       def createTree() {
