@@ -9,8 +9,8 @@ import play.api.Play.current
 import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
-import controllers.TreeJsonWrapper._
 import models._
+import views.json.Tree.JsonHelpers
 
 object TreeController extends Controller {
 	
@@ -34,7 +34,8 @@ object TreeController extends Controller {
 	  val tree = new Tree()
 	  tree.root = root
 	  tree.save()
-	  Ok(views.html.index.render(toJson(tree).toString))
+
+	  Ok("Setup complete")
 	}
 	
 	def generateTreeLevel(root: Node, documents: Seq[Document], depth: Int) = {
@@ -67,7 +68,7 @@ object TreeController extends Controller {
 	  }
 	}
 	
-    def root(documentSetId: Long) = Action {
+    def root(id: Long) = Action {
 // Leaving this here in case the complete JSON from the file is needed in testing the UI      
 //        val file = Play.application.getFile("conf/stub-tree-root.json")
 //        val json = io.Source.fromFile(file).mkString
@@ -75,9 +76,14 @@ object TreeController extends Controller {
 //            header = ResponseHeader(200, Map(CONTENT_TYPE -> "application/json")),
 //            body = Enumerator(json)
 //        )
-      val tree = Tree.find.all.get(0)
-      val json = toJson(tree)
+      val tree = Tree.find.byId(id) // FIXME handle security
+      val json = JsonHelpers.rootNodeToJsValue(tree.root)
       Ok(json)
+    }
 
+    def node(treeId: Long, nodeId: Long) = Action {
+      val node = Node.find.byId(nodeId) // FIXME handle security
+      val json = JsonHelpers.rootNodeToJsValue(node)
+      Ok(json)
     }
 }

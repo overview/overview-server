@@ -12,10 +12,10 @@ class Router
       when 'document_view' then this._document_view_path(id)
 
   _root_path: () ->
-    "/tree/#{@document_set_id}/root"
+    "/trees/#{@document_set_id}/root"
 
   _documents_path: () ->
-    "/tree/#{@document_set_id}/documents"
+    "/trees/#{@document_set_id}/documents"
 
   _document_view_path: (id) ->
     "/documents/#{id}"
