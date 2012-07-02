@@ -11,6 +11,6 @@ jQuery ($) ->
   $('#tree').each () ->
     app.controllers.tree_controller(this, tree, state)
   $('#document-list').each () ->
-    app.controllers.document_list_controller(this, store, needs_resolver, state)
+    app.controllers.document_list_controller(this, store, needs_resolver, state.selection)
   $('#document').each () ->
     app.controllers.document_contents_controller(this, state.selection, needs_resolver.server.router)

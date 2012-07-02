@@ -22,7 +22,7 @@ VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
-document_list_controller = (div, store, resolver, state) ->
+document_list_controller = (div, store, resolver, selection) ->
   stored_selection = undefined
   document_list = undefined
   view = undefined
@@ -36,13 +36,13 @@ document_list_controller = (div, store, resolver, state) ->
   refresh_document_list = () ->
     document_list = new DocumentList(store, stored_selection, resolver)
     if !view?
-      view = new DocumentListView(div, document_list, state.selection, VIEW_OPTIONS)
+      view = new DocumentListView(div, document_list, selection, VIEW_OPTIONS)
     else
       view.set_document_list(document_list)
     maybe_fetch()
 
   maybe_update_stored_selection = () ->
-    new_stored_selection = selection_to_stored_selection(state.selection)
+    new_stored_selection = selection_to_stored_selection(selection)
     return if _.isEqual(stored_selection, new_stored_selection)
     stored_selection = new_stored_selection
     refresh_document_list()
@@ -53,13 +53,13 @@ document_list_controller = (div, store, resolver, state) ->
     documentid = view.last_document_id_clicked()
     store.documents.get(documentid)
 
-  state.selection.observe(maybe_update_stored_selection)
+  selection.observe(maybe_update_stored_selection)
 
   view.observe('need-documents', maybe_fetch)
 
   view.observe 'document-clicked', ->
     document = get_view_document()
-    state.selection.update({ document: document })
+    selection.update({ document: document })
 
 exports = require.make_export_object('controllers/document_list_controller')
 exports.document_list_controller = document_list_controller
