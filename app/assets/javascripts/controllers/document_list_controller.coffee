@@ -18,6 +18,10 @@ selection_to_stored_selection = (s) ->
     documents: []
   }
 
+VIEW_OPTIONS = {
+  buffer_documents: 5,
+}
+
 document_list_controller = (div, store, resolver, state) ->
   stored_selection = undefined
   document_list = undefined
@@ -27,12 +31,12 @@ document_list_controller = (div, store, resolver, state) ->
     need_documents = view.get_top_need_documents()
     return if !need_documents
     max = need_documents[0] + DOCUMENT_LIST_REQUEST_SIZE
-    document_list.slice(need_documents[0], _.min([need_documents[1] || max, max]))
+    document_list.slice(need_documents[0], max)
 
   refresh_document_list = () ->
     document_list = new DocumentList(store, stored_selection, resolver)
     if !view?
-      view = new DocumentListView(div, document_list, state.selection)
+      view = new DocumentListView(div, document_list, state.selection, VIEW_OPTIONS)
     else
       view.set_document_list(document_list)
     maybe_fetch()
