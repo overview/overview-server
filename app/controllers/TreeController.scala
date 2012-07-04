@@ -15,10 +15,6 @@ import views.json.Tree.JsonHelpers
 object TreeController extends Controller {
 	
 	def temporarySetup() = Action {
-	  val level1 = Seq(3)
-	  val level2 = Seq(1, 3, 5)
-	  val level3 = Seq(Seq(1), Seq(1, 1, 1), Seq(1, 1, 1, 1))
-	  
 	  val root = new Node()
 	  root.description = "root"
 
@@ -29,8 +25,10 @@ object TreeController extends Controller {
 	    document.save
 	  }
 
+      documentSet.save
+
 	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
-	  
+
 	  val tree = new Tree()
 	  tree.root = root
 	  tree.save()
@@ -39,7 +37,6 @@ object TreeController extends Controller {
 	}
 	
 	def generateTreeLevel(root: Node, documents: Seq[Document], depth: Int) = {
-	  
       documents.foreach(d => root.addDocument(d))
 
 	  if ((depth > 1) && (documents.size > 1)) {
