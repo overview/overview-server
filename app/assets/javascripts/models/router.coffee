@@ -11,6 +11,7 @@ class Router
       when 'node' then this._node_path(id)
       when 'documents' then this._documents_path()
       when 'document_view' then this._document_view_path(id)
+      when 'create_log_entries' then this._create_log_entries_path()
 
   _root_path: () ->
     "/trees/#{@document_set_id}/root"
@@ -23,6 +24,9 @@ class Router
 
   _document_view_path: (id) ->
     "/documents/#{id}"
+
+  _create_log_entries_path: () ->
+    "/documentsets/#{@document_set_id}/log-entries/create-many"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router

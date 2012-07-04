@@ -49,3 +49,29 @@ describe 'models/log', ->
         log.add_entry(create_entry())
         log.clear_entries()
         expect(log.entries).toEqual([])
+
+    describe 'upload_entries_to_server_and_clear', ->
+      class MockServer
+        post: (@path, @data, @options) ->
+
+      log = undefined
+      mock_server = undefined
+
+      beforeEach ->
+        log = new Log()
+        log.add_entry(create_entry())
+        mock_server = new MockServer()
+
+      it 'should clear entries', ->
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(log.entries).toEqual([])
+
+      it 'should post to the proper path', ->
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(mock_server.path).toEqual('create_log_entries')
+
+      it 'should post a JSON array', ->
+        entry = log.entries[0]
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(mock_server.data).toMatch(/^\[\{.*\}\]$/)
+        expect(mock_server.data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))

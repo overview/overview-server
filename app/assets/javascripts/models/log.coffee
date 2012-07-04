@@ -13,5 +13,11 @@ class Log
   clear_entries: () ->
     @entries = []
 
+  upload_entries_to_server_and_clear: (server) ->
+    server.post('create_log_entries', JSON.stringify(@entries), {
+      contentType: 'application/json',
+    })
+    this.clear_entries()
+
 exports = require.make_export_object('models/log')
 exports.Log = Log
