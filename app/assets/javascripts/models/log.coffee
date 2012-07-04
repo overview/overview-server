@@ -22,5 +22,9 @@ class Log
     })
     this.clear_entries()
 
+  for_component: (component) ->
+    (action, details=undefined) =>
+      this.add_entry({ component: component, action: action, details: details })
+
 exports = require.make_export_object('models/log')
 exports.Log = Log

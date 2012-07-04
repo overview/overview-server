@@ -88,3 +88,11 @@ describe 'models/log', ->
       it 'should set global: false on the $.ajax request', ->
         log.upload_entries_to_server_and_clear(mock_server)
         expect(mock_server.options.global).toBe(false)
+
+    describe 'for_component()', ->
+      it 'should return a function that can be used as a shortcut', ->
+        log = new Log()
+        spyOn(log, 'add_entry').andCallThrough()
+        log_shortcut = log.for_component('test')
+        log_shortcut('action', 'details')
+        expect(log.add_entry).toHaveBeenCalledWith({ component: 'test', action: 'action', details: 'details' })
