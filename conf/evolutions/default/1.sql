@@ -26,6 +26,17 @@ create table document_set_creation_job (
   constraint pk_document_set_creation_job primary key (id))
 ;
 
+create table log_entry (
+  id                        bigint not null,
+  document_set_id           bigint,
+  username                  varchar(255),
+  date                      timestamp,
+  component                 varchar(255),
+  action                    varchar(255),
+  details                   varchar(255),
+  constraint pk_log_entry primary key (id))
+;
+
 create table node (
   id                        bigint not null,
   description               varchar(255),
@@ -65,54 +76,66 @@ create sequence document_set_seq;
 
 create sequence document_set_creation_job_seq;
 
+create sequence log_entry_seq;
+
 create sequence node_seq;
 
 create sequence tag_seq;
 
 create sequence tree_seq;
 
-alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id);
+alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
 create index ix_document_documentSet_1 on document (document_set_id);
-alter table node add constraint fk_node_parent_2 foreign key (parent_id) references node (id);
-create index ix_node_parent_2 on node (parent_id);
-alter table tag add constraint fk_tag_documentSet_3 foreign key (document_set_id) references document_set (id);
-create index ix_tag_documentSet_3 on tag (document_set_id);
-alter table tree add constraint fk_tree_root_4 foreign key (root_id) references node (id);
-create index ix_tree_root_4 on tree (root_id);
+alter table log_entry add constraint fk_log_entry_documentSet_2 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
+create index ix_log_entry_documentSet_2 on log_entry (document_set_id);
+alter table node add constraint fk_node_parent_3 foreign key (parent_id) references node (id) on delete restrict on update restrict;
+create index ix_node_parent_3 on node (parent_id);
+alter table tag add constraint fk_tag_documentSet_4 foreign key (document_set_id) references document_set (id) on delete restrict on update restrict;
+create index ix_tag_documentSet_4 on tag (document_set_id);
+alter table tree add constraint fk_tree_root_5 foreign key (root_id) references node (id) on delete restrict on update restrict;
+create index ix_tree_root_5 on tree (root_id);
 
 
 
-alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id);
+alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id) on delete restrict on update restrict;
 
-alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id);
+alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id) on delete restrict on update restrict;
 
-alter table node_document add constraint fk_node_document_node_01 foreign key (node_id) references node (id);
+alter table node_document add constraint fk_node_document_node_01 foreign key (node_id) references node (id) on delete restrict on update restrict;
 
-alter table node_document add constraint fk_node_document_document_02 foreign key (document_id) references document (id);
+alter table node_document add constraint fk_node_document_document_02 foreign key (document_id) references document (id) on delete restrict on update restrict;
 
 # --- !Downs
 
-drop table if exists document cascade;
+SET REFERENTIAL_INTEGRITY FALSE;
 
-drop table if exists document_tag cascade;
+drop table if exists document;
 
-drop table if exists node_document cascade;
+drop table if exists document_tag;
 
-drop table if exists document_set cascade;
+drop table if exists node_document;
 
-drop table if exists document_set_creation_job cascade;
+drop table if exists document_set;
 
-drop table if exists node cascade;
+drop table if exists document_set_creation_job;
 
-drop table if exists tag cascade;
+drop table if exists log_entry;
 
-drop table if exists tree cascade;
+drop table if exists node;
+
+drop table if exists tag;
+
+drop table if exists tree;
+
+SET REFERENTIAL_INTEGRITY TRUE;
 
 drop sequence if exists document_seq;
 
 drop sequence if exists document_set_seq;
 
 drop sequence if exists document_set_creation_job_seq;
+
+drop sequence if exists log_entry_seq;
 
 drop sequence if exists node_seq;
 

@@ -1,0 +1,30 @@
+@(documentSet: DocumentSet, logEntries: Seq[LogEntry])
+
+@main("Log") {
+  <h1>Log</h1>
+
+  <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.getId, ".csv")">this log as a spreadsheet</a>.</p>
+
+  <table class="log-entries">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Time</th>
+        <th>Component</th>
+        <th>Action</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for(entry <- logEntries) {
+        <tr>
+          <td class="user">@entry.getUsername</td>
+          <td class="date">@entry.getDate</td>
+          <td class="component">@entry.getComponent</td>
+          <td class="action">@entry.getAction</td>
+          <td class="details">@entry.getDetails</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

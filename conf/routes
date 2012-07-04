@@ -19,5 +19,8 @@ GET /trees/:id/root controllers.TreeController.root(id: Long)
 GET /trees/:treeId/nodes/:nodeId controllers.TreeController.node(treeId: Long, nodeId: Long)
 GET /trees/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 
+POST /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)
+GET /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
