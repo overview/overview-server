@@ -1,4 +1,4 @@
-app = require('app')
-
-exports = require.make_export_object('globals')
-exports.router = new app.models.Router()
+# This file can hold more variables than it exports:
+#
+# 1) somebody calls "require('globals').foo = foo"
+# 2) somebody else calls "foo = require('globals').foo"

@@ -1,10 +1,14 @@
 app = require('app')
-globals = require('globals')
 
 store = new app.models.Store()
 state = new app.models.State()
 
-needs_resolver = new app.models.NeedsResolver(store)
+server = new app.models.Server()
+needs_resolver = new app.models.NeedsResolver(store, server)
+
+log = require('globals').logger
+app.controllers.log_controller(log, server)
+
 tree = new app.models.PartialTree(needs_resolver)
 
 jQuery ($) ->
@@ -13,4 +17,4 @@ jQuery ($) ->
   $('#document-list').each () ->
     app.controllers.document_list_controller(this, store, needs_resolver, state.selection)
   $('#document').each () ->
-    app.controllers.document_contents_controller(this, state.selection, needs_resolver.server.router)
+    app.controllers.document_contents_controller(this, state.selection, server.router)

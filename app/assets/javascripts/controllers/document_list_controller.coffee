@@ -1,5 +1,6 @@
 DocumentList = require('models/document_list').DocumentList
 DocumentListView = require('views/document_list_view').DocumentListView
+log = require('globals').logger.for_component('document_list')
 
 DOCUMENT_LIST_REQUEST_SIZE = 20
 
@@ -59,6 +60,7 @@ document_list_controller = (div, store, resolver, selection) ->
 
   view.observe 'document-clicked', ->
     document = get_view_document()
+    log('clicked document', "#{document?.id}")
     selection.update({ document: document })
 
 exports = require.make_export_object('controllers/document_list_controller')
