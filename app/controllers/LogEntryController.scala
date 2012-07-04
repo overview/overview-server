@@ -66,7 +66,7 @@ object LogEntryController extends Controller {
         val documentSet = DocumentSet.find.byId(documentSetId) // TODO: security
 
         if (documentSet == null) {
-            NotFound("Invalid document set ID")
+            NotFound("Invalid document set ID " + documentSetId)
         } else {
             request.body match {
                 case jsArray: JsArray =>
