@@ -80,3 +80,11 @@ describe 'models/log', ->
         log.clear_entries()
         log.upload_entries_to_server_and_clear(mock_server)
         expect(mock_server.path).toBeUndefined()
+
+      it 'should set contentType: "application/json" on the $.ajax request', ->
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(mock_server.options.contentType).toEqual('application/json')
+
+      it 'should set global: false on the $.ajax request', ->
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(mock_server.options.global).toBe(false)

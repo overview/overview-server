@@ -18,6 +18,7 @@ class Log
 
     server.post('create_log_entries', JSON.stringify(@entries), {
       contentType: 'application/json',
+      global: false,
     })
     this.clear_entries()
 
