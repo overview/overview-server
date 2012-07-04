@@ -23,13 +23,13 @@ object TreeController extends Controller {
 	  root.description = "root"
 
 	  val documentSet = new DocumentSet()
-	  for (i <- 1 to 22) {
+	  for (i <- 1 to 2200) {
 	    val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
 	    documentSet.addDocument(document)
 	    document.save
 	  }
 
-	  generateTreeLevel(root, documentSet.documents.toSeq, 4)
+	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
 	  
 	  val tree = new Tree()
 	  tree.root = root
