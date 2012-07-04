@@ -75,3 +75,8 @@ describe 'models/log', ->
         log.upload_entries_to_server_and_clear(mock_server)
         expect(mock_server.data).toMatch(/^\[\{.*\}\]$/)
         expect(mock_server.data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))
+
+      it 'should not post when empty', ->
+        log.clear_entries()
+        log.upload_entries_to_server_and_clear(mock_server)
+        expect(mock_server.path).toBeUndefined()

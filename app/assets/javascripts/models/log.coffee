@@ -14,6 +14,8 @@ class Log
     @entries = []
 
   upload_entries_to_server_and_clear: (server) ->
+    return if @entries.length == 0
+
     server.post('create_log_entries', JSON.stringify(@entries), {
       contentType: 'application/json',
     })
