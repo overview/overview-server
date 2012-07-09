@@ -29,8 +29,9 @@ observable = (klass) ->
   klass.prototype._notify = (event='_') ->
     all_observers = (@_observers ||= {})
     observers_for_event = (all_observers[event] ||= [])
+    args = Array.prototype.slice.call(arguments, 1)
     for observer in observers_for_event
-      observer.call(this)
+      observer.apply(this, args)
     undefined
 
 exports = require.make_export_object('models/observable')

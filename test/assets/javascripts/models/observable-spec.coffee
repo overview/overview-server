@@ -73,3 +73,25 @@ describe 'models/', ->
       o.observe(-> x = 1)
       o._notify()
       expect(x).toEqual(1)
+
+    it 'should pass an argument in the callback', ->
+      class O
+        observable(this)
+
+      _arg = undefined
+      o = new O()
+      o.observe('event', (arg) -> _arg = arg)
+      o._notify('event', 'foo')
+      expect(_arg).toEqual('foo')
+
+    it 'should pass multiple arguments in the callback', ->
+      class O
+        observable(this)
+
+      a1 = undefined
+      a2 = undefined
+      o = new O()
+      o.observe('event', (arg1, arg2) -> a1 = arg1; a2 = arg2)
+      o._notify('event', 1, 2)
+      expect(a1).toEqual(1)
+      expect(a2).toEqual(2)
