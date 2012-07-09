@@ -70,6 +70,16 @@ describe 'models/id_tree', ->
       do_remove(1) # root, remove
       expect(calls).toEqual(['add', 'root', 'add', 'remove', 'root', 'remove'])
 
+    it 'should notify :remove from deepest to shallowest', ->
+      do_add(1, [2, 3])
+      do_add(2, [4, 5])
+      do_add(3, [6, 7])
+      do_add(4, [8, 9])
+      args = []
+      id_tree.observe('remove', (ids) -> args.push(ids))
+      do_remove(1)
+      expect(args).toEqual([[4, 3, 2, 1]])
+
     describe 'after removing a child', ->
       beforeEach ->
         do_add(1, [2, 3])
@@ -150,6 +160,19 @@ describe 'models/id_tree', ->
         id_tree.observe('remove', (ids) -> args.push(ids))
         do_remove(2)
         expect(args).toEqual([[5, 4, 2]]) # order doesn't matter
+
+      it 'should notify :remove-undefined when removing', ->
+        args = []
+        id_tree.observe('remove-undefined', (ids) -> args.push(ids))
+        do_remove(4)
+        expect(args).toEqual([[9, 8]])
+
+      it 'should notify :remove-undefined before :remove', ->
+        args = []
+        id_tree.observe('remove', (ids) -> args.push(ids))
+        id_tree.observe('remove-undefined', (ids) -> args.push(ids))
+        do_remove(4)
+        expect(args).toEqual([[9, 8], [4]])
 
       it 'should notify :add with multiple IDs when adding in a single edit', ->
         args = []

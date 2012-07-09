@@ -20,9 +20,11 @@ observable = require('models/observable').observable
 # 1. `root`, which will notify that `root` is now `1`
 # 2. `add`, which will notify that [1, 2, 3, 4] were added
 #
-# The other notification is `remove`, which mirrors `add` but removes sub-nodes
-# as well. Both will be called after an `edit`, if need be: first `add` and
-# then `remove`.
+# The other notifications are `remove` and `remove-undefined`, which mirror
+# `add` but remove sub-nodes as well. They will be called after an `edit`, if
+# need be: first `add`, then `remove-undefined`, and finally `remove`. The
+# order of IDs is consistent: the `add` list ends with the deepest nodes, and
+# the `remove` lists begin with them.
 #
 # Now, to read the tree, use this interface, which is optimized for speed:
 #
@@ -62,6 +64,7 @@ class IdTree
     @_edits = {
       add: [],
       remove: [],
+      remove_undefined: [],
       root: false,
     }
 
@@ -76,6 +79,7 @@ class IdTree
 
     this._notify('add', @_edits.add) if @_edits.add.length
     this._notify('root', @root) if @_edits.root
+    this._notify('remove-undefined', @_edits.remove_undefined) if @_edits.remove_undefined.length
     this._notify('remove', @_edits.remove) if @_edits.remove.length
 
     @_edits.add = []
@@ -99,11 +103,14 @@ class IdTree
 
     throw 'MissingNode' if !to_visit?
 
-    while cur = to_visit.pop()
+    # Breadth-first search
+    while cur = to_visit.shift()
       child_ids.push(cur)
       if children = @children[cur]
-        @_edits.remove.push(cur)
+        @_edits.remove.unshift(cur) # @_edits.remove is deepest-to-shallowest
         (to_visit.push(child_id) for child_id in children)
+      else
+        @_edits.remove_undefined.unshift(cur)
 
     for child_id in child_ids
       delete @parent[child_id]
