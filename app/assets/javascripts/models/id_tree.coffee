@@ -1,3 +1,5 @@
+observable = require('models/observable').observable
+
 # A special, fast tree which only stores IDs
 #
 # This tree is made for speed. Inserts do not create any objects, and it
@@ -34,15 +36,20 @@
 #     id_tree.parent[3] # 1
 #     id_tree.parent[1] # undefined
 #
-# Some invariants of the IdTree:
+# Some invariants of the IdTree, true before/after every method call:
 #
 # * Any id that `children` points to has an inverse `parent` entry
-# * The inverse is true, except nothing points to `root`.
+# * The inverse is true, except nothing points to `root`. (This means every
+#   node has a path back to the root.)
 # * `has()` returns whether the `children` entry is defined.
-# * There are never any dangling `parent` entries.
-# * There are never any dangling `children` entries.
-# * There are never any loops
+#
+# And some undefined behavior:
+#
+# * Loops (i.e., a non-tree)
+# * Re-adding a node that was just removed, all in the same edit
 class IdTree
+  observable(this)
+
   constructor: () ->
     @root = -1
     @children = {}
@@ -51,9 +58,11 @@ class IdTree
     @_editor = {
       add: this._add.bind(this),
       remove: this._remove.bind(this),
-
-      #_added: [],
-      #_removed: [],
+    }
+    @_edits = {
+      add: [],
+      remove: [],
+      root: false,
     }
 
   has: (id) ->
@@ -65,14 +74,24 @@ class IdTree
   edit: (callback) ->
     callback(@_editor)
 
+    this._notify('add', @_edits.add) if @_edits.add.length
+    this._notify('root', @root) if @_edits.root
+    this._notify('remove', @_edits.remove) if @_edits.remove.length
+
+    @_edits.add = []
+    @_edits.remove = []
+    @_edits.root = false
+
   _add: (id, children) ->
     if @root == -1
       @root = id
+      @_edits.root = true
     else
       throw 'MissingNode' if !@parent[id]?
 
     @children[id] = children
     (@parent[child_id] = id for child_id in children)
+    @_edits.add.push(id)
 
   _remove: (id) ->
     child_ids = []
@@ -83,15 +102,19 @@ class IdTree
     while cur = to_visit.pop()
       child_ids.push(cur)
       if children = @children[cur]
+        @_edits.remove.push(cur)
         (to_visit.push(child_id) for child_id in children)
 
     for child_id in child_ids
       delete @parent[child_id]
       delete @children[child_id]
 
-    @root = -1 if @root == id
+    if @root == id
+      @root = -1
+      @_edits.root = true
 
     delete @children[id]
+    @_edits.remove.push(id)
 
 exports = require.make_export_object('models/id_tree')
 exports.IdTree = IdTree

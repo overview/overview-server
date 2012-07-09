@@ -53,6 +53,23 @@ describe 'models/id_tree', ->
       do_add(2, [4, 5])
       expect(id_tree.all()).toEqual([1, 2])
 
+    it 'should trigger :root', ->
+      root = undefined
+      id_tree.observe('root', (r) -> root = r)
+      do_add(1, [])
+      expect(root).toEqual(1)
+
+    it 'should notify :root before/after :add/:remove such that notifications make a consistent tree', ->
+      calls = []
+      id_tree.observe('root', () -> calls.push('root'))
+      id_tree.observe('add', () -> calls.push('add'))
+      id_tree.observe('remove', () -> calls.push('remove'))
+      do_add(1, [2, 3]) # add, root
+      do_add(2, []) # add
+      do_remove(2) # remove
+      do_remove(1) # root, remove
+      expect(calls).toEqual(['add', 'root', 'add', 'remove', 'root', 'remove'])
+
     describe 'after removing a child', ->
       beforeEach ->
         do_add(1, [2, 3])
@@ -75,6 +92,12 @@ describe 'models/id_tree', ->
       it 'should set @root to -1 when removing the root node', ->
         do_remove(1)
         expect(id_tree.root).toEqual(-1)
+
+      it 'should trigger :root when removing the root node', ->
+        root = id_tree.root
+        id_tree.observe('root', (r) -> root = r)
+        do_remove(1)
+        expect(root).toEqual(-1)
 
     describe 'starting with a bigger tree', ->
       beforeEach ->
@@ -103,3 +126,47 @@ describe 'models/id_tree', ->
         expect(() ->
           do_add(10, [])
         ).toThrow('MissingNode')
+
+      it 'should not notify :root when removing a non-root node', ->
+        called = false
+        id_tree.observe('root', () -> called = true)
+        do_remove(2)
+        expect(called).toBeFalsy()
+
+      it 'should notify :add with an ID when adding', ->
+        args = []
+        id_tree.observe('add', (ids) -> args.push(ids))
+        do_add(6, [])
+        expect(args).toEqual([[6]])
+
+      it 'should notify :remove with an ID when removing', ->
+        args = []
+        id_tree.observe('remove', (ids) -> args.push(ids))
+        do_remove(4)
+        expect(args).toEqual([[4]])
+
+      it 'should notify :remove with multiple IDs when removing', ->
+        args = []
+        id_tree.observe('remove', (ids) -> args.push(ids))
+        do_remove(2)
+        expect(args).toEqual([[5, 4, 2]]) # order doesn't matter
+
+      it 'should notify :add with multiple IDs when adding in a single edit', ->
+        args = []
+        id_tree.observe('add', (ids) -> args.push(ids))
+        id_tree.edit (editable) ->
+          editable.add(6, [7, 8])
+          editable.add(7, [])
+          editable.add(8, [])
+          expect(args).toEqual([])
+        expect(args).toEqual([[6, 7, 8]])
+
+      it 'should notify :add and :remove when changing in the same edit', ->
+        args = []
+        id_tree.observe('add', (ids) -> args.push(ids))
+        id_tree.observe('remove', (ids) -> args.push(ids))
+        id_tree.edit (editable) ->
+          editable.add(6, [7, 8])
+          editable.add(7, [])
+          editable.remove(2)
+        expect(args).toEqual([[6, 7], [5, 4, 2]])
