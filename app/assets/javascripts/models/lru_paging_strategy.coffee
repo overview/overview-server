@@ -24,6 +24,10 @@
 #     strategy.free(id4)
 #     strategy.find_id_to_free_if_full() # returns undefined
 #     strategy.find_id_to_free() # returns id3
+#
+# There are also `freeze` and `thaw` methods. These will prevent the pages
+# that contain an ID from losing it. `find_id_to_free()` will throw
+# 'AllPagesFrozen' if it's impossible to free anything.
 class LruPagingStrategy
   constructor: (@n_pages) ->
     @_pages = []
@@ -40,7 +44,7 @@ class LruPagingStrategy
 
     throw 'AllPagesFull' if !page?
     @_pages[page] = id
-    @_ids[id] = { page: page, counter: @_counter++ }
+    @_ids[id] = { page: page, counter: @_counter++, frozen: false }
     @_n++
     page
 
@@ -48,21 +52,32 @@ class LruPagingStrategy
     page = @_ids[id]?.page
     throw 'IdNotCached' if !page?
     @_pages[page] = undefined
-    @_ids[id] = undefined
+    delete @_ids[id]
     @_n--
     page
 
   is_full: () ->
     @_n >= @n_pages
 
+  is_frozen: (id) ->
+    @_ids[id].frozen
+
+  freeze: (id) ->
+    @_ids[id].frozen = true
+
+  thaw: (id) ->
+    @_ids[id].frozen = false
+
   find_id_to_free: () ->
     best_id = undefined
     best_counter = @_counter + 1
 
     for id, info of @_ids
-      if info.counter < best_counter
+      if info.counter < best_counter && !info.frozen
         best_counter = info.counter
         best_id = +id
+
+    throw 'AllPagesFrozen' if @_n > 0 && !best_id?
 
     best_id
 
