@@ -2,8 +2,6 @@ package models;
 
 import java.util.*;
 
-import com.avaje.ebean.Ebean;
-
 import org.junit.Before;
 import org.junit.Test;
 
