@@ -1,3 +1,5 @@
+observable = require('models/observable').observable
+
 # A special, fast tree which only stores IDs
 #
 # This tree is made for speed. Inserts do not create any objects, and it
@@ -18,9 +20,13 @@
 # 1. `root`, which will notify that `root` is now `1`
 # 2. `add`, which will notify that [1, 2, 3, 4] were added
 #
-# The other notification is `remove`, which mirrors `add` but removes sub-nodes
-# as well. Both will be called after an `edit`, if need be: first `add` and
-# then `remove`.
+# The other notifications are `remove` and `remove-undefined`, which mirror
+# `add` but remove sub-nodes as well. They will be called after an `edit`, if
+# need be: first `add`, then `remove-undefined`, and finally `remove`. The
+# order of IDs is consistent: the `add` list ends with the deepest nodes, and
+# the `remove` lists begin with them.
+#
+# Finally, `edit` is notified after any change.
 #
 # Now, to read the tree, use this interface, which is optimized for speed:
 #
@@ -34,15 +40,20 @@
 #     id_tree.parent[3] # 1
 #     id_tree.parent[1] # undefined
 #
-# Some invariants of the IdTree:
+# Some invariants of the IdTree, true before/after every method call:
 #
 # * Any id that `children` points to has an inverse `parent` entry
-# * The inverse is true, except nothing points to `root`.
+# * The inverse is true, except nothing points to `root`. (This means every
+#   node has a path back to the root.)
 # * `has()` returns whether the `children` entry is defined.
-# * There are never any dangling `parent` entries.
-# * There are never any dangling `children` entries.
-# * There are never any loops
+#
+# And some undefined behavior:
+#
+# * Loops (i.e., a non-tree)
+# * Re-adding a node that was just removed, all in the same edit
 class IdTree
+  observable(this)
+
   constructor: () ->
     @root = -1
     @children = {}
@@ -51,9 +62,12 @@ class IdTree
     @_editor = {
       add: this._add.bind(this),
       remove: this._remove.bind(this),
-
-      #_added: [],
-      #_removed: [],
+    }
+    @_edits = {
+      add: [],
+      remove: [],
+      remove_undefined: [],
+      root: false,
     }
 
   has: (id) ->
@@ -65,14 +79,28 @@ class IdTree
   edit: (callback) ->
     callback(@_editor)
 
+    this._notify('add', @_edits.add) if @_edits.add.length
+    this._notify('root', @root) if @_edits.root
+    this._notify('remove-undefined', @_edits.remove_undefined) if @_edits.remove_undefined.length
+    this._notify('remove', @_edits.remove) if @_edits.remove.length
+
+    if @_edits.add.length || @_edits.remove_undefined.length || @_edits.remove.length
+      this._notify('edit')
+
+    @_edits.add = []
+    @_edits.remove = []
+    @_edits.root = false
+
   _add: (id, children) ->
     if @root == -1
       @root = id
+      @_edits.root = true
     else
       throw 'MissingNode' if !@parent[id]?
 
     @children[id] = children
     (@parent[child_id] = id for child_id in children)
+    @_edits.add.push(id)
 
   _remove: (id) ->
     child_ids = []
@@ -80,18 +108,25 @@ class IdTree
 
     throw 'MissingNode' if !to_visit?
 
-    while cur = to_visit.pop()
+    # Breadth-first search
+    while cur = to_visit.shift()
       child_ids.push(cur)
       if children = @children[cur]
+        @_edits.remove.unshift(cur) # @_edits.remove is deepest-to-shallowest
         (to_visit.push(child_id) for child_id in children)
+      else
+        @_edits.remove_undefined.unshift(cur)
 
     for child_id in child_ids
       delete @parent[child_id]
       delete @children[child_id]
 
-    @root = -1 if @root == id
+    if @root == id
+      @root = -1
+      @_edits.root = true
 
     delete @children[id]
+    @_edits.remove.push(id)
 
 exports = require.make_export_object('models/id_tree')
 exports.IdTree = IdTree

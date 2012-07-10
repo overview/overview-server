@@ -1,5 +1,7 @@
 app = require('app')
 
+OnDemandTree = require('models/on_demand_tree').OnDemandTree
+
 store = new app.models.Store()
 state = new app.models.State()
 
@@ -9,7 +11,8 @@ needs_resolver = new app.models.NeedsResolver(store, server)
 log = require('globals').logger
 app.controllers.log_controller(log, server)
 
-tree = new app.models.PartialTree(needs_resolver)
+tree = new OnDemandTree(needs_resolver)
+tree.demand_root()
 
 jQuery ($) ->
   $('#tree').each () ->

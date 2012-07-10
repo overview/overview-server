@@ -7,7 +7,6 @@ exports.IdTree = require('models/id_tree').IdTree
 exports.Log = require('models/log').Log
 exports.ObjectStore = require('models/object_store').ObjectStore
 exports.NeedsResolver = require('models/needs_resolver').NeedsResolver
-exports.PartialTree = require('models/partial_tree').PartialTree
 exports.Router = require('models/router').Router
 exports.Selection = require('models/selection').Selection
 exports.Server = require('models/server').Server
