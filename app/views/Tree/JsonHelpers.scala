@@ -34,16 +34,11 @@ object JsonHelpers {
 
     def rootNodeToJsValue(rootNode: Node) : JsValue = {
         val includedNodes = rootNode.getNodesBreadthFirst(12).toSeq
-        val includedDocumentIds  =  HashSet[Document]()
-
-        for (node <- includedNodes) {
-            val partialNode = new PartiallyLoadedNode(node.getId)
-
-            for (document <- partialNode.getDocuments(0, 10)) {
-                includedDocumentIds.add(document)
-            }
-        }
-        // TODO: move all the above into app.models
+        
+        val partiallyLoadedNodes = includedNodes.map(n => new PartiallyLoadedNode(n.getId))
+        val documentsInNodes = partiallyLoadedNodes.flatMap(_.getDocuments(0, maxElementsInList))
+        val includedDocumentIds = documentsInNodes.toSet
+        
 
         JsObject(Seq(
             "nodes" -> JsArray(includedNodes.map(JsonHelpers.subNodeToJsValue)),
