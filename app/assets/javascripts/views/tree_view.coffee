@@ -33,10 +33,7 @@ class TreeView
     this._redraw()
 
   _attach: () ->
-    @tree.id_tree.observe('root', => this._redraw())
-    @tree.id_tree.observe('add', => this._redraw())
-    @tree.id_tree.observe('remove', => this._redraw())
-    @tree.id_tree.observe('remove-undefined', => this._redraw())
+    @tree.id_tree.observe('edit', => this._redraw())
 
     $(@canvas).on 'click', (e) =>
       x = e.pageX - @canvas.offsetLeft

@@ -193,3 +193,16 @@ describe 'models/id_tree', ->
           editable.add(7, [])
           editable.remove(2)
         expect(args).toEqual([[6, 7], [5, 4, 2]])
+
+      it 'should notify :edit after an edit', ->
+        called = false
+        id_tree.observe('edit', () -> called = true)
+        id_tree.edit (editable) ->
+          editable.add(6, [7, 8])
+        expect(called).toBeTruthy()
+
+      it 'should not notify :edit if nothing has changed', ->
+        called = false
+        id_tree.observe('edit', () -> called = true)
+        id_tree.edit(->)
+        expect(called).toBeFalsy()

@@ -26,6 +26,8 @@ observable = require('models/observable').observable
 # order of IDs is consistent: the `add` list ends with the deepest nodes, and
 # the `remove` lists begin with them.
 #
+# Finally, `edit` is notified after any change.
+#
 # Now, to read the tree, use this interface, which is optimized for speed:
 #
 #     id_tree.root # 1
@@ -81,6 +83,9 @@ class IdTree
     this._notify('root', @root) if @_edits.root
     this._notify('remove-undefined', @_edits.remove_undefined) if @_edits.remove_undefined.length
     this._notify('remove', @_edits.remove) if @_edits.remove.length
+
+    if @_edits.add.length || @_edits.remove_undefined.length || @_edits.remove.length
+      this._notify('edit')
 
     @_edits.add = []
     @_edits.remove = []
