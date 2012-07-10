@@ -40,6 +40,7 @@ class OnDemandTree
   constructor: (@resolver, options={}) ->
     @id_tree = new IdTree()
     @nodes = {}
+    @height = 0
     @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
 
   # Our @_paging_strategy suggests a node to remove. We can add logic, though:
@@ -110,9 +111,37 @@ class OnDemandTree
         @nodes[node.id] = node
         editable.add(node.id, node.children)
 
+        this._refresh_height()
+
     @_paging_strategy.thaw(x) for x in freeze_ids
 
     undefined
+
+  _refresh_height: () ->
+    # bulky, but understandable and O(n)
+    return @height = 0 if @id_tree.root == -1
+
+    p = @id_tree.parent
+    d = {} # id -> depth
+    d[@id_tree.root] = 1
+
+    id_to_depth = (id) ->
+      loops = 0
+      parent_id = id
+
+      loop
+        if d[parent_id]?
+          return d[id] = loops + d[parent_id]
+
+        parent_id = p[parent_id]
+        loops += 1
+
+    max_depth = 1
+    for child_id, _ of p
+      depth = id_to_depth(child_id)
+      max_depth = depth if depth > max_depth
+
+    @height = max_depth
 
   demand_root: () ->
     @resolver.get_deferred('root').done(this._add_json.bind(this))

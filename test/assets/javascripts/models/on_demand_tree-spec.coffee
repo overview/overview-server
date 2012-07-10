@@ -45,6 +45,9 @@ describe 'models/on_demand_tree', ->
       it 'should start with id_tree empty', ->
         expect(tree.id_tree.root).toEqual(-1)
 
+      it 'should have @height=0', ->
+        expect(tree.height).toEqual(0)
+
       it 'should demand_root() and call get_deferred("root")', ->
         deferred = tree.demand_root()
         expect(resolver.type).toEqual('root')
@@ -55,6 +58,14 @@ describe 'models/on_demand_tree', ->
         add_node_through_deferred(1, [2, 3])
         expect(tree.id_tree.root).toEqual(1)
         expect(tree.id_tree.children[1]).toEqual([2, 3])
+
+      it 'should add to @height for new levels', ->
+        add_node_through_deferred(1, [])
+        expect(tree.height).toEqual(1)
+
+      it 'should add to @height for yet-unresolved levels', ->
+        add_node_through_deferred(1, [2])
+        expect(tree.height).toEqual(2)
 
     describe 'with a non-empty tree', ->
       beforeEach ->
