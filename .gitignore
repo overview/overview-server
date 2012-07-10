@@ -1,3 +1,4 @@
+bin
 logs
 project/project
 project/target
@@ -12,6 +13,7 @@ dist
 *.swp
 .env
 .cache
+.target
 
 test/assets/javascripts/src-js
 test/assets/javascripts/test-js
