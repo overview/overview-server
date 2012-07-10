@@ -109,8 +109,8 @@ describe 'models/lru_paging_strategy', ->
 
     it 'should implement is_frozen()', ->
       strategy.add(7)
-      expect(strategy.is_frozen(7).toBe(false)
+      expect(strategy.is_frozen(7)).toBe(false)
       strategy.freeze(7)
-      expect(strategy.is_frozen(7).toBe(true)
+      expect(strategy.is_frozen(7)).toBe(true)
       strategy.thaw(7)
-      expect(strategy.is_frozen(7).toBe(false)
+      expect(strategy.is_frozen(7)).toBe(false)
