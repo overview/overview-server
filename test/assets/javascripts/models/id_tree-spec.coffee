@@ -195,11 +195,16 @@ describe 'models/id_tree', ->
         expect(args).toEqual([[6, 7], [5, 4, 2]])
 
       it 'should notify :edit after an edit', ->
-        called = false
-        id_tree.observe('edit', () -> called = true)
+        obj = undefined
+        id_tree.observe('edit', (o) -> obj = o)
         id_tree.edit (editable) ->
           editable.add(6, [7, 8])
-        expect(called).toBeTruthy()
+        expect(obj).toEqual({
+          add: [6],
+          remove: [],
+          remove_undefined: [],
+          root: undefined,
+        })
 
       it 'should not notify :edit if nothing has changed', ->
         called = false
