@@ -21,7 +21,7 @@ import org.joda.time.{DateTime,DateTimeZone}
 import models.LogEntry
 
 class LogEntryControllerSpec extends Specification {
-  Ebean.getServer(null).getAdminLogging().setLogLevel(LogLevel.SQL)
+//  Ebean.getServer(null).getAdminLogging().setLogLevel(LogLevel.SQL) // Can't do this outside the FakeApplication
 
   trait DbContext extends Around {
     def around[T <% Result](t: =>T) = {
