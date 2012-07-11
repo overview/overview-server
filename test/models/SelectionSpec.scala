@@ -1,5 +1,8 @@
 package models
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
 import scala.collection.JavaConversions._
 
 import com.avaje.ebean.Ebean
@@ -11,22 +14,21 @@ class SelectionSpec extends Specification {
   "Selections " should {
     
       trait DbContext extends BeforeAfter {
-
+    	
+        val application: FakeApplication = FakeApplication()
+        
 		def before = { 
+    	  start(application)
 		  Ebean.beginTransaction
-		  clearDatabase
 		  createTree
 		}
-        def after = Ebean.endTransaction
+        
+        def after = {
+          Ebean.endTransaction
+          stop()
+        }
       }
 
-      def clearDatabase() {
-        Ebean.createSqlUpdate("TRUNCATE document_set CASCADE").execute()
-        // The following will handle inconsistencies, where the above didn't propagate
-        Ebean.createSqlUpdate("TRUNCATE tree CASCADE").execute()
-        Ebean.createSqlUpdate("TRUNCATE node CASCADE").execute()
-        Ebean.createSqlUpdate("TRUNCATE document CASCADE").execute()
-      }
       
       def createTree() {
        	val documentSet = new DocumentSet()

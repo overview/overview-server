@@ -1,15 +1,27 @@
 package models
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
 import com.avaje.ebean.Ebean
 import org.specs2.mutable._
+import play.api.test.FakeApplication
 
 class PartiallyLoadedNodeSpec extends Specification {
 	
   "A PartiallyLoadedNode" should {
     trait DbContext extends BeforeAfter {
-      def before = Ebean.beginTransaction
+      
+      def before = {
+        val application = FakeApplication();
+       
+        start(application)
+        Ebean.beginTransaction
+      }
             
-      def after = Ebean.endTransaction
+      def after = {
+        Ebean.endTransaction
+        stop()
+      }
     }
 
     "return Node description" in new DbContext {

@@ -1,5 +1,8 @@
 package views.json.Tree
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
 import scala.collection.JavaConversions._
 
 import com.avaje.ebean.Ebean
@@ -21,10 +24,16 @@ object JsonHelpersSpec extends Specification {
 
   trait DbContext extends BeforeAfter {
     def before = {
+      val application = FakeApplication()
+      start(application)
+      
       Ebean.beginTransaction()
       clearDatabase()
     }
-    def after = Ebean.rollbackTransaction
+    def after = {
+     stop()
+     Ebean.rollbackTransaction()
+    }
   }
 
   "rootNodeToJsValue" should {

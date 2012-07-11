@@ -1,5 +1,8 @@
 package controllers
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
 import java.sql.Connection
 
 import org.specs2.mutable._
@@ -22,6 +25,8 @@ class LogEntryControllerSpec extends Specification {
 
   trait DbContext extends Around {
     def around[T <% Result](t: =>T) = {
+      val application = FakeApplication()
+      start(application)
       Ebean.beginTransaction()
 
       var result: Result = null
@@ -35,6 +40,7 @@ class LogEntryControllerSpec extends Specification {
         result = t
       } finally {
         Ebean.rollbackTransaction()
+        stop()
       }
 
       result // This will only be null if our try block is broken
