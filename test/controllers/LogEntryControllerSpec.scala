@@ -21,29 +21,13 @@ import org.joda.time.{DateTime,DateTimeZone}
 import models.LogEntry
 
 class LogEntryControllerSpec extends Specification {
-//  Ebean.getServer(null).getAdminLogging().setLogLevel(LogLevel.SQL) // Can't do this outside the FakeApplication
+  import helpers.DbContext
 
-  trait DbContext extends Around {
-    def around[T <% Result](t: =>T) = {
-      val application = FakeApplication()
-      start(application)
-      Ebean.beginTransaction()
-
-      var result: Result = null
-
-      try {
-        Ebean.createSqlUpdate("TRUNCATE document_set CASCADE").execute()
+  trait OurDbContext extends DbContext {
+    override def before = {
+        super.before
         Ebean.createSqlUpdate("INSERT INTO document_set (id, query) VALUES (1, 'foo')").execute()
         Ebean.createSqlUpdate("INSERT INTO document_set (id, query) VALUES (2, 'bar')").execute()
-        Ebean.createSqlUpdate("TRUNCATE log_entry CASCADE").execute()
-
-        result = t
-      } finally {
-        Ebean.rollbackTransaction()
-        stop()
-      }
-
-      result // This will only be null if our try block is broken
     }
   }
 
@@ -65,27 +49,27 @@ class LogEntryControllerSpec extends Specification {
       "details" -> JsString("details")
     ))))
 
-    "return a 404 error when given an invalid DocumentSet" in new DbContext {
+    "return a 404 error when given an invalid DocumentSet" in new OurDbContext {
       val result = jsonToResponse(9999, JsArray())
       status(result).must(equalTo(NOT_FOUND))
     }
 
-    "do nothing with empty JSON array" in new DbContext {
+    "do nothing with empty JSON array" in new OurDbContext {
       val result = jsonToResponse(1, JsArray())
       status(result).must(equalTo(OK))
     }
 
-    "return a 400 error when not given a JSON array" in new DbContext {
+    "return a 400 error when not given a JSON array" in new OurDbContext {
       val result = jsonToResponse(1, JsString("foo"))
       status(result).must(equalTo(BAD_REQUEST))
     }
 
-    "return a 400 error when a JSON array element isn't a JSON object" in new DbContext {
+    "return a 400 error when a JSON array element isn't a JSON object" in new OurDbContext {
       val result = jsonToResponse(1, JsArray(Seq(JsString("foo"))))
       status(result).must(equalTo(BAD_REQUEST))
     }
 
-    "return a 400 error when date isn't ISO-8601" in new DbContext {
+    "return a 400 error when date isn't ISO-8601" in new OurDbContext {
       val result = jsonToResponse(1, JsArray(Seq(JsObject(Seq(
         "component" -> JsString("foo"),
         "action" -> JsString("bar"),
@@ -94,7 +78,7 @@ class LogEntryControllerSpec extends Specification {
       status(result).must(equalTo(BAD_REQUEST)) // There's no "T"
     }
 
-    "return a 400 error when component isn't specified" in new DbContext {
+    "return a 400 error when component isn't specified" in new OurDbContext {
       val result = jsonToResponse(1, JsArray(Seq(JsObject(Seq(
         "action" -> JsString("bar"),
         "date" -> JsString("2012-07-03T11:51:03.320-04:00")
@@ -102,7 +86,7 @@ class LogEntryControllerSpec extends Specification {
       status(result).must(equalTo(BAD_REQUEST))
     }
 
-    "return a 400 error when action isn't specified" in new DbContext {
+    "return a 400 error when action isn't specified" in new OurDbContext {
       val result = jsonToResponse(1, JsArray(Seq(JsObject(Seq(
         "component" -> JsString("foo"),
         "date" -> JsString("2012-07-03T11:51:03.320-04:00")
@@ -110,7 +94,7 @@ class LogEntryControllerSpec extends Specification {
       status(result).must(equalTo(BAD_REQUEST))
     }
 
-    "not crash if another (not details) property is specified" in new DbContext {
+    "not crash if another (not details) property is specified" in new OurDbContext {
       val result = jsonToResponse(1, JsArray(Seq(JsObject(Seq(
         "component" -> JsString("foo"),
         "action" -> JsString("bar"),
@@ -119,12 +103,12 @@ class LogEntryControllerSpec extends Specification {
       )))))
     }
 
-    "return OK with valid JSON" in new DbContext {
+    "return OK with valid JSON" in new OurDbContext {
       val result = jsonToResponse(1, validJson)
       status(result).must(equalTo(OK))
     }
 
-    "update the database with valid JSON" in new DbContext {
+    "update the database with valid JSON" in new OurDbContext {
       val result = jsonToResponse(1, validJson)
       val logEntry = Ebean.find(classOf[LogEntry]).findUnique()
       logEntry.component.must(equalTo("foo"))
@@ -133,13 +117,13 @@ class LogEntryControllerSpec extends Specification {
       logEntry.details.must(equalTo("details"))
     }
 
-    "set the right DocumentSet on the LogEntry" in new DbContext {
+    "set the right DocumentSet on the LogEntry" in new OurDbContext {
       val result = jsonToResponse(1, validJson)
       val logEntry = Ebean.find(classOf[LogEntry]).findUnique()
       logEntry.documentSet.id.must(equalTo(1))
     }
 
-    "add multiple rows to the database when multiple entries are given" in new DbContext {
+    "add multiple rows to the database when multiple entries are given" in new OurDbContext {
       val json = validJson ++ JsArray(Seq(JsObject(Seq(
         "component" -> JsString("foo2"),
         "action" -> JsString("bar2"),
@@ -151,7 +135,7 @@ class LogEntryControllerSpec extends Specification {
       Ebean.find(classOf[LogEntry]).findRowCount.must(equalTo(2))
     }
 
-    "not add any rows to the database when the first row is valid but subsequent ones are invalid" in new DbContext {
+    "not add any rows to the database when the first row is valid but subsequent ones are invalid" in new OurDbContext {
       val json = validJson ++ JsArray(Seq(JsObject(Seq(
         "component" -> JsString("foo"),
         "action" -> JsString("bar"),
@@ -180,46 +164,46 @@ class LogEntryControllerSpec extends Specification {
       update.execute()
     }
 
-    "return 404 when there is no DocumentSet" in new DbContext {
+    "return 404 when there is no DocumentSet" in new OurDbContext {
       val result = getResult(9999)
       status(result).must(equalTo(NOT_FOUND))
     }
 
-    "return 200 when there is a DocumentSet" in new DbContext {
+    "return 200 when there is a DocumentSet" in new OurDbContext {
       val result = getResult(1)
       status(result).must(equalTo(OK))
     }
 
-    "return HTML data by default" in new DbContext {
+    "return HTML data by default" in new OurDbContext {
       val result = getResult(1, "")
       contentType(result).must(beSome("text/html"))
     }
 
-    "return CSV data when called with CSV format" in new DbContext {
+    "return CSV data when called with CSV format" in new OurDbContext {
       val result = getResult(1, ".csv")
       contentType(result).must(beSome("text/csv"))
     }
 
-    "return CSV data that quotes a quotation mark" in new DbContext {
+    "return CSV data that quotes a quotation mark" in new OurDbContext {
       // opencsv ALWAYS writes quotes, and its escape character is another quote.
       createLogEntry(1, "2012-07-04 13:20:46", "de't\"ails")
       val result = getResult(1, ".csv")
       contentAsString(result).must(contain("\"de't\"\"ails\""))
     }
 
-    "return CSV dates in ISO8601 format" in new DbContext {
+    "return CSV dates in ISO8601 format" in new OurDbContext {
       createLogEntry(1, "2012-07-04 13:20:46", "de't\"ails")
       val result = getResult(1, ".csv")
       contentAsString(result).must(contain("2012-07-04T13:20:46.000")) // ignore timezone--it cancels out
     }
 
-    "ignore log entries on another DocumentSet" in new DbContext {
+    "ignore log entries on another DocumentSet" in new OurDbContext {
       createLogEntry(1, "2012-07-04 13:20:46", "de't\"ails")
       val result = getResult(2, ".csv")
       contentAsString(result).must(not(contain("2012-07-04")))
     }
 
-    "order in reverse chronological order" in new DbContext {
+    "order in reverse chronological order" in new OurDbContext {
       createLogEntry(1, "2012-07-04 13:20:46", "de't\"ails")
       createLogEntry(1, "2012-07-05 13:20:46", "de't\"ails 2")
       val result = getResult(1, ".csv")
@@ -227,7 +211,7 @@ class LogEntryControllerSpec extends Specification {
       s.indexOf("2012-07-05").must(be_<(s.indexOf("2012-07-04")))
     }
 
-    "show log entries in the HTML" in new DbContext {
+    "show log entries in the HTML" in new OurDbContext {
       createLogEntry(1, "2012-07-04 13:20:46", "de't\"ails")
       val result = getResult(1, "")
       contentAsString(result).must(contain("de't"))
