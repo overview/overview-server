@@ -21,6 +21,7 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     val asyncHttpClient = new AsyncHttpClient()
     val f = asyncHttpClient.prepareGet(documentCloudQuery).execute()
     val response = f.get().getResponseBody()      // blocks until result comes back. needs async() so it doesn't tie up thread
+    asyncHttpClient.close()
     
     val result = parse[DCSearchResult](response)
     
@@ -51,7 +52,9 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
       // Get the document text
       val asyncHttpClient = new AsyncHttpClient()
       val f = asyncHttpClient.prepareGet(document.textUrl).execute()
-      val text = f.get().getResponseBody()    
+      val text = f.get().getResponseBody()
+      asyncHttpClient.close()
+
       //println(text)
 
       // Turn into tokens
