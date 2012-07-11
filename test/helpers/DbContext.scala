@@ -17,7 +17,7 @@ trait DbContext extends BeforeAfter {
   }
             
   def after : Any = {
-    Ebean.endTransaction
+    Ebean.rollbackTransaction
     stop()
   }
     
