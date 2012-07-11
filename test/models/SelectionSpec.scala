@@ -9,26 +9,15 @@ import com.avaje.ebean.Ebean
 
 import org.specs2.mutable.{Specification,BeforeAfter}
 
+import helpers.DbContext
+
 class SelectionSpec extends Specification {
   
   "Selections " should {
-    
-      trait DbContext extends BeforeAfter {
-    	
-        val application: FakeApplication = FakeApplication()
-        
-		def before = { 
-    	  start(application)
-		  Ebean.beginTransaction
-		  createTree
-		}
-        
-        def after = {
-          Ebean.endTransaction
-          stop()
-        }
-      }
 
+    trait TreeCreatedContext extends DbContext {
+        override def before = {  super.before ; createTree() }
+      }
       
       def createTree() {
        	val documentSet = new DocumentSet()
@@ -50,7 +39,7 @@ class SelectionSpec extends Specification {
   
       def createTitle(n: Int) = "document[" + n + "]"
 	  
-    "return all documents in tree, with no other constraints" in new DbContext {
+    "return all documents in tree, with no other constraints" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
       
       val selection =  new Selection(tree)
@@ -60,7 +49,7 @@ class SelectionSpec extends Specification {
       allDocuments.size must beEqualTo(90)
     }
     
-    "return all documents in tree, in sorted order" in new DbContext {
+    "return all documents in tree, in sorted order" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
       
       val selection =  new Selection(tree)
@@ -72,7 +61,7 @@ class SelectionSpec extends Specification {
       }
     }
     
-    "return a slice of documents in the tree" in new DbContext {
+    "return a slice of documents in the tree" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
       
       val selection =  new Selection(tree)
@@ -93,7 +82,7 @@ class SelectionSpec extends Specification {
       
     }
     
-    "return only documents under a node" in new DbContext {
+    "return only documents under a node" in new TreeCreatedContext {
       
       addExtraChildrenToTree()
       val tree = Tree.find.all().get(0)
@@ -114,7 +103,7 @@ class SelectionSpec extends Specification {
     }
     
       
-    "return document and node intersection in sorted order" in new DbContext {
+    "return document and node intersection in sorted order" in new TreeCreatedContext {
       addExtraChildrenToTree()
       val tree = Tree.find.all().get(0)
       val childNodes = tree.getRoot.getChildren
