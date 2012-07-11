@@ -9,22 +9,17 @@ import org.junit.Test;
 import play.test.FakeApplication;
 
 import com.avaje.ebean.Ebean;
-import com.avaje.ebean.TxIsolation;
 
 import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
 
-public class NodeTest {
+public class NodeTest extends DatabaseTest {
 
 	private Node root;
 	private FakeApplication application;
 	
 	@Before
 	public void createTree() {
-		application = fakeApplication();
-		start(application);
-		Ebean.beginTransaction();
-		
 		root = new Node();
 		
 		root.description = "description";
@@ -43,12 +38,6 @@ public class NodeTest {
 		root.save();
 	}
 	
-	@After
-	public void rollBackTransaction() {
-	
-	  Ebean.endTransaction();
-	  stop(application);
-	}
 	
 	
 	@Test
