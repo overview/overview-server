@@ -1,45 +1,41 @@
-
-import play._
-import play.libs.WS
-import play.libs.F.Promise
-import play.libs.F.Function;
-import play.libs.Json
+package clustering 
 
 import models._
-
-import scala.collection.JavaConversions._  // for iteration through documentReferences JsonNode -- and other things here?
-
-
+import scala.collection.JavaConversions._
+import com.ning.http.client.AsyncHttpClient
+import com.codahale.jerkson.Json._
+  
+// Define the bits of the DocumentCloud JSON response that we're interested in. 
+// This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
+case class DCDocumentResources(text:String)
+case class DCDocument(title: String, canonical_url:String, resources:clustering.DCDocumentResources)
+case class DCSearchResult(documents: Seq[clustering.DCDocument])
 
 class DocumentSetIndexer(var documentSet:DocumentSet) {
 
   // Query documentCloud and create one document object for each doc returned by the query
   def createDocuments() = {
     val queryString = documentSet.query
-    val documentCloudQuery = "http://www.documentcloud.org/api/search.json"
+    val documentCloudQuery = "http://www.documentcloud.org/api/search.json?q=" + queryString
+      
+    val asyncHttpClient = new AsyncHttpClient()
+    val f = asyncHttpClient.prepareGet(documentCloudQuery).execute()
+    val response = f.get().getResponseBody()      // blocks until result comes back. needs async() so it doesn't tie up thread
     
-    // Query DocumentCloud for all docs matching query string
-    val DCcall = WS.url(documentCloudQuery).setQueryParameter("q", queryString).get();
-    val response = DCcall.get();  // blocks until result comes back. but does it tie up the thread? not sure, async() may be better
-  
+    val result = parse[DCSearchResult](response)
+    
     // Iterate over returned docs, each one described by a block of JSON
-    val documentReferences  = response.asJson().get("documents")
-    for (document <- documentReferences) { 
+    for (document <- result.documents) { 
       
-      var title = document.get("title").toString()
-      title = title.replace("\"", "")
-      
-      var canonicalUrl = document.get("canonical_url").toString()
-  
-      canonicalUrl = canonicalUrl.replace("\"", "")
-      var textUrl = document.get("resources").get("text").toString()
-      textUrl = textUrl.substring(1,textUrl.length-1) // remove quotes
+      var title = document.title      
+      var canonicalUrl = document.canonical_url
+      var textUrl = document.resources.text
                       
       val newDoc = new Document(title, textUrl, canonicalUrl)
       documentSet.addDocument(newDoc)
       newDoc.save()
     }
-   
+  
     documentSet.update();     
   }
   
@@ -52,8 +48,10 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     
     for (document <- documentSet.documents) {
 
-      // Get the doument text
-      val text = WS.url(document.textUrl).get().get().getBody()
+      // Get the document text
+      val asyncHttpClient = new AsyncHttpClient()
+      val f = asyncHttpClient.prepareGet(document.textUrl).execute()
+      val text = f.get().getResponseBody()    
       //println(text)
 
       // Turn into tokens

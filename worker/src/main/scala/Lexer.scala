@@ -8,7 +8,7 @@
  * Created by Jonathan Stray, June 2012
  * 
  */
-
+package clustering
 
 import scala.util.matching.Regex
 import scala.io.Source
