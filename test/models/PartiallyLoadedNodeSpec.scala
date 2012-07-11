@@ -11,20 +11,6 @@ import helpers.DbContext
 class PartiallyLoadedNodeSpec extends Specification {
 	
   "A PartiallyLoadedNode" should {
-//    trait DbContext extends BeforeAfter {
-//      
-//      def before = {
-//        val application = FakeApplication();
-//       
-//        start(application)
-//        Ebean.beginTransaction
-//      }
-//            
-//      def after = {
-//        Ebean.endTransaction
-//        stop()
-//      }
-//    }
 
     "return Node description" in new DbContext {
       val node = new Node()
