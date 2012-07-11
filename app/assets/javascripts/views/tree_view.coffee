@@ -41,7 +41,6 @@ class TreeView
       $canvas = $(@canvas)
       x = e.pageX - offset.left
       y = e.pageY - offset.top
-      console.log("Event:", e)
       nodeid = this._pixel_to_nodeid(x, y)
       this._notify('click', nodeid)
 
@@ -53,18 +52,19 @@ class TreeView
     doc_index = Math.floor(x / $canvas.width() * @tree.nodes[@tree.id_tree.root].doclist.n)
 
     levels_to_go = Math.floor(y / $canvas.height() * @tree.height)
-    console.log("Click on pixel #{y} of #{$canvas.height()}")
 
+    docs_to_our_left = 0
     last_node_id = @tree.id_tree.root
     node_ids_at_this_level = @tree.id_tree.children[@tree.id_tree.root]
 
     while levels_to_go > 0 && node_ids_at_this_level?.length
-      docs_seen_at_this_level = 0
-
       for last_node_id in node_ids_at_this_level
         docs_in_this_node = this._nodeid_to_n_documents(last_node_id)
-        docs_seen_at_this_level += docs_in_this_node
-        break if docs_seen_at_this_level > doc_index
+
+        if docs_in_this_node + docs_to_our_left <= doc_index
+          docs_to_our_left += docs_in_this_node
+        else
+          break
 
       levels_to_go -= 1
       node_ids_at_this_level = @tree.id_tree.children[last_node_id]?.slice()
