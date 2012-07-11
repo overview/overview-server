@@ -6,7 +6,7 @@ DEFAULT_OPTIONS = {
     node: '#ccccdd',
     node_unloaded: '#ddddff',
     node_selected: '#bbbbbb',
-    line: '#555555',
+    line: '#888888',
   },
   leaf_width: 3, # relative units
   leaf_horizontal_padding: 1, # on each side
@@ -20,7 +20,7 @@ _ = window._
 class TreeView
   observable(this)
 
-  constructor: (@div, @tree, options={}) ->
+  constructor: (@div, @tree, @selection, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, options, DEFAULT_OPTIONS, { color: options_color })
 
@@ -33,33 +33,38 @@ class TreeView
     this._redraw()
 
   _attach: () ->
-    @tree.id_tree.observe('edit', => this._redraw())
+    @tree.id_tree.observe('edit', this._redraw.bind(this))
+    @selection.observe(this._redraw.bind(this))
 
     $(@canvas).on 'click', (e) =>
-      x = e.pageX - @canvas.offsetLeft
-      y = e.pageY - @canvas.offsetTop
+      offset = $(@canvas).offset()
+      $canvas = $(@canvas)
+      x = e.pageX - offset.left
+      y = e.pageY - offset.top
       nodeid = this._pixel_to_nodeid(x, y)
       this._notify('click', nodeid)
 
   _pixel_to_nodeid: (x, y) ->
+    return undefined if @tree.id_tree.root == -1
+
     $canvas = $(@canvas)
 
     doc_index = Math.floor(x / $canvas.width() * @tree.nodes[@tree.id_tree.root].doclist.n)
 
-    levels_to_go = Math.floor(y / $canvas.height() * @tree.height) + 1
-    last_node_id = undefined
+    levels_to_go = Math.floor(y / $canvas.height() * @tree.height)
 
-    node_ids_at_this_level = [ @tree.id_tree.root ]
+    docs_to_our_left = 0
+    last_node_id = @tree.id_tree.root
+    node_ids_at_this_level = @tree.id_tree.children[@tree.id_tree.root]
+
     while levels_to_go > 0 && node_ids_at_this_level?.length
-      docs_seen_at_this_level = 0
+      for last_node_id in node_ids_at_this_level
+        docs_in_this_node = this._nodeid_to_n_documents(last_node_id)
 
-      while node_ids_at_this_level.length > 0
-        last_node_id = node_ids_at_this_level.shift()
-        node = @tree.nodes[last_node_id]
-        docs_in_this_node = node?.doclist?.n || this._nodeid_to_n_documents(last_node_id)
-        docs_seen_at_this_level += docs_in_this_node
-
-        break if docs_seen_at_this_level > doc_index
+        if docs_in_this_node + docs_to_our_left <= doc_index
+          docs_to_our_left += docs_in_this_node
+        else
+          break
 
       levels_to_go -= 1
       node_ids_at_this_level = @tree.id_tree.children[last_node_id]?.slice()
@@ -92,7 +97,6 @@ class TreeView
     ctx.strokeRect(x, y, w, h)
 
   _draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
-    ctx.save()
     ctx.fillStyle = @options.color.node_unloaded
 
     ctx.beginPath()
@@ -104,8 +108,6 @@ class TreeView
     ctx.fill()
     ctx.stroke()
 
-    ctx.restore()
-
   _draw_node: (nodeid, ctx, spxx, spxy) ->
     is_loaded = @tree.nodes[nodeid]?
     n_documents = this._nodeid_to_n_documents(nodeid)
@@ -114,6 +116,16 @@ class TreeView
     padding_x = n_documents * @options.leaf_horizontal_padding * spxx
     height = @options.node_height * spxy
     padding_y = @options.node_vertical_padding * spxy
+
+    if @selection.nodes.indexOf(nodeid) != -1
+      ctx.lineWidth = 3
+      ctx.fillStyle = @options.color.node_selected
+    else
+      ctx.lineWidth = 1
+      if is_loaded
+        ctx.fillStyle = @options.color.node
+      else
+        ctx.fillStyle = @options.color.node_unloaded
 
     if !is_loaded
       this._draw_unloaded_node(nodeid, ctx, padding_x, padding_y, width, height)
@@ -131,6 +143,7 @@ class TreeView
 
         child_x = width2 * 0.5
 
+        ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(node_x, -padding_y)
         ctx.bezierCurveTo(node_x, 0, child_x, 0, child_x, padding_y)
@@ -164,9 +177,6 @@ class TreeView
 
     spxx = width / spx_width
     spxy = height / spx_height
-
-    ctx.fillStyle = @options.color.node
-    ctx.lineWidth = 1
 
     this._draw_node(@tree.id_tree.root, ctx, spxx, spxy)
 

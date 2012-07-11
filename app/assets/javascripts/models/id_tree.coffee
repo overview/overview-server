@@ -67,7 +67,7 @@ class IdTree
       add: [],
       remove: [],
       remove_undefined: [],
-      root: false,
+      root: undefined,
     }
 
   has: (id) ->
@@ -84,12 +84,17 @@ class IdTree
     this._notify('remove-undefined', @_edits.remove_undefined) if @_edits.remove_undefined.length
     this._notify('remove', @_edits.remove) if @_edits.remove.length
 
-    if @_edits.add.length || @_edits.remove_undefined.length || @_edits.remove.length
-      this._notify('edit')
+    if @_edits.add.length || @_edits.remove_undefined.length || @_edits.remove.length || @_edits.root
+      this._notify('edit', {
+        add: @_edits.add,
+        root: @_edits.root,
+        remove_undefined: @_edits.remove_undefined,
+        remove: @_edits.remove
+      })
 
     @_edits.add = []
     @_edits.remove = []
-    @_edits.root = false
+    @_edits.root = undefined
 
   _add: (id, children) ->
     if @root == -1

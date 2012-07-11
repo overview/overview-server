@@ -11,13 +11,19 @@ object ApplicationBuild extends Build {
     val appName         = "overview-server"
     val appVersion      = "1.0-SNAPSHOT"
 
+    val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
+      
     val appDependencies = Seq(
         "postgresql" % "postgresql" % "9.1-901.jdbc4",
         "net.sf.opencsv" % "opencsv" % "2.3"
     )
 
     
-    val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA)
+    val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA).settings(
+      testOptions in Test += Tests.Setup( () => 
+      System.setProperty("db.default.url", testDatabaseUrl ))
+    )
+    
     
     val worker = Project("overview-worker", file("worker"), settings =
       Defaults.defaultSettings ++ 
@@ -27,7 +33,8 @@ object ApplicationBuild extends Build {
          						 
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = JAVA).settings(
-      // Add your own project settings here      
+      testOptions in Test += Tests.Setup( () => 
+      System.setProperty("db.default.url", testDatabaseUrl))  
     ).dependsOn(common, worker).aggregate(common,worker)
 
 }

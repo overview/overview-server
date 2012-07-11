@@ -1,68 +1,55 @@
 package models
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
 import scala.collection.JavaConversions._
 
 import com.avaje.ebean.Ebean
 
 import org.specs2.mutable.{Specification,BeforeAfter}
 
+import helpers.DbContext
+
 class SelectionSpec extends Specification {
   
   "Selections " should {
-    
-      trait DbContext extends BeforeAfter {
 
-		def before = { 
-		  Ebean.beginTransaction
-		  clearDatabase
-		  createTree
-		}
-        def after = Ebean.endTransaction
-      }
-
-      def clearDatabase() {
-        Ebean.createSqlUpdate("TRUNCATE document_set CASCADE").execute()
-        // The following will handle inconsistencies, where the above didn't propagate
-        Ebean.createSqlUpdate("TRUNCATE tree CASCADE").execute()
-        Ebean.createSqlUpdate("TRUNCATE node CASCADE").execute()
-        Ebean.createSqlUpdate("TRUNCATE document CASCADE").execute()
+    trait TreeCreatedContext extends DbContext {
+        override def before = {  super.before ; createTree() }
+    }
+      
+    def createTree() {
+      val documentSet = new DocumentSet()
+      val node = new Node()
+      
+      documentSet.setQuery("foo")
+      
+      for (i <- 10 to 99) {
+    	val document = new Document(createTitle(i), "texturl", "viewurl")
+    	documentSet.addDocument(document)
+    	node.addDocument(document)
       }
       
-      def createTree() {
-       	val documentSet = new DocumentSet()
-    	val node = new Node()
-      
-    	documentSet.setQuery("foo")
-      
-    	for (i <- 10 to 99) {
-    	  val document = new Document(createTitle(i), "texturl", "viewurl")
-    	  documentSet.addDocument(document)
-    	  node.addDocument(document)
-    	}
-      
-    	val tree = new Tree()
-    	tree.setRoot(node)
+      val tree = new Tree()
+      tree.setRoot(node)
         
-    	tree.save()
-      }
+      tree.save()
+    }
   
-      def createTitle(n: Int) = "document[" + n + "]"
+    def createTitle(n: Int) = "document[" + n + "]"
 	  
-    "return all documents in tree, with no other constraints" in new DbContext {
+    "return all documents in tree, with no other constraints" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
-      
       val selection =  new Selection(tree)
-
-        
       val allDocuments = selection.findDocumentsSlice(0, 91)
+      
       allDocuments.size must beEqualTo(90)
     }
     
-    "return all documents in tree, in sorted order" in new DbContext {
+    "return all documents in tree, in sorted order" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
-      
       val selection =  new Selection(tree)
-
       val allDocuments = selection.findDocumentsSlice(0, 91).toSeq
 
       for (i <- 10 to 99) {
@@ -70,9 +57,8 @@ class SelectionSpec extends Specification {
       }
     }
     
-    "return a slice of documents in the tree" in new DbContext {
+    "return a slice of documents in the tree" in new TreeCreatedContext {
       val tree = Tree.find.all().get(0)
-      
       val selection =  new Selection(tree)
 
       val start = 15;
@@ -91,8 +77,7 @@ class SelectionSpec extends Specification {
       
     }
     
-    "return only documents under a node" in new DbContext {
-      
+    "return only documents under a node" in new TreeCreatedContext {
       addExtraChildrenToTree()
       val tree = Tree.find.all().get(0)
       val childNodes = tree.getRoot.getChildren
@@ -112,7 +97,7 @@ class SelectionSpec extends Specification {
     }
     
       
-    "return document and node intersection in sorted order" in new DbContext {
+    "return document and node intersection in sorted order" in new TreeCreatedContext {
       addExtraChildrenToTree()
       val tree = Tree.find.all().get(0)
       val childNodes = tree.getRoot.getChildren
@@ -135,10 +120,7 @@ class SelectionSpec extends Specification {
         sd.getTitle must beEqualTo(cd.getTitle)
       }
     
-  }
-  
-
-    
+    }
   }
 
   def addExtraChildrenToTree() = {

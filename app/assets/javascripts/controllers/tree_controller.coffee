@@ -2,7 +2,7 @@ TreeView = require('views').TreeView
 log = require('globals').logger.for_component('tree')
 
 tree_controller = (div, on_demand_tree, state) ->
-  view = new TreeView(div, on_demand_tree)
+  view = new TreeView(div, on_demand_tree, state.selection)
 
   view.observe 'click', (nodeid) ->
     log('clicked node', "#{nodeid}")
