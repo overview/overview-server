@@ -9,60 +9,47 @@ import java.util.Set;
 
 import org.junit.Test;
 
-public class DocumentTest {
+import com.avaje.ebean.Ebean;
+
+public class DocumentTest extends DatabaseTest {
 
 	@Test
 	public void saveDocument() {
-	  running(fakeApplication(inMemoryDatabase()), new Runnable() {
-		public void run() {
-          Document document = new Document("title", "http://text", "http://view");
-          document.save();
+	  Document document = new Document("title", "http://text", "http://view");
+	  document.save();
           
-          Document storedDocument = Document.find.byId(document.id);
+	  Document storedDocument = Document.find.byId(document.id);
 				
-          assertThat(storedDocument.title).isEqualTo("title");
-	    }
-	  });
+	  assertThat(storedDocument.title).isEqualTo("title");
 	}
 
   // TODO: Remove or fix this test when we start dealing with tags, since it duplicates 
   //       tests in DocumentSet  
   @Test
   public void createTags() {
-    running(fakeApplication(inMemoryDatabase()), new Runnable() {
-      public void run() {
+	Document document = new Document("title", "http://text", "http://view");
 
-        Document document = new Document("title", "http://text", "http://view");
+	DocumentSet documentSet = new DocumentSet();
+	documentSet.addDocument(document);
+	Set<Tag> tags = documentSet.findOrCreateTags("  foo , bar");
 
-        DocumentSet documentSet = new DocumentSet();
-        documentSet.addDocument(document);
-        Set<Tag> tags = documentSet.findOrCreateTags("  foo , bar");
+	document.addTags(tags);
 
-        document.addTags(tags);
+	documentSet.save();
 
-        documentSet.save();
+	assertThat(document.tags).onProperty("name")
+	                         .contains("foo")
+	                         .contains("bar");
 
+	documentSet.refresh();
+	assertThat(documentSet.tags.size()).isEqualTo(2);
 
-
-        assertThat(document.tags).onProperty("name")
-        						 .contains("foo")
-        						 .contains("bar");
-
-
+	assertThat(documentSet.tags).onProperty("name")
+       							.contains("foo")
+       							.contains("bar");
         
-        
-        documentSet.refresh();
-        assertThat(documentSet.tags.size()).isEqualTo(2);
-
-        assertThat(documentSet.tags).onProperty("name")
-        							.contains("foo")
-        							.contains("bar");
-        
-
-        assertThat(Tag.find.all()).onProperty("name")
-        						  .contains("foo")
-        						  .contains("bar");
-      }
-    });
+	assertThat(Tag.find.all()).onProperty("name")
+       						  .contains("foo")
+       						  .contains("bar");
   }
 }

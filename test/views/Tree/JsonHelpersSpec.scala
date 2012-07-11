@@ -1,5 +1,8 @@
 package views.json.Tree
 
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
 import scala.collection.JavaConversions._
 
 import com.avaje.ebean.Ebean
@@ -9,24 +12,11 @@ import org.specs2.mutable._
 import play.api.libs.json.Json._
 
 import models.{Document, DocumentSet, Node, Tree}
+import helpers.DbContext
 
 object JsonHelpersSpec extends Specification {
-  def clearDatabase() = {
-    Ebean.createSqlUpdate("TRUNCATE document_set CASCADE").execute()
-    // The following will handle inconsistencies, where the above didn't propagate
-    Ebean.createSqlUpdate("TRUNCATE tree CASCADE").execute()
-    Ebean.createSqlUpdate("TRUNCATE node CASCADE").execute()
-    Ebean.createSqlUpdate("TRUNCATE document CASCADE").execute()
-  }
 
-  trait DbContext extends BeforeAfter {
-    def before = {
-      Ebean.beginTransaction()
-      clearDatabase()
-    }
-    def after = Ebean.rollbackTransaction
-  }
-
+  
   "rootNodeToJsValue" should {
     "contain the nodes" in new DbContext {
     	val tree = new Tree()
