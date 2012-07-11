@@ -37,29 +37,33 @@ class TreeView
     @selection.observe(this._redraw.bind(this))
 
     $(@canvas).on 'click', (e) =>
-      x = e.pageX - @canvas.offsetLeft
-      y = e.pageY - @canvas.offsetTop
+      offset = $(@canvas).offset()
+      $canvas = $(@canvas)
+      x = e.pageX - offset.left
+      y = e.pageY - offset.top
+      console.log("Event:", e)
       nodeid = this._pixel_to_nodeid(x, y)
       this._notify('click', nodeid)
 
   _pixel_to_nodeid: (x, y) ->
+    return undefined if @tree.id_tree.root == -1
+
     $canvas = $(@canvas)
 
     doc_index = Math.floor(x / $canvas.width() * @tree.nodes[@tree.id_tree.root].doclist.n)
 
-    levels_to_go = Math.floor(y / $canvas.height() * @tree.height) + 1
-    last_node_id = undefined
+    levels_to_go = Math.floor(y / $canvas.height() * @tree.height)
+    console.log("Click on pixel #{y} of #{$canvas.height()}")
 
-    node_ids_at_this_level = [ @tree.id_tree.root ]
+    last_node_id = @tree.id_tree.root
+    node_ids_at_this_level = @tree.id_tree.children[@tree.id_tree.root]
+
     while levels_to_go > 0 && node_ids_at_this_level?.length
       docs_seen_at_this_level = 0
 
-      while node_ids_at_this_level.length > 0
-        last_node_id = node_ids_at_this_level.shift()
-        node = @tree.nodes[last_node_id]
-        docs_in_this_node = node?.doclist?.n || this._nodeid_to_n_documents(last_node_id)
+      for last_node_id in node_ids_at_this_level
+        docs_in_this_node = this._nodeid_to_n_documents(last_node_id)
         docs_seen_at_this_level += docs_in_this_node
-
         break if docs_seen_at_this_level > doc_index
 
       levels_to_go -= 1
@@ -118,7 +122,7 @@ class TreeView
       ctx.fillStyle = @options.color.node_selected
     else
       ctx.lineWidth = 1
-      if @tree.nodes[nodeid]?
+      if is_loaded
         ctx.fillStyle = @options.color.node
       else
         ctx.fillStyle = @options.color.node_unloaded
@@ -130,7 +134,6 @@ class TreeView
 
       ctx.save()
       ctx.translate(0, height + 2 * padding_y)
-      ctx.lineWidth = 1
 
       node_x = padding_x + width * 0.5
 
@@ -140,6 +143,7 @@ class TreeView
 
         child_x = width2 * 0.5
 
+        ctx.lineWidth = 1
         ctx.beginPath()
         ctx.moveTo(node_x, -padding_y)
         ctx.bezierCurveTo(node_x, 0, child_x, 0, child_x, padding_y)

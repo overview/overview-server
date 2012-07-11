@@ -120,6 +120,10 @@ describe 'views/tree_view', ->
         check_pixel(50, 75, rgb_node_unloaded)
         check_pixel(99, 99, rgb_background)
 
+      it 'should trigger :click on undefined', ->
+        click_pixel(50, 50)
+        expect(events[0]).toEqual(['click', undefined])
+
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
@@ -170,3 +174,31 @@ describe 'views/tree_view', ->
       it 'should trigger :click on an unloaded node when we click below it', ->
         click_pixel(75, 75)
         expect(events[0]).toEqual(['click', 7])
+
+      it 'should select the proper level, with pixel perfection', ->
+        click_pixel(20, 0)
+        expect(events[0]).toEqual(['click', 1])
+        click_pixel(20, 30)
+        expect(events[1]).toEqual(['click', 1])
+        click_pixel(20, 34)
+        expect(events[2]).toEqual(['click', 2])
+        click_pixel(20, 66)
+        expect(events[3]).toEqual(['click', 2])
+        click_pixel(20, 67)
+        expect(events[4]).toEqual(['click', 3])
+        click_pixel(20, 99)
+        expect(events[5]).toEqual(['click', 3])
+
+      it 'should select the proper document, with pixel perfection', ->
+        click_pixel(0, 70)
+        expect(events[0]).toEqual(['click', 3])
+        click_pixel(24, 70)
+        expect(events[1]).toEqual(['click', 3])
+        click_pixel(25, 70)
+        expect(events[2]).toEqual(['click', 4])
+        click_pixel(49, 70)
+        expect(events[3]).toEqual(['click', 4])
+        click_pixel(50, 70)
+        expect(events[4]).toEqual(['click', 7])
+        click_pixel(99, 70)
+        expect(events[5]).toEqual(['click', 7])
