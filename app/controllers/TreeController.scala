@@ -37,31 +37,32 @@ object TreeController extends Controller {
 	}
 	
 	def generateTreeLevel(root: Node, documents: Seq[Document], depth: Int) = {
-      documents.foreach(d => root.addDocument(d))
+    documents.foreach(root.addDocument)
 
 	  if ((depth > 1) && (documents.size > 1)) {
-	    val numberOfChildren = Random.nextInt(scala.math.min(5, documents.size)) + 1
+	    val numberOfChildren = Random.nextInt(scala.math.min(7, documents.size)) + 1
 	    val children = generateChildren(numberOfChildren, documents, depth)
-	    children.foreach(c => root.addChild(c))
+	    children.foreach(root.addChild)
 	  }
 	}
 
 	def generateChildren(numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
-	  val siblings = Seq[Node]()
-	  if (numberOfSiblings > 0) {
+    val child = new Node()
+    child.description = "node height " + depth
+
+	  if (numberOfSiblings > 1) {
 	    val splitPoint = 
 	      if (documents.size > numberOfSiblings) Random.nextInt(documents.size - numberOfSiblings) + 1 else 1 
 	    
 	    val (childDocuments, siblingDocuments) = documents.splitAt(splitPoint)
 	    
-	    val child = new Node()
-	    child.description = "node height " + depth
 	    generateTreeLevel(child, childDocuments, depth - 1)
 	    
 	    Seq[Node](child) ++ generateChildren(numberOfSiblings - 1, siblingDocuments, depth)
 	  }
 	  else {
-		siblings
+      generateTreeLevel(child, documents, depth - 1)
+      Seq[Node](child)
 	  }
 	}
 	
