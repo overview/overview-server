@@ -6,7 +6,7 @@ DEFAULT_OPTIONS = {
     node: '#ccccdd',
     node_unloaded: '#ddddff',
     node_selected: '#bbbbbb',
-    line: '#555555',
+    line: '#888888',
   },
   leaf_width: 3, # relative units
   leaf_horizontal_padding: 1, # on each side
@@ -20,7 +20,7 @@ _ = window._
 class TreeView
   observable(this)
 
-  constructor: (@div, @tree, options={}) ->
+  constructor: (@div, @tree, @selection, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, options, DEFAULT_OPTIONS, { color: options_color })
 
@@ -33,7 +33,8 @@ class TreeView
     this._redraw()
 
   _attach: () ->
-    @tree.id_tree.observe('edit', => this._redraw())
+    @tree.id_tree.observe('edit', this._redraw.bind(this))
+    @selection.observe(this._redraw.bind(this))
 
     $(@canvas).on 'click', (e) =>
       x = e.pageX - @canvas.offsetLeft
@@ -92,7 +93,6 @@ class TreeView
     ctx.strokeRect(x, y, w, h)
 
   _draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
-    ctx.save()
     ctx.fillStyle = @options.color.node_unloaded
 
     ctx.beginPath()
@@ -104,8 +104,6 @@ class TreeView
     ctx.fill()
     ctx.stroke()
 
-    ctx.restore()
-
   _draw_node: (nodeid, ctx, spxx, spxy) ->
     is_loaded = @tree.nodes[nodeid]?
     n_documents = this._nodeid_to_n_documents(nodeid)
@@ -115,6 +113,16 @@ class TreeView
     height = @options.node_height * spxy
     padding_y = @options.node_vertical_padding * spxy
 
+    if @selection.nodes.indexOf(nodeid) != -1
+      ctx.lineWidth = 3
+      ctx.fillStyle = @options.color.node_selected
+    else
+      ctx.lineWidth = 1
+      if @tree.nodes[nodeid]?
+        ctx.fillStyle = @options.color.node
+      else
+        ctx.fillStyle = @options.color.node_unloaded
+
     if !is_loaded
       this._draw_unloaded_node(nodeid, ctx, padding_x, padding_y, width, height)
     else
@@ -122,6 +130,7 @@ class TreeView
 
       ctx.save()
       ctx.translate(0, height + 2 * padding_y)
+      ctx.lineWidth = 1
 
       node_x = padding_x + width * 0.5
 
@@ -164,9 +173,6 @@ class TreeView
 
     spxx = width / spx_width
     spxy = height / spx_height
-
-    ctx.fillStyle = @options.color.node
-    ctx.lineWidth = 1
 
     this._draw_node(@tree.id_tree.root, ctx, spxx, spxy)
 
