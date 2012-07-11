@@ -1,7 +1,8 @@
-# This isn't really a unit test: it depends upon models/on_demand_tree.coffee
+# This isn't really a unit test: it depends upon models
+TreeView = require('views/tree_view').TreeView
 
 OnDemandTree = require('models/on_demand_tree').OnDemandTree # this is easier than mocking it
-TreeView = require('views/tree_view').TreeView
+Selection = require('models/selection').Selection # this, too
 
 Event = jQuery.Event
 Deferred = jQuery.Deferred
@@ -25,18 +26,21 @@ describe 'views/tree_view', ->
   describe 'TreeView', ->
     resolver = undefined
     tree = undefined
+    selection = undefined
     view = undefined
     div = undefined
     options = undefined
     rgb_background = undefined
     rgb_node = undefined
     rgb_node_unloaded = undefined
+    rgb_node_selected = undefined
     events = undefined
 
     beforeEach ->
       resolver = new MockResolver()
       # We'll give our tree a huge cache so it won't interfere with tests
       tree = new OnDemandTree(resolver, { cache_size: 999999 })
+      selection = new Selection()
       div = $('<div style="width:100px;height:100px"></div>')[0]
       $('body').append(div)
       options = {}
@@ -58,10 +62,11 @@ describe 'views/tree_view', ->
       add_nodes_through_deferred([ { id: id, children: children, doclist: { n: n_documents } } ])
 
     create_view = () ->
-      view = new TreeView(div, tree, options)
+      view = new TreeView(div, tree, selection, options)
       rgb_background = color_to_rgb(view.options.color.background)
       rgb_node = color_to_rgb(view.options.color.node)
       rgb_node_unloaded = color_to_rgb(view.options.color.node_unloaded)
+      rgb_node_selected = color_to_rgb(view.options.color.node_selected)
 
     maybe_observe_events = () ->
       return if events?
@@ -115,6 +120,10 @@ describe 'views/tree_view', ->
         check_pixel(50, 75, rgb_node_unloaded)
         check_pixel(99, 99, rgb_background)
 
+      it 'should trigger :click on undefined', ->
+        click_pixel(50, 50)
+        expect(events[0]).toEqual(['click', undefined])
+
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
@@ -142,6 +151,13 @@ describe 'views/tree_view', ->
         click_pixel(75, 75)
         expect(events[0]).toEqual(['click', 3])
 
+      it 'should highlight the selected node', ->
+        rgb = get_pixel(25, 75)
+        expect(rgb).toEqual(rgb_node)
+        selection.update({ nodes: [2] })
+        rgb = get_pixel(25, 75)
+        expect(rgb).toEqual(rgb_node_selected)
+
     describe 'with a non-full tree', ->
       beforeEach ->
         # three-level binary tree, right-middle node isn't full
@@ -158,3 +174,31 @@ describe 'views/tree_view', ->
       it 'should trigger :click on an unloaded node when we click below it', ->
         click_pixel(75, 75)
         expect(events[0]).toEqual(['click', 7])
+
+      it 'should select the proper level, with pixel perfection', ->
+        click_pixel(20, 0)
+        expect(events[0]).toEqual(['click', 1])
+        click_pixel(20, 30)
+        expect(events[1]).toEqual(['click', 1])
+        click_pixel(20, 34)
+        expect(events[2]).toEqual(['click', 2])
+        click_pixel(20, 66)
+        expect(events[3]).toEqual(['click', 2])
+        click_pixel(20, 67)
+        expect(events[4]).toEqual(['click', 3])
+        click_pixel(20, 99)
+        expect(events[5]).toEqual(['click', 3])
+
+      it 'should select the proper document, with pixel perfection', ->
+        click_pixel(0, 70)
+        expect(events[0]).toEqual(['click', 3])
+        click_pixel(24, 70)
+        expect(events[1]).toEqual(['click', 3])
+        click_pixel(25, 70)
+        expect(events[2]).toEqual(['click', 4])
+        click_pixel(49, 70)
+        expect(events[3]).toEqual(['click', 4])
+        click_pixel(50, 70)
+        expect(events[4]).toEqual(['click', 7])
+        click_pixel(99, 70)
+        expect(events[5]).toEqual(['click', 7])
