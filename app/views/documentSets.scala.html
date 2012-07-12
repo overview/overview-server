@@ -1,4 +1,4 @@
-@(documentSets: List[DocumentSet], documentSetForm: Form[DocumentSet])
+@(documentSets: List[DocumentSet], documentSetForm: play.api.data.Form[DocumentSetCreationJob])
 
 @import helper._
 
@@ -11,7 +11,7 @@
   		<li> 
   			<a href="/documentsets/@documentSet.id/view">@documentSet.query</a>
   			
-  			@form(routes.Application.deleteDocumentSet(documentSet.id)) {
+  			@form(routes.DocumentSetController.deleteDocumentSet(documentSet.id)) {
   				<input type="submit" value="Delete">
   			}
   		</li>

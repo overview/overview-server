@@ -4,9 +4,9 @@
 
 # Interim URLs
 GET     /                           controllers.Application.index()
-GET	    /documentsets		        controllers.Application.showDocumentSets()
+GET	    /documentsets		        controllers.DocumentSetController.showDocumentSets()
 POST	/documentsets		        controllers.DocumentSetController.createDocumentSet()
-POST	/documentsets/:id/delete	controllers.Application.deleteDocumentSet(id: Long)
+POST	/documentsets/:id/delete	controllers.DocumentSetController.deleteDocumentSet(id: Long)
 
 GET		/init						controllers.TreeController.temporarySetup()
 GET	    /showJobs					controllers.Application.showJobs()
