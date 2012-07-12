@@ -32,7 +32,7 @@ object ApplicationBuild extends Build {
          						  Seq("org.specs2" %% "specs2" % "1.11" % "test"))).dependsOn(common).aggregate(common)
          						 
 
-    val main = PlayProject(appName, appVersion, appDependencies, mainLang = JAVA).settings(
+    val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
       testOptions in Test += Tests.Setup( () => 
       System.setProperty("db.default.url", testDatabaseUrl))  
     ).dependsOn(common, worker).aggregate(common,worker)
