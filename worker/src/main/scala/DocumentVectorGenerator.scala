@@ -10,6 +10,7 @@
  */
 
 package clustering
+import scala.collection.mutable.Map
 
 // Basic use: call addDocument(docID, terms) until done, then getVectors() once
 class DocumentVectorGenerator {
@@ -17,12 +18,15 @@ class DocumentVectorGenerator {
   // --- Types ---
   type DocumentID = Long
   
-  type DocumentVector = Map[String, Float]                            // term -> tf_idf                                           
-  object DocumentVector { def apply() = { Map[String, Float]() } }
+  type DocumentVector = scala.collection.mutable.Map[String, Float]                            // term -> tf_idf                                           
+  def DocumentVector = scala.collection.mutable.Map[String, Float] _                           // so we can do var t = DocumentVector()
+  
+  type DocumentSetVectors = scala.collection.mutable.Map[DocumentID, DocumentVector]           // docid -> vector                  
+  object DocumentSetVectors { def apply() = { scala.collection.mutable.Map[DocumentID, DocumentVector]() } }
+  
+  //def DocumentSecVectors = scala.collection.mutable.Map[DocumentID, DocumentVector] _  not sure why this doesn't work
 
-  type DocumentSetVectors = Map[DocumentID, DocumentVector]           // docid -> vector                  
-  object DocumentSetVectors { def apply() = { Map[DocumentID, DocumentVector]() } }
-
+  
   // --- Data ---
   private var numDocs = 0 
   private var idf = DocumentVector() 
@@ -36,19 +40,19 @@ class DocumentVectorGenerator {
     if (terms.size > 0) {
         
       // count how many times each token appears in this doc (term frequency)      
-      var termcounts = Map[String, Int]()
+      var termcounts = DocumentVector()
       for (t <- terms) {
-        val prev_count = if (termcounts.contains(t)) termcounts(t) else 0
+        val prev_count = termcounts.getOrElse(t,0f)
         termcounts += (t -> (prev_count + 1))
       }
       
       // divide out document length to go from term count to term frequency
-      val termfreqs : DocumentVector = termcounts.mapValues(count => count/terms.size.toFloat) 
-      tf += (docId -> termfreqs)
+      termcounts.transform((key,count) => count/terms.size.toFloat) 
+      tf += (docId -> termcounts)
        
       // for each unique term in this doc, update how many docs each term appears in (doc frequency)
       for (t <- termcounts.keys) {
-        val prev_count = if (idf.contains(t)) idf(t) else 0
+        val prev_count = idf.getOrElse(t, 0f)
         idf += (t -> (prev_count + 1))
       }
       
@@ -64,7 +68,7 @@ class DocumentVectorGenerator {
  
     // Drop all terms where count < 3 or count == N, and take the log of document frequency in the usual IDF way
     var idf2 = idf.filter(kv => (kv._2 > 2) && (kv._2 < numDocs))
-    idf2 = idf2.mapValues(count => math.log10(numDocs / count).toFloat)
+    idf2.transform((term,count) => math.log10(numDocs / count).toFloat)
     
     // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
     for ((docid, doctf) <- tf) {                // for each doc
@@ -81,9 +85,9 @@ class DocumentVectorGenerator {
       }
       
       length = math.sqrt(length).toFloat
-      val normalized  = tfidf.mapValues(weight => weight/length)
+      tfidf.transform((term,weight) => weight/length)
      
-      docVectors += (docid -> normalized)
+      docVectors += (docid -> tfidf)
     }
     
     return docVectors    
