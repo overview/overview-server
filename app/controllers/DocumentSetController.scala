@@ -1,27 +1,40 @@
 package controllers
 
+import collection.JavaConversions._
+
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.{Action,Controller}
-import models.DocumentSetCreationJob
-import models.DocumentSetCreationJob
+import models.{DocumentSet, DocumentSetCreationJob}
+
 
 object DocumentSetController extends Controller {
-    def index(documentSetId: Long) = Action {
-        Ok(views.html.DocumentSet.index())
-    }
+  val queryForm = Form(
+    mapping(
+      "query" -> text
+    ) ((query) => new DocumentSetCreationJob(query))
+      ((job: DocumentSetCreationJob) => Some((job.query)))
+  ) 
+
+  def index(documentSetId: Long) = Action {
+	Ok(views.html.DocumentSet.index())
+  }
     
-    def createDocumentSet() = Action { implicit request =>
-      val queryForm = Form(
-          mapping(
-              "query" -> text
-          ) ((query) => new DocumentSetCreationJob(query))
-            ((job: DocumentSetCreationJob) => Some((job.query)))
-      ) 
-       
-      val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
-      documentSetCreationJob.save
+  def createDocumentSet() = Action { implicit request =>
+    val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
+    documentSetCreationJob.save
       
-      Redirect(routes.Application.showDocumentSets())
-    }
+    Redirect(routes.DocumentSetController.showDocumentSets())
+  }
+    
+  def showDocumentSets() = Action { 
+    Ok(views.html.documentSets(DocumentSet.find.all.toList, queryForm))
+  }
+  
+  def deleteDocumentSet(documentSetId: Long) = Action {
+    val documentSet = DocumentSet.find.ref(documentSetId)
+    documentSet.delete()
+    
+    Redirect(routes.DocumentSetController.showDocumentSets())
+  }
 }

@@ -2,7 +2,7 @@ IdTree = require('models/id_tree').IdTree
 LruPagingStrategy = require('models/lru_paging_strategy').LruPagingStrategy
 
 DEFAULT_OPTIONS = {
-  cache_size: 2000
+  cache_size: 1000,
 }
 
 # An incomplete tree structure.
@@ -43,26 +43,26 @@ class OnDemandTree
     @height = 0
     @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
 
-  # Our @_paging_strategy suggests a node to remove. We can add logic, though:
-  # let's remove the minimum possible--a leaf--instead of the one it suggests.
+    this._keep_height_up_to_date() # after pruning
+
+  _keep_height_up_to_date: () ->
+    @id_tree.observe('edit', this._refresh_height.bind(this))
+
+  # Our @_paging_strategy suggests a node to remove, but it might be high up.
+  # Let's suggest removing children instead.
   _id_to_first_leaf: (id) ->
-    nextid = id
     c = @id_tree.children
-    p = @id_tree.parent
-    n = @nodes
+
+    _first_defined_child_id = (id) ->
+      for child_id in c[id]
+        return child_id if c[child_id]?
+      undefined
 
     loop
-      id = nextid
-      nextid = undefined
-
-      children = c[id]
-      if children? && children[0]?
-        for childid in children
-          if n[childid]? && !@_paging_strategy.is_frozen(childid)
-            nextid = childid
-            break
+      nextid = _first_defined_child_id(id)
 
       return id if !nextid?
+      id = nextid
 
   # Returns IDs that relate to the given one.
   #
@@ -72,50 +72,85 @@ class OnDemandTree
   #      2        3          4
   #    5 6 7    8 9 10    11 12 13
   #
-  # The "important" IDs to 6 are 5, 6, 7, 2, 3, 4 and 1: all siblings, parents,
+  # The "important" IDs to 6 are 5, 7, 2, 3, 4 and 1: all siblings, parents,
   # aunts and uncles from all tree levels. Only loaded-node IDs will be
   # returned.
-  _id_to_important_ids: (id) ->
+  _id_to_important_other_ids: (id) ->
     ret = []
     c = @id_tree.children
     p = @id_tree.parent
-    n = @nodes
 
-    while id?
-      children = c[id]
+    cur = id
+    while cur?
+      children = c[cur]
       if children?
         for child in children
-          ret.push(child) if n[child]?
-      id = p[id]
+          ret.push(child) if c[child]? && child != id
+      cur = p[cur]
     ret.push(@id_tree.root) if @id_tree.root != -1
 
     ret
 
-  _add_json: (json) ->
-    freeze_ids = this._id_to_important_ids(json.nodes[0].id)
+  _remove_up_to_n_nodes_starting_at_id: (editable, n, id) ->
+    removed = 0
 
-    @_paging_strategy.freeze(x) for x in freeze_ids
+    loop
+      # Assume if a node isn't frozen, nothing below it is frozen
+      leafid = this._id_to_first_leaf(id)
+      editable.remove(leafid)
+      delete @nodes[leafid]
+      @_paging_strategy.free(leafid)
+      removed += 1
+
+      return removed if leafid == id || removed >= n
+
+  _remove_n_nodes: (editable, n) ->
+    while n > 0
+      id = @_paging_strategy.find_id_to_free()
+      n -= this._remove_up_to_n_nodes_starting_at_id(editable, n, id)
+
+  _add_json: (json) ->
+    return if !json.nodes.length
 
     @id_tree.edit (editable) =>
-      for node in (json.nodes || [])
-        oldid = @_paging_strategy.find_id_to_free_if_full() # throws AllPagesFrozen
-        if oldid?
-          oldid = this._id_to_first_leaf(oldid)
-          @_paging_strategy.free(oldid)
-          delete @nodes[oldid]
-          editable.remove(oldid)
+      # (This comes in handy later)
+      frozen_ids = this._id_to_important_other_ids(json.nodes[0].id)
 
-        @_paging_strategy.add(node.id)
-        @_paging_strategy.freeze(node.id)
-        freeze_ids.push(node.id)
+      # Actually add to the tree
+      for node in json.nodes
         @nodes[node.id] = node
         editable.add(node.id, node.children)
 
-        this._refresh_height()
+      added_ids = []
+      overflow_ids = []
 
-    @_paging_strategy.thaw(x) for x in freeze_ids
+      # Track the IDs we can, without overloading our paging strategy
+      for node in json.nodes
+        id = node.id
+        if @_paging_strategy.is_full()
+          overflow_ids.push(id)
+        else
+          @_paging_strategy.add(id)
+          added_ids.push(id)
 
-    undefined
+      if overflow_ids.length
+        # Our tree is over-sized. Let's find old nodes to remove.
+
+        # Freeze the nodes we *don't* want to remove
+        frozen_ids.push(id) for id in added_ids
+
+        @_paging_strategy.freeze(id) for id in frozen_ids
+
+        # Remove expendable nodes
+        this._remove_n_nodes(editable, overflow_ids.length)
+
+        # Unfreeze those important nodes
+        @_paging_strategy.thaw(id) for id in frozen_ids
+
+        # Now we have space for the new ones
+        @_paging_strategy.add(id) for id in overflow_ids
+
+      undefined
 
   _refresh_height: () ->
     # bulky, but understandable and O(n)

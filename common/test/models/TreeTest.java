@@ -1,11 +1,10 @@
 package models;
 
-import java.util.List;
+import static org.fest.assertions.Assertions.*;
 
+import java.util.List;
 import org.junit.Test;
 
-import static play.test.Helpers.*;
-import static org.fest.assertions.Assertions.*;
 
 
 public class TreeTest  extends DatabaseTest {

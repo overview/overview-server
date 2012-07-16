@@ -2,21 +2,14 @@ package models;
 
 import java.util.*;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import play.test.FakeApplication;
-
-import com.avaje.ebean.Ebean;
-
-import static play.test.Helpers.*;
 import static org.fest.assertions.Assertions.*;
 
 public class NodeTest extends DatabaseTest {
 
 	private Node root;
-	private FakeApplication application;
 	
 	@Before
 	public void createTree() {

@@ -1,15 +1,13 @@
 package models;
 
 
-import static play.test.Helpers.*;
+
 import static org.fest.assertions.Assertions.*;
 
 import java.util.Set;
-
-
 import org.junit.Test;
 
-import com.avaje.ebean.Ebean;
+
 
 public class DocumentTest extends DatabaseTest {
 
