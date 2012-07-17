@@ -225,5 +225,9 @@ Timecop.TimeStackItem.prototype = {
 // added by Adam Hooper, 2012-07-04
 defineDelegate('toISOString');
 Timecop.MockDate.UTC = Timecop.NativeDate.UTC;
+// added by Adam Hooper, 2012-07-17
+Timecop.MockDate.now = function() {
+  return (new Date()).getTime();
+}
 
 }());
