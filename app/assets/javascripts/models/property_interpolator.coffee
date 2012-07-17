@@ -40,12 +40,12 @@ class PropertyInterpolator
     v1 + (v2 - v1) * fraction
 
   set_property_target: (property, target, start_ms=undefined) ->
-    if @duration == 0
+    if @duration == 0 || _.isEqual(property.current, target)
       property.current = target
     else
+      property.start_ms = start_ms? && start_ms || Date.now()
       property.v1 = property.current
       property.v2 = target
-      property.start_ms = start_ms? && start_ms || Date.now()
 
 exports = require.make_export_object('models/property_interpolator')
 exports.PropertyInterpolator = PropertyInterpolator

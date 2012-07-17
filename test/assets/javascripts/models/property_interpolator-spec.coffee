@@ -127,6 +127,16 @@ describe 'models/property_interpolator', ->
           interpolator.set_property_target(p, 2)
           expect(p).toEqual({ current: 2 })
 
+        it 'should not try to interpolate when the property is not changing', ->
+          p = { current: 1 }
+          interpolator.set_property_target(p, 1)
+          expect(p).toEqual({ current: 1 })
+
+        it 'should not try to interpolate an Array when the property is not changing', ->
+          p = { current: [ 1, 2, 3 ] }
+          interpolator.set_property_target(p, [ 1, 2, 3 ])
+          expect(p).toEqual({ current: [ 1, 2, 3 ] })
+
       describe 'update_property_to_fraction', ->
         it 'should exist (see update_property() for more precise tests', ->
           p = { v1: 1, v2: 2, current: 1, start_ms: 1 }
