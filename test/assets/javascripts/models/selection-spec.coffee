@@ -17,3 +17,14 @@ describe 'models/', ->
       selection = new Selection()
       selection.update({ node: 1 })
       expect(selection.nodes).toEqual([1])
+
+    describe 'includes()', ->
+      it 'should return true when appropriate', ->
+        selection = new Selection()
+        selection.update({ node: 1 })
+        expect(selection.includes('node', 2)).toEqual(false)
+
+      it 'should return true when appropriate', ->
+        selection = new Selection()
+        selection.update({ node: 1 })
+        expect(selection.includes('node', 1)).toEqual(true)

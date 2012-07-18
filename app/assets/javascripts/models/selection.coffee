@@ -8,6 +8,10 @@ class Selection
     @tags = []
     @documents = []
 
+  includes: (key, id) ->
+    key += 's' if key[key.length - 1] != 's'
+    this[key].indexOf(id) != -1
+
   update: (options) ->
     changed1 = if options.nodes?
       this._update_one('nodes', options.nodes)

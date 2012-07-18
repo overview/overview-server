@@ -1,31 +1,22 @@
 # This isn't really a unit test: it depends upon models
 TreeView = require('views/tree_view').TreeView
 
-OnDemandTree = require('models/on_demand_tree').OnDemandTree # this is easier than mocking it
-Selection = require('models/selection').Selection # this, too
-
 Event = jQuery.Event
 Deferred = jQuery.Deferred
 
+OnDemandTree = require('models/on_demand_tree').OnDemandTree
+AnimatedTree = require('models/animated_tree').AnimatedTree
+Selection = require('models/selection').Selection
+Animator = require('models/animator').Animator
+PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
+
 class MockResolver
-  constructor: () ->
-    @deferreds = []
-
-  get_deferred: () ->
-    @deferreds.push(ret = new Deferred())
-    ret
-
-color_to_rgb = (s) ->
-  [
-    parseInt(s.substring(1, 3), 16),
-    parseInt(s.substring(3, 5), 16),
-    parseInt(s.substring(5, 7), 16),
-  ]
+  get_deferred: (type, id) -> new Deferred()
 
 describe 'views/tree_view', ->
   describe 'TreeView', ->
-    resolver = undefined
-    tree = undefined
+    on_demand_tree = undefined
+    animated_tree = undefined
     selection = undefined
     view = undefined
     div = undefined
@@ -37,10 +28,12 @@ describe 'views/tree_view', ->
     events = undefined
 
     beforeEach ->
-      resolver = new MockResolver()
-      # We'll give our tree a huge cache so it won't interfere with tests
-      tree = new OnDemandTree(resolver, { cache_size: 999999 })
+      interpolator = new PropertyInterpolator(1000, (x) -> x)
+      animator = new Animator(interpolator)
       selection = new Selection()
+      resolver = new MockResolver()
+      on_demand_tree = new OnDemandTree(resolver, { cache_size: 1000 })
+      animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
       div = $('<div style="width:100px;height:100px"></div>')[0]
       $('body').append(div)
       options = {}
@@ -50,19 +43,20 @@ describe 'views/tree_view', ->
       options = {}
       $(div).remove() # Removes all callbacks
       div = undefined
-      tree = undefined
+      on_demand_tree = undefined
+      animated_tree = undefined
       view = undefined
       events = undefined
 
     add_nodes_through_deferred = (nodes) ->
-      deferred = tree.demand_node(nodes[0].id)
+      deferred = on_demand_tree.demand_node(nodes[0].id)
       deferred.resolve({ nodes: nodes })
 
     add_node_through_deferred = (id, children, n_documents) ->
       add_nodes_through_deferred([ { id: id, children: children, doclist: { n: n_documents } } ])
 
     create_view = () ->
-      view = new TreeView(div, tree, selection, options)
+      view = new TreeView(div, animated_tree, options)
       rgb_background = color_to_rgb(view.options.color.background)
       rgb_node = color_to_rgb(view.options.color.node)
       rgb_node_unloaded = color_to_rgb(view.options.color.node_unloaded)
@@ -92,9 +86,24 @@ describe 'views/tree_view', ->
       rgb = get_pixel(x, y)
       expect(rgb).toEqual(expect_rgb)
 
+    color_to_rgb = (s) ->
+      [
+        parseInt(s.substring(1, 3), 16),
+        parseInt(s.substring(3, 5), 16),
+        parseInt(s.substring(5, 7), 16),
+      ]
+
+    at = (ms, callback) -> Timecop.freeze(new Date(ms), callback)
+
     describe 'beginning with an empty tree', ->
       beforeEach ->
         create_view()
+
+      it 'should notify :needs-update when the tree does', ->
+        called = false
+        view.observe('needs-update', (() -> called = true))
+        animated_tree._notify('needs-update')
+        expect(called).toBe(true)
 
       it 'should make a canvas of the proper size', ->
         $canvas = $(view.canvas)
@@ -107,13 +116,15 @@ describe 'views/tree_view', ->
         check_pixel(99, 99, rgb_background)
 
       it 'should add a root that appears after drawing', ->
-        add_node_through_deferred(1, [], 1)
+        Timecop.freeze new Date(0), -> add_node_through_deferred(1, [], 1)
+        Timecop.freeze new Date(1000), -> view.update()
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 50, rgb_node)
         check_pixel(99, 99, rgb_background)
 
       it 'should draw unloaded nodes', ->
-        add_node_through_deferred(1, [2], 1)
+        at 0, -> add_node_through_deferred(1, [2], 1)
+        at 1000, -> view.update()
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 25, rgb_node)
         check_pixel(60, 50, rgb_background)
@@ -127,9 +138,11 @@ describe 'views/tree_view', ->
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
-        add_node_through_deferred(1, [2, 3], 2)
-        add_node_through_deferred(2, [], 1)
-        add_node_through_deferred(3, [], 1)
+        Timecop.freeze new Date(0), ->
+          add_node_through_deferred(1, [2, 3], 2)
+          add_node_through_deferred(2, [], 1)
+          add_node_through_deferred(3, [], 1)
+        Timecop.freeze new Date(1000), -> animated_tree.update()
         create_view()
 
       it 'should put padding around nodes', ->
@@ -154,17 +167,20 @@ describe 'views/tree_view', ->
       it 'should highlight the selected node', ->
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node)
-        selection.update({ nodes: [2] })
+        at 100, -> selection.update({ nodes: [2] })
+        at 1100, -> view.update()
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node_selected)
 
     describe 'with a non-full tree', ->
       beforeEach ->
         # three-level binary tree, right-middle node isn't full
-        add_node_through_deferred(1, [2, 7], 4)
-        add_node_through_deferred(2, [3, 4], 2)
-        add_node_through_deferred(3, [], 1)
-        add_node_through_deferred(4, [], 1)
+        Timecop.freeze new Date(0), ->
+          add_node_through_deferred(1, [2, 7], 4)
+          add_node_through_deferred(2, [3, 4], 2)
+          add_node_through_deferred(3, [], 1)
+          add_node_through_deferred(4, [], 1)
+        Timecop.freeze new Date(1000), -> animated_tree.update()
         create_view()
 
       it 'should trigger :click on a unloaded node', ->

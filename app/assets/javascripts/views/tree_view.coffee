@@ -8,11 +8,97 @@ DEFAULT_OPTIONS = {
     node_selected: '#bbbbbb',
     line: '#888888',
   },
+  connector_line_width: 1, # px
+  node_line_width: 1.5, # px
+  node_line_width_selected: 3, # px
+  node_line_width_unloaded: 1, # px
   leaf_width: 3, # relative units
   leaf_horizontal_padding: 1, # on each side
   node_height: 10,
   node_vertical_padding: 3,
+  animation_speed: 0, # no animations
 }
+
+class DrawOperation
+  constructor: (@canvas, @options) ->
+    @ctx = @canvas.getContext('2d')
+    $canvas = $(@canvas)
+
+    @ctx.lineStyle = @options.color.line
+
+    @width = Math.ceil($canvas.width())
+    @height = Math.ceil($canvas.height())
+
+  clear: () ->
+    @ctx.fillStyle = @options.color.background
+    @ctx.fillRect(0, 0, @width, @height)
+
+  calculate_subpixels: (num_documents, depth) ->
+    depth = 0.00001 if depth == 0
+    # We render to pixels, but our calculations are done with integers in
+    # subpixel space. Multiply by "spxx" and "spxy" to convert to pixel space.
+    @spxx_per_document = @options.leaf_width + 2 * @options.leaf_horizontal_padding
+    @spxy_per_level = @options.node_height + 2 * @options.node_vertical_padding
+    @spxx = @width / (num_documents * @spxx_per_document)
+    @spxy = @height / (depth * @spxy_per_level)
+
+  _node_to_color: (node) ->
+    # FIXME interpolate colors
+    if node.selected
+      @options.color.node_selected
+    else if node.loaded
+      @options.color.node
+    else
+      @options.color.node_unloaded
+
+  _node_to_line_width: (node) ->
+    # FIXME interpolate widths
+    if node.selected
+      @options.node_line_width_selected
+    else if node.loaded
+      @options.node_line_width
+    else
+      @options.node_line_width_unloaded
+
+  _node_to_connector_line_width: (node) ->
+    @options.connector_line_width * node.loaded_animation_fraction.current
+
+  draw_node: (node, documents_before, level) ->
+    ctx = @ctx
+
+    left = @spxx_per_document * documents_before * @spxx
+    top = @spxy_per_level * level * @spxy
+
+    width = node.num_documents.current * @options.leaf_width * @spxx
+    padding_x = node.num_documents.current * @options.leaf_horizontal_padding * @spxx
+    height = @options.node_height * @spxy
+    padding_y = @options.node_vertical_padding * @spxy
+
+    ctx.lineWidth = this._node_to_line_width(node)
+    ctx.fillStyle = this._node_to_color(node)
+
+    ctx.fillRect(left + padding_x, top + padding_y, width, height)
+    ctx.strokeRect(left + padding_x, top + padding_y, width, height)
+
+    middle_x = left + padding_x + width * 0.5
+    documents_drawn_in_children = documents_before
+
+    for child_node in node.children
+      child_middle_x = this.draw_node(child_node, documents_drawn_in_children, level + 1)
+      documents_drawn_in_children += child_node.num_documents.current
+
+      ctx.lineWidth = this._node_to_connector_line_width(child_node)
+
+      ctx.beginPath()
+      ctx.moveTo(middle_x, top + padding_y + height)
+      ctx.bezierCurveTo(
+        middle_x, top + 2 * padding_y + height,
+        child_middle_x, top + 2 * padding_y + height,
+        child_middle_x, top + 3 * padding_y + height
+      )
+      ctx.stroke()
+
+    middle_x
 
 $ = jQuery
 _ = window._
@@ -20,12 +106,14 @@ _ = window._
 class TreeView
   observable(this)
 
-  constructor: (@div, @tree, @selection, options={}) ->
+  constructor: (@div, @tree, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, options, DEFAULT_OPTIONS, { color: options_color })
 
     $div = $(@div)
     @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
+
+    @_nodes = {}
 
     $div.append(@canvas)
 
@@ -33,8 +121,9 @@ class TreeView
     this._redraw()
 
   _attach: () ->
-    @tree.id_tree.observe('edit', this._redraw.bind(this))
-    @selection.observe(this._redraw.bind(this))
+    @tree.observe 'needs-update', =>
+      @_needs_update = true
+      this._notify('needs-update')
 
     $(@canvas).on 'click', (e) =>
       offset = $(@canvas).offset()
@@ -45,31 +134,26 @@ class TreeView
       this._notify('click', nodeid)
 
   _pixel_to_nodeid: (x, y) ->
-    return undefined if @tree.id_tree.root == -1
+    return undefined if @tree.root is undefined
 
     $canvas = $(@canvas)
 
-    doc_index = Math.floor(x / $canvas.width() * @tree.nodes[@tree.id_tree.root].doclist.n)
-
-    levels_to_go = Math.floor(y / $canvas.height() * @tree.height)
+    node = @tree.root
+    doc_index = Math.floor(x / $canvas.width() * node.num_documents.current)
+    levels_to_go = Math.floor(y / $canvas.height() * @tree.animated_height.current)
 
     docs_to_our_left = 0
-    last_node_id = @tree.id_tree.root
-    node_ids_at_this_level = @tree.id_tree.children[@tree.id_tree.root]
-
-    while levels_to_go > 0 && node_ids_at_this_level?.length
-      for last_node_id in node_ids_at_this_level
-        docs_in_this_node = this._nodeid_to_n_documents(last_node_id)
-
-        if docs_in_this_node + docs_to_our_left <= doc_index
-          docs_to_our_left += docs_in_this_node
+    while levels_to_go > 0 && node.children.length > 0
+      for child_node in node.children
+        if child_node.num_documents.current + docs_to_our_left <= doc_index
+          docs_to_our_left += child_node.num_documents.current
         else
           break
 
       levels_to_go -= 1
-      node_ids_at_this_level = @tree.id_tree.children[last_node_id]?.slice()
+      node = child_node
 
-    last_node_id
+    node?.id
 
   _nodeid_to_n_documents: (nodeid) ->
     exact = @tree.nodes[nodeid]?.doclist?.n
@@ -92,93 +176,35 @@ class TreeView
 
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
-  _draw_loaded_node: (nodeid, ctx, x, y, w, h) ->
-    ctx.fillRect(x, y, w, h)
-    ctx.strokeRect(x, y, w, h)
+  #_draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
+  #  ctx.fillStyle = @options.color.node_unloaded
 
-  _draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
-    ctx.fillStyle = @options.color.node_unloaded
-
-    ctx.beginPath()
-    ctx.moveTo(x, y + h * 0.5)
-    ctx.quadraticCurveTo(x, y, x + w * 0.5, y)
-    ctx.quadraticCurveTo(x + w, y, x + w, y + h * 0.5)
-    ctx.quadraticCurveTo(x + w, y + h, x + w * 0.5, y + h)
-    ctx.quadraticCurveTo(x, y + h, x, y + h * 0.5)
-    ctx.fill()
-    ctx.stroke()
-
-  _draw_node: (nodeid, ctx, spxx, spxy) ->
-    is_loaded = @tree.nodes[nodeid]?
-    n_documents = this._nodeid_to_n_documents(nodeid)
-
-    width = n_documents * @options.leaf_width * spxx
-    padding_x = n_documents * @options.leaf_horizontal_padding * spxx
-    height = @options.node_height * spxy
-    padding_y = @options.node_vertical_padding * spxy
-
-    if @selection.nodes.indexOf(nodeid) != -1
-      ctx.lineWidth = 3
-      ctx.fillStyle = @options.color.node_selected
-    else
-      ctx.lineWidth = 1
-      if is_loaded
-        ctx.fillStyle = @options.color.node
-      else
-        ctx.fillStyle = @options.color.node_unloaded
-
-    if !is_loaded
-      this._draw_unloaded_node(nodeid, ctx, padding_x, padding_y, width, height)
-    else
-      this._draw_loaded_node(nodeid, ctx, padding_x, padding_y, width, height)
-
-      ctx.save()
-      ctx.translate(0, height + 2 * padding_y)
-
-      node_x = padding_x + width * 0.5
-
-      c = @tree.id_tree.children[nodeid]
-      for child_id in c
-        width2 = this._draw_node(child_id, ctx, spxx, spxy)
-
-        child_x = width2 * 0.5
-
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.moveTo(node_x, -padding_y)
-        ctx.bezierCurveTo(node_x, 0, child_x, 0, child_x, padding_y)
-        ctx.stroke()
-
-        ctx.translate(width2, 0) # move to the right, for the next child
-        node_x -= width2
-
-      ctx.restore()
-
-    width + 2 * padding_x
+  #  ctx.beginPath()
+  #  ctx.moveTo(x, y + h * 0.5)
+  #  ctx.quadraticCurveTo(x, y, x + w * 0.5, y)
+  #  ctx.quadraticCurveTo(x + w, y, x + w, y + h * 0.5)
+  #  ctx.quadraticCurveTo(x + w, y + h, x + w * 0.5, y + h)
+  #  ctx.quadraticCurveTo(x, y + h, x, y + h * 0.5)
+  #  ctx.fill()
+  #  ctx.stroke()
 
   _redraw: () ->
-    ctx = @canvas.getContext('2d')
+    op = new DrawOperation(@canvas, @options)
+    op.clear()
 
-    width = Math.ceil($(@canvas).width())
-    height = Math.ceil($(@canvas).height())
+    return if @tree.root is undefined
 
-    ctx.fillStyle = @options.color.background
-    ctx.strokeStyle = @options.color.line
-    ctx.fillRect(0, 0, width, height)
+    op.calculate_subpixels(@tree.root.num_documents.current, @tree.animated_height.current)
 
-    return if @tree.height == 0
+    op.draw_node(@tree.root, 0, 0)
 
-    # We render to pixels, but our calculations are done with integers in
-    # subpixel space. Multiply by "spxx" and "spxy" to convert to pixel space.
-    # Why not scale()? Because we want fine strokes
-    spx_width = @tree.nodes[@tree.id_tree.root].doclist.n \
-      * (@options.leaf_width + 2 * @options.leaf_horizontal_padding)
-    spx_height = @tree.height * (@options.node_height + 2 * @options.node_vertical_padding)
+  update: () ->
+    @tree.update()
+    this._redraw()
+    @_needs_update = @tree.needs_update()
 
-    spxx = width / spx_width
-    spxy = height / spx_height
-
-    this._draw_node(@tree.id_tree.root, ctx, spxx, spxy)
+  needs_update: () ->
+    @_needs_update
 
 exports = require.make_export_object('views/tree_view')
 exports.TreeView = TreeView
