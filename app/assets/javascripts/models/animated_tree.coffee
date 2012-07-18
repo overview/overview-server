@@ -86,8 +86,6 @@ class AnimatedTree
       @_last_selected_nodes = new_selection
 
   _load: () ->
-    c = @id_tree.children
-
     @root = this._create_node(@id_tree.root)
     @_nodes[@root.id] = @root
 
@@ -95,28 +93,17 @@ class AnimatedTree
 
     while parent_node_queue.length
       parent_node = parent_node_queue.pop()
-      child_ids = c[parent_node.id]
+      nd = this._node_child_ids_to_num_documents(parent_node)
 
-      loaded_documents = 0
-      unloaded_children = []
-
-      for child_id in child_ids
-        if c[child_id]?
-          node = this._create_node(child_id)
-          loaded_documents += node.num_documents.current
+      for child_id in @id_tree.children[parent_node.id]
+        node = this._create_node(child_id)
+        if node.loaded
           parent_node_queue.push(node)
         else
-          node = this._create_undefined_node(child_id)
-          unloaded_children.push(node)
+          node.num_documents.current = nd[child_id]
 
-        @_nodes[node.id] = node
         parent_node.children.push(node)
-
-      if unloaded_children.length > 0
-        # Spread the missing documents over the number of unloaded children
-        num_unloaded_documents = parent_node.num_documents.current - loaded_documents
-        num_per_unloaded_child = num_unloaded_documents / unloaded_children.length
-        u.num_documents.current = num_per_unloaded_child for u in unloaded_children
+        @_nodes[node.id] = node
 
     @animated_height.current = @on_demand_tree.height
     this._notify('needs-update')
@@ -137,39 +124,53 @@ class AnimatedTree
     node.loaded = true
     @animator.animate_object_properties(node, {
       loaded_animation_fraction: 1,
-      num_documents: real_node.doclist.n,
     }, undefined, time)
 
-    child_ids = @id_tree.children[id]
-    for child_id in child_ids
+    # Update all num_documents at this level, including this node
+    this._animate_update_node_sibling_num_documents(id, time)
+
+    # Create child nodes, and set their num_documents
+    nd = this._node_child_ids_to_num_documents(node)
+    for child_id in @id_tree.children[id]
+      child_node = this._create_node(child_id)
       # Even if the nodes are loaded, we'll add them here as unloaded nodes,
       # then we'll switch them to loaded in later _animate_load_node() calls.
-      child_node = this._create_undefined_node(child_id)
+      child_node.loaded = false
+      child_node.loaded_animation_fraction.current = 0
+      child_node.num_documents.current = nd[child_id]
       @_nodes[child_node.id] = child_node
-      child_node.num_documents.current = real_node.doclist.n / child_ids.length
       node.children.push(child_node)
 
-    this._animate_update_node_sibling_num_documents(id, time)
+  _node_child_ids_to_num_documents: (node) ->
+    n = @on_demand_tree.nodes
+
+    ret = {}
+    undefined_child_ids = []
+    num_documents = n[node.id].doclist.n
+
+    for child_id in @id_tree.children[node.id]
+      child_num_documents = n[child_id]?.doclist?.n
+      if child_num_documents?
+        num_documents -= child_num_documents
+        ret[child_id] = child_num_documents
+      else
+        undefined_child_ids.push(child_id)
+
+    if undefined_child_ids.length
+      x = num_documents / undefined_child_ids.length
+      ret[child_id] = x for child_id in undefined_child_ids
+
+    ret
 
   _animate_update_node_sibling_num_documents: (id, time) ->
     parent_id = @id_tree.parent[id]
     return if !parent_id? # root node
 
-    n = @on_demand_tree.nodes
+    parent_node = @_nodes[parent_id]
+    nd = this._node_child_ids_to_num_documents(@_nodes[parent_id])
 
-    sibling_undefined_nodes = []
-    sibling_documents = n[parent_id].doclist.n
-
-    for sibling_node in @_nodes[parent_id].children
-      if sibling_node.loaded
-        sibling_documents -= n[sibling_node.id].doclist.n
-      else
-        sibling_undefined_nodes.push(sibling_node)
-
-    if sibling_undefined_nodes.length > 0
-      nd = sibling_documents / sibling_undefined_nodes.length
-      for node in sibling_undefined_nodes
-        @animator.animate_object_properties(node, { num_documents: nd }, undefined, time)
+    for sibling_node in parent_node.children
+      @animator.animate_object_properties(sibling_node, { num_documents: nd[sibling_node.id] }, undefined, time)
 
   _animate_remove_undefined_node: (id, time) ->
     node = @_nodes[id]
@@ -187,26 +188,15 @@ class AnimatedTree
 
   _create_node: (id) ->
     n = @on_demand_tree.nodes[id]
+    loaded = n?
     selected = @selection.includes('node', id)
     {
       id: id,
-      loaded: true,
-      loaded_animation_fraction: { current: 1 },
+      loaded: loaded,
+      loaded_animation_fraction: { current: loaded && 1 || 0 },
       selected: selected,
       selected_animation_fraction: { current: selected && 1 || 0 },
-      num_documents: { current: n.doclist.n },
-      children: [],
-    }
-
-  _create_undefined_node: (id) ->
-    selected = @selection.includes('node', id)
-    {
-      id: id,
-      loaded: false,
-      loaded_animation_fraction: { current: 0 },
-      selected: selected,
-      selected_animation_fraction: { current: selected && 1 || 0 },
-      num_documents: { current: 0 },
+      num_documents: { current: n?.doclist?.n },
       children: [],
     }
 
