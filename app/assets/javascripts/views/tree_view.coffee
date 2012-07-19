@@ -26,8 +26,11 @@ class DrawOperation
 
     @ctx.lineStyle = @options.color.line
 
-    @width = Math.ceil($canvas.width())
-    @height = Math.ceil($canvas.height())
+    @width = Math.ceil($canvas.parent().width())
+    @height = Math.ceil($canvas.parent().height())
+
+    @canvas.width = @width
+    @canvas.height = @height
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
@@ -121,9 +124,8 @@ class TreeView
     this._redraw()
 
   _attach: () ->
-    @tree.observe 'needs-update', =>
-      @_needs_update = true
-      this._notify('needs-update')
+    @tree.observe('needs-update', this._set_needs_update.bind(this))
+    $(window).on('resize.tree-view', this._set_needs_update.bind(this))
 
     $(@canvas).on 'click', (e) =>
       offset = $(@canvas).offset()
@@ -205,6 +207,11 @@ class TreeView
 
   needs_update: () ->
     @_needs_update
+
+  _set_needs_update: () ->
+    if !@_needs_update
+      @_needs_update = true
+      this._notify('needs-update')
 
 exports = require.make_export_object('views/tree_view')
 exports.TreeView = TreeView

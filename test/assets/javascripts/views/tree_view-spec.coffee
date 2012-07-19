@@ -42,6 +42,7 @@ describe 'views/tree_view', ->
     afterEach ->
       options = {}
       $(div).remove() # Removes all callbacks
+      $(window).off('resize.tree-view')
       div = undefined
       on_demand_tree = undefined
       animated_tree = undefined
@@ -218,3 +219,12 @@ describe 'views/tree_view', ->
         expect(events[4]).toEqual(['click', 7])
         click_pixel(99, 70)
         expect(events[5]).toEqual(['click', 7])
+
+      it 'should resize and notify :needs-update when resized', ->
+        called = false
+        view.observe('needs-update', (() -> called = true))
+        $(div).width(50)
+        $(window).resize()
+        expect(called).toBe(true)
+        view.update()
+        expect($(view.canvas).width()).toEqual(50)
