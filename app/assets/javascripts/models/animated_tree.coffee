@@ -120,6 +120,10 @@ class AnimatedTree
 
   _animate_load_node: (id, time) ->
     node = @_nodes[id] # exists, but we know loaded = false
+
+    if node.loaded == true
+      throw "Trying to load #{node.id} but it is already loaded..."
+
     real_node = @on_demand_tree.nodes[id]
     node.loaded = true
     @animator.animate_object_properties(node, {
