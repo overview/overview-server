@@ -41,7 +41,7 @@ class SubTreeLoaderSpec extends Specification {
           on("description" -> ("heightB-" + depth), "parent" -> root).
           executeInsert().getOrElse(-1l)
       
-        childId1 :: childId2 :: 
+        childId1 :: childId2 ::
           writeSubTreeInDb(childId1, depth - 1) ++ writeSubTreeInDb(childId2, depth - 1)
       }
     }
@@ -52,9 +52,6 @@ class SubTreeLoaderSpec extends Specification {
     
     "load subtree 5 levels deep" in new TreeContext {
 
-      //val nodeIds = writeBinaryTreeInDb(10)
-
-      
       val subTreeLoader = new SubTreeLoader(nodeIds(0))
       
       val nodes = subTreeLoader.loadNodes()
