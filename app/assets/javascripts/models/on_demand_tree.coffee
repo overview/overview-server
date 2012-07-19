@@ -116,22 +116,24 @@ class OnDemandTree
       # (This comes in handy later)
       frozen_ids = this._id_to_important_other_ids(json.nodes[0].id)
 
+      added_ids = []
+
       # Actually add to the tree
       for node in json.nodes
-        @nodes[node.id] = node
-        editable.add(node.id, node.children)
+        if !@id_tree.children[node.id]?
+          @nodes[node.id] = node
+          editable.add(node.id, node.children)
+          added_ids.push(node.id)
 
-      added_ids = []
       overflow_ids = []
 
       # Track the IDs we can, without overloading our paging strategy
-      for node in json.nodes
-        id = node.id
+      for id in added_ids
         if @_paging_strategy.is_full()
           overflow_ids.push(id)
         else
           @_paging_strategy.add(id)
-          added_ids.push(id)
+      added_ids.splice(-overflow_ids.length)
 
       if overflow_ids.length
         # Our tree is over-sized. Let's find old nodes to remove.

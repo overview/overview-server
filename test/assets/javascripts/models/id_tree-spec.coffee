@@ -137,6 +137,11 @@ describe 'models/id_tree', ->
           do_add(10, [])
         ).toThrow('MissingNode')
 
+      it 'should throw an error when adding an existing node', ->
+        expect(() ->
+          do_add(4, [8, 9])
+        ).toThrow('NodeAlreadyExists')
+
       it 'should not notify :root when removing a non-root node', ->
         called = false
         id_tree.observe('root', () -> called = true)

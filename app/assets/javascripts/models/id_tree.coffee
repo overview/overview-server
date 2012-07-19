@@ -97,6 +97,8 @@ class IdTree
     @_edits.root = undefined
 
   _add: (id, children) ->
+    throw 'NodeAlreadyExists' if @children[id]?
+
     if @root == -1
       @root = id
       @_edits.root = true

@@ -26,12 +26,13 @@ describe 'models/on_demand_tree', ->
       add_nodes_through_deferred([ { id: id, children: children } ])
 
     create_listen_object = () ->
-      ret = { add: [], remove: [], remove_undefined: [], root: [], }
+      ret = { add: [], remove: [], remove_undefined: [], root: [], edits: 0, }
 
       tree.id_tree.observe('add', (ids) -> ret.add.push(ids))
       tree.id_tree.observe('remove', (ids) -> ret.remove.push(ids))
       tree.id_tree.observe('remove-undefined', (ids) -> ret.remove_undefined.push(ids))
       tree.id_tree.observe('root', (root) -> ret.root.push(root))
+      tree.id_tree.observe('edit', () -> ret.edits += 1)
 
       ret
 
@@ -143,3 +144,13 @@ describe 'models/on_demand_tree', ->
         new_nodes = [ { id: 41, children: [1000] } ].concat(stub_node(id) for id in [ 1000 .. 1028 ])
         expect(new_nodes.length).toEqual(30) # assertion
         add_nodes_through_deferred(new_nodes) # throws error on failure
+
+      it 'should not re-add a root node that was already added', ->
+        o = create_listen_object()
+        add_node_through_deferred(1, [2, 3, 4]) # the existing root
+        expect(o.add).toEqual([])
+
+      it 'should not re-add a non-root node that was already added', ->
+        o = create_listen_object()
+        add_node_through_deferred(2, [5, 6, 7]) # the existing root
+        expect(o.add).toEqual([])
