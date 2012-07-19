@@ -12,13 +12,12 @@ import play.api.db.DB
 
 class SubTreeLoader(rootId: Long) {
   
-  def loadNodes() : List[core.Node] = {
-    DB.withConnection { implicit connection => 
-      val result : List[Long] = SQL(
-          """
-            SELECT nodes.node_id, ARRAY_AGG(nodes.child_id) AS child_ids
-    		  FROM (
-    		  	SELECT DISTINCT n6.parent_id AS node_id, n6.id AS child_id
+  def loadNodes()(implicit connection : java.sql.Connection) : List[core.Node] = {
+	val result : List[Long] = SQL(
+        """
+          SELECT nodes.node_id, ARRAY_AGG(nodes.child_id) AS child_ids
+			FROM (
+    		  SELECT DISTINCT n6.parent_id AS node_id, n6.id AS child_id
     		  	FROM node n1
     		  	LEFT JOIN node n2 ON (n2.parent_id = n1.id)
     		  	LEFT JOIN node n3 ON (n3.id = n2.id OR n3.parent_id = n2.id)
@@ -33,9 +32,7 @@ class SubTreeLoader(rootId: Long) {
     		
     		
       result.map(core.Node(_))
-    }
-    
-		  
+
   }
 
   
