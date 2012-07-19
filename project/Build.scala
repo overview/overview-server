@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
     val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
       
     val appDependencies = Seq(
+        "org.squeryl" %% "squeryl" % "0.9.5-2",
         "postgresql" % "postgresql" % "9.1-901.jdbc4",
         "net.sf.opencsv" % "opencsv" % "2.3"
     )
