@@ -10,6 +10,11 @@ import play.api.test._
 import play.api.test.Helpers._
 
 
+/**
+ * A helper class for tests that access the test-database. Wraps the test in a 
+ * FakeApplication and a transaction. The transaction is rolled back after the test.
+ * The database connection is available as an implicit parameter.
+ */
 trait  DbTestContext extends Around {
   implicit lazy val connection = Session.currentSession.connection
       
