@@ -4,7 +4,6 @@ import anorm._
 
 import helpers.DbTestContext
 import java.sql.Connection
-import Math.pow
 import org.specs2.mutable.Specification
 
 class SubTreeDataLoaderSpec extends Specification {
