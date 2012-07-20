@@ -1,60 +1,38 @@
 package models
 
-import anorm._ 
-
-import java.sql.Connection
-
+import org.specs2.mock._
 import org.specs2.mutable.Specification
 
-import helpers.DbTestContext
 
-class SubTreeLoaderSpec extends Specification {
+class SubTreeLoaderSpec extends Specification with Mockito {
 
   "SubTreeLoader" should {
     
-    
-    def writeBinaryTreeInDb(depth : Int)(implicit connection: Connection) : List[Long] = {
-      val id = SQL(
-        """
-          insert into node values (nextval('node_seq'), {description});
-        """
-      ).on("description" -> "root").executeInsert().getOrElse(-1l)
-            
-      id :: writeSubTreeInDb(id, depth - 1) 
-    }
-
-    
-    def writeSubTreeInDb(root : Long, depth: Int)(implicit connection : Connection) : List[Long] = depth match {
-      case 0 => Nil
-      case _ => {
-        
-        val childId1 = SQL("insert into Node values (nextval('node_seq'), {description}, {parent})").
-          on("description" -> ("heightA-" + depth), "parent" -> root).
-          executeInsert().getOrElse(-1l)
-        val childId2 = SQL("insert into Node values (nextval('node_seq'), {description}, {parent})").
-          on("description" -> ("heightB-" + depth), "parent" -> root).
-          executeInsert().getOrElse(-1l)
+    "call its loader and parser to create nodes" in {
+      implicit val unusedConnection: java.sql.Connection = null
       
-        childId1 :: childId2 ::
-          writeSubTreeInDb(childId1, depth - 1) ++ writeSubTreeInDb(childId2, depth - 1)
-      }
-    }
-    
-    
-    trait TreeCreated extends DbTestContext {
-      lazy val nodeIds = writeBinaryTreeInDb(10)
-    }
-    
-    "load subtree 5 levels deep" in new TreeCreated {
-      val subTreeLoader = new SubTreeLoader(nodeIds(0))
+      val loader = mock[SubTreeDataLoader]
+      val parser = mock[SubTreeDataParser]
       
+      val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"))
+      loader loadNodeData(1, 4) returns nodeData
+      parser createNodes(nodeData) returns List(core.Node(1, "worked!", Nil))
+      
+      val subTreeLoader = new SubTreeLoader(1, 4, loader, parser)
       val nodes = subTreeLoader.loadNodes()
       
-      nodes must have size(31)
+      there was one(loader).loadNodeData(1, 4)
+      there was one(parser).createNodes(nodeData)
+      
+      nodes.head.description must be equalTo("worked!")
     }
     
-        
-    
+    "be constructable with default loader and parser" in {
+      val subTreeLoader = new SubTreeLoader(3, 55)
+      
+      success
+    }
+   
   }   
         
 }
