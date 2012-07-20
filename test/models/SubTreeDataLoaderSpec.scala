@@ -56,5 +56,15 @@ class SubTreeDataLoaderSpec extends Specification {
     		  			    (rootId, childId2, "childB-" + rootId))
       
     }
+    
+    "include root node with no parent" in new TreeCreated {
+      
+      val subTreeDataLoader = new SubTreeDataLoader()
+      val rootId = nodeIds(0)
+      
+      val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
+      
+      nodeData must contain((-1l, rootId, "root"))
+    }
   }
 }
