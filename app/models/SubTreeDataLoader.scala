@@ -22,21 +22,15 @@ class SubTreeDataLoader {
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
-                            (implicit connection: Connection) : List[NodeData] = depth match {
-    case 0 => Nil
-    case _ => {
-      if (nodes.size == 0) {
-        Nil
-      }
-      else {
-    	val childNodes = SQL(childNodeQuery(nodes)).
-    	  as(long("id") ~ long("child_id") ~ str("child_description") map(flatten) *)
+                            (implicit connection: Connection) : List[NodeData] = {
+    if (depth == 0 || nodes.size == 0) Nil
+    else {
+      val childNodes = SQL(childNodeQuery(nodes)).
+    	as(long("id") ~ long("child_id") ~ str("child_description") map(flatten) *)
       
-    	val childNodeIds = childNodes.map(_._2)
+      val childNodeIds = childNodes.map(_._2)
       
-    	childNodes ++ loadChildNodes(childNodeIds, depth - 1)
-      }
-    
+      childNodes ++ loadChildNodes(childNodeIds, depth - 1)
     }
   }
 
