@@ -7,8 +7,11 @@ class SubTreeDataParser {
     val childNodeIds = parentData.map { 
       case (node, dataList) => (node, dataList.map(_._2))
     }
-
     
-    data.map(d => core.Node(d._2, d._3, childNodeIds.getOrElse(d._2, Nil)))
+    data.map(d => createOneNode(d._2, d._3, childNodeIds))
+  }
+  
+  private def createOneNode(id: Long, description: String, childNodeIds: Map[Long, List[Long]]) : core.Node = {
+    core.Node(id, description, childNodeIds.getOrElse(id, Nil))
   }
 }
