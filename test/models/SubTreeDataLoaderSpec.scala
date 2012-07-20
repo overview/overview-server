@@ -40,33 +40,19 @@ class SubTreeDataLoaderSpec extends Specification {
       val childTree1 = writeSubTreeInDb(childId1, depth - 1)
       val childTree2 = writeSubTreeInDb(childId2, depth - 1)
       
-      childId1 :: childId2 :: childTree1 ++ childTree2
+      childId1 :: childTree1 ++ (childId2 :: childTree2)
     }
   }
     
   "SubTreeDatabaseLoader" should {
-   
-    "include root node with children of requested subTree" in new TreeCreated {
-      
-      val childId1 = nodeIds(1)
-      val childId2 = nodeIds(2)
-      
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
-      
-      nodeData must contain((rootId, childId1, "childA-" + rootId), 
-    		  			    (rootId, childId2, "childB-" + rootId))
-      
-    }
     
     "include root node with no parent" in new TreeCreated {
-      
       val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
       
       nodeData must contain((-1l, rootId, "root"))
     }
     
     "load subTree of depth 4" in new TreeCreated {
-      
       val nodeData = subTreeDataLoader.loadNodeData(rootId, 4)
       nodeData must have size(31)
       
@@ -77,7 +63,6 @@ class SubTreeDataLoaderSpec extends Specification {
     }
     
     "load subTree of depth 7" in new TreeCreated {
-      
       val nodeData = subTreeDataLoader.loadNodeData(rootId, 7)
       nodeData must have size(255)
       
@@ -87,8 +72,13 @@ class SubTreeDataLoaderSpec extends Specification {
       nonLeafNodes must haveTheSameElementsAs(parentNodes)
     }
     
-    "loads complete subtree if depth exceeds depth of tree" in new TreeCreated { skipped("not implemented") }
+    "loads complete subtree if depth exceeds depth of tree" in new TreeCreated { 
+      val lowestNonLeafNode = nodeIds(10 - 2)
+      val nodeData = subTreeDataLoader.loadNodeData(lowestNonLeafNode, 5)
+      nodeData must have size(3)
+    }
+    
     "handles incorret depth parameter" in new TreeCreated { skipped("not implemented") }
-    "handles missing rootid" in new TreeCreated { skipped("not implement") }
+    "handles missing rootid" in new TreeCreated { skipped("not implemented") }
   }
 }
