@@ -24,6 +24,20 @@ class SubTreeDataParserSpec extends Specification {
       val nodeDescriptions = nodeData.map(n => (n._2, n._3))
       
       nodes.map(n => (n.id, n.description)) must haveTheSameElementsAs(nodeDescriptions)
+      
+      val root = nodes.find(_.id == 1l).get
+      val child2 = nodes.find(_.id == 2l).get
+      val child3 = nodes.find(_.id == 3l).get
+      
+      root.childNodeIds   must haveTheSameElementsAs(List(2l, 3l))
+      child2.childNodeIds must haveTheSameElementsAs(List(4l, 5l, 6l, 7l))
+      child3.childNodeIds must haveTheSameElementsAs(List(8l, 9l, 10l))
+      
+      val leafIds = 4l to 10l
+      val leafNodes = leafIds.flatMap(i => nodes.find(_.id == i))
+      
+      leafNodes.flatMap(_.childNodeIds) must be empty
+       
     }
   }
 
