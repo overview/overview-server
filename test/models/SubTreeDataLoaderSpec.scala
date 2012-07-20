@@ -8,9 +8,11 @@ import Math.pow
 import org.specs2.mutable.Specification
 
 class SubTreeDataLoaderSpec extends Specification {
-
+  
+  private val TreeDepth = 6
+  
   trait TreeCreated extends DbTestContext {
-    lazy val nodeIds = writeBinaryTreeInDb(10)
+    lazy val nodeIds = writeBinaryTreeInDb(TreeDepth)
     lazy val rootId = nodeIds(0)
     
     lazy val subTreeDataLoader = new SubTreeDataLoader()
@@ -52,29 +54,29 @@ class SubTreeDataLoaderSpec extends Specification {
       nodeData must contain((-1l, rootId, "root"))
     }
     
-    "load subTree of depth 4" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 4)
-      nodeData must have size(31)
+    "load subTree of depth 2" in new TreeCreated {
+      val nodeData = subTreeDataLoader.loadNodeData(rootId, 2)
+      nodeData must have size(7)
       
-      val nonLeafNodes = nodeData.map(_._2).take(15)
+      val nonLeafNodes = nodeData.map(_._2).take(3)
       val parentNodes = nodeData.map(_._1).tail.distinct
       
       nonLeafNodes must haveTheSameElementsAs(parentNodes)
     }
     
-    "load subTree of depth 7" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 7)
-      nodeData must have size(255)
+    "load subTree of depth 5" in new TreeCreated {
+      val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
+      nodeData must have size(63)
       
-      val nonLeafNodes = nodeData.map(_._2).take(127)
+      val nonLeafNodes = nodeData.map(_._2).take(31)
       val parentNodes = nodeData.map(_._1).tail.distinct
       
       nonLeafNodes must haveTheSameElementsAs(parentNodes)
     }
     
     "loads complete subtree if depth exceeds depth of tree" in new TreeCreated { 
-      val lowestNonLeafNode = nodeIds(10 - 2)
-      val nodeData = subTreeDataLoader.loadNodeData(lowestNonLeafNode, 5)
+      val lowestNonLeafNode = nodeIds(TreeDepth - 2)
+      val nodeData = subTreeDataLoader.loadNodeData(lowestNonLeafNode, TreeDepth / 2)
       nodeData must have size(3)
     }
     
