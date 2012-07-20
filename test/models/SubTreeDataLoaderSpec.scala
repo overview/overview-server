@@ -1,8 +1,10 @@
 package models
 
 import anorm._
+
 import helpers.DbTestContext
 import java.sql.Connection
+import Math.pow
 import org.specs2.mutable.Specification
 
 class SubTreeDataLoaderSpec extends Specification {
@@ -38,9 +40,7 @@ class SubTreeDataLoaderSpec extends Specification {
       val childTree1 = writeSubTreeInDb(childId1, depth - 1)
       val childTree2 = writeSubTreeInDb(childId2, depth - 1)
       
-      childId1 :: childId2 ::
-        childTree1.take(2) ++ childTree2.take(2) ++ 
-        childTree1.drop(2) ++ childTree2.drop(2)
+      childId1 :: childId2 :: childTree1 ++ childTree2
     }
   }
     
@@ -68,11 +68,25 @@ class SubTreeDataLoaderSpec extends Specification {
     "load subTree of depth 4" in new TreeCreated {
       
       val nodeData = subTreeDataLoader.loadNodeData(rootId, 4)
-      
       nodeData must have size(31)
+      
+      val nonLeafNodes = nodeData.map(_._2).take(15)
+      val parentNodes = nodeData.map(_._1).tail.distinct
+      
+      nonLeafNodes must haveTheSameElementsAs(parentNodes)
     }
     
-    "load subTree of depth 7" in new TreeCreated { skipped("not implemented") }
+    "load subTree of depth 7" in new TreeCreated {
+      
+      val nodeData = subTreeDataLoader.loadNodeData(rootId, 7)
+      nodeData must have size(255)
+      
+      val nonLeafNodes = nodeData.map(_._2).take(127)
+      val parentNodes = nodeData.map(_._1).tail.distinct
+      
+      nonLeafNodes must haveTheSameElementsAs(parentNodes)
+    }
+    
     "loads complete subtree if depth exceeds depth of tree" in new TreeCreated { skipped("not implemented") }
     "handles incorret depth parameter" in new TreeCreated { skipped("not implemented") }
     "handles missing rootid" in new TreeCreated { skipped("not implement") }
