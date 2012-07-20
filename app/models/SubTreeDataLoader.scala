@@ -10,15 +10,17 @@ class SubTreeDataLoader {
   
     
   def loadNodeData(rootId: Long, depth: Int)(implicit connection: Connection) : List[NodeData] = {
-    val rootNode = SQL(RootNodeQuery).on("id" -> rootId).
-      as(long("id") ~ str("description") map(flatten) single)
+    require(depth > 0)
     
-    val rootAsChild = (-1l, rootNode._1, rootNode._2)
+    val rootNode = SQL(RootNodeQuery).on("id" -> rootId).
+      as(long("id") ~ str("description") map(flatten) *)
+    
+    val rootAsChild = rootNode.map(n => (-1l, n._1, n._2))
     
     val childNodes = loadChildNodes(List(rootId), depth)
     
     
-    rootAsChild :: childNodes
+    rootAsChild ++ childNodes
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)

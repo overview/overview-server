@@ -78,7 +78,15 @@ class SubTreeDataLoaderSpec extends Specification {
       nodeData must have size(3)
     }
     
-    "handles incorret depth parameter" in new TreeCreated { skipped("not implemented") }
-    "handles missing rootid" in new TreeCreated { skipped("not implemented") }
+    "handles incorret depth parameter" in new TreeCreated { 
+      val nodeData = subTreeDataLoader.loadNodeData(rootId, 0) must
+        throwAn[IllegalArgumentException] 
+    }
+    
+    "handles missing rootid" in new TreeCreated { 
+      val nodeData = subTreeDataLoader.loadNodeData(-123, 4)
+      
+      nodeData must be empty
+    }
   }
 }
