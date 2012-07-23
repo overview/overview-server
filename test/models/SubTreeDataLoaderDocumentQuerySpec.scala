@@ -27,11 +27,11 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     	  executeInsert().getOrElse(-1l)
     } toList
     
-    def insertDocuments(nodes : List[Long])(implicit connection : Connection) :
-      List[Long] = {
+    def insertDocuments(nodes : List[Long], numberOfDocuments : Int = 10)
+                       (implicit connection : Connection) : List[Long] = {
       
       val ids = nodes.flatMap { n => 
-        val documents = for (i <- 1 to 10) yield SQL(
+        val documents = for (i <- 1 to numberOfDocuments) yield SQL(
             """
               INSERT INTO document VALUES 
                 (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
@@ -49,8 +49,8 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       ids
     }
     
-	"return documents for one node only" in new DocumentsLoaded {
-      val documentIds = insertDocuments(nodeIds)
+	"return 10 documents at most for a node" in new DocumentsLoaded {
+      val documentIds = insertDocuments(nodeIds, 15)
 
       val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds.take(1))
       
@@ -59,6 +59,16 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       loadedIds must haveTheSameElementsAs(documentIds.take(10))
     }
 	
+    "return all documents if fewer than 10" in new DocumentsLoaded {
+      val documentIds = insertDocuments(nodeIds, 5)
+      
+      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
+      
+      val loadedIds = nodeDocuments.map(_._3)
+      
+      loadedIds must haveTheSameElementsAs(documentIds)
+    } 
+    
 	"return documents for several nodes" in new DocumentsLoaded {
 	  val documentIds = insertDocuments(nodeIds)
 	  
@@ -84,6 +94,9 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  
 	  nodeDocuments must be empty
 	}
+	
+	
+
   }
   
   step(stop)
