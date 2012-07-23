@@ -28,7 +28,7 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   def writeBinaryTreeInDb(depth : Int)(implicit connection: Connection) : List[Long] = {
     val id = SQL(
         """
-          insert into node values (nextval('node_seq'), {description});
+          INSERT INTO node VALUES (nextval('node_seq'), {description});
         """
     ).on("description" -> "root").executeInsert().getOrElse(-1l)
             
@@ -38,10 +38,10 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   def writeSubTreeInDb(root : Long, depth: Int)(implicit connection : Connection) : List[Long] = depth match {
     case 0 => Nil
     case _ => {
-      val childId1 = SQL("insert into Node values (nextval('node_seq'), {description}, {parent})").
+      val childId1 = SQL("INSERT INTO node VALUES (nextval('node_seq'), {description}, {parent})").
         on("description" -> ("childA-" + root), "parent" -> root).
         executeInsert().getOrElse(-1l)
-      val childId2 = SQL("insert into Node values (nextval('node_seq'), {description}, {parent})").
+      val childId2 = SQL("INSERT INTO node VALUES (nextval('node_seq'), {description}, {parent})").
         on("description" -> ("childB-" + root), "parent" -> root).
         executeInsert().getOrElse(-1l)
         
