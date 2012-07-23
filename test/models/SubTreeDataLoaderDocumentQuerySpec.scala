@@ -49,42 +49,38 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       ids
     }
     
+	def documentIdsForNodes(nodes: List[Long])(implicit connection: Connection) : List[Long] = {
+	  val subTreeDataLoader = new SubTreeDataLoader()
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodes)
+	  
+	  nodeDocuments.map(_._3)
+	}
+    
+    
 	"return 10 documents at most for a node" in new DocumentsLoaded {
       val documentIds = insertDocuments(nodeIds, 15)
-
-      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds.take(1))
-      
-      val loadedIds = nodeDocuments.map(_._3)
+      val loadedIds = documentIdsForNodes(nodeIds.take(1))
       
       loadedIds must haveTheSameElementsAs(documentIds.take(10))
     }
 	
     "return all documents if fewer than 10" in new DocumentsLoaded {
       val documentIds = insertDocuments(nodeIds, 5)
-      
-      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
-      
-      val loadedIds = nodeDocuments.map(_._3)
+      val loadedIds = documentIdsForNodes(nodeIds)
       
       loadedIds must haveTheSameElementsAs(documentIds)
     } 
     
 	"return documents for several nodes" in new DocumentsLoaded {
 	  val documentIds = insertDocuments(nodeIds)
-	  
-	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
-	  
-	  val loadedIds = nodeDocuments.map(_._3)
+	  val loadedIds = documentIdsForNodes(nodeIds)
 	  
 	  loadedIds must haveTheSameElementsAs(documentIds)
 	}
 	
 	"handle nodes with no documents" in new DocumentsLoaded {
 	  val documentIds = insertDocuments(nodeIds.take(2))
-	  
-	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
-	  
-	  val loadedIds = nodeDocuments.map(_._3)
+	  val loadedIds = documentIdsForNodes(nodeIds)
 	  
 	  loadedIds must haveTheSameElementsAs(documentIds.take(20))
 	}
@@ -94,7 +90,6 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  
 	  nodeDocuments must be empty
 	}
-	
 	
 
   }
