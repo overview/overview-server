@@ -17,8 +17,6 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     
     trait DocumentsLoaded extends DbTestContext {
       lazy val nodeIds = insertNodes
-      lazy val subTreeDataLoader = new SubTreeDataLoader()
-            
     }
     
     def insertNodes(implicit connection: Connection) : List[Long] = {
@@ -86,12 +84,32 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	}
 	
 	"return empty list for unknown node Id" in new DocumentsLoaded {
+      val subTreeDataLoader = new SubTreeDataLoader()
 	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(List(1l))
 	  
 	  nodeDocuments must be empty
 	}
 	
+	"returns total document count" in new DocumentsLoaded {
+	  val numberOfDocuments = 15
+	  val documentIds = insertDocuments(nodeIds.take(1), numberOfDocuments)
 
+	  val subTreeDataLoader = new SubTreeDataLoader()
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds.take(1))
+	  
+	  val documentCounts = nodeDocuments.map(_._2)
+	  documentCounts.distinct must contain(numberOfDocuments.toLong).only
+	}
+
+	"return node ids" in new DocumentsLoaded {
+	  val documentIds = insertDocuments(nodeIds)
+	  
+	  val subTreeDataLoader = new SubTreeDataLoader()
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
+	  
+	  val nodes = nodeDocuments.map(_._1)
+	  nodes.distinct must haveTheSameElementsAs(nodeIds)
+	}
   }
   
   step(stop)
