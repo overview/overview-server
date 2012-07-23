@@ -15,34 +15,47 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     
   "SubTreeDataLoader" should {
     
-	"return documents for one node only" in new DbTestContext {
+    trait DocumentsLoaded extends DbTestContext {
+      lazy val nodeIds = insertNodes
       
-      val nodeId = SQL(
-        """
-          INSERT INTO node VALUES (nextval('node_seq'), 'node');
-        """
-      ).executeInsert().getOrElse(-1l)
+    }
+    
+    def insertNodes(implicit connection: Connection) : List[Long] = {
+      val nodeId = SQL("INSERT INTO node VALUES (nextval('node_seq'), 'node')").
+    		  executeInsert().getOrElse(-1l)
       
-      val documentIds = for (i <- 1 to 10) yield
-        SQL(
-          """
-            INSERT INTO document VALUES 
-              (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
-          """
-        ).on("title" -> ("title-" + i),
-            "textUrl" -> ("textUrl-" + i),
-            "viewUrl" -> ("viewUrl-" + i)).executeInsert().getOrElse(-1);
-
-
-      documentIds.foreach(id =>
-        SQL("INSERT INTO node_document VALUES ({nodeId}, {documentId})").
-          on("nodeId" -> nodeId, "documentId" -> id).executeInsert())
+      List(nodeId)
+    }
+    
+    def insertDocuments(nodes : List[Long])(implicit connection : Connection) :
+      List[Long] = {
+      
+      val ids = nodes.flatMap { n => 
+        val documents = for (i <- 1 to 10) yield SQL(
+            """
+              INSERT INTO document VALUES 
+                (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
+            """
+          ).on("title" -> ("title-" + i),
+               "textUrl" -> ("textUrl-" + i),
+               "viewUrl" -> ("viewUrl-" + i)).executeInsert().getOrElse(-1l);
+        
+        documents.foreach(id =>
+          SQL("INSERT INTO node_document VALUES ({nodeId}, {documentId})").
+          on("nodeId" -> n, "documentId" -> id).executeInsert())
           
+        documents
+      }
+
+      ids
+    }
+    
+	"return documents for one node only" in new DocumentsLoaded {
+      val documentIds = insertDocuments(nodeIds)
       val subTreeDataLoader = new SubTreeDataLoader()
       
-      val nodeDocuments = subTreeDataLoader.loadDocumentIds(List(nodeId))
+      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
       
-      nodeDocuments must have size(10)
       val loadedIds = nodeDocuments.map(_._3)
       
       loadedIds must haveTheSameElementsAs(documentIds)
