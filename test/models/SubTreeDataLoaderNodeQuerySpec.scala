@@ -1,12 +1,20 @@
 package models
 
 import anorm._
-
+import anorm.SqlParser._
 import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
+import org.squeryl.Session
 
-class SubTreeDataLoaderSpec extends Specification {
+import play.api.test._
+import play.api.test.Helpers._
+import play.api.Play.{start, stop}
+
+class SubTreeDataLoaderNodeQuerySpec extends Specification  {
+  
+  step(start(FakeApplication()))
+  
   
   private val TreeDepth = 6
   
@@ -27,7 +35,6 @@ class SubTreeDataLoaderSpec extends Specification {
     id :: writeSubTreeInDb(id, depth - 1) 
   }
 
-    
   def writeSubTreeInDb(root : Long, depth: Int)(implicit connection : Connection) : List[Long] = depth match {
     case 0 => Nil
     case _ => {
@@ -40,7 +47,7 @@ class SubTreeDataLoaderSpec extends Specification {
         
       val childTree1 = writeSubTreeInDb(childId1, depth - 1)
       val childTree2 = writeSubTreeInDb(childId2, depth - 1)
-      
+
       childId1 :: childTree1 ++ (childId2 :: childTree2)
     }
   }
@@ -76,18 +83,29 @@ class SubTreeDataLoaderSpec extends Specification {
     "loads complete subtree if depth exceeds depth of tree" in new TreeCreated { 
       val lowestNonLeafNode = nodeIds(TreeDepth - 2)
       val nodeData = subTreeDataLoader.loadNodeData(lowestNonLeafNode, TreeDepth / 2)
+      
       nodeData must have size(3)
     }
     
-    "handles incorret depth parameter" in new TreeCreated { 
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 0) must
+    "handle incorrect depth parameter" in new TreeCreated {
+      val nodeData = subTreeDataLoader.loadNodeData(123, 0) must
         throwAn[IllegalArgumentException] 
     }
-    
-    "handles missing rootid" in new TreeCreated { 
-      val nodeData = subTreeDataLoader.loadNodeData(-123, 4)
+      
+    "handle missing rootid" in new TreeCreated {
+      val nodeData = subTreeDataLoader.loadNodeData(-1, 4)
       
       nodeData must be empty
     }
+    
+    "return empty document list for nodes with no documents" in new TreeCreated {
+      val nodes = nodeIds.take(5)
+      
+      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodes)
+      
+      nodeDocuments must be empty
+    }
   }
+  
+  step(stop())
 }

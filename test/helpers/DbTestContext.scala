@@ -16,17 +16,14 @@ import play.api.test.Helpers._
  * The database connection is available as an implicit parameter.
  */
 trait  DbTestContext extends Around {
-  implicit lazy val connection = Session.currentSession.connection
-      
+  lazy implicit val connection = Session.currentSession.connection
+  
   def around[T <% Result](test: => T) = {
-    running(FakeApplication()) {
-      inTransaction {
-        val result = test
-        connection.rollback()
+	inTransaction {
+	val result = test
+	connection.rollback()
             
-        result
-      }
-    }
+	result
+	}
   }
-   
 }
