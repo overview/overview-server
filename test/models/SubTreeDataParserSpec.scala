@@ -17,7 +17,8 @@ class SubTreeDataParserSpec extends Specification {
       
       val subTreeDataParser = new SubTreeDataParser()
       
-      val nodes = subTreeDataParser.createNodes(nodeData)
+      val emptyDocumentData = Nil
+      val nodes = subTreeDataParser.createNodes(nodeData, emptyDocumentData)
       
       nodes must have size(10)
       
@@ -38,6 +39,27 @@ class SubTreeDataParserSpec extends Specification {
       
       leafNodes.flatMap(_.childNodeIds) must be empty
        
+    }
+    
+    "create Nodes with Documents" in {
+      val nodeData = List(
+          (-1l, 1l, "root"), (1l, 2l, "child"), (2l, 3l, "grandchild"))
+      val documentData = List(
+          (1l, 25l, 100l), (2l, 2l, 101l),
+          (1l, 25l, 102l), (2l, 2l, 103l),
+          (1l, 25l, 103l),
+          (1l, 25l, 104l), (3l, 1l, 105l))
+      
+      val rootDocuments = documentData.filter(_._1 == 1l).map(_._1)
+      val childDocuments = documentData.filter(_._1 == 2l).map(_._1)
+      val grandChildDocuments = documentData.filter(_._1 == 3l).map(_._1)
+      
+      val subTreeDataParser = new SubTreeDataParser()
+      val nodes = subTreeDataParser.createNodes(nodeData, documentData)
+      
+      val root = nodes.find(_.id == 1l)
+    //  root.documentIds must haveTheSameElementsAs(rootDocuments)
+      nodes must have size(3)
     }
   }
 
