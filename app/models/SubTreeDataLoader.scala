@@ -4,6 +4,8 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 
+import org.squeryl.Session
+
 /**
  * Utility class form SubTreeLoader that performs database queries and returns results as 
  * a list of tuples.
@@ -11,6 +13,7 @@ import java.sql.Connection
 class SubTreeDataLoader {
 
   type NodeData = (Long, Long, String)
+  type NodeDocument = (Long, Long, Long)
   
   private val IdColumn = "id"
   private val ChildIdColumn = "child_id"
@@ -33,6 +36,27 @@ class SubTreeDataLoader {
     
     rootAsChild ++ childNodes
   }
+  
+  
+  def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
+    val documentIds = SQL(
+      """
+        SELECT node_id, document_count, document_id
+    	FROM (
+    	  SELECT 
+    		nd.node_id,
+    		COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
+    		nd.document_id,
+    		RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
+    	  FROM node_document nd
+    	  WHERE nd.node_id IN ( """ + nodeIds.mkString(", ") + """)
+    	  ORDER BY nd.document_id
+    	) ss
+    	WHERE ss.pos < 11
+      """).as(long("node_id") ~ long("document_count") ~ long("document_id") map(flatten) *)
+
+    documentIds
+  } 
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
