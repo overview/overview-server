@@ -68,6 +68,22 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  
 	  loadedIds must haveTheSameElementsAs(documentIds)
 	}
+	
+	"handle nodes with no documents" in new DocumentsLoaded {
+	  val documentIds = insertDocuments(nodeIds.take(2))
+	  
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
+	  
+	  val loadedIds = nodeDocuments.map(_._3)
+	  
+	  loadedIds must haveTheSameElementsAs(documentIds.take(20))
+	}
+	
+	"return empty list for unknown node Id" in new DocumentsLoaded {
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(List(1l))
+	  
+	  nodeDocuments must be empty
+	}
   }
   
   step(stop)
