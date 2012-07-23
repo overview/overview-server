@@ -17,15 +17,15 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     
     trait DocumentsLoaded extends DbTestContext {
       lazy val nodeIds = insertNodes
-      
+      lazy val subTreeDataLoader = new SubTreeDataLoader()
+            
     }
     
     def insertNodes(implicit connection: Connection) : List[Long] = {
-      val nodeId = SQL("INSERT INTO node VALUES (nextval('node_seq'), 'node')").
-    		  executeInsert().getOrElse(-1l)
-      
-      List(nodeId)
-    }
+      for (i <- 1 to 3) yield
+        SQL("INSERT INTO node VALUES (nextval('node_seq'), 'node')").
+    	  executeInsert().getOrElse(-1l)
+    } toList
     
     def insertDocuments(nodes : List[Long])(implicit connection : Connection) :
       List[Long] = {
@@ -46,20 +46,28 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
           
         documents
       }
-
       ids
     }
     
 	"return documents for one node only" in new DocumentsLoaded {
       val documentIds = insertDocuments(nodeIds)
-      val subTreeDataLoader = new SubTreeDataLoader()
-      
-      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
+
+      val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds.take(1))
       
       val loadedIds = nodeDocuments.map(_._3)
       
-      loadedIds must haveTheSameElementsAs(documentIds)
+      loadedIds must haveTheSameElementsAs(documentIds.take(10))
     }
+	
+	"return documents for several nodes" in new DocumentsLoaded {
+	  val documentIds = insertDocuments(nodeIds)
+	  
+	  val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodeIds)
+	  
+	  val loadedIds = nodeDocuments.map(_._3)
+	  
+	  loadedIds must haveTheSameElementsAs(documentIds)
+	}
   }
   
   step(stop)
