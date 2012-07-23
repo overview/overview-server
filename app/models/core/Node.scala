@@ -1,4 +1,4 @@
 package models.core
 
-case class Node (id: Long, description: String, childNodeIds: List[Long] = Nil)
+case class Node (id: Long, description: String, childNodeIds: List[Long])
 				 

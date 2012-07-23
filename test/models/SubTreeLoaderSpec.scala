@@ -16,13 +16,13 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       
       val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"))
       loader loadNodeData(1, 4) returns nodeData
-      parser createNodes(nodeData) returns List(core.Node(1, "worked!", Nil))
+      parser createNodes(nodeData, Nil) returns List(core.Node(1, "worked!", Nil))
       
       val subTreeLoader = new SubTreeLoader(1, 4, loader, parser)
       val nodes = subTreeLoader.loadNodes()
       
       there was one(loader).loadNodeData(1, 4)
-      there was one(parser).createNodes(nodeData)
+      there was one(parser).createNodes(nodeData, Nil)
       
       nodes.head.description must be equalTo("worked!")
     }

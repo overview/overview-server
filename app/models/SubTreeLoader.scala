@@ -22,7 +22,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
 	
     val nodeData = loader.loadNodeData(rootId, depth)
     
-    parser.createNodes(nodeData)
+    parser.createNodes(nodeData, Nil)
   }
 
   
