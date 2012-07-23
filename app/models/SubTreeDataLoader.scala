@@ -18,7 +18,9 @@ class SubTreeDataLoader {
   private val IdColumn = "id"
   private val ChildIdColumn = "child_id"
   private val DescriptionColumn = "child_description"
-    
+  private val DocumentCountColumn = "document_count"
+  private val DocumentIdColumn = "document_id"
+  
   /**
    * @return a list of tuples: (parentId, childId, childDescription) for each node found in
    * a breadth first traversal of the tree to the specified depth, starting at the specified 
@@ -39,23 +41,8 @@ class SubTreeDataLoader {
   
   
   def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
-    val documentIds = SQL(
-      """
-        SELECT node_id, document_count, document_id
-    	FROM (
-    	  SELECT 
-    		nd.node_id,
-    		COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
-    		nd.document_id,
-    		RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
-    	  FROM node_document nd
-    	  WHERE nd.node_id IN ( """ + nodeIds.mkString(", ") + """)
-    	  ORDER BY nd.document_id
-    	) ss
-    	WHERE ss.pos < 11
-      """).as(long("node_id") ~ long("document_count") ~ long("document_id") map(flatten) *)
-
-    documentIds
+    SQL(nodeDocumentQuery(nodeIds)).
+    	as(long(IdColumn) ~ long(DocumentCountColumn) ~ long(DocumentIdColumn) map(flatten) *)
   } 
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
@@ -78,8 +65,27 @@ class SubTreeDataLoader {
     "SELECT node.parent_id AS " + IdColumn +
     ", node.id AS " + ChildIdColumn +
     ", node.description AS " + DescriptionColumn +
-    "  FROM node WHERE parent_id IN (" + nodeIds.mkString(", ") + 
-    ")"
+    "  FROM node WHERE parent_id IN " + idList(nodeIds)
   }
+  
+  private def nodeDocumentQuery(nodeIds: List[Long]) : String = {
+    """
+      SELECT node_id AS id, document_count, document_id
+	  FROM (
+    	SELECT 
+    	  nd.node_id,
+    	  COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
+    	  nd.document_id,
+    	  RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
+    	FROM node_document nd
+    	WHERE nd.node_id IN """ + idList(nodeIds) + 
+    """
+    	ORDER BY nd.document_id
+      ) ss
+      WHERE ss.pos < 11
+    """    
+  }
+  
+  private def idList(ids: List[Long]) : String = "(" + ids.mkString(", ") + ")"
 
 }

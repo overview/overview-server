@@ -19,14 +19,14 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       
       val nodeId = SQL(
         """
-          insert into Node values (nextval('node_seq'), 'node');
+          INSERT INTO node VALUES (nextval('node_seq'), 'node');
         """
       ).executeInsert().getOrElse(-1l)
       
       val documentIds = for (i <- 1 to 10) yield
         SQL(
           """
-            insert into Document values 
+            INSERT INTO document VALUES 
               (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
           """
         ).on("title" -> ("title-" + i),
@@ -35,7 +35,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 
 
       documentIds.foreach(id =>
-        SQL("insert into node_document values ({nodeId}, {documentId})").
+        SQL("INSERT INTO node_document VALUES ({nodeId}, {documentId})").
           on("nodeId" -> nodeId, "documentId" -> id).executeInsert())
           
       val subTreeDataLoader = new SubTreeDataLoader()
