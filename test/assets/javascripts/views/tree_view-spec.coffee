@@ -117,8 +117,8 @@ describe 'views/tree_view', ->
         check_pixel(99, 99, rgb_background)
 
       it 'should add a root that appears after drawing', ->
-        Timecop.freeze new Date(0), -> add_node_through_deferred(1, [], 1)
-        Timecop.freeze new Date(1000), -> view.update()
+        at(0, -> add_node_through_deferred(1, [], 1))
+        at(1000, -> view.update())
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 50, rgb_node)
         check_pixel(99, 99, rgb_background)
@@ -139,11 +139,11 @@ describe 'views/tree_view', ->
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
-        Timecop.freeze new Date(0), ->
+        at 0, ->
           add_node_through_deferred(1, [2, 3], 2)
           add_node_through_deferred(2, [], 1)
           add_node_through_deferred(3, [], 1)
-        Timecop.freeze new Date(1000), -> animated_tree.update()
+        at(1000, -> animated_tree.update())
         create_view()
 
       it 'should put padding around nodes', ->
@@ -176,12 +176,12 @@ describe 'views/tree_view', ->
     describe 'with a non-full tree', ->
       beforeEach ->
         # three-level binary tree, right-middle node isn't full
-        Timecop.freeze new Date(0), ->
+        at 0, ->
           add_node_through_deferred(1, [2, 7], 4)
           add_node_through_deferred(2, [3, 4], 2)
           add_node_through_deferred(3, [], 1)
           add_node_through_deferred(4, [], 1)
-        Timecop.freeze new Date(1000), -> animated_tree.update()
+        at(1000, -> animated_tree.update())
         create_view()
 
       it 'should trigger :click on a unloaded node', ->
