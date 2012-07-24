@@ -11,10 +11,10 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     val loader = mock[SubTreeDataLoader]
     val parser = mock[SubTreeDataParser]
     val subTreeLoader = new SubTreeLoader(1, 4, loader, parser)
+    val nodeIds = List(1l, 2l, 3l)
     
-    val dummyNodes = List(core.Node(1, "dummyNode", Nil, null), 
-    		  			  core.Node(2, "dummyNode", Nil, null), 
-    		  			  core.Node(3, "dummyNode", Nil, null))	
+    val dummyNodes = nodeIds.map(core.Node(_, "dummyNode", Nil, null))
+    val dummyDocuments = List(core.Document(10l, "documents", "created", "from data"))
 
   }
   
@@ -35,26 +35,22 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     
     "call loader and parser to create documents from nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l)
-      val nodeIds = List(1l, 2l, 3l)
       
-      val mockDocumentData = List((10l, "actually", "all", "documentdata"))
-      val mockDocuments = List(core.Document(10l, "documents", "created", "from data"))
+      val dummyDocumentData = List((10l, "actually", "all", "documentdata"))
       
-      loader loadDocuments(nodeIds) returns mockDocumentData
-      parser createDocuments(mockDocumentData) returns mockDocuments
+      loader loadDocuments(nodeIds) returns dummyDocumentData
+      parser createDocuments(dummyDocumentData) returns dummyDocuments
       
       val documents = subTreeLoader.loadDocuments(dummyNodes)
 
       there was one(loader).loadDocuments(nodeIds)
-      there was one(parser).createDocuments(mockDocumentData)
+      there was one(parser).createDocuments(dummyDocumentData)
     }
     
     "not duplicate documents included in multiple nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 10l, 40l, 10l, 40l, 40l, 50l)
-      val nodeIds = List(1l, 2l, 3l)
-      
+
       val dummyDocumentData = documentIds.map((_, "nodes will", "include the", "same documents"))
-      val dummyDocuments = List(core.Document(10l, "documents", "created", "from data"))
       
       val distinctDocumentData = documentIds.distinct.map((_, "nodes will", "include the", "same documents"))
           
@@ -65,6 +61,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       
       there was one(parser).createDocuments(distinctDocumentData)
     }
+    
     
     "be constructable with default loader and parser" in {
       val subTreeLoader = new SubTreeLoader(3, 55)
