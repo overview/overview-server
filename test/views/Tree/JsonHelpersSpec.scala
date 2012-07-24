@@ -38,6 +38,25 @@ object JsonHelpersSpec extends Specification {
     }
   }
   
+  "GenerateJson" should {
+    "generate Json for Node" in {
+      val nodeId = 234l;
+      val description = "nodeDescription"
+      val childIds = List(2l, 3l, 4l)
+      val documentIds = List(20l, 21l)
+      val documentIdList = models.core.DocumentIdList(documentIds, 34l)
+      val node = models.core.Node(nodeId, description, childIds, documentIdList)
+      
+      val nodeJson = JsonHelpers.generateJson(node)
+      
+      nodeJson.toString must /("id" -> nodeId)
+      nodeJson.toString must /("description" -> description)
+      nodeJson.toString must contain("\"children\":[" + childIds.mkString(",") + "]")
+      nodeJson.toString must contain("\"docids\":[" + documentIds.mkString(",") + "]")
+      nodeJson.toString must /("doclist") /("n" -> 34)
+    }
+  }
+  
   "rootNodeToJsValue" should {
     "contain the nodes" in new DbContext {
     	val tree = new Tree()

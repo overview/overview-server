@@ -22,9 +22,22 @@ object JsonHelpers {
 	  JsArray(data.map(generateJson))
 	}
 	
-	private def generateJson[A](data: A) : JsValue = data match {
+	def generateJson[A](data: A) : JsValue = data match {
 	  case models.core.Node(id, description, childNodeIds, documentList) => {
-	    JsObject(Seq("id" -> JsNumber(id)))
+	    JsObject(Seq(
+	    			"id" -> JsNumber(id),
+	    			"description" -> JsString(description),
+	    			"children" -> JsArray(childNodeIds.map(JsNumber(_))),
+	    			"doclist" -> generateJson(documentList)
+	    			)
+	    		)
+	  }
+	  case models.core.DocumentIdList(ids, total) => {
+	    JsObject(Seq(
+	    			"docids" -> JsArray(ids.map(JsNumber(_))),
+	    			"n" -> JsNumber(total)
+	    			)
+	    		)
 	  }
 	}
 	
