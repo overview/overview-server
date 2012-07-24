@@ -21,6 +21,9 @@ class SubTreeDataLoader {
   private val DescriptionColumn = "child_description"
   private val DocumentCountColumn = "document_count"
   private val DocumentIdColumn = "document_id"
+  private val TitleColumn = "title"
+  private val TextUrlColumn = "text_url"
+  private val ViewUrlColumn = "view_url"
   
   /**
    * @return a list of tuples: (parentId, childId, childDescription) for each node found in
@@ -48,11 +51,8 @@ class SubTreeDataLoader {
   
   
   def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
-    SQL("""
-    	  SELECT id, title, text_url, view_url
-          FROM document
-          WHERE id IN """ + idList(documentIds) 
-        ).as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map(flatten) *)
+    SQL(documentQuery(documentIds)).
+        as(long(IdColumn) ~ str(TitleColumn) ~ str(TextUrlColumn) ~ str(ViewUrlColumn) map(flatten) *)
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
@@ -67,6 +67,8 @@ class SubTreeDataLoader {
       childNodes ++ loadChildNodes(childNodeIds, depth - 1)
     }
   }
+  
+  
 
   private val RootNodeQuery = 
     "SELECT node.id, node.description AS " + DescriptionColumn + " FROM node WHERE id = {id}"
@@ -96,6 +98,12 @@ class SubTreeDataLoader {
     """    
   }
   
+  private def documentQuery(documentIds: List[Long]) : String = {
+	"""
+      SELECT id, title, text_url, view_url
+      FROM document
+      WHERE id IN """ + idList(documentIds)     
+  }
   private def idList(ids: List[Long]) : String = "(" + ids.mkString(", ") + ")"
 
 }
