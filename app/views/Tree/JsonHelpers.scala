@@ -14,7 +14,8 @@ object JsonHelpers {
 	  JsValue = {
 	  JsObject(Seq(
             "nodes" -> generateJsonArray(nodes),
-            "documents" -> generateJsonArray(documents)
+            "documents" -> generateJsonArray(documents),
+            "tags" -> JsArray(Seq())
 	      )
       )
 	}
@@ -29,7 +30,11 @@ object JsonHelpers {
 	    			"id" -> JsNumber(id),
 	    			"description" -> JsString(description),
 	    			"children" -> JsArray(childNodeIds.map(JsNumber(_))),
-	    			"doclist" -> generateJson(documentList)
+	    			"doclist" -> generateJson(documentList),
+	    			"taglist" -> JsObject(Seq(
+	    					"full" -> JsArray(Seq()),
+	    					"partial" -> JsArray(Seq())
+    					))
 	    			)
 	    		)
 	  }
