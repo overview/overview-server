@@ -154,9 +154,3 @@ describe 'models/animator', ->
         it 'should keep needs_update true when setting only some animated values', ->
           animator.set_object_properties(obj, { x: 1 })
           expect(animator.needs_update()).toBe(true)
-
-      it 'should invoke a callback immediately when none of the properties have changed', ->
-        called = false
-        obj = { x: { current: 1 } }
-        animator.animate_object_properties(obj, { x: 1 }, (() -> called = true), 100)
-        expect(called).toBe(true)
