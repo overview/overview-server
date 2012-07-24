@@ -60,12 +60,24 @@ h1 {
   }
 }
 
-#tree {
+#focus {
   position: absolute;
   left: 0;
   right: 50%;
   top: 0;
-  height: 60%;
+  height: 5%;
+
+  .handle {
+    cursor: move;
+  }
+}
+
+#tree {
+  position: absolute;
+  left: 0;
+  right: 50%;
+  top: 5%;
+  height: 55%;
   border-bottom: 1px solid @color-border;
   overflow: hidden;
   font-size: .7em;

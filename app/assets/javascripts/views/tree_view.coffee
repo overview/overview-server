@@ -36,13 +36,17 @@ class DrawOperation
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
 
-  calculate_subpixels: (num_documents, depth) ->
+  calculate_subpixels: (num_documents, depth, zoom_factor, pan_fraction) ->
     depth = 0.00001 if depth == 0
+
     # We render to pixels, but our calculations are done with integers in
     # subpixel space. Multiply by "spxx" and "spxy" to convert to pixel space.
     @spxx_per_document = @options.leaf_width + 2 * @options.leaf_horizontal_padding
+    npx = @spxx_per_document * num_documents
+    @spxx = @width / (npx * zoom_factor)
+    @left_px = (0.5 + pan_fraction - zoom_factor * 0.5) * npx * @spxx
+
     @spxy_per_level = @options.node_height + 2 * @options.node_vertical_padding
-    @spxx = @width / (num_documents * @spxx_per_document)
     @spxy = @height / (depth * @spxy_per_level)
 
   _node_to_color: (node) ->
@@ -69,7 +73,7 @@ class DrawOperation
   draw_node: (node, documents_before, level) ->
     ctx = @ctx
 
-    left = @spxx_per_document * documents_before * @spxx
+    left = @spxx_per_document * documents_before * @spxx - @left_px
     top = @spxy_per_level * level * @spxy
 
     width = node.num_documents.current * @options.leaf_width * @spxx
@@ -84,6 +88,7 @@ class DrawOperation
     ctx.strokeRect(left + padding_x, top + padding_y, width, height)
 
     middle_x = left + padding_x + width * 0.5
+
     documents_drawn_in_children = documents_before
 
     for child_node in node.children
@@ -109,7 +114,7 @@ _ = window._
 class TreeView
   observable(this)
 
-  constructor: (@div, @tree, options={}) ->
+  constructor: (@div, @tree, @focus, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, options, DEFAULT_OPTIONS, { color: options_color })
 
@@ -117,15 +122,27 @@ class TreeView
     @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
 
     @_nodes = {}
+    @_zoom_document = { current: -1 }
+    @_zoom_factor = { current: 1 }
 
     $div.append(@canvas)
 
     this._attach()
-    this._redraw()
+    this.update()
 
   _attach: () ->
-    @tree.observe('needs-update', this._set_needs_update.bind(this))
-    $(window).on('resize.tree-view', this._set_needs_update.bind(this))
+    @tree.id_tree.observe 'edit', =>
+      if @_zoom_document.current == -1
+        root_id = @tree.id_tree.root
+        if root_id?
+          @_zoom_document.current = @tree.root.num_documents.current / 2
+
+    update = this._set_needs_update.bind(this)
+    @tree.observe('needs-update', update)
+    @focus.observe('needs-update', update)
+    @focus.observe('zoom', update)
+    @focus.observe('pan', update)
+    $(window).on('resize.tree-view', update)
 
     $(@canvas).on 'click', (e) =>
       offset = $(@canvas).offset()
@@ -140,8 +157,14 @@ class TreeView
 
     $canvas = $(@canvas)
 
+    zoom = @focus.zoom
+    pan = @focus.pan
+
+    canvas_fraction = x / $canvas.width()
+    doc_fraction = 0.5 + pan - zoom * 0.5 + canvas_fraction * zoom
+
     node = @tree.root
-    doc_index = Math.floor(x / $canvas.width() * node.num_documents.current)
+    doc_index = Math.floor(doc_fraction * node.num_documents.current)
     levels_to_go = Math.floor(y / $canvas.height() * @tree.animated_height.current)
 
     docs_to_our_left = 0
@@ -196,14 +219,20 @@ class TreeView
 
     return if @tree.root is undefined
 
-    op.calculate_subpixels(@tree.root.num_documents.current, @tree.animated_height.current)
+    op.calculate_subpixels(
+      @tree.root.num_documents.current,
+      @tree.animated_height.current,
+      @focus.zoom,
+      @focus.pan,
+    )
 
     op.draw_node(@tree.root, 0, 0)
 
   update: () ->
     @tree.update()
+    @focus.update()
     this._redraw()
-    @_needs_update = @tree.needs_update()
+    @_needs_update = @tree.needs_update() || @focus.needs_update()
 
   needs_update: () ->
     @_needs_update
