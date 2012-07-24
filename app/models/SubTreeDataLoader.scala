@@ -14,7 +14,6 @@ import DatabaseStructure._
  */
 class SubTreeDataLoader {
 
-  
   /**
    * @return a list of tuples: (parentId, childId, childDescription) for each node found in
    * a breadth first traversal of the tree to the specified depth, starting at the specified 
