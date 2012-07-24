@@ -119,6 +119,16 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  val documents = subTreeDataLoader.loadDocuments(documentIds)
 	  
 	  documents must have size(nodeIds.size * 3)
+	  documents.map(_._1) must haveTheSameElementsAs(documentIds)
+	  
+	  val titles = (1 to numberOfDocuments).map("title-" + _)
+	  documents.map(_._2) must containAllOf(titles)
+	  
+	  val textUrls = (1 to numberOfDocuments).map("textUrl-" + _)
+	  documents.map(_._3) must containAllOf(textUrls)
+	  
+	  val viewUrls = (1 to numberOfDocuments).map("viewUrl-" + _)
+	  documents.map(_._4) must containAllOf(viewUrls)
 	}
   }
   

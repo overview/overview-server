@@ -14,7 +14,7 @@ class SubTreeDataLoader {
 
   type NodeData = (Long, Long, String)
   type NodeDocument = (Long, Long, Long)
-  type DocumentData = (Long)
+  type DocumentData = (Long, String, String, String)
   
   private val IdColumn = "id"
   private val ChildIdColumn = "child_id"
@@ -49,10 +49,10 @@ class SubTreeDataLoader {
   
   def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
     SQL("""
-    	  SELECT id
+    	  SELECT id, title, text_url, view_url
           FROM document
           WHERE id IN """ + idList(documentIds) 
-        ).as(scalar[Long] *)
+        ).as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map(flatten) *)
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
