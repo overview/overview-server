@@ -16,10 +16,17 @@ class SubTreeDataParser {
       case (node, dataList) => (node, dataList.map(_._2))
     }
     
-    nodeData.map(d => createOneNode(d._2, d._3, childNodeIds))
+    val parentDocumentData = documentData.groupBy(_._1)
+    val documentIds = parentDocumentData.map {
+      case (node, documentDataList) => (node, documentDataList.map(_._3))
+    }
+    nodeData.map(d => createOneNode(d._2, d._3, childNodeIds, documentIds))
   }
   
-  private def createOneNode(id: Long, description: String, childNodeIds: Map[Long, List[Long]]) : core.Node = {
-    core.Node(id, description, childNodeIds.getOrElse(id, Nil))
+  private def createOneNode(id: Long, 
+		  			        description: String,
+		  			        childNodeIds: Map[Long, List[Long]],
+		  			        documentIds: Map[Long, List[Long]]) : core.Node = {
+    core.Node(id, description, childNodeIds.getOrElse(id, Nil), documentIds.getOrElse(id, Nil))
   }
 }
