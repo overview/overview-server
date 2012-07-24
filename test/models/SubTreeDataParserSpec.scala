@@ -50,14 +50,15 @@ class SubTreeDataParserSpec extends Specification {
           (1l, 25l, 103l),
           (1l, 25l, 104l), (3l, 1l, 105l))
       
-      val rootDocuments = documentData.filter(_._1 == 1l).map(_._1)
-      val childDocuments = documentData.filter(_._1 == 2l).map(_._1)
-      val grandChildDocuments = documentData.filter(_._1 == 3l).map(_._1)
+      val rootDocuments = documentData.filter(_._1 == 1l).map(_._3)
+      val childDocuments = documentData.filter(_._1 == 2l).map(_._3)
+      val grandChildDocuments = documentData.filter(_._1 == 3l).map(_._3)
       
       val subTreeDataParser = new SubTreeDataParser()
       val nodes = subTreeDataParser.createNodes(nodeData, documentData)
       
-      val root = nodes.find(_.id == 1l)
+      val root = nodes.find(_.id == 1l).get
+      root.documentIds.firstIds must haveTheSameElementsAs(rootDocuments)
     //  root.documentIds must haveTheSameElementsAs(rootDocuments)
       nodes must have size(3)
     }

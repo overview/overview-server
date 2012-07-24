@@ -16,7 +16,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       
       val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"))
       loader loadNodeData(1, 4) returns nodeData
-      parser createNodes(nodeData, Nil) returns List(core.Node(1, "worked!", Nil, Nil))
+      parser createNodes(nodeData, Nil) returns List(core.Node(1, "worked!", Nil, null))
       
       val subTreeLoader = new SubTreeLoader(1, 4, loader, parser)
       val nodes = subTreeLoader.loadNodes()
