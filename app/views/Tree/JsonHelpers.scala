@@ -13,7 +13,8 @@ object JsonHelpers {
 	def generateSubTreeJson(nodes: List[models.core.Node], documents: List[models.core.Document]) :
 	  JsValue = {
 	  JsObject(Seq(
-            "nodes" -> generateJsonArray(nodes)
+            "nodes" -> generateJsonArray(nodes),
+            "documents" -> generateJsonArray(documents)
 	      )
       )
 	}

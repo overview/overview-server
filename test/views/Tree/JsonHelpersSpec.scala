@@ -31,10 +31,14 @@ object JsonHelpersSpec extends Specification {
     		  			   
       val treeJson = JsonHelpers.generateSubTreeJson(nodes, documents)
 
-      treeJson.toString must /("nodes") */("id" -> 1l)
-      treeJson.toString must /("nodes") */("id" -> 2l)
-      treeJson.toString must /("nodes") */("id" -> 3l)
-      treeJson.toString must /("nodes") */("id" -> 5l)
+      treeJson.toString must /("nodes") */("id" -> 1)
+      treeJson.toString must /("nodes") */("id" -> 2)
+      treeJson.toString must /("nodes") */("id" -> 3)
+      treeJson.toString must /("nodes") */("id" -> 5)
+      
+      treeJson.toString must /("documents") */("id" -> 10)
+      treeJson.toString must /("documents") */("id" -> 20)
+      treeJson.toString must /("documents") */("id" -> 30)
     }
   }
   
