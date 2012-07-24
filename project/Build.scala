@@ -6,7 +6,7 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 object ApplicationBuild extends Build {
 
   override def settings = super.settings ++
-  Seq(EclipseKeys.skipParents in ThisBuild := false)
+    Seq(EclipseKeys.skipParents in ThisBuild := false)
 
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
@@ -20,12 +20,10 @@ object ApplicationBuild extends Build {
     "org.mockito" % "mockito-all" % "1.9.0"
   )
 
-
   val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA).settings(
     testOptions in Test += Tests.Setup( () =>
       System.setProperty("db.default.url", testDatabaseUrl ))
   )
-
 
   val worker = Project("overview-worker", file("worker"), settings =
     Defaults.defaultSettings ++
