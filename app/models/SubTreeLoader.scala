@@ -29,7 +29,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
     val nodeIds = nodes.map(_.id)
     val documentData = loader.loadDocuments(nodeIds)
     
-    parser.createDocuments(documentData.distinct)
+    parser.createDocuments(documentData.distinct.sortBy(_._1))
   }
   
 }
