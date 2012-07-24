@@ -55,6 +55,15 @@ object JsonHelpersSpec extends Specification {
       nodeJson.toString must contain("\"docids\":[" + documentIds.mkString(",") + "]")
       nodeJson.toString must /("doclist") /("n" -> 34)
     }
+    
+    "generate Json for Document" in {
+      val document = models.core.Document(4, "title", "text", "view")
+      
+      val documentJson = JsonHelpers.generateJson(document)
+      
+      documentJson.toString must /("id" -> 4)
+      documentJson.toString must /("title" -> "title")
+    }
   }
   
   "rootNodeToJsValue" should {

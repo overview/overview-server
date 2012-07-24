@@ -39,6 +39,13 @@ object JsonHelpers {
 	    			)
 	    		)
 	  }
+	  case models.core.Document(id, title, textUrl, viewUrl) => {
+	    JsObject(Seq(
+	    			"id" -> JsNumber(id),
+	    			"title" -> JsString(title)
+	    			)
+	    		)
+	  }
 	}
 	
     val maxElementsInList = 10
