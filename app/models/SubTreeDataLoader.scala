@@ -6,28 +6,14 @@ import java.sql.Connection
 
 import org.squeryl.Session
 
+import DatabaseStructure._ 
+
 /**
  * Utility class form SubTreeLoader that performs database queries and returns results as 
  * a list of tuples.
  */
 class SubTreeDataLoader {
 
-  type NodeData = (Long, Long, String)
-  type NodeDocument = (Long, Long, Long)
-  type DocumentData = (Long, String, String, String)
-  
-  private val IdColumn = "id"
-  private val ChildIdColumn = "child_id"
-  private val DescriptionColumn = "child_description"
-  private val DocumentCountColumn = "document_count"
-  private val DocumentIdColumn = "document_id"
-  private val TitleColumn = "title"
-  private val TextUrlColumn = "text_url"
-  private val ViewUrlColumn = "view_url"
-  
-  private val DocumentIdParser = long(IdColumn) ~ long(DocumentCountColumn) ~ long(DocumentIdColumn)
-  private val DocumentParser = long(IdColumn) ~ str(TitleColumn) ~ str(TextUrlColumn) ~ str(ViewUrlColumn)
-  private val NodeParser = long(IdColumn) ~ long(ChildIdColumn) ~ str(DescriptionColumn)
   
   /**
    * @return a list of tuples: (parentId, childId, childDescription) for each node found in

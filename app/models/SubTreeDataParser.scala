@@ -1,5 +1,6 @@
 package models
 
+import DatabaseStructure.{NodeData, NodeDocument}
 
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
@@ -9,8 +10,8 @@ class SubTreeDataParser {
   /**
    * @return a list of Nodes created from the passed in data
    */
-  def createNodes(nodeData: List[(Long, Long, String)], 
-		  		  documentData: List[(Long, Long, Long)]) : List[core.Node] = {
+  def createNodes(nodeData: List[NodeData], 
+		  		  documentData: List[NodeDocument]) : List[core.Node] = {
     val nodeAndChild = nodeData.map(d => (d._1, d._2))
     val childNodeIds = groupByNodeId(nodeAndChild)
     
