@@ -132,6 +132,29 @@ describe 'models/animator', ->
           animator.update(1600)
           expect(obj.x.current).toEqual(1)
 
+        it 'should cancel the animation when setting new values directly', ->
+          animator.update(600)
+          animator.set_object_properties(obj, { x: 1 }, undefined, 600)
+          expect(obj.x.current).toEqual(1)
+          expect(obj.x.start_ms).toBeUndefined()
+          animator.update(1100) # expect no crashes
+
+        it 'should invoke the callback immediately if setting all its values directly', ->
+          animator.set_object_properties(obj, { x: 3, y: 3 })
+          expect(called).toBe(true)
+
+        it 'should set needs_update to false when setting new values directly', ->
+          animator.set_object_properties(obj, { x: 3, y: 3 })
+          expect(animator.needs_update()).toBe(false)
+
+        it 'should not invoke the callback when setting only some animated values directly', ->
+          animator.set_object_properties(obj, { x: 1 })
+          expect(called).toBe(false)
+
+        it 'should keep needs_update true when setting only some animated values', ->
+          animator.set_object_properties(obj, { x: 1 })
+          expect(animator.needs_update()).toBe(true)
+
       it 'should invoke a callback immediately when none of the properties have changed', ->
         called = false
         obj = { x: { current: 1 } }
