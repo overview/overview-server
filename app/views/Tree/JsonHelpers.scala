@@ -9,6 +9,25 @@ import models.{Node,PartiallyLoadedNode,Document}
 import play.api.libs.json._
 
 object JsonHelpers {
+  
+	def generateSubTreeJson(nodes: List[models.core.Node], documents: List[models.core.Document]) :
+	  JsValue = {
+	  JsObject(Seq(
+            "nodes" -> generateJsonArray(nodes)
+	      )
+      )
+	}
+	
+	private def generateJsonArray[A](data: List[A]) : JsValue = {
+	  JsArray(data.map(generateJson))
+	}
+	
+	private def generateJson[A](data: A) : JsValue = data match {
+	  case models.core.Node(id, description, childNodeIds, documentList) => {
+	    JsObject(Seq("id" -> JsNumber(id)))
+	  }
+	}
+	
     val maxElementsInList = 10
 
     def subNodeToJsValue(node: Node) : JsValue = {

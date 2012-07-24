@@ -16,6 +16,27 @@ import helpers.DbContext
 
 object JsonHelpersSpec extends Specification {
 
+  "Json generated for Tree" should {
+    "contain nodes" in {
+      val documentIds = models.core.DocumentIdList(List(10, 20, 30), 43)
+      val nodes = List(models.core.Node(1l, "description", List(2, 3, 5), documentIds), 
+          models.core.Node(2l, "description", List(2, 4), documentIds), 
+          models.core.Node(3l, "description", List(6), documentIds), 
+          models.core.Node(5l, "description", Nil, documentIds)
+      )
+
+      val documents = List(models.core.Document(10, "title", "text", "view"),
+    		  			   models.core.Document(20, "title", "text", "view"),
+    		  			   models.core.Document(30, "title", "text", "view"))
+    		  			   
+      val treeJson = JsonHelpers.generateSubTreeJson(nodes, documents)
+
+      treeJson.toString must /("nodes") */("id" -> 1l)
+      treeJson.toString must /("nodes") */("id" -> 2l)
+      treeJson.toString must /("nodes") */("id" -> 3l)
+      treeJson.toString must /("nodes") */("id" -> 5l)
+    }
+  }
   
   "rootNodeToJsValue" should {
     "contain the nodes" in new DbContext {
