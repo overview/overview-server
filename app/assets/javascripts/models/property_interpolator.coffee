@@ -68,7 +68,7 @@ class PropertyInterpolator
     v1 + (v2 - v1) * fraction
 
   set_property_target: (property, target, start_ms=undefined) ->
-    if @duration == 0 || _.isEqual(property.current, target)
+    if @duration == 0
       property.current = target
     else
       property.start_ms = start_ms? && start_ms || Date.now()

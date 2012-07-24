@@ -4,11 +4,26 @@ TreeView = require('views/tree_view').TreeView
 Event = jQuery.Event
 Deferred = jQuery.Deferred
 
+observable = require('models/observable').observable
 OnDemandTree = require('models/on_demand_tree').OnDemandTree
 AnimatedTree = require('models/animated_tree').AnimatedTree
 Selection = require('models/selection').Selection
 Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
+
+class MockFocus
+  observable(this)
+
+  constructor: () ->
+    @zoom = 1
+    @pan = 0
+    @_update_called = false
+    @_needs_update = false
+
+  set_zoom: (@zoom) ->
+  set_pan: (@pan) ->
+  update: () -> @_update_called = true
+  needs_update: () -> @_needs_update
 
 class MockResolver
   get_deferred: (type, id) -> new Deferred()
@@ -18,6 +33,7 @@ describe 'views/tree_view', ->
     on_demand_tree = undefined
     animated_tree = undefined
     selection = undefined
+    focus = undefined
     view = undefined
     div = undefined
     options = undefined
@@ -31,6 +47,7 @@ describe 'views/tree_view', ->
       interpolator = new PropertyInterpolator(1000, (x) -> x)
       animator = new Animator(interpolator)
       selection = new Selection()
+      focus = new MockFocus()
       resolver = new MockResolver()
       on_demand_tree = new OnDemandTree(resolver, { cache_size: 1000 })
       animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
@@ -44,6 +61,7 @@ describe 'views/tree_view', ->
       $(div).remove() # Removes all callbacks
       $(window).off('resize.tree-view')
       div = undefined
+      focus = undefined
       on_demand_tree = undefined
       animated_tree = undefined
       view = undefined
@@ -57,7 +75,7 @@ describe 'views/tree_view', ->
       add_nodes_through_deferred([ { id: id, children: children, doclist: { n: n_documents } } ])
 
     create_view = () ->
-      view = new TreeView(div, animated_tree, options)
+      view = new TreeView(div, animated_tree, focus, options)
       rgb_background = color_to_rgb(view.options.color.background)
       rgb_node = color_to_rgb(view.options.color.node)
       rgb_node_unloaded = color_to_rgb(view.options.color.node_unloaded)
@@ -106,6 +124,18 @@ describe 'views/tree_view', ->
         animated_tree._notify('needs-update')
         expect(called).toBe(true)
 
+      it 'should notify :needs-update when the focus does', ->
+        called = false
+        view.observe('needs-update', (() -> called = true))
+        focus._notify('needs-update')
+        expect(called).toBe(true)
+
+      it 'should update() the focus', ->
+        focus._update_called = false
+        focus._needs_update = true
+        view.update()
+        expect(focus._update_called).toBe(true)
+
       it 'should make a canvas of the proper size', ->
         $canvas = $(view.canvas)
         expect($canvas.width()).toEqual(100)
@@ -117,8 +147,8 @@ describe 'views/tree_view', ->
         check_pixel(99, 99, rgb_background)
 
       it 'should add a root that appears after drawing', ->
-        Timecop.freeze new Date(0), -> add_node_through_deferred(1, [], 1)
-        Timecop.freeze new Date(1000), -> view.update()
+        at(0, -> add_node_through_deferred(1, [], 1))
+        at(1000, -> view.update())
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 50, rgb_node)
         check_pixel(99, 99, rgb_background)
@@ -139,20 +169,39 @@ describe 'views/tree_view', ->
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
-        Timecop.freeze new Date(0), ->
+        at 0, ->
           add_node_through_deferred(1, [2, 3], 2)
           add_node_through_deferred(2, [], 1)
           add_node_through_deferred(3, [], 1)
-        Timecop.freeze new Date(1000), -> animated_tree.update()
+        at(1000, -> animated_tree.update())
         create_view()
 
       it 'should put padding around nodes', ->
         # check for backgrounds
         check_pixel(1, 25, rgb_background) # left of the root node
-        check_pixel(98, 25, rgb_background) # left of the root node
+        check_pixel(98, 25, rgb_background) # right of the root node
         check_pixel(1, 75, rgb_background) # left of the leftmost node
         check_pixel(98, 75, rgb_background) # right of the rightmost node
         check_pixel(50, 75, rgb_background) # in between the subnodes
+
+      it 'should zoom and pan', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+
+        check_pixel(1, 25, rgb_background) # left of the root node
+        check_pixel(98, 25, rgb_node) # the root node, which extends past the canvas
+        check_pixel(1, 75, rgb_background) # left of the left node
+        check_pixel(50, 75, rgb_node) # node 2
+        # FIXME why does this break? check_pixel(99, 25, rgb_background) # right of node 2
+
+      it 'should select properly when zoomed and panned', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+
+        click_pixel(50, 75)
+        expect(events[0]).toEqual(['click', 2])
 
       it 'should draw a line from parent to child', ->
         middle_x_of_parent = 50
@@ -176,12 +225,12 @@ describe 'views/tree_view', ->
     describe 'with a non-full tree', ->
       beforeEach ->
         # three-level binary tree, right-middle node isn't full
-        Timecop.freeze new Date(0), ->
+        at 0, ->
           add_node_through_deferred(1, [2, 7], 4)
           add_node_through_deferred(2, [3, 4], 2)
           add_node_through_deferred(3, [], 1)
           add_node_through_deferred(4, [], 1)
-        Timecop.freeze new Date(1000), -> animated_tree.update()
+        at(1000, -> animated_tree.update())
         create_view()
 
       it 'should trigger :click on a unloaded node', ->
@@ -228,3 +277,17 @@ describe 'views/tree_view', ->
         expect(called).toBe(true)
         view.update()
         expect($(view.canvas).width()).toEqual(50)
+
+      it 'should notify :needs-update and set needs_update=true when zoom changes', ->
+        called = false
+        view.observe('needs-update', (-> called = true))
+        focus._notify('zoom', 0.4)
+        expect(called).toBe(true)
+        expect(view.needs_update()).toBe(true)
+
+      it 'should notify :needs-update and set needs_update=true when pan changes', ->
+        called = false
+        view.observe('needs-update', (-> called = true))
+        focus._notify('pan', 0.2)
+        expect(called).toBe(true)
+        expect(view.needs_update()).toBe(true)

@@ -33,6 +33,30 @@ class Animator
     tracked_callback?.call_and_forget_if_ready()
     undefined
 
+  set_object_properties: (object, new_values) ->
+    for k, v of new_values
+      property = object[k]
+      start_ms = property.start_ms
+      @interpolator.set_property_target(property, v)
+      @interpolator.update_property_to_fraction(property, 1.0)
+
+      if property.tracked_callbacks?
+        for tracked_callback in property.tracked_callbacks
+          tracked_callback.mark_property_completed(property)
+          tracked_callback.call_and_forget_if_ready()
+        delete property.tracked_callbacks
+
+      if start_ms?
+        properties_at_ms = @_tracked_properties[start_ms]
+        idx = properties_at_ms.indexOf(property)
+        if idx != -1
+          if properties_at_ms.length == 1
+            delete @_tracked_properties[start_ms]
+          else
+            properties_at_ms.splice(idx, 1)
+
+    undefined
+
   update: (ms=undefined) ->
     ms = ms? && ms || Date.now()
     delete_ms = []
