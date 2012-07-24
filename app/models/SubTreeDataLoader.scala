@@ -25,6 +25,10 @@ class SubTreeDataLoader {
   private val TextUrlColumn = "text_url"
   private val ViewUrlColumn = "view_url"
   
+  private val DocumentIdParser = long(IdColumn) ~ long(DocumentCountColumn) ~ long(DocumentIdColumn)
+  private val DocumentParser = long(IdColumn) ~ str(TitleColumn) ~ str(TextUrlColumn) ~ str(ViewUrlColumn)
+  private val NodeParser = long(IdColumn) ~ long(ChildIdColumn) ~ str(DescriptionColumn)
+  
   /**
    * @return a list of tuples: (parentId, childId, childDescription) for each node found in
    * a breadth first traversal of the tree to the specified depth, starting at the specified 
@@ -46,13 +50,13 @@ class SubTreeDataLoader {
   
   def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
     SQL(nodeDocumentQuery(nodeIds)).
-    	as(long(IdColumn) ~ long(DocumentCountColumn) ~ long(DocumentIdColumn) map(flatten) *)
+    	as(DocumentIdParser map(flatten) *)
   } 
   
   
   def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
     SQL(documentQuery(documentIds)).
-        as(long(IdColumn) ~ str(TitleColumn) ~ str(TextUrlColumn) ~ str(ViewUrlColumn) map(flatten) *)
+        as(DocumentParser map(flatten) *)
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
@@ -60,7 +64,7 @@ class SubTreeDataLoader {
     if (depth == 0 || nodes.size == 0) Nil
     else {
       val childNodes = SQL(childNodeQuery(nodes)).
-    	as(long(IdColumn) ~ long(ChildIdColumn) ~ str(DescriptionColumn) map(flatten) *)
+    	as(NodeParser map(flatten) *)
       
       val childNodeIds = childNodes.map(_._2)
       
