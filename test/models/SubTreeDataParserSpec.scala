@@ -20,7 +20,7 @@ class SubTreeDataParserSpec extends Specification {
       val emptyDocumentData = Nil
       val nodes = subTreeDataParser.createNodes(nodeData, emptyDocumentData)
       
-      nodes must have size(10)
+      nodes must have size(nodeData.size)
       
       val nodeDescriptions = nodeData.map(n => (n._2, n._3))
       
@@ -57,7 +57,7 @@ class SubTreeDataParserSpec extends Specification {
       val subTreeDataParser = new SubTreeDataParser()
       val nodes = subTreeDataParser.createNodes(nodeData, documentData)
       
-      nodes must have size(3)
+      nodes must have size(nodeData.size)
       
       val root = nodes.find(_.id == 1l).get
       root.documentIds.firstIds must haveTheSameElementsAs(rootDocuments)
