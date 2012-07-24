@@ -43,7 +43,9 @@ class SubTreeDataLoader {
     	as(DocumentIdParser map(flatten) *)
   } 
   
-  
+  /** 
+   * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
+   */
   def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
     SQL(documentQuery(documentIds)).
         as(DocumentParser map(flatten) *)

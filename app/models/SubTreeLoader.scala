@@ -25,6 +25,11 @@ class SubTreeLoader(rootId: Long, depth: Int,
     parser.createNodes(nodeData, Nil)
   }
 
+  /**
+   * @return a list of Documents whose ids are referenced by the passed in nodes. The list is sorted
+   * by document IDs and all the elements are distinct, even if documentIds are included in multiple
+   * Nodes.
+   */
   def loadDocuments(nodes: List[core.Node])(implicit connection : java.sql.Connection) : List[core.Document] = {
     val nodeIds = nodes.map(_.id)
     val documentData = loader.loadDocuments(nodeIds)
