@@ -72,6 +72,23 @@ class SubTreeDataParserSpec extends Specification {
       grandChild.documentIds.totalCount must beEqualTo(1l)
      
     }
+    
+    "create Documents from tuples" in {
+      val documentData = List(
+          (1l, "title1", "textUrl1", "viewUrl1"),
+          (2l, "title2", "textUrl2", "viewUrl2"),
+          (3l, "title3", "textUrl3", "viewUrl3")
+      )
+      
+      val subTreeDataParser = new SubTreeDataParser()
+      val documents = subTreeDataParser.createDocuments(documentData)
+      
+      documents must have size(3)
+      
+      documents(0) must be equalTo core.Document(1l, "title1", "textUrl1", "viewUrl1")
+      documents(1) must be equalTo core.Document(2l, "title2", "textUrl2", "viewUrl2")
+      documents(2) must be equalTo core.Document(3l, "title3", "textUrl3", "viewUrl3")
+    }
   }
 
 }

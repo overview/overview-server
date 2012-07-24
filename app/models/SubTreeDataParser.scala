@@ -1,6 +1,6 @@
 package models
 
-import DatabaseStructure.{NodeData, NodeDocument}
+import DatabaseStructure.{DocumentData, NodeData, NodeDocument}
 
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
@@ -22,6 +22,10 @@ class SubTreeDataParser {
     val documentCounts = groupByNodeId(nodeAndDocumentCount)
     
     nodeData.map(d => createOneNode(d._2, d._3, childNodeIds, documentIds, documentCounts))
+  }
+  
+  def createDocuments(documentData: List[DocumentData]) : List[core.Document] = {
+    documentData.map(d => core.Document(d._1, d._2, d._3, d._4))
   }
   
   private def createOneNode(id: Long, 
