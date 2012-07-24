@@ -3,9 +3,9 @@ package models
 import anorm.SqlParser._
 
 object DatabaseStructure {
-  type NodeData = (Long, Long, String)
-  type NodeDocument = (Long, Long, Long)
-  type DocumentData = (Long, String, String, String)
+  type NodeData = (Long, Long, String) // parentId, childId, description
+  type NodeDocument = (Long, Long, Long) // nodeId, documentCount, documentId
+  type DocumentData = (Long, String, String, String) // documentId, title, textUrl, viewUrl
   
   val IdColumn = "id"
   val ChildIdColumn = "child_id"
