@@ -21,14 +21,20 @@ class SubTreeLoaderSpec extends Specification with Mockito {
   "SubTreeLoader" should {
     
     "call loader and parser to create nodes" in new MockComponents {
-      val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"))
+      val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"), (1l, 3l, "child"))
+      val documentData = List((1l, 34l, 20l), (2l, 1l, 30l))
+      
       loader loadNodeData(1, 4) returns nodeData
-      parser createNodes(nodeData, Nil) returns dummyNodes
+      loader loadDocumentIds(nodeIds) returns documentData 
+      
+      parser createNodes(nodeData, documentData) returns dummyNodes
       
       val nodes = subTreeLoader.loadNodes()
       
       there was one(loader).loadNodeData(1, 4)
-      there was one(parser).createNodes(nodeData, Nil)
+      there was one(loader).loadDocumentIds(nodeIds)
+      
+      there was one(parser).createNodes(nodeData, documentData)
       
       nodes must be equalTo(dummyNodes)
     }

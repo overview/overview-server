@@ -21,8 +21,10 @@ class SubTreeLoader(rootId: Long, depth: Int,
   def loadNodes()(implicit connection : java.sql.Connection) : List[core.Node] = {
 	
     val nodeData = loader.loadNodeData(rootId, depth)
+    val nodeIds = nodeData.map(_._2).distinct
+    val documentData = loader.loadDocumentIds(nodeIds)
     
-    parser.createNodes(nodeData, Nil)
+    parser.createNodes(nodeData, documentData)
   }
 
   /**
