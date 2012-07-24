@@ -33,7 +33,11 @@ class SubTreeDataLoader {
     rootAsChild ++ childNodes
   }
   
-  
+  /**
+   * @return a list of tuples:(nodeId, totalDocumentCount, documentId) for each nodeId. A maximum of 
+   * 10 documentIds are returned for each documentId. totalDocumentCount is the total number of documents
+   * associated with the nodeId in the database
+   */
   def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
     SQL(nodeDocumentQuery(nodeIds)).
     	as(DocumentIdParser map(flatten) *)

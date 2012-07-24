@@ -24,6 +24,9 @@ class SubTreeDataParser {
     nodeData.map(d => createOneNode(d._2, d._3, childNodeIds, documentIds, documentCounts))
   }
   
+  /**
+   * @return a list of Documents created from the passed in data
+   */
   def createDocuments(documentData: List[DocumentData]) : List[core.Document] = {
     documentData.map(d => core.Document(d._1, d._2, d._3, d._4))
   }
