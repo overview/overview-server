@@ -26,13 +26,23 @@ class AnimatedFocus
     callback.apply(this)
     this._notify('needs-update') if !old_needs_update && this.needs_update()
 
-  set_zoom: (zoom, time=undefined) ->
+  set_zoom: (zoom) ->
+    @animator.set_object_properties(this, { _animated_zoom: zoom })
+    @zoom = this._sanify_zoom(@_animated_zoom.current)
+    this._notify('zoom', zoom)
+
+  set_pan: (pan) ->
+    @animator.set_object_properties(this, { _animated_pan: pan })
+    @pan = this._sanify_pan_at_zoom(@_animated_pan.current, @zoom)
+    this._notify('pan', pan)
+
+  animate_zoom: (zoom, time=undefined) ->
     time = Date.now() if !time?
     this._maybe_notifying_needs_update ->
       @animator.animate_object_properties(this, { _animated_zoom: zoom }, undefined, time)
     this._notify('zoom', zoom)
 
-  set_pan: (pan, time=undefined) ->
+  animate_pan: (pan, time=undefined) ->
     time = Date.now() if !time?
     this._maybe_notifying_needs_update ->
       @animator.animate_object_properties(this, { _animated_pan: pan }, undefined, time)
