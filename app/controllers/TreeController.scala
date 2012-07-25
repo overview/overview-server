@@ -71,7 +71,7 @@ object TreeController extends Controller {
     def root(id: Long) = Action {
       val tree = Tree.find.byId(id) // FIXME handle security
 
-      DB.withTransaction {implicit connection =>
+      DB.withTransaction { implicit connection =>
       	val subTreeLoader = new SubTreeLoader(tree.root.id, 4)
       	val nodes = subTreeLoader.loadNodes
       	val documents = subTreeLoader.loadDocuments(nodes)
@@ -82,8 +82,13 @@ object TreeController extends Controller {
     }
 
     def node(treeId: Long, nodeId: Long) = Action {
-      val node = Node.find.byId(nodeId) // FIXME handle security
-      val json = JsonHelpers.rootNodeToJsValue(node)
-      Ok(json)
+      DB.withTransaction { implicit connection =>
+      	val subTreeLoader = new SubTreeLoader(nodeId, 4)
+      	val nodes = subTreeLoader.loadNodes
+      	val documents = subTreeLoader.loadDocuments(nodes)
+
+      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+        Ok(json)
+      }
     }
 }
