@@ -30,7 +30,7 @@ object JsonHelpersSpec extends Specification {
     		  			   models.core.Document(30, "title", "text", "view"))
     		  			   
       val treeJson = JsonHelpers.generateSubTreeJson(nodes, documents)
-
+      
       treeJson.toString must /("nodes") */("id" -> 1)
       treeJson.toString must /("nodes") */("id" -> 2)
       treeJson.toString must /("nodes") */("id" -> 3)
@@ -66,7 +66,7 @@ object JsonHelpersSpec extends Specification {
       val documentJson = JsonHelpers.generateJson(document)
       
       documentJson.toString must /("id" -> 4)
-      documentJson.toString must /("title" -> "title")
+      documentJson.toString must /("description" -> "title")
     }
   }
   
