@@ -21,8 +21,8 @@ class SubTreeDataParserSpec extends Specification {
       
       val subTreeDataParser = new SubTreeDataParser()
       
-      val emptyDocumentData = Nil
-      val nodes = subTreeDataParser.createNodes(nodeData, emptyDocumentData)
+      val documentData = List((1l, 1l, 10l), (2l, 1l, 10l), (3l, 1l, 10l))
+      val nodes = subTreeDataParser.createNodes(nodeData, documentData)
       
       nodes must have size(nonLeafNodeData.size)
       

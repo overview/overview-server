@@ -1,6 +1,6 @@
 package models
 
-import DatabaseStructure.{DocumentData, NodeData, NodeDocument}
+import DatabaseStructure.{DocumentData, NodeData, NodeDocument, NoId}
 
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
@@ -15,17 +15,17 @@ class SubTreeDataParser {
     val nodeAndChild = nodeData.map(d => (d._1, d._2))
     val childNodeIds = groupByNodeId(nodeAndChild)
     
-    val nodeDescriptions = nodeData.map(d => (d._2, d._3)).distinct.toMap
-    val nodeIds = nodeData.map(_._1).distinct.filterNot(_ == -1)
-        
     val nodeAndDocument = documentData.map(d => (d._1, d._3))
     val documentIds = groupByNodeId(nodeAndDocument)
     
-    val nodeAndDocumentCount = documentData.map(d => (d._1, d._2))
-    val documentCounts = groupByNodeId(nodeAndDocumentCount)
+    val nodeDescriptions = nodeData.map(d => (d._2, d._3)).distinct.toMap
+    val nodeIds = nodeData.map(_._1).distinct.filterNot(_ == NoId)
+    val documentCounts = documentData.map(d => (d._1, d._2)).distinct.toMap
     
-    nodeIds.map(n => createOneNode(n, nodeDescriptions.getOrElse(n, ""), childNodeIds, documentIds, 
-    							   documentCounts))
+    nodeIds.map(n => createOneNode(n, nodeDescriptions,
+                                      childNodeIds,
+                                      documentIds,
+                                      documentCounts))	
   }
   
   /**
@@ -36,16 +36,13 @@ class SubTreeDataParser {
   }
   
   private def createOneNode(id: Long, 
-		  			        description: String,
+		  			        descriptions: Map[Long, String],
 		  			        childNodeIds: Map[Long, List[Long]],
 		  			        documentIds: Map[Long, List[Long]],
-		  			        documentCounts: Map[Long, List[Long]]) : core.Node = {
-    val documentIdLists = documentIds.map {
-      case (node, ids) => (node, core.DocumentIdList(ids, documentCounts.getOrElse(node, Nil).head))
-    }
+		  			        documentCounts: Map[Long, Long]) : core.Node = {
     
-    core.Node(id, description, childNodeIds.getOrElse(id, Nil),
-    						   documentIdLists.getOrElse(id, null))
+    val documentIdList = core.DocumentIdList(documentIds(id), documentCounts(id))
+    core.Node(id, descriptions(id), childNodeIds(id), documentIdList)
     						   
   }
   
