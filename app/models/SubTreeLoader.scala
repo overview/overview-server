@@ -36,7 +36,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
     val documentIds = nodes.flatMap(_.documentIds.firstIds)
     val documentData = loader.loadDocuments(documentIds.distinct.sorted)
     
-    parser.createDocuments(documentData.distinct.sortBy(_._1))
+    parser.createDocuments(documentData)
   }
   
 }
