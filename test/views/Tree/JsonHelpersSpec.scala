@@ -72,16 +72,21 @@ object JsonHelpersSpec extends Specification {
   
   "rootNodeToJsValue" should {
     "contain the nodes" in new DbContext {
+    	val documentSet = new DocumentSet()
+    	documentSet.save()
     	val tree = new Tree()
 
     	val root = new Node()
+    	root.setDocumentSet(documentSet)
 
     	for (i <- 10 to 12) {
     	  val level1ChildNode = new Node()
+    	  level1ChildNode.setDocumentSet(documentSet)
     	  root.children.add(level1ChildNode)
 
     	  for (j <- 1 to 2) {
     	    val level2ChildNode = new Node()
+    	    level2ChildNode.setDocumentSet(documentSet)
     	  	level1ChildNode.children.add(level2ChildNode)
     	  }
     	}
@@ -103,10 +108,12 @@ object JsonHelpersSpec extends Specification {
 
     "return documents in nodes" in new DbContext {
       val documentSet = new DocumentSet()
+    	documentSet.save()
 
       val tree = new Tree()
 
       val root = new Node()
+      root.setDocumentSet(documentSet)
 
       for (i <- 10 to 30) {
         val document = new Document("document[" + i + "]", "textUrl-" + i, "viewUrl-" + i)
@@ -118,6 +125,7 @@ object JsonHelpersSpec extends Specification {
 
       for (i <- 0 to 2) {
       	val child = new Node()
+      	child.setDocumentSet(documentSet)
       	documentSet.getDocuments.slice(5 * i, 5 * i + 5).foreach{child.addDocument}
       	root.addChild(child)
       }
@@ -142,10 +150,13 @@ object JsonHelpersSpec extends Specification {
 
 
     "fake Tags list" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
 
     	val tree = new Tree()
 
     	val root = new Node()
+    	root.setDocumentSet(documentSet)
     	tree.root = root;
 
     	tree.save
@@ -158,7 +169,10 @@ object JsonHelpersSpec extends Specification {
 
   "subNodeToJsValue" should {
     "contain the id" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
       val node = new Node()
+      node.setDocumentSet(documentSet)
       node.id = 5
 
       node.save
@@ -168,7 +182,10 @@ object JsonHelpersSpec extends Specification {
     }
 
     "contain the description" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
       val node = new Node()
+      node.setDocumentSet(documentSet)
       node.id = 5
       node.description = "This is my description"
 
@@ -179,10 +196,14 @@ object JsonHelpersSpec extends Specification {
     }
 
     "contain children node Ids" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
       val rootNode = new Node()
+      rootNode.setDocumentSet(documentSet)
       rootNode.id = 5
       for (i <- 1 to 3) {
         val childNode = new Node()
+        childNode.setDocumentSet(documentSet)
         childNode.id = i
         rootNode.children.add(childNode)
       }
@@ -198,10 +219,14 @@ object JsonHelpersSpec extends Specification {
     }
 
     "contains doclist with docIds and count" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
       val rootNode = new Node()
+      rootNode.setDocumentSet(documentSet)
       rootNode.id = 5
       for (i <- 1 to 3) {
         val childNode = new Node()
+        childNode.setDocumentSet(documentSet)
         childNode.id = i
         rootNode.children.add(childNode)
       }
@@ -221,7 +246,10 @@ object JsonHelpersSpec extends Specification {
     }
 
     "doclist lists at most first 10 docids" in new DbContext {
-  	val rootNode = new Node()
+      val documentSet = new DocumentSet()
+    	documentSet.save()
+      val rootNode = new Node()
+      rootNode.setDocumentSet(documentSet)
       rootNode.id = 5
 
       for (i <- 10 to 35) {
@@ -230,16 +258,18 @@ object JsonHelpersSpec extends Specification {
       	rootNode.documents.add(document)
       }
 
-  	rootNode.save
+      rootNode.save
       val nodeJson = JsonHelpers.subNodeToJsValue(rootNode)
-
 
       nodeJson.toString must contain ("10,11,12,13,14,15,16,17,18,19]")
       nodeJson.toString must /("doclist") /("n" -> 26)
     }
 
     "fakes the tags list" in new DbContext {
+      val documentSet = new DocumentSet()
+    	documentSet.save()
       val rootNode = new Node()
+      rootNode.setDocumentSet(documentSet)
       rootNode.id = 5
 
       rootNode.save

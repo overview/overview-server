@@ -17,17 +17,19 @@ import views.json.Tree.JsonHelpers
 object TreeController extends Controller {
 	
 	def temporarySetup() = Action {
-	  val root = new Node()
-	  root.description = "root"
-
 	  val documentSet = new DocumentSet()
+
+	  val root = new Node()
+	  root.setDocumentSet(documentSet)
+    root.setDescription("root")
+
 	  for (i <- 1 to 2200) {
 	    val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
 	    documentSet.addDocument(document)
 	    document.save
 	  }
 
-      documentSet.save
+    documentSet.save
 
 	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
 
@@ -43,14 +45,15 @@ object TreeController extends Controller {
 
 	  if ((depth > 1) && (documents.size > 1)) {
 	    val numberOfChildren = Random.nextInt(scala.math.min(7, documents.size)) + 1
-	    val children = generateChildren(numberOfChildren, documents, depth)
+	    val children = generateChildren(root, numberOfChildren, documents, depth)
 	    children.foreach(root.addChild)
 	  }
 	}
 
-	def generateChildren(numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
+	def generateChildren(parent: Node, numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
     val child = new Node()
-    child.description = "node height " + depth
+    child.setDocumentSet(parent.documentSet)
+    child.setDescription("node height " + depth)
 
 	  if (numberOfSiblings > 1) {
 	    val splitPoint = 
@@ -60,7 +63,7 @@ object TreeController extends Controller {
 	    
 	    generateTreeLevel(child, childDocuments, depth - 1)
 	    
-	    Seq[Node](child) ++ generateChildren(numberOfSiblings - 1, siblingDocuments, depth)
+	    Seq[Node](child) ++ generateChildren(parent, numberOfSiblings - 1, siblingDocuments, depth)
 	  }
 	  else {
       generateTreeLevel(child, documents, depth - 1)

@@ -21,14 +21,16 @@ class SelectionSpec extends Specification {
       
     def createTree() {
       val documentSet = new DocumentSet()
+      documentSet.save()
       val node = new Node()
+      node.setDocumentSet(documentSet)
       
       documentSet.setQuery("foo")
       
       for (i <- 10 to 99) {
-    	val document = new Document(createTitle(i), "texturl", "viewurl")
-    	documentSet.addDocument(document)
-    	node.addDocument(document)
+        val document = new Document(createTitle(i), "texturl", "viewurl")
+        documentSet.addDocument(document)
+        node.addDocument(document)
       }
       
       val tree = new Tree()
@@ -124,8 +126,8 @@ class SelectionSpec extends Specification {
   }
 
   def addExtraChildrenToTree() = {
+    val documentSet = DocumentSet.find.all().get(0)
     val tree = Tree.find.all().get(0)
-            
 
     val documentsInChild1 = tree.getRoot.getDocuments.toSeq.slice(20, 40)
     val documentsInChild2 = tree.getRoot.getDocuments.toSeq.slice(10, 15)
@@ -134,9 +136,8 @@ class SelectionSpec extends Specification {
     val documentsInChildren = Seq(documentsInChild1, 
     			                  documentsInChild2,
     		  					  documentsInChild3)
-    val childNodes = Seq.fill(3)(new Node)
-      
-      
+    val childNodes = Seq.fill(3) { val n = new Node; n.setDocumentSet(documentSet); n }
+
     for ((child, documents) <- childNodes.zip(documentsInChildren)) {
       documents.foreach(child.addDocument(_))
       tree.getRoot.addChild(child)
