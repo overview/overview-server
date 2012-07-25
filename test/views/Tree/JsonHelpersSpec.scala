@@ -16,6 +16,59 @@ import helpers.DbContext
 
 object JsonHelpersSpec extends Specification {
 
+  "Json generated for Tree" should {
+    "contain nodes" in {
+      val documentIds = models.core.DocumentIdList(List(10, 20, 30), 43)
+      val nodes = List(models.core.Node(1l, "description", List(2, 3, 5), documentIds), 
+          models.core.Node(2l, "description", List(2, 4), documentIds), 
+          models.core.Node(3l, "description", List(6), documentIds), 
+          models.core.Node(5l, "description", Nil, documentIds)
+      )
+
+      val documents = List(models.core.Document(10, "title", "text", "view"),
+    		  			   models.core.Document(20, "title", "text", "view"),
+    		  			   models.core.Document(30, "title", "text", "view"))
+    		  			   
+      val treeJson = JsonHelpers.generateSubTreeJson(nodes, documents)
+      
+      treeJson.toString must /("nodes") */("id" -> 1)
+      treeJson.toString must /("nodes") */("id" -> 2)
+      treeJson.toString must /("nodes") */("id" -> 3)
+      treeJson.toString must /("nodes") */("id" -> 5)
+      
+      treeJson.toString must /("documents") */("id" -> 10)
+      treeJson.toString must /("documents") */("id" -> 20)
+      treeJson.toString must /("documents") */("id" -> 30)
+    }
+  }
+  
+  "GenerateJson" should {
+    "generate Json for Node" in {
+      val nodeId = 234l;
+      val description = "nodeDescription"
+      val childIds = List(2l, 3l, 4l)
+      val documentIds = List(20l, 21l)
+      val documentIdList = models.core.DocumentIdList(documentIds, 34l)
+      val node = models.core.Node(nodeId, description, childIds, documentIdList)
+      
+      val nodeJson = JsonHelpers.generateJson(node)
+      
+      nodeJson.toString must /("id" -> nodeId)
+      nodeJson.toString must /("description" -> description)
+      nodeJson.toString must contain("\"children\":[" + childIds.mkString(",") + "]")
+      nodeJson.toString must contain("\"docids\":[" + documentIds.mkString(",") + "]")
+      nodeJson.toString must /("doclist") /("n" -> 34)
+    }
+    
+    "generate Json for Document" in {
+      val document = models.core.Document(4, "title", "text", "view")
+      
+      val documentJson = JsonHelpers.generateJson(document)
+      
+      documentJson.toString must /("id" -> 4)
+      documentJson.toString must /("description" -> "title")
+    }
+  }
   
   "rootNodeToJsValue" should {
     "contain the nodes" in new DbContext {

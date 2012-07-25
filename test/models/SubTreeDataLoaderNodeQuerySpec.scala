@@ -107,5 +107,5 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
     }
   }
   
-  step(stop())
+  step(stop)
 }
