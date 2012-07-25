@@ -72,7 +72,7 @@ object TreeController extends Controller {
       val tree = Tree.find.byId(id) // FIXME handle security
 
       DB.withTransaction {implicit connection =>
-      	val subTreeLoader = new SubTreeLoader(tree.root.id, 5)
+      	val subTreeLoader = new SubTreeLoader(tree.root.id, 4)
       	val nodes = subTreeLoader.loadNodes
       	val documents = subTreeLoader.loadDocuments(nodes)
 
