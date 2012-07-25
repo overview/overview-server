@@ -15,13 +15,17 @@ class SubTreeDataParser {
     val nodeAndChild = nodeData.map(d => (d._1, d._2))
     val childNodeIds = groupByNodeId(nodeAndChild)
     
+    val nodeDescriptions = nodeData.map(d => (d._2, d._3)).distinct.toMap
+    val nodeIds = nodeData.map(_._1).distinct.filterNot(_ == -1)
+        
     val nodeAndDocument = documentData.map(d => (d._1, d._3))
     val documentIds = groupByNodeId(nodeAndDocument)
     
     val nodeAndDocumentCount = documentData.map(d => (d._1, d._2))
     val documentCounts = groupByNodeId(nodeAndDocumentCount)
     
-    nodeData.map(d => createOneNode(d._2, d._3, childNodeIds, documentIds, documentCounts))
+    nodeIds.map(n => createOneNode(n, nodeDescriptions.getOrElse(n, ""), childNodeIds, documentIds, 
+    							   documentCounts))
   }
   
   /**
