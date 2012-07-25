@@ -3,14 +3,16 @@ package controllers
 import scala.collection.JavaConversions._
 import scala.io
 import scala.util.Random
-
+import play.api.db.DB
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import models._
+
 import views.json.Tree.JsonHelpers
+
 
 object TreeController extends Controller {
 	
@@ -67,16 +69,16 @@ object TreeController extends Controller {
 	}
 	
     def root(id: Long) = Action {
-// Leaving this here in case the complete JSON from the file is needed in testing the UI      
-//        val file = Play.application.getFile("conf/stub-tree-root.json")
-//        val json = io.Source.fromFile(file).mkString
-//      SimpleResult(
-//            header = ResponseHeader(200, Map(CONTENT_TYPE -> "application/json")),
-//            body = Enumerator(json)
-//        )
       val tree = Tree.find.byId(id) // FIXME handle security
-      val json = JsonHelpers.rootNodeToJsValue(tree.root)
-      Ok(json)
+
+      DB.withTransaction {implicit connection =>
+      	val subTreeLoader = new SubTreeLoader(tree.root.id, 5)
+      	val nodes = subTreeLoader.loadNodes
+      	val documents = subTreeLoader.loadDocuments(nodes)
+
+      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+        Ok(json)
+      }
     }
 
     def node(treeId: Long, nodeId: Long) = Action {
