@@ -7,6 +7,8 @@ object DatabaseStructure {
   type NodeDocument = (Long, Long, Long) // nodeId, documentCount, documentId
   type DocumentData = (Long, String, String, String) // documentId, title, textUrl, viewUrl
   
+  val NoId = -1l;
+  
   val IdColumn = "id"
   val ChildIdColumn = "child_id"
   val DescriptionColumn = "child_description"
