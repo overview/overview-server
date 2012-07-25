@@ -13,7 +13,7 @@ GET	    /showJobs					controllers.Application.showJobs()
 
 
 # Good URLs
-GET /documentsets/:id	controllers.DocumentSetController.index(id: Long)
+GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
 GET /documents/:id controllers.DocumentController.show(id: Long)
 GET /trees/:id/root controllers.TreeController.root(id: Long)
 GET /trees/:treeId/nodes/:nodeId controllers.TreeController.node(treeId: Long, nodeId: Long)
