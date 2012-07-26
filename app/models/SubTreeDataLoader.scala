@@ -15,9 +15,9 @@ import DatabaseStructure._
 class SubTreeDataLoader {
 
   /**
-   * @return a list of tuples: (parentId, childId, childDescription) for each node found in
+   * @return a list of tuples: (parentId, Some(childId), childDescription) for each node found in
    * a breadth first traversal of the tree to the specified depth, starting at the specified 
-   * root.
+   * root. Nodes with no children will return (id, None, "")
    * @throws IllegalArgumentException if depth < 1 
    */
   def loadNodeData(rootId: Long, depth: Int)(implicit connection: Connection) : List[NodeData] = {
@@ -54,19 +54,22 @@ class SubTreeDataLoader {
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
-      val childNodes = SQL(childNodeQuery(nodes)).as(NodeParser map(flatten) *)
+      val childNodeData = SQL(childNodeQuery(nodes)).as(NodeParser map(flatten) *)
       
-      val nodesWithChildNodes = childNodes.map(_._1)
-      val leafNodes = nodes.diff(nodesWithChildNodes)
-      val leafNodeData = leafNodes.map((_, None, ""))
+      val leafNodeData = dataForLeafNodes(nodes, childNodeData)
       
-      val childNodeIds = childNodes.map(_._2.get)
+      val childNodeIds = childNodeData.map(_._2.get)
       
-      childNodes ++ leafNodeData ++ loadChildNodes(childNodeIds, depth - 1)
+      childNodeData ++ leafNodeData ++ loadChildNodes(childNodeIds, depth - 1)
     }
   }
   
-  
+  private def dataForLeafNodes(nodes: List[Long], childNodeData: List[NodeData]) : List[NodeData] = {
+    val nodesWithChildNodes = childNodeData.map(_._1)
+    val leafNodes = nodes.diff(nodesWithChildNodes)
+    
+    leafNodes.map((_, None, ""))
+  }
 
   private val RootNodeQuery = 
     "SELECT node.id, node.description AS " + DescriptionColumn + " FROM node WHERE id = {id}"
