@@ -12,18 +12,13 @@ class SubTreeDataParser {
    */
   def createNodes(nodeData: List[NodeData], 
 		  		  documentData: List[NodeDocument]) : List[core.Node] = {
-    val nodeAndPossibleChild = nodeData.map(d => (d._1, d._2))
-    val possibleChildNodes = groupByNodeId(nodeAndPossibleChild)
-    val childNodeIds = possibleChildNodes.map(d => (d._1 -> d._2.flatMap(_.toList)))
-    
-    val nodeAndDocument = documentData.map(d => (d._1, d._3))
-    val documentIds = groupByNodeId(nodeAndDocument)
-    
-    val nodeDescriptions = nodeData.filter(_._2 != None).map(d => (d._2.get, d._3)).distinct.toMap
-    
-    val nodeIds = nodeData.map(_._1).distinct.filterNot(_ == NoId)
-    val documentCounts = documentData.map(d => (d._1, d._2)).distinct.toMap
-    
+    val nodeDescriptions = mapNodesToDescriptions(nodeData)
+    val childNodeIds = mapNodesToChildNodeIdLists(nodeData)
+    val documentIds = mapNodesToDocumentIdLists(documentData)
+    val documentCounts = mapNodesToDocumentCounts(documentData)
+        
+    val nodeIds = realNodeIds(nodeData) 
+
     nodeIds.map(n => createOneNode(n, nodeDescriptions,
                                       childNodeIds,
                                       documentIds,
@@ -56,4 +51,28 @@ class SubTreeDataParser {
     }
   }
     
+  private def mapNodesToChildNodeIdLists(nodeData: List[NodeData]) : Map[Long, List[Long]] = {
+    val nodeAndPossibleChild = nodeData.map(d => (d._1, d._2))
+    val possibleChildNodes = groupByNodeId(nodeAndPossibleChild)
+    
+    possibleChildNodes.map(d => (d._1 -> d._2.flatMap(_.toList)))   
+  }
+  
+  private def mapNodesToDocumentIdLists(documentData: List[NodeDocument]) : Map[Long, List[Long]] = {
+    val nodeAndDocument = documentData.map(d => (d._1, d._3))
+    groupByNodeId(nodeAndDocument)
+  }
+  
+  private def mapNodesToDescriptions(nodeData: List[NodeData]) : Map[Long, String] = {
+    val childNodes = nodeData.filter(_._2 != None)
+    childNodes.map(d => (d._2.get, d._3)).distinct.toMap
+  }
+  
+  private def mapNodesToDocumentCounts(documentData: List[NodeDocument]) : Map[Long, Long] = {
+    documentData.map(d => (d._1, d._2)).distinct.toMap
+  }
+  
+  private def realNodeIds(nodeData : List[NodeData]) : List[Long] = {
+    nodeData.map(_._1).distinct.filterNot(_ == NoId)
+  }
 }
