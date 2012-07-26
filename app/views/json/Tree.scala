@@ -1,6 +1,6 @@
 package views.json
 
-import models.core.{DocumentIdList, Node}
+import models.core.{Document, DocumentIdList, Node}
 import play.api.libs.json.JsValue
 import play.api.libs.json.{JsObject, Writes}
 import play.api.libs.json.Json.toJson
@@ -32,11 +32,22 @@ object ATree {
     }
   }
   
+  implicit object JsonDocument extends Writes[Document] {
+    def writes(document: Document) : JsValue = {
+      toJson(Map(
+        "id" -> toJson(document.id),
+        "description" -> toJson(document.title)
+      ))
+    }
+  }
+  
 
-  def show(nodes: List[Node]) : JsValue = {
+  def show(nodes: List[Node], documents: List[Document]) : JsValue = {
     toJson(
       Map(
-        "nodes" -> toJson(nodes)
+        "nodes" -> toJson(nodes),
+        "documents" -> toJson(documents),
+        "tags" -> toJson(Seq[String]())
       )
     )
   }

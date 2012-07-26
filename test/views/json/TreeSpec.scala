@@ -13,16 +13,42 @@ class TreeSpec extends Specification {
       val documentIds = DocumentIdList(List(10, 20, 30), 43)
       
       val nodes = List(
-          Node(1, "description", List(2, 3), documentIds),
-          Node(2, "description", List(4, 5, 6), documentIds), 
-          Node(3, "description", List(7), documentIds) 
+          Node(1l, "description", List(2, 3), documentIds),
+          Node(2l, "description", List(4, 5, 6), documentIds), 
+          Node(3l, "description", List(7), documentIds) 
       )
       
-      val treeJson = ATree.show(nodes).toString
+      val dummyDocuments = List[Document]()
+      
+      val treeJson = ATree.show(nodes, dummyDocuments).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
       treeJson must /("nodes") */("id" -> 3)
+    }
+    
+    "contain all documents" in {
+      val dummyNodes = List[Node]()
+      val documents = List(
+    	Document(10l, "title", "textUrl", "viewUrl"),
+    	Document(20l, "title", "textUrl", "viewUrl"),
+    	Document(30l, "title", "textUrl", "viewUrl")
+      )
+      
+      val treeJson = ATree.show(dummyNodes, documents).toString
+      
+      treeJson must /("documents") */("id" -> 10l)
+      treeJson must /("documents") */("id" -> 20l)
+      treeJson must /("documents") */("id" -> 30l)
+    }
+    
+    "contain empty tags because they're not implemented yet" in {
+      val dummyNodes = List[Node]()
+      val dummyDocuments = List[Document]()
+      
+      val treeJson = ATree.show(dummyNodes, dummyDocuments).toString
+      
+      treeJson must contain("\"tags\":[]")
     }
   }
   
@@ -54,6 +80,21 @@ class TreeSpec extends Specification {
       
       documentIdListJson must contain("\"docids\":" + ids.mkString("[", ",", "]"))
       documentIdListJson must /("n" -> count)
+    }
+  }
+  
+  "JsonDocument" should {
+    import views.json.ATree.JsonDocument
+    
+    "write document attributes" in {
+      val id = 39l
+      val title = "title"
+      val document = Document(id, title, "unused by Tree", "unused by Tree")
+      
+      val documentJson = toJson(document).toString
+      
+      documentJson must /("id" -> id)
+      documentJson must /("description" -> title)
     }
   }
 
