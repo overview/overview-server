@@ -1,0 +1,211 @@
+271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+Basecamp Manual
+Managing Projects Using Basecamp's Project Management Software
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+1
+
+TABLE OF CONTENTS
+a
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+2
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+3
+
+MANUAL OVERVIEW
+WHAT IS BASECAMP?
+Basecamp is a popular, weB-Based project management solution used By organizations across the gloBe. Basecamp is an excellent way to Bring project memBers, managers, and clients together in one complete and unified application. Basecamp can Be used to track file downloads, messages, and feedBack, and view deadlines for Both tasks and milestones. Best of all, it's free for all lform clients to sign-up and use Basecamp!
+
+SCOPE this manual will focus on the functionality and capabilities of the Basecamp software solution. the following tutorial will utilize a simplistic example of an underway project for ease-of-understanding.
+
+OBJECTIVES After the brief introduction given to you during your first needs assessment meeting and reading through this manual, you should be able to effectively manage the following tools and capabilities: o User Profile o Messages o To-Do Lists & Tasks o Milestones o File Downloads o Writeboards o Commenting
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+4
+
+WELCOME TO BASECAMP
+PREFERRED BROWSER when using Basecamp, please use the latest version of mozilla firefox. http://www.mozilla.com/en-US/firefox/
+Note: Firefox 3.6 or later is also acceptable.
+
+WELCOME E-MAIL By now, you probably have a handy e-mail in your inbox with the login instructions for Basecamp. as per the e-mail, click on the activation link to get started. create a username and password that is easy to remember. once you've created your new account, you will be sent a confirmation e-mail. Click on the link below "Access Your Account Now" to go to the user login screen.
+Note: Please save your login username and password so that you can refer to it at a later time. If you forget your username or password you can click on the "Help: I forgot my username or password" link or contact Lform directly for further assistance.
+
+LOGGING INTO BASECAMP once you have your login credentials ready, type in the following url into your web browser: https://lform.basecamphq.com/ This will take you to the Lform Basecamp login in screen. enter your username and password.
+Note: It is advisable to bookmark this Basecamp URL so that you can refer to it at a later time.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+5
+
+GETTING STARTED
+"MY INFO" Immediately after logging into Basecamp, click on the "My Info" tab located at the top right-hand corner of your screen. here you can edit your personal and contact information, gather authentication tokens, and e-mail dropbox key. Personal Information: Click on this link to change your name, photo, e-mail address, username or password. Contact Information: please enter as much contact information as possible. this is extremely useful for all project members. Authentication Tokens: Your authentication token is a special code that allows outside software and services to connect to your account with your permission. It works like a password so you should keep it safe just as you do with your username and password. If you think your token might have been compromised, you can generate a new one. Your E-mail Dropbox: when you send e-mail to Basecamp, you're identified by your unique e-mail dropbox address. if you're getting spammed, you can reset your dropbox key.
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+6
+
+SEARCH: if at some point you feel that you can't easily access an item within the site, simply click the "Search" tab located in the far right-hand corner. Type in keywords of the item you are trying to locate, and press "Search". If you use the search more than once, a list will begin to form under "Recent Searches" in the right-hand coloumn.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+7
+
+PROJECT OVERVIEW & ACTIVITY After you update your user information, click on the "Overview Tab" to take you back to the "Project Overview & Activity" dashboard. This section of the site provides you with a "bird's eye view" of the activity taking place in this project. in the left-hand column, you may notice that you already have a long laundry list of "To-Do" items and "Milestones" (both in a list view and partial calendar view). the partial calendar view shows all milestones that are due within the next 14 days. when items are late, they will appear above the calendar marked in red. These items (and more) will be explained future sections. In the right-hand column you will see the "Stay Up To Date On This Project" options that allow you to receive e-mail notifications or subscribe to an RSS feed. you will also see a list of project members from your company and lform design, along with their recent login activity.
+Note: Please contact Lform Design to have additional members added to your company.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+8
+
+LOGGED ITEMS once the project is fully underway, there will be "Messages," "Comments," "Milestones," "To Do's" "Files," and "Writeboards" in this log. Messages: messages are similar to e-mails. they can be sent to anyone involved in the project. Comments: Comments can be made on all items (except for to-do lists) in Basecamp. To-Do Lists & Tasks: To-do's come in two forms: a list and a task. The tasks make up the to-do list. Tasks can be assigned to an individual within the project and given a due date. Task lists can be associated with a milestone in the project. Files: All files (i.e. images, videos, documents, etc.) can be added to the project using this file upload feature. Writeboards: writeboards can be used to create and edit website content so that it can be shared and collaborated on with all project members.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+9
+
+MESSAGES
+If you click on the "Messages" tab you will see the most active (or most discussed) messages at the top, followed by a list of the latest messages at the bottom. ADD A MESSAGE:
+Note: Step 1 can be completed using step A or B.
+
+1a. Click on the "Messages" tab, then click the "Post a New Message" button 1b. Click on the "Overview" tab, then click on the "New Message" link 2. give the message a title 3. Assign the message to a category (optional) 4. enter a message in the message box 5. Attach a file (optional) 6. indicate if the message is related to a milestone (optional) 7. Select the people you would like to receive this message 8. Click "Post this Message" EDIT A MESSAGE: 1. Navigate to the message you would like to edit 2. Click on the message title 3. Click the "Edit this Message" link 4. Edit the fields as necessary 5. Indicate whether or not you would like to notify the people assigned to this message of the edits you have made 6. Click "Save Changes"
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+10
+
+DELETE A MESSAGE: 1. Navigate to the message you would like to delete 2. Click on the message title 3. Click the "Delete" link 4. Click "OK" if you are sure you would like to delete the message COMMENT ON A MESSAGE: 1. Navigate to the message you would like to comment on 2. type your comment in the comment box and attach a file (if necessary) 3. Click "Add this Comment"
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+11
+
+TO-DO LISTS & TASKS
+If you click on the "To-Dos" tab you will see a list of "To-Do Lists" and their corresponding tasks. You may also notice that individual project members have been assigned to certain tasks. Tasks highlighted in yellow indicate that you have been assigned to complete these tasks. ADD A TO-DO LIST & TASk:
+Note: Step 1 can be completed using step A or B.
+
+1a. Click on the "To-Dos" tab, then click the "New ToDo List" button 1b. Click on the "Overview" tab, then click on the "New To-Do List" link 2. give the to-do list a title 3. Provide a brief description for the list (optional) 4. indicate if the message is related to a milestone (optional) 5. Click "Create this List" 6. once you've created the list, the screen will refresh and prompt you to start adding task items. 7. enter a to-do item 8. Assign a member to complete the task 9. Assign the task a due date (optional) 10. Click "Add this Item" 11. When you've completed the task list, click the "I'm done adding items" link 12. repeat these steps as necessary
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+12
+
+EDIT A TO-DO LIST OR TASk: 1. Mouse over the to-do list or task item you would like to edit, and click the "Edit" link 2. Edit the fields as necessary 3. Click "Save"
+
+REORDER TO-DO LISTS: 1. Click on the "To-Dos" tab 2. Click the "Reorder Lists" link 3. "Click & Drag" the lists by holding down the mouse on the double arrow icon to the left of the title 4. When you're finished, click the "Done Reordering Lists" link
+
+REORDER TASkS: 1. Navigate to the to-do list you would like to edit 2. Mouse over the task you would like to move or rearrange 3. "Click & Drag" the task by holding down the mouse on the double arrow icon to the left of the title
+Note: You also have the ability to move tasks to other to-do lists.
+
+DELETE A TO-DO LIST OR TASk: 1. Navigate to the to-do list or task you would like to delete 2. Mouse over the list or task you would like to delete 3. Click the "trash can icon" to delete the item 4. Click "OK" if you are sure you would like to delete the item
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+13
+
+COMMENT ON A TASk: 1. Navigate to the task you would like to comment on 2. Mouse over the task you would like to comment on and click on the "speech bubble icon" to the right of the task 3. type your comment in the comment box and attach a file (if necessary) 4. Click "Add this Comment" COMPLETE A TASk: 1. Navigate to the task you would like to mark as complete 2. Click the check-box next to the task you would like to complete
+Note: If you check off that you have completed a task by accident, you can simply uncheck the task to bring it back up to the "Upcoming Task" section.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+14
+
+MILESTONES
+If you click on the "Milestones" tab you will see a partial calendar view and a full list view of all the milestones in this project. in the right-hand column you will notice a small calendar with highlighted dates. each color has a specific meaning: o red: late milestone o Blue: today's date o green: completed milestone o yellow: upcoming milestone Because Basecamp does not currently offer a full calendar view, you may want to subscribe to your milestones using a calendar rss feed. Below you will find a list of resources: o Backpack Calendar: http://backpackit.com/calendar o ical: http://www.apple.com/support/ical/ o mozilla calendar project: http://www.mozilla.org/projects/calendar/ o google calendar:: http://www.google.com/intl/en/ googlecalendar/about.html
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+15
+
+ADD A MILESTONE:
+Note: Step 1 can be completed using step A or B.
+
+1a. Click on the "Milestones" tab, then click "Add a New Milestone" (or to add more than one at a time, click the "Add ten at a time" link) 1b. Click on the "Overview" tab, then click on the "New Milestone" link 2. give the milestone a title
+Note: It is important to use the same client name prefix as the rest of the milestones (i.e. "Lform - Homepage Designs COMPLETED"). In this example, "Lform" was the client name prefix. These are extremely helpful to Lform Design so that they can clearly distinguish similar milestones used by multiple projects.
+
+3. assign a member of the project to the milestone 4. select a due date for the milestone 5. Click "Create this Milestone" 6. repeat these steps as necessary EDIT A MILESTONE:
+Note: You can only edit milestones that you have created yourself.
+
+1. Mouse over the milestone you would like to edit, and click the "Edit" link 2. Edit the fields as necessary 3. Click "Save" DELETE A MILESTONE:
+Note: You can only delete milestones that you have created yourself.
+
+1. Navigate to the milestone you would like to delete 2. Mouse over the milestone you would like to delete 3. Click the "trash can icon" to delete the item 4. Click "OK" if you are sure you would like to delete the item
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com 16
+
+COMMENT ON A MILESTONE: 1. Navigate to the milestone you would like to comment on 2. Mouse over the milestone you would like to comment on and click on the "speech bubble icon" to the right of the milestone 3. type your comment in the comment box 4. Click "Add this Comment" COMPLETE A MILESTONE: 1. Navigate to the milestone you would like to mark as complete 2. Click the check-box next to the milestone you would like to complete
+Note: If you check off that you completed a milestone by accident, you can simply uncheck the milestone to bring it back up to the "Upcoming Milestones" section.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+17
+
+If you click on the "Writeboards" tab you will most likely be prompted to "Create the first Writeboard". writeboards are rarely used, but can certainly come in handy if you want to collaborate on website content or concepts with multiple project members. Writeboards allow project members to track changes, make corrections, review multiple versions of a document, and write without overwriting someone else. You may use the following link as an additional resource to create writeboards: http://writeboard.com This will be useful if you would like to use the "import a writeboard" function.
+
+ADD A WRITEBOARD:
+Note: Step 1 can be completed using step A or B.
+
+1a. Click on the "Writeboards" tab, then click on the "Create the First Writeboard" button 1b. Click the "Writeboards" tab, then click on the "Create a Writeboard" button 2. give the writeboard a title 3. Click "Create a New Writeboard" 4. Type (or copy & paste) content into the open field 5. Select the project members you would like involved in this collaborative effort 6. Click "Save this Writeboard"
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+18
+
+EDIT A WRITEBOARD: 1. Click on the "Writeboard" tab 2. Click on the title of the writeboard you would like to edit 3. Click "Edit this Page" 4. Make edits as necessary
+Note: If the edits are very minor, check the "Minor edit, don't save new version" box.
+
+5. Select the project members you would like to notify of these changes 6. Click "Save as the Newest Version"
+
+VIEW WRITEBOARD VERSIONS: the writeboard versions appear in chronological descending order, with the latest version appearing at the top of the list. this list will tell you which version number it is, how long ago the edit was made, and who the edit was made by (author). View Versions by Time: To view each version, simply click on the "time" link (i.e. 2mins ago). Compare Versions: o To compare versions (max 2 at a time), check off the two versions you would like to compare and then click the "Compare" button. o You may also click the "Quick Compare" link, which will automatically select two versions for you.
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+19
+
+o Once you have completed comparing the versions, you may chose one of the following options: o Export: Click Export.
+Note: You can export this file in either .txt or .html format.
+
+o Flag this Version: Click "Flag this Version" flag version for importance
+Note: To unflag a version, simply click the "Remove Flag" button.
+
+o Revert to this Version: Click the "Revert to this Version" link
+Note: By choosing this option, none of your other versions will be lost. This version will be copied and become the latest version.
+
+DELETE A WRITEBOARD: 1. Click on the "Writeboard" tab 2. Mouse over the writeboard you would like to delete 3. Click the "trash can icon" to delete the item 4. Click "OK" if you are sure you would like to delete the item
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+20
+
+FILES
+If you click on the "Files" tab you will see a list of files. In this case there is only one file (the Basecamp manual that you are using now). files can be uploaded in one of two ways: uploading them directly to the "Files" area of the site, or by attaching them in a message or comment. if you plan on uploading a large amount of files, it is highly recommended that you assign the files to be placed within specific categories. You may use the general default categories provided by Basecamp, or you can create categories that are more meaningful or useful to the project. ADD A FILE:
+Note: You can also add files by attaching them to a message or comment.
+
+1. Click on the "Files" tab, then click on "Upload a File" 2. Choose a file to upload by clicking on the "Browse" button 3. Search your computers hard-drive for the file you would like to upload, then click "Open" 4. Assign the file to a category (optional) 5. Give the file a brief description (optional) 6. To add multiple files at once, click the "Browse" button under "Choose Another File to Upload" (repeat this step as necessary)
+Note: You can remove unwanted files before uploading them by clicking "remove" to the right of the file name.
+
+7. Select the people you would like to notify about this upload 8. Click "Upload File"
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com 21
+
+EDIT A FILE:
+Note: You can only edit files that you have uploaded yourself.
+
+1. Navigate to the file would like to edit 2. Mouse over the file you would like to edit, and click the "Edit" link 3. Edit the fields as necessary 4. Click "Save" - Note: You can only delete files that you have uploaded yourself. DELETE A FILE: 1. Navigate to the file you would like to delete 2. Mouse over the file you would like to delete 3. Click the "trash can icon" to delete the item 4. Click "OK" if you are sure you would like to delete the item
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+22
+
+CONCLUSION
+after having read through this manual, it is plain to see that Basecamp is such an easy to use project management solution. no wonder why they have over 5 million users! For further assistance, please contact Lform by calling (973) 239-9002.
+
+LFORM DESIGN 271 grove avenue webster commons Building c, suite 4 verona, nj 07044 T: (973)239-9002 e: updates@lform.com http://www.lform.com/
+
+LFORM DESIGN | 271 Grove Avenue | Webster Commons - Building C, Suite 4 | Verona, NJ 07044 | T: 973.239.9002 | www.lform.com
+
+23
+
+

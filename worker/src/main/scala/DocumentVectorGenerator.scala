@@ -22,14 +22,11 @@ class DocumentVectorGenerator {
   def DocumentVector = scala.collection.mutable.Map[String, Float] _                           // so we can do var t = DocumentVector()
   
   type DocumentSetVectors = scala.collection.mutable.Map[DocumentID, DocumentVector]           // docid -> vector                  
-  object DocumentSetVectors { def apply() = { scala.collection.mutable.Map[DocumentID, DocumentVector]() } }
-  
-  //def DocumentSecVectors = scala.collection.mutable.Map[DocumentID, DocumentVector] _  not sure why this doesn't work
+  object DocumentSetVectors { def apply() = { scala.collection.mutable.Map[DocumentID, DocumentVector]() } }  
 
-  
   // --- Data ---
   private var numDocs = 0 
-  private var idf = DocumentVector() 
+  private var doccount = DocumentVector() 
   private var tf = DocumentSetVectors()
    
   // --- Methods ---
@@ -50,25 +47,29 @@ class DocumentVectorGenerator {
       termcounts.transform((key,count) => count/terms.size.toFloat) 
       tf += (docId -> termcounts)
        
-      // for each unique term in this doc, update how many docs each term appears in (doc frequency)
+      // for each unique term in this doc, update how many docs each term appears in (doc count)
       for (t <- termcounts.keys) {
-        val prev_count = idf.getOrElse(t, 0f)
-        idf += (t -> (prev_count + 1))
+        val prev_count = doccount.getOrElse(t, 0f)
+        doccount += (t -> (prev_count + 1))
       }
       
       numDocs += 1
     }
   }   
   
+  // Return inverse document frequency map: term -> idf
+  // Drop all terms where count < 3 or count == N, and take the log of document frequency in the usual IDF way
+  def Idf() : DocumentVector = {
+    var idf2 = doccount.filter(kv => (kv._2 > 2) && (kv._2 < numDocs))
+    idf2.transform((term,count) => math.log10(numDocs / count).toFloat)    
+  }
+  
   // After all documents have been added (or, really, at any point) compute the total set of document vectors
   // Previously added documents will end up with different vectors as new docs are added, due to IDF term
   def getVectors() : DocumentSetVectors = {
    
     var docVectors = DocumentSetVectors()
- 
-    // Drop all terms where count < 3 or count == N, and take the log of document frequency in the usual IDF way
-    var idf2 = idf.filter(kv => (kv._2 > 2) && (kv._2 < numDocs))
-    idf2.transform((term,count) => math.log10(numDocs / count).toFloat)
+    val idf = Idf()
     
     // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
     for ((docid, doctf) <- tf) {                // for each doc
@@ -77,7 +78,7 @@ class DocumentVectorGenerator {
       var length = 0f
       
       for ((term,termfreq) <- doctf) {          // for each term in doc
-        if (idf2.contains(term)) {              // skip if term eliminated in previous step
+        if (idf.contains(term)) {               // skip if term eliminated in previous step
           val weight = termfreq * idf(term)     // otherwise, multiply tf*idf
           tfidf += (term -> weight)
           length += weight*weight

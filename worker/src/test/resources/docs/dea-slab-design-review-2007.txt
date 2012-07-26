@@ -1,0 +1,91 @@
+(R)
+EVANS
+AND ASSOCIATES mc.
+DATE: July 30, 2007
+TO: Bob Hutchinson
+FROM: Jon Harper
+SUBJECT: Task 3.0 - Slab Design Review
+PROJ ECT: Courthouse Square - Slab Evaluation
+PROJECT NO: MARN0000-0036
+COPIES:
+This memo is intended to provide a brief summary of work completed to date regarding the Courthouse Square
+Slab Evaluation proj ect. DEA has completed tasks 1.0 (Floor Elevation Survey), 2.0 (Construction Document
+Review) and 3.0 (Slab Design Review) specific to the fifth floor which appeared to have the most cosmetic
+damage. Our preliminary conclusions are as follows:
+Task 1.0 Measure spot elevations at 15 individual locations at the fifth floor focused in an area at the northeast
+side of the building. (Directly north ofthe east stairwell.) Survey information previously provided in full in a
+separate deliverable. Partial survey information provided below.
+Task 2_0 Review general contractors' documents relative to slab formwork methods including shoring and re-
+shoring removal. Review special inspection reports relative to slab construction. This includes slab
+reinforcement inspection and testing of concrete strength for the concrete slabs. Review rebar shop drawings and
+steel tendon drawings and calculations. Review contractor requests for information (RFl's) relative to the slab
+construction. Reviewed construction documents provided by Marion County and Arbuckle Costic
+Architects.
+Task 3.1 Review as-built structural drawings to determine slab reinforcement information. Compare with rebar
+and steel tendon shop drawings. In general, as-built structural drawings match rebar and steel tendon shop
+drawings. See itemized comments below for specific irregularities or concerns.
+Task 3.2 Analyze the existing slab design at the fifth floor level to verify structural adequacy to support required
+vertical loads. DEA analyzed iive individual slab segments located at the fifth floor level (see attached
+calculations). All five conditions were modeled based on the rebar and steel tendon shop drawings. Slab
+appears adequate at all locations to support the required vertical loads.
+2100 Southwest River Parkway Portland Oregon 97201 Telephone: 503.223.6663 Facsimile; 503.223.2701
+
+Bob Hutchinson
+July 30, 2007
+Page 2
+Task 3.3 Calculate slab deflection due to dead and live load and compare with the as-built measurements. See
+table below for surveyed deflections versus calculated deflections.
+ 
+Location Surveyed Deflection Calculated Deflection Asuweyed V5 ca|C,,|a,ed
+
+W0-5 In addition to task summaries listed above, the following items/issues were discovered during this task and should
+be noted: 
+There appears to be a discrepancy between the number of tendons indicated on the fifth floor pt shop
+drawings and the fifth floor elongation (inspection) reports relative to slab segments at Grids H. The
+slab at these locations was checked forthe tendon configuration depicted in the elongation reports and
+appears adequate, but this raises the question as to whether there might have been conliision in the field
+regarding the layout of the banded tendons possibly leading to improper placement.
+In a structural observation report dated February 24, 2000, Tim Terich (with Century West Engineering)
+states: "Observed the floor grinding of slabs in the west stairs, where the concrete was poured too high.
+Grinding has exposed 2-3 tendons running parallel to the door opening. The tendons lie within of
+the top of the slab. These tendons are not significant to the integrity of the slab. The tendons Mr. Terich
+refers to are distributed tendons running in the east-west direction. The removal of these tendons would
+not be expected to impact the slabs structural integrity. However, this does raise the question as to
+whether other, more important, tendons were cut in the field in a similar fashion without documentation.
+RFI 22 states "Are there more pt cables required between l0 l0a, Structural engineer answered
+"Yes. See shops for adj ustment.". DEA was unable to locate pt shop drawings showing a modification.
+DEA located a fax transmittal dated July 22, 1999 from Tim Terich which states: "Attached is a re-design
+of reinforcing near the west shear wall to account for the removal of 'short' tendons." The sketch
+referenced in this transmittal was not located.
+There was a mark-up by Mr. Terich on the third floor rebar shop drawings calling for a tighter rebar
+spacing than what was originally detailed (denoted by hand written comments by Mr. Terich on the shop
+drawing). Mr. Terich included a note on the fourth and fifth floor rebar shop drawings directing the
+contractor to reference the third floor rebar shop drawing for information. It is possible this additional
+reinforcement was not added in the field if the contractor was building off of the shop drawings and did
+not catch the 'reference' note on the fourth and fifth floor drawings.
+
+Bob Hutchinson
+July 30, 2007
+Page 3
+0 In a letter dated May 5, 1999, Leonard Lodder (with Arbuckle Costic Architects) writes to Glen Cook
+(with Century West Engineering) saying: have recently succeeded in reviewing with the Owner's
+project manager your request for additional fees to cover perceived changes in scope for the project
+during the design development and construction document phases of the project. Unfortunately, our
+review is tempered by the significant number of RFIS from the Contractor regarding structural issues.
+There is considerable concern that the level of completeness of the structural drawings will expose the
+Owners to significant additional costs through change orders.". If this is the case and there was a large
+number of RFIS on the project, the possibility of errors and/or omissions in the construction phase would
+have increased.
+0 Per the Permit Set drawings, the only top mat reinforcement called out in the fifth floor slab is #4 24"
+o_o. at the pour strip and (8) #6 each way at the columns. Additional welded wire fabric appears to have
+been added in the field (handwritten note has been added to the as-built drawings), however, DEA was
+unable to find rebar shop drawings detailing this additional reinforcement. Based on the slab analysis
+outlined above, this appears to be a less than adequate amount of top mat reinforcement.
+This memo was prepared to provide a brief summary of information reviewed to date. So far it is clear that the
+floor slabs at the third, fourth and fifth floor have deflected more than expected. Any conclusions regarding the
+cause of this deflection or the structural adequacy of the slabs cannot be made until ftuther evaluation has been
+performed. Therefore, we request authorization to proceed with task 4.0 to verify the existing slab construction.
+.. aE't1U 
+ Initials: JFH
+File Name: 0036 Task 3 Sum1nary.doc
+
