@@ -13,7 +13,7 @@ import DatabaseStructure._
  * a list of tuples.
  */
 class SubTreeDataLoader {
-
+      
   /**
    * @return a list of tuples: (parentId, Some(childId), childDescription) for each node found in
    * a breadth first traversal of the tree to the specified depth, starting at the specified 
@@ -23,8 +23,7 @@ class SubTreeDataLoader {
   def loadNodeData(rootId: Long, depth: Int)(implicit connection: Connection) : List[NodeData] = {
     require(depth > 0)
     
-    val rootNode = SQL(RootNodeQuery).on("id" -> rootId).
-      as(long(IdColumn) ~ str(DescriptionColumn) map(flatten) *)
+    val rootNode = rootNodeQuery(rootId)
     
     val rootAsChild = rootNode.map(n => (NoId, Some(n._1), n._2))
     val childNodes = loadChildNodes(List(rootId), depth)
@@ -38,23 +37,21 @@ class SubTreeDataLoader {
    * associated with the nodeId in the database
    */
   def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
-    SQL(nodeDocumentQuery(nodeIds)).
-    	as(DocumentIdParser map(flatten) *)
+    nodeDocumentQuery(nodeIds)
   } 
   
   /** 
    * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
    */
   def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
-    SQL(documentQuery(documentIds)).
-        as(DocumentParser map(flatten) *)
+    documentQuery(documentIds)
   }
   
   private def loadChildNodes(nodes: List[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
-      val childNodeData = SQL(childNodeQuery(nodes)).as(NodeParser map(flatten) *)
+      val childNodeData = childNodeQuery(nodes)
       
       val leafNodeData = dataForLeafNodes(nodes, childNodeData)
       
@@ -71,40 +68,62 @@ class SubTreeDataLoader {
     leafNodes.map((_, None, ""))
   }
 
-  private val RootNodeQuery = 
-    "SELECT node.id, node.description AS " + DescriptionColumn + " FROM node WHERE id = {id}"
+  private def rootNodeQuery(rootNodeId: Long)(implicit c: Connection) : List[(Long, String)]= {
+    val descriptionParser = long("id") ~ str("description")
+    
+    SQL("SELECT node.id, node.description FROM node WHERE id = {rootId}").
+      on("rootId" -> rootNodeId).
+      as(descriptionParser map(flatten) *)
+  }
         
-  private def childNodeQuery(nodeIds: List[Long]) : String = {
-    "SELECT node.parent_id AS " + IdColumn +
-    ", node.id AS " + ChildIdColumn +
-    ", node.description AS " + DescriptionColumn +
-    "  FROM node WHERE parent_id IN " + idList(nodeIds)
+  private def childNodeQuery(nodeIds: List[Long])(implicit c: Connection) : List[NodeData] = {
+    val nodeParser = long("parent_id") ~ get[Option[Long]]("id") ~ str("description")
+
+    SQL(
+      """
+        SELECT node.parent_id, node.id, node.description
+        FROM node WHERE parent_id IN 
+      """ + idList(nodeIds)
+    ).as(nodeParser map(flatten) *)
   }
   
-  private def nodeDocumentQuery(nodeIds: List[Long]) : String = {
-    """
-      SELECT node_id AS id, document_count, document_id
-	  FROM (
-    	SELECT 
-    	  nd.node_id,
-    	  COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
-    	  nd.document_id,
-    	  RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
-    	FROM node_document nd
-    	WHERE nd.node_id IN """ + idList(nodeIds) + 
-    """
-    	ORDER BY nd.document_id
-      ) ss
-      WHERE ss.pos < 11
-    """    
+  private def nodeDocumentQuery(nodeIds: List[Long])(implicit c: Connection) : List[NodeDocument] = {
+    val documentIdParser = long("node_id") ~ long("document_count") ~ long("document_id")
+
+    SQL(
+      """
+        SELECT node_id, document_count, document_id
+	    FROM (
+    	  SELECT 
+    	    nd.node_id,
+    	    COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
+    	    nd.document_id,
+    	    RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
+    	  FROM node_document nd
+    	  WHERE nd.node_id IN 
+      """ + idList(nodeIds) + 
+      """
+    	  ORDER BY nd.document_id
+        ) ss
+        WHERE ss.pos < 11
+      """
+    ).
+    as(documentIdParser map(flatten) *)
   }
   
-  private def documentQuery(documentIds: List[Long]) : String = {
-	"""
-      SELECT id, title, text_url, view_url
-      FROM document
-      WHERE id IN """ + idList(documentIds)     
+  private def documentQuery(documentIds: List[Long])(implicit c: Connection) : List[DocumentData]= {
+    val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
+
+    SQL(
+      """
+        SELECT id, title, text_url, view_url
+        FROM document
+        WHERE id IN 
+      """ + idList(documentIds)
+    ).
+    as(documentParser map(flatten) *)
   }
+  
   private def idList(ids: List[Long]) : String = "(" + ids.mkString(", ") + ")"
 
 }
