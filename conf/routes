@@ -16,7 +16,7 @@ GET	    /showJobs					controllers.Application.showJobs()
 GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
 GET /documents/:id controllers.DocumentController.show(id: Long)
 GET /trees/:id/root controllers.TreeController.root(id: Long)
-GET /trees/:treeId/nodes/:nodeId controllers.TreeController.node(treeId: Long, nodeId: Long)
+GET /trees/:id/nodes/:nodeId controllers.TreeController.node(id: Long, nodeId: Long)
 GET /trees/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 
 POST /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)

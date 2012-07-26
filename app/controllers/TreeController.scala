@@ -10,6 +10,8 @@ import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import models._
+import anorm.SQL
+import anorm.SqlParser.scalar
 
 import views.json.Tree.JsonHelpers
 
@@ -30,12 +32,9 @@ object TreeController extends Controller {
 	  }
 
     documentSet.save
+    root.save
 
 	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
-
-	  val tree = new Tree()
-	  tree.root = root
-	  tree.save()
 
 	  Ok("Setup complete")
 	}
@@ -72,10 +71,15 @@ object TreeController extends Controller {
 	}
 	
     def root(id: Long) = Action {
-      val tree = Tree.find.byId(id) // FIXME handle security
+      // FIXME handle security
 
       DB.withTransaction { implicit connection =>
-      	val subTreeLoader = new SubTreeLoader(tree.root.id, 4)
+        val rootId = SQL("""
+          SELECT id FROM node
+          WHERE document_set_id = {document_set_id} AND parent_id IS NULL
+          """).on('document_set_id -> id).as(scalar[Long].single)
+
+      	val subTreeLoader = new SubTreeLoader(rootId, 4)
       	val nodes = subTreeLoader.loadNodes
       	val documents = subTreeLoader.loadDocuments(nodes)
 
@@ -84,7 +88,9 @@ object TreeController extends Controller {
       }
     }
 
-    def node(treeId: Long, nodeId: Long) = Action {
+    def node(id: Long, nodeId: Long) = Action {
+      // FIXME handle security
+
       DB.withTransaction { implicit connection =>
       	val subTreeLoader = new SubTreeLoader(nodeId, 4)
       	val nodes = subTreeLoader.loadNodes
