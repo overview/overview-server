@@ -3,35 +3,38 @@ package controllers
 import scala.collection.JavaConversions._
 import scala.io
 import scala.util.Random
-
+import play.api.db.DB
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import models._
+import anorm.SQL
+import anorm.SqlParser.scalar
+
 import views.json.Tree.JsonHelpers
+
 
 object TreeController extends Controller {
 	
 	def temporarySetup() = Action {
-	  val root = new Node()
-	  root.description = "root"
-
 	  val documentSet = new DocumentSet()
+
+	  val root = new Node()
+	  root.setDocumentSet(documentSet)
+    root.setDescription("root")
+
 	  for (i <- 1 to 2200) {
 	    val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
 	    documentSet.addDocument(document)
 	    document.save
 	  }
 
-      documentSet.save
+    documentSet.save
+    root.save
 
 	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
-
-	  val tree = new Tree()
-	  tree.root = root
-	  tree.save()
 
 	  Ok("Setup complete")
 	}
@@ -41,14 +44,15 @@ object TreeController extends Controller {
 
 	  if ((depth > 1) && (documents.size > 1)) {
 	    val numberOfChildren = Random.nextInt(scala.math.min(7, documents.size)) + 1
-	    val children = generateChildren(numberOfChildren, documents, depth)
+	    val children = generateChildren(root, numberOfChildren, documents, depth)
 	    children.foreach(root.addChild)
 	  }
 	}
 
-	def generateChildren(numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
+	def generateChildren(parent: Node, numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
     val child = new Node()
-    child.description = "node height " + depth
+    child.setDocumentSet(parent.documentSet)
+    child.setDescription("node height " + depth)
 
 	  if (numberOfSiblings > 1) {
 	    val splitPoint = 
@@ -58,7 +62,7 @@ object TreeController extends Controller {
 	    
 	    generateTreeLevel(child, childDocuments, depth - 1)
 	    
-	    Seq[Node](child) ++ generateChildren(numberOfSiblings - 1, siblingDocuments, depth)
+	    Seq[Node](child) ++ generateChildren(parent, numberOfSiblings - 1, siblingDocuments, depth)
 	  }
 	  else {
       generateTreeLevel(child, documents, depth - 1)
@@ -67,21 +71,33 @@ object TreeController extends Controller {
 	}
 	
     def root(id: Long) = Action {
-// Leaving this here in case the complete JSON from the file is needed in testing the UI      
-//        val file = Play.application.getFile("conf/stub-tree-root.json")
-//        val json = io.Source.fromFile(file).mkString
-//      SimpleResult(
-//            header = ResponseHeader(200, Map(CONTENT_TYPE -> "application/json")),
-//            body = Enumerator(json)
-//        )
-      val tree = Tree.find.byId(id) // FIXME handle security
-      val json = JsonHelpers.rootNodeToJsValue(tree.root)
-      Ok(json)
+      // FIXME handle security
+
+      DB.withTransaction { implicit connection =>
+        val rootId = SQL("""
+          SELECT id FROM node
+          WHERE document_set_id = {document_set_id} AND parent_id IS NULL
+          """).on('document_set_id -> id).as(scalar[Long].single)
+
+      	val subTreeLoader = new SubTreeLoader(rootId, 4)
+      	val nodes = subTreeLoader.loadNodes
+      	val documents = subTreeLoader.loadDocuments(nodes)
+
+      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+        Ok(json)
+      }
     }
 
-    def node(treeId: Long, nodeId: Long) = Action {
-      val node = Node.find.byId(nodeId) // FIXME handle security
-      val json = JsonHelpers.rootNodeToJsValue(node)
-      Ok(json)
+    def node(id: Long, nodeId: Long) = Action {
+      // FIXME handle security
+
+      DB.withTransaction { implicit connection =>
+      	val subTreeLoader = new SubTreeLoader(nodeId, 4)
+      	val nodes = subTreeLoader.loadNodes
+      	val documents = subTreeLoader.loadDocuments(nodes)
+
+      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+        Ok(json)
+      }
     }
 }

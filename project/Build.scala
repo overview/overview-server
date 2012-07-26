@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 import PlayProject._
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
+import templemore.xsbt.cucumber.CucumberPlugin
 
 object ApplicationBuild extends Build {
 
@@ -36,6 +37,11 @@ object ApplicationBuild extends Build {
     testOptions in Test += Tests.Setup( () =>
       System.setProperty("db.default.url", testDatabaseUrl)
     )
+  ).settings(
+    CucumberPlugin.cucumberSettings : _*
+  ).settings(
+    CucumberPlugin.cucumberFeaturesDir := file("test/features"),
+    CucumberPlugin.cucumberStepsBasePackage := "steps"
   ).dependsOn(common, worker).aggregate(common,worker)
 
 }

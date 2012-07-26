@@ -9,6 +9,51 @@ import models.{Node,PartiallyLoadedNode,Document}
 import play.api.libs.json._
 
 object JsonHelpers {
+  
+	def generateSubTreeJson(nodes: List[models.core.Node], documents: List[models.core.Document]) :
+	  JsValue = {
+	  JsObject(Seq(
+            "nodes" -> generateJsonArray(nodes),
+            "documents" -> generateJsonArray(documents),
+            "tags" -> JsArray(Seq())
+	      )
+      )
+	}
+	
+	private def generateJsonArray[A](data: List[A]) : JsValue = {
+	  JsArray(data.map(generateJson))
+	}
+	
+	def generateJson[A](data: A) : JsValue = data match {
+	  case models.core.Node(id, description, childNodeIds, documentList) => {
+	    JsObject(Seq(
+	    			"id" -> JsNumber(id),
+	    			"description" -> JsString(description),
+	    			"children" -> JsArray(childNodeIds.map(JsNumber(_))),
+	    			"doclist" -> generateJson(documentList),
+	    			"taglist" -> JsObject(Seq(
+	    					"full" -> JsArray(Seq()),
+	    					"partial" -> JsArray(Seq())
+    					))
+	    			)
+	    		)
+	  }
+	  case models.core.DocumentIdList(ids, total) => {
+	    JsObject(Seq(
+	    			"docids" -> JsArray(ids.map(JsNumber(_))),
+	    			"n" -> JsNumber(total)
+	    			)
+	    		)
+	  }
+	  case models.core.Document(id, title, textUrl, viewUrl) => {
+	    JsObject(Seq(
+	    			"id" -> JsNumber(id),
+	    			"description" -> JsString(title)
+	    			)
+	    		)
+	  }
+	}
+	
     val maxElementsInList = 10
 
     def subNodeToJsValue(node: Node) : JsValue = {

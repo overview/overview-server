@@ -13,26 +13,29 @@ public class NodeTest extends DatabaseTest {
 	
 	@Before
 	public void createTree() {
+		DocumentSet documentSet = new DocumentSet();
+
 		root = new Node();
-		
-		root.description = "description";
+		root.setDocumentSet(documentSet);
+        root.setDescription("description");
 		
 		for (long i = 10l; i < 13l; i++) {
 			Node level1ChildNode = new Node();
+			level1ChildNode.setDocumentSet(documentSet);
 			root.addChild(level1ChildNode);
 						
 			for (int j = 1; j < 5l; j++) {
 				Node level2ChildNode = new Node();
-				level2ChildNode.description = "bla";
+				level2ChildNode.setDocumentSet(documentSet);
+				level2ChildNode.setDescription("bla");
 				level1ChildNode.addChild(level2ChildNode);
 			}
 		}
 		
+		documentSet.save();
 		root.save();
 	}
-	
-	
-	
+
 	@Test
 	public void getFirstLevelNodesBreadthFirst() {
 	  List<Node> onlyLevel1 = root.getNodesBreadthFirst(4);
@@ -43,7 +46,7 @@ public class NodeTest extends DatabaseTest {
 		  assertThat(root.children.contains(onlyLevel1.get(i)));
 	  }
 	}
-	
+
 	@Test
 	public void partiallyIncludeSecondLevel() {
 	  List<Node> halfLevel2 = root.getNodesBreadthFirst(9);
