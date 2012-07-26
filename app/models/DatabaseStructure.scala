@@ -3,7 +3,7 @@ package models
 import anorm.SqlParser._
 
 object DatabaseStructure {
-  type NodeData = (Long, Long, String) // parentId, childId, description
+  type NodeData = (Long, Option[Long], String) // parentId, childId, description
   type NodeDocument = (Long, Long, Long) // nodeId, documentCount, documentId
   type DocumentData = (Long, String, String, String) // documentId, title, textUrl, viewUrl
   
@@ -20,7 +20,7 @@ object DatabaseStructure {
   
   val DocumentIdParser = long(IdColumn) ~ long(DocumentCountColumn) ~ long(DocumentIdColumn)
   val DocumentParser = long(IdColumn) ~ str(TitleColumn) ~ str(TextUrlColumn) ~ str(ViewUrlColumn)
-  val NodeParser = long(IdColumn) ~ long(ChildIdColumn) ~ str(DescriptionColumn)
+  val NodeParser = long(IdColumn) ~ get[Option[Long]](ChildIdColumn) ~ str(DescriptionColumn)
   
 
 }

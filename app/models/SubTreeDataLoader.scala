@@ -26,9 +26,9 @@ class SubTreeDataLoader {
     val rootNode = SQL(RootNodeQuery).on("id" -> rootId).
       as(long(IdColumn) ~ str(DescriptionColumn) map(flatten) *)
     
-    val rootAsChild = rootNode.map(n => (NoId, n._1, n._2))
+    val rootAsChild = rootNode.map(n => (NoId, Some(n._1), n._2))
     val childNodes = loadChildNodes(List(rootId), depth)
-    
+     
     rootAsChild ++ childNodes
   }
   
@@ -54,12 +54,15 @@ class SubTreeDataLoader {
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
-      val childNodes = SQL(childNodeQuery(nodes)).
-    	as(NodeParser map(flatten) *)
+      val childNodes = SQL(childNodeQuery(nodes)).as(NodeParser map(flatten) *)
       
-      val childNodeIds = childNodes.map(_._2)
+      val nodesWithChildNodes = childNodes.map(_._1)
+      val leafNodes = nodes.diff(nodesWithChildNodes)
+      val leafNodeData = leafNodes.map((_, None, ""))
       
-      childNodes ++ loadChildNodes(childNodeIds, depth - 1)
+      val childNodeIds = childNodes.map(_._2.get)
+      
+      childNodes ++ leafNodeData ++ loadChildNodes(childNodeIds, depth - 1)
     }
   }
   

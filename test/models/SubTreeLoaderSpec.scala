@@ -10,7 +10,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
   trait MockComponents extends Scope {
     val loader = mock[SubTreeDataLoader]
     val parser = mock[SubTreeDataParser]
-    val subTreeLoader = new SubTreeLoader(1, 4, loader, parser)
+    val subTreeLoader = new SubTreeLoader(1, 2, loader, parser)
     
     val dummyDocuments = List(core.Document(10l, "documents", "created", "from data"))
     val dummyDocumentData = List((10l, "actually", "all", "documentdata"))
@@ -29,24 +29,38 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     
     "load DocumentIds for unique parent nodes, parsing result" in new MockComponents {
       val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"), (1l, 3l, "child"),
-                          (2l, 4l, "grandChild"))
-      val nodeIds = List(-1l, 1l, 2l)
+                          (2l, 4l, "grandChild"), (3l, 5l, "grandChild"), 
+                          (3l, 5l, "grandchild")).map(d => (d._1, Some(d._2), d._3))
+      val nodeIds = List(-1l, 1l, 2l, 3l)
       val documentData = List((1l, 34l, 20l))
       val dummyNodes = List(core.Node(1l, "standin for lots of Nodes", Nil, null))
       
-      loader loadNodeData(1, 4) returns nodeData
+      loader loadNodeData(1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
       parser createNodes(nodeData, documentData) returns dummyNodes
       
       val nodes = subTreeLoader.loadNodes()
       
-      there was one(loader).loadNodeData(1, 4)
+      there was one(loader).loadNodeData(1, 2)
       there was one(loader).loadDocumentIds(nodeIds)
       there was one(parser).createNodes(nodeData, documentData)
       
       nodes must be equalTo(dummyNodes)
     }
     
+    "load DocumentIds for leaf nodes with no children" in new MockComponents {
+      val nodeData = List((-1l, Some(54l), "in subtree with no children"),
+    		  			  (54l, None, ""))
+      val documentData = List((54l, 34l, 20l), (54l, 34l, 30l))
+      val nodeIds = List(-1l, 54l)
+      
+      loader loadNodeData(1, 2) returns nodeData
+      loader loadDocumentIds(nodeIds) returns documentData
+
+      val nodes = subTreeLoader.loadNodes()
+      
+      there was one(loader).loadDocumentIds(nodeIds)
+    }
     
     "call loader and parser to create documents from nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 40l, 50l)

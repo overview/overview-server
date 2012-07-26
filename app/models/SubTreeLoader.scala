@@ -22,6 +22,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
 	
     val nodeData = loader.loadNodeData(rootId, depth)
     val nodeIds = nodeData.map(_._1).distinct
+
     val documentData = loader.loadDocumentIds(nodeIds)
     
     parser.createNodes(nodeData, documentData)

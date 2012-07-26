@@ -13,12 +13,16 @@ class SubTreeDataParser {
   def createNodes(nodeData: List[NodeData], 
 		  		  documentData: List[NodeDocument]) : List[core.Node] = {
     val nodeAndChild = nodeData.map(d => (d._1, d._2))
-    val childNodeIds = groupByNodeId(nodeAndChild)
+    val groupedByNode = nodeAndChild.groupBy(_._1)
+    val childNodeIds = groupedByNode.map {
+      case (nodeId, dataList) => (nodeId, dataList.flatMap(_._2.toList))
+    }
     
     val nodeAndDocument = documentData.map(d => (d._1, d._3))
     val documentIds = groupByNodeId(nodeAndDocument)
     
-    val nodeDescriptions = nodeData.map(d => (d._2, d._3)).distinct.toMap
+    val nodeDescriptions = nodeData.filter(_._2 != None).map(d => (d._2.get, d._3)).distinct.toMap
+    
     val nodeIds = nodeData.map(_._1).distinct.filterNot(_ == NoId)
     val documentCounts = documentData.map(d => (d._1, d._2)).distinct.toMap
     
