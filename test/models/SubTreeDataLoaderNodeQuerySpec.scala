@@ -25,26 +25,38 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
     lazy val subTreeDataLoader = new SubTreeDataLoader()
   }
   
-  def writeBinaryTreeInDb(depth : Int)(implicit connection: Connection) : List[Long] = {
-    val id = SQL(
+  def writeBinaryTreeInDb(depth : Int)(implicit c: Connection) : List[Long] = {
+    def insertRootNode() : Long = {
+      SQL(
         """
-          INSERT INTO node VALUES (nextval('node_seq'), {description});
+          INSERT INTO node(id, description) 
+          VALUES (nextval('node_seq'), {description});
         """
-    ).on("description" -> "root").executeInsert().getOrElse(-1l)
-            
+      ).on("description" -> "root").executeInsert().getOrElse(-1l)
+    }
+    
+    val id = insertRootNode
+
     id :: writeSubTreeInDb(id, depth - 1) 
   }
 
-  def writeSubTreeInDb(root : Long, depth: Int)(implicit connection : Connection) : List[Long] = depth match {
+  def writeSubTreeInDb(root : Long, depth: Int)(implicit c : Connection) : List[Long] = depth match {
     case 0 => Nil
     case _ => {
-      val childId1 = SQL("INSERT INTO node VALUES (nextval('node_seq'), {description}, {parent})").
-        on("description" -> ("childA-" + root), "parent" -> root).
-        executeInsert().getOrElse(-1l)
-      val childId2 = SQL("INSERT INTO node VALUES (nextval('node_seq'), {description}, {parent})").
-        on("description" -> ("childB-" + root), "parent" -> root).
-        executeInsert().getOrElse(-1l)
-        
+      def insertChildNode(description: String, parent: Long) : Long = {
+        SQL(
+          """
+            INSERT INTO node(id, description, parent_id) 
+            VALUES (nextval('node_seq'), {description}, {parent})
+          """
+        ).
+        on("description" -> description, "parent" -> parent).
+        executeInsert().getOrElse(-1l)      
+      }
+
+      val childId1 = insertChildNode("childA-" + root, root)
+      val childId2 = insertChildNode("childB-" + root, root)
+      
       val childTree1 = writeSubTreeInDb(childId1, depth - 1)
       val childTree2 = writeSubTreeInDb(childId2, depth - 1)
 

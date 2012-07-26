@@ -22,7 +22,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     
     def insertNodes(implicit connection: Connection) : List[Long] = {
       for (i <- 1 to 3) yield
-        SQL("INSERT INTO node VALUES (nextval('node_seq'), 'node')").
+        SQL("INSERT INTO node(id, description) VALUES (nextval('node_seq'), 'node')").
     	  executeInsert().getOrElse(-1l)
     } toList
     
@@ -32,7 +32,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       val ids = nodes.flatMap { n => 
         val documents = for (i <- 1 to numberOfDocuments) yield SQL(
             """
-              INSERT INTO document VALUES 
+              INSERT INTO document(id, title, text_url, view_url) VALUES 
                 (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
             """
           ).on("title" -> ("title-" + i),
@@ -40,7 +40,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
                "viewUrl" -> ("viewUrl-" + i)).executeInsert().getOrElse(-1l);
         
         documents.foreach(id =>
-          SQL("INSERT INTO node_document VALUES ({nodeId}, {documentId})").
+          SQL("INSERT INTO node_document(node_id, document_id) VALUES ({nodeId}, {documentId})").
           on("nodeId" -> n, "documentId" -> id).executeInsert())
           
         documents
