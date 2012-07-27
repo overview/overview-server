@@ -48,15 +48,18 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       documentId
     }
     
-    "load document data for specified nodes" in new DbTestContext {
-      val documentSet = insertDocumentSet
-      val nodeIds = setupNodes(documentSet)
+    trait NodesAndDocuments extends DbTestContext {
+      lazy val documentSet = insertDocumentSet
+      lazy val nodeIds = setupNodes(documentSet)
 
-      val documentIds = nodeIds.flatMap { n =>
+      lazy val documentIds = nodeIds.flatMap { n =>
         for (_ <- 1 to 2) yield insertDocument(n, documentSet)
-      }
-
+      }      
+    }
+    
+    "load document data for specified nodes" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(2)
+      val expectedDocumentIds = documentIds.take(4)
       
       val persistentDocumentListDataLoader =
         new PersistentDocumentListDataLoader(selectedNodes, Nil)
@@ -64,20 +67,13 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
       val loadedIds = documentData.map(_._1)
       
-      loadedIds must haveTheSameElementsAs(documentIds.take(4))
+      loadedIds must haveTheSameElementsAs(expectedDocumentIds)
       documentData must have(_._2 == "title")
       documentData must have(_._3 == "textUrl")
       documentData must have(_._4 == "viewUrl")
     }
     
-    "load document data for specified document ids" in new DbTestContext {
-      val documentSet = insertDocumentSet
-      val nodeIds = setupNodes(documentSet)
-
-      val documentIds = nodeIds.flatMap { n =>
-        for (_ <- 1 to 2) yield insertDocument(n, documentSet)
-      }
-
+    "load document data for specified document ids" in new NodesAndDocuments {
       val selectedDocuments = documentIds.take(3)
       
       val persistentDocumentListDataLoader =
