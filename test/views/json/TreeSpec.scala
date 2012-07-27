@@ -65,6 +65,8 @@ class TreeSpec extends Specification {
       nodeJson must /("description" -> "node")
       nodeJson must contain("\"children\":" + List(4, 5, 6).mkString("[", ",", "]"))
       nodeJson must =~ ("doclist.*docids.*n".r)
+      
+      nodeJson must contain("\"taglist\":[]")
     }
   }
   

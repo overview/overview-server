@@ -23,7 +23,8 @@ object Tree {
           "id" -> toJson(node.id),
           "description" -> toJson(node.description),
           "children" -> toJson(node.childNodeIds),
-          "doclist" -> toJson(node.documentIds)
+          "doclist" -> toJson(node.documentIds),
+          "taglist" -> toJson(Seq[String]())
       ))
     }
   }
