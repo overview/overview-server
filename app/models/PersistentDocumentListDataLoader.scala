@@ -8,27 +8,36 @@ import java.sql.Connection
 class PersistentDocumentListDataLoader(nodeIds: List[Long], documentIds: List[Long]) {
 
   def loadDocumentSlice(firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
-    val where = List(nodeSelection(nodeIds),
-      documentSelection(documentIds)).flatMap(_.toList)
-      
-    documentQueryWhere(where.mkString(" AND "))
+    val selectionCriteria = List(nodeIds, documentIds)
+    
+    val whereClauses = List(
+        whereClauseForIds(nodeSelection(nodeIds), nodeIds),
+        whereClauseForIds(documentSelection(documentIds), documentIds)
+    )    
+    documentQueryWhere(combineWhereClauses(whereClauses))
   }
 
-  private def documentSelection(documentIds: List[Long]) : Option[String] = 
-    documentIds match {
-    case Nil => None
-    case _ => Some("document.id IN " + idList(documentIds))
-  } 
   
-  private def nodeSelection(nodeIds: List[Long]) : Option[String] =
-    nodeIds match {
+  private def nodeSelection(nodeIds: List[Long]) : String = {
+    """
+    document.id IN 
+	  (SELECT document_id FROM node_document WHERE node_id IN """ + idList(nodeIds) + ")"
+  }
+  
+  private def documentSelection(documentIds: List[Long]) : String = {
+    "document.id IN " + idList(documentIds)
+  }
+  
+  private def combineWhereClauses(whereClauses: List[Option[String]]) : String = {
+    val actualWheres = whereClauses.flatMap(_.toList)
+    
+    actualWheres.mkString(" AND ")
+  }
+  
+  private def whereClauseForIds(where: String, ids: List[Long]) : Option[String] =
+    ids match {
     case Nil => None
-    case _ => Some("""
-    			   document.id IN 
-	                (SELECT document_id FROM node_document WHERE node_id IN""" + 
-	                idList(nodeIds) + 
-    			   ")"
-    		  )
+    case _ => Some(where)
   }
   
   private def documentQueryWhere(where: String)(implicit c: Connection) : List[DocumentData] = {

@@ -57,7 +57,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       }      
     }
     
-    "load document data for specified nodes" in new NodesAndDocuments {
+    "load document data for specified nodes with no other constraints" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(2)
       val expectedDocumentIds = documentIds.take(4)
       
@@ -73,7 +73,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       documentData must have(_._4 == "viewUrl")
     }
     
-    "load document data for specified document ids" in new NodesAndDocuments {
+    "load document data for specified document ids with no other constraints" in new NodesAndDocuments {
       val selectedDocuments = documentIds.take(3)
       
       val persistentDocumentListDataLoader =
@@ -83,6 +83,19 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds.take(3))
+    }
+    
+    "load intersection of documents specified by nodes and document ids" in new NodesAndDocuments {
+      val selectedNodes = nodeIds.take(2)
+      val selectedDocuments = documentIds.drop(1)
+      
+      val persistendDocumentListDataLoader =
+        new PersistentDocumentListDataLoader(selectedNodes, selectedDocuments)
+
+      val documentData = persistendDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
     }
   }
 
