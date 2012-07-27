@@ -10,21 +10,31 @@ class PersistentDocumentListDataLoader(nodeIds: List[Long], documentIds: List[Lo
   def loadDocumentSlice(firstRow: Long, maxRows: Long)
                        (implicit c: Connection) : List[DocumentData] = {
     if (nodeIds.isEmpty) {
-	  SQL("""
-          SELECT id, title, text_url, view_url FROM document
-          WHERE document.id IN
-	      """ + documentIds.mkString("(", ",", ")")
-          ).as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map(flatten) *)
+	  val documentSelectionWhere =
+	    "WHERE document.id IN " + idList(documentIds)
+	        
+	  documentQueryWhere(documentSelectionWhere)
     }
     else {
-	  SQL("""
-          SELECT id, title, text_url, view_url FROM document
-          WHERE document.id IN 
-	        (SELECT document_id FROM node_document WHERE node_id IN 
-          """ + nodeIds.mkString("(", ",", ")") +
-          """)"""
-          ).as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map(flatten) *)
+      val nodeSelectionWhere = 
+        """
+ 		WHERE document.id IN 
+	      (SELECT document_id FROM node_document WHERE node_id IN
+        """ + idList(nodeIds) +
+          ")"
+          
+        documentQueryWhere(nodeSelectionWhere)
     }
   }
 
+  private def documentQueryWhere(where: String)(implicit c: Connection) : List[DocumentData] = {
+    SQL("""
+        SELECT id, title, text_url, view_url FROM document
+        """ + where
+        ).as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
+  }
+  
+  private def idList(idList: List[Long]) : String = {
+    idList.mkString("(", ",", ")")
+  }
 }
