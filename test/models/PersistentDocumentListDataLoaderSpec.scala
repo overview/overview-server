@@ -3,9 +3,11 @@ package models
 import anorm._
 import anorm.SqlParser._
 import helpers.DbTestContext
+import java.sql.Connection
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+
 
 class PersistentDocumentListDataLoaderSpec extends Specification {
 
@@ -13,47 +15,54 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
 
   "PersistentDocumentListDataLoader" should {
 
-    "load document data for specified nodes" in new DbTestContext {
-      val documentSet =
-        SQL("""
-            INSERT INTO document_set (id, query)
-            VALUES (nextval('document_set_seq'), 'PersistentDocumentListLoaderSpec')
-            """).executeInsert()
+    def insertDocumentSet(implicit c: Connection): Long = {
+      SQL("""
+          INSERT INTO document_set (id, query)
+          VALUES (nextval('document_set_seq'), 'PersistentDocumentListLoaderSpec')
+          """).executeInsert().getOrElse(throw new Exception("failed insert"))
+    }
 
-      val nodeIds =
+    def setupNodes(documentSetId: Long)(implicit c: Connection): List[Long] = {
+      SQL("""
+         INSERT INTO node (id, description, document_set_id)
+         VALUES (nextval('node_seq'), 'node1', {document_set_id}),
+    		    (nextval('node_seq'), 'node2', {document_set_id}),
+                (nextval('node_seq'), 'node3', {document_set_id})
+         """).on("document_set_id" -> documentSetId).executeInsert(scalar[Long] *)
+    }
+
+    def insertDocument(nodeId: Long, documentSetId: Long)(implicit c: Connection): Long = {
+      val documentId =
         SQL("""
-           INSERT INTO node (id, description, document_set_id)
-           VALUES (nextval('node_seq'), 'node1', {document_set_id}),
-    		   	   (nextval('node_seq'), 'node2', {document_set_id}),
-                   (nextval('node_seq'), 'node3', {document_set_id})
-           """).on("document_set_id" -> documentSet).executeInsert(scalar[Long] *)
+        	INSERT INTO document (id, title, text_url, view_url, document_set_id)
+            VALUES (nextval('document_seq'),
+                    'title', 'textUrl', 'viewUrl', {document_set_id})
+            """).on("document_set_id" -> documentSetId).executeInsert().
+          getOrElse(throw new Exception("failed insert"))
+
+      SQL("""
+          INSERT INTO node_document (node_id, document_id)
+          VALUES ({node_id}, {document_id})
+          """).on("node_id" -> nodeId, "document_id" -> documentId).executeInsert()
+
+      documentId
+    }
+    
+    "load document data for specified nodes" in new DbTestContext {
+      val documentSet = insertDocumentSet
+      
+      val nodeIds = setupNodes(documentSet)
 
       val documentIds = nodeIds.flatMap { n =>
-        val documentIds =
-          SQL("""
-              INSERT INTO document (id, title, text_url, view_url, document_set_id)
-              VALUES (nextval('document_seq'),
-                      'title', 'textUrl', 'viewUrl', {document_set_id}),
-                     (nextval('document_seq'),
-                      'title', 'textUrl', 'viewUrl', {document_set_id})
-              """).on("document_set_id" -> documentSet).executeInsert(scalar[Long] *)
-
-        documentIds.foreach { d =>
-          SQL("""
-                INSERT INTO node_document (node_id, document_id)
-                VALUES ({node_id}, {document_id})
-                """).on("node_id" -> n, "document_id" -> d).executeInsert()
-        }
-        
-        documentIds
+        for (_ <- 1 to 2) yield insertDocument(n, documentSet)
       }
-      
+
       val persistentDocumentListDataLoader =
         new PersistentDocumentListDataLoader(nodeIds, Nil)
-      
+
       val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
-      
-      documentData must have size(6)
+
+      documentData must have size (6)
     }
   }
 
