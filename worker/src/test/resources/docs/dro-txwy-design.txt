@@ -1,0 +1,31 @@
+3/6/2007
+To: Info:
+
+FOR YOUR INFORMATION
+
+2007-26/5-7
+726831
+
+Airport Manager, La Plata Co, (DRO) , CO. FAA (AFS-230, AFS-200, AAS-1), AASC, ALPA, AOPA, APA, ASAP, ATA, CAPA, IPA, NATA, NBAA, NTSB, RAA
+
+From: Linda J. Connell, Director
+
+NASA Aviation Safety Reporting System
+Re:
+
+DRO TAXIWAY DESIGN
+
+We recently received an ASRS report describing a safety concern which may involve your area of operational responsibility. We do not have sufficient details to assess either the factual accuracy or possible gravity of the report. It is our policy to relay the reported information to the appropriate authority for evaluation and any necessary follow-up. We feel you should be aware of the enclosed deidentified report.
+
+ABFYITxt
+
+To properly assess the usefulness of our FYI service, we would appreciate it if you would take the time to give us your feedback on the value of the information that we have provided. Please contact Harvey Hartmann or Don Purdy at (408) 541-2800 or email at hhartmann@mail.arc.nasa.gov, dpurdy@mail.arc.nasa.gov.
+
+Aviation Safety Reporting System 385 Moffet Park Dr ? Suite 200 ? Sunnyvale ? CA ? 94089
+
+ACN: 726831
+Time Date : 200702 Day : Mon Local Time Of Day : 0601 To 1200 Place Locale Reference.Airport : DRO.Airport State Reference : CO Altitude.AGL.Single Value : 0 Person / 1 Function.Observation : Observer ASRS Report : 726831 Events Independent Detector.Other.Other : 1 Resolutory Action.None Taken : Anomaly Accepted Narrative THIS IS TO REPORT A GENERAL AND CONTINUING SAFETY HAZARD AT THE LA PLATA COUNTY ARPT, DURANGO, COLORADO (DRO). THE ARPT DOES NOT HAVE A CTL TWR. IT HAS AN ILS APCH TO RWY 02 WITH STANDARD CATEGORY 1 MINIMUMS OF '200 AND 1/2.' IN ORDER FOR A DEPARTING ACFT TO USE THE FULL LENGTH OF RWY 02 FOR TKOF, THE PLTS MUST BACK-TAXI FOR APPROX 1800 FT TO REACH A SMALL TURN-AROUND AREA. THIS IS REQUIRED BECAUSE OF A LACK OF A FULL-LENGTH PARALLEL TXWY. FAA ARPT DESIGN CRITERIA REQUIRE A FULL-LENGTH PARALLEL TXWY FOR A RWY THAT HAS AN ILS. THIS IS PARTICULARLY IMPORTANT AT AN ARPT WITHOUT A CTL TWR. THE FAA HAS FAILED FOR YEARS TO ENFORCE ITS OWN SAFETY CRITERIA AT DRO. WHEN THE WIND FAVORS RWY 02 AND THE VISIBILITY IS RESTRICTED, ESPECIALLY IN SNOW OR BLOWING SNOW, AN ACFT ON SHORT FINAL WOULD BE UNABLE TO SEE A BACK-TAXIING ACFT UNTIL IT IS TOO LATE. IF ALL PLTS PROPERLY PARTICIPATE IN CTAF ADVISORY COMMUNICATIONS THE PLT ON THE ILS APCH AND ANY BACK-TAXIING ACFT WOULD PROBABLY BE AWARE OF EACH OTHER. BUT, THAT IS A HIGH-RISK ASSUMPTION TO MAKE. DRO HAS SCHEDULED COMMUTER AIR CARRIER SERVICE SO I PRESUME IT IS A PART 139-CERTIFIED ARPT. THAT MAKES THIS SITUATION EVEN MORE INEXCUSABLE. WE CAN ONLY SPECULATE ABOUT THE RISK THIS PLACES ON THE CREWS AND PAX OF THOSE COMMUTER FLTS, NOT TO MENTION PRIVATE FLT OPERATIONS AT THE ARPT.
+
+Synopsis RPTR ALLEGES THERE IS AN FAA ARPT DESIGN CRITERIA REQUIREMENT FOR A FULL-LENGTH PARALLEL TXWY FOR A RWY THAT HAS AN ILS APCH, WHICH IS NOT BEING MET AT DRO.
+
+

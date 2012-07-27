@@ -16,8 +16,8 @@ object DocumentSetController extends Controller {
       ((job: DocumentSetCreationJob) => Some((job.query)))
   ) 
 
-  def index(documentSetId: Long) = Action {
-	Ok(views.html.DocumentSet.index())
+  def show(documentSetId: Long) = Action {
+    Ok(views.html.DocumentSet.show())
   }
     
   def createDocumentSet() = Action { implicit request =>

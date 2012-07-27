@@ -27,7 +27,7 @@ object Lexer {
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
   //  - discard stopwords
   
-  def term_acceptable(t:String) : Boolean = {  
+  def termAcceptable(t:String) : Boolean = {  
     if (t.length < 3)
       false                                    // too short, unacceptable
     else if (stopWords.contains(t))
@@ -40,8 +40,8 @@ object Lexer {
   }
   
   // Given a string, returns a list of terms. Basically just splits on space, but also cleans up lots
-  def make_terms(textIn:String) : Array[String] = {
-    if (textIn.length == 0) Array()
+  def makeTerms(textIn:String) : Seq[String] = {
+    if (textIn.length == 0) Seq()
    
     // lose case, strip HTML/XML tags, 
     var text = textIn.toLowerCase                   
@@ -54,7 +54,7 @@ object Lexer {
     text = text.filter(c => c.isDigit || c.isLetter || " -'".contains(c))
     
     // split on space, keep only "acceptable" terms
-    text.split(' ').filter(term_acceptable)
+    text.split(' ').filter(termAcceptable)
   }
   
 }

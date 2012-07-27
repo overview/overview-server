@@ -10,83 +10,91 @@ import play.api.mvc._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import models._
+import anorm.SQL
+import anorm.SqlParser.scalar
 
 
 object TreeController extends Controller {
-	
-	def temporarySetup() = Action {
-	  val root = new Node()
-	  root.description = "root"
 
-	  val documentSet = new DocumentSet()
-	  for (i <- 1 to 2200) {
-	    val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
-	    documentSet.addDocument(document)
-	    document.save
-	  }
+  def temporarySetup() = Action {
+    val documentSet = new DocumentSet()
 
-      documentSet.save
+    val root = new Node()
+    root.setDocumentSet(documentSet)
+    root.setDescription("root")
 
-	  generateTreeLevel(root, documentSet.documents.toSeq, 12)
+    for (i <- 1 to 2200) {
+      val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
+      documentSet.addDocument(document)
+      document.save
+    }
 
-	  val tree = new Tree()
-	  tree.root = root
-	  tree.save()
+    documentSet.save
+    root.save
 
-	  Ok("Setup complete")
-	}
-	
-	def generateTreeLevel(root: Node, documents: Seq[Document], depth: Int) = {
+    generateTreeLevel(root, documentSet.documents.toSeq, 12)
+
+    Ok("Setup complete")
+  }
+
+  def generateTreeLevel(root: Node, documents: Seq[Document], depth: Int) = {
     documents.foreach(root.addDocument)
 
-	  if ((depth > 1) && (documents.size > 1)) {
-	    val numberOfChildren = Random.nextInt(scala.math.min(7, documents.size)) + 1
-	    val children = generateChildren(numberOfChildren, documents, depth)
-	    children.foreach(root.addChild)
-	  }
-	}
+    if ((depth > 1) && (documents.size > 1)) {
+      val numberOfChildren = Random.nextInt(scala.math.min(7, documents.size)) + 1
+      val children = generateChildren(root, numberOfChildren, documents, depth)
+      children.foreach(root.addChild)
+    }
+  }
 
-	def generateChildren(numberOfSiblings: Int, documents: Seq[Document], depth: Int) : Seq[Node] = {
+  def generateChildren(parent: Node, numberOfSiblings: Int, documents: Seq[Document], depth: Int): Seq[Node] = {
     val child = new Node()
-    child.description = "node height " + depth
+    child.setDocumentSet(parent.documentSet)
+    child.setDescription("node height " + depth)
 
-	  if (numberOfSiblings > 1) {
-	    val splitPoint = 
-	      if (documents.size > numberOfSiblings) Random.nextInt(documents.size - numberOfSiblings) + 1 else 1 
-	    
-	    val (childDocuments, siblingDocuments) = documents.splitAt(splitPoint)
-	    
-	    generateTreeLevel(child, childDocuments, depth - 1)
-	    
-	    Seq[Node](child) ++ generateChildren(numberOfSiblings - 1, siblingDocuments, depth)
-	  }
-	  else {
+    if (numberOfSiblings > 1) {
+      val splitPoint =
+        if (documents.size > numberOfSiblings) Random.nextInt(documents.size - numberOfSiblings) + 1 else 1
+
+      val (childDocuments, siblingDocuments) = documents.splitAt(splitPoint)
+
+      generateTreeLevel(child, childDocuments, depth - 1)
+
+      Seq[Node](child) ++ generateChildren(parent, numberOfSiblings - 1, siblingDocuments, depth)
+    } else {
       generateTreeLevel(child, documents, depth - 1)
       Seq[Node](child)
-	  }
-	}
-	
-    def root(id: Long) = Action {
-      val tree = Tree.find.byId(id) // FIXME handle security
-
-      DB.withTransaction { implicit connection =>
-      	val subTreeLoader = new SubTreeLoader(tree.root.id, 4)
-      	val nodes = subTreeLoader.loadNodes
-      	val documents = subTreeLoader.loadDocuments(nodes)
-
-      	val json = views.json.Tree.show(nodes, documents)
-        Ok(json)
-      }
     }
+  }
 
-    def node(treeId: Long, nodeId: Long) = Action {
-      DB.withTransaction { implicit connection =>
-      	val subTreeLoader = new SubTreeLoader(nodeId, 4)
-      	val nodes = subTreeLoader.loadNodes
-      	val documents = subTreeLoader.loadDocuments(nodes)
+  def root(id: Long) = Action {
+    // FIXME handle security
 
-      	val json = views.json.Tree.show(nodes, documents)
-        Ok(json)
-      }
+    DB.withTransaction { implicit connection =>
+      val rootId = SQL("""
+          SELECT id FROM node
+          WHERE document_set_id = {document_set_id} AND parent_id IS NULL
+          """).on('document_set_id -> id).as(scalar[Long].single)
+
+      val subTreeLoader = new SubTreeLoader(rootId, 4)
+      val nodes = subTreeLoader.loadNodes
+      val documents = subTreeLoader.loadDocuments(nodes)
+
+      val json = views.json.Tree.show(nodes, documents)
+      Ok(json)
     }
+  }
+
+  def node(id: Long, nodeId: Long) = Action {
+    // FIXME handle security
+
+    DB.withTransaction { implicit connection =>
+      val subTreeLoader = new SubTreeLoader(nodeId, 4)
+      val nodes = subTreeLoader.loadNodes
+      val documents = subTreeLoader.loadDocuments(nodes)
+
+      val json = views.json.Tree.show(nodes, documents)
+      Ok(json)
+    }
+  }
 }

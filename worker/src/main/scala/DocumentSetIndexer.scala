@@ -52,7 +52,7 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     for (document <- documentSet.documents) {
      
       val text = BlockingHTTPRequest(document.textUrl)
-      val terms = Lexer.make_terms(text)
+      val terms = Lexer.makeTerms(text)
       vectorGen.addDocument(document.id, terms)
     }
     

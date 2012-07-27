@@ -19,46 +19,46 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   private val TreeDepth = 6
   
   trait TreeCreated extends DbTestContext {
-    lazy val nodeIds = writeBinaryTreeInDb(TreeDepth)
+    lazy val documentSetId = insertDocumentSet
+    lazy val nodeIds = writeBinaryTreeInDb(documentSetId, TreeDepth)
     lazy val rootId = nodeIds(0)
     
     lazy val subTreeDataLoader = new SubTreeDataLoader()
   }
-  
-  def writeBinaryTreeInDb(depth : Int)(implicit c: Connection) : List[Long] = {
-    def insertRootNode() : Long = {
-      SQL(
-        """
-          INSERT INTO node(id, description) 
-          VALUES (nextval('node_seq'), {description});
-        """
-      ).on("description" -> "root").executeInsert().getOrElse(-1l)
-    }
-    
-    val id = insertRootNode
 
-    id :: writeSubTreeInDb(id, depth - 1) 
+  def insertDocumentSet(implicit connection: Connection) : Long = {
+    SQL("""
+      INSERT INTO document_set (id, query)
+      VALUES (nextval('document_set_seq'), 'SubTreeDataLoaderDocumentQuerySpec')
+      """).executeInsert().getOrElse(throw new Exception("fail"))
   }
 
-  def writeSubTreeInDb(root : Long, depth: Int)(implicit c : Connection) : List[Long] = depth match {
+  def insertNode(documentSetId: Long, parentId: Option[Long], description: String)(implicit connection: Connection) : Long = {
+    SQL("""
+      INSERT INTO node (id, document_set_id, parent_id, description)
+      VALUES (nextval('node_seq'), {document_set_id}, {parent_id}, {description})
+      """).on(
+        'document_set_id -> documentSetId,
+        'parent_id -> parentId,
+        'description -> description
+      ).executeInsert().getOrElse(throw new Exception("fail"))
+  }
+  
+
+  def writeBinaryTreeInDb(documentSetId: Long, depth : Int)(implicit c: Connection) : List[Long] = {
+    val id = insertNode(documentSetId, None, "root")
+
+    id :: writeSubTreeInDb(documentSetId, id, depth - 1) 
+  }
+
+  def writeSubTreeInDb(documentSetId: Long, root : Long, depth: Int)(implicit c : Connection) : List[Long] = depth match {
     case 0 => Nil
     case _ => {
-      def insertChildNode(description: String, parent: Long) : Long = {
-        SQL(
-          """
-            INSERT INTO node(id, description, parent_id) 
-            VALUES (nextval('node_seq'), {description}, {parent})
-          """
-        ).
-        on("description" -> description, "parent" -> parent).
-        executeInsert().getOrElse(-1l)      
-      }
+      val childId1 = insertNode(documentSetId, Some(root), "childA-" + root)
+      val childId2 = insertNode(documentSetId, Some(root), "childB-" + root)
 
-      val childId1 = insertChildNode("childA-" + root, root)
-      val childId2 = insertChildNode("childB-" + root, root)
-      
-      val childTree1 = writeSubTreeInDb(childId1, depth - 1)
-      val childTree2 = writeSubTreeInDb(childId2, depth - 1)
+      val childTree1 = writeSubTreeInDb(documentSetId, childId1, depth - 1)
+      val childTree2 = writeSubTreeInDb(documentSetId, childId2, depth - 1)
 
       childId1 :: childTree1 ++ (childId2 :: childTree2)
     }

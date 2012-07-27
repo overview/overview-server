@@ -17,6 +17,9 @@ public class Node extends Model {
     
     @ManyToOne
     public Node parent;
+
+    @ManyToOne
+    public DocumentSet documentSet;
     
     @OneToMany(cascade=CascadeType.ALL,mappedBy="parent")
     public Set<Node> children = new HashSet<Node>();
