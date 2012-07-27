@@ -61,8 +61,12 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
         new PersistentDocumentListDataLoader(nodeIds, Nil)
 
       val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
-
-      documentData must have size (6)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds)
+      documentData must have(_._2 == "title")
+      documentData must have(_._3 == "textUrl")
+      documentData must have(_._4 == "viewUrl")
     }
   }
 
