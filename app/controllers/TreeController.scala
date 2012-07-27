@@ -11,8 +11,6 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.Json._
 import models._
 
-import views.json.Tree.JsonHelpers
-
 
 object TreeController extends Controller {
 	
@@ -76,7 +74,7 @@ object TreeController extends Controller {
       	val nodes = subTreeLoader.loadNodes
       	val documents = subTreeLoader.loadDocuments(nodes)
 
-      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+      	val json = views.json.Tree.show(nodes, documents)
         Ok(json)
       }
     }
@@ -87,7 +85,7 @@ object TreeController extends Controller {
       	val nodes = subTreeLoader.loadNodes
       	val documents = subTreeLoader.loadDocuments(nodes)
 
-      	val json = JsonHelpers.generateSubTreeJson(nodes, documents)
+      	val json = views.json.Tree.show(nodes, documents)
         Ok(json)
       }
     }
