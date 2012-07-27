@@ -20,7 +20,7 @@ class TreeSpec extends Specification {
       
       val dummyDocuments = List[Document]()
       
-      val treeJson = ATree.show(nodes, dummyDocuments).toString
+      val treeJson = Tree.show(nodes, dummyDocuments).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -35,7 +35,7 @@ class TreeSpec extends Specification {
     	Document(30l, "title", "textUrl", "viewUrl")
       )
       
-      val treeJson = ATree.show(dummyNodes, documents).toString
+      val treeJson = Tree.show(dummyNodes, documents).toString
       
       treeJson must /("documents") */("id" -> 10l)
       treeJson must /("documents") */("id" -> 20l)
@@ -46,14 +46,14 @@ class TreeSpec extends Specification {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
       
-      val treeJson = ATree.show(dummyNodes, dummyDocuments).toString
+      val treeJson = Tree.show(dummyNodes, dummyDocuments).toString
       
       treeJson must contain("\"tags\":[]")
     }
   }
   
   "JsonNode" should {
-    import views.json.ATree.JsonNode
+    import views.json.Tree.JsonNode
     
     "write node attributes" in {
       val documentIds = DocumentIdList(List(10, 20, 30), 45)
@@ -69,7 +69,7 @@ class TreeSpec extends Specification {
   }
   
   "JsonDocumentIdList" should {
-    import views.json.ATree.JsonDocumentIdList
+    import views.json.Tree.JsonDocumentIdList
     
     "write documentIdList attributes" in {
       val ids = List(10l, 20l, 34l)
@@ -84,7 +84,7 @@ class TreeSpec extends Specification {
   }
   
   "JsonDocument" should {
-    import views.json.ATree.JsonDocument
+    import views.json.Tree.JsonDocument
     
     "write document attributes" in {
       val id = 39l

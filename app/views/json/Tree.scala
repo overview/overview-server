@@ -6,7 +6,7 @@ import play.api.libs.json.{JsObject, Writes}
 import play.api.libs.json.Json.toJson
 
 
-object ATree {
+object Tree {
 
   implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
     def writes(documentIdList: DocumentIdList) : JsValue = {
