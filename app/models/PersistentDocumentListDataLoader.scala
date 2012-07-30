@@ -30,8 +30,11 @@ class PersistentDocumentListDataLoader(nodeIds: List[Long], documentIds: List[Lo
   
   private def combineWhereClauses(whereClauses: List[Option[String]]) : String = {
     val actualWheres = whereClauses.flatMap(_.toList)
+    actualWheres match {
+      case Nil => ""
+      case _ => actualWheres.mkString("WHERE ", " AND ", " ")
+    }
     
-    actualWheres.mkString(" AND ")
   }
   
   private def whereClauseForIds(where: String, ids: List[Long]) : Option[String] =
@@ -43,7 +46,7 @@ class PersistentDocumentListDataLoader(nodeIds: List[Long], documentIds: List[Lo
   private def documentSliceQueryWhere(firstRow: Long, maxRows: Long, where: String)(implicit c: Connection) : List[DocumentData] = {
     SQL("""
         SELECT id, title, text_url, view_url FROM document 
-        WHERE """ + where + 
+        """ + where + 
         """
         ORDER BY id 
         LIMIT {maxRows} OFFSET {offset}

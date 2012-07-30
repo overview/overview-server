@@ -73,20 +73,6 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       documentData must have(_._4 == "viewUrl")
     }
 
-         
-    "load slice of selected documents" in new NodesAndDocuments {
-      val expectedDocumentIds = documentIds.slice(2, 5)
-      
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(nodeIds, Nil)
-
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(2, 3)
-      val loadedIds = documentData.map(_._1)
-      
-      loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
-      
-    }
-
     "load document data for specified document ids with no other constraints" in new NodesAndDocuments {
       val selectedDocuments = documentIds.take(3)
       
@@ -111,6 +97,43 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       
       loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
     }
+    
+
+    "load slice of selected documents" in new NodesAndDocuments {
+      val expectedDocumentIds = documentIds.slice(2, 5)
+      
+      val persistentDocumentListDataLoader =
+        new PersistentDocumentListDataLoader(nodeIds, Nil)
+
+      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(2, 3)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
+    }
+    
+    "return nothing if slice offset is larger than total number of Rows" in new NodesAndDocuments {
+      val selectedDocuments = documentIds
+      
+      val persistentDocumentListDataLoader =
+        new PersistentDocumentListDataLoader(nodeIds, Nil)
+
+      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(10, 4)
+      
+      documentData must be empty
+    }
+    
+    "return all documents if selection is empty" in new NodesAndDocuments {
+      val selectedDocuments = documentIds
+       
+      val persistentDocumentListDataLoader =
+        new PersistentDocumentListDataLoader(Nil, Nil)
+     
+      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds)      
+    }
+    
   }
 
   step(stop)
