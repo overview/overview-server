@@ -49,6 +49,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     }
     
     trait NodesAndDocuments extends DbTestContext {
+      lazy val dataLoader = new PersistentDocumentListDataLoader()
       lazy val documentSet = insertDocumentSet
       lazy val nodeIds = setupNodes(documentSet) // must access nodeIds in tests to insert them in Databas
 
@@ -61,10 +62,9 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedNodes = nodeIds.take(2)
       val expectedDocumentIds = documentIds.take(4)
       
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(selectedNodes, Nil)
-
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val documentData = 
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, 0, 6)
+        
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(expectedDocumentIds)
@@ -77,9 +77,11 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedDocuments = documentIds.take(3)
       
       val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(Nil, selectedDocuments)
+        new PersistentDocumentListDataLoader()
 
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val documentData = 
+        persistentDocumentListDataLoader.loadSelectedDocumentSlice(Nil, selectedDocuments,
+        														   0, 6)
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds.take(3))
@@ -89,10 +91,9 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedNodes = nodeIds.take(2)
       val selectedDocuments = documentIds.drop(1)
       
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(selectedNodes, selectedDocuments)
-
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val documentData = 
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, selectedDocuments, 0, 6)
+        
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
@@ -101,11 +102,8 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
 
     "load slice of selected documents" in new NodesAndDocuments {
       val expectedDocumentIds = documentIds.slice(2, 5)
-      
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(nodeIds, Nil)
 
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(2, 3)
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 2, 3)
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
@@ -114,10 +112,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "return nothing if slice offset is larger than total number of Rows" in new NodesAndDocuments {
       val selectedDocuments = documentIds
       
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(nodeIds, Nil)
-
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(10, 4)
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 10, 4)
       
       documentData must be empty
     }
@@ -125,10 +120,8 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "return all documents if selection is empty" in new NodesAndDocuments {
       val selectedDocuments = documentIds
        
-      val persistentDocumentListDataLoader =
-        new PersistentDocumentListDataLoader(Nil, Nil)
-     
-      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val documentData = dataLoader.loadSelectedDocumentSlice(Nil, Nil, 0, 6)
+        
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds)      

@@ -5,9 +5,10 @@ import anorm.SqlParser._
 import DatabaseStructure._
 import java.sql.Connection
 
-class PersistentDocumentListDataLoader(nodeIds: List[Long], documentIds: List[Long]) {
+class PersistentDocumentListDataLoader() {
 
-  def loadDocumentSlice(firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
+  def loadSelectedDocumentSlice(nodeIds: List[Long], documentIds: List[Long],
+		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
     val selectionCriteria = List(nodeIds, documentIds)
     
     val whereClauses = List(
