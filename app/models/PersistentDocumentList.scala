@@ -12,7 +12,7 @@ class PersistentDocumentList(nodeIds: String, documentIds: String,
   private val documents = IdList(documentIds)
   
   def loadSlice(start: Long, end: Long)(implicit c: Connection) : List[core.Document] = {
-    val documentData = loader.loadSelectedDocumentSlice(nodes, documents, start, end)
+    val documentData = loader.loadSelectedDocumentSlice(nodes, documents, start, end  - start)
     parser.createDocuments(documentData)
   }
   

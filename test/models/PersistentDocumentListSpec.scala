@@ -46,6 +46,18 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       documents must be equalTo(dummyDocuments)
     }
     
+    "compute offset and limit of slice" in new MockComponents {
+      val dummyDocumentData = Nil    
+      
+      loader loadSelectedDocumentSlice(nodeIds, documentIds, 3, 4) returns
+        dummyDocumentData
+        
+      val documents = persistentDocumentList.loadSlice(3, 7)
+      
+      there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 3, 4)
+
+    }
+    
     "be constructable with default loader and parser" in {
       val persistentDocumentList = new PersistentDocumentList("", "")
       
