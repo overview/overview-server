@@ -7,7 +7,7 @@ import java.sql.Connection
 
 class PersistentDocumentListDataLoader() {
 
-  def loadSelectedDocumentSlice(nodeIds: List[Long], documentIds: List[Long],
+  def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
     val selectionCriteria = List(nodeIds, documentIds)
     
@@ -19,13 +19,13 @@ class PersistentDocumentListDataLoader() {
   }
 
   
-  private def nodeSelection(nodeIds: List[Long]) : String = {
+  private def nodeSelection(nodeIds: Seq[Long]) : String = {
     """
     document.id IN 
 	  (SELECT document_id FROM node_document WHERE node_id IN """ + idList(nodeIds) + ")"
   }
   
-  private def documentSelection(documentIds: List[Long]) : String = {
+  private def documentSelection(documentIds: Seq[Long]) : String = {
     "document.id IN " + idList(documentIds)
   }
   
@@ -38,7 +38,7 @@ class PersistentDocumentListDataLoader() {
     
   }
   
-  private def whereClauseForIds(where: String, ids: List[Long]) : Option[String] =
+  private def whereClauseForIds(where: String, ids: Seq[Long]) : Option[String] =
     ids match {
     case Nil => None
     case _ => Some(where)
@@ -55,7 +55,7 @@ class PersistentDocumentListDataLoader() {
         as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
   }
   
-  private def idList(idList: List[Long]) : String = {
+  private def idList(idList: Seq[Long]) : String = {
     idList.mkString("(", ",", ")")
   }
 }
