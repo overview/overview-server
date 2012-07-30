@@ -50,7 +50,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     
     trait NodesAndDocuments extends DbTestContext {
       lazy val documentSet = insertDocumentSet
-      lazy val nodeIds = setupNodes(documentSet)
+      lazy val nodeIds = setupNodes(documentSet) // must access nodeIds in tests to insert them in Databas
 
       lazy val documentIds = nodeIds.flatMap { n =>
         for (_ <- 1 to 2) yield insertDocument(n, documentSet)
@@ -72,7 +72,21 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       documentData must have(_._3 == "textUrl")
       documentData must have(_._4 == "viewUrl")
     }
-    
+
+         
+    "load slice of selected documents" in new NodesAndDocuments {
+      val expectedDocumentIds = documentIds.slice(2, 5)
+      
+      val persistentDocumentListDataLoader =
+        new PersistentDocumentListDataLoader(nodeIds, Nil)
+
+      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(2, 3)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
+      
+    }
+
     "load document data for specified document ids with no other constraints" in new NodesAndDocuments {
       val selectedDocuments = documentIds.take(3)
       
@@ -89,10 +103,10 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedNodes = nodeIds.take(2)
       val selectedDocuments = documentIds.drop(1)
       
-      val persistendDocumentListDataLoader =
+      val persistentDocumentListDataLoader =
         new PersistentDocumentListDataLoader(selectedNodes, selectedDocuments)
 
-      val documentData = persistendDocumentListDataLoader.loadDocumentSlice(0, 6)
+      val documentData = persistentDocumentListDataLoader.loadDocumentSlice(0, 6)
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
