@@ -35,7 +35,6 @@ class PersistentDocumentListDataLoader() {
       case Nil => ""
       case _ => actualWheres.mkString("WHERE ", " AND ", " ")
     }
-    
   }
   
   private def whereClauseForIds(where: String, ids: Seq[Long]) : Option[String] =
