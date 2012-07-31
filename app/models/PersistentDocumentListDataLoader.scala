@@ -9,15 +9,15 @@ class PersistentDocumentListDataLoader() {
 
   def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
-    val selectionCriteria = List(nodeIds, documentIds)
     
-    val whereClauses = List(
-        whereClauseForIds(nodeSelection(nodeIds), nodeIds),
-        whereClauseForIds(documentSelection(documentIds), documentIds)
-    )    
-    documentSliceQueryWhere(firstRow, maxRows, combineWhereClauses(whereClauses))
+    val where = createWhereClause(nodeIds, documentIds)
+    documentSliceQueryWhere(firstRow, maxRows, where)
   }
 
+  def loadCount(nodeIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
+    val where = createWhereClause(nodeIds, documentIds)
+    countQueryWhere(where)
+  }
   
   private def nodeSelection(nodeIds: Seq[Long]) : String = {
     """
@@ -27,6 +27,15 @@ class PersistentDocumentListDataLoader() {
   
   private def documentSelection(documentIds: Seq[Long]) : String = {
     "document.id IN " + idList(documentIds)
+  }
+  
+  private def createWhereClause(nodeIds: Seq[Long], documentIds: Seq[Long]): String = {
+    val whereClauses = List(
+    		whereClauseForIds(nodeSelection(nodeIds), nodeIds),
+    		whereClauseForIds(documentSelection(documentIds), documentIds)
+    )    
+
+    combineWhereClauses(whereClauses)
   }
   
   private def combineWhereClauses(whereClauses: List[Option[String]]) : String = {
@@ -53,6 +62,14 @@ class PersistentDocumentListDataLoader() {
         """).on("maxRows" -> maxRows, "offset" -> firstRow).
         as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
   }
+  
+  private def countQueryWhere(where: String)(implicit c: Connection) : Long = {
+    SQL("""
+        SELECT COUNT(*) FROM document 
+        """ + where  
+        ).as(scalar[Long].single)
+  }
+  
   
   private def idList(idList: Seq[Long]) : String = {
     idList.mkString("(", ",", ")")
