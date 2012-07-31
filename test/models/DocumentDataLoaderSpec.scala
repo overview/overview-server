@@ -35,7 +35,14 @@ class DocumentDataLoaderSpec extends Specification {
       
       val document = documentDataLoader.loadDocument(documentId)
       
-      document must be equalTo((documentId, "title", "textUrl", "viewUrl"))
+      document must beSome
+      document.get must be equalTo((documentId, "title", "textUrl", "viewUrl"))
+    }
+    
+    "Returns None for non-existing id" in new DbTestContext {
+      val documentDataLoader = new DocumentDataLoader()
+      
+      documentDataLoader.loadDocument(-1) must beNone
     }
   }
   
