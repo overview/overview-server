@@ -1,8 +1,7 @@
 package views.json
 
 import models.core.{Document, DocumentIdList, Node}
-import play.api.libs.json.JsValue
-import play.api.libs.json.{JsObject, Writes}
+import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
 
