@@ -11,7 +11,7 @@ class PersistentDocumentList(nodeIds: String, documentIds: String,
   private val nodes = IdList(nodeIds)
   private val documents = IdList(documentIds)
   
-  def loadSlice(start: Long, end: Long)(implicit c: Connection) : List[core.Document] = {
+  def loadSlice(start: Long, end: Long)(implicit c: Connection) : Seq[core.Document] = {
     require(start >= 0)
     require(start < end)
     

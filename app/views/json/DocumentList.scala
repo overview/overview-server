@@ -16,7 +16,7 @@ object DocumentList {
     }
   }
   
-  def show(documents: List[Document], totalCount: Long): JsValue = {
+  def show(documents: Seq[Document], totalCount: Long): JsValue = {
     toJson(
       Map(
           "documents" -> toJson(documents),

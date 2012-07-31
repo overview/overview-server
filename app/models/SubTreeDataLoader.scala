@@ -36,18 +36,18 @@ class SubTreeDataLoader {
    * 10 documentIds are returned for each documentId. totalDocumentCount is the total number of documents
    * associated with the nodeId in the database
    */
-  def loadDocumentIds(nodeIds : List[Long])(implicit connection: Connection) : List[NodeDocument] = {
+  def loadDocumentIds(nodeIds : Seq[Long])(implicit connection: Connection) : List[NodeDocument] = {
     nodeDocumentQuery(nodeIds)
   } 
   
   /** 
    * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
    */
-  def loadDocuments(documentIds: List[Long])(implicit connection: Connection) : List[DocumentData] = {
+  def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection) : List[DocumentData] = {
     documentQuery(documentIds)
   }
   
-  private def loadChildNodes(nodes: List[Long], depth: Int)
+  private def loadChildNodes(nodes: Seq[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
@@ -61,7 +61,7 @@ class SubTreeDataLoader {
     }
   }
   
-  private def dataForLeafNodes(nodes: List[Long], childNodeData: List[NodeData]) : List[NodeData] = {
+  private def dataForLeafNodes(nodes: Seq[Long], childNodeData: List[NodeData]) : Seq[NodeData] = {
     val nodesWithChildNodes = childNodeData.map(_._1)
     val leafNodes = nodes.diff(nodesWithChildNodes)
     
@@ -76,7 +76,7 @@ class SubTreeDataLoader {
       as(descriptionParser map(flatten) *)
   }
         
-  private def childNodeQuery(nodeIds: List[Long])(implicit c: Connection) : List[NodeData] = {
+  private def childNodeQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeData] = {
     val nodeParser = long("parent_id") ~ get[Option[Long]]("id") ~ str("description")
 
     SQL(
@@ -87,7 +87,7 @@ class SubTreeDataLoader {
     ).as(nodeParser map(flatten) *)
   }
   
-  private def nodeDocumentQuery(nodeIds: List[Long])(implicit c: Connection) : List[NodeDocument] = {
+  private def nodeDocumentQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeDocument] = {
     val documentIdParser = long("node_id") ~ long("document_count") ~ long("document_id")
 
     SQL(
@@ -111,7 +111,7 @@ class SubTreeDataLoader {
     as(documentIdParser map(flatten) *)
   }
   
-  private def documentQuery(documentIds: List[Long])(implicit c: Connection) : List[DocumentData]= {
+  private def documentQuery(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentData]= {
     val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
 
     SQL(
@@ -124,6 +124,6 @@ class SubTreeDataLoader {
     as(documentParser map(flatten) *)
   }
   
-  private def idList(ids: List[Long]) : String = "(" + ids.mkString(", ") + ")"
+  private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
 
 }

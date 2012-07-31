@@ -10,8 +10,8 @@ class SubTreeDataParser {
   /**
    * @return a list of Nodes created from the passed in data
    */
-  def createNodes(nodeData: List[NodeData], 
-		  		  documentData: List[NodeDocument]) : List[core.Node] = {
+  def createNodes(nodeData: Seq[NodeData], 
+		  		  documentData: Seq[NodeDocument]) : Seq[core.Node] = {
     val nodeDescriptions = mapNodesToDescriptions(nodeData)
     val childNodeIds = mapNodesToChildNodeIdLists(nodeData)
     val documentIds = mapNodesToDocumentIdLists(documentData)
@@ -28,14 +28,14 @@ class SubTreeDataParser {
   /**
    * @return a list of Documents created from the passed in data
    */
-  def createDocuments(documentData: List[DocumentData]) : List[core.Document] = {
+  def createDocuments(documentData: Seq[DocumentData]) : Seq[core.Document] = {
     documentData.map(d => core.Document(d._1, d._2, d._3, d._4))
   }
   
   private def createOneNode(id: Long, 
 		  			        descriptions: Map[Long, String],
-		  			        childNodeIds: Map[Long, List[Long]],
-		  			        documentIds: Map[Long, List[Long]],
+		  			        childNodeIds: Map[Long, Seq[Long]],
+		  			        documentIds: Map[Long, Seq[Long]],
 		  			        documentCounts: Map[Long, Long]) : core.Node = {
     
     val documentIdList = core.DocumentIdList(documentIds(id), documentCounts(id))
@@ -43,7 +43,7 @@ class SubTreeDataParser {
     						   
   }
   
-  private def groupByNodeId[A](nodeData: List[(Long, A)]) : Map[Long, List[A]] = {
+  private def groupByNodeId[A](nodeData: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
     val groupedByNode = nodeData.groupBy(_._1)
     
     groupedByNode.map {
@@ -51,28 +51,28 @@ class SubTreeDataParser {
     }
   }
     
-  private def mapNodesToChildNodeIdLists(nodeData: List[NodeData]) : Map[Long, List[Long]] = {
+  private def mapNodesToChildNodeIdLists(nodeData: Seq[NodeData]) : Map[Long, Seq[Long]] = {
     val nodeAndPossibleChild = nodeData.map(d => (d._1, d._2))
     val possibleChildNodes = groupByNodeId(nodeAndPossibleChild)
     
     possibleChildNodes.map(d => (d._1 -> d._2.flatMap(_.toList)))   
   }
   
-  private def mapNodesToDocumentIdLists(documentData: List[NodeDocument]) : Map[Long, List[Long]] = {
+  private def mapNodesToDocumentIdLists(documentData: Seq[NodeDocument]) : Map[Long, Seq[Long]] = {
     val nodeAndDocument = documentData.map(d => (d._1, d._3))
     groupByNodeId(nodeAndDocument)
   }
   
-  private def mapNodesToDescriptions(nodeData: List[NodeData]) : Map[Long, String] = {
+  private def mapNodesToDescriptions(nodeData: Seq[NodeData]) : Map[Long, String] = {
     val childNodes = nodeData.filter(_._2 != None)
     childNodes.map(d => (d._2.get, d._3)).distinct.toMap
   }
   
-  private def mapNodesToDocumentCounts(documentData: List[NodeDocument]) : Map[Long, Long] = {
+  private def mapNodesToDocumentCounts(documentData: Seq[NodeDocument]) : Map[Long, Long] = {
     documentData.map(d => (d._1, d._2)).distinct.toMap
   }
   
-  private def realNodeIds(nodeData : List[NodeData]) : List[Long] = {
+  private def realNodeIds(nodeData : Seq[NodeData]) : Seq[Long] = {
     nodeData.map(_._1).distinct.filterNot(_ == NoId)
   }
 }

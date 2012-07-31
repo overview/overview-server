@@ -38,7 +38,7 @@ object Tree {
   }
   
 
-  def show(nodes: List[Node], documents: List[Document]) : JsValue = {
+  def show(nodes: Seq[Node], documents: Seq[Document]) : JsValue = {
     toJson(
       Map(
         "nodes" -> toJson(nodes),

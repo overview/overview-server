@@ -18,7 +18,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
   /**
    * @return a list of all the Nodes in the subTree
    */
-  def loadNodes()(implicit connection : java.sql.Connection) : List[core.Node] = {
+  def loadNodes()(implicit connection : java.sql.Connection) : Seq[core.Node] = {
 	
     val nodeData = loader.loadNodeData(rootId, depth)
     val nodeIds = nodeData.map(_._1).distinct
@@ -33,7 +33,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
    * by document IDs and all the elements are distinct, even if documentIds are included in multiple
    * Nodes.
    */
-  def loadDocuments(nodes: List[core.Node])(implicit connection : java.sql.Connection) : List[core.Document] = {
+  def loadDocuments(nodes: Seq[core.Node])(implicit connection : java.sql.Connection) : Seq[core.Document] = {
     val documentIds = nodes.flatMap(_.documentIds.firstIds)
     val documentData = loader.loadDocuments(documentIds.distinct.sorted)
     
