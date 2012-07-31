@@ -19,6 +19,10 @@ class PersistentDocumentList(nodeIds: String, documentIds: String,
     parser.createDocuments(documentData)
   }
   
+  def loadCount()(implicit c: Connection) : Long = {
+    loader.loadCount(nodes, documents)
+  }
+  
   
 
 }

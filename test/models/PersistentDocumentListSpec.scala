@@ -57,6 +57,16 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 3, 4)
     }
     
+    "call loader to get selection count" in new MockComponents {
+      val expectedCount = 256l
+      
+      loader.loadCount(nodeIds, documentIds) returns expectedCount
+      
+      val count = persistentDocumentList.loadCount()
+      
+      count must be equalTo(expectedCount)
+    }
+    
     "throw exception if start of slice is < 0" in new MockComponents {
       persistentDocumentList.loadSlice(-3, 3) must throwAn[IllegalArgumentException] 
     }
