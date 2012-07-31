@@ -14,7 +14,7 @@ class DocumentDataLoaderSpec extends Specification {
   
   "DocumentDataLoader" should {
     
-    "Load document data for speficied id" in new DbTestContext {
+    "Load document data for specified id" in new DbTestContext {
       val documentSetId = 
         SQL("""
             INSERT INTO document_set (id, query)
