@@ -55,9 +55,20 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val documents = persistentDocumentList.loadSlice(3, 7)
       
       there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 3, 4)
-
     }
     
+    "throw exception if start of slice is < 0" in new MockComponents {
+      persistentDocumentList.loadSlice(-3, 3) must throwAn[IllegalArgumentException] 
+    }
+    
+    "throw exception if start > end" in new MockComponents {
+      persistentDocumentList.loadSlice(5, 3) must throwAn[IllegalArgumentException] 
+    }
+
+    "throw exception if start == end" in new MockComponents {
+      persistentDocumentList.loadSlice(5, 5) must throwAn[IllegalArgumentException] 
+    }
+
     "be constructable with default loader and parser" in {
       val persistentDocumentList = new PersistentDocumentList("", "")
       
