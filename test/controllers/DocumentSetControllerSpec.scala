@@ -13,22 +13,21 @@ class DocumentSetControllerSpec extends Specification {
   
   "The DocumentSet Controller" should {
     "submit a DocumentSetCreationJob when a new query is received" in new DbContext {
-      val result = controllers.DocumentSetController.createDocumentSet() (FakeRequest().
+      val result = controllers.DocumentSetController.create() (FakeRequest().
         withFormUrlEncodedBody(("query", "foo")))	
 
-            
       val foundJob = DocumentSetCreationJob.find.where().eq("query", "foo").findUnique
-        
+
       foundJob must not beNull; // without this semicolon the next line gets gobbled up 
       foundJob.query must beEqualTo("foo")
     }
     
       
     "redirect to documentsets view" in new DbContext {
-      val result = controllers.DocumentSetController.createDocumentSet() (FakeRequest().
+      val result = controllers.DocumentSetController.create() (FakeRequest().
         withFormUrlEncodedBody(("query", "foo")))
-      
-        redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
+
+      redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
     }
   }
 
