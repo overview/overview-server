@@ -1,4 +1,4 @@
-package models
+package controllers
 
 import org.specs2.mutable.Specification
 import java.util.IllegalFormatConversionException
