@@ -10,19 +10,13 @@
  */
 
 package clustering
+
 import scala.collection.mutable.Map
+import ClusterTypes._
 
 // Basic use: call addDocument(docID, terms) until done, then getVectors() once
 class DocumentVectorGenerator {
 
-  // --- Types ---
-  type DocumentID = Long
-  
-  type DocumentVector = scala.collection.mutable.Map[String, Float]                            // term -> tf_idf                                           
-  def DocumentVector = scala.collection.mutable.Map[String, Float] _                           // so we can do var t = DocumentVector()
-  
-  type DocumentSetVectors = scala.collection.mutable.Map[DocumentID, DocumentVector]           // docid -> vector                  
-  object DocumentSetVectors { def apply() = { scala.collection.mutable.Map[DocumentID, DocumentVector]() } }  
 
   // --- Data ---
   private var numDocs = 0 
