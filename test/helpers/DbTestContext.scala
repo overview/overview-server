@@ -19,11 +19,11 @@ trait  DbTestContext extends Around {
   lazy implicit val connection = Session.currentSession.connection
   
   def around[T <% Result](test: => T) = {
-	inTransaction {
-	val result = test
-	connection.rollback()
+    inTransaction {
+	  val result = test
+	  connection.rollback()
             
-	result
+	  result
 	}
   }
 }
