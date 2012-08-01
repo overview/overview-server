@@ -10,7 +10,10 @@ object DocumentController extends Controller {
       DB.withTransaction { implicit connection =>
       	val documentLoader = new DocumentLoader()
       	val document = documentLoader.load(documentId)
-      	Ok(views.html.Document.show(document.get))
+      	document match {
+      	  case Some(d) => Ok(views.html.Document.show(d))
+      	  case None => NotFound
+      	}
       }
     }
 }
