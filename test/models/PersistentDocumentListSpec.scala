@@ -15,7 +15,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val nodeIds = Seq(1l, 2l, 4l)
       val documentIds = Seq(5l, 6l)
       val persistentDocumentList = 
-        new PersistentDocumentList("1, 2, 4", "5, 6", loader, parser)
+        new PersistentDocumentList(nodeIds, documentIds, loader, parser)
 
       
     }
@@ -80,7 +80,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     }
 
     "be constructable with default loader and parser" in {
-      val persistentDocumentList = new PersistentDocumentList("", "")
+      val persistentDocumentList = new PersistentDocumentList(Nil, Nil)
       
       success
     }
