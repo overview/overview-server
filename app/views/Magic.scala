@@ -6,6 +6,10 @@ case class ScopedMessages(scope: String) {
   }
 }
 
+/*
+ * Functions that every template can access.
+ */
+
 object Magic {
   val t = play.api.i18n.Messages
   val scopedMessages = ScopedMessages
