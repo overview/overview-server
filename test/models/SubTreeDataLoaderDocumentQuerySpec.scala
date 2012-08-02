@@ -2,6 +2,7 @@ package models
 
 import anorm._
 
+import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
@@ -16,49 +17,23 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
   "SubTreeDataLoader" should {
     
     trait DocumentsLoaded extends DbTestContext {
-      lazy val documentSetId = insertDocumentSet
-      lazy val nodeIds = insertNodes(documentSetId)
+      lazy val documentSetId = insertDocumentSet("SubTreeDataLoaderDocumentQuerySpec")
+      lazy val nodeIds = insertNodes(documentSetId, 3)
       val subTreeDataLoader = new SubTreeDataLoader()
     }
 
-    def insertDocumentSet(implicit connection: Connection) : Long = {
-      SQL("""
-        INSERT INTO document_set (id, query)
-        VALUES (nextval('document_set_seq'), 'SubTreeDataLoaderDocumentQuerySpec')
-        """).executeInsert().getOrElse(throw new Exception("fail"))
-    }
-    
-    def insertNodes(documentSetId: Long)(implicit connection: Connection) : List[Long] = {
-      for (i <- 1 to 3) yield
-        SQL("""
-          INSERT INTO node (id, document_set_id, parent_id, description)
-          VALUES (nextval('node_seq'), {document_set_id}, NULL, 'node')
-          """).on('document_set_id -> documentSetId).executeInsert().getOrElse(-1l)
-    } toList
-    
-    def insertDocuments(nodes : List[Long], numberOfDocuments : Int = 10)
-                       (implicit connection : Connection) : List[Long] = {
+
+    def insertDocuments(nodes : Seq[Long], numberOfDocuments : Int = 10)
+                       (implicit connection : Connection) : Seq[Long] = {
       
       val ids = nodes.flatMap { n => 
-        val documents = for (i <- 1 to numberOfDocuments) yield SQL(
-            """
-              INSERT INTO document(id, title, text_url, view_url) VALUES 
-                (nextval('document_seq'), {title}, {textUrl}, {viewUrl})
-            """
-          ).on("title" -> ("title-" + i),
-               "textUrl" -> ("textUrl-" + i),
-               "viewUrl" -> ("viewUrl-" + i)).executeInsert().getOrElse(-1l);
-        
-        documents.foreach(id =>
-          SQL("INSERT INTO node_document(node_id, document_id) VALUES ({nodeId}, {documentId})").
-          on("nodeId" -> n, "documentId" -> id).executeInsert())
-          
-        documents
+        for (i <- 1 to numberOfDocuments) yield 
+          insertDocumentWithNode("title-" + i, "textUrl-" + i, "viewUrl-" + i, n)
       }
       ids
     }
     
-	def documentIdsForNodes(nodes: List[Long], subTreeDataLoader : SubTreeDataLoader)(implicit connection: Connection) : List[Long] = {
+	def documentIdsForNodes(nodes: Seq[Long], subTreeDataLoader : SubTreeDataLoader)(implicit connection: Connection) : List[Long] = {
 	  val nodeDocumentIds = subTreeDataLoader.loadDocumentIds(nodes)
 	  
 	  nodeDocumentIds.map(_._3)

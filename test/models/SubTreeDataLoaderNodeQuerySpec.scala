@@ -2,6 +2,7 @@ package models
 
 import anorm._
 import anorm.SqlParser._
+import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
@@ -19,31 +20,13 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   private val TreeDepth = 6
   
   trait TreeCreated extends DbTestContext {
-    lazy val documentSetId = insertDocumentSet
+    lazy val documentSetId = insertDocumentSet("SubTreeDataLoaderNodeQuerySpec")
     lazy val nodeIds = writeBinaryTreeInDb(documentSetId, TreeDepth)
     lazy val rootId = nodeIds(0)
     
     lazy val subTreeDataLoader = new SubTreeDataLoader()
   }
 
-  def insertDocumentSet(implicit connection: Connection) : Long = {
-    SQL("""
-      INSERT INTO document_set (id, query)
-      VALUES (nextval('document_set_seq'), 'SubTreeDataLoaderDocumentQuerySpec')
-      """).executeInsert().getOrElse(throw new Exception("fail"))
-  }
-
-  def insertNode(documentSetId: Long, parentId: Option[Long], description: String)(implicit connection: Connection) : Long = {
-    SQL("""
-      INSERT INTO node (id, document_set_id, parent_id, description)
-      VALUES (nextval('node_seq'), {document_set_id}, {parent_id}, {description})
-      """).on(
-        'document_set_id -> documentSetId,
-        'parent_id -> parentId,
-        'description -> description
-      ).executeInsert().getOrElse(throw new Exception("fail"))
-  }
-  
 
   def writeBinaryTreeInDb(documentSetId: Long, depth : Int)(implicit c: Connection) : List[Long] = {
     val id = insertNode(documentSetId, None, "root")
