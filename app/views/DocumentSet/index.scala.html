@@ -26,7 +26,7 @@
         <ul class="unstyled document-sets">
           @documentSets.map { documentSet =>
             <li id="document-set-@documentSet.id">
-              <a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a>
+              <h2><a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a></h2>
             </li>
           }
         </ul>
