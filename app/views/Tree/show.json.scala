@@ -1,13 +1,11 @@
-package views.json
+package views.json.Tree
 
 import models.core.{Document, DocumentIdList, Node}
 import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
-
-object Tree {
-
-  implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
+object show {
+  private implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
     def writes(documentIdList: DocumentIdList) : JsValue = {
       toJson(Map(
           "docids" -> toJson(documentIdList.firstIds),
@@ -16,7 +14,7 @@ object Tree {
     }
   }
   
-  implicit object JsonNode extends Writes[Node] {
+  private implicit object JsonNode extends Writes[Node] {
     def writes(node: Node) : JsValue = {
       toJson(Map(
           "id" -> toJson(node.id),
@@ -28,7 +26,7 @@ object Tree {
     }
   }
   
-  implicit object JsonDocument extends Writes[Document] {
+  private implicit object JsonDocument extends Writes[Document] {
     def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
@@ -36,9 +34,8 @@ object Tree {
       ))
     }
   }
-  
 
-  def show(nodes: Seq[Node], documents: Seq[Document]) : JsValue = {
+  def apply(nodes: Seq[Node], documents: Seq[Document]) : JsValue = {
     toJson(
       Map(
         "nodes" -> toJson(nodes),
