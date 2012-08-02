@@ -1,0 +1,151 @@
+package models
+
+import anorm._
+import anorm.SqlParser._
+import helpers.DbTestContext
+import java.sql.Connection
+import org.specs2.mutable.Specification
+import play.api.test.FakeApplication
+import play.api.Play.{ start, stop }
+
+
+class PersistentDocumentListDataLoaderSpec extends Specification {
+
+  step(start(FakeApplication()))
+
+  "PersistentDocumentListDataLoader" should {
+
+    def insertDocumentSet(implicit c: Connection): Long = {
+      SQL("""
+          INSERT INTO document_set (id, query)
+          VALUES (nextval('document_set_seq'), 'PersistentDocumentListLoaderSpec')
+          """).executeInsert().getOrElse(throw new Exception("failed insert"))
+    }
+
+    def setupNodes(documentSetId: Long)(implicit c: Connection): List[Long] = {
+      SQL("""
+         INSERT INTO node (id, description, document_set_id)
+         VALUES (nextval('node_seq'), 'node1', {document_set_id}),
+    		    (nextval('node_seq'), 'node2', {document_set_id}),
+                (nextval('node_seq'), 'node3', {document_set_id})
+         """).on("document_set_id" -> documentSetId).executeInsert(scalar[Long] *)
+    }
+
+    def insertDocument(nodeId: Long, documentSetId: Long)(implicit c: Connection): Long = {
+      val documentId =
+        SQL("""
+        	INSERT INTO document (id, title, text_url, view_url, document_set_id)
+            VALUES (nextval('document_seq'),
+                    'title', 'textUrl', 'viewUrl', {document_set_id})
+            """).on("document_set_id" -> documentSetId).executeInsert().
+          getOrElse(throw new Exception("failed insert"))
+
+      SQL("""
+          INSERT INTO node_document (node_id, document_id)
+          VALUES ({node_id}, {document_id})
+          """).on("node_id" -> nodeId, "document_id" -> documentId).executeInsert()
+
+      documentId
+    }
+    
+    trait NodesAndDocuments extends DbTestContext {
+      lazy val dataLoader = new PersistentDocumentListDataLoader()
+      lazy val documentSet = insertDocumentSet
+      lazy val nodeIds = setupNodes(documentSet) // must access nodeIds in tests to insert them in Databas
+
+      lazy val documentIds = nodeIds.flatMap { n =>
+        for (_ <- 1 to 2) yield insertDocument(n, documentSet)
+      }      
+    }
+    
+    "load document data for specified nodes with no other constraints" in new NodesAndDocuments {
+      val selectedNodes = nodeIds.take(2)
+      val expectedDocumentIds = documentIds.take(4)
+      
+      val documentData = 
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, 0, 6)
+        
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(expectedDocumentIds)
+      documentData must have(_._2 == "title")
+      documentData must have(_._3 == "textUrl")
+      documentData must have(_._4 == "viewUrl")
+    }
+
+    "load document data for specified document ids with no other constraints" in new NodesAndDocuments {
+      val selectedDocuments = documentIds.take(3)
+      
+      val persistentDocumentListDataLoader =
+        new PersistentDocumentListDataLoader()
+
+      val documentData = 
+        persistentDocumentListDataLoader.loadSelectedDocumentSlice(Nil, selectedDocuments,
+        														   0, 6)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds.take(3))
+    }
+    
+    "load intersection of documents specified by nodes and document ids" in new NodesAndDocuments {
+      val selectedNodes = nodeIds.take(2)
+      val selectedDocuments = documentIds.drop(1)
+      
+      val documentData = 
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, selectedDocuments, 0, 6)
+        
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
+    }
+    
+
+    "load slice of selected documents" in new NodesAndDocuments {
+      val expectedDocumentIds = documentIds.slice(2, 5)
+
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 2, 3)
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
+    }
+    
+    "return nothing if slice offset is larger than total number of Rows" in new NodesAndDocuments {
+      val selectedDocuments = documentIds
+      
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 10, 4)
+      
+      documentData must be empty
+    }
+    
+    "return all documents if selection is empty" in new NodesAndDocuments {
+      val selectedDocuments = documentIds
+       
+      val documentData = dataLoader.loadSelectedDocumentSlice(Nil, Nil, 0, 6)
+        
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds)      
+    }
+    
+    "return total number of results in selection" in new NodesAndDocuments {
+      val selectedNodes = nodeIds.take(2)
+      val selectedDocuments = documentIds
+    
+      val count = dataLoader.loadCount(selectedNodes, selectedDocuments)
+      
+      count must be equalTo(4)
+    }
+    
+    "return 0 count if selection result is empty" in new NodesAndDocuments {
+      val selectedNodes = nodeIds.take(1)
+      val selectedDocuments = documentIds.drop(3)
+      
+      val count = dataLoader.loadCount(selectedNodes, selectedDocuments)
+      
+      count must be equalTo(0)
+    }
+    
+  }
+
+  step(stop)
+}

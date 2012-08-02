@@ -4,8 +4,6 @@
 
 # Interim URLs
 GET     /                           controllers.Application.index()
-GET	    /documentsets		        controllers.DocumentSetController.showDocumentSets()
-POST	/documentsets		        controllers.DocumentSetController.createDocumentSet()
 POST	/documentsets/:id/delete	controllers.DocumentSetController.deleteDocumentSet(id: Long)
 
 GET		/init						controllers.TreeController.temporarySetup()
@@ -13,6 +11,8 @@ GET	    /showJobs					controllers.Application.showJobs()
 
 
 # Good URLs
+GET /documentsets controllers.DocumentSetController.index()
+POST /documentsets controllers.DocumentSetController.create()
 GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
 GET /documents/:id controllers.DocumentController.show(id: Long)
 GET /trees/:id/root controllers.TreeController.root(id: Long)

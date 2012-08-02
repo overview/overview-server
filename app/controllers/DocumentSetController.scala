@@ -7,7 +7,6 @@ import play.api.data.Forms._
 import play.api.mvc.{Action,Controller}
 import models.{DocumentSet, DocumentSetCreationJob}
 
-
 object DocumentSetController extends Controller {
   val queryForm = Form(
     mapping(
@@ -16,25 +15,30 @@ object DocumentSetController extends Controller {
       ((job: DocumentSetCreationJob) => Some((job.query)))
   ) 
 
+  def index() = Action {
+    // FIXME make per-user
+    val documentSets = DocumentSet.find.orderBy("query").findList
+    val documentSetCreationJobs = DocumentSetCreationJob.find.orderBy("query").findList
+    Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
+  }
+
   def show(documentSetId: Long) = Action {
+    // FIXME check user has access to document set
+    val documentSet = DocumentSet.find.byId(documentSetId) // for potential 404 error
     Ok(views.html.DocumentSet.show())
   }
-    
-  def createDocumentSet() = Action { implicit request =>
+
+  def create() = Action { implicit request =>
     val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
     documentSetCreationJob.save
-      
-    Redirect(routes.DocumentSetController.showDocumentSets())
+
+    Redirect(routes.DocumentSetController.index())
   }
-    
-  def showDocumentSets() = Action { 
-    Ok(views.html.documentSets(DocumentSet.find.all.toList, queryForm))
-  }
-  
+
   def deleteDocumentSet(documentSetId: Long) = Action {
     val documentSet = DocumentSet.find.ref(documentSetId)
     documentSet.delete()
     
-    Redirect(routes.DocumentSetController.showDocumentSets())
+    Redirect(routes.DocumentSetController.index())
   }
 }

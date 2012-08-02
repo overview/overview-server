@@ -1,156 +1,152 @@
-@import '_normalize.less';
+@import 'bootstrap.less';
+@import 'bootstrap-responsive.less';
 
 @color-background: white;
 @color: black;
 @color-subtle: #888;
 @color-border: black;
 
-html {
+body.document-set-show {
   margin: 0;
   padding: 0;
-  background: @color-background;
-  color: @color;
-}
+  width: 100%;
 
-body {
-  margin: 0;
-  padding: 0;
-}
-
-h1 {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  margin: 0;
-  padding: 0 1em;
-  font-size: 1.6em;
-  height: 1.25em;
-  line-height: 1.25;
-  border-bottom: 2px solid @color;
-}
-
-#main {
-  position: absolute;
-  top: 2em;
-  margin-top: 2px;
-  left: 0;
-  right: 0;
-  bottom: 1.5em;
-  margin-bottom: 2px;
-}
-
-#document {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  border-left: 1px solid @color-border;
-
-  iframe {
+  h1 {
     position: absolute;
-    top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    padding: 0;
+    right: 0;
+    top: 0;
     margin: 0;
-  }
-}
-
-#focus {
-  position: absolute;
-  left: 0;
-  right: 50%;
-  top: 0;
-  height: 5%;
-
-  .handle {
-    cursor: move;
-  }
-}
-
-#tree {
-  position: absolute;
-  left: 0;
-  right: 50%;
-  top: 5%;
-  height: 55%;
-  border-bottom: 1px solid @color-border;
-  overflow: hidden;
-  font-size: .7em;
-
-  .selected {
-    color: blue;
-  }
-}
-
-#terms-tags-documents {
-  position: absolute;
-  top: 60%;
-  border-top: 1px solid @color-border;
-  left: 0;
-  bottom: 0;
-  right: 50%;
-}
-
-#document-list {
-  overflow: auto;
-  position: absolute;
-  top: 2em;
-  bottom: 0;
-  left: 0;
-  right: 0;
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    padding: 0 1em;
+    font-size: 1.6em;
+    height: 1.25em;
+    line-height: 1.25;
+    border-bottom: 2px solid @color;
   }
 
-  li {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  #main {
+    position: absolute;
+    top: 2em;
+    margin-top: 2px;
+    left: 0;
+    right: 0;
+    bottom: 1.5em;
+    margin-bottom: 2px;
+  }
 
-    &.placeholder {
-      background: #eee;
-      color: red;
+  #document {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 1px solid @color-border;
+
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      padding: 0;
+      margin: 0;
     }
   }
 
-  a {
-    display: block;
-    color: inherit;
-    text-decoration: inherit;
+  #focus {
+    position: absolute;
+    left: 0;
+    right: 50%;
+    top: 0;
+    height: 5%;
 
-    &:hover {
-      background: #ddd;
+    .handle {
+      cursor: move;
+    }
+  }
+
+  #tree {
+    position: absolute;
+    left: 0;
+    right: 50%;
+    top: 5%;
+    height: 55%;
+    border-bottom: 1px solid @color-border;
+    overflow: hidden;
+    font-size: .7em;
+
+    .selected {
+      color: blue;
+    }
+  }
+
+  #terms-tags-documents {
+    position: absolute;
+    top: 60%;
+    border-top: 1px solid @color-border;
+    left: 0;
+    bottom: 0;
+    right: 50%;
+  }
+
+  #document-list {
+    overflow: auto;
+    position: absolute;
+    top: 2em;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    &.selected {
-      color: black;
-      font-weight: bold;
+    li {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      &.placeholder {
+        background: #eee;
+        color: red;
+      }
+    }
+
+    a {
+      display: block;
+      color: inherit;
+      text-decoration: inherit;
+
+      &:hover {
+        background: #ddd;
+      }
+
+      &.selected {
+        color: black;
+        font-weight: bold;
+      }
+    }
+  }
+
+  footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1.5em;
+    line-height: 1.5;
+    border-top: 2px solid @color;
+    overflow: hidden;
+    text-align: center;
+  
+    a {
+      font-size: .66em;
+      text-decoration: none;
+      color: @color-subtle;
     }
   }
 }
 
-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1.5em;
-  line-height: 1.5;
-  border-top: 2px solid @color;
-  overflow: hidden;
-  text-align: center;
-
-  a {
-    font-size: .66em;
-    text-decoration: none;
-    color: @color-subtle;
-  }
-}
