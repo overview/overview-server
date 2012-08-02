@@ -10,13 +10,15 @@
 
 package clustering
 
+import scala.collection.mutable
+
 object ClusterTypes {
   type DocumentID = Long
   type TermWeight = Float
   
-  type DocumentVector = scala.collection.mutable.Map[String, TermWeight ]                            // term -> tf_idf                                           
-  def DocumentVector = scala.collection.mutable.Map[String, TermWeight ] _                           // so we can do var t = DocumentVector()
+  type DocumentVector = mutable.Map[String, TermWeight ]                            // term -> tf_idf                                           
+  def DocumentVector = mutable.Map[String, TermWeight ] _                           // so we can do var t = DocumentVector()
   
-  type DocumentSetVectors = scala.collection.mutable.Map[DocumentID, DocumentVector]           // docid -> vector                  
-  object DocumentSetVectors { def apply() = { scala.collection.mutable.Map[DocumentID, DocumentVector]() } }  
+  type DocumentSetVectors = mutable.Map[DocumentID, DocumentVector]           // docid -> vector                  
+  object DocumentSetVectors { def apply() = { mutable.Map[DocumentID, DocumentVector]() } }  
 }

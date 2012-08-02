@@ -12,22 +12,25 @@
 package clustering
 
 import models._
-import scala.collection.mutable
+import scala.collection.mutable.{Set,Stack}
 import clustering.ClusterTypes._
 
-class ConnectedComponents[T](val reachableNodes : (T, Set[T]) => Iterable[T]) {
-    
+object ConnectedComponents {
+
+  // Takes a node, and a set of unvisited nodes, and yields all nodes we an visit next
+  type EdgeEnumerationFn[T] = (T, Set[T]) => Iterable[T]
+  
   // Returns component containing startNode, plus all nodes not in component
-  def GetSingleConnectedComponent(startNode: T, allNodes:Set[T]) : (Set[T], Set[T]) = {
-    var component = Set[T](startNode)             // all nodes found to be in the component so far 
-    val frontier = mutable.Stack[T](startNode)    // nodes in the component that we have not checked the edges of
-    var remaining = allNodes - startNode          // nodes not yet visited
+  def SingleComponent[T](startNode : T, allNodes : Set[T], edgeEnumerator : EdgeEnumerationFn[T] ) : (Set[T], Set[T]) = {
+    var component = Set[T](startNode)         // all nodes found to be in the component so far 
+    val frontier = Stack[T](startNode)        // nodes in the component that we have not checked the edges of
+    var remaining = allNodes - startNode      // nodes not yet visited
     
-    // walk outward from each node in the frontier, until the frontier is empty (or we run out of nodes)
+    // walk outward from each node in the frontier, until the frontier is empty or we run out of nodes
     while (!frontier.isEmpty && !remaining.isEmpty) {
       val a = frontier.pop
       
-      for (b <- reachableNodes(a, remaining)) {        // for every remaining we can reach from a...
+      for (b <- edgeEnumerator(a, remaining)) {        // for every remaining we can reach from a...
         component += b
         frontier.push(b)
         remaining -=b
@@ -38,12 +41,12 @@ class ConnectedComponents[T](val reachableNodes : (T, Set[T]) => Iterable[T]) {
   }
 
   // Produce all connected components 
-  def GetConnectedComponents(allNodes:Set[T]) : Set[Set[T]] = {
+  def AllComponents[T](allNodes : Set[T], edgeEnumerator : EdgeEnumerationFn[T] ) : Set[Set[T]] = {
     var components = Set[Set[T]]()
     var remaining = allNodes
     
     while (!remaining.isEmpty) {
-      val (newComponent, leftOvers) = GetSingleConnectedComponent(remaining.first, remaining)
+      val (newComponent, leftOvers) = SingleComponent(remaining.first, remaining, edgeEnumerator)
       components += newComponent
       remaining = leftOvers
     }
@@ -94,7 +97,7 @@ class TreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (DocumentVe
 
   // Steps distance thresh from 1.0 to 0 in increments. 1 is always full graph, 0 is always leaves
   def BuildTree(threshStep: Double) : TreeNode = {
-     var topLevel : nodeSet = docVecs.keys.toSet
+     var topLevel : nodeSet = Set(docVecs.keys.toArray:_*)
      val numDescTerms = 20 // take top 20 terms
      
      // root is all documents
@@ -108,10 +111,7 @@ class TreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (DocumentVe
        var nextLevel = List[TreeNode]()
        for (node <- currentLevel) {
          
-         //val componentFinder = new ConnectedComponents((doc:DocumentID, otherDocs:Set[DocumentID]) => reachableDocs(thresh, doc, otherDocs))
-         
-         val componentFinder = new ConnectedComponents[DocumentID](reachableDocs(thresh, _, _))
-         val childComponents = componentFinder.GetConnectedComponents(node.docs)
+         val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, reachableDocs(thresh, _, _))
          
          if (childComponents.size == 1) {
            // lower threshold did not split this component, pass unchanged to next level
