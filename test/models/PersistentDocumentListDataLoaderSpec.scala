@@ -22,7 +22,8 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       lazy val nodeIds = insertNodes(documentSet, 3) // must access nodeIds in tests to insert them in Databas
 
       lazy val documentIds = nodeIds.flatMap { n =>
-        for (_ <- 1 to 2) yield insertDocumentWithNode("title", "textUrl", "viewUrl", n)
+        for (_ <- 1 to 2) yield insertDocumentWithNode(documentSet,
+        											   "title", "textUrl", "viewUrl", n)
       }      
     }
     
