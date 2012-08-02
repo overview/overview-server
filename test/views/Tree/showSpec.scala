@@ -1,11 +1,11 @@
-package views.json
+package views.json.Tree
 
 import org.specs2.mutable.Specification
 import models.core._
 
 import play.api.libs.json.Json.toJson
 
-class TreeSpec extends Specification {
+class showSpec extends Specification {
   
   "Tree view generated Json" should {
     
@@ -20,7 +20,7 @@ class TreeSpec extends Specification {
       
       val dummyDocuments = List[Document]()
       
-      val treeJson = Tree.show(nodes, dummyDocuments).toString
+      val treeJson = show(nodes, dummyDocuments).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -35,7 +35,7 @@ class TreeSpec extends Specification {
     	Document(30l, "title", "textUrl", "viewUrl")
       )
       
-      val treeJson = Tree.show(dummyNodes, documents).toString
+      val treeJson = show(dummyNodes, documents).toString
       
       treeJson must /("documents") */("id" -> 10l)
       treeJson must /("documents") */("id" -> 20l)
@@ -46,14 +46,14 @@ class TreeSpec extends Specification {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
       
-      val treeJson = Tree.show(dummyNodes, dummyDocuments).toString
+      val treeJson = show(dummyNodes, dummyDocuments).toString
       
       treeJson must contain("\"tags\":[]")
     }
   }
   
   "JsonNode" should {
-    import views.json.Tree.JsonNode
+    import views.json.Tree.show.JsonNode
     
     "write node attributes" in {
       val documentIds = DocumentIdList(List(10, 20, 30), 45)
@@ -71,7 +71,7 @@ class TreeSpec extends Specification {
   }
   
   "JsonDocumentIdList" should {
-    import views.json.Tree.JsonDocumentIdList
+    import views.json.Tree.show.JsonDocumentIdList
     
     "write documentIdList attributes" in {
       val ids = List(10l, 20l, 34l)
@@ -86,7 +86,7 @@ class TreeSpec extends Specification {
   }
   
   "JsonDocument" should {
-    import views.json.Tree.JsonDocument
+    import views.json.Tree.show.JsonDocument
     
     "write document attributes" in {
       val id = 39l

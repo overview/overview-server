@@ -5,8 +5,8 @@ import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
 object show {
-  private implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
-    def writes(documentIdList: DocumentIdList) : JsValue = {
+  private[Tree] implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
+    override def writes(documentIdList: DocumentIdList) : JsValue = {
       toJson(Map(
           "docids" -> toJson(documentIdList.firstIds),
           "n" -> toJson(documentIdList.totalCount)
@@ -14,8 +14,8 @@ object show {
     }
   }
   
-  private implicit object JsonNode extends Writes[Node] {
-    def writes(node: Node) : JsValue = {
+  private[Tree] implicit object JsonNode extends Writes[Node] {
+    override def writes(node: Node) : JsValue = {
       toJson(Map(
           "id" -> toJson(node.id),
           "description" -> toJson(node.description),
@@ -26,8 +26,8 @@ object show {
     }
   }
   
-  private implicit object JsonDocument extends Writes[Document] {
-    def writes(document: Document) : JsValue = {
+  private[Tree] implicit object JsonDocument extends Writes[Document] {
+    override def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
         "description" -> toJson(document.title)
