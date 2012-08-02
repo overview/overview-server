@@ -54,7 +54,7 @@ object DbSetup {
   }
   
   def insertNodes(documentSetId: Long, count: Int)(implicit c: Connection): Seq[Long] = {
-    for (i <- 1 to 3) yield insertNode(documentSetId, None, "node-" + i)
+    for (i <- 1 to count) yield insertNode(documentSetId, None, "node-" + i)
   }
 
 }
