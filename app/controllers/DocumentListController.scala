@@ -10,9 +10,11 @@ import models.PersistentDocumentList
 object DocumentListController extends Controller {
     def index(treeId: Long, nodeids: String, tagids: String,
               documentids: String, start: Int, end: Int) = Action {
+      val (validStart, validEnd) = SaneRange(start, end)
+      
       DB.withTransaction { implicit connection => 
         val documents = new PersistentDocumentList(IdList(nodeids), IdList(documentids))
-        val selection = documents.loadSlice(start, end)
+        val selection = documents.loadSlice(validStart, validEnd)
         val totalItems = documents.loadCount
         
         Ok(views.json.DocumentList.show(selection, totalItems))
