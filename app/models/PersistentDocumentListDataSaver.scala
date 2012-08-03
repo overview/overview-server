@@ -12,6 +12,10 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
     SQL("""
         INSERT INTO document_tag (document_id, tag_id)
         SELECT id, {tagId} FROM document """ +
-            selectedDocumentsWhere).on("tagId" -> tagId).executeUpdate()
+            selectedDocumentsWhere +
+        """
+        AND id NOT IN
+          (SELECT document_id FROM document_tag WHERE tag_id = {tagId})
+        """).on("tagId" -> tagId).executeUpdate()
   }
 }

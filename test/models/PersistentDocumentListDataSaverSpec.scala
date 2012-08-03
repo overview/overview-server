@@ -19,6 +19,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       
       lazy val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
       lazy val tagId = insertTag("tag")
+      lazy val dataSaver = new PersistentDocumentListDataSaver()
       
       def insertTag(name: String): Long = {
         SQL("""
@@ -50,7 +51,6 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(nodeIds, 5)
       
-      val dataSaver = new PersistentDocumentListDataSaver()
       val count = dataSaver.addTag(tagId, Nil, documentIds)
       
       count must be equalTo(documentIds.size)
@@ -64,7 +64,6 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 3)
       val documentIds = insertDocumentsForeachNode(nodeIds, 2)
       
-      val dataSaver = new PersistentDocumentListDataSaver()
       val count = dataSaver.addTag(tagId, nodeIds.drop(1), documentIds.take(4))
       
       count must be equalTo(2)
@@ -76,20 +75,18 @@ class PersistentDocumentListDataSaverSpec extends Specification {
     }
     
     "not add a tag for a document more than once" in new TagCreated {
-      val documentIds = for (i <- 1 to 5) yield 
-        insertDocument(documentSetId, "title-" + i, "textUrl-" + i, "viewUrl-" + i)
-      val nodeIds = Nil
+      val nodeIds = insertNodes(documentSetId, 4)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 2)
       
-      val dataSaver = new PersistentDocumentListDataSaver()
-      val count = dataSaver.addTag(tagId, nodeIds.take(3), documentIds)
-      val actualInsertsCount = dataSaver.addTag(tagId, nodeIds.drop(2), documentIds)
+      val count = dataSaver.addTag(tagId, nodeIds.take(1), documentIds)
+      val actualInsertsCount = dataSaver.addTag(tagId, nodeIds, documentIds)
       
-      actualInsertsCount must be equalTo(2)
+      actualInsertsCount must be equalTo(6)
       
       val taggedDocuments = selectDocumentsWithTag(tagId)
       
       taggedDocuments must haveTheSameElementsAs(documentIds)
-    }.pendingUntilFixed
+    }
   }
   
   step(stop)
