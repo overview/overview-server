@@ -109,34 +109,36 @@ class GenerateClustersSpec extends Specification {
     val tree = new DocTreeBuilder(docSet, distanceFn).BuildTree(threshSteps)
     
     // Check that the tree has the structure in the diagram above 
-    // (nodes must appear in this order because BuildTree sorts on document keys)
+    // Use orderedChildren to make this test invariant to the actual stored component order
     tree.docs must beEqualTo(Set(1,2,3,4))
-    tree.children.size must beEqualTo(2)
-
-    val lchild = tree.children.head
-    val rchild = tree.children.last
+    val treekids = tree.OrderedChildren
+    treekids.size must beEqualTo(2)
     
-    lchild.docs must beEqualTo(Set(1,2))
-    lchild.children.size must beEqualTo(2)
+      val lchild = treekids.head
+      lchild.docs must beEqualTo(Set(1,2))
+      val lkids = lchild.OrderedChildren
+      lkids.size must beEqualTo(2)
+      
+        val llchild = lkids.head
+        llchild.docs must beEqualTo(Set(1))
+        llchild.children must beEmpty
+        
+        val lrchild = lkids.last
+        lrchild.docs must beEqualTo(Set(2))
+        lrchild.children must beEmpty
     
-    val llchild = lchild.children.head
-    llchild.docs must beEqualTo(Set(1))
-    llchild.children must beEmpty
+      val rchild = treekids.last
+      rchild.docs must beEqualTo(Set(3,4))
+      val rkids = rchild.OrderedChildren
+      rkids.size must beEqualTo(2)
     
-    val lrchild = lchild.children.last
-    lrchild.docs must beEqualTo(Set(2))
-    lrchild.children must beEmpty
-    
-    rchild.docs must beEqualTo(Set(3,4))
-    rchild.children.size must beEqualTo(2)
-    
-    val rlchild = rchild.children.head
-    rlchild.docs must beEqualTo(Set(3))
-    rlchild.children must beEmpty
-    
-    val rrchild = rchild.children.last
-    rrchild.docs must beEqualTo(Set(4))
-    rrchild.children must beEmpty    
+        val rlchild = rkids.head
+        rlchild.docs must beEqualTo(Set(3))
+        rlchild.children must beEmpty
+        
+        val rrchild = rkids.last
+        rrchild.docs must beEqualTo(Set(4))
+        rrchild.children must beEmpty    
    }
  }
 }

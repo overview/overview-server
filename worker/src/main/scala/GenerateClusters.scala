@@ -78,8 +78,14 @@ object DistanceFn {
 
 
 class DocTreeNode(val docs : Set[DocumentID]) {
- var description = ""
- var children:Set[DocTreeNode] = Set[DocTreeNode]() 
+  var description = ""
+  var children:Set[DocTreeNode] = Set[DocTreeNode]()
+ 
+  // return children in predictable order. Presently, sort by descending by size, and then ascending by document IDs
+  def OrderedChildren  = {
+    children.toList.sortWith((a,b) => (a.docs.size > b.docs.size) || (a.docs.min < b.docs.min))
+  }
+ 
 }
 
 
@@ -124,7 +130,7 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
         
     // root thresh=1.0 is one node with all documents
-    var topLevel = Set(docVecs.keys.toArray.sorted:_*)    // order by document ID to fix order of node generation    
+    var topLevel = Set(docVecs.keys.toArray:_*)
     val root = new DocTreeNode(topLevel)
           
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
