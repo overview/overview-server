@@ -29,7 +29,8 @@ object ApplicationBuild extends Build {
 
   val worker = Project("overview-worker", file("worker"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++= appDependencies ++
+      Seq(libraryDependencies ++= 
+        appDependencies ++
         Seq("play" %% "play" % "2.0.2") ++
         Seq("org.specs2" %% "specs2" % "1.11" % "test"))
       ).dependsOn(common).aggregate(common)
