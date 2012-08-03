@@ -28,6 +28,16 @@ class TagLoaderSpec extends Specification {
       
       foundTag must be equalTo(Some(tagId))
     }
+    
+    "get None if tag does not exist" in new DbTestContext {
+      val tagName = "taggy"
+        
+      val tagLoader = new TagLoader()
+      
+      val missingTag = tagLoader.loadByName(tagName)
+      
+      missingTag must beNone
+    }
   }
   
   step(stop)

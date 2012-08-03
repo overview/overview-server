@@ -8,7 +8,7 @@ class TagLoader {
   
   def loadByName(name: String)(implicit c: Connection) : Option[Long] = {
     SQL("SELECT id FROM tag WHERE name = {name}").on("name" -> name).
-      as(scalar[Option[Long]] single)
+      as(scalar[Long] *).headOption
   }
 
 }
