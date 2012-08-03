@@ -113,7 +113,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val count = persistentDocumentList.removeTag(tagId)
 
       there was one(saver).removeTag(tagId, nodeIds, documentIds)
-
+      count must be equalTo dummyCount
     }
 
   }
