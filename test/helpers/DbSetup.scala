@@ -44,6 +44,14 @@ object DbSetup {
              executeInsert().getOrElse(failInsert)
   }
   
+  def insertTag(documentSetId: Long, name: String)(implicit c: Connection): Long = {
+    SQL("""
+        INSERT INTO tag (id, name, document_set_id)
+        VALUES (nextval('tag_seq'), {name}, {documentSetId})
+        """).on("name" -> name, "documentSetId" -> documentSetId).
+        executeInsert().getOrElse(failInsert)
+  }
+
   def insertDocumentWithNode(documentSetId: Long,
                              title: String, textUrl: String, viewUrl: String, 
                              nodeId: Long)(implicit connection: Connection) : Long = {
