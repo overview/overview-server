@@ -6,8 +6,9 @@ import java.sql.Connection
 
 class TagLoader {
   
-  def getByName(name: String)(implicit c: Connection) : Long = {
-    SQL("SELECT id FROM tag WHERE name = {name}").on("name" -> name).as(scalar[Long] single)
+  def loadByName(name: String)(implicit c: Connection) : Option[Long] = {
+    SQL("SELECT id FROM tag WHERE name = {name}").on("name" -> name).
+      as(scalar[Option[Long]] single)
   }
 
 }

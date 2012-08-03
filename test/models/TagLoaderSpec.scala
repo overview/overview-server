@@ -24,9 +24,9 @@ class TagLoaderSpec extends Specification {
       
       val tagLoader = new TagLoader()
       
-      val foundTag = tagLoader.getByName(tagName)
+      val foundTag = tagLoader.loadByName(tagName)
       
-      foundTag must be equalTo(tagId)
+      foundTag must be equalTo(Some(tagId))
     }
   }
   
