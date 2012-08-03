@@ -15,32 +15,43 @@ class PersistentDocumentListDataSaverSpec extends Specification {
   
   "PersistentDocumentListDataSaver" should {
     
-    def insertTag(name: String, documentSetId: Long)(implicit c: Connection) : Long = {
-      SQL("""
+    trait TagCreated extends DbTestContext {
+      
+      lazy val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
+      lazy val tagId = insertTag("tag")
+      
+      def insertTag(name: String): Long = {
+        SQL("""
           INSERT INTO tag (id, name, document_set_id)
           VALUES (nextval('tag_seq'), {name}, {documentSetId})
           """).on("name" -> name, "documentSetId" -> documentSetId).
           executeInsert(scalar[Long] single)
-    }
-    
-    def selectDocumentsWithTag(tagId: Long)(implicit c: Connection) : List[Long] = {
-      SQL("""
+      }
+
+      def selectDocumentsWithTag(tagId: Long): List[Long] = {
+        SQL("""
           SELECT document_id FROM document_tag WHERE tag_id = {tagId}
           """).on("tagId" -> tagId).as(scalar[Long] *)
+      }
+      
+      def insertDocumentsForeachNode(nodeIds: Seq[Long], documentCount: Int): Seq[Long] = {
+        
+        nodeIds.flatMap(n => 
+          for (i <- 1 to documentCount) yield
+          	insertDocumentWithNode(documentSetId, 
+          						   "title-" + i, "textUrl-" + i, "viewUrl-" + i, 
+          						   n)
+          )
+      }
+        
     }
     
-    
-    "add tag to selection, returning insert count" in new DbTestContext {
-      val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
-      
-      val documentIds = for (i <- 1 to 5) yield 
-        insertDocument(documentSetId, "title-" + i, "textUrl-" + i, "viewUrl-" + i)
-      val nodeIds = Nil
-      
-      val tagId = insertTag("tag", documentSetId)
+    "add tag to selection, returning insert count" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 5)
       
       val dataSaver = new PersistentDocumentListDataSaver()
-      val count = dataSaver.addTag(tagId, nodeIds, documentIds)
+      val count = dataSaver.addTag(tagId, Nil, documentIds)
       
       count must be equalTo(documentIds.size)
       
@@ -49,17 +60,9 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       taggedDocuments must haveTheSameElementsAs(documentIds)
     }
     
-    "add tag to selection with both nodes and documents" in new DbTestContext {
-      val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
-      
+    "add tag to selection with both nodes and documents" in new TagCreated {
       val nodeIds = insertNodes(documentSetId, 3)
-      
-      val documentIds = nodeIds.flatMap(n => 
-    	for (i <- 1 to 2) yield
-    	  insertDocumentWithNode(documentSetId, "title", "textUrl", "viewUrl", n)
-      )
-      
-      val tagId = insertTag("tag", documentSetId)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 2)
       
       val dataSaver = new PersistentDocumentListDataSaver()
       val count = dataSaver.addTag(tagId, nodeIds.drop(1), documentIds.take(4))
@@ -72,14 +75,10 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       
     }
     
-    "not add a tag for a document more than once" in new DbTestContext {
-      val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
-      
+    "not add a tag for a document more than once" in new TagCreated {
       val documentIds = for (i <- 1 to 5) yield 
         insertDocument(documentSetId, "title-" + i, "textUrl-" + i, "viewUrl-" + i)
       val nodeIds = Nil
-      
-      val tagId = insertTag("tag", documentSetId)
       
       val dataSaver = new PersistentDocumentListDataSaver()
       val count = dataSaver.addTag(tagId, nodeIds.take(3), documentIds)
