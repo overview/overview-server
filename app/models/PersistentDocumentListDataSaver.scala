@@ -11,7 +11,7 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
     val whereClauses = SelectionWhere(nodeIds, documentIds) :+ whereDocumentNotTagged
     val whereSelectionIsNotAlreadyTagged = combineWhereClauses(whereClauses)
     
-        SQL("""
+    SQL("""
         INSERT INTO document_tag (document_id, tag_id)
         SELECT id, {tagId} FROM document """ +
           whereSelectionIsNotAlreadyTagged).on("tagId" -> tagId).executeUpdate()
@@ -19,7 +19,13 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
   
   def removeTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
                (implicit c: Connection): Long = {
-    0
+    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val whereSelected = combineWhereClauses(whereClauses)
+    
+    SQL("""
+        DELETE FROM document_tag WHERE document_id IN
+    	  (SELECT id FROM document """ + 
+    	   whereSelected + ")").executeUpdate()
   }
   
   

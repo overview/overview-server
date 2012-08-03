@@ -88,7 +88,34 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val count = dataSaver.addTag(tagId, Nil, Nil)
       
       count must be equalTo(10)
+    }
+    
+    "remove tag from selection" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 10)
       
+      dataSaver.addTag(tagId, nodeIds, documentIds)
+      
+      val removedCount = dataSaver.removeTag(tagId, nodeIds, documentIds.take(5))
+      
+      removedCount must be equalTo(5)
+      
+      val taggedDocuments = selectDocumentsWithTag(tagId)
+      taggedDocuments must haveTheSameElementsAs(documentIds.drop(5))
+    }
+    
+    "remove tags from all documents on empty selection" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 10)
+      
+      dataSaver.addTag(tagId, nodeIds, documentIds)
+      
+      val removedCount = dataSaver.removeTag(tagId, Nil, Nil)
+      
+      removedCount must be equalTo(10)
+      
+      val taggedDocuments = selectDocumentsWithTag(tagId)
+      taggedDocuments must be empty
     }
   }
   
