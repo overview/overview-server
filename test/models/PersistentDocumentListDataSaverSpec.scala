@@ -87,6 +87,16 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       
       taggedDocuments must haveTheSameElementsAs(documentIds)
     }
+    
+    "tag all documents if selection is empty" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(nodeIds, 10)
+      
+      val count = dataSaver.addTag(tagId, Nil, Nil)
+      
+      count must be equalTo(10)
+      
+    }
   }
   
   step(stop)
