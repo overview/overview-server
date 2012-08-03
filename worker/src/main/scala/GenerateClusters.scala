@@ -71,23 +71,20 @@ object DistanceFn {
   }
   
   // Document distance computation. Returns 1 - similarity, where similarity is cosine of normalized vectors
-  def distance(a: DocumentVector, b: DocumentVector) = {
+  def CosineDistance(a: DocumentVector, b: DocumentVector) = {
     1.0 - SparseDot(a,b)
   }
 }
 
 
-class TreeNode(var docs : Set[DocumentID], var description : String, var children:Set[TreeNode] = Set[TreeNode]()) 
+class DocTreeNode(val docs : Set[DocumentID]) {
+ var description = ""
+ var children:Set[DocTreeNode] = Set[DocTreeNode]() 
+}
 
-class TreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (DocumentVector, DocumentVector) => Double) {
 
-  type nodeSet = Set[DocumentID]
-  
-  // Produces a descriptive label for a set of documents, by taking top N keywords
-  def DocsetDescription(documents: Set[DocumentID], N : Int) : String = {
-    "words, are, awesome"
-  }
-  
+class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (DocumentVector, DocumentVector) => Double) {
+
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
   def reachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs:Set[DocumentID]) : Iterable[DocumentID] = {
@@ -95,46 +92,67 @@ class TreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (DocumentVe
         yield otherDoc
   }
 
-  // Steps distance thresh from 1.0 to 0 in increments. 1 is always full graph, 0 is always leaves
-  def BuildTree(threshStep: Double) : TreeNode = {
-     var topLevel : nodeSet = Set(docVecs.keys.toArray:_*)
-     val numDescTerms = 20 // take top 20 terms
-     
-     // root is all documents
-     val root = new TreeNode(topLevel, DocsetDescription(topLevel, numDescTerms))
-     
-     // intermediate levels created by thresholding all edges watching how connected components break apart
-     var currentLevel = List(root)
-     val steps = (1.0-threshStep to threshStep/2 by threshStep) // don't go all the way down to 0
-     
-     for (thresh <- steps) {
-       var nextLevel = List[TreeNode]()
-       for (node <- currentLevel) {
-         
-         val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, reachableDocs(thresh, _, _))
-         
-         if (childComponents.size == 1) {
-           // lower threshold did not split this component, pass unchanged to next level
-           nextLevel = node :: nextLevel               
-         } else {
-           // lower threshold did split this component, create a child TreeNode for each resulting component
-           for (component <- childComponents) {
-             val newChild = new TreeNode(component, DocsetDescription(component, numDescTerms))
-             node.children += newChild
-             nextLevel =  newChild :: nextLevel
-           }
-         }
-         
-         currentLevel = nextLevel
-       }
-     }
+  // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components
+  // Returns new set of leaf nodes
+  private def ExpandTree(currentLeaves : List[DocTreeNode], thresh:Double) =  {
+     var nextLeaves = List[DocTreeNode]()
+
+     for (node <- currentLeaves) {
+
+       val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, reachableDocs(thresh, _, _))
        
-    // bottom level is one leaf node for each document
-    for (node <- currentLevel) {
-      node.children = node.docs.map( docID => new TreeNode(Set(docID), DocsetDescription(Set(docID), numDescTerms)) )
+       if (childComponents.size == 1) {
+         // lower threshold did not split this component, pass unchanged to next level
+         nextLeaves = node :: nextLeaves
+       } else {
+         // lower threshold did split this component, create a child TreeNode for each resulting component
+         for (component <- childComponents) {
+           val newLeaf= new DocTreeNode(component)
+           node.children += newLeaf
+           nextLeaves =  newLeaf:: nextLeaves
+         }
+       }       
+     }
+     
+     nextLeaves    
+  }
+
+  // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
+  def BuildTree(threshSteps: Seq[Double]) : DocTreeNode = {
+    require(threshSteps.first == 1.0)
+    require(threshSteps.last == 0.0)
+    require(threshSteps.forall(step => step >= 0 && step <= 1.0))
+        
+    // root thresh=1.0 is one node with all documents
+    var topLevel = Set(docVecs.keys.toArray.sorted:_*)    // order by document ID to fix order of node generation    
+    val root = new DocTreeNode(topLevel)
+          
+    // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
+    var currentLeaves = List(root)  
+    val intermediateSteps = threshSteps.drop(1).dropRight(1)    // remove first 1.0 and last 0.0 val
+    for (thresh <- intermediateSteps) {
+      currentLeaves = ExpandTree(currentLeaves, thresh)
+    }
+       
+    // bottom level thresh=0.0 is one leaf node for each document
+    for (node <- currentLeaves) {
+      if (node.docs.size > 1)                                   // don't expand if already one node
+        node.children = node.docs.map( item=> new DocTreeNode(Set(item)) )
     }
          
     root
   }
+}
 
+// Helpfully encapsulate the document tree construction with useful defaults
+object BuildDocTree {
+  def apply(docVecs : DocumentSetVectors) 
+        : DocTreeNode = {
+    
+    // By default: cosine distance, and step down in 0.1 increments 
+    val distanceFn = DistanceFn.CosineDistance _
+    val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
+    
+    new DocTreeBuilder(docVecs, distanceFn).BuildTree(threshSteps)
+  }
 }
