@@ -11,12 +11,7 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
     val selectedDocumentsWhere = createWhereClause(nodeIds, documentIds)
     SQL("""
         INSERT INTO document_tag (document_id, tag_id)
-        SELECT id, {tagId} FROM document
-        WHERE id IN 
-          (SELECT id FROM document """ + 
-           selectedDocumentsWhere +
-        """
-          )
-        """).on("tagId" -> tagId).executeUpdate()
+        SELECT id, {tagId} FROM document """ +
+            selectedDocumentsWhere).on("tagId" -> tagId).executeUpdate()
   }
 }
