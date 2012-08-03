@@ -1,8 +1,5 @@
-@(title: String, bodyClass: String = "default")(content: Html)
-
-<!DOCTYPE html>
-
-<html>
+@(title: String, bodyClass: String = "default")(content: Html)(implicit lang: play.api.i18n.Lang)<!DOCTYPE html>
+<html lang="@lang.code">
     <head>
         <title>@title</title>
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")" />

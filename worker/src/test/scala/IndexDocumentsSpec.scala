@@ -1,3 +1,13 @@
+/**
+ * IndexDocumentsSpec.scala
+ * 
+ * Unit tests for document set indexing: lexing and TF-IDF vector generation
+ * 
+ * Overview Project, created August 2012
+ * @author Jonathan Stray
+ * 
+ */
+
 
 import org.specs2.mutable.Specification
 import org.specs2.specification._

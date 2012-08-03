@@ -4,6 +4,7 @@ import models._
 import scala.collection.JavaConversions._
 import com.ning.http.client.AsyncHttpClient
 import com.codahale.jerkson.Json._
+import ClusterTypes._
 
 // Define the bits of the DocumentCloud JSON response that we're interested in. 
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
@@ -45,7 +46,7 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
   
   
   // Retrieve document text and produce TF-IDF vector space representation
-  def generateTFIDF() : DocumentVectorGenerator#DocumentSetVectors = {
+  def generateTFIDF() : DocumentSetVectors = {
 
     val vectorGen = new DocumentVectorGenerator
     
