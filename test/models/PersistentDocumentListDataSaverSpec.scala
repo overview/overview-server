@@ -18,16 +18,9 @@ class PersistentDocumentListDataSaverSpec extends Specification {
     trait TagCreated extends DbTestContext {
       
       lazy val documentSetId = insertDocumentSet("PersistentDocumentListDataSaverSpec")
-      lazy val tagId = insertTag("tag")
+      lazy val tagId = insertTag(documentSetId, "tag")
       lazy val dataSaver = new PersistentDocumentListDataSaver()
       
-      def insertTag(name: String): Long = {
-        SQL("""
-          INSERT INTO tag (id, name, document_set_id)
-          VALUES (nextval('tag_seq'), {name}, {documentSetId})
-          """).on("name" -> name, "documentSetId" -> documentSetId).
-          executeInsert(scalar[Long] single)
-      }
 
       def selectDocumentsWithTag(tagId: Long): List[Long] = {
         SQL("""
