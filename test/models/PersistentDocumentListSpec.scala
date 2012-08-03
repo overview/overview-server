@@ -90,16 +90,35 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val nodeIds = List(1l, 2l)
       val documentIds = List(10l, 20l, 30l)
       val tagId = 34l;
+      val dummyCount = 19l
       
       val persistentDocumentList = new PersistentDocumentList(nodeIds, documentIds,
                                                               saver = mockSaver)
-      mockSaver.addTag(tagId, nodeIds, documentIds) returns 5l
+      mockSaver.addTag(tagId, nodeIds, documentIds) returns dummyCount
       
       val count = persistentDocumentList.addTag(tagId)
       
       there was one(mockSaver).addTag(tagId, nodeIds, documentIds)
+      count must be equalTo dummyCount
+    }
+    
+    "call saver to remove a tag" in {
+      val mockSaver = mock[PersistentDocumentListDataSaver]
+      val nodeIds = List(1l, 2l)
+      val documentIds = List(10l, 20l, 30l)
+      val tagId = 34l;
+      val dummyCount = 19l
+
+      val persistentDocumentList = new PersistentDocumentList(nodeIds, documentIds,
+                                                              saver = mockSaver)
+      mockSaver.removeTag(tagId, nodeIds, documentIds) returns dummyCount
+      
+      val count = persistentDocumentList.removeTag(tagId)
+      
+      there was one(mockSaver).removeTag(tagId, nodeIds, documentIds)
       
     }
+   
   }
 
 }
