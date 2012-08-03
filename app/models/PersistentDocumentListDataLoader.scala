@@ -10,12 +10,16 @@ class PersistentDocumentListDataLoader extends PersistentDocumentListSelector {
   def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
     
-    val where = createWhereClause(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val where = combineWhereClauses(whereClauses)
+     
     documentSliceQueryWhere(firstRow, maxRows, where)
   }
 
   def loadCount(nodeIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val where = createWhereClause(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val where = combineWhereClauses(whereClauses)
+    
     countQueryWhere(where)
   }
   

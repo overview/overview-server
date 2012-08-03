@@ -8,17 +8,16 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
 
   def addTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
             (implicit c: Connection): Long = {
-    val selectedDocumentsWhere = createWhereClause(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, documentIds) :+ whereDocumentNotTagged
+    val whereSelectionIsNotAlreadyTagged = combineWhereClauses(whereClauses)
     
-    val w = if (selectedDocumentsWhere == "") "WHERE" else selectedDocumentsWhere + " AND "
-
-    SQL("""
+        SQL("""
         INSERT INTO document_tag (document_id, tag_id)
         SELECT id, {tagId} FROM document """ +
-            w +
-        """
-        id NOT IN
-          (SELECT document_id FROM document_tag WHERE tag_id = {tagId})
-        """).on("tagId" -> tagId).executeUpdate()
+          whereSelectionIsNotAlreadyTagged).on("tagId" -> tagId).executeUpdate()
   }
+  
+  private val whereDocumentNotTagged = 
+    Some("id NOT IN (SELECT document_id FROM document_tag WHERE tag_id = {tagId})")
+
 }
