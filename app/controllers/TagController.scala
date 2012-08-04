@@ -28,7 +28,28 @@ object TagController extends Controller {
       val tagCount = documents.addTag(tagId)
 
       Ok(views.json.Tag.show((tagId, tagCount)))
-
+    }
+  }
+  
+  def remove(documentSetId: Long, tag: String,
+             nodeIds: String, tagIds: String, documentIds: String) = Action {
+    DB.withTransaction { implicit connection => 
+      
+      val tagLoader = new TagLoader()
+      
+      tagLoader.loadByName(tag) match {
+        case Some(tagId) => {
+          val documents = new PersistentDocumentList(IdList(nodeIds),
+                                                     IdList(documentIds))
+          
+          val tagCount = documents.removeTag(tagId)
+          
+          Ok(views.json.Tag.show((tagId, tagCount)))
+        }
+        case None => NotFound
+      }
+      
     }
   }
 }
+
