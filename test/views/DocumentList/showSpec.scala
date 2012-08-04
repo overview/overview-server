@@ -1,4 +1,4 @@
-package views.json
+package views.json.DocumentList
 
 import models.core.Document
 import org.specs2.mutable.Specification
@@ -16,7 +16,7 @@ class DocumentListSpec extends Specification {
       )
       val totalCount = 13l
       
-      val documentListJson = DocumentList.show(documents, totalCount).toString
+      val documentListJson = show(documents, totalCount).toString
       
       documentListJson must beMatching(".*\"documents\":\\[(.*title.*,?){3}\\].*".r)
       documentListJson must /("total_items" -> totalCount)
@@ -24,7 +24,7 @@ class DocumentListSpec extends Specification {
   }
   
   "JsonDocument" should {
-    import views.json.DocumentList.JsonDocument
+    import views.json.DocumentList.show.JsonDocument
     
     "write document id and title" in {
       val document = Document(10l, "document title", "unused", "unused")
