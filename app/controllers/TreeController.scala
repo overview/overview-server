@@ -23,7 +23,7 @@ object TreeController extends Controller {
     root.setDocumentSet(documentSet)
     root.setDescription("root")
 
-    for (i <- 1 to 200) {
+    for (i <- 1 to 2200) {
       val document = new Document("document-" + i, "textUrl-" + i, "viewUrl-" + i)
       documentSet.addDocument(document)
       document.save
@@ -31,7 +31,7 @@ object TreeController extends Controller {
 
     documentSet.save
     
-    generateTreeLevel(root, documentSet.documents.toSeq, 5)
+    generateTreeLevel(root, documentSet.documents.toSeq, 12)
     root.save
 
     Ok("Setup complete")
