@@ -73,26 +73,28 @@ class GenerateClustersSpec extends Specification {
   // Test document vectors. Only four docs, but designed to test following aspects of tree generation:
   // - a node not splitting as the threshold changes
   // - some nodes already having size = 1 before we get to the last pass (where thresh=0), some not
-  // Designed so we get a tree like so
-  //        1234
-  //      12    34
-  //      12   3  4
+  // Designed so the output of each threshold pass is like so 
+  //        12345
+  //      12    345
+  //      12   34  5
+  //      12  3  4  5
   //     1  2
   // We do this by setting:
-  //    distance(1,2) = 0.1, distance(3,4) = 0.2, distance(12,34) = 0.6  
-  // using three different dimensions/terms: A is only common between 1,2, B is shared between 12 and 34, C is in 3,4
+  //    distance(1,2) = 0.1, distance(3,4) = 0.2, distance(34,5) = 0.4, distance(12,34) = 0.6  
+  // Using four different dimensions/terms, shared between docs wherever there is an "edge" of given weight
   // These aren't "real" doc vectors because not normalized, but compatible with DistanceFn.CosineDistance
   
   val dist01 = math.sqrt(1 - 0.1).toFloat       // value chosen so 1 - dist01*dist01 == 0.1
-  val dist02 = math.sqrt(1 - 0.2).toFloat       // etc...
+  val dist02 = math.sqrt(1 - 0.2).toFloat       // etc...  
+  val dist04 = math.sqrt(1 - 0.4).toFloat
   val dist06 = math.sqrt(1 - 0.6).toFloat
   
   val docSet = Map[DocumentID, DocumentVector](
       1L -> Map("A" -> dist01, "B" -> dist06),
       2L -> Map("A" -> dist01, "B" -> dist06),
       3L -> Map("B" -> dist06, "C" -> dist02),
-      4L -> Map("B" -> dist06, "C" -> dist02))
-      
+      4L -> Map("B" -> dist06, "C" -> dist02, "D" -> dist04),
+      5L -> Map("D" -> dist04))
   
  "DocTreeBuilder" should {
    "build a small tree" in {
@@ -100,8 +102,8 @@ class GenerateClustersSpec extends Specification {
     val distanceFn = DistanceFn.CosineDistance _
     val threshSteps = List(1,       // root contains all nodes 
                            0.7,     // no change
-                           0.5,     // split 1234 => 12, 34 
-                           0.4,     // no change
+                           0.5,     // split 12345 => 12, 345
+                           0.3,      // split 345 => 34,5
                            0.2,     // no change
                            0.1,     // split 34 => 3,4
                            0)       // leaf nodes, split 12 => 1,2
@@ -109,7 +111,7 @@ class GenerateClustersSpec extends Specification {
     val tree = new DocTreeBuilder(docSet, distanceFn).BuildTree(threshSteps)
     
     // Check that the tree has the structure in the diagram above 
-    tree.toString must beEqualTo("(1,2,3,4, (1,2, (1), (2)), (3,4, (3), (4)))")
+    tree.toString must beEqualTo("(1,2,3,4,5, (3,4,5, (3,4, (3), (4)), (5)), (1,2, (1), (2)))")
    }
  }
 }

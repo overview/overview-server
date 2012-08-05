@@ -77,13 +77,14 @@ object DistanceFn {
 }
 
 
+// Document tree node. Contains items, children, and a description which lists top terms in all docs of this node
 class DocTreeNode(val docs : Set[DocumentID]) {
   var description = ""
   var children:Set[DocTreeNode] = Set[DocTreeNode]()
  
   // return children in predictable order. Presently, sort by descending by size, and then ascending by document IDs
   def OrderedChildren : List[DocTreeNode] = {
-    children.toList.sortWith((a,b) => (a.docs.size > b.docs.size) || (a.docs.min < b.docs.min))
+    children.toList.sortWith((a,b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))
   }
  
   // simple string representation, good for unit tests. We sort the sets to ensure consistent output
@@ -97,10 +98,10 @@ class DocTreeNode(val docs : Set[DocumentID]) {
   }
   
   //  Tree pretty printer
-  def prettyString2(indent : Int = 0) : String = {
+  private def prettyString2(indent : Int = 0) : String = {
     " " * indent + docs.toList.sorted.mkString(",") + 
       (if (!children.isEmpty) 
-        "\n" + OrderedChildren.map(_.prettyString2(indent+2)).mkString("\n")
+        "\n" + OrderedChildren.map(_.prettyString2(indent+4)).mkString("\n")
       else
         "")
   }

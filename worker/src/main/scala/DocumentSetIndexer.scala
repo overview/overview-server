@@ -65,13 +65,15 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
 
     val docSetVecs = generateTFIDF()
     
-    for ((docid, tfidf) <- docSetVecs) {
+/*    for ((docid, tfidf) <- docSetVecs) {
       println("---------------------------")
       println(tfidf.toList.sortBy(-_._2))  // sort by decreasing weight      
     }
- 
+*/
+    val docTree = BuildDocTree(docSetVecs)
     println("---------------------------")
     println("Indexed " + documentSet.documents.size + " documents.")
+    println(docTree.prettyString)
   }
   
 }
