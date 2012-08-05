@@ -82,10 +82,29 @@ class DocTreeNode(val docs : Set[DocumentID]) {
   var children:Set[DocTreeNode] = Set[DocTreeNode]()
  
   // return children in predictable order. Presently, sort by descending by size, and then ascending by document IDs
-  def OrderedChildren  = {
+  def OrderedChildren : List[DocTreeNode] = {
     children.toList.sortWith((a,b) => (a.docs.size > b.docs.size) || (a.docs.min < b.docs.min))
   }
  
+  // simple string representation, good for unit tests. We sort the sets to ensure consistent output
+  override def toString = {
+    "(" + docs.toList.sorted.mkString(",") + 
+       (if (!children.isEmpty) 
+          ", " + OrderedChildren.mkString(", ") 
+        else 
+          "") + 
+    ")"
+  }
+  
+  //  Tree pretty printer
+  def prettyString2(indent : Int = 0) : String = {
+    " " * indent + docs.toList.sorted.mkString(",") + 
+      (if (!children.isEmpty) 
+        "\n" + OrderedChildren.map(_.prettyString2(indent+2)).mkString("\n")
+      else
+        "")
+  }
+  def prettyString = prettyString2(0)
 }
 
 

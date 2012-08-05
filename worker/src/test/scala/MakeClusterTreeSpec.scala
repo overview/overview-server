@@ -109,36 +109,7 @@ class GenerateClustersSpec extends Specification {
     val tree = new DocTreeBuilder(docSet, distanceFn).BuildTree(threshSteps)
     
     // Check that the tree has the structure in the diagram above 
-    // Use orderedChildren to make this test invariant to the actual stored component order
-    tree.docs must beEqualTo(Set(1,2,3,4))
-    val treekids = tree.OrderedChildren
-    treekids.size must beEqualTo(2)
-    
-      val lchild = treekids.head
-      lchild.docs must beEqualTo(Set(1,2))
-      val lkids = lchild.OrderedChildren
-      lkids.size must beEqualTo(2)
-      
-        val llchild = lkids.head
-        llchild.docs must beEqualTo(Set(1))
-        llchild.children must beEmpty
-        
-        val lrchild = lkids.last
-        lrchild.docs must beEqualTo(Set(2))
-        lrchild.children must beEmpty
-    
-      val rchild = treekids.last
-      rchild.docs must beEqualTo(Set(3,4))
-      val rkids = rchild.OrderedChildren
-      rkids.size must beEqualTo(2)
-    
-        val rlchild = rkids.head
-        rlchild.docs must beEqualTo(Set(3))
-        rlchild.children must beEmpty
-        
-        val rrchild = rkids.last
-        rrchild.docs must beEqualTo(Set(4))
-        rrchild.children must beEmpty    
+    tree.toString must beEqualTo("(1,2,3,4, (1,2, (1), (2)), (3,4, (3), (4)))")
    }
  }
 }
