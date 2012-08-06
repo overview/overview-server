@@ -53,13 +53,14 @@ describe 'views/tree_view', ->
       animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
       div = $('<div style="width:100px;height:100px"></div>')[0]
       $('body').append(div)
-      options = {}
+      options = { mousewheel_zoom_factor: 2 }
       events = undefined
 
     afterEach ->
       options = {}
       $(div).remove() # Removes all callbacks
-      $(window).off('resize.tree-view')
+      $(window).off('.tree-view')
+      $('body').off('.tree-view')
       div = undefined
       focus = undefined
       on_demand_tree = undefined
@@ -86,16 +87,23 @@ describe 'views/tree_view', ->
 
       events = []
       view.observe('click', (nodeid) -> events.push(['click', nodeid]))
+      view.observe('pan', (fraction) -> events.push(['pan', fraction]))
+      view.observe('zoom-pan', (zoom_and_pan) -> events.push(['zoom-pan', zoom_and_pan]))
 
-    click_pixel = (x, y) ->
+    mouse_event = (name, x, y, properties={}) ->
       maybe_observe_events()
       $canvas = $(view.canvas)
 
       canvas_position = $canvas.position()
-      e = Event('click')
+      e = Event(name)
+      e.which = 1
       e.pageX = canvas_position.left + x
       e.pageY = canvas_position.top + y
+      e[k] = v for k, v of properties
       $canvas.trigger(e)
+      e
+
+    click_pixel = (x, y) -> mouse_event('click', x, y)
 
     get_pixel = (x, y) ->
       data = view.canvas.getContext('2d').getImageData(x, y, 1, 1).data
@@ -194,6 +202,41 @@ describe 'views/tree_view', ->
         check_pixel(1, 75, rgb_background) # left of the left node
         check_pixel(50, 75, rgb_node) # node 2
         # FIXME why does this break? check_pixel(99, 25, rgb_background) # right of node 2
+
+      it 'should notify :zoom-pan when dragging', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+        mouse_event('mousedown', 50, 50)
+        mouse_event('mousemove', 70, 50) # delta = 20px/100px * zoom = 0.1; -0.25 + delta = -0.15
+        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.5, pan: -0.15 }])
+
+      it 'should calculate the second :zoom-pan properly, too', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+        mouse_event('mousedown', 50, 50)
+        mouse_event('mousemove', 70, 50)
+        mouse_event('mousemove', 90, 50) # delta = 40px / 100px * zoom = 0.2
+        expect(events[1][1].pan).toBeCloseTo(-0.05, 4)
+
+      it 'should stop notifying :zoom-pan on mouseup', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+        mouse_event('mousedown', 50, 50)
+        mouse_event('mouseup', 50, 50)
+        called = false
+        view.observe('zoom-pan', -> called = true)
+        mouse_event('mousemove', 70, 50)
+        expect(called).toBe(false)
+
+      it 'should notify zoom-in on mouse-wheel-up', ->
+        focus.set_zoom(0.5)
+        focus.set_pan(-0.25)
+        view.update()
+        mouse_event('mousewheel', 25, 50, { deltaY: 1 })
+        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.25, pan: -0.375 }])
 
       it 'should select properly when zoomed and panned', ->
         focus.set_zoom(0.5)

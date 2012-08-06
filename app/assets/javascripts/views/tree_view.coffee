@@ -17,6 +17,7 @@ DEFAULT_OPTIONS = {
   node_height: 10,
   node_vertical_padding: 3,
   animation_speed: 0, # no animations
+  mousewheel_zoom_factor: 1.2,
 }
 
 class DrawOperation
@@ -116,7 +117,7 @@ class TreeView
 
   constructor: (@div, @tree, @focus, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
-    @options = _.extend({}, options, DEFAULT_OPTIONS, { color: options_color })
+    @options = _.extend({}, DEFAULT_OPTIONS, options, { color: options_color })
 
     $div = $(@div)
     @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
@@ -151,6 +152,46 @@ class TreeView
       y = e.pageY - offset.top
       nodeid = this._pixel_to_nodeid(x, y)
       this._notify('click', nodeid)
+
+    this._handle_drag()
+    this._handle_mousewheel()
+
+  _handle_drag: () ->
+    $(@canvas).on 'mousedown', (e) =>
+      return if e.which != 1
+
+      start_x = e.pageX
+      zoom = @focus.zoom
+      start_pan = @focus.pan
+      width = $(@canvas).width()
+
+      update_from_event = (e) =>
+        dx = e.pageX - start_x
+        d_pan = (dx / width) * zoom
+
+        this._notify('zoom-pan', { zoom: zoom, pan: start_pan + d_pan })
+
+      $('body').on 'mousemove.tree-view', (e) ->
+        update_from_event(e)
+        e.preventDefault()
+
+      $('body').on 'mouseup.tree-view', (e) ->
+        update_from_event(e)
+        $('body').off('.tree-view')
+        e.preventDefault()
+
+  _handle_mousewheel: () ->
+    $(@canvas).on 'mousewheel', (e) =>
+      offset = $(@canvas).offset()
+      x = e.pageX - offset.left
+      width = $(@canvas).width()
+
+      sign = e.deltaY > 0 && 1 || -1
+
+      zoom = @focus.zoom * Math.pow(@options.mousewheel_zoom_factor, -sign)
+      pan = @focus.pan + ((x / width) - 0.5) * @focus.zoom * sign
+
+      this._notify('zoom-pan', { zoom: zoom, pan: pan })
 
   _pixel_to_nodeid: (x, y) ->
     return undefined if @tree.root is undefined
