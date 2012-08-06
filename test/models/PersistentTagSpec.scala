@@ -10,7 +10,7 @@ class PersistentTagSpec extends Specification with Mockito {
     
     "be created by findOrCreateByName factory method if not in database" in {
       val loader = mock[PersistentTagLoader]
-      val saver = mock[TagSaver]
+      val saver = mock[PersistentTagSaver]
       val documentSetId = 4l
       val dummyTagId = 23l
       val name = "a tag"
@@ -28,7 +28,7 @@ class PersistentTagSpec extends Specification with Mockito {
     
     "be loaded by findOrCreateByName factory method if in database" in {
       val loader = mock[PersistentTagLoader]
-      val saver = mock[TagSaver]
+      val saver = mock[PersistentTagSaver]
       val documentSetId = 4l
       val dummyTagId = 23l
       val name = "a tag"

@@ -1,6 +1,6 @@
 package controllers
 
-import models.{PersistentDocumentList, PersistentTagLoader, TagSaver}
+import models.{PersistentDocumentList, PersistentTagLoader, PersistentTagSaver}
 import play.api.db.DB
 import play.api.mvc.{Action, Controller}
 import play.api.Play.current
@@ -17,7 +17,7 @@ object TagController extends Controller {
       val tagId = tagLoader.loadByName(tag) match {
         case Some(id) => id
         case None => {
-          val tagSaver = new TagSaver()
+          val tagSaver = new PersistentTagSaver()
           tagSaver.save(tag, documentSetId).get
         }
       }  

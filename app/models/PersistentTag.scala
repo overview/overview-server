@@ -10,7 +10,7 @@ object PersistentTag {
   
   def findOrCreateByName(name: String, documentSetId: Long,
 		  				 loader: PersistentTagLoader = new PersistentTagLoader(), 
-		  				 saver: TagSaver = new TagSaver())
+		  				 saver: PersistentTagSaver = new PersistentTagSaver())
   						(implicit c: Connection) : PersistentTag = {
     val tagId = loader.loadByName(name) match {
       case Some(id) => id
@@ -21,7 +21,7 @@ object PersistentTag {
   }
   
   private class PersistentTagImpl(tagId: Long, name: String,
-		  						  loader: PersistentTagLoader, saver: TagSaver) extends PersistentTag {
+		  						  loader: PersistentTagLoader, saver: PersistentTagSaver) extends PersistentTag {
     val id = tagId
   }
 }
