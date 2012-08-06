@@ -12,6 +12,7 @@ class PersistentTagLoader {
   }
 
   def countDocuments(id: Long)(implicit c: Connection) : Long = {
-    0
+    SQL("SELECT COUNT(*) from document_tag WHERE tag_id = {tagId}").
+      on("tagId" -> id).as(scalar[Long] single)
   }
 }

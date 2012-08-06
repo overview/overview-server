@@ -61,7 +61,7 @@ class PersistentTagSpec extends Specification with Mockito {
       tag must beNone
     }
     
-    "should return number of documents with tag" in new MockComponents {
+    "should ask loader for number of documents with tag" in new MockComponents {
       val dummyCount = 454;
       
       loader loadByName(name) returns Some(dummyTagId)
