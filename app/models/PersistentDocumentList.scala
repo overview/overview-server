@@ -6,7 +6,9 @@ class PersistentDocumentList(nodeIds: Seq[Long], documentIds: Seq[Long],
 							 loader: PersistentDocumentListDataLoader = 
 							   new PersistentDocumentListDataLoader(),
 							 parser: PersistentDocumentListParser = 
-							   new PersistentDocumentListParser()) {
+							   new PersistentDocumentListParser(),
+							 saver: PersistentDocumentListDataSaver =
+							   new PersistentDocumentListDataSaver()) {
   
   def loadSlice(start: Long, end: Long)(implicit c: Connection) : Seq[core.Document] = {
     require(start >= 0)
@@ -20,6 +22,11 @@ class PersistentDocumentList(nodeIds: Seq[Long], documentIds: Seq[Long],
     loader.loadCount(nodeIds, documentIds)
   }
   
+  def addTag(tagId: Long)(implicit c: Connection): Long = {
+    saver.addTag(tagId, nodeIds, documentIds)
+  }
   
-
+  def removeTag(tagId: Long)(implicit c: Connection): Long = {
+    saver.removeTag(tagId, nodeIds, documentIds)
+  }
 }

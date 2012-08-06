@@ -30,9 +30,9 @@ object TreeController extends Controller {
     }
 
     documentSet.save
-    root.save
-
+    
     generateTreeLevel(root, documentSet.documents.toSeq, 12)
+    root.save
 
     Ok("Setup complete")
   }

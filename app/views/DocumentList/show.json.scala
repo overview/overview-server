@@ -1,12 +1,14 @@
-package views.json
+package views.json.DocumentList
+
 
 import models.core.Document
 import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
-object DocumentList {
 
-  implicit object JsonDocument extends Writes[Document] {
+object show {
+
+  private[DocumentList] implicit object JsonDocument extends Writes[Document] {
     def writes(document: Document): JsValue = {
       toJson(Map(
           "id" -> toJson(document.id),
@@ -16,7 +18,7 @@ object DocumentList {
     }
   }
   
-  def show(documents: Seq[Document], totalCount: Long): JsValue = {
+  def apply(documents: Seq[Document], totalCount: Long): JsValue = {
     toJson(
       Map(
           "documents" -> toJson(documents),
@@ -24,4 +26,5 @@ object DocumentList {
           )    
     )
   }
+
 }

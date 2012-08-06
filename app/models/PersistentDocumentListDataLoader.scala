@@ -5,51 +5,22 @@ import anorm.SqlParser._
 import DatabaseStructure._
 import java.sql.Connection
 
-class PersistentDocumentListDataLoader() {
+class PersistentDocumentListDataLoader extends PersistentDocumentListSelector {
 
   def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
     
-    val where = createWhereClause(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val where = combineWhereClauses(whereClauses)
+     
     documentSliceQueryWhere(firstRow, maxRows, where)
   }
 
   def loadCount(nodeIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val where = createWhereClause(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val where = combineWhereClauses(whereClauses)
+    
     countQueryWhere(where)
-  }
-  
-  private def nodeSelection(nodeIds: Seq[Long]) : String = {
-    """
-    document.id IN 
-	  (SELECT document_id FROM node_document WHERE node_id IN """ + idList(nodeIds) + ")"
-  }
-  
-  private def documentSelection(documentIds: Seq[Long]) : String = {
-    "document.id IN " + idList(documentIds)
-  }
-  
-  private def createWhereClause(nodeIds: Seq[Long], documentIds: Seq[Long]): String = {
-    val whereClauses = List(
-    		whereClauseForIds(nodeSelection(nodeIds), nodeIds),
-    		whereClauseForIds(documentSelection(documentIds), documentIds)
-    )    
-
-    combineWhereClauses(whereClauses)
-  }
-  
-  private def combineWhereClauses(whereClauses: List[Option[String]]) : String = {
-    val actualWheres = whereClauses.flatMap(_.toList)
-    actualWheres match {
-      case Nil => ""
-      case _ => actualWheres.mkString("WHERE ", " AND ", " ")
-    }
-  }
-  
-  private def whereClauseForIds(where: String, ids: Seq[Long]) : Option[String] =
-    ids match {
-    case Nil => None
-    case _ => Some(where)
   }
   
   private def documentSliceQueryWhere(firstRow: Long, maxRows: Long, where: String)(implicit c: Connection) : List[DocumentData] = {
@@ -68,10 +39,5 @@ class PersistentDocumentListDataLoader() {
         SELECT COUNT(*) FROM document 
         """ + where  
         ).as(scalar[Long].single)
-  }
-  
-  
-  private def idList(idList: Seq[Long]) : String = {
-    idList.mkString("(", ",", ")")
   }
 }
