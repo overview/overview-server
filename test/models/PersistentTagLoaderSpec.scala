@@ -86,7 +86,7 @@ class PersistentTagLoaderSpec extends Specification {
       val counts = tagLoader.countsPerNode(nodeIds, tagId)
       val expectedCounts = nodeIds.take(2).map((_, 4l))
       
-      counts must be equalTo(expectedCounts)
+      counts must haveTheSameElementsAs(expectedCounts)
     }
   }
   
