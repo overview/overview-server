@@ -27,5 +27,10 @@ tree_controller = (div, on_demand_tree, focus, selection) ->
     selection.update({ node: nodeid })
     on_demand_tree.demand_node(nodeid)
 
+  view.observe 'zoom-pan', (obj) ->
+    log('zoomed/panned', "zoom #{obj.zoom}, pan #{obj.pan}")
+    focus.set_zoom(obj.zoom)
+    focus.set_pan(obj.pan)
+
 exports = require.make_export_object('controllers/tree_controller')
 exports.tree_controller = tree_controller
