@@ -17,9 +17,10 @@ object TagController extends Controller {
       val documents = new PersistentDocumentList(IdList(nodeIds),
     		  								     IdList(documentIds))
       
-      val tagCount = documents.addTag(tag.id)
+      val tagUpdateCount = documents.addTag(tag.id)
+      val tagTotalCount = tag.count
 
-      Ok(views.json.Tag.show((tag.id, tagCount)))
+      Ok(views.json.Tag.add(tag.id, tagUpdateCount, tagTotalCount))
     }
   }
   
@@ -34,7 +35,7 @@ object TagController extends Controller {
           
           val tagCount = documents.removeTag(tag.id)
           
-          Ok(views.json.Tag.show((tag.id, tagCount)))
+          Ok(views.json.Tag.add(tag.id, tagCount, tagCount))
         }
         case None => NotFound
       }
