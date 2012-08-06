@@ -11,4 +11,7 @@ class PersistentTagLoader {
       as(scalar[Long] *).headOption
   }
 
+  def countDocuments(id: Long)(implicit c: Connection) : Long = {
+    0
+  }
 }

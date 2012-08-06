@@ -4,6 +4,8 @@ import java.sql.Connection
 
 trait PersistentTag {
   val id: Long
+  
+  def count(implicit c: Connection): Long
 }
 
 object PersistentTag {
@@ -33,5 +35,9 @@ object PersistentTag {
   private class PersistentTagImpl(tagId: Long, name: String,
 		  						  loader: PersistentTagLoader, saver: PersistentTagSaver) extends PersistentTag {
     val id = tagId
+    
+    def count(implicit c: Connection): Long = {
+      loader.countDocuments(id)
+    }
   }
 }
