@@ -1,6 +1,6 @@
 package controllers
 
-import models.{PersistentDocumentList, TagLoader, TagSaver}
+import models.{PersistentDocumentList, PersistentTagLoader, TagSaver}
 import play.api.db.DB
 import play.api.mvc.{Action, Controller}
 import play.api.Play.current
@@ -12,7 +12,7 @@ object TagController extends Controller {
              nodeIds: String, tagIds: String, documentIds: String) = Action {
     DB.withTransaction { implicit connection =>
 
-      val tagLoader = new TagLoader()
+      val tagLoader = new PersistentTagLoader()
 
       val tagId = tagLoader.loadByName(tag) match {
         case Some(id) => id
@@ -35,7 +35,7 @@ object TagController extends Controller {
              nodeIds: String, tagIds: String, documentIds: String) = Action {
     DB.withTransaction { implicit connection => 
       
-      val tagLoader = new TagLoader()
+      val tagLoader = new PersistentTagLoader()
       
       tagLoader.loadByName(tag) match {
         case Some(tagId) => {

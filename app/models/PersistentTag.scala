@@ -9,7 +9,7 @@ trait PersistentTag {
 object PersistentTag {
   
   def findOrCreateByName(name: String, documentSetId: Long,
-		  				 loader: TagLoader = new TagLoader(), 
+		  				 loader: PersistentTagLoader = new PersistentTagLoader(), 
 		  				 saver: TagSaver = new TagSaver())
   						(implicit c: Connection) : PersistentTag = {
     val tagId = loader.loadByName(name) match {
@@ -21,7 +21,7 @@ object PersistentTag {
   }
   
   private class PersistentTagImpl(tagId: Long, name: String,
-		  						  loader: TagLoader, saver: TagSaver) extends PersistentTag {
+		  						  loader: PersistentTagLoader, saver: TagSaver) extends PersistentTag {
     val id = tagId
   }
 }
