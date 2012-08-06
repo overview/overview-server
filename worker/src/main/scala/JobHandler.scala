@@ -27,8 +27,7 @@ object JobHandler {
         println("documentSet: " + documentSet.query)
         
         val indexer = new clustering.DocumentSetIndexer(documentSet)
-        indexer.createDocuments
-        indexer.indexDocuments
+        indexer.BuildTree
         
         j.setState(JobState.Complete)
         j.save

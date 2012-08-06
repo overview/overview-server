@@ -70,7 +70,7 @@ class GenerateClustersSpec extends Specification {
     }
   }
   
-  // Test document vectors. Only four docs, but designed to test following aspects of tree generation:
+  // Test document vectors. Only five docs, but designed to test following aspects of tree generation:
   // - a node not splitting as the threshold changes
   // - some nodes already having size = 1 before we get to the last pass (where thresh=0), some not
   // Designed so the output of each threshold pass is like so 
