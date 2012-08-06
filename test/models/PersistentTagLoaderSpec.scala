@@ -67,6 +67,27 @@ class PersistentTagLoaderSpec extends Specification {
       val count = tagLoader.countDocuments(tagId)
       count must be equalTo(3)
     }
+    
+    "count tagged documents per node" in new DbTestContext {
+      val tagName = "taggy"
+        
+      val documentSetId = insertDocumentSet("TagLoaderSpec")
+      val nodeIds = insertNodes(documentSetId, 4)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 4)
+      
+      val tagId = insertTag(documentSetId, tagName)
+      val tagLoader = new PersistentTagLoader()
+
+      val initialCounts = tagLoader.countsPerNode(nodeIds, tagId)
+      
+      initialCounts must be empty
+      
+      tagDocuments(tagId, documentIds.take(8))
+      val counts = tagLoader.countsPerNode(nodeIds, tagId)
+      val expectedCounts = nodeIds.take(2).map((_, 4l))
+      
+      counts must be equalTo(expectedCounts)
+    }
   }
   
   step(stop)

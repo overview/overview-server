@@ -65,4 +65,13 @@ object DbSetup {
     for (i <- 1 to count) yield insertNode(documentSetId, None, "node-" + i)
   }
 
+  def insertDocumentsForeachNode(documentSetId: Long, nodeIds: Seq[Long], 
+                                 documentCount: Int)(implicit c: Connection): Seq[Long] = {
+
+    nodeIds.flatMap(n =>
+      for (i <- 1 to documentCount) yield insertDocumentWithNode(documentSetId,
+        "title-" + i, "textUrl-" + i, "viewUrl-" + i,
+        n))
+  }
+
 }
