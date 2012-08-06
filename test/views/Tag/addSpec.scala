@@ -16,6 +16,7 @@ class addSpec extends Specification {
       
       resultJson must /("id" -> tagId)
       resultJson must /("numAdded" -> addedCount)
+      resultJson must /("numTotal" -> totalCount)
     }
   }
 
