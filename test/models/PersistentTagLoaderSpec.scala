@@ -38,6 +38,8 @@ class PersistentTagLoaderSpec extends Specification {
       
       missingTag must beNone
     }
+    
+    
   }
   
   step(stop)
