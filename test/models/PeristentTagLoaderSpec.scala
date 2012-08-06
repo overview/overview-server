@@ -10,11 +10,11 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 
-class TagLoaderSpec extends Specification {
+class PersistentTagLoaderSpec extends Specification {
 
   step(start(FakeApplication()))
   
-  "TagLoader" should {
+  "PersistentTagLoader" should {
     
     "get tag id by name if it exists" in new DbTestContext {
       val tagName = "taggy"
@@ -22,7 +22,7 @@ class TagLoaderSpec extends Specification {
       val documentSetId = insertDocumentSet("TagLoaderSpec")
       val tagId = insertTag(documentSetId, tagName)
       
-      val tagLoader = new TagLoader()
+      val tagLoader = new PersistentTagLoader()
       
       val foundTag = tagLoader.loadByName(tagName)
       
@@ -32,7 +32,7 @@ class TagLoaderSpec extends Specification {
     "get None if tag does not exist" in new DbTestContext {
       val tagName = "taggy"
         
-      val tagLoader = new TagLoader()
+      val tagLoader = new PersistentTagLoader()
       
       val missingTag = tagLoader.loadByName(tagName)
       
