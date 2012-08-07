@@ -12,6 +12,8 @@ import play.api.test.FakeApplication
 
 class PersistentTagLoaderSpec extends Specification {
 
+  val tagName = "taggy"
+
   def tagDocuments(tagId: Long, documentIds: Seq[Long])(implicit c: Connection) : Long = {
     SQL("""
         INSERT INTO document_tag (document_id, tag_id)
@@ -19,18 +21,18 @@ class PersistentTagLoaderSpec extends Specification {
         WHERE id IN """ + documentIds.mkString("(", ",", ")")
         ).on("tagId" -> tagId).executeUpdate()
   }
+
+  trait TagSetup extends DbTestContext {
+    lazy val documentSetId = insertDocumentSet("TagLoaderSpec")
+    lazy val tagLoader = new PersistentTagLoader()
+  }
   
   step(start(FakeApplication()))
   
   "PersistentTagLoader" should {
     
-    "get tag id by name if it exists" in new DbTestContext {
-      val tagName = "taggy"
-        
-      val documentSetId = insertDocumentSet("TagLoaderSpec")
+    "get tag id by name if it exists" in new TagSetup {
       val tagId = insertTag(documentSetId, tagName)
-      
-      val tagLoader = new PersistentTagLoader()
       
       val foundTag = tagLoader.loadByName(tagName)
       
@@ -38,7 +40,6 @@ class PersistentTagLoaderSpec extends Specification {
     }
     
     "get None if tag does not exist" in new DbTestContext {
-      val tagName = "taggy"
         
       val tagLoader = new PersistentTagLoader()
       
@@ -47,16 +48,11 @@ class PersistentTagLoaderSpec extends Specification {
       missingTag must beNone
     }
     
-    "count total number of documents tagged" in new DbTestContext {
-      val tagName = "taggy"
-        
-      val documentSetId = insertDocumentSet("TagLoaderSpec")
+    "count total number of documents tagged" in new TagSetup {
       val documentIds = for (i <- 1 to 5) yield 
         insertDocument(documentSetId, "title", "textUrl", "viewUrl")
       
       val tagId = insertTag(documentSetId, tagName)
-      
-      val tagLoader = new PersistentTagLoader()
       
       val initialCount = tagLoader.countDocuments(tagId)
       
@@ -68,25 +64,37 @@ class PersistentTagLoaderSpec extends Specification {
       count must be equalTo(3)
     }
     
-    "count tagged documents per node" in new DbTestContext {
-      val tagName = "taggy"
-        
-      val documentSetId = insertDocumentSet("TagLoaderSpec")
+    "count tagged documents per node" in new TagSetup {
       val nodeIds = insertNodes(documentSetId, 4)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 4)
       
       val tagId = insertTag(documentSetId, tagName)
-      val tagLoader = new PersistentTagLoader()
-
-      val initialCounts = tagLoader.countsPerNode(nodeIds, tagId)
       
-      initialCounts must be empty
-      
-      tagDocuments(tagId, documentIds.take(8))
+      tagDocuments(tagId, documentIds)
       val counts = tagLoader.countsPerNode(nodeIds, tagId)
-      val expectedCounts = nodeIds.take(2).map((_, 4l))
+      val expectedCounts = nodeIds.map((_, 4l))
       
       counts must haveTheSameElementsAs(expectedCounts)
+    }
+    
+    "insert 0 values for nodes with no tagged documents" in new TagSetup {
+      val nodeIds = insertNodes(documentSetId, 4)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 4)
+      
+      val tagId = insertTag(documentSetId, tagName)
+      
+      val initialCounts = tagLoader.countsPerNode(nodeIds, tagId)
+      val expectedInitialCounts = nodeIds.map((_, 0l))
+      
+      initialCounts must haveTheSameElementsAs(expectedInitialCounts)
+      
+      tagDocuments(tagId, documentIds.take(8))
+      
+      val counts = tagLoader.countsPerNode(nodeIds, tagId)
+      val expectedCounts = nodeIds.take(2).map((_, 4l)) ++ nodeIds.drop(2).map((_, 0l))
+      
+      counts must haveTheSameElementsAs(expectedCounts)
+      
     }
   }
   

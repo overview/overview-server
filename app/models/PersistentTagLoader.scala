@@ -17,15 +17,7 @@ class PersistentTagLoader {
   }
   
   def countsPerNode(nodeIds: Seq[Long], id: Long)(implicit c: Connection) : Seq[(Long, Long)] = {
-//SELECT nd.node_id, dt.tag_id, COUNT(*)
-//FROM node_document nd
-//INNER JOIN document_tag dt ON nd.document_id = dt.document_id
-//WHERE ...
-//
-//Am I correct in thinking that the WHERE clause is 
-//WHERE dt.tag_id = {tagId} AND
-//WHERE nd.node_id IN (node id list)
-    SQL("""
+    val nodeCounts = SQL("""
         SELECT node_id, COUNT(*) FROM node_document
         INNER JOIN document_tag ON node_document.document_id = document_tag.document_id
         WHERE document_tag.tag_id = {tagId} AND
@@ -34,5 +26,10 @@ class PersistentTagLoader {
         GROUP BY node_document.node_id
         """).on("tagId" -> id).as(long("node_id") ~ long("count") map(flatten) *)
 
+    val nodesWithTaggedDocuments = nodeCounts.map(_._1)
+    val nodesWithNoTaggedDocuments = nodeIds.diff(nodesWithTaggedDocuments)
+    val zeroCounts = nodesWithNoTaggedDocuments.map((_, 0l))
+    
+    nodeCounts ++ zeroCounts
   }
 }
