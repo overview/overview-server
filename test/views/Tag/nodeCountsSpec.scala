@@ -10,7 +10,7 @@ class nodeCountsSpec extends Specification {
     "contain counts in an array" in {
       val nodeCounts = Seq((1l, 45l), (2l, 33l), (3l, 0l))
       
-      val nodeCountArray = toJson(views.json.Tag.updateNodeCounts(nodeCounts)).toString
+      val nodeCountArray = toJson(views.json.Tag.nodeCounts(nodeCounts)).toString
       
       nodeCountArray must beEqualTo("[1,45,2,33,3,0]")
     }
