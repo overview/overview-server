@@ -6,6 +6,7 @@ trait PersistentTag {
   val id: Long
   
   def count(implicit c: Connection): Long
+  def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection) : Seq[(Long, Long)]
 }
 
 object PersistentTag {
@@ -38,6 +39,10 @@ object PersistentTag {
     
     def count(implicit c: Connection): Long = {
       loader.countDocuments(id)
+    }
+    
+    def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection) : Seq[(Long, Long)] = {
+      loader.countsPerNode(nodeIds, id)
     }
   }
 }
