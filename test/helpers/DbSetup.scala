@@ -73,5 +73,14 @@ object DbSetup {
         "title-" + i, "textUrl-" + i, "viewUrl-" + i,
         n))
   }
+  
+  def tagDocuments(tagId: Long, documentIds: Seq[Long])(implicit c: Connection) : Long = {
+    SQL("""
+        INSERT INTO document_tag (document_id, tag_id)
+        SELECT id, {tagId} FROM document
+        WHERE id IN """ + documentIds.mkString("(", ",", ")")
+        ).on("tagId" -> tagId).executeUpdate()
+  }
+
 
 }
