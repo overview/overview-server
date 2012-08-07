@@ -76,6 +76,28 @@ describe 'models/tag_store', ->
         tag_store.remove(tag2)
         expect(val).toEqual({ position: 1, tag: tag2 })
 
+      it 'should change a tag property', ->
+        tag_store.change(tag2, { name: 'foo' })
+        expect(tag_store.tags[1].name).toEqual('foo')
+
+      it 'should set changed values by value, not by reference', ->
+        doclist = { n: 1, docids: [ 1 ] }
+        tag_store.change(tag2, { doclist: doclist })
+        doclist.n = 2
+        expect(tag2.doclist.n).toEqual(1)
+        doclist.docids.push(4)
+        expect(tag2.doclist.docids).toEqual([1])
+
+      it 'should change a tag property to undefined', ->
+        tag_store.change(tag2, { name: undefined })
+        expect(tag_store.tags[1].name).toBeUndefined()
+
+      it 'should notify :tag-changed', ->
+        val = undefined
+        tag_store.observe('tag-changed', (v) -> val = v)
+        tag_store.change(tag2, { doclist: { n: 1, docids: [ 1 ] } })
+        expect(val).toBe(tag2)
+
       it 'should throw an exception when removing if the tag is not present', ->
         expect(-> tag_store.remove(dummy_tag(4, 'other'))).toThrow('tagNotFound')
 
