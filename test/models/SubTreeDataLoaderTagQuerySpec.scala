@@ -35,6 +35,22 @@ class SubTreeDataLoaderTagQuerySpec extends Specification {
 
       nodeTagCounts must haveTheSameElementsAs(expectedCounts)                               
     }
+    
+    "return tag counts for all nodes if none specified" in new DbTestContext {
+      val documentSetId = insertDocumentSet("SubTreeDataLoaderTagQuerySpec")
+      val nodeIds = insertNodes(documentSetId, 5)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 1)
+      val tagId = insertTag(documentSetId, "tag")
+      
+      tagDocuments(tagId, documentIds)
+      
+      val subTreeDataLoader = new SubTreeDataLoader()
+      val nodeTagCounts = subTreeDataLoader.loadNodeTagCounts(Nil)
+      
+      val expectedCounts = nodeIds.map((_, tagId, 1l))
+      
+      nodeTagCounts must haveTheSameElementsAs(expectedCounts)
+    }
   }
   
   step(stop)
