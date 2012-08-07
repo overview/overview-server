@@ -94,7 +94,19 @@ class PersistentTagLoaderSpec extends Specification {
       val expectedCounts = nodeIds.take(2).map((_, 4l)) ++ nodeIds.drop(2).map((_, 0l))
       
       counts must haveTheSameElementsAs(expectedCounts)
+    }
+    
+    "empty list returns counts for all nodes" in new TagSetup {
+      val nodeIds = insertNodes(documentSetId, 4)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 4)
       
+      val tagId = insertTag(documentSetId, tagName)
+      
+      tagDocuments(tagId, documentIds)
+      val counts = tagLoader.countsPerNode(Nil, tagId)
+      val expectedCounts = nodeIds.map((_, 4l))
+      
+      counts must haveTheSameElementsAs(expectedCounts)
     }
   }
   

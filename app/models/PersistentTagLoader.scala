@@ -17,11 +17,16 @@ class PersistentTagLoader {
   }
   
   def countsPerNode(nodeIds: Seq[Long], id: Long)(implicit c: Connection) : Seq[(Long, Long)] = {
+    val nodeWhere = nodeIds match {
+      case Nil => ""
+      case _ => " AND node_document.node_id in " + nodeIds.mkString("(", ",", ")")  
+    }
+    
     val nodeCounts = SQL("""
         SELECT node_id, COUNT(*) FROM node_document
         INNER JOIN document_tag ON node_document.document_id = document_tag.document_id
-        WHERE document_tag.tag_id = {tagId} AND
-              node_document.node_id IN """ + nodeIds.mkString("(", ",", ")") + 
+        WHERE document_tag.tag_id = {tagId}
+        """ + nodeWhere +
         """
         GROUP BY node_document.node_id
         """).on("tagId" -> id).as(long("node_id") ~ long("count") map(flatten) *)
