@@ -3,7 +3,7 @@ package views.Tag
 import org.specs2.mutable.Specification
 import play.api.libs.json.Json.toJson
 
-class updateNodeCountsSpec extends Specification {
+class nodeCountsSpec extends Specification {
   
   "Json for update node count result" should {
     
