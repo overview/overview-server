@@ -14,7 +14,7 @@ package clustering
 import scala.collection.mutable.Map
 import ClusterTypes._
 
-// Basic use: call addDocument(docID, terms) until done, then getVectors() once
+// Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once
 class DocumentVectorGenerator {
 
 
@@ -26,7 +26,7 @@ class DocumentVectorGenerator {
   // --- Methods ---
   
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
-  def addDocument(docId:DocumentID, terms:Seq[String]) = {
+  def AddDocument(docId:DocumentID, terms:Seq[String]) = {
      
     if (terms.size > 0) {
         
@@ -60,7 +60,7 @@ class DocumentVectorGenerator {
   
   // After all documents have been added (or, really, at any point) compute the total set of document vectors
   // Previously added documents will end up with different vectors as new docs are added, due to IDF term
-  def getVectors() : DocumentSetVectors = {
+  def DocumentVectors() : DocumentSetVectors = {
    
     var docVectors = DocumentSetVectors()
     val idf = Idf()
