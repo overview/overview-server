@@ -47,14 +47,8 @@ class SubTreeDataLoader {
     documentQuery(documentIds)
   }
   
-  def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[(Long, Long, Long)] = {
-    SQL("""
-        SELECT node_document.node_id, document_tag.tag_id, COUNT(document_tag.tag_id)
-        FROM node_document 
-        INNER JOIN document_tag ON node_document.document_id = document_tag.document_id
-    	WHERE node_document.node_id IN """ + idList(nodeIds) + """
-        GROUP BY node_document.node_id, document_tag.tag_id
-    	""").as(long("node_id") ~ long("tag_id") ~ long("count") map(flatten) *)
+  def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+    nodeTagCountQuery(nodeIds)
   }
   
   
@@ -133,6 +127,18 @@ class SubTreeDataLoader {
       """ + idList(documentIds)
     ).
     as(documentParser map(flatten) *)
+  }
+  
+  private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+	val nodeTagCountParser = long("node_id") ~ long("tag_id") ~ long("count")
+    
+    SQL("""
+        SELECT node_document.node_id, document_tag.tag_id, COUNT(document_tag.tag_id)
+        FROM node_document 
+        INNER JOIN document_tag ON node_document.document_id = document_tag.document_id
+    	WHERE node_document.node_id IN """ + idList(nodeIds) + """
+        GROUP BY node_document.node_id, document_tag.tag_id
+    	""").as(nodeTagCountParser map(flatten) *)    
   }
   
   private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
