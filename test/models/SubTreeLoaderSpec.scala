@@ -34,16 +34,20 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val nodeIds = List(-1l, 1l, 2l, 3l)
       val documentData = List((1l, 34l, 20l))
       val dummyNodes = List(core.Node(1l, "standin for lots of Nodes", Nil, null))
+      val dummyNodeTagCountsData = List((1l, 2l, 4l))
       
       loader loadNodeData(1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
-      parser createNodes(nodeData, documentData) returns dummyNodes
+      loader loadNodeTagCounts(nodeIds) returns dummyNodeTagCountsData
+      
+      parser createNodes(nodeData, documentData, dummyNodeTagCountsData) returns dummyNodes
       
       val nodes = subTreeLoader.loadNodes()
       
       there was one(loader).loadNodeData(1, 2)
       there was one(loader).loadDocumentIds(nodeIds)
-      there was one(parser).createNodes(nodeData, documentData)
+      there was one(loader).loadNodeTagCounts(nodeIds)
+      there was one(parser).createNodes(nodeData, documentData, dummyNodeTagCountsData)
       
       nodes must be equalTo(dummyNodes)
     }
