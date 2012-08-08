@@ -3,7 +3,7 @@ package models
 import anorm._
 import java.sql.Connection
 
-class TagSaver {
+class PersistentTagSaver {
 
   def save(name: String, documentSetId: Long)(implicit c: Connection) : Option[Long] = {
     try {

@@ -47,6 +47,14 @@ class SubTreeDataLoader {
     documentQuery(documentIds)
   }
   
+  def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+    nodeTagCountQuery(nodeIds)
+  }
+  
+  def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentTagData] = {
+    documentTagQuery(documentIds)
+  }
+  
   private def loadChildNodes(nodes: Seq[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
@@ -122,6 +130,41 @@ class SubTreeDataLoader {
       """ + idList(documentIds)
     ).
     as(documentParser map(flatten) *)
+  }
+  
+  private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+    val whereNodeIsSelected = nodeIds match {
+      case Nil => ""
+      case _ => "WHERE node_document.node_id IN " + idList(nodeIds) 
+    }
+    
+	val nodeTagCountParser = long("node_id") ~ long("tag_id") ~ long("count")
+    
+    SQL("""
+        SELECT node_document.node_id, document_tag.tag_id, COUNT(document_tag.tag_id)
+        FROM node_document 
+        INNER JOIN document_tag ON node_document.document_id = document_tag.document_id """ +
+        whereNodeIsSelected + 
+        """
+        GROUP BY node_document.node_id, document_tag.tag_id
+    	""").as(nodeTagCountParser map(flatten) *)    
+  }
+  
+  private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection) : 
+	  List[DocumentTagData] = {
+    val whereDocumentIsSelected = documentIds match {
+      case Nil => ""
+      case _ => "WHERE document_tag.document_id IN " + idList(documentIds)
+    }
+    
+    SQL("""
+        SELECT document_tag.document_id, document_tag.tag_id 
+        FROM document_tag
+        INNER JOIN tag ON document_tag.tag_id = tag.id """ +
+        whereDocumentIsSelected +
+        """
+        ORDER BY document_tag.document_id, tag.name
+        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
   }
   
   private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"

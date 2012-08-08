@@ -8,15 +8,15 @@ import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
-class TagSaverSpec extends Specification {
+class PersistentTagSaverSpec extends Specification {
 	
   step(start(FakeApplication()))
   
-  "TagSaver" should {
+  "PersistentTagSaver" should {
     
     "add a new tag to the database, returning id" in new DbTestContext {
       val documentSetId = insertDocumentSet("TagSaverSpec")
-      val tagSaver = new TagSaver()
+      val tagSaver = new PersistentTagSaver()
       val name = "a tag"
         
       val id = tagSaver.save(name, documentSetId)
@@ -31,7 +31,7 @@ class TagSaverSpec extends Specification {
     
     "return None if attempting to add already existing tag" in new DbTestContext {
       val documentSetId = insertDocumentSet("TagSaverSpec")
-      val tagSaver = new TagSaver()
+      val tagSaver = new PersistentTagSaver()
       val name = "a tag"
 
       val goodId = tagSaver.save(name, documentSetId)

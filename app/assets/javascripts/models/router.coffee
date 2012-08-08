@@ -12,6 +12,8 @@ class Router
       when 'documents' then this._documents_path()
       when 'document_view' then this._document_view_path(id)
       when 'create_log_entries' then this._create_log_entries_path()
+      when 'tag_add' then this._tag_add_path(id)
+      when 'tag_remove' then this._tag_remove_path(id)
 
   _root_path: () ->
     "/trees/#{@document_set_id}/root"
@@ -27,6 +29,12 @@ class Router
 
   _create_log_entries_path: () ->
     "/documentsets/#{@document_set_id}/log-entries/create-many"
+
+  _tag_add_path: (name) ->
+    "/tags/#{encodeURIComponent(name)}/add"
+
+  _tag_remove_path: (name) ->
+    "/tags/#{encodeURIComponent(name)}/remove"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router

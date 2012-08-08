@@ -1,55 +1,61 @@
 package controllers
 
-import models.{PersistentDocumentList, TagLoader, TagSaver}
+import models.{PersistentDocumentList, PersistentTag}
 import play.api.db.DB
 import play.api.mvc.{Action, Controller}
 import play.api.Play.current
+import models.PersistentTagLoader
 
 
 object TagController extends Controller {
 
-  def create(documentSetId: Long, tag: String, 
+  def create(documentSetId: Long, tagName: String, 
              nodeIds: String, tagIds: String, documentIds: String) = Action {
     DB.withTransaction { implicit connection =>
+      val tag = PersistentTag.findOrCreateByName(tagName, documentSetId)
 
-      val tagLoader = new TagLoader()
-
-      val tagId = tagLoader.loadByName(tag) match {
-        case Some(id) => id
-        case None => {
-          val tagSaver = new TagSaver()
-          tagSaver.save(tag, documentSetId).get
-        }
-      }  
-      
       val documents = new PersistentDocumentList(IdList(nodeIds),
     		  								     IdList(documentIds))
       
-      val tagCount = documents.addTag(tagId)
+      val tagUpdateCount = documents.addTag(tag.id)
+      val tagTotalCount = tag.count
 
-      Ok(views.json.Tag.show((tagId, tagCount)))
+      Ok(views.json.Tag.add(tag.id, tagUpdateCount, tagTotalCount))
     }
   }
   
-  def remove(documentSetId: Long, tag: String,
+  def remove(documentSetId: Long, tagName: String,
              nodeIds: String, tagIds: String, documentIds: String) = Action {
     DB.withTransaction { implicit connection => 
       
-      val tagLoader = new TagLoader()
-      
-      tagLoader.loadByName(tag) match {
-        case Some(tagId) => {
+      PersistentTag.findByName(tagName, documentSetId) match {
+        case Some(tag) => {
           val documents = new PersistentDocumentList(IdList(nodeIds),
                                                      IdList(documentIds))
           
-          val tagCount = documents.removeTag(tagId)
+          val tagUpdateCount = documents.removeTag(tag.id)
+          val tagTotalCount = tag.count
           
-          Ok(views.json.Tag.show((tagId, tagCount)))
+          Ok(views.json.Tag.remove(tag.id, tagUpdateCount, tagTotalCount))
         }
         case None => NotFound
       }
-      
+    }
+  }
+
+  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = Action {
+    DB.withTransaction { implicit connection =>
+
+      PersistentTag.findByName(tagName, documentSetId) match {
+        case Some(tag) => {
+          val nodeCounts = tag.countsPerNode(IdList(nodeIds))
+
+          Ok(views.json.Tag.nodeCounts(nodeCounts))
+        }
+        case None => NotFound
+      }
     }
   }
 }
+
 
