@@ -37,8 +37,9 @@ class SubTreeLoader(rootId: Long, depth: Int,
   def loadDocuments(nodes: Seq[core.Node])(implicit connection : java.sql.Connection) : Seq[core.Document] = {
     val documentIds = nodes.flatMap(_.documentIds.firstIds)
     val documentData = loader.loadDocuments(documentIds.distinct.sorted)
+    val documentTagData = loader.loadDocumentTags(documentIds)
     
-    parser.createDocuments(documentData)
+    parser.createDocuments(documentData, documentTagData)
   }
   
 }

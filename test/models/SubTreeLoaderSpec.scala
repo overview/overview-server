@@ -69,22 +69,27 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     "call loader and parser to create documents from nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 40l, 50l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
+      val dummyTagData = List((10l, 5l), (20l, 15l))
       
       loader loadDocuments(documentIds) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments
+      loader loadDocumentTags(documentIds) returns dummyTagData
+      
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments
       
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
 
       there was one(loader).loadDocuments(documentIds)
-      there was one(parser).createDocuments(dummyDocumentData)
+      there was one(loader).loadDocumentTags(documentIds)
+      there was one(parser).createDocuments(dummyDocumentData, dummyTagData)
     }
     
     "not duplicate documents included in multiple nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 10l, 20l, 30l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
-
+      val dummyTagData = Nil
+      
       loader loadDocuments(documentIds.distinct) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments 
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments 
 
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
       
@@ -94,9 +99,10 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     "create documents in sorted order" in new MockComponents {
       val documentIds = List(30l, 20l, 40l, 10l, 60l, 50l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
+      val dummyTagData = Nil
       
       loader loadDocuments(documentIds.sorted) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments
       
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
       

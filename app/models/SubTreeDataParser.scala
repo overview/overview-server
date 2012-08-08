@@ -31,7 +31,8 @@ class SubTreeDataParser {
   /**
    * @return a list of Documents created from the passed in data
    */
-  def createDocuments(documentData: Seq[DocumentData]) : Seq[core.Document] = {
+  def createDocuments(documentData: Seq[DocumentData], 
+		  			  documentTagData: Seq[DocumentTagData] = Nil) : Seq[core.Document] = {
     documentData.map(d => core.Document(d._1, d._2, d._3, d._4))
   }
   
