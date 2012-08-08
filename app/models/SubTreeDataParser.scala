@@ -32,8 +32,10 @@ class SubTreeDataParser {
    * @return a list of Documents created from the passed in data
    */
   def createDocuments(documentData: Seq[DocumentData], 
-		  			  documentTagData: Seq[DocumentTagData] = Nil) : Seq[core.Document] = {
-    documentData.map(d => core.Document(d._1, d._2, d._3, d._4))
+		  			  documentTagData: Seq[DocumentTagData]) : Seq[core.Document] = {
+    val tagIds = mapDocumentsToTagIds(documentTagData)
+    
+    documentData.map(d => core.Document(d._1, d._2, d._3, d._4, tagIds.getOrElse(d._1, Nil)))
   }
   
   private def createOneNode(id: Long, 
@@ -84,6 +86,11 @@ class SubTreeDataParser {
     groupedByNode.map {
       case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2.toString -> d._3)).toMap)
     }
+  }
+  
+  private def mapDocumentsToTagIds(documentTagData: Seq[DocumentTagData]) :
+	  Map[Long, Seq[Long]] = {
+    groupByNodeId(documentTagData)
   }
   
   private def realNodeIds(nodeData : Seq[NodeData]) : Seq[Long] = {

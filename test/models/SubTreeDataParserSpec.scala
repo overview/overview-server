@@ -109,14 +109,15 @@ class SubTreeDataParserSpec extends Specification {
     
     "create Documents from tuples in the same order" in {
       val expectedDocs = List(
-          core.Document(1l, "title1", "textUrl1", "viewUrl1"),
-          core.Document(2l, "title2", "textUrl2", "viewUrl2"),
-          core.Document(3l, "title3", "textUrl3", "viewUrl3"))
+          core.Document(1l, "title1", "textUrl1", "viewUrl1", Seq(5l, 15l)),
+          core.Document(2l, "title2", "textUrl2", "viewUrl2", Seq(15l)),
+          core.Document(3l, "title3", "textUrl3", "viewUrl3", Nil))
       
+      val tagData = Seq((1l, 5l), (1l, 15l), (2l, 15l))
       val documentData = expectedDocs.map(d => (d.id, d.title, d.textUrl, d.viewUrl))
 
       val subTreeDataParser = new SubTreeDataParser()
-      val documents = subTreeDataParser.createDocuments(documentData)
+      val documents = subTreeDataParser.createDocuments(documentData, tagData)
       
       documents must be equalTo expectedDocs
     }    
