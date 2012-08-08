@@ -4,5 +4,5 @@ case class Node (id: Long,
                  description: String,
                  childNodeIds: Seq[Long],
                  documentIds: DocumentIdList,
-                 tagCounts:Seq[(Long, Long)] = Nil)
+                 tagCounts:Map[String, Long] = Map())
 				 

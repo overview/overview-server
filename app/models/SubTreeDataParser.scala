@@ -40,11 +40,11 @@ class SubTreeDataParser {
 		  			        childNodeIds: Map[Long, Seq[Long]],
 		  			        documentIds: Map[Long, Seq[Long]],
 		  			        documentCounts: Map[Long, Long],
-		  			        tagCounts: Map[Long, Seq[(Long, Long)]]) : core.Node = {
+		  			        tagCounts: Map[Long, Map[String, Long]]) : core.Node = {
     
     val documentIdList = core.DocumentIdList(documentIds(id), documentCounts(id))
     core.Node(id, descriptions(id), childNodeIds(id), documentIdList, 
-    		  tagCounts.getOrElse(id, Nil))
+    		  tagCounts.getOrElse(id, Map()))
   }
   
   private def groupByNodeId[A](nodeData: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
@@ -77,11 +77,11 @@ class SubTreeDataParser {
   }
   
   private def mapNodesToTagCounts(nodeTagCountData: Seq[NodeTagCountData]) :
-	  Map[Long, Seq[(Long, Long)]] = {
+	  Map[Long, Map[String, Long]] = {
     val groupedByNode = nodeTagCountData.groupBy(_._1)
     
     groupedByNode.map {
-      case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2, d._3)))
+      case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2.toString -> d._3)).toMap)
     }
   }
   

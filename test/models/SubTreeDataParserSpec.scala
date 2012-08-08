@@ -71,10 +71,9 @@ class SubTreeDataParserSpec extends Specification {
       val child2 = nodes.find(_.id == 2l).get
       val child3 = nodes.find(_.id == 3l).get
       
-      root.tagCounts must haveTheSameElementsAs(List((5l, 22l), (15l, 12l)))
-      child2.tagCounts must haveTheSameElementsAs(List((5l, 3l)))
+      root.tagCounts must haveTheSameElementsAs(Map(("5" -> 22l), ("15", 12l)))
+      child2.tagCounts must haveTheSameElementsAs(Map(("5" -> 3l)))
       child3.tagCounts must be empty
-      
     }
     
     

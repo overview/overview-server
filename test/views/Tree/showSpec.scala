@@ -57,7 +57,8 @@ class showSpec extends Specification {
     
     "write node attributes" in {
       val documentIds = DocumentIdList(List(10, 20, 30), 45)
-      val node = Node(1, "node", List(4, 5, 6), documentIds)
+      val tagCounts = Map(("3" -> 22l), ("4" -> 555l))
+      val node = Node(1, "node", List(4, 5, 6), documentIds, tagCounts)
       
       val nodeJson = toJson(node).toString
       
@@ -66,7 +67,7 @@ class showSpec extends Specification {
       nodeJson must contain("\"children\":" + List(4, 5, 6).mkString("[", ",", "]"))
       nodeJson must =~ ("doclist.*docids.*n".r)
       
-      nodeJson must contain("\"taglist\":[]")
+      nodeJson must contain(""""tagcounts":{"3":22,"4":555}""")
     }
   }
   
