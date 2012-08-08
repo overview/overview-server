@@ -9,7 +9,7 @@ class PersistentDocumentListParserSpec extends Specification {
   "PersisteDocumentListParser" should {
     
     "return empty list given empty input" in {
-      val persistentDocumentListParser = new PersistentDocumentListParser()
+      val persistentDocumentListParser = new DocumentListParser()
       
       val documents = persistentDocumentListParser.createDocuments(Nil, Nil)
       
@@ -21,7 +21,7 @@ class PersistentDocumentListParserSpec extends Specification {
     		 				 (20l, "title2", "textUrl2", "viewUrl2"),
     		 				 (30l, "title3", "textUrl3", "viewUrl3")
      )
-     val persistentDocumentListParser = new PersistentDocumentListParser()
+     val persistentDocumentListParser = new DocumentListParser()
      
      val documents = persistentDocumentListParser.createDocuments(documentData, Nil)
      

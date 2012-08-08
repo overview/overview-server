@@ -2,7 +2,7 @@ package models
 
 import DatabaseStructure.{DocumentData, DocumentTagData}
 
-class PersistentDocumentListParser {
+class DocumentListParser {
   
   def createDocuments(documentData: Seq[DocumentData],
 		  			  documentTagData: Seq[DocumentTagData]) : Seq[core.Document] = {

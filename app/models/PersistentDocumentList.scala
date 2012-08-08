@@ -5,8 +5,8 @@ import java.sql.Connection
 class PersistentDocumentList(nodeIds: Seq[Long], val documentIds: Seq[Long],
 							 loader: PersistentDocumentListDataLoader = 
 							   new PersistentDocumentListDataLoader(),
-							 parser: PersistentDocumentListParser = 
-							   new PersistentDocumentListParser(),
+							 parser: DocumentListParser = 
+							   new DocumentListParser(),
 							 saver: PersistentDocumentListDataSaver =
 							   new PersistentDocumentListDataSaver()) {
   

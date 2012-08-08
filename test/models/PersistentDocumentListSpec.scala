@@ -14,7 +14,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
 
     trait MockComponents extends Scope {
       val loader = mock[PersistentDocumentListDataLoader]
-      val parser = mock[PersistentDocumentListParser]
+      val parser = mock[DocumentListParser]
 
       val persistentDocumentList =
         new PersistentDocumentList(nodeIds, documentIds, loader, parser)
