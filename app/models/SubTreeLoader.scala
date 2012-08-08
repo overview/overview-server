@@ -44,6 +44,6 @@ class SubTreeLoader(rootId: Long, depth: Int,
   
   def loadTags(documentSetId: Long)(implicit connection: Connection) : Seq[core.Tag] = {
     val tagData = loader.loadTags(documentSetId)
-    Nil
+    parser.createTags(tagData)
   }
 }

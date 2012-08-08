@@ -38,6 +38,10 @@ class SubTreeDataParser {
     documentData.map(d => core.Document(d._1, d._2, d._3, d._4, tagIds.getOrElse(d._1, Nil)))
   }
   
+  def createTags(tagData: Seq[TagData]) : Seq[core.Tag] = {
+    Nil
+  }
+  
   private def createOneNode(id: Long, 
 		  			        descriptions: Map[Long, String],
 		  			        childNodeIds: Map[Long, Seq[Long]],
