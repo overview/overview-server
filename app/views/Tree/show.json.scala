@@ -32,7 +32,8 @@ object show {
     override def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
-        "description" -> toJson(document.title)
+        "description" -> toJson(document.title),
+        "tagids" -> toJson(document.tags)
       ))
     }
   }

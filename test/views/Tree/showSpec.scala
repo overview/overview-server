@@ -92,12 +92,13 @@ class showSpec extends Specification {
     "write document attributes" in {
       val id = 39l
       val title = "title"
-      val document = Document(id, title, "unused by Tree", "unused by Tree")
+      val document = Document(id, title, "unused by Tree", "unused by Tree", Seq(1, 2, 3))
       
       val documentJson = toJson(document).toString
       
       documentJson must /("id" -> id)
       documentJson must /("description" -> title)
+      documentJson must contain(""""tagids":[1,2,3]""")
     }
   }
 
