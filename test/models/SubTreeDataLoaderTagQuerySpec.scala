@@ -65,6 +65,16 @@ class SubTreeDataLoaderTagQuerySpec extends Specification {
       
       documentTagIds must haveTheSameElementsAs(expectedDocumentTags)
     }
+    
+    "return tag ids for all documents if no document ids are specified" in new NodesSetup {
+      val tagId = insertTag(documentSetId, "tag")
+      tagDocuments(tagId, documentIds)
+      
+      val documentTagIds = subTreeDataLoader.loadDocumentTags(Nil)
+      val expectedDocumentTags = documentIds.map((_, tagId))
+      
+      documentTagIds must haveTheSameElementsAs(expectedDocumentTags)
+    }
   }
   
   step(stop)

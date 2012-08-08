@@ -52,13 +52,7 @@ class SubTreeDataLoader {
   }
   
   def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentTagData] = {
-    SQL("""
-        SELECT document_tag.document_id, document_tag.tag_id 
-        FROM document_tag
-        INNER JOIN tag ON document_tag.tag_id = tag.id
-        WHERE document_tag.document_id IN """ + idList(documentIds) + """
-        ORDER BY document_tag.document_id, tag.name
-        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
+    documentTagQuery(documentIds)
   }
   
   private def loadChildNodes(nodes: Seq[Long], depth: Int)
@@ -154,6 +148,23 @@ class SubTreeDataLoader {
         """
         GROUP BY node_document.node_id, document_tag.tag_id
     	""").as(nodeTagCountParser map(flatten) *)    
+  }
+  
+  private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection) : 
+	  List[DocumentTagData] = {
+    val whereDocumentIsSelected = documentIds match {
+      case Nil => ""
+      case _ => "WHERE document_tag.document_id IN " + idList(documentIds)
+    }
+    
+    SQL("""
+        SELECT document_tag.document_id, document_tag.tag_id 
+        FROM document_tag
+        INNER JOIN tag ON document_tag.tag_id = tag.id """ +
+        whereDocumentIsSelected +
+        """
+        ORDER BY document_tag.document_id, tag.name
+        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
   }
   
   private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
