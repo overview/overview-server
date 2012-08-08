@@ -21,8 +21,9 @@ class RemoteTagList
     documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
-    @document_store.remove_doclist(tag.doclist)
-    @tag_store.change(tag, { doclist: undefined })
+    if tag.doclist?
+      @document_store.remove_doclist(tag.doclist)
+      @tag_store.change(tag, { doclist: undefined })
 
     selection_post_data = this._selection_to_post_data(selection)
     @transaction_queue.queue =>
@@ -36,8 +37,9 @@ class RemoteTagList
     documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
-    @document_store.remove_doclist(tag.doclist)
-    @tag_store.change(tag, { doclist: undefined })
+    if tag.doclist?
+      @document_store.remove_doclist(tag.doclist)
+      @tag_store.change(tag, { doclist: undefined })
 
     selection_post_data = this._selection_to_post_data(selection)
     @transaction_queue.queue =>
@@ -45,7 +47,8 @@ class RemoteTagList
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
 
   _after_tag_add_or_remove: (tag, obj) ->
-    @document_store.add_doclist(obj.tag.doclist, obj.documents)
+    if obj.tag?.doclist? && obj.documents?
+      @document_store.add_doclist(obj.tag.doclist, obj.documents)
     @tag_store.change(tag, obj.tag)
 
   _selection_to_post_data: (selection) ->
