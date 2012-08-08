@@ -175,6 +175,17 @@ describe 'models/remote_tag_list', ->
           tag_store.tags[0].doclist = { n: 6, docids: [ 1, 3, 5, 7, 9, 14 ] }
           tag_store.tags[1].doclist = { n: 7, docids: [ 2, 4, 7, 8, 10, 13, 15 ] }
 
+        describe 'when selection is empty', ->
+          it 'should not add the tag to any documents', ->
+            tag = remote_tag_list.tags[0]
+            remote_tag_list.add_tag_to_selection(tag, selection)
+            expect(document_store.documents[2].tagids).toNotContain(1)
+
+          it 'should not remove the tag from any documents', ->
+            tag = remote_tag_list.tags[1]
+            remote_tag_list.remove_tag_from_selection(tag, selection)
+            expect(document_store.documents[2].tagids).toContain(2)
+
         describe 'after applying a tag to a node', ->
           beforeEach ->
             tag = remote_tag_list.tags[0]

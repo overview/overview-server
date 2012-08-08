@@ -1,17 +1,28 @@
 Server = require('models/server').Server
 
+list_to_hash = (list_of_objects) ->
+  ret = {}
+  ret[o.id] = o for o in list_of_objects
+  ret
+
 handle_node_resolved = (needs_resolver, obj) ->
-  store = needs_resolver.store
+  document_store = needs_resolver.document_store
+  documents_hash = list_to_hash(obj.documents)
   for node in obj.nodes
-    store.nodes.add(node)
-  for tag in obj.tags
-    store.tags.add(tag)
-  for document in obj.documents
-    store.documents.add(document)
+    document_store.add_doclist(node.doclist, documents_hash)
 
 resolve_root = (needs_resolver) ->
   needs_resolver.server.get('root').done (obj) ->
     handle_node_resolved(needs_resolver, obj)
+
+    documents_hash = list_to_hash(obj.documents)
+
+    tag_store = needs_resolver.tag_store
+    document_store = needs_resolver.document_store
+
+    for tag in obj.tags
+      document_store.add_doclist(tag.doclist, documents_hash)
+      tag_store.add(tag)
 
 resolve_node = (needs_resolver, id) ->
   needs_resolver.server.get('node', { path_argument: id }).done (obj) ->
@@ -30,9 +41,7 @@ resolve_selection_documents_slice = (needs_resolver, obj) ->
     if list?.length
       params[key] = list_to_param(obj.selection[key])
 
-  needs_resolver.server.get('documents', { data: params }).done (obj) ->
-    for document in obj.documents
-      needs_resolver.store.documents.add(document)
+  needs_resolver.server.get('documents', { data: params })
 
 RESOLVERS = {
   root: resolve_root,
@@ -41,7 +50,7 @@ RESOLVERS = {
 }
 
 class NeedsResolver
-  constructor: (@store, server=undefined) ->
+  constructor: (@document_store, @tag_store, server=undefined) ->
     @server = server || new Server()
 
     @needs = {}

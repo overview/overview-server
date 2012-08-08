@@ -16,6 +16,8 @@ class RemoteTagList
 
   add_tag_to_selection: (tag, selection) ->
     docids = this._selection_to_docids(selection)
+    return if !docids?
+
     documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
@@ -29,6 +31,8 @@ class RemoteTagList
 
   remove_tag_from_selection: (tag, selection) ->
     docids = this._selection_to_docids(selection)
+    return if !docids?
+
     documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
@@ -51,6 +55,11 @@ class RemoteTagList
       tags: selection.tags.join(','),
     }
 
+  # Returns loaded docids from selection.
+  #
+  # If nothing is selected, returns undefined. Do not confuse this with
+  # the empty-Array return value, which only means we don't have any loaded
+  # docids that match the selection.
   _selection_to_docids: (selection) ->
     arrays = []
     if selection.nodes.length
