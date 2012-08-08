@@ -55,6 +55,10 @@ class SubTreeDataLoader {
     documentTagQuery(documentIds)
   }
   
+  def loadTags(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
+    Nil
+  }
+  
   private def loadChildNodes(nodes: Seq[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil

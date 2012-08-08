@@ -13,9 +13,9 @@ class showSpec extends Specification {
       val documentIds = DocumentIdList(List(10, 20, 30), 43)
       
       val nodes = List(
-          Node(1l, "description", List(2, 3), documentIds),
-          Node(2l, "description", List(4, 5, 6), documentIds), 
-          Node(3l, "description", List(7), documentIds) 
+          Node(1l, "description", List(2, 3), documentIds, Map()),
+          Node(2l, "description", List(4, 5, 6), documentIds, Map()), 
+          Node(3l, "description", List(7), documentIds, Map()) 
       )
       
       val dummyDocuments = List[Document]()
