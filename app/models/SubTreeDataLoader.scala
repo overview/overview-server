@@ -12,7 +12,7 @@ import DatabaseStructure._
  * Utility class form SubTreeLoader that performs database queries and returns results as 
  * a list of tuples.
  */
-class SubTreeDataLoader {
+class SubTreeDataLoader extends DocumentTagDataLoader {
       
   /**
    * @return a list of tuples: (parentId, Some(childId), childDescription) for each node found in
@@ -49,10 +49,6 @@ class SubTreeDataLoader {
   
   def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
     nodeTagCountQuery(nodeIds)
-  }
-  
-  def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentTagData] = {
-    documentTagQuery(documentIds)
   }
   
   def loadTags(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
@@ -154,24 +150,6 @@ class SubTreeDataLoader {
     	""").as(nodeTagCountParser map(flatten) *)    
   }
   
-  private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection) : 
-	  List[DocumentTagData] = {
-    val whereDocumentIsSelected = documentIds match {
-      case Nil => ""
-      case _ => "WHERE document_tag.document_id IN " + idList(documentIds)
-    }
-    
-    SQL("""
-        SELECT document_tag.document_id, document_tag.tag_id 
-        FROM document_tag
-        INNER JOIN tag ON document_tag.tag_id = tag.id """ +
-        whereDocumentIsSelected +
-        """
-        ORDER BY document_tag.document_id, tag.name
-        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
-  }
-  
-  
   private def tagQuery(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
     val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~ 
     				    get[Option[Long]]("document_id")
@@ -191,7 +169,4 @@ class SubTreeDataLoader {
         """).on("documentSetId" -> documentSetId).
         as(tagDataParser map(flatten) *)
   }
-  
-  private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
-
 }

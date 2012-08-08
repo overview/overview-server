@@ -2,7 +2,7 @@ package models
 
 import java.sql.Connection
 
-class PersistentDocumentList(nodeIds: Seq[Long], documentIds: Seq[Long],
+class PersistentDocumentList(nodeIds: Seq[Long], val documentIds: Seq[Long],
 							 loader: PersistentDocumentListDataLoader = 
 							   new PersistentDocumentListDataLoader(),
 							 parser: PersistentDocumentListParser = 
@@ -15,7 +15,10 @@ class PersistentDocumentList(nodeIds: Seq[Long], documentIds: Seq[Long],
     require(start < end)
     
     val documentData = loader.loadSelectedDocumentSlice(nodeIds, documentIds, start, end  - start)
-    parser.createDocuments(documentData)
+    val selectedDocumentIds = documentData.map(_._1)
+    val documentTagData = loader.loadDocumentTags(selectedDocumentIds)
+    
+    parser.createDocuments(documentData, documentTagData)
   }
   
   def loadCount()(implicit c: Connection) : Long = {

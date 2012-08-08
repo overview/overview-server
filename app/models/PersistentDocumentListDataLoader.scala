@@ -5,7 +5,7 @@ import anorm.SqlParser._
 import DatabaseStructure._
 import java.sql.Connection
 
-class PersistentDocumentListDataLoader extends PersistentDocumentListSelector {
+class PersistentDocumentListDataLoader extends DocumentTagDataLoader with PersistentDocumentListSelector {
 
   def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {

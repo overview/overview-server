@@ -11,7 +11,7 @@ class PersistentDocumentListParserSpec extends Specification {
     "return empty list given empty input" in {
       val persistentDocumentListParser = new PersistentDocumentListParser()
       
-      val documents = persistentDocumentListParser.createDocuments(Nil)
+      val documents = persistentDocumentListParser.createDocuments(Nil, Nil)
       
       documents must be empty
     }
@@ -23,7 +23,7 @@ class PersistentDocumentListParserSpec extends Specification {
      )
      val persistentDocumentListParser = new PersistentDocumentListParser()
      
-     val documents = persistentDocumentListParser.createDocuments(documentData)
+     val documents = persistentDocumentListParser.createDocuments(documentData, Nil)
      
      val ids = documents.map(_.id)
      val titles = documents.map(_.title)
