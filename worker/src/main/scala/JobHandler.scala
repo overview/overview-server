@@ -16,15 +16,13 @@ object JobHandler {
       val submittedJobs = DocumentSetCreationJob.find.where.eq("state", JobState.Submitted).findList.toSeq
       
       for (j <- submittedJobs) {
-    	println(j.query)
-        println(j.state)
         j.setState(JobState.InProgress);
         
         j.save
         val documentSet = new DocumentSet
         documentSet.setQuery(j.query)
         documentSet.save
-        println("documentSet: " + documentSet.query)
+        println("Created document set for query: " + documentSet.query)
         
         val indexer = new clustering.DocumentSetIndexer(documentSet)
         indexer.BuildTree
