@@ -79,8 +79,9 @@ object TreeController extends Controller {
       val subTreeLoader = new SubTreeLoader(rootId, 4)
       val nodes = subTreeLoader.loadNodes
       val documents = subTreeLoader.loadDocuments(nodes)
-
-      val json = views.json.Tree.show(nodes, documents,Nil)
+      val tags = subTreeLoader.loadTags(id)
+      
+      val json = views.json.Tree.show(nodes, documents, tags)
       Ok(json)
     }
   }
@@ -92,8 +93,9 @@ object TreeController extends Controller {
       val subTreeLoader = new SubTreeLoader(nodeId, 4)
       val nodes = subTreeLoader.loadNodes
       val documents = subTreeLoader.loadDocuments(nodes)
-
-      val json = views.json.Tree.show(nodes, documents, Nil)
+      val tags = subTreeLoader.loadTags(id)
+      
+      val json = views.json.Tree.show(nodes, documents, tags)
       Ok(json)
     }
   }
