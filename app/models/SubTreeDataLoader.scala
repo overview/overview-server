@@ -51,6 +51,15 @@ class SubTreeDataLoader {
     nodeTagCountQuery(nodeIds)
   }
   
+  def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentTagData] = {
+    SQL("""
+        SELECT document_tag.document_id, document_tag.tag_id 
+        FROM document_tag
+        INNER JOIN tag ON document_tag.tag_id = tag.id
+        WHERE document_tag.document_id IN """ + idList(documentIds) + """
+        ORDER BY document_tag.document_id, tag.name
+        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
+  }
   
   private def loadChildNodes(nodes: Seq[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {

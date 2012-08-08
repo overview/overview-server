@@ -49,6 +49,22 @@ class SubTreeDataLoaderTagQuerySpec extends Specification {
       
       nodeTagCounts must haveTheSameElementsAs(expectedCounts)
     }
+    
+    "return tag ids for specified document ids" in new NodesSetup {
+      val tagId1 = insertTag(documentSetId, "tag1")
+      val tagId2 = insertTag(documentSetId, "tag2")
+      val tagId3 = insertTag(documentSetId, "tag3")
+      tagDocuments(tagId1, documentIds.take(8))
+      tagDocuments(tagId2, documentIds.take(4))
+      
+      val documentTagIds = subTreeDataLoader.loadDocumentTags(documentIds)
+      val tag1Documents = documentIds.take(8).map((_, tagId1))
+      val tag2Documents = documentIds.take(4).map((_, tagId2))
+      val tag3Documents = Nil
+      val expectedDocumentTags = tag1Documents ++ tag2Documents ++ tag3Documents
+      
+      documentTagIds must haveTheSameElementsAs(expectedDocumentTags)
+    }
   }
   
   step(stop)
