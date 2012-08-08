@@ -181,13 +181,13 @@ class SubTreeDataLoader {
     		dt.document_id,
             RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
     	  FROM tag t
-    	  INNER JOIN document_tag dt ON t.id = dt.tag_id
+    	  LEFT JOIN document_tag dt ON t.id = dt.tag_id
           WHERE t.document_set_id = {documentSetId}
     	  ORDER BY t.name, dt.document_id
     	) ss
     	WHERE ss.pos < 11        
         """).on("documentSetId" -> documentSetId).
-        as(long("tag_id") ~ str("tag_name") ~ long("document_count") ~ long("document_id") map(flatten) *)
+        as(long("tag_id") ~ str("tag_name") ~ long("document_count") ~ get[Option[Long]]("document_id") map(flatten) *)
   }
   
   private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
