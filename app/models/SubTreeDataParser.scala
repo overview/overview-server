@@ -12,18 +12,20 @@ class SubTreeDataParser {
    */
   def createNodes(nodeData: Seq[NodeData], 
 		  		  documentData: Seq[NodeDocument],
-		  		  nodeTagCountData: Seq[NodeTagCountData] = Nil) : Seq[core.Node] = {
+		  		  nodeTagCountData: Seq[NodeTagCountData]) : Seq[core.Node] = {
     val nodeDescriptions = mapNodesToDescriptions(nodeData)
     val childNodeIds = mapNodesToChildNodeIdLists(nodeData)
     val documentIds = mapNodesToDocumentIdLists(documentData)
     val documentCounts = mapNodesToDocumentCounts(documentData)
-        
+    val tagCounts = mapNodesToTagCounts(nodeTagCountData)
+    
     val nodeIds = realNodeIds(nodeData) 
 
     nodeIds.map(n => createOneNode(n, nodeDescriptions,
                                       childNodeIds,
                                       documentIds,
-                                      documentCounts))	
+                                      documentCounts,
+                                      tagCounts))	
   }
   
   /**
@@ -37,11 +39,12 @@ class SubTreeDataParser {
 		  			        descriptions: Map[Long, String],
 		  			        childNodeIds: Map[Long, Seq[Long]],
 		  			        documentIds: Map[Long, Seq[Long]],
-		  			        documentCounts: Map[Long, Long]) : core.Node = {
+		  			        documentCounts: Map[Long, Long],
+		  			        tagCounts: Map[Long, Seq[(Long, Long)]]) : core.Node = {
     
     val documentIdList = core.DocumentIdList(documentIds(id), documentCounts(id))
-    core.Node(id, descriptions(id), childNodeIds(id), documentIdList)
-    						   
+    core.Node(id, descriptions(id), childNodeIds(id), documentIdList, 
+    		  tagCounts.getOrElse(id, Nil))
   }
   
   private def groupByNodeId[A](nodeData: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
@@ -71,6 +74,15 @@ class SubTreeDataParser {
   
   private def mapNodesToDocumentCounts(documentData: Seq[NodeDocument]) : Map[Long, Long] = {
     documentData.map(d => (d._1, d._2)).distinct.toMap
+  }
+  
+  private def mapNodesToTagCounts(nodeTagCountData: Seq[NodeTagCountData]) :
+	  Map[Long, Seq[(Long, Long)]] = {
+    val groupedByNode = nodeTagCountData.groupBy(_._1)
+    
+    groupedByNode.map {
+      case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2, d._3)))
+    }
   }
   
   private def realNodeIds(nodeData : Seq[NodeData]) : Seq[Long] = {
