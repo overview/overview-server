@@ -50,24 +50,24 @@ class SubTreeDataParser {
     		  tagCounts.getOrElse(id, Map()))
   }
   
-  private def groupByNodeId[A](nodeData: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
-    val groupedByNode = nodeData.groupBy(_._1)
+  private def groupById[A](data: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
+    val groupedById= data.groupBy(_._1)
     
-    groupedByNode.map {
-      case (nodeId, dataList) => (nodeId, dataList.map(_._2))
+    groupedById.map {
+      case (id, dataList) => (id, dataList.map(_._2))
     }
   }
     
   private def mapNodesToChildNodeIdLists(nodeData: Seq[NodeData]) : Map[Long, Seq[Long]] = {
     val nodeAndPossibleChild = nodeData.map(d => (d._1, d._2))
-    val possibleChildNodes = groupByNodeId(nodeAndPossibleChild)
+    val possibleChildNodes = groupById(nodeAndPossibleChild)
     
     possibleChildNodes.map(d => (d._1 -> d._2.flatMap(_.toList)))   
   }
   
   private def mapNodesToDocumentIdLists(documentData: Seq[NodeDocument]) : Map[Long, Seq[Long]] = {
     val nodeAndDocument = documentData.map(d => (d._1, d._3))
-    groupByNodeId(nodeAndDocument)
+    groupById(nodeAndDocument)
   }
   
   private def mapNodesToDescriptions(nodeData: Seq[NodeData]) : Map[Long, String] = {
@@ -90,7 +90,7 @@ class SubTreeDataParser {
   
   private def mapDocumentsToTagIds(documentTagData: Seq[DocumentTagData]) :
 	  Map[Long, Seq[Long]] = {
-    groupByNodeId(documentTagData)
+    groupById(documentTagData)
   }
   
   private def realNodeIds(nodeData : Seq[NodeData]) : Seq[Long] = {
