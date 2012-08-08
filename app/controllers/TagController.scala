@@ -40,8 +40,22 @@ object TagController extends Controller {
         }
         case None => NotFound
       }
-      
+    }
+  }
+
+  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = Action {
+    DB.withTransaction { implicit connection =>
+
+      PersistentTag.findByName(tagName, documentSetId) match {
+        case Some(tag) => {
+          val nodeCounts = tag.countsPerNode(IdList(nodeIds))
+
+          Ok(views.json.Tag.nodeCounts(nodeCounts))
+        }
+        case None => NotFound
+      }
     }
   }
 }
+
 

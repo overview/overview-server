@@ -34,16 +34,20 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val nodeIds = List(-1l, 1l, 2l, 3l)
       val documentData = List((1l, 34l, 20l))
       val dummyNodes = List(core.Node(1l, "standin for lots of Nodes", Nil, null))
+      val dummyNodeTagCountsData = List((1l, 2l, 4l))
       
       loader loadNodeData(1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
-      parser createNodes(nodeData, documentData) returns dummyNodes
+      loader loadNodeTagCounts(nodeIds) returns dummyNodeTagCountsData
+      
+      parser createNodes(nodeData, documentData, dummyNodeTagCountsData) returns dummyNodes
       
       val nodes = subTreeLoader.loadNodes()
       
       there was one(loader).loadNodeData(1, 2)
       there was one(loader).loadDocumentIds(nodeIds)
-      there was one(parser).createNodes(nodeData, documentData)
+      there was one(loader).loadNodeTagCounts(nodeIds)
+      there was one(parser).createNodes(nodeData, documentData, dummyNodeTagCountsData)
       
       nodes must be equalTo(dummyNodes)
     }
@@ -65,22 +69,27 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     "call loader and parser to create documents from nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 40l, 50l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
+      val dummyTagData = List((10l, 5l), (20l, 15l))
       
       loader loadDocuments(documentIds) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments
+      loader loadDocumentTags(documentIds) returns dummyTagData
+      
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments
       
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
 
       there was one(loader).loadDocuments(documentIds)
-      there was one(parser).createDocuments(dummyDocumentData)
+      there was one(loader).loadDocumentTags(documentIds)
+      there was one(parser).createDocuments(dummyDocumentData, dummyTagData)
     }
     
     "not duplicate documents included in multiple nodes" in new MockComponents {
       val documentIds = List(10l, 20l, 30l, 10l, 20l, 30l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
-
+      val dummyTagData = Nil
+      
       loader loadDocuments(documentIds.distinct) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments 
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments 
 
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
       
@@ -90,9 +99,10 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     "create documents in sorted order" in new MockComponents {
       val documentIds = List(30l, 20l, 40l, 10l, 60l, 50l)
       val dummyNodeList = createTwoDummyNodes(documentIds)
+      val dummyTagData = Nil
       
       loader loadDocuments(documentIds.sorted) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData) returns dummyDocuments
+      parser createDocuments(dummyDocumentData, dummyTagData) returns dummyDocuments
       
       val documents = subTreeLoader.loadDocuments(dummyNodeList)
       

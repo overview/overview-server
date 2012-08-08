@@ -4,6 +4,7 @@ import models.core.{Document, DocumentIdList, Node}
 import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
+
 object show {
   private[Tree] implicit object JsonDocumentIdList extends Writes[DocumentIdList] {
     override def writes(documentIdList: DocumentIdList) : JsValue = {
@@ -21,16 +22,18 @@ object show {
           "description" -> toJson(node.description),
           "children" -> toJson(node.childNodeIds),
           "doclist" -> toJson(node.documentIds),
-          "taglist" -> toJson(Seq[String]())
+          "tagcounts" -> toJson(node.tagCounts)
       ))
     }
   }
+
   
   private[Tree] implicit object JsonDocument extends Writes[Document] {
     override def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
-        "description" -> toJson(document.title)
+        "description" -> toJson(document.title),
+        "tagids" -> toJson(document.tags)
       ))
     }
   }

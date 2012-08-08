@@ -62,7 +62,7 @@ class PersistentTagSpec extends Specification with Mockito {
     }
     
     "should ask loader for number of documents with tag" in new MockComponents {
-      val dummyCount = 454;
+      val dummyCount = 454
       
       loader loadByName(name) returns Some(dummyTagId)
       
@@ -75,6 +75,26 @@ class PersistentTagSpec extends Specification with Mockito {
       
       count must be equalTo(dummyCount)
     }
+    
+    "should ask loader for number of documents with tag per node" in new MockComponents {
+      val dummyCounts = Seq((1l, 5l), (2l, 3345l))
+      val nodeIds = Seq(1l, 2l)
+      
+      loader loadByName(name) returns Some(dummyTagId)
+      loader countsPerNode(nodeIds, dummyTagId) returns dummyCounts
+      
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val counts = tag.countsPerNode(nodeIds)
+      
+      there was one(loader).countsPerNode(nodeIds, dummyTagId)
+      
+      counts must be equalTo(dummyCounts)
+    }
   }
 
+  
+  
+  
+  
+  
 }

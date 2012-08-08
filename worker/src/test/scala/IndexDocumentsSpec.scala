@@ -46,10 +46,10 @@ class MakeDocumentTreeSpec extends Specification {
       val doc4 = "the rat doesn't really care about the cat cat".split(" ")
       	
       val vectorGen = new DocumentVectorGenerator()
-      vectorGen.addDocument(1, doc1)
-      vectorGen.addDocument(2, doc2)
-      vectorGen.addDocument(3, doc3)
-      vectorGen.addDocument(4, doc4)
+      vectorGen.AddDocument(1, doc1)
+      vectorGen.AddDocument(2, doc2)
+      vectorGen.AddDocument(3, doc3)
+      vectorGen.AddDocument(4, doc4)
        
       // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
       val idf = vectorGen.Idf()
@@ -58,7 +58,7 @@ class MakeDocumentTreeSpec extends Specification {
       idf.size must beEqualTo(2)      
       
       // Finally, check actual vectors. 
-      val vecs = vectorGen.getVectors()
+      val vecs = vectorGen.DocumentVectors()
        
       // doc1: only cat remains
       vecs.get(1).get must beEqualTo(Map("cat"->1.0)) 
@@ -86,7 +86,7 @@ class MakeDocumentTreeSpec extends Specification {
       val filenames =  new File("worker/src/test/resources/docs").listFiles
       val docterms = filenames.map(filename => (filename, Lexer.makeTerms(io.Source.fromFile(filename).getLines.reduceLeft(_+"\n"+_))))
       for ((filename,terms) <- docterms) {
-        vectorGen.addDocument(filename.hashCode, terms)
+        vectorGen.AddDocument(filename.hashCode, terms)
       }
       
       // check IDF
@@ -107,7 +107,7 @@ class MakeDocumentTreeSpec extends Specification {
       }
       
            // check document vectors
-      val vecs = vectorGen.getVectors()
+      val vecs = vectorGen.DocumentVectors()
       vecs.size must beEqualTo(docterms.size) // ?? can we drop documents if no terms? probably not
       
       // each document vector must contain only terms in IDF and the source document, and be normalized
