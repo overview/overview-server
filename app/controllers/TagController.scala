@@ -9,7 +9,7 @@ import models.PersistentTagLoader
 
 object TagController extends Controller {
 
-  def create(documentSetId: Long, tagName: String, 
+  def add(documentSetId: Long, tagName: String, 
              nodeIds: String, tagIds: String, documentIds: String) = Action {
     DB.withTransaction { implicit connection =>
       val tag = PersistentTag.findOrCreateByName(tagName, documentSetId)
