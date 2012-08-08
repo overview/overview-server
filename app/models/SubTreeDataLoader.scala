@@ -173,6 +173,8 @@ class SubTreeDataLoader {
   
   
   private def tagQuery(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
+    val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~ 
+    				    get[Option[Long]]("document_id")
     SQL("""
     	SELECT tag_id, tag_name, document_count, document_id
     	FROM (
@@ -187,7 +189,7 @@ class SubTreeDataLoader {
     	) ss
     	WHERE ss.pos < 11        
         """).on("documentSetId" -> documentSetId).
-        as(long("tag_id") ~ str("tag_name") ~ long("document_count") ~ get[Option[Long]]("document_id") map(flatten) *)
+        as(tagDataParser map(flatten) *)
   }
   
   private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
