@@ -13,14 +13,15 @@ class showSpec extends Specification {
       val documentIds = DocumentIdList(List(10, 20, 30), 43)
       
       val nodes = List(
-          Node(1l, "description", List(2, 3), documentIds),
-          Node(2l, "description", List(4, 5, 6), documentIds), 
-          Node(3l, "description", List(7), documentIds) 
+          Node(1l, "description", List(2, 3), documentIds, Map()),
+          Node(2l, "description", List(4, 5, 6), documentIds, Map()), 
+          Node(3l, "description", List(7), documentIds, Map()) 
       )
       
       val dummyDocuments = List[Document]()
+      val dummyTags = List[Tag]()
       
-      val treeJson = show(nodes, dummyDocuments).toString
+      val treeJson = show(nodes, dummyDocuments, dummyTags).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -34,21 +35,26 @@ class showSpec extends Specification {
     	Document(20l, "title", "textUrl", "viewUrl"),
     	Document(30l, "title", "textUrl", "viewUrl")
       )
+      val dummyTags = List[Tag]()
       
-      val treeJson = show(dummyNodes, documents).toString
+      val treeJson = show(dummyNodes, documents, dummyTags).toString
       
       treeJson must /("documents") */("id" -> 10l)
       treeJson must /("documents") */("id" -> 20l)
       treeJson must /("documents") */("id" -> 30l)
     }
     
-    "contain empty tags because they're not implemented yet" in {
+    "contain tags" in {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
+      val tags = List(
+        Tag(5l, "tag1", DocumentIdList(Seq(), 0)),
+        Tag(15l, "tag2", DocumentIdList(Seq(), 0))
+      )
+      val treeJson = show(dummyNodes, dummyDocuments, tags).toString
       
-      val treeJson = show(dummyNodes, dummyDocuments).toString
-      
-      treeJson must contain("\"tags\":[]")
+      treeJson must /("tags") */("id" -> 5l)
+      treeJson must /("tags") */("id" -> 15l)
     }
   }
   
@@ -99,6 +105,23 @@ class showSpec extends Specification {
       documentJson must /("id" -> id)
       documentJson must /("description" -> title)
       documentJson must contain(""""tagids":[1,2,3]""")
+    }
+  }
+  
+  "JsonTag" should {
+    import views.json.Tree.show.JsonTag
+    
+    "write tag attributes" in {
+      val id = 5l
+      val name = "tag"
+      val documentCount = 22l
+      val tag = Tag(id, name, DocumentIdList(Seq(10l), documentCount))
+      
+      val tagJson = toJson(tag).toString
+      
+      tagJson must /("id" -> id)
+      tagJson must /("name" -> name)
+      tagJson must /("doclist") */("n" -> documentCount)
     }
   }
 

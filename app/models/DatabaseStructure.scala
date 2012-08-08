@@ -8,6 +8,7 @@ object DatabaseStructure {
   type DocumentData = (Long, String, String, String) // documentId, title, textUrl, viewUrl
   type NodeTagCountData = (Long, Long, Long) // nodeId, tagId, count
   type DocumentTagData = (Long, Long) // documentId, tagId
+  type TagData = (Long, String, Long, Option[Long]) // tagId, name, count, documentId
   
   val NoId = -1l;
 }

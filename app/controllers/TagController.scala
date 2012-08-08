@@ -34,7 +34,7 @@ object TagController extends Controller {
     )
   )
 
-  def create(documentSetId: Long, tagName: String) = Action { implicit request =>
+  def add(documentSetId: Long, tagName: String) = Action { implicit request =>
     DB.withTransaction { implicit connection =>
       form(documentSetId).bindFromRequest.fold(
         formWithErrors => BadRequest,
