@@ -22,25 +22,4 @@ class DocumentListSpec extends Specification {
       documentListJson must /("total_items" -> totalCount)
     }
   }
-  
-  "JsonDocument" should {
-    import views.json.DocumentList.show.JsonDocument
-    
-    "write document id and title" in {
-      val document = Document(10l, "document title", "unused", "unused")
-      
-      val documentJson = toJson(document).toString
-      
-      documentJson must /("id" -> 10l)
-      documentJson must /("title" -> "document title")
-    }
-    
-    "write empty tag id list until implemented" in {
-      val document = Document(10l, "document title", "unused", "unused")
-      
-      val documentJson = toJson(document).toString
-      
-      documentJson must contain("\"tagids\":[]")
-    }
-  }
 }
