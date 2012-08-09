@@ -90,9 +90,63 @@ body.document-set-show {
     right: 50%;
   }
 
+  #tag-list {
+    ul {
+      margin: 0;
+      list-style: none;
+    }
+
+    form {
+      float: left;
+      margin-bottom: 0;
+    }
+
+    .tag-name {
+      min-width: 3em;
+      text-align: left;
+
+      -webkit-border-top-right-radius: 4px;
+              border-top-right-radius: 4px;
+      -webkit-border-bottom-right-radius: 4px;
+              border-bottom-right-radius: 4px;
+      -moz-border-radius-topright: 4px;
+      -moz-border-radius-bottomright: 4px;
+    }
+
+    .btn-group {
+      & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
+
+      .tag-add, .tag-remove {
+        position: absolute;
+        padding: 4px 3px 4px;
+        width: 12px;
+        top: 0;
+        right: 0;
+        opacity: 0.01;
+        overflow: hidden;
+        text-align: center;
+        // FIXME use Less CSS to do this
+        -webkit-transition: opacity 0.3s ease;
+           -moz-transition: opacity 0.3s ease;
+            -ms-transition: opacity 0.3s ease;
+             -o-transition: opacity 0.3s ease;
+                transition: opacity 0.3s ease;
+      }
+
+      .tag-add {
+        right: 18px;
+      }
+
+      &:hover {
+        .tag-add, .tag-remove {
+          opacity: 1;
+        }
+      }
+    }
+  }
+
   #document-list {
     overflow: auto;
-    position: absolute;
     top: 2em;
     bottom: 0;
     left: 0;
