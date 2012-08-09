@@ -3,6 +3,7 @@ package models
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
+import models.DatabaseStructure.TagData
 
 class PersistentTagLoader {
   
@@ -36,5 +37,26 @@ class PersistentTagLoader {
     val zeroCounts = nodesWithNoTaggedDocuments.map((_, 0l))
     
     nodeCounts ++ zeroCounts
+  }
+  
+  def loadTag(tagId: Long)(implicit c: Connection) : Seq[TagData] = {
+    val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~ 
+    				    get[Option[Long]]("document_id")
+    
+    SQL("""
+    	SELECT tag_id, tag_name, document_count, document_id
+    	FROM (
+    	  SELECT t.id AS tag_id, t.name AS tag_name,
+            COUNT(dt.document_id) OVER (PARTITION BY dt.tag_id) AS document_count,
+    		dt.document_id,
+            RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
+    	  FROM tag t
+    	  LEFT JOIN document_tag dt ON t.id = dt.tag_id
+          WHERE t.id = {tagId}
+    	  ORDER BY t.name, dt.document_id
+    	) ss
+    	WHERE ss.pos < 11        
+        """).on("tagId" -> tagId).
+        as(tagDataParser map(flatten) *)
   }
 }

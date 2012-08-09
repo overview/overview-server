@@ -7,6 +7,7 @@ trait PersistentTag {
   
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection) : Seq[(Long, Long)]
+  def loadTag(implicit c: Connection) : core.Tag
 }
 
 object PersistentTag {
@@ -32,7 +33,7 @@ object PersistentTag {
 	  case None => None
 	}
   }
-  
+    
   private class PersistentTagImpl(tagId: Long, name: String,
 		  						  loader: PersistentTagLoader, saver: PersistentTagSaver) extends PersistentTag {
     val id = tagId
@@ -44,5 +45,11 @@ object PersistentTag {
     def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection) : Seq[(Long, Long)] = {
       loader.countsPerNode(nodeIds, id)
     }
+    
+    def loadTag(implicit c: Connection) : core.Tag = {
+      val tagData = loader.loadTag(id)
+      core.Tag(0, "foo", null)
+    }
+    
   }
 }

@@ -90,6 +90,19 @@ class PersistentTagSpec extends Specification with Mockito {
       
       counts must be equalTo(dummyCounts)
     }
+    
+    "ask loader and parser to create tag" in new MockComponents {
+    	
+      val tagData = Seq((dummyTagId, name, 0l, None))
+      
+      loader loadByName(name) returns Some(dummyTagId)
+      loader loadTag(dummyTagId) returns tagData
+      
+      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val tag = persistentTag.loadTag
+      
+      there was one(loader).loadTag(dummyTagId)
+    }
   }
 
   
