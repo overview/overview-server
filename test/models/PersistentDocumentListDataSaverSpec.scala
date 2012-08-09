@@ -34,7 +34,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 5)
       
-      val count = dataSaver.addTag(tagId, Nil, documentIds)
+      val count = dataSaver.addTag(tagId, Nil, Nil, documentIds)
       
       count must be equalTo(documentIds.size)
       
@@ -43,26 +43,31 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       taggedDocuments must haveTheSameElementsAs(documentIds)
     }
     
-    "add tag to selection with both nodes and documents" in new TagCreated {
+    "add tag to selection with nodes, tags, and documents" in new TagCreated {
       val nodeIds = insertNodes(documentSetId, 3)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 2)
+      val tagId1 = insertTag(documentSetId, "tag1")
       
-      val count = dataSaver.addTag(tagId, nodeIds.drop(1), documentIds.take(4))
+      tagDocuments(tagId1, documentIds.take(5))
+      val tagIds = Seq(tagId1)
       
-      count must be equalTo(2)
+      val count = dataSaver.addTag(tagId, nodeIds.drop(1), tagIds, documentIds.take(6))
+      
+      count must be equalTo(3)
       
       val taggedDocuments = selectDocumentsWithTag(tagId)
       
-      taggedDocuments must haveTheSameElementsAs(documentIds.slice(2, 4))
+      taggedDocuments must haveTheSameElementsAs(documentIds.slice(2, 5))
       
     }
     
     "not add a tag for a document more than once" in new TagCreated {
       val nodeIds = insertNodes(documentSetId, 4)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 2)
+      val tagIds = Nil
       
-      val count = dataSaver.addTag(tagId, nodeIds.take(1), documentIds)
-      val actualInsertsCount = dataSaver.addTag(tagId, nodeIds, documentIds)
+      val count = dataSaver.addTag(tagId, nodeIds.take(1), tagIds, documentIds)
+      val actualInsertsCount = dataSaver.addTag(tagId, nodeIds, tagIds, documentIds)
       
       actualInsertsCount must be equalTo(6)
       
@@ -75,7 +80,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
       
-      val count = dataSaver.addTag(tagId, Nil, Nil)
+      val count = dataSaver.addTag(tagId, Nil, Nil, Nil)
       
       count must be equalTo(10)
     }
@@ -83,8 +88,9 @@ class PersistentDocumentListDataSaverSpec extends Specification {
     "remove tag from selection" in new TagCreated {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
+      val tagIds = Nil
       
-      dataSaver.addTag(tagId, nodeIds, documentIds)
+      dataSaver.addTag(tagId, nodeIds, tagIds, documentIds)
       
       val removedCount = dataSaver.removeTag(tagId, nodeIds, documentIds.take(5))
       
@@ -97,8 +103,9 @@ class PersistentDocumentListDataSaverSpec extends Specification {
     "remove tags from all documents on empty selection" in new TagCreated {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
+      val tagIds = Nil
       
-      dataSaver.addTag(tagId, nodeIds, documentIds)
+      dataSaver.addTag(tagId, nodeIds, tagIds, documentIds)
       
       val removedCount = dataSaver.removeTag(tagId, Nil, Nil)
       

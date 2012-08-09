@@ -29,7 +29,7 @@ class PersistentDocumentList(nodeIds: Seq[Long],
   }
   
   def addTag(tagId: Long)(implicit c: Connection): Long = {
-    saver.addTag(tagId, nodeIds, documentIds)
+    saver.addTag(tagId, nodeIds, tagIds, documentIds)
   }
   
   def removeTag(tagId: Long)(implicit c: Connection): Long = {

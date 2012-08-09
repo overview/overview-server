@@ -6,9 +6,9 @@ import java.sql.Connection
 
 class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
 
-  def addTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
+  def addTag(tagId: Long, nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long])
             (implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, Nil, documentIds) :+ whereDocumentNotTagged
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds) :+ whereDocumentNotTagged
     val whereSelectionIsNotAlreadyTagged = combineWhereClauses(whereClauses)
     
     SQL("""
