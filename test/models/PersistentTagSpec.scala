@@ -110,6 +110,33 @@ class PersistentTagSpec extends Specification with Mockito {
       
       tag must be equalTo(dummyTag)
     }
+    
+    "load documents referenced by tag" in new MockComponents {
+      val tag = core.Tag(dummyTagId, name, core.DocumentIdList(Seq(1l, 2l), 3))
+      val dummyDocumentData = List((1l, "title", "text", "view"),
+    		  					   (2l, "title", "text", "view"))
+      val documentIds = Seq(1l, 2l)
+      val dummyDocumentTagData = List((1l,5l), (2l, 15l))
+      val dummyDocuments = List(
+          core.Document(1l, "document1", "text", "view", Seq(5l)),
+          core.Document(2l, "document2", "text", "view", Seq(15l)))
+      
+      loader loadByName(name) returns Some(dummyTagId)
+      loader loadDocuments(documentIds) returns dummyDocumentData 
+      loader loadDocumentTags(documentIds) returns dummyDocumentTagData
+      parser createDocuments(dummyDocumentData, dummyDocumentTagData) returns dummyDocuments
+      
+      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, 
+    		  											   loader, parser, saver)
+    		  											   
+      val documents = persistentTag.loadDocuments(tag)
+      
+      there was one(loader).loadDocuments(documentIds) 
+      there was one(loader).loadDocumentTags(documentIds)
+      there was one(parser).createDocuments(dummyDocumentData, dummyDocumentTagData)
+      
+      documents must be equalTo(dummyDocuments)
+    }
   }
 }
 

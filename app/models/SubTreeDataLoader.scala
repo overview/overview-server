@@ -40,13 +40,6 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
     nodeDocumentQuery(nodeIds)
   } 
   
-  /** 
-   * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
-   */
-  def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection) : List[DocumentData] = {
-    documentQuery(documentIds)
-  }
-  
   def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
     nodeTagCountQuery(nodeIds)
   }
@@ -117,19 +110,6 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
       """
     ).
     as(documentIdParser map(flatten) *)
-  }
-  
-  private def documentQuery(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentData]= {
-    val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
-
-    SQL(
-      """
-        SELECT id, title, text_url, view_url
-        FROM document
-        WHERE id IN 
-      """ + idList(documentIds)
-    ).
-    as(documentParser map(flatten) *)
   }
   
   private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {

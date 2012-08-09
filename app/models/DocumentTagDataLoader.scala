@@ -3,7 +3,7 @@ package models
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import models.DatabaseStructure.DocumentTagData
+import models.DatabaseStructure.{DocumentData, DocumentTagData}
 
 class DocumentTagDataLoader {
 
@@ -11,6 +11,14 @@ class DocumentTagDataLoader {
     documentTagQuery(documentIds)
   }
   
+    
+  /** 
+   * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
+   */
+  def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection) : List[DocumentData] = {
+    documentQuery(documentIds)
+  }
+
   protected def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
   
   private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection) : 
@@ -29,4 +37,18 @@ class DocumentTagDataLoader {
         ORDER BY document_tag.document_id, tag.name
         """).as(long("document_id") ~ long("tag_id") map(flatten) *)
   }  
+  
+  private def documentQuery(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentData]= {
+    val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
+
+    SQL(
+      """
+        SELECT id, title, text_url, view_url
+        FROM document
+        WHERE id IN 
+      """ + idList(documentIds)
+    ).
+    as(documentParser map(flatten) *)
+  }
+
 }

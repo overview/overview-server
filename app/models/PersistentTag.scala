@@ -8,6 +8,7 @@ trait PersistentTag {
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection) : Seq[(Long, Long)]
   def loadTag(implicit c: Connection) : core.Tag
+  def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document]
 }
 
 object PersistentTag {
@@ -55,5 +56,13 @@ object PersistentTag {
       parser.createTags(tagData).head
     }
     
+    def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document] = {
+      val documentIds = tag.documentIds.firstIds
+      val documentData = loader.loadDocuments(documentIds)
+      val documentTagData = loader.loadDocumentTags(documentIds)
+      
+      parser.createDocuments(documentData, documentTagData)
+    }
+
   }
 }

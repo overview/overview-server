@@ -5,7 +5,7 @@ import anorm.SqlParser._
 import java.sql.Connection
 import models.DatabaseStructure.TagData
 
-class PersistentTagLoader {
+class PersistentTagLoader extends DocumentTagDataLoader {
   
   def loadByName(name: String)(implicit c: Connection) : Option[Long] = {
     SQL("SELECT id FROM tag WHERE name = {name}").on("name" -> name).
