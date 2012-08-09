@@ -33,7 +33,7 @@ class ModelJsonConvertersSpec extends Specification {
       val documentJson = toJson(document).toString
       
       documentJson must /("id" -> id)
-      documentJson must /("description" -> title)
+      documentJson must /("title" -> title)
       documentJson must contain(""""tagids":[1,2,3]""")
     }
   }

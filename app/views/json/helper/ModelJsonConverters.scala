@@ -29,7 +29,7 @@ object ModelJsonConverters {
     override def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
-        "description" -> toJson(document.title),
+        "title" -> toJson(document.title),
         "tagids" -> toJson(document.tags)
       ))
     }
