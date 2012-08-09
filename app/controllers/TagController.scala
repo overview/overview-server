@@ -39,12 +39,13 @@ object TagController extends Controller {
       form(documentSetId).bindFromRequest.fold(
         formWithErrors => BadRequest,
         documents => {
-          val tag = PersistentTag.findOrCreateByName(tagName, documentSetId)
+          val tagData = PersistentTag.findOrCreateByName(tagName, documentSetId)
 
-          val tagUpdateCount = documents.addTag(tag.id)
-          val tagTotalCount = tag.count
+          val tagUpdateCount = documents.addTag(tagData.id)
+          val tag = tagData.loadTag
+          val taggedDocuments = tagData.loadDocuments(tag)
 
-          Ok(views.json.Tag.add(tag.id, tagUpdateCount, tagTotalCount))
+          Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
         }
       )
     }
