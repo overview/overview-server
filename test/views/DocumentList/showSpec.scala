@@ -10,9 +10,9 @@ class DocumentListSpec extends Specification {
     
     "contain documents and total_items" in {
       val documents =  List(
-          Document(10, "title1", "textUrl1", "viewUrl1"),
-          Document(20, "title2", "textUrl2", "viewUrl2"),
-          Document(30, "title3", "textUrl3", "viewUrl3")
+          Document(10, "title1", "textUrl1", "viewUrl1", Seq()),
+          Document(20, "title2", "textUrl2", "viewUrl2", Seq()),
+          Document(30, "title3", "textUrl3", "viewUrl3", Seq())
       )
       val totalCount = 13l
       

@@ -12,7 +12,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     val parser = mock[SubTreeDataParser]
     val subTreeLoader = new SubTreeLoader(1, 2, loader, parser)
     
-    val dummyDocuments = List(core.Document(10l, "documents", "created", "from data"))
+    val dummyDocuments = List(core.Document(10l, "documents", "created", "from data", Seq(5l)))
     val dummyDocumentData = List((10l, "actually", "all", "documentdata"))
 
     def createTwoDummyNodes(documentIds : List[Long]) : List[core.Node] = {
