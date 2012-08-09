@@ -55,14 +55,15 @@ object TagController extends Controller {
     DB.withTransaction { implicit connection =>
       PersistentTag.findByName(tagName, documentSetId) match {
         case None => NotFound
-        case Some(tag) => {
+        case Some(tagData) => {
           form(documentSetId).bindFromRequest.fold(
             formWithErrors => BadRequest,
             documents => {
-              val tagUpdateCount = documents.removeTag(tag.id)
-              val tagTotalCount = tag.count
-
-              Ok(views.json.Tag.remove(tag.id, tagUpdateCount, tagTotalCount))
+              val tagUpdateCount = documents.removeTag(tagData.id)
+              val tag = tagData.loadTag
+              val taggedDocuments = tagData.loadDocuments(tag)
+              
+              Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
             }
           )
         }
