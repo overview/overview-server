@@ -4,6 +4,7 @@ object SelectionWhere {
   
   def apply(nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long]) :
 	  Seq[Option[String]] = {
+    
     Seq(nodeSelection(nodeIds),
         tagSelection(tagIds),
         documentSelection(documentIds))

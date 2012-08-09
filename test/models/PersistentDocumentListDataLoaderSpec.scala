@@ -72,16 +72,21 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       loadedIds must haveTheSameElementsAs(documentIds.take(4))
     }
     
-    "load intersection of documents specified by nodes and document ids" in new NodesAndDocuments {
+    "load intersection of documents specified by nodes, tags,and document ids" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(2)
       val selectedDocuments = documentIds.drop(1)
+      tagDocuments(tag1, documentIds)
+      tagDocuments(tag2, documentIds.take(3))
+      val selectedTags = Seq(tag2, tag3)
       
       val documentData = 
-        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, selectedDocuments, 0, 6)
-        
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, 
+        									 selectedTags,
+        									 selectedDocuments, 0, 6)
+
       val loadedIds = documentData.map(_._1)
       
-      loadedIds must haveTheSameElementsAs(documentIds.slice(1, 4))
+      loadedIds must haveTheSameElementsAs(documentIds.slice(1, 3))
     }
     
 
