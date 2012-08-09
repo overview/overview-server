@@ -28,17 +28,6 @@ class SubTreeDataParser extends DocumentListParser {
                                       tagCounts))	
   }
   
-
-  def createTags(tagData: Seq[TagData]) : Seq[core.Tag] = {
-    val tagNames = mapTagsToNames(tagData)
-    val tagDocumentCounts = mapTagsToDocumentCounts(tagData)
-    val tagDocuments = mapTagsToDocuments(tagData)
-    
-    val tagIds = tagNames.keys.toSeq
-    tagIds.map(id => core.Tag(id, tagNames(id), 
-    				          core.DocumentIdList(tagDocuments(id), tagDocumentCounts(id))))
-
-  }
   
   private def createOneNode(id: Long, 
 		  			        descriptions: Map[Long, String],
@@ -79,23 +68,6 @@ class SubTreeDataParser extends DocumentListParser {
     
     groupedByNode.map {
       case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2.toString -> d._3)).toMap)
-    }
-  }
-    
-  private def mapTagsToNames(tagData: Seq[TagData]) : Map[Long, String] = {
-    tagData.map(d => (d._1, d._2)).distinct.toMap
-  }
-  
-  private def mapTagsToDocumentCounts(tagData: Seq[TagData]) : Map[Long, Long] = {
-    tagData.map(d => (d._1, d._3)).distinct.toMap
-  }
-  
-  private def mapTagsToDocuments(tagData: Seq[TagData]) : Map[Long, Seq[Long]] = {
-    val tagAndDocument = tagData.map(d => (d._1, d._4))
-    val tagsToPossibleDocuments = groupById(tagAndDocument)
-    
-    tagsToPossibleDocuments.map {
-      case (tag, documents) => (tag -> documents.collect { case Some(id) => id}) 
     }
   }
   

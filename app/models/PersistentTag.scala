@@ -13,7 +13,8 @@ trait PersistentTag {
 object PersistentTag {
   
   def findOrCreateByName(name: String, documentSetId: Long,
-		  				 loader: PersistentTagLoader = new PersistentTagLoader(), 
+		  				 loader: PersistentTagLoader = new PersistentTagLoader(),
+		  				 parser: DocumentListParser = new DocumentListParser(),
 		  				 saver: PersistentTagSaver = new PersistentTagSaver())
   						(implicit c: Connection) : PersistentTag = {
     val tagId = loader.loadByName(name) match {
@@ -21,21 +22,24 @@ object PersistentTag {
       case None => saver.save(name, documentSetId).get 
     }
     
-    new PersistentTagImpl(tagId, name, loader, saver)
+    new PersistentTagImpl(tagId, name, loader, parser, saver)
   }
   
   def findByName(name: String, documentSetId: Long,
 		  	     loader: PersistentTagLoader = new PersistentTagLoader(), 
+		  	     parser: DocumentListParser = new DocumentListParser(),
 		  		 saver: PersistentTagSaver = new PersistentTagSaver())
   				(implicit c: Connection) : Option[PersistentTag] = {
 	loader.loadByName(name) match {
-	  case Some(id) => Some(new PersistentTagImpl(id, name, loader, saver))
+	  case Some(id) => Some(new PersistentTagImpl(id, name, loader, parser, saver))
 	  case None => None
 	}
   }
     
   private class PersistentTagImpl(tagId: Long, name: String,
-		  						  loader: PersistentTagLoader, saver: PersistentTagSaver) extends PersistentTag {
+		  						  loader: PersistentTagLoader, 
+		  						  parser: DocumentListParser,
+		  						  saver: PersistentTagSaver) extends PersistentTag {
     val id = tagId
     
     def count(implicit c: Connection): Long = {
@@ -48,7 +52,7 @@ object PersistentTag {
     
     def loadTag(implicit c: Connection) : core.Tag = {
       val tagData = loader.loadTag(id)
-      core.Tag(0, "foo", null)
+      parser.createTags(tagData).head
     }
     
   }
