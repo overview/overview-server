@@ -33,6 +33,6 @@ class PersistentDocumentList(nodeIds: Seq[Long],
   }
   
   def removeTag(tagId: Long)(implicit c: Connection): Long = {
-    saver.removeTag(tagId, nodeIds, documentIds)
+    saver.removeTag(tagId, nodeIds, tagIds, documentIds)
   }
 }

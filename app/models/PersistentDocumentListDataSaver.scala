@@ -17,7 +17,8 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
           whereSelectionIsNotAlreadyTagged).on("tagId" -> tagId).executeUpdate()
   }
   
-  def removeTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
+  def removeTag(tagId: Long, 
+                nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long])
                (implicit c: Connection): Long = {
     val whereClauses = SelectionWhere(nodeIds, Nil, documentIds)
     val whereSelected = combineWhereClauses(whereClauses)
