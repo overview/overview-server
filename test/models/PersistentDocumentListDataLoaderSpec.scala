@@ -120,17 +120,19 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "return total number of results in selection" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(2)
       val selectedDocuments = documentIds
-    
-      val count = dataLoader.loadCount(selectedNodes, selectedDocuments)
+      tagDocuments(tag1, documentIds.take(3))
+      val selectedTags = Seq(tag1, tag2)
       
-      count must be equalTo(4)
+      val count = dataLoader.loadCount(selectedNodes, selectedTags, selectedDocuments)
+      
+      count must be equalTo(3)
     }
     
     "return 0 count if selection result is empty" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(1)
       val selectedDocuments = documentIds.drop(3)
       
-      val count = dataLoader.loadCount(selectedNodes, selectedDocuments)
+      val count = dataLoader.loadCount(selectedNodes, Nil, selectedDocuments)
       
       count must be equalTo(0)
     }

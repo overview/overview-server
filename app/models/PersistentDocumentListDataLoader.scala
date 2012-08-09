@@ -19,8 +19,10 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
     documentSliceQueryWhere(firstRow, maxRows, where)
   }
 
-  def loadCount(nodeIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, Nil, documentIds)
+  def loadCount(nodeIds: Seq[Long], 
+                tagIds: Seq[Long],
+                documentIds: Seq[Long])(implicit c: Connection): Long = {
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
     
     countQueryWhere(where)
