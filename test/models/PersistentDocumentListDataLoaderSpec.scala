@@ -24,7 +24,11 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       lazy val documentIds = nodeIds.flatMap { n =>
         for (_ <- 1 to 2) yield insertDocumentWithNode(documentSet,
         											   "title", "textUrl", "viewUrl", n)
-      }      
+      }     
+      
+      lazy val tag1 = insertTag(documentSet, "tag1")
+      lazy val tag2 = insertTag(documentSet, "tag2")
+      lazy val tag3 = insertTag(documentSet, "tag3")
     }
     
     "load document data for specified nodes with no other constraints" in new NodesAndDocuments {
@@ -32,7 +36,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val expectedDocumentIds = documentIds.take(4)
       
       val documentData = 
-        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, 0, 6)
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, Nil, 0, 6)
         
       val loadedIds = documentData.map(_._1)
       
@@ -49,11 +53,23 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
         new PersistentDocumentListDataLoader()
 
       val documentData = 
-        persistentDocumentListDataLoader.loadSelectedDocumentSlice(Nil, selectedDocuments,
+        persistentDocumentListDataLoader.loadSelectedDocumentSlice(Nil, Nil, selectedDocuments,
         														   0, 6)
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(documentIds.take(3))
+    }
+    
+    "load document data for specified tags with no other constraints" in new NodesAndDocuments {
+      tagDocuments(tag1, documentIds.take(3))
+      tagDocuments(tag2, documentIds.slice(2, 4))
+      val tagIds = Seq(tag1, tag2, tag3)
+      
+      val documentData = dataLoader.loadSelectedDocumentSlice(Nil, tagIds, Nil, 0, 6)
+      
+      val loadedIds = documentData.map(_._1)
+      
+      loadedIds must haveTheSameElementsAs(documentIds.take(4))
     }
     
     "load intersection of documents specified by nodes and document ids" in new NodesAndDocuments {
@@ -61,7 +77,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedDocuments = documentIds.drop(1)
       
       val documentData = 
-        dataLoader.loadSelectedDocumentSlice(selectedNodes, selectedDocuments, 0, 6)
+        dataLoader.loadSelectedDocumentSlice(selectedNodes, Nil, selectedDocuments, 0, 6)
         
       val loadedIds = documentData.map(_._1)
       
@@ -72,7 +88,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "load slice of selected documents" in new NodesAndDocuments {
       val expectedDocumentIds = documentIds.slice(2, 5)
 
-      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 2, 3)
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, Nil, 2, 3)
       val loadedIds = documentData.map(_._1)
       
       loadedIds must haveTheSameElementsAs(expectedDocumentIds)     
@@ -81,7 +97,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "return nothing if slice offset is larger than total number of Rows" in new NodesAndDocuments {
       val selectedDocuments = documentIds
       
-      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, 10, 4)
+      val documentData = dataLoader.loadSelectedDocumentSlice(nodeIds, Nil, Nil, 10, 4)
       
       documentData must be empty
     }
@@ -89,7 +105,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
     "return all documents if selection is empty" in new NodesAndDocuments {
       val selectedDocuments = documentIds
        
-      val documentData = dataLoader.loadSelectedDocumentSlice(Nil, Nil, 0, 6)
+      val documentData = dataLoader.loadSelectedDocumentSlice(Nil, Nil, Nil, 0, 6)
         
       val loadedIds = documentData.map(_._1)
       

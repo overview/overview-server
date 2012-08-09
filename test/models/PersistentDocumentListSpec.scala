@@ -11,13 +11,14 @@ class PersistentDocumentListSpec extends Specification with Mockito {
 
     val nodeIds = Seq(1l, 2l, 4l)
     val documentIds = Seq(5l, 6l)
+    val tagIds = Seq(7l, 8l, 9l, 10l)
 
     trait MockComponents extends Scope {
       val loader = mock[PersistentDocumentListDataLoader]
       val parser = mock[DocumentListParser]
 
       val persistentDocumentList =
-        new PersistentDocumentList(nodeIds, documentIds, loader, parser)
+        new PersistentDocumentList(nodeIds, tagIds, documentIds, loader, parser)
     }
 
     trait MockSaver extends Scope {
@@ -25,18 +26,18 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val saver = mock[PersistentDocumentListDataSaver]
 
       val persistentDocumentList =
-        new PersistentDocumentList(nodeIds, documentIds, saver = saver)
+        new PersistentDocumentList(nodeIds, tagIds, documentIds, saver = saver)
     }
 
     "extract ids from input strings" in new MockComponents {
       val dummyDocumentData = Nil
 
-      loader loadSelectedDocumentSlice (nodeIds, documentIds, 0, 10) returns
+      loader loadSelectedDocumentSlice (nodeIds, tagIds, documentIds, 0, 10) returns
         dummyDocumentData
 
       val documents = persistentDocumentList.loadSlice(0, 10)
 
-      there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 0, 10)
+      there was one(loader).loadSelectedDocumentSlice(nodeIds, tagIds, documentIds, 0, 10)
     }
 
     "call loader and parser to create Documents" in new MockComponents {
@@ -44,14 +45,14 @@ class PersistentDocumentListSpec extends Specification with Mockito {
       val dummyDocumentTagData = List((1l, 5l), (1l, 15l))
       val dummyDocuments = List(core.Document(1l, "title", "text", "view"))
 
-      loader loadSelectedDocumentSlice(nodeIds, documentIds, 0, 10) returns
+      loader loadSelectedDocumentSlice(nodeIds, tagIds, documentIds, 0, 10) returns
         dummyDocumentData
       loader loadDocumentTags(List(1l)) returns dummyDocumentTagData
       parser createDocuments(dummyDocumentData, dummyDocumentTagData) returns dummyDocuments
 
       val documents = persistentDocumentList.loadSlice(0, 10)
 
-      there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 0, 10)
+      there was one(loader).loadSelectedDocumentSlice(nodeIds, tagIds, documentIds, 0, 10)
       there was one(parser).createDocuments(dummyDocumentData, dummyDocumentTagData)
 
       documents must be equalTo (dummyDocuments)
@@ -60,12 +61,12 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     "compute offset and limit of slice" in new MockComponents {
       val dummyDocumentData = Nil
 
-      loader loadSelectedDocumentSlice (nodeIds, documentIds, 3, 4) returns
+      loader loadSelectedDocumentSlice (nodeIds, tagIds, documentIds, 3, 4) returns
         dummyDocumentData
 
       val documents = persistentDocumentList.loadSlice(3, 7)
 
-      there was one(loader).loadSelectedDocumentSlice(nodeIds, documentIds, 3, 4)
+      there was one(loader).loadSelectedDocumentSlice(nodeIds, tagIds, documentIds, 3, 4)
     }
 
     "call loader to get selection count" in new MockComponents {
@@ -91,7 +92,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     }
 
     "be constructable with default loader and parser" in {
-      val persistentDocumentList = new PersistentDocumentList(Nil, Nil)
+      val persistentDocumentList = new PersistentDocumentList(Nil, Nil, Nil)
 
       success
     }

@@ -8,7 +8,7 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
 
   def addTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
             (implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, documentIds) :+ whereDocumentNotTagged
+    val whereClauses = SelectionWhere(nodeIds, Nil, documentIds) :+ whereDocumentNotTagged
     val whereSelectionIsNotAlreadyTagged = combineWhereClauses(whereClauses)
     
     SQL("""
@@ -19,7 +19,7 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
   
   def removeTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
                (implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, Nil, documentIds)
     val whereSelected = combineWhereClauses(whereClauses)
     
     SQL("""

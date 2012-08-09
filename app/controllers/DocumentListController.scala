@@ -13,7 +13,9 @@ object DocumentListController extends Controller {
       val (validStart, validEnd) = SaneRange(start, end)
       
       DB.withTransaction { implicit connection => 
-        val documents = new PersistentDocumentList(IdList(nodeids), IdList(documentids))
+        val documents = new PersistentDocumentList(IdList(nodeids), 
+                                                   IdList(tagids),
+                                                   IdList(documentids))
         val selection = documents.loadSlice(validStart, validEnd)
         val totalItems = documents.loadCount
         
