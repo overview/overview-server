@@ -32,7 +32,11 @@ object ApplicationBuild extends Build {
       Seq(libraryDependencies ++= 
         appDependencies ++
         Seq("play" %% "play" % "2.0.2") ++
-        Seq("org.specs2" %% "specs2" % "1.11" % "test")) :+ (scalacOptions ++= Seq("-deprecation", "-unchecked"))
+        Seq("org.specs2" %% "specs2" % "1.11" % "test"))
+      ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")).
+        settings(
+          testOptions in Test += Tests.Setup( () =>
+          	System.setProperty("datasource.default.url", testDatabaseUrl))
       ).dependsOn(common).aggregate(common)
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
