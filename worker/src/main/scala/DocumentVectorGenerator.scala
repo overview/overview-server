@@ -27,27 +27,28 @@ class DocumentVectorGenerator {
   
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
   def AddDocument(docId:DocumentID, terms:Seq[String]) = {
-     
-    if (terms.size > 0) {
+    this.synchronized {
+      if (terms.size > 0) {
+          
+        // count how many times each token appears in this doc (term frequency)      
+        var termcounts = DocumentVector()
+        for (t <- terms) {
+          val prev_count = termcounts.getOrElse(t,0f)
+          termcounts += (t -> (prev_count + 1))
+        }
         
-      // count how many times each token appears in this doc (term frequency)      
-      var termcounts = DocumentVector()
-      for (t <- terms) {
-        val prev_count = termcounts.getOrElse(t,0f)
-        termcounts += (t -> (prev_count + 1))
+        // divide out document length to go from term count to term frequency
+        termcounts.transform((key,count) => count/terms.size.toFloat) 
+        tf += (docId -> termcounts)
+         
+        // for each unique term in this doc, update how many docs each term appears in (doc count)
+        for (t <- termcounts.keys) {
+          val prev_count = doccount.getOrElse(t, 0f)
+          doccount += (t -> (prev_count + 1))
+        }
+        
+        numDocs += 1
       }
-      
-      // divide out document length to go from term count to term frequency
-      termcounts.transform((key,count) => count/terms.size.toFloat) 
-      tf += (docId -> termcounts)
-       
-      // for each unique term in this doc, update how many docs each term appears in (doc count)
-      for (t <- termcounts.keys) {
-        val prev_count = doccount.getOrElse(t, 0f)
-        doccount += (t -> (prev_count + 1))
-      }
-      
-      numDocs += 1
     }
   }   
   
