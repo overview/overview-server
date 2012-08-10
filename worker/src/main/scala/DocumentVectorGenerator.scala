@@ -26,28 +26,29 @@ class DocumentVectorGenerator {
   // --- Methods ---
   
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
-  def AddDocument(docId:DocumentID, terms:Seq[String]) = {
-     
-    if (terms.size > 0) {
+  def addDocument(docId:DocumentID, terms:Seq[String]) = {
+    this.synchronized {
+      if (terms.size > 0) {
+          
+        // count how many times each token appears in this doc (term frequency)      
+        var termcounts = DocumentVector()
+        for (t <- terms) {
+          val prev_count = termcounts.getOrElse(t,0f)
+          termcounts += (t -> (prev_count + 1))
+        }
         
-      // count how many times each token appears in this doc (term frequency)      
-      var termcounts = DocumentVector()
-      for (t <- terms) {
-        val prev_count = termcounts.getOrElse(t,0f)
-        termcounts += (t -> (prev_count + 1))
+        // divide out document length to go from term count to term frequency
+        termcounts.transform((key,count) => count/terms.size.toFloat) 
+        tf += (docId -> termcounts)
+         
+        // for each unique term in this doc, update how many docs each term appears in (doc count)
+        for (t <- termcounts.keys) {
+          val prev_count = doccount.getOrElse(t, 0f)
+          doccount += (t -> (prev_count + 1))
+        }
+        
+        numDocs += 1
       }
-      
-      // divide out document length to go from term count to term frequency
-      termcounts.transform((key,count) => count/terms.size.toFloat) 
-      tf += (docId -> termcounts)
-       
-      // for each unique term in this doc, update how many docs each term appears in (doc count)
-      for (t <- termcounts.keys) {
-        val prev_count = doccount.getOrElse(t, 0f)
-        doccount += (t -> (prev_count + 1))
-      }
-      
-      numDocs += 1
     }
   }   
   
@@ -60,7 +61,7 @@ class DocumentVectorGenerator {
   
   // After all documents have been added (or, really, at any point) compute the total set of document vectors
   // Previously added documents will end up with different vectors as new docs are added, due to IDF term
-  def DocumentVectors() : DocumentSetVectors = {
+  def documentVectors() : DocumentSetVectors = {
    
     var docVectors = DocumentSetVectors()
     val idf = Idf()
