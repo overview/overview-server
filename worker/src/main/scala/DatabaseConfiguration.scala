@@ -1,3 +1,9 @@
+/*
+ * DatabaseConfiguration.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, June 2012
+ */
 
 import com.avaje.ebean.config.GlobalProperties
 
@@ -15,7 +21,7 @@ class DatabaseConfiguration {
 	val databaseSetting = sys.props.get(DATABASE_URL)
 	databaseSetting match {
       case Some(databaseInfo) => {
-        val urlPattern = "\\w+://(\\w+):(\\w+)@([\\w-.]+)/(\\w+)".r
+        val urlPattern = "\\w+://(\\w+):(\\w+)@([\\w-.]+)/([\\w-]+)".r
     
         val urlPattern(user, password, host, database) = databaseInfo
         ("jdbc:postgresql://"+host+"/"+database, user, password)
