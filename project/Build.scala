@@ -32,7 +32,7 @@ object ApplicationBuild extends Build {
       Seq(libraryDependencies ++= 
         appDependencies ++
         Seq("play" %% "play" % "2.0.2") ++
-        Seq("org.specs2" %% "specs2" % "1.11" % "test"))
+        Seq("org.specs2" %% "specs2" % "1.11" % "test")) :+ (scalacOptions ++= Seq("-deprecation", "-unchecked"))
       ).dependsOn(common).aggregate(common)
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
