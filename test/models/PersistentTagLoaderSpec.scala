@@ -101,6 +101,18 @@ class PersistentTagLoaderSpec extends Specification {
       
       counts must haveTheSameElementsAs(expectedCounts)
     }
+    
+    "return tag data for tag id" in new TagSetup {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 4)
+      val tagId = insertTag(documentSetId, tagName)
+      tagDocuments(tagId, documentIds)
+      
+      val expectedTagData = documentIds.map(d => (tagId, tagName, 4, Some(d)))
+      val tagData = tagLoader.loadTag(tagId)
+      
+      tagData must haveTheSameElementsAs(expectedTagData)
+    }
   }
   
   step(stop)

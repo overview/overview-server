@@ -1,6 +1,6 @@
 package models
 
-class PersistentDocumentListSelector {
+trait PersistentDocumentListSelector {
 
   protected def combineWhereClauses(whereClauses: Seq[Option[String]]) : String = {
     val actualWheres = whereClauses.collect { case Some(w) => w }

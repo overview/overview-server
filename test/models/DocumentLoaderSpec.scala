@@ -9,17 +9,19 @@ class DocumentLoaderSpec extends Specification with Mockito {
   "DocumentLoader" should {
     "call loader and parser to create optional document" in {
       val loader = mock[DocumentDataLoader]
-      val parser = mock[DocumentDataParser]
+      val parser = mock[DocumentListParser]
       
       val dummyDocumentData = Some((10l, "title", "textUrl", "viewUrl"))
       loader loadDocument(17l) returns dummyDocumentData
+      parser createDocuments(dummyDocumentData.toList, Nil) returns 
+        Seq(core.Document(10l, "title", "textUrl", "viewUrl", null))
       
       val documentLoader = new DocumentLoader(loader, parser)
       
       documentLoader.load(17l)
       
       there was one(loader).loadDocument(17l)
-      there was one(parser).createDocument(dummyDocumentData)
+      there was one(parser).createDocuments(dummyDocumentData.toList, Nil)
     }
     
     "be constructable with default loader and parser" in {

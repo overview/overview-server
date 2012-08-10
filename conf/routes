@@ -22,8 +22,8 @@ GET /trees/:id/documents controllers.DocumentListController.index(id: Long, node
 POST /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)
 GET /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
 
-POST /documentsets/:id/tags/:tag/add controllers.TagController.create(id: Long, tag: String, nodes: String ?= "", tags: String ?= "", documents: String ?="")
-POST /documentsets/:id/tags/:tag/remove controllers.TagController.remove(id: Long, tag: String, nodes: String ?= "", tags: String ?= "", documents: String ?="")
+POST /documentsets/:id/tags/:tag/add controllers.TagController.add(id: Long, tag: String)
+POST /documentsets/:id/tags/:tag/remove controllers.TagController.remove(id: Long, tag: String)
 
 POST /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")
 

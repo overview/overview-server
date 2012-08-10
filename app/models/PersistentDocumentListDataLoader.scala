@@ -5,19 +5,24 @@ import anorm.SqlParser._
 import DatabaseStructure._
 import java.sql.Connection
 
-class PersistentDocumentListDataLoader extends PersistentDocumentListSelector {
+class PersistentDocumentListDataLoader extends DocumentTagDataLoader with PersistentDocumentListSelector {
 
-  def loadSelectedDocumentSlice(nodeIds: Seq[Long], documentIds: Seq[Long],
-		  						firstRow: Long, maxRows: Long)(implicit c: Connection): List[DocumentData] = {
+  def loadSelectedDocumentSlice(nodeIds: Seq[Long], 
+		  					    tagIds: Seq[Long], 
+		  					    documentIds: Seq[Long],
+		  						firstRow: Long, maxRows: Long)
+  		(implicit c: Connection): List[DocumentData] = {
     
-    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
      
     documentSliceQueryWhere(firstRow, maxRows, where)
   }
 
-  def loadCount(nodeIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, documentIds)
+  def loadCount(nodeIds: Seq[Long], 
+                tagIds: Seq[Long],
+                documentIds: Seq[Long])(implicit c: Connection): Long = {
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
     
     countQueryWhere(where)

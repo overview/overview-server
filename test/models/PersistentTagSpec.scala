@@ -11,6 +11,7 @@ class PersistentTagSpec extends Specification with Mockito {
 	
     trait MockComponents extends Scope {
       val loader = mock[PersistentTagLoader]
+      val parser = mock[DocumentListParser]
       val saver = mock[PersistentTagSaver]
       val documentSetId = 4l
       val dummyTagId = 23l
@@ -24,7 +25,7 @@ class PersistentTagSpec extends Specification with Mockito {
       loader loadByName(name) returns None
       saver save(name, documentSetId) returns Some(dummyTagId)
       
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       
       there was one(loader).loadByName(name)
       there was one(saver).save(name, documentSetId)
@@ -35,7 +36,7 @@ class PersistentTagSpec extends Specification with Mockito {
     "be loaded by findOrCreateByName factory method if in database" in new MockComponents {
       loader loadByName(name) returns Some(dummyTagId)
             
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       
       there was one(loader).loadByName(name)
       there was no(saver).save(name, documentSetId)
@@ -47,7 +48,7 @@ class PersistentTagSpec extends Specification with Mockito {
     "be loaded by findByName if in database" in new MockComponents {
       loader loadByName(name) returns Some(dummyTagId)
       
-      val tag = PersistentTag.findByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findByName(name, documentSetId, loader, parser, saver)
       
       tag must beSome
       tag.get.id must be equalTo(dummyTagId)
@@ -56,7 +57,7 @@ class PersistentTagSpec extends Specification with Mockito {
     "return None from findByName if tag is not in database" in new MockComponents {
       loader loadByName(name) returns None
       
-      val tag = PersistentTag.findByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findByName(name, documentSetId, loader, parser, saver)
       
       tag must beNone
     }
@@ -68,7 +69,7 @@ class PersistentTagSpec extends Specification with Mockito {
       
       loader countDocuments(dummyTagId) returns dummyCount
       
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       val count = tag.count
       
       there was one(loader).countDocuments(dummyTagId)
@@ -83,18 +84,59 @@ class PersistentTagSpec extends Specification with Mockito {
       loader loadByName(name) returns Some(dummyTagId)
       loader countsPerNode(nodeIds, dummyTagId) returns dummyCounts
       
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, saver)
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       val counts = tag.countsPerNode(nodeIds)
       
       there was one(loader).countsPerNode(nodeIds, dummyTagId)
       
       counts must be equalTo(dummyCounts)
     }
+    
+    "ask loader and parser to create tag" in new MockComponents {
+    	
+      val tagData = Seq((dummyTagId, name, 0l, None))
+      val dummyTag = core.Tag(dummyTagId, name, core.DocumentIdList(Nil, 0))
+      
+      loader loadByName(name) returns Some(dummyTagId)
+      loader loadTag(dummyTagId) returns tagData
+      parser createTags(tagData) returns Seq(dummyTag)
+      
+      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
+      
+      val tag = persistentTag.loadTag
+      
+      there was one(loader).loadTag(dummyTagId)
+      there was one(parser).createTags(tagData)
+      
+      tag must be equalTo(dummyTag)
+    }
+    
+    "load documents referenced by tag" in new MockComponents {
+      val tag = core.Tag(dummyTagId, name, core.DocumentIdList(Seq(1l, 2l), 3))
+      val dummyDocumentData = List((1l, "title", "text", "view"),
+    		  					   (2l, "title", "text", "view"))
+      val documentIds = Seq(1l, 2l)
+      val dummyDocumentTagData = List((1l,5l), (2l, 15l))
+      val dummyDocuments = List(
+          core.Document(1l, "document1", "text", "view", Seq(5l)),
+          core.Document(2l, "document2", "text", "view", Seq(15l)))
+      
+      loader loadByName(name) returns Some(dummyTagId)
+      loader loadDocuments(documentIds) returns dummyDocumentData 
+      loader loadDocumentTags(documentIds) returns dummyDocumentTagData
+      parser createDocuments(dummyDocumentData, dummyDocumentTagData) returns dummyDocuments
+      
+      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, 
+    		  											   loader, parser, saver)
+    		  											   
+      val documents = persistentTag.loadDocuments(tag)
+      
+      there was one(loader).loadDocuments(documentIds) 
+      there was one(loader).loadDocumentTags(documentIds)
+      there was one(parser).createDocuments(dummyDocumentData, dummyDocumentTagData)
+      
+      documents must be equalTo(dummyDocuments)
+    }
   }
-
-  
-  
-  
-  
-  
 }
+

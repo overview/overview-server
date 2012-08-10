@@ -18,36 +18,38 @@ observable = require('models/observable').observable
 class DocumentList
   observable(this)
 
-  constructor: (@store, @selection, @resolver) ->
+  constructor: (@document_store, @selection, @resolver) ->
     @documents = []
     @deferreds = {}
     @n = undefined
 
   get_placeholder_documents: () ->
-    # Set up "ids_so_far" to the Documents list, then filter it by tags and nodes
-    ids_so_far = (document.id? && document.id || document for document in (@selection.documents || []))
-    excludes_something = @selection.documents?.length
+    return []
 
-    for key in [ 'tags', 'nodes' ]
-      store = @store[key]
-      for object in @selection[key]
-        object = store.get(object) if !object.id?
+    ## Set up "ids_so_far" to the Documents list, then filter it by tags and nodes
+    #ids_so_far = (document.id? && document.id || document for document in (@selection.documents || []))
+    #excludes_something = @selection.documents?.length
 
-        return [] if !object?.doclist?
+    #for key in [ 'tags', 'nodes' ]
+    #  store = @store[key]
+    #  for object in @selection[key]
+    #    object = store.get(object) if !object.id?
 
-        doclist = object.doclist
+    #    return [] if !object?.doclist?
 
-        if !excludes_something
-          ids_so_far = doclist.docids
-          excludes_something = true
-        else
-          new_ids_so_far = []
-          for docid in (doclist.docids || [])
-            if ids_so_far.indexOf(docid) >= 0
-              new_ids_so_far.push(docid)
-          ids_so_far = new_ids_so_far
+    #    doclist = object.doclist
 
-    (@store.documents.get(docid) for docid in ids_so_far)
+    #    if !excludes_something
+    #      ids_so_far = doclist.docids
+    #      excludes_something = true
+    #    else
+    #      new_ids_so_far = []
+    #      for docid in (doclist.docids || [])
+    #        if ids_so_far.indexOf(docid) >= 0
+    #          new_ids_so_far.push(docid)
+    #      ids_so_far = new_ids_so_far
+
+    X(@store.documents.get(docid) for docid in ids_so_far)
 
   # Returns a Deferred which, when resolved, will be a slice of this.documents
   slice: (start, end) ->

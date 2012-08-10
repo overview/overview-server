@@ -31,10 +31,10 @@ class Router
     "/documentsets/#{@document_set_id}/log-entries/create-many"
 
   _tag_add_path: (name) ->
-    "/tags/#{encodeURIComponent(name)}/add"
+    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/add"
 
   _tag_remove_path: (name) ->
-    "/tags/#{encodeURIComponent(name)}/remove"
+    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/remove"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router

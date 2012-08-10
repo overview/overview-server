@@ -23,7 +23,7 @@ VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
-document_list_controller = (div, store, resolver, selection) ->
+document_list_controller = (div, document_store, resolver, selection) ->
   stored_selection = undefined
   document_list = undefined
   view = undefined
@@ -35,7 +35,7 @@ document_list_controller = (div, store, resolver, selection) ->
     document_list.slice(need_documents[0], max)
 
   refresh_document_list = () ->
-    document_list = new DocumentList(store, stored_selection, resolver)
+    document_list = new DocumentList(document_store, stored_selection, resolver)
     if !view?
       view = new DocumentListView(div, document_list, selection, VIEW_OPTIONS)
     else
@@ -52,7 +52,7 @@ document_list_controller = (div, store, resolver, selection) ->
 
   get_view_document = () ->
     documentid = view.last_document_id_clicked()
-    store.documents.get(documentid)
+    document_store.documents[documentid]
 
   selection.observe(maybe_update_stored_selection)
 

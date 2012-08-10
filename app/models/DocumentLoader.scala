@@ -3,11 +3,12 @@ package models
 import java.sql.Connection
 
 class DocumentLoader(loader: DocumentDataLoader = new DocumentDataLoader(),
-					 parser: DocumentDataParser = new DocumentDataParser()) {
+					 parser: DocumentListParser = new DocumentListParser()) {
 
   def load(id: Long)(implicit c: Connection): Option[core.Document] = {
     val documentData = loader.loadDocument(id)
+    val noTagsNeeded = Nil
     
-    parser.createDocument(documentData)
+    parser.createDocuments(documentData.toList, noTagsNeeded).headOption
   }
 }

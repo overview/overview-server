@@ -12,7 +12,7 @@ import DatabaseStructure._
  * Utility class form SubTreeLoader that performs database queries and returns results as 
  * a list of tuples.
  */
-class SubTreeDataLoader {
+class SubTreeDataLoader extends DocumentTagDataLoader {
       
   /**
    * @return a list of tuples: (parentId, Some(childId), childDescription) for each node found in
@@ -40,19 +40,12 @@ class SubTreeDataLoader {
     nodeDocumentQuery(nodeIds)
   } 
   
-  /** 
-   * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
-   */
-  def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection) : List[DocumentData] = {
-    documentQuery(documentIds)
-  }
-  
   def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
     nodeTagCountQuery(nodeIds)
   }
   
-  def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentTagData] = {
-    documentTagQuery(documentIds)
+  def loadTags(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
+    tagQuery(documentSetId)
   }
   
   private def loadChildNodes(nodes: Seq[Long], depth: Int)
@@ -119,19 +112,6 @@ class SubTreeDataLoader {
     as(documentIdParser map(flatten) *)
   }
   
-  private def documentQuery(documentIds: Seq[Long])(implicit c: Connection) : List[DocumentData]= {
-    val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
-
-    SQL(
-      """
-        SELECT id, title, text_url, view_url
-        FROM document
-        WHERE id IN 
-      """ + idList(documentIds)
-    ).
-    as(documentParser map(flatten) *)
-  }
-  
   private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
     val whereNodeIsSelected = nodeIds match {
       case Nil => ""
@@ -150,23 +130,23 @@ class SubTreeDataLoader {
     	""").as(nodeTagCountParser map(flatten) *)    
   }
   
-  private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection) : 
-	  List[DocumentTagData] = {
-    val whereDocumentIsSelected = documentIds match {
-      case Nil => ""
-      case _ => "WHERE document_tag.document_id IN " + idList(documentIds)
-    }
-    
+  private def tagQuery(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
+    val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~ 
+    				    get[Option[Long]]("document_id")
     SQL("""
-        SELECT document_tag.document_id, document_tag.tag_id 
-        FROM document_tag
-        INNER JOIN tag ON document_tag.tag_id = tag.id """ +
-        whereDocumentIsSelected +
-        """
-        ORDER BY document_tag.document_id, tag.name
-        """).as(long("document_id") ~ long("tag_id") map(flatten) *)
+    	SELECT tag_id, tag_name, document_count, document_id
+    	FROM (
+    	  SELECT t.id AS tag_id, t.name AS tag_name,
+            COUNT(dt.document_id) OVER (PARTITION BY dt.tag_id) AS document_count,
+    		dt.document_id,
+            RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
+    	  FROM tag t
+    	  LEFT JOIN document_tag dt ON t.id = dt.tag_id
+          WHERE t.document_set_id = {documentSetId}
+    	  ORDER BY t.name, dt.document_id
+    	) ss
+    	WHERE ss.pos < 11        
+        """).on("documentSetId" -> documentSetId).
+        as(tagDataParser map(flatten) *)
   }
-  
-  private def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
-
 }

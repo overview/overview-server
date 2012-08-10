@@ -6,9 +6,9 @@ import java.sql.Connection
 
 class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
 
-  def addTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
+  def addTag(tagId: Long, nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long])
             (implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, documentIds) :+ whereDocumentNotTagged
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds) :+ whereDocumentNotTagged
     val whereSelectionIsNotAlreadyTagged = combineWhereClauses(whereClauses)
     
     SQL("""
@@ -17,17 +17,20 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
           whereSelectionIsNotAlreadyTagged).on("tagId" -> tagId).executeUpdate()
   }
   
-  def removeTag(tagId: Long, nodeIds: Seq[Long], documentIds: Seq[Long])
+  def removeTag(tagId: Long, 
+                nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long])
                (implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, documentIds)
+    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds) :+ whereTagIdMatches
     val whereSelected = combineWhereClauses(whereClauses)
-    
+
     SQL("""
         DELETE FROM document_tag WHERE document_id IN
     	  (SELECT id FROM document """ + 
-    	   whereSelected + ")").executeUpdate()
+    	   whereSelected + ")").on("tagId" -> tagId).executeUpdate()
   }
   
+  private def whereTagIdMatches() = 
+    Some("tag_id = {tagId}")
   
   private val whereDocumentNotTagged = 
     Some("id NOT IN (SELECT document_id FROM document_tag WHERE tag_id = {tagId})")

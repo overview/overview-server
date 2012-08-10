@@ -5,7 +5,7 @@ import DatabaseStructure._
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
  */
-class SubTreeDataParser {
+class SubTreeDataParser extends DocumentListParser {
 
   /**
    * @return a list of Nodes created from the passed in data
@@ -28,15 +28,6 @@ class SubTreeDataParser {
                                       tagCounts))	
   }
   
-  /**
-   * @return a list of Documents created from the passed in data
-   */
-  def createDocuments(documentData: Seq[DocumentData], 
-		  			  documentTagData: Seq[DocumentTagData]) : Seq[core.Document] = {
-    val tagIds = mapDocumentsToTagIds(documentTagData)
-    
-    documentData.map(d => core.Document(d._1, d._2, d._3, d._4, tagIds.getOrElse(d._1, Nil)))
-  }
   
   private def createOneNode(id: Long, 
 		  			        descriptions: Map[Long, String],
@@ -50,14 +41,6 @@ class SubTreeDataParser {
     		  tagCounts.getOrElse(id, Map()))
   }
   
-  private def groupById[A](data: Seq[(Long, A)]) : Map[Long, Seq[A]] = {
-    val groupedById= data.groupBy(_._1)
-    
-    groupedById.map {
-      case (id, dataList) => (id, dataList.map(_._2))
-    }
-  }
-    
   private def mapNodesToChildNodeIdLists(nodeData: Seq[NodeData]) : Map[Long, Seq[Long]] = {
     val nodeAndPossibleChild = nodeData.map(d => (d._1, d._2))
     val possibleChildNodes = groupById(nodeAndPossibleChild)
@@ -86,11 +69,6 @@ class SubTreeDataParser {
     groupedByNode.map {
       case (nodeId, dataList) => (nodeId, dataList.map(d => (d._2.toString -> d._3)).toMap)
     }
-  }
-  
-  private def mapDocumentsToTagIds(documentTagData: Seq[DocumentTagData]) :
-	  Map[Long, Seq[Long]] = {
-    groupById(documentTagData)
   }
   
   private def realNodeIds(nodeData : Seq[NodeData]) : Seq[Long] = {
