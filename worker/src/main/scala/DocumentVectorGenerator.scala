@@ -26,7 +26,7 @@ class DocumentVectorGenerator {
   // --- Methods ---
   
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
-  def AddDocument(docId:DocumentID, terms:Seq[String]) = {
+  def addDocument(docId:DocumentID, terms:Seq[String]) = {
     this.synchronized {
       if (terms.size > 0) {
           
@@ -61,7 +61,7 @@ class DocumentVectorGenerator {
   
   // After all documents have been added (or, really, at any point) compute the total set of document vectors
   // Previously added documents will end up with different vectors as new docs are added, due to IDF term
-  def DocumentVectors() : DocumentSetVectors = {
+  def documentVectors() : DocumentSetVectors = {
    
     var docVectors = DocumentSetVectors()
     val idf = Idf()
