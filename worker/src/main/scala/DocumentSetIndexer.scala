@@ -17,7 +17,20 @@ case class DCSearchResult(documents: Seq[clustering.DCDocument])
 // Single object that interfaces to Ning's Async HTTP library
 object AsyncHttpRequest {  
   
-  private lazy val asyncHttpClient = new AsyncHttpClient()
+  private def getHttpConfig = {
+    val builder = new AsyncHttpClientConfig.Builder()
+    val config = builder
+        .setMaximumConnectionsTotal(16)
+        .setMaximumConnectionsPerHost(20)
+        .setFollowRedirects(true)
+        .setCompressionEnabled(true)
+        .setAllowPoolingConnection(true)
+        .setRequestTimeoutInMs(20000)
+        .build
+   config
+  }
+      
+  private lazy val asyncHttpClient = new AsyncHttpClient(getHttpConfig)
   
   // Since AsyncHTTPClient has an executor anyway, allow re-use (if desired) for an Akka Promise execution context
   lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
@@ -77,17 +90,14 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     println(op + ", time: " + (t1 - t0)/1e9 + " seconds")
   }
 
-  private def MakeDoc(doc:DCDocument, response:Response) = {
-    println("Retrieved text for document " + doc.resources.text)
-    val text = response.getResponseBody
-    (doc, Lexer.makeTerms(text))
-  }
-
   case class DocAndTerms(doc: DCDocument, terms: Seq[String])
+  
+  var numDocsRetrieved = 0
   
   // Given retrieved text, lex it and store the result. Purely functional, can be parallelized
   private def MakeTerms(doc:DCDocument, response:Response) = {
-    //println("Retrieved text for document " + doc.resources.text)
+    numDocsRetrieved += 1
+    println("WORKER: " + numDocsRetrieved + " docs retrieved, " + doc.resources.text)
     val text = response.getResponseBody
     DocAndTerms(doc, Lexer.makeTerms(text))
   }
@@ -107,12 +117,22 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
   // Query documentCloud and create one document object for each doc returned by the query
   def RetrieveAndIndexDocuments() : Future[DocumentSetVectors] = {     
     // Blocking document list retrieval for the moment
-    val documentCloudQuery = "http://www.documentcloud.org/api/search.json?per_page=500&q=" + documentSet.query
+    val num = documentSet.query.filter(_.isDigit)
+    val q = documentSet.query.filter(c => !(c.isDigit))
+    val documentCloudQuery = "http://www.documentcloud.org/api/search.json?per_page=" + num + "&q=" + q
     val response = AsyncHttpRequest.BlockingHttpRequest(documentCloudQuery)
     val result = parse[DCSearchResult](response)              // TODO error handling, log bad result from DC here
-
+    
+    println("WORKER: Got document set result with " + result.documents.size + " docs.")
+    
     // Generate Futures for each document we want to retrieve
-    val docFutures = result.documents.map { doc => (doc,AsyncHttpRequest(doc.resources.text)) }
+    var docFutures = List[(DCDocument, Future[Response])]()
+    for (i <- 0 to result.documents.size-1) {
+      val doc = result.documents.get(i)
+      docFutures = (doc,AsyncHttpRequest(doc.resources.text)) :: docFutures
+      //if ((i % 7) == 0) Thread.sleep(1000)
+    }
+    //val docFutures = result.documents.map { doc => (doc,AsyncHttpRequest(doc.resources.text)) }
     
     // When each doc retrieval completes, feed it into MakeTerms
     val addedDocFutures = docFutures map { case(doc, futureResponse) => futureResponse map { response => MakeTerms(doc, response) } }   
@@ -131,16 +151,16 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     
     vectorsPromise onSuccess {
       case docSetVecs:DocumentSetVectors => 
-        printElapsedTime("Retrieved and indexed " + documentSet.documents.size + " documents", t0)
+        printElapsedTime("WORKER: Retrieved and indexed " + documentSet.documents.size + " documents", t0)
 
         val t1 = System.nanoTime()
         val docTree = BuildDocTree(docSetVecs)
-        printElapsedTime("Clustered documents", t1)
+        printElapsedTime("WORKER: Clustered documents", t1)
         //println(docTree.prettyString)
         
         val t2 = System.nanoTime()
         documentSet.update();            
-        printElapsedTime("Saved DocumentSet to DB", t2)
+        printElapsedTime("WORKER: Saved DocumentSet to DB", t2)
     }
   } 
 }
