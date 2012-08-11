@@ -20,11 +20,25 @@ class NodeWriter(documentSetId: Long) {
   
   def write(root: DocTreeNode)(implicit c: Connection) {
     
-    SQL("""
+    val rootId = SQL("""
         INSERT INTO node (id, description, document_set_id) VALUES
           (nextval('node_seq'), {description}, {documentSetId})
         """).on("documentSetId" -> documentSetId, "description" -> root.description).
-             executeInsert()
+             executeInsert().get
+             
+    root.children.foreach(writeSubTree(_, rootId))
+  }
+  
+  private def writeSubTree(node: DocTreeNode, parentId: Long)(implicit c: Connection) {
+    val nodeId = SQL("""
+        INSERT INTO node (id, description, parent_id, document_set_id) VALUES
+          (nextval('node_seq'), {description}, {parentId}, {documentSetId})
+        """).on("documentSetId" -> documentSetId, 
+                "description" -> node.description,
+                "parentId" -> parentId).
+             executeInsert().get
+
+     node.children.foreach(writeSubTree(_, nodeId))
   }
 
 }
