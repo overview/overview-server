@@ -19,17 +19,10 @@ import java.sql.Connection
 class NodeWriter(documentSetId: Long) {
   
   def write(root: DocTreeNode)(implicit c: Connection) {
-    
-    val rootId = SQL("""
-        INSERT INTO node (id, description, document_set_id) VALUES
-          (nextval('node_seq'), {description}, {documentSetId})
-        """).on("documentSetId" -> documentSetId, "description" -> root.description).
-             executeInsert().get
-             
-    root.children.foreach(writeSubTree(_, rootId))
+    writeSubTree(root, None)
   }
   
-  private def writeSubTree(node: DocTreeNode, parentId: Long)(implicit c: Connection) {
+  private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val nodeId = SQL("""
         INSERT INTO node (id, description, parent_id, document_set_id) VALUES
           (nextval('node_seq'), {description}, {parentId}, {documentSetId})
@@ -38,7 +31,7 @@ class NodeWriter(documentSetId: Long) {
                 "parentId" -> parentId).
              executeInsert().get
 
-     node.children.foreach(writeSubTree(_, nodeId))
+     node.children.foreach(writeSubTree(_, Some(nodeId)))
   }
 
 }
