@@ -30,9 +30,11 @@ colors = [
 add_color = (index, color) ->
   hsl = "hsl(#{color.h},100%,50%)"
   hsl_gradient = "hsl(#{color.h},100%,85%)"
-  selector=".btn-color-#{index}"
 
-  add_rule(selector,
+  add_rule(".tag-color-#{index}", "color: white; background-color: #{hsl};")
+
+  btn_selector=".btn-color-#{index}"
+  add_rule(btn_selector,
     """
     color: white;
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
@@ -46,7 +48,7 @@ add_color = (index, color) ->
     border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
     """)
 
-  add_rule("#{selector}:hover, #{selector}:active, #{selector}.active, #{selector}.disabled, #{selector}[disabled]",
+  add_rule("#{btn_selector}:hover, #{btn_selector}:active, #{btn_selector}.active, #{btn_selector}.disabled, #{btn_selector}[disabled]",
     """
     background-color: #{hsl_gradient};
     """)
@@ -75,6 +77,10 @@ class ColorTable
 
     while n >= colors.length
       grow_colors()
+
+  get: (n) ->
+    this.reserve(n)
+    colors[n]
 
 exports = require.make_export_object('views/color_table')
 exports.ColorTable = ColorTable
