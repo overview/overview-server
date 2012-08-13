@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+ColorTable = require('views/color_table').ColorTable
 
 TAG_KEY = 'overview-tag'
 
@@ -6,6 +7,7 @@ class TagListView
   observable(this)
 
   constructor: (@div, @tag_list) ->
+    @color_table = new ColorTable()
     this._init_html()
     this._observe_tag_add()
     this._observe_tag_remove()
@@ -60,6 +62,24 @@ class TagListView
 
     $ul = $('ul', @div)
     $li.insertBefore($ul.children()[position])
+
+    this._reset_tag_button_classes()
+
+  _reset_tag_button_classes: () ->
+    $lis = $('a.tag-name', @div).closest('li')
+    @color_table.reserve($lis.length)
+
+    i = 0
+    $lis.each ->
+      $btn = $(this).find('a.btn')
+      match = /\bbtn-color-(\d+)\b/.exec($btn[0].className)
+      if match && match[1] != i
+        old_position = match[1]
+        $btn.removeClass("btn-color-#{old_position}")
+      $btn.addClass("btn-color-#{i}")
+      i += 1
+
+    undefined
 
   _observe_tag_remove: () ->
     @tag_list.observe 'tag-removed', (obj) =>
