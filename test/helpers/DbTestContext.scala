@@ -8,15 +8,13 @@
 package helpers
 
 import anorm._
-import org.specs2.mutable.Around
 import org.specs2.execute.Result
-
+import org.specs2.mutable.Around
 import org.squeryl.PrimitiveTypeMode.inTransaction
 import org.squeryl.Session
 
 import play.api.test._
 import play.api.test.Helpers._
-
 
 /**
  /**
@@ -34,7 +32,6 @@ trait  DbTestContext extends Around {
   def around[T <% Result](test: => T) = {
 
     inTransaction {
-      SQL("TRUNCATE TABLE document_set CASCADE").execute()
 	  val result = test
 	  connection.rollback()
             
