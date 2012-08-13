@@ -247,12 +247,13 @@ describe 'models/remote_tag_list', ->
                 9: { id: 9, title: "doc9", tagids: [ 1 ] },
                 10: { id: 10, title: "doc10", tagids: [ 1, 2 ] },
               }
+              new_documents_array = (new_documents[i] for i in [1..10])
 
               beforeEach ->
                 server.deferreds[0].resolve({
                   num_added: 8,
                   tag: { id: 1, doclist: new_doclist },
-                  documents: new_documents,
+                  documents: new_documents_array,
                 })
 
               it 'should set the new tag count', ->
@@ -329,7 +330,7 @@ describe 'models/remote_tag_list', ->
                 server.deferreds[0].resolve({
                   num_removed: 6,
                   tag: { id: 2, doclist: new_doclist },
-                  documents: new_documents,
+                  documents: [new_documents[15]],
                 })
 
               it 'should set the new tag count', ->

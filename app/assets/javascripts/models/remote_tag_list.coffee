@@ -48,7 +48,9 @@ class RemoteTagList
 
   _after_tag_add_or_remove: (tag, obj) ->
     if obj.tag?.doclist? && obj.documents?
-      @document_store.add_doclist(obj.tag.doclist, obj.documents)
+      documents = {}
+      documents[doc.id] = doc for doc in obj.documents
+      @document_store.add_doclist(obj.tag.doclist, documents)
     @tag_store.change(tag, obj.tag)
 
   _selection_to_post_data: (selection) ->
