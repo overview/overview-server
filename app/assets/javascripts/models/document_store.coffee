@@ -16,6 +16,9 @@ class DocumentStore
       @_counts[documentid] = 1
     this._notify('document-added', document)
 
+  change: (document) ->
+    this._notify('document-changed', document)
+
   remove: (document) ->
     documentid = document.id
 

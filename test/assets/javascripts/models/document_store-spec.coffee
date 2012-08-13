@@ -68,6 +68,14 @@ describe 'models/document_store', ->
       store.add(document1)
       expect(v).toBe(document1)
 
+    it 'should notify :document-changed', ->
+      document1 = { id: 1, title: 'foo' }
+      store.add(document1)
+      v = undefined
+      store.observe('document-changed', (o) -> v = o)
+      store.change(document1)
+      expect(v).toBe(document1)
+
     it 'should notify :document-removed', ->
       document = { id: 1, title: 'foo' }
       store.add(document)
