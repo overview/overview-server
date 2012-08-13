@@ -1,5 +1,3 @@
-app = require('app')
-
 DocumentStore = require('models/document_store').DocumentStore
 TagStore = require('models/tag_store').TagStore
 OnDemandTree = require('models/on_demand_tree').OnDemandTree
@@ -8,16 +6,19 @@ Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
 TransactionQueue = require('models/transaction_queue').TransactionQueue
 RemoteTagList = require('models/remote_tag_list').RemoteTagList
+State = require('models/state').State
+NeedsResolver = require('models/needs_resolver').NeedsResolver
+Server = require('models/server').Server
 
 tag_store = new TagStore()
 document_store = new DocumentStore()
 
-state = new app.models.State()
+state = new State()
 
-server = new app.models.Server()
+server = new Server()
 transaction_queue = new TransactionQueue()
 
-needs_resolver = new app.models.NeedsResolver(document_store, tag_store, server)
+needs_resolver = new NeedsResolver(document_store, tag_store, server)
 
 log = require('globals').logger
 
