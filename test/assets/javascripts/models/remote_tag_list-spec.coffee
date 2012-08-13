@@ -21,6 +21,9 @@ class MockTagStore
     tag[k] = v for k, v of map
     undefined
 
+  find_tag_by_name: (name) ->
+    _.find(@tags, (o) -> o.name == name)
+
 class MockDocumentStore
   constructor: () ->
     @documents = {}
@@ -127,6 +130,11 @@ describe 'models/remote_tag_list', ->
         remote_tag_list.observe('tag-changed', (v) -> actual = v)
         tag_store._notify('tag-changed', expected)
         expect(actual).toBe(expected)
+
+      it 'should pass through find_tag_by_name() to the TagStore', ->
+        expected = tag_store.tags[1]
+        tag = remote_tag_list.find_tag_by_name('BB')
+        expect(tag).toBe(expected)
 
       it 'should mirror TagStore.tags', ->
         tag_store.tags.splice(1, 1)

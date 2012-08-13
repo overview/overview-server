@@ -10,6 +10,9 @@ class MockTagList
   constructor: () ->
     @tags = []
 
+  find_tag_by_name: (name) ->
+    _.find(@tags, (o) -> o.name == name)
+
 describe 'views/tag_list_view', ->
   describe 'TagListView', ->
     div = undefined
@@ -89,3 +92,11 @@ describe 'views/tag_list_view', ->
         view.observe('remove-clicked', (v) -> val = v)
         $(div).find('a.tag-remove:eq(0)').click()
         expect(val).toBe(tag1)
+
+      it 'should notify :add-clicked when trying to create an existing tag', ->
+        $form = $('form', div)
+        $form.find('input[type=text]').val('AA')
+        val = undefined
+        view.observe('add-clicked', (v) -> val = v)
+        $form.submit()
+        expect(val).toEqual(tag1)

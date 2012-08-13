@@ -110,5 +110,8 @@ class RemoteTagList
     index = tagids.indexOf(tagid)
     tagids.splice(index, 1) if index >= 0
 
+  find_tag_by_name: (name) ->
+    @tag_store.find_tag_by_name(name)
+
 exports = require.make_export_object('models/remote_tag_list')
 exports.RemoteTagList = RemoteTagList

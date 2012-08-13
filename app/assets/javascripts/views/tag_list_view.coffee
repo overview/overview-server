@@ -39,12 +39,19 @@ class TagListView
       $input = $form.find('input[name=tag_name]')
       name = $.trim($input.val())
       if name.length > 0
-        this._notify('create-submitted', { name: name })
+        this._create_or_add_tag(name)
       $input.val('')
 
   _observe_tag_add: () ->
     @tag_list.observe 'tag-added', (obj) =>
       this._add_tag(obj.position, obj.tag)
+
+  _create_or_add_tag: (name) ->
+    tag = @tag_list.find_tag_by_name(name)
+    if tag?
+      this._notify('add-clicked', tag)
+    else
+      this._notify('create-submitted', { name: name })
 
   _add_tag: (position, tag) ->
     $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
