@@ -11,7 +11,7 @@ $ = jQuery
 class DocumentListView
   observable(this)
 
-  constructor: (@div, @document_list, @selection, options={}) ->
+  constructor: (@div, @document_store, @tag_store, @document_list, @selection, options={}) ->
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -27,6 +27,7 @@ class DocumentListView
     this._attach_click()
     this._attach_selection()
     this._attach_document_list()
+    this._attach_document_changed()
     this._attach_scroll()
 
   _attach_click: () ->
@@ -59,7 +60,6 @@ class DocumentListView
   _attach_scroll: () ->
     $(@div).scroll(=> this._refresh_need_documents())
 
-
   _get_bottom_need_document_index: () ->
     return undefined if !@_buffer_documents?
     # Assumes there's no padding between documents
@@ -78,10 +78,29 @@ class DocumentListView
   _detach_document_list: () ->
     @document_list.unobserve(@_document_list_callback)
 
+  _attach_document_changed: () ->
+    @document_store.observe('document-changed', (document) => this._update_document(document))
+
+  _update_document_a_tagids: ($tags, tagids) ->
+    $tags.empty()
+    for tagid in tagids
+      tag = @tag_store.find_tag_by_id(tagid)
+      $tags.append("<span class=\"tag-color-#{tag.position}\"/>")
+
+  _update_document: (document) ->
+    $tags = $("a[href=#document-#{document.id}] span.tags")
+    this._update_document_a_tagids($tags, document.tagids || [])
+
   _document_to_dom_node: (document) ->
     $a = $('<a></a>')
       .text(document.title)
       .attr('href', "#document-#{document.id}")
+
+    $tags = $('<span class="tags"/>')
+    this._update_document_a_tagids($tags, document.tagids || [])
+    $a.prepend($tags)
+
+    $a
 
   _index_to_dom_node: (index) ->
     $a = $('<a></a>')

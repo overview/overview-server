@@ -19,22 +19,45 @@ class MockDocumentList
 
   get_placeholder_documents: () -> @placeholder_documents
 
+class MockDocumentStore
+  observable(this)
+
+  constructor: () ->
+    @documents = {}
+
+class MockTagStore
+  observable(this)
+
+  constructor: () ->
+    @tags = []
+
+  find_tag_by_id: (id) ->
+    _.find(@tags, (t) -> t.id == id) || throw "tagNotFound: #{id}"
+
 mock_document_array = (n, first=1) ->
-  ({ id: i, title: "doc#{i}" } for i in [first..(n+first-1)])
+  ({ id: i, title: "doc#{i}", tagids: [1 + n%2] } for i in [first..(n+first-1)])
 
 describe 'views/document_list_view', ->
   describe 'DocumentListView', ->
     selection = undefined
+    document_store = undefined
+    tag_store = undefined
     document_list = undefined
     div = undefined
     options = undefined
 
-    create_view = () -> new DocumentListView(div, document_list, selection, options)
+    create_view = () -> new DocumentListView(div, document_store, tag_store, document_list, selection, options)
 
     beforeEach ->
       options = {}
       selection = new MockSelection()
       document_list = new MockDocumentList(selection)
+      document_store = new MockDocumentStore()
+      tag_store = new MockTagStore()
+      tag_store.tags = [
+        { id: 1, position: 0, name: 'AA' },
+        { id: 2, position: 1, name: 'BB' },
+      ]
       div = $('<div></div>')[0]
       $('body').append(div)
 
@@ -43,6 +66,8 @@ describe 'views/document_list_view', ->
       $(div).remove() # Removes all callbacks
       div = undefined
       document_list = undefined
+      document_store = undefined
+      tag_store = undefined
 
     it 'should add nothing for an empty DocumentList', ->
       document_list.n = 0
@@ -82,6 +107,7 @@ describe 'views/document_list_view', ->
     describe 'starting with a complete list', ->
       beforeEach ->
         document_list.documents = mock_document_array(2)
+        document_store.documents[d.id] = d for d in document_list.documents
         document_list.n = 2
 
       it 'should set need_documents to []', ->
@@ -94,6 +120,21 @@ describe 'views/document_list_view', ->
         expect($div.children().length).toBeTruthy()
         expect($div.find('a[href=#document-1]').length).toEqual(1)
         expect($div.find('a[href=#document-2]').length).toEqual(1)
+
+      it 'should add a tag with the proper color to each list item', ->
+        view = create_view()
+        $tags = $('a:eq(0) span.tags', view.div)
+        expect($tags.length).toEqual(1)
+        expect($tags.children().length).toEqual(1)
+        expect($tags.children()[0].className).toEqual('tag-color-0')
+
+      it 'should add a tag to the list item after the document changes', ->
+        view = create_view()
+        document_list.documents[0].tagids.push(2)
+        document_store._notify('document-changed', document_list.documents[0])
+        $tags = $('a:eq(0) span.tags', view.div)
+        expect($tags.children().length).toEqual(2)
+        expect($tags.children()[1].className).toEqual('tag-color-1')
 
       it 'should not have any "last clicked" document', ->
         view = create_view()
