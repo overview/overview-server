@@ -36,9 +36,11 @@ class TagListView
     $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="New tag" class="input-mini" /><input type="submit" value="Tag" class="btn" /></form')
     $form.on 'submit', (e) =>
       e.preventDefault()
-      name = $.trim($form.find('input[name=tag_name]').val())
+      $input = $form.find('input[name=tag_name]')
+      name = $.trim($input.val())
       if name.length > 0
         this._notify('create-submitted', { name: name })
+      $input.val('')
 
   _observe_tag_add: () ->
     @tag_list.observe 'tag-added', (obj) =>

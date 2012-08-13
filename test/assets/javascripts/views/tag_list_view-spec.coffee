@@ -72,6 +72,12 @@ describe 'views/tag_list_view', ->
         $form.submit()
         expect(val).toEqual({ name: 'foo' })
 
+      it 'should reset the form after :create-submitted', ->
+        $form = $('form', div)
+        $form.find('input[type=text]').val('foo')
+        $form.submit()
+        expect($form.find('input[type=text]').val()).toEqual('')
+
       it 'should notify :add-clicked', ->
         val = undefined
         view.observe('add-clicked', (v) -> val = v)
