@@ -90,5 +90,7 @@ class TagListView
     $li = $($ul.children()[tag.position])
     $li.remove()
 
+    this._reset_tag_button_classes()
+
 exports = require.make_export_object('views/tag_list_view')
 exports.TagListView = TagListView
