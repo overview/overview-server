@@ -1,4 +1,8 @@
+observable = require('models/observable').observable
+
 class DocumentStore
+  observable(this)
+
   constructor: () ->
     @documents = {}
     @_counts = {}
@@ -10,6 +14,7 @@ class DocumentStore
     else
       @documents[document.id] = document
       @_counts[documentid] = 1
+    this._notify('document-added', document)
 
   remove: (document) ->
     documentid = document.id
@@ -18,6 +23,7 @@ class DocumentStore
     if @_counts[documentid] == 0
       delete @_counts[documentid]
       delete @documents[documentid]
+    this._notify('document-removed', document)
 
   add_doclist: (doclist, documents) ->
     this.add(documents[docid]) for docid in doclist.docids
