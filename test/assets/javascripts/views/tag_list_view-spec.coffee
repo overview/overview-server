@@ -37,14 +37,14 @@ describe 'views/tag_list_view', ->
       expect($form.length).toEqual(1)
 
     describe 'with tags', ->
-      tag1 = { id: 1, name: 'AA', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
-      tag2 = { id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
+      tag1 = { position: 0, id: 1, name: 'AA', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
+      tag2 = { position: 1, id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
 
       beforeEach ->
         tag_list.tags.push(tag1)
-        tag_list._notify('tag-added', { position: 0, tag: tag1 })
+        tag_list._notify('tag-added', tag1)
         tag_list.tags.push(tag2)
-        tag_list._notify('tag-added', { position: 1, tag: tag2 })
+        tag_list._notify('tag-added', tag2)
 
       it 'should show tags', ->
         $lis = $('li', div)
