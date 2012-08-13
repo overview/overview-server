@@ -29,6 +29,7 @@ class MockDocumentStore
     @documents = {}
     @added_doclists = []
     @removed_doclists = []
+    @changes = []
 
   add_doclist: (doclist, documents) ->
     @documents = _.union(@documents, documents)
@@ -37,6 +38,9 @@ class MockDocumentStore
 
   remove_doclist: (doclist) ->
     @removed_doclists.push(doclist)
+
+  change: (document) ->
+    @changes.push(document)
 
 class MockTransactionQueue
   constructor: () ->
@@ -203,6 +207,9 @@ describe 'models/remote_tag_list', ->
           it 'should apply the tag to documents in that node\'s doclist', ->
             expect(document_store.documents[2].tagids).toContain(1)
 
+          it 'should notify the document store', ->
+            expect(document_store.changes.length).toEqual(6)
+
           it 'should apply the tag to documents in that node\'s children\'s doclists', ->
             expect(document_store.documents[13].tagids).toContain(1)
 
@@ -289,6 +296,9 @@ describe 'models/remote_tag_list', ->
 
           it 'should remove the tag from documents in that node\'s doclist', ->
             expect(document_store.documents[2].tagids).not.toContain(2)
+
+          it 'should notify the document store of changes to documents', ->
+            expect(document_store.changes.length).toEqual(6)
 
           it 'should remove the tag from documents in that node\'s children\'s doclists', ->
             expect(document_store.documents[13].tagids).not.toContain(2)
