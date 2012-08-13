@@ -39,5 +39,10 @@ class TagStore
   find_tag_by_name: (name) ->
     _.find(@tags, (v) -> v.name == name)
 
+  find_tag_by_id: (id) ->
+    ret = _.find(@tags, (v) -> v.id == id)
+    throw 'tagNotFound' if !ret
+    ret
+
 exports = require.make_export_object('models/tag_store')
 exports.TagStore = TagStore

@@ -125,6 +125,14 @@ describe 'models/tag_store', ->
         tag = tag_store.find_tag_by_name('AA')
         expect(tag).toBe(tag1)
 
+      it 'should find_tag_by_id(0 for an existing tag', ->
+        tag = tag_store.find_tag_by_id(1)
+        expect(tag).toBe(tag1)
+
       it 'should return undefined when find_tag_by_name() does not find a tag', ->
         tag = tag_store.find_tag_by_name('A')
         expect(tag).toBeUndefined()
+
+      it 'should throw an exception when find_tag_by_id() does not find a tag', ->
+        expect(-> tag = tag_store.find_tag_by_id(63)).toThrow('tagNotFound')
+
