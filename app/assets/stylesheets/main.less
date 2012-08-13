@@ -74,7 +74,6 @@ body.document-set-show {
     height: 55%;
     border-bottom: 1px solid @color-border;
     overflow: hidden;
-    font-size: .7em;
 
     .selected {
       color: blue;
@@ -122,9 +121,9 @@ body.document-set-show {
         width: 12px;
         top: 0;
         right: 0;
-        opacity: 0.01;
         overflow: hidden;
         text-align: center;
+        opacity: 0.01;
         // FIXME use Less CSS to do this
         -webkit-transition: opacity 0.3s ease;
            -moz-transition: opacity 0.3s ease;
@@ -183,6 +182,17 @@ body.document-set-show {
         font-weight: bold;
       }
     }
+
+    span.tags {
+      span {
+        vertical-align: middle;
+        display: inline-block;
+        width: .7em;
+        height: .7em;
+        margin: 0 .25em;
+        border: 1px solid gray;
+      }
+    }
   }
 
   footer {
@@ -197,7 +207,6 @@ body.document-set-show {
     text-align: center;
   
     a {
-      font-size: .66em;
       text-decoration: none;
       color: @color-subtle;
     }

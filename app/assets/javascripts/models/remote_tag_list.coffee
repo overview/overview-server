@@ -48,7 +48,9 @@ class RemoteTagList
 
   _after_tag_add_or_remove: (tag, obj) ->
     if obj.tag?.doclist? && obj.documents?
-      @document_store.add_doclist(obj.tag.doclist, obj.documents)
+      documents = {}
+      documents[doc.id] = doc for doc in obj.documents
+      @document_store.add_doclist(obj.tag.doclist, documents)
     @tag_store.change(tag, obj.tag)
 
   _selection_to_post_data: (selection) ->
@@ -101,12 +103,19 @@ class RemoteTagList
 
   _maybe_add_tagid_to_document: (tagid, document) ->
     tagids = document.tagids
-    tagids.push(tagid) if tagid not in tagids
+    if tagid not in tagids
+      tagids.push(tagid)
+      @document_store.change(document)
 
   _maybe_remove_tagid_from_document: (tagid, document) ->
     tagids = document.tagids
     index = tagids.indexOf(tagid)
-    tagids.splice(index, 1) if index >= 0
+    if index >= 0
+      tagids.splice(index, 1)
+      @document_store.change(document)
+
+  find_tag_by_name: (name) ->
+    @tag_store.find_tag_by_name(name)
 
 exports = require.make_export_object('models/remote_tag_list')
 exports.RemoteTagList = RemoteTagList

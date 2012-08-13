@@ -23,7 +23,7 @@ VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
-document_list_controller = (div, document_store, resolver, selection) ->
+document_list_controller = (div, document_store, tag_store, resolver, selection) ->
   stored_selection = undefined
   document_list = undefined
   view = undefined
@@ -37,7 +37,7 @@ document_list_controller = (div, document_store, resolver, selection) ->
   refresh_document_list = () ->
     document_list = new DocumentList(document_store, stored_selection, resolver)
     if !view?
-      view = new DocumentListView(div, document_list, selection, VIEW_OPTIONS)
+      view = new DocumentListView(div, document_store, tag_store, document_list, selection, VIEW_OPTIONS)
     else
       view.set_document_list(document_list)
     maybe_fetch()

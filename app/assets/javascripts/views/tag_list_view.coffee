@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+ColorTable = require('views/color_table').ColorTable
 
 TAG_KEY = 'overview-tag'
 
@@ -6,6 +7,7 @@ class TagListView
   observable(this)
 
   constructor: (@div, @tag_list) ->
+    @color_table = new ColorTable()
     this._init_html()
     this._observe_tag_add()
     this._observe_tag_remove()
@@ -36,30 +38,59 @@ class TagListView
     $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="New tag" class="input-mini" /><input type="submit" value="Tag" class="btn" /></form')
     $form.on 'submit', (e) =>
       e.preventDefault()
-      name = $.trim($form.find('input[name=tag_name]').val())
+      $input = $form.find('input[name=tag_name]')
+      name = $.trim($input.val())
       if name.length > 0
-        this._notify('create-submitted', { name: name })
+        this._create_or_add_tag(name)
+      $input.val('')
 
   _observe_tag_add: () ->
     @tag_list.observe 'tag-added', (obj) =>
-      this._add_tag(obj.position, obj.tag)
+      this._add_tag(obj)
 
-  _add_tag: (position, tag) ->
+  _create_or_add_tag: (name) ->
+    tag = @tag_list.find_tag_by_name(name)
+    if tag?
+      this._notify('add-clicked', tag)
+    else
+      this._notify('create-submitted', { name: name })
+
+  _add_tag: (tag) ->
     $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
     $li.data(TAG_KEY, tag)
     $li.find('.tag-name').text(tag.name)
 
     $ul = $('ul', @div)
-    $li.insertBefore($ul.children()[position])
+    $li.insertBefore($ul.children()[tag.position])
+
+    this._reset_tag_button_classes()
+
+  _reset_tag_button_classes: () ->
+    $lis = $('a.tag-name', @div).closest('li')
+    @color_table.reserve($lis.length)
+
+    i = 0
+    $lis.each ->
+      $btn = $(this).find('a.btn')
+      match = /\bbtn-color-(\d+)\b/.exec($btn[0].className)
+      if match && match[1] != i
+        old_position = match[1]
+        $btn.removeClass("btn-color-#{old_position}")
+      $btn.addClass("btn-color-#{i}")
+      i += 1
+
+    undefined
 
   _observe_tag_remove: () ->
-    @tag_list.observe 'tag-removed', (obj) =>
-      this._remove_tag(obj.position)
+    @tag_list.observe 'tag-removed', (tag) =>
+      this._remove_tag(tag)
 
-  _remove_tag: (position) ->
+  _remove_tag: (tag) ->
     $ul = $('ul', @div)
-    $li = $($ul.children()[position])
+    $li = $($ul.children()[tag.position])
     $li.remove()
+
+    this._reset_tag_button_classes()
 
 exports = require.make_export_object('views/tag_list_view')
 exports.TagListView = TagListView

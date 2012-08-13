@@ -10,6 +10,9 @@ class MockTagList
   constructor: () ->
     @tags = []
 
+  find_tag_by_name: (name) ->
+    _.find(@tags, (o) -> o.name == name)
+
 describe 'views/tag_list_view', ->
   describe 'TagListView', ->
     div = undefined
@@ -34,14 +37,14 @@ describe 'views/tag_list_view', ->
       expect($form.length).toEqual(1)
 
     describe 'with tags', ->
-      tag1 = { id: 1, name: 'AA', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
-      tag2 = { id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
+      tag1 = { position: 0, id: 1, name: 'AA', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
+      tag2 = { position: 1, id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
 
       beforeEach ->
         tag_list.tags.push(tag1)
-        tag_list._notify('tag-added', { position: 0, tag: tag1 })
+        tag_list._notify('tag-added', tag1)
         tag_list.tags.push(tag2)
-        tag_list._notify('tag-added', { position: 1, tag: tag2 })
+        tag_list._notify('tag-added', tag2)
 
       it 'should show tags', ->
         $lis = $('li', div)
@@ -72,6 +75,12 @@ describe 'views/tag_list_view', ->
         $form.submit()
         expect(val).toEqual({ name: 'foo' })
 
+      it 'should reset the form after :create-submitted', ->
+        $form = $('form', div)
+        $form.find('input[type=text]').val('foo')
+        $form.submit()
+        expect($form.find('input[type=text]').val()).toEqual('')
+
       it 'should notify :add-clicked', ->
         val = undefined
         view.observe('add-clicked', (v) -> val = v)
@@ -83,3 +92,11 @@ describe 'views/tag_list_view', ->
         view.observe('remove-clicked', (v) -> val = v)
         $(div).find('a.tag-remove:eq(0)').click()
         expect(val).toBe(tag1)
+
+      it 'should notify :add-clicked when trying to create an existing tag', ->
+        $form = $('form', div)
+        $form.find('input[type=text]').val('AA')
+        val = undefined
+        view.observe('add-clicked', (v) -> val = v)
+        $form.submit()
+        expect(val).toEqual(tag1)

@@ -22,12 +22,19 @@ describe 'models/tag_store', ->
         tag_store.add(tag1)
         expect(tag_store.tags).toEqual([tag1])
 
+      it 'should add a position to a tag', ->
+        tag1 = dummy_tag(1, 'Tag')
+        tag_store.add(tag1)
+        tag2 = dummy_tag(2, 'Z')
+        tag_store.add(tag2)
+        expect(tag2.position).toEqual(1)
+
       it 'should notify :tag-added when a tag is added', ->
         tag1 = dummy_tag(1, 'Tag')
         val = undefined
         tag_store.observe('tag-added', (v) -> val = v)
         tag_store.add(tag1)
-        expect(val).toEqual({ position: 0, tag: tag1 })
+        expect(val).toEqual(tag1)
 
       it 'should sort tags as it adds them', ->
         tag1 = dummy_tag(1, 'A')
@@ -36,17 +43,19 @@ describe 'models/tag_store', ->
         tag_store.add(tag1)
         expect(tag_store.tags).toEqual([ tag1, tag2 ])
 
-      it 'should notify the proper position in :tag-added', ->
+      it 'should reset positions before :tag-added', ->
         tag1 = dummy_tag(1, 'A')
         tag2 = dummy_tag(2, 'B')
         tag3 = dummy_tag(3, 'C')
         tag_store.add(tag1)
         tag_store.add(tag3)
 
-        val = undefined
-        tag_store.observe('tag-added', (v) -> val = v)
+        tag_store.observe 'tag-added', ->
+          expect(tag1.position).toEqual(0)
+          expect(tag2.position).toEqual(1)
+          expect(tag3.position).toEqual(2)
+
         tag_store.add(tag2)
-        expect(val).toEqual({ position: 1, tag: tag2 })
 
     describe 'beginning full', ->
       tag1 = undefined
@@ -74,7 +83,15 @@ describe 'models/tag_store', ->
         val = undefined
         tag_store.observe('tag-removed', (v) -> val = v)
         tag_store.remove(tag2)
-        expect(val).toEqual({ position: 1, tag: tag2 })
+        expect(val).toEqual(tag2)
+
+      it 'should reposition tags in :tag-removed', ->
+        tag_store.observe 'tag-removed', () ->
+          expect(tag1.position).toEqual(0)
+          expect(tag2.position).toEqual(1)
+          expect(tag3.position).toEqual(1)
+
+        tag_store.remove(tag2)
 
       it 'should change a tag property', ->
         tag_store.change(tag2, { name: 'foo' })
@@ -108,6 +125,14 @@ describe 'models/tag_store', ->
         tag = tag_store.find_tag_by_name('AA')
         expect(tag).toBe(tag1)
 
+      it 'should find_tag_by_id(0 for an existing tag', ->
+        tag = tag_store.find_tag_by_id(1)
+        expect(tag).toBe(tag1)
+
       it 'should return undefined when find_tag_by_name() does not find a tag', ->
         tag = tag_store.find_tag_by_name('A')
         expect(tag).toBeUndefined()
+
+      it 'should throw an exception when find_tag_by_id() does not find a tag', ->
+        expect(-> tag = tag_store.find_tag_by_id(63)).toThrow('tagNotFound')
+

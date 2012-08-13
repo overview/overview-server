@@ -21,11 +21,15 @@ class MockTagStore
     tag[k] = v for k, v of map
     undefined
 
+  find_tag_by_name: (name) ->
+    _.find(@tags, (o) -> o.name == name)
+
 class MockDocumentStore
   constructor: () ->
     @documents = {}
     @added_doclists = []
     @removed_doclists = []
+    @changes = []
 
   add_doclist: (doclist, documents) ->
     @documents = _.union(@documents, documents)
@@ -34,6 +38,9 @@ class MockDocumentStore
 
   remove_doclist: (doclist) ->
     @removed_doclists.push(doclist)
+
+  change: (document) ->
+    @changes.push(document)
 
 class MockTransactionQueue
   constructor: () ->
@@ -128,6 +135,11 @@ describe 'models/remote_tag_list', ->
         tag_store._notify('tag-changed', expected)
         expect(actual).toBe(expected)
 
+      it 'should pass through find_tag_by_name() to the TagStore', ->
+        expected = tag_store.tags[1]
+        tag = remote_tag_list.find_tag_by_name('BB')
+        expect(tag).toBe(expected)
+
       it 'should mirror TagStore.tags', ->
         tag_store.tags.splice(1, 1)
         expect(remote_tag_list.tags).toBe(tag_store.tags)
@@ -195,6 +207,9 @@ describe 'models/remote_tag_list', ->
           it 'should apply the tag to documents in that node\'s doclist', ->
             expect(document_store.documents[2].tagids).toContain(1)
 
+          it 'should notify the document store', ->
+            expect(document_store.changes.length).toEqual(6)
+
           it 'should apply the tag to documents in that node\'s children\'s doclists', ->
             expect(document_store.documents[13].tagids).toContain(1)
 
@@ -247,12 +262,13 @@ describe 'models/remote_tag_list', ->
                 9: { id: 9, title: "doc9", tagids: [ 1 ] },
                 10: { id: 10, title: "doc10", tagids: [ 1, 2 ] },
               }
+              new_documents_array = (new_documents[i] for i in [1..10])
 
               beforeEach ->
                 server.deferreds[0].resolve({
                   num_added: 8,
                   tag: { id: 1, doclist: new_doclist },
-                  documents: new_documents,
+                  documents: new_documents_array,
                 })
 
               it 'should set the new tag count', ->
@@ -280,6 +296,9 @@ describe 'models/remote_tag_list', ->
 
           it 'should remove the tag from documents in that node\'s doclist', ->
             expect(document_store.documents[2].tagids).not.toContain(2)
+
+          it 'should notify the document store of changes to documents', ->
+            expect(document_store.changes.length).toEqual(6)
 
           it 'should remove the tag from documents in that node\'s children\'s doclists', ->
             expect(document_store.documents[13].tagids).not.toContain(2)
@@ -329,7 +348,7 @@ describe 'models/remote_tag_list', ->
                 server.deferreds[0].resolve({
                   num_removed: 6,
                   tag: { id: 2, doclist: new_doclist },
-                  documents: new_documents,
+                  documents: [new_documents[15]],
                 })
 
               it 'should set the new tag count', ->
