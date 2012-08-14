@@ -11,7 +11,7 @@ $ = jQuery
 class DocumentListView
   observable(this)
 
-  constructor: (@div, @document_store, @tag_store, @document_list, @selection, options={}) ->
+  constructor: (@div, @document_store, @on_demand_tree, @tag_store, @document_list, @selection, options={}) ->
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -135,7 +135,7 @@ class DocumentListView
 
     if !n?
       @_redraw_used_placeholders = true
-      documents = @document_list.get_placeholder_documents()
+      documents = @document_list.get_placeholder_documents(@document_store, @on_demand_tree)
 
     $ul = $div.children('ul')
 

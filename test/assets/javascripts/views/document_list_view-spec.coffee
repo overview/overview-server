@@ -17,7 +17,7 @@ class MockDocumentList
     @n = undefined
     @placeholder_documents = []
 
-  get_placeholder_documents: () -> @placeholder_documents
+  get_placeholder_documents: (document_store, on_demand_tree) -> @placeholder_documents
 
 class MockDocumentStore
   observable(this)
@@ -46,7 +46,7 @@ describe 'views/document_list_view', ->
     div = undefined
     options = undefined
 
-    create_view = () -> new DocumentListView(div, document_store, tag_store, document_list, selection, options)
+    create_view = () -> new DocumentListView(div, document_store, {}, tag_store, document_list, selection, options)
 
     beforeEach ->
       options = {}
@@ -91,7 +91,7 @@ describe 'views/document_list_view', ->
       document_list2 = new MockDocumentList(selection)
       spyOn(document_list2, 'get_placeholder_documents').andCallThrough()
       view.set_document_list(document_list2)
-      expect(document_list2.get_placeholder_documents).toHaveBeenCalled()
+      expect(document_list2.get_placeholder_documents).toHaveBeenCalledWith(document_store, {})
 
     describe 'get_top_need_documents', ->
       it 'should return the most pressing need_documents', ->

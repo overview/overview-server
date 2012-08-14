@@ -46,7 +46,7 @@ jQuery ($) ->
     tree_controller(this, tree, focus, state.selection)
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
-    document_list_controller(this, document_store, tag_store, needs_resolver, state.selection)
+    document_list_controller(this, document_store, tree, tag_store, needs_resolver, state.selection)
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
     document_contents_controller(this, state.selection, server.router)

@@ -18,38 +18,13 @@ observable = require('models/observable').observable
 class DocumentList
   observable(this)
 
-  constructor: (@document_store, @selection, @resolver) ->
+  constructor: (@selection, @resolver) ->
     @documents = []
     @deferreds = {}
     @n = undefined
 
-  get_placeholder_documents: () ->
-    return []
-
-    ## Set up "ids_so_far" to the Documents list, then filter it by tags and nodes
-    #ids_so_far = (document.id? && document.id || document for document in (@selection.documents || []))
-    #excludes_something = @selection.documents?.length
-
-    #for key in [ 'tags', 'nodes' ]
-    #  store = @store[key]
-    #  for object in @selection[key]
-    #    object = store.get(object) if !object.id?
-
-    #    return [] if !object?.doclist?
-
-    #    doclist = object.doclist
-
-    #    if !excludes_something
-    #      ids_so_far = doclist.docids
-    #      excludes_something = true
-    #    else
-    #      new_ids_so_far = []
-    #      for docid in (doclist.docids || [])
-    #        if ids_so_far.indexOf(docid) >= 0
-    #          new_ids_so_far.push(docid)
-    #      ids_so_far = new_ids_so_far
-
-    X(@store.documents.get(docid) for docid in ids_so_far)
+  get_placeholder_documents: (document_store, on_demand_tree) ->
+    @selection.documents_from_caches(document_store, on_demand_tree)
 
   # Returns a Deferred which, when resolved, will be a slice of this.documents
   slice: (start, end) ->
