@@ -7,7 +7,6 @@ Deferred = jQuery.Deferred
 observable = require('models/observable').observable
 OnDemandTree = require('models/on_demand_tree').OnDemandTree
 AnimatedTree = require('models/animated_tree').AnimatedTree
-Selection = require('models/selection').Selection
 Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
 
@@ -28,11 +27,17 @@ class MockFocus
 class MockResolver
   get_deferred: (type, id) -> new Deferred()
 
+class MockState
+  observable(this)
+
+  constructor: () ->
+    @selection = { nodes: [], tags: [], documents: [] }
+
 describe 'views/tree_view', ->
   describe 'TreeView', ->
     on_demand_tree = undefined
     animated_tree = undefined
-    selection = undefined
+    state = undefined
     focus = undefined
     view = undefined
     div = undefined
@@ -46,11 +51,11 @@ describe 'views/tree_view', ->
     beforeEach ->
       interpolator = new PropertyInterpolator(1000, (x) -> x)
       animator = new Animator(interpolator)
-      selection = new Selection()
+      state = new MockState()
       focus = new MockFocus()
       resolver = new MockResolver()
       on_demand_tree = new OnDemandTree(resolver, { cache_size: 1000 })
-      animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
+      animated_tree = new AnimatedTree(on_demand_tree, state, animator)
       div = $('<div style="width:100px;height:100px"></div>')[0]
       $('body').append(div)
       options = { mousewheel_zoom_factor: 2 }
@@ -63,6 +68,7 @@ describe 'views/tree_view', ->
       $('body').off('.tree-view')
       div = undefined
       focus = undefined
+      state = undefined
       on_demand_tree = undefined
       animated_tree = undefined
       view = undefined
@@ -260,7 +266,9 @@ describe 'views/tree_view', ->
       it 'should highlight the selected node', ->
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node)
-        at 100, -> selection.update({ nodes: [2] })
+        at 100, ->
+          state.selection.nodes = [2]
+          state._notify('selection-changed', state.selection)
         at 1100, -> view.update()
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node_selected)

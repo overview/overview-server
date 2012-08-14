@@ -1,14 +1,14 @@
 class DocumentContentsView
-  constructor: (@div, @selection, @router) ->
+  constructor: (@div, @state, @router) ->
     @_last_url = undefined
 
-    @selection.observe(=> this._refresh())
+    @state.observe('selection-changed', this._refresh.bind(this))
+
     this._refresh()
 
   _get_focus_url: () ->
-    document = @selection.documents[0]
-    documentid = document?.id? && document.id || document
-    documentid && @router.route_to_path('document_view', documentid)
+    docid = @state.selection.documents[0]
+    docid? && @router.route_to_path('document_view', docid) || undefined
 
   _find_or_create_iframe: () ->
     $div = $(@div)

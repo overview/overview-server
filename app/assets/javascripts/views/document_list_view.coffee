@@ -11,7 +11,7 @@ $ = jQuery
 class DocumentListView
   observable(this)
 
-  constructor: (@div, @cache, @document_list, @selection, options={}) ->
+  constructor: (@div, @cache, @document_list, @state, options={}) ->
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -69,7 +69,7 @@ class DocumentListView
     Math.ceil(div_bottom / (document_height || 1)) + @_buffer_documents
 
   _attach_selection: () ->
-    @selection.observe( => this._refresh_selection())
+    @state.observe('selection-changed', this._refresh_selection.bind(this))
 
   _attach_document_list: () ->
     @_document_list_callback = () => this._redraw()
@@ -178,7 +178,7 @@ class DocumentListView
   _refresh_selection: () ->
     $div = $(@div)
     $div.find('.selected').removeClass('selected')
-    for document_or_id in @selection.documents
+    for document_or_id in @state.selection.documents
       documentid = document_or_id.id? && document_or_id.id || document_or_id
       $div.find("a[href=#document-#{documentid}]").addClass('selected')
 

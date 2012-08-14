@@ -1,32 +1,28 @@
 observable = require('models/observable').observable
 Selection = require('models/selection').Selection
 
-PROPERTIES = []
+PROPERTIES = [ 'selection' ]
 
 class State
   observable(this)
 
   constructor: () ->
     @properties = {}
-    @selection = new Selection()
-
-    @selection.observe => this._notify('selection')
 
     for property in PROPERTIES
       @properties[property] = undefined
 
-  get: (property) ->
-    @properties[property]
+    @selection = new Selection()
 
   set: (property, value) ->
-    @oldValue = this.get(property)
+    old_value = this[property]
 
     # Check for equality
-    return if @oldValue is value
-    return if @oldValue? && value? && @oldValue.equals? && @oldValue.equals(value)
+    return if old_value is value
+    return if old_value? && value? && old_value.equals? && old_value.equals(value)
 
-    @properties[property] = value
-    this._notify(property)
+    this[property] = value
+    this._notify("#{property}-changed", value)
 
 exports = require.make_export_object('models/state')
 exports.State = State

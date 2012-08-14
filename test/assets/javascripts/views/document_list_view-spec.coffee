@@ -1,14 +1,6 @@
 observable = require('models/observable').observable # a small unit-testing transgression
 DocumentListView = require('views/document_list_view').DocumentListView
 
-class MockSelection
-  observable(this)
-
-  constructor: (properties={}) ->
-    @nodes = (properties.nodes || {})
-    @tags = (properties.tags || {})
-    @documents = (properties.documents || {})
-
 class MockDocumentList
   observable(this)
 
@@ -34,12 +26,18 @@ class MockTagStore
   find_tag_by_id: (id) ->
     _.find(@tags, (t) -> t.id == id) || throw "tagNotFound: #{id}"
 
+class MockState
+  observable(this)
+
+  constructor: () ->
+    @selection = { nodes: [], tags: [], documents: [] }
+
 mock_document_array = (n, first=1) ->
   ({ id: i, title: "doc#{i}", tagids: [1 + n%2] } for i in [first..(n+first-1)])
 
 describe 'views/document_list_view', ->
   describe 'DocumentListView', ->
-    selection = undefined
+    state = undefined
     document_store = undefined
     tag_store = undefined
     document_list = undefined
@@ -48,12 +46,12 @@ describe 'views/document_list_view', ->
 
     create_view = () ->
       cache = { document_store: document_store, tag_store: tag_store, on_demand_tree: {} }
-      new DocumentListView(div, cache, document_list, selection, options)
+      new DocumentListView(div, cache, document_list, state, options)
 
     beforeEach ->
       options = {}
-      selection = new MockSelection()
-      document_list = new MockDocumentList(selection)
+      state = new MockState()
+      document_list = new MockDocumentList(state.selection)
       document_store = new MockDocumentStore()
       tag_store = new MockTagStore()
       tag_store.tags = [
@@ -79,18 +77,18 @@ describe 'views/document_list_view', ->
     it 'should unobserve when setting a new DocumentList', ->
       view = create_view()
       expect(document_list._observers._.length).toEqual(1) # if this fails, the test is broken
-      view.set_document_list(new MockDocumentList(selection))
+      view.set_document_list(new MockDocumentList(state.selection))
       expect(document_list._observers._.length).toEqual(0)
 
     it 'should observe the new DocumentList', ->
       view = create_view()
-      document_list2 = new MockDocumentList(selection)
+      document_list2 = new MockDocumentList(state.selection)
       view.set_document_list(document_list2)
       expect(document_list2._observers._.length).toEqual(1)
 
     it 'should ask for placeholder data when a new list is set', ->
       view = create_view()
-      document_list2 = new MockDocumentList(selection)
+      document_list2 = new MockDocumentList(state.selection)
       spyOn(document_list2, 'get_placeholder_documents').andCallThrough()
       view.set_document_list(document_list2)
       expect(document_list2.get_placeholder_documents).toHaveBeenCalledWith(view.cache)
@@ -163,30 +161,25 @@ describe 'views/document_list_view', ->
         expect(called).toBeTruthy()
 
       it 'should add the "selected" class to selected documents', ->
-        selection.documents = [ document_list.documents[0] ]
+        state.selection.documents = [1]
         view = create_view()
         $div = $(view.div)
         expect($div.find('a[href=#document-1]').hasClass('selected')).toBeTruthy()
         expect($div.find('a[href=#document-2]').hasClass('selected')).toBeFalsy()
 
       it 'should remove the "selected" class when the selection changes', ->
-        selection.documents = [ document_list.documents[0] ]
+        state.selection.documents = [1]
         view = create_view()
-        selection.documents = []
-        selection._notify()
+        state.selection.documents = []
+        state._notify('selection-changed', state.selection)
         expect($(view.div).find('a[href=#document-1]').hasClass('selected')).toBeFalsy()
 
       it 'should add the "selected" class when the selection changes', ->
-        selection.documents = [ document_list.documents[0] ]
+        state.selection.documents = [1]
         view = create_view()
-        selection.documents = [ document_list.documents[0], document_list.documents[1] ]
-        selection._notify()
+        state.selection.documents = [1,2]
+        state._notify('selection-changed', state.selection)
         expect($(view.div).find('a[href=#document-2]').hasClass('selected')).toBeTruthy()
-
-      it 'should work with selected document IDs or document objects', ->
-        selection.documents = [ 1 ]
-        view = create_view()
-        expect($(view.div).find('a[href=#document-1]').hasClass('selected')).toBeTruthy()
 
     describe 'starting with an incomplete list', ->
       beforeEach ->
