@@ -34,21 +34,58 @@ class Selection
     old_value = this[key]
     new_value ||= []
 
-    equal = (old_value.length == new_value.length)
-    if equal
-      for x in old_value
-        found = false
-        for y in new_value
-          if (x.id? && x.id || x) == (y.id? && y.id || y)
-            found = true
-            break
-        if !found
-          equal = false
-          break
-
-    return if equal
+    return if _.isEqual(old_value, new_value)
 
     this[key] = new_value
+
+  documents_from_caches: (document_store, on_demand_tree) ->
+    node_document_ids = []
+    if @nodes.length
+      c = on_demand_tree.id_tree.children
+      n = on_demand_tree.nodes
+
+      # get flat list of all node IDs, with descendents
+      all_node_ids = []
+      next_node_ids = @nodes.slice(0)
+      while next_node_ids.length
+        last_node_ids = next_node_ids
+        next_node_ids = []
+        for nextid in last_node_ids
+          continue if !n[nextid]?
+          continue if all_node_ids.indexOf(nextid) >= 0
+          all_node_ids.push(nextid)
+          if c[nextid]?
+            for childid in c[nextid]
+              next_node_ids.push(childid)
+
+      # turn that into documents
+      if all_node_ids.length
+        arrays = (n[nodeid].doclist.docids for nodeid in all_node_ids)
+        node_document_ids = _.uniq(_.union.apply({}, arrays))
+
+    tag_document_ids = []
+    if @tags.length
+      arrays = []
+      for tagid in @tags
+        array = []
+        for id, document of document_store.documents
+          if document.tagids.indexOf(tagid) != -1
+            array.push(document.id) # not plain id, which is a String
+        arrays.push(array)
+      tag_document_ids = _.uniq(_.union.apply({}, arrays))
+
+    document_ids = if node_document_ids.length && tag_document_ids.length
+      node_document_ids.sort()
+      tag_document_ids.sort()
+      _.intersection(node_document_ids, tag_document_ids)
+    else if node_document_ids.length
+      node_document_ids
+    else
+      tag_document_ids
+
+    documents = (document_store.documents[id] for id in document_ids)
+
+    _.sortBy(documents, (d) -> d.title)
 
 exports = require.make_export_object('models/selection')
 exports.Selection = Selection
