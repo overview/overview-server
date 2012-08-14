@@ -61,6 +61,9 @@ class MockSelection
     @documents = []
     @tags = []
 
+  documents_from_caches: (document_store, on_demand_tree) ->
+    []
+
 class MockOnDemandTree
   observable(this)
 
@@ -202,6 +205,7 @@ describe 'models/remote_tag_list', ->
           beforeEach ->
             tag = remote_tag_list.tags[0]
             selection.nodes = [2]
+            spyOn(selection, 'documents_from_caches').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
             remote_tag_list.add_tag_to_selection(tag, selection)
 
           it 'should apply the tag to documents in that node\'s doclist', ->
@@ -292,6 +296,7 @@ describe 'models/remote_tag_list', ->
           beforeEach ->
             tag = remote_tag_list.tags[1]
             selection.nodes = [2]
+            spyOn(selection, 'documents_from_caches').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
             remote_tag_list.remove_tag_from_selection(tag, selection)
 
           it 'should remove the tag from documents in that node\'s doclist', ->

@@ -13,8 +13,6 @@ handle_node_resolved = (needs_resolver, obj) ->
 
 resolve_root = (needs_resolver) ->
   needs_resolver.server.get('root').done (obj) ->
-    handle_node_resolved(needs_resolver, obj)
-
     documents_hash = list_to_hash(obj.documents)
 
     tag_store = needs_resolver.tag_store
@@ -23,6 +21,8 @@ resolve_root = (needs_resolver) ->
     for tag in obj.tags
       document_store.add_doclist(tag.doclist, documents_hash)
       tag_store.add(tag)
+
+    handle_node_resolved(needs_resolver, obj)
 
 resolve_node = (needs_resolver, id) ->
   needs_resolver.server.get('node', { path_argument: id }).done (obj) ->

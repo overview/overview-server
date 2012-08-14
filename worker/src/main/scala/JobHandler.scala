@@ -5,11 +5,12 @@ import com.avaje.ebean.{Ebean, EbeanServerFactory}
 import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
 import models.{DocumentSet,DocumentSetCreationJob}
 import models.DocumentSetCreationJob.JobState
+import writers.NodeWriter
 
 object JobHandler {
   def main(args: Array[String]) {
 
-	configureDatabaseConnection
+	val server = configureDatabaseConnection
 	
 	while (true) {
       Thread.sleep(500)
@@ -25,8 +26,8 @@ object JobHandler {
         println("Created document set for query: " + documentSet.query)
         
         val indexer = new clustering.DocumentSetIndexer(documentSet)
-        indexer.BuildTree
-        
+        val tree = indexer.BuildTree(server)
+
         j.setState(JobState.Complete)
         j.save
       }
@@ -59,7 +60,7 @@ object JobHandler {
 	config.setDefaultServer(true)  
 	config.setRegister(true)  
 	
-	val server = EbeanServerFactory.create(config)
+	EbeanServerFactory.create(config)
 
   }
 }

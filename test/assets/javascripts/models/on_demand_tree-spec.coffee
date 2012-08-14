@@ -2,6 +2,10 @@ OnDemandTree = require('models/on_demand_tree').OnDemandTree
 
 Deferred = jQuery.Deferred
 
+class MockDocumentStore
+  constructor: () ->
+    @documents = {}
+
 class MockResolver
   constructor: () ->
     @deferreds = []

@@ -35,7 +35,7 @@ DEFAULT_OPTIONS = {
 #
 # Options:
 #
-# * cache_size (default 100): number of nodes to *not* remove
+# * cache_size (default 1000): number of nodes to *not* remove
 class OnDemandTree
   constructor: (@resolver, options={}) ->
     @id_tree = new IdTree()

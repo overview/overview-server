@@ -2,7 +2,6 @@ package clustering
 
 import models._
 import ClusterTypes._
-
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import com.codahale.jerkson.Json._
@@ -11,6 +10,8 @@ import akka.dispatch.{ExecutionContext,Future,Promise}
 import akka.actor._
 import akka.pattern.ask
 import akka.routing.SmallestMailboxRouter
+import com.avaje.ebean.EbeanServer
+import writers.NodeWriter
 
 // Define the bits of the DocumentCloud JSON response that we're interested in. 
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
@@ -231,7 +232,7 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     vectorsPromise
   }
 
-  def BuildTree() = {
+  def BuildTree(server: EbeanServer) = {
     val t0 = System.nanoTime()
     val vectorsPromise = RetrieveAndIndexDocuments()
     
@@ -245,7 +246,16 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
         //println(docTree.prettyString)
         
         val t2 = System.nanoTime()
-        documentSet.update();            
+        val transaction = server.beginTransaction()
+        implicit val connection = transaction.getConnection()
+        
+        //documentSet.update();
+        val writer = new NodeWriter(documentSet.id)
+        writer.write(docTree)
+        
+        server.commitTransaction()
+        server.endTransaction()
+        
         printElapsedTime("WORKER: Saved DocumentSet to DB", t2)
     }
   } 

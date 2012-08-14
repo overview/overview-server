@@ -15,10 +15,9 @@ class RemoteTagList
     @tag_store.add(tag)
 
   add_tag_to_selection: (tag, selection) ->
-    docids = this._selection_to_docids(selection)
-    return if !docids?
+    documents = this._selection_to_documents(selection)
+    return if !documents?
 
-    documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
     if tag.doclist?
@@ -31,10 +30,9 @@ class RemoteTagList
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
 
   remove_tag_from_selection: (tag, selection) ->
-    docids = this._selection_to_docids(selection)
-    return if !docids?
+    documents = this._selection_to_documents(selection)
+    return if !documents?
 
-    documents = (@document_store.documents[docid] for docid in docids)
     this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
     if tag.doclist?
@@ -65,41 +63,11 @@ class RemoteTagList
   # If nothing is selected, returns undefined. Do not confuse this with
   # the empty-Array return value, which only means we don't have any loaded
   # docids that match the selection.
-  _selection_to_docids: (selection) ->
-    arrays = []
-    if selection.nodes.length
-      arrays.push(this._nodeids_to_docids(selection.nodes))
-    if selection.documents.length
-      arrays.push(this._docids_to_docids(selection.documents))
-    if selection.tags.length
-      arrays.push(this._tagids_to_docids(selection.tags))
+  _selection_to_documents: (selection) ->
+    if !selection.nodes.length && !selection.tags.length && !selection.documents.length
+      return undefined
 
-    if arrays.length
-      _.intersection.apply({}, arrays)
-    else
-      undefined
-
-  _nodeids_to_docids: (nodeids) ->
-    c = @on_demand_tree.id_tree.children
-    n = @on_demand_tree.nodes
-
-    nodeids = (nodeid for nodeid in nodeids when n[nodeid]?)
-    loop
-      next_potential_nodeids = _.union.apply({}, c[nodeid] for nodeid in nodeids)
-      next_nodeids = (nodeid for nodeid in next_potential_nodeids when n[nodeid]? && nodeid not in nodeids)
-
-      if next_nodeids.length
-        nodeids.push(nodeid) for nodeid in next_nodeids
-      else
-        break
-
-    _.union.apply({}, n[nodeid].doclist.docids for nodeid in nodeids)
-
-  _docids_to_docids: (docids) ->
-    undefined
-
-  _tagids_to_docids: (tagids) ->
-    undefined
+    selection.documents_from_caches(@document_store, @on_demand_tree)
 
   _maybe_add_tagid_to_document: (tagid, document) ->
     tagids = document.tagids

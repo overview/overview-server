@@ -11,7 +11,7 @@ $ = jQuery
 class DocumentListView
   observable(this)
 
-  constructor: (@div, @document_store, @tag_store, @document_list, @selection, options={}) ->
+  constructor: (@div, @document_store, @on_demand_tree, @tag_store, @document_list, @selection, options={}) ->
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -82,6 +82,7 @@ class DocumentListView
     @document_store.observe('document-changed', (document) => this._update_document(document))
 
   _update_document_a_tagids: ($tags, tagids) ->
+    return if @tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
     $tags.empty()
     for tagid in tagids
       tag = @tag_store.find_tag_by_id(tagid)
@@ -135,7 +136,7 @@ class DocumentListView
 
     if !n?
       @_redraw_used_placeholders = true
-      documents = @document_list.get_placeholder_documents()
+      documents = @document_list.get_placeholder_documents(@document_store, @on_demand_tree)
 
     $ul = $div.children('ul')
 

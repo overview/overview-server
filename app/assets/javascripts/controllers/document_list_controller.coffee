@@ -1,5 +1,6 @@
 DocumentList = require('models/document_list').DocumentList
 DocumentListView = require('views/document_list_view').DocumentListView
+Selection = require('models/selection').Selection
 log = require('globals').logger.for_component('document_list')
 
 DOCUMENT_LIST_REQUEST_SIZE = 20
@@ -9,21 +10,20 @@ DOCUMENT_LIST_REQUEST_SIZE = 20
 # account. That's because we want our DocumentListView not to filter by
 # selected documents--we're using the DocumentListView to *select* documents,
 # so we need to show the ones that aren't selected.
-array_to_ids = (a) ->
-  (x.id? && x.id || x for x in a)
 
 selection_to_stored_selection = (s) ->
   {
-    nodes: array_to_ids(s.nodes),
-    tags: array_to_ids(s.tags),
-    documents: []
+    nodes: s.nodes.slice(0),
+    tags: s.tags.slice(0),
+    documents: [],
+    documents_from_caches: Selection.prototype.documents_from_caches,
   }
 
 VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
-document_list_controller = (div, document_store, tag_store, resolver, selection) ->
+document_list_controller = (div, document_store, on_demand_tree, tag_store, resolver, selection) ->
   stored_selection = undefined
   document_list = undefined
   view = undefined
@@ -35,9 +35,9 @@ document_list_controller = (div, document_store, tag_store, resolver, selection)
     document_list.slice(need_documents[0], max)
 
   refresh_document_list = () ->
-    document_list = new DocumentList(document_store, stored_selection, resolver)
+    document_list = new DocumentList(stored_selection, resolver)
     if !view?
-      view = new DocumentListView(div, document_store, tag_store, document_list, selection, VIEW_OPTIONS)
+      view = new DocumentListView(div, document_store, on_demand_tree, tag_store, document_list, selection, VIEW_OPTIONS)
     else
       view.set_document_list(document_list)
     maybe_fetch()
