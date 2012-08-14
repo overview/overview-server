@@ -24,7 +24,7 @@ tree_controller = (div, on_demand_tree, focus, state) ->
 
   view.observe 'click', (nodeid) ->
     log('clicked node', "#{nodeid}")
-    new_selection = state.selection.replace({ nodes: [nodeid], tags: [] })
+    new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
     state.set('selection', new_selection)
     on_demand_tree.demand_node(nodeid)
 
