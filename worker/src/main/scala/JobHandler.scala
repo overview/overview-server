@@ -49,7 +49,7 @@ object JobHandler {
 	postgresDb.setPassword(databaseConfig.password) 
 	postgresDb.setUrl(databaseConfig.databaseUrl)
 	
-	postgresDb.setHeartbeatSql("select count(*) from tree")
+	postgresDb.setHeartbeatSql("select 1")
   
 	config.setDataSourceConfig(postgresDb)
   
