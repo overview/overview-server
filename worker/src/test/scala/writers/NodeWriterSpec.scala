@@ -23,13 +23,26 @@ class NodeWriterSpec extends Specification {
   
 
   trait DocumentSetSetup extends DbTestContext {
+    
+    private def failInsert = { throw new Exception("failed insert") }
+    
     def insertDocumentSet(query: String): Long = {
       SQL("""
           INSERT INTO document_set(id, query) 
           VALUES(nextval('document_set_seq'), 'NodeWriterSpec')
-          """).executeInsert().getOrElse(throw new Exception("failed insert"))
+          """).executeInsert().getOrElse(failInsert)
     }
 
+    def insertDocument(documentSetId: Long,
+      title: String, textUrl: String, viewUrl: String): Long = {
+      SQL("""
+        INSERT INTO document(id, document_set_id, title, text_url, view_url) VALUES 
+          (nextval('document_seq'), {documentSetId}, {title}, {textUrl}, {viewUrl})
+        """).on("documentSetId" -> documentSetId,
+        "title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl).
+        executeInsert().getOrElse(failInsert)
+    }
+    
     lazy val documentSetId = insertDocumentSet("NodeWriterSpec")
   }
   
@@ -103,5 +116,32 @@ class NodeWriterSpec extends Specification {
       
       savedGrandChildren must have size(4)
     }
+    
+    "insert document into node_document table" in new DocumentSetSetup {
+      val documentIds = for (i <- 1 to 5) yield 
+        insertDocument(documentSetId, "title", "textUrl", "viewUrl")
+      val idSet = Set(documentIds: _*)
+      
+      val node = new DocTreeNode(idSet)
+      node.description = "node"
+      val writer = new NodeWriter(documentSetId)
+      
+      writer.write(node)
+      
+      val savedNode = SQL("SELECT id FROM node WHERE description = 'node'").
+                     as(long("id") singleOpt)
+                     
+      savedNode must beSome
+      val nodeId = savedNode.get
+      
+      val nodeDocuments = 
+        SQL("""
+            SELECT node_id, document_id FROM node_document
+            """).as(long("node_id") ~ long("document_id") map(flatten) *)
+      
+      val expectedNodeDocuments = documentIds.map((nodeId, _))
+      
+      nodeDocuments must haveTheSameElementsAs(expectedNodeDocuments)
+    } 
   }
 }

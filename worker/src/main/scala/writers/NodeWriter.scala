@@ -30,7 +30,14 @@ class NodeWriter(documentSetId: Long) {
                 "description" -> node.description,
                 "parentId" -> parentId).
              executeInsert().get
-
+             
+     node.docs.foreach { documentId =>
+    	SQL("""
+    	    INSERT INTO node_document (node_id, document_id) VALUES
+    	    ( {nodeId}, {documentId} )
+    	    """).on("nodeId" -> nodeId, "documentId" -> documentId).
+    	         executeInsert()
+     }
      node.children.foreach(writeSubTree(_, Some(nodeId)))
   }
 
