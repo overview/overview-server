@@ -23,8 +23,8 @@ class DocumentList
     @deferreds = {}
     @n = undefined
 
-  get_placeholder_documents: (document_store, on_demand_tree) ->
-    @selection.documents_from_caches(document_store, on_demand_tree)
+  get_placeholder_documents: (cache) ->
+    @selection.documents_from_cache(cache)
 
   # Returns a Deferred which, when resolved, will be a slice of this.documents
   slice: (start, end) ->

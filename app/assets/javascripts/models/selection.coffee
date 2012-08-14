@@ -1,5 +1,17 @@
 observable = require('models/observable').observable
 
+# A Selection is an intersection of unions:
+#
+# * A list of Node IDs
+# * A list of Tag IDs
+# * A list of Document IDs
+#
+# A Selection is immutable.
+#
+# The documents_from_cache() method returns the documents in the passed Cache
+# which can be proven to be included in the Selection. This is a subset of the
+# documents in the Cache which are included in the Selection (the client can't
+# currently determine that), and it's a subset of the documents in the Cache.
 class Selection
   observable(this)
 
@@ -38,11 +50,11 @@ class Selection
 
     this[key] = new_value
 
-  documents_from_caches: (document_store, on_demand_tree) ->
+  documents_from_cache: (cache) ->
     node_document_ids = []
     if @nodes.length
-      c = on_demand_tree.id_tree.children
-      n = on_demand_tree.nodes
+      c = cache.on_demand_tree.id_tree.children
+      n = cache.on_demand_tree.nodes
 
       # get flat list of all node IDs, with descendents
       all_node_ids = []
@@ -68,7 +80,7 @@ class Selection
       arrays = []
       for tagid in @tags
         array = []
-        for id, document of document_store.documents
+        for id, document of cache.document_store.documents
           if document.tagids.indexOf(tagid) != -1
             array.push(document.id) # not plain id, which is a String
         arrays.push(array)
@@ -83,7 +95,7 @@ class Selection
     else
       tag_document_ids
 
-    documents = (document_store.documents[id] for id in document_ids)
+    documents = (cache.document_store.documents[id] for id in document_ids)
 
     _.sortBy(documents, (d) -> d.title)
 

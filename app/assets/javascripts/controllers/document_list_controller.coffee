@@ -16,14 +16,14 @@ selection_to_stored_selection = (s) ->
     nodes: s.nodes.slice(0),
     tags: s.tags.slice(0),
     documents: [],
-    documents_from_caches: Selection.prototype.documents_from_caches,
+    documents_from_cache: Selection.prototype.documents_from_cache,
   }
 
 VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
-document_list_controller = (div, document_store, on_demand_tree, tag_store, resolver, selection) ->
+document_list_controller = (div, cache, selection) ->
   stored_selection = undefined
   document_list = undefined
   view = undefined
@@ -35,9 +35,9 @@ document_list_controller = (div, document_store, on_demand_tree, tag_store, reso
     document_list.slice(need_documents[0], max)
 
   refresh_document_list = () ->
-    document_list = new DocumentList(stored_selection, resolver)
+    document_list = new DocumentList(stored_selection, cache.needs_resolver)
     if !view?
-      view = new DocumentListView(div, document_store, on_demand_tree, tag_store, document_list, selection, VIEW_OPTIONS)
+      view = new DocumentListView(div, cache, document_list, selection, VIEW_OPTIONS)
     else
       view.set_document_list(document_list)
     maybe_fetch()
@@ -52,7 +52,7 @@ document_list_controller = (div, document_store, on_demand_tree, tag_store, reso
 
   get_view_document = () ->
     documentid = view.last_document_id_clicked()
-    document_store.documents[documentid]
+    cache.document_store.documents[documentid]
 
   selection.observe(maybe_update_stored_selection)
 

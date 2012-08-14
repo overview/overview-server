@@ -29,13 +29,13 @@ describe 'models/', ->
         selection.update({ node: 1 })
         expect(selection.includes('node', 1)).toEqual(true)
 
-    describe 'documents_from_caches', ->
+    describe 'documents_from_cache', ->
       selection = undefined
       document_store = undefined
       on_demand_tree = undefined
 
       go = () ->
-        selection.documents_from_caches(document_store, on_demand_tree)
+        selection.documents_from_cache({ document_store: document_store, on_demand_tree: on_demand_tree })
 
       beforeEach ->
         selection = new Selection()

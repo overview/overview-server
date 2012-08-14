@@ -9,7 +9,7 @@ State = require('models/state').State
 transaction_queue = new TransactionQueue()
 
 cache = new Cache()
-remote_tag_list = new RemoteTagList(cache.tag_store, cache.on_demand_tree, cache.document_store, transaction_queue, cache.server)
+remote_tag_list = new RemoteTagList(cache, transaction_queue, cache.server)
 
 cache.on_demand_tree.demand_root()
 
@@ -36,7 +36,7 @@ jQuery ($) ->
     tree_controller(this, cache.on_demand_tree, focus, state.selection)
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
-    document_list_controller(this, cache.document_store, cache.on_demand_tree, cache.tag_store, cache.needs_resolver, state.selection)
+    document_list_controller(this, cache, state.selection)
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
     document_contents_controller(this, state.selection, cache.server.router)

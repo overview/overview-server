@@ -61,7 +61,7 @@ class MockSelection
     @documents = []
     @tags = []
 
-  documents_from_caches: (document_store, on_demand_tree) ->
+  documents_from_cache: (cache) ->
     []
 
 class MockOnDemandTree
@@ -115,7 +115,7 @@ describe 'models/remote_tag_list', ->
     describe 'with some default tags', ->
       beforeEach ->
         tag_store.tags = [ dummy_tag(1, 'AA'), dummy_tag(2, 'BB') ]
-        remote_tag_list = new RemoteTagList(tag_store, on_demand_tree, document_store, transaction_queue, server)
+        remote_tag_list = new RemoteTagList({ tag_store: tag_store, on_demand_tree: on_demand_tree, document_store: document_store }, transaction_queue, server)
 
       it 'should pass through :tag-added from the TagStore', ->
         expected = { position: 1, tag: dummy_tag(3, 'CC') }
@@ -205,7 +205,7 @@ describe 'models/remote_tag_list', ->
           beforeEach ->
             tag = remote_tag_list.tags[0]
             selection.nodes = [2]
-            spyOn(selection, 'documents_from_caches').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
+            spyOn(selection, 'documents_from_cache').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
             remote_tag_list.add_tag_to_selection(tag, selection)
 
           it 'should apply the tag to documents in that node\'s doclist', ->
@@ -296,7 +296,7 @@ describe 'models/remote_tag_list', ->
           beforeEach ->
             tag = remote_tag_list.tags[1]
             selection.nodes = [2]
-            spyOn(selection, 'documents_from_caches').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
+            spyOn(selection, 'documents_from_cache').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
             remote_tag_list.remove_tag_from_selection(tag, selection)
 
           it 'should remove the tag from documents in that node\'s doclist', ->
