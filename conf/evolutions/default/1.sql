@@ -33,10 +33,12 @@ CREATE INDEX log_entry_document_set_id ON log_entry (document_set_id);
 
 CREATE TABLE node (
   id                        BIGSERIAL PRIMARY KEY,
-  description               VARCHAR(255) NOT NULL,
-  parent_id                 BIGINT REFERENCES node (id)
+  document_set_id           BIGINT NOT NULL REFERENCES document_set (id),
+  parent_id                 BIGINT REFERENCES node (id),
+  description               VARCHAR(255) NOT NULL
 );
 CREATE INDEX node_parent_id ON node (parent_id);
+CREATE INDEX node_document_set_id ON node (document_set_id);
 
 CREATE TABLE tag (
   id                        BIGSERIAL PRIMARY KEY,
