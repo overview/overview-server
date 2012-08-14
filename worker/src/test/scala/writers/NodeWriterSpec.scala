@@ -28,16 +28,16 @@ class NodeWriterSpec extends Specification {
     
     def insertDocumentSet(query: String): Long = {
       SQL("""
-          INSERT INTO document_set(id, query) 
-          VALUES(nextval('document_set_seq'), 'NodeWriterSpec')
+          INSERT INTO document_set (query) 
+          VALUES ('NodeWriterSpec')
           """).executeInsert().getOrElse(failInsert)
     }
 
     def insertDocument(documentSetId: Long,
       title: String, textUrl: String, viewUrl: String): Long = {
       SQL("""
-        INSERT INTO document(id, document_set_id, title, text_url, view_url) VALUES 
-          (nextval('document_seq'), {documentSetId}, {title}, {textUrl}, {viewUrl})
+        INSERT INTO document (document_set_id, title, text_url, view_url)
+        VALUES ({documentSetId}, {title}, {textUrl}, {viewUrl})
         """).on("documentSetId" -> documentSetId,
         "title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl).
         executeInsert().getOrElse(failInsert)

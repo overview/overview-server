@@ -155,8 +155,8 @@ class LogEntryControllerSpec extends Specification {
 
     def createLogEntry(documentSetId: Long, date: String, details: String) = {
       val update = Ebean.createSqlUpdate("""
-          INSERT INTO log_entry (id, document_set_id, username, date, component, action, details)
-          VALUES (nextval('log_entry_seq'), :document_set_id, 'a user', CAST(:date AS TIMESTAMP), 'a component', 'an action', :details)
+          INSERT INTO log_entry (document_set_id, username, date, component, action, details)
+          VALUES (:document_set_id, 'a user', CAST(:date AS TIMESTAMP), 'a component', 'an action', :details)
           """)
       update.setParameter("document_set_id", documentSetId)
       update.setParameter("date", date)

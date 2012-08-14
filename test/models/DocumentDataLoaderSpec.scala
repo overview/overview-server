@@ -17,14 +17,14 @@ class DocumentDataLoaderSpec extends Specification {
     "Load document data for specified id" in new DbTestContext {
       val documentSetId = 
         SQL("""
-            INSERT INTO document_set (id, query)
-            VALUES (nextval('document_set_seq'), 'DocumentDataLoaderSpec')
+            INSERT INTO document_set (query)
+            VALUES ('DocumentDataLoaderSpec')
             """).executeInsert()
             
       val insertedDocumentId = 
         SQL("""
-            INSERT INTO document (id, title, text_url, view_url, document_set_id)
-            VALUES (nextval('document_seq'), 'title', 'textUrl', 'viewUrl', {documentSetId})
+            INSERT INTO document (title, text_url, view_url, document_set_id)
+            VALUES ('title', 'textUrl', 'viewUrl', {documentSetId})
             """).on("documentSetId" -> documentSetId).executeInsert()
 
       insertedDocumentId must beSome

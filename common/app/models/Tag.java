@@ -11,14 +11,15 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import play.data.validation.Constraints.Required;
-import play.db.ebean.Model;
+import play.db.ebean.*;
+import javax.persistence.*;
 
-@Table(uniqueConstraints=@UniqueConstraint(columnNames={"document_set_id", "name"}))
 @Entity
 public class Tag extends Model {
 	private static final long serialVersionUID = 1L;
 
 	@Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="tag_id_seq")
 	public Long id;
 	
 	@Required
