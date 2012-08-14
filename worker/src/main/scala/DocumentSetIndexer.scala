@@ -138,7 +138,7 @@ class DocsetRetriever(val documentSet : DocumentSet,
     // When we get a message with a list of docs to retrieve, queue up a GetText message for each one
     case DocsToRetrieve(docs) =>
       //println("DocsToRetrieve")
-      require(allDocsIn == false)   // can't sent DocsToRetrieve after AllDocsIn
+      require(allDocsIn == false)   // can't send DocsToRetrieve after AllDocsIn
       requestQueue ++= docs.documents
       spoolRequests
 
@@ -146,6 +146,7 @@ class DocsetRetriever(val documentSet : DocumentSet,
     case NoMoreDocsToRetrieve =>
       //println("NoMoreDocsToRetrieve")
       allDocsIn = true
+      spoolRequests     // needed to stop us, in boundary case when DocsToRetrieve was never sent to us 
       
     case GetTextSucceeded(doc, text) =>
       httpReqInFlight -= 1
@@ -230,7 +231,6 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     vectorsPromise
   }
 
-  
   def BuildTree() = {
     val t0 = System.nanoTime()
     val vectorsPromise = RetrieveAndIndexDocuments()
