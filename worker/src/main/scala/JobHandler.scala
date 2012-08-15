@@ -49,6 +49,5 @@ object JobHandler {
       }
       
     }
-
   }
 }

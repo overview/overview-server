@@ -9,8 +9,8 @@ object DbSetup {
   
   def insertDocumentSet(query: String)(implicit c: Connection) : Long = {
     SQL("""
-      INSERT INTO document_set (id, query)
-      VALUES (nextval('document_set_seq'), {query})
+      INSERT INTO document_set (query)
+      VALUES ({query})
       """).on("query" -> query).
            executeInsert().getOrElse(failInsert)
   }
@@ -18,8 +18,8 @@ object DbSetup {
   def insertNode(documentSetId: Long, parentId: Option[Long], description: String)
                 (implicit c: Connection) : Long = {
     SQL("""
-      INSERT INTO node (id, document_set_id, parent_id, description)
-      VALUES (nextval('node_seq'), {document_set_id}, {parent_id}, {description})
+      INSERT INTO node (document_set_id, parent_id, description)
+      VALUES ({document_set_id}, {parent_id}, {description})
       """).on(
         'document_set_id -> documentSetId,
         'parent_id -> parentId,
@@ -30,8 +30,8 @@ object DbSetup {
   def insertDocument(documentSetId: Long, title: String, textUrl: String, viewUrl: String)
                      (implicit connection: Connection) : Long = {
     SQL("""
-        INSERT INTO document(id, document_set_id, title, text_url, view_url) VALUES 
-          (nextval('document_seq'), {documentSetId}, {title}, {textUrl}, {viewUrl})
+        INSERT INTO document(document_set_id, title, text_url, view_url) VALUES 
+          ({documentSetId}, {title}, {textUrl}, {viewUrl})
         """).on("documentSetId" -> documentSetId,
                 "title" -> title, "textUrl" -> textUrl,"viewUrl" -> viewUrl).
              executeInsert().getOrElse(failInsert)
@@ -46,8 +46,8 @@ object DbSetup {
   
   def insertTag(documentSetId: Long, name: String)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO tag (id, name, document_set_id)
-        VALUES (nextval('tag_seq'), {name}, {documentSetId})
+        INSERT INTO tag (name, document_set_id)
+        VALUES ({name}, {documentSetId})
         """).on("name" -> name, "documentSetId" -> documentSetId).
         executeInsert().getOrElse(failInsert)
   }

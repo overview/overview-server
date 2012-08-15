@@ -51,12 +51,12 @@ object DocumentSetShowSteps {
   def createBasicDocumentSet() : Long = {
     Framework.db { implicit connection =>
       SQL("TRUNCATE TABLE document_set CASCADE").execute()
-      val documentSetId = SQL("INSERT INTO document_set (id, query) VALUES (nextval('document_set_seq'), 'basic')").executeInsert()
-      val nodeSql = SQL("INSERT INTO node (id, document_set_id, description, parent_id) VALUES (nextval('node_seq'), {document_set_id}, {description}, {parent_id})")
+      val documentSetId = SQL("INSERT INTO document_set (query) VALUES ('basic')").executeInsert()
+      val nodeSql = SQL("INSERT INTO node (document_set_id, description, parent_id) VALUES ({document_set_id}, {description}, {parent_id})")
       val node1Id = nodeSql.on('document_set_id -> documentSetId, 'description -> "node 1", 'parent_id -> None).executeInsert()
       val node2Id = nodeSql.on('document_set_id -> documentSetId, 'description -> "node 2", 'parent_id -> node1Id).executeInsert()
       val node3Id = nodeSql.on('document_set_id -> documentSetId, 'description -> "node 3", 'parent_id -> node1Id).executeInsert()
-      val documentSql = SQL("INSERT INTO document (id, document_set_id, title, text_url, view_url) VALUES (nextval('document_seq'), {document_set_id}, {title}, 'text_url', 'view_url')")
+      val documentSql = SQL("INSERT INTO document (document_set_id, title, text_url, view_url) VALUES ({document_set_id}, {title}, 'text_url', 'view_url')")
       val document1Id = documentSql.on('document_set_id -> documentSetId, 'title -> "document 1").executeInsert()
       val document2Id = documentSql.on('document_set_id -> documentSetId, 'title -> "document 2").executeInsert()
       val document3Id = documentSql.on('document_set_id -> documentSetId, 'title -> "document 3").executeInsert()

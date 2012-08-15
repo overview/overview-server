@@ -1,138 +1,76 @@
 # --- !Ups
 
-create table document (
-  id                        bigint not null,
-  title                     varchar(255),
-  text_url                  varchar(255),
-  view_url                  varchar(255),
-  document_set_id           bigint,
-  constraint pk_document primary key (id))
-;
+CREATE TABLE document_set (
+  id                        BIGSERIAL PRIMARY KEY,
+  query                     VARCHAR(1023) NOT NULL
+);
 
-create table document_set (
-  id                        bigint not null,
-  query                     varchar(255),
-  constraint pk_document_set primary key (id))
-;
+CREATE TABLE document (
+  id                        BIGSERIAL PRIMARY KEY,
+  document_set_id           BIGINT NOT NULL REFERENCES document_set (id),
+  title                     VARCHAR(255) NOT NULL,
+  text_url                  VARCHAR(511) NOT NULL,
+  view_url                  VARCHAR(511) NOT NULL
+);
+CREATE INDEX document_document_set_id ON document (document_set_id);
 
-create table document_set_creation_job (
-  id                        bigint not null,
-  query                     varchar(255),
-  state                     integer,
-  constraint ck_document_set_creation_job_state check (state in (0,1,2)),
-  constraint pk_document_set_creation_job primary key (id))
-;
+CREATE TABLE document_set_creation_job (
+  id                        BIGSERIAL PRIMARY KEY,
+  query                     VARCHAR(1023) NOT NULL,
+  state                     INTEGER NOT NULL CHECK (state IN (0,1,2))
+);
 
-create table log_entry (
-  id                        bigint not null,
-  document_set_id           bigint,
-  username                  varchar(255),
-  date                      timestamp,
-  component                 varchar(255),
-  action                    varchar(255),
-  details                   varchar(255),
-  constraint pk_log_entry primary key (id))
-;
+CREATE TABLE log_entry (
+  id                        BIGSERIAL PRIMARY KEY,
+  document_set_id           BIGINT NOT NULL REFERENCES document_set (id),
+  username                  VARCHAR(255) NOT NULL,
+  date                      TIMESTAMP NOT NULL,
+  component                 VARCHAR(255) NOT NULL,
+  action                    VARCHAR(255) NOT NULL,
+  details                   VARCHAR(255) NOT NULL
+);
+CREATE INDEX log_entry_document_set_id ON log_entry (document_set_id);
 
-create table node (
-  id                        bigint not null,
-  description               varchar(255),
-  parent_id                 bigint,
-  constraint pk_node primary key (id))
-;
+CREATE TABLE node (
+  id                        BIGSERIAL PRIMARY KEY,
+  document_set_id           BIGINT NOT NULL REFERENCES document_set (id),
+  parent_id                 BIGINT REFERENCES node (id),
+  description               VARCHAR(255) NOT NULL
+);
+CREATE INDEX node_parent_id ON node (parent_id);
+CREATE INDEX node_document_set_id ON node (document_set_id);
 
-create table tag (
-  id                        bigint not null,
-  name                      varchar(255),
-  document_set_id           bigint,
-  constraint uq_tag_1 unique (document_set_id,name),
-  constraint pk_tag primary key (id))
-;
+CREATE TABLE tag (
+  id                        BIGSERIAL PRIMARY KEY,
+  document_set_id           BIGINT NOT NULL REFERENCES document_set (id),
+  name                      VARCHAR(255) NOT NULL,
+  UNIQUE (document_set_id, name)
+);
+CREATE INDEX tag_document_set_id ON tag (document_set_id);
 
-create table tree (
-  id                        bigint not null,
-  root_id                   bigint,
-  constraint pk_tree primary key (id))
-;
+CREATE TABLE document_tag (
+  document_id                    BIGINT NOT NULL REFERENCES document (id),
+  tag_id                         BIGINT NOT NULL REFERENCES tag (id),
+  PRIMARY KEY (document_id, tag_id)
+);
+CREATE INDEX document_tag_document_id ON document_tag (document_id);
+CREATE INDEX document_tag_tag_id ON document_tag (tag_id);
 
-
-create table document_tag (
-  document_id                    bigint not null,
-  tag_id                         bigint not null,
-  constraint pk_document_tag primary key (document_id, tag_id))
-;
-
-create table node_document (
-  node_id                        bigint not null,
-  document_id                    bigint not null,
-  constraint pk_node_document primary key (node_id, document_id))
-;
-create sequence document_seq;
-
-create sequence document_set_seq;
-
-create sequence document_set_creation_job_seq;
-
-create sequence log_entry_seq;
-
-create sequence node_seq;
-
-create sequence tag_seq;
-
-create sequence tree_seq;
-
-alter table document add constraint fk_document_documentSet_1 foreign key (document_set_id) references document_set (id);
-create index ix_document_documentSet_1 on document (document_set_id);
-alter table log_entry add constraint fk_log_entry_documentSet_2 foreign key (document_set_id) references document_set (id);
-create index ix_log_entry_documentSet_2 on log_entry (document_set_id);
-alter table node add constraint fk_node_parent_3 foreign key (parent_id) references node (id);
-create index ix_node_parent_3 on node (parent_id);
-alter table tag add constraint fk_tag_documentSet_4 foreign key (document_set_id) references document_set (id);
-create index ix_tag_documentSet_4 on tag (document_set_id);
-alter table tree add constraint fk_tree_root_5 foreign key (root_id) references node (id);
-create index ix_tree_root_5 on tree (root_id);
-
-
-
-alter table document_tag add constraint fk_document_tag_document_01 foreign key (document_id) references document (id);
-
-alter table document_tag add constraint fk_document_tag_tag_02 foreign key (tag_id) references tag (id);
-
-alter table node_document add constraint fk_node_document_node_01 foreign key (node_id) references node (id);
-
-alter table node_document add constraint fk_node_document_document_02 foreign key (document_id) references document (id);
+CREATE TABLE node_document (
+  node_id                        BIGINT NOT NULL REFERENCES node (id),
+  document_id                    BIGINT NOT NULL REFERENCES document (id),
+  PRIMARY KEY (node_id, document_id)
+);
+CREATE INDEX node_document_node_id ON node_document (node_id);
+CREATE INDEX node_document_document_id ON node_document (document_id);
 
 # --- !Downs
 
-drop table if exists document cascade;
-
-drop table if exists document_tag cascade;
-
-drop table if exists node_document cascade;
-
-drop table if exists document_set cascade;
-
-drop table if exists document_set_creation_job cascade;
-
-drop table if exists log_entry cascade;
-
-drop table if exists node cascade;
-
-drop table if exists tag cascade;
-
-drop table if exists tree cascade;
-
-drop sequence if exists document_seq;
-
-drop sequence if exists document_set_seq;
-
-drop sequence if exists document_set_creation_job_seq;
-
-drop sequence if exists log_entry_seq;
-
-drop sequence if exists node_seq;
-
-drop sequence if exists tag_seq;
-
-drop sequence if exists tree_seq;
-
+DROP TABLE IF EXISTS node_document CASCADE;
+DROP TABLE IF EXISTS document_tag CASCADE;
+DROP TABLE IF EXISTS tag CASCADE;
+DROP TABLE IF EXISTS node CASCADE;
+DROP TABLE IF EXISTS log_entry CASCADE;
+DROP TABLE IF EXISTS document CASCADE;
+DROP TABLE IF EXISTS document_set CASCADE;
+DROP TABLE IF EXISTS document_set_creation_job CASCADE;

@@ -1,54 +1,98 @@
-observable = require('models/observable').observable
+KEYS = [ 'nodes', 'tags', 'documents' ]
 
+# A Selection is an intersection of unions, describing Documents:
+#
+# * A list of Node IDs
+# * A list of Tag IDs
+# * A list of Document IDs
+#
+# A Selection is immutable.
+#
+# The documents_from_cache() method returns the documents in the passed Cache
+# which can be proven to be included in the Selection. This is a subset of the
+# documents in the Cache which are included in the Selection (the client can't
+# currently determine that).
 class Selection
-  observable(this)
+  constructor: (obj = undefined) ->
+    (this[k] = obj?[k]?.slice(0) || []) for k in KEYS
+    undefined
 
-  constructor: () ->
-    @nodes = []
-    @tags = []
-    @documents = []
+  _copy_with_algorithm: (rhs, functor) ->
+    obj = {}
+    (obj[k] = functor(this[k], rhs[k])) for k in KEYS
+    new Selection(obj)
 
-  includes: (key, id) ->
-    key += 's' if key[key.length - 1] != 's'
-    this[key].indexOf(id) != -1
+  plus: (rhs) ->
+    this._copy_with_algorithm(rhs, (lv, rv) -> _.union(lv, rv || []))
 
-  update: (options) ->
-    changed1 = if options.nodes?
-      this._update_one('nodes', options.nodes)
-    else if options.node?
-      this._update_one('nodes', [options.node])
+  minus: (rhs) ->
+    this._copy_with_algorithm(rhs, (lv, rv) -> _.difference(lv, rv || []))
 
-    changed2 = if options.tags?
-      this._update_one('tags', options.tags)
-    else if options.tag?
-      this._update_one('tags', [options.tag])
+  replace: (rhs) ->
+    this._copy_with_algorithm(rhs, (lv, rv) -> rv? && rv || lv)
 
-    changed3 = if options.documents?
-      this._update_one('documents', options.documents)
-    else if options.document?
-      this._update_one('documents', [options.document])
+  copy: (rhs) ->
+    this._copy_with_algorithm({}, _.identity)
 
-    this._notify() if changed1 || changed2 || changed3
+  equals: (rhs) ->
+    _.isEqual(this, rhs)
 
-  _update_one: (key, new_value) ->
-    old_value = this[key]
-    new_value ||= []
+  pick: (keys...) ->
+    obj = {}
+    (obj[k] = this[k]) for k in keys
+    new Selection(obj)
 
-    equal = (old_value.length == new_value.length)
-    if equal
-      for x in old_value
-        found = false
-        for y in new_value
-          if (x.id? && x.id || x) == (y.id? && y.id || y)
-            found = true
-            break
-        if !found
-          equal = false
-          break
+  _node_ids_to_document_ids: (cache, node_ids) ->
+    c = cache.on_demand_tree.id_tree.children
+    n = cache.on_demand_tree.nodes
 
-    return if equal
+    # get flat list of all node IDs, with descendents
+    all_node_ids = []
+    next_node_ids = node_ids.slice(0)
+    while next_node_ids.length
+      last_node_ids = next_node_ids
+      next_node_ids = []
+      for nextid in last_node_ids
+        continue if !n[nextid]?
+        continue if all_node_ids.indexOf(nextid) >= 0
+        all_node_ids.push(nextid)
+        if c[nextid]?
+          for childid in c[nextid]
+            next_node_ids.push(childid)
 
-    this[key] = new_value
+    # turn that into documents
+    arrays = (n[nodeid].doclist.docids for nodeid in all_node_ids)
+    _.uniq(_.union.apply(null, arrays))
+
+  _tag_ids_to_document_ids: (cache, tag_ids) ->
+    arrays = []
+    for tagid in tag_ids
+      array = []
+      for id, document of cache.document_store.documents
+        if document.tagids.indexOf(tagid) != -1
+          array.push(document.id) # not plain id, which is a String
+      arrays.push(array)
+    _.uniq(_.union.apply({}, arrays))
+
+  documents_from_cache: (cache) ->
+    arrays = []
+
+    if @nodes.length
+      arrays.push(this._node_ids_to_document_ids(cache, @nodes))
+
+    if @tags.length
+      arrays.push(this._tag_ids_to_document_ids(cache, @tags))
+
+    if @documents.length
+      arrays.push(@documents)
+
+    documents = if arrays.length >= 1
+      docids = _.intersection.apply(null, arrays)
+      cache.document_store.documents[docid] for docid in docids
+    else
+      _.values(cache.document_store.documents)
+
+    _.sortBy(documents, (d) -> d.title)
 
 exports = require.make_export_object('models/selection')
 exports.Selection = Selection

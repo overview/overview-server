@@ -4,10 +4,14 @@ import collection.JavaConversions._
 
 import play.api.data._
 import play.api.data.Forms._
-import play.api.mvc.{Action,Controller}
+import play.api.mvc.Action
+import play.api.db.DB
+import play.api.Play.current
+import org.squeryl.PrimitiveTypeMode.inTransaction
+
 import models.{DocumentSet, DocumentSetCreationJob}
 
-object DocumentSetController extends Controller {
+object DocumentSetController extends Base {
   val queryForm = Form(
     mapping(
       "query" -> text
@@ -15,11 +19,14 @@ object DocumentSetController extends Controller {
       ((job: DocumentSetCreationJob) => Some((job.query)))
   ) 
 
-  def index() = Action {
-    // FIXME make per-user
-    val documentSets = DocumentSet.find.orderBy("query").findList
-    val documentSetCreationJobs = DocumentSetCreationJob.find.orderBy("query").findList
-    Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
+  def index() = authorizedAction(anyUser) { user => request =>
+    DB.withTransaction { connection =>
+      inTransaction { // FIXME remove!
+        val documentSets = user.documentSets.page(0, 20).toSeq
+        val documentSetCreationJobs = DocumentSetCreationJob.find.orderBy("query").findList
+        Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
+      }
+    }
   }
 
   def show(documentSetId: Long) = Action {
@@ -32,13 +39,6 @@ object DocumentSetController extends Controller {
     val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
     documentSetCreationJob.save
 
-    Redirect(routes.DocumentSetController.index())
-  }
-
-  def deleteDocumentSet(documentSetId: Long) = Action {
-    val documentSet = DocumentSet.find.ref(documentSetId)
-    documentSet.delete()
-    
     Redirect(routes.DocumentSetController.index())
   }
 }

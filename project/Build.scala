@@ -17,9 +17,13 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     "org.squeryl" %% "squeryl" % "0.9.5-2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
-    "net.sf.opencsv" % "opencsv" % "2.3",
     "org.mockito" % "mockito-all" % "1.9.0",
     "org.jodd" % "jodd-wot" % "3.3.4"
+  )
+
+  val playAppDependencies = appDependencies ++ Seq(
+    "net.sf.opencsv" % "opencsv" % "2.3",
+    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT"
   )
 
   val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA).settings(
@@ -39,7 +43,9 @@ object ApplicationBuild extends Build {
           	System.setProperty("datasource.default.url", testDatabaseUrl))
       ).dependsOn(common).aggregate(common)
 
-  val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
+  val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
+    resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
+
     testOptions in Test += Tests.Setup( () =>
       System.setProperty("db.default.url", testDatabaseUrl)
     ),

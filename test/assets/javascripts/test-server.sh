@@ -5,11 +5,6 @@ SOURCE_DIR="$DIR/../../../app/assets/javascripts"
 COFFEE_VERSION=`coffee -v`
 JSTD_CONFIG="$DIR/jsTestDriver.conf"
 
-if [ "x$COFFEE_VERSION" != 'xCoffeeScript version 1.2.0' ]; then
-  echo 'Invalid CoffeeScript version. Please install 1.2.0.'
-  exit 1
-fi
-
 echo 'Cleaning up old files...'
 rm -rf "$DIR/src-js" "$DIR/test-js"
 mkdir -p "$DIR/src-js" "$DIR/test-js"

@@ -29,12 +29,12 @@ observable = require('models/observable').observable
 class AnimatedTree
   observable(this)
 
-  constructor: (@on_demand_tree, @selection, @animator) ->
+  constructor: (@on_demand_tree, @state, @animator) ->
     @id_tree = @on_demand_tree.id_tree
     @root = undefined # node with children property pointing to other nodes
     @animated_height = { current: 0 }
     @_nodes = {} # id => node
-    @_last_selected_nodes = @selection.nodes
+    @_last_selected_nodes = @state.selection.nodes
 
     this._attach()
 
@@ -48,7 +48,7 @@ class AnimatedTree
       else
         this._change(changes)
 
-    @selection.observe(this._refresh_selection.bind(this))
+    @state.observe('selection-changed', this._refresh_selection.bind(this))
 
   _maybe_notifying_needs_update: (callback) ->
     old_needs_update = this.needs_update()
@@ -58,26 +58,20 @@ class AnimatedTree
   _refresh_selection: () ->
     this._maybe_notifying_needs_update ->
       old_selection = @_last_selected_nodes
-      new_selection = @selection.nodes
+      new_selection = @state.selection.nodes
 
       time = Date.now()
 
-      removed = {}
-      removed[oldid] = true for oldid in old_selection
-      added = {}
-      for newid in new_selection
-        if removed[newid]?
-          delete removed[newid] # it hasn't been added or removed
-        else
-          added[newid] = true
+      removed = _.difference(old_selection, new_selection)
+      added = _.difference(new_selection, old_selection)
 
-      for id, _ of removed
+      for id in removed
         node = @_nodes[id]
         if node?
           node.selected = false
           @animator.animate_object_properties(node, { selected_animation_fraction: 0 }, undefined, time)
 
-      for id, _ of added
+      for id in added
         node = @_nodes[id]
         if node?
           node.selected = true
@@ -193,7 +187,7 @@ class AnimatedTree
   _create_node: (id) ->
     n = @on_demand_tree.nodes[id]
     loaded = n?
-    selected = @selection.includes('node', id)
+    selected = @state.selection.nodes.indexOf(id) != -1
     {
       id: id,
       loaded: loaded,

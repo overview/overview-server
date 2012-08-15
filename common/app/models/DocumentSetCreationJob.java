@@ -12,6 +12,7 @@ public class DocumentSetCreationJob extends Model {
 	public enum JobState {Submitted, InProgress, Complete};
 	
 	@Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="document_set_creation_job_id_seq")
 	public long id;
 	
 	public String query;

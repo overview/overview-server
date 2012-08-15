@@ -9,7 +9,8 @@ public class DocumentSetDatabaseTest extends DatabaseTest {
 	@Test
 	public void saveToDatabase() {
 	  DocumentSet documentSet = new DocumentSet();
-		
+      documentSet.setQuery("query");
+
 	  for (int i = 0; i < 3; i++) {
 		Document document = new Document("title" + i, "textUrl" + i, "viewUrl" + i);
 		documentSet.addDocument(document);

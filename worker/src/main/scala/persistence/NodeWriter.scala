@@ -24,8 +24,8 @@ class NodeWriter(documentSetId: Long) {
   
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val nodeId = SQL("""
-        INSERT INTO node (id, description, parent_id, document_set_id) VALUES
-          (nextval('node_seq'), {description}, {parentId}, {documentSetId})
+        INSERT INTO node (description, parent_id, document_set_id) VALUES
+          ({description}, {parentId}, {documentSetId})
         """).on("documentSetId" -> documentSetId, 
                 "description" -> node.description,
                 "parentId" -> parentId).
