@@ -5,47 +5,43 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package writers
+package persistence
 
 import anorm._
 import anorm.SqlParser._
 import clustering.DocTreeNode
 import clustering.ClusterTypes.DocumentID
-import helpers.DbTestContext
+import helpers.{DbSpecification, DbTestContext}
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
-import org.specs2.matcher.HaveTheSameElementsAs
 
 
 
-class NodeWriterSpec extends Specification {
+
+class NodeWriterSpec extends DbSpecification {
   
+  step(setupDB)
+  
+  private def failInsert = { throw new Exception("failed insert") }
 
-  trait DocumentSetSetup extends DbTestContext {
-    
-    private def failInsert = { throw new Exception("failed insert") }
-    
-    def insertDocumentSet(query: String): Long = {
-      SQL("""
+  def insertDocumentSet(query: String)(implicit c: Connection): Long = {
+    SQL("""
           INSERT INTO document_set(id, query) 
           VALUES(nextval('document_set_seq'), 'NodeWriterSpec')
           """).executeInsert().getOrElse(failInsert)
-    }
+  }
 
-    def insertDocument(documentSetId: Long,
-      title: String, textUrl: String, viewUrl: String): Long = {
-      SQL("""
+  def insertDocument(documentSetId: Long,
+    title: String, textUrl: String, viewUrl: String)(implicit c: Connection): Long = {
+    SQL("""
         INSERT INTO document(id, document_set_id, title, text_url, view_url) VALUES 
           (nextval('document_seq'), {documentSetId}, {title}, {textUrl}, {viewUrl})
         """).on("documentSetId" -> documentSetId,
-        "title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl).
-        executeInsert().getOrElse(failInsert)
-    }
-    
-    lazy val documentSetId = insertDocumentSet("NodeWriterSpec")
+      "title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl).
+      executeInsert().getOrElse(failInsert)
   }
-  
+
   private def addChildren(parent: DocTreeNode, description: String) : Seq[DocTreeNode] = {
     val children = for (i <- 1 to 2) yield new DocTreeNode(Set())
     children.foreach(_.description = description)
@@ -59,8 +55,8 @@ class NodeWriterSpec extends Specification {
 		  					   
   "NodeWriter" should {
     
-    "insert root node with description, document set, and no parent" in new DocumentSetSetup {
-          
+    "insert root node with description, document set, and no parent" in new DbTestContext {
+      val documentSetId = insertDocumentSet("NodeWriterSpec")          
       val root = new DocTreeNode(Set())
       val description = "description"
       root.description = description
@@ -81,7 +77,8 @@ class NodeWriterSpec extends Specification {
       rootDocumentSetId must be equalTo(documentSetId)
     }
     
-    "insert child nodes" in new DocumentSetSetup {
+    "insert child nodes" in new DbTestContext {
+      val documentSetId = insertDocumentSet("NodeWriterSpec")
       val root = new DocTreeNode(Set())
       root.description = "root"
       val childNodes = addChildren(root, "child")
@@ -117,7 +114,8 @@ class NodeWriterSpec extends Specification {
       savedGrandChildren must have size(4)
     }
     
-    "insert document into node_document table" in new DocumentSetSetup {
+    "insert document into node_document table" in new DbTestContext {
+      val documentSetId = insertDocumentSet("NodeWriterSpec")
       val documentIds = for (i <- 1 to 5) yield 
         insertDocument(documentSetId, "title", "textUrl", "viewUrl")
       val idSet = Set(documentIds: _*)
@@ -144,4 +142,6 @@ class NodeWriterSpec extends Specification {
       nodeDocuments must haveTheSameElementsAs(expectedNodeDocuments)
     } 
   }
+  
+  step(shutdownDB)
 }

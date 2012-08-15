@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package writers
+package persistence
 
 import anorm._
 import clustering.DocTreeNode
