@@ -10,10 +10,12 @@ import static org.fest.assertions.Assertions.*;
 public class NodeTest extends DatabaseTest {
 
 	private Node root;
+	private DocumentSet documentSet;
 	
 	@Before
 	public void createTree() {
-		DocumentSet documentSet = new DocumentSet();
+		documentSet = new DocumentSet();
+		documentSet.setQuery("query");
 
 		root = new Node();
 		root.setDocumentSet(documentSet);
@@ -22,12 +24,13 @@ public class NodeTest extends DatabaseTest {
 		for (long i = 10l; i < 13l; i++) {
 			Node level1ChildNode = new Node();
 			level1ChildNode.setDocumentSet(documentSet);
+			level1ChildNode.setDescription("level 1 child " + i);
 			root.addChild(level1ChildNode);
 						
 			for (int j = 1; j < 5l; j++) {
 				Node level2ChildNode = new Node();
 				level2ChildNode.setDocumentSet(documentSet);
-				level2ChildNode.setDescription("bla");
+				level2ChildNode.setDescription("level 2 child " + j + " of level 1 node " + i);
 				level1ChildNode.addChild(level2ChildNode);
 			}
 		}
@@ -63,6 +66,7 @@ public class NodeTest extends DatabaseTest {
 	public void saveToDatabase() {
 	  for (int i = 0; i < 5; i++) {
 		Document document = new Document("title:" + i, "textUrl-" + i, "viewUrl-" + i);
+		document.setDocumentSet(documentSet);
 		root.addDocument(document);
 	  }
 	  root.save();

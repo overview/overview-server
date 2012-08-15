@@ -11,7 +11,7 @@ $ = jQuery
 class DocumentListView
   observable(this)
 
-  constructor: (@div, @document_store, @on_demand_tree, @tag_store, @document_list, @selection, options={}) ->
+  constructor: (@div, @cache, @document_list, @state, options={}) ->
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -69,7 +69,7 @@ class DocumentListView
     Math.ceil(div_bottom / (document_height || 1)) + @_buffer_documents
 
   _attach_selection: () ->
-    @selection.observe( => this._refresh_selection())
+    @state.observe('selection-changed', this._refresh_selection.bind(this))
 
   _attach_document_list: () ->
     @_document_list_callback = () => this._redraw()
@@ -79,13 +79,13 @@ class DocumentListView
     @document_list.unobserve(@_document_list_callback)
 
   _attach_document_changed: () ->
-    @document_store.observe('document-changed', (document) => this._update_document(document))
+    @cache.document_store.observe('document-changed', (document) => this._update_document(document))
 
   _update_document_a_tagids: ($tags, tagids) ->
-    return if @tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
+    return if @cache.tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
     $tags.empty()
     for tagid in tagids
-      tag = @tag_store.find_tag_by_id(tagid)
+      tag = @cache.tag_store.find_tag_by_id(tagid)
       $tags.append("<span class=\"tag-color-#{tag.position}\"/>")
 
   _update_document: (document) ->
@@ -136,7 +136,7 @@ class DocumentListView
 
     if !n?
       @_redraw_used_placeholders = true
-      documents = @document_list.get_placeholder_documents(@document_store, @on_demand_tree)
+      documents = @document_list.get_placeholder_documents(@cache)
 
     $ul = $div.children('ul')
 
@@ -178,7 +178,7 @@ class DocumentListView
   _refresh_selection: () ->
     $div = $(@div)
     $div.find('.selected').removeClass('selected')
-    for document_or_id in @selection.documents
+    for document_or_id in @state.selection.documents
       documentid = document_or_id.id? && document_or_id.id || document_or_id
       $div.find("a[href=#document-#{documentid}]").addClass('selected')
 

@@ -1,7 +1,8 @@
 # Not a unit test, because this is more useful
-OnDemandTree = require('models/on_demand_tree').OnDemandTree
 AnimatedTree = require('models/animated_tree').AnimatedTree
-Selection = require('models/selection').Selection
+
+observable = require('models/observable').observable
+OnDemandTree = require('models/on_demand_tree').OnDemandTree
 Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
 
@@ -10,19 +11,25 @@ Deferred = jQuery.Deferred
 class MockResolver
   get_deferred: (type, id) -> new Deferred()
 
+class MockState
+  observable(this)
+
+  constructor: () ->
+    @selection = { nodes: [], tags: [], documents: [] }
+
 describe 'models/animated_tree', ->
   describe 'AnimatedTree', ->
     on_demand_tree = undefined
     animated_tree = undefined
-    selection = undefined
+    state = undefined
 
     beforeEach ->
       interpolator = new PropertyInterpolator(1000, (x) -> x)
       animator = new Animator(interpolator)
-      selection = new Selection()
+      state = new MockState()
       resolver = new MockResolver()
       on_demand_tree = new OnDemandTree(resolver, { cache_size: 1000 })
-      animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
+      animated_tree = new AnimatedTree(on_demand_tree, state, animator)
 
     add_nodes = (list) ->
       response = {
@@ -35,6 +42,10 @@ describe 'models/animated_tree', ->
         editable.remove(id) for id in list
 
     at = (ms, callback) -> Timecop.freeze new Date(ms), callback
+
+    complete = (callback) ->
+      at(1, callback)
+      at(1001, -> animated_tree.update())
 
     it 'should start with no root', ->
       expect(animated_tree.root).toBeUndefined()
@@ -64,13 +75,17 @@ describe 'models/animated_tree', ->
       expect(animated_tree.root.children[1].num_documents.current).toEqual(2)
 
     it 'should allow a selected, loaded node', ->
-      selection.update({ node: 1 })
+      complete ->
+        state.selection.nodes = [1]
+        state._notify('selection-changed', state.selection)
       add_nodes([[1, [], 1]])
       expect(animated_tree.root.selected).toBe(true)
       expect(animated_tree.root.selected_animation_fraction.current).toEqual(1)
 
     it 'should allow a selected, unloaded node', ->
-      selection.update({ node: 2 })
+      complete ->
+        state.selection.nodes = [2]
+        state._notify('selection-changed', state.selection)
       add_nodes([[1, [2], 1]])
       node = animated_tree.root.children[0]
       expect(node.selected).toBe(true)
@@ -79,19 +94,25 @@ describe 'models/animated_tree', ->
     it 'should animate selection', ->
       add_nodes([[1, [2], 1]])
       node = animated_tree.root
-      Timecop.freeze new Date(100), -> selection.update({ node: 1 })
+      Timecop.freeze new Date(100), ->
+        state.selection.nodes = [1]
+        state._notify('selection-changed', state.selection)
       expect(node.selected).toBe(true)
       property = node.selected_animation_fraction
       expect(property.v2).toEqual(1)
       expect(property.current).toEqual(0)
 
     it 'should animate a selection change', ->
-      selection.update({ nodes: [ 1, 2 ] })
+      complete ->
+        state.selection.nodes = [1, 2]
+        state._notify('selection-changed', state.selection)
       add_nodes([[1, [2, 3], 3]])
       n1 = animated_tree.root
       n2 = n1.children[0]
       n3 = n1.children[1]
-      Timecop.freeze new Date(100), -> selection.update({ nodes: [ 2, 3 ] })
+      Timecop.freeze new Date(100), ->
+        state.selection.nodes = [2, 3]
+        state._notify('selection-changed', state.selection)
       expect(n1.selected).toBe(false)
       expect(n2.selected).toBe(true)
       expect(n3.selected).toBe(true)
@@ -152,7 +173,8 @@ describe 'models/animated_tree', ->
       Timecop.freeze new Date(1100), -> animated_tree.update()
       called = false
       animated_tree.observe('needs-update', (() -> called = true))
-      selection.update({ node: 1 })
+      state.selection.nodes = [1]
+      state._notify('selection-changed', state.selection)
       expect(called).toBe(true)
 
     it 'should set animated_height to height on load', ->

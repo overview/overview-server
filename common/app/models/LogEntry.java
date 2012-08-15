@@ -12,6 +12,7 @@ public class LogEntry extends Model {
 	private static final long serialVersionUID = 1L;
 
     @Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="log_entry_id_seq")
     public Long id;
 
     @Required

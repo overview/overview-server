@@ -3,7 +3,9 @@ observable = require('models/observable').observable
 class RemoteTagList
   observable(this)
 
-  constructor: (@tag_store, @on_demand_tree, @document_store, @transaction_queue, @server) ->
+  constructor: (@cache, @transaction_queue, @server) ->
+    @tag_store = @cache.tag_store
+    @document_store = @cache.document_store
     @tags = @tag_store.tags
 
     @tag_store.observe('tag-added', (v) => this._notify('tag-added', v))
@@ -67,7 +69,7 @@ class RemoteTagList
     if !selection.nodes.length && !selection.tags.length && !selection.documents.length
       return undefined
 
-    selection.documents_from_caches(@document_store, @on_demand_tree)
+    selection.documents_from_cache(@cache)
 
   _maybe_add_tagid_to_document: (tagid, document) ->
     tagids = document.tagids

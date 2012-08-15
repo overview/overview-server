@@ -5,10 +5,10 @@ PropertyInterpolator = require('models/property_interpolator').PropertyInterpola
 
 log = require('globals').logger.for_component('tree')
 
-tree_controller = (div, on_demand_tree, focus, selection) ->
+tree_controller = (div, on_demand_tree, focus, state) ->
   interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
   animator = new Animator(interpolator)
-  animated_tree = new AnimatedTree(on_demand_tree, selection, animator)
+  animated_tree = new AnimatedTree(on_demand_tree, state, animator)
   view = new TreeView(div, animated_tree, focus)
 
   interval = undefined
@@ -24,7 +24,8 @@ tree_controller = (div, on_demand_tree, focus, selection) ->
 
   view.observe 'click', (nodeid) ->
     log('clicked node', "#{nodeid}")
-    selection.update({ node: nodeid })
+    new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
+    state.set('selection', new_selection)
     on_demand_tree.demand_node(nodeid)
 
   view.observe 'zoom-pan', (obj) ->

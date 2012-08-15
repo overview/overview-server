@@ -8,8 +8,7 @@ class MockSelection
     @tags = (properties.tags || {})
     @documents = (properties.documents || {})
 
-  documents_from_caches: (document_list, on_demand_tree) ->
-    []
+  documents_from_cache: (cache) -> []
 
 class MockResolver
   constructor: () ->
@@ -26,12 +25,12 @@ describe 'models/document_list', ->
     beforeEach ->
       resolver = new MockResolver()
 
-    it 'should pass get_placeholder_documents() to selection.documents_from_caches()', ->
+    it 'should pass get_placeholder_documents() to selection.documents_from_cache()', ->
       selection = new MockSelection()
       dl = new DocumentList(selection, resolver)
-      spyOn(selection, 'documents_from_caches')
-      dl.get_placeholder_documents({ foo: 'bar' }, { foo: 'baz' })
-      expect(selection.documents_from_caches).toHaveBeenCalledWith({ foo: 'bar'}, { foo: 'baz' })
+      spyOn(selection, 'documents_from_cache')
+      dl.get_placeholder_documents({})
+      expect(selection.documents_from_cache).toHaveBeenCalledWith({})
 
     describe 'slice', ->
       it 'should return documents it already has, without a server call', ->

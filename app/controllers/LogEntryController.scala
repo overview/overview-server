@@ -111,7 +111,7 @@ object LogEntryController extends Controller {
                         logEntry.setUsername("test user")
                         logEntry.setComponent(component)
                         logEntry.setAction(action)
-                        details.map(logEntry.setDetails(_))
+                        logEntry.setDetails(details.getOrElse(""))
 
                         try {
                             val dateTime = isoDateTimeFormat.parseDateTime(dateString)

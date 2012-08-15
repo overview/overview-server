@@ -34,11 +34,4 @@ object DocumentSetController extends Controller {
 
     Redirect(routes.DocumentSetController.index())
   }
-
-  def deleteDocumentSet(documentSetId: Long) = Action {
-    val documentSet = DocumentSet.find.ref(documentSetId)
-    documentSet.delete()
-    
-    Redirect(routes.DocumentSetController.index())
-  }
 }

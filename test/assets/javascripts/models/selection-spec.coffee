@@ -8,34 +8,77 @@ describe 'models/', ->
       expect(selection.documents).toEqual([])
       expect(selection.tags).toEqual([])
 
-    it 'should set nodes', ->
-      selection = new Selection()
-      selection.update({ nodes: [ 1, 2, 3 ] })
-      expect(selection.nodes).toEqual([1, 2, 3])
+    it 'should set objects to passed values', ->
+      obj = { nodes: [1, 2, 3], tags: [4, 5, 6], documents: [7, 8, 9] }
+      selection = new Selection(obj)
+      for key in [ 'nodes', 'tags', 'documents' ]
+        expect(selection[key]).toEqual(obj[key])
 
-    it 'should set a single node', ->
-      selection = new Selection()
-      selection.update({ node: 1 })
-      expect(selection.nodes).toEqual([1])
+    it 'should store ID arrays by value, not by reference', ->
+      obj = { nodes: [1, 2, 3], tags: [], documents: [] }
+      selection = new Selection(obj)
+      for key in [ 'nodes', 'tags', 'documents' ]
+        obj[key].push(10)
+        expect(selection[key]).not.toEqual(obj[key])
 
-    describe 'includes()', ->
-      it 'should return true when appropriate', ->
-        selection = new Selection()
-        selection.update({ node: 1 })
-        expect(selection.includes('node', 2)).toEqual(false)
+    it 'should plus() properly', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.plus({ tags: [ 4 ] })
+      expect(selection2.nodes).toEqual([1, 2, 3])
+      expect(selection2.tags).toEqual([4])
 
-      it 'should return true when appropriate', ->
-        selection = new Selection()
-        selection.update({ node: 1 })
-        expect(selection.includes('node', 1)).toEqual(true)
+    it 'should plus() without overwriting values', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.plus({ nodes: [ 4 ] })
+      expect(selection2.nodes).toEqual([1, 2, 3, 4])
 
-    describe 'documents_from_caches', ->
+    it 'should minus() properly', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.minus({ nodes: [ 3 ] })
+      expect(selection2.nodes).toEqual([1, 2])
+
+    it 'should ignore nonexistent values in minus()', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.minus({ nodes: [ 4 ] })
+      expect(selection2.nodes).toEqual([1, 2, 3])
+
+    it 'should replace() properly', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.replace({ nodes: [ 3 ] })
+      expect(selection2.nodes).toEqual([3])
+
+    it 'should replace() with an empty list', ->
+      selection = new Selection({ nodes: [ 1, 2, 3] })
+      selection2 = selection.replace({ nodes: [] })
+      expect(selection2.nodes).toEqual([])
+
+    it 'should equals() an equivalent selection', ->
+      selection1 = new Selection({ nodes: [1], tags: [2], documents: [3] })
+      selection2 = new Selection({ nodes: [1], tags: [2], documents: [3] })
+      expect(selection1.equals(selection2)).toBe(true)
+
+    it 'should not equals() a different selection', ->
+      selection1 = new Selection({ nodes: [1], tags: [2], documents: [3] })
+      selection2 = new Selection({ nodes: [1], tags: [2], documents: [] })
+      expect(selection1.equals(selection2)).toBe(false)
+
+    it 'should pick() properly', ->
+      selection1 = new Selection({ nodes: [1], tags: [2], documents: [3] })
+      selection2 = selection1.pick('nodes', 'tags')
+      expect(selection2.nodes).toEqual([1])
+      expect(selection2.tags).toEqual([2])
+      expect(selection2.documents).toEqual([])
+
+    describe 'documents_from_cache', ->
       selection = undefined
       document_store = undefined
       on_demand_tree = undefined
 
+      extend = (rhs) ->
+        selection = selection.plus(rhs)
+
       go = () ->
-        selection.documents_from_caches(document_store, on_demand_tree)
+        selection.documents_from_cache({ document_store: document_store, on_demand_tree: on_demand_tree })
 
       beforeEach ->
         selection = new Selection()
@@ -86,26 +129,31 @@ describe 'models/', ->
         on_demand_tree = undefined
 
       it 'should select nothing when given a wrong node', ->
-        selection.update({ nodes: [20] })
+        extend({ nodes: [20] })
         v = go()
         expect(v).toEqual([])
 
       it 'should select all documents within a node', ->
-        selection.update({ nodes: [2] })
+        extend({ nodes: [2] })
         v = go()
         expect(v).toEqual([1, 2, 3, 4, 5].map((i) -> document_store.documents[i]))
 
       it 'should select all documents within two nodes', ->
-        selection.update({ nodes: [ 3, 5 ] })
+        extend({ nodes: [ 3, 5 ] })
         v = go()
         expect(v).toEqual([4, 5, 6, 7].map((i) -> document_store.documents[i]))
 
       it 'should select all documents with a tag', ->
-        selection.update({ tags: [ 2 ] })
+        extend({ tags: [ 2 ] })
         v = go()
         expect(v).toEqual([2, 3, 4].map((i) -> document_store.documents[i]))
 
       it 'should select documents by node and tag', ->
-        selection.update({ nodes: [ 3, 5 ], tags: [ 1] })
+        extend({ nodes: [ 3, 5 ], tags: [ 1] })
         v = go()
         expect(v).toEqual([4, 5, 7].map((i) -> document_store.documents[i]))
+
+      it 'should select documents by document ID', ->
+        extend({ documents: [1] })
+        v = go()
+        expect(v).toEqual([document_store.documents[1]])

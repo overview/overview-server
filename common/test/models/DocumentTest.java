@@ -13,7 +13,12 @@ public class DocumentTest extends DatabaseTest {
 
 	@Test
 	public void saveDocument() {
+      DocumentSet documentSet = new DocumentSet();
+      documentSet.setQuery("query");
+      documentSet.save();
+
 	  Document document = new Document("title", "http://text", "http://view");
+	  document.setDocumentSet(documentSet);
 	  document.save();
           
 	  Document storedDocument = Document.find.byId(document.id);
@@ -28,6 +33,7 @@ public class DocumentTest extends DatabaseTest {
 	Document document = new Document("title", "http://text", "http://view");
 
 	DocumentSet documentSet = new DocumentSet();
+	documentSet.setQuery("query");
 	documentSet.addDocument(document);
 	Set<Tag> tags = documentSet.findOrCreateTags("  foo , bar");
 
