@@ -25,7 +25,7 @@ class DocumentSetCreationJobSpec extends Specification {
       maybeUser must beSome
       val user = maybeUser.get
       
-      val job = new DocumentSetCreationJob(query, user.id)
+      val job = new DocumentSetCreationJob(query)
       user.documentSetCreationJobs.associate(job)
       
       user.documentSetCreationJobs must contain(job)
