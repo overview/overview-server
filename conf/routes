@@ -6,7 +6,6 @@
 GET     /                           controllers.Application.index()
 #POST	/documentsets/:id/delete	controllers.DocumentSetController.deleteDocumentSet(id: Long)
 
-GET	    /showJobs					controllers.Application.showJobs()
 
 
 # Good URLs
