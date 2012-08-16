@@ -1,7 +1,7 @@
 @(
   documentSets: Seq[models.orm.DocumentSet],
-  documentSetCreationJobs: Seq[DocumentSetCreationJob],
-  form: Form[DocumentSetCreationJob]
+  documentSetCreationJobs: Seq[models.orm.DocumentSetCreationJob],
+  form: Form[models.orm.DocumentSetCreationJob]
 )(implicit lang: play.api.i18n.Lang)
 
 @import views.html.helper.EnumToString
@@ -16,7 +16,7 @@
           @documentSetCreationJobs.map { job =>
             <li id="document-set-creation-job-@job.id">
               <span class="query">@job.query</span>
-              <span class="state">@EnumToString(job.state)</span>
+              <span class="state">@job.state</span>
             </li>
           }
         </ul>
