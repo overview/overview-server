@@ -1,10 +1,10 @@
 package models.orm
 
 import org.joda.time.DateTime
-import org.squeryl.KeyedEntity
 import org.squeryl.annotations.Column
+import org.squeryl.dsl.OneToMany
+import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
-
 import models.orm.Dsl.{crypt,gen_hash}
 
 class User(
@@ -35,7 +35,11 @@ class User(
 
   val id: Long = 0
 
+  lazy val documentSetCreationJobs: OneToMany[DocumentSetCreationJob] =
+    Schema.userToDocumentSetCreationJobs.left(this)
   lazy val documentSets = Schema.documentSetUsers.right(this)
+
+  
 }
 
 object User {
