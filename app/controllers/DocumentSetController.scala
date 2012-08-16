@@ -1,15 +1,15 @@
 package controllers
 
 import collection.JavaConversions._
-
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc.Action
 import play.api.db.DB
 import play.api.Play.current
 import org.squeryl.PrimitiveTypeMode.inTransaction
-
-import models.{DocumentSet, DocumentSetCreationJob}
+import models.DocumentSet
+import models.orm.DocumentSetCreationJob
+import models.orm.Schema
 
 object DocumentSetController extends Base {
   val queryForm = Form(
@@ -23,9 +23,9 @@ object DocumentSetController extends Base {
     DB.withTransaction { connection =>
       inTransaction { // FIXME remove!
         val documentSets = user.documentSets.page(0, 20).toSeq
-        val documentSetCreationJobs = DocumentSetCreationJob.find.orderBy("query").findList
+        val documentSetCreationJobs = user.documentSetCreationJobs.toSeq
         Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
-      }
+     }
     }
   }
 
@@ -35,9 +35,12 @@ object DocumentSetController extends Base {
     Ok(views.html.DocumentSet.show())
   }
 
-  def create() = Action { implicit request =>
+  def create() = authorizedAction(anyUser) { user => implicit request =>
     val documentSetCreationJob: DocumentSetCreationJob = queryForm.bindFromRequest.get
-    documentSetCreationJob.save
+    inTransaction { 
+      user.documentSetCreationJobs.associate(documentSetCreationJob)
+    }
+    
 
     Redirect(routes.DocumentSetController.index())
   }
