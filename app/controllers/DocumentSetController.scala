@@ -29,7 +29,7 @@ object DocumentSetController extends Base {
     }
   }
 
-  def show(documentSetId: Long) = Action {
+  def show(documentSetId: Long) = authorizedAction(anyUser) { user => request =>
     // FIXME check user has access to document set
     val documentSet = DocumentSet.find.byId(documentSetId) // for potential 404 error
     Ok(views.html.DocumentSet.show())
