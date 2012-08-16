@@ -17,8 +17,8 @@ class DocumentSetWriter() {
   
   def write(query: String)(implicit c: Connection) : Long = {
     SQL("""
-        INSERT INTO document_set (id, query) 
-        VALUES (nextval('document_set_seq'), {query})
+        INSERT INTO document_set (query) 
+        VALUES ({query})
         """).on("query" -> query).executeInsert().get
   }
 }

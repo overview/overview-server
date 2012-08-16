@@ -24,10 +24,10 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val inProgress = InProgress.id
       
       SQL("""
-          INSERT INTO document_set_creation_job (id, query, state) VALUES 
-            (nextval('document_set_creation_job_seq'), 'q1', {state1}),
-            (nextval('document_set_creation_job_seq'), 'q2', {state2}),
-            (nextval('document_set_creation_job_seq'), 'q3', {state3})
+          INSERT INTO document_set_creation_job (query, state) VALUES 
+            ('q1', {state1}),
+            ('q2', {state2}),
+            ('q3', {state3})
           """).on("state1" -> submitted, "state2" -> submitted, "state3" -> inProgress).
                executeUpdate()
                
@@ -43,8 +43,8 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       
       val jobId = SQL(
           """
-          INSERT INTO document_set_creation_job (id, query, state) VALUES 
-            (nextval('document_set_creation_job_seq'), 'q1', {state})
+          INSERT INTO document_set_creation_job (query, state) VALUES 
+            ('q1', {state})
           """).on("state" -> submitted).executeInsert()
                
       val jobs = PersistentDocumentSetCreationJob.findAllSubmitted

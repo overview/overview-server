@@ -22,8 +22,8 @@ class DocumentWriterSpec extends DbSpecification {
     "write title, text_url, and view_url to document table" in new DbTestContext {
       val documentSetId = 
         SQL("""
-            INSERT INTO document_set (id, query)
-            VALUES (nextval('document_set_seq'), 'DocumentWriterSpec')
+            INSERT INTO document_set (query)
+            VALUES ('DocumentWriterSpec')
         	""").executeInsert().getOrElse(throw new Exception("Failed insert"))
         	
       val writer = new DocumentWriter(documentSetId)

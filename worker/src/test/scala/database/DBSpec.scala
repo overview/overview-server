@@ -22,8 +22,8 @@ class DBSpec extends DbSpecification {
     "provide scope with transaction" in  {
       DB.withTransaction { implicit connection =>
         SQL("""
-             INSERT INTO document_set (id, query) 
-         	 VALUES (nextval('document_set_seq'), 'q')
+             INSERT INTO document_set (query) 
+         	 VALUES ('q')
              """).executeInsert()
 
         connection.rollback()
@@ -41,8 +41,8 @@ class DBSpec extends DbSpecification {
       try {
         DB.withTransaction { implicit connection =>
           SQL("""
-            INSERT INTO document_set (id, query) 
-        	VALUES (nextval('document_set_seq'), 'q')
+            INSERT INTO document_set (query) 
+        	VALUES ('q')
             """).executeInsert()
 
           throw new Exception(exceptionMessage)

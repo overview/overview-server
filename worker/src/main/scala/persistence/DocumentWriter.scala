@@ -19,8 +19,8 @@ class DocumentWriter(documentSetId: Long) {
   def write(title: String, textUrl: String, viewUrl: String)
            (implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO document (id, title, text_url, view_url, document_set_id) VALUES 
-          (nextval('document_seq'), {title}, {textUrl}, {viewUrl}, {documentSetId})
+        INSERT INTO document (title, text_url, view_url, document_set_id) VALUES 
+          ({title}, {textUrl}, {viewUrl}, {documentSetId})
         """).on("title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl, 
                 "documentSetId" -> documentSetId).executeInsert().get
   }
