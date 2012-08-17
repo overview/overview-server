@@ -66,11 +66,11 @@ CREATE INDEX node_document_document_id ON node_document (document_id);
 
 # --- !Downs
 
-DROP TABLE IF EXISTS node_document cascade;
-DROP TABLE IF EXISTS document_tag cascade;
-DROP TABLE IF EXISTS tag cascade;
-DROP TABLE IF EXISTS node cascade;
-DROP TABLE IF EXISTS log_entry cascade;
-DROP TABLE IF EXISTS document cascade;
-DROP TABLE IF EXISTS document_set cascade;
-DROP TABLE IF EXISTS document_set_creation_job cascade;
+DROP TABLE IF EXISTS node_document CASCADE;
+DROP TABLE IF EXISTS document_tag CASCADE;
+DROP TABLE IF EXISTS tag CASCADE;
+DROP TABLE IF EXISTS node CASCADE;
+DROP TABLE IF EXISTS log_entry CASCADE;
+DROP TABLE IF EXISTS document CASCADE;
+DROP TABLE IF EXISTS document_set CASCADE;
+DROP TABLE IF EXISTS document_set_creation_job CASCADE;

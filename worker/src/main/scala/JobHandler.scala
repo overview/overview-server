@@ -1,66 +1,53 @@
 
-import scala.collection.JavaConversions._
-import scala.io.Source
+
 import com.avaje.ebean.{Ebean, EbeanServerFactory}
 import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
-import models.{DocumentSet,DocumentSetCreationJob}
-import models.DocumentSetCreationJob.JobState
-import writers.NodeWriter
+import com.jolbox.bonecp._
+
+import database.{DatabaseConfiguration, DataSource, DB}
+import persistence._
+import persistence.DocumentSetCreationJobState._
 
 object JobHandler {
   def main(args: Array[String]) {
 
-	val server = configureDatabaseConnection
+    val config = new DatabaseConfiguration()
+	val dataSource = new DataSource(config)
 	
+    DB.connect(dataSource)
+    
 	while (true) {
-      Thread.sleep(500)
-      val submittedJobs = DocumentSetCreationJob.find.where.eq("state", JobState.Submitted).findList.toSeq
+      Thread.sleep(500) 
       
-      for (j <- submittedJobs) {
-        j.setState(JobState.InProgress);
-        
-        j.save
-        val documentSet = new DocumentSet
-        documentSet.setQuery(j.query)
-        documentSet.save
-        println("Created document set for query: " + documentSet.query)
-        
-        val indexer = new clustering.DocumentSetIndexer(documentSet)
-        val tree = indexer.BuildTree(server)
 
-        j.setState(JobState.Complete)
-        j.save
+      val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { implicit connection =>
+       PersistentDocumentSetCreationJob.findAllSubmitted
+      }
+
+      for (j <- submittedJobs) {
+        
+        val documentSetWriter = new DocumentSetWriter()
+        
+        val documentSetId = DB.withConnection { implicit connection => 
+          documentSetWriter.write(j.query)
+        }
+
+
+        println("Created document set for query: " + j.query)
+
+        val documentWriter = new DocumentWriter(documentSetId)
+        val nodeWriter = new NodeWriter(documentSetId)
+        val indexer = 
+          new clustering.DocumentSetIndexer(j.query, nodeWriter, documentWriter)
+        
+        val tree = indexer.BuildTree()
+
+        j.state = Complete
+        DB.withConnection { implicit connection =>
+          j.update
+        }
       }
       
     }
-
-  }
-
-  def configureDatabaseConnection() = {
-    val databaseConfig = new DatabaseConfiguration()
-    
-    val config = new ServerConfig();  
-	config.setName("default");  
-	
-	  // Define DataSource parameters  
-	val postgresDb = new DataSourceConfig()  
-	postgresDb.setDriver(databaseConfig.databaseDriver)  
-	postgresDb.setUsername(databaseConfig.username)  
-	postgresDb.setPassword(databaseConfig.password) 
-	postgresDb.setUrl(databaseConfig.databaseUrl)
-	
-	postgresDb.setHeartbeatSql("select 1")
-  
-	config.setDataSourceConfig(postgresDb)
-  
-	// set DDL options...  
-	config.setDdlGenerate(false)  
-	config.setDdlRun(false)	 
-  
-	config.setDefaultServer(true)  
-	config.setRegister(true)  
-	
-	EbeanServerFactory.create(config)
-
   }
 }

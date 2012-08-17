@@ -5,6 +5,8 @@
  * Created by Jonas Karlsson, June 2012
  */
 
+package database
+
 import com.avaje.ebean.config.GlobalProperties
 
 class DatabaseConfiguration {
@@ -14,11 +16,12 @@ class DatabaseConfiguration {
   val PasswordProperty =       "datasource.default.password"
   val DATABASE_URL = 		   "datasource.default.url"
    
-  val databaseDriver = GlobalProperties.get(DatabaseDriverProperty, null) 
+  val databaseDriver = "org.postgresql.Driver"
   val (databaseUrl, username, password) = readSettings()
     
   def readSettings() : (String, String, String) = {
 	val databaseSetting = sys.props.get(DATABASE_URL)
+
 	databaseSetting match {
       case Some(databaseInfo) => {
         val urlPattern = "\\w+://(\\w+):(\\w+)@([\\w-.]+)/([\\w-]+)".r

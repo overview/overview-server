@@ -11,7 +11,9 @@ import akka.actor._
 import akka.pattern.ask
 import akka.routing.SmallestMailboxRouter
 import com.avaje.ebean.EbeanServer
-import writers.NodeWriter
+import persistence.{DocumentWriter, NodeWriter}
+import database.DB
+
 
 // Define the bits of the DocumentCloud JSON response that we're interested in. 
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
@@ -105,7 +107,7 @@ class SingleDocRetriever extends Actor {
 
 case class DocRetrievalError(doc:DCDocument, error:Throwable)
 
-class DocsetRetriever(val documentSet : DocumentSet,
+class DocsetRetriever(val documentWriter : DocumentWriter,
                       val vectorGen : DocumentVectorGenerator,
                       finished : Promise[Seq[DocRetrievalError]]) 
  extends Actor {
@@ -153,10 +155,10 @@ class DocsetRetriever(val documentSet : DocumentSet,
       httpReqInFlight -= 1
       numRetrieved += 1
       println("WORKER: Retrieved document " + numRetrieved + " from " + doc.resources.text)
-      val newDoc = new Document(doc.title, doc.resources.text, doc.canonical_url)
-      documentSet.addDocument(newDoc)
-      newDoc.save()
-      vectorGen.addDocument(newDoc.id, Lexer.makeTerms(text))
+     val documentId = DB.withConnection { implicit connection =>
+      	  documentWriter.write(doc.title, doc.resources.text, doc.canonical_url)
+      }
+      vectorGen.addDocument(documentId, Lexer.makeTerms(text))      	  
       spoolRequests
       
     case GetTextFailed(doc, error) =>
@@ -167,7 +169,8 @@ class DocsetRetriever(val documentSet : DocumentSet,
   }
 }
 
-class DocumentSetIndexer(var documentSet:DocumentSet) {
+class DocumentSetIndexer(query: String, 
+						 nodeWriter: NodeWriter, documentWriter: DocumentWriter) {
 
   // number of documents to retrieve on each page of search results
   // Too large, and we wait a long time to start retrieving the actual text. Too small, and we have needless HTTP traffic 
@@ -185,7 +188,7 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     implicit val context = ActorSystem("DocumentRetriever")
     val retrievalDone = Promise[Seq[DocRetrievalError]]()
     val vectorGen = new DocumentVectorGenerator
-    val retriever = context.actorOf( Props(new DocsetRetriever(documentSet, vectorGen, retrievalDone)), name = "retriever")
+    val retriever = context.actorOf( Props(new DocsetRetriever(documentWriter, vectorGen, retrievalDone)), name = "retriever")
         
     // This is what we will ultimately return
     val vectorsPromise = Promise[DocumentSetVectors]()
@@ -194,7 +197,10 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     // Send the results to DocsetRetriever actor as we get them
     // If any of the DC calls to list the document set fail, the whole thing fails
     def getDocuments(pageNum:Int) : Unit = {
-      val documentCloudQuery = "http://www.documentcloud.org/api/search.json?per_page=" + pageSize + "&page=" + pageNum + "&q=" + documentSet.query
+      val documentCloudQuery = 
+        "http://www.documentcloud.org/api/search.json?per_page=" + pageSize + 
+        "&page=" + pageNum + "&q=" + query
+        
       AsyncHttpRequest(documentCloudQuery, 
           { response:Response => 
             
@@ -232,13 +238,13 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
     vectorsPromise
   }
 
-  def BuildTree(server: EbeanServer) = {
+  def BuildTree() = {
     val t0 = System.nanoTime()
     val vectorsPromise = RetrieveAndIndexDocuments()
     
     vectorsPromise onSuccess {
       case docSetVecs:DocumentSetVectors => 
-        printElapsedTime("WORKER: Retrieved and indexed " + documentSet.documents.size + " documents", t0)
+        printElapsedTime("WORKER: Retrieved and indexed " + "some" + " documents", t0)
 
         val t1 = System.nanoTime()
         val docTree = BuildDocTree(docSetVecs)
@@ -246,15 +252,10 @@ class DocumentSetIndexer(var documentSet:DocumentSet) {
         //println(docTree.prettyString)
         
         val t2 = System.nanoTime()
-        val transaction = server.beginTransaction()
-        implicit val connection = transaction.getConnection()
-        
-        //documentSet.update();
-        val writer = new NodeWriter(documentSet.id)
-        writer.write(docTree)
-        
-        server.commitTransaction()
-        server.endTransaction()
+
+        DB.withTransaction { implicit connection =>
+         nodeWriter.write(docTree)
+        }
         
         printElapsedTime("WORKER: Saved DocumentSet to DB", t2)
     }
