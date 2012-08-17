@@ -44,7 +44,8 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val jobs = PersistentDocumentSetCreationJob.findAllSubmitted
       
       jobs.map(_.query) must haveTheSameElementsAs(Seq("q1", "q2"))
-      jobs.map(_.state) must haveTheSameElementsAs(Seq(Submitted, Submitted))
+      jobs.map(_.state).distinct must contain(Submitted).only
+      jobs.map(_.userId).distinct must contain(userId).only
     }
     
     "update job state" in new DbTestContext {
