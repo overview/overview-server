@@ -30,6 +30,7 @@ object AsyncHttpRequest {
         .setFollowRedirects(true)
         .setCompressionEnabled(true)
         .setAllowPoolingConnection(true)
+        .setRequestTimeoutInMs(5 * 60 * 1000) // 5 minutes, to allow for downloading large files
         .build
    config
   }
@@ -86,24 +87,10 @@ object AsyncHttpRequest {
 
 // Case classes modeling the messages that our actors can send one another
 case class GetText(doc : DCDocument)
-case class GetTextSucceeded(doc : DCDocument, text : String)
+case class GetTextSucceeded(doc : DCDocument, text : String, startTime:Long)
 case class GetTextFailed(doc : DCDocument, error:Throwable)
 case class DocsToRetrieve(docs:DCSearchResult)
 case class NoMoreDocsToRetrieve()
-
-// Actor that retrieves the text for a single document, via HTTP request 
-class SingleDocRetriever extends Actor {
- 
-    def receive = {
-      case GetText(doc) => 
-        //println(this.toString + ": received GetText for " + doc.resources.text)
-        val requester = sender    // sender is a method, save return value for use in closures below
-      AsyncHttpRequest(
-         doc.resources.text,
-         { result:Response => requester ! GetTextSucceeded(doc, result.getResponseBody()) },
-         { t:Throwable => requester ! GetTextFailed(doc, t)})
-  }
-}
 
 case class DocRetrievalError(doc:DCDocument, error:Throwable)
 
@@ -113,7 +100,7 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
  extends Actor {
   
   var allDocsIn:Boolean = false   // have we received all documents to proces (via DocsToRetrieve messages?)
-  val maxInFlight = 8             // number of simultaneous HTTP connections to try
+  val maxInFlight = 4             // number of simultaneous HTTP connections to try
   var httpReqInFlight = 0
   var numRetrieved = 0
   
@@ -125,8 +112,9 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
   def spoolRequests {
     while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
       val doc = requestQueue.dequeue
+      val startTime = System.nanoTime
       AsyncHttpRequest(doc.resources.text, 
-          { result:Response => self ! GetTextSucceeded(doc, result.getResponseBody) },
+          { result:Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
           { t:Throwable => self ! GetTextFailed(doc, t) } )
       httpReqInFlight += 1
     } 
@@ -141,7 +129,7 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
     // When we get a message with a list of docs to retrieve, queue up a GetText message for each one
     case DocsToRetrieve(docs) =>
       //println("DocsToRetrieve")
-      require(allDocsIn == false)   // can't sent DocsToRetrieve after AllDocsIn
+      require(allDocsIn == false)   // can't send DocsToRetrieve after AllDocsIn
       requestQueue ++= docs.documents
       spoolRequests
 
@@ -149,11 +137,17 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
     case NoMoreDocsToRetrieve =>
       //println("NoMoreDocsToRetrieve")
       allDocsIn = true
+      spoolRequests     // needed to stop us, in boundary case when DocsToRetrieve was never sent to us 
       
-    case GetTextSucceeded(doc, text) =>
+    case GetTextSucceeded(doc, text, startTime) =>
       httpReqInFlight -= 1
       numRetrieved += 1
-      println("WORKER: Retrieved document " + numRetrieved + " from " + doc.resources.text)
+      val elapsedSeconds = (System.nanoTime - startTime)/1e9
+      println("WORKER: Retrieved document " + numRetrieved + 
+             " \n    from:  " + doc.resources.text + 
+              "\n    size:  " + text.size + 
+              "\n    time:  " + ("%.2f" format elapsedSeconds) + 
+              "\n    speed: " + ((text.size/1024) / elapsedSeconds + 0.5).toInt + " KB/s")
      val documentId = DB.withConnection { implicit connection =>
       	  documentWriter.write(doc.title, doc.resources.text, doc.canonical_url)
       }
@@ -173,11 +167,11 @@ class DocumentSetIndexer(query: String,
 
   // number of documents to retrieve on each page of search results
   // Too large, and we wait a long time to start retrieving the actual text. Too small, and we have needless HTTP traffic 
-  private val pageSize = 500
+  private val pageSize = 100
   
   private def printElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()
-    println(op + ", time: " + (t1 - t0)/1e9 + " seconds")
+    println(op + ", time: " + ("%.2f" format (t1 - t0)/1e9) + " seconds")
   }
   
   // Query documentCloud and create one document object for each doc returned by the query
@@ -223,6 +217,7 @@ class DocumentSetIndexer(query: String,
             vectorsPromise.failure(error) 
           })
     }
+    println("WORKER: beginning document set retrieval")
     getDocuments(1) // start at this page
     
     // When the docsetRetriever finishes, compute vectors and complete the promise
@@ -237,14 +232,13 @@ class DocumentSetIndexer(query: String,
     vectorsPromise
   }
 
-  
   def BuildTree() = {
     val t0 = System.nanoTime()
     val vectorsPromise = RetrieveAndIndexDocuments()
     
     vectorsPromise onSuccess {
       case docSetVecs:DocumentSetVectors => 
-        printElapsedTime("WORKER: Retrieved and indexed " + "some" + " documents", t0)
+        printElapsedTime("WORKER: Retrieved and indexed " + docSetVecs.size + " documents", t0)
 
         val t1 = System.nanoTime()
         val docTree = BuildDocTree(docSetVecs)
