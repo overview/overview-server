@@ -26,7 +26,7 @@ object JobHandler {
 
       for (j <- submittedJobs) {
         
-        val documentSetWriter = new DocumentSetWriter()
+        val documentSetWriter = new DocumentSetWriter(j.userId)
         
         val documentSetId = DB.withConnection { implicit connection => 
           documentSetWriter.write(j.query)

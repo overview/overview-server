@@ -12,13 +12,21 @@ import java.sql.Connection
 
 /**
  * Writes out the query defining a document set to the database.
+ * @param userId the owner of the DocumentSet
  */
-class DocumentSetWriter() {
+class DocumentSetWriter(userId: Long) {
   
   def write(query: String)(implicit c: Connection) : Long = {
-    SQL("""
-        INSERT INTO document_set (query) 
-        VALUES ({query})
-        """).on("query" -> query).executeInsert().get
+    val documentSetId =
+      SQL("""
+          INSERT INTO document_set (query) 
+          VALUES ({query})
+          """).on("query" -> query).executeInsert().get
+     SQL("""
+         INSERT INTO document_set_user (document_set_id, user_id)
+         VALUES ({documentSetId}, {userId})
+         """).on("documentSetId" -> documentSetId, "userId" -> userId).execute()
+         
+     documentSetId
   }
 }

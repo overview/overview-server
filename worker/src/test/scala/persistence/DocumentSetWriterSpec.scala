@@ -20,7 +20,8 @@ class DocumentSetWriterSpec extends DbSpecification {
   "DocumentSetWriter" should {
     
     "write query into document_set table and return id" in new DbTestContext {
-      val writer = new DocumentSetWriter()
+      val adminUserId = 1l;
+      val writer = new DocumentSetWriter(adminUserId)
       val query = "a query"
         
       val id = writer.write(query)
@@ -29,6 +30,11 @@ class DocumentSetWriterSpec extends DbSpecification {
        					as(long("id") ~ str("query") map(flatten) *)  
           
       savedIds must haveTheSameElementsAs(Seq((id, query)))
+      
+      val documentSetUsers = SQL("SELECT document_set_id, user_id FROM document_set_user").
+                                as(long("document_set_id") ~ long("user_id") map(flatten) *)
+                                
+      documentSetUsers.distinct must contain((id, adminUserId)).only
     }
   }
   
