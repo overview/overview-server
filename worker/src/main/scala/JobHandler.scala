@@ -1,4 +1,9 @@
-
+/*
+ * JobHandler.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, June 2012
+ */
 
 import com.avaje.ebean.{Ebean, EbeanServerFactory}
 import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}

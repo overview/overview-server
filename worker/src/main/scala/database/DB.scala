@@ -1,9 +1,20 @@
+/*
+ * DB.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
+
 package database
 
 import java.sql.Connection
 import java.sql.Statement
 import java.sql.Savepoint
 
+/**
+ * Convenience object for database access. Call DB.connect(datasSource) once at the start
+ * of the application, and DB.close() at the end.
+ */
 object DB {
 
   private var dataSource: DataSource = _
@@ -16,10 +27,16 @@ object DB {
     dataSource.shutdown()
   }
   
+  /**
+   * @return a connection. Caller is responsible for closing connection.
+   */
   def getConnection(): Connection = {
     dataSource.getConnection()
   }
   
+ /**
+  * Provides a scope with an implicit connection that is automatically closed.
+  */
   def withConnection[T](block: Connection => T): T = {
     val connection = new AutoCleanConnection(dataSource.getConnection())
     try {
@@ -30,6 +47,10 @@ object DB {
     }
   }
   
+  /**
+   * Provides a scope inside a transaction with an implicit connection .
+   * If an error occurs, a rollback is performed. The connection is automatically closed.
+   */
   def withTransaction[T](block: Connection => T): T = {
     withConnection { implicit connection =>
       try {

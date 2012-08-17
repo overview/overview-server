@@ -9,6 +9,12 @@ package database
 
 import com.avaje.ebean.config.GlobalProperties
 
+/**
+ * Sets up properties needed to configure the database.
+ * Reads datasource.default.url in Play's format http://user:password@host/database
+ * and converts to jdbc:postgresql://host/database, with user and password in 
+ * separate configuration variables.
+ */
 class DatabaseConfiguration {
   val DatabaseDriverProperty = "datasource.default.databaseDriver"
   val DatabaseUrlProperty =    "datasource.default.databaseUrl"

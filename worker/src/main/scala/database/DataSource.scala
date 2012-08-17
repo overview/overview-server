@@ -1,8 +1,19 @@
+/*
+ * DataSource.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
+
 package database
 
 import com.jolbox.bonecp._
 import java.sql.Connection
 
+/**
+ * Wrapper for BoneCPDataSource, that applies the given configuration.
+ * Should be shutdown() when program ends to shutdown BoneCP connection pool.
+ */
 class DataSource(configuration: DatabaseConfiguration) {
 
   Class.forName(configuration.databaseDriver)
