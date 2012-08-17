@@ -6,7 +6,7 @@ import play.api.data.Forms._
 import play.api.mvc.Action
 import play.api.db.DB
 import play.api.Play.current
-import org.squeryl.PrimitiveTypeMode.inTransaction
+import org.squeryl.PrimitiveTypeMode._
 import models.DocumentSet
 import models.orm.DocumentSetCreationJob
 import models.orm.Schema
@@ -31,8 +31,14 @@ object DocumentSetController extends Base {
 
   def show(documentSetId: Long) = authorizedAction(anyUser) { user => request =>
     // FIXME check user has access to document set
-    val documentSet = DocumentSet.find.byId(documentSetId) // for potential 404 error
-    Ok(views.html.DocumentSet.show())
+    inTransaction {
+      val documentSet = user.documentSets.where(d => d.id === documentSetId).headOption
+      documentSet match {
+        case Some(d) => Ok(views.html.DocumentSet.show())
+        case None => Forbidden
+      }
+    }
+    
   }
 
   def create() = authorizedAction(anyUser) { user => implicit request =>
