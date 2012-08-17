@@ -87,7 +87,7 @@ case class GetText(doc : DCDocument)
 case class GetTextSucceeded(doc : DCDocument, text : String)
 case class GetTextFailed(doc : DCDocument, error:Throwable)
 case class DocsToRetrieve(docs:DCSearchResult)
-case class NoMoreDocsToRetrieve
+case class NoMoreDocsToRetrieve()
 
 // Actor that retrieves the text for a single document, via HTTP request 
 class SingleDocRetriever extends Actor {

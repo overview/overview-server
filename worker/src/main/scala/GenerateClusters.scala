@@ -46,7 +46,7 @@ object ConnectedComponents {
     var remaining = allNodes
     
     while (!remaining.isEmpty) {
-      val (newComponent, leftOvers) = SingleComponent(remaining.first, remaining, edgeEnumerator)
+      val (newComponent, leftOvers) = SingleComponent(remaining.head, remaining, edgeEnumerator)
       components += newComponent
       remaining = leftOvers
     }
@@ -145,7 +145,7 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
 
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
   def BuildTree(threshSteps: Seq[Double]) : DocTreeNode = {
-    require(threshSteps.first == 1.0)
+    require(threshSteps.head == 1.0)
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
         
