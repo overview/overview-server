@@ -99,7 +99,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  
 	  val documents = subTreeDataLoader.loadDocuments(documentIds)
 	  
-	  documents must have size(nodeIds.size * 3)
+	  documents must have size(nodeIds.size * numberOfDocuments)
 	  documents.map(_._1) must haveTheSameElementsAs(documentIds)
 	  
 	  val titles = (1 to numberOfDocuments).map("title-" + _)
@@ -110,6 +110,15 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	  
 	  val viewUrls = (1 to numberOfDocuments).map("viewUrl-" + _)
 	  documents.map(_._4) must containAllOf(viewUrls)
+	}
+	
+	"return no documents if no document ids specified" in new DocumentsLoaded {
+	  insertDocuments(documentSetId, nodeIds)
+	  val emptyDocumentIdList = Nil
+	  
+	  val documents = subTreeDataLoader.loadDocuments(emptyDocumentIdList)
+	  
+	  documents must be empty
 	}
   }
   

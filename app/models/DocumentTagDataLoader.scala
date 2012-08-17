@@ -16,7 +16,10 @@ class DocumentTagDataLoader {
    * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
    */
   def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection) : List[DocumentData] = {
-    documentQuery(documentIds)
+	documentIds match {
+	  case Nil => Nil
+	  case _ => documentQuery(documentIds)
+	} 
   }
 
   protected def idList(ids: Seq[Long]) : String = "(" + ids.mkString(", ") + ")"
