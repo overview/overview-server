@@ -22,7 +22,7 @@ import scala.collection.mutable.Set
 
 class NodeWriterSpec extends DbSpecification {
   
-  step(setupDB)
+  step(setupDb)
 
 
   private def addChildren(parent: DocTreeNode, description: String) : Seq[DocTreeNode] = {
@@ -126,5 +126,5 @@ class NodeWriterSpec extends DbSpecification {
     } 
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

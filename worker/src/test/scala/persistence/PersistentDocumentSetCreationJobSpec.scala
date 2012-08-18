@@ -17,7 +17,7 @@ import persistence.DocumentSetCreationJobState._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   def findAdminUserId(implicit connection: Connection): Option[Long] = {
     SQL("""
@@ -68,5 +68,5 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

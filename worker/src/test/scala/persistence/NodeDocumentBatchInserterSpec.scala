@@ -15,7 +15,7 @@ import java.sql.Connection
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   trait DocumentsSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("NodeDocumentBatchInserterSpec")
@@ -92,5 +92,5 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

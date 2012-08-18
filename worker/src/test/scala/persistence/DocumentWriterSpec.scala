@@ -16,7 +16,7 @@ import org.specs2.mutable.Specification
 
 class DocumentWriterSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   "DocumentWriter" should {
     
@@ -38,5 +38,5 @@ class DocumentWriterSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

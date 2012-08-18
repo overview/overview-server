@@ -38,12 +38,12 @@ class DbSpecification extends Specification {
 
   var dataSource: DataSource = _
   
-  def setupDB() {
+  def setupDb() {
     dataSource = new DataSource(new DatabaseConfiguration)
     DB.connect(dataSource)  
   }
 
-  def shutdownDB() {
+  def shutdownDb() {
     DB.close()
   }
   
