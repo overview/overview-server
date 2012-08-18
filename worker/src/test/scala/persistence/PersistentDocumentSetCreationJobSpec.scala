@@ -9,7 +9,7 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import persistence.DocumentSetCreationJobState._

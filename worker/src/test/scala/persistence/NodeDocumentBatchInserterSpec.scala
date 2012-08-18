@@ -9,7 +9,7 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
 import helpers.DbSetup._
 import java.sql.Connection
 
