@@ -12,6 +12,7 @@ import anorm.SqlParser._
 import clustering.DocTreeNode
 import clustering.ClusterTypes.DocumentID
 import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSetup._
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
@@ -22,26 +23,7 @@ import scala.collection.mutable.Set
 class NodeWriterSpec extends DbSpecification {
   
   step(setupDB)
-  
-  private def failInsert = { throw new Exception("failed insert") }
 
-
-  def insertDocumentSet(query: String)(implicit c: Connection): Long = {
-    SQL("""
-          INSERT INTO document_set (query) 
-          VALUES('NodeWriterSpec')
-        """).executeInsert().getOrElse(failInsert)
-  }
-
-  def insertDocument(documentSetId: Long,
-    title: String, textUrl: String, viewUrl: String)(implicit c: Connection): Long = {
-    SQL("""
-        INSERT INTO document(document_set_id, title, text_url, view_url) VALUES 
-          ({documentSetId}, {title}, {textUrl}, {viewUrl})
-        """).on("documentSetId" -> documentSetId,
-      "title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl).
-      executeInsert().getOrElse(failInsert)
-  }
 
   private def addChildren(parent: DocTreeNode, description: String) : Seq[DocTreeNode] = {
     val children = for (i <- 1 to 2) yield new DocTreeNode(Set())
