@@ -33,7 +33,8 @@ class NodeDocumentBatchInserter(threshold: Long) {
   
   /** execute the batch insert */
   def flush(implicit c: Connection) {
-	  batchQuery.execute
+	  val result = batchQuery.execute
+
 	  resetBatch
   }
 

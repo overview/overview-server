@@ -17,9 +17,11 @@ import java.sql.Connection
  * the nodes must already exist in the database.
  */
 class NodeWriter(documentSetId: Long) {
+  val batchInserter = new NodeDocumentBatchInserter(500)
   
   def write(root: DocTreeNode)(implicit c: Connection) {
     writeSubTree(root, None)
+    batchInserter.flush
   }
   
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
@@ -31,13 +33,8 @@ class NodeWriter(documentSetId: Long) {
                 "parentId" -> parentId).
              executeInsert().get
              
-     node.docs.foreach { documentId =>
-    	SQL("""
-    	    INSERT INTO node_document (node_id, document_id) VALUES
-    	    ( {nodeId}, {documentId} )
-    	    """).on("nodeId" -> nodeId, "documentId" -> documentId).
-    	         executeInsert()
-     }
+     node.docs.foreach(batchInserter.insert(nodeId, _))
+     
      node.children.foreach(writeSubTree(_, Some(nodeId)))
   }
 
