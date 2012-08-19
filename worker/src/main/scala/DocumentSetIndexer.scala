@@ -10,10 +10,10 @@ import akka.dispatch.{ExecutionContext,Future,Promise}
 import akka.actor._
 import akka.pattern.ask
 import akka.routing.SmallestMailboxRouter
-import com.avaje.ebean.EbeanServer
+//import com.avaje.ebean.EbeanServer
 import persistence.{DocumentWriter, NodeWriter}
 import database.DB
-
+import logging._
 
 // Define the bits of the DocumentCloud JSON response that we're interested in. 
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
@@ -128,14 +128,12 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
   def receive = {     
     // When we get a message with a list of docs to retrieve, queue up a GetText message for each one
     case DocsToRetrieve(docs) =>
-      //println("DocsToRetrieve")
       require(allDocsIn == false)   // can't send DocsToRetrieve after AllDocsIn
       requestQueue ++= docs.documents
       spoolRequests
 
     // Client sends this message to indicate that document listing is complete. 
     case NoMoreDocsToRetrieve =>
-      //println("NoMoreDocsToRetrieve")
       allDocsIn = true
       spoolRequests     // needed to stop us, in boundary case when DocsToRetrieve was never sent to us 
       
@@ -143,12 +141,12 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
       httpReqInFlight -= 1
       numRetrieved += 1
       val elapsedSeconds = (System.nanoTime - startTime)/1e9
-      println("WORKER: Retrieved document " + numRetrieved + 
-             " \n    from:  " + doc.resources.text + 
-              "\n    size:  " + text.size + 
-              "\n    time:  " + ("%.2f" format elapsedSeconds) + 
-              "\n    speed: " + ((text.size/1024) / elapsedSeconds + 0.5).toInt + " KB/s")
-     val documentId = DB.withConnection { implicit connection =>
+      Logger.debug("Retrieved document " + numRetrieved + 
+             ", from: " + doc.resources.text + 
+             ", size: " + text.size + 
+             ", time: " + ("%.2f" format elapsedSeconds) + 
+             ", speed: " + ((text.size/1024) / elapsedSeconds + 0.5).toInt + " KB/s")
+      val documentId = DB.withConnection { implicit connection =>
       	  documentWriter.write(doc.title, doc.resources.text, doc.canonical_url)
       }
       vectorGen.addDocument(documentId, Lexer.makeTerms(text))      	  
@@ -156,7 +154,7 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
       
     case GetTextFailed(doc, error) =>
       httpReqInFlight -= 1
-      println("WORKER: Exception retrieving document from " + doc.resources.text +" : " + error.toString)
+      Logger.warn("Exception retrieving document from " + doc.resources.text +" : " + error.toString)
       errorQueue += DocRetrievalError(doc,error)
       spoolRequests
   }
@@ -171,7 +169,7 @@ class DocumentSetIndexer(query: String,
   
   private def printElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()
-    println(op + ", time: " + ("%.2f" format (t1 - t0)/1e9) + " seconds")
+    Logger.info(op + ", time: " + ("%.2f" format (t1 - t0)/1e9) + " seconds")
   }
   
   // Query documentCloud and create one document object for each doc returned by the query
@@ -201,7 +199,7 @@ class DocumentSetIndexer(query: String,
 
               // send the docs we get back to the retriever for queing
               if (!result.documents.isEmpty) {
-                println("WORKER: Got document set result page " + pageNum + " with " + result.documents.size + " docs.")
+                Logger.debug("Got document set result page " + pageNum + " with " + result.documents.size + " docs.")
                 retriever ! DocsToRetrieve(result)
               }
 
@@ -217,15 +215,15 @@ class DocumentSetIndexer(query: String,
             vectorsPromise.failure(error) 
           })
     }
-    println("WORKER: beginning document set retrieval")
+    Logger.info("Beginning document set retrieval")
     getDocuments(1) // start at this page
     
     // When the docsetRetriever finishes, compute vectors and complete the promise
     retrievalDone onComplete {
       case Left(error) => 
-        println("WORKER: document set retrieval error: " + error)
+        Logger.warn("Document set retrieval error: " + error)
       case Right(docsNotFetched) => 
-        println("WORKER: document set retrieval succeded, with " + docsNotFetched.length + " not fetched")
+        Logger.info("Document set retrieval succeded, with " + docsNotFetched.length + " not fetched")
         vectorsPromise.success(vectorGen.documentVectors)
     }
     
@@ -238,12 +236,11 @@ class DocumentSetIndexer(query: String,
     
     vectorsPromise onSuccess {
       case docSetVecs:DocumentSetVectors => 
-        printElapsedTime("WORKER: Retrieved and indexed " + docSetVecs.size + " documents", t0)
+        printElapsedTime("Retrieved and indexed " + docSetVecs.size + " documents", t0)
 
         val t1 = System.nanoTime()
         val docTree = BuildDocTree(docSetVecs)
-        printElapsedTime("WORKER: Clustered documents", t1)
-        //println(docTree.prettyString)
+        printElapsedTime("Clustered documents", t1)
         
         val t2 = System.nanoTime()
 
@@ -251,7 +248,7 @@ class DocumentSetIndexer(query: String,
          nodeWriter.write(docTree)
         }
         
-        printElapsedTime("WORKER: Saved DocumentSet to DB", t2)
+        printElapsedTime("Saved DocumentSet to DB", t2)
     }
   } 
 }

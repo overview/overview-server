@@ -1,17 +1,20 @@
-/*
+/***
  * JobHandler.scala
  * 
- * Overview Project
- * Created by Jonas Karlsson, June 2012
+ * Overview Project,June 2012
+ * @author Jonas Karlsson
  */
 
-import com.avaje.ebean.{Ebean, EbeanServerFactory}
-import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
+
+//import com.avaje.ebean.{Ebean, EbeanServerFactory}
+//import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
 import com.jolbox.bonecp._
 
 import database.{DatabaseConfiguration, DataSource, DB}
 import persistence._
 import persistence.DocumentSetCreationJobState._
+
+import logging._
 
 object JobHandler {
   def main(args: Array[String]) {
@@ -38,7 +41,7 @@ object JobHandler {
         }
 
 
-        println("Created document set for query: " + j.query)
+        Logger.info("Created document set for query: " + j.query)
 
         val documentWriter = new DocumentWriter(documentSetId)
         val nodeWriter = new NodeWriter(documentSetId)

@@ -9,6 +9,9 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <!-- turn off Ning HTTP and eBean INFO output -->
+    <!-- turn off Ning HTTP output -->
     <logger name="com.ning.http.client" level="WARN"/>
+
+    <!-- for the moment, lots of debug info for the worker -->
+    <logger name="WORKER" level="DEBUG"/>
 </configuration>
