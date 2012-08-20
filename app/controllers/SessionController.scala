@@ -1,13 +1,14 @@
 package controllers
 
-import play.api.mvc.{Action,Controller}
+import java.sql.Connection
+import play.api.mvc.{Action,AnyContent,Controller,Request}
 import play.api.data.Form
 import play.api.data.Forms._
 import jp.t2v.lab.play20.auth.LoginLogout
 
 import models.orm.User
 
-object SessionController extends Controller with LoginLogout with AuthConfigImpl {
+object SessionController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
   val loginForm = Form {
     mapping(
       "email" -> email,
@@ -19,13 +20,18 @@ object SessionController extends Controller with LoginLogout with AuthConfigImpl
     Ok(views.html.Session.new_(loginForm))
   }
 
-  def delete = Action { implicit request =>
+  def delete = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
+    implicit val r = request
+
     gotoLogoutSucceeded.flashing(
       "success" -> "You have logged out"
     )
   }
 
-  def create = Action { implicit request =>
+  def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
+    implicit val r = request
+    implicit val c = connection
+
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors)),
       user => gotoLoginSucceeded(user.getOrElse(throw new Exception("invalid code")).id)
