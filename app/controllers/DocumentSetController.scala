@@ -30,7 +30,6 @@ object DocumentSetController extends Base {
   }
 
   def show(documentSetId: Long) = authorizedAction(anyUser) { user => request =>
-    // FIXME check user has access to document set
     inTransaction {
       val documentSet = user.documentSets.where(d => d.id === documentSetId).headOption
       documentSet match {
