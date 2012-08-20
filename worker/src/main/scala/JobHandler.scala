@@ -14,7 +14,7 @@ import database.{DatabaseConfiguration, DataSource, DB}
 import persistence._
 import persistence.DocumentSetCreationJobState._
 
-import logging._
+import overview.logging._
 
 object JobHandler {
   def main(args: Array[String]) {

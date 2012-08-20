@@ -2,97 +2,32 @@ package clustering
 
 import models._
 import ClusterTypes._
-import scala.collection.JavaConversions._
-import scala.collection.mutable
-import com.codahale.jerkson.Json._
-import com.ning.http.client._
-import akka.dispatch.{ExecutionContext,Future,Promise}
-import akka.actor._
-import akka.pattern.ask
-import akka.routing.SmallestMailboxRouter
-//import com.avaje.ebean.EbeanServer
+import overview.http._
+import overview.logging._
 import persistence.{DocumentWriter, NodeWriter}
 import database.DB
-import logging._
 
-// Define the bits of the DocumentCloud JSON response that we're interested in. 
-// This omits many returned fields, but that's good for robustness (don't demand what we don't use.) 
-case class DCDocumentResources(text:String)
-case class DCDocument(title: String, canonical_url:String, resources:clustering.DCDocumentResources)
-case class DCSearchResult(documents: Seq[clustering.DCDocument])
+//import scala.collection.JavaConversions._
+import scala.collection.mutable
+import akka.dispatch.{ExecutionContext,Future,Promise}
+import akka.actor._
 
-// Single object that interfaces to Ning's Async HTTP library
-object AsyncHttpRequest {  
-  
-  private def getHttpConfig = {
-    val builder = new AsyncHttpClientConfig.Builder()
-    val config = builder
-        .setFollowRedirects(true)
-        .setCompressionEnabled(true)
-        .setAllowPoolingConnection(true)
-        .setRequestTimeoutInMs(5 * 60 * 1000) // 5 minutes, to allow for downloading large files
-        .build
-   config
-  }
-      
-  private lazy val asyncHttpClient = new AsyncHttpClient(getHttpConfig)
-  
-  // Since AsyncHTTPClient has an executor anyway, allow re-use (if desired) for an Akka Promise execution context
-  lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
-  
-  // Execute an asynchronous HTTP request, with given callbacks for success and failure
-  def apply(url       : String, 
-            onSuccess : (Response) => Unit, 
-            onFailure : (Throwable) => Unit ) = {
-    
-    asyncHttpClient.prepareGet(url).execute(
-      new AsyncCompletionHandler[Response]() {
-        override def onCompleted(response: Response) = {
-         onSuccess(response)
-         response
-        }
-        override def onThrowable(t: Throwable) = {
-          onFailure(t)
-        }
-      }) 
-  }
-  
-  // Version that returns a Future[Response]
-  def apply(url:String) : Future[Response] = {  
-    
-    implicit val context = executionContext
-    var promise = Promise[Response]()         // uses executionContext derived from asyncClient executor
-    
-    asyncHttpClient.prepareGet(url).execute(
-      new AsyncCompletionHandler[Response]() {
-        override def onCompleted(response: Response) = {
-          promise.success(response)
-          response
-        }
-        override def onThrowable(t: Throwable) = {
-          promise.failure(t)
-        }
-      })
-      
-    promise
-  }
-  
-  // You probably shouldn't ever call this :)
-  // it will block the thread
-  def BlockingHttpRequest(url:String) : String = {
-      val f = asyncHttpClient.prepareGet(url).execute()
-      f.get().getResponseBody()
-  }
+
+class DocumentAtURL(val title:String, 
+                    val viewURL:String, 
+                    val textURL:String)
+{
+  var text : Option[String] = None      // empty until loaded, by someone else
 }
 
 // Case classes modeling the messages that our actors can send one another
-case class GetText(doc : DCDocument)
-case class GetTextSucceeded(doc : DCDocument, text : String, startTime:Long)
-case class GetTextFailed(doc : DCDocument, error:Throwable)
-case class DocsToRetrieve(docs:DCSearchResult)
+case class GetText(doc : DocumentAtURL)
+case class GetTextSucceeded(doc : DocumentAtURL, text : String, startTime:Long)
+case class GetTextFailed(doc : DocumentAtURL, error:Throwable)
+case class DocToRetrieve(doc:DocumentAtURL)
 case class NoMoreDocsToRetrieve()
 
-case class DocRetrievalError(doc:DCDocument, error:Throwable)
+case class DocRetrievalError(doc:DocumentAtURL, error:Throwable)
 
 class DocsetRetriever(val documentWriter : DocumentWriter,
                       val vectorGen : DocumentVectorGenerator,
@@ -104,7 +39,7 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
   var httpReqInFlight = 0
   var numRetrieved = 0
   
-  var requestQueue = mutable.Queue[DCDocument]()
+  var requestQueue = mutable.Queue[DocumentAtURL]()
   var errorQueue = mutable.Queue[DocRetrievalError]()
 
   // This initiates more HTTP requests up to maxInFlight. When each request completes or fails, we get a message
@@ -113,8 +48,8 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
     while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
       val doc = requestQueue.dequeue
       val startTime = System.nanoTime
-      AsyncHttpRequest(doc.resources.text, 
-          { result:Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
+      AsyncHttpRequest(doc.textURL, 
+          { result:AsyncHttpRequest.Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
           { t:Throwable => self ! GetTextFailed(doc, t) } )
       httpReqInFlight += 1
     } 
@@ -126,10 +61,10 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
   }
   
   def receive = {     
-    // When we get a message with a list of docs to retrieve, queue up a GetText message for each one
-    case DocsToRetrieve(docs) =>
+    // When we get a message with a doc to retrieve, queue it up
+    case DocToRetrieve(doc) =>
       require(allDocsIn == false)   // can't send DocsToRetrieve after AllDocsIn
-      requestQueue ++= docs.documents
+      requestQueue += doc
       spoolRequests
 
     // Client sends this message to indicate that document listing is complete. 
@@ -142,19 +77,21 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
       numRetrieved += 1
       val elapsedSeconds = (System.nanoTime - startTime)/1e9
       Logger.debug("Retrieved document " + numRetrieved + 
-             ", from: " + doc.resources.text + 
+             ", from: " + doc.textURL + 
              ", size: " + text.size + 
              ", time: " + ("%.2f" format elapsedSeconds) + 
              ", speed: " + ((text.size/1024) / elapsedSeconds + 0.5).toInt + " KB/s")
+             
       val documentId = DB.withConnection { implicit connection =>
-      	  documentWriter.write(doc.title, doc.resources.text, doc.canonical_url)
+      	  documentWriter.write(doc.title, doc.textURL, doc.viewURL)
       }
+      
       vectorGen.addDocument(documentId, Lexer.makeTerms(text))      	  
       spoolRequests
       
     case GetTextFailed(doc, error) =>
       httpReqInFlight -= 1
-      Logger.warn("Exception retrieving document from " + doc.resources.text +" : " + error.toString)
+      Logger.warn("Exception retrieving document from " + doc.textURL +" : " + error.toString)
       errorQueue += DocRetrievalError(doc,error)
       spoolRequests
   }
@@ -163,9 +100,6 @@ class DocsetRetriever(val documentWriter : DocumentWriter,
 class DocumentSetIndexer(query: String, 
 						 nodeWriter: NodeWriter, documentWriter: DocumentWriter) {
 
-  // number of documents to retrieve on each page of search results
-  // Too large, and we wait a long time to start retrieving the actual text. Too small, and we have needless HTTP traffic 
-  private val pageSize = 100
   
   private def printElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()
@@ -175,6 +109,8 @@ class DocumentSetIndexer(query: String,
   // Query documentCloud and create one document object for each doc returned by the query
   def RetrieveAndIndexDocuments() : Future[DocumentSetVectors] = {     
     
+    Logger.info("Beginning document set retrieval")
+
     // create the actor
     implicit val context = ActorSystem("DocumentRetriever")
     val retrievalDone = Promise[Seq[DocRetrievalError]]()
@@ -184,39 +120,13 @@ class DocumentSetIndexer(query: String,
     // This is what we will ultimately return
     val vectorsPromise = Promise[DocumentSetVectors]()
 
-    // Retrieve each page of document results, calling AsyncHttpRequest recursively (weird, but...)
-    // Send the results to DocsetRetriever actor as we get them
-    // If any of the DC calls to list the document set fail, the whole thing fails
-    def getDocuments(pageNum:Int) : Unit = {
-      val documentCloudQuery = 
-        "http://www.documentcloud.org/api/search.json?per_page=" + pageSize + 
-        "&page=" + pageNum + "&q=" + query
-        
-      AsyncHttpRequest(documentCloudQuery, 
-          { response:Response => 
-            
-              val result = parse[DCSearchResult](response.getResponseBody())
-
-              // send the docs we get back to the retriever for queing
-              if (!result.documents.isEmpty) {
-                Logger.debug("Got document set result page " + pageNum + " with " + result.documents.size + " docs.")
-                retriever ! DocsToRetrieve(result)
-              }
-
-              // if we got a full page back, try the next page, otherwise done
-              if (result.documents.size == pageSize) {
-                  getDocuments(pageNum+1)   
-              } else {
-                retriever ! NoMoreDocsToRetrieve
-              }
-          },
-          { error:Throwable => 
-            retriever ! PoisonPill
-            vectorsPromise.failure(error) 
-          })
+    // Feed a sequence of DocumentAtURL objects to retriever
+    val sourceDocList = new DocumentCloudSource(query)
+    for (doc <- sourceDocList) {
+      retriever ! DocToRetrieve(doc)
     }
-    Logger.info("Beginning document set retrieval")
-    getDocuments(1) // start at this page
+    retriever ! NoMoreDocsToRetrieve
+
     
     // When the docsetRetriever finishes, compute vectors and complete the promise
     retrievalDone onComplete {
