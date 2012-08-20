@@ -8,7 +8,7 @@
  * 
  */
 
-package clustering
+package overview.clustering
 
 import overview.http.AsyncHttpRequest
 import overview.http.AsyncHttpRequest.Response

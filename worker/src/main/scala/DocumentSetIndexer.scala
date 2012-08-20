@@ -8,10 +8,10 @@
  * 
  */
 
-package clustering 
+package overview.clustering 
 
 import models._
-import ClusterTypes._
+import overview.clustering.ClusterTypes._
 import overview.http._
 import overview.logging._
 import persistence.{DocumentWriter, NodeWriter}

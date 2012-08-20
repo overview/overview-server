@@ -8,8 +8,8 @@
  * 
  */
 
-import clustering._
-import clustering.ClusterTypes._
+import overview.clustering._
+import overview.clustering.ClusterTypes._
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 import scala.collection.mutable.{Set,Map}

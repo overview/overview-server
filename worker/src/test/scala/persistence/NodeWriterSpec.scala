@@ -9,8 +9,8 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import clustering.DocTreeNode
-import clustering.ClusterTypes.DocumentID
+import overview.clustering.DocTreeNode
+import overview.clustering.ClusterTypes.DocumentID
 import helpers.{DbSpecification, DbTestContext}
 import java.sql.Connection
 import org.specs2.mutable.Specification

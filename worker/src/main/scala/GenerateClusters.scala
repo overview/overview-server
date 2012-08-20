@@ -9,11 +9,11 @@
  * 
  */
 
-package clustering
+package overview.clustering
 
 import models._
 import scala.collection.mutable.{Set,Stack}
-import clustering.ClusterTypes._
+import ClusterTypes._
 
 object ConnectedComponents {
 

@@ -19,7 +19,7 @@ import akka.util.Timeout
 
 
 // Input and output types...
-class DocumentAtURL(val textURL:String)
+case class DocumentAtURL(val textURL:String)
 case class DocRetrievalError(doc:DocumentAtURL, error:Throwable)
 
 

@@ -9,17 +9,17 @@
  * 
  */
 
-package clustering
+package overview.clustering
 
 import scala.collection.mutable.Map
-import ClusterTypes._
+import overview.clustering.ClusterTypes._
 
 // Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once
 class DocumentVectorGenerator {
 
 
   // --- Data ---
-  private var numDocs = 0 
+  var numDocs = 0 
   private var doccount = DocumentVector() 
   private var tf = DocumentSetVectors()
    

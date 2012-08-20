@@ -11,7 +11,7 @@
 
 import org.specs2.mutable.Specification
 import org.specs2.specification._
-import clustering._
+import overview.clustering._
 import scala.io.Source
 import java.io.File
 

@@ -13,7 +13,7 @@ import persistence._
 import persistence.DocumentSetCreationJobState._
 
 import overview.logging._
-import clustering._
+import overview.clustering._
 
 object JobHandler {
   def main(args: Array[String]) {
@@ -45,7 +45,7 @@ object JobHandler {
         val documentWriter = new DocumentWriter(documentSetId)
         val nodeWriter = new NodeWriter(documentSetId)
         val indexer = 
-          new clustering.DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter)
+          new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter)
         
         val tree = indexer.BuildTree()
 
