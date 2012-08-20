@@ -9,7 +9,7 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import persistence.DocumentSetCreationJobState._
@@ -17,7 +17,7 @@ import persistence.DocumentSetCreationJobState._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   def findAdminUserId(implicit connection: Connection): Option[Long] = {
     SQL("""
@@ -68,5 +68,5 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

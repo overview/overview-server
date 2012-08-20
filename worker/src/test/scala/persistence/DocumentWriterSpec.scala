@@ -10,21 +10,18 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
+import helpers.DbSetup._
 import org.specs2.mutable.Specification
 
 class DocumentWriterSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   "DocumentWriter" should {
     
     "write title, text_url, and view_url to document table" in new DbTestContext {
-      val documentSetId = 
-        SQL("""
-            INSERT INTO document_set (query)
-            VALUES ('DocumentWriterSpec')
-        	""").executeInsert().getOrElse(throw new Exception("Failed insert"))
+      val documentSetId = insertDocumentSet("DocumentWriterSpec")
         	
       val writer = new DocumentWriter(documentSetId)
       val title = "title"
@@ -41,5 +38,5 @@ class DocumentWriterSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

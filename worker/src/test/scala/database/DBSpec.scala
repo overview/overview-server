@@ -15,7 +15,7 @@ import org.specs2.mutable.Around
 import org.specs2.mutable.Specification
 
 class DBSpec extends DbSpecification {
-  step(setupDB) 
+  step(setupDb) 
   
   "DB object" should {
 
@@ -66,5 +66,5 @@ class DBSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }

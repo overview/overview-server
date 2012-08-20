@@ -9,13 +9,13 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
 import org.specs2.mutable.Specification
 
 
 class DocumentSetWriterSpec extends DbSpecification {
 
-  step(setupDB)
+  step(setupDb)
   
   "DocumentSetWriter" should {
     
@@ -38,5 +38,5 @@ class DocumentSetWriterSpec extends DbSpecification {
     }
   }
   
-  step(shutdownDB)
+  step(shutdownDb)
 }
