@@ -8,7 +8,7 @@
  * 
  */
 
-package clustering
+package overview.clustering
 
 import scala.collection.mutable
 

@@ -1,27 +1,29 @@
-/*
+/***
  * JobHandler.scala
  * 
- * Overview Project
- * Created by Jonas Karlsson, June 2012
+ * Overview Project,June 2012
+ * @author Jonas Karlsson
  */
 
-import com.avaje.ebean.{Ebean, EbeanServerFactory}
-import com.avaje.ebean.config.{ServerConfig, DataSourceConfig}
+
 import com.jolbox.bonecp._
 
 import database.{DatabaseConfiguration, DataSource, DB}
 import persistence._
 import persistence.DocumentSetCreationJobState._
 
+import overview.logging._
+import overview.clustering._
+
 object JobHandler {
   def main(args: Array[String]) {
 
     val config = new DatabaseConfiguration()
-	val dataSource = new DataSource(config)
+	  val dataSource = new DataSource(config)
 	
     DB.connect(dataSource)
     
-	while (true) {
+	  while (true) {
       Thread.sleep(500) 
       
 
@@ -38,12 +40,12 @@ object JobHandler {
         }
 
 
-        println("Created document set for query: " + j.query)
+        Logger.info("Created document set for query: " + j.query)
 
         val documentWriter = new DocumentWriter(documentSetId)
         val nodeWriter = new NodeWriter(documentSetId)
         val indexer = 
-          new clustering.DocumentSetIndexer(j.query, nodeWriter, documentWriter)
+          new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter)
         
         val tree = indexer.BuildTree()
 
