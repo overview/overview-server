@@ -14,8 +14,7 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
 		  						firstRow: Long, maxRows: Long)
   		(implicit c: Connection): List[DocumentData] = {
     
-    val whereClauses = Some("document.document_set_id = {documentSetId}") +: 
-      SelectionWhere(documentSetId, nodeIds, tagIds, documentIds)
+    val whereClauses = SelectionWhere(documentSetId, nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
      
     documentSliceQueryWhere(documentSetId, firstRow, maxRows, where)
@@ -25,8 +24,7 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
 		  		nodeIds: Seq[Long], 
                 tagIds: Seq[Long],
                 documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val whereClauses = Some("document.document_set_id = {documentSetId}") +:
-      SelectionWhere(documentSetId, nodeIds, tagIds, documentIds)
+    val whereClauses = SelectionWhere(documentSetId, nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
     
     countQueryWhere(documentSetId, where)

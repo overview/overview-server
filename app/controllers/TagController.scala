@@ -25,7 +25,6 @@ object TagController extends Controller {
       "tags" -> idList
     )
     ({ (documents, nodes, tags) =>
-      // FIXME include documentSetId in this constructor
       new PersistentDocumentList(documentSetId, nodes, tags, documents)
     })
     ( (documents: PersistentDocumentList) =>
