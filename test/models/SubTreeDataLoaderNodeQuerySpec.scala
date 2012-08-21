@@ -22,7 +22,7 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   trait TreeCreated extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("SubTreeDataLoaderNodeQuerySpec")
     lazy val nodeIds = writeBinaryTreeInDb(documentSetId, TreeDepth)
-    lazy val rootId = nodeIds(0)
+    lazy val rootId = nodeIds(0) // Need to use rootId in test in order for inserts to execute
     
     lazy val subTreeDataLoader = new SubTreeDataLoader()
   }
@@ -96,6 +96,21 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
       val nodeData = subTreeDataLoader.loadNodeData(documentSetId, -1, 4)
       
       nodeData must be equalTo(List((-1l, None, "")))
+    }
+    
+    "find root node of document set" in new TreeCreated {
+      val expectedRoot = rootId
+      val maybeRoot = subTreeDataLoader.loadRoot(documentSetId)
+      
+      maybeRoot must beSome
+      maybeRoot.get must be equalTo(rootId)
+    }
+    
+    "return None if document set has no root node" in new TreeCreated {
+      val documentSetId2 = insertDocumentSet("empty document set")
+      val noRoot = subTreeDataLoader.loadRoot(documentSetId2)
+      
+      noRoot must beNone
     }
     
     "return empty document list for nodes with no documents" in new TreeCreated {

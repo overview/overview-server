@@ -110,6 +110,17 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       there was one(loader).loadDocuments(documentIds.sorted)
     }
     
+    "loads root node from loader" in new MockComponents {
+      val dummyRootNodeId = Some(1l)
+      
+      loader loadRoot(documentSetId) returns dummyRootNodeId
+      
+      val rootId = subTreeLoader.loadRootId()
+      
+      there was one(loader).loadRoot(documentSetId)
+      rootId must be equalTo(dummyRootNodeId)
+    }
+    
     "load tag information for nodes" in new MockComponents {
       val dummyTagData = List((1l, "dummy", 55l, Some(10l)))
       val dummyTags = List(core.Tag(1l, "dummy", null))

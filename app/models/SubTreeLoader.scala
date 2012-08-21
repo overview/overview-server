@@ -28,6 +28,12 @@ class SubTreeLoader(documentSetId: Long,
     parser.createNodes(nodeData, documentData, nodeTagCountData)
   }
 
+  /**
+   * @return Some(rootId) if the documentSet has a root node, None otherwise.
+   */
+  def loadRootId()(implicit connection: Connection): Option[Long] = {
+    loader.loadRoot(documentSetId)
+  }
   
   /**
    * @return a list of Documents whose ids are referenced by the passed in nodes. The list is sorted

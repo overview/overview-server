@@ -32,6 +32,14 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
   }
   
   /**
+   * @return Some(rootId) if the documentSetId has an associated root node,
+   * None otherwise.
+   */
+  def loadRoot(documentSetId: Long)(implicit c: Connection): Option[Long] = {
+    rootQuery(documentSetId)  
+  }
+  
+  /**
    * @return a list of tuples:(nodeId, totalDocumentCount, documentId) for each nodeId. A maximum of 
    * 10 documentIds are returned for each documentId. totalDocumentCount is the total number of documents
    * associated with the nodeId in the database
@@ -70,6 +78,14 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
     leafNodes.map((_, None, ""))
   }
 
+  private def rootQuery(documentSetId: Long)(implicit c: Connection): Option[Long] = {
+    SQL("""
+        select id FROM node
+        WHERE document_set_id = {documentSetId} AND
+        parent_id IS NULL
+        """).on("documentSetId" -> documentSetId).as(scalar[Long].singleOpt)  
+  }
+  
   private def rootNodeQuery(documentSetId: Long, rootNodeId: Long)(implicit c: Connection) : List[(Long, String)]= {
     val descriptionParser = long("id") ~ str("description")
     
