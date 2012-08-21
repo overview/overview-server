@@ -48,12 +48,12 @@ class RetrieveDocumentSetSpec extends DbSpecification {
     "retrieve a local document set" in {
             
       // turn every doc in the test directory into a file:// URL
-      val filenames =  new File("worker/src/test/resources/docs").listFiles
-      var docURLs = filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))      
-      
+      val filenames =  new File("worker/src/test/resources/docs").listFiles.sorted
+      val docURLs = filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))
+
       val vectorGen = new DocumentVectorGenerator      
       def processDocument(doc: DocumentAtURL, text:String) : Unit = {
-        vectorGen.addDocument(vectorGen.numDocs, Lexer.makeTerms(text))          
+        vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))          
       }      
 
       val timeOut = Timeout(500)   // ms                                               
@@ -69,8 +69,8 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       
       // Failed retrieval: add a URL that doesn't exist, test that the error is returned to us
       val errURL = DocumentAtURL("file:///xyzzy")
-      docURLs ++= Array(errURL)
-      val retrievalErr = BulkHttpRetriever[DocumentAtURL](docURLs,
+      val docURLsWithErr = docURLs :+ errURL
+      val retrievalErr = BulkHttpRetriever[DocumentAtURL](docURLsWithErr,
                                                           (doc,text) => processDocument(doc, text) ) // adds to existing vectorGen, whatevs
       val resultErr = Await.result(retrievalErr, timeOut.duration)
 

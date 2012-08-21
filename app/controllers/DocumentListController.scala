@@ -18,9 +18,11 @@ trait DocumentListController extends BaseController {
                       documentids: String, start: Int, end: Int)(implicit request: Request[AnyContent], connection: Connection) = {
     val (validStart, validEnd) = SaneRange(start, end)
     
-    val documents = new PersistentDocumentList(IdList(nodeids), 
-                                               IdList(tagids),
-                                               IdList(documentids))
+    val documents = 
+      new PersistentDocumentList(documentSetId,
+    		  					 IdList(nodeids), 
+                                 IdList(tagids),
+                                 IdList(documentids))
     val selection = documents.loadSlice(validStart, validEnd)
     val totalItems = documents.loadCount
     
