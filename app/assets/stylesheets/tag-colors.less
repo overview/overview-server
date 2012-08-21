@@ -1,0 +1,52 @@
+.declare-tag-color(@index, @color) {
+  @color-selector: "tag-color-@{index}";
+  @btn-selector: "btn.tag-color-@{index}";
+
+  @normal-color: darken(desaturate(@color, 20%), 20%);
+  @hover-color: @color;
+
+  (~".@{color-selector}") {
+    color: white;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+    background-color: @normal-color;
+  }
+
+  (~".@{btn-selector}") {
+    background-image: -ms-linear-gradient(top, @hover-color, @normal-color);
+    background-image: -webkit-linear-gradient(top, @hover-color, @normal-color);
+    background-image: -o-linear-gradient(top, @hover-color, @normal-color);
+    background-image: -moz-linear-gradient(top, @hover-color, @normal-color);
+    background-image: linear-gradient(top, @hover-color, @normal-color);
+    background-repeat: repeat-x;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+
+    &:hover, &:active, &.active, &.disabled, &[disabled] {
+      background-color: @hover-color;
+    }
+  }
+}
+
+.declare-tag-color(0, #ff0009);
+.declare-tag-color(1, #ff7700);
+.declare-tag-color(2, #fff700);
+//.declare-tag-color(X, #89ff00); // commented out so we have a prime number, for good distribution after hashing strings
+.declare-tag-color(3, #09ff00);
+.declare-tag-color(4, #00ff77);
+.declare-tag-color(5, #00fff7);
+.declare-tag-color(6, #0089ff);
+.declare-tag-color(7, #0009ff);
+.declare-tag-color(8, #7700ff);
+.declare-tag-color(9, #f700ff);
+.declare-tag-color(10, #ff0089);
+.declare-tag-color(11, #ff7378);
+.declare-tag-color(12, #ffb573);
+.declare-tag-color(13, #fffb73);
+.declare-tag-color(14, #beff73);
+.declare-tag-color(15, #78ff73);
+.declare-tag-color(16, #73ffb5);
+.declare-tag-color(17, #73fffb);
+.declare-tag-color(18, #73beff);
+.declare-tag-color(19, #7378ff);
+.declare-tag-color(20, #b573ff);
+.declare-tag-color(21, #fb73ff);
+.declare-tag-color(22, #ff73be);

@@ -1,86 +1,54 @@
-initialized = false
-_style = undefined
-_add_rule_impl = undefined
-
-get_style = () ->
-  return _style if _style?
-  _style = $('<style type="text/css"></style>').appendTo('head')[0]
-
-get_add_rule_impl = () ->
-  return _add_rule_impl if _add_rule_impl?
-  style = get_style()
-  sheet = style.sheet || style.styleSheet
-  sheet_rules = sheet.rules || sheet.cssRules
-  _add_rule_impl = if sheet.insertRule?
-    (selector, rules) ->
-      sheet.insertRule("#{selector} { #{rules} }", sheet_rules.length)
-  else
-    (selector, rules) ->
-      sheet.addRule(selector, rules, rules.length)
-
-add_rule = (selector, rules) ->
-  get_add_rule_impl()(selector, rules)
-
 colors = [
-  { h: 0, s: 1, l: 0.5 },
-  { h: 120, s: 1, l: 0.5 },
-  { h: 240, s: 1, l: 0.5 }
+  "#ff0009",
+  "#ff7700",
+  "#fff700",
+  #"#89ff00", # commented out for a prime number, for good distribution after hashing strings
+  "#09ff00",
+  "#00ff77",
+  "#00fff7",
+  "#0089ff",
+  "#0009ff",
+  "#7700ff",
+  "#f700ff",
+  "#ff0089",
+  "#ff7378",
+  "#ffb573",
+  "#fffb73",
+  "#beff73",
+  "#78ff73",
+  "#73ffb5",
+  "#73fffb",
+  "#73beff",
+  "#7378ff",
+  "#b573ff",
+  "#fb73ff",
+  "#ff73be",
 ]
 
-add_color = (index, color) ->
-  hsl = "hsl(#{color.h},100%,50%)"
-  hsl_gradient = "hsl(#{color.h},100%,85%)"
+string_to_hash_integer = (s) ->
+  # Taken from http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+  hash = 0
+  for i in [0..(s.length - 1)]
+    c = s.charCodeAt(i)
+    hash = ((hash << 5) - hash) + c # hash*31 + c
+    hash = hash & hash # convert to integer
+  hash
 
-  add_rule(".tag-color-#{index}", "color: white; background-color: #{hsl};")
-
-  btn_selector=".btn-color-#{index}"
-  add_rule(btn_selector,
-    """
-    color: white;
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
-    background-color: #{hsl};
-    background-image: -ms-linear-gradient(top, #{hsl_gradient}, #{hsl});
-    background-image: -webkit-linear-gradient(top, #{hsl_gradient}, #{hsl});
-    background-image: -o-linear-gradient(top, #{hsl_gradient}, #{hsl});
-    background-image: -moz-linear-gradient(top, #{hsl_gradient}, #{hsl});
-    background-image: linear-gradient(top, #{hsl_gradient}, #{hsl});
-    background-repeat: repeat-x;
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
-    """)
-
-  add_rule("#{btn_selector}:hover, #{btn_selector}:active, #{btn_selector}.active, #{btn_selector}.disabled, #{btn_selector}[disabled]",
-    """
-    background-color: #{hsl_gradient};
-    """)
-
-grow_colors = () ->
-  new1 = colors.length
-  new2 = new1 * 2
-
-  for i in [new1...new2]
-    old1 = i - new1
-    old2 = old1 + 1
-    h1 = colors[old1].h
-    h2 = colors[old2].h
-    h2 += 360 if h2 < h1
-    h = (h1 + h2) / 2
-    colors.push({ h: h, s: 1, l: 0.5 })
-    add_color(i, colors[i])
+string_to_colors_index = (s) ->
+  h = string_to_hash_integer(s)
+  i = h % colors.length
+  console.log(s, h, i)
+  i += colors.length if i < 0
+  i
 
 class ColorTable
-  reserve: (n) ->
-    if !initialized
-      add_color(0, colors[0])
-      add_color(1, colors[1])
-      add_color(2, colors[2])
-      initialized = true
+  get: (s) ->
+    i = string_to_colors_index(s)
+    colors[i]
 
-    while n >= colors.length
-      grow_colors()
-
-  get: (n) ->
-    this.reserve(n)
-    colors[n]
+  get_tag_color_class: (s) ->
+    i = string_to_colors_index(s)
+    "tag-color-#{i}"
 
 exports = require.make_export_object('views/color_table')
 exports.ColorTable = ColorTable

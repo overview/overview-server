@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
   buffer_documents: undefined, # retrieve all documents
@@ -12,6 +13,7 @@ class DocumentListView
   observable(this)
 
   constructor: (@div, @cache, @document_list, @state, options={}) ->
+    @color_table = new ColorTable()
     @need_documents = [] # list of [start, end] pairs of needed documents
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
@@ -86,7 +88,8 @@ class DocumentListView
     $tags.empty()
     for tagid in tagids
       tag = @cache.tag_store.find_tag_by_id(tagid)
-      $tags.append("<span class=\"tag-color-#{tag.position}\"/>")
+      tag_class = @color_table.get_tag_color_class(tag.name)
+      $tags.append("<span class=\"#{tag_class}\"/>")
 
   _update_document: (document) ->
     $tags = $("a[href=#document-#{document.id}] span.tags")
