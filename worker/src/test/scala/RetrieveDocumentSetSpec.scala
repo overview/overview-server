@@ -21,13 +21,13 @@ import scala.io.Source
 import overview.clustering._
 import overview.http._
 import overview.http.BulkHttpRetriever._
-
-import helpers.{DbSpecification, DbTestContext}
+import helpers.DbSpecification
+import helpers.DbSetup._
 import persistence._
 
 class RetrieveDocumentSetSpec extends DbSpecification {
   
-  step(setupDB)
+  step(setupDb)
 
   private def failInsert = { throw new Exception("failed insert") }
   
@@ -87,16 +87,16 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       val documentSetId = insertDocumentSet("NodeWriterSpec")          
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
-      //val indexer = new DocumentSetIndexer(docURLs, nodeWriter, documentWriter)
+      val indexer = new DocumentSetIndexer(docURLs, nodeWriter, documentWriter)
       
-      //indexer.BuildTree
+      indexer.BuildTree
       
       // Check that nine documents were written to the database
       val docNodes = findNodeDocuments
       docNodes.toString must beEqualTo("foo!")
    }
- */ 
+*/ 
   }    
    
-  step(shutdownDB)
+  step(shutdownDb)
 }
