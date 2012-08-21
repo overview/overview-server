@@ -1,6 +1,5 @@
 package models
 
-import scala.collection.JavaConversions._
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
@@ -11,7 +10,7 @@ import play.api.db.DB
 /**
  * Loads data from the database about subTrees
  */
-class SubTreeLoader(rootId: Long, depth: Int, 
+class SubTreeLoader(documentSetId: Long, rootId: Long, depth: Int, 
 					loader: SubTreeDataLoader = new SubTreeDataLoader(),
 					parser: SubTreeDataParser = new SubTreeDataParser()) {
   
@@ -20,7 +19,7 @@ class SubTreeLoader(rootId: Long, depth: Int,
    */
   def loadNodes()(implicit connection : Connection) : Seq[core.Node] = {
 	
-    val nodeData = loader.loadNodeData(rootId, depth)
+    val nodeData = loader.loadNodeData(documentSetId, rootId, depth)
     val nodeIds = nodeData.map(_._1).distinct
 
     val documentData = loader.loadDocumentIds(nodeIds)

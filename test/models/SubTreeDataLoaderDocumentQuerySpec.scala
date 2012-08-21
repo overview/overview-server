@@ -22,17 +22,6 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       val subTreeDataLoader = new SubTreeDataLoader()
     }
 
-
-    def insertDocuments(documentSetId: Long, nodes : Seq[Long], numberOfDocuments : Int = 10)
-                       (implicit connection : Connection) : Seq[Long] = {
-      
-      nodes.flatMap { n => 
-        for (i <- 1 to numberOfDocuments) yield 
-          insertDocumentWithNode(documentSetId, 
-                                 "title-" + i, "textUrl-" + i, "viewUrl-" + i, n)
-      }
-    }
-    
 	def documentIdsForNodes(nodes: Seq[Long], subTreeDataLoader : SubTreeDataLoader)(implicit connection: Connection) : List[Long] = {
 	  val nodeDocumentIds = subTreeDataLoader.loadDocumentIds(nodes)
 	  
@@ -41,28 +30,28 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
     
     
 	"return 10 document ids at most for a node" in new DocumentsLoaded {
-      val documentIds = insertDocuments(documentSetId, nodeIds, 15)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 15)
       val loadedIds = documentIdsForNodes(nodeIds.take(1), subTreeDataLoader)
       
       loadedIds must haveTheSameElementsAs(documentIds.take(10))
     }
 	
     "return all document ids if fewer than 10" in new DocumentsLoaded {
-      val documentIds = insertDocuments(documentSetId, nodeIds, 5)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 5)
       val loadedIds = documentIdsForNodes(nodeIds, subTreeDataLoader)
       
       loadedIds must haveTheSameElementsAs(documentIds)
     } 
     
 	"return document ids for several nodes" in new DocumentsLoaded {
-	  val documentIds = insertDocuments(documentSetId, nodeIds)
+	  val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
 	  val loadedIds = documentIdsForNodes(nodeIds, subTreeDataLoader)
 	  
 	  loadedIds must haveTheSameElementsAs(documentIds)
 	}
 	
 	"handle nodes with no documents" in new DocumentsLoaded {
-	  val documentIds = insertDocuments(documentSetId, nodeIds.take(2))
+	  val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds.take(2), 10)
 	  val loadedIds = documentIdsForNodes(nodeIds, subTreeDataLoader)
 	  
 	  loadedIds must haveTheSameElementsAs(documentIds.take(20))
@@ -76,7 +65,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	
 	"returns total document count" in new DocumentsLoaded {
 	  val numberOfDocuments = 15
-	  val documentIds = insertDocuments(documentSetId, nodeIds.take(1), numberOfDocuments)
+	  val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds.take(1), numberOfDocuments)
 
 	  val nodeDocumentIds = subTreeDataLoader.loadDocumentIds(nodeIds.take(1))
 	  
@@ -85,7 +74,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	}
 
 	"return node ids" in new DocumentsLoaded {
-	  val documentIds = insertDocuments(documentSetId, nodeIds)
+	  val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
 	  
 	  val nodeDocumentIds = subTreeDataLoader.loadDocumentIds(nodeIds)
 	  
@@ -95,7 +84,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	
 	"return all documents in nodes" in new DocumentsLoaded {
 	  val numberOfDocuments = 3
-	  val documentIds = insertDocuments(documentSetId, nodeIds, numberOfDocuments)
+	  val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, numberOfDocuments)
 	  
 	  val documents = subTreeDataLoader.loadDocuments(documentIds)
 	  
@@ -113,7 +102,7 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
 	}
 	
 	"return no documents if no document ids specified" in new DocumentsLoaded {
-	  insertDocuments(documentSetId, nodeIds)
+	  insertDocumentsForeachNode(documentSetId, nodeIds, 10)
 	  val emptyDocumentIdList = Nil
 	  
 	  val documents = subTreeDataLoader.loadDocuments(emptyDocumentIdList)

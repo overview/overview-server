@@ -50,13 +50,13 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   "SubTreeDatabaseLoader" should {
     
     "include root node with no parent" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId, rootId, 5)
       
       nodeData must contain((-1l, Some(rootId), "root"))
     }
     
     "load subTree of depth 2" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 2)
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId, rootId, 2)
       nodeData must have size(7)
       
       val nonLeafNodes = nodeData.map(_._2.get).take(3)
@@ -66,7 +66,7 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
     }
     
     "load subTree of depth 5" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(rootId, 5)
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId, rootId, 5)
       nodeData must have size(63)
       
       val nonLeafNodes = nodeData.map(_._2.get).take(31)
@@ -77,7 +77,8 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
     
     "loads leaf nodes with No child nodes specified" in new TreeCreated { 
       val lowestNonLeafNode = nodeIds(TreeDepth - 2)
-      val nodeData = subTreeDataLoader.loadNodeData(lowestNonLeafNode, TreeDepth)
+      val nodeData = 
+        subTreeDataLoader.loadNodeData(documentSetId, lowestNonLeafNode, TreeDepth)
 
       nodeData must have size(5)
       
@@ -87,12 +88,12 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
     }
     
     "handle incorrect depth parameter" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(123, 0) must
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId, 123, 0) must
         throwAn[IllegalArgumentException] 
     }
       
     "handle missing rootid" in new TreeCreated {
-      val nodeData = subTreeDataLoader.loadNodeData(-1, 4)
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId, -1, 4)
       
       nodeData must be equalTo(List((-1l, None, "")))
     }

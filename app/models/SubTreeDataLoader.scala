@@ -20,7 +20,8 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
    * root. Nodes with no children will return (id, None, "")
    * @throws IllegalArgumentException if depth < 1 
    */
-  def loadNodeData(rootId: Long, depth: Int)(implicit connection: Connection) : List[NodeData] = {
+  def loadNodeData(documentSetId: Long, rootId: Long, depth: Int)
+                  (implicit connection: Connection) : List[NodeData] = {
     require(depth > 0)
     
     val rootNode = rootNodeQuery(rootId)

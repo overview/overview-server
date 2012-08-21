@@ -10,7 +10,8 @@ class SubTreeLoaderSpec extends Specification with Mockito {
   trait MockComponents extends Scope {
     val loader = mock[SubTreeDataLoader]
     val parser = mock[SubTreeDataParser]
-    val subTreeLoader = new SubTreeLoader(1, 2, loader, parser)
+    val documentSetId = 123l;
+    val subTreeLoader = new SubTreeLoader(documentSetId, 1, 2, loader, parser)
     
     val dummyDocuments = List(core.Document(10l, "documents", "created", "from data", Seq(5l)))
     val dummyDocumentData = List((10l, "actually", "all", "documentdata"))
@@ -36,7 +37,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val dummyNodes = List(core.Node(1l, "standin for lots of Nodes", Nil, null, Map()))
       val dummyNodeTagCountsData = List((1l, 2l, 4l))
       
-      loader loadNodeData(1, 2) returns nodeData
+      loader loadNodeData(documentSetId, 1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
       loader loadNodeTagCounts(nodeIds) returns dummyNodeTagCountsData
       
@@ -44,7 +45,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       
       val nodes = subTreeLoader.loadNodes()
       
-      there was one(loader).loadNodeData(1, 2)
+      there was one(loader).loadNodeData(documentSetId, 1, 2)
       there was one(loader).loadDocumentIds(nodeIds)
       there was one(loader).loadNodeTagCounts(nodeIds)
       there was one(parser).createNodes(nodeData, documentData, dummyNodeTagCountsData)
@@ -58,7 +59,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val documentData = List((54l, 34l, 20l), (54l, 34l, 30l))
       val nodeIds = List(-1l, 54l)
       
-      loader loadNodeData(1, 2) returns nodeData
+      loader loadNodeData(documentSetId, 1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
 
       val nodes = subTreeLoader.loadNodes()
@@ -110,7 +111,6 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     }
     
     "load tag information for nodes" in new MockComponents {
-      val documentSetId = 1;
       val dummyTagData = List((1l, "dummy", 55l, Some(10l)))
       val dummyTags = List(core.Tag(1l, "dummy", null))
       
@@ -127,7 +127,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     
     
     "be constructable with default loader and parser" in {
-      val subTreeLoader = new SubTreeLoader(3, 55)
+      val subTreeLoader = new SubTreeLoader(1l, 3, 55)
       
       success
     }
