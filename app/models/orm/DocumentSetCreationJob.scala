@@ -5,13 +5,13 @@ import org.squeryl.KeyedEntity
 import org.squeryl.dsl.ManyToOne
 
 class DocumentSetCreationJob(
-    val query: String, 
-    val state: Int = 0
+    @Column("document_set_id")
+    val documentSetId: Long,
+    val state: Int = 0,
+    val fraction_complete: Double = 0.0,
+    val state_description: String = ""
    ) extends KeyedEntity[Long] {
   override val id: Long = 0
 
-  @Column("user_id")
-  var userId: Long = _
-
-  lazy val user: ManyToOne[User] = Schema.userToDocumentSetCreationJobs.right(this)
+  lazy val documentSet: ManyToOne[DocumentSet] = Schema.documentSetDocumentSetCreationJobs.right(this);
 }

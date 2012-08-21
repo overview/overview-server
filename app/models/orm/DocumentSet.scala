@@ -7,6 +7,16 @@ class DocumentSet(val query: String) extends KeyedEntity[Long] {
   override val id: Long = 0
 
   lazy val users = Schema.documentSetUsers.left(this)
+
+  // It's one-to-one, which in the DB is one-to-many. This method is an
+  // implementation detail, but Squeryl won't let us make it private.
+  lazy val documentSetCreationJobs = Schema.documentSetDocumentSetCreationJobs.left(this)
+
+  def documentSetCreationJob = documentSetCreationJobs.headOption;
+
+  def buildDocumentSetCreationJob() = new DocumentSetCreationJob(id)
+
+  def createDocumentSetCreationJob() = Schema.documentSetCreationJobs.insert(buildDocumentSetCreationJob)
 }
 
 object DocumentSet {
