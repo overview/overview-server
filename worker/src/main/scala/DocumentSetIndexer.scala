@@ -40,7 +40,7 @@ import akka.dispatch.{Future,Promise}
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))          
   }
   
-  def BuildTree() = {
+  def BuildTree() : Unit = {
     val t0 = System.nanoTime()
     
  

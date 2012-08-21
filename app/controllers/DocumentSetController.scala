@@ -26,7 +26,7 @@ object DocumentSetController extends BaseController {
     val documentSetCreationJobs = user.documentSetCreationJobs.toSeq
     Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
   }
-
+  
   private def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSet = user.documentSets.where(d => d.id === id).headOption
     documentSet match {

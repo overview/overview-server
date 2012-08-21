@@ -27,7 +27,7 @@ class DatabaseConfigurationSpec extends Specification {
       val host = "localhost"
       val database = "overview-test"
 
-      val databaseUrl = "postgres://"+username+":"+password+"@"+host+"/"+database
+      
       val systemDefault = sys.props.get("datasource.default.url")
       
       val defaultDriver = "org.postgresql.Driver"
@@ -39,6 +39,29 @@ class DatabaseConfigurationSpec extends Specification {
       dbConfig.username must beEqualTo(username)
       dbConfig.password must beEqualTo(password)
       dbConfig.databaseDriver must beEqualTo(defaultDriver) 
+    }
+    
+    "handle real urls" in {
+      val testDatabaseUrlProperty = "testdatasource.default.url"
+
+      val username = "overview-user"
+      val password = "overview123-"      
+      val host = "localhost.my-domain.org:1244"
+      val database = "overview-test"
+     
+      val databaseUrl = "postgres://"+username+":"+password+"@"+host+"/"+database        
+      sys.props += testDatabaseUrlProperty -> databaseUrl
+      
+      val dbConfig = 
+        new DatabaseConfiguration(defaultDatabaseUrlProperty = testDatabaseUrlProperty)
+      
+      sys.props -= testDatabaseUrlProperty
+      val expectedUrl = "jdbc:postgresql://"+host+"/"+database
+      
+      dbConfig.databaseUrl must beEqualTo(expectedUrl)
+      dbConfig.username must beEqualTo(username)
+      dbConfig.password must beEqualTo(password)
+      
     }
   }
 

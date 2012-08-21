@@ -29,7 +29,7 @@ trait BaseController extends Controller with TransactionActionController with Au
   protected def anyUser() : Authority = { user => true }
 
   /*
-   * Actions may be defined liek this:
+   * Actions may be defined like this:
    *
    * def show(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId)) {
    *   user => (request, connection) => { ... do something ... }

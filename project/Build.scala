@@ -41,7 +41,7 @@ object ApplicationBuild extends Build {
         settings(
           testOptions in Test += Tests.Setup( () =>
           	System.setProperty("datasource.default.url", testDatabaseUrl))
-      ).dependsOn(common).aggregate(common)
+      )
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
