@@ -2,47 +2,38 @@
   documentSets: Seq[models.orm.DocumentSet],
   documentSetCreationJobs: Seq[models.orm.DocumentSetCreationJob],
   form: Form[models.orm.DocumentSetCreationJob]
-)(implicit lang: play.api.i18n.Lang)
+)(implicit lang: Lang, flash: Flash)
 
 @import views.html.helper.EnumToString
 
-@main(title=t("views.DocumentSet.index.title"), bodyClass="document-set-index") {
-  @defining(scopedMessages("views.DocumentSet.index")) { m =>
-    <div class="container">
-      <div class="page-header"><h1>@m("title")</h1></div>
+@defining(scopedMessages("views.DocumentSet.index")) { m =>
+  @main(title=m("title"), bodyClass="document-set-index", h1=m("h1")) {
+    @if(documentSetCreationJobs) {
+      <ul class="unstyled document-set-creation-jobs">
+        @documentSetCreationJobs.map { job =>
+          <li id="document-set-creation-job-@job.id">
+            <span class="query">@job.query</span>
+            <span class="state">@job.state</span>
+          </li>
+        }
+      </ul>
+    }
 
-      @if(documentSetCreationJobs) {
-        <ul class="unstyled document-set-creation-jobs">
-          @documentSetCreationJobs.map { job =>
-            <li id="document-set-creation-job-@job.id">
-              <span class="query">@job.query</span>
-              <span class="state">@job.state</span>
-            </li>
-          }
-        </ul>
-      }
+    @if(documentSets) {
+      <ul class="unstyled document-sets">
+        @documentSets.map(_documentSet(_))
+      </ul>
+    } else {
+      <p class="no-document-sets">@m("no_document_sets")</p>
+    }
 
-      @if(documentSets) {
-        <ul class="unstyled document-sets">
-          @documentSets.map { documentSet =>
-            <li id="document-set-@documentSet.id">
-              <h2><a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a></h2>
-            </li>
-          }
-        </ul>
-      } else {
-        <p class="no-document-sets">@m("no_document_sets")</p>
-      }
+    <div class="well">
+      <h2>@m("create")</h2>
 
-      <div class="well">
-        <h2>@m("create")</h2>
-
-        <form method="post" action="@routes.DocumentSetController.create" class="form-inline"
-          >@defining(form("query")) { field =><input type="text" name="@field.name" id="@field.id" value="@field.value"
-          />}<input type="submit" class="btn" value="@m("create_submit")"
-          /></form>
-      </div>
-
+      <form method="post" action="@routes.DocumentSetController.create" class="form-inline"
+        >@defining(form("query")) { field =><input type="text" name="@field.name" id="@field.id" value="@field.value"
+        />}<input type="submit" class="btn" value="@m("create_submit")"
+        /></form>
     </div>
   }
 }

@@ -3,9 +3,14 @@ models.DocumentSetCreationJob.JobState.InProgress=in progress
 models.DocumentSetCreationJob.JobState.Complete=complete
 
 views.DocumentSet.index.title=Your document sets
+views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.create=Import a document set
 views.DocumentSet.index.create_submit=Import
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+
+views.DocumentSet._documentSet.action_delete=Delete
+views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
+views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
 
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in

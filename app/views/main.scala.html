@@ -1,52 +1,77 @@
-@(title: String, bodyClass: String = "default")(content: Html)(implicit lang: play.api.i18n.Lang)<!DOCTYPE html>
+@(
+  title: String,
+  bodyClass: String="default",
+  h1: String=""
+)(
+  content: Html
+)(
+  implicit lang: Lang, flash: Flash
+)<!DOCTYPE html>
 <html lang="@lang.code">
-    <head>
-        <title>@title</title>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")" />
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")" />
-        <!-- These are ordered by hand. See Issue #33. -->
-        <script src="@routes.Assets.at("javascripts/vendor/jquery-1-7-2.js")"></script>
-        <script src="@routes.Assets.at("javascripts/vendor/jquery.mousewheel.js")"></script>
-        <script src="@routes.Assets.at("javascripts/vendor/underscore.js")"></script>
-        <script src="@routes.Assets.at("javascripts/require.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/observable.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/tag_store.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/document_store.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/id_tree.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/lru_paging_strategy.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/on_demand_tree.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/router.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/server.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/needs_resolver.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/cache.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/dom_id_generator.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/document_list.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/log.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/selection.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/state.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/property_interpolator.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/animator.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/animated_tree.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/animated_focus.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/transaction_queue.js")"></script>
-        <script src="@routes.Assets.at("javascripts/models/remote_tag_list.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/color_table.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/document_contents_view.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/document_list_view.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/focus_view.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/tree_view.js")"></script>
-        <script src="@routes.Assets.at("javascripts/views/tag_list_view.js")"></script>
-        <script src="@routes.Assets.at("javascripts/start-logger.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/log_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/document_contents_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/document_list_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/focus_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/tree_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/controllers/tag_list_controller.js")"></script>
-        <script src="@routes.Assets.at("javascripts/globals.js")"></script>
-        <script src="@routes.Assets.at("javascripts/main.js")"></script>
-    </head>
-    <body class="@bodyClass">
-        @content
-    </body>
+  <head>
+    <title>@title</title>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")" />
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")" />
+  </head>
+  <body class="@bodyClass">
+    <div class="container">
+      @if(h1 != "") {
+        <div class="page-header"><h1>@h1</h1></div>
+      }
+      @flash.get("success").map { notice =>
+        <div class="alert alert-success fade in"><button type="button" class="close" data-dismiss="alert">x</button>@notice</div>
+      }
+      @flash.get("error").map { error =>
+        <div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">x</button>@error</div>
+      }
+      @content
+      <footer><a href="http://overview.ap.org">The Overview Project</a></footer>
+    </div>
+
+    <!-- These are ordered by hand. See Issue #33. -->
+    <script src="@routes.Assets.at("javascripts/vendor/jquery-1-7-2.js")"></script>
+    <script src="@routes.Assets.at("javascripts/vendor/jquery.mousewheel.js")"></script>
+    <script src="@routes.Assets.at("javascripts/vendor/underscore.js")"></script>
+    <script src="@routes.Assets.at("javascripts/require.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/observable.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/tag_store.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/document_store.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/id_tree.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/lru_paging_strategy.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/on_demand_tree.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/router.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/server.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/needs_resolver.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/cache.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/dom_id_generator.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/document_list.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/log.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/selection.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/state.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/property_interpolator.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/animator.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/animated_tree.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/animated_focus.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/transaction_queue.js")"></script>
+    <script src="@routes.Assets.at("javascripts/models/remote_tag_list.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/color_table.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/document_contents_view.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/document_list_view.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/focus_view.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/tree_view.js")"></script>
+    <script src="@routes.Assets.at("javascripts/views/tag_list_view.js")"></script>
+    <script src="@routes.Assets.at("javascripts/start-logger.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/log_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/document_contents_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/document_list_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/focus_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/tree_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/controllers/tag_list_controller.js")"></script>
+    <script src="@routes.Assets.at("javascripts/globals.js")"></script>
+    <script src="@routes.Assets.at("javascripts/main.js")"></script>
+
+    <script src="@routes.Assets.at("javascripts/vendor/bootstrap-alert.js")"></script>
+    <script src="@routes.Assets.at("javascripts/elements/form-with-confirm.js")"></script>
+    <script src="@routes.Assets.at("javascripts/elements/alert.js")"></script>
+  </body>
 </html>

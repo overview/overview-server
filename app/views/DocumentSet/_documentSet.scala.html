@@ -1,0 +1,13 @@
+@(
+  documentSet: models.orm.DocumentSet
+)(implicit lang: play.api.i18n.Lang)
+
+@defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
+  <li id="document-set-@documentSet.id">
+    <h2><a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a></h2>
+    <form method="post" class="form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)">
+      <input type="hidden" name="X-HTTP-Method-Override" value="DELETE" />
+      <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
+    </form>
+  </li>
+}
