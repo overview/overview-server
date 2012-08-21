@@ -11,7 +11,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     val loader = mock[SubTreeDataLoader]
     val parser = mock[SubTreeDataParser]
     val documentSetId = 123l;
-    val subTreeLoader = new SubTreeLoader(documentSetId, 1, 2, loader, parser)
+    val subTreeLoader = new SubTreeLoader(documentSetId, loader, parser)
     
     val dummyDocuments = List(core.Document(10l, "documents", "created", "from data", Seq(5l)))
     val dummyDocumentData = List((10l, "actually", "all", "documentdata"))
@@ -43,7 +43,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       
       parser createNodes(nodeData, documentData, dummyNodeTagCountsData) returns dummyNodes
       
-      val nodes = subTreeLoader.loadNodes()
+      val nodes = subTreeLoader.load(1l, 2)
       
       there was one(loader).loadNodeData(documentSetId, 1, 2)
       there was one(loader).loadDocumentIds(nodeIds)
@@ -62,7 +62,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       loader loadNodeData(documentSetId, 1, 2) returns nodeData
       loader loadDocumentIds(nodeIds) returns documentData
 
-      val nodes = subTreeLoader.loadNodes()
+      val nodes = subTreeLoader.load(1, 2)
       
       there was one(loader).loadDocumentIds(nodeIds)
     }
@@ -127,7 +127,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     
     
     "be constructable with default loader and parser" in {
-      val subTreeLoader = new SubTreeLoader(1l, 3, 55)
+      val subTreeLoader = new SubTreeLoader(1l)
       
       success
     }

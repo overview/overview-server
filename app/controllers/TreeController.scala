@@ -19,8 +19,8 @@ object TreeController extends BaseController {
         WHERE document_set_id = {document_set_id} AND parent_id IS NULL
         """).on('document_set_id -> id).as(scalar[Long].single)
 
-    val subTreeLoader = new SubTreeLoader(id, rootId, 4)
-    val nodes = subTreeLoader.loadNodes
+    val subTreeLoader = new SubTreeLoader(id)
+    val nodes = subTreeLoader.load(rootId, 4)
     val documents = subTreeLoader.loadDocuments(nodes)
     val tags = subTreeLoader.loadTags(id)
     
@@ -29,8 +29,8 @@ object TreeController extends BaseController {
   }
 
   private def authorizedNode(user: User, id: Long, nodeId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    val subTreeLoader = new SubTreeLoader(id, nodeId, 4)
-    val nodes = subTreeLoader.loadNodes
+    val subTreeLoader = new SubTreeLoader(id)
+    val nodes = subTreeLoader.load(nodeId, 4)
     val documents = subTreeLoader.loadDocuments(nodes)
     val tags = subTreeLoader.loadTags(id)
     

@@ -10,16 +10,16 @@ import play.api.db.DB
 /**
  * Loads data from the database about subTrees
  */
-class SubTreeLoader(documentSetId: Long, rootId: Long, depth: Int, 
+class SubTreeLoader(documentSetId: Long,
 					loader: SubTreeDataLoader = new SubTreeDataLoader(),
 					parser: SubTreeDataParser = new SubTreeDataParser()) {
   
   /**
-   * @return a list of all the Nodes in the subTree
+   * @return a list of all the Nodes in the subTree with root at nodeId
    */
-  def loadNodes()(implicit connection : Connection) : Seq[core.Node] = {
+  def load(nodeId: Long, depth: Int)(implicit connection : Connection) : Seq[core.Node] = {
 	
-    val nodeData = loader.loadNodeData(documentSetId, rootId, depth)
+    val nodeData = loader.loadNodeData(documentSetId, nodeId, depth)
     val nodeIds = nodeData.map(_._1).distinct
 
     val documentData = loader.loadDocumentIds(nodeIds)
@@ -28,6 +28,7 @@ class SubTreeLoader(documentSetId: Long, rootId: Long, depth: Int,
     parser.createNodes(nodeData, documentData, nodeTagCountData)
   }
 
+  
   /**
    * @return a list of Documents whose ids are referenced by the passed in nodes. The list is sorted
    * by document IDs and all the elements are distinct, even if documentIds are included in multiple
