@@ -59,27 +59,10 @@ class TagListView
     $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
     $li.data(TAG_KEY, tag)
     $li.find('.tag-name').text(tag.name)
+    $li.find('.btn').addClass(@color_table.get_tag_color_class(tag.name))
 
     $ul = $('ul', @div)
     $li.insertBefore($ul.children()[tag.position])
-
-    this._reset_tag_button_classes()
-
-  _reset_tag_button_classes: () ->
-    $lis = $('a.tag-name', @div).closest('li')
-    @color_table.reserve($lis.length)
-
-    i = 0
-    $lis.each ->
-      $btn = $(this).find('a.btn')
-      match = /\bbtn-color-(\d+)\b/.exec($btn[0].className)
-      if match && match[1] != i
-        old_position = match[1]
-        $btn.removeClass("btn-color-#{old_position}")
-      $btn.addClass("btn-color-#{i}")
-      i += 1
-
-    undefined
 
   _observe_tag_remove: () ->
     @tag_list.observe 'tag-removed', (tag) =>
@@ -89,8 +72,6 @@ class TagListView
     $ul = $('ul', @div)
     $li = $($ul.children()[tag.position])
     $li.remove()
-
-    this._reset_tag_button_classes()
 
 exports = require.make_export_object('views/tag_list_view')
 exports.TagListView = TagListView
