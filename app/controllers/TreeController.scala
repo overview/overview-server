@@ -13,19 +13,21 @@ object TreeController extends BaseController {
   def node(id: Long, nodeId: Long) = authorizedAction(userOwningDocumentSet(id)) { user => (request: Request[AnyContent], connection: Connection) => authorizedNode(user, id, nodeId)(request, connection) }
 
   private def authorizedRoot(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    // FIXME move this to model
-    val rootId = SQL("""
-        SELECT id FROM node
-        WHERE document_set_id = {document_set_id} AND parent_id IS NULL
-        """).on('document_set_id -> id).as(scalar[Long].single)
 
     val subTreeLoader = new SubTreeLoader(id)
-    val nodes = subTreeLoader.load(rootId, 4)
-    val documents = subTreeLoader.loadDocuments(nodes)
-    val tags = subTreeLoader.loadTags(id)
     
-    val json = views.json.Tree.show(nodes, documents, tags)
-    Ok(json)
+    subTreeLoader.loadRootId match {
+      case Some(rootId) => {
+        val nodes = subTreeLoader.load(rootId, 4)
+
+        val documents = subTreeLoader.loadDocuments(nodes)
+        val tags = subTreeLoader.loadTags(id)
+
+        val json = views.json.Tree.show(nodes, documents, tags)
+        Ok(json)
+      }
+      case None => NotFound
+    }
   }
 
   private def authorizedNode(user: User, id: Long, nodeId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
