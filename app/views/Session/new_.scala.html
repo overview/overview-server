@@ -2,14 +2,45 @@
   form: Form[Option[orm.User]]
 )(implicit lang: play.api.i18n.Lang)
 
-@main(title="Login", bodyClass="session-new") {
-  <div class="container">
-    <div class="page-header"><h1>Login</h1></div>
+@defining(scopedMessages("views.Session.new_")) { m =>
+  @main(title=m("title"), bodyClass="session-new") {
+    <div class="container">
+      <div class="page-header"><h1>@m("h1")</h1></div>
 
-    <form method="post" action="@routes.SessionController.create()">
-      <p>Email (admin@@overview-project.org): <input type="text" name="email" value="admin@@overview-project.org" /></p>
-      <p>Password (same thing): <input type="password" name="password" /></p>
-      <p><input type="submit" value="Log in" /></p>
-    </form>
-  </div>
+      <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
+        @if(form.hasGlobalErrors) {
+          <div class="control-group error">
+            <ul class="unstyled controls">
+              @form.globalErrors.map { error =>
+                <li class="help-block error">@t(error.message, error.args: _*)</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <fieldset class="control-group@(if(form.errors("email").isEmpty) "" else " error")">
+          <label for="session-email" class="control-label">@m("label_email")</label>
+          <div class="controls">
+            <input id="session-email" type="text" name="email" class="input-large" placeholder="@m("placeholder_email")" />
+            @form.errors("email").map { error =>
+              <span class="help-inline">@t(error.message, error.args: _*)</span>
+            }
+            <p class="help-block">@m("help_email")
+          </div>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <label for="session-password" class="control-label">@m("label_password")</label>
+          <div class="controls">
+            <input id="session-password" type="password" name="password" class="input-large" />
+            <p class="help-block">@m("help_password")
+          </div>
+        </fieldset>
+
+        <fieldset class="form-actions">
+          <input type="submit" class="btn btn-primary" value="@m("submit")" />
+        </fieldset>
+      </form>
+    </div>
+  }
 }

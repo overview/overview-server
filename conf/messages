@@ -6,3 +6,12 @@ views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.create=Import a document set
 views.DocumentSet.index.create_submit=Import
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+
+views.Session.new_.title=Log in
+views.Session.new_.h1=Log in
+views.Session.new_.label_email=Email
+views.Session.new_.placeholder_email=user@example.org
+views.Session.new_.help_email=Default: admin@overview-project.org
+views.Session.new_.label_password=Password
+views.Session.new_.help_password=Default: same as username
+views.Session.new_.submit=Log in

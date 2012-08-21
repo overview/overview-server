@@ -43,13 +43,11 @@ class User(
 }
 
 object User {
-  def findById(id: Long) = inTransaction { Schema.users.lookup(id) }
+  def findById(id: Long) = Schema.users.lookup(id)
 
   def authenticate(email: String, password: String) : Option[User] = {
-    inTransaction {
-      Schema.users.where(
-        u => u.email === email and crypt(password, u.passwordHash) === u.passwordHash
-      ).headOption
-    }
+    Schema.users.where(
+      u => u.email === email and crypt(password, u.passwordHash) === u.passwordHash
+    ).headOption
   }
 }
