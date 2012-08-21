@@ -80,7 +80,7 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     "call loader to get selection count" in new MockComponents {
       val expectedCount = 256l
 
-      loader.loadCount(nodeIds, tagIds, documentIds) returns expectedCount
+      loader.loadCount(documentSetId, nodeIds, tagIds, documentIds) returns expectedCount
 
       val count = persistentDocumentList.loadCount()
 

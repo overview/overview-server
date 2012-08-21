@@ -141,7 +141,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       tagDocuments(tag1, documentIds.take(3))
       val selectedTags = Seq(tag1, tag2)
       
-      val count = dataLoader.loadCount(selectedNodes, selectedTags, selectedDocuments)
+      val count = dataLoader.loadCount(documentSetId, selectedNodes, selectedTags, selectedDocuments)
       
       count must be equalTo(3)
     }
@@ -150,9 +150,22 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
       val selectedNodes = nodeIds.take(1)
       val selectedDocuments = documentIds.drop(3)
       
-      val count = dataLoader.loadCount(selectedNodes, Nil, selectedDocuments)
+      val count = 
+        dataLoader.loadCount(documentSetId, selectedNodes, Nil, selectedDocuments)
       
       count must be equalTo(0)
+    }
+    
+    "only count results in specified document set" in new NodesAndDocuments {
+      val documentSetId2 = insertDocumentSet("Other DocumentSet")
+      val nodeIds2 = insertNodes(documentSetId2, 1)
+      val documentIds2 = insertDocumentsForeachNode(documentSetId2, nodeIds2, 5)
+      val selectedNodes = nodeIds ++ nodeIds2
+      val expectedCount = documentIds.size
+      
+      val count = dataLoader.loadCount(documentSetId, selectedNodes, Nil, Nil)
+      
+      count must be equalTo(expectedCount)
     }
     
   }

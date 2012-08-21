@@ -20,13 +20,14 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
     documentSliceQueryWhere(documentSetId, firstRow, maxRows, where)
   }
 
-  def loadCount(nodeIds: Seq[Long], 
+  def loadCount(documentSetId: Long,
+		  		nodeIds: Seq[Long], 
                 tagIds: Seq[Long],
                 documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds)
+    val whereClauses = Some("document.document_set_id = {documentSetId}") +: SelectionWhere(nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
     
-    countQueryWhere(where)
+    countQueryWhere(documentSetId, where)
   }
   
   private def documentSliceQueryWhere(documentSetId: Long,
@@ -43,10 +44,11 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
         as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
   }
   
-  private def countQueryWhere(where: String)(implicit c: Connection) : Long = {
+  private def countQueryWhere(documentSetId: Long, where: String)
+                             (implicit c: Connection) : Long = {
     SQL("""
         SELECT COUNT(*) FROM document 
         """ + where  
-        ).as(scalar[Long].single)
+        ).on("documentSetId" -> documentSetId).as(scalar[Long].single)
   }
 }

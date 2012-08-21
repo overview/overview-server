@@ -28,7 +28,7 @@ class PersistentDocumentList(documentSetId: Long,
   }
   
   def loadCount()(implicit c: Connection) : Long = {
-    loader.loadCount(nodeIds, tagIds, documentIds)
+    loader.loadCount(documentSetId, nodeIds, tagIds, documentIds)
   }
   
   def addTag(tagId: Long)(implicit c: Connection): Long = {
