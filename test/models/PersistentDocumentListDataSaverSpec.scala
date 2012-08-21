@@ -34,7 +34,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 5)
       
-      val count = dataSaver.addTag(tagId, Nil, Nil, documentIds)
+      val count = dataSaver.addTag(tagId, documentSetId, Nil, Nil, documentIds)
       
       count must be equalTo(documentIds.size)
       
@@ -51,7 +51,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       tagDocuments(tagId1, documentIds.take(5))
       val tagIds = Seq(tagId1)
       
-      val count = dataSaver.addTag(tagId, nodeIds.drop(1), tagIds, documentIds.take(6))
+      val count = dataSaver.addTag(tagId, documentSetId, nodeIds.drop(1), tagIds, documentIds.take(6))
       
       count must be equalTo(3)
       
@@ -66,8 +66,10 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 2)
       val tagIds = Nil
       
-      val count = dataSaver.addTag(tagId, nodeIds.take(1), tagIds, documentIds)
-      val actualInsertsCount = dataSaver.addTag(tagId, nodeIds, tagIds, documentIds)
+      val count = dataSaver.addTag(tagId, documentSetId, 
+                                   nodeIds.take(1), tagIds, documentIds)
+      val actualInsertsCount = dataSaver.addTag(tagId, documentSetId, 
+                                                nodeIds, tagIds, documentIds)
       
       actualInsertsCount must be equalTo(6)
       
@@ -80,7 +82,7 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
       
-      val count = dataSaver.addTag(tagId, Nil, Nil, Nil)
+      val count = dataSaver.addTag(tagId, documentSetId, Nil, Nil, Nil)
       
       count must be equalTo(10)
     }
@@ -93,9 +95,10 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       
       val tagIds = Seq(tagId1)
       
-      dataSaver.addTag(tagId, nodeIds, Nil, documentIds)
+      dataSaver.addTag(tagId, documentSetId, nodeIds, Nil, documentIds)
       
-      val removedCount = dataSaver.removeTag(tagId, nodeIds, tagIds, documentIds.take(5))
+      val removedCount = dataSaver.removeTag(tagId, documentSetId, 
+    		  								 nodeIds, tagIds, documentIds.take(5))
       
       removedCount must be equalTo(4)
       
@@ -107,9 +110,9 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val nodeIds = insertNodes(documentSetId, 1)
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
       
-      dataSaver.addTag(tagId, nodeIds, Nil, documentIds)
+      dataSaver.addTag(tagId, documentSetId, nodeIds, Nil, documentIds)
       
-      val removedCount = dataSaver.removeTag(tagId, Nil, Nil, Nil)
+      val removedCount = dataSaver.removeTag(tagId, documentSetId, Nil, Nil, Nil)
       
       removedCount must be equalTo(10)
       
@@ -122,9 +125,22 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 10)
       val tagIds = Seq(tagId)
       
-      val noChange = dataSaver.removeTag(tagId, nodeIds, Nil, documentIds)
+      val noChange = dataSaver.removeTag(tagId, documentSetId, nodeIds, Nil, documentIds)
       
       noChange must be equalTo(0)
+    }
+    
+    "only add tag to documents in document set" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 5)
+      
+      val documentSetId2 = insertDocumentSet("Other document set")
+      val nodeIds2 = insertNodes(documentSetId2, 1)
+      val documentIds2 = insertDocumentsForeachNode(documentSetId2, nodeIds2, 5)
+      
+      val addCount = dataSaver.addTag(tagId, documentSetId, nodeIds ++ nodeIds2, Nil, Nil)
+      
+      addCount must be equalTo(documentIds.size)
     }
   }
   

@@ -108,22 +108,22 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     "call saver to add a tag" in new MockSaver {
       val dummyCount = 19l
 
-      saver.addTag(tagId, nodeIds, tagIds, documentIds) returns dummyCount
+      saver.addTag(tagId, documentSetId, nodeIds, tagIds, documentIds) returns dummyCount
 
       val count = persistentDocumentList.addTag(tagId)
 
-      there was one(saver).addTag(tagId, nodeIds, tagIds, documentIds)
+      there was one(saver).addTag(tagId, documentSetId, nodeIds, tagIds, documentIds)
       count must be equalTo dummyCount
     }
 
     "call saver to remove a tag" in new MockSaver {
       val dummyCount = 19l
 
-      saver.removeTag(tagId, nodeIds, tagIds, documentIds) returns dummyCount
+      saver.removeTag(tagId, documentSetId, nodeIds, tagIds, documentIds) returns dummyCount
 
       val count = persistentDocumentList.removeTag(tagId)
 
-      there was one(saver).removeTag(tagId, nodeIds, tagIds, documentIds)
+      there was one(saver).removeTag(tagId, documentSetId, nodeIds, tagIds, documentIds)
       count must be equalTo dummyCount
     }
 

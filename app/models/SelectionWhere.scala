@@ -2,14 +2,19 @@ package models
 
 object SelectionWhere {
   
-  def apply(nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long]) :
+  def apply(documentSetId: Long, nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long]) :
 	  Seq[Option[String]] = {
     
-    Seq(nodeSelection(nodeIds),
+    Seq(documentSetSelection(documentSetId),
+        nodeSelection(nodeIds),
         tagSelection(tagIds),
         documentSelection(documentIds))
   }
     
+  private def documentSetSelection(documentSetId: Long) : Option[String] = {
+    Some("document.document_set_id = {documentSetId}")  
+  }
+  
   private def nodeSelection(nodeIds: Seq[Long]) : Option[String] = nodeIds match {
     case Nil => None
     case _ => Some("""

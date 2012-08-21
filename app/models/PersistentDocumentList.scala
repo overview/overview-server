@@ -32,10 +32,10 @@ class PersistentDocumentList(documentSetId: Long,
   }
   
   def addTag(tagId: Long)(implicit c: Connection): Long = {
-    saver.addTag(tagId, nodeIds, tagIds, documentIds)
+    saver.addTag(tagId, documentSetId, nodeIds, tagIds, documentIds)
   }
   
   def removeTag(tagId: Long)(implicit c: Connection): Long = {
-    saver.removeTag(tagId, nodeIds, tagIds, documentIds)
+    saver.removeTag(tagId, documentSetId, nodeIds, tagIds, documentIds)
   }
 }
