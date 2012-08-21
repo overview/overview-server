@@ -7,16 +7,17 @@ import java.sql.Connection
 
 class PersistentDocumentListDataLoader extends DocumentTagDataLoader with PersistentDocumentListSelector {
 
-  def loadSelectedDocumentSlice(nodeIds: Seq[Long], 
+  def loadSelectedDocumentSlice(documentSetId: Long,
+		  						nodeIds: Seq[Long], 
 		  					    tagIds: Seq[Long], 
 		  					    documentIds: Seq[Long],
 		  						firstRow: Long, maxRows: Long)
   		(implicit c: Connection): List[DocumentData] = {
     
-    val whereClauses = SelectionWhere(nodeIds, tagIds, documentIds)
+    val whereClauses = Some("document.document_set_id = {documentSetId}") +: SelectionWhere(nodeIds, tagIds, documentIds)
     val where = combineWhereClauses(whereClauses)
      
-    documentSliceQueryWhere(firstRow, maxRows, where)
+    documentSliceQueryWhere(documentSetId, firstRow, maxRows, where)
   }
 
   def loadCount(nodeIds: Seq[Long], 
@@ -28,14 +29,17 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
     countQueryWhere(where)
   }
   
-  private def documentSliceQueryWhere(firstRow: Long, maxRows: Long, where: String)(implicit c: Connection) : List[DocumentData] = {
+  private def documentSliceQueryWhere(documentSetId: Long,
+                                      firstRow: Long, maxRows: Long, where: String)
+                                     (implicit c: Connection) : List[DocumentData] = {
     SQL("""
         SELECT id, title, text_url, view_url FROM document 
         """ + where + 
         """
         ORDER BY id 
         LIMIT {maxRows} OFFSET {offset}
-        """).on("maxRows" -> maxRows, "offset" -> firstRow).
+        """).on("maxRows" -> maxRows, "offset" -> firstRow, 
+                "documentSetId" -> documentSetId).
         as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
   }
   
