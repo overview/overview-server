@@ -49,11 +49,12 @@ class RetrieveDocumentSetSpec extends DbSpecification {
             
       // turn every doc in the test directory into a file:// URL
       val filenames =  new File("worker/src/test/resources/docs").listFiles
-      var docURLs = filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))      
+      var docURLs = filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))
+      docURLs.sortBy(_.textURL) // sort by URL to get consistent IDs
       
       val vectorGen = new DocumentVectorGenerator      
       def processDocument(doc: DocumentAtURL, text:String) : Unit = {
-        vectorGen.addDocument(vectorGen.numDocs, Lexer.makeTerms(text))          
+        vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))          
       }      
 
       val timeOut = Timeout(500)   // ms                                               
