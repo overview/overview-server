@@ -24,11 +24,10 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
                   (implicit connection: Connection) : List[NodeData] = {
     require(depth > 0)
     
-    val rootNode = rootNodeQuery(rootId)
-    
+    val rootNode = rootNodeQuery(documentSetId, rootId)
     val rootAsChild = rootNode.map(n => (NoId, Some(n._1), n._2))
-    val childNodes = loadChildNodes(List(rootId), depth)
-     
+    val childNodes = loadChildNodes(documentSetId, List(rootId), depth)
+
     rootAsChild ++ childNodes
   }
   
@@ -49,17 +48,18 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
     tagQuery(documentSetId)
   }
   
-  private def loadChildNodes(nodes: Seq[Long], depth: Int)
+  private def loadChildNodes(documentSetId: Long, nodes: Seq[Long], depth: Int)
                             (implicit connection: Connection) : List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
-      val childNodeData = childNodeQuery(nodes)
+      val childNodeData = childNodeQuery(documentSetId, nodes)
       
       val leafNodeData = dataForLeafNodes(nodes, childNodeData)
       
       val childNodeIds = childNodeData.map(_._2.get)
       
-      childNodeData ++ leafNodeData ++ loadChildNodes(childNodeIds, depth - 1)
+      childNodeData ++ leafNodeData ++ 
+        loadChildNodes(documentSetId, childNodeIds, depth - 1)
     }
   }
   
@@ -70,23 +70,29 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
     leafNodes.map((_, None, ""))
   }
 
-  private def rootNodeQuery(rootNodeId: Long)(implicit c: Connection) : List[(Long, String)]= {
+  private def rootNodeQuery(documentSetId: Long, rootNodeId: Long)(implicit c: Connection) : List[(Long, String)]= {
     val descriptionParser = long("id") ~ str("description")
     
-    SQL("SELECT node.id, node.description FROM node WHERE id = {rootId}").
-      on("rootId" -> rootNodeId).
+    SQL("""
+        SELECT node.id, node.description FROM node 
+        WHERE id = {rootId} AND
+        document_set_id = {documentSetId}
+        """).
+      on("rootId" -> rootNodeId, "documentSetId" -> documentSetId).
       as(descriptionParser map(flatten) *)
   }
         
-  private def childNodeQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeData] = {
+  private def childNodeQuery(documentSetId: Long, nodeIds: Seq[Long])
+                            (implicit c: Connection) : List[NodeData] = {
     val nodeParser = long("parent_id") ~ get[Option[Long]]("id") ~ str("description")
 
     SQL(
       """
         SELECT node.parent_id, node.id, node.description
         FROM node WHERE parent_id IN 
-      """ + idList(nodeIds)
-    ).as(nodeParser map(flatten) *)
+      """ + idList(nodeIds) + """AND 
+        document_set_id = {documentSetId}
+      """).on("documentSetId" -> documentSetId).as(nodeParser map(flatten) *)
   }
   
   private def nodeDocumentQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeDocument] = {

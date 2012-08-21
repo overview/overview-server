@@ -28,20 +28,20 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   }
 
 
-  def writeBinaryTreeInDb(documentSetId: Long, depth : Int)(implicit c: Connection) : List[Long] = {
-    val id = insertNode(documentSetId, None, "root")
+  def writeBinaryTreeInDb(documentSet: Long, depth : Int)(implicit c: Connection) : List[Long] = {
+    val id = insertNode(documentSet, None, "root")
 
-    id :: writeSubTreeInDb(documentSetId, id, depth - 1) 
+    id :: writeSubTreeInDb(documentSet, id, depth - 1) 
   }
 
-  def writeSubTreeInDb(documentSetId: Long, root : Long, depth: Int)(implicit c : Connection) : List[Long] = depth match {
+  def writeSubTreeInDb(documentSet: Long, root : Long, depth: Int)(implicit c : Connection) : List[Long] = depth match {
     case 0 => Nil
     case _ => {
-      val childId1 = insertNode(documentSetId, Some(root), "childA-" + root)
-      val childId2 = insertNode(documentSetId, Some(root), "childB-" + root)
+      val childId1 = insertNode(documentSet, Some(root), "childA-" + root)
+      val childId2 = insertNode(documentSet, Some(root), "childB-" + root)
 
-      val childTree1 = writeSubTreeInDb(documentSetId, childId1, depth - 1)
-      val childTree2 = writeSubTreeInDb(documentSetId, childId2, depth - 1)
+      val childTree1 = writeSubTreeInDb(documentSet, childId1, depth - 1)
+      val childTree2 = writeSubTreeInDb(documentSet, childId2, depth - 1)
 
       childId1 :: childTree1 ++ (childId2 :: childTree2)
     }
@@ -104,6 +104,16 @@ class SubTreeDataLoaderNodeQuerySpec extends Specification  {
       val nodeDocuments = subTreeDataLoader.loadDocumentIds(nodes)
       
       nodeDocuments must be empty
+    }
+    
+    "only load nodes from document set" in new TreeCreated {
+      val nodes = nodeIds;
+      val documentSetId2 = insertDocumentSet("Other document set")
+      val nodeIds2 = writeBinaryTreeInDb(documentSetId2, 2)
+      
+      val nodeData = subTreeDataLoader.loadNodeData(documentSetId2, rootId, 2)
+      
+      nodeData must haveTheSameElementsAs(Seq((rootId, None, "")))
     }
   }
   
