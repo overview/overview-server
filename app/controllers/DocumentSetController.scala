@@ -6,14 +6,13 @@ import play.api.data.Forms._
 import play.api.mvc.{Action,AnyContent,Request}
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
-import models.DocumentSet
-import models.orm.DocumentSetCreationJob
-import models.orm.Schema
+import models.orm.{DocumentSet,DocumentSetCreationJob}
 
 object DocumentSetController extends BaseController {
   def index() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedIndex(user)(request, connection))
   def show(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedShow(user, id)(request, connection))
   def create() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedCreate(user)(request, connection))
+  def delete(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedDelete(user, id)(request, connection))
 
   private val queryForm = Form(
     mapping(
@@ -44,5 +43,10 @@ object DocumentSetController extends BaseController {
         Redirect(routes.DocumentSetController.index())
       }
     )
+  }
+
+  private def authorizedDelete(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    DocumentSet.delete(id)
+    Redirect(routes.DocumentSetController.index()).flashing("success" -> "FIXME translate")
   }
 }
