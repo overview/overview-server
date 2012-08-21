@@ -1,14 +1,19 @@
 package views.html.DocumentSet
 
-import play.api.data.{Form,Forms}
-import org.specs2.mutable.Specification
-
 import jodd.lagarto.dom.jerry.Jerry.jerry
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import play.api.data.{Form,Forms}
+import play.api.mvc.Flash
 
 import models.DocumentSet
 import models.orm.DocumentSetCreationJob
 
 class indexSpec extends Specification {
+  trait ViewContext extends Scope {
+    implicit lazy val flash = new Flash()
+  }
+
   private def documentSet(id: Long, query: String) = {
     val ret = new DocumentSet()
     ret.id = id
@@ -31,7 +36,7 @@ class indexSpec extends Specification {
   def $(selector: java.lang.String)(implicit j: jodd.lagarto.dom.jerry.Jerry) = { j.$(selector) }
 
   "DocumentSet.index" should {
-    "Show DocumentSetCreationJobs if there are some" in {
+    "Show DocumentSetCreationJobs if there are some" in new ViewContext {
       val dscj1 = documentSetCreationJob(1, "query1", 0)
       val dscj2 = documentSetCreationJob(2, "query2", 0)
 
@@ -42,18 +47,18 @@ class indexSpec extends Specification {
       j.$("ul.document-set-creation-jobs").text() must contain("query2")
     }
 
-    //"Show the DocumentSetCreationJob status" in {
+    //"Show the DocumentSetCreationJob status" in new ViewContext {
     //  val dscj = documentSetCreationJob(1, "query1", DocumentSetCreationJob.JobState.InProgress)
     //  val html = index(Seq(), Seq(dscj), form).body
     //  html must contain("in progress")
     //}
 
-    "Not show DocumentSetCreationJobs if there aren't any" in {
+    "Not show DocumentSetCreationJobs if there aren't any" in new ViewContext {
       implicit val j = jerry(index(Seq(), Seq(), form).body)
       $("ul.document-set-creation-jobs").length must equalTo(0)
     }
 // FIXME This doesn't compile
-//    "Show links to DocumentSets if there are some" in {
+//    "Show links to DocumentSets if there are some" in new ViewContext {
 //      val ds1 = documentSet(1, "query1")
 //      val ds2 = documentSet(2, "query2")
 //
@@ -63,12 +68,12 @@ class indexSpec extends Specification {
 //      $("ul.document-sets li#document-set-2").text must contain("query2")
 //    }
 
-    "Not show links to DocumentSets if there are none" in {
+    "Not show links to DocumentSets if there are none" in new ViewContext {
       implicit val j = jerry(index(Seq(), Seq(), form).body)
       $("ul.document-sets").length must equalTo(0)
     }
 
-    "Show a form for adding a new document set" in {
+    "Show a form for adding a new document set" in new ViewContext {
       implicit val j = jerry(index(Seq(), Seq(), form).body)
       $("form").length must equalTo(1)
       $("input[name=query]").length must equalTo(1)
