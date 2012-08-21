@@ -1,8 +1,6 @@
-@(documentSet: DocumentSet, logEntries: Seq[LogEntry])
+@(documentSet: DocumentSet, logEntries: Seq[LogEntry])(implicit lang: Lang, flash: Flash)
 
-@main("Log") {
-  <h1>Log</h1>
-
+@main("Log", h1="Log") {
   <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.getId, ".csv")">this log as a spreadsheet</a>.</p>
 
   <table class="log-entries">

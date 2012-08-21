@@ -1,14 +1,8 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
-# ~~~~
 
-# Interim URLs
-GET     /                           controllers.Application.index()
-#POST	/documentsets/:id/delete	controllers.DocumentSetController.deleteDocumentSet(id: Long)
+GET / controllers.Application.index()
 
-
-
-# Good URLs
 GET /login controllers.SessionController.new_()
 POST /login controllers.SessionController.create()
 GET /logout controllers.SessionController.delete()
@@ -16,19 +10,21 @@ GET /logout controllers.SessionController.delete()
 GET /documentsets controllers.DocumentSetController.index()
 POST /documentsets controllers.DocumentSetController.create()
 GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
-GET /documents/:id controllers.DocumentController.show(id: Long)
+POST /documentsets/:id controllers.DocumentSetController.delete(id: Long)
+DELETE /documentsets/:id controllers.DocumentSetController.delete(id: Long)
+
 GET /trees/:id/root controllers.TreeController.root(id: Long)
 GET /trees/:id/nodes/:nodeId controllers.TreeController.node(id: Long, nodeId: Long)
 GET /trees/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
+
+GET /documents/:id controllers.DocumentController.show(id: Long)
 
 POST /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)
 GET /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
 
 POST /documentsets/:id/tags/:tag/add controllers.TagController.add(id: Long, tag: String)
 POST /documentsets/:id/tags/:tag/remove controllers.TagController.remove(id: Long, tag: String)
-
 POST /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")
 
-
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET /assets/*file controllers.Assets.at(path="/public", file)

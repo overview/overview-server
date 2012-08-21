@@ -1,46 +1,42 @@
 @(
   form: Form[Option[orm.User]]
-)(implicit lang: play.api.i18n.Lang)
+)(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Session.new_")) { m =>
-  @main(title=m("title"), bodyClass="session-new") {
-    <div class="container">
-      <div class="page-header"><h1>@m("h1")</h1></div>
-
-      <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
-        @if(form.hasGlobalErrors) {
-          <div class="control-group error">
-            <ul class="unstyled controls">
-              @form.globalErrors.map { error =>
-                <li class="help-block error">@t(error.message, error.args: _*)</li>
-              }
-            </ul>
-          </div>
-        }
-
-        <fieldset class="control-group@(if(form.errors("email").isEmpty) "" else " error")">
-          <label for="session-email" class="control-label">@m("label_email")</label>
-          <div class="controls">
-            <input id="session-email" type="text" name="email" class="input-large" placeholder="@m("placeholder_email")" />
-            @form.errors("email").map { error =>
-              <span class="help-inline">@t(error.message, error.args: _*)</span>
+  @main(title=m("title"), bodyClass="session-new", h1=m("h1")) {
+    <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
+      @if(form.hasGlobalErrors) {
+        <div class="control-group error">
+          <ul class="unstyled controls">
+            @form.globalErrors.map { error =>
+              <li class="help-block error">@t(error.message, error.args: _*)</li>
             }
-            <p class="help-block">@m("help_email")
-          </div>
-        </fieldset>
+          </ul>
+        </div>
+      }
 
-        <fieldset class="control-group">
-          <label for="session-password" class="control-label">@m("label_password")</label>
-          <div class="controls">
-            <input id="session-password" type="password" name="password" class="input-large" />
-            <p class="help-block">@m("help_password")
-          </div>
-        </fieldset>
+      <fieldset class="control-group@(if(form.errors("email").isEmpty) "" else " error")">
+        <label for="session-email" class="control-label">@m("label_email")</label>
+        <div class="controls">
+          <input id="session-email" type="email" name="email" class="input-large" required="required" placeholder="@m("placeholder_email")" />
+          @form.errors("email").map { error =>
+            <span class="help-inline">@t(error.message, error.args: _*)</span>
+          }
+          <p class="help-block">@m("help_email")</p>
+        </div>
+      </fieldset>
 
-        <fieldset class="form-actions">
-          <input type="submit" class="btn btn-primary" value="@m("submit")" />
-        </fieldset>
-      </form>
-    </div>
+      <fieldset class="control-group">
+        <label for="session-password" class="control-label">@m("label_password")</label>
+        <div class="controls">
+          <input id="session-password" type="password" name="password" class="input-large" required="required" />
+          <p class="help-block">@m("help_password")</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="form-actions">
+        <input type="submit" class="btn btn-primary" value="@m("submit")" />
+      </fieldset>
+    </form>
   }
 }

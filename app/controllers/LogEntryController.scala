@@ -32,7 +32,7 @@ object LogEntryController extends Controller {
             "details" -> optional(text)
         ))
 
-    def index(documentSetId: Long, extension: String) = Action {
+    def index(documentSetId: Long, extension: String) = Action { implicit request =>
         val documentSet = DocumentSet.find.byId(documentSetId) // TODO: security
 
         if (documentSet == null) {

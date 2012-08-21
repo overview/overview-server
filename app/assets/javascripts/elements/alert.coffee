@@ -1,0 +1,2 @@
+$ ->
+  $('div.alert').alert()
