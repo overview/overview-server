@@ -2,7 +2,7 @@ package models.orm
 
 import org.joda.time.DateTime
 import org.squeryl.annotations.Column
-import org.squeryl.dsl.OneToMany
+import org.squeryl.dsl.{ManyToMany, OneToMany}
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import models.orm.Dsl.{crypt,gen_hash}
@@ -35,7 +35,17 @@ class User(
 
   val id: Long = 0
 
-  lazy val documentSets = Schema.documentSetUsers.right(this)
+  lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] = 
+    Schema.documentSetUsers.right(this)
+  
+  def createDocumentSet(query: String): DocumentSet = {
+    require(id != 0l)
+    val documentSet = new DocumentSet(query)
+    Schema.documentSets.insert(documentSet)
+    this.documentSets.associate(documentSet)
+    
+    documentSet
+  }
 }
 
 object User {
