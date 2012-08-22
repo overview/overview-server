@@ -6,7 +6,7 @@ import play.api.data.Forms._
 import play.api.mvc.{Action,AnyContent,Request}
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
-import models.orm.{DocumentSet,DocumentSetCreationJob}
+import models.orm.{DocumentSet,DocumentSetCreationJob, Schema}
 
 object DocumentSetController extends BaseController {
   def index() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedIndex(user)(request, connection))
@@ -38,7 +38,7 @@ object DocumentSetController extends BaseController {
     queryForm.bindFromRequest().fold(
       f => authorizedIndex(user),
       documentSet => {
-        user.documentSets.associate(documentSet)
+        Schema.documentSets.insert(documentSet)
         documentSet.createDocumentSetCreationJob()
         Redirect(routes.DocumentSetController.index())
       }
