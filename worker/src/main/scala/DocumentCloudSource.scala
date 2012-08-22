@@ -14,7 +14,7 @@ import overview.http.AsyncHttpRequest
 import overview.http.AsyncHttpRequest.Response
 import overview.http.DocumentAtURL
 
-import overview.logging._
+import overview.util.Logger
 
 import akka.dispatch.{Future,Promise,Await}
 import akka.util.Timeout
@@ -30,18 +30,20 @@ class DCDocumentAtURL(val title:String, val viewURL:String, textURL:String) exte
 // Should really be private to DocumentCloudSource.parseResults but Jerkson gives errors, see https://groups.google.com/forum/?fromgroups#!topic/play-framework/MKNPYOj9LBA%5B1-25%5D
 case class DCDocumentResources(text:String)
 case class DCDocument(title: String, canonical_url:String, resources:DCDocumentResources)
-case class DCSearchResult(documents: Seq[DCDocument])
+case class DCSearchResult(total:Int, documents: Seq[DCDocument])
 
 
 class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL] {
 
   // --- private ---
   private val pageSize = 100
+  private var numDocuments:Option[Int] = None
   
-  private def pageQuery(pageNum:Int) = {
-    "http://www.documentcloud.org/api/search.json?per_page=" + pageSize + "&page=" + pageNum + "&q=" + query
+  private def pageQuery(pageNum:Int, myPageSize:Int = pageSize) = {
+    "http://www.documentcloud.org/api/search.json?per_page=" + myPageSize + "&page=" + pageNum + "&q=" + query
   }
 
+  
   // we use a promise to sync the main call with our async callbacks, and propagate errors
   private implicit val executionContext = AsyncHttpRequest.executionContext   // needed to run the promise obejct
   private val done = Promise[Unit]() 
@@ -53,6 +55,7 @@ class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL]
 
     // For each returned document, package up the result in a DocumentAtURL object, and call f on it
     val result = parse[DCSearchResult](pageText)
+    numDocuments = Some(result.total)
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
     for (doc <- result.documents) {
@@ -98,4 +101,17 @@ class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL]
     getNextPage(1,f)                           // start at first page    
     Await.result(done, Timeout.never.duration)  // wait here until all pages retrieved (will also rethrow any exceptions generated)
   }
+  
+  // size is defined on Traversable, but we redefine here for efficiency (otherwise we must retrieve all results)
+  // Get it from from JSON, only once, lazily
+  override def size = {
+    if (numDocuments.isEmpty) {
+      Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
+      val pageText = AsyncHttpRequest.BlockingHttpRequest(pageQuery(1,1))  // grab one document from first page. blocks thread to do it.
+      val result = parse[DCSearchResult](pageText)
+      numDocuments = Some(result.total)
+    }
+    numDocuments.get
+  }
+  
 }

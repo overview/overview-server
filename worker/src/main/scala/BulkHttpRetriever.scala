@@ -10,8 +10,7 @@
 
 package overview.http 
 
-import overview.logging._
-import overview.WorkerActorSystem
+import overview.util.{Logger,WorkerActorSystem}
 
 import scala.collection.mutable
 import akka.dispatch.{ExecutionContext,Future,Promise}
@@ -34,7 +33,7 @@ object BulkHttpRetriever {
   private case class NoMoreDocsToRetrieve()
   
   private class BulkHttpActor[T <: DocumentAtURL](writeDocument : (T,String) => Unit, 
-                                                 finished : Promise[Seq[DocRetrievalError]] ) 
+                                                  finished : Promise[Seq[DocRetrievalError]] ) 
    extends Actor {
     
     var allDocsIn:Boolean = false   // have we received all documents to proces (via DocsToRetrieve messages?)
@@ -100,12 +99,12 @@ object BulkHttpRetriever {
                                 writeDocument : (T,String) => Unit ) : Promise[Seq[DocRetrievalError]] = {     
     
     Logger.info("Beginning HTTP document set retrieval")
-
+    
     // create the actor
     implicit val context = WorkerActorSystem()
     val retrievalDone = Promise[Seq[DocRetrievalError]]
     val retriever = context.actorOf( Props(new BulkHttpActor(writeDocument, retrievalDone)), name = "retriever")
-        
+    
     // Feed a sequence of DocumentAtURL objects to retriever
     for (doc <- sourceDocList) {
       retriever ! DocToRetrieve(doc)

@@ -13,21 +13,24 @@ package overview.clustering
 import models._
 import overview.clustering.ClusterTypes._
 import overview.http._
-import overview.logging._
+import overview.util.Logger
+import overview.util.Progress._
 import persistence.{DocumentWriter, NodeWriter}
 import database.DB
 
 import akka.actor._
-import akka.dispatch.{Future,Promise}
-
-
+import akka.dispatch.{Future,Promise,Await}
+import akka.util.Timeout
 
  class DocumentSetIndexer(sourceDocList : Traversable[DCDocumentAtURL],
                           nodeWriter : NodeWriter, 
                           documentWriter : DocumentWriter,
-                          progressReporter : ActorRef) {
+                          progAbort : ProgressAbortFn ) {
 
-  private def printElapsedTime(op:String, t0 : Long) {
+  private var percentFetched = 0
+  private val fetchingPercent = 90.0   // what percent done do we say when we're all done fetching docs?
+  
+  private def logElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()
     Logger.info(op + ", time: " + ("%.2f" format (t1 - t0)/1e9) + " seconds")
   }
@@ -39,37 +42,37 @@ import akka.dispatch.{Future,Promise}
     val documentId = DB.withConnection { 
       implicit connection => documentWriter.write(doc.title, doc.textURL, doc.viewURL)
     }
-    vectorGen.addDocument(documentId, Lexer.makeTerms(text))          
+    vectorGen.addDocument(documentId, Lexer.makeTerms(text))    
+    progAbort(Progress(vectorGen.numDocs * fetchingPercent / sourceDocList.size, "Retrieving documents"))
   }
   
   def BuildTree() : Unit = {
-    val t0 = System.nanoTime()
     
+    val t0 = System.nanoTime()
  
+    // Retrieve all that stuff!
     val retrievalDone = BulkHttpRetriever[DCDocumentAtURL]( sourceDocList,
                                                             (doc,text) => processDocument(doc, text) ) 
     
-   // When the docsetRetriever finishes, compute vectors and complete the promise
-    retrievalDone onComplete {
-      case Left(error) => 
-        Logger.warn("Document set retrieval error: " + error)
+    // Now, wait on this thread until all docs are in 
+    val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration) 
+    logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)        
+    
+    // Cluster (build the tree)
+    progAbort(Progress(fetchingPercent, "Clustering documents"))        
+    val t1 = System.nanoTime()
+    val docVecs = vectorGen.documentVectors()
+    val docTree = BuildDocTree(docVecs)  // TODO progress while clustering
+    logElapsedTime("Clustered documents", t1)
         
-      case Right(docsNotFetched) => 
-        Logger.info("Document set retrieval succeded, with " + docsNotFetched.length + " not fetched")
-        
-        val docVecs = vectorGen.documentVectors()
-        printElapsedTime("Retrieved and indexed " + docVecs.size + " documents", t0)        
-
-        val t1 = System.nanoTime()
-        val docTree = BuildDocTree(docVecs)
-        printElapsedTime("Clustered documents", t1)
-        
-        val t2 = System.nanoTime()
-        DB.withTransaction { implicit connection =>
-         nodeWriter.write(docTree)
-        }
-        
-        printElapsedTime("Saved DocumentSet to DB", t2)
+    // Save tree to database
+    progAbort(Progress(99, "Saving document tree"))
+    val t2 = System.nanoTime()
+    DB.withTransaction { implicit connection =>
+     nodeWriter.write(docTree)
     }
+    logElapsedTime("Saved DocumentSet to DB", t2)
+    
+    progAbort(Progress(100, "Done"))
   } 
 }

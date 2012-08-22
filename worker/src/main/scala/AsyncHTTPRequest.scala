@@ -11,7 +11,7 @@
 
 package overview.http
 
-import overview.logging._
+import overview.util.Logger
 
 import akka.dispatch.{ExecutionContext,Future,Promise}
 import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig, AsyncCompletionHandler, Response => AHCResponse}

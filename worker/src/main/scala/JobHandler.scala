@@ -12,14 +12,14 @@ import akka.util.duration._
 import com.jolbox.bonecp._
 
 import database.{DatabaseConfiguration, DataSource, DB}
-import overview.logging._
-import overview.WorkerActorSystem
+import overview.util.{Logger,WorkerActorSystem}
+import overview.util.Progress._
 import persistence._
 import persistence.DocumentSetCreationJobState._
 
 case class ScanForJobs()
 case class JobDone()
-case class JobProgress(job:PersistentDocumentSetCreationJob, percentComplete:Int, stageName:String, statusText:String)
+case class JobProgress(percentComplete:Int, stageName:String, statusText:String)
 
 class JobHandler extends Actor {
     
@@ -51,7 +51,10 @@ class JobHandler extends Actor {
 
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
-      val indexer = new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter, self)
+      def progFn(prog:Progress) = { 
+        println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")) ; false 
+      }
+      val indexer = new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter, progFn)
       val tree = indexer.BuildTree()
 
       j.state = Complete
@@ -65,9 +68,9 @@ class JobHandler extends Actor {
        handleJobs
        waitAndThenScan
         
-      case prog:JobProgress =>
+      case prog:Progress =>
         // TODO write status to DB here, for display by client
-        Logger.info("Job progress: " + prog.stageName + ", " + prog.percentComplete + "% done. " + prog.statusText)      
+        println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK"))      
     }
   }
 
