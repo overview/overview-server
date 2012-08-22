@@ -7,6 +7,7 @@ import play.api.mvc.{Action,AnyContent,Request}
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
 import models.orm.{DocumentSet,DocumentSetCreationJob}
+import models.orm.DocumentSet.ImplicitHelper._
 
 object DocumentSetController extends BaseController {
   def index() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedIndex(user)(request, connection))
@@ -17,12 +18,12 @@ object DocumentSetController extends BaseController {
   private val queryForm = Form(
     mapping(
       "query" -> text
-    ) ((query) => new DocumentSet(query))
+    ) ((query) => new DocumentSet(0, query))
       ((ds: DocumentSet) => Some((ds.query)))
   ) 
 
   private def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentSets = user.documentSets.page(0, 20).toSeq
+    val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
     Ok(views.html.DocumentSet.index(documentSets, queryForm))
   }
   
@@ -38,8 +39,9 @@ object DocumentSetController extends BaseController {
     queryForm.bindFromRequest().fold(
       f => authorizedIndex(user),
       documentSet => {
-        user.documentSets.associate(documentSet)
-        documentSet.createDocumentSetCreationJob()
+        val insertedDocumentSet = documentSet.save()
+        user.documentSets.associate(insertedDocumentSet)
+        insertedDocumentSet.createDocumentSetCreationJob()
         Redirect(routes.DocumentSetController.index())
       }
     )
