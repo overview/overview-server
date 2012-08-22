@@ -9,6 +9,7 @@ package models.orm
 import anorm.SQL
 import org.squeryl.dsl.OneToMany
 import org.squeryl.KeyedEntity
+import org.squeryl.PrimitiveTypeMode._
 
 
 class DocumentSet(val query: String) extends KeyedEntity[Long] {
@@ -51,6 +52,7 @@ object DocumentSet {
     SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_set_user WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+    Schema.documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
     SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
     // And return the count
   }
