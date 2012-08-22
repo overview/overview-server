@@ -35,7 +35,7 @@ object ApplicationBuild extends Build {
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++= 
         appDependencies ++
-        Seq("play" %% "play" % "2.0.3") ++
+        Seq("play" %% "play" % "2.0.2") ++
         Seq("org.specs2" %% "specs2" % "1.11" % "test"))
       ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")).
         settings(
