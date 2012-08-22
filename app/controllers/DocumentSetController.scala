@@ -12,6 +12,7 @@ import models.orm.DocumentSet.ImplicitHelper._
 object DocumentSetController extends BaseController {
   def index() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedIndex(user)(request, connection))
   def show(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedShow(user, id)(request, connection))
+  def showJson(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedShowJson(user, id)(request, connection))
   def create() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedCreate(user)(request, connection))
   def delete(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedDelete(user, id)(request, connection))
 
@@ -25,6 +26,14 @@ object DocumentSetController extends BaseController {
   private def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
     Ok(views.html.DocumentSet.index(documentSets, queryForm))
+  }
+
+  private def authorizedShowJson(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val documentSet = user.documentSets.where(d => d.id === id).toSeq.withCreationJobs.headOption
+    documentSet match {
+      case Some(ds) => Ok(views.json.DocumentSet.show(ds))
+      case None => NotFound
+    }
   }
   
   private def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
