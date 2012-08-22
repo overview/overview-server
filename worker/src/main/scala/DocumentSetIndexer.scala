@@ -17,13 +17,15 @@ import overview.logging._
 import persistence.{DocumentWriter, NodeWriter}
 import database.DB
 
+import akka.actor._
 import akka.dispatch.{Future,Promise}
 
 
 
  class DocumentSetIndexer(sourceDocList : Traversable[DCDocumentAtURL],
                           nodeWriter : NodeWriter, 
-                          documentWriter : DocumentWriter) {
+                          documentWriter : DocumentWriter,
+                          progressReporter : ActorRef) {
 
   private def printElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()

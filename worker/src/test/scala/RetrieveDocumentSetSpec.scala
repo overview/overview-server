@@ -74,7 +74,7 @@ class RetrieveDocumentSetSpec extends DbSpecification {
                                                           (doc,text) => processDocument(doc, text) ) // adds to existing vectorGen, whatevs
       val resultErr = Await.result(retrievalErr, timeOut.duration)
 
-      resultErr.size must beEqualTo(1) // everything should be retrieved
+      resultErr.size must beEqualTo(1) // exactly one doc should be fail
       resultErr.head.doc must beEqualTo(errURL)                                                    
     }
 

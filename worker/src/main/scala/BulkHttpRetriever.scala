@@ -11,6 +11,7 @@
 package overview.http 
 
 import overview.logging._
+import overview.WorkerActorSystem
 
 import scala.collection.mutable
 import akka.dispatch.{ExecutionContext,Future,Promise}
@@ -101,7 +102,7 @@ object BulkHttpRetriever {
     Logger.info("Beginning HTTP document set retrieval")
 
     // create the actor
-    implicit val context = ActorSystem("DocumentRetriever")
+    implicit val context = WorkerActorSystem()
     val retrievalDone = Promise[Seq[DocRetrievalError]]
     val retriever = context.actorOf( Props(new BulkHttpActor(writeDocument, retrievalDone)), name = "retriever")
         
