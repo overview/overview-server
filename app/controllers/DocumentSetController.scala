@@ -17,14 +17,13 @@ object DocumentSetController extends BaseController {
   private val queryForm = Form(
     mapping(
       "query" -> text
-    ) ((query) => new DocumentSetCreationJob(query))
-      ((job: DocumentSetCreationJob) => Some((job.query)))
+    ) ((query) => new DocumentSet(query))
+      ((ds: DocumentSet) => Some((ds.query)))
   ) 
 
   private def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSets = user.documentSets.page(0, 20).toSeq
-    val documentSetCreationJobs = user.documentSetCreationJobs.toSeq
-    Ok(views.html.DocumentSet.index(documentSets, documentSetCreationJobs, queryForm))
+    Ok(views.html.DocumentSet.index(documentSets, queryForm))
   }
   
   private def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
@@ -38,8 +37,9 @@ object DocumentSetController extends BaseController {
   private def authorizedCreate(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
     queryForm.bindFromRequest().fold(
       f => authorizedIndex(user),
-      job => {
-        user.documentSetCreationJobs.associate(job)
+      documentSet => {
+        user.documentSets.associate(documentSet)
+        documentSet.createDocumentSetCreationJob()
         Redirect(routes.DocumentSetController.index())
       }
     )

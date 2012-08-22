@@ -1,12 +1,45 @@
+/*
+ * DocumentSet.scala
+ * 
+ * Overview Project
+ * Created by Adam Hooper, Aug 2012
+ */
 package models.orm
 
 import anorm.SQL
+import org.squeryl.dsl.OneToMany
 import org.squeryl.KeyedEntity
+
 
 class DocumentSet(val query: String) extends KeyedEntity[Long] {
   override val id: Long = 0
 
   lazy val users = Schema.documentSetUsers.left(this)
+
+  /**
+   * It's one-to-one, which in the DB is one-to-many. This method is an
+   * implementation detail, but Squeryl won't let us make it private.
+   */
+  lazy val documentSetCreationJobs: OneToMany[DocumentSetCreationJob] =
+    Schema.documentSetDocumentSetCreationJobs.left(this)
+
+  /**
+   * The current DocumentSetCreationJob associated with the document set, 
+   * or None if no association exists
+   */
+  def documentSetCreationJob: Option[DocumentSetCreationJob] =
+    documentSetCreationJobs.headOption;
+
+  /**
+   * Create a new DocumentSetCreationJob for the document set. The job will be
+   * inserted into the database in the state NotStarted. Should only be called
+   * after the document set has been inserted into the database.x
+   */
+  def createDocumentSetCreationJob(): DocumentSetCreationJob = {
+    require(id != 0l)
+    val documentSetCreationJob = new DocumentSetCreationJob(id)
+    documentSetCreationJobs.associate(documentSetCreationJob)
+  } 
 }
 
 object DocumentSet {

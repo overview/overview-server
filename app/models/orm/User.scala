@@ -35,11 +35,7 @@ class User(
 
   val id: Long = 0
 
-  lazy val documentSetCreationJobs: OneToMany[DocumentSetCreationJob] =
-    Schema.userToDocumentSetCreationJobs.left(this)
   lazy val documentSets = Schema.documentSetUsers.right(this)
-
-  
 }
 
 object User {

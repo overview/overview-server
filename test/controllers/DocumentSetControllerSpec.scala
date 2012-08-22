@@ -16,13 +16,14 @@ class DocumentSetControllerSpec extends Specification {
       val result = controllers.DocumentSetController.create() (FakeRequest().
         withFormUrlEncodedBody(("query", "foo")))	
       inTransaction {
-        val foundJob = 
-          Schema.documentSetCreationJobs.where(d => d.query === "foo").headOption
+        val foundDocumentSet = 
+          Schema.documentSets.where(d => d.query === "foo").headOption
 
-        foundJob must beSome
-        foundJob.get.query must beEqualTo("foo")
-      }.pendingUntilFixed
-    }
+        foundDocumentSet must beSome
+        val foundJob = foundDocumentSet.get.documentSetCreationJob
+        foundJob.get.state must be equalTo(0)
+      }
+    }.pendingUntilFixed
     
       
     "redirect to documentsets view" in new DbContext {

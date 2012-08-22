@@ -11,8 +11,8 @@ object Schema extends org.squeryl.Schema {
     manyToManyRelation(documentSets, users, "document_set_user").
       via[DocumentSetUser]((ds, u, dsu) => 
         (dsu.documentSetId === ds.id, dsu.userId === u.id))
-        
-  val userToDocumentSetCreationJobs = 
-    oneToManyRelation(users, documentSetCreationJobs).
-      via((u, d) => u.id === d.userId)
+
+  val documentSetDocumentSetCreationJobs =
+    oneToManyRelation(documentSets, documentSetCreationJobs).
+      via((ds, dscj) => ds.id === dscj.documentSetId)
 }

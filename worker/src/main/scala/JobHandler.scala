@@ -27,27 +27,21 @@ object JobHandler {
       Thread.sleep(500) 
       
 
-      val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { implicit connection =>
-       PersistentDocumentSetCreationJob.findAllSubmitted
+      val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { 
+        implicit connection =>
+          PersistentDocumentSetCreationJob.findAllSubmitted
       }
 
       for (j <- submittedJobs) {
-        
-        val documentSetWriter = new DocumentSetWriter(j.userId)
-        
-        val documentSetId = DB.withConnection { implicit connection => 
-          documentSetWriter.write(j.query)
-        }
-
-
-        Logger.info("Created document set for query: " + j.query)
+        val documentSetId = j.documentSetId
 
         val documentWriter = new DocumentWriter(documentSetId)
         val nodeWriter = new NodeWriter(documentSetId)
-        val indexer = 
-          new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter)
-        
-        val tree = indexer.BuildTree()
+        Logger.error("fix indexer")
+//        val indexer = 
+//          new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter)
+//        
+//        val tree = indexer.BuildTree()
 
         j.state = Complete
         DB.withConnection { implicit connection =>
