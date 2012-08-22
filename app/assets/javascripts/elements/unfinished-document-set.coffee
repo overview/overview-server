@@ -3,8 +3,8 @@ WAIT_INTERVAL = 500 # ms after one request completes before another starts
 $ ->
   $('body.document-set-index li.unfinished').each ->
     $li = $(this)
-    href = $li.find('h2 a').attr('href')
-    json_href = "#{href}.json"
+    $a = $li.find('h2 a')
+    json_href = "#{$a.attr('href')}.json"
 
     done = (data) ->
       $li.replaceWith(data.html)
@@ -22,4 +22,5 @@ $ ->
           progress(data)
           window.setTimeout(refresh, WAIT_INTERVAL)
 
+    $a.click((e) -> e.preventDefault())
     window.setTimeout(refresh, WAIT_INTERVAL)
