@@ -8,7 +8,13 @@
       <input type="hidden" name="X-HTTP-Method-Override" value="DELETE" />
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
-    <h2><a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a></h2>
+    <h2>
+      @documentSet.documentSetCreationJob.map { job =>
+        @documentSet.query
+      }.getOrElse {
+        <a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a>
+      }
+    </h2>
     <p class="status">
     @documentSet.documentSetCreationJob.map { job =>
       <label>
