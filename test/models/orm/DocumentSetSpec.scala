@@ -22,35 +22,29 @@ class DocumentSetSpec extends Specification {
     inExample("create a DocumentSetCreationJob") in new DbTestContext {
       val query = "query"
 
-      val documentSet = new DocumentSet(query)
-      Schema.documentSets.insert(documentSet)
-      
+      val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
+
       val job = documentSet.createDocumentSetCreationJob
       
       job.documentSet.head must be equalTo(documentSet)
+
+      val returnedJob = Schema.documentSetCreationJobs.single
       
-      val maybeJob = Schema.documentSetCreationJobs.headOption
-      maybeJob must beSome
-      
-      val maybeSet = Schema.documentSets.where(ds => ds.query === query).headOption
-      maybeSet must beSome
-      val set = maybeSet.get
-      
-      set.documentSetCreationJob must be equalTo(maybeJob)
+      val returnedSet = Schema.documentSets.where(ds => ds.query === query).single
+      returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(Some(returnedJob))
     }
     
     inExample("throw exception if job creation is attempted before db insertion") in 
     	new DbTestContext {
       val query = "query"
-      val documentSet = new DocumentSet("query")
+      val documentSet = new DocumentSet(0L, query)
       
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
     
     inExample("delete all references in other tables") in new DbTestContext {
       val query = "query"
-      val documentSet = new DocumentSet("query")
-      Schema.documentSets.insert(documentSet)
+      val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
       val id = documentSet.id
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
       

@@ -40,9 +40,9 @@ class User(
   
   def createDocumentSet(query: String): DocumentSet = {
     require(id != 0l)
-    val documentSet = new DocumentSet(query)
-    Schema.documentSets.insert(documentSet)
-    this.documentSets.associate(documentSet)
+
+    val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
+    documentSets.associate(documentSet)
     
     documentSet
   }
