@@ -15,10 +15,7 @@ object DocumentSetController extends BaseController {
   def delete(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedDelete(user, id)(request, connection))
 
   private val queryForm = Form(
-    mapping(
       "query" -> text
-    ) ((query) => new DocumentSet(query))
-      ((ds: DocumentSet) => Some((ds.query)))
   ) 
 
   private def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
@@ -37,8 +34,8 @@ object DocumentSetController extends BaseController {
   private def authorizedCreate(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
     queryForm.bindFromRequest().fold(
       f => authorizedIndex(user),
-      documentSet => {
-        Schema.documentSets.insert(documentSet)
+      query => {
+        val documentSet = user.createDocumentSet(query)
         documentSet.createDocumentSetCreationJob()
         Redirect(routes.DocumentSetController.index())
       }

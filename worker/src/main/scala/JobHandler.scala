@@ -50,13 +50,12 @@ class JobHandler extends Actor {
       }
       val documentSetId = j.documentSetId
 
-      Logger.error("Fix this")
-
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
       val query = DB.withConnection { implicit connection => 
         DocumentSetLoader.loadQuery(j.documentSetId).get
       }	
+      Logger.info("Indexing query: " + query)
       val indexer = new DocumentSetIndexer(new DocumentCloudSource(query), nodeWriter, documentWriter, self)
       val tree = indexer.BuildTree()
 

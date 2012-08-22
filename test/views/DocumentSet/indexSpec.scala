@@ -23,10 +23,7 @@ class indexSpec extends Specification {
   }
 
   val form = Form(
-    Forms.mapping(
       "query" -> Forms.text
-    ) ((query) => new DocumentSet(query))
-      ((job: DocumentSet) => Some((job.query)))
   ) 
 
   def $(selector: java.lang.String)(implicit j: jodd.lagarto.dom.jerry.Jerry) = { j.$(selector) }
