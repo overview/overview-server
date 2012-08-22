@@ -26,7 +26,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
       val submitted = Submitted.id
       val inProgress = InProgress.id
-      println(submitted + " " + inProgress)
+      
       SQL("""
           INSERT INTO document_set_creation_job (document_set_id, state) VALUES 
             ({documentSetId},{state1}),

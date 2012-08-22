@@ -21,8 +21,8 @@ object DbSetup {
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
           INSERT INTO document_set (query) 
-          VALUES('NodeWriterSpec')
-        """).executeInsert().getOrElse(failInsert)
+          VALUES({query})
+        """).on("query" -> query).executeInsert().getOrElse(failInsert)
   }
   
   def insertNode(documentSetId: Long)(implicit c: Connection): Long = {

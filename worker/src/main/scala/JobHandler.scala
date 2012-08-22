@@ -44,14 +44,21 @@ class JobHandler extends Actor {
     
     // Run a single job
     def handleSingleJob(j:PersistentDocumentSetCreationJob) : Unit = {
+      j.state = InProgress
+      DB.withConnection { implicit connection =>
+        j.update
+      }
       val documentSetId = j.documentSetId
 
       Logger.error("Fix this")
 
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
-//      val indexer = new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter, self)
-//      val tree = indexer.BuildTree()
+      val query = DB.withConnection { implicit connection => 
+        DocumentSetLoader.loadQuery(j.documentSetId).get
+      }	
+      val indexer = new DocumentSetIndexer(new DocumentCloudSource(query), nodeWriter, documentWriter, self)
+      val tree = indexer.BuildTree()
 
       j.state = Complete
       DB.withConnection { implicit connection =>
