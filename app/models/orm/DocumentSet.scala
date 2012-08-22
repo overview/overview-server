@@ -53,7 +53,7 @@ object DocumentSet {
     SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_set_user WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     Schema.documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
-    SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
+    Schema.documentSets.delete(id)
     // And return the count
   }
 }
