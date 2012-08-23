@@ -1,6 +1,7 @@
 @import 'bootstrap.less';
 @import 'bootstrap-responsive.less';
 @import 'tag-colors.less';
+@import 'vendor/progress-polyfill.less';
 
 @color-background: white;
 @color: black;
@@ -96,8 +97,11 @@ body.document-set-show {
       list-style: none;
     }
 
+    li {
+      vertical-align: middle;
+    }
+
     form {
-      float: left;
       margin-bottom: 0;
     }
 
@@ -186,7 +190,6 @@ body.document-set-show {
 
     span.tags {
       span {
-        vertical-align: middle;
         display: inline-block;
         width: .7em;
         height: .7em;
@@ -214,3 +217,32 @@ body.document-set-show {
   }
 }
 
+body.document-set-index {
+  ul.document-sets {
+    &>li {
+      .well;
+
+      &:not(:hover) {
+        border-color: white;
+        background-color: white;
+        position: relative;
+        -webkit-box-shadow: none;
+           -moz-box-shadow: none;
+                box-shadow: none;
+      }
+    }
+
+    label {
+      display: inline;
+      margin: 0;
+    }
+
+    .state-description {
+      .muted;
+    }
+
+    form.delete {
+      float: right;
+    }
+  }
+}

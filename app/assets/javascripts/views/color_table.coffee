@@ -37,7 +37,6 @@ string_to_hash_integer = (s) ->
 string_to_colors_index = (s) ->
   h = string_to_hash_integer(s)
   i = h % colors.length
-  console.log(s, h, i)
   i += colors.length if i < 0
   i
 

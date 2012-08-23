@@ -1,24 +1,12 @@
 @(
   documentSets: Seq[models.orm.DocumentSet],
-  documentSetCreationJobs: Seq[models.orm.DocumentSetCreationJob],
-  form: Form[models.orm.DocumentSetCreationJob]
+  form: Form[String]
 )(implicit lang: Lang, flash: Flash)
 
 @import views.html.helper.EnumToString
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(title=m("title"), bodyClass="document-set-index", h1=m("h1")) {
-    @if(documentSetCreationJobs) {
-      <ul class="unstyled document-set-creation-jobs">
-        @documentSetCreationJobs.map { job =>
-          <li id="document-set-creation-job-@job.id">
-            <span class="query">@job.query</span>
-            <span class="state">@job.state</span>
-          </li>
-        }
-      </ul>
-    }
-
     @if(documentSets) {
       <ul class="unstyled document-sets">
         @documentSets.map(_documentSet(_))

@@ -34,7 +34,7 @@ class JobHandler extends Actor {
     def handleJobs : Unit  = {
     
       val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { implicit connection =>
-       PersistentDocumentSetCreationJob.findAllSubmitted
+        PersistentDocumentSetCreationJob.findAllSubmitted
       }
 
       for (j <- submittedJobs) {
@@ -44,17 +44,22 @@ class JobHandler extends Actor {
     
     // Run a single job
     def handleSingleJob(j:PersistentDocumentSetCreationJob) : Unit = {
-      val documentSetWriter = new DocumentSetWriter(j.userId)      
-      val documentSetId = DB.withConnection { implicit connection => documentSetWriter.write(j.query) }
-
-      Logger.info("Created document set for query: " + j.query)
+      j.state = InProgress
+      DB.withConnection { implicit connection =>
+        j.update
+      }
+      val documentSetId = j.documentSetId
 
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog:Progress) = { 
         println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")) ; false 
       }
-      val indexer = new DocumentSetIndexer(new DocumentCloudSource(j.query), nodeWriter, documentWriter, progFn)
+      val query = DB.withConnection { implicit connection => 
+        DocumentSetLoader.loadQuery(j.documentSetId).get
+      } 
+      val indexer = new DocumentSetIndexer(new DocumentCloudSource(query), nodeWriter, documentWriter, progFn)
+      Logger.info("Indexing query: " + query)
       val tree = indexer.BuildTree()
 
       j.state = Complete

@@ -42,5 +42,8 @@ object Progress {
   def makeNestedProgress(inner:Progress, percentWhenInnerDone:Float) : Progress = {
     Progress(percentWhenInnerDone * inner.percent/100, inner.status, inner.hasError)
   }
+  
+  // stub that you can pass in when you don't case about progress reporting
+  def NoProgressReporting(p:Progress):Boolean = { false } 
 }
 

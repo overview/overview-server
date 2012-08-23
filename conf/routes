@@ -9,6 +9,7 @@ GET /logout controllers.SessionController.delete()
 
 GET /documentsets controllers.DocumentSetController.index()
 POST /documentsets controllers.DocumentSetController.create()
+GET /documentsets/:id.json	controllers.DocumentSetController.showJson(id: Long)
 GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
 POST /documentsets/:id controllers.DocumentSetController.delete(id: Long)
 DELETE /documentsets/:id controllers.DocumentSetController.delete(id: Long)

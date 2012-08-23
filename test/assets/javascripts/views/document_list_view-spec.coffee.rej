@@ -1,0 +1,20 @@
+--- test/assets/javascripts/views/document_list_view-spec.coffee
++++ test/assets/javascripts/views/document_list_view-spec.coffee
+@@ -126,7 +126,7 @@
+         $tags = $('a:eq(0) span.tags', view.div)
+         expect($tags.length).toEqual(1)
+         expect($tags.children().length).toEqual(1)
+-        expect($tags.children()[0].className).toEqual('tag-color-0')
++        expect($tags.children()[0].className).toMatch(/tag-color-\d+/)
+ 
+       it 'should add a tag to the list item after the document changes', ->
+         view = create_view()
+@@ -134,7 +134,7 @@
+         document_store._notify('document-changed', document_list.documents[0])
+         $tags = $('a:eq(0) span.tags', view.div)
+         expect($tags.children().length).toEqual(2)
+-        expect($tags.children()[1].className).toEqual('tag-color-1')
++        expect($tags.children()[1].className).toMatch(/tag-color-\d/)
+ 
+       it 'should not have any "last clicked" document', ->
+         view = create_view()
