@@ -17,6 +17,7 @@ trait PersistentDocumentSetCreationJob {
   var state: DocumentSetCreationJobState
   
   def update(implicit c: Connection) : Long
+  def delete(implicit c: Connection) : Long
 }
 
 object PersistentDocumentSetCreationJob {
@@ -46,6 +47,14 @@ object PersistentDocumentSetCreationJob {
           UPDATE document_set_creation_job SET state = {state}
           WHERE id = {id}
           """).on("state" -> state.id, "id" -> id).executeUpdate()
+    }
+    
+    def delete(implicit c: Connection) : Long = {
+      SQL("""
+          DELETE FROM document_set_creation_job
+          WHERE id = {id}
+          """).on("id" -> id).executeUpdate()
+          
     }
     
   }

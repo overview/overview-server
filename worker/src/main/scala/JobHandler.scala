@@ -38,9 +38,8 @@ object JobHandler {
     Logger.info("Indexing query: " + query)
     val tree = indexer.BuildTree()
 
-    j.state = Complete
     DB.withConnection { implicit connection =>
-      j.update
+      j.delete
     }
   }
     
