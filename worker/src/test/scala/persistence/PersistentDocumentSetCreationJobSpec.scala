@@ -22,6 +22,17 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   
   trait JobSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
+    lazy val allNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
+    lazy val notStartedJob = allNotStartedJobs.head
+    
+    def insertJob: Long = 
+      SQL("""
+          INSERT INTO document_set_creation_job (document_set_id, state)
+          VALUES ({documentSetId}, {state})
+          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id).
+              executeInsert().getOrElse(throw new Exception("failed Insert"))
+      
+
   }
   
   "PersistentDocumentSetCreationJob" should {
@@ -37,37 +48,34 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
                   "state3" -> InProgress.id).
                executeUpdate()
                
-      val jobs = PersistentDocumentSetCreationJob.findAllSubmitted
-      
-      jobs.map(_.state).distinct must contain(Submitted).only
-      jobs.map(_.documentSetId).distinct must contain(documentSetId).only
+      allNotStartedJobs.map(_.state).distinct must contain(Submitted).only
+      allNotStartedJobs.map(_.documentSetId).distinct must contain(documentSetId).only
     }
     
+    
     "update job state" in new JobSetup {
-      SQL("""
-          INSERT INTO document_set_creation_job (document_set_id, state)
-          VALUES ({documentSetId}, {state})
-          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id).
-              executeInsert()
+      insertJob
+      notStartedJob.state = InProgress
+      notStartedJob.update
+
+      val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
+      remainingNotStartedJobs must be empty
+    }
+    
+    "update percent complete" in new JobSetup {
+      insertJob
       
-      val jobs = PersistentDocumentSetCreationJob.findAllSubmitted
+      notStartedJob.fractionComplete = 0.5
+      notStartedJob.update
+      val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
       
-      jobs.foreach(_.state = InProgress)
-      val updates = jobs.map(_.update) 
-     
-      updates must contain(1l).only
+      job.fractionComplete must be equalTo(0.5)
     }
     
     "delete itself" in new JobSetup {
-      SQL("""
-          INSERT INTO document_set_creation_job (document_set_id, state)
-          VALUES ({documentSetId}, {state})
-          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id).
-              executeInsert()
-
-      val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
+      insertJob
       
-      job.delete
+      notStartedJob.delete
       
       val remainingJobs = PersistentDocumentSetCreationJob.findAllSubmitted
       

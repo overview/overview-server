@@ -27,6 +27,10 @@ object JobHandler {
     val documentWriter = new DocumentWriter(documentSetId)
     val nodeWriter = new NodeWriter(documentSetId)
     def progFn(prog:Progress) = { 
+      j.fractionComplete = prog.percent / 100.0
+      DB.withConnection { implicit connection =>
+        j.update  
+      }
       println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")) ; false 
     }
     val query = DB.withConnection { implicit connection => 
