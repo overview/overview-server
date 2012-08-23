@@ -10,12 +10,12 @@ import models.orm.{DocumentSet,DocumentSetCreationJob}
 import models.orm.DocumentSet.ImplicitHelper._
 
 object DocumentSetController extends BaseController {
-  def index() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedIndex(user)(request, connection))
-  def show(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedShow(user, id)(request, connection))
-  def showJson(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedShowJson(user, id)(request, connection))
-  def create() = authorizedAction(anyUser)(user => (request: Request[AnyContent], connection: Connection) => authorizedCreate(user)(request, connection))
-  def delete(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => (request: Request[AnyContent], connection: Connection) => authorizedDelete(user, id)(request, connection))
-
+  def index() = authorizedAction(anyUser)(user => this.authorizedIndex(user)(_: Request[AnyContent], _: Connection))
+  def show(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => authorizedShow(user, id)(_: Request[AnyContent], _: Connection))
+  def showJson(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => authorizedShowJson(user, id)(_: Request[AnyContent], _: Connection))
+  def create() = authorizedAction(anyUser)(user => authorizedCreate(user)(_: Request[AnyContent], _: Connection))
+  def delete(id: Long) = authorizedAction(userOwningDocumentSet(id))(user => authorizedDelete(user, id)(_: Request[AnyContent], _: Connection))
+  
   private val queryForm = Form(
     "query" -> text
   ) 
