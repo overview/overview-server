@@ -51,22 +51,22 @@ class _documentSetSpec extends Specification {
     }
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.NOT_STARTED)
+      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.NotStarted)
       $("li.unfinished").length must be_>=(1)
     }
 
     "should show a progress bar" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.IN_PROGRESS, 0.2)
+      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress, 0.2)
       $("progress").length must be_>=(1)
     }
 
     "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.IN_PROGRESS, 0.2)
+      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress, 0.2)
       $("progress").attr("value") must beEqualTo("20")
     }
 
     "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.IN_PROGRESS)
+      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress)
       $(".state").text() must endWith("IN_PROGRESS")
     }
 
