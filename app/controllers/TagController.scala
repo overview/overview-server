@@ -1,13 +1,33 @@
 package controllers
 
-import play.api.db.DB
-import play.api.mvc.{Action, Controller}
+
+import java.sql.Connection
+import models.orm.User
 import play.api.data.{Form,FormError}
+import play.api.db.DB
+import play.api.mvc.{Action, AnyContent, Request}
 import play.api.Play.current
 
 import models.{PersistentDocumentList,PersistentTag,PersistentTagLoader}
 
-object TagController extends Controller {
+object TagController extends BaseController {
+
+    
+  def add(documentSetId: Long, tagName: String) = 
+    authorizedAction(userOwningDocumentSet(documentSetId))(user => 
+      authorizedAdd(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
+    )
+
+  def remove(documentSetId: Long, tagName: String) = 
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedRemove(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
+    )
+    
+  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = 
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedNodeCounts(documentSetId, tagName, nodeIds)(_: Request[AnyContent], _: Connection)
+    )
+    
   private val idListFormat = new play.api.data.format.Formatter[Seq[Long]] {
     def bind(key: String, data: Map[String,String]) : Either[Seq[FormError],Seq[Long]] = {
       val idList = data.get(key).map(s => IdList(s)).getOrElse(Seq())
@@ -33,53 +53,51 @@ object TagController extends Controller {
     )
   )
 
-  def add(documentSetId: Long, tagName: String) = Action { implicit request =>
-    DB.withTransaction { implicit connection =>
-      form(documentSetId).bindFromRequest.fold(
-        formWithErrors => BadRequest,
-        documents => {
-          val tagData = PersistentTag.findOrCreateByName(tagName, documentSetId)
+  def authorizedAdd(documentSetId: Long, tagName: String)
+                   (implicit request: Request[AnyContent], connection: Connection) = {
+    form(documentSetId).bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      documents => {
+        val tagData = PersistentTag.findOrCreateByName(tagName, documentSetId)
 
-          val tagUpdateCount = documents.addTag(tagData.id)
-          val tag = tagData.loadTag
-          val taggedDocuments = tagData.loadDocuments(tag)
+        val tagUpdateCount = documents.addTag(tagData.id)
+        val tag = tagData.loadTag
+        val taggedDocuments = tagData.loadDocuments(tag)
 
-          Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
-        }
-      )
-    }
+        Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
+      }
+    )
   }
   
-  def remove(documentSetId: Long, tagName: String) = Action { implicit request =>
-    DB.withTransaction { implicit connection =>
-      PersistentTag.findByName(tagName, documentSetId) match {
-        case None => NotFound
-        case Some(tagData) => {
-          form(documentSetId).bindFromRequest.fold(
-            formWithErrors => BadRequest,
-            documents => {
-              val tagUpdateCount = documents.removeTag(tagData.id)
-              val tag = tagData.loadTag
-              val taggedDocuments = tagData.loadDocuments(tag)
-              
-              Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
-            }
-          )
-        }
+  
+  
+  def authorizedRemove(documentSetId: Long, tagName: String)
+                      (implicit request: Request[AnyContent], connection: Connection) = {
+    PersistentTag.findByName(tagName, documentSetId) match {
+      case None => NotFound
+      case Some(tagData) => {
+        form(documentSetId).bindFromRequest.fold(
+          formWithErrors => BadRequest,
+          documents => {
+            val tagUpdateCount = documents.removeTag(tagData.id)
+            val tag = tagData.loadTag
+            val taggedDocuments = tagData.loadDocuments(tag)
+            
+            Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
+          }
+        )
       }
     }
   }
 
-  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = Action {
-    DB.withTransaction { implicit connection =>
 
-      PersistentTag.findByName(tagName, documentSetId) match {
-        case Some(tag) => {
-          val nodeCounts = tag.countsPerNode(IdList(nodeIds))
-
-          Ok(views.json.Tag.nodeCounts(nodeCounts))
-        }
-        case None => NotFound
+  def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String) 
+                          (implicit request: Request[AnyContent], connection: Connection) = {
+    PersistentTag.findByName(tagName, documentSetId) match {
+      case None => NotFound
+      case Some(tag) => {
+        val nodeCounts = tag.countsPerNode(IdList(nodeIds))
+        Ok(views.json.Tag.nodeCounts(nodeCounts))
       }
     }
   }
