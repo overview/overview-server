@@ -35,5 +35,11 @@ trait BaseController extends Controller with TransactionActionController with Au
    *   user => (request, connection) => { ... do something ... }
    * }
    */
-  protected def userOwningDocumentSet(id: Long) : Authority = { user => user.documentSets.where((ds) => ds.id === id).nonEmpty }
+  protected def userOwningDocumentSet(id: Long) : Authority = { user => 
+    user.documentSets.where((ds) => ds.id === id).nonEmpty 
+  }
+  
+  protected def userOwningDocument(id: Long) : Authority = { user =>
+    user.documentSets.where(ds => id in from(ds.documents)(d => select(d.id))).nonEmpty
+  }
 }
