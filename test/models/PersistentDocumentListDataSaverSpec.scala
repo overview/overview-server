@@ -142,6 +142,17 @@ class PersistentDocumentListDataSaverSpec extends Specification {
       
       addCount must be equalTo(documentIds.size)
     }
+    
+    "not remove tag if documents are not in document set" in new TagCreated {
+      val nodeIds = insertNodes(documentSetId, 1)
+      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 5)
+      val documentSetId2 = insertDocumentSet("Other document set")
+      
+      val addCount = dataSaver.addTag(tagId, documentSetId, Nil, Nil, Nil)
+      val noChange = dataSaver.removeTag(tagId, documentSetId2, Nil, Nil, documentIds)
+      
+      noChange must be equalTo(0)
+    }
   }
   
   step(stop)
