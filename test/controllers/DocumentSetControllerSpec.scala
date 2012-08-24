@@ -1,15 +1,19 @@
+/*
+ * DocumentSetControllerSpec.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, June 2012
+ */
 package controllers
 
-import org.specs2.mutable._
-import org.specs2.specification._
+import helpers.DbTestContext
+import models.orm.{DocumentSet, DocumentSetCreationJob, Schema}
+import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
 
-
-import models.orm.{DocumentSetCreationJob, Schema}
-import helpers.DbTestContext
 
 class DocumentSetControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -28,16 +32,19 @@ class DocumentSetControllerSpec extends Specification {
       val authorizedRequest = FakeRequest().withFormUrlEncodedBody(("query", "foo")).
       	        withCookies(sessionCookie)
 
+      val result = controllers.DocumentSetController.create()(authorizedRequest)
       val maybeDocumentSet = Schema.documentSets.headOption
       maybeDocumentSet must beSome
       val documentSet = maybeDocumentSet.get
-      
+
       val foundJob = 
         Schema.documentSetCreationJobs.
           where(d => d.documentSetId === documentSet.id).headOption
 
       foundJob must beSome
       foundJob.get.state must beEqualTo(DocumentSetCreationJob.State.NotStarted)
+      
+      controllers.DocumentSetController.delete(documentSet.id)(authorizedRequest)
     }
     
       
@@ -46,8 +53,10 @@ class DocumentSetControllerSpec extends Specification {
       	        withCookies(sessionCookie)
 
       val result = controllers.DocumentSetController.create()(authorizedRequest)
-        
+      val documentSet = Schema.documentSets.head
+      
       redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
+      controllers.DocumentSetController.delete(documentSet.id)(authorizedRequest)
     }
   }
   
