@@ -3,157 +3,124 @@ package controllers
 import scala.collection.JavaConversions._
 
 import java.io.StringWriter
-import java.sql.Connection
-
-import com.avaje.ebean.{Ebean,TxRunnable,TxScope,TxType}
+import java.sql.{Connection,Timestamp}
 
 import play.api.libs.json._
-import play.api.data._
+import play.api.data.{Form,FormError}
 import play.api.data.Forms._
-import play.api.mvc.{Action,Controller}
+import play.api.mvc.{Action,Controller,Request,AnyContent}
 
-import org.joda.time.format.{DateTimeFormatter,ISODateTimeFormat}
-import org.joda.time.DateTimeZone
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 
 import au.com.bytecode.opencsv.CSVWriter
 
-import models.{DocumentSet,LogEntry}
+import org.squeryl.PrimitiveTypeMode._
 
-object LogEntryController extends Controller {
-    val createManyJsonInstructions =
-        "Request must be of type application/json and look like " +
-        "'[{date: \"ISO8601-datetime\", component: \"component\", action: \"action\", details: \"details\"}, ...]'"
-    val isoDateTimeFormat = ISODateTimeFormat.dateTime()
+import models.orm.{DocumentSet,LogEntry,User}
+import models.orm.LogEntry.ImplicitHelper._
 
-    val logEntryForm = Form(tuple(
-            "date" -> nonEmptyText,
-            "component" -> nonEmptyText,
-            "action" -> nonEmptyText,
-            "details" -> optional(text)
-        ))
+object LogEntryController extends BaseController {
+  def index(id: Long, extension: String) = authorizedAction(userOwningDocumentSet(id))(user => authorizedIndex(user, id, extension)(_: Request[AnyContent], _: Connection))
+  def createMany(id: Long) = authorizedAction(parse.json, userOwningDocumentSet(id))(user => authorizedCreateMany(user, id)(_: Request[JsValue], _: Connection))
 
-    def index(documentSetId: Long, extension: String) = Action { implicit request =>
-        val documentSet = DocumentSet.find.byId(documentSetId) // TODO: security
+  private[controllers] def authorizedIndex(user: User, documentSetId: Long, extension: String)(implicit request: Request[AnyContent], connection: Connection) = {
+    val documentSet = user.documentSets.where(ds => ds.id === documentSetId).headOption
 
-        if (documentSet == null) {
-            NotFound("Invalid document set ID")
-        } else {
-            val logEntries = Ebean.find(classOf[LogEntry])
-                .where().eq("document_set_id", documentSetId)
-                .orderBy("date DESC")
-                .setMaxRows(5000)
-                .findList()
+    documentSet.map({ ds =>
+      val logEntries = ds.orderedLogEntries.page(0, 5000).toSeq.withUsers
 
-            extension match {
-                case ".csv" => logEntriesToCsv(logEntries)
-                case _ => Ok(views.html.LogEntry.index(documentSet, logEntries))
-            }
-        }
-    }
+      extension match {
+        case ".csv" => logEntriesToCsv(logEntries)
+        case _ => Ok(views.html.LogEntry.index(ds, logEntries))
+      }
+    }).getOrElse(
+      NotFound("Invalid document set ID")
+    )
+  }
 
-    private def logEntriesToCsv(logEntries: Seq[LogEntry]) = {
-        val stringWriter = new StringWriter()
-        val csvWriter = new CSVWriter(stringWriter)
-        csvWriter.writeNext(Array("date", "username", "component", "action", "details"))
-        logEntries.foreach({ e =>
-          csvWriter.writeNext(Array(e.getDate().toString(), e.getUsername(), e.getComponent(), e.getAction(), e.getDetails()))
-        })
-        csvWriter.close()
-        Ok(stringWriter.toString()).as("text/csv")
-    }
-
-    def createMany(documentSetId: Long) = Action(parse.json) { request =>
-        val documentSet = DocumentSet.find.byId(documentSetId) // TODO: security
-
-        if (documentSet == null) {
-            NotFound("Invalid document set ID " + documentSetId)
-        } else {
-            request.body match {
-                case jsArray: JsArray =>
-                    var ok = true
-
-                    runInTransactionAndRollbackIfFalse(() => {
-                        for (jsValue <- jsArray.as[List[JsValue]]) {
-                            ok &&= verifyAndInsertLogEntry(documentSet, jsValue)
-                        }
-
-                        ok
-                    })
-
-                    if (ok) {
-                        Ok("added log entries")
-                    } else {
-                        BadRequest(createManyJsonInstructions)
-                    }
-                case _ => BadRequest(createManyJsonInstructions)
-            }
-        }
-    }
-
-    private def verifyAndInsertLogEntry(documentSet: DocumentSet, jsValue: JsValue) : Boolean = {
+  private[controllers] def authorizedCreateMany(user: User, documentSetId: Long)(implicit request: Request[JsValue], connection: Connection) = {
+    request.body match {
+      case jsArray: JsArray =>
         var ok = true
 
-        jsValue match {
-            case jsObject: JsObject =>
-                val stringMap = jsObject.fields.toMap.mapValues(_ match {
-                    case s: JsString => s.value
-                    case _ => null
-                })
-
-                logEntryForm.bind(stringMap).fold(
-                    formWithErrors => {
-                        ok = false
-                    }, value => {
-                        val (dateString, component, action, details) = value
-
-                        val logEntry = new LogEntry()
-                        logEntry.setDocumentSet(documentSet)
-                        logEntry.setUsername("test user")
-                        logEntry.setComponent(component)
-                        logEntry.setAction(action)
-                        logEntry.setDetails(details.getOrElse(""))
-
-                        try {
-                            val dateTime = isoDateTimeFormat.parseDateTime(dateString)
-                            logEntry.setDate(dateTime.toDateTime(DateTimeZone.UTC))
-                        } catch {
-                            case e: IllegalArgumentException =>
-                                ok = false
-                        }
-
-                        if (ok) {
-                            logEntry.save()
-                        }
-                    }
-                )
-            case _ =>
-                ok = false
+        for (jsValue <- jsArray.as[List[JsValue]]) {
+          ok &&= verifyAndInsertLogEntry(documentSetId, user, jsValue)
         }
 
-        ok
-    }
-
-    private def runInTransactionAndRollbackIfFalse(callback: () => Boolean) = {
-        // If we're in an existing transaction, add a savepoint and rollback
-        // to it if needed. If we're not in a transaction, start one, do the
-        // savepoint stuff, and then commit. If we rolled back to the savepoint,
-        // the commit will be a no-op and the database will be unchanged.
-
-        val existingTransaction = Ebean.currentTransaction()
-        val transaction = if (existingTransaction != null) existingTransaction else Ebean.beginTransaction()
-
-        val connection : java.sql.Connection = transaction.getConnection()
-
-        val savepoint = connection.setSavepoint()
-
-        if (callback()) {
-            connection.releaseSavepoint(savepoint)
+        if (ok) {
+          Ok("added log entries")
         } else {
-            connection.rollback(savepoint)
+          connection.rollback()
+          BadRequest(createManyJsonInstructions)
         }
-
-        if (existingTransaction == null) {
-            Ebean.commitTransaction()
-        }
+      case _ => BadRequest(createManyJsonInstructions)
     }
+  }
+
+  val createManyJsonInstructions =
+      "Request must be of type application/json and look like " +
+      "'[{date: \"ISO8601-datetime\", component: \"component\", action: \"action\", details: \"details\"}, ...]'"
+
+  lazy val isoDateTimeFormat = ISODateTimeFormat.dateTime()
+
+  implicit def iso8601DateFormatter = new play.api.data.format.Formatter[Timestamp] {
+    override val format = Some("format.iso8601_date", Nil)
+
+    def bind(key: String, data: Map[String,String]) = {
+      play.api.data.format.Formats.stringFormat.bind(key, data).right.flatMap { s =>
+        val ret = scala.util.control.Exception.catching(classOf[IllegalArgumentException])
+          .either(new Timestamp(isoDateTimeFormat.parseDateTime(s).getMillis()))
+          .left.map(e => Seq(FormError(key, "error.iso8601_date", Nil)))
+
+        ret
+      }
+    }
+
+    def unbind(key: String, value: Timestamp) = {
+      Map(key -> isoDateTimeFormat.print(new DateTime(value)))
+    }
+  }
+
+  def logEntryForm(documentSetId: Long, user: User) = Form(
+    mapping(
+      "date" -> of[Timestamp],
+      "component" -> nonEmptyText,
+      "action" -> nonEmptyText,
+      "details" -> optional(text)
+    )
+    ((date, component, action, details) => LogEntry(0L, documentSetId, user.id, date, component, action, details.getOrElse("")))
+    ((le: LogEntry) => Some(le.date, le.component, le.action, Some(le.details)))
+  )
+
+  private def logEntriesToCsv(logEntries: Seq[LogEntry]) = {
+    val stringWriter = new StringWriter()
+    val csvWriter = new CSVWriter(stringWriter)
+    csvWriter.writeNext(Array("date", "email", "component", "action", "details"))
+    logEntries.foreach({ e =>
+      csvWriter.writeNext(Array(isoDateTimeFormat.print(new DateTime(e.date)), e.user.email, e.component, e.action, e.details))
+    })
+    csvWriter.close()
+    Ok(stringWriter.toString()).as("text/csv")
+  }
+
+  private def verifyAndInsertLogEntry(documentSetId: Long, user: User, jsValue: JsValue) : Boolean = {
+    jsValueToMap(jsValue).map(m =>
+      logEntryForm(documentSetId, user).bind(m).fold(
+        formWithErrors => false,
+        logEntry => { logEntry.save; true }
+      )
+    ).getOrElse(false)
+  }
+
+  private def jsValueToMap(jsValue: JsValue) : Option[Map[String,String]] = {
+    jsValue match {
+      case jsObject: JsObject =>
+        Some(jsObject.fields.toMap.mapValues(_ match {
+          case s: JsString => s.value
+          case _ => ""
+        }))
+      case _ => None
+    }
+  }
 }

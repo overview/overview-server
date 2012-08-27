@@ -23,6 +23,12 @@ case class DocumentSet(
     ) extends KeyedEntity[Long] {
   lazy val users = Schema.documentSetUsers.left(this)
 
+  lazy val documents = Schema.documentSetDocuments.left(this)
+
+  lazy val logEntries = Schema.documentSetLogEntries.left(this)
+
+  lazy val orderedLogEntries = from(logEntries)(le => select(le).orderBy(le.date desc))
+
   /**
    * Create a new DocumentSetCreationJob for the document set.
    *
@@ -34,13 +40,11 @@ case class DocumentSet(
     require(id != 0l)
     val documentSetCreationJob = new DocumentSetCreationJob(id)
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
-  } 
+  }
 
   def withCreationJob = copy(documentSetCreationJob =
     Schema.documentSetDocumentSetCreationJobs.left(this).headOption
   )
-
-  lazy val documents = Schema.documentSetDocuments.left(this)
 
   def documentCount : Long = {
     providedDocumentCount.getOrElse(

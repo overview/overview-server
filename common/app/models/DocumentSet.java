@@ -24,9 +24,6 @@ public class DocumentSet extends Model {
     @OneToMany(cascade=CascadeType.ALL)
     public Set<Document> documents = new HashSet<Document>();
 
-    @OneToMany
-    public List<LogEntry> logEntries = new ArrayList<LogEntry>();
-    
     @ManyToMany(mappedBy="documents")
     public Set<Node> nodes = new HashSet<Node>();
 

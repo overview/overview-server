@@ -46,6 +46,8 @@ class User(
     
     documentSet
   }
+
+  def save = Schema.users.insertOrUpdate(this)
 }
 
 object User {

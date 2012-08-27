@@ -54,9 +54,9 @@ class DocumentSetSpec extends Specification {
           """).on("documentSetId" -> id).executeInsert()
    
       SQL("""
-          INSERT INTO log_entry (document_set_id, username, date, component, action, details)
-          VALUES ({documentSetId}, 'user', '2012-08-20 09:12:12', 'component', 'action', 'details')
-          """).on("documentSetId" -> id).executeInsert()
+          INSERT INTO log_entry (document_set_id, user_id, date, component, action, details)
+          VALUES ({documentSetId}, {userId}, '2012-08-20 09:12:12', 'component', 'action', 'details')
+          """).on("documentSetId" -> id, "userId" -> 1).executeInsert()
       val tagId = insertTag(id, "tag")
       val nodeIds = insertNodes(id, 1)
       val documentIds = insertDocumentsForeachNode(id, nodeIds, 1)
