@@ -28,8 +28,10 @@ object ApplicationBuild extends Build {
   )
 
   val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA).settings(
-    testOptions in Test += Tests.Setup( () =>
-      System.setProperty("db.default.url", testDatabaseUrl ))
+    testOptions in Test += Tests.Setup({_ =>
+      System.setProperty("db.default.url", testDatabaseUrl)
+      System.setProperty("specs2.xonly", "true")
+    })
   )
 
   val worker = Project("overview-worker", file("worker"), settings =
@@ -39,22 +41,25 @@ object ApplicationBuild extends Build {
         Seq("play" %% "play" % "2.0.2") ++
         Seq("org.specs2" %% "specs2" % "1.11" % "test"))
       )
+      .settings(
+        testOptions in Test += Tests.Setup({_ =>
+        	System.setProperty("datasource.default.url", testDatabaseUrl)
+          System.setProperty("specs2.xonly", "true")
+        })
+      )
       .settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
       )
       .settings(
         initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
       )
-      .settings(
-        testOptions in Test += Tests.Setup(() =>
-        	System.setProperty("datasource.default.url", testDatabaseUrl))
-      )
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
 
-    testOptions in Test += Tests.Setup( () =>
+    testOptions in Test += Tests.Setup({_ =>
       System.setProperty("db.default.url", testDatabaseUrl)
-    ),
+      System.setProperty("specs2.xonly", "true")
+    }),
     templatesImport += "views.Magic._"
   ).settings(
     CucumberPlugin.cucumberSettings : _*
