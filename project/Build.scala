@@ -24,7 +24,8 @@ object ApplicationBuild extends Build {
 
   val playAppDependencies = appDependencies ++ Seq(
     "net.sf.opencsv" % "opencsv" % "2.3",
-    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT"
+    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT",
+    "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
   )
 
   val common = PlayProject("overview-common", appVersion, appDependencies, path = file("common"), mainLang = JAVA).settings(
@@ -59,6 +60,7 @@ object ApplicationBuild extends Build {
     testOptions in Test += Tests.Setup({_ =>
       System.setProperty("db.default.url", testDatabaseUrl)
       System.setProperty("specs2.xonly", "true")
+      System.setProperty("mail.from", "sender@example.org")
     }),
     templatesImport += "views.Magic._"
   ).settings(
