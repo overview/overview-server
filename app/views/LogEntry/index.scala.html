@@ -1,7 +1,7 @@
-@(documentSet: DocumentSet, logEntries: Seq[LogEntry])(implicit lang: Lang, flash: Flash)
+@(documentSet: models.orm.DocumentSet, logEntries: Seq[models.orm.LogEntry])(implicit lang: Lang, flash: Flash)
 
 @main("Log", h1="Log") {
-  <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.getId, ".csv")">this log as a spreadsheet</a>.</p>
+  <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.id, ".csv")">this log as a spreadsheet</a>.</p>
 
   <table class="log-entries">
     <thead>
@@ -14,13 +14,13 @@
       </tr>
     </thead>
     <tbody>
-      @for(entry <- logEntries) {
+      @logEntries.map { entry =>
         <tr>
-          <td class="user">@entry.getUsername</td>
-          <td class="date">@entry.getDate</td>
-          <td class="component">@entry.getComponent</td>
-          <td class="action">@entry.getAction</td>
-          <td class="details">@entry.getDetails</td>
+          <td class="email">@entry.user.email</td>
+          <td class="date">@entry.date</td>
+          <td class="component">@entry.component</td>
+          <td class="action">@entry.action</td>
+          <td class="details">@entry.details</td>
         </tr>
       }
     </tbody>
