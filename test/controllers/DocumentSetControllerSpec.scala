@@ -7,56 +7,47 @@
 package controllers
 
 import helpers.DbTestContext
-import models.orm.{DocumentSet, DocumentSetCreationJob, Schema}
+import models.orm.{DocumentSet, DocumentSetCreationJob, Schema, User}
 import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
+import play.api.mvc.Controller
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
 
 
+
 class DocumentSetControllerSpec extends Specification {
   step(start(FakeApplication()))
   
+  class TestDocumentSetController() extends Controller with AuthorizedDocumentSetController;  
+  
   trait AuthorizedSession extends DbTestContext {
-    lazy val login = controllers.SessionController.create() (FakeRequest().
-      withFormUrlEncodedBody(("email", "admin@overview-project.org"),
-                             ("password", "admin@overview-project.org")))
-                               
-    lazy val sessionCookie = cookies(login)("PLAY_SESSION")
+    val query = "documentSet query"
+    implicit val authorizedRequest = 
+      FakeRequest().withFormUrlEncodedBody(("query", query))
+    val controller = new TestDocumentSetController()
+    lazy val user = 
+      Schema.users.where(u => u.email === "admin@overview-project.org").head
+    lazy val documentSet = Schema.documentSets.headOption
+    lazy val documentSetCreationJob = Schema.documentSetCreationJobs.headOption
   }
+
   
   "The DocumentSet Controller" should {
     
-    "submit a DocumentSetCreationJob when a new query is received" in new AuthorizedSession {
-      val authorizedRequest = FakeRequest().withFormUrlEncodedBody(("query", "foo")).
-      	        withCookies(sessionCookie)
-
-      val result = controllers.DocumentSetController.create()(authorizedRequest)
-      val maybeDocumentSet = Schema.documentSets.headOption
-      maybeDocumentSet must beSome
-      val documentSet = maybeDocumentSet.get
-
-      val foundJob = 
-        Schema.documentSetCreationJobs.
-          where(d => d.documentSetId === documentSet.id).headOption
-
-      foundJob must beSome
-      foundJob.get.state must beEqualTo(DocumentSetCreationJob.State.NotStarted)
-      
-      controllers.DocumentSetController.delete(documentSet.id)(authorizedRequest)
+    inExample("submit a DocumentSetCreationJob when a new query is received") in new AuthorizedSession {
+      val result = controller.authorizedCreate(user)
+      documentSet must beSome
+      documentSetCreationJob must beSome
+      documentSet.get.query must be equalTo(query)
+      documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
     }
     
       
     inExample("redirect to documentsets view") in new AuthorizedSession {
-      val authorizedRequest = FakeRequest().withFormUrlEncodedBody(("query", "foo")).
-      	        withCookies(sessionCookie)
-
-      val result = controllers.DocumentSetController.create()(authorizedRequest)
-      val documentSet = Schema.documentSets.head
-      
+      val result = controller.authorizedCreate(user)
       redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
-      controllers.DocumentSetController.delete(documentSet.id)(authorizedRequest)
     }
   }
   
