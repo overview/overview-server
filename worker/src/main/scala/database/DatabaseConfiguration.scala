@@ -7,8 +7,6 @@
 
 package database
 
-import com.avaje.ebean.config.GlobalProperties
-
 /**
  * Sets up properties needed to configure the database.
  * Reads datasource.default.url in Play's format http://user:password@host/database
@@ -26,20 +24,13 @@ class DatabaseConfiguration(
   val (databaseUrl, username, password) = readSettings()
     
   def readSettings() : (String, String, String) = {
-	val databaseSetting = sys.props.get(defaultDatabaseUrlProperty)
+    val databaseSetting = sys.props.get(defaultDatabaseUrlProperty)
+        .getOrElse(throw new Error("Could not read setting " + defaultDatabaseUrlProperty))
 
-	databaseSetting match {
-      case Some(databaseInfo) => {
-        val urlPattern = """[^:]+://([^:]+):([^@]+)@([^/]+)/(.+)""".r
+    val urlPattern = """[^:]+://([^:]+):([^@]+)@([^/]+)/(.+)""".r
 
-        val urlPattern(user, password, host, database) = databaseInfo
-        ("jdbc:postgresql://"+host+"/"+database, user, password)
-      }
-      case None => {
-        (GlobalProperties.get(databaseUrlProperty, null),
-         GlobalProperties.get(usernameProperty, null),
-         GlobalProperties.get(passwordProperty, null))
-      }
-	}
+    val urlPattern(user, password, host, database) = databaseSetting
+
+    ("jdbc:postgresql://"+host+"/"+database, user, password)
   }
 }

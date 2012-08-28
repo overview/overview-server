@@ -12,6 +12,7 @@ object ApplicationBuild extends Build {
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
 
+  val appDatabaseUrl = "postgres://overview:overview@localhost/overview-dev"
   val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
 
   val appDependencies = Seq(
@@ -37,10 +38,15 @@ object ApplicationBuild extends Build {
         appDependencies ++
         Seq("play" %% "play" % "2.0.2") ++
         Seq("org.specs2" %% "specs2" % "1.11" % "test"))
-      ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")).
-        settings(
-          testOptions in Test += Tests.Setup( () =>
-          	System.setProperty("datasource.default.url", testDatabaseUrl))
+      )
+      .settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
+      )
+      .settings(
+        initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
+      )
+      .settings(
+        testOptions in Test += Tests.Setup(() =>
+        	System.setProperty("datasource.default.url", testDatabaseUrl))
       )
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
