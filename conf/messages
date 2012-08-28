@@ -1,3 +1,8 @@
+mailers.User.create.subject=Overview Project new account confirmation
+mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
+mailers.User.create.signoff=Happy analyzing,
+mailers.User.create.signature=The Overview Project developers
+
 models.DocumentSetCreationJob.JobState.Submitted=submitted
 models.DocumentSetCreationJob.JobState.InProgress=in progress
 models.DocumentSetCreationJob.JobState.Complete=complete
