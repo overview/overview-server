@@ -23,8 +23,10 @@ object UserController extends Controller with TransactionActionController {
   def new_() = Action { implicit request => Ok(views.html.User.new_(form)) }
   
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
+    implicit val r = request
+    
     form.bindFromRequest()(request).fold(
-      f => Redirect(routes.UserController.new_),
+      formWithErrors => BadRequest(views.html.User.new_(formWithErrors)),
       user => {
         User.findByEmail(user.email) match {
           case Some(_) => handleExistingUser(user)
