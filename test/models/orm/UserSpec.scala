@@ -28,7 +28,7 @@ class UserSpec extends Specification {
   
   "User" should {
     
-    inExample("Create a DocumentSet") in new UserContext {
+    "Create a DocumentSet" in new UserContext {
       Schema.users.insert(user)
       
       val documentSet = user.createDocumentSet(query)
@@ -63,7 +63,7 @@ class UserSpec extends Specification {
       savedUser must beSome.like {case u => u must be equalTo(user)}
     }
     
-    inExample("throw an exception if confirmation token is not unique") in new UserInfo {
+    "throw an exception if confirmation token is not unique" in new UserInfo {
       val token = Some("a token")
       val user1 = new User(email, hashedPassword, token)
       val user2 = new User("user2", "password".bcrypt(7), token)
@@ -71,6 +71,9 @@ class UserSpec extends Specification {
       user1.save
       user2.save must throwA[java.lang.RuntimeException]
     }
+    
+    
+    
   }
   
   step(stop)
