@@ -16,31 +16,33 @@ object UserController extends Controller with TransactionActionController {
     mapping(
       "email" -> email,
       "password" -> nonEmptyText.verifying("password.secure", { (s: String) => (new PasswordTester(s)).isSecure })
-    )((email, password) => new User(email, password))((u: User) => Some(u.email, ""))
+    )((email, password) => User.prepareNewRegistration(email, password))
+     ((u: User) => Some(u.email, ""))
   )
 
   def new_() = Action { implicit request => Ok(views.html.User.new_(form)) }
   
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
     form.bindFromRequest()(request).fold(
-      newUser => {
-        val email = newUser.data("email")
-        val password = newUser.data("password")
-        createNewUser(email, password)
-        sendConfirmationEmail(email)
-        
-        Redirect(routes.DocumentSetController.index()).
-          flashing(("success" -> "check email for confirmation link"))
-      },
+      f => Redirect(routes.UserController.new_),
       user => {
-        sendAccountExistsEmail(user.email)
-        Redirect(routes.SessionController.new_)
+        User.findByEmail(user.email) match {
+          case Some(_) => handleExistingUser(user)
+          case None => registerNewUser(user)
+        }
+        Redirect(routes.Application.index).
+          flashing("success" -> "Check your email for confirmation link")
       }
     )
   }
 
-  private def createNewUser(email: String, password: String) {
-   // User(email, password)
+  private def handleExistingUser(user: User) {
+    
+  }
+  
+  private def registerNewUser(user: User) {
+    
+   user.save
   }
   
   private def sendConfirmationEmail(email: String) {}

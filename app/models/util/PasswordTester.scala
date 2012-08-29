@@ -69,7 +69,7 @@ class PasswordTester(val password: String) {
   }
 
   def countCharacterSpace = {
-    Matchers.map((t) => if (password.matches(t._2)) t._3 else 0).reduce(_ + _)
+    Matchers.map((t) => if (password.matches(".*" + t._2 + ".*")) t._3 else 0).reduce(_ + _)
   }
 
   def numGuessesNeeded : BigInt = {
