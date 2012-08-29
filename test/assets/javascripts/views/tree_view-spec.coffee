@@ -215,7 +215,7 @@ describe 'views/tree_view', ->
         view.update()
         mouse_event('mousedown', 50, 50)
         mouse_event('mousemove', 70, 50) # delta = 20px/100px * zoom = 0.1; -0.25 + delta = -0.15
-        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.5, pan: -0.15 }])
+        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.5, pan: -0.35 }])
 
       it 'should calculate the second :zoom-pan properly, too', ->
         focus.set_zoom(0.5)
@@ -224,7 +224,7 @@ describe 'views/tree_view', ->
         mouse_event('mousedown', 50, 50)
         mouse_event('mousemove', 70, 50)
         mouse_event('mousemove', 90, 50) # delta = 40px / 100px * zoom = 0.2
-        expect(events[1][1].pan).toBeCloseTo(-0.05, 4)
+        expect(events[1][1].pan).toBeCloseTo(-0.45, 4)
 
       it 'should stop notifying :zoom-pan on mouseup', ->
         focus.set_zoom(0.5)

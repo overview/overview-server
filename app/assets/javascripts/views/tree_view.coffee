@@ -169,7 +169,7 @@ class TreeView
         dx = e.pageX - start_x
         d_pan = (dx / width) * zoom
 
-        this._notify('zoom-pan', { zoom: zoom, pan: start_pan + d_pan })
+        this._notify('zoom-pan', { zoom: zoom, pan: start_pan - d_pan })
 
       $('body').on 'mousemove.tree-view', (e) ->
         update_from_event(e)
