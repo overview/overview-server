@@ -1,11 +1,13 @@
 package models.orm
 
-import org.joda.time.DateTime
+
+import java.sql.Timestamp
+import models.orm.Dsl.{crypt,gen_hash}
+import org.joda.time.DateTime.now
 import org.squeryl.annotations.Column
 import org.squeryl.dsl.{ManyToMany, OneToMany}
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
-import models.orm.Dsl.{crypt,gen_hash}
 import ua.t3hnar.bcrypt._
 
 class User(
@@ -14,10 +16,9 @@ class User(
     @Column("password_hash")
     var passwordHash: String,
     @Column("confirmation_token")
-    var confirmationToken: Option[String] = None
-    // FIXME get DateTime mapped
-    //@Column("confirmation_sent_at")
-    //var confirmationSentAt: Option[DateTime],
+    var confirmationToken: Option[String] = None,
+    @Column("confirmation_sent_at")
+    var confirmationSentAt: Option[Timestamp] = None
     //@Column("confirmed_at")
     //var confirmedAt: Option[DateTime],
     //@Column("reset_password_token")
@@ -68,8 +69,9 @@ object User {
   
   def prepareNewRegistration(email: String, password: String) : User = {
     val confirmationToken = util.Random.alphanumeric take(TokenLength) mkString;
+    val confirmationSentAt = new Timestamp(now().getMillis())
     
-    new User(email, password.bcrypt, Some(confirmationToken))
+    new User(email, password.bcrypt, Some(confirmationToken), Some(confirmationSentAt))
   }
   
   def isConfirmed(email: String): Boolean = false

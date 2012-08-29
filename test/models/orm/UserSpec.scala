@@ -1,6 +1,8 @@
 package models.orm
 
 import helpers.DbTestContext
+import java.sql.Timestamp
+import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
 import play.api.test.FakeApplication
@@ -72,7 +74,11 @@ class UserSpec extends Specification {
       user2.save must throwA[java.lang.RuntimeException]
     }
     
-    
+    inExample("have a confirmation sent at date") in new RegistrationContext {
+      val currentTime = now().getMillis()
+      user.confirmationSentAt must beSome.like {case t => 
+        t.getTime must be closeTo(currentTime, 1000)}
+    }
     
   }
   
