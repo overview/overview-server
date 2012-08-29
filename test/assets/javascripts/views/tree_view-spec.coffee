@@ -242,7 +242,7 @@ describe 'views/tree_view', ->
         focus.set_pan(-0.25)
         view.update()
         mouse_event('mousewheel', 25, 50, { deltaY: 1 })
-        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.25, pan: -0.375 }])
+        expect(events[0]).toEqual(['zoom-pan', { zoom: 0.25, pan: -0.3125 }])
 
       it 'should select properly when zoomed and panned', ->
         focus.set_zoom(0.5)

@@ -181,6 +181,14 @@ class TreeView
         e.preventDefault()
 
   _handle_mousewheel: () ->
+    # When the user moves mouse wheel in, we divide zoom by a factor of
+    # mousewheel_zoom_factor. We adjust pan to whatever will keep the mouse
+    # cursor pointing to the same location, in absolute terms.
+    #
+    # Before zoom, absolute location is pan1 + (cursor_fraction - 0.5) * zoom1
+    # After, it's pan2 + (cursor_fraction - 0.5) * zoom2
+    #
+    # So pan2 = pan1 + (cursor_fraction - 0.5) * zoom1 - (cursor_fraction - 0.5) * zoom2
     $(@canvas).on 'mousewheel', (e) =>
       offset = $(@canvas).offset()
       x = e.pageX - offset.left
@@ -188,10 +196,14 @@ class TreeView
 
       sign = e.deltaY > 0 && 1 || -1
 
-      zoom = @focus.zoom * Math.pow(@options.mousewheel_zoom_factor, -sign)
-      pan = @focus.pan + ((x / width) - 0.5) * @focus.zoom * sign
+      zoom1 = @focus.zoom
+      zoom2 = zoom1 * Math.pow(@options.mousewheel_zoom_factor, -sign)
+      pan1 = @focus.pan
+      relative_cursor_fraction = ((x / width) - 0.5)
 
-      this._notify('zoom-pan', { zoom: zoom, pan: pan })
+      pan2 = pan1 + relative_cursor_fraction * zoom1 - relative_cursor_fraction * zoom2
+
+      this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
   _pixel_to_nodeid: (x, y) ->
     return undefined if @tree.root is undefined
