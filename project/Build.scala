@@ -24,7 +24,8 @@ object ApplicationBuild extends Build {
 
   val playAppDependencies = appDependencies ++ Seq(
     "net.sf.opencsv" % "opencsv" % "2.3",
-    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT"
+    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT",
+    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4"
   )
 
 
@@ -50,11 +51,13 @@ object ApplicationBuild extends Build {
       testOptions in Test ++= Seq(
         Tests.Argument("xonly"),
         Tests.Setup(() => System.setProperty("db.default.url", testDatabaseUrl)))
-  ).settings(
-    CucumberPlugin.cucumberSettings : _*
-  ).settings(
-    CucumberPlugin.cucumberFeaturesDir := file("test/features"),
-    CucumberPlugin.cucumberStepsBasePackage := "steps"
-  ).dependsOn(worker).aggregate(worker)
+    ).settings(
+      resolvers += "The New Motion repository" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"         
+    ).settings(
+      CucumberPlugin.cucumberSettings : _*
+    ).settings(
+      CucumberPlugin.cucumberFeaturesDir := file("test/features"),
+      CucumberPlugin.cucumberStepsBasePackage := "steps"
+    ).dependsOn(worker).aggregate(worker)
 
 }
