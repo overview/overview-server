@@ -18,12 +18,37 @@ class FocusView
   constructor: (@div, @focus, options={}) ->
     @options = _.extend({}, DEFAULT_OPTIONS, options)
     this._add_html_elements()
+    this._handle_dragging_middle()
     this._handle_dragging()
     this._handle_focus_changes()
 
   _handle_focus_changes: () ->
     @focus.observe('zoom', => this.update())
     @focus.observe('pan', => this.update())
+
+  _handle_dragging_middle: () ->
+    $(@div).on 'mousedown', '.middle', (e) =>
+      return if e.which != 1
+
+      $elem = $(e.target)
+      start_x = e.pageX
+      width = $(@div).width()
+      start_pan = @focus.pan
+
+      update_from_event = (e) =>
+        dx = e.pageX - start_x
+        d_pan = dx / width
+        pan = start_pan + d_pan
+        this._notify('zoom-pan', { zoom: @focus.zoom, pan: start_pan + d_pan })
+
+      $('body').on 'mousemove.focus-view', (e) ->
+        update_from_event(e)
+        e.preventDefault()
+
+      $('body').on 'mouseup.focus-view', (e) ->
+        update_from_event(e)
+        $('body').off('.focus-view')
+        e.preventDefault()
 
   _handle_dragging: () ->
     $handle_left = $(@div).find('.handle.left')

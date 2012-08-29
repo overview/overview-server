@@ -36,6 +36,8 @@ describe 'views/focus_view', ->
         $(div).find('.handle.left')
       else if left_or_right_or_body == 'right'
         $(div).find('.handle.right')
+      else if left_or_right_or_body == 'middle'
+        $(div).find('.middle')
       else
         $('body')
 
@@ -112,3 +114,15 @@ describe 'views/focus_view', ->
         # x1 15, x2 25
         expect(zoom).toBeCloseTo(0.1)
         expect(pan).toBeCloseTo(-0.3)
+
+      it 'should signal when the bar is dragged', ->
+        focus.zoom = 0.25 # anything
+        focus.pan = 0
+        view.update()
+        zoom = undefined
+        pan = undefined
+        view.observe('zoom-pan', (o) -> zoom = o.zoom; pan = o.pan)
+        mouse_event('middle', 'mousedown', 50, 5)
+        mouse_event('body', 'mousemove', 15, 5) # 35 pixels to the left -- 35% of the view
+        expect(zoom).toEqual(0.25) # unchanged
+        expect(pan).toEqual(-0.35)
