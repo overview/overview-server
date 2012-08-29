@@ -9,18 +9,18 @@ import ua.t3hnar.bcrypt._
 
 class UserSpec extends Specification {
   
-  trait UserInfo {
+  trait UserInfo extends DbTestContext {
 	val query = "query"
 	val email = "foo@bar.net"
 	val rawPassword = "raw password"
 	val hashedPassword = rawPassword.bcrypt(7)
   }
   
-  trait UserContext extends DbTestContext with UserInfo {
+  trait UserContext extends UserInfo {
   	val user = new User(email, hashedPassword)
   }
   
-  trait RegistrationContext extends DbTestContext with UserInfo {
+  trait RegistrationContext extends UserInfo {
     val user = User.prepareNewRegistration(email, rawPassword)  
   }
   
@@ -61,6 +61,15 @@ class UserSpec extends Specification {
       user.save
       val savedUser = User.findById(user.id)
       savedUser must beSome.like {case u => u must be equalTo(user)}
+    }
+    
+    inExample("throw an exception if confirmation token is not unique") in new UserInfo {
+      val token = Some("a token")
+      val user1 = new User(email, hashedPassword, token)
+      val user2 = new User("user2", "password".bcrypt(7), token)
+      
+      user1.save
+      user2.save must throwA[java.lang.RuntimeException]
     }
   }
   
