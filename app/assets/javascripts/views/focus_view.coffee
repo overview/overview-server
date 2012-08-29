@@ -29,6 +29,7 @@ class FocusView
   _handle_dragging_middle: () ->
     $(@div).on 'mousedown', '.middle', (e) =>
       return if e.which != 1
+      e.preventDefault()
 
       $elem = $(e.target)
       start_x = e.pageX
@@ -56,6 +57,7 @@ class FocusView
 
     $(@div).on 'mousedown', '.handle', (e) =>
       return if e.which != 1
+      e.preventDefault()
 
       $elem = $(e.target)
       left_or_right = $elem.hasClass('left') && 'left' || 'right'

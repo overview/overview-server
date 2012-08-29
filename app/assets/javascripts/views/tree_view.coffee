@@ -159,6 +159,7 @@ class TreeView
   _handle_drag: () ->
     $(@canvas).on 'mousedown', (e) =>
       return if e.which != 1
+      e.preventDefault()
 
       start_x = e.pageX
       zoom = @focus.zoom
@@ -190,6 +191,7 @@ class TreeView
     #
     # So pan2 = pan1 + (cursor_fraction - 0.5) * zoom1 - (cursor_fraction - 0.5) * zoom2
     $(@canvas).on 'mousewheel', (e) =>
+      e.preventDefault()
       offset = $(@canvas).offset()
       x = e.pageX - offset.left
       width = $(@canvas).width()
