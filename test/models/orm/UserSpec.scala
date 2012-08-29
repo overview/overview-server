@@ -6,15 +6,22 @@ import helpers.DbTestContext
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
-
+import ua.t3hnar.bcrypt._
 
 class UserSpec extends Specification {
+  
+  trait UserContext extends DbTestContext {
+	val query = "query"
+	val email = "foo@bar.net"
+	val rawPassword = "raw password"
+	val hashedPassword = "pretend hash"
+  }
   
   step(start(FakeApplication()))
   
   "User" should {
     
-    inExample("Create a DocumentSet") in new DbTestContext {
+    "Create a DocumentSet" in new DbTestContext {
       val query = "query"
       val email = "foo@bar.net"
       val password = "pencil69"
@@ -36,7 +43,7 @@ class UserSpec extends Specification {
       userId must be equalTo(user.id)
     }
     
-    inExample("Not create a DocumentSet if not inserted in database") in new DbTestContext {
+    "Not create a DocumentSet if not inserted in database" in new DbTestContext {
       val query = "query"
       val email = "foo@bar.net"
       val password = "pencil69"
@@ -44,6 +51,11 @@ class UserSpec extends Specification {
       val user = new User(email, password)
             
       user.createDocumentSet(query) must throwAn[IllegalArgumentException]
+    }
+    
+    "prepare new registration with hashed password" in new UserContext {
+      val user = User.prepareNewRegistration(email, rawPassword)
+      user.passwordHash must be equalTo(rawPassword.bcrypt(7))
     }
   }
   

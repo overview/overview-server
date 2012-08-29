@@ -58,4 +58,10 @@ object User {
       u => u.email === email and crypt(password, u.passwordHash) === u.passwordHash
     ).headOption
   }
+  
+  def prepareNewRegistration(email: String, password: String) : User = {
+    new User(email, password)
+  }
+  
+  def isConfirmed(email: String): Boolean = false
 }
