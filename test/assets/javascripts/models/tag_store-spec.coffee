@@ -17,6 +17,10 @@ describe 'models/tag_store', ->
       it 'should start empty', ->
         expect(tag_store.tags).toEqual([])
 
+      it 'should create a tag', ->
+        tag = tag_store.create_tag('foo')
+        expect(tag).toEqual({ id: -1, name: 'foo', count: 0, position: 0 })
+
       it 'should add a tag', ->
         tag1 = dummy_tag(1, 'Tag')
         tag_store.add(tag1)
@@ -84,6 +88,12 @@ describe 'models/tag_store', ->
         tag_store.observe('tag-removed', (v) -> val = v)
         tag_store.remove(tag2)
         expect(val).toEqual(tag2)
+
+      it 'should notify :tag-id-changed', ->
+        v = undefined
+        tag_store.observe('tag-id-changed', (old_id, tag) -> v = [ old_id, tag ])
+        tag_store.change(tag2, { id: 10 })
+        expect(v).toEqual([ 2, tag2 ])
 
       it 'should reposition tags in :tag-removed', ->
         tag_store.observe 'tag-removed', () ->

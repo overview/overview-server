@@ -13,8 +13,7 @@ class RemoteTagList
     @tag_store.observe('tag-changed', (v) => this._notify('tag-changed', v))
 
   create_tag: (name) ->
-    tag = { id: undefined, name: name, count: 0 }
-    @tag_store.add(tag)
+    @tag_store.create_tag(name)
 
   add_tag_to_selection: (tag, selection) ->
     documents = this._selection_to_documents(selection)
@@ -47,6 +46,8 @@ class RemoteTagList
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
 
   _after_tag_add_or_remove: (tag, obj) ->
+    old_tagid = tag.id
+
     if obj.tag?.doclist? && obj.documents?
       documents = {}
       documents[doc.id] = doc for doc in obj.documents

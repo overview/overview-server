@@ -92,3 +92,9 @@ describe 'models/document_store', ->
       store.observe('document-removed', (o) -> v = o)
       store.remove(document)
       expect(v).toBe(document)
+
+    it 'should rewrite_tag_id()', ->
+      document = { id: 1, title: 'foo', tagids: [ -1 ] }
+      store.add(document)
+      store.rewrite_tag_id(-1, 3)
+      expect(document.tagids).toEqual([3])
