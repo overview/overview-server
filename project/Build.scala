@@ -25,7 +25,8 @@ object ApplicationBuild extends Build {
   val playAppDependencies = appDependencies ++ Seq(
     "net.sf.opencsv" % "opencsv" % "2.3",
     "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT",
-    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4"
+    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
+    "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
   )
 
 
@@ -45,19 +46,21 @@ object ApplicationBuild extends Build {
       )
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
-      resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
-      templatesImport += "views.Magic._"
-    ).settings(
-      testOptions in Test ++= Seq(
-        Tests.Argument("xonly"),
-        Tests.Setup(() => System.setProperty("db.default.url", testDatabaseUrl)))
-    ).settings(
-      resolvers += "The New Motion repository" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"         
-    ).settings(
-      CucumberPlugin.cucumberSettings : _*
-    ).settings(
-      CucumberPlugin.cucumberFeaturesDir := file("test/features"),
-      CucumberPlugin.cucumberStepsBasePackage := "steps"
-    ).dependsOn(worker).aggregate(worker)
-
+    resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
+    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",         
+    templatesImport += "views.Magic._"
+  ).settings(
+    testOptions in Test ++= Seq(
+      Tests.Argument("xonly"),
+      Tests.Setup({_ =>
+        System.setProperty("db.default.url", testDatabaseUrl)
+        System.setProperty("mail.from", "sender@example.org")
+      })
+    )
+  ).settings(
+    CucumberPlugin.cucumberSettings : _*
+  ).settings(
+    CucumberPlugin.cucumberFeaturesDir := file("test/features"),
+    CucumberPlugin.cucumberStepsBasePackage := "steps"
+  ).dependsOn(worker).aggregate(worker)
 }

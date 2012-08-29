@@ -2,27 +2,27 @@ package controllers
 
 import java.sql.Connection
 import models.orm.User
+import models.util.PasswordTester
 import play.api.data.Form
-import play.api.data.Forms._
+import play.api.data.Forms.{email,nonEmptyText,mapping}
+import play.api.data.validation.Constraint
 import play.api.mvc.{Action, AnyContent, Controller, Request}
 
-object UserController extends Controller with TransactionActionController {
 
-  val loginForm = Form {
+
+
+object UserController extends Controller with TransactionActionController {
+  val form = Form(
     mapping(
       "email" -> email,
-      "password" -> text
-    )(User.prepareNewRegistration)((user: User) => Some(user.email, "")).
-    verifying("Already existing account", u => !User.isConfirmed(u.email))
-  }
-  
-  def new_ = Action { implicit request =>
-Ok("hi")
-    //	Ok(views.html.User.new_(loginForm))
-  }
+      "password" -> nonEmptyText.verifying("password.secure", { (s: String) => (new PasswordTester(s)).isSecure })
+    )((email, password) => new User(email, password))((u: User) => Some(u.email, ""))
+  )
+
+  def new_() = Action { implicit request => Ok(views.html.User.new_(form)) }
   
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
-    loginForm.bindFromRequest()(request).fold(
+    form.bindFromRequest()(request).fold(
       newUser => {
         val email = newUser.data("email")
         val password = newUser.data("password")
@@ -38,11 +38,13 @@ Ok("hi")
       }
     )
   }
-  
+
   private def createNewUser(email: String, password: String) {
    // User(email, password)
   }
   
   private def sendConfirmationEmail(email: String) {}
   private def sendAccountExistsEmail(email: String) {}
+  
 }
+

@@ -7,10 +7,15 @@ GET /login controllers.SessionController.new_()
 POST /login controllers.SessionController.create()
 GET /logout controllers.SessionController.delete()
 
+GET /confirm controllers.ConfirmationController.show(token: String ?= "")
+
+GET /register controllers.UserController.new_()
+POST /register controllers.UserController.create()
+
 GET /documentsets controllers.DocumentSetController.index()
 POST /documentsets controllers.DocumentSetController.create()
-GET /documentsets/:id.json	controllers.DocumentSetController.showJson(id: Long)
-GET /documentsets/:id	controllers.DocumentSetController.show(id: Long)
+GET /documentsets/:id.json controllers.DocumentSetController.showJson(id: Long)
+GET /documentsets/:id controllers.DocumentSetController.show(id: Long)
 POST /documentsets/:id controllers.DocumentSetController.delete(id: Long)
 DELETE /documentsets/:id controllers.DocumentSetController.delete(id: Long)
 

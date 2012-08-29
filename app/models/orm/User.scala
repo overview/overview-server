@@ -6,6 +6,7 @@ import org.squeryl.dsl.{ManyToMany, OneToMany}
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import models.orm.Dsl.{crypt,gen_hash}
+import ua.t3hnar.bcrypt._
 
 class User(
     var email: String,
@@ -53,6 +54,10 @@ class User(
 object User {
   def findById(id: Long) = Schema.users.lookup(id)
 
+  def findByEmail(email: String) : Option[User] = {
+    from(Schema.users)(u => where(u.email === email) select(u)).headOption
+  }
+
   def authenticate(email: String, password: String) : Option[User] = {
     Schema.users.where(
       u => u.email === email and crypt(password, u.passwordHash) === u.passwordHash
@@ -60,7 +65,7 @@ object User {
   }
   
   def prepareNewRegistration(email: String, password: String) : User = {
-    new User(email, password)
+    new User(email, password.bcrypt)
   }
   
   def isConfirmed(email: String): Boolean = false

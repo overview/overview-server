@@ -1,3 +1,15 @@
+mailers.User.create.subject=Overview Project new account confirmation
+mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
+mailers.User.create.signoff=Happy analyzing,
+mailers.User.create.signature=The Overview Project developers
+
+mailers.user.createErrorUserAlreadyExists.subject=Overview Project account confirmation
+mailers.user.createErrorUserAlreadyExists.intro=Somebody with this email address has tried to register to use the Overview Project. You already have an account, so your password has not changed.
+mailers.user.createErrorUserAlreadyExists.case1=If you did not recently try to register, please ignore this email.
+mailers.user.createErrorUserAlreadyExists.case2=If you did, please rack your brain to remember your password, and log in here:
+mailers.User.createErrorUserAlreadyExists.signoff=Happy analyzing,
+mailers.User.createErrorUserAlreadyExists.signature=The Overview Project developers
+
 models.DocumentSetCreationJob.JobState.Submitted=submitted
 models.DocumentSetCreationJob.JobState.InProgress=in progress
 models.DocumentSetCreationJob.JobState.Complete=complete
@@ -5,6 +17,13 @@ models.DocumentSetCreationJob.JobState.Complete=complete
 views.Confirmation.create.title=Confirmation sent
 views.Confirmation.create.h1=Confirmation sent
 views.Confirmation.create.body=An email was sent to @email. Please click on the link in that email to sign in.
+
+views.Confirmation.index.title=Enter confirmation code
+views.Confirmation.index.h1=Enter confirmation code
+views.Confirmation.index.intro=Have you received your confirmation email yet? If so, enter the token below or click the link in the email
+views.Confirmation.index.label_token=Token from email
+views.Confirmation.index.placeholder_token=1234567890qwertyuiopASDFGHJKL
+views.Confirmation.index.submit=Finish registering and log in
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
@@ -28,3 +47,15 @@ views.Session.new_.help_email=Default: admin@overview-project.org
 views.Session.new_.label_password=Password
 views.Session.new_.help_password=Default: same as username
 views.Session.new_.submit=Log in
+
+views.User.new.title=Register
+views.User.new.h1=Register
+views.User.new.label_email=Email
+views.User.new.placeholder_email=user@example.org
+views.User.new.help_email=We will send a confirmation email to this address
+views.User.new.label_password=Password
+views.User.new.help_password=Either choose eight or more lowercase and uppercase letters and digits, or write a lowercase sentence you''ll remember that others won''t guess
+views.User.new.label_password2=Password (again)
+views.User.new.help_password2=Because if you don''t remember it now, you never will
+views.User.new.submit=Register and send confirmation email
+views.User.new.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it

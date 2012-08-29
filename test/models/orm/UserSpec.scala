@@ -55,7 +55,7 @@ class UserSpec extends Specification {
     
     "prepare new registration with hashed password" in new UserContext {
       val user = User.prepareNewRegistration(email, rawPassword)
-      user.passwordHash must be equalTo(rawPassword.bcrypt(7))
+      rawPassword.isBcrypted(user.passwordHash) must beTrue
     }
   }
   
