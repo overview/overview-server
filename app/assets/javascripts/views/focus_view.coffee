@@ -1,15 +1,8 @@
 observable = require('models/observable').observable
 
 DEFAULT_OPTIONS = {
-  handle_color: '#cccccc',
-  handle_border_color: '#000000',
-  handle_border_radius: 1, #px
   handle_width: 11, #px
   handle_border_width: 1, #px
-  line_color: '#aaaaaa',
-  line_height: 1, #px
-  middle_color: '#aaddaa',
-  middle_height: 5, #px
 }
 
 class FocusView
@@ -92,9 +85,6 @@ class FocusView
     height = $div.height()
     $div.find('.line').css({
       position: 'absolute',
-      top: (height - @options.line_height) * 0.5,
-      height: @options.line_height,
-      'background-color': @options.line_color,
       left: 0,
       right: 0,
     })
@@ -102,18 +92,11 @@ class FocusView
       position: 'absolute',
       top: 0,
       bottom: 0,
-      'background-color': @options.handle_color,
-      'border-color': @options.handle_border_color,
-      'border-radius': @options.handle_border_radius,
       'border-width': @options.handle_border_width,
-      'border-style': 'solid',
       width: @options.handle_width,
     })
     $div.find('.middle').css({
       position: 'absolute',
-      top: (height - @options.middle_height) * 0.5,
-      height: @options.middle_height,
-      'background-color': @options.middle_color,
     })
     this._redraw()
 
