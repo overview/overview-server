@@ -9,12 +9,19 @@ import ua.t3hnar.bcrypt._
 
 class UserSpec extends Specification {
   
-  trait UserContext extends DbTestContext {
+  trait UserInfo {
 	val query = "query"
 	val email = "foo@bar.net"
 	val rawPassword = "raw password"
 	val hashedPassword = rawPassword.bcrypt(7)
-	val user = new User(email, hashedPassword)
+  }
+  
+  trait UserContext extends DbTestContext with UserInfo {
+  	val user = new User(email, hashedPassword)
+  }
+  
+  trait RegistrationContext extends DbTestContext with UserInfo {
+    val user = User.prepareNewRegistration(email, rawPassword)  
   }
   
   step(start(FakeApplication()))
@@ -39,9 +46,21 @@ class UserSpec extends Specification {
       user.createDocumentSet(query) must throwAn[IllegalArgumentException]
     }
     
-    "prepare new registration with hashed password" in new UserContext {
-      val newUser = User.prepareNewRegistration(email, rawPassword)
-      rawPassword.isBcrypted(newUser.passwordHash) must beTrue
+    "prepare new registration with hashed password" in new RegistrationContext {
+      rawPassword.isBcrypted(user.passwordHash) must beTrue
+    }
+    
+    inExample("have a long alphanumeric confirmation token") in new RegistrationContext {
+
+      user.confirmationToken must beSome.like { case s => 
+        s must be matching("""[a-zA-Z0-9]{26}""") 
+      }
+    } 
+    
+    inExample("save confirmation token") in new RegistrationContext {
+      user.save
+      val savedUser = User.findById(user.id)
+      savedUser must beSome.like {case u => u must be equalTo(user)}
     }
   }
   

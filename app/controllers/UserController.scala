@@ -41,7 +41,6 @@ object UserController extends Controller with TransactionActionController {
   }
   
   private def registerNewUser(user: User) {
-    
    user.save
   }
   

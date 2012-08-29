@@ -12,9 +12,9 @@ class User(
     var email: String,
     //var role: UserRole.UserRole,
     @Column("password_hash")
-    var passwordHash: String
-    //@Column("confirmation_token")
-    //var confirmationToken: Option[String],
+    var passwordHash: String,
+    @Column("confirmation_token")
+    var confirmationToken: Option[String] = None
     // FIXME get DateTime mapped
     //@Column("confirmation_sent_at")
     //var confirmationSentAt: Option[DateTime],
@@ -52,6 +52,8 @@ class User(
 }
 
 object User {
+  private val TokenLength = 26
+  
   def findById(id: Long) = Schema.users.lookup(id)
 
   def findByEmail(email: String) : Option[User] = {
@@ -65,7 +67,9 @@ object User {
   }
   
   def prepareNewRegistration(email: String, password: String) : User = {
-    new User(email, password.bcrypt)
+    val confirmationToken = util.Random.alphanumeric take(TokenLength) mkString;
+    
+    new User(email, password.bcrypt, Some(confirmationToken))
   }
   
   def isConfirmed(email: String): Boolean = false
