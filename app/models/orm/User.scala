@@ -53,6 +53,10 @@ class User(
 object User {
   def findById(id: Long) = Schema.users.lookup(id)
 
+  def findByEmail(email: String) : Option[User] = {
+    from(Schema.users)(u => where(u.email === email) select(u)).headOption
+  }
+
   def authenticate(email: String, password: String) : Option[User] = {
     Schema.users.where(
       u => u.email === email and crypt(password, u.passwordHash) === u.passwordHash
