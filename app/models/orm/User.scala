@@ -14,6 +14,7 @@ import ua.t3hnar.bcrypt._
 
 
 case class User(
+    val id: Long = 0l,
     val email: String,
     //var role: UserRole.UserRole,
     @Column("password_hash")
@@ -38,7 +39,6 @@ case class User(
     //var lastSignInIp: Option[String]
     ) extends KeyedEntity[Long] {
 
-  val id: Long = 0
   private var validCredentials = false
   
   lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] = 
@@ -78,7 +78,7 @@ object User {
     val storedUser =  Schema.users.where(u => u.email === email).headOption
     
     storedUser match {
-      case None => new User(email, rawPassword.bcrypt(BcryptRounds))
+      case None => User(email = email, passwordHash = rawPassword.bcrypt(BcryptRounds))
       case Some(u) => {
         u.validCredentials = rawPassword.isBcrypted(u.passwordHash)
         u
@@ -92,11 +92,17 @@ object User {
     from(Schema.users)(u => where(u.email === email) select(u)).headOption
   }
   
+  def findByConfirmationToken(token: String): Option[User] = {
+    Schema.users.where(u => u.confirmationToken.getOrElse("") === token).headOption
+  }
+  
   def prepareNewRegistration(email: String, password: String) : User = {
     val confirmationToken = util.Random.alphanumeric take(TokenLength) mkString;
     val confirmationSentAt = new Timestamp(now().getMillis())
     
-    new User(email, password.bcrypt(BcryptRounds), Some(confirmationToken), Some(confirmationSentAt))
+    User(email = email, passwordHash = password.bcrypt(BcryptRounds), 
+        confirmationToken = Some(confirmationToken), 
+        confirmationSentAt = Some(confirmationSentAt))
   }
   
   def isConfirmed(email: String): Boolean = false
