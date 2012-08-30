@@ -10,7 +10,9 @@ class createSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurContext extends Scope {
-    val user = new models.orm.User(email = "email@example.org", passwordHash = "hash")
+    val user = new models.orm.User(email = "email@example.org",
+    							   passwordHash = "hash",
+    							   confirmationToken = Some("token"))
     val lang = Lang("fu", "BA")
     val request = FakeRequest("POST", "https://example.org/user/create")
 
@@ -23,7 +25,7 @@ class createSpec extends Specification {
     }
 
     "include the confirmation URL" in new OurContext {
-      mailer.text.must(contain("user.confirmationToken")) // FIXME remove the quotes
+      mailer.text.must(contain(user.confirmationToken.get)) 
     }
   }
 

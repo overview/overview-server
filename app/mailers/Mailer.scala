@@ -1,6 +1,7 @@
 package mailers
 
 import com.typesafe.plugin.{use,MailerPlugin}
+import play.api.Play.{current, configuration}
 import scala.xml.Node
 
 trait Mailer {
@@ -10,7 +11,8 @@ trait Mailer {
   val recipients: Seq[String]
   val text: String
   val html: Node
-  val from: Seq[String] = Seq(sys.props.get("mail.from").getOrElse(throw new Exception("You must set the 'mail.from' property to send mail.")))
+  val from: Seq[String] = Seq(configuration.getString("mail.from").getOrElse(throw new Exception("You must set the 'mail.from' property to send mail.")))
+    
 
   private def wordWrapLine(line: String) : String = {
     if (line.length <= WrapWidth) {

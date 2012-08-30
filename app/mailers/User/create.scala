@@ -9,7 +9,7 @@ import models.orm.User
 case class create(val user: User)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.User.create")
 
-  private val url = controllers.routes.ConfirmationController.show("user.confirmationToken").absoluteURL() // FIXME remove quotes
+  private val url = controllers.routes.ConfirmationController.show(user.confirmationToken.getOrElse("")).absoluteURL() // FIXME remove quotes
   private val body = m("body")
   private val signoff = m("signoff")
   private val signature = m("signature")

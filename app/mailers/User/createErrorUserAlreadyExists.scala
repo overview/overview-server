@@ -7,7 +7,8 @@ import mailers.Mailer
 import models.orm.User
 
 case class createErrorUserAlreadyExists(val user: User)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
-  private val m = views.Magic.scopedMessages("mailers.User.create")
+  private val m = views.Magic.scopedMessages("mailers.user.createErrorUserAlreadyExists")
+  		                                    
 
   private val url = controllers.routes.SessionController.new_().absoluteURL()
   private val intro = m("intro")

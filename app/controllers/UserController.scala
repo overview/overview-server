@@ -1,6 +1,7 @@
 package controllers
 
 import java.sql.Connection
+import mailers.User.create
 import models.orm.User
 import models.util.PasswordTester
 import play.api.data.Form
@@ -38,12 +39,13 @@ object UserController extends Controller with TransactionActionController {
     )
   }
 
-  private def handleExistingUser(user: User) {
-    
+  private def handleExistingUser(user: User)(implicit request: Request[AnyContent]) {
+    mailers.User.createErrorUserAlreadyExists(user).send  
   }
   
-  private def registerNewUser(user: User) {
+  private def registerNewUser(user: User)(implicit request: Request[AnyContent]) {
    user.save
+   mailers.User.create(user).send
   }
   
   private def sendConfirmationEmail(email: String) {}
