@@ -1,15 +1,8 @@
 observable = require('models/observable').observable
 
 DEFAULT_OPTIONS = {
-  handle_color: '#cccccc',
-  handle_border_color: '#000000',
-  handle_border_radius: 1, #px
   handle_width: 11, #px
   handle_border_width: 1, #px
-  line_color: '#aaaaaa',
-  line_height: 1, #px
-  middle_color: '#aaddaa',
-  middle_height: 5, #px
 }
 
 class FocusView
@@ -18,6 +11,7 @@ class FocusView
   constructor: (@div, @focus, options={}) ->
     @options = _.extend({}, DEFAULT_OPTIONS, options)
     this._add_html_elements()
+    this._handle_dragging_middle()
     this._handle_dragging()
     this._handle_focus_changes()
 
@@ -25,12 +19,38 @@ class FocusView
     @focus.observe('zoom', => this.update())
     @focus.observe('pan', => this.update())
 
+  _handle_dragging_middle: () ->
+    $(@div).on 'mousedown', '.middle', (e) =>
+      return if e.which != 1
+      e.preventDefault()
+
+      $elem = $(e.target)
+      start_x = e.pageX
+      width = $(@div).width()
+      start_pan = @focus.pan
+
+      update_from_event = (e) =>
+        dx = e.pageX - start_x
+        d_pan = dx / width
+        pan = start_pan + d_pan
+        this._notify('zoom-pan', { zoom: @focus.zoom, pan: start_pan + d_pan })
+
+      $('body').on 'mousemove.focus-view', (e) ->
+        update_from_event(e)
+        e.preventDefault()
+
+      $('body').on 'mouseup.focus-view', (e) ->
+        update_from_event(e)
+        $('body').off('.focus-view')
+        e.preventDefault()
+
   _handle_dragging: () ->
     $handle_left = $(@div).find('.handle.left')
     $handle_right = $(@div).find('.handle.right')
 
     $(@div).on 'mousedown', '.handle', (e) =>
       return if e.which != 1
+      e.preventDefault()
 
       $elem = $(e.target)
       left_or_right = $elem.hasClass('left') && 'left' || 'right'
@@ -65,9 +85,6 @@ class FocusView
     height = $div.height()
     $div.find('.line').css({
       position: 'absolute',
-      top: (height - @options.line_height) * 0.5,
-      height: @options.line_height,
-      'background-color': @options.line_color,
       left: 0,
       right: 0,
     })
@@ -75,18 +92,11 @@ class FocusView
       position: 'absolute',
       top: 0,
       bottom: 0,
-      'background-color': @options.handle_color,
-      'border-color': @options.handle_border_color,
-      'border-radius': @options.handle_border_radius,
       'border-width': @options.handle_border_width,
-      'border-style': 'solid',
       width: @options.handle_width,
     })
     $div.find('.middle').css({
       position: 'absolute',
-      top: (height - @options.middle_height) * 0.5,
-      height: @options.middle_height,
-      'background-color': @options.middle_color,
     })
     this._redraw()
 

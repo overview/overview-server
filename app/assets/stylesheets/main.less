@@ -12,6 +12,7 @@ body.document-set-show {
   margin: 0;
   padding: 0;
   width: 100%;
+  overflow: hidden;
 
   h1 {
     position: absolute;
@@ -61,10 +62,38 @@ body.document-set-show {
     left: 0;
     right: 50%;
     top: 0;
-    height: 5%;
+    height: 15px;
+
+    .line {
+      top: 0;
+      height: 100%;
+      background: #f6f6f6;
+    }
 
     .handle {
+      top: 0;
+      bottom: 0;
+      background: #ddd;
+      border: 1px solid #bbb;
+
+      &.right {
+        cursor: e-resize;
+        border-left: none;
+      }
+      &.left {
+        cursor: w-resize;
+        border-right: none;
+      }
+    }
+
+    .middle {
+      top: 0;
+      bottom: 0;
       cursor: move;
+      background: #ddd;
+      border: 1px solid #bbb;
+      border-left: none;
+      border-right: none;
     }
   }
 
@@ -72,8 +101,8 @@ body.document-set-show {
     position: absolute;
     left: 0;
     right: 50%;
-    top: 5%;
-    height: 55%;
+    top: 15px;
+    bottom: 45%;
     border-bottom: 1px solid @color-border;
     overflow: hidden;
 

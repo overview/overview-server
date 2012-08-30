@@ -9,6 +9,9 @@ class MockTagStore
   constructor: () ->
     @tags = []
 
+  create_tag: (name) ->
+    this.add({ id: -1, name: name, count: 0 })
+
   add: (tag) ->
     @tags.push(tag)
     tag
@@ -149,15 +152,11 @@ describe 'models/remote_tag_list', ->
 
       it 'should create_tag() and return a tag', ->
         tag = remote_tag_list.create_tag('foo')
-        expect(tag).toEqual({ id: undefined, name: 'foo', count: 0 })
+        expect(tag).toEqual({ id: -1, name: 'foo', count: 0 })
 
       it 'should send nothing to the server in create_tag()', ->
         tag = remote_tag_list.create_tag('foo')
         expect(transaction_queue.callbacks.length).toEqual(0)
-
-      it 'should add to the TagStore in create_tag()', ->
-        tag = remote_tag_list.create_tag('ZZ')
-        expect(remote_tag_list.tags[2]).toEqual({ id: undefined, name: 'ZZ', count: 0 })
 
       describe 'with a partial tree and documents', ->
         beforeEach ->
@@ -245,7 +244,7 @@ describe 'models/remote_tag_list', ->
             it 'should have POSTed', ->
               expect(post).toBeDefined()
 
-            it 'should post to tag_remove with tag name', ->
+            it 'should post to tag_add with tag name', ->
               expect(post[0]).toEqual('tag_add')
               expect(post[2].path_argument).toEqual('AA')
 

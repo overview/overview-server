@@ -5,6 +5,11 @@ class TagStore
 
   constructor: () ->
     @tags = []
+    @_last_unsaved_id = 0
+
+  create_tag: (name) ->
+    id = @_last_unsaved_id -= 1
+    this.add({ id: id, name: name, count: 0 })
 
   add: (tag) ->
     throw 'tagAlreadyExists' if @tags.some((v) -> v.name == tag.name)
@@ -27,12 +32,15 @@ class TagStore
     tag
 
   change: (tag, map) ->
+    old_tagid = tag.id
+
     for k, v of map
       if !v?
         tag[k] = undefined
       else
         tag[k] = JSON.parse(JSON.stringify(v))
 
+    this._notify('tag-id-changed', old_tagid, tag) if old_tagid != tag.id
     this._notify('tag-changed', tag)
     tag
 
