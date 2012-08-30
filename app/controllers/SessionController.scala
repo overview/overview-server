@@ -12,8 +12,9 @@ object SessionController extends Controller with TransactionActionController wit
   val loginForm = Form {
     mapping(
       "email" -> email,
-      "password" -> text)(User.authenticate)(_.map(u => (u.email, "")))
-    .verifying("Invalid email or password", result => result.isDefined)
+      "password" -> text)(User.apply)(u => Some(u.email, ""))
+    .verifying("Invalid email or password", u => u.hasValidCredentials || !u.isConfirmed)
+    .verifying("User not confirmed", u => u.isConfirmed)
   }
 
   def new_ = Action { implicit request =>
@@ -34,7 +35,7 @@ object SessionController extends Controller with TransactionActionController wit
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors)),
-      user => gotoLoginSucceeded(user.getOrElse(throw new Exception("invalid code")).id)
+      user => gotoLoginSucceeded(user.id)
     )
   }
 }

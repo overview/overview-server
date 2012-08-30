@@ -26,6 +26,11 @@ class UserSpec extends Specification {
     val user = User.prepareNewRegistration(email, rawPassword)  
   }
   
+  trait AdminUser extends DbTestContext {
+    val adminUser = "admin@overview-project.org"
+    val adminPassword = "admin@overview-project.org"
+  }
+  
   step(start(FakeApplication()))
   
   "User" should {
@@ -46,6 +51,12 @@ class UserSpec extends Specification {
     
     "Not create a DocumentSet if not inserted in database" in new UserContext {
       user.createDocumentSet(query) must throwAn[IllegalArgumentException]
+    }
+
+    
+    "create user with hashed password" in new UserInfo {
+      val user = User(email, rawPassword)
+      rawPassword.isBcrypted(user.passwordHash) must beTrue
     }
     
     "prepare new registration with hashed password" in new RegistrationContext {
@@ -78,6 +89,32 @@ class UserSpec extends Specification {
       val currentTime = now().getMillis()
       user.confirmationSentAt must beSome.like {case t => 
         t.getTime must be closeTo(currentTime, 1000)}
+    }
+    
+    
+    "check valid credentials" in new AdminUser {
+      User(adminUser, adminPassword).hasValidCredentials must beTrue
+    }
+    
+    "checks wrong password" in new AdminUser {
+      User(adminUser, adminPassword + "not!").hasValidCredentials must beFalse
+    }
+    
+    "check wrong email" in new UserInfo {
+      User(email, rawPassword).hasValidCredentials must beFalse
+    }
+
+    "check registration not confirmed" in new RegistrationContext {
+      user.save
+      User(email, rawPassword).isConfirmed must beFalse
+    }
+    
+    "check confirmed registration" in new RegistrationContext {
+      val confirmedUser = user.withConfirmation
+      confirmedUser.save
+      println(confirmedUser.id)
+      User(email, rawPassword).isConfirmed must beTrue
+      User(email, rawPassword).confirmationToken must beNone
     }
     
   }
