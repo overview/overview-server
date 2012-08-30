@@ -22,7 +22,7 @@ class DocumentSetSpec extends Specification {
     inExample("create a DocumentSetCreationJob") in new DbTestContext {
       val query = "query"
 
-      val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
+      val documentSet = Schema.documentSets.insert(DocumentSet(0L, query))
 
       val job = documentSet.createDocumentSetCreationJob
       

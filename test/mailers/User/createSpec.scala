@@ -10,7 +10,7 @@ class createSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurContext extends Scope {
-    val user = new models.orm.User("email@example.org", "password-hash")
+    val user = new models.orm.User(email = "email@example.org", passwordHash = "hash")
     val lang = Lang("fu", "BA")
     val request = FakeRequest("POST", "https://example.org/user/create")
 
