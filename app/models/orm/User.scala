@@ -64,7 +64,7 @@ object User {
   def findById(id: Long) = Schema.users.lookup(id)
 
   def findByEmail(email: String) : Option[User] = {
-    from(Schema.users)(u => where(u.email === email) select(u)).headOption
+    Schema.users.where(u => lower(u.email) === lower(email)).headOption
   }
   
   def findByConfirmationToken(token: String): Option[User] = {

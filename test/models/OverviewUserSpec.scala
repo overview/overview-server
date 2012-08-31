@@ -39,6 +39,23 @@ class OverviewUserSpec  extends Specification {
         u.passwordMatches(password) must beTrue  
       }
     }
+    
+    "find user by email insensitive to case" in new ExistingUserContext {
+      OverviewUser.findByEmail(email.toUpperCase) must beSome.like {case u =>
+        u.passwordMatches(password) must beTrue  
+      }
+    }
+    
+    "find user by email insensitive to case of stored value" in new DbTestContext {
+      val email = "MixedCase@UPPERCASE.NET"
+      val password = "password"
+      val user = PotentialUser(email, password).requestConfirmation.confirm
+      user.save
+      
+      OverviewUser.findByEmail(email) must beSome.like { case u =>
+        u.email must be equalTo(email)
+      }
+    }
    
     "find user by confirmation token" in new NewRegistration {
       user.save
