@@ -25,6 +25,10 @@ trait ConfirmationRequest {
 case class PotentialUser(val email: String, val password: String) {
   private val user = OverviewUser.findByEmail(email)
   
+  def withValidEmail: Option[OverviewUser] = {
+    user  
+  }
+  
   def withValidCredentials: Option[OverviewUser] = {
     user.find(u => u.passwordMatches(password))
   }

@@ -28,7 +28,7 @@ object UserController extends Controller with TransactionActionController {
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.User.new_(formWithErrors)),
       user => {
-        OverviewUser.findByEmail(user.email) match {
+        user.withValidEmail match {
           case Some(u) => handleExistingUser(u)
           case None => registerNewUser(user)
         }
@@ -39,12 +39,10 @@ object UserController extends Controller with TransactionActionController {
   }
 
   private def handleExistingUser(user: OverviewUser)(implicit request: Request[AnyContent]) {
-    println("------")
     mailers.User.createErrorUserAlreadyExists(user).send  
   }
   
   private def registerNewUser(user: PotentialUser)(implicit request: Request[AnyContent]) {
-    println("++++")
    val registeredUser = user.requestConfirmation
    registeredUser.save
    mailers.User.create(registeredUser).send

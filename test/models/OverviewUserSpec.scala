@@ -106,6 +106,16 @@ class OverviewUserSpec  extends Specification {
       user.withValidCredentials must beNone
     }
     
+    "return an existing user without validating" in new ExistingUserContext {
+      val user = PotentialUser(email, password + "not!")
+      
+      user.withValidEmail must beSome.like { case u => u.email must be equalTo(user.email) }
+    }
+    
+    "return None if user doesn't exist" in new NewRegistration {
+      PotentialUser(email, password).withValidEmail must beNone
+    }
+    
     "get user with confirmation request" in new NewRegistration {
       user.save
       PotentialUser(email, password).withConfirmationRequest must beSome.like {case u =>
