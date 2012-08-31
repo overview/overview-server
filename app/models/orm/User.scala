@@ -39,8 +39,7 @@ case class User(
     //var lastSignInIp: Option[String]
     ) extends KeyedEntity[Long] {
 
-  private var validCredentials = false
-  
+    
   lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] = 
     Schema.documentSetUsers.right(this)
   
@@ -53,18 +52,6 @@ case class User(
     documentSet
   }
 
-  def withConfirmation: User = 
-    copy(confirmedAt = Some(new Timestamp(now().getMillis)),
-         confirmationToken = None)
-      
-  def hasValidCredentials: Boolean = {
-    validCredentials
-  }
-  
-  def isConfirmed : Boolean = {
-    confirmedAt.isDefined
-  }
-  
   def save = {
     Schema.users.insertOrUpdate(this)
   }
@@ -74,18 +61,6 @@ object User {
   private val TokenLength = 26
   private val BcryptRounds = 7
   
-  def apply(email: String, rawPassword: String) : User = {
-    val storedUser =  Schema.users.where(u => u.email === email).headOption
-    
-    storedUser match {
-      case None => User(email = email, passwordHash = rawPassword.bcrypt(BcryptRounds))
-      case Some(u) => {
-        u.validCredentials = rawPassword.isBcrypted(u.passwordHash)
-        u
-      }
-    }
-  } 
-    
   def findById(id: Long) = Schema.users.lookup(id)
 
   def findByEmail(email: String) : Option[User] = {
@@ -95,15 +70,4 @@ object User {
   def findByConfirmationToken(token: String): Option[User] = {
     Schema.users.where(u => u.confirmationToken.getOrElse("") === token).headOption
   }
-  
-  def prepareNewRegistration(email: String, password: String) : User = {
-    val confirmationToken = util.Random.alphanumeric take(TokenLength) mkString;
-    val confirmationSentAt = new Timestamp(now().getMillis())
-    
-    User(email = email, passwordHash = password.bcrypt(BcryptRounds), 
-        confirmationToken = Some(confirmationToken), 
-        confirmationSentAt = Some(confirmationSentAt))
-  }
-  
-  def isConfirmed(email: String): Boolean = false
 }

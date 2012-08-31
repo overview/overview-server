@@ -16,7 +16,7 @@ class LogEntryControllerSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurDbContext extends DbTestContext {
-    lazy val user = (User("email@example.org", "password")).save
+    lazy val user = (User(email = "email@example.org", passwordHash = "hash")).save
     lazy val documentSet1 = user.createDocumentSet("foo")
     lazy val documentSet2 = user.createDocumentSet("bar")
   }
