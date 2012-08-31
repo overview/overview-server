@@ -18,13 +18,13 @@ case class User(
     val email: String,
     //var role: UserRole.UserRole,
     @Column("password_hash")
-    val passwordHash: String,
+    var passwordHash: String,
     @Column("confirmation_token")
-    val confirmationToken: Option[String] = None,
+    var confirmationToken: Option[String] = None,
     @Column("confirmation_sent_at")
-    val confirmationSentAt: Option[Timestamp] = None,
+    var confirmationSentAt: Option[Timestamp] = None,
     @Column("confirmed_at")
-    val confirmedAt: Option[Timestamp] = None
+    var confirmedAt: Option[Timestamp] = None
     //@Column("reset_password_token")
     //var resetPasswordToken: Option[String],
     //@Column("reset_password_sent_at")

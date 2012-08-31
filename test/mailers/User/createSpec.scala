@@ -1,5 +1,6 @@
 package mailers.User
 
+import models.{ConfirmationRequest, OverviewUser}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.Play.{start,stop}
@@ -10,9 +11,18 @@ class createSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurContext extends Scope {
-    val user = new models.orm.User(email = "email@example.org",
-    							   passwordHash = "hash",
-    							   confirmationToken = Some("token"))
+    val user = new OverviewUser with ConfirmationRequest {
+      val id = 5l
+      val email = "email@example.org"
+      def passwordMatches(password: String) = true
+      def withConfirmationRequest = Some(this)
+      def save {}
+      
+      val confirmationToken = "token"
+      val confirmationSentAt = new java.sql.Timestamp(0)
+      def confirm = this
+    }
+    
     val lang = Lang("fu", "BA")
     val request = FakeRequest("POST", "https://example.org/user/create")
 
@@ -25,7 +35,7 @@ class createSpec extends Specification {
     }
 
     "include the confirmation URL" in new OurContext {
-      mailer.text.must(contain(user.confirmationToken.get)) 
+      mailer.text.must(contain(user.confirmationToken)) 
     }
   }
 

@@ -4,12 +4,12 @@ import play.api.i18n.Lang
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
-import models.orm.User
+import models.{ConfirmationRequest, OverviewUser}
 
-case class create(val user: User)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
+case class create(val user: OverviewUser with ConfirmationRequest)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.User.create")
 
-  private val url = controllers.routes.ConfirmationController.show(user.confirmationToken.getOrElse("")).absoluteURL() // FIXME remove quotes
+  private val url = controllers.routes.ConfirmationController.show(user.confirmationToken).absoluteURL() 
   private val body = m("body")
   private val signoff = m("signoff")
   private val signature = m("signature")

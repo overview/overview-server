@@ -4,9 +4,9 @@ import play.api.i18n.Lang
 import play.api.mvc.RequestHeader
 
 import mailers.Mailer
-import models.orm.User
+import models.OverviewUser
 
-case class createErrorUserAlreadyExists(val user: User)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
+case class createErrorUserAlreadyExists(val user: OverviewUser)(implicit val lang: Lang, val request: RequestHeader) extends Mailer {
   private val m = views.Magic.scopedMessages("mailers.user.createErrorUserAlreadyExists")
   		                                    
 

@@ -1,6 +1,7 @@
 package controllers
 
 import java.sql.Connection
+import models.{OverviewUser, PotentialUser}
 import play.api.mvc.{Action,AnyContent,Controller,Request}
 import play.api.data.Form
 import play.api.data.Forms._
@@ -12,9 +13,10 @@ object SessionController extends Controller with TransactionActionController wit
   val loginForm = Form {
     mapping(
       "email" -> email,
-      "password" -> text)(User.apply)(u => Some(u.email, ""))
-    .verifying("Invalid email or password", u => u.hasValidCredentials || !u.isConfirmed)
-    .verifying("User not confirmed", u => u.isConfirmed)
+      "password" -> text)(PotentialUser)(u => Some((u.email, u.password)))
+    .verifying("Invalid email or password", {u: PotentialUser => 
+               u.withValidCredentials.isDefined || u.withConfirmationRequest.isDefined})
+    .verifying("User not confirmed", u => !u.withConfirmationRequest.isDefined)
   }
 
   def new_ = Action { implicit request =>
@@ -35,7 +37,7 @@ object SessionController extends Controller with TransactionActionController wit
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors)),
-      user => gotoLoginSucceeded(user.id)
+      user => gotoLoginSucceeded(user.withValidCredentials.get.id)
     )
   }
 }

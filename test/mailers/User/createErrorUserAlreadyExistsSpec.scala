@@ -10,7 +10,15 @@ class createErrorUserAlreadyExistsSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurContext extends Scope {
-    val user = new models.orm.User(email = "email@example.org", passwordHash = "hash")
+    val user = new models.OverviewUser {
+      val id = 4l
+      val email = "email@example.org"
+      def passwordMatches(password: String) = true
+      def withConfirmationRequest = None
+      
+      def save {}
+    }
+    
     val lang = Lang("fu", "BA")
     val request = FakeRequest("POST", "https://example.org/user/create")
 

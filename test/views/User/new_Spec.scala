@@ -11,7 +11,8 @@ class new_Spec extends Specification {
     lazy val emptyForm = Form(mapping(
       "email" -> email,
       "password" -> nonEmptyText
-    )((email, password) => models.orm.User(email, password))((u: models.orm.User) => Some(u.email, "")))
+    )(models.PotentialUser)(u => Some((u.email, u.password))))
+    
     lazy val form = emptyForm
 
     lazy implicit val flash = play.api.mvc.Flash()

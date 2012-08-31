@@ -5,15 +5,13 @@ import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 
-import models.orm.{Schema, User}
+import models.{OverviewUser, ConfirmationRequest}
+
 
 object ConfirmationController extends Controller with TransactionActionController {
 
-  val form = Form{
-    mapping(
-     "token" -> text 
-    )(User.findByConfirmationToken)(u => u.get.confirmationToken)
-    .verifying("No such token", user => user.isDefined)
+  val form = Form {
+     "token" -> nonEmptyText 
   }
 
   def show(token: String) = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
@@ -21,10 +19,15 @@ object ConfirmationController extends Controller with TransactionActionControlle
     
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.Confirmation.index(formWithErrors)),
-      user => {
-        val confirmedUser = user.get.withConfirmation
-        Schema.users.update(confirmedUser)
-        Redirect(routes.Application.index())
+      token => {
+        OverviewUser.findByConfirmationToken(token) match {
+          case Some(u) => {
+            u.confirm
+            u.save
+            Redirect(routes.Application.index())
+          }
+          case None => BadRequest(views.html.Confirmation.index(form)) // FIXME: indicate error
+        }
       }
     )
   }

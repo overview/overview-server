@@ -11,9 +11,8 @@ class indexSpec extends Specification {
     lazy implicit val flash = play.api.mvc.Flash()
 
     lazy val user : Option[models.orm.User] = None
-    lazy val emptyForm = Form(mapping(
+    lazy val emptyForm = Form(
       "token" -> play.api.data.Forms.text
-      )((token) => user)((user: Option[models.orm.User]) => user.map(_.email))
     )
     lazy val form = emptyForm
 

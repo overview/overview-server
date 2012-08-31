@@ -2,7 +2,7 @@ package controllers
 
 import java.sql.Connection
 import mailers.User.create
-import models.orm.User
+import models.{OverviewUser, PotentialUser}
 import models.util.PasswordTester
 import play.api.data.Form
 import play.api.data.Forms.{email,nonEmptyText,mapping}
@@ -17,8 +17,7 @@ object UserController extends Controller with TransactionActionController {
     mapping(
       "email" -> email,
       "password" -> nonEmptyText.verifying("password.secure", { (s: String) => (new PasswordTester(s)).isSecure })
-    )((email, password) => User.prepareNewRegistration(email, password))
-     ((u: User) => Some(u.email, ""))
+    )(PotentialUser)(u => Some(u.email, u.password))
   )
 
   def new_() = Action { implicit request => Ok(views.html.User.new_(form)) }
@@ -29,8 +28,8 @@ object UserController extends Controller with TransactionActionController {
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.User.new_(formWithErrors)),
       user => {
-        User.findByEmail(user.email) match {
-          case Some(_) => handleExistingUser(user)
+        OverviewUser.findByEmail(user.email) match {
+          case Some(u) => handleExistingUser(u)
           case None => registerNewUser(user)
         }
         Redirect(routes.Application.index).
@@ -39,13 +38,16 @@ object UserController extends Controller with TransactionActionController {
     )
   }
 
-  private def handleExistingUser(user: User)(implicit request: Request[AnyContent]) {
+  private def handleExistingUser(user: OverviewUser)(implicit request: Request[AnyContent]) {
+    println("------")
     mailers.User.createErrorUserAlreadyExists(user).send  
   }
   
-  private def registerNewUser(user: User)(implicit request: Request[AnyContent]) {
-   user.save
-   mailers.User.create(user).send
+  private def registerNewUser(user: PotentialUser)(implicit request: Request[AnyContent]) {
+    println("++++")
+   val registeredUser = user.requestConfirmation
+   registeredUser.save
+   mailers.User.create(registeredUser).send
   }
   
   private def sendConfirmationEmail(email: String) {}
