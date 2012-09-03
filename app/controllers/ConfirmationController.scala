@@ -12,7 +12,7 @@ object ConfirmationController extends Controller with TransactionActionControlle
 
   val form = Form { mapping(
    "token" -> nonEmptyText 
-   )(OverviewUser.findByConfirmationToken)({u: Option[OverviewUser with ConfirmationRequest] => u.map(_.confirmationToken)})
+   )(OverviewUser.findByConfirmationToken)(_.map(_.confirmationToken))
    .verifying("Token not found", u => u.isDefined)
   }
 
