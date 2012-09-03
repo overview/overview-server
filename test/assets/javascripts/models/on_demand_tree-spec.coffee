@@ -76,13 +76,13 @@ describe 'models/on_demand_tree', ->
       beforeEach ->
         create_tree(5)
         add_nodes_through_deferred([
-          { id: 1, children: [ 2, 3 ] },
-          { id: 2, children: [ 4, 5 ] },
-          { id: 3, children: [ 6, 7 ] },
+          { id: 1, children: [ 2, 3 ], tagcounts: { "1": 20, "2": 10 }, doclist: { n: 50, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } },
+          { id: 2, children: [ 4, 5 ], tagcounts: { "1": 12, "2": 4 }, doclist: { n: 30, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } },
+          { id: 3, children: [ 6, 7 ], tagcounts: { "1": 8, "2": 6 }, doclist: { n: 20, docids: [ 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 ] } },
         ])
 
       it 'should get node objects from ids', ->
-        expect(tree.nodes[1]).toEqual({ id: 1, children: [ 2, 3 ] })
+        expect(tree.nodes[1]).toEqual({ id: 1, children: [ 2, 3 ], tagcounts: { "1": 20, "2": 10 }, doclist: { n: 50, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } })
 
       it 'should not get unresolved-node objects', ->
         expect(tree.nodes[4]).toBeUndefined()
@@ -101,6 +101,53 @@ describe 'models/on_demand_tree', ->
         deferred = tree.demand_node(4)
         deferred.resolve({ nodes: [ { id: 4, children: [ 8, 9 ] } ] })
         expect(tree.nodes[4].children).toEqual([8, 9])
+
+      describe 'remove_tag_from_node()', ->
+        it 'should not remove a tag from a node when the tag is not there', ->
+          tree.remove_tag_from_node(1, { id: 3 })
+          expect(tree.nodes[1].tagcounts[3]).toBeUndefined()
+
+        it 'should remove a tag from a node', ->
+          tree.remove_tag_from_node(3, { id: 1 })
+          expect(tree.nodes[3].tagcounts).toEqual({ "2": 6 })
+
+        it 'should remove a tag from child nodes', ->
+          tree.remove_tag_from_node(1, { id: 1 })
+          expect(tree.nodes[3].tagcounts).toEqual({ "2": 6 })
+
+        it 'should subtract a tag count from parent nodes', ->
+          tree.remove_tag_from_node(3, { id: 1 })
+          expect(tree.nodes[1].tagcounts).toEqual({ "1": 12, "2": 10 } )
+
+        it 'should return the count', ->
+          count = tree.remove_tag_from_node(3, { id: 1 })
+          expect(count).toEqual(8)
+
+        it 'should delete a tag count from a parent when it equals 0', ->
+          tree.nodes[3].tagcounts[1] = 20
+          tree.remove_tag_from_node(3, { id: 1 })
+          expect(tree.nodes[1].tagcounts).toEqual({"2": 10 })
+
+      describe 'add_tag_to_node()', ->
+        it 'should add a new tag to a node, counting the number of documents in the node', ->
+          tree.add_tag_to_node(3, { id: 3 })
+          expect(tree.nodes[3].tagcounts[3]).toEqual(20)
+
+        it 'should set the count to be equal to the doclist size', ->
+          tree.add_tag_to_node(1, { id: 1 })
+          expect(tree.nodes[1].tagcounts[1]).toEqual(50)
+
+        it 'should set children counds to be equal to their doclist sizes', ->
+          tree.add_tag_to_node(1, { id: 1 })
+          expect(tree.nodes[2].tagcounts[1]).toEqual(30)
+
+        it 'should return the count added', ->
+          count = tree.add_tag_to_node(2, { id: 1 })
+          expect(count).toEqual(18)
+
+        it 'should add to ancestor tagcounts', ->
+          tree.add_tag_to_node(2, { id: 1 })
+          expect(tree.nodes[1].tagcounts[1]).toEqual(38)
 
     describe 'with a full tree', ->
       beforeEach ->

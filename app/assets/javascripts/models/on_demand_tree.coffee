@@ -186,5 +186,60 @@ class OnDemandTree
   demand_node: (id) ->
     @resolver.get_deferred('node', id).done(this._add_json.bind(this))
 
+  get_loaded_node_children: (node) ->
+    _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
+
+  get_node_parent: (node) ->
+    parent_id = @id_tree.parent[node.id]
+    if parent_id? then @nodes[parent_id] else undefined
+
+  remove_tag_from_node: (nodeid, tag) ->
+    node = @nodes[nodeid]
+    count = node.tagcounts[tag.id]
+    this._remove_tagid_from_node_and_children(node, tag.id)
+
+    parent = this.get_node_parent(node)
+    this._add_tagcount_to_node_and_ancestors(parent, tag.id, -count) if parent?
+
+    count
+
+  _remove_tagid_from_node_and_children: (node, tagid) ->
+    tagcounts = node.tagcounts
+    delete tagcounts[tagid] if tagcounts[tagid]?
+
+    for child_node in this.get_loaded_node_children(node)
+      this._remove_tagid_from_node_and_children(child_node, tagid)
+    undefined
+
+  add_tag_to_node: (nodeid, tag) ->
+    node = @nodes[nodeid]
+
+    difference = this._add_tagid_to_node_and_children(node, tag.id)
+
+    parent = this.get_node_parent(node)
+    this._add_tagcount_to_node_and_ancestors(parent, tag.id, difference) if parent?
+
+    difference
+
+  _add_tagid_to_node_and_children: (node, tagid) ->
+    tagcounts = node.tagcounts
+    count_before = tagcounts[tagid] || 0
+    count_after = node.doclist.n
+    tagcounts[tagid] = count_after
+
+    for child_node in this.get_loaded_node_children(node)
+      this._add_tagid_to_node_and_children(child_node, tagid)
+
+    count_after - count_before
+
+  _add_tagcount_to_node_and_ancestors: (node, tagid, count) ->
+    tagcounts = node.tagcounts
+    tagcounts[tagid] ||= 0
+    tagcounts[tagid] += count
+    delete tagcounts[tagid] if tagcounts[tagid] == 0
+
+    parent = this.get_node_parent(node)
+    this._add_tagcount_to_node_and_ancestors(parent, tag.id, count) if parent?
+
 exports = require.make_export_object('models/on_demand_tree')
 exports.OnDemandTree = OnDemandTree
