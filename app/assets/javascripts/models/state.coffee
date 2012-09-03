@@ -7,12 +7,8 @@ class State
   observable(this)
 
   constructor: () ->
-    @properties = {}
-
-    for property in PROPERTIES
-      @properties[property] = undefined
-
     @selection = new Selection()
+    @last_tag_id = undefined
 
   set: (property, value) ->
     old_value = this[property]
