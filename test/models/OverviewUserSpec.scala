@@ -99,6 +99,15 @@ class OverviewUserSpec  extends Specification {
       
       user.withConfirmationRequest must beNone
     }
+    
+    "remember unconfirmed state after confirmation" in new NewRegistration {
+      val token = user.confirmationToken
+      user.save
+      
+      user.confirm
+      user.save
+      user.confirmationToken must be equalTo(token)
+    }
   }
   
   "PotentialUser" should {
