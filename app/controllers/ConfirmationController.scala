@@ -1,14 +1,16 @@
 package controllers
 
 import java.sql.Connection
+import jp.t2v.lab.play20.auth.LoginLogout
+import models.{OverviewUser, ConfirmationRequest}
 import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 
-import models.{OverviewUser, ConfirmationRequest}
 
 
-object ConfirmationController extends Controller with TransactionActionController {
+
+object ConfirmationController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
 
   val form = Form { mapping(
    "token" -> nonEmptyText 
@@ -23,7 +25,8 @@ object ConfirmationController extends Controller with TransactionActionControlle
       formWithErrors => BadRequest(views.html.Confirmation.index(formWithErrors)),
       user => {
         user.map(_.confirm.save)
-        Redirect(routes.Application.index())
+        gotoLoginSucceeded(user.get.id).flashing(
+          "success" -> "Your registration is confirmed and you have logged in")
       }
     )
   }
