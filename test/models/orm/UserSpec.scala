@@ -44,8 +44,8 @@ class UserSpec extends Specification {
 
     "throw an exception if confirmation token is not unique" in new UserContext{
       val token = Some("a token")
-      val user1 = User(0, email, hashedPassword, token)
-      val user2 = User(0, "user2", "password".bcrypt(7), token)
+      val user1 = User(email, hashedPassword, token)
+      val user2 = User("user2", "password".bcrypt(7), token)
       
       user1.save
       user2.save must throwA[java.lang.RuntimeException]
