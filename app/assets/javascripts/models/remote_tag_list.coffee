@@ -21,9 +21,13 @@ class RemoteTagList
 
     this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
-    if tag.doclist?
-      @document_store.remove_doclist(tag.doclist)
-      @tag_store.change(tag, { doclist: undefined })
+    @cache.on_demand_tree.id_tree.edit =>
+      if tag.doclist?
+        @document_store.remove_doclist(tag.doclist)
+        @tag_store.change(tag, { doclist: undefined })
+
+      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+        @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
     @transaction_queue.queue =>
@@ -36,9 +40,13 @@ class RemoteTagList
 
     this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
-    if tag.doclist?
-      @document_store.remove_doclist(tag.doclist)
-      @tag_store.change(tag, { doclist: undefined })
+    @cache.on_demand_tree.id_tree.edit =>
+      if tag.doclist?
+        @document_store.remove_doclist(tag.doclist)
+        @tag_store.change(tag, { doclist: undefined })
+
+      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+        @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
     @transaction_queue.queue =>

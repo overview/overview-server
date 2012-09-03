@@ -73,6 +73,11 @@ class MockOnDemandTree
   constructor: () ->
     @id_tree = { root: -1, children: {}, parent: {} }
     @nodes = {}
+    @id_tree = { edit: (cb) -> cb.apply({}) }
+
+  add_tag_to_node: () ->
+
+  remove_tag_from_node: () ->
 
 class MockServer
   constructor: () ->
@@ -164,11 +169,11 @@ describe 'models/remote_tag_list', ->
           on_demand_tree.id_tree.children = { 1: [2, 3], 2: [4, 5], 3: [6, 7], 4: [8], 5: [9] }
           on_demand_tree.id_tree.parent = { 2: 1, 3: 1, 4: 2, 5: 2, 6: 3, 7: 3, 8: 4, 9: 5 }
           on_demand_tree.nodes = {
-            1: { id: 1, doclist: { n: 15, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-15
-            2: { id: 2, doclist: { n: 13, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-13
-            3: { id: 3, doclist: { n: 2, docids: [ 14, 15 ] } },                         # 14-15
-            4: { id: 4, doclist: { n: 12, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-12
-            5: { id: 5, doclist: { n: 1, docids: [ 13 ] } },                             # 13
+            1: { id: 1, tagcounts: { "1": 6, "2": 7 }, doclist: { n: 15, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-15
+            2: { id: 2, tagcounts: { "1": 5, "2": 6 }, doclist: { n: 13, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-13
+            3: { id: 3, tagcounts: { "1": 1, "2": 1 }, doclist: { n: 2, docids: [ 14, 15 ] } },                         # 14-15
+            4: { id: 4, tagcounts: { "1": 5, "2": 5 }, doclist: { n: 12, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-12
+            5: { id: 5, tagcounts: { "2": 1 }, doclist: { n: 1, docids: [ 13 ] } },                                     # 13
           }
           document_store.documents = {
             1: { id: 1, title: "doc1", tagids: [ 1 ] },
@@ -205,6 +210,7 @@ describe 'models/remote_tag_list', ->
             tag = remote_tag_list.tags[0]
             selection.nodes = [2]
             spyOn(selection, 'documents_from_cache').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
+            spyOn(on_demand_tree, 'add_tag_to_node')
             remote_tag_list.add_tag_to_selection(tag, selection)
 
           it 'should apply the tag to documents in that node\'s doclist', ->
@@ -215,6 +221,9 @@ describe 'models/remote_tag_list', ->
 
           it 'should apply the tag to documents in that node\'s children\'s doclists', ->
             expect(document_store.documents[13].tagids).toContain(1)
+
+          it 'should add the tagcount to the node', ->
+            expect(on_demand_tree.add_tag_to_node).toHaveBeenCalledWith(2, tag_store.tags[0])
 
           it 'should not apply the tag to other documents', ->
             expect(document_store.documents[15].tagids).not.toContain(1)
@@ -296,6 +305,7 @@ describe 'models/remote_tag_list', ->
             tag = remote_tag_list.tags[1]
             selection.nodes = [2]
             spyOn(selection, 'documents_from_cache').andReturn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13].map((id) -> document_store.documents[id]))
+            spyOn(on_demand_tree, 'remove_tag_from_node')
             remote_tag_list.remove_tag_from_selection(tag, selection)
 
           it 'should remove the tag from documents in that node\'s doclist', ->
@@ -318,6 +328,9 @@ describe 'models/remote_tag_list', ->
 
           it 'should unset the tag\'s doclist', ->
             expect(tag_store.tags[1].doclist).toBeUndefined()
+
+          it 'should remove the tagcount from the node', ->
+            expect(on_demand_tree.remove_tag_from_node).toHaveBeenCalledWith(2, tag_store.tags[1])
 
           it 'should queue a server call', ->
             expect(transaction_queue.callbacks.length).toEqual(1)
