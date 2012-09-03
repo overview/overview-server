@@ -10,8 +10,10 @@ import models.{OverviewUser, ConfirmationRequest}
 
 object ConfirmationController extends Controller with TransactionActionController {
 
-  val form = Form {
-     "token" -> nonEmptyText 
+  val form = Form { mapping(
+   "token" -> nonEmptyText 
+   )(OverviewUser.findByConfirmationToken)({u: Option[OverviewUser with ConfirmationRequest] => u.map(_.confirmationToken)})
+   .verifying("Token not found", u => u.isDefined)
   }
 
   def show(token: String) = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
@@ -19,15 +21,9 @@ object ConfirmationController extends Controller with TransactionActionControlle
     
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.Confirmation.index(formWithErrors)),
-      token => {
-        OverviewUser.findByConfirmationToken(token) match {
-          case Some(u) => {
-            u.confirm
-            u.save
-            Redirect(routes.Application.index())
-          }
-          case None => BadRequest(views.html.Confirmation.index(form)) // FIXME: indicate error
-        }
+      user => {
+        user.map(_.confirm.save)
+        Redirect(routes.Application.index())
       }
     )
   }
