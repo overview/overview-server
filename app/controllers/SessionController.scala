@@ -14,9 +14,9 @@ object SessionController extends Controller with TransactionActionController wit
     mapping(
       "email" -> email,
       "password" -> text)(PotentialUser)(u => Some((u.email, u.password)))
-    .verifying("Invalid email or password", {u: PotentialUser => 
-               u.withValidCredentials.isDefined || u.withConfirmationRequest.isDefined})
-    .verifying("User not confirmed", u => !u.withConfirmationRequest.isDefined)
+    .verifying("Invalid email or password", u => u.withValidCredentials.isDefined)
+    .verifying("User not confirmed", u => 
+      !(u.withConfirmationRequest.isDefined && u.withValidCredentials.isDefined))
   }
 
   def new_ = Action { implicit request =>
