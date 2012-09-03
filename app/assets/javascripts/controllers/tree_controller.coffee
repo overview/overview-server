@@ -20,6 +20,9 @@ tree_controller = (div, on_demand_tree, focus, state) ->
   start_update_interval = () ->
     interval = window.setInterval(maybe_update, 20)
 
+  # XXX maybe move the focus tag into AnimatedTree?
+  state.observe('focused_tag-changed', -> on_demand_tree.id_tree.edit(->))
+
   view.observe('needs-update', start_update_interval)
 
   view.observe 'click', (nodeid) ->

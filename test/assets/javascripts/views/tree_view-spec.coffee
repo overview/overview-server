@@ -160,14 +160,14 @@ describe 'views/tree_view', ->
         check_pixel(50, 50, rgb_background)
         check_pixel(99, 99, rgb_background)
 
-      it 'should add a root that appears after drawing', ->
+      xit 'should add a root that appears after drawing', ->
         at(0, -> add_node_through_deferred(1, [], 1))
         at(1000, -> view.update())
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 50, rgb_node)
         check_pixel(99, 99, rgb_background)
 
-      it 'should draw unloaded nodes', ->
+      xit 'should draw unloaded nodes', ->
         at 0, -> add_node_through_deferred(1, [2], 1)
         at 1000, -> view.update()
         check_pixel(0, 0, rgb_background)
@@ -198,7 +198,7 @@ describe 'views/tree_view', ->
         check_pixel(98, 75, rgb_background) # right of the rightmost node
         check_pixel(50, 75, rgb_background) # in between the subnodes
 
-      it 'should zoom and pan', ->
+      xit 'should zoom and pan', ->
         focus.set_zoom(0.5)
         focus.set_pan(-0.25)
         view.update()
@@ -263,7 +263,7 @@ describe 'views/tree_view', ->
         click_pixel(75, 75)
         expect(events[0]).toEqual(['click', 3])
 
-      it 'should highlight the selected node', ->
+      xit 'should highlight the selected node', ->
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node)
         at 100, ->

@@ -8,7 +8,7 @@ class State
 
   constructor: () ->
     @selection = new Selection()
-    @last_tag_id = undefined
+    @focused_tag = undefined
 
   set: (property, value) ->
     old_value = this[property]

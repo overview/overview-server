@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
   color: {
@@ -7,10 +8,13 @@ DEFAULT_OPTIONS = {
     node_unloaded: '#ddddff',
     node_selected: '#bbbbbb',
     line: '#888888',
+    line_selected: '#000000',
+    line_loaded: '#333333',
+    line_unloaded: '#999999',
   },
   connector_line_width: 1, # px
-  node_line_width: 1.5, # px
-  node_line_width_selected: 3, # px
+  node_line_width: 2, # px
+  node_line_width_selected: 4, # px
   node_line_width_unloaded: 1, # px
   leaf_width: 3, # relative units
   leaf_horizontal_padding: 1, # on each side
@@ -21,8 +25,14 @@ DEFAULT_OPTIONS = {
 }
 
 class DrawOperation
-  constructor: (@canvas, @options) ->
+  constructor: (@canvas, tag, @options) ->
     @ctx = @canvas.getContext('2d')
+    if tag?
+      @tag = {
+        id: tag.id,
+        color: new ColorTable().get(tag.name)
+      }
+
     $canvas = $(@canvas)
 
     @ctx.lineStyle = @options.color.line
@@ -60,13 +70,20 @@ class DrawOperation
       @options.color.node_unloaded
 
   _node_to_line_width: (node) ->
-    # FIXME interpolate widths
     if node.selected
       @options.node_line_width_selected
     else if node.loaded
       @options.node_line_width
     else
       @options.node_line_width_unloaded
+
+  _node_to_line_color: (node) ->
+    if node.selected
+      @options.color.line_selected
+    else if node.loaded
+      @options.color.line_loaded
+    else
+      @options.color.line_unloaded
 
   _node_to_connector_line_width: (node) ->
     @options.connector_line_width * node.loaded_animation_fraction.current
@@ -82,10 +99,32 @@ class DrawOperation
     height = @options.node_height * @spxy
     padding_y = @options.node_vertical_padding * @spxy
 
-    ctx.lineWidth = this._node_to_line_width(node)
-    ctx.fillStyle = this._node_to_color(node)
+    if @tag?
+      tagcount = node.tagcounts?[@tag.id]
+      if tagcount
+        doccount = node.num_documents.current
+        slant_offset = height / 2
+        tagwidth = 1.0 * (width + slant_offset) * tagcount / doccount # works with animation
 
-    ctx.fillRect(left + padding_x, top + padding_y, width, height)
+        ctx.save()
+
+        ctx.beginPath()
+        ctx.rect(left + padding_x, top + padding_y, width, height)
+        ctx.clip()
+
+        ctx.fillStyle = @tag.color
+
+        ctx.beginPath()
+        ctx.moveTo(left + padding_x, top + padding_y)
+        ctx.lineTo(left + padding_x + tagwidth + slant_offset, top + padding_y)
+        ctx.lineTo(left + padding_x + tagwidth - slant_offset, top + padding_y + height)
+        ctx.lineTo(left + padding_x, top + padding_y + height)
+        ctx.fill()
+
+        ctx.restore()
+
+    ctx.lineWidth = this._node_to_line_width(node)
+    ctx.strokeStyle = this._node_to_line_color(node)
     ctx.strokeRect(left + padding_x, top + padding_y, width, height)
 
     middle_x = left + padding_x + width * 0.5
@@ -269,7 +308,7 @@ class TreeView
   #  ctx.stroke()
 
   _redraw: () ->
-    op = new DrawOperation(@canvas, @options)
+    op = new DrawOperation(@canvas, @tree.state.focused_tag, @options)
     op.clear()
 
     return if @tree.root is undefined

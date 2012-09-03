@@ -211,8 +211,8 @@ describe 'models/id_tree', ->
           root: undefined,
         })
 
-      it 'should not notify :edit if nothing has changed', ->
+      it 'should notify :edit even if nothing has changed', ->
         called = false
         id_tree.observe('edit', () -> called = true)
         id_tree.edit(->)
-        expect(called).toBeFalsy()
+        expect(called).toBeTruthy()

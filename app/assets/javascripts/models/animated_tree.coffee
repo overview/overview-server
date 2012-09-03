@@ -35,11 +35,15 @@ class AnimatedTree
     @animated_height = { current: 0 }
     @_nodes = {} # id => node
     @_last_selected_nodes = @state.selection.nodes
+    @_needs_update = false
 
     this._attach()
 
-  needs_update: () -> @animator.needs_update()
-  update: () -> @animator.update()
+  set_needs_update: () -> this._maybe_notifying_needs_update(->)
+  needs_update: () -> @_needs_update || @animator.needs_update()
+  update: () ->
+    @_needs_update = false
+    @animator.update()
 
   _attach: () ->
     @id_tree.observe 'edit', (changes) =>
@@ -104,6 +108,8 @@ class AnimatedTree
 
   _change: (changes) ->
     this._maybe_notifying_needs_update ->
+      @_needs_update = true
+
       time = Date.now()
 
       this._animate_remove_undefined_node(id, time) for id in changes.remove_undefined
@@ -120,6 +126,7 @@ class AnimatedTree
 
     real_node = @on_demand_tree.nodes[id]
     node.loaded = true
+    node.tagcounts = real_node.tagcounts
     @animator.animate_object_properties(node, {
       loaded_animation_fraction: 1,
     }, undefined, time)
@@ -178,6 +185,7 @@ class AnimatedTree
 
   _animate_unload_node: (id, time) ->
     node = @_nodes[id]
+    node.tagcounts = undefined
     node.loaded = false
     @animator.animate_object_properties(node, { loaded_animation_fraction: 0 }, =>
       delete @_nodes[child.id] for child in node.children
@@ -195,6 +203,7 @@ class AnimatedTree
       selected: selected,
       selected_animation_fraction: { current: selected && 1 || 0 },
       num_documents: { current: n?.doclist?.n },
+      tagcounts: n?.tagcounts
       children: [],
     }
 
