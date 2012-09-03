@@ -100,3 +100,9 @@ describe 'views/tag_list_view', ->
         view.observe('add-clicked', (v) -> val = v)
         $form.submit()
         expect(val).toEqual(tag1)
+
+      it 'should notify :tag-clicked when clicking a tag', ->
+        val = undefined
+        view.observe('tag-clicked', (v) -> val = v)
+        $('a.tag-name:eq(0)', div).click()
+        expect(val).toBe(tag1)

@@ -22,6 +22,12 @@ class TagListView
 
     notify = this._notify.bind(this)
 
+    $ul.on 'click', 'a.tag-name', (e) ->
+      e.preventDefault()
+      $li = $(this).closest('li')
+      tag = $li.data(TAG_KEY)
+      notify('tag-clicked', tag)
+
     $ul.on 'click', 'a.tag-add', (e) ->
       e.preventDefault()
       $li = $(this).closest('li')
