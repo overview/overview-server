@@ -37,7 +37,7 @@ object SessionController extends Controller with TransactionActionController wit
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors)),
-      user => gotoLoginSucceeded(user.withValidEmail.get.id)
+      user => gotoLoginSucceeded(user.withRegisteredEmail.get.id)
     )
   }
 }
