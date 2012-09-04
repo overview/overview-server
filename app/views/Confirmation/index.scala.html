@@ -1,5 +1,5 @@
 @(
-  form: play.api.data.Form[Option[OverviewUser with ConfirmationRequest]]
+  form: play.api.data.Form[OverviewUser with ConfirmationRequest]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Confirmation.index")) { m =>
