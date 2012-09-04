@@ -14,7 +14,7 @@ class indexSpec extends Specification {
     lazy val user : Option[models.orm.User] = None
     lazy val emptyForm = Form(mapping(
       "token" -> play.api.data.Forms.text
-      )(OverviewUser.findByConfirmationToken)({u:Option[OverviewUser with ConfirmationRequest] => u.map(_.confirmationToken)})
+      )(OverviewUser.findByConfirmationToken(_).getOrElse(throw new Exception("user already confirmed")))(u => Some(u.confirmationToken))
     )
     lazy val form = emptyForm
 
@@ -29,3 +29,4 @@ class indexSpec extends Specification {
     }
   }
 }
+

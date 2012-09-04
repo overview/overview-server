@@ -13,9 +13,9 @@ import play.api.mvc.{Action,AnyContent, Controller, Request}
 object ConfirmationController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
 
   val form = Form { mapping(
-   "token" -> nonEmptyText 
-   )(OverviewUser.findByConfirmationToken)(_.map(_.confirmationToken))
-   .verifying("Token not found", u => u.isDefined)
+   "token" -> text.verifying(OverviewUser.findByConfirmationToken(_).isDefined)
+   )(OverviewUser.findByConfirmationToken(_).
+     getOrElse(throw new Exception("User already confirmed")))(u => Some(u.confirmationToken))
   }
 
   def show(token: String) = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
@@ -23,11 +23,11 @@ object ConfirmationController extends Controller with TransactionActionControlle
     
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.Confirmation.index(formWithErrors)),
-      user => {
-        user.map(_.confirm.save)
-        gotoLoginSucceeded(user.get.id).flashing(
-          "success" -> "Your registration is confirmed and you have logged in")
+      u => {
+        u.confirm.save
+        gotoLoginSucceeded(u.id).flashing("success" -> "Your registration is confirmed and you have logged in")
       }
     )
   }
 }
+
