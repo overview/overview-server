@@ -3,6 +3,7 @@ package steps
 import anorm._
 
 import controllers.routes
+import helpers.DbSetup
 
 import cucumber.runtime.{EN, ScalaDsl, PendingException}
 import org.specs2.matcher.MustMatchers
@@ -51,7 +52,7 @@ object DocumentSetShowSteps {
   def createBasicDocumentSet() : Long = {
     Framework.db { implicit connection =>
       SQL("TRUNCATE TABLE document_set CASCADE").execute()
-      val documentSetId = SQL("INSERT INTO document_set (query) VALUES ('basic')").executeInsert()
+      val documentSetId = DbSetup.insertDocumentSet("basic")
       val nodeSql = SQL("INSERT INTO node (document_set_id, description, parent_id) VALUES ({document_set_id}, {description}, {parent_id})")
       val node1Id = nodeSql.on('document_set_id -> documentSetId, 'description -> "node 1", 'parent_id -> None).executeInsert()
       val node2Id = nodeSql.on('document_set_id -> documentSetId, 'description -> "node 2", 'parent_id -> node1Id).executeInsert()
@@ -67,7 +68,7 @@ object DocumentSetShowSteps {
       tieNodeToDocumentSql.on('node_id -> node2Id, 'document_id -> document1Id).execute()
       tieNodeToDocumentSql.on('node_id -> node3Id, 'document_id -> document2Id).execute()
       tieNodeToDocumentSql.on('node_id -> node3Id, 'document_id -> document3Id).execute()
-      documentSetId.getOrElse(throw new Exception("invalid document set ID"))
+      documentSetId
     }
   }
 }

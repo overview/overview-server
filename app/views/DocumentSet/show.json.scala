@@ -14,7 +14,7 @@ object show {
   private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
     Map(
       "state" -> toJson(m("job_state." + job.state.toString)),
-      "percent_complete" -> toJson(math.round(job.fraction_complete * 100)),
+      "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
       "state_description" -> toJson(job.stateDescription)
     )
   }

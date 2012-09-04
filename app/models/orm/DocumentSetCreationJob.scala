@@ -5,12 +5,12 @@ import org.squeryl.KeyedEntity
 import org.squeryl.dsl.ManyToOne
 
 case class DocumentSetCreationJob(
-    @Column("document_set_id")
-    val documentSetId: Long = 0,
+    @Column("document_set_id") val documentSetId: Long = 0,
+    @Column("documentcloud_username") val username: Option[String] = None,
+    @Column("documentcloud_password") val password: Option[String] = None,
     val state: DocumentSetCreationJob.State = DocumentSetCreationJob.State.NotStarted,
-    val fraction_complete: Double = 0.0,
-    @Column("status_description")
-    val stateDescription: String = ""
+    @Column("fraction_complete") val fractionComplete: Double = 0.0,
+    @Column("status_description") val stateDescription: String = ""
    ) extends KeyedEntity[Long] {
   override val id: Long = 0
 

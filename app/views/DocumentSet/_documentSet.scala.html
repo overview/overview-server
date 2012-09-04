@@ -8,12 +8,13 @@
       <input type="hidden" name="X-HTTP-Method-Override" value="DELETE" />
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
-    <h2><a class="query" href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.query</a></h2>
+    <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
+    <h3>Query: <span class="query">@documentSet.query</span></h3>
     <p class="status">
     @documentSet.documentSetCreationJob.map { job =>
       <label>
         <span class="state">@m("job_state." + job.state.toString())</span>
-        <progress min="0" max="100" value="@scala.math.round(job.fraction_complete * 100)" />
+        <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
       </label>
       <!-- FIXME make i18n-friendly --><span class="state-description">@job.stateDescription</span>
     }.getOrElse {

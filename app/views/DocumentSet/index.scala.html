@@ -1,6 +1,6 @@
 @(
   documentSets: Seq[models.orm.DocumentSet],
-  form: Form[String]
+  form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
 @import views.html.helper.EnumToString
@@ -15,13 +15,41 @@
       <p class="no-document-sets">@m("no_document_sets")</p>
     }
 
-    <div class="well">
-      <h2>@m("create")</h2>
+    <form method="post" action="@routes.DocumentSetController.create" class="well form-horizontal">
+      <h2>@m("manual_create_h2")</h2>
 
-      <form method="post" action="@routes.DocumentSetController.create" class="form-inline"
-        >@defining(form("query")) { field =><input type="text" name="@field.name" id="@field.id" value="@field.value"
-        />}<input type="submit" class="btn" value="@m("create_submit")"
-        /></form>
-    </div>
+      @if(form.hasGlobalErrors) {
+        <div class="control-group error">
+          <ul class="unstyled controls">
+            @form.globalErrors.map { error =>
+              <li class="help-block error">@t(error.message, error.args: _*)</li>
+            }
+          </ul>
+        </div>
+      }
+
+      @for(fieldName <- Seq("title", "query")) {
+        @form.forField(fieldName) { field =>
+          <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
+            <label class="control-label" for="document-set-@field.name">@m(field.name + "_label")</label>
+            <div class="controls">
+              <input id="document-set-@field.name" name="@field.name" type="text" class="input-large" required="required" placeholder="@m(field.name + "_placeholder")" />
+              @defining(m(field.name + "_help")) { inlineHelp =>
+                @if(!".".equals(inlineHelp)) {
+                  <span class="help-inline">@inlineHelp</span>
+                }
+              }
+              @field.errors.map { error =>
+                <span class="help-inline">@t(error.message, error.args: _*)</span>
+              }
+            </div>
+          </fieldset>
+        }
+      }
+
+      <fieldset class="form-actions">
+        <input type="submit" class="btn btn-primary" value="@m("manual_create_submit")" />
+      </fieldset>
+    </form>
   }
 }

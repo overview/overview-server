@@ -15,6 +15,7 @@ import scala.annotation.target.field
 
 case class DocumentSet(
     val id: Long = 0,
+    val title: String = "",
     val query: String = "",
     @(Transient @field)
     val providedDocumentCount: Option[Long] = None,
@@ -36,9 +37,9 @@ case class DocumentSet(
    *
    * Should only be called after the document set has been inserted into the database.
    */
-  def createDocumentSetCreationJob(): DocumentSetCreationJob = {
+  def createDocumentSetCreationJob(username: Option[String]=None, password: Option[String]=None): DocumentSetCreationJob = {
     require(id != 0l)
-    val documentSetCreationJob = new DocumentSetCreationJob(id)
+    val documentSetCreationJob = new DocumentSetCreationJob(id, username=username, password=password)
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
   }
 
@@ -50,6 +51,12 @@ case class DocumentSet(
     providedDocumentCount.getOrElse(
       from(Schema.documents)(d => where(d.documentSetId === this.id) compute(count)).single.measures
     )
+  }
+
+  def save(): DocumentSet = {
+    require(id == 0L)
+
+    Schema.documentSets.insertOrUpdate(this)
   }
 }
 

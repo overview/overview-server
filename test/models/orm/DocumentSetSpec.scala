@@ -21,10 +21,11 @@ class DocumentSetSpec extends Specification {
     // Need inExample because Squeryl messes up implicit conversion
     inExample("create a DocumentSetCreationJob") in new DbTestContext {
       val query = "query"
+      val title = "title"
 
-      val documentSet = Schema.documentSets.insert(DocumentSet(0L, query))
+      val documentSet = Schema.documentSets.insert(DocumentSet(0L, title, query))
 
-      val job = documentSet.createDocumentSetCreationJob
+      val job = documentSet.createDocumentSetCreationJob()
       
       job.documentSet.head must be equalTo(documentSet)
 
@@ -34,10 +35,10 @@ class DocumentSetSpec extends Specification {
       returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(Some(returnedJob))
     }
     
-    inExample("throw exception if job creation is attempted before db insertion") in 
-    	new DbTestContext {
+    inExample("throw exception if job creation is attempted before db insertion") in new DbTestContext {
       val query = "query"
-      val documentSet = new DocumentSet(0L, query)
+      val title = "title"
+      val documentSet = new DocumentSet(0L, title, query)
       
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
