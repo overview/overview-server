@@ -28,7 +28,7 @@ object UserController extends Controller with TransactionActionController {
     form.bindFromRequest()(request).fold(
       formWithErrors => BadRequest(views.html.User.new_(formWithErrors)),
       user => {
-        user.withValidEmail match {
+        user.withRegisteredEmail match {
           case Some(u) => handleExistingUser(u)
           case None => registerNewUser(user)
         }

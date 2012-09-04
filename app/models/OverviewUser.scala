@@ -48,7 +48,7 @@ case class PotentialUser(val email: String, val password: String) {
   /**
    * @return OverviewUser if exists, without checking password
    */
-  def withValidEmail: Option[OverviewUser] = {
+  def withRegisteredEmail: Option[OverviewUser] = {
     user  
   }
   

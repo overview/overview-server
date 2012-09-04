@@ -135,11 +135,11 @@ class OverviewUserSpec  extends Specification {
     "return an existing user without validating" in new ExistingUserContext {
       val user = PotentialUser(email, password + "not!")
       
-      user.withValidEmail must beSome.like { case u => u.email must be equalTo(user.email) }
+      user.withRegisteredEmail must beSome.like { case u => u.email must be equalTo(user.email) }
     }
     
     "return None if user doesn't exist" in new NewRegistration {
-      PotentialUser(email, password).withValidEmail must beNone
+      PotentialUser(email, password).withRegisteredEmail must beNone
     }
     
     "get user with confirmation request" in new NewRegistration {
