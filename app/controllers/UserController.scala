@@ -32,7 +32,7 @@ object UserController extends Controller with TransactionActionController {
           case Some(u) => handleExistingUser(u)
           case None => registerNewUser(user)
         }
-        Redirect(routes.Application.index).
+        Redirect(routes.ConfirmationController.show("")).
           flashing("success" -> "Check your email for confirmation link")
       }
     )
