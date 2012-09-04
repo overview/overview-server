@@ -24,11 +24,18 @@ $ ->
       $error_p.remove()
       $confirm.closest('fieldset').removeClass('error')
 
-    confirmation_matches = () -> $confirm.val() == $password.val()
+    confirmation_matches = () ->
+      !$confirm.val() || !$password.val() || $confirm.val() == $password.val()
+
     refresh = () -> if confirmation_matches() then set_ok() else set_not_ok()
     refresh_if_not_ok = () -> refresh() if !is_ok
 
-    $confirm.add($password).on('change', refresh)
+    $fields = $confirm.add($password)
+    $fields.on('change', refresh)
+    $fields.on('keyup', refresh)
+    $fields.on('paste', refresh)
+    $fields.on('cut', refresh)
+
     $form.on 'submit', (e) ->
       refresh()
-      e.preventDefault() if !is_ok
+      e.preventDefault() if !is_ok || !$confirm.val() || !$password.val()
