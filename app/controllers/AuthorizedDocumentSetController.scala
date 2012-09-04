@@ -44,13 +44,13 @@ trait AuthorizedDocumentSetController {
         val saved = documentSet.save()
         saved.users.associate(user)
         saved.createDocumentSetCreationJob(username=credentials.username, password=credentials.password)
-        Redirect(routes.DocumentSetController.index())
+        Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.create.success")
       }
     )
   }
 
   def authorizedDelete(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     DocumentSet.delete(id)
-    Redirect(routes.DocumentSetController.index()).flashing("success" -> "FIXME translate")
+    Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.delete.success")
   }
 }
