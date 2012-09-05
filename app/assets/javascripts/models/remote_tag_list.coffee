@@ -3,7 +3,7 @@ observable = require('models/observable').observable
 class RemoteTagList
   observable(this)
 
-  constructor: (@cache, @transaction_queue, @server) ->
+  constructor: (@cache) ->
     @tag_store = @cache.tag_store
     @document_store = @cache.document_store
     @tags = @tag_store.tags
@@ -30,8 +30,8 @@ class RemoteTagList
         @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
-    @transaction_queue.queue =>
-      deferred = @server.post('tag_add', selection_post_data, { path_argument: tag.name })
+    @cache.transaction_queue.queue =>
+      deferred = @cache.server.post('tag_add', selection_post_data, { path_argument: tag.name })
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
 
   remove_tag_from_selection: (tag, selection) ->
@@ -49,8 +49,8 @@ class RemoteTagList
         @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
-    @transaction_queue.queue =>
-      deferred = @server.post('tag_remove', selection_post_data, { path_argument: tag.name })
+    @cache.transaction_queue.queue =>
+      deferred = @cache.server.post('tag_remove', selection_post_data, { path_argument: tag.name })
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
 
   _after_tag_add_or_remove: (tag, obj) ->

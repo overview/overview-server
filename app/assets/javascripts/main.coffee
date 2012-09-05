@@ -1,17 +1,14 @@
 AnimatedFocus = require('models/animated_focus').AnimatedFocus
 Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
-TransactionQueue = require('models/transaction_queue').TransactionQueue
 RemoteTagList = require('models/remote_tag_list').RemoteTagList
 World = require('models/world').World
 
-transaction_queue = new TransactionQueue()
-
 world = new World()
 
-remote_tag_list = new RemoteTagList(world.cache, transaction_queue, world.cache.server)
+remote_tag_list = new RemoteTagList(world.cache)
 
-world.cache.on_demand_tree.demand_root()
+world.cache.load_root()
 
 log = require('globals').logger
 
