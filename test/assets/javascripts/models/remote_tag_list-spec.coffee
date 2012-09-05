@@ -67,6 +67,9 @@ class MockSelection
   documents_from_cache: (cache) ->
     []
 
+  allows_correct_tagcount_adjustments: () ->
+    !!(@nodes.length && !@documents.length && !@tags.length)
+
 class MockOnDemandTree
   observable(this)
 

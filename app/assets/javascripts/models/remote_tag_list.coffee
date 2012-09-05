@@ -26,7 +26,7 @@ class RemoteTagList
         @document_store.remove_doclist(tag.doclist)
         @tag_store.change(tag, { doclist: undefined })
 
-      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+      if selection.allows_correct_tagcount_adjustments()
         @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
@@ -45,7 +45,7 @@ class RemoteTagList
         @document_store.remove_doclist(tag.doclist)
         @tag_store.change(tag, { doclist: undefined })
 
-      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+      if selection.allows_correct_tagcount_adjustments()
         @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
