@@ -69,6 +69,19 @@ describe 'models/', ->
       expect(selection2.tags).toEqual([2])
       expect(selection2.documents).toEqual([])
 
+    describe 'allows_correct_tagcount_adjustments', ->
+      it 'should return true for a node-only selection', ->
+        selection = new Selection({ nodes: [1] })
+        expect(selection.allows_correct_tagcount_adjustments()).toBe(true)
+
+      it 'should return false for a selection with documents', ->
+        selection = new Selection({ documents: [1] })
+        expect(selection.allows_correct_tagcount_adjustments()).toBe(false)
+
+      it 'should return false for a selection with tags', ->
+        selection = new Selection({ tags: [1] })
+        expect(selection.allows_correct_tagcount_adjustments()).toBe(false)
+
     describe 'documents_from_cache', ->
       selection = undefined
       document_store = undefined
