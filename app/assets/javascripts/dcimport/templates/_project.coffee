@@ -23,7 +23,7 @@ template = _.template("""
         <i class="icon-download"></i> <%- m.import %>
       </button>
     </form>
-    <h2><%- project.title %></h2>
+    <h3><%- project.title %></h3>
     <p class="status"><span class="document-count"><%- m.document_count(project.document_ids.length) %></span></p>
   </li>""")
 
