@@ -266,12 +266,32 @@ body.document-set-index {
       margin: 0;
     }
 
+    h3 {
+      .muted;
+      font-size: 1em;
+      font-weight: normal;
+      line-height: 1;
+    }
+
     .state-description {
       .muted;
     }
 
     form.delete {
+      margin-top: 10px;
       float: right;
+      line-height: 40px; // from "h2"
+      vertical-align: middle;
+    }
+  }
+
+  #documentcloud-import {
+    li {
+      vertical-align: middle;
+
+      h2, form, p {
+        display: inline-block;
+      }
     }
   }
 }

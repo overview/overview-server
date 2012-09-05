@@ -24,8 +24,9 @@ class DocumentSetControllerSpec extends Specification {
   
   trait AuthorizedSession extends DbTestContext {
     val query = "documentSet query"
+    val title = "documentSet title"
     implicit val authorizedRequest = 
-      FakeRequest().withFormUrlEncodedBody(("query", query))
+      FakeRequest().withFormUrlEncodedBody("query" -> query, "title" -> title)
     val controller = new TestDocumentSetController()
     lazy val user = 
       Schema.users.where(u => u.email === "admin@overview-project.org").head
@@ -41,6 +42,7 @@ class DocumentSetControllerSpec extends Specification {
       documentSet must beSome
       documentSetCreationJob must beSome
       documentSet.get.query must be equalTo(query)
+      documentSet.get.title must be equalTo(title)
       documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
     }
     

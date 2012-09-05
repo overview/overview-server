@@ -3,7 +3,6 @@ package views.html.DocumentSet
 import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.data.{Form,Forms}
 import play.api.mvc.Flash
 
 import models.orm.DocumentSet
@@ -17,9 +16,7 @@ class indexSpec extends Specification {
     implicit lazy val j = jerry(index(documentSets, form).body)
   }
 
-  val form = Form(
-    "query" -> Forms.text
-  ) 
+  val form = controllers.forms.DocumentSetForm()
 
   def $(selector: java.lang.String)(implicit j: jodd.lagarto.dom.jerry.Jerry) = { j.$(selector) }
 
@@ -36,13 +33,13 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       documentSets ++= Seq(
-        DocumentSet(1, "query1", Some(10)),
-        DocumentSet(2, "query2", Some(15))
+        DocumentSet(1, "title1", "query1", Some(10)),
+        DocumentSet(2, "title2", "query2", Some(15))
       )
 
       $("ul.document-sets").length must equalTo(1)
       $("ul.document-sets li#document-set-1 a").attr("href") must endWith("/1")
-      $("ul.document-sets li#document-set-2").text must contain("query2")
+      $("ul.document-sets li#document-set-2").text must contain("title2")
     }
   }
 }

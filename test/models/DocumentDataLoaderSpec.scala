@@ -2,7 +2,7 @@ package models
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbTestContext
+import helpers.{DbSetup,DbTestContext}
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
@@ -15,33 +15,19 @@ class DocumentDataLoaderSpec extends Specification {
   "DocumentDataLoader" should {
     
     "Load document data for specified id" in new DbTestContext {
-      val documentSetId = 
-        SQL("""
-            INSERT INTO document_set (query)
-            VALUES ('DocumentDataLoaderSpec')
-            """).executeInsert()
-            
-      val insertedDocumentId = 
-        SQL("""
-            INSERT INTO document (title, text_url, view_url, document_set_id)
-            VALUES ('title', 'textUrl', 'viewUrl', {documentSetId})
-            """).on("documentSetId" -> documentSetId).executeInsert()
+      val documentSetId = DbSetup.insertDocumentSet("DocumentDataLoaderSpec")
+      val insertedDocumentId = DbSetup.insertDocument(documentSetId, "title", "textUrl", "viewUrl")
 
-      insertedDocumentId must beSome
-      
-      val documentId = insertedDocumentId.get
-      
       val documentDataLoader = new DocumentDataLoader()
-      
-      val document = documentDataLoader.loadDocument(documentId)
-      
+      val document = documentDataLoader.loadDocument(insertedDocumentId)
+
       document must beSome
-      document.get must be equalTo((documentId, "title", "textUrl", "viewUrl"))
+      document.get must be equalTo((insertedDocumentId, "title", "textUrl", "viewUrl"))
     }
     
     "Returns None for non-existing id" in new DbTestContext {
       val documentDataLoader = new DocumentDataLoader()
-      
+
       documentDataLoader.loadDocument(-1) must beNone
     }
   }

@@ -10,14 +10,12 @@ import models.orm.DocumentSet.ImplicitHelper._
 
 trait AuthorizedDocumentSetController {
   this: Controller =>
- 
-  private val queryForm = Form(
-    "query" -> text
-  ) 
+
+  private val form = controllers.forms.DocumentSetForm()
 
   def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = { 
     val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
-    Ok(views.html.DocumentSet.index(documentSets, queryForm))
+    Ok(views.html.DocumentSet.index(documentSets, form))
   }
   
   def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
@@ -37,18 +35,22 @@ trait AuthorizedDocumentSetController {
   }
 
   def authorizedCreate(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
-    queryForm.bindFromRequest().fold(
+    form.bindFromRequest().fold(
       f => authorizedIndex(user),
-      query => {
-        val documentSet = user.createDocumentSet(query)
-        documentSet.createDocumentSetCreationJob()
-        Redirect(routes.DocumentSetController.index())
+      (tuple) => {
+        val documentSet = tuple._1
+        val credentials = tuple._2
+
+        val saved = documentSet.save()
+        saved.users.associate(user)
+        saved.createDocumentSetCreationJob(username=credentials.username, password=credentials.password)
+        Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.create.success")
       }
     )
   }
 
   def authorizedDelete(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     DocumentSet.delete(id)
-    Redirect(routes.DocumentSetController.index()).flashing("success" -> "FIXME translate")
+    Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.delete.success")
   }
 }

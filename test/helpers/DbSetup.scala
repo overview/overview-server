@@ -9,10 +9,12 @@ object DbSetup {
   
   def insertDocumentSet(query: String)(implicit c: Connection) : Long = {
     SQL("""
-      INSERT INTO document_set (query)
-      VALUES ({query})
-      """).on("query" -> query).
-           executeInsert().getOrElse(failInsert)
+      INSERT INTO document_set (title, query)
+      VALUES ({title}, {query})
+      """).on(
+        'title -> ("From query: " + query),
+        'query -> query
+      ).executeInsert().getOrElse(failInsert)
   }
 
   def insertNode(documentSetId: Long, parentId: Option[Long], description: String)

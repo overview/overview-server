@@ -33,8 +33,8 @@ class RetrieveDocumentSetSpec extends DbSpecification {
   
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO document_set (query) 
-        VALUES('NodeWriterSpec')
+        INSERT INTO document_set (title, query) 
+        VALUES('Title', 'NodeWriterSpec')
       """).executeInsert().getOrElse(failInsert)
   }
   

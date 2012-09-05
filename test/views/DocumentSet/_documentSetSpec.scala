@@ -16,13 +16,13 @@ class _documentSetSpec extends Specification {
   }
 
   trait NormalDocumentSetContext extends ViewContext {
-    override val documentSet = new DocumentSet(1, "a query", Some(20))
+    override val documentSet = DocumentSet(1, "a title", "a query", Some(20))
   }
 
   trait DocumentSetWithJobContext extends ViewContext {
     val documentSetId = 1L
     val job : DocumentSetCreationJob
-    override lazy val documentSet = new DocumentSet(documentSetId, "a query", Some(10), Some(job))
+    override lazy val documentSet = DocumentSet(documentSetId, "a title", "a query", Some(10), Some(job))
   }
 
   "DocumentSet._documentSet" should {
@@ -51,22 +51,22 @@ class _documentSetSpec extends Specification {
     }
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.NotStarted)
+      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.NotStarted)
       $("li.unfinished").length must be_>=(1)
     }
 
     "should show a progress bar" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress, 0.2)
+      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress, fractionComplete=0.2)
       $("progress").length must be_>=(1)
     }
 
     "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress, 0.2)
+      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress, fractionComplete=0.2)
       $("progress").attr("value") must beEqualTo("20")
     }
 
     "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      override val job = new DocumentSetCreationJob(documentSetId, DocumentSetCreationJob.State.InProgress)
+      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress)
       $(".state").text() must endWith("IN_PROGRESS")
     }
 
