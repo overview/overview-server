@@ -48,10 +48,10 @@ $ ->
       if $.browser.mozilla
         # Mozilla *can* put username/password in the URL. However, if the
         # server returns a 401 response, it will prompt for a password.
-        # DocumentCloud currently doesn't, but who's to say that won't change?
-        # Also, Mozilla will prompt to user to save the username/password if
-        # we do such a JSONP request, and that's confusing. Using a web worker
-        # avoids both problems.
+        # DocumentCloud currently doesn't (it returns 403), but who's to say
+        # that won't change? Also, Mozilla will prompt to user to save the
+        # username/password if we do such a JSONP request, and that's
+        # confusing. Using a web worker avoids both problems.
         request_id = "#{worker_request_id += 1}"
         worker_messages[request_id] = wrapped_callback
         worker.postMessage({ request_id: request_id, username: email, password: password })
