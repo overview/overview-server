@@ -27,8 +27,6 @@ views.Confirmation.index.submit=Finish registering and log in
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
-views.DocumentSet.index.manual_create_h2=Import a document set manually (advanced)
-views.DocumentSet.index.manual_create_submit=Import
 views.DocumentSet.index.title_label=Title
 views.DocumentSet.index.title_placeholder=Title
 views.DocumentSet.index.title_help=.
@@ -36,6 +34,10 @@ views.DocumentSet.index.query_label=Query
 views.DocumentSet.index.query_placeholder=frog
 views.DocumentSet.index.query_help=This query must follow DocumentCloud syntax
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+views.DocumentSet.index.import_from_documentcloud=Import a DocumentSet project
+views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project...
+views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public documents (advanced)...
+views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 
 views.DocumentSet._documentSet.action_delete=Delete
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)

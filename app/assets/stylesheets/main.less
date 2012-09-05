@@ -44,6 +44,8 @@
 
 // Okay, on with the code
 
+@import 'bootstrap-fixes.less';
+
 @import 'vendor/progress-polyfill.less';
 
 @import 'tag-colors.less';
@@ -323,9 +325,30 @@ body.document-set-index {
     li {
       vertical-align: middle;
 
-      h2, form, p {
+      h3, form, p {
         display: inline-block;
+        line-height: 40px; // bootstrap's h3
+        height: 40px;
+        margin: 0;
+        vertical-align: baseline;
       }
+
+      h3 {
+        font-size: 20px;
+        margin: 0 .5em;
+      }
+
+      form {
+        vertical-align: top;
+      }
+
+      span.document-count {
+        color: @grayLight;
+      }
+    }
+
+    .manual form {
+      margin-bottom: 0;
     }
   }
 }
