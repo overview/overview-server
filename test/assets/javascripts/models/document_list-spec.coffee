@@ -38,7 +38,7 @@ describe 'models/document_list', ->
         dl.documents = [ '1', '2', '3', '4', '5' ]
         dl.n = 5
         deferred = dl.slice(0, 3)
-        expect(deferred.isResolved()).toBe(true)
+        expect(deferred.state()).toEqual('resolved')
         arr = undefined
         deferred.done((x) -> arr = x)
         expect(arr).toEqual(['1', '2', '3'])
@@ -53,7 +53,7 @@ describe 'models/document_list', ->
       it 'should give the return value of get_selection_documents_slice', ->
         dl = new DocumentList(new MockSelection(), resolver)
         deferred = dl.slice(0, 2)
-        expect(deferred.isResolved()).toBe(false)
+        expect(deferred.state()).toEqual('pending')
         arr = undefined
         deferred.done((x) -> arr = x)
         resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })

@@ -67,6 +67,9 @@ class MockSelection
   documents_from_cache: (cache) ->
     []
 
+  allows_correct_tagcount_adjustments: () ->
+    !!(@nodes.length && !@documents.length && !@tags.length)
+
 class MockOnDemandTree
   observable(this)
 
@@ -123,7 +126,7 @@ describe 'models/remote_tag_list', ->
     describe 'with some default tags', ->
       beforeEach ->
         tag_store.tags = [ dummy_tag(1, 'AA'), dummy_tag(2, 'BB') ]
-        remote_tag_list = new RemoteTagList({ tag_store: tag_store, on_demand_tree: on_demand_tree, document_store: document_store }, transaction_queue, server)
+        remote_tag_list = new RemoteTagList({ tag_store: tag_store, on_demand_tree: on_demand_tree, document_store: document_store, transaction_queue: transaction_queue, server: server })
 
       it 'should pass through :tag-added from the TagStore', ->
         expected = { position: 1, tag: dummy_tag(3, 'CC') }

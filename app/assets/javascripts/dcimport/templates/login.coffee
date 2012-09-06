@@ -3,6 +3,7 @@ window.dcimport.templates ||= {}
 
 m = {
   legend: 'Enter your DocumentCloud email and password',
+  error: 'You entered an invalid username or password, or DocumentCloud is unavailable. Please try again.'
   labels: {
     email: 'Email',
     password: 'Password',
@@ -17,6 +18,13 @@ m = {
 template = _.template("""
   <form class="form-horizontal" method="get" action="#">
     <legend><%- m.legend %></legend>
+    <% if (error) { %>
+      <div class="control-group error">
+        <div class="controls">
+          <span class="help-block error"><%- m.error %></span>
+        </div>
+      </div>
+    <% } %>
     <div class="control-group">
       <label class="control-label" for="dcimport-email"><%- m.labels.email %></label>
       <div class="controls">
@@ -26,7 +34,7 @@ template = _.template("""
     <div class="control-group">
       <label class="control-label" for="dcimport-password"><%- m.labels.password %></label>
       <div class="controls">
-        <input type="text" name="dcimport_password" id="dcimport-password" required="required" />
+        <input type="password" name="dcimport_password" id="dcimport-password" required="required" />
         <span class="help-inline"><%- m.explanation %></span>
       </div>
     </div>
@@ -37,4 +45,4 @@ template = _.template("""
     </div>
   </form>""")
 
-window.dcimport.templates.login = () -> template({ m: m })
+window.dcimport.templates.login = (error) -> template({ m: m, error: error })

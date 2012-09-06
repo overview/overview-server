@@ -1,12 +1,54 @@
-@import 'bootstrap.less';
-@import 'bootstrap-responsive.less';
-@import 'tag-colors.less';
+// FIXME upgrade to Play 2.1 to fix https://github.com/playframework/Play20/pull/366
+// and let us just run this:
+//@import 'vendor/bootstrap/less/bootstrap.less';
+//@import 'vendor/bootstrap/less/responsive.less';
+// Instead of all this:
+@import "vendor/bootstrap/less/reset.less";
+@import "vendor/bootstrap/less/variables.less"; // Modify this for custom colors, font-sizes, etc
+@import "vendor/bootstrap/less/mixins.less";
+@import "vendor/bootstrap/less/scaffolding.less";
+@import "vendor/bootstrap/less/grid.less";
+@import "vendor/bootstrap/less/layouts.less";
+@import "vendor/bootstrap/less/type.less";
+@import "vendor/bootstrap/less/code.less";
+@import "vendor/bootstrap/less/forms.less";
+@import "vendor/bootstrap/less/tables.less";
+@import "vendor/bootstrap/less/sprites.less";
+@import "vendor/bootstrap/less/dropdowns.less";
+@import "vendor/bootstrap/less/wells.less";
+@import "vendor/bootstrap/less/component-animations.less";
+@import "vendor/bootstrap/less/close.less";
+@import "vendor/bootstrap/less/buttons.less";
+@import "vendor/bootstrap/less/button-groups.less";
+@import "vendor/bootstrap/less/alerts.less"; // Note: alerts share common CSS with buttons and thus have styles in buttons.less
+@import "vendor/bootstrap/less/navs.less";
+@import "vendor/bootstrap/less/navbar.less";
+@import "vendor/bootstrap/less/breadcrumbs.less";
+@import "vendor/bootstrap/less/pagination.less";
+@import "vendor/bootstrap/less/pager.less";
+@import "vendor/bootstrap/less/modals.less";
+@import "vendor/bootstrap/less/tooltip.less";
+@import "vendor/bootstrap/less/popovers.less";
+@import "vendor/bootstrap/less/thumbnails.less";
+@import "vendor/bootstrap/less/labels-badges.less";
+@import "vendor/bootstrap/less/progress-bars.less";
+@import "vendor/bootstrap/less/accordion.less";
+@import "vendor/bootstrap/less/carousel.less";
+@import "vendor/bootstrap/less/hero-unit.less";
+@import "vendor/bootstrap/less/utilities.less"; // Has to be last to override when necessary
+@import "vendor/bootstrap/less/responsive-utilities.less";
+@import "vendor/bootstrap/less/responsive-1200px-min.less";
+@import "vendor/bootstrap/less/responsive-768px-979px.less";
+@import "vendor/bootstrap/less/responsive-767px-max.less";
+@import "vendor/bootstrap/less/responsive-navbar.less";
+
+// Okay, on with the code
+
+@import 'bootstrap-fixes.less';
+
 @import 'vendor/progress-polyfill.less';
 
-@color-background: white;
-@color: black;
-@color-subtle: #888;
-@color-border: black;
+@import 'tag-colors.less';
 
 body.document-set-show {
   margin: 0;
@@ -24,7 +66,7 @@ body.document-set-show {
     font-size: 1.6em;
     height: 1.25em;
     line-height: 1.25;
-    border-bottom: 2px solid @color;
+    border-bottom: 2px solid @hrBorder;
   }
 
   #main {
@@ -43,7 +85,7 @@ body.document-set-show {
     top: 0;
     bottom: 0;
     left: 50%;
-    border-left: 1px solid @color-border;
+    border-left: 1px solid @hrBorder;
 
     iframe {
       position: absolute;
@@ -67,14 +109,14 @@ body.document-set-show {
     .line {
       top: 0;
       height: 100%;
-      background: #f6f6f6;
+      background: @wellBackground;
     }
 
     .handle {
       top: 0;
       bottom: 0;
       background: #ddd;
-      border: 1px solid #bbb;
+      border: 1px solid @grayLight;
 
       &.right {
         cursor: e-resize;
@@ -91,7 +133,7 @@ body.document-set-show {
       bottom: 0;
       cursor: move;
       background: #ddd;
-      border: 1px solid #bbb;
+      border: 1px solid @grayLight;
       border-left: none;
       border-right: none;
     }
@@ -103,7 +145,7 @@ body.document-set-show {
     right: 50%;
     top: 15px;
     bottom: 45%;
-    border-bottom: 1px solid @color-border;
+    border-bottom: 1px solid @hrBorder;
     overflow: hidden;
 
     .selected {
@@ -114,7 +156,7 @@ body.document-set-show {
   #terms-tags-documents {
     position: absolute;
     top: 60%;
-    border-top: 1px solid @color-border;
+    border-top: 1px solid @hrBorder;
     left: 0;
     bottom: 0;
     right: 50%;
@@ -158,12 +200,7 @@ body.document-set-show {
         overflow: hidden;
         text-align: center;
         opacity: 0.01;
-        // FIXME use Less CSS to do this
-        -webkit-transition: opacity 0.3s ease;
-           -moz-transition: opacity 0.3s ease;
-            -ms-transition: opacity 0.3s ease;
-             -o-transition: opacity 0.3s ease;
-                transition: opacity 0.3s ease;
+        .transition(opacity 0.3s ease);
       }
 
       .tag-add {
@@ -197,8 +234,7 @@ body.document-set-show {
       list-style: none;
 
       &.placeholder {
-        background: #eee;
-        color: red;
+        color: @gray;
       }
     }
 
@@ -208,11 +244,11 @@ body.document-set-show {
       text-decoration: inherit;
 
       &:hover {
-        background: #ddd;
+        background: @wellBackground;
       }
 
       &.selected {
-        color: black;
+        color: @black;
         font-weight: bold;
       }
     }
@@ -223,7 +259,7 @@ body.document-set-show {
         width: .7em;
         height: .7em;
         margin: 0 .25em;
-        border: 1px solid gray;
+        border: 1px solid @gray;
       }
     }
   }
@@ -235,13 +271,13 @@ body.document-set-show {
     right: 0;
     height: 1.5em;
     line-height: 1.5;
-    border-top: 2px solid @color;
+    border-top: 2px solid @hrBorder;
     overflow: hidden;
     text-align: center;
   
     a {
       text-decoration: none;
-      color: @color-subtle;
+      color: @grayLight;
     }
   }
 }
@@ -289,9 +325,30 @@ body.document-set-index {
     li {
       vertical-align: middle;
 
-      h2, form, p {
+      h3, form, p {
         display: inline-block;
+        line-height: 40px; // bootstrap's h3
+        height: 40px;
+        margin: 0;
+        vertical-align: baseline;
       }
+
+      h3 {
+        font-size: 20px;
+        margin: 0 .5em;
+      }
+
+      form {
+        vertical-align: top;
+      }
+
+      span.document-count {
+        color: @grayLight;
+      }
+    }
+
+    .manual form {
+      margin-bottom: 0;
     }
   }
 }

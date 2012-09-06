@@ -94,5 +94,8 @@ class Selection
 
     _.sortBy(documents, (d) -> d.title)
 
+  allows_correct_tagcount_adjustments: () ->
+    !!(@nodes.length && !@tags.length && !@documents.length)
+
 exports = require.make_export_object('models/selection')
 exports.Selection = Selection

@@ -3,7 +3,7 @@ observable = require('models/observable').observable
 class RemoteTagList
   observable(this)
 
-  constructor: (@cache, @transaction_queue, @server) ->
+  constructor: (@cache) ->
     @tag_store = @cache.tag_store
     @document_store = @cache.document_store
     @tags = @tag_store.tags
@@ -26,13 +26,16 @@ class RemoteTagList
         @document_store.remove_doclist(tag.doclist)
         @tag_store.change(tag, { doclist: undefined })
 
-      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+      if selection.allows_correct_tagcount_adjustments()
         @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
-    @transaction_queue.queue =>
-      deferred = @server.post('tag_add', selection_post_data, { path_argument: tag.name })
+    @cache.transaction_queue.queue =>
+      deferred = @cache.server.post('tag_add', selection_post_data, { path_argument: tag.name })
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
+      if !selection.allows_correct_tagcount_adjustments()
+        deferred.done(=> @cache.refresh_tagcounts(tag))
+      deferred
 
   remove_tag_from_selection: (tag, selection) ->
     documents = this._selection_to_documents(selection)
@@ -45,13 +48,16 @@ class RemoteTagList
         @document_store.remove_doclist(tag.doclist)
         @tag_store.change(tag, { doclist: undefined })
 
-      if selection.tags.length == 0 && selection.documents.length == 0 && selection.nodes.length > 0
+      if selection.allows_correct_tagcount_adjustments()
         @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
 
     selection_post_data = this._selection_to_post_data(selection)
-    @transaction_queue.queue =>
-      deferred = @server.post('tag_remove', selection_post_data, { path_argument: tag.name })
+    @cache.transaction_queue.queue =>
+      deferred = @cache.server.post('tag_remove', selection_post_data, { path_argument: tag.name })
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
+      if !selection.allows_correct_tagcount_adjustments()
+        deferred.done(=> @cache.refresh_tagcounts(tag))
+      deferred
 
   _after_tag_add_or_remove: (tag, obj) ->
     old_tagid = tag.id
