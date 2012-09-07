@@ -35,7 +35,7 @@ class NodeWriterSpec extends DbSpecification {
   }
   
   private val nodeDataParser = long("id") ~ str("description") ~ 
-		  					   get[Option[Long]]("parent_id") ~ long("document_set_id")
+   get[Option[Long]]("parent_id") ~ long("document_set_id")
 		  					   
   "NodeWriter" should {
     
@@ -72,9 +72,9 @@ class NodeWriterSpec extends DbSpecification {
       writer.write(root)
       
       val savedRoot = SQL("""
-    		  		   SELECT id, description, parent_id, document_set_id FROM node
-                       WHERE description = 'root'
-    		  		   """).as(nodeDataParser map(flatten) singleOpt)
+                          SELECT id, description, parent_id, document_set_id FROM node
+                          WHERE description = 'root'
+                          """).as(nodeDataParser map(flatten) singleOpt)
         
       savedRoot must beSome
       val (rootId, _, _, _) = savedRoot.get
