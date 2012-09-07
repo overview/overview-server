@@ -20,5 +20,6 @@ test/assets/javascripts/test-js
 
 .ensime
 .ensime_lucene/*
-#*
+\#*
+.\#*
 
