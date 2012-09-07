@@ -14,6 +14,9 @@ import DocumentSetCreationJobState._
 trait PersistentDocumentSetCreationJob {
   
   val documentSetId: Long
+  val documentCloudUsername: Option[String]
+  val documentCloudPassword: Option[String]
+
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   
@@ -23,24 +26,30 @@ trait PersistentDocumentSetCreationJob {
 
 object PersistentDocumentSetCreationJob {
   
+  private type DocumentSetCreationJobData = (Long, Long, Int, Double, 
+					     Option[String], Option[String])
+	  
   def findAllSubmitted(implicit c: Connection) : List[PersistentDocumentSetCreationJob] = {
     val jobData = 
       SQL("""
-          SELECT id, document_set_id, state, fraction_complete
+          SELECT id, document_set_id, state, fraction_complete,
+                 documentcloud_username, documentcloud_password
           FROM document_set_creation_job
           WHERE state = {state}
           """).on("state" -> Submitted.id).
             as(long("id") ~ long("document_set_id") ~ int("state") ~ 
-               get[Double]("fraction_complete") map(flatten) *)
+               get[Double]("fraction_complete") ~ 
+	       get[Option[String]]("documentcloud_username") ~ 
+	       get[Option[String]]("documentcloud_password") map(flatten) *)
             
       jobData.map(new PersistentDocumentSetCreationJobImpl(_))
   }
   
-  private class PersistentDocumentSetCreationJobImpl(data: (Long, Long, Int, Double)) 
-		  											 
+  private class PersistentDocumentSetCreationJobImpl(data: DocumentSetCreationJobData)
     extends PersistentDocumentSetCreationJob {
     
-    val (id, documentSetId, stateNumber, complete) = data
+    val (id, documentSetId, stateNumber, complete, 
+      documentCloudUsername, documentCloudPassword) = data
 
     var state = DocumentSetCreationJobState(stateNumber)
     var fractionComplete = complete
