@@ -31,7 +31,7 @@ object ApplicationBuild extends Build {
 
 
   val worker = Project("overview-worker", file("worker"), settings =
-    Defaults.defaultSettings ++
+    Defaults.defaultSettings ++ 
       Seq(libraryDependencies ++= 
         appDependencies ++
         Seq("play" %% "play" % "2.0.3") ++
@@ -43,7 +43,8 @@ object ApplicationBuild extends Build {
       ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
       ).settings(
         initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
-      )
+      ).settings(parallelExecution in (Test) := false)
+
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
