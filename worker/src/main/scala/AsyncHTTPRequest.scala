@@ -81,10 +81,12 @@ object AsyncHttpRequest {
   lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
   
   // Execute an asynchronous HTTP request, with given callbacks for success and failure
-  def apply(url       : String, 
+  def apply(resource: DocumentAtURL,
             onSuccess : (Response) => Unit, 
             onFailure : (Throwable) => Unit ) = {
     
+    val url = resource.textURL
+
     if (url.toLowerCase.startsWith("file://")) {
       
       // handle file: URLs for unit tests
@@ -114,12 +116,12 @@ object AsyncHttpRequest {
   }
   
   // Version that returns a Future[Response]
-  def apply(url:String) : Future[Response] = {  
+  def apply(resource: DocumentAtURL) : Future[Response] = {  
     
     implicit val context = executionContext
     var promise = Promise[Response]()         // uses executionContext derived from asyncClient executor
     
-    asyncHttpClient.prepareGet(url).execute(
+    asyncHttpClient.prepareGet(resource.textURL).execute(
       new AsyncCompletionHandler[Response]() {
         override def onCompleted(response: Response) = {
           promise.success(response)

@@ -50,7 +50,7 @@ object BulkHttpRetriever {
       while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
         val doc = requestQueue.dequeue
         val startTime = System.nanoTime
-        AsyncHttpRequest(doc.textURL, 
+        AsyncHttpRequest(doc, 
             { result:AsyncHttpRequest.Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
             { t:Throwable => self ! GetTextFailed(doc, t) } )
         httpReqInFlight += 1

@@ -40,7 +40,7 @@ class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL]
   private var numDocuments:Option[Int] = None
   
   private def pageQuery(pageNum:Int, myPageSize:Int = pageSize) = {
-    "http://www.documentcloud.org/api/search.json?per_page=" + myPageSize + "&page=" + pageNum + "&q=" + query
+    DocumentAtURL("http://www.documentcloud.org/api/search.json?per_page=" + myPageSize + "&page=" + pageNum + "&q=" + query)
   }
 
   
@@ -107,7 +107,7 @@ class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL]
   override def size = {
     if (numDocuments.isEmpty) {
       Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
-      val pageText = AsyncHttpRequest.BlockingHttpRequest(pageQuery(1,1))  // grab one document from first page. blocks thread to do it.
+      val pageText = AsyncHttpRequest.BlockingHttpRequest(pageQuery(1,1).textURL)  // grab one document from first page. blocks thread to do it.
       val result = parse[DCSearchResult](pageText)
       numDocuments = Some(result.total)
     }
