@@ -11,9 +11,9 @@
 
 package overview.clustering
 
-import models._
 import scala.collection.mutable.{Set,Stack}
 import ClusterTypes._
+import overview.util.Progress._
 
 object ConnectedComponents {
 
@@ -82,7 +82,7 @@ class DocTreeNode(val docs : Set[DocumentID]) {
   var description = ""
   var children:Set[DocTreeNode] = Set[DocTreeNode]()
  
-  // return children in predictable order. Presently, sort by descending by size, and then ascending by document IDs
+  // return children in predictable order. Sort descending by size, then ascending by document IDs
   def OrderedChildren : List[DocTreeNode] = {
     children.toList.sortWith((a,b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))
   }
@@ -98,14 +98,13 @@ class DocTreeNode(val docs : Set[DocumentID]) {
   }
   
   //  Tree pretty printer
-  private def prettyString2(indent : Int = 0) : String = {
+  def prettyString(indent : Int = 0) : String = {
     " " * indent + docs.toList.sorted.mkString(",") + 
       (if (!children.isEmpty) 
-        "\n" + OrderedChildren.map(_.prettyString2(indent+4)).mkString("\n")
+        "\n" + OrderedChildren.map(_.prettyString(indent+4)).mkString("\n")
       else
         "")
   }
-  def prettyString = prettyString2(0)
 }
 
 
@@ -144,41 +143,45 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
   }
 
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
-  def BuildTree(threshSteps: Seq[Double]) : DocTreeNode = {
+  def BuildTree(threshSteps: Seq[Double],
+                progAbort:ProgressAbortFn) : DocTreeNode = {
     require(threshSteps.head == 1.0)
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
-        
+    val numSteps:Double = threshSteps.size
+    
     // root thresh=1.0 is one node with all documents
+    progAbort(Progress(0, "Clustering documents level 1"))
     var topLevel = Set(docVecs.keys.toArray:_*)
     val root = new DocTreeNode(topLevel)
           
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
     var currentLeaves = List(root)  
-    val intermediateSteps = threshSteps.drop(1).dropRight(1)    // remove first 1.0 and last 0.0 val
-    for (thresh <- intermediateSteps) {
-      currentLeaves = ExpandTree(currentLeaves, thresh)
+    for (curStep <- 1 to threshSteps.size-2) {
+      progAbort(Progress(curStep/numSteps, "Clustering documents level " + (curStep+1)))
+      currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
     }
        
     // bottom level thresh=0.0 is one leaf node for each document
+    progAbort(Progress((numSteps-1)/numSteps, "Clustering documents level " + numSteps.toInt))
     for (node <- currentLeaves) {
       if (node.docs.size > 1)                                   // don't expand if already one node
         node.children = node.docs.map( item=> new DocTreeNode(Set(item)) )
     }
-         
+
     root
   }
 }
 
 // Helpfully encapsulate the document tree construction with useful defaults
 object BuildDocTree {
-  def apply(docVecs : DocumentSetVectors) 
+  def apply(docVecs : DocumentSetVectors, progAbort:ProgressAbortFn = NoProgressReporting) 
         : DocTreeNode = {
     
     // By default: cosine distance, and step down in 0.1 increments 
     val distanceFn = DistanceFn.CosineDistance _
     val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
     
-    new DocTreeBuilder(docVecs, distanceFn).BuildTree(threshSteps)
+    new DocTreeBuilder(docVecs, distanceFn).BuildTree(threshSteps, progAbort)
   }
 }

@@ -30,18 +30,20 @@ object JobHandler {
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog: Progress) = {
-        j.fractionComplete = prog.percent / 100.0
+        j.fractionComplete = prog.fraction
         DB.withConnection { implicit connection =>
           j.update
         }
-        println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
+        println("PROGRESS: " + prog.fraction*100+ "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
       }
+      
       val (_, query)  = DB.withConnection { implicit connection =>
         DocumentSetLoader.loadQuery(j.documentSetId).get
       }
   
       val dcSource = new DocumentCloudSource(query,
-                                             j.documentCloudUsername, j.documentCloudPassword)
+                                             j.documentCloudUsername, 
+                                             j.documentCloudPassword)
   
       val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
   
