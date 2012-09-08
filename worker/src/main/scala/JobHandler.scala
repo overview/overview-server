@@ -19,38 +19,46 @@ object JobHandler {
 
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
-    j.state = InProgress
-    DB.withConnection { implicit connection =>
-      j.update
-    }
-    val documentSetId = j.documentSetId
-
-    val documentWriter = new DocumentWriter(documentSetId)
-    val nodeWriter = new NodeWriter(documentSetId)
-    def progFn(prog: Progress) = {
-      j.fractionComplete = prog.percent / 100.0
+    try {
+        
+      j.state = InProgress
       DB.withConnection { implicit connection =>
         j.update
       }
-      println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
-    }
-    val (_, query)  = DB.withConnection { implicit connection =>
-      DocumentSetLoader.loadQuery(j.documentSetId).get
-    }
-
-    val dcSource = new DocumentCloudSource(query,
-                                           j.documentCloudUsername, j.documentCloudPassword)
-
-    val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
-
-    Logger.info("Indexing query: " + query)
-    val tree = indexer.BuildTree()
-
-    DB.withConnection { implicit connection =>
-      j.delete
+      val documentSetId = j.documentSetId
+  
+      val documentWriter = new DocumentWriter(documentSetId)
+      val nodeWriter = new NodeWriter(documentSetId)
+      def progFn(prog: Progress) = {
+        j.fractionComplete = prog.percent / 100.0
+        DB.withConnection { implicit connection =>
+          j.update
+        }
+        println("PROGRESS: " + prog.percent + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
+      }
+      val (_, query)  = DB.withConnection { implicit connection =>
+        DocumentSetLoader.loadQuery(j.documentSetId).get
+      }
+  
+      val dcSource = new DocumentCloudSource(query,
+                                             j.documentCloudUsername, j.documentCloudPassword)
+  
+      val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
+  
+      Logger.info("Indexing query: " + query)
+      val tree = indexer.BuildTree()
+  
+      DB.withConnection { implicit connection =>
+        j.delete
+      }
+      
+    } catch {
+      case t:Throwable =>
+        j.state = Error
+        DB.withConnection { implicit connection => j.update }  
     }
   }
-
+  
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
 
