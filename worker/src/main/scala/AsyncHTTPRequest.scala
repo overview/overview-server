@@ -107,7 +107,6 @@ object AsyncHttpRequest {
           response
         }
         override def onThrowable(t: Throwable) = {
-	  println("faiu: " + t)
           onFailure(t)
         }
       }
