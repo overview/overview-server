@@ -10,17 +10,13 @@
 
 package overview.clustering
 
+import akka.dispatch.{Await, Promise}
+import akka.util.Timeout
+import com.codahale.jerkson.Json._
+import overview.http.{BasicAuth, DocumentAtURL}
 import overview.http.AsyncHttpRequest
 import overview.http.AsyncHttpRequest.Response
-import overview.http.DocumentAtURL
-
 import overview.util.Logger
-
-import akka.dispatch.{Future,Promise,Await}
-import akka.util.Timeout
-
-import com.codahale.jerkson.Json._
-import scala.concurrent._
 
 // The main DocumentCloudSource class produces a sequence of these...
 class DCDocumentAtURL(val title:String, val viewURL:String, textURL:String) extends DocumentAtURL(textURL)
@@ -33,14 +29,26 @@ case class DCDocument(title: String, canonical_url:String, resources:DCDocumentR
 case class DCSearchResult(total:Int, documents: Seq[DCDocument])
 
 
-class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL] {
+class DocumentCloudSource(val query:String,
+                          documentCloudUserName: Option[String] = None,
+                          documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
   // --- private ---
   private val pageSize = 100
   private var numDocuments:Option[Int] = None
   
   private def pageQuery(pageNum:Int, myPageSize:Int = pageSize) = {
-    DocumentAtURL("http://www.documentcloud.org/api/search.json?per_page=" + myPageSize + "&page=" + pageNum + "&q=" + query)
+    val searchURL = "http://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
+      "&page=" + pageNum + "&q=" + query
+    (documentCloudUserName, documentCloudPassword) match {
+      case (Some(n), Some(p)) =>
+        new DocumentAtURL(searchURL) with BasicAuth {
+          val username = n
+          val password = p
+        }
+      case _ => DocumentAtURL(searchURL)
+    }
+
   }
 
   
@@ -59,7 +67,15 @@ class DocumentCloudSource(val query:String) extends Traversable[DCDocumentAtURL]
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
     for (doc <- result.documents) {
-      f(new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text))
+      val docAtURL = (documentCloudUserName, documentCloudPassword) match {
+        case (Some(n), Some(p)) => 
+          new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text) with BasicAuth {
+            val username  = n
+            val password = p
+          }
+        case _ => new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text)
+      }
+      f(docAtURL)
     }
     return result.documents.size
   }

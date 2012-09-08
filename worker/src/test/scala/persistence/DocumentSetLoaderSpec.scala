@@ -10,13 +10,17 @@ class DocumentSetLoaderSpec extends DbSpecification {
   
   "DocumentSetLoader" should {
     
-    "load query from id" in new DbTestContext {
+    "load query and title from id" in new DbTestContext {
       val query = "DocumentSetLoaderSpec"
+      val title = "DocumentSet for " + query
+      
       val documentSetId = insertDocumentSet(query)
 
-      val foundQuery = DocumentSetLoader.loadQuery(documentSetId)
-      foundQuery must beSome     
-      foundQuery.get must be equalTo(query)
+      val foundData = DocumentSetLoader.loadQuery(documentSetId)
+      foundData must beSome.like { case d =>
+	d._1 must be equalTo(title)
+	d._2 must be equalTo(query)
+      }     
     }
   }
   
