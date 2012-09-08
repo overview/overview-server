@@ -38,7 +38,7 @@ class DocumentCloudSource(val query:String,
   private var numDocuments:Option[Int] = None
   
   private def pageQuery(pageNum:Int, myPageSize:Int = pageSize) = {
-    val searchURL = "http://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
+    val searchURL = "https://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
       "&page=" + pageNum + "&q=" + query
     (documentCloudUserName, documentCloudPassword) match {
       case (Some(n), Some(p)) =>
@@ -67,14 +67,7 @@ class DocumentCloudSource(val query:String,
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
     for (doc <- result.documents) {
-      val docAtURL = (documentCloudUserName, documentCloudPassword) match {
-        case (Some(n), Some(p)) => 
-          new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text) with BasicAuth {
-            val username  = n
-            val password = p
-          }
-        case _ => new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text)
-      }
+      val docAtURL = new DCDocumentAtURL(doc.title, doc.canonical_url, doc.resources.text)
       f(docAtURL)
     }
     return result.documents.size
