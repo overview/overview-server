@@ -100,10 +100,11 @@ class DocTreeNode(val docs : Set[DocumentID]) {
   //  Tree pretty printer
   def prettyString(indent : Int = 0) : String = {
     " " * indent + docs.toList.sorted.mkString(",") + 
+      " -- " + description + 
       (if (!children.isEmpty) 
         "\n" + OrderedChildren.map(_.prettyString(indent+4)).mkString("\n")
       else
-        "")
+        "") 
   }
 }
 
@@ -144,7 +145,7 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
 
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
   def BuildTree(threshSteps: Seq[Double],
-                progAbort:ProgressAbortFn) : DocTreeNode = {
+                progAbort:ProgressAbortFn = NoProgressReporting) : DocTreeNode = {
     require(threshSteps.head == 1.0)
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
@@ -171,17 +172,65 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
 
     root
   }
+  
+  // recursively create node descriptions, by summing document vectors across all docs in a ndoe
+  def labelClusters(docTree:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
+
+    var nodeVec = DocumentVector
+  }
+  
+  // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
+  def makeDescription(vec:DocumentVector) : String = {
+    val maxTerms = 15
+    vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
+  }
+  
+  // Sparse vector sum, used for computing node descriptions
+  def accumDocumentVector(acc:DocumentVector, v:DocumentVector) : Unit = {
+    v foreach { 
+      case (id, weight) => acc.update(id, acc.getOrElse(id, 0f) + weight)
+    }
+  }
+  
+  // Create a descriptive string for each node, by taking the sum of all document vectors in that node. 
+  // Building all descriptions at once allows a lot of re-use of sub-sums.
+  def labelNode(node:DocTreeNode) : DocumentVector = {
+    if (node.docs.size == 1) {
+      require(node.children.isEmpty)
+      val vec = docVecs.get(node.docs.head).get   // get document vector corresponding to our single document ID
+      node.description = makeDescription(vec)
+      vec
+    } else {
+      var vec = DocumentVector()
+      for (node <- node.children) {
+        accumDocumentVector(vec, labelNode(node))             // sum the document vectors of all child nodes
+      }
+      node.description = makeDescription(vec)
+      vec
+    }
+  }
+
 }
 
-// Helpfully encapsulate the document tree construction with useful defaults
+// Given a set of document vectors, generate a tree of nodes and their descriptions
 object BuildDocTree {
+  
+  
   def apply(docVecs : DocumentSetVectors, progAbort:ProgressAbortFn = NoProgressReporting) 
         : DocTreeNode = {
-    
     // By default: cosine distance, and step down in 0.1 increments 
     val distanceFn = DistanceFn.CosineDistance _
     val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
     
-    new DocTreeBuilder(docVecs, distanceFn).BuildTree(threshSteps, progAbort)
+    // Build the tree
+    val builder = new DocTreeBuilder(docVecs, distanceFn)
+    val tree = builder.BuildTree(threshSteps, progAbort)
+    
+    // Now recurse to create a label for each node
+    builder.labelNode(tree)    
+    //println(tree.prettyString())
+    
+    tree
   }
+  
 }
