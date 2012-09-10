@@ -12,6 +12,7 @@ class TagListView
     this._observe_tag_add()
     this._observe_tag_remove()
     this._observe_shown_tag()
+    this._observe_selected_tags()
 
   _init_html: () ->
     $div = $(@div)
@@ -39,6 +40,11 @@ class TagListView
     $ul.on 'click', 'a.tag-remove', (e) ->
       e.preventDefault()
       notify('remove-clicked', element_to_tag(this))
+
+    this._refresh_shown_tag()
+    this._refresh_selected_tags()
+
+    undefined
 
   _create_form: () ->
     $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="New tag" class="input-mini" /><input type="submit" value="Tag" class="btn" /></form')
@@ -87,6 +93,15 @@ class TagListView
     $div.find('.shown').removeClass('shown')
     if @state.focused_tag?
       $div.find("[data-#{TAG_ID_KEY}=#{@state.focused_tag.id}]").addClass('shown')
+
+  _observe_selected_tags: () ->
+    @state.observe('selection-changed', this._refresh_selected_tags.bind(this))
+
+  _refresh_selected_tags: () ->
+    $div = $(@div)
+    $div.find('.selected').removeClass('selected')
+    for tagid in @state.selection.tags
+      $div.find("[data-#{TAG_ID_KEY}=#{tagid}]").addClass('selected')
 
 exports = require.make_export_object('views/tag_list_view')
 exports.TagListView = TagListView

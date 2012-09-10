@@ -128,3 +128,9 @@ describe 'views/tag_list_view', ->
         state._notify('focused_tag-changed', tag1)
         class_name = $('li:eq(0)', div).attr('class')
         expect(class_name).toMatch(/\bshown\b/)
+
+      it 'should set "selected" on selected tags', ->
+        state.selection.tags = [1, 2]
+        state._notify('selection-changed', state.selection)
+        $lis = $('li.selected', div)
+        expect($lis.length).toEqual(2)
