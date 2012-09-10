@@ -36,12 +36,15 @@ class SubTreeLoader(documentSetId: Long,
   }
   
   /**
-   * @return a list of Documents whose ids are referenced by the passed in nodes. The list is sorted
-   * by document IDs and all the elements are distinct, even if documentIds are included in multiple
-   * Nodes.
+   * @return a list of Documents whose ids are referenced by the passed in nodes and tags.
+   * The list is sorted by document IDs and all the elements are distinct, even if documentIds 
+   * referenced multiple times.
    */
-  def loadDocuments(nodes: Seq[core.Node])(implicit connection : Connection) : Seq[core.Document] = {
-    val documentIds = nodes.flatMap(_.documentIds.firstIds)
+  def loadDocuments(nodes: Seq[core.Node], tags: Seq[core.Tag])(implicit connection : Connection) : Seq[core.Document] = {
+    val nodeDocumentIds = nodes.flatMap(_.documentIds.firstIds)
+    val tagDocumentIds = tags.flatMap(_.documentIds.firstIds)
+    val documentIds = nodeDocumentIds ++ tagDocumentIds
+    
     val documentData = loader.loadDocuments(documentIds.distinct.sorted)
     val documentTagData = loader.loadDocumentTags(documentIds)
     

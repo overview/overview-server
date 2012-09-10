@@ -20,8 +20,8 @@ object TreeController extends BaseController {
       case Some(rootId) => {
         val nodes = subTreeLoader.load(rootId, 4)
 
-        val documents = subTreeLoader.loadDocuments(nodes)
         val tags = subTreeLoader.loadTags(id)
+        val documents = subTreeLoader.loadDocuments(nodes, tags)
 
         val json = views.json.Tree.show(nodes, documents, tags)
         Ok(json)
@@ -33,8 +33,8 @@ object TreeController extends BaseController {
   private def authorizedNode(user: User, id: Long, nodeId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val subTreeLoader = new SubTreeLoader(id)
     val nodes = subTreeLoader.load(nodeId, 4)
-    val documents = subTreeLoader.loadDocuments(nodes)
     val tags = subTreeLoader.loadTags(id)
+    val documents = subTreeLoader.loadDocuments(nodes, tags)
     
     val json = views.json.Tree.show(nodes, documents, tags)
     Ok(json)
