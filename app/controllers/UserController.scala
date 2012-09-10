@@ -12,7 +12,7 @@ import play.api.mvc.{Action, AnyContent, Controller, Request}
 
 
 
-object UserController extends Controller with TransactionActionController {
+object UserController extends Controller with TransactionActionController with HttpsEnforcer {
   val form = Form(
     mapping(
       "email" -> email,
@@ -20,7 +20,7 @@ object UserController extends Controller with TransactionActionController {
     )(PotentialUser)(u => Some(u.email, u.password))
   )
 
-  def new_() = Action { implicit request => Ok(views.html.User.new_(form)) }
+  def new_() = HttpsAction { implicit request => Ok(views.html.User.new_(form)) }
   
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
     implicit val r = request

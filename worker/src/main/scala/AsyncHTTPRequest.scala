@@ -1,143 +1,157 @@
 /**
  * AsyncHTTPRequest.scala
- * 
+ *
  * Thin wrapper on Ning AsyncHTTPClient library, to manage singleton object, and provide callback and akka Future-based interfaces
- *  
+ *
  * Overview Project, created August 2012
- * 
+ *
  * @author Jonathan Stray
  *
  */
 
 package overview.http
 
+import akka.dispatch.{ExecutionContext, Future, Promise}
+import com.ning.http.client._
+import com.ning.http.client.Realm.AuthScheme
+import com.ning.http.client.{Response => AHCResponse}
 import overview.util.Logger
-
-import akka.dispatch.{ExecutionContext,Future,Promise}
-import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig, AsyncCompletionHandler, Response => AHCResponse}
 import scala.io.Source._
-import java.io.InputStream._
-import java.net.URI._
 
 // Single object that interfaces to Ning's Async HTTP library
-object AsyncHttpRequest {  
+object AsyncHttpRequest {
 
   // expose this type so that users don't need to import com.ning.http.client
-  type Response =  AHCResponse
-  
+  type Response = AHCResponse
+
   private def getHttpConfig = {
     val builder = new AsyncHttpClientConfig.Builder()
     val config = builder
-        .setFollowRedirects(true)
-        .setCompressionEnabled(true)
-        .setAllowPoolingConnection(true)
-        .setRequestTimeoutInMs(5 * 60 * 1000) // 5 minutes, to allow for downloading large files
-        .build
-   config
+      .setFollowRedirects(true)
+      .setCompressionEnabled(true)
+      .setAllowPoolingConnection(true)
+      .setRequestTimeoutInMs(5 * 60 * 1000) // 5 minutes, to allow for downloading large files
+      .build
+    config
   }
 
   private lazy val asyncHttpClient = new AsyncHttpClient(getHttpConfig)
 
   // Response object used when loading a file:// URL, sort of fakes an HTTP response for a fixed set of bytes
   // Probably doesn't really handle character encoding correctly, definitely doesn't emulate header fields
-  private class FileResponse(val url:String, val body:String) extends AHCResponse {
-    def getStatusCode() : Int = 200
-    def getStatusText() : String = "OK"
-    
-    def getResponseBodyAsBytes() : Array[Byte] = body.getBytes()
-    def getResponseBodyAsStream() : java.io.InputStream = new java.io.ByteArrayInputStream(body.getBytes())
-    def getResponseBodyExcerpt(maxLength:Int, charst:String) : String = body.take(maxLength)
-    def getResponseBody(charset:String) : String = body
-    def getResponseBodyExcerpt(maxLength:Int) = body.take(maxLength)
-    def getResponseBody() : String = body
-    
-    def getUri() : java.net.URI  = new java.net.URI(url)
-    
+  private class FileResponse(val url: String, val body: String) extends AHCResponse {
+    def getStatusCode(): Int = 200
+    def getStatusText(): String = "OK"
+
+    def getResponseBodyAsBytes(): Array[Byte] = body.getBytes()
+    def getResponseBodyAsStream(): java.io.InputStream = new java.io.ByteArrayInputStream(body.getBytes())
+    def getResponseBodyExcerpt(maxLength: Int, charst: String): String = body.take(maxLength)
+    def getResponseBody(charset: String): String = body
+    def getResponseBodyExcerpt(maxLength: Int) = body.take(maxLength)
+    def getResponseBody(): String = body
+
+    def getUri(): java.net.URI = new java.net.URI(url)
+
     // TODO Header stuff not really implemented yet. Should we make up sensible defaults?
-    def getContentType() : String = "some content type" 
-    def getHeader(name:String) : String = ""
-    def getHeaders(name:String) : java.util.List[String] = new java.util.LinkedList
-    def getHeaders() : com.ning.http.client.FluentCaseInsensitiveStringsMap = new com.ning.http.client.FluentCaseInsensitiveStringsMap
-    
-    def isRedirected() : Boolean = false
-    
-    override def toString() : String = body   // need the override as it re-implements scala standard toString
-    
-    def getCookies() : java.util.List[com.ning.http.client.Cookie] = new java.util.LinkedList
-    
-    def hasResponseStatus() : Boolean = true
-    def hasResponseHeaders() : Boolean = true
-    def hasResponseBody() : Boolean = true
+    def getContentType(): String = "some content type"
+    def getHeader(name: String): String = ""
+    def getHeaders(name: String): java.util.List[String] = new java.util.LinkedList
+    def getHeaders(): com.ning.http.client.FluentCaseInsensitiveStringsMap = new com.ning.http.client.FluentCaseInsensitiveStringsMap
+
+    def isRedirected(): Boolean = false
+
+    override def toString(): String = body // need the override as it re-implements scala standard toString
+
+    def getCookies(): java.util.List[com.ning.http.client.Cookie] = new java.util.LinkedList
+
+    def hasResponseStatus(): Boolean = true
+    def hasResponseHeaders(): Boolean = true
+    def hasResponseBody(): Boolean = true
   }
 
-  private def makeFileResponse(url:String) : Response = {
+  private def makeFileResponse(url: String): Response = {
     require(url.toLowerCase.startsWith("file://"))
     val fname = url.drop(7)
     Logger.debug("Retrieving file URL " + fname)
     new FileResponse(url, fromFile(fname).mkString)
   }
-  
+
   // Since AsyncHTTPClient has an executor anyway, allow re-use (if desired) for an Akka Promise execution context
   lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
-  
+
   // Execute an asynchronous HTTP request, with given callbacks for success and failure
-  def apply(url       : String, 
-            onSuccess : (Response) => Unit, 
-            onFailure : (Throwable) => Unit ) = {
-    
+  def apply(resource: DocumentAtURL,
+    onSuccess: (Response) => Unit,
+    onFailure: (Throwable) => Unit) = {
+
+    val url = resource.textURL
+
     if (url.toLowerCase.startsWith("file://")) {
-      
+
       // handle file: URLs for unit tests
-      var optResponse : Option[Response] = None
+      var optResponse: Option[Response] = None
       try {
         optResponse = Some(makeFileResponse(url))
       } catch {
-        case t:Throwable => onFailure(t)
+        case t: Throwable => onFailure(t)
       }
-      if (optResponse.isDefined) 
+      if (optResponse.isDefined)
         onSuccess(optResponse.get)
-      
-    } else {  
-      
+
+    } else {
       // An actual HTTP request, woo-hoo!
-      asyncHttpClient.prepareGet(url).execute(
-        new AsyncCompletionHandler[Response]() {
-          override def onCompleted(response: Response) = {
-           onSuccess(response)
-           response
-          }
-          override def onThrowable(t: Throwable) = {
-            onFailure(t)
-          }
-        }) 
-    }
-  }
-  
-  // Version that returns a Future[Response]
-  def apply(url:String) : Future[Response] = {  
-    
-    implicit val context = executionContext
-    var promise = Promise[Response]()         // uses executionContext derived from asyncClient executor
-    
-    asyncHttpClient.prepareGet(url).execute(
-      new AsyncCompletionHandler[Response]() {
+
+      val responseHandler = new AsyncCompletionHandler[Response]() {
         override def onCompleted(response: Response) = {
-          promise.success(response)
+          onSuccess(response)
           response
         }
         override def onThrowable(t: Throwable) = {
-          promise.failure(t)
+          onFailure(t)
         }
-      })
-      
+      }
+
+      resource match {
+	case r: DocumentAtURL with BasicAuth => {
+	  val realm = new Realm.RealmBuilder()
+            .setPrincipal(r.username)
+            .setPassword(r.password)
+            .setUsePreemptiveAuth(true)
+            .setScheme(AuthScheme.BASIC)
+            .build();
+	  asyncHttpClient.prepareGet(url).setRealm(realm).execute(responseHandler);
+	}
+	case _ => asyncHttpClient.prepareGet(url).execute(responseHandler)
+      }
+    }
+  }
+
+  // Version that returns a Future[Response]
+  def apply(resource: DocumentAtURL): Future[Response] = {
+
+    implicit val context = executionContext
+    var promise = Promise[Response]() // uses executionContext derived from asyncClient executor
+
+    def responseHandler = new AsyncCompletionHandler[Response]() {
+      override def onCompleted(response: Response) = {
+        promise.success(response)
+        response
+      }
+      override def onThrowable(t: Throwable) = {
+        promise.failure(t)
+      }
+    }
+
+    asyncHttpClient.prepareGet(resource.textURL).execute(responseHandler)
+
     promise
   }
-  
+
   // You probably shouldn't ever call this :)
   // it will block the thread
-  def BlockingHttpRequest(url:String) : String = {
-      val f = asyncHttpClient.prepareGet(url).execute()
-      f.get().getResponseBody()
+  def BlockingHttpRequest(url: String): String = {
+    val f = asyncHttpClient.prepareGet(url).execute()
+    f.get().getResponseBody()
   }
 }
 

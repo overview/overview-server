@@ -33,14 +33,14 @@ object WorkerActorSystem {
 object Progress {
 
   // Little class that represents progress
-  case class Progress(percent:Double, status:String, hasError:Boolean = false) 
+  case class Progress(fraction:Double, status:String, hasError:Boolean = false) 
 
   // Callback function to inform of progress, and returns false if operation should abort
   type ProgressAbortFn = (Progress) => Boolean 
   
   // Turns a sub-task progress into overall task progress
-  def makeNestedProgress(inner:Progress, percentWhenInnerDone:Float) : Progress = {
-    Progress(percentWhenInnerDone * inner.percent/100, inner.status, inner.hasError)
+  def makeNestedProgress(inner:ProgressAbortFn, startFraction:Double, endFraction:Double) : ProgressAbortFn = {
+    (progress) => inner(Progress(startFraction + (endFraction - startFraction) * progress.fraction, progress.status, progress.hasError))
   }
   
   // stub that you can pass in when you don't case about progress reporting

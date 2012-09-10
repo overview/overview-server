@@ -20,10 +20,15 @@ class DocumentVectorGenerator {
 
   // --- Data ---
   var numDocs = 0 
+  private var termStrings = new StringTable
   private var doccount = DocumentVector() 
-  private var tf = DocumentSetVectors()
-   
+  private var tf = DocumentSetVectors(termStrings)
+     
   // --- Methods ---
+  
+  // provide limited access to our string table, so if someone has one of our vectors they can look up the IDs
+  def idToString(id:TermID) = termStrings.idToString(id)
+  def stringToId(s:String) = termStrings.stringToId(s)
   
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
   def addDocument(docId:DocumentID, terms:Seq[String]) = {
@@ -32,9 +37,10 @@ class DocumentVectorGenerator {
           
         // count how many times each token appears in this doc (term frequency)      
         var termcounts = DocumentVector()
-        for (t <- terms) {
-          val prev_count = termcounts.getOrElse(t,0f)
-          termcounts += (t -> (prev_count + 1))
+        for (termString <- terms) {
+          val term = termStrings.stringToId(termString)
+          val prev_count = termcounts.getOrElse(term,0f)
+          termcounts += (term -> (prev_count + 1))
         }
         
         // divide out document length to go from term count to term frequency
@@ -42,9 +48,9 @@ class DocumentVectorGenerator {
         tf += (docId -> termcounts)
          
         // for each unique term in this doc, update how many docs each term appears in (doc count)
-        for (t <- termcounts.keys) {
-          val prev_count = doccount.getOrElse(t, 0f)
-          doccount += (t -> (prev_count + 1))
+        for (term <- termcounts.keys) {
+          val prev_count = doccount.getOrElse(term, 0f)
+          doccount += (term -> (prev_count + 1))
         }
         
         numDocs += 1
@@ -63,7 +69,7 @@ class DocumentVectorGenerator {
   // Previously added documents will end up with different vectors as new docs are added, due to IDF term
   def documentVectors() : DocumentSetVectors = {
    
-    var docVectors = DocumentSetVectors()
+    var docVectors = DocumentSetVectors(termStrings)
     val idf = Idf()
     
     // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing

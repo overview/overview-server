@@ -31,8 +31,20 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
           VALUES ({documentSetId}, {state})
           """).on("documentSetId" -> documentSetId, "state" -> Submitted.id).
               executeInsert().getOrElse(throw new Exception("failed Insert"))
-      
+  }
 
+  trait DocumentCloudJobSetup extends JobSetup {
+    val dcUsername = "user@documentcloud.org"
+    val dcPassword = "dcPassword"
+
+    def insertDocumentCloudJob: Long = 
+      SQL("""
+          INSERT INTO document_set_creation_job 
+	    (document_set_id, state, documentcloud_username, documentcloud_password)
+          VALUES ({documentSetId}, {state}, {userName}, {password})
+          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id,
+		  "userName" -> dcUsername, "password" -> dcPassword).
+              executeInsert().getOrElse(throw new Exception("failed Insert"))
   }
   
   "PersistentDocumentSetCreationJob" should {
@@ -80,6 +92,20 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val remainingJobs = PersistentDocumentSetCreationJob.findAllSubmitted
       
       remainingJobs must be empty
+    }
+
+    "have empty username and password if not available" in new JobSetup {
+      insertJob
+
+      allNotStartedJobs.head.documentCloudUsername must beNone
+      allNotStartedJobs.head.documentCloudPassword must beNone
+    }
+
+    "have username and password if available" in new DocumentCloudJobSetup {
+      insertDocumentCloudJob
+
+      allNotStartedJobs.head.documentCloudUsername must beSome.like { case n => 
+	n must be equalTo(dcUsername) }
     }
   }
   

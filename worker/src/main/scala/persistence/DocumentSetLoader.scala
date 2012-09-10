@@ -6,11 +6,12 @@ import java.sql.Connection
 
 object DocumentSetLoader {
 
-  def loadQuery(documentSetId: Long)(implicit c: Connection): Option[String] = {
+  def loadQuery(documentSetId: Long)(implicit c: Connection): Option[(String, String)] = {
     SQL("""
-        SELECT query FROM document_set
+        SELECT title, query FROM document_set
         WHERE id = {documentSetId}
-        """).on("documentSetId" -> documentSetId).as(str("query") singleOpt)
+        """).on("documentSetId" -> documentSetId)
+	    .as(str("title") ~ str("query") map(flatten) *).headOption
         
   }
 }

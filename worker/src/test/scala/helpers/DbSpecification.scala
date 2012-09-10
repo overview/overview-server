@@ -36,10 +36,9 @@ class DbSpecification extends Specification {
     }
   }
 
-  var dataSource: DataSource = _
   
   def setupDb() {
-    dataSource = new DataSource(new DatabaseConfiguration)
+    val dataSource = new DataSource(new DatabaseConfiguration)
     DB.connect(dataSource)  
   }
 

@@ -10,7 +10,6 @@
 
 package overview.clustering 
 
-import models._
 import overview.clustering.ClusterTypes._
 import overview.http._
 import overview.util.Logger
@@ -27,8 +26,9 @@ import akka.util.Timeout
                           documentWriter : DocumentWriter,
                           progAbort : ProgressAbortFn ) {
 
-  private var percentFetched = 0
-  private val fetchingPercent = 90.0   // what percent done do we say when we're all done fetching docs?
+  private var fractionFetched = 0
+  private val fetchingFraction = 0.9   // what percent done do we say when we're all done fetching docs?
+  private val savingFraction = 0.99
   
   private def logElapsedTime(op:String, t0 : Long) {
     val t1 = System.nanoTime()
@@ -43,7 +43,7 @@ import akka.util.Timeout
       implicit connection => documentWriter.write(doc.title, doc.textURL, doc.viewURL)
     }
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))    
-    progAbort(Progress(vectorGen.numDocs * fetchingPercent / sourceDocList.size, "Retrieving documents"))
+    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, "Retrieving documents"))
   }
   
   def BuildTree() : Unit = {
@@ -59,20 +59,20 @@ import akka.util.Timeout
     logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)        
     
     // Cluster (build the tree)
-    progAbort(Progress(fetchingPercent, "Clustering documents"))        
+    progAbort(Progress(fetchingFraction, "Clustering documents"))        
     val t1 = System.nanoTime()
     val docVecs = vectorGen.documentVectors()
-    val docTree = BuildDocTree(docVecs)  // TODO progress while clustering
+    val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
     logElapsedTime("Clustered documents", t1)
         
     // Save tree to database
-    progAbort(Progress(99, "Saving document tree"))
+    progAbort(Progress(savingFraction, "Saving document tree"))
     val t2 = System.nanoTime()
     DB.withTransaction { implicit connection =>
      nodeWriter.write(docTree)
     }
     logElapsedTime("Saved DocumentSet to DB", t2)
     
-    progAbort(Progress(100, "Done"))
+    progAbort(Progress(1, "Done"))
   } 
 }

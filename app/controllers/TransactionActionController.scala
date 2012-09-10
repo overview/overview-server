@@ -9,13 +9,13 @@ import play.api.Play.current
 
 import models.orm.SquerylPostgreSqlAdapter
 
-trait TransactionActionController {
+trait TransactionActionController extends HttpsEnforcer {
   protected type ActionWithConnection[A] = {
     def apply(request: Request[A], connection: Connection): Result
   }
 
   protected def ActionInTransaction[A](p: BodyParser[A])(f: ActionWithConnection[A]) = {
-    Action(p) { implicit request =>
+    HttpsAction(p) { implicit request =>
       DB.withTransaction { implicit connection =>
         val adapter = new SquerylPostgreSqlAdapter()
         val session = new Session(connection, adapter)
