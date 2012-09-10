@@ -1,16 +1,17 @@
 observable = require('models/observable').observable
 ColorTable = require('views/color_table').ColorTable
 
-TAG_KEY = 'overview-tag'
+TAG_ID_KEY = 'overview-tag-id'
 
 class TagListView
   observable(this)
 
-  constructor: (@div, @tag_list) ->
+  constructor: (@div, @tag_list, @state) ->
     @color_table = new ColorTable()
     this._init_html()
     this._observe_tag_add()
     this._observe_tag_remove()
+    this._observe_shown_tag()
 
   _init_html: () ->
     $div = $(@div)
@@ -22,23 +23,22 @@ class TagListView
 
     notify = this._notify.bind(this)
 
+    element_to_tag = (elem) =>
+      $li = $(elem).closest('li')
+      tagid = +$li.attr("data-#{TAG_ID_KEY}")
+      tag = @tag_list.find_tag_by_id(tagid)
+
     $ul.on 'click', 'a.tag-name', (e) ->
       e.preventDefault()
-      $li = $(this).closest('li')
-      tag = $li.data(TAG_KEY)
-      notify('tag-clicked', tag)
+      notify('tag-clicked', element_to_tag(this))
 
     $ul.on 'click', 'a.tag-add', (e) ->
       e.preventDefault()
-      $li = $(this).closest('li')
-      tag = $li.data(TAG_KEY)
-      notify('add-clicked', tag)
+      notify('add-clicked', element_to_tag(this))
 
     $ul.on 'click', 'a.tag-remove', (e) ->
       e.preventDefault()
-      $li = $(this).closest('li')
-      tag = $li.data(TAG_KEY)
-      notify('remove-clicked', tag)
+      notify('remove-clicked', element_to_tag(this))
 
   _create_form: () ->
     $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="New tag" class="input-mini" /><input type="submit" value="Tag" class="btn" /></form')
@@ -63,7 +63,7 @@ class TagListView
 
   _add_tag: (tag) ->
     $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
-    $li.data(TAG_KEY, tag)
+    $li.attr("data-#{TAG_ID_KEY}", tag.id)
     $li.find('.tag-name').text(tag.name)
     $li.find('.btn').addClass(@color_table.get_tag_color_class(tag.name))
 
@@ -78,6 +78,15 @@ class TagListView
     $ul = $('ul', @div)
     $li = $($ul.children()[tag.position])
     $li.remove()
+
+  _observe_shown_tag: () ->
+    @state.observe('focused_tag-changed', this._refresh_shown_tag.bind(this))
+
+  _refresh_shown_tag: () ->
+    $div = $(@div)
+    $div.find('.shown').removeClass('shown')
+    if @state.focused_tag?
+      $div.find("[data-#{TAG_ID_KEY}=#{@state.focused_tag.id}]").addClass('shown')
 
 exports = require.make_export_object('views/tag_list_view')
 exports.TagListView = TagListView
