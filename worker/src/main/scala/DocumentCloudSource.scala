@@ -13,7 +13,7 @@ package overview.clustering
 import akka.dispatch.{ Await, Promise }
 import akka.util.Timeout
 import com.codahale.jerkson.Json._
-import overview.http.{ AsyncHttpRequest, BasicAuth, DocumentAtURL, SimpleHttpRequest }
+import overview.http.{ AsyncHttpRequest, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
 import overview.http.AsyncHttpRequest.Response
 import overview.util.Logger
 
@@ -39,11 +39,7 @@ class DocumentCloudSource(val query: String,
     val searchURL = "https://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
       "&page=" + pageNum + "&q=" + query
     (documentCloudUserName, documentCloudPassword) match {
-      case (Some(n), Some(p)) =>
-        new DocumentAtURL(searchURL) with BasicAuth {
-          val username = n
-          val password = p
-        }
+      case (Some(n), Some(p)) => new PrivateDocumentAtURL(searchURL, n, p)
       case _ => DocumentAtURL(searchURL)
     }
 
@@ -56,10 +52,7 @@ class DocumentCloudSource(val query: String,
   // Get the URL for accessing a private document
   private def privateDocURL(docURL: String): String = {
     val privateQuery = (documentCloudUserName, documentCloudPassword) match {
-      case (Some(n), Some(p)) => new DocumentAtURL(docURL) with BasicAuth {
-        val username = n
-        val password = p
-      }
+      case (Some(n), Some(p)) => new PrivateDocumentAtURL(docURL, n, p)
       case _ => throw new Exception("Can't access private documents without credentials")
     }
     val f = SimpleHttpRequest(privateQuery)
