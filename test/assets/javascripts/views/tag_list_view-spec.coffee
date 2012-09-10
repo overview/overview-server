@@ -13,17 +13,33 @@ class MockTagList
   find_tag_by_name: (name) ->
     _.find(@tags, (o) -> o.name == name)
 
+  find_tag_by_id: (id) ->
+    _.find(@tags, (o) -> o.id == id)
+
+class MockSelection
+  constructor: (obj) ->
+    this[k] = v for k, v of obj
+
+class MockState
+  observable(this)
+
+  constructor: () ->
+    @selection = new MockSelection({ nodes: [], tags: [], documents: []})
+    @focused_tag = undefined
+
 describe 'views/tag_list_view', ->
   describe 'TagListView', ->
     div = undefined
     view = undefined
     tag_list = undefined
+    state = undefined
 
     beforeEach ->
       div = $('<div></div>')[0]
       $('body').append(div)
       tag_list = new MockTagList()
-      view = new TagListView(div, tag_list)
+      state = new MockState()
+      view = new TagListView(div, tag_list, state)
 
     afterEach ->
       $(div).remove() # removes event handlers
@@ -106,3 +122,15 @@ describe 'views/tag_list_view', ->
         view.observe('tag-clicked', (v) -> val = v)
         $('a.tag-name:eq(0)', div).click()
         expect(val).toBe(tag1)
+
+      it 'should set "shown" on shown tag', ->
+        state.focused_tag = tag1
+        state._notify('focused_tag-changed', tag1)
+        class_name = $('li:eq(0)', div).attr('class')
+        expect(class_name).toMatch(/\bshown\b/)
+
+      it 'should set "selected" on selected tags', ->
+        state.selection.tags = [1, 2]
+        state._notify('selection-changed', state.selection)
+        $lis = $('li.selected', div)
+        expect($lis.length).toEqual(2)

@@ -1,7 +1,8 @@
 TagListView = require('views/tag_list_view').TagListView
+Selection = require('models/selection').Selection
 
 tag_list_controller = (div, remote_tag_list, state) ->
-  view = new TagListView(div, remote_tag_list)
+  view = new TagListView(div, remote_tag_list, state)
 
   view.observe 'add-clicked', (tag) ->
     remote_tag_list.add_tag_to_selection(tag, state.selection)
@@ -10,6 +11,7 @@ tag_list_controller = (div, remote_tag_list, state) ->
     remote_tag_list.remove_tag_from_selection(tag, state.selection)
     state.set('focused_tag', tag)
   view.observe 'tag-clicked', (tag) ->
+    state.set('selection', new Selection({ tags: [tag.id] })) # even if id is negative
     state.set('focused_tag', tag)
 
   view.observe 'create-submitted', (tag) ->

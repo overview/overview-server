@@ -102,5 +102,8 @@ class RemoteTagList
   find_tag_by_name: (name) ->
     @tag_store.find_tag_by_name(name)
 
+  find_tag_by_id: (id) ->
+    @tag_store.find_tag_by_id(id)
+
 exports = require.make_export_object('models/remote_tag_list')
 exports.RemoteTagList = RemoteTagList
