@@ -1,49 +1,5 @@
-class ProjectsFetcher
-  constructor: () ->
-    if Worker?
-      @worker = new Worker('/assets/javascripts/dcimport/login-worker.js')
-      @last_request_id = 0
-      @callbacks = {}
-
-      @worker.onmessage = (e) =>
-        request_id = e.data.request_id
-        if @callbacks[request_id]?
-          @callback = @callbacks[request_id]
-          delete @callbacks[request_id]
-          @callback(e.data)
-
-  try_authenticated_fetch: (email, password) ->
-    if Worker?
-      # Mozilla/Chrome *can* put username/password in the URL. However, if the
-      # server returns a 401 response, they will prompt for a password.
-      # DocumentCloud currently doesn't (it returns 403), but who's to say
-      # that won't change? Also, Mozilla will prompt to user to save the
-      # username/password if we do such a JSONP request, and that's
-      # confusing. Using a web worker avoids both problems.
-      #
-      # see https://bugzilla.mozilla.org/show_bug.cgi?id=282547
-      d = new $.Deferred()
-      request_id = "#{@last_request_id += 1}"
-      @callbacks[request_id] = (data) ->
-        if data.error?
-          d.reject()
-        else
-          d.resolve(data.data)
-      @worker.postMessage({ request_id: request_id, username: email, password: password })
-      d
-    else
-      # IE9
-      $.ajax({
-        url: "https://www.documentcloud.org/api/projects.json?callback=?",
-        username: email,
-        password: password,
-        dataType: 'jsonp',
-        timeout: 20000
-      })
-
 $ ->
   $root = $('#documentcloud-import>.with-login')
-  projects_fetcher = undefined
 
   # FIXME translate
   dcimport.templates.loading = _.template("""<div class="loading">Loading...</div>""")
@@ -74,8 +30,12 @@ $ ->
       $root.empty()
       $root.append(dcimport.templates.loading())
 
-      projects_fetcher ||= new ProjectsFetcher()
-      deferred = projects_fetcher.try_authenticated_fetch(email, password)
+      deferred = $.ajax({
+        url: "https://www.documentcloud.org/api/projects.json",
+        timeout: 20000,
+        beforeSend: (xhr) ->
+          xhr.setRequestHeader('Authorization', "Basic #{Base64.encode64("#{email}:#{password}")}")
+      })
       deferred.fail(-> recurse(true))
       deferred.done(callback)
     else
