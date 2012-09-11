@@ -60,15 +60,6 @@ class DrawOperation
     @spxy_per_level = @options.node_height + 2 * @options.node_vertical_padding
     @spxy = @height / (depth * @spxy_per_level)
 
-  _node_to_color: (node) ->
-    # FIXME interpolate colors
-    if node.selected
-      @options.color.node_selected
-    else if node.loaded
-      @options.color.node
-    else
-      @options.color.node_unloaded
-
   _node_to_line_width: (node) ->
     if node.selected
       @options.node_line_width_selected
