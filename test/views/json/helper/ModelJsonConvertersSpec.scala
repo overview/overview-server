@@ -28,7 +28,7 @@ class ModelJsonConvertersSpec extends Specification {
     "write document attributes" in {
       val id = 39l
       val title = "title"
-      val document = Document(id, title, "unused by Tree", "unused by Tree", Seq(1, 2, 3))
+      val document = Document(id, title, "unused by Tree", Seq(1, 2, 3))
       
       val documentJson = toJson(document).toString
       

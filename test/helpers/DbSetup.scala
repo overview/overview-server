@@ -29,13 +29,13 @@ object DbSetup {
       ).executeInsert().getOrElse(failInsert)
   }
 
-  def insertDocument(documentSetId: Long, title: String, textUrl: String, viewUrl: String)
+  def insertDocument(documentSetId: Long, title: String, documentCloudId: String)
                      (implicit connection: Connection) : Long = {
     SQL("""
-        INSERT INTO document(document_set_id, title, text_url, view_url) VALUES 
-          ({documentSetId}, {title}, {textUrl}, {viewUrl})
+        INSERT INTO document(document_set_id, title, documentcloud_id) VALUES 
+          ({documentSetId}, {title}, {documentCloudId})
         """).on("documentSetId" -> documentSetId,
-                "title" -> title, "textUrl" -> textUrl,"viewUrl" -> viewUrl).
+                "title" -> title, "documentCloudId" -> documentCloudId).
              executeInsert().getOrElse(failInsert)
   }
   
@@ -55,9 +55,9 @@ object DbSetup {
   }
 
   def insertDocumentWithNode(documentSetId: Long,
-                             title: String, textUrl: String, viewUrl: String, 
-                             nodeId: Long)(implicit connection: Connection) : Long = {
-    val documentId = insertDocument(documentSetId, title, textUrl, viewUrl)
+                             title: String, documentCloudId: String, nodeId: Long)
+                            (implicit connection: Connection) : Long = {
+    val documentId = insertDocument(documentSetId, title, documentCloudId)
     insertNodeDocument(nodeId, documentId)
     
     documentId
@@ -72,8 +72,7 @@ object DbSetup {
 
     nodeIds.flatMap(n =>
       for (i <- 1 to documentCount) yield insertDocumentWithNode(documentSetId,
-        "title-" + i, "textUrl-" + i, "viewUrl-" + i,
-        n))
+        "title-" + i, "documentcloudId-" + i, n))
   }
   
   def tagDocuments(tagId: Long, documentIds: Seq[Long])(implicit c: Connection) : Long = {

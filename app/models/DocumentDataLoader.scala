@@ -7,10 +7,10 @@ import models.DatabaseStructure.DocumentData
 
 class DocumentDataLoader {
   def loadDocument(id: Long)(implicit c: Connection) : Option[DocumentData] = {
-    val documentParser = long("id") ~ str("title") ~ str("text_url") ~ str("view_url")
+    val documentParser = long("id") ~ str("title") ~ str("documentcloud_id") 
     
     val document = SQL("""
-        SELECT id, title, text_url, view_url
+        SELECT id, title, documentcloud_id
         FROM document
         WHERE id = {documentId}
         """).on("documentId" -> id).

@@ -11,10 +11,10 @@ class DocumentLoaderSpec extends Specification with Mockito {
       val loader = mock[DocumentDataLoader]
       val parser = mock[DocumentListParser]
       
-      val dummyDocumentData = Some((10l, "title", "textUrl", "viewUrl"))
+      val dummyDocumentData = Some((10l, "title", "documentCloudId"))
       loader loadDocument(17l) returns dummyDocumentData
       parser createDocuments(dummyDocumentData.toList, Nil) returns 
-        Seq(core.Document(10l, "title", "textUrl", "viewUrl", null))
+        Seq(core.Document(10l, "title", "documentCloudId", null))
       
       val documentLoader = new DocumentLoader(loader, parser)
       

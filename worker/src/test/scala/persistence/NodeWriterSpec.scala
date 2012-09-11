@@ -101,7 +101,7 @@ class NodeWriterSpec extends DbSpecification {
     "insert document into node_document table" in new DbTestContext {
       val documentSetId = insertDocumentSet("NodeWriterSpec")
       val documentIds = for (i <- 1 to 5) yield 
-        insertDocument(documentSetId, "title", "textUrl", "viewUrl")
+        insertDocument(documentSetId, "title", "documentCloudId")
       val idSet = Set(documentIds: _*)
       
       val node = new DocTreeNode(idSet)

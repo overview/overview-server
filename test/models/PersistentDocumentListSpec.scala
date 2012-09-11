@@ -47,9 +47,9 @@ class PersistentDocumentListSpec extends Specification with Mockito {
     }
 
     "call loader and parser to create Documents" in new MockComponents {
-      val dummyDocumentData = List((1l, "title", "text", "view"))
+      val dummyDocumentData = List((1l, "title", "documentCloudId"))
       val dummyDocumentTagData = List((1l, 5l), (1l, 15l))
-      val dummyDocuments = List(core.Document(1l, "title", "text", "view", Seq(4l)))
+      val dummyDocuments = List(core.Document(1l, "title", "documentCloudId", Seq(4l)))
 
       loader loadSelectedDocumentSlice(documentSetId, nodeIds, tagIds, documentIds, 
     		  					       0, 10) returns dummyDocumentData

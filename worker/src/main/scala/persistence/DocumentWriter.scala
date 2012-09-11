@@ -16,12 +16,11 @@ import java.sql.Connection
 class DocumentWriter(documentSetId: Long) {
   
  
-  def write(title: String, textUrl: String, viewUrl: String)
-           (implicit c: Connection): Long = {
+  def write(title: String, documentCloudId: String)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO document (title, text_url, view_url, document_set_id) VALUES 
-          ({title}, {textUrl}, {viewUrl}, {documentSetId})
-        """).on("title" -> title, "textUrl" -> textUrl, "viewUrl" -> viewUrl, 
-                "documentSetId" -> documentSetId).executeInsert().get
+        INSERT INTO document (title, documentcloud_id, document_set_id) VALUES 
+          ({title}, {documentCloudId}, {documentSetId})
+        """).on("title" -> title, "documentCloudId" -> documentCloudId,
+	        "documentSetId" -> documentSetId).executeInsert().get
   }
 }

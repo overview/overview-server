@@ -43,7 +43,7 @@ class PersistentTagLoaderSpec extends Specification {
     
     "count total number of documents tagged" in new TagSetup {
       val documentIds = for (i <- 1 to 5) yield 
-        insertDocument(documentSetId, "title", "textUrl", "viewUrl")
+        insertDocument(documentSetId, "title", "documentCloudId")
       
       val tagId = insertTag(documentSetId, tagName)
       

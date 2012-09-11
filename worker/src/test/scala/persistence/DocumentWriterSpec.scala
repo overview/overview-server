@@ -20,20 +20,19 @@ class DocumentWriterSpec extends DbSpecification {
   
   "DocumentWriter" should {
     
-    "write title, text_url, and view_url to document table" in new DbTestContext {
+    "write title and document_cloud_id to document table" in new DbTestContext {
       val documentSetId = insertDocumentSet("DocumentWriterSpec")
         	
       val writer = new DocumentWriter(documentSetId)
       val title = "title"
-      val textUrl = "textUrl"
-      val viewUrl = "viewUrl"
+      val documentCloudId = "documentCloud-id"
         
-      val id = writer.write(title, textUrl, viewUrl)
+      val id = writer.write(title, documentCloudId)
       val documents = 
-        SQL("SELECT id, title, text_url, view_url FROM document").
-          as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map(flatten) *)
+        SQL("SELECT id, title, documentcloud_id FROM document").
+          as(long("id") ~ str("title") ~ str("documentcloud_id") map(flatten) *)
           
-      documents must haveTheSameElementsAs(Seq((id, title, textUrl, viewUrl)))
+      documents must haveTheSameElementsAs(Seq((id, title, documentCloudId)))
       
     }
   }

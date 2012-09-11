@@ -18,13 +18,14 @@ import overview.http.AsyncHttpRequest.Response
 import overview.util.Logger
 
 // The main DocumentCloudSource class produces a sequence of these...
-class DCDocumentAtURL(val title: String, val viewURL: String, textURL: String) extends DocumentAtURL(textURL)
+class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
 
 // Define the bits of the DocumentCloud JSON response that we're interested in. 
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.)
 // Should really be private to DocumentCloudSource.parseResults but Jerkson gives errors, see https://groups.google.com/forum/?fromgroups#!topic/play-framework/MKNPYOj9LBA%5B1-25%5D
 case class DCDocumentResources(text: String)
-case class DCDocument(title: String, access: String, canonical_url: String, resources: DCDocumentResources)
+case class DCDocument(id: String, title: String, access: String, canonical_url: String,
+  resources: DCDocumentResources)
 case class DCSearchResult(total: Int, documents: Seq[DCDocument])
 
 class DocumentCloudSource(val query: String,
@@ -73,7 +74,7 @@ class DocumentCloudSource(val query: String,
       val textUrl = if (doc.access == "public") doc.resources.text
       else privateDocURL(doc.resources.text)
 
-      val docAtURL = new DCDocumentAtURL(doc.title, doc.canonical_url, textUrl)
+      val docAtURL = new DCDocumentAtURL(doc.title, doc.id, textUrl)
       f(docAtURL)
     }
     return result.documents.size

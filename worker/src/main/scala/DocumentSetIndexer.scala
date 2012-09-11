@@ -40,7 +40,7 @@ import akka.util.Timeout
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
   private def processDocument(doc: DCDocumentAtURL, text:String) : Unit = {
     val documentId = DB.withConnection { 
-      implicit connection => documentWriter.write(doc.title, doc.textURL, doc.viewURL)
+      implicit connection => documentWriter.write(doc.title, doc.documentCloudId)
     }
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))    
     progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, "Retrieving documents"))

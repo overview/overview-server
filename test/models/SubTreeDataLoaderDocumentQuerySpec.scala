@@ -93,11 +93,8 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       val titles = (1 to numberOfDocuments).map("title-" + _)
       documents.map(_._2) must containAllOf(titles)
 
-      val textUrls = (1 to numberOfDocuments).map("textUrl-" + _)
-      documents.map(_._3) must containAllOf(textUrls)
-
-      val viewUrls = (1 to numberOfDocuments).map("viewUrl-" + _)
-      documents.map(_._4) must containAllOf(viewUrls)
+      val documentCloudIds = (1 to numberOfDocuments).map("documentcloudId-" + _)
+      documents.map(_._3) must containAllOf(documentCloudIds)
     }
 
     "return no documents if no document ids specified" in new DocumentsLoaded {

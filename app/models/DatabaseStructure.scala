@@ -24,8 +24,8 @@ object DatabaseStructure {
    */
   type NodeDocument = (Long, Long, Long) 
   
-  /** documentId, title, textUrl, viewUrl */
-  type DocumentData = (Long, String, String, String) 
+  /** documentId, title, documentCloudId */
+  type DocumentData = (Long, String, String)
 
   /**  nodeId, tagId, count */  
   type NodeTagCountData = (Long, Long, Long)

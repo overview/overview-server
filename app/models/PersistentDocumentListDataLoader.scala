@@ -34,14 +34,14 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
                                       firstRow: Long, maxRows: Long, where: String)
                                      (implicit c: Connection) : List[DocumentData] = {
     SQL("""
-        SELECT id, title, text_url, view_url FROM document 
+        SELECT id, title, documentcloud_id FROM document 
         """ + where + 
         """
         ORDER BY id 
         LIMIT {maxRows} OFFSET {offset}
         """).on("maxRows" -> maxRows, "offset" -> firstRow, 
                 "documentSetId" -> documentSetId).
-        as(long("id") ~ str("title") ~ str("text_url") ~ str("view_url") map (flatten) *)
+        as(long("id") ~ str("title") ~ str("documentcloud_id") map (flatten) *)
   }
   
   private def countQueryWhere(documentSetId: Long, where: String)

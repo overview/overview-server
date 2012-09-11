@@ -9,10 +9,8 @@ class Document(
     @Column("document_set_id")
     val documentSetId: Long,
     val title: String,
-    @Column("text_url")
-    val textUrl: String,
-    @Column("view_url")
-    val viewUrl: String
+    @Column("documentcloud_id")
+    val documentcloud_id: String
     ) extends KeyedEntity[Long] {
   override val id: Long = 0
 
