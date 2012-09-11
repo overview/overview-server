@@ -88,6 +88,31 @@ class DrawOperation
   _node_to_connector_line_width: (node) ->
     @options.connector_line_width * node.loaded_animation_fraction.current
 
+  draw_tagcount: (left, top, width, height, color, fraction) ->
+    return if fraction == 0
+
+    slant_offset = height / 2
+    tagwidth = 1.0 * (width + slant_offset) * fraction
+
+    ctx = @ctx
+
+    ctx.save()
+
+    ctx.beginPath()
+    ctx.rect(left, top, width, height)
+    ctx.clip()
+
+    ctx.fillStyle = @tag.color
+
+    ctx.beginPath()
+    ctx.moveTo(left, top)
+    ctx.lineTo(left + tagwidth + slant_offset, top)
+    ctx.lineTo(left + tagwidth - slant_offset, top + height)
+    ctx.lineTo(left, top + height)
+    ctx.fill()
+
+    ctx.restore()
+
   draw_node: (node, documents_before, level) ->
     ctx = @ctx
 
@@ -99,29 +124,8 @@ class DrawOperation
     height = @options.node_height * @spxy
     padding_y = @options.node_vertical_padding * @spxy
 
-    if @tag?
-      tagcount = node.tagcounts?[@tag.id]
-      if tagcount
-        doccount = node.num_documents.current
-        slant_offset = height / 2
-        tagwidth = 1.0 * (width + slant_offset) * tagcount / doccount # works with animation
-
-        ctx.save()
-
-        ctx.beginPath()
-        ctx.rect(left + padding_x, top + padding_y, width, height)
-        ctx.clip()
-
-        ctx.fillStyle = @tag.color
-
-        ctx.beginPath()
-        ctx.moveTo(left + padding_x, top + padding_y)
-        ctx.lineTo(left + padding_x + tagwidth + slant_offset, top + padding_y)
-        ctx.lineTo(left + padding_x + tagwidth - slant_offset, top + padding_y + height)
-        ctx.lineTo(left + padding_x, top + padding_y + height)
-        ctx.fill()
-
-        ctx.restore()
+    if @tag? && tagcount = node.tagcounts?[@tag.id]
+      this.draw_tagcount(left + padding_x, top + padding_y, width, height, @tag.color, tagcount / node.num_documents.current)
 
     ctx.lineWidth = this._node_to_line_width(node)
     ctx.strokeStyle = this._node_to_line_color(node)
