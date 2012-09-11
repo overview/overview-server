@@ -23,4 +23,9 @@ class DocumentWriter(documentSetId: Long) {
         """).on("title" -> title, "documentCloudId" -> documentCloudId,
 	        "documentSetId" -> documentSetId).executeInsert().get
   }
+
+  def updateDescription(id: Long, description: String)(implicit c: Connection): Long = {
+    SQL("UPDATE document SET title = {description} WHERE id = {id}").
+      on("description" -> description, "id" -> id).executeUpdate()
+  }
 }
