@@ -71,8 +71,9 @@ class DocumentCloudSource(val query: String,
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
     for (doc <- result.documents) {
-      val textUrl = if (doc.access == "public") doc.resources.text
-      else privateDocURL(doc.resources.text)
+      val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
+      val textUrl = if (doc.access == "public") dcDocumentURL
+      else privateDocURL(dcDocumentURL)
 
       val docAtURL = new DCDocumentAtURL(doc.title, doc.id, textUrl)
       f(docAtURL)
