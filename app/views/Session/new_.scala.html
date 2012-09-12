@@ -22,7 +22,6 @@
           @form.errors("email").map { error =>
             <span class="help-inline">@t(error.message, error.args: _*)</span>
           }
-          <p class="help-block">@m("help_email")</p>
         </div>
       </fieldset>
 
@@ -30,7 +29,6 @@
         <label for="session-password" class="control-label">@m("label_password")</label>
         <div class="controls">
           <input id="session-password" type="password" name="password" class="input-large" required="required" />
-          <p class="help-block">@m("help_password")</p>
         </div>
       </fieldset>
 
