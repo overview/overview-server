@@ -4,8 +4,8 @@ ColorTable = require('views/color_table').ColorTable
 DEFAULT_OPTIONS = {
   node_hunits: 1,
   node_vunits: 1,
-  node_hpadding: 1,
-  node_vpadding: 1,
+  node_hpadding: 0.5,
+  node_vpadding: 0.7,
   color: {
     background: '#ffffff',
     node: '#ccccdd',
@@ -144,15 +144,13 @@ class DrawOperation
     ctx.restore()
 
   _measure_drawable_node: (drawable_node, middle_x, level) ->
-    width_units = drawable_node.width
-    left_units = middle_x - width_units * 0.5
-
+    left_units = middle_x - drawable_node.width * 0.5
     vpadding = @options.node_vpadding
 
     px = drawable_node.px = {
       left: left_units * @px_per_hunit - @px_pan,
       top: (level * (1 + vpadding) + vpadding) * @px_per_vunit,
-      width: width_units * @px_per_hunit,
+      width: drawable_node.width * @px_per_hunit,
       height: @px_per_vunit,
       left_with_padding: (middle_x - drawable_node.width_with_padding * 0.5) * @px_per_hunit - @px_pan,
       width_with_padding: drawable_node.width_with_padding * @px_per_hunit,
@@ -185,7 +183,7 @@ class DrawOperation
     ctx.lineWidth = this._node_to_connector_line_width(parent_drawable_node.node)
     ctx.beginPath()
     ctx.moveTo(x1, y1)
-    ctx.bezierCurveTo(x1, mid_y, x2, mid_y, x2, y2)
+    ctx.bezierCurveTo(x1, mid_y + (0.1 * px1.height), x2, mid_y - (0.1 * px1.height), x2, y2)
     ctx.stroke()
 
   _draw_drawable_node: (drawable_node, middle_x, level) ->
