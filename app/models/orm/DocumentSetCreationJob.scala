@@ -3,6 +3,7 @@ package models.orm
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity
 import org.squeryl.dsl.ManyToOne
+import org.squeryl.PrimitiveTypeMode._
 
 case class DocumentSetCreationJob(
     @Column("document_set_id") val documentSetId: Long = 0,
@@ -17,6 +18,13 @@ case class DocumentSetCreationJob(
   def this() = this(state=DocumentSetCreationJob.State.NotStarted) // rrgh, Squeryl Enumerations
 
   lazy val documentSet: ManyToOne[DocumentSet] = Schema.documentSetDocumentSetCreationJobs.right(this);
+
+  def position: Long = {
+    val queue = from(Schema.documentSetCreationJobs)(ds =>
+      where(ds.state === DocumentSetCreationJob.State.NotStarted) select(ds.id) orderBy(ds.id))
+
+    queue.toSeq.indexOf(id)
+  }
 }
 
 object DocumentSetCreationJob {
