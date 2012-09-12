@@ -29,11 +29,11 @@ case class DocumentSetCreationJob(
 
   lazy val documentSet: ManyToOne[DocumentSet] = Schema.documentSetDocumentSetCreationJobs.right(this);
 
-  def position: Long = {
+  def jobsAheadInQueue: Long = {
     val queue = from(Schema.documentSetCreationJobs)(ds =>
       where(ds.state === NotStarted) select (ds.id) orderBy (ds.id))
 
-    queue.toSeq.indexOf(id)
+    queue.toSeq.indexOf(id) + 1
   }
 }
 

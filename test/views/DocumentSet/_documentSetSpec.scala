@@ -28,7 +28,7 @@ class _documentSetSpec extends Specification {
 
 
   class FakeDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState,
-    fractionComplete: Double = 0.0, override val position: Long = -1l) extends
+    fractionComplete: Double = 0.0, override val jobsAheadInQueue: Long = -1l) extends
   DocumentSetCreationJob(documentSetId, state = state, fractionComplete = fractionComplete)
   
   
@@ -85,7 +85,7 @@ class _documentSetSpec extends Specification {
     }
 
    "should show position in queue for NotStarted jobs" in new DocumentSetWithJobContext {
-     override val job = new FakeDocumentSetCreationJob(documentSetId, state=NotStarted, position=0)
+     override val job = new FakeDocumentSetCreationJob(documentSetId, state=NotStarted, jobsAheadInQueue=1)
       $(".state-description").text.trim must endWith("jobs_to_process")
     }
   }

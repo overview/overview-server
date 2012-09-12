@@ -21,7 +21,7 @@ object show {
     )
 
     val notStartedMap = job.state match {
-      case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.position))
+      case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
       case _ => Map()
     }
 

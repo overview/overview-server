@@ -15,7 +15,7 @@ $ ->
 
     state_description = (data) ->
       if data.state is 'NOT_STARTED'
-        m.queue_description(data.n_jobs_ahead_in_queue + 1)
+        m.queue_description(data.n_jobs_ahead_in_queue)
       else 
         data.state_description
 
