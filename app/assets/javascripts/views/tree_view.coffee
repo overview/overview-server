@@ -2,11 +2,13 @@ observable = require('models/observable').observable
 ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
+  node_hunits: 1,
+  node_vunits: 1,
+  node_hpadding: 0.5,
+  node_vpadding: 0.7,
   color: {
     background: '#ffffff',
-    node: '#ccccdd',
     node_unloaded: '#ddddff',
-    node_selected: '#bbbbbb',
     line: '#888888',
     line_selected: '#000000',
     line_loaded: '#333333',
@@ -16,17 +18,12 @@ DEFAULT_OPTIONS = {
   node_line_width: 2, # px
   node_line_width_selected: 4, # px
   node_line_width_unloaded: 1, # px
-  leaf_width: 3, # relative units
-  leaf_horizontal_padding: 1, # on each side
-  node_height: 10,
-  node_vertical_padding: 3,
   animation_speed: 0, # no animations
   mousewheel_zoom_factor: 1.2,
 }
 
 class DrawOperation
-  constructor: (@canvas, tag, @options) ->
-    @ctx = @canvas.getContext('2d')
+  constructor: (@canvas, tag, @zoom, @pan, @options) ->
     if tag?
       @tag = {
         id: tag.id,
@@ -34,40 +31,83 @@ class DrawOperation
       }
 
     $canvas = $(@canvas)
-
-    @ctx.lineStyle = @options.color.line
-
-    @width = Math.ceil($canvas.parent().width())
-    @height = Math.ceil($canvas.parent().height())
+    @width = +Math.ceil($canvas.parent().width())
+    @height = +Math.ceil($canvas.parent().height())
 
     @canvas.width = @width
     @canvas.height = @height
+
+    @ctx = @canvas.getContext('2d')
+    @ctx.lineStyle = @options.color.line
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
 
-  calculate_subpixels: (num_documents, depth, zoom_factor, pan_fraction) ->
-    depth = 0.00001 if depth == 0
+  draw: (node) ->
+    @drawable_node = this._node_to_drawable_node(node)
+    @drawable_node.relative_x = 0
+    depth = @drawable_node.height
 
-    # We render to pixels, but our calculations are done with integers in
-    # subpixel space. Multiply by "spxx" and "spxy" to convert to pixel space.
-    @spxx_per_document = @options.leaf_width + 2 * @options.leaf_horizontal_padding
-    npx = @spxx_per_document * num_documents
-    @spxx = @width / (npx * zoom_factor)
-    @left_px = (0.5 + pan_fraction - zoom_factor * 0.5) * npx * @spxx
+    @px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
+    @px_per_vunit = @height / ((depth + 1) * @options.node_vpadding + (depth * @options.node_vunits))
+    @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
-    @spxy_per_level = @options.node_height + 2 * @options.node_vertical_padding
-    @spxy = @height / (depth * @spxy_per_level)
+    this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width_with_padding * 0.5 * @px_per_hunit - @px_pan })
 
-  _node_to_color: (node) ->
-    # FIXME interpolate colors
-    if node.selected
-      @options.color.node_selected
-    else if node.loaded
-      @options.color.node
+  _pixel_is_within_node: (x, y, drawable_node) ->
+    px = drawable_node.px
+    x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
+
+  _pixel_to_drawable_node_recursive: (x, y, drawable_node) ->
+    return drawable_node if this._pixel_is_within_node(x, y, drawable_node)
+
+    if drawable_node.children?
+      for child in drawable_node.children
+        drawable_child = this._pixel_to_drawable_node_recursive(x, y, child)
+        return drawable_child if drawable_child
+
+    return undefined
+
+  pixel_to_nodeid: (x, y) ->
+    drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
+    drawable_node?.node?.id
+
+  _node_is_complete: (node) ->
+    !_(node.children).any((n) => !n.loaded)
+
+  _node_to_drawable_node: (node) ->
+    fraction = node.loaded_animation_fraction.current
+    hpadding = @options.node_hpadding * fraction
+
+    drawable_node = {
+      node: node,
+      fraction: fraction,
+      width: node.num_documents.current * fraction,
+    }
+
+    width_of_this_node_with_padding = drawable_node.width + (2 * hpadding)
+
+    if !node.children.length || !this._node_is_complete(node)
+      drawable_node.width_with_padding = width_of_this_node_with_padding
+      drawable_node.height = fraction
     else
-      @options.color.node_unloaded
+      drawable_node.children = _(node.children).map(this._node_to_drawable_node.bind(this))
+
+      width_of_children_with_padding = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_padding), 0) + (drawable_node.children.length + 1) * hpadding
+      drawable_node.width_with_padding = if width_of_this_node_with_padding > width_of_children_with_padding
+        width_of_this_node_with_padding
+      else
+        width_of_children_with_padding
+
+      drawable_node.height = _(n.height for n in drawable_node.children).max() + fraction
+
+      x = -0.5 * drawable_node.width_with_padding + hpadding
+      for child in drawable_node.children
+        child.relative_x = x + child.width_with_padding * 0.5
+        x += child.width_with_padding + hpadding
+
+    drawable_node
 
   _node_to_line_width: (node) ->
     if node.selected
@@ -85,68 +125,88 @@ class DrawOperation
     else
       @options.color.line_unloaded
 
-  _node_to_connector_line_width: (node) ->
-    @options.connector_line_width * node.loaded_animation_fraction.current
+  _draw_tagcount: (left, top, width, height, color, fraction) ->
+    return if fraction == 0
 
-  draw_node: (node, documents_before, level) ->
+    slant_offset = height / 2
+    tagwidth = 1.0 * (width + slant_offset) * fraction
+
     ctx = @ctx
 
-    left = @spxx_per_document * documents_before * @spxx - @left_px
-    top = @spxy_per_level * level * @spxy
+    ctx.save()
 
-    width = node.num_documents.current * @options.leaf_width * @spxx
-    padding_x = node.num_documents.current * @options.leaf_horizontal_padding * @spxx
-    height = @options.node_height * @spxy
-    padding_y = @options.node_vertical_padding * @spxy
+    ctx.beginPath()
+    ctx.rect(left, top, width, height)
+    ctx.clip()
 
-    if @tag?
-      tagcount = node.tagcounts?[@tag.id]
-      if tagcount
-        doccount = node.num_documents.current
-        slant_offset = height / 2
-        tagwidth = 1.0 * (width + slant_offset) * tagcount / doccount # works with animation
+    ctx.fillStyle = @tag.color
 
-        ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(left, top)
+    ctx.lineTo(left + tagwidth + slant_offset, top)
+    ctx.lineTo(left + tagwidth - slant_offset, top + height)
+    ctx.lineTo(left, top + height)
+    ctx.fill()
 
-        ctx.beginPath()
-        ctx.rect(left + padding_x, top + padding_y, width, height)
-        ctx.clip()
+    ctx.restore()
 
-        ctx.fillStyle = @tag.color
+  _measure_drawable_node: (drawable_node, parent_px) ->
+    vpadding = @options.node_vpadding
+    fraction = drawable_node.fraction
+    px_per_hunit = @px_per_hunit
+    vpx_of_fraction = fraction * @px_per_vunit
 
-        ctx.beginPath()
-        ctx.moveTo(left + padding_x, top + padding_y)
-        ctx.lineTo(left + padding_x + tagwidth + slant_offset, top + padding_y)
-        ctx.lineTo(left + padding_x + tagwidth - slant_offset, top + padding_y + height)
-        ctx.lineTo(left + padding_x, top + padding_y + height)
-        ctx.fill()
+    px = drawable_node.px = {
+      middle: parent_px.middle + drawable_node.relative_x * px_per_hunit,
+      width: drawable_node.width * px_per_hunit,
+      width_with_padding: drawable_node.width_with_padding * px_per_hunit,
+      top: (parent_px.top || 0) + (parent_px.height || 0) + vpadding * vpx_of_fraction,
+      height: @options.node_vunits * vpx_of_fraction,
+    }
+    px.left = px.middle - px.width * 0.5
+    px.left_with_padding = px.middle - px.width_with_padding * 0.5
 
-        ctx.restore()
+  _draw_measured_drawable_node: (drawable_node) ->
+    px = drawable_node.px
+    node = drawable_node.node
 
+    if @tag? && tagcount = node.tagcounts?[@tag.id]
+      this._draw_tagcount(px.left, px.top, px.width, px.height, @tag.color, tagcount / node.num_documents.current)
+
+    ctx = @ctx
     ctx.lineWidth = this._node_to_line_width(node)
     ctx.strokeStyle = this._node_to_line_color(node)
-    ctx.strokeRect(left + padding_x, top + padding_y, width, height)
 
-    middle_x = left + padding_x + width * 0.5
+    if _(drawable_node.node.children).any((n) -> !n.loaded)
+      ctx.fillStyle = @options.color.node_unloaded
+      ctx.fillRect(px.left, px.top, px.width, px.height)
 
-    documents_drawn_in_children = documents_before
+    ctx.strokeRect(px.left, px.top, px.width, px.height)
 
-    for child_node in node.children
-      child_middle_x = this.draw_node(child_node, documents_drawn_in_children, level + 1)
-      documents_drawn_in_children += child_node.num_documents.current
+  _draw_line_from_parent_to_child: (parent_px, child_px) ->
+    x1 = parent_px.middle
+    y1 = parent_px.top + parent_px.height
+    x2 = child_px.middle
+    y2 = child_px.top
+    mid_y = 0.5 * (y1 + y2)
 
-      ctx.lineWidth = this._node_to_connector_line_width(child_node)
+    ctx = @ctx
+    ctx.lineWidth = @options.connector_line_width
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
+    ctx.stroke()
 
-      ctx.beginPath()
-      ctx.moveTo(middle_x, top + padding_y + height)
-      ctx.bezierCurveTo(
-        middle_x, top + 2 * padding_y + height,
-        child_middle_x, top + 2 * padding_y + height,
-        child_middle_x, top + 3 * padding_y + height
-      )
-      ctx.stroke()
+  _draw_drawable_node: (drawable_node, parent_px) ->
+    this._measure_drawable_node(drawable_node, parent_px)
+    this._draw_measured_drawable_node(drawable_node)
 
-    middle_x
+    if drawable_node.children?
+      for child_drawable_node in drawable_node.children
+        this._draw_drawable_node(child_drawable_node, drawable_node.px)
+        this._draw_line_from_parent_to_child(drawable_node.px, child_drawable_node.px)
+
+    undefined
 
 $ = jQuery
 _ = window._
@@ -249,30 +309,7 @@ class TreeView
   _pixel_to_nodeid: (x, y) ->
     return undefined if @tree.root is undefined
 
-    $canvas = $(@canvas)
-
-    zoom = @focus.zoom
-    pan = @focus.pan
-
-    canvas_fraction = x / $canvas.width()
-    doc_fraction = 0.5 + pan - zoom * 0.5 + canvas_fraction * zoom
-
-    node = @tree.root
-    doc_index = Math.floor(doc_fraction * node.num_documents.current)
-    levels_to_go = Math.floor(y / $canvas.height() * @tree.animated_height.current)
-
-    docs_to_our_left = 0
-    while levels_to_go > 0 && node.children.length > 0
-      for child_node in node.children
-        if child_node.num_documents.current + docs_to_our_left <= doc_index
-          docs_to_our_left += child_node.num_documents.current
-        else
-          break
-
-      levels_to_go -= 1
-      node = child_node
-
-    node?.id
+    @last_draw.pixel_to_nodeid(x, y)
 
   _nodeid_to_n_documents: (nodeid) ->
     exact = @tree.nodes[nodeid]?.doclist?.n
@@ -295,32 +332,13 @@ class TreeView
 
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
-  #_draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
-  #  ctx.fillStyle = @options.color.node_unloaded
-
-  #  ctx.beginPath()
-  #  ctx.moveTo(x, y + h * 0.5)
-  #  ctx.quadraticCurveTo(x, y, x + w * 0.5, y)
-  #  ctx.quadraticCurveTo(x + w, y, x + w, y + h * 0.5)
-  #  ctx.quadraticCurveTo(x + w, y + h, x + w * 0.5, y + h)
-  #  ctx.quadraticCurveTo(x, y + h, x, y + h * 0.5)
-  #  ctx.fill()
-  #  ctx.stroke()
-
   _redraw: () ->
-    op = new DrawOperation(@canvas, @tree.state.focused_tag, @options)
-    op.clear()
+    @last_draw = new DrawOperation(@canvas, @tree.state.focused_tag, @focus.zoom, @focus.pan, @options)
+    @last_draw.clear()
 
     return if @tree.root is undefined
 
-    op.calculate_subpixels(
-      @tree.root.num_documents.current,
-      @tree.animated_height.current,
-      @focus.zoom,
-      @focus.pan,
-    )
-
-    op.draw_node(@tree.root, 0, 0)
+    @last_draw.draw(@tree.root)
 
   update: () ->
     @tree.update()
