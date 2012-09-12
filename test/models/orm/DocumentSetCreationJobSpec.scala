@@ -6,7 +6,7 @@ import anorm._
 import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
-import models.orm.DocumentSetCreationJob.State._
+import models.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
@@ -17,7 +17,7 @@ class DocumentSetCreationJobSpec extends Specification {
 
   "DocumentSetCreationJob" should {
 
-    def createJobs(state: DocumentSetCreationJob.State)(implicit c: Connection): Seq[DocumentSetCreationJob] = {
+    def createJobs(state: DocumentSetCreationJobState)(implicit c: Connection): Seq[DocumentSetCreationJob] = {
       val documentSets = for (i <- 1 to 5) yield insertDocumentSet("set-" + i)
       val jobs = documentSets.map(DocumentSetCreationJob(_, state = state))
       jobs.map(Schema.documentSetCreationJobs.insert)

@@ -5,6 +5,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
 import models.orm.{DocumentSet,DocumentSetCreationJob}
+import models.orm.DocumentSetCreationJobState._
 
 class _documentSetSpec extends Specification {
   trait ViewContext extends Scope {
@@ -51,22 +52,22 @@ class _documentSetSpec extends Specification {
     }
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.NotStarted)
+      override val job = DocumentSetCreationJob(documentSetId, state=NotStarted)
       $("li.unfinished").length must be_>=(1)
     }
 
     "should show a progress bar" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress, fractionComplete=0.2)
+      override val job = DocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2)
       $("progress").length must be_>=(1)
     }
 
     "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress, fractionComplete=0.2)
+      override val job = DocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2)
       $("progress").attr("value") must beEqualTo("20")
     }
 
     "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=DocumentSetCreationJob.State.InProgress)
+      override val job = DocumentSetCreationJob(documentSetId, state=InProgress)
       $(".state").text() must endWith("IN_PROGRESS")
     }
 

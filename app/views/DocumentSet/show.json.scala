@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
 import models.orm.{DocumentSet,DocumentSetCreationJob}
-import models.orm.DocumentSetCreationJob.State._
+import models.orm.DocumentSetCreationJobState._
 
 
 object show {
