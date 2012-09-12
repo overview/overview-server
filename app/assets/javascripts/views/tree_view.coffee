@@ -47,13 +47,29 @@ class DrawOperation
     @ctx.fillRect(0, 0, @width, @height)
 
   draw: (node) ->
-    drawable_node = this._node_to_drawable_node(node)
+    @drawable_node = this._node_to_drawable_node(node)
 
-    @px_per_hunit = @width / drawable_node.width_with_padding / @zoom
-    @px_per_vunit = @height / ((drawable_node.height + 1) * @options.node_vpadding + drawable_node.height)
+    @px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
+    @px_per_vunit = @height / ((@drawable_node.height + 1) * @options.node_vpadding + @drawable_node.height)
     @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
-    this._draw_drawable_node(drawable_node, drawable_node.width_with_padding * 0.5, 0)
+    this._draw_drawable_node(@drawable_node, @drawable_node.width_with_padding * 0.5, 0)
+
+  _pixel_is_within_node: (x, y, drawable_node) ->
+    px = drawable_node.px
+    x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
+
+  _find_drawable_node_child_containing_x_within_padding: (drawable_node, x) ->
+    _(drawable_node.children || []).find (n) ->
+      x >= n.px.left_with_padding && x <= n.px.left_with_padding + n.px.width_with_padding
+
+  pixel_to_nodeid: (x, y) ->
+    cur = @drawable_node
+
+    while cur? && !this._pixel_is_within_node(x, y, cur)
+      cur = this._find_drawable_node_child_containing_x_within_padding(cur, x)
+
+    cur?.node?.id
 
   _node_is_complete: (node) ->
     !_(node.children).any((n) => !n.loaded)
@@ -127,52 +143,61 @@ class DrawOperation
 
     ctx.restore()
 
-  _draw_measured_node: (node, left, top, width, height) ->
+  _measure_drawable_node: (drawable_node, middle_x, level) ->
+    width_units = drawable_node.width
+    left_units = middle_x - width_units * 0.5
+
+    vpadding = @options.node_vpadding
+
+    px = drawable_node.px = {
+      left: left_units * @px_per_hunit - @px_pan,
+      top: (level * (1 + vpadding) + vpadding) * @px_per_vunit,
+      width: width_units * @px_per_hunit,
+      height: @px_per_vunit,
+      left_with_padding: (middle_x - drawable_node.width_with_padding * 0.5) * @px_per_hunit - @px_pan,
+      width_with_padding: drawable_node.width_with_padding * @px_per_hunit,
+    }
+    px.middle = px.left + px.width * 0.5
+
+  _draw_measured_drawable_node: (drawable_node) ->
+    px = drawable_node.px
+    node = drawable_node.node
+
     if @tag? && tagcount = node.tagcounts?[@tag.id]
-      this._draw_tagcount(left, top, width, height, @tag.color, tagcount / node.num_documents.current)
+      this._draw_tagcount(px.left, px.top, px.width, px.height, @tag.color, tagcount / node.num_documents.current)
 
     ctx = @ctx
     ctx.lineWidth = this._node_to_line_width(node)
     ctx.strokeStyle = this._node_to_line_color(node)
-    ctx.strokeRect(left, top, width, height)
+    ctx.strokeRect(px.left, px.top, px.width, px.height)
 
-  _draw_line_from_parent_to_child: (parent_node, middle_px, child_middle_px, parent_level) ->
-    vpadding = @options.node_vpadding
+  _draw_line_from_parent_to_child: (parent_drawable_node, child_drawable_node) ->
+    px1 = parent_drawable_node.px
+    px2 = child_drawable_node.px
 
-    x1 = middle_px
-    y1 = (parent_level + 1) * (vpadding + 1) * @px_per_vunit
-    x2 = child_middle_px
-    y2 = y1 + vpadding * @px_per_vunit
+    x1 = px1.middle
+    y1 = px1.top + px1.height
+    x2 = px2.middle
+    y2 = px2.top
     mid_y = 0.5 * (y1 + y2)
 
     ctx = @ctx
-    ctx.lineWidth = this._node_to_connector_line_width(parent_node)
+    ctx.lineWidth = this._node_to_connector_line_width(parent_drawable_node.node)
     ctx.beginPath()
     ctx.moveTo(x1, y1)
     ctx.bezierCurveTo(x1, mid_y, x2, mid_y, x2, y2)
     ctx.stroke()
 
   _draw_drawable_node: (drawable_node, middle_x, level) ->
-    width_units = drawable_node.width
-    left_units = middle_x - width_units * 0.5
-
-    vpadding = @options.node_vpadding
-
-    middle_px = middle_x * @px_per_hunit - @px_pan
-    left = left_units * @px_per_hunit - @px_pan
-    width = width_units * @px_per_hunit
-    top = (level * (1 + vpadding) + vpadding) * @px_per_vunit
-    height = @px_per_vunit
-
-    this._draw_measured_node(drawable_node.node, left, top, width, height)
+    this._measure_drawable_node(drawable_node, middle_x, level)
+    this._draw_measured_drawable_node(drawable_node)
 
     if drawable_node.children?
       for child_drawable_node in drawable_node.children
-        child_middle_px = this._draw_drawable_node(child_drawable_node, middle_x + child_drawable_node.relative_x, level + 1)
+        this._draw_drawable_node(child_drawable_node, middle_x + child_drawable_node.relative_x, level + 1)
+        this._draw_line_from_parent_to_child(drawable_node, child_drawable_node)
 
-        this._draw_line_from_parent_to_child(child_drawable_node.node, middle_px, child_middle_px, level)
-
-    middle_px
+    undefined
 
 $ = jQuery
 _ = window._
@@ -275,30 +300,7 @@ class TreeView
   _pixel_to_nodeid: (x, y) ->
     return undefined if @tree.root is undefined
 
-    $canvas = $(@canvas)
-
-    zoom = @focus.zoom
-    pan = @focus.pan
-
-    canvas_fraction = x / $canvas.width()
-    doc_fraction = 0.5 + pan - zoom * 0.5 + canvas_fraction * zoom
-
-    node = @tree.root
-    doc_index = Math.floor(doc_fraction * node.num_documents.current)
-    levels_to_go = Math.floor(y / $canvas.height() * @tree.animated_height.current)
-
-    docs_to_our_left = 0
-    while levels_to_go > 0 && node.children.length > 0
-      for child_node in node.children
-        if child_node.num_documents.current + docs_to_our_left <= doc_index
-          docs_to_our_left += child_node.num_documents.current
-        else
-          break
-
-      levels_to_go -= 1
-      node = child_node
-
-    node?.id
+    @last_draw.pixel_to_nodeid(x, y)
 
   _nodeid_to_n_documents: (nodeid) ->
     exact = @tree.nodes[nodeid]?.doclist?.n
@@ -322,12 +324,12 @@ class TreeView
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
   _redraw: () ->
-    op = new DrawOperation(@canvas, @tree.state.focused_tag, @tree.animated_height.current, @focus.zoom, @focus.pan, @options)
-    op.clear()
+    @last_draw = new DrawOperation(@canvas, @tree.state.focused_tag, @tree.animated_height.current, @focus.zoom, @focus.pan, @options)
+    @last_draw.clear()
 
     return if @tree.root is undefined
 
-    op.draw(@tree.root)
+    @last_draw.draw(@tree.root)
 
   update: () ->
     @tree.update()
