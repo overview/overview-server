@@ -180,6 +180,29 @@ describe 'views/tree_view', ->
         click_pixel(50, 50)
         expect(events[0]).toEqual(['click', undefined])
 
+      it 'should resize and notify :needs-update when resized', ->
+        called = false
+        view.observe('needs-update', (() -> called = true))
+        $(div).width(50)
+        $(window).resize()
+        expect(called).toBe(true)
+        view.update()
+        expect($(view.canvas).width()).toEqual(50)
+
+      it 'should notify :needs-update and set needs_update=true when zoom changes', ->
+        called = false
+        view.observe('needs-update', (-> called = true))
+        focus._notify('zoom', 0.4)
+        expect(called).toBe(true)
+        expect(view.needs_update()).toBe(true)
+
+      it 'should notify :needs-update and set needs_update=true when pan changes', ->
+        called = false
+        view.observe('needs-update', (-> called = true))
+        focus._notify('pan', 0.2)
+        expect(called).toBe(true)
+        expect(view.needs_update()).toBe(true)
+
     describe 'with a full tree', ->
       beforeEach ->
         # two-level tree
@@ -272,73 +295,3 @@ describe 'views/tree_view', ->
         at 1100, -> view.update()
         rgb = get_pixel(25, 75)
         expect(rgb).toEqual(rgb_node_selected)
-
-    describe 'with a non-full tree', ->
-      beforeEach ->
-        # three-level binary tree, right-middle node isn't full
-        at 0, ->
-          add_node_through_deferred(1, [2, 7], 4)
-          add_node_through_deferred(2, [3, 4], 2)
-          add_node_through_deferred(3, [], 1)
-          add_node_through_deferred(4, [], 1)
-        at(1000, -> animated_tree.update())
-        create_view()
-
-      it 'should trigger :click on a unloaded node', ->
-        click_pixel(75, 50)
-        expect(events[0]).toEqual(['click', 7])
-
-      it 'should trigger :click on an unloaded node when we click below it', ->
-        click_pixel(75, 75)
-        expect(events[0]).toEqual(['click', 7])
-
-      it 'should select the proper level, with pixel perfection', ->
-        click_pixel(20, 0)
-        expect(events[0]).toEqual(['click', 1])
-        click_pixel(20, 30)
-        expect(events[1]).toEqual(['click', 1])
-        click_pixel(20, 34)
-        expect(events[2]).toEqual(['click', 2])
-        click_pixel(20, 66)
-        expect(events[3]).toEqual(['click', 2])
-        click_pixel(20, 67)
-        expect(events[4]).toEqual(['click', 3])
-        click_pixel(20, 99)
-        expect(events[5]).toEqual(['click', 3])
-
-      it 'should select the proper document, with pixel perfection', ->
-        click_pixel(0, 70)
-        expect(events[0]).toEqual(['click', 3])
-        click_pixel(24, 70)
-        expect(events[1]).toEqual(['click', 3])
-        click_pixel(25, 70)
-        expect(events[2]).toEqual(['click', 4])
-        click_pixel(49, 70)
-        expect(events[3]).toEqual(['click', 4])
-        click_pixel(50, 70)
-        expect(events[4]).toEqual(['click', 7])
-        click_pixel(99, 70)
-        expect(events[5]).toEqual(['click', 7])
-
-      it 'should resize and notify :needs-update when resized', ->
-        called = false
-        view.observe('needs-update', (() -> called = true))
-        $(div).width(50)
-        $(window).resize()
-        expect(called).toBe(true)
-        view.update()
-        expect($(view.canvas).width()).toEqual(50)
-
-      it 'should notify :needs-update and set needs_update=true when zoom changes', ->
-        called = false
-        view.observe('needs-update', (-> called = true))
-        focus._notify('zoom', 0.4)
-        expect(called).toBe(true)
-        expect(view.needs_update()).toBe(true)
-
-      it 'should notify :needs-update and set needs_update=true when pan changes', ->
-        called = false
-        view.observe('needs-update', (-> called = true))
-        focus._notify('pan', 0.2)
-        expect(called).toBe(true)
-        expect(view.needs_update()).toBe(true)
