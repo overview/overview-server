@@ -11,7 +11,11 @@
   <script src="@routes.Assets.at("javascripts/dcimport/templates/login.js")"></script>
   <script src="@routes.Assets.at("javascripts/dcimport/templates/_project.js")"></script>
   <script src="@routes.Assets.at("javascripts/dcimport/login.js")"></script>
-  <script src="@routes.Assets.at("javascripts/dcimport/main.js")"></script>
+  <script src="@routes.Assets.at("javascripts/dcimport/import-project.js")"></script>
+  <script type="text/javascript">
+    var node = $('#documentcloud-import .with-login');
+    dcimport.import_project_with_login(node);
+  </script>
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
