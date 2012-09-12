@@ -13,8 +13,15 @@
   <script src="@routes.Assets.at("javascripts/dcimport/login.js")"></script>
   <script src="@routes.Assets.at("javascripts/dcimport/import-project.js")"></script>
   <script type="text/javascript">
-    var node = $('#documentcloud-import .with-login');
+    var node = $('#documentcloud-import .with-login')[0];
     dcimport.import_project_with_login(node);
+
+    var $manual_root = $('#documentcloud-import .manual');
+    $manual_root.find('a:eq(0)').on('click', function(e) {
+      e.preventDefault();
+      $manual_root.find('form').toggle();
+    });
+
   </script>
 }
 

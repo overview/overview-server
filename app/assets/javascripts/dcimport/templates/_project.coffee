@@ -17,7 +17,7 @@ template = _.template("""
     <form method="post" class="form-inline" action="<%- r.DocumentSetController.create() %>">
       <input type="hidden" name="title" value="<%- project.title %>" />
       <input type="hidden" name="query" value="projectid:<%- project.id %>" />
-      <input type="hidden" name="documentcloud_username" value="<%- credentials.username %>" />
+      <input type="hidden" name="documentcloud_username" value="<%- credentials.email %>" />
       <input type="hidden" name="documentcloud_password" value="<%- credentials.password %>" />
       <button class="btn">
         <i class="icon-download"></i> <%- m.import %>

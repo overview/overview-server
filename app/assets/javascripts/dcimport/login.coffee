@@ -1,10 +1,9 @@
 Deferred = $.Deferred
 
 # FIXME translate
-dcimport.templates.loading = _.template("""<div class="loading">Loading...</div>""")
-dcimport.templates.empty = _.template("""<p>You have no projects to import.</p>""")
+dcimport.templates.loading = _.template("""<p>Loading...</p>""")
 
-get_stored_credentials = () ->
+dcimport.get_credentials = () ->
   ret = {
     email: sessionStorage.getItem('dcimport_email'),
     password: sessionStorage.getItem('dcimport_password'),
@@ -51,7 +50,7 @@ request_json_with_login_recursive = (deferred, url, prompt_div, attempt=0) ->
       store_credentials(credentials)
       request_json_with_login_recursive(deferred, url, prompt_div, attempt + 1)
 
-  credentials = get_stored_credentials()
+  credentials = dcimport.get_credentials()
 
   if credentials?
     $div = $(prompt_div)

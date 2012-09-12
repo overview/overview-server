@@ -34,4 +34,4 @@ jQuery ($) ->
     document_list_controller(this, world.cache, world.state)
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
-    document_contents_controller(this, world.state, world.cache.server.router)
+    document_contents_controller(this, world.cache, world.state)

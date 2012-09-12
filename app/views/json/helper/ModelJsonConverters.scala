@@ -14,27 +14,26 @@ object ModelJsonConverters {
       ))
     }
   }
-  
+
   implicit object JsonTag extends Writes[Tag] {
     override def writes(tag: Tag): JsValue = {
       toJson(Map(
         "id" -> toJson(tag.id),
         "name" -> toJson(tag.name),
-        "doclist" -> toJson(tag.documentIds)))
+        "doclist" -> toJson(tag.documentIds)
+      ))
     }
   }
-  
-    
+
   implicit object JsonDocument extends Writes[Document] {
     override def writes(document: Document) : JsValue = {
       toJson(Map(
         "id" -> toJson(document.id),
         "title" -> toJson(document.title),
-        "tagids" -> toJson(document.tags)
+        "tagids" -> toJson(document.tags),
+        "documentcloud_id" -> toJson(document.documentCloudId)
       ))
     }
   }
-
-
 
 }

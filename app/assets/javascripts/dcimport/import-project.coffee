@@ -1,27 +1,22 @@
 $ = jQuery
+#
+# FIXME translate
+dcimport.templates.empty = _.template("""<p>You have no projects to import.</p>""")
 
 dcimport.import_project_with_login = (div) ->
-  $root = $(div)
-
   show_data = (data) ->
-    $root.empty()
+    $div = $(div)
+    $div.empty()
 
     if !data?.projects?.length
-      $root.append(dcimport.templates.empty())
+      $div.append(dcimport.templates.empty())
     else
+      credentials = dcimport.get_credentials()
       $ul = $('<ul class="unstyled projects"></ul>')
-      credentials = {
-        username: sessionStorage.getItem('dcimport_email'),
-        password: sessionStorage.getItem('dcimport_password'),
-      }
       $ul.append(dcimport.templates._project(project, credentials)) for project in data.projects
-      $root.append($ul)
+      $div.append($ul)
 
-  $root.on 'click', 'a', (e) ->
+  $div.on 'click', 'a', (e) ->
     e.preventDefault()
-    deferred = dcimport.request_json_with_login('https://www.documentcloud.org/api/projects.json', $root[0])
+    deferred = dcimport.request_json_with_login('https://www.documentcloud.org/api/projects.json', div)
     deferred.done(show_data)
-
-  $manual_root = $('#documentcloud-import>.manual')
-  $manual_root.find('a:eq(0)').on 'click', (e) ->
-    $manual_root.find('form').toggle()

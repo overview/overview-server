@@ -8,34 +8,39 @@ class MockState
   constructor: () ->
     @selection = { nodes: [], tags: [], documents: [] }
 
-class MockRouter
-  route_to_path: (key, id) ->
-    @last_path = "/#{key}/#{id}"
+class MockCache
+  constructor: () ->
+    @document_store = { documents: {
+      '1': { id: 1, title: "doc 1", documentcloud_id: "1-doc-1" }
+      '2': { id: 2, title: "doc 2", documentcloud_id: "2-doc-2" }
+    }}
+    @server = {
+      router: {
+        route_to_path: (key, id) -> "/#{key}/#{id}"
+      }
+    }
 
 
 describe 'views/document_contents_view', ->
   describe 'DocumentContentsView', ->
+    cache = undefined
     state = undefined
-    router = undefined
-    document = { id: 1, title: "doc 1" }
-    document2 = { id: 2, title: "doc 2" }
     div = undefined
     view = undefined
 
-    create_view = () -> new DocumentContentsView(div, state, router)
+    create_view = () -> new DocumentContentsView(div, cache, state)
     
     beforeEach ->
-      state = new MockState()
-      router = new MockRouter()
       div = $('<div></div>')[0]
       $('body').append(div)
-      view = undefined
+      cache = new MockCache()
+      state = new MockState()
 
     afterEach ->
-      state = undefined
-      router = undefined
       $(div).remove() # Removes all callbacks
       div = undefined
+      cache = undefined
+      state = undefined
       view = undefined
 
     describe 'beginning empty', ->
@@ -48,7 +53,7 @@ describe 'views/document_contents_view', ->
       it 'should build an iframe when there is a selected document', ->
         state.selection.documents = [1]
         state._notify('selection-changed', state.selection)
-        expect($(view.div).find('iframe[src="/document_view/1"]').length).toEqual(1)
+        expect(view.iframe.getAttribute('src')).toEqual('/document_view/1')
 
     describe 'beginning on a document', ->
       beforeEach ->
@@ -58,15 +63,24 @@ describe 'views/document_contents_view', ->
       it 'should show the iframe', ->
         expect($(view.div).find('iframe[src="/document_view/1"]').length).toEqual(1)
 
-      it 'should change the URL when the document changes', ->
+      it 'should call the iframe load_documentcloud_document() on change', ->
+        id = undefined
+        view.iframe = {
+          contentWindow: {
+            load_documentcloud_document: (x) -> id = x
+          }
+        }
         state.selection.documents = [2]
         state._notify('selection-changed', state.selection)
-        $iframe = $(view.div).find('iframe')
-        expect($iframe.attr('src')).toEqual('/document_view/2')
+        expect(id).toEqual('2-doc-2')
 
-      it 'should not change the URL when the selection changes but the selected document does not', ->
-        $iframe = $(view.div).find('iframe')
-        $iframe.attr('src', '/somewhere-else')
+      it 'should call load_documentcloud_document() when the selection changes but the selected document does not', ->
+        id = undefined
+        view.iframe = {
+          contentWindow: {
+            load_documentcloud_document: (x) -> id = x
+          }
+        }
         state.selection.nodes = [1]
         state._notify('selection-changed', state.selection)
-        expect($iframe.attr('src')).toEqual('/somewhere-else')
+        expect(id).toBeUndefined()

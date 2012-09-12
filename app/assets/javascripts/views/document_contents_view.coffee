@@ -1,36 +1,40 @@
 class DocumentContentsView
-  constructor: (@div, @state, @router) ->
-    @_last_url = undefined
+  constructor: (@div, @cache, @state) ->
+    @_last_docid = undefined
+    @iframe = undefined
 
     @state.observe('selection-changed', this._refresh.bind(this))
 
     this._refresh()
 
-  _get_focus_url: () ->
-    docid = @state.selection.documents[0]
-    docid? && @router.route_to_path('document_view', docid) || undefined
+  _get_docid: () ->
+    @state.selection.documents[0]
 
-  _find_or_create_iframe: () ->
-    $div = $(@div)
+  _get_iframe_url: (document) ->
+    @cache.server.router.route_to_path('document_view', document.id)
 
-    $iframe = $div.find('iframe')
-    if !$iframe.length
-      $iframe = $('<iframe frameborder="0" width="1" height="1"></iframe>')
-      $div.append($iframe)
-
-    $iframe[0]
+  _create_iframe: (document) ->
+    $iframe = $('<iframe frameborder="0" width="1" height="1"></iframe>')
+    url = this._get_iframe_url(document)
+    $iframe.attr('src', this._get_iframe_url(document))
+    $(@div).append($iframe)
+    @iframe = $iframe[0]
 
   _refresh: () ->
-    url = this._get_focus_url()
-    return if url == @_last_url
+    docid = this._get_docid()
+    return if docid == @_last_docid
+    @_last_docid = docid
 
-    if !url?
-      $(@div).empty()
+    if docid?
+      document = @cache.document_store.documents[docid]
+
+      if @iframe?
+        @iframe.contentWindow.load_documentcloud_document(document.documentcloud_id)
+      else
+        this._create_iframe(document)
     else
-      iframe = this._find_or_create_iframe()
-      iframe.src = url
-
-    @_last_url = url
+      if @iframe?
+        @iframe.contentWindow.load_documentcloud_document(undefined)
 
 exports = require.make_export_object('views/document_contents_view')
 exports.DocumentContentsView = DocumentContentsView

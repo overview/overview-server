@@ -3,6 +3,7 @@
 <html>
   <head>
     <title>@document.title</title>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
   </head>
   <body>
@@ -10,9 +11,31 @@
 
     <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/viewer.js")"></script>
     <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/templates.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor-coffee/base64.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/jquery-1-8-1.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/underscore.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/templates/login.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/login.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/fetch-document-json.js")"></script>
 
     <script type="text/javascript">
-      DV.load('https://www.documentcloud.org/documents/@(document.documentCloudId).json', { container: '#DV-container' });
+      window.load_documentcloud_document = function(id) {
+        var $container = $('#DV-container');
+        $container.empty();
+        $container.attr('className', '');
+
+        if (id) {
+          var container = $container[0];
+
+          var deferred = dcimport.fetch_document_json(id, container);
+          deferred.done(function(json) { DV.load(json, container.id); });
+          // TODO handle failure
+        }
+      };
+
+      $(function() {
+        window.load_documentcloud_document('@document.documentCloudId');
+      });
     </script>
   </body>
 </html>
