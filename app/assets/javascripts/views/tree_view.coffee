@@ -8,9 +8,7 @@ DEFAULT_OPTIONS = {
   node_vpadding: 0.7,
   color: {
     background: '#ffffff',
-    node: '#ccccdd',
     node_unloaded: '#ddddff',
-    node_selected: '#bbbbbb',
     line: '#888888',
     line_selected: '#000000',
     line_loaded: '#333333',
@@ -176,6 +174,11 @@ class DrawOperation
     ctx = @ctx
     ctx.lineWidth = this._node_to_line_width(node)
     ctx.strokeStyle = this._node_to_line_color(node)
+
+    if _(drawable_node.node.children).any((n) -> !n.loaded)
+      ctx.fillStyle = @options.color.node_unloaded
+      ctx.fillRect(px.left, px.top, px.width, px.height)
+
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
   _draw_line_from_parent_to_child: (parent_px, child_px) ->
