@@ -48,12 +48,14 @@ class DrawOperation
 
   draw: (node) ->
     @drawable_node = this._node_to_drawable_node(node)
+    @drawable_node.relative_x = 0
+    depth = @drawable_node.height
 
     @px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
-    @px_per_vunit = @height / ((@drawable_node.height + 1) * @options.node_vpadding + @drawable_node.height)
+    @px_per_vunit = @height / ((depth + 1) * @options.node_vpadding + (depth * @options.node_vunits))
     @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
-    this._draw_drawable_node(@drawable_node, @drawable_node.width_with_padding * 0.5, 0)
+    this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width_with_padding * 0.5 * @px_per_hunit - @px_pan })
 
   _pixel_is_within_node: (x, y, drawable_node) ->
     px = drawable_node.px
@@ -75,22 +77,30 @@ class DrawOperation
     !_(node.children).any((n) => !n.loaded)
 
   _node_to_drawable_node: (node) ->
+    fraction = node.loaded_animation_fraction.current
+    hpadding = @options.node_hpadding * fraction
+
     drawable_node = {
       node: node,
-      loaded: node.loaded,
+      fraction: fraction,
+      width: node.num_documents.current * fraction,
     }
 
-    hpadding = @options.node_hpadding
+    width_of_this_node_with_padding = drawable_node.width + (2 * hpadding)
 
     if !node.children.length || !this._node_is_complete(node)
-      drawable_node.width = node.num_documents.current
-      drawable_node.width_with_padding = drawable_node.width + 2 * hpadding
-      drawable_node.height = 1
+      drawable_node.width_with_padding = width_of_this_node_with_padding
+      drawable_node.height = fraction
     else
       drawable_node.children = _(node.children).map(this._node_to_drawable_node.bind(this))
-      drawable_node.width = _(drawable_node.children).reduce(((s, n) -> s + n.width), 0)
-      drawable_node.width_with_padding = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_padding), 0) + (drawable_node.children.length + 1) * hpadding
-      drawable_node.height = _(n.height for n in drawable_node.children).max() + 1
+
+      width_of_children_with_padding = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_padding), 0) + (drawable_node.children.length + 1) * hpadding
+      drawable_node.width_with_padding = if width_of_this_node_with_padding > width_of_children_with_padding
+        width_of_this_node_with_padding
+      else
+        width_of_children_with_padding
+
+      drawable_node.height = _(n.height for n in drawable_node.children).max() + fraction
 
       x = -0.5 * drawable_node.width_with_padding + hpadding
       for child in drawable_node.children
@@ -114,9 +124,6 @@ class DrawOperation
       @options.color.line_loaded
     else
       @options.color.line_unloaded
-
-  _node_to_connector_line_width: (node) ->
-    @options.connector_line_width * node.loaded_animation_fraction.current
 
   _draw_tagcount: (left, top, width, height, color, fraction) ->
     return if fraction == 0
@@ -143,19 +150,21 @@ class DrawOperation
 
     ctx.restore()
 
-  _measure_drawable_node: (drawable_node, middle_x, level) ->
-    left_units = middle_x - drawable_node.width * 0.5
+  _measure_drawable_node: (drawable_node, parent_px) ->
     vpadding = @options.node_vpadding
+    fraction = drawable_node.fraction
+    px_per_hunit = @px_per_hunit
+    vpx_of_fraction = fraction * @px_per_vunit
 
     px = drawable_node.px = {
-      left: left_units * @px_per_hunit - @px_pan,
-      top: (level * (1 + vpadding) + vpadding) * @px_per_vunit,
-      width: drawable_node.width * @px_per_hunit,
-      height: @px_per_vunit,
-      left_with_padding: (middle_x - drawable_node.width_with_padding * 0.5) * @px_per_hunit - @px_pan,
-      width_with_padding: drawable_node.width_with_padding * @px_per_hunit,
+      middle: parent_px.middle + drawable_node.relative_x * px_per_hunit,
+      width: drawable_node.width * px_per_hunit,
+      width_with_padding: drawable_node.width_with_padding * px_per_hunit,
+      top: (parent_px.top || 0) + (parent_px.height || 0) + vpadding * vpx_of_fraction,
+      height: @options.node_vunits * vpx_of_fraction,
     }
-    px.middle = px.left + px.width * 0.5
+    px.left = px.middle - px.width * 0.5
+    px.left_with_padding = px.middle - px.width_with_padding * 0.5
 
   _draw_measured_drawable_node: (drawable_node) ->
     px = drawable_node.px
@@ -169,31 +178,28 @@ class DrawOperation
     ctx.strokeStyle = this._node_to_line_color(node)
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
-  _draw_line_from_parent_to_child: (parent_drawable_node, child_drawable_node) ->
-    px1 = parent_drawable_node.px
-    px2 = child_drawable_node.px
-
-    x1 = px1.middle
-    y1 = px1.top + px1.height
-    x2 = px2.middle
-    y2 = px2.top
+  _draw_line_from_parent_to_child: (parent_px, child_px) ->
+    x1 = parent_px.middle
+    y1 = parent_px.top + parent_px.height
+    x2 = child_px.middle
+    y2 = child_px.top
     mid_y = 0.5 * (y1 + y2)
 
     ctx = @ctx
-    ctx.lineWidth = this._node_to_connector_line_width(parent_drawable_node.node)
+    ctx.lineWidth = @options.connector_line_width
     ctx.beginPath()
     ctx.moveTo(x1, y1)
-    ctx.bezierCurveTo(x1, mid_y + (0.1 * px1.height), x2, mid_y - (0.1 * px1.height), x2, y2)
+    ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
     ctx.stroke()
 
-  _draw_drawable_node: (drawable_node, middle_x, level) ->
-    this._measure_drawable_node(drawable_node, middle_x, level)
+  _draw_drawable_node: (drawable_node, parent_px) ->
+    this._measure_drawable_node(drawable_node, parent_px)
     this._draw_measured_drawable_node(drawable_node)
 
     if drawable_node.children?
       for child_drawable_node in drawable_node.children
-        this._draw_drawable_node(child_drawable_node, middle_x + child_drawable_node.relative_x, level + 1)
-        this._draw_line_from_parent_to_child(drawable_node, child_drawable_node)
+        this._draw_drawable_node(child_drawable_node, drawable_node.px)
+        this._draw_line_from_parent_to_child(drawable_node.px, child_drawable_node.px)
 
     undefined
 
