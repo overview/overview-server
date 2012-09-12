@@ -59,17 +59,19 @@ class DrawOperation
     px = drawable_node.px
     x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
 
-  _find_drawable_node_child_containing_x_within_padding: (drawable_node, x) ->
-    _(drawable_node.children || []).find (n) ->
-      x >= n.px.left_with_padding && x <= n.px.left_with_padding + n.px.width_with_padding
+  _pixel_to_drawable_node_recursive: (x, y, drawable_node) ->
+    return drawable_node if this._pixel_is_within_node(x, y, drawable_node)
+
+    if drawable_node.children?
+      for child in drawable_node.children
+        drawable_child = this._pixel_to_drawable_node_recursive(x, y, child)
+        return drawable_child if drawable_child
+
+    return undefined
 
   pixel_to_nodeid: (x, y) ->
-    cur = @drawable_node
-
-    while cur? && !this._pixel_is_within_node(x, y, cur)
-      cur = this._find_drawable_node_child_containing_x_within_padding(cur, x)
-
-    cur?.node?.id
+    drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
+    drawable_node?.node?.id
 
   _node_is_complete: (node) ->
     !_(node.children).any((n) => !n.loaded)
