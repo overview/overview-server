@@ -36,6 +36,7 @@ object PersistentDocumentSetCreationJob {
                  documentcloud_username, documentcloud_password
           FROM document_set_creation_job
           WHERE state = {state}
+	  ORDER BY id
           """).on("state" -> Submitted.id).
             as(long("id") ~ long("document_set_id") ~ int("state") ~ 
                get[Double]("fraction_complete") ~ 
