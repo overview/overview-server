@@ -84,9 +84,7 @@ describe 'views/tree_view', ->
     create_view = () ->
       view = new TreeView(div, animated_tree, focus, options)
       rgb_background = color_to_rgb(view.options.color.background)
-      rgb_node = color_to_rgb(view.options.color.node)
       rgb_node_unloaded = color_to_rgb(view.options.color.node_unloaded)
-      rgb_node_selected = color_to_rgb(view.options.color.node_selected)
 
     maybe_observe_events = () ->
       return if events?
