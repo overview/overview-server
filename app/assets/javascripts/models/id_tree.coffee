@@ -113,7 +113,7 @@ class IdTree
     return undefined if !@children[id]?
 
     ret = []
-    to_visit = @children[id]
+    to_visit = @children[id].slice(0)
 
     # Breadth-first search
     while cur = to_visit.shift()
