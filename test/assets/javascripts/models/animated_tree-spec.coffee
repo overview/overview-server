@@ -177,19 +177,6 @@ describe 'models/animated_tree', ->
       state._notify('selection-changed', state.selection)
       expect(called).toBe(true)
 
-    it 'should set animated_height to height on load', ->
-      add_nodes([[1, [2], 3]])
-      expect(animated_tree.animated_height.current).toEqual(2)
-
-    it 'should animate animated_height on change', ->
-      add_nodes([[1, [2], 3]])
-      Timecop.freeze new Date(100), -> add_nodes([[2, [3], 3]])
-      expect(animated_tree.animated_height.current).toEqual(2)
-      Timecop.freeze new Date(600), -> animated_tree.update()
-      expect(animated_tree.animated_height.current).toEqual(2.5)
-      Timecop.freeze new Date(1100), -> animated_tree.update()
-      expect(animated_tree.animated_height.current).toEqual(3)
-
     it 'should update num_documents in just-loaded nodes', ->
       at 100, -> add_nodes([[1, [2, 3], 3]])
       n2 = animated_tree.root.children[0]

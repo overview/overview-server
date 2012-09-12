@@ -8,7 +8,6 @@ observable = require('models/observable').observable
 # * An update() method, to change properties by an animation step
 # * A needs_update() method, which says whether update() would do something
 # * A @root property, which is suitable for drawing
-# * A @animated_height property, which looks like { current: 3 } when H=3
 # * A :needs-update signal, fired when needs_update() goes from false to true
 #
 # The root is either undefined (for an unloaded tree) or a collection of nodes
@@ -32,7 +31,6 @@ class AnimatedTree
   constructor: (@on_demand_tree, @state, @animator) ->
     @id_tree = @on_demand_tree.id_tree
     @root = undefined # node with children property pointing to other nodes
-    @animated_height = { current: 0 }
     @_nodes = {} # id => node
     @_last_selected_nodes = @state.selection.nodes
     @_needs_update = false
@@ -103,7 +101,6 @@ class AnimatedTree
         parent_node.children.push(node)
         @_nodes[node.id] = node
 
-    @animated_height.current = @on_demand_tree.height
     this._notify('needs-update')
 
   _change: (changes) ->
@@ -115,8 +112,6 @@ class AnimatedTree
       this._animate_remove_undefined_node(id, time) for id in changes.remove_undefined
       this._animate_unload_node(id, time) for id in changes.remove
       this._animate_load_node(id, time) for id in changes.add
-
-      @animator.animate_object_properties(this, { animated_height: @on_demand_tree.height}, undefined, time)
 
   _animate_load_node: (id, time) ->
     node = @_nodes[id] # exists, but we know loaded = false

@@ -25,7 +25,7 @@ DEFAULT_OPTIONS = {
 }
 
 class DrawOperation
-  constructor: (@canvas, tag, @depth, @zoom, @pan, @options) ->
+  constructor: (@canvas, tag, @zoom, @pan, @options) ->
     if tag?
       @tag = {
         id: tag.id,
@@ -328,7 +328,7 @@ class TreeView
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
   _redraw: () ->
-    @last_draw = new DrawOperation(@canvas, @tree.state.focused_tag, @tree.animated_height.current, @focus.zoom, @focus.pan, @options)
+    @last_draw = new DrawOperation(@canvas, @tree.state.focused_tag, @focus.zoom, @focus.pan, @options)
     @last_draw.clear()
 
     return if @tree.root is undefined
