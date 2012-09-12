@@ -3,17 +3,16 @@
 <html>
   <head>
     <title>@document.title</title>
-    <style>
-      html, body, iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
   </head>
   <body>
-    <iframe frameborder="0" width="1" height="1" src="@document.documentCloudId"></iframe>
+    <div id="DV-container"></div>
+
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/viewer.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/templates.js")"></script>
+
+    <script type="text/javascript">
+      DV.load('https://www.documentcloud.org/documents/@(document.documentCloudId).json', { container: '#DV-container' });
+    </script>
   </body>
 </html>

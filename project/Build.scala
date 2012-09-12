@@ -29,6 +29,11 @@ object ApplicationBuild extends Build {
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
   )
 
+  def customLessEntryPoints(base: File) : PathFinder = (
+    (base / "app" / "assets" / "stylesheets" ** "main.less") +++
+    (base / "app" / "assets" / "stylesheets" ** "DV.less")
+  )
+
 
   val worker = Project("overview-worker", file("worker"), settings =
     Defaults.defaultSettings ++ 
@@ -49,7 +54,7 @@ object ApplicationBuild extends Build {
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
     resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",         
-    lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" ** "main.less"),
+    lessEntryPoints <<= baseDirectory(customLessEntryPoints),
     templatesImport += "views.Magic._"
   ).settings(
     testOptions in Test ++= Seq(
