@@ -5,6 +5,7 @@ import play.api.data.Forms._
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
+import models.DocumentSetCreationJobQueue
 import models.orm.{DocumentSet,DocumentSetCreationJob, User}
 import models.orm.DocumentSet.ImplicitHelper._
 
@@ -29,7 +30,7 @@ trait AuthorizedDocumentSetController {
   def authorizedShowJson(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSet = user.documentSets.where(d => d.id === id).toSeq.withCreationJobs.headOption
     documentSet match {
-      case Some(ds) => Ok(views.json.DocumentSet.show(ds))
+      case Some(ds) => Ok(views.json.DocumentSet.show(ds, DocumentSetCreationJobQueue.position(ds.id)))
       case None => NotFound
     }
   }
