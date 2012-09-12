@@ -330,18 +330,6 @@ class TreeView
 
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
-  #_draw_unloaded_node: (nodeid, ctx, x, y, w, h) ->
-  #  ctx.fillStyle = @options.color.node_unloaded
-
-  #  ctx.beginPath()
-  #  ctx.moveTo(x, y + h * 0.5)
-  #  ctx.quadraticCurveTo(x, y, x + w * 0.5, y)
-  #  ctx.quadraticCurveTo(x + w, y, x + w, y + h * 0.5)
-  #  ctx.quadraticCurveTo(x + w, y + h, x + w * 0.5, y + h)
-  #  ctx.quadraticCurveTo(x, y + h, x, y + h * 0.5)
-  #  ctx.fill()
-  #  ctx.stroke()
-
   _redraw: () ->
     op = new DrawOperation(@canvas, @tree.state.focused_tag, @options)
     op.clear()
