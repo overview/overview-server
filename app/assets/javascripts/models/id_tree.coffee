@@ -39,6 +39,7 @@ observable = require('models/observable').observable
 #     id_tree.parent[6] # 3, even though node 6 isn't there
 #     id_tree.parent[3] # 1
 #     id_tree.parent[1] # undefined
+#     id_tree.loaded_descendents(1) # [ 4, 2, 3 ]
 #
 # Some invariants of the IdTree, true before/after every method call:
 #
@@ -107,6 +108,21 @@ class IdTree
     @children[id] = children
     (@parent[child_id] = id for child_id in children)
     @_edits.add.push(id)
+
+  loaded_descendents: (id) ->
+    return undefined if !@children[id]?
+
+    ret = []
+    to_visit = @children[id]
+
+    # Breadth-first search
+    while cur = to_visit.shift()
+      children = @children[cur]
+      if children? # may even be empty
+        ret.unshift(cur)
+        to_visit.push(child_id) for child_id in children
+
+    ret
 
   _remove: (id) ->
     child_ids = []

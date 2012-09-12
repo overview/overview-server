@@ -70,15 +70,28 @@ describe 'models/id_tree', ->
       do_remove(1) # root, remove
       expect(calls).toEqual(['add', 'root', 'add', 'remove', 'root', 'remove'])
 
-    it 'should notify :remove from deepest to shallowest', ->
-      do_add(1, [2, 3])
-      do_add(2, [4, 5])
-      do_add(3, [6, 7])
-      do_add(4, [8, 9])
-      args = []
-      id_tree.observe('remove', (ids) -> args.push(ids))
-      do_remove(1)
-      expect(args).toEqual([[4, 3, 2, 1]])
+    describe 'Starting with a simple tree', ->
+      beforeEach ->
+        do_add(1, [2, 3])
+        do_add(2, [4, 5])
+        do_add(3, [6, 7])
+        do_add(4, [8, 9])
+
+      it 'should notify :remove from deepest to shallowest', ->
+        args = []
+        id_tree.observe('remove', (ids) -> args.push(ids))
+        do_remove(1)
+        expect(args).toEqual([[4, 3, 2, 1]])
+
+      it 'should return undefined when calling loaded_descendents() on an unloaded node', ->
+        expect(id_tree.loaded_descendents(8)).toEqual(undefined)
+
+      it 'should return an empty list when calling loaded_descendents() on a leaf', ->
+        expect(id_tree.loaded_descendents(4)).toEqual([])
+
+      it 'should return loaded_descendents() from deepest to shallowest', ->
+        do_add(6, [10, 11])
+        expect(id_tree.loaded_descendents(1)).toEqual([ 6, 4, 3, 2 ])
 
     describe 'after removing a child', ->
       beforeEach ->
