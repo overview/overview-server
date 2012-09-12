@@ -2,6 +2,10 @@ observable = require('models/observable').observable
 ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
+  node_hunits: 1,
+  node_vunits: 1,
+  node_hpadding: 1,
+  node_vpadding: 1,
   color: {
     background: '#ffffff',
     node: '#ccccdd',
@@ -16,17 +20,12 @@ DEFAULT_OPTIONS = {
   node_line_width: 2, # px
   node_line_width_selected: 4, # px
   node_line_width_unloaded: 1, # px
-  leaf_width: 3, # relative units
-  leaf_horizontal_padding: 1, # on each side
-  node_height: 10,
-  node_vertical_padding: 3,
   animation_speed: 0, # no animations
   mousewheel_zoom_factor: 1.2,
 }
 
 class DrawOperation
-  constructor: (@canvas, tag, @options) ->
-    @ctx = @canvas.getContext('2d')
+  constructor: (@canvas, tag, @depth, @zoom, @pan, @options) ->
     if tag?
       @tag = {
         id: tag.id,
@@ -34,43 +33,27 @@ class DrawOperation
       }
 
     $canvas = $(@canvas)
-
-    @ctx.lineStyle = @options.color.line
-
-    @width = Math.ceil($canvas.parent().width())
-    @height = Math.ceil($canvas.parent().height())
+    @width = +Math.ceil($canvas.parent().width())
+    @height = +Math.ceil($canvas.parent().height())
 
     @canvas.width = @width
     @canvas.height = @height
+
+    @ctx = @canvas.getContext('2d')
+    @ctx.lineStyle = @options.color.line
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
 
-  calculate_subpixels: (depth, zoom_factor, pan_fraction) ->
-    @zoom_factor = zoom_factor
-    @pan_fraction = pan_fraction
-
-    @whitespace = 0.5
-
-    depth = 0.00001 if depth == 0
-
-    ## We render to pixels, but our calculations are done with integers in
-    ## subpixel space. Multiply by "spxx" and "spxy" to convert to pixel space.
-    #@spxx_per_document = @options.leaf_width + 2 * @options.leaf_horizontal_padding
-    #npx = @spxx_per_document * num_documents
-    #@spxx = @width / (npx * zoom_factor)
-    #@left_px = (0.5 + pan_fraction - zoom_factor * 0.5) * npx * @spxx
-
-    @px_per_vunit = @height / (depth + @whitespace * (depth + 1))
-
   draw: (node) ->
     drawable_node = this._node_to_drawable_node(node)
 
-    @px_per_unit = @width / drawable_node.width_with_whitespace / @zoom_factor
-    @px_pan = (drawable_node.width_with_whitespace * (0.5 + @pan_fraction - @zoom_factor / 2)) * @px_per_unit
+    @px_per_hunit = @width / drawable_node.width_with_padding / @zoom
+    @px_per_vunit = @height / ((drawable_node.height + 1) * @options.node_vpadding + drawable_node.height)
+    @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
-    this._draw_drawable_node(drawable_node, drawable_node.width_with_whitespace * 0.5, 0)
+    this._draw_drawable_node(drawable_node, drawable_node.width_with_padding * 0.5, 0)
 
   _node_is_complete: (node) ->
     !_(node.children).any((n) => !n.loaded)
@@ -81,18 +64,22 @@ class DrawOperation
       loaded: node.loaded,
     }
 
+    hpadding = @options.node_hpadding
+
     if !node.children.length || !this._node_is_complete(node)
       drawable_node.width = node.num_documents.current
-      drawable_node.width_with_whitespace = drawable_node.width + 2 * @whitespace
+      drawable_node.width_with_padding = drawable_node.width + 2 * hpadding
+      drawable_node.height = 1
     else
       drawable_node.children = _(node.children).map(this._node_to_drawable_node.bind(this))
       drawable_node.width = _(drawable_node.children).reduce(((s, n) -> s + n.width), 0)
-      drawable_node.width_with_whitespace = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_whitespace), 0) + (drawable_node.children.length + 1) * @whitespace
+      drawable_node.width_with_padding = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_padding), 0) + (drawable_node.children.length + 1) * hpadding
+      drawable_node.height = _(n.height for n in drawable_node.children).max() + 1
 
-      x = -0.5 * drawable_node.width_with_whitespace + @whitespace
+      x = -0.5 * drawable_node.width_with_padding + hpadding
       for child in drawable_node.children
-        child.relative_x = x + child.width_with_whitespace * 0.5
-        x += child.width_with_whitespace + @whitespace
+        child.relative_x = x + child.width_with_padding * 0.5
+        x += child.width_with_padding + hpadding
 
     drawable_node
 
@@ -150,10 +137,12 @@ class DrawOperation
     ctx.strokeRect(left, top, width, height)
 
   _draw_line_from_parent_to_child: (parent_node, middle_px, child_middle_px, parent_level) ->
+    vpadding = @options.node_vpadding
+
     x1 = middle_px
-    y1 = (parent_level + 1) * (@whitespace + 1) * @px_per_vunit
+    y1 = (parent_level + 1) * (vpadding + 1) * @px_per_vunit
     x2 = child_middle_px
-    y2 = y1 + @whitespace * @px_per_vunit
+    y2 = y1 + vpadding * @px_per_vunit
     mid_y = 0.5 * (y1 + y2)
 
     ctx = @ctx
@@ -167,10 +156,12 @@ class DrawOperation
     width_units = drawable_node.width
     left_units = middle_x - width_units * 0.5
 
-    middle_px = middle_x * @px_per_unit - @px_pan
-    left = left_units * @px_per_unit - @px_pan
-    width = width_units * @px_per_unit
-    top = (level * (1 + @whitespace) + @whitespace) * @px_per_vunit
+    vpadding = @options.node_vpadding
+
+    middle_px = middle_x * @px_per_hunit - @px_pan
+    left = left_units * @px_per_hunit - @px_pan
+    width = width_units * @px_per_hunit
+    top = (level * (1 + vpadding) + vpadding) * @px_per_vunit
     height = @px_per_vunit
 
     this._draw_measured_node(drawable_node.node, left, top, width, height)
@@ -331,16 +322,10 @@ class TreeView
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
   _redraw: () ->
-    op = new DrawOperation(@canvas, @tree.state.focused_tag, @options)
+    op = new DrawOperation(@canvas, @tree.state.focused_tag, @tree.animated_height.current, @focus.zoom, @focus.pan, @options)
     op.clear()
 
     return if @tree.root is undefined
-
-    op.calculate_subpixels(
-      @tree.animated_height.current,
-      @focus.zoom,
-      @focus.pan,
-    )
 
     op.draw(@tree.root)
 
