@@ -15,56 +15,55 @@ import java.sql.Connection
 import org.specs2.mutable.Specification
 import persistence.DocumentSetCreationJobState._
 
-
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   step(setupDb)
-  
+
+  def insertDocumentSetCreationJob(documentSetId: Long, state: Int)(implicit c: Connection): Long = {
+    SQL("""
+        INSERT INTO document_set_creation_job (document_set_id, state)
+        VALUES ({documentSetId}, {state})
+        """).on("documentSetId" -> documentSetId, "state" -> state).
+      executeInsert().getOrElse(throw new Exception("failed Insert"))
+  }
+
+  def insertJobsWithState(documentSetId: Long, states: Seq[Int])(implicit c: Connection) {
+    states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
+  }
+
   trait JobSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
     lazy val allNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
     lazy val notStartedJob = allNotStartedJobs.head
-    
-    def insertJob: Long = 
-      SQL("""
-          INSERT INTO document_set_creation_job (document_set_id, state)
-          VALUES ({documentSetId}, {state})
-          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id).
-              executeInsert().getOrElse(throw new Exception("failed Insert"))
+
+    def insertJob = insertDocumentSetCreationJob(documentSetId, Submitted.id)
   }
 
   trait DocumentCloudJobSetup extends JobSetup {
     val dcUsername = "user@documentcloud.org"
     val dcPassword = "dcPassword"
 
-    def insertDocumentCloudJob: Long = 
+    lazy val jobId = insertJob
+
+    def insertDocumentCloudJob: Long =
       SQL("""
-          INSERT INTO document_set_creation_job 
-	    (document_set_id, state, documentcloud_username, documentcloud_password)
-          VALUES ({documentSetId}, {state}, {userName}, {password})
-          """).on("documentSetId" -> documentSetId, "state" -> Submitted.id,
-		  "userName" -> dcUsername, "password" -> dcPassword).
-              executeInsert().getOrElse(throw new Exception("failed Insert"))
+	  UPDATE document_set_creation_job
+	  SET documentcloud_username = {userName},
+	      documentcloud_password = {password}
+	  WHERE id = {jobId}
+	 """).on("userName" -> dcUsername, "password" -> dcPassword, "jobId" -> jobId).
+        executeUpdate()
   }
-  
+
   "PersistentDocumentSetCreationJob" should {
-    
+
     "find all submitted jobs" in new JobSetup {
-      SQL("""
-          INSERT INTO document_set_creation_job (document_set_id, state) VALUES 
-            ({documentSetId},{state1}),
-            ({documentSetId}, {state2}),
-            ({documentSetId}, {state3})
-          """).on("documentSetId" -> documentSetId,
-                  "state1" -> Submitted.id, "state2" -> Submitted.id, 
-                  "state3" -> InProgress.id).
-               executeUpdate()
-               
+      insertJobsWithState(documentSetId, Seq(Submitted.id, Submitted.id, InProgress.id))
+
       allNotStartedJobs.map(_.state).distinct must contain(Submitted).only
       allNotStartedJobs.map(_.documentSetId).distinct must contain(documentSetId).only
     }
-    
-    
+
     "update job state" in new JobSetup {
       insertJob
       notStartedJob.state = InProgress
@@ -73,24 +72,24 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
       remainingNotStartedJobs must be empty
     }
-    
+
     "update percent complete" in new JobSetup {
       insertJob
-      
+
       notStartedJob.fractionComplete = 0.5
       notStartedJob.update
       val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
-      
-      job.fractionComplete must be equalTo(0.5)
+
+      job.fractionComplete must be equalTo (0.5)
     }
-    
+
     "delete itself" in new JobSetup {
       insertJob
-      
+
       notStartedJob.delete
-      
+
       val remainingJobs = PersistentDocumentSetCreationJob.findAllSubmitted
-      
+
       remainingJobs must be empty
     }
 
@@ -104,10 +103,12 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "have username and password if available" in new DocumentCloudJobSetup {
       insertDocumentCloudJob
 
-      allNotStartedJobs.head.documentCloudUsername must beSome.like { case n => 
-	n must be equalTo(dcUsername) }
+      allNotStartedJobs.head.documentCloudUsername must beSome.like {
+        case n =>
+          n must be equalTo (dcUsername)
+      }
     }
   }
-  
+
   step(shutdownDb)
 }
