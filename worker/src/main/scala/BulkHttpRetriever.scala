@@ -32,6 +32,7 @@ object BulkHttpRetriever {
   private case class DocToRetrieve(doc: DocumentAtURL)
   private case class NoMoreDocsToRetrieve()
 
+  
   private class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Unit,
     finished: Promise[Seq[DocRetrievalError]])
     extends Actor {
@@ -83,7 +84,16 @@ object BulkHttpRetriever {
           ", size: " + text.size +
           ", time: " + ("%.2f" format elapsedSeconds) +
           ", speed: " + ((text.size / 1024) / elapsedSeconds + 0.5).toInt + " KB/s")
-        writeDocument(doc.asInstanceOf[T], text)
+        try {
+          writeDocument(doc.asInstanceOf[T], text)
+        } catch {
+          case e => {
+	    Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
+	    finished.failure(e)
+	    context.stop(self)
+	  }
+	}
+
         spoolRequests
 
       case GetTextFailed(doc, error) =>
@@ -93,6 +103,7 @@ object BulkHttpRetriever {
         spoolRequests
     }
   }
+
 
   def apply[T <: DocumentAtURL](sourceDocList: Traversable[T],
     writeDocument: (T, String) => Unit): Promise[Seq[DocRetrievalError]] = {
