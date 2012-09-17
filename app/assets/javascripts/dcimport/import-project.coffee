@@ -16,7 +16,7 @@ dcimport.import_project_with_login = (div) ->
       $ul.append(dcimport.templates._project(project, credentials)) for project in data.projects
       $div.append($ul)
 
-  $div.on 'click', 'a', (e) ->
+  $(div).on 'click', 'a', (e) ->
     e.preventDefault()
     deferred = dcimport.request_json_with_login('https://www.documentcloud.org/api/projects.json', div)
     deferred.done(show_data)

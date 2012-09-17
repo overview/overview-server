@@ -23,21 +23,21 @@ class DocumentSetCreationJobSpec extends Specification {
       jobs.map(Schema.documentSetCreationJobs.insert)
     }
 
-    "Return -1th position for non-Submitted jobs" in new DbTestContext {
+    "Return 0 jobsAheadInQueue for non-Submitted jobs" in new DbTestContext {
       val documentSetId = insertDocumentSet("DocumentSetCreationJobQueueSpec")
       val job = DocumentSetCreationJob(documentSetId, state = InProgress)
       Schema.documentSetCreationJobs.insert(job)
 
-      job.position must be equalTo (-1l)
+      job.jobsAheadInQueue must be equalTo (0l)
     }
 
-    "Return position in queue of NotStarted jobs" in new DbTestContext {
+    "Return jobsAheadInQueue in queue of NotStarted jobs" in new DbTestContext {
       val notStartedJobs = createJobs(NotStarted)
 
       val inProgressJobs = createJobs(InProgress)
 
-      val expectedPositions = (0l to 4l).toIndexedSeq
-      notStartedJobs.map(_.position) must be equalTo (expectedPositions)
+      val expectedJobsAheadInQueue = (1l to 5l).toIndexedSeq
+      notStartedJobs.map(_.jobsAheadInQueue) must be equalTo (expectedJobsAheadInQueue)
     }
 
   }

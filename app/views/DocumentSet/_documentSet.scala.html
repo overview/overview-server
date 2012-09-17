@@ -16,7 +16,12 @@
         <span class="state">@m("job_state." + job.state.toString())</span>
         <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
       </label>
-      <!-- FIXME make i18n-friendly --><span class="state-description">@job.stateDescription</span>
+      <!-- FIXME make i18n-friendly --><span class="state-description">@{
+        val jobsToProcess = job.jobsAheadInQueue
+	  if (jobsToProcess == 0) job.stateDescription
+	  else m("jobs_to_process", jobsToProcess)
+	}
+      </span>
     }.getOrElse {
       <span class="document-count">@m("document_count", documentSet.documentCount)</span>
     }

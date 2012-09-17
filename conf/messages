@@ -46,6 +46,7 @@ views.DocumentSet._documentSet.job_state.ERROR=stalled
 views.DocumentSet._documentSet.job_state.NOT_STARTED=NOT_STARTED
 views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before this one: {0}
 
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in

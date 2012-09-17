@@ -1,3 +1,7 @@
+m = {
+  queue_description: (n) -> "Number of jobs to process before this one: #{n}",
+}
+
 WAIT_INTERVAL = 500 # ms after one request completes before another starts
 
 $ ->
@@ -9,10 +13,16 @@ $ ->
     done = (data) ->
       $li.replaceWith(data.html)
 
+    state_description = (data) ->
+      if data.state is 'NOT_STARTED'
+        m.queue_description(data.n_jobs_ahead_in_queue)
+      else 
+        data.state_description
+
     progress = (data) ->
       $li.find('progress').attr('value', data.percent_complete)
       $li.find('.state').text(data.state)
-      $li.find('.state-description').text(data.state_description)
+      $li.find('.state-description').text(state_description(data))
 
     refresh = ->
       $.get json_href, (data) ->

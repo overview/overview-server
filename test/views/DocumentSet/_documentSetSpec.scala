@@ -1,11 +1,11 @@
 package views.html.DocumentSet
 
 import jodd.lagarto.dom.jerry.Jerry.jerry
+import models.orm.{DocumentSet, DocumentSetCreationJob}
+import models.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import models.orm.{DocumentSet,DocumentSetCreationJob}
-import models.orm.DocumentSetCreationJobState._
 
 class _documentSetSpec extends Specification {
   trait ViewContext extends Scope {
@@ -26,6 +26,12 @@ class _documentSetSpec extends Specification {
     override lazy val documentSet = DocumentSet(documentSetId, "a title", "a query", Some(10), Some(job))
   }
 
+
+  class FakeDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState,
+    fractionComplete: Double = 0.0, override val jobsAheadInQueue: Long = -1l) extends
+  DocumentSetCreationJob(documentSetId, state = state, fractionComplete = fractionComplete)
+  
+  
   "DocumentSet._documentSet" should {
     "be an <li>" in new NormalDocumentSetContext {
       body must beMatching("""(?s)\A\s*<li.*</li>\s*\z$""".r)
@@ -52,27 +58,35 @@ class _documentSetSpec extends Specification {
     }
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=NotStarted)
+      override val job = new FakeDocumentSetCreationJob(documentSetId, NotStarted) 
+      
       $("li.unfinished").length must be_>=(1)
     }
 
     "should show a progress bar" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2)
+      override val job =
+	new FakeDocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2) 
       $("progress").length must be_>=(1)
     }
 
     "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2)
+      override val job =
+	new FakeDocumentSetCreationJob(documentSetId, state=InProgress, fractionComplete=0.2)
       $("progress").attr("value") must beEqualTo("20")
     }
 
     "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      override val job = DocumentSetCreationJob(documentSetId, state=InProgress)
+      override val job = new FakeDocumentSetCreationJob(documentSetId, state=InProgress)
       $(".state").text() must endWith("IN_PROGRESS")
     }
 
     "should show a document count when complete" in new NormalDocumentSetContext {
       $("span.document-count").text() must endWith("document_count")
+    }
+
+   "should show position in queue for NotStarted jobs" in new DocumentSetWithJobContext {
+     override val job = new FakeDocumentSetCreationJob(documentSetId, state=NotStarted, jobsAheadInQueue=1)
+      $(".state-description").text.trim must endWith("jobs_to_process")
     }
   }
 }
