@@ -1,24 +1,12 @@
 package controllers
 
 import java.sql.Connection
-import mailers.User.create
+import play.api.mvc.{AnyContent, Controller, Request}
+
 import models.{OverviewUser, PotentialUser}
-import models.util.PasswordTester
-import play.api.data.Form
-import play.api.data.Forms.{email,nonEmptyText,mapping}
-import play.api.data.validation.Constraint
-import play.api.mvc.{Action, AnyContent, Controller, Request}
-
-
-
 
 object UserController extends Controller with TransactionActionController with HttpsEnforcer {
-  val form = Form(
-    mapping(
-      "email" -> email,
-      "password" -> nonEmptyText.verifying("password.secure", { (s: String) => (new PasswordTester(s)).isSecure })
-    )(PotentialUser)(u => Some(u.email, u.password))
-  )
+  val form = controllers.forms.UserForm()
 
   def new_() = HttpsAction { implicit request => Ok(views.html.User.new_(form)) }
   
