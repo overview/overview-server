@@ -174,9 +174,9 @@ describe 'views/tree_view', ->
         check_pixel(50, 75, rgb_node_unloaded)
         check_pixel(99, 99, rgb_background)
 
-      it 'should trigger :click on undefined', ->
+      it 'should not trigger :click on undefined', ->
         click_pixel(50, 50)
-        expect(events[0]).toEqual(['click', undefined])
+        expect(events).toEqual([])
 
       it 'should resize and notify :needs-update when resized', ->
         called = false

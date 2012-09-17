@@ -94,6 +94,7 @@ class IdTree
 
     @_edits.add = []
     @_edits.remove = []
+    @_edits.remove_undefined = []
     @_edits.root = undefined
 
   _add: (id, children) ->

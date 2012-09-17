@@ -69,12 +69,19 @@ class DrawOperation
 
     return undefined
 
-  pixel_to_nodeid: (x, y) ->
+  pixel_to_action: (x, y) ->
     drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
-    drawable_node?.node?.id
+    return undefined if !drawable_node?.node?
+
+    event = if drawable_node.children?.length && x - 12 < drawable_node.px.left && y - 12 > drawable_node.px.top + drawable_node.height
+      'collapse'
+    else
+      'click'
+
+    return { event: event, id: drawable_node.node.id }
 
   _node_is_complete: (node) ->
-    !_(node.children).any((n) => !n.loaded)
+    !_(node.children).any((n) => !n.loaded && !n.loaded_animation_fraction.current)
 
   _node_to_drawable_node: (node) ->
     fraction = node.loaded_animation_fraction.current
@@ -150,6 +157,22 @@ class DrawOperation
 
     ctx.restore()
 
+  _maybe_draw_collapse: (drawable_node) ->
+    if drawable_node.children?.length
+      px = drawable_node.px
+      if px.width > 20
+        ctx = @ctx
+        y = px.top + px.height - 8
+        ctx.save()
+        ctx.lineWidth = 1
+        ctx.strokeStyle = 'red'
+        ctx.beginPath()
+        ctx.arc(px.left + 8, y, 5, 0, Math.PI*2, true)
+        ctx.moveTo(px.left + 5, y)
+        ctx.lineTo(px.left + 11, y)
+        ctx.stroke()
+        ctx.restore()
+
   _measure_drawable_node: (drawable_node, parent_px) ->
     vpadding = @options.node_vpadding
     fraction = drawable_node.fraction
@@ -182,6 +205,8 @@ class DrawOperation
       ctx.fillRect(px.left, px.top, px.width, px.height)
 
     ctx.strokeRect(px.left, px.top, px.width, px.height)
+
+    this._maybe_draw_collapse(drawable_node)
 
   _draw_line_from_parent_to_child: (parent_px, child_px) ->
     x1 = parent_px.middle
@@ -249,8 +274,8 @@ class TreeView
       $canvas = $(@canvas)
       x = e.pageX - offset.left
       y = e.pageY - offset.top
-      nodeid = this._pixel_to_nodeid(x, y)
-      this._notify('click', nodeid)
+      action = this._pixel_to_action(x, y)
+      this._notify(action.event, action.id) if action
 
     this._handle_drag()
     this._handle_mousewheel()
@@ -306,10 +331,10 @@ class TreeView
 
       this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
-  _pixel_to_nodeid: (x, y) ->
+  _pixel_to_action: (x, y) ->
     return undefined if @tree.root is undefined
 
-    @last_draw.pixel_to_nodeid(x, y)
+    @last_draw.pixel_to_action(x, y)
 
   _nodeid_to_n_documents: (nodeid) ->
     exact = @tree.nodes[nodeid]?.doclist?.n
