@@ -197,7 +197,7 @@ class DrawOperation
         y = px.top + px.height - 8
         x = px.middle
         ctx.lineWidth = 1
-        ctx.strokeStyle = 'red'
+        ctx.strokeStyle = '#aaaaaa'
         ctx.beginPath()
         ctx.arc(x, y, 5, 0, Math.PI*2, true)
         ctx.moveTo(x - 3, y)
