@@ -174,17 +174,19 @@ class AnimatedTree
 
   _animate_remove_undefined_node: (id, time) ->
     node = @_nodes[id]
+    return if !node?
     @animator.animate_object_properties(node, { loaded_animation_fraction: 0 }, undefined, time)
     # We'll delete it from @_nodes in the parent's removal. We know the parent
     # is being unloaded.
 
   _animate_unload_node: (id, time) ->
     node = @_nodes[id]
+    return if !node?
     node.tagcounts = undefined
     node.loaded = false
     @animator.animate_object_properties(node, { loaded_animation_fraction: 0 }, =>
-      delete @_nodes[child.id] for child in node.children
-      @_nodes[id].children = []
+      delete @_nodes[child.id] for child in node.children when @_nodes[child.id]?
+      @_nodes[id].children = [] if @_nodes[id]?
     , time)
 
   _create_node: (id) ->

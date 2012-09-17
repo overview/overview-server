@@ -32,6 +32,11 @@ tree_controller = (div, on_demand_tree, focus, state) ->
     state.set('selection', new_selection)
     on_demand_tree.demand_node(nodeid)
 
+  view.observe 'collapse', (nodeid) ->
+    return if !nodeid?
+    log('collapsed node', "#{nodeid}")
+    on_demand_tree.unload_node_children(nodeid)
+
   view.observe 'zoom-pan', (obj) ->
     log('zoomed/panned', "zoom #{obj.zoom}, pan #{obj.pan}")
     focus.set_zoom(obj.zoom)

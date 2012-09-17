@@ -50,9 +50,6 @@ describe 'models/on_demand_tree', ->
       it 'should start with id_tree empty', ->
         expect(tree.id_tree.root).toEqual(-1)
 
-      it 'should have @height=0', ->
-        expect(tree.height).toEqual(0)
-
       it 'should demand_root() and call get_deferred("root")', ->
         deferred = tree.demand_root()
         expect(resolver.type).toEqual('root')
@@ -63,14 +60,6 @@ describe 'models/on_demand_tree', ->
         add_node_through_deferred(1, [2, 3])
         expect(tree.id_tree.root).toEqual(1)
         expect(tree.id_tree.children[1]).toEqual([2, 3])
-
-      it 'should add to @height for new levels', ->
-        add_node_through_deferred(1, [])
-        expect(tree.height).toEqual(1)
-
-      it 'should add to @height for yet-unresolved levels', ->
-        add_node_through_deferred(1, [2])
-        expect(tree.height).toEqual(2)
 
     describe 'with a non-empty tree', ->
       beforeEach ->
@@ -101,6 +90,11 @@ describe 'models/on_demand_tree', ->
         deferred = tree.demand_node(4)
         deferred.resolve({ nodes: [ { id: 4, children: [ 8, 9 ] } ] })
         expect(tree.nodes[4].children).toEqual([8, 9])
+
+      it 'should unload nodes through unload_node_children()', ->
+        tree.unload_node_children(1)
+        expect(tree.id_tree.children[1]).toEqual([2, 3])
+        expect(tree.nodes[2]).toBeUndefined()
 
       describe 'remove_tag_from_node()', ->
         it 'should not remove a tag from a node when the tag is not there', ->

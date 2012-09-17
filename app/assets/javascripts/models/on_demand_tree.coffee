@@ -40,13 +40,7 @@ class OnDemandTree
   constructor: (@resolver, options={}) ->
     @id_tree = new IdTree()
     @nodes = {}
-    @height = 0
     @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
-
-    this._keep_height_up_to_date() # after pruning
-
-  _keep_height_up_to_date: () ->
-    @id_tree.observe('edit', this._refresh_height.bind(this))
 
   # Our @_paging_strategy suggests a node to remove, but it might be high up.
   # Let's suggest removing children instead.
@@ -91,15 +85,18 @@ class OnDemandTree
 
     ret
 
+  _remove_leaf_node: (editable, leafid) ->
+    editable.remove(leafid)
+    delete @nodes[leafid]
+    @_paging_strategy.free(leafid)
+
   _remove_up_to_n_nodes_starting_at_id: (editable, n, id) ->
     removed = 0
 
     loop
       # Assume if a node isn't frozen, nothing below it is frozen
       leafid = this._id_to_first_leaf(id)
-      editable.remove(leafid)
-      delete @nodes[leafid]
-      @_paging_strategy.free(leafid)
+      this._remove_leaf_node(editable, leafid)
       removed += 1
 
       return removed if leafid == id || removed >= n
@@ -154,37 +151,16 @@ class OnDemandTree
 
       undefined
 
-  _refresh_height: () ->
-    # bulky, but understandable and O(n)
-    return @height = 0 if @id_tree.root == -1
-
-    p = @id_tree.parent
-    d = {} # id -> depth
-    d[@id_tree.root] = 1
-
-    id_to_depth = (id) ->
-      loops = 0
-      parent_id = id
-
-      loop
-        if d[parent_id]?
-          return d[id] = loops + d[parent_id]
-
-        parent_id = p[parent_id]
-        loops += 1
-
-    max_depth = 1
-    for child_id, _ of p
-      depth = id_to_depth(child_id)
-      max_depth = depth if depth > max_depth
-
-    @height = max_depth
-
   demand_root: () ->
     @resolver.get_deferred('root').done(this._add_json.bind(this))
 
   demand_node: (id) ->
     @resolver.get_deferred('node', id).done(this._add_json.bind(this))
+
+  unload_node_children: (id) ->
+    @id_tree.edit (editable) =>
+      this._remove_leaf_node(editable, nodeid) for nodeid in @id_tree.loaded_descendents(id)
+      undefined
 
   get_loaded_node_children: (node) ->
     _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
