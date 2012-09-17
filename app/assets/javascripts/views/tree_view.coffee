@@ -78,7 +78,9 @@ class DrawOperation
     drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
     return undefined if !drawable_node?.node?
 
-    event = if drawable_node.children?.length && x - 12 < drawable_node.px.left && y - 12 > drawable_node.px.top + drawable_node.height
+    px = drawable_node.px
+
+    event = if drawable_node.children?.length && x > px.middle - 5 && x < px.middle + 5 && y > px.top + px.height - 12
       'collapse'
     else
       'click'
@@ -193,12 +195,13 @@ class DrawOperation
       if px.width > 20
         ctx = @ctx
         y = px.top + px.height - 8
+        x = px.middle
         ctx.lineWidth = 1
         ctx.strokeStyle = 'red'
         ctx.beginPath()
-        ctx.arc(px.left + 8, y, 5, 0, Math.PI*2, true)
-        ctx.moveTo(px.left + 5, y)
-        ctx.lineTo(px.left + 11, y)
+        ctx.arc(x, y, 5, 0, Math.PI*2, true)
+        ctx.moveTo(x - 3, y)
+        ctx.lineTo(x + 3, y)
         ctx.stroke()
 
   _measure_drawable_node: (drawable_node, parent_px) ->
