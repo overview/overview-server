@@ -10,10 +10,11 @@ import models.orm.DocumentSet
 class indexSpec extends Specification {
   trait ViewContext extends Scope {
     implicit lazy val flash = new Flash()
+    lazy val user = new models.orm.User("user@example.org", "")
 
     var documentSets : Seq[DocumentSet] = Seq()
 
-    implicit lazy val j = jerry(index(documentSets, form).body)
+    implicit lazy val j = jerry(index(user, documentSets, form).body)
   }
 
   val form = controllers.forms.DocumentSetForm()

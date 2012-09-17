@@ -1,0 +1,11 @@
+@(
+  optionalUser: Option[models.orm.User]
+)(implicit lang: Lang, flash: Flash)
+
+@defining(scopedMessages("views.Welcome.show")) { m =>
+  @main(optionalUser=optionalUser, title=m("title"), bodyClass="welcome-show", h1=m("h1")) {
+    <p>FIXME: add content</p>
+
+    <p><a href="@routes.DocumentSetController.index()">See Document Sets</a></p>
+  }
+}

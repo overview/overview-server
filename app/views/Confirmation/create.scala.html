@@ -3,7 +3,7 @@
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Confirmation.create")) { m =>
-  @main(title=m("title"), bodyClass="confirmation-create", h1=m("h1")) {
+  @main(optionalUser=None, title=m("title"), bodyClass="confirmation-create", h1=m("h1")) {
     <p>@m("body").replace("@email", email)</p>
   }
 }

@@ -3,7 +3,7 @@
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Confirmation.index")) { m =>
-  @main(title=m("title"), bodyClass="confirmation-index", h1=m("h1")) {
+  @main(optionalUser=None, title=m("title"), bodyClass="confirmation-index", h1=m("h1")) {
     <p>@m("intro")</p>
 
     <form method="get" action="@routes.ConfirmationController.show()" class="well form-horizontal">

@@ -1,4 +1,5 @@
 @(
+  optionalUser: Option[models.orm.User],
   title: String,
   bodyClass: String="default",
   h1: String="",
@@ -15,6 +16,7 @@
     <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")" />
   </head>
   <body class="@bodyClass">
+    @views.html.components.navbar(optionalUser)
     <div class="container">
       @if(h1 != "") {
         <div class="page-header"><h1>@h1</h1></div>

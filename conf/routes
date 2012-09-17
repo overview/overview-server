@@ -1,7 +1,7 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 
-GET / controllers.Application.index()
+GET / controllers.WelcomeController.show()
 
 GET /login controllers.SessionController.new_()
 POST /login controllers.SessionController.create()

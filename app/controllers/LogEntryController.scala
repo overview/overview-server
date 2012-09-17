@@ -32,7 +32,7 @@ object LogEntryController extends BaseController {
 
       extension match {
         case ".csv" => logEntriesToCsv(logEntries)
-        case _ => Ok(views.html.LogEntry.index(ds, logEntries))
+        case _ => Ok(views.html.LogEntry.index(user, ds, logEntries))
       }
     }).getOrElse(
       NotFound("Invalid document set ID")

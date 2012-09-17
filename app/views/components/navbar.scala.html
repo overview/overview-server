@@ -1,0 +1,24 @@
+@(
+  optionalUser: Option[models.orm.User]
+)(
+  implicit lang: Lang
+)
+<nav class="navbar navbar-static-top">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="@routes.WelcomeController.show()">The Overview Project</a>
+      <ul class="nav">
+        <li><a href="http://overview.ap.org/">Blog</a></li>
+      </ul>
+      @optionalUser.map { user =>
+        <div class="logged-in pull-right">
+          <p class="navbar-text pull-left">You are logged in as <strong>@user.email</strong></p>
+          <ul class="nav">
+            <li><a href="@routes.DocumentSetController.index()">Your document sets</a></li>
+            <li><a href="@routes.SessionController.delete()">Log out</a></li>
+          </ul>
+        </div>
+      }
+    </div>
+  </div>
+</nav>
