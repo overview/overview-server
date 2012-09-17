@@ -3,7 +3,7 @@
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Session.new_")) { m =>
-  @main(title=m("title"), bodyClass="session-new", h1=m("h1")) {
+  @main(optionalUser=None, title=m("title"), bodyClass="session-new", h1=m("h1")) {
     <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
       @if(form.hasGlobalErrors) {
         <div class="control-group error">

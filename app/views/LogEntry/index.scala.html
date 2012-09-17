@@ -1,6 +1,10 @@
-@(documentSet: models.orm.DocumentSet, logEntries: Seq[models.orm.LogEntry])(implicit lang: Lang, flash: Flash)
+@(
+  user: models.orm.User,
+  documentSet: models.orm.DocumentSet,
+  logEntries: Seq[models.orm.LogEntry]
+)(implicit lang: Lang, flash: Flash)
 
-@main("Log", h1="Log") {
+@main(optionalUser=Some(user), title="Log", h1="Log") {
   <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.id, ".csv")">this log as a spreadsheet</a>.</p>
 
   <table class="log-entries">

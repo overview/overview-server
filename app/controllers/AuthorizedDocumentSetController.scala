@@ -15,13 +15,13 @@ trait AuthorizedDocumentSetController {
 
   def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = { 
     val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
-    Ok(views.html.DocumentSet.index(documentSets, form))
+    Ok(views.html.DocumentSet.index(user, documentSets, form))
   }
   
   def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSet = user.documentSets.where(d => d.id === id).headOption
     documentSet match {
-      case Some(d) => Ok(views.html.DocumentSet.show())
+      case Some(d) => Ok(views.html.DocumentSet.show(user))
       case None => NotFound
     }
   }

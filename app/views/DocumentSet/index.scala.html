@@ -1,4 +1,5 @@
 @(
+  user: models.orm.User,
   documentSets: Seq[models.orm.DocumentSet],
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
@@ -26,7 +27,7 @@
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
-  @main(title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts) {
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts) {
     @if(documentSets) {
       <ul class="unstyled document-sets">
         @documentSets.map(_documentSet(_))
