@@ -32,7 +32,7 @@ object TreeController extends BaseController {
 
   private def authorizedNode(user: User, id: Long, nodeId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val subTreeLoader = new SubTreeLoader(id)
-    val nodes = subTreeLoader.load(nodeId, 4)
+    val nodes = subTreeLoader.load(nodeId, 2)
     val tags = subTreeLoader.loadTags(id)
     val documents = subTreeLoader.loadDocuments(nodes, tags)
     
