@@ -10,14 +10,7 @@ import jp.t2v.lab.play20.auth.LoginLogout
 import models.orm.User
 
 object SessionController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl with HttpsEnforcer{
-  val loginForm = Form {
-    mapping(
-      "email" -> email,
-      "password" -> text)(PotentialUser)(u => Some((u.email, u.password)))
-    .verifying("Invalid email or password", u => u.withValidCredentials.isDefined)
-    .verifying("User not confirmed", u => 
-      !(u.withConfirmationRequest.isDefined && u.withValidCredentials.isDefined))
-  }
+  val loginForm = controllers.forms.LoginForm()
 
   def new_ = HttpsAction { implicit request =>
     Ok(views.html.Session.new_(loginForm))
