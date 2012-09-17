@@ -80,8 +80,13 @@ class DrawOperation
 
     px = drawable_node.px
 
-    event = if drawable_node.children?.length && x > px.middle - 5 && x < px.middle + 5 && y > px.top + px.height - 12
-      'collapse'
+    event = if px.width > 20 && x > px.middle - 5 && x < px.middle + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
+      if drawable_node.children?.length
+        'collapse'
+      else if drawable_node.node.children?
+        'expand'
+      else
+        'click'
     else
       'click'
 
@@ -204,6 +209,23 @@ class DrawOperation
         ctx.lineTo(x + 3, y)
         ctx.stroke()
 
+  _maybe_draw_expand: (drawable_node) ->
+    if !drawable_node.children?.length && drawable_node.node.children?.length
+      px = drawable_node.px
+      if px.width > 20
+        ctx = @ctx
+        y = px.top + px.height - 8
+        x = px.middle
+        ctx.lineWidth = 1
+        ctx.strokeStyle = '#aaaaaa'
+        ctx.beginPath()
+        ctx.arc(x, y, 5, 0, Math.PI*2, true)
+        ctx.moveTo(x - 3, y)
+        ctx.lineTo(x + 3, y)
+        ctx.moveTo(x, y + 3)
+        ctx.lineTo(x, y - 3)
+        ctx.stroke()
+
   _measure_drawable_node: (drawable_node, parent_px) ->
     vpadding = @options.node_vpadding
     fraction = drawable_node.fraction
@@ -238,6 +260,7 @@ class DrawOperation
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
     this._maybe_draw_collapse(drawable_node)
+    this._maybe_draw_expand(drawable_node)
     this._maybe_draw_description(drawable_node)
 
   _draw_line_from_parent_to_child: (parent_px, child_px) ->

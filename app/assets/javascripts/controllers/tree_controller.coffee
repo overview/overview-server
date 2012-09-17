@@ -30,6 +30,10 @@ tree_controller = (div, on_demand_tree, focus, state) ->
     log('clicked node', "#{nodeid}")
     new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
     state.set('selection', new_selection)
+
+  view.observe 'expand', (nodeid) ->
+    return if !nodeid?
+    log('expanded node', "#{nodeid}")
     on_demand_tree.demand_node(nodeid)
 
   view.observe 'collapse', (nodeid) ->
