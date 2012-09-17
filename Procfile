@@ -1,2 +1,2 @@
 web: target/start -Dhttp.port=${PORT} -DapplyEvolutions.default=true -Ddb.default.url=${DATABASE_URL} -Ddb.default.driver=org.postgresql.Driver -Dsmtp.mock=false
-worker: java -cp "target/staged/*" -Ddatasource.default.url=${DATABASE_URL} -Ddatasource.default.driver=org.postgresql.Driver JobHandler
+worker: java -cp "target/staged/*" ${JAVA_OPTS} -Ddatasource.default.url=${DATABASE_URL} -Ddatasource.default.driver=org.postgresql.Driver JobHandler
