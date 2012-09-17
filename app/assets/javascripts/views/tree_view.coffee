@@ -8,16 +8,15 @@ DEFAULT_OPTIONS = {
   node_vpadding: 0.7,
   color: {
     background: '#ffffff',
-    node_unloaded: '#ddddff',
     line: '#888888',
     line_selected: '#000000',
     line_loaded: '#333333',
-    line_unloaded: '#999999',
+    line_leaf: '#999999',
   },
   connector_line_width: 1, # px
   node_line_width: 2, # px
   node_line_width_selected: 4, # px
-  node_line_width_unloaded: 1, # px
+  node_line_width_leaf: 1, # px
   animation_speed: 0, # no animations
   mousewheel_zoom_factor: 1.2,
 }
@@ -131,18 +130,18 @@ class DrawOperation
   _node_to_line_width: (node) ->
     if node.selected
       @options.node_line_width_selected
-    else if node.loaded
-      @options.node_line_width
+    else if node.children?.length is 0 # leaf node
+      @options.node_line_width_leaf
     else
-      @options.node_line_width_unloaded
+      @options.node_line_width
 
   _node_to_line_color: (node) ->
     if node.selected
       @options.color.line_selected
-    else if node.loaded
-      @options.color.line_loaded
+    else if node.children?.length is 0 # leaf node
+      @options.color.line_leaf
     else
-      @options.color.line_unloaded
+      @options.color.line_loaded
 
   _draw_tagcount: (left, top, width, height, color, fraction) ->
     return if fraction == 0
@@ -252,10 +251,6 @@ class DrawOperation
     ctx = @ctx
     ctx.lineWidth = this._node_to_line_width(node)
     ctx.strokeStyle = this._node_to_line_color(node)
-
-    if _(drawable_node.node.children).any((n) -> !n.loaded)
-      ctx.fillStyle = @options.color.node_unloaded
-      ctx.fillRect(px.left, px.top, px.width, px.height)
 
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
