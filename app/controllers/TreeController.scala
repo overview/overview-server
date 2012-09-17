@@ -33,10 +33,9 @@ object TreeController extends BaseController {
   private def authorizedNode(user: User, id: Long, nodeId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val subTreeLoader = new SubTreeLoader(id)
     val nodes = subTreeLoader.load(nodeId, 2)
-    val tags = subTreeLoader.loadTags(id)
-    val documents = subTreeLoader.loadDocuments(nodes, tags)
-    
-    val json = views.json.Tree.show(nodes, documents, tags)
+    val documents = subTreeLoader.loadDocuments(nodes, Seq())
+
+    val json = views.json.Tree.show(nodes, documents, Seq())
     Ok(json)
   }
 }
