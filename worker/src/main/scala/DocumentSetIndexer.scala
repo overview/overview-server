@@ -13,7 +13,7 @@ package overview.clustering
 import java.sql.Connection
 import overview.clustering.ClusterTypes._
 import overview.http._
-import overview.util.Logger
+import overview.util.{Logger, WorkerActorSystem}
 import overview.util.Progress._
 import persistence.{ DocumentWriter, NodeWriter }
 import database.DB
@@ -58,13 +58,17 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     val t0 = System.nanoTime()
 
     // Retrieve all that stuff!
-    val retrievalDone = BulkHttpRetriever[DCDocumentAtURL](sourceDocList,
-      (doc, text) => processDocument(doc, text))
 
-    // Now, wait on this thread until all docs are in 
-    val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
-    logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
-
+    WorkerActorSystem.withActorSystem { implicit context =>
+      val retrievalDone = BulkHttpRetriever[DCDocumentAtURL](sourceDocList,
+	(doc, text) => processDocument(doc, text))
+    
+      // Now, wait on this thread until all docs are in 
+      val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
+      logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
+    }
+    
+    
     // Cluster (build the tree)
     progAbort(Progress(fetchingFraction, "Clustering documents"))
     val t1 = System.nanoTime()

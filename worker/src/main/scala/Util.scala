@@ -26,8 +26,11 @@ object Logger {
 
 // Singleton Akka actor system object. One per process, managing all actors.
 object WorkerActorSystem {
-  private lazy val context = ActorSystem("WorkerActorSystem") 
-  def apply():ActorSystem = context
+  def withActorSystem(f: ActorSystem => Unit) {
+    val context = ActorSystem("WorkerActorSystem")
+    f(context)
+    context.shutdown
+  }
 }
 
 object Progress {

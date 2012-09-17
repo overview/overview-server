@@ -104,14 +104,13 @@ object BulkHttpRetriever {
     }
   }
 
+  implicit var context: ActorSystem = null
 
-  def apply[T <: DocumentAtURL](sourceDocList: Traversable[T],
-    writeDocument: (T, String) => Unit): Promise[Seq[DocRetrievalError]] = {
+  def apply[T <: DocumentAtURL](sourceDocList: Traversable[T],  writeDocument: (T, String) => Unit)
+    (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
     Logger.info("Beginning HTTP document set retrieval")
 
-    // create the actor
-    implicit val context = WorkerActorSystem()
     val retrievalDone = Promise[Seq[DocRetrievalError]]
     val retriever = context.actorOf(Props(new BulkHttpActor(writeDocument, retrievalDone)), name = "retriever")
 
@@ -123,5 +122,6 @@ object BulkHttpRetriever {
 
     // return promise (of list of errors retrieving documents)
     retrievalDone
+
   }
 }

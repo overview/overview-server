@@ -21,6 +21,7 @@ import scala.io.Source
 import overview.clustering._
 import overview.http._
 import overview.http.BulkHttpRetriever._
+import overview.util.WorkerActorSystem
 import helpers.DbSpecification
 import helpers.DbSetup._
 import persistence._
@@ -57,25 +58,34 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       }      
 
       val timeOut = Timeout(500)   // ms                                               
-      
-      // Successful retrieval. Check the generated tree (will change if test file set changes)
-      val retrievalDone = BulkHttpRetriever[DocumentAtURL](docURLs,
-                                                           (doc,text) => processDocument(doc, text) ) 
-      val result = Await.result(retrievalDone, timeOut.duration)
 
-      result.size must beEqualTo(0) // everything should be retrieved
+      
+      WorkerActorSystem.withActorSystem { implicit context =>
+// Successful retrieval. Check the generated tree (will change if test file set changes)
+	val retrievalDone =
+	  BulkHttpRetriever[DocumentAtURL](docURLs, (doc,text) => processDocument(doc, text)) 
+	val result = Await.result(retrievalDone, timeOut.duration)
+
+	result.size must beEqualTo(0) // everything should be retrieved
+      }
+      
       val docTree = BuildDocTree(vectorGen.documentVectors()).toString      
       docTree must beEqualTo("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
       
       // Failed retrieval: add a URL that doesn't exist, test that the error is returned to us
       val errURL = DocumentAtURL("file:///xyzzy")
       val docURLsWithErr = docURLs :+ errURL
-      val retrievalErr = BulkHttpRetriever[DocumentAtURL](docURLsWithErr,
-                                                          (doc,text) => processDocument(doc, text) ) // adds to existing vectorGen, whatevs
-      val resultErr = Await.result(retrievalErr, timeOut.duration)
 
-      resultErr.size must beEqualTo(1) // exactly one doc should be fail
-      resultErr.head.doc must beEqualTo(errURL)                                                    
+      WorkerActorSystem.withActorSystem { implicit context =>
+	// adds to existing vectorGen, whatevs
+	val retrievalErr =
+	  BulkHttpRetriever[DocumentAtURL](docURLsWithErr, (doc,text) => processDocument(doc, text)) 
+	val resultErr = Await.result(retrievalErr, timeOut.duration)
+
+	resultErr.size must beEqualTo(1) // exactly one doc should be fail
+	resultErr.head.doc must beEqualTo(errURL)
+      }
+      success
     }
 
 /*
