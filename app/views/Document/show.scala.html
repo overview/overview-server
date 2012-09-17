@@ -19,16 +19,28 @@
     <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/fetch-document-json.js")"></script>
 
     <script type="text/javascript">
+      var deferred, viewer;
       window.load_documentcloud_document = function(id) {
+        if (deferred) {
+          deferred.resolve(undefined);
+          deferred = undefined;
+        }
+
+        if (viewer) {
+          viewer.api.unload();
+          viewer = undefined;
+        }
+
         var $container = $('#DV-container');
         $container.empty();
-        $container.attr('className', '');
 
         if (id) {
-          var container = $container[0];
+          deferred = dcimport.fetch_document_json(id, $container[0]);
+          deferred.done(function(json) {
+            if (!json) return;
 
-          var deferred = dcimport.fetch_document_json(id, container);
-          deferred.done(function(json) { DV.load(json, container.id); });
+            viewer = DV.load(json, { container: $container[0] });
+          });
           // TODO handle failure
         }
       };

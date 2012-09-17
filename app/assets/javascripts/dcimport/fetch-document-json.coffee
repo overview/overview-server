@@ -22,7 +22,7 @@ dcimport.fetch_document_json = (documentcloud_id, prompt_div) ->
     credentials = dcimport.get_credentials()
     url_beginning = "https://#{encodeURIComponent(credentials.email)}:#{encodeURIComponent(credentials.password)}@s3.documentcloud.org"
 
-    replace_resource_url_beginnings(json.resources, url_beginning)
+    replace_url_beginnings(json.resources, url_beginning)
     ret.resolve(json)
 
   ret
