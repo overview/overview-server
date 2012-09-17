@@ -20,7 +20,7 @@ object JobHandler {
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     try {
-        
+      Logger.info("Handling job")  
       j.state = InProgress
       DB.withConnection { implicit connection =>
         j.update
@@ -34,7 +34,7 @@ object JobHandler {
         DB.withConnection { implicit connection =>
           j.update
         }
-        println("PROGRESS: " + prog.fraction*100+ "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
+        Logger.info("PROGRESS: " + prog.fraction*100+ "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
       }
       
       val (_, query)  = DB.withConnection { implicit connection =>
@@ -70,6 +70,7 @@ object JobHandler {
 
     for (j <- submittedJobs) {
       handleSingleJob(j)
+      System.gc()
     }
   }
 
