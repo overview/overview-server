@@ -44,7 +44,6 @@ describe 'views/tree_view', ->
     options = undefined
     rgb_background = undefined
     rgb_node = undefined
-    rgb_node_unloaded = undefined
     rgb_node_selected = undefined
     events = undefined
 
@@ -84,7 +83,6 @@ describe 'views/tree_view', ->
     create_view = () ->
       view = new TreeView(div, animated_tree, focus, options)
       rgb_background = color_to_rgb(view.options.color.background)
-      rgb_node_unloaded = color_to_rgb(view.options.color.node_unloaded)
 
     maybe_observe_events = () ->
       return if events?
@@ -171,7 +169,7 @@ describe 'views/tree_view', ->
         check_pixel(0, 0, rgb_background)
         check_pixel(50, 25, rgb_node)
         check_pixel(60, 50, rgb_background)
-        check_pixel(50, 75, rgb_node_unloaded)
+        check_pixel(50, 75, rgb_node)
         check_pixel(99, 99, rgb_background)
 
       it 'should not trigger :click on undefined', ->
@@ -270,7 +268,7 @@ describe 'views/tree_view', ->
         focus.set_pan(-0.25)
         view.update()
 
-        click_pixel(50, 75)
+        click_pixel(50, 70)
         expect(events[0]).toEqual(['click', 2])
 
       it 'should draw a line from parent to child', ->
