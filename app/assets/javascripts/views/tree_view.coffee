@@ -23,11 +23,11 @@ DEFAULT_OPTIONS = {
 }
 
 class DrawOperation
-  constructor: (@canvas, tag, @zoom, @pan, @options) ->
-    if tag?
+  constructor: (@canvas, @tree, @zoom, @pan, @options) ->
+    if @tree.state.focused_tag?
       @tag = {
-        id: tag.id,
-        color: new ColorTable().get(tag.name)
+        id: @tree.state.focused_tag.id,
+        color: new ColorTable().get(@tree.state.focused_tag.name)
       }
 
     $canvas = $(@canvas)
@@ -39,13 +39,18 @@ class DrawOperation
 
     @ctx = @canvas.getContext('2d')
     @ctx.lineStyle = @options.color.line
+    @ctx.font = '10px Helvetica, Arial, sans-serif'
+    @ctx.textBaseline = 'top'
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
 
-  draw: (node) ->
-    @drawable_node = this._node_to_drawable_node(node)
+  draw: () ->
+    this.clear()
+    return if !@tree.root?
+
+    @drawable_node = this._node_to_drawable_node(@tree.root)
     @drawable_node.relative_x = 0
     depth = @drawable_node.height
 
@@ -157,13 +162,37 @@ class DrawOperation
 
     ctx.restore()
 
+  _maybe_draw_description: (drawable_node) ->
+    px = drawable_node.px
+    width = px.width - 6 # border+padding
+    return if width < 15
+
+    id = drawable_node.node.id
+    real_node = @tree.on_demand_tree.nodes[id]
+    return if !real_node?.description
+
+    ctx = @ctx
+
+    left = px.left + 3
+    right = left + width
+
+    gradient = ctx.createLinearGradient(left, 0, right, 0)
+    gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 0.7)')
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(left, px.top, width, px.height)
+    ctx.clip()
+    ctx.fillStyle = gradient
+    ctx.fillText(real_node.description, left, px.top + 3)
+    ctx.restore()
+
   _maybe_draw_collapse: (drawable_node) ->
     if drawable_node.children?.length
       px = drawable_node.px
       if px.width > 20
         ctx = @ctx
         y = px.top + px.height - 8
-        ctx.save()
         ctx.lineWidth = 1
         ctx.strokeStyle = 'red'
         ctx.beginPath()
@@ -171,7 +200,6 @@ class DrawOperation
         ctx.moveTo(px.left + 5, y)
         ctx.lineTo(px.left + 11, y)
         ctx.stroke()
-        ctx.restore()
 
   _measure_drawable_node: (drawable_node, parent_px) ->
     vpadding = @options.node_vpadding
@@ -207,6 +235,7 @@ class DrawOperation
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
     this._maybe_draw_collapse(drawable_node)
+    this._maybe_draw_description(drawable_node)
 
   _draw_line_from_parent_to_child: (parent_px, child_px) ->
     x1 = parent_px.middle
@@ -332,7 +361,7 @@ class TreeView
       this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
   _pixel_to_action: (x, y) ->
-    return undefined if @tree.root is undefined
+    return undefined if !@tree.root?
 
     @last_draw.pixel_to_action(x, y)
 
@@ -358,12 +387,8 @@ class TreeView
     n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
   _redraw: () ->
-    @last_draw = new DrawOperation(@canvas, @tree.state.focused_tag, @focus.zoom, @focus.pan, @options)
-    @last_draw.clear()
-
-    return if @tree.root is undefined
-
-    @last_draw.draw(@tree.root)
+    @last_draw = new DrawOperation(@canvas, @tree, @focus.zoom, @focus.pan, @options)
+    @last_draw.draw()
 
   update: () ->
     @tree.update()
