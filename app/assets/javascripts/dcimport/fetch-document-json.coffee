@@ -16,7 +16,7 @@ replace_url_beginnings = (obj, url_beginning) ->
 dcimport.fetch_document_json = (documentcloud_id, prompt_div) ->
   ret = new Deferred()
 
-  url = "https://www.documentcloud.org/documents/#{documentcloud_id}.json"
+  url = "https://www.documentcloud.org/api/documents/#{documentcloud_id}.json"
   deferred = dcimport.request_json_with_login(url, prompt_div)
   deferred.done (json) ->
     credentials = dcimport.get_credentials()
