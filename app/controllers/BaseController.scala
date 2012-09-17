@@ -19,6 +19,26 @@ trait BaseController extends Controller with TransactionActionController with Au
     authorizedAction(BodyParsers.parse.anyContent, authority)(f)
   }
 
+  protected def optionallyAuthorizedAction[A](p: BodyParser[A])(f: Option[User] => ActionWithConnection[A]): Action[A] = {
+    ActionInTransaction(p) { (request: Request[A], connection: Connection) =>
+      f(restoreUser(request))(request, connection)
+    }
+  }
+
+  protected def optionallyAuthorizedAction(f: Option[User] => ActionWithConnection[AnyContent]): Action[AnyContent] = {
+    optionallyAuthorizedAction(BodyParsers.parse.anyContent)(f)
+  }
+
+  // copy/pasted from play20-auth
+  private def restoreUser[A](implicit request: Request[A]): Option[User] = for {
+    sessionId <- request.session.get("sessionId")
+    userId <- resolver.sessionId2userId(sessionId)
+    user <- resolveUser(userId)
+  } yield {
+    resolver.prolongTimeout(sessionId, sessionTimeoutInSeconds)
+    user
+  }
+
   /*
    * Actions may be defined like this:
    *
