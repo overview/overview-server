@@ -1,15 +1,12 @@
 package controllers
 
 import java.sql.Connection
-import models.{OverviewUser, PotentialUser}
-import play.api.mvc.{Action,AnyContent,Controller,Request}
-import play.api.data.Form
-import play.api.data.Forms._
 import jp.t2v.lab.play20.auth.LoginLogout
+import play.api.mvc.{AnyContent,Controller,Request}
 
-import models.orm.User
+import models.OverviewUser
 
-object SessionController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl with HttpsEnforcer{
+object SessionController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl with HttpsEnforcer {
   val loginForm = controllers.forms.LoginForm()
 
   def new_ = HttpsAction { implicit request =>
