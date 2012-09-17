@@ -39,7 +39,7 @@
           deferred.done(function(json) {
             if (!json) return;
 
-            viewer = DV.load(json, { container: $container[0] });
+            viewer = DV.load(json, { container: $container[0], sidebar: false });
           });
           // TODO handle failure
         }
