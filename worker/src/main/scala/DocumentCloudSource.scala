@@ -13,6 +13,7 @@ package overview.clustering
 import akka.dispatch.{ Await, Promise }
 import akka.util.Timeout
 import com.codahale.jerkson.Json._
+import java.net.URLEncoder
 import overview.http.{ AsyncHttpRequest, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
 import overview.http.AsyncHttpRequest.Response
 import overview.util.Logger
@@ -38,7 +39,7 @@ class DocumentCloudSource(val query: String,
 
   private def pageQuery(pageNum: Int, myPageSize: Int = pageSize) = {
     val searchURL = "https://www.documentcloud.org/api/search.json?per_page=" + myPageSize +
-      "&page=" + pageNum + "&q=" + query
+      "&page=" + pageNum + "&q=" + URLEncoder.encode(query, "UTF-8")
     (documentCloudUserName, documentCloudPassword) match {
       case (Some(n), Some(p)) => new PrivateDocumentAtURL(searchURL, n, p)
       case _ => DocumentAtURL(searchURL)
