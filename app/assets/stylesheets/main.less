@@ -75,8 +75,7 @@ body.document-set-show {
     right: 0;
     left: @left_width;
     top: 42px + 60px; // navbar + h1
-    bottom: 42px; // footer
-    border-left: 1px solid @hrBorder;
+    bottom: 0;
 
     iframe {
       position: absolute;
@@ -95,7 +94,7 @@ body.document-set-show {
     left: 0;
     width: @left_width;
     top: 42px + 60px; // navbar + h1
-    bottom: 42px; // footer
+    bottom: 0;
   }
 
   #tree {
@@ -247,23 +246,6 @@ body.document-set-show {
         margin: 0 .25em;
         border: 1px solid @gray;
       }
-    }
-  }
-
-  footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1.5em;
-    line-height: 1.5;
-    border-top: 2px solid @hrBorder;
-    overflow: hidden;
-    text-align: center;
-  
-    a {
-      text-decoration: none;
-      color: @grayLight;
     }
   }
 }
