@@ -10,16 +10,15 @@ object SessionController extends Controller with TransactionActionController wit
   val loginForm = controllers.forms.LoginForm()
   val registrationForm = controllers.forms.UserForm()
 
+  private val m = views.Magic.scopedMessages("controllers.SessionController")
+
   def new_ = HttpsAction { implicit request =>
     Ok(views.html.Session.new_(loginForm, registrationForm))
   }
 
   def delete = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
     implicit val r = request
-
-    gotoLogoutSucceeded.flashing(
-      "success" -> "You have logged out"
-    )
+    gotoLogoutSucceeded.flashing("success" -> m("delete.success"))
   }
 
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
@@ -28,7 +27,7 @@ object SessionController extends Controller with TransactionActionController wit
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
-      user => gotoLoginSucceeded(user.withRegisteredEmail.get.id)
+      user => gotoLoginSucceeded(user.withRegisteredEmail.get.id).flashing("success" -> m("create.success"))
     )
   }
 }

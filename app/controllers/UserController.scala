@@ -9,6 +9,8 @@ object UserController extends Controller with TransactionActionController with H
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
 
+  private val m = views.Magic.scopedMessages("controllers.UserController")
+
   def new_() = HttpsAction { implicit request => Ok(views.html.Session.new_(loginForm, userForm)) }
 
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
@@ -22,7 +24,7 @@ object UserController extends Controller with TransactionActionController with H
           case None => registerNewUser(user)
         }
         Redirect(routes.ConfirmationController.show("")).
-          flashing("success" -> "Check your email for confirmation link")
+          flashing("success" -> m("create.success"))
       }
     )
   }

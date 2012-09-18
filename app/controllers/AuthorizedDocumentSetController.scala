@@ -35,6 +35,8 @@ trait AuthorizedDocumentSetController {
   }
 
   def authorizedCreate(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
+    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
+
     form.bindFromRequest().fold(
       f => authorizedIndex(user),
       (tuple) => {
@@ -44,13 +46,14 @@ trait AuthorizedDocumentSetController {
         val saved = documentSet.save()
         saved.users.associate(user)
         saved.createDocumentSetCreationJob(username=credentials.username, password=credentials.password)
-        Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.create.success")
+        Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
       }
     )
   }
 
   def authorizedDelete(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     DocumentSet.delete(id)
-    Redirect(routes.DocumentSetController.index()).flashing("success" -> "controllers.DocumentSetController.delete.success")
+    Redirect(routes.DocumentSetController.index()).flashing("success" -> m("delete.success"))
   }
 }

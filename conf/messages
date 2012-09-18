@@ -1,3 +1,13 @@
+controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
+
+controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.
+controllers.DocumentSetController.delete.success=You have deleted your document set.
+
+controllers.SessionController.create.success=You have logged in. Welcome back.
+controllers.SessionController.delete.success=You have logged out. We hope you''ll log in again sometime.
+
+controllers.UserController.create.success=Thank you for registering. There''s one more step: please check your email and click the confirmation link.
+
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
 mailers.User.create.signoff=Happy analyzing,
