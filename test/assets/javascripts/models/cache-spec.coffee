@@ -67,7 +67,11 @@ describe 'models/cache', ->
 
         it 'should delete node counts that are 0', ->
           server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
-          expect('1' in tree.nodes[2].tagcounts).toBe(false)
+          expect(tree.nodes[3].tagcounts).toEqual({})
+
+        it 'should zero node counts when the server does not give them', ->
+          server.deferreds[0].resolve([ 1, 20 ])
+          expect(tree.nodes[2].tagcounts).toEqual({})
 
         it 'should return the deferred', ->
           server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])

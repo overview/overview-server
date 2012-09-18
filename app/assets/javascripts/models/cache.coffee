@@ -18,23 +18,30 @@ class Cache
 
   refresh_tagcounts: (tag) ->
     nodes = @on_demand_tree.nodes
-    node_ids_string = _(nodes).keys().join(',')
+    node_ids = _(nodes).keys()
+    node_ids_string = node_ids.join(',')
     deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tag.name })
     deferred.done (data) =>
       @on_demand_tree.id_tree.edit ->
-        i = 0
         tagid = tag.id
+        server_tagcounts = {}
+
+        i = 0
         while i < data.length
           nodeid = data[i++]
           count = data[i++]
 
-          tagcounts = nodes[nodeid]?.tagcounts
+          server_tagcounts[nodeid] = count
 
-          if tagcounts?
-            if count
-              tagcounts[tagid] = count
-            else
-              delete tagcounts[tagid]
+        for nodeid in node_ids
+          tagcounts = nodes[nodeid]?.tagcounts
+          continue if !tagcounts?
+
+          count = server_tagcounts[nodeid]
+          if count
+            tagcounts[tagid] = count
+          else
+            delete tagcounts[tagid]
 
         undefined
 
