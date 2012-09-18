@@ -6,10 +6,10 @@ import java.sql.Connection
 import models.DatabaseStructure.TagData
 
 class PersistentTagLoader extends DocumentTagDataLoader {
-  
-  def loadByName(name: String)(implicit c: Connection) : Option[Long] = {
-    SQL("SELECT id FROM tag WHERE name = {name}").on("name" -> name).
-      as(scalar[Long] *).headOption
+
+  def loadByName(documentSetId: Long, name: String)(implicit c: Connection) : Option[Long] = {
+    SQL("SELECT id FROM tag WHERE name = {name} AND document_set_id = {documentSetId}").
+      on("name" -> name, "documentSetId" -> documentSetId).as(scalar[Long] *).headOption
   }
 
   def countDocuments(id: Long)(implicit c: Connection) : Long = {
