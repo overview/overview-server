@@ -241,6 +241,7 @@ body.document-set-show {
       margin: 0;
       padding: 0;
       list-style: none;
+      white-space: nowrap;
 
       &.placeholder {
         color: @gray;
@@ -251,6 +252,9 @@ body.document-set-show {
       display: block;
       color: inherit;
       text-decoration: inherit;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       &:hover {
         background: @wellBackground;
