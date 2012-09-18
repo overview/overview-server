@@ -17,11 +17,11 @@ trait AuthorizedDocumentSetController {
     val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
     Ok(views.html.DocumentSet.index(user, documentSets, form))
   }
-  
+
   def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val documentSet = user.documentSets.where(d => d.id === id).headOption
     documentSet match {
-      case Some(d) => Ok(views.html.DocumentSet.show(user))
+      case Some(ds) => Ok(views.html.DocumentSet.show(user, ds))
       case None => NotFound
     }
   }

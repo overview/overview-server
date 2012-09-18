@@ -1,4 +1,10 @@
-@(user: models.orm.User)(implicit lang: Lang, flash: Flash)
+@(
+  user: models.orm.User,
+  documentSet: models.orm.DocumentSet
+)(
+  implicit lang: Lang,
+  flash: Flash
+)
 @javascripts = {
   <!-- These are ordered by hand. See Issue #33. -->
   <script src="@routes.Assets.at("javascripts/require.js")"></script>
@@ -40,8 +46,8 @@
   <script src="@routes.Assets.at("javascripts/globals.js")"></script>
   <script src="@routes.Assets.at("javascripts/main.js")"></script>
 }
-@main(optionalUser=Some(user), title="Document set", bodyClass="document-set-show", javascripts=javascripts) {
-  <h1>Document set</h1>
+@main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts) {
+  <h1>@documentSet.title</h1>
   <div id="main">
     <div id="focus"></div>
     <div id="tree"></div>
