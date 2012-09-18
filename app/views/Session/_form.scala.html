@@ -4,6 +4,8 @@
 
 @defining(scopedMessages("views.Session._form")) { m =>
   <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
+    <h3>@m("h3")</h3>
+
     @if(form.hasGlobalErrors) {
       <div class="control-group error">
         <ul class="unstyled controls">
@@ -20,7 +22,7 @@
         <div class="controls">
           <input id="session-@field.name" type="email" name="@field.name" class="input-large" required="required" placeholder="@m("placeholder_" + field.name)" />
           @field.errors.map { error =>
-            <span class="help-inline">@t(error.message, error.args: _*)</span>
+            <p class="help-block">@t(error.message, error.args: _*)</span>
           }
         </div>
       </fieldset>
@@ -33,7 +35,7 @@
           <input id="session-@field.name" type="password" name="@field.name" class="input-large" required="required" />
         </div>
         @field.errors.map { error =>
-          <span class="help-inline">@t(error.message, error.args: _*)</span>
+          <p class="help-block">@t(error.message, error.args: _*)</span>
         }
       </fieldset>
     }

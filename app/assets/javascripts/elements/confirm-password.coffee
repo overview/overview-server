@@ -5,7 +5,7 @@ $ ->
     $password = $form.find('input[type=password]:not(.confirm-password)')
 
     error_message = $confirm.attr('data-confirm-password-error-does-not-match') || "does not match"
-    $error_p = $('<span class="help-inline"></span>')
+    $error_p = $('<p class="help-block"></p>')
     $error_p.text(error_message)
 
     is_ok = true

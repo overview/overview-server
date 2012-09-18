@@ -1,9 +1,0 @@
-@(
-  form: Form[PotentialUser]
-)(implicit lang: Lang, flash: Flash)
-
-@defining(scopedMessages("views.User.new")) { m =>
-  @main(optionalUser=None, title=m("title"), bodyClass="user-new", h1=m("h1")) {
-    @views.html.User._form(form)
-  }
-}

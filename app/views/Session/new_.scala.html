@@ -1,11 +1,18 @@
 @(
-  form: Form[PotentialUser]
+  loginForm: Form[PotentialUser],
+  registrationForm: Form[PotentialUser]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Session.new_")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="session-new", h1=m("h1")) {
-    @views.html.Session._form(form)
+    <div class="row">
+      <div class="span6">
+        @views.html.Session._form(loginForm)
+      </div>
 
-    <p>New user? <a href="/register">Register for an account</a></p>
+      <div class="span6">
+        @views.html.User._form(registrationForm)
+      </div>
+    </div>
   }
 }

@@ -48,6 +48,7 @@ views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before this one: {0}
 
+views.Session._form.h3=Log in to your account
 views.Session._form.label_email=Email
 views.Session._form.placeholder_email=user@example.org
 views.Session._form.label_password=Password
@@ -56,6 +57,7 @@ views.Session._form.submit=Log in
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
+views.User._form.h3=Create an account
 views.User._form.label_email=Email
 views.User._form.placeholder_email=user@example.org
 views.User._form.help_email=We will send a confirmation email to this address
@@ -64,7 +66,7 @@ views.User._form.help_password=Either choose eight or more lowercase and upperca
 views.User._form.label_password2=Password (again)
 views.User._form.help_password2=Because if you don''t remember it now, you never will
 views.User._form.submit=Register and send confirmation email
-views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it
+views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
 
 views.User.new.title=Register
 views.User.new.h1=Register

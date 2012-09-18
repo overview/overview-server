@@ -6,15 +6,16 @@ import play.api.mvc.{AnyContent, Controller, Request}
 import models.{OverviewUser, PotentialUser}
 
 object UserController extends Controller with TransactionActionController with HttpsEnforcer {
-  val form = controllers.forms.UserForm()
+  val loginForm = controllers.forms.LoginForm()
+  val userForm = controllers.forms.UserForm()
 
-  def new_() = HttpsAction { implicit request => Ok(views.html.User.new_(form)) }
-  
+  def new_() = HttpsAction { implicit request => Ok(views.html.Session.new_(loginForm, userForm)) }
+
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
     implicit val r = request
     
-    form.bindFromRequest()(request).fold(
-      formWithErrors => BadRequest(views.html.User.new_(formWithErrors)),
+    userForm.bindFromRequest()(request).fold(
+      formWithErrors => BadRequest(views.html.Session.new_(loginForm, formWithErrors)),
       user => {
         user.withRegisteredEmail match {
           case Some(u) => handleExistingUser(u)
@@ -35,9 +36,5 @@ object UserController extends Controller with TransactionActionController with H
    registeredUser.save
    mailers.User.create(registeredUser).send
   }
-  
-  private def sendConfirmationEmail(email: String) {}
-  private def sendAccountExistsEmail(email: String) {}
-  
 }
 
