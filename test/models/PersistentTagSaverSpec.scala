@@ -19,7 +19,7 @@ class PersistentTagSaverSpec extends Specification {
       val tagSaver = new PersistentTagSaver()
       val name = "a tag"
         
-      val id = tagSaver.save(name, documentSetId)
+      val id = tagSaver.save(documentSetId, name)
 
       id must not beNone
       
@@ -34,8 +34,8 @@ class PersistentTagSaverSpec extends Specification {
       val tagSaver = new PersistentTagSaver()
       val name = "a tag"
 
-      val goodId = tagSaver.save(name, documentSetId)
-      val noId = tagSaver.save(name, documentSetId)
+      val goodId = tagSaver.save(documentSetId, name)
+      val noId = tagSaver.save(documentSetId, name)
       
       noId must beNone
     }

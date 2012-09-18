@@ -3,6 +3,7 @@ package helpers
 import anorm._
 import java.sql.Connection
 
+
 object DbSetup {
   
   private def failInsert = { throw new Exception("failed insert") }
@@ -82,6 +83,4 @@ object DbSetup {
         WHERE id IN """ + documentIds.mkString("(", ",", ")")
         ).on("tagId" -> tagId).executeUpdate()
   }
-
-
 }
