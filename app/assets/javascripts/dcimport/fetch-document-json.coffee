@@ -1,7 +1,7 @@
 $ = jQuery
 Deferred = $.Deferred
 
-url_beginning_regex = /^https?:\/\/s3.documentcloud.org(.*)$/
+url_beginning_regex = /^https?:\/\/www.documentcloud.org(.*)$/
 
 replace_url_beginning = (url, url_beginning) ->
   url.replace(url_beginning_regex, "#{url_beginning}$1")
@@ -20,9 +20,9 @@ dcimport.fetch_document_json = (documentcloud_id, prompt_div) ->
   deferred = dcimport.request_json_with_login(url, prompt_div)
   deferred.done (json) ->
     credentials = dcimport.get_credentials()
-    url_beginning = "https://#{encodeURIComponent(credentials.email)}:#{encodeURIComponent(credentials.password)}@s3.documentcloud.org"
+    url_beginning = "https://#{encodeURIComponent(credentials.email)}:#{encodeURIComponent(credentials.password)}@www.documentcloud.org"
 
-    replace_url_beginnings(json.resources, url_beginning)
-    ret.resolve(json)
+    replace_url_beginnings(json.document.resources, url_beginning)
+    ret.resolve(json.document)
 
   ret

@@ -60,6 +60,7 @@ request_json_with_login_recursive = (deferred, url, prompt_div, attempt=0) ->
     ajax = $.ajax({
       url: url,
       timeout: 20000,
+      dataType: 'json',
       beforeSend: (xhr) ->
         xhr.setRequestHeader('Authorization', credentials_to_authorization_header(credentials))
     })
