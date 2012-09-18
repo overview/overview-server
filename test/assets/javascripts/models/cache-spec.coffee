@@ -39,7 +39,7 @@ describe 'models/cache', ->
       beforeEach ->
         tree = {
           id_tree: {
-            edit: () -> @edited = true
+            edit: (cb) -> cb(); @edited = true
           }
           nodes: {
             "1": { id: 1, children: [2, 3], tagcounts: { "1": 10 } },
@@ -75,3 +75,8 @@ describe 'models/cache', ->
 
         it 'should not crash when receiving an unloaded node', ->
           server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])
+
+        it 'should call id_tree.edit()', ->
+          # After refreshing node counts, we need to redraw. See #128.
+          server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])
+          expect(cache.on_demand_tree.id_tree.edited).toBe(true)
