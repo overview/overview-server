@@ -4,40 +4,8 @@
 
 @defining(scopedMessages("views.Session.new_")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="session-new", h1=m("h1")) {
-    <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
-      @if(form.hasGlobalErrors) {
-        <div class="control-group error">
-          <ul class="unstyled controls">
-            @form.globalErrors.map { error =>
-              <li class="help-block error">@t(error.message, error.args: _*)</li>
-            }
-          </ul>
-        </div>
-      }
+    @views.html.Session._form(form)
 
-      <fieldset class="control-group@(if(form.errors("email").isEmpty) "" else " error")">
-        <label for="session-email" class="control-label">@m("label_email")</label>
-        <div class="controls">
-          <input id="session-email" type="email" name="email" class="input-large" required="required" placeholder="@m("placeholder_email")" />
-          @form.errors("email").map { error =>
-            <span class="help-inline">@t(error.message, error.args: _*)</span>
-          }
-        </div>
-      </fieldset>
-
-      <fieldset class="control-group">
-        <label for="session-password" class="control-label">@m("label_password")</label>
-        <div class="controls">
-          <input id="session-password" type="password" name="password" class="input-large" required="required" />
-        </div>
-      </fieldset>
-
-      <fieldset class="form-actions">
-        <input type="submit" class="btn btn-primary" value="@m("submit")" />
-      </fieldset>
-    </form>
-
-    <span class="help-block">New user? <a href="/register">Register for an account</a></span>
-
+    <p>New user? <a href="/register">Register for an account</a></p>
   }
 }

@@ -48,12 +48,13 @@ views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before this one: {0}
 
+views.Session._form.label_email=Email
+views.Session._form.placeholder_email=user@example.org
+views.Session._form.label_password=Password
+views.Session._form.submit=Log in
+
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
-views.Session.new_.label_email=Email
-views.Session.new_.placeholder_email=user@example.org
-views.Session.new_.label_password=Password
-views.Session.new_.submit=Log in
 
 views.User.new.title=Register
 views.User.new.h1=Register
