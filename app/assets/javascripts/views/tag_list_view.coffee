@@ -11,6 +11,7 @@ class TagListView
     this._init_html()
     this._observe_tag_add()
     this._observe_tag_remove()
+    this._observe_tag_id_change()
     this._observe_shown_tag()
     this._observe_selected_tags()
 
@@ -79,6 +80,10 @@ class TagListView
   _observe_tag_remove: () ->
     @tag_list.observe 'tag-removed', (tag) =>
       this._remove_tag(tag)
+
+  _observe_tag_id_change: () ->
+    @tag_list.observe 'tag-id-changed', (old_tagid, tag) =>
+      $("li[data-#{TAG_ID_KEY}=#{old_tagid}]", @div).attr("data-#{TAG_ID_KEY}", tag.id)
 
   _remove_tag: (tag) ->
     $ul = $('ul', @div)
