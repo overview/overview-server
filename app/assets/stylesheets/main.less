@@ -50,41 +50,32 @@
 
 @import 'tag-colors.less';
 
+html {
+  height: 100%;
+}
+
 body.document-set-show {
+  @left_width: 55%;
+  @right_width: 45%;
+  @tree_height: 55%;
+  @focus_height: 15px;
+
   margin: 0;
   padding: 0;
   width: 100%;
+  height: 100%;
   overflow: hidden;
 
   h1 {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 40px; // navbar
-    margin: 0;
-    padding: 0 1em;
-    font-size: 1.6em;
-    height: 1.25em;
-    line-height: 1.25;
-    border-bottom: 2px solid @hrBorder;
-  }
-
-  #main {
-    position: absolute;
-    top: 2em;
-    margin-top: 42px;
-    left: 0;
-    right: 0;
-    bottom: 1.5em;
-    margin-bottom: 2px;
+    text-align: center;
   }
 
   #document {
     position: absolute;
     right: 0;
-    top: 0;
-    bottom: 0;
-    left: 50%;
+    left: @left_width;
+    top: 42px + 60px; // navbar + h1
+    bottom: 42px; // footer
     border-left: 1px solid @hrBorder;
 
     iframe {
@@ -99,22 +90,31 @@ body.document-set-show {
     }
   }
 
-  #focus {
+  #main {
     position: absolute;
     left: 0;
-    right: 50%;
-    top: 0;
-    height: 15px;
+    width: @left_width;
+    top: 42px + 60px; // navbar + h1
+    bottom: 42px; // footer
+  }
+
+  #tree {
+    height: @tree_height;
+  }
+
+  #focus {
+    position: relative;
+    height: @focus_height;
 
     .line {
       top: 0;
-      height: 100%;
+      height: @focus_height;
       background: @wellBackground;
     }
 
     .handle {
       top: 0;
-      bottom: 0;
+      height: @focus_height;
       background: #ddd;
       border: 1px solid @grayLight;
 
@@ -130,7 +130,7 @@ body.document-set-show {
 
     .middle {
       top: 0;
-      bottom: 0;
+      height: @focus_height;
       cursor: move;
       background: #ddd;
       border: 1px solid @grayLight;
@@ -139,32 +139,9 @@ body.document-set-show {
     }
   }
 
-  #tree {
-    position: absolute;
-    left: 0;
-    right: 50%;
-    top: 15px;
-    bottom: 45%;
-    border-bottom: 1px solid @hrBorder;
-    overflow: hidden;
-
-    .selected {
-      color: blue;
-    }
-  }
-
-  #terms-tags-documents {
-    position: absolute;
-    top: 60%;
-    border-top: 1px solid @hrBorder;
-    left: 0;
-    bottom: 0;
-    right: 50%;
-  }
-
   #tag-list {
     ul {
-      margin: 0;
+      margin: 10px 0;
       list-style: none;
     }
 
@@ -226,10 +203,6 @@ body.document-set-show {
 
   #document-list {
     overflow: auto;
-    top: 2em;
-    bottom: 0;
-    left: 0;
-    right: 0;
 
     ul {
       margin: 0;

@@ -32,6 +32,17 @@ jQuery ($) ->
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
     document_list_controller(this, world.cache, world.state)
+
+    $document_list = $(this)
+    refresh_height = () ->
+      parent_height = +$document_list.parent().height()
+      prevall_height = _($document_list.prevAll()).reduce(((sum, el) -> sum + (+$(el).height())), 0)
+      $document_list.height(parent_height - prevall_height)
+
+    refresh_height()
+    $(window).resize(refresh_height)
+    world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
+    world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
     document_contents_controller(this, world.cache, world.state)
