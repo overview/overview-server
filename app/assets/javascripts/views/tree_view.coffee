@@ -54,7 +54,7 @@ class DrawOperation
     depth = @drawable_node.height
 
     @px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
-    @px_per_vunit = @height / ((depth + 1) * @options.node_vpadding + (depth * @options.node_vunits))
+    @px_per_vunit = (@height - @options.node_line_width_selected) / ((depth > 1 && ((depth - 1) * @options.node_vpadding) || 0) + depth * @options.node_vunits)
     @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
     this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width_with_padding * 0.5 * @px_per_hunit - @px_pan })
@@ -235,7 +235,7 @@ class DrawOperation
       middle: parent_px.middle + drawable_node.relative_x * px_per_hunit,
       width: drawable_node.width * px_per_hunit,
       width_with_padding: drawable_node.width_with_padding * px_per_hunit,
-      top: (parent_px.top || 0) + (parent_px.height || 0) + vpadding * vpx_of_fraction,
+      top: (parent_px.top? && (parent_px.top + parent_px.height + vpadding * vpx_of_fraction) || @options.node_line_width_selected * 0.5),
       height: @options.node_vunits * vpx_of_fraction,
     }
     px.left = px.middle - px.width * 0.5
