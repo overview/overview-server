@@ -1,11 +1,27 @@
 @(
-  optionalUser: Option[models.orm.User]
+  loginForm: Form[PotentialUser],
+  userForm: Form[PotentialUser]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Welcome.show")) { m =>
-  @main(optionalUser=optionalUser, title=m("title"), bodyClass="welcome-show", h1=m("h1")) {
-    <p>FIXME: add content</p>
+  @main(optionalUser=None, title=m("title"), bodyClass="welcome-show") {
+    <header class="hero-unit">
+      <h1>@m("h1")</h1>
+      <p>@m("p1")</p>
+      <p>@m("p2")</p>
+    </header>
 
-    <p><a href="@routes.DocumentSetController.index()">See Document Sets</a></p>
+    <h2>@m("login_h2")</h2>
+    <p>@m("login_preamble")</p>
+
+    <div class="row">
+      <div class="span6">
+        @views.html.Session._form(loginForm)
+      </div>
+
+      <div class="span6">
+        @views.html.User._form(userForm)
+      </div>
+    </div>
   }
 }
