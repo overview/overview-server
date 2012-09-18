@@ -1,4 +1,4 @@
-package views.html.User
+package views.html.Session
 
 import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.mutable.Specification
@@ -8,22 +8,18 @@ import play.api.data.Forms.{email,nonEmptyText,mapping}
 
 class new_Spec extends Specification {
   trait OurContext extends Scope {
-    lazy val emptyForm = Form(mapping(
-      "email" -> email,
-      "password" -> nonEmptyText
-    )(models.PotentialUser)(u => Some((u.email, u.password))))
-    
-    lazy val form = emptyForm
+    lazy val loginForm = controllers.forms.LoginForm()
+    lazy val userForm = controllers.forms.UserForm()
 
     lazy implicit val flash = play.api.mvc.Flash()
-    lazy val body = new_(form).body
+    lazy val body = new_(loginForm, userForm).body
     lazy val j = jerry(body)
     def $(selector: String) = j.$(selector)
   }
 
   "new_()" should {
-    "show a form" in new OurContext {
-      $("form").length.must(beEqualTo(1))
+    "show two form" in new OurContext {
+      $("form").length.must(beEqualTo(2))
     }
 
     "show a confirm-password field" in new OurContext {
