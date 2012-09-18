@@ -23,7 +23,7 @@ trait AuthConfigImpl extends AuthConfig {
     Redirect(uri)
   }
 
-  override def logoutSucceeded[A](request: Request[A]): PlainResult = Redirect(routes.SessionController.new_)
+  override def logoutSucceeded[A](request: Request[A]): PlainResult = Redirect(routes.WelcomeController.show)
 
   override def authenticationFailed[A](request: Request[A]): PlainResult = {
     Redirect(routes.SessionController.new_).withSession("access_uri" -> request.uri)
