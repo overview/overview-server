@@ -1,53 +1,9 @@
 @(
-  form: play.api.data.Form[models.PotentialUser]
+  form: Form[PotentialUser]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.User.new")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="user-new", h1=m("h1")) {
-    <form method="post" action="@routes.UserController.create()" class="well form-horizontal">
-      @if(form.hasGlobalErrors) {
-        <div class="control-group error">
-          <ul class="unstyled controls">
-            @form.globalErrors.map { error =>
-              <li class="help-block error">@t(error.message, error.args: _*)</li>
-            }
-          </ul>
-        </div>
-      }
-
-      <fieldset class="control-group@(if(form.errors("email").isEmpty) "" else " error")">
-        <label class="control-label" for="user-email">@m("label_email")</label>
-        <div class="controls">
-          <input id="user-email" name="email" type="email" class="input-large" required="required" placeholder="@m("placeholder_email")" />
-          @form.errors("email").map { error =>
-            <span class="help-inline">@t(error.message, error.args: _*)</span>
-          }
-          <p class="help-block">@m("help_email")</p>
-        </div>
-      </fieldset>
-
-      <fieldset class="control-group@(if(form.errors("password").isEmpty) "" else " error")">
-        <label class="control-label" for="user-password">@m("label_password")</label>
-        <div class="controls">
-          <input id="user-password" name="password" type="password" class="input-large" required="required" />
-          @form.errors("password").map { error =>
-            <span class="help-inline">@t(error.message, error.args: _*)</span>
-          }
-          <p class="help-block">@m("help_password")</p>
-        </div>
-      </fieldset>
-
-      <fieldset class="control-group">
-        <label class="control-label" for="user-password2">@m("label_password2")</label>
-        <div class="controls">
-          <input id="user-password2" type="password" class="confirm-password input-large" required="required" data-confirm-password-error-does-not-match="@m("error_password2_does_not_match")" />
-          <p class="help-block">@m("help_password2")</p>
-        </div>
-      </fieldset>
-
-      <fieldset class="form-actions">
-        <input type="submit" class="btn btn-primary" value="@m("submit")" />
-      </fieldset>
-    </form>
+    @views.html.User._form(form)
   }
 }

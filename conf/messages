@@ -56,14 +56,15 @@ views.Session._form.submit=Log in
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
+views.User._form.label_email=Email
+views.User._form.placeholder_email=user@example.org
+views.User._form.help_email=We will send a confirmation email to this address
+views.User._form.label_password=Password
+views.User._form.help_password=Either choose eight or more lowercase and uppercase letters and digits, or write a lowercase sentence you''ll remember that others won''t guess
+views.User._form.label_password2=Password (again)
+views.User._form.help_password2=Because if you don''t remember it now, you never will
+views.User._form.submit=Register and send confirmation email
+views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it
+
 views.User.new.title=Register
 views.User.new.h1=Register
-views.User.new.label_email=Email
-views.User.new.placeholder_email=user@example.org
-views.User.new.help_email=We will send a confirmation email to this address
-views.User.new.label_password=Password
-views.User.new.help_password=Either choose eight or more lowercase and uppercase letters and digits, or write a lowercase sentence you''ll remember that others won''t guess
-views.User.new.label_password2=Password (again)
-views.User.new.help_password2=Because if you don''t remember it now, you never will
-views.User.new.submit=Register and send confirmation email
-views.User.new.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it
