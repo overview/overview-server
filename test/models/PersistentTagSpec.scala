@@ -23,12 +23,12 @@ class PersistentTagSpec extends Specification with Mockito {
     "be created by findOrCreateByName factory method if not in database" in new MockComponents {
         
       loader loadByName(documentSetId, name) returns None
-      saver save(name, documentSetId) returns Some(dummyTagId)
+      saver save(documentSetId, name) returns Some(dummyTagId)
       
       val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       
       there was one(loader).loadByName(documentSetId, name)
-      there was one(saver).save(name, documentSetId)
+      there was one(saver).save(documentSetId, name)
       
       tag.id must be equalTo(dummyTagId)
     } 
@@ -39,7 +39,7 @@ class PersistentTagSpec extends Specification with Mockito {
       val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       
       there was one(loader).loadByName(documentSetId, name)
-      there was no(saver).save(name, documentSetId)
+      there was no(saver).save(documentSetId, name)
       
       tag.id must be equalTo(dummyTagId)
       

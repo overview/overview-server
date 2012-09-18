@@ -5,7 +5,7 @@ import java.sql.Connection
 
 class PersistentTagSaver {
 
-  def save(name: String, documentSetId: Long)(implicit c: Connection) : Option[Long] = {
+  def save(documentSetId: Long, name: String)(implicit c: Connection) : Option[Long] = {
     try {
     	SQL("""
     		INSERT INTO tag (name, document_set_id) 
