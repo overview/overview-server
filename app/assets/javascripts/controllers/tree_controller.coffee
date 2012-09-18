@@ -29,6 +29,11 @@ tree_controller = (div, on_demand_tree, focus, state) ->
     return if !nodeid?
     log('clicked node', "#{nodeid}")
     new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
+
+    node = on_demand_tree.nodes[nodeid]
+    if node?.doclist?.n == 1
+      new_selection = new_selection.replace({ documents: [ node.doclist.docids[0] ] })
+
     state.set('selection', new_selection)
 
   view.observe 'expand', (nodeid) ->
