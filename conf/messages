@@ -1,3 +1,5 @@
+password.secure=This password isn''t secure. Please use a confusing, 8-character password with lowercase, uppercase, digits and symbols, or use a longer (and possibly simpler) passphrase.
+
 controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
 
 controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.

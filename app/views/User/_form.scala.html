@@ -32,10 +32,10 @@
         <label for="user-@field.name" class="control-label">@m("label_" + field.name)</label>
         <div class="controls">
           <input id="user-@field.name" type="password" name="@field.name" class="input-large" required="required" />
+          @field.errors.map { error =>
+            <p class="help-block">@t(error.message, error.args: _*)</span>
+          }
         </div>
-        @field.errors.map { error =>
-          <p class="help-block">@t(error.message, error.args: _*)</span>
-        }
       </fieldset>
     }
 
