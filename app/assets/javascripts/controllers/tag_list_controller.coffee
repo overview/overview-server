@@ -17,6 +17,7 @@ tag_list_controller = (div, remote_tag_list, state) ->
   view.observe 'create-submitted', (tag) ->
     tag = remote_tag_list.create_tag(tag.name)
     remote_tag_list.add_tag_to_selection(tag, state.selection)
+    state.set('focused_tag', tag)
 
 exports = require.make_export_object('controllers/tag_list_controller')
 exports.tag_list_controller = tag_list_controller
