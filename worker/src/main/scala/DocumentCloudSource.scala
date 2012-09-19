@@ -62,6 +62,23 @@ class DocumentCloudSource(val query: String,
     f.getHeader("Location")
   }
 
+  private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String,
+                                         f: DCDocumentAtURL => U) {
+    val privateQuery = (documentCloudUserName, documentCloudPassword) match {
+      case (Some(n), Some(p)) => new PrivateDocumentAtURL(docURL, n, p)
+      case _ => throw new Exception("Can't access private documents without credentials")
+    }
+
+    SimpleHttpRequest(privateQuery, { response =>
+      val privateURL = response.getHeader("Location")
+      f(new DCDocumentAtURL(title, id, privateURL))
+    },
+    { t: Throwable =>
+        Logger.error("Exception retrieving DocumentCloud query results: " + t)
+        done.failure(t)
+    })
+  }
+  
   // Parse a single page of results (from JSON to DCDearchResult), create DocumentAtURL objects, call f on them
   // Returns number of documents processed
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
@@ -73,11 +90,9 @@ class DocumentCloudSource(val query: String,
 
     for (doc <- result.documents) {
       val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
-      val textUrl = if (doc.access == "public") dcDocumentURL
-      else privateDocURL(dcDocumentURL)
 
-      val docAtURL = new DCDocumentAtURL(doc.title, doc.id, textUrl)
-      f(docAtURL)
+      if (doc.access == "public") f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL))
+      else redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id, f)
     }
     return result.documents.size
   }
