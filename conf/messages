@@ -54,9 +54,9 @@ views.DocumentSet.index.query_label=Query
 views.DocumentSet.index.query_placeholder=frog
 views.DocumentSet.index.query_help=This query must follow DocumentCloud syntax
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
-views.DocumentSet.index.import_from_documentcloud=Import a DocumentSet project
+views.DocumentSet.index.import_from_documentcloud=Import a document set
 views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project...
-views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public documents (advanced)...
+views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)...
 views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 
 views.DocumentSet._documentSet.action_delete=Delete
