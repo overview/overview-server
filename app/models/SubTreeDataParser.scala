@@ -29,16 +29,21 @@ class SubTreeDataParser extends DocumentListParser {
   }
   
   
+  // Instantiate a single core.Node object from the lists of id's returned from the database
+  // Sort child node id's by decreasing number of documents in each of those nodes, so far as we know them.
   private def createOneNode(id: Long, 
 		  			        descriptions: Map[Long, String],
 		  			        childNodeIds: Map[Long, Seq[Long]],
 		  			        documentIds: Map[Long, Seq[Long]],
 		  			        documentCounts: Map[Long, Long],
 		  			        tagCounts: Map[Long, Map[String, Long]]) : core.Node = {
-    
+
     val documentIdList = core.DocumentIdList(documentIds(id), documentCounts(id))
-    core.Node(id, descriptions(id), childNodeIds(id), documentIdList, 
-    		  tagCounts.getOrElse(id, Map()))
+    core.Node(id, 
+              descriptions(id), 
+              childNodeIds(id).sortWith((id1,id2) => documentCounts.getOrElse(id1, 0L) > documentCounts.getOrElse(id2, 0L)),   
+              documentIdList, 
+              tagCounts.getOrElse(id, Map()))
   }
   
   private def mapNodesToChildNodeIdLists(nodeData: Seq[NodeData]) : Map[Long, Seq[Long]] = {
