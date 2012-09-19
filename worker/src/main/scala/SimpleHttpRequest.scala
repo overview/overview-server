@@ -6,61 +6,50 @@ import com.ning.http.client.Realm.AuthScheme
 
 object SimpleHttpRequest {
 
-  val builder = new AsyncHttpClientConfig.Builder
-  val config = builder.setFollowRedirects(false)
-    .setCompressionEnabled(true)
-    .setAllowPoolingConnection(true)
-    .setRequestTimeoutInMs(5 * 60 * 1000)
-    .build
+  private def getHttpConfig(followRedirects: Boolean = true) = {
+    val builder = new AsyncHttpClientConfig.Builder
 
-  val asyncHttpClient = new AsyncHttpClient(config)
-
-  def apply(resource: DocumentAtURL): Response = {
-    val response = resource match {
-      case r: DocumentAtURL with BasicAuth => {
-        val realm = new Realm.RealmBuilder()
-          .setPrincipal(r.username)
-          .setPassword(r.password)
-          .setUsePreemptiveAuth(true)
-          .setScheme(AuthScheme.BASIC)
-          .build();
-
-        asyncHttpClient.prepareGet(resource.textURL).setRealm(realm).execute()
-      }
-      case _ =>  asyncHttpClient.prepareGet(resource.textURL).execute()
-    }
-
-    response.get
+    builder.
+      setFollowRedirects(followRedirects).
+      setCompressionEnabled(true).
+      setAllowPoolingConnection(true).
+      setRequestTimeoutInMs(5 * 60 * 1000).
+      build
   }
+  
+  private lazy val asyncHttpClient = new AsyncHttpClient(getHttpConfig(followRedirects = false))
 
+  
   def apply(resource: DocumentAtURL,
-    onSuccess: Response => Unit, onFailure: Throwable => Unit): Response = {
+    onSuccess: Response => Unit, onFailure: Throwable => Unit) = {
 
     val responseHandler = new AsyncCompletionHandler[Response]() {
       override def onCompleted(response: Response) = {
-	onSuccess(response)
-	response
+        onSuccess(response)
+        response
       }
       override def onThrowable(t: Throwable) = {
-	onFailure(t)
+        onFailure(t)
       }
     }
-    
-    val response = resource match {
-      case r: DocumentAtURL with BasicAuth => {
-        val realm = new Realm.RealmBuilder()
-          .setPrincipal(r.username)
-          .setPassword(r.password)
-          .setUsePreemptiveAuth(true)
-          .setScheme(AuthScheme.BASIC)
-          .build();
 
-        asyncHttpClient.prepareGet(resource.textURL).setRealm(realm).execute(responseHandler)
-      }
-      case _ =>  asyncHttpClient.prepareGet(resource.textURL).execute(responseHandler)
+    resource match {
+      case r: DocumentAtURL with BasicAuth => getWithBasicAuth(r, responseHandler)
+      case _ => asyncHttpClient.prepareGet(resource.textURL).execute(responseHandler)
     }
-
-    response.get
   }
   
+  private def getWithBasicAuth(resource: DocumentAtURL with BasicAuth,
+    responseHandler: AsyncCompletionHandler[Response])  = {
+
+    val realm = new Realm.RealmBuilder()
+      .setPrincipal(resource.username)
+      .setPassword(resource.password)
+      .setUsePreemptiveAuth(true)
+      .setScheme(AuthScheme.BASIC)
+      .build();
+
+    asyncHttpClient.prepareGet(resource.textURL).setRealm(realm).execute(responseHandler)
+  }
+
 }

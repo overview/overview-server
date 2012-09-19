@@ -11,10 +11,10 @@
 
 package overview.http
 
-import akka.dispatch.{ExecutionContext, Future, Promise}
+import akka.dispatch.{ ExecutionContext, Future, Promise }
 import com.ning.http.client._
 import com.ning.http.client.Realm.AuthScheme
-import com.ning.http.client.{Response => AHCResponse}
+import com.ning.http.client.{ Response => AHCResponse }
 import overview.util.Logger
 import scala.io.Source._
 
@@ -112,18 +112,23 @@ object AsyncHttpRequest {
       }
 
       resource match {
-	case r: DocumentAtURL with BasicAuth => {
-	  val realm = new Realm.RealmBuilder()
-            .setPrincipal(r.username)
-            .setPassword(r.password)
-            .setUsePreemptiveAuth(true)
-            .setScheme(AuthScheme.BASIC)
-            .build();
-	  asyncHttpClient.prepareGet(url).setRealm(realm).execute(responseHandler);
-	}
-	case _ => asyncHttpClient.prepareGet(url).execute(responseHandler)
+        case r: DocumentAtURL with BasicAuth => getWithBasicAuth(r, responseHandler)
+        case _ => asyncHttpClient.prepareGet(url).execute(responseHandler)
       }
     }
+  }
+
+  private def getWithBasicAuth(resource: DocumentAtURL with BasicAuth,
+    responseHandler: AsyncCompletionHandler[Response]) = {
+
+    val realm = new Realm.RealmBuilder()
+      .setPrincipal(resource.username)
+      .setPassword(resource.password)
+      .setUsePreemptiveAuth(true)
+      .setScheme(AuthScheme.BASIC)
+      .build();
+
+    asyncHttpClient.prepareGet(resource.textURL).setRealm(realm).execute(responseHandler)
   }
 
   // Version that returns a Future[Response]

@@ -51,16 +51,6 @@ class DocumentCloudSource(val query: String,
   private implicit val executionContext = AsyncHttpRequest.executionContext // needed to run the promise obejct
   private val done = Promise[Unit]()
 
-  // Get the URL for accessing a private document
-  private def privateDocURL(docURL: String): String = {
-    val privateQuery = (documentCloudUserName, documentCloudPassword) match {
-      case (Some(n), Some(p)) => new PrivateDocumentAtURL(docURL, n, p)
-      case _ => throw new Exception("Can't access private documents without credentials")
-    }
-    val f = SimpleHttpRequest(privateQuery)
-
-    f.getHeader("Location")
-  }
 
   private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String,
                                          f: DCDocumentAtURL => U) {
