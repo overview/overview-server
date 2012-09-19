@@ -1,3 +1,5 @@
+brand.name=The Overview Project
+
 password.secure=This password isn''t secure. Please use a confusing, 8-character password with lowercase, uppercase, digits and symbols, or use a longer (and possibly simpler) passphrase.
 
 controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
@@ -25,6 +27,12 @@ mailers.User.createErrorUserAlreadyExists.signature=The Overview Project develop
 models.DocumentSetCreationJob.JobState.Submitted=submitted
 models.DocumentSetCreationJob.JobState.InProgress=in progress
 models.DocumentSetCreationJob.JobState.Complete=complete
+
+views.components.navbar.link_blog=Blog
+views.components.navbar.link_contact=Contact us
+views.components.navbar.logged_in=You are logged in as {0}
+views.components.navbar.link_document_sets=Your document sets
+views.components.navbar.link_logout=Log out
 
 views.Confirmation.create.title=Confirmation sent
 views.Confirmation.create.h1=Confirmation sent
