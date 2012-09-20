@@ -6,6 +6,7 @@
 @defining(scopedMessages("views.Welcome.show")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="welcome-show") {
     <header class="hero-unit">
+      <img src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
       <h1>@m("h1")</h1>
       <p>@m("p1")</p>
       <p>@m("p2")</p>
