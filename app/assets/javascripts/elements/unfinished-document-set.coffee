@@ -2,7 +2,7 @@ m = {
   queue_description: (n) -> "Number of jobs to process before this one: #{n}",
 }
 
-WAIT_INTERVAL = 500 # ms after one request completes before another starts
+WAIT_INTERVAL = 1000 # ms after one request completes before another starts
 
 $ ->
   $('body.document-set-index li.unfinished').each ->
