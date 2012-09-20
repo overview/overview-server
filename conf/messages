@@ -30,7 +30,8 @@ models.DocumentSetCreationJob.JobState.Complete=complete
 
 views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
-views.components.navbar.logged_in=You are logged in as {0}
+views.components.navbar.link_help=Help
+views.components.navbar.logged_in={0}
 views.components.navbar.link_document_sets=Your document sets
 views.components.navbar.link_logout=Log out
 

@@ -3,6 +3,8 @@
 
 GET / controllers.WelcomeController.show()
 
+GET /help controllers.HelpController.show()
+
 GET /login controllers.SessionController.new_()
 POST /login controllers.SessionController.create()
 GET /logout controllers.SessionController.delete()

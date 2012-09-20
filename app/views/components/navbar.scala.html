@@ -10,7 +10,8 @@
         <a class="brand" href="@routes.WelcomeController.show()">@t("brand.name")</a>
         <ul class="nav">
           <li><a href="http://overview.ap.org/">@m("link_blog")</a></li>
-          <li><a href="http://overview.ap.org/get-involved/">@m("link_contact")</a></li>
+          <li><a href="@routes.HelpController.show()">@m("link_help")</a></li>
+          <li><a href="http://overview.ap.org/contact/">@m("link_contact")</a></li>
         </ul>
         @optionalUser.map { user =>
           <div class="logged-in pull-right">
