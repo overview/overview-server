@@ -23,7 +23,22 @@
       $manual_root.find('form').toggle();
     });
 
+    var $sample_root = $('#documentcloud-import .sample');
+    $sample_root.find('a:eq(0)').on('click', function(e) {
+      e.preventDefault();
+      $sample_root.find('ul').toggle();
+    });
   </script>
+}
+
+@sampleForm(title: String, query: String, description: String) = {
+  <form method="post" action="@routes.DocumentSetController.create" class="form-inline">
+    <input type="hidden" name="title" value="@title"/>
+    <input type="hidden" name="query" value="@query"/>
+    <button class="btn"><i class="icon-download"></i> Import</button>
+  </form>
+  <h3>@title</h3>
+  <p class="status">@description</p>
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
@@ -43,6 +58,18 @@
 
       <div class="with-login">
         <p><a href="#">@m("import_from_documentcloud_account")</a></p>
+      </div>
+
+      <hr />
+
+      <div class="sample">
+        <p><a href="#">@m("import_sample_document_set")</a></p>
+
+        <ul class="unstyled projects">
+          <li>@sampleForm("Whitehouse emails prior to BP oil spill", "projectid:5359", "About 600 documents")</li>
+          <li>@sampleForm("Homocide Watch documents", "group:homocide-watch", "Court documents concerning homocides: about 350 documents")</li>
+          <li>@sampleForm("WikiLeaks spy files", "projectid:6560", "Brochures from surveillance equipment manufacturers: about 300 documents")</li>
+        </ul>
       </div>
 
       <hr />

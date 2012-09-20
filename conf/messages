@@ -59,6 +59,7 @@ views.DocumentSet.index.import_from_documentcloud=Import a document set
 views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project...
 views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)...
 views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
+views.DocumentSet.index.import_sample_document_set=Import a sample document set
 
 views.DocumentSet._documentSet.action_delete=Delete
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
