@@ -54,6 +54,11 @@ html {
   height: 100%;
 }
 
+.alert {
+  position: relative;
+  z-index: 1;
+}
+
 body.document-set-show {
   @left_width: 55%;
   @right_width: 45%;
@@ -66,16 +71,14 @@ body.document-set-show {
   height: 100%;
   overflow: hidden;
 
-  h1 {
-    text-align: center;
-  }
-
   #document {
     position: absolute;
-    right: 0;
+    right: 5px;
     left: @left_width;
-    top: 42px + 60px; // navbar + h1
-    bottom: 0;
+    margin-left: 5px;
+    top: 42px + 5px; // navbar
+    bottom: 5px;
+    border: 1px solid #ccc;
 
     iframe {
       position: absolute;
@@ -93,20 +96,26 @@ body.document-set-show {
     position: absolute;
     left: 0;
     width: @left_width;
-    top: 42px + 60px; // navbar + h1
+    top: 42px; // navbar
     bottom: 0;
     box-sizing: border-box;
-    padding: 0 10px;
   }
 
   #tree {
     height: @tree_height;
     padding-bottom: 10px;
+    box-sizing: border-box;
+    margin: 5px 5px 0;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-bottom: none;
   }
 
   #focus {
     position: relative;
-    height: @focus_height;
+    height: @focus_height + 2px;
+    margin: 0 5px 5px 5px;
+    border: 1px solid #ccc; // including border-top
 
     .line {
       top: 0;
@@ -143,8 +152,8 @@ body.document-set-show {
 
   #tag-list {
     ul {
-      margin: 0;
-      padding: 10px 0;
+      margin: 0 5px;
+      padding: 0;
       list-style: none;
     }
 
@@ -206,6 +215,10 @@ body.document-set-show {
 
   #document-list {
     overflow: auto;
+    box-sizing: border-box;
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
 
     ul {
       margin: 0;

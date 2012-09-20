@@ -36,8 +36,8 @@ jQuery ($) ->
     $document_list = $(this)
     refresh_height = () ->
       parent_height = +$document_list.parent().height()
-      prevall_height = _($document_list.prevAll()).reduce(((sum, el) -> sum + (+$(el).outerHeight())), 0)
-      $document_list.height(parent_height - prevall_height)
+      prevall_height = _($document_list.prevAll()).reduce(((sum, el) -> sum + (+$(el).height())), 0)
+      $document_list.height(parent_height - prevall_height - 44) # FIXME remove "44px"
 
     refresh_height()
     $(window).resize(refresh_height)
