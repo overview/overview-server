@@ -91,6 +91,7 @@ views.User._form.error_password2_does_not_match=This password doesn''t match wha
 views.User.new.title=Register
 views.User.new.h1=Register
 
+views.Welcome.show.title=The Overview Project
 views.Welcome.show.h1=Browse lots of documents
 views.Welcome.show.p1=You''re a journalist who used to think you never found enough documents. Now you have too many.
 views.Welcome.show.p2=Overview will automatically file documents into folders for you. That way, you can focus on what''s important: the story.
