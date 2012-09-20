@@ -10,7 +10,7 @@
 
 package overview.clustering
 
-import akka.dispatch.{ Await, Promise }
+import akka.dispatch.{ Await, Future, Promise }
 import akka.util.Timeout
 import com.codahale.jerkson.Json._
 import java.net.URLEncoder
@@ -48,20 +48,32 @@ class DocumentCloudSource(val query: String,
   }
 
   // we use a promise to sync the main call with our async callbacks, and propagate errors
-  private implicit val executionContext = AsyncHttpRequest.executionContext // needed to run the promise obejct
+  private implicit val executionContext = AsyncHttpRequest.executionContext // needed to run the promise object
   private val done = Promise[Unit]()
 
-  // Get the URL for accessing a private document
-  private def privateDocURL(docURL: String): String = {
+
+  private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String,
+                                         f: DCDocumentAtURL => U): Promise[DCDocumentAtURL] = {
     val privateQuery = (documentCloudUserName, documentCloudPassword) match {
       case (Some(n), Some(p)) => new PrivateDocumentAtURL(docURL, n, p)
       case _ => throw new Exception("Can't access private documents without credentials")
     }
-    val f = SimpleHttpRequest(privateQuery)
 
-    f.getHeader("Location")
+    val done = Promise[DCDocumentAtURL]()
+
+    SimpleHttpRequest(privateQuery,
+    { response =>
+      val privateURL = response.getHeader("Location")
+      done.success(new DCDocumentAtURL(title, id, privateURL))
+    },
+    { t: Throwable =>
+        Logger.error("Exception retrieving DocumentCloud query results: " + t)
+        done.failure(t)
+    })
+
+    done
   }
-
+  
   // Parse a single page of results (from JSON to DCDearchResult), create DocumentAtURL objects, call f on them
   // Returns number of documents processed
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
@@ -71,15 +83,18 @@ class DocumentCloudSource(val query: String,
     numDocuments = Some(result.total)
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
+    var redirects = Seq[Future[DCDocumentAtURL]]()
     for (doc <- result.documents) {
       val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
-      val textUrl = if (doc.access == "public") dcDocumentURL
-      else privateDocURL(dcDocumentURL)
 
-      val docAtURL = new DCDocumentAtURL(doc.title, doc.id, textUrl)
-      f(docAtURL)
+      if (doc.access == "public") f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL))
+      else redirects = redirects :+  redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id, f)
     }
-    return result.documents.size
+    val urlsFuture = Future.sequence(redirects) // waits for all redirectToPrivateDocURL to complete, rethrows exceptions
+    val urls = Await.result(urlsFuture, Timeout.never.duration)
+    urls.map(f)
+    
+    result.documents.size
   }
 
   // Retrieve each page of document results asynchronously, calling ourself recursively (weird, but...)
