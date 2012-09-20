@@ -37,9 +37,6 @@ class DrawOperation
     @canvas.height = @height
 
     @ctx = @canvas.getContext('2d')
-    @ctx.lineStyle = @options.color.line
-    @ctx.font = '10px Helvetica, Arial, sans-serif'
-    @ctx.textBaseline = 'top'
 
     # HDPI stuff: http://www.html5rocks.com/en/tutorials/canvas/hidpi/
     device_pixel_ratio = window.devicePixelRatio || 1
@@ -50,7 +47,7 @@ class DrawOperation
                           @ctx.backingStorePixelRatio ||
                           1
 
-    ratio = device_pixel_ratio / backing_store_ratio
+    @device_to_backing_store_ratio = ratio = device_pixel_ratio / backing_store_ratio
     if ratio != 1
       old_width = @canvas.width
       old_height = @canvas.height
@@ -62,6 +59,10 @@ class DrawOperation
       @canvas.style.height = "#{old_height}px"
 
       @ctx.scale(ratio, ratio)
+
+    @ctx.lineStyle = @options.color.line
+    @ctx.font = "#{11 * ratio}px Helvetica, Arial, sans-serif"
+    @ctx.textBaseline = 'top'
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
