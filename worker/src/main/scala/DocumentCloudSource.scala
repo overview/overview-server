@@ -79,22 +79,25 @@ class DocumentCloudSource(val query: String,
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
 
     // For each returned document, package up the result in a DocumentAtURL object, and call f on it
-    val result = parse[DCSearchResult](pageText)
-    numDocuments = Some(result.total)
-    Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
-    var redirects = Seq[Future[DCDocumentAtURL]]()
-    for (doc <- result.documents) {
-      val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
+    if (pageNum <= 10) {
+      val result = parse[DCSearchResult](pageText)
+      numDocuments = Some(result.total)
+      Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
+
+      var redirects = Seq[Future[DCDocumentAtURL]]()
+      for (doc <- result.documents) {
+	val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
 
       if (doc.access == "public") f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL))
-      else redirects = redirects :+  redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id, f)
+	else redirects = redirects :+  redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id, f)
+      }
+      val urlsFuture = Future.sequence(redirects) // waits for all redirectToPrivateDocURL to complete, rethrows exceptions
+      val urls = Await.result(urlsFuture, Timeout.never.duration)
+      urls.map(f)
+      result.documents.size
     }
-    val urlsFuture = Future.sequence(redirects) // waits for all redirectToPrivateDocURL to complete, rethrows exceptions
-    val urls = Await.result(urlsFuture, Timeout.never.duration)
-    urls.map(f)
-    
-    result.documents.size
+    else 0
   }
 
   // Retrieve each page of document results asynchronously, calling ourself recursively (weird, but...)
