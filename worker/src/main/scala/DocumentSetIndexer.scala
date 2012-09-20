@@ -60,14 +60,12 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     // Retrieve all that stuff!
 
     WorkerActorSystem.withActorSystem { implicit context =>
-      val retrievalDone = BulkHttpRetriever[DCDocumentAtURL](sourceDocList,
-	(doc, text) => processDocument(doc, text))
+      val retrievalDone = BulkHttpRetriever[DCDocumentAtURL](sourceDocList, (doc, text) => processDocument(doc, text))
     
       // Now, wait on this thread until all docs are in 
       val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
       logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
     }
-    
     
     // Cluster (build the tree)
     progAbort(Progress(fetchingFraction, "Clustering documents"))

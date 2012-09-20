@@ -88,11 +88,11 @@ object BulkHttpRetriever {
           writeDocument(doc.asInstanceOf[T], text)
         } catch {
           case e => {
-	    Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
-	    finished.failure(e)
-	    context.stop(self)
-	  }
-	}
+      	    Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
+      	    finished.failure(e)
+      	    context.stop(self)
+          }
+        }
 
         spoolRequests
 
