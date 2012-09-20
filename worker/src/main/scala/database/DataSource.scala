@@ -24,7 +24,7 @@ class DataSource(configuration: DatabaseConfiguration) {
   dataSource.setUsername(configuration.username)
   dataSource.setPassword(configuration.password)
   dataSource.setMinConnectionsPerPartition(1)
-  dataSource.setMaxConnectionsPerPartition(10)
+  dataSource.setMaxConnectionsPerPartition(5)
   dataSource.setAcquireIncrement(1)
   dataSource.setPartitionCount(1)
   dataSource.setDisableJMX(true)
