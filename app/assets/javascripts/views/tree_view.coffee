@@ -41,6 +41,28 @@ class DrawOperation
     @ctx.font = '10px Helvetica, Arial, sans-serif'
     @ctx.textBaseline = 'top'
 
+    # HDPI stuff: http://www.html5rocks.com/en/tutorials/canvas/hidpi/
+    device_pixel_ratio = window.devicePixelRatio || 1
+    backing_store_ratio = @ctx.webkitBackingStorePixelRatio ||
+                          @ctx.mozBackingStorePixelRatio ||
+                          @ctx.msBackingStorePixelRatio ||
+                          @ctx.oBackingStorePixelRatio ||
+                          @ctx.backingStorePixelRatio ||
+                          1
+
+    ratio = device_pixel_ratio / backing_store_ratio
+    if ratio != 1
+      old_width = @canvas.width
+      old_height = @canvas.height
+
+      @canvas.width = old_width * ratio
+      @canvas.height = old_height * ratio
+
+      @canvas.style.width = "#{old_width}px"
+      @canvas.style.height = "#{old_height}px"
+
+      @ctx.scale(ratio, ratio)
+
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
