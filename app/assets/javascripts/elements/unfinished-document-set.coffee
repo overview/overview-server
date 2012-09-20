@@ -14,9 +14,9 @@ $ ->
       $li.replaceWith(data.html)
 
     state_description = (data) ->
-      if data.state is 'NOT_STARTED'
+      if data.n_jobs_ahead_in_queue
         m.queue_description(data.n_jobs_ahead_in_queue)
-      else 
+      else
         data.state_description
 
     progress = (data) ->
