@@ -18,90 +18,131 @@ class MockResolver
     @deferreds.push(ret = new Deferred())
     ret
 
+class MockDocumentStore
+  constructor: () ->
+    @adds = []
+    @removes = []
+
+  add_doclist: (doclist, documents) ->
+    @adds.push({ doclist: doclist, documents: documents })
+
+  remove_doclist: (doclist) ->
+    @removes.push(doclist)
+
+class MockCache
+  constructor: () ->
+    @document_store = new MockDocumentStore()
+    @needs_resolver = new MockResolver()
+
 describe 'models/document_list', ->
   describe 'DocumentList', ->
+    doc = (i) -> { id: i, title: "doc#{i}" }
+    doclist = (start, end) ->
+      {
+        documents: doc(i) for i in [ start ... end ],
+        total_items: end - start
+      }
+
+    cache = undefined
     resolver = undefined
+    document_store = undefined
 
     beforeEach ->
-      resolver = new MockResolver()
+      cache = new MockCache()
+      resolver = cache.needs_resolver
+      document_store = cache.document_store
 
     it 'should pass get_placeholder_documents() to selection.documents_from_cache()', ->
       selection = new MockSelection()
-      dl = new DocumentList(selection, resolver)
+      dl = new DocumentList(cache, selection)
       spyOn(selection, 'documents_from_cache')
-      dl.get_placeholder_documents({})
-      expect(selection.documents_from_cache).toHaveBeenCalledWith({})
+      dl.get_placeholder_documents()
+      expect(selection.documents_from_cache).toHaveBeenCalledWith(cache)
 
     describe 'slice', ->
       it 'should return documents it already has, without a server call', ->
-        dl = new DocumentList(new MockSelection(), resolver)
-        dl.documents = [ '1', '2', '3', '4', '5' ]
+        dl = new DocumentList(cache, new MockSelection())
+        dl.documents = doclist(1, 6).documents
         dl.n = 5
         deferred = dl.slice(0, 3)
         expect(deferred.state()).toEqual('resolved')
         arr = undefined
         deferred.done((x) -> arr = x)
-        expect(arr).toEqual(['1', '2', '3'])
+        expect(arr).toEqual(doclist(1, 4).documents)
 
       it 'should call Resolver.get_deferred(selection_documents_slice)', ->
         selection = new MockSelection({ documents: [ 1, 2, 3 ] })
-        dl = new DocumentList(selection, resolver)
+        dl = new DocumentList(cache, selection)
         spyOn(resolver, 'get_deferred').andCallThrough()
         deferred = dl.slice(0, 2)
         expect(resolver.get_deferred).toHaveBeenCalledWith('selection_documents_slice', { selection: selection, start: 0, end: 2 })
 
       it 'should give the return value of get_selection_documents_slice', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         deferred = dl.slice(0, 2)
         expect(deferred.state()).toEqual('pending')
         arr = undefined
         deferred.done((x) -> arr = x)
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
-        expect(arr).toEqual(['1', '2'])
+        resolver.deferreds[0].resolve(doclist(1, 3))
+        expect(arr).toEqual(doclist(1,3).documents)
 
       it 'should cache unresolved values', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         d1 = dl.slice(0, 2)
         d2 = dl.slice(0, 2)
         expect(d2).toBe(d1)
 
       it 'should cache resolved values', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         d1 = dl.slice(0, 2)
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
+        resolver.deferreds[0].resolve(doclist(1, 3))
         d2 = dl.slice(0, 2)
         expect(d2).toBe(d1)
 
       it 'should populate @documents', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         deferred = dl.slice(0, 2)
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
-        expect(dl.documents).toEqual(['1', '2'])
+        resolver.deferreds[0].resolve(doclist(1, 3))
+        expect(dl.documents).toEqual(doclist(1,3).documents)
 
       it 'should populate @documents with undefined if a later request comes in before an earlier one', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         d1 = dl.slice(0, 2)
         d2 = dl.slice(2, 4)
-        resolver.deferreds[1].resolve({ documents: [ '3', '4' ] })
-        expect(dl.documents).toEqual([undefined, undefined, '3', '4'])
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ] })
-        expect(dl.documents).toEqual([ '1', '2', '3', '4' ])
+        resolver.deferreds[1].resolve(doclist(3, 5))
+        expect(dl.documents).toEqual([undefined, undefined, doc(3), doc(4)])
+        resolver.deferreds[0].resolve(doclist(1, 3))
+        expect(dl.documents).toEqual(doclist(1, 5).documents)
 
       it 'should populate @n', ->
-        dl = new DocumentList(new MockSelection(), resolver)
-        deferred = dl.slice(0, 2)
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ], total_items: 2 })
+        dl = new DocumentList(cache, new MockSelection())
+        dl.slice(0, 2)
+        resolver.deferreds[0].resolve(doclist(1, 3))
         expect(dl.n).toEqual(2)
 
       it 'should notify observers', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         deferred = dl.slice(0, 2)
         called = false
         dl.observe(-> called = true)
-        resolver.deferreds[0].resolve({ documents: [ '1', '2' ], total_items: 2 })
+        resolver.deferreds[0].resolve(doclist(1, 3))
         expect(called).toBeTruthy()
+
+      it 'should call DocumentStore.add_doclist()', ->
+        dl = new DocumentList(cache, new MockSelection())
+        dl.slice(0, 2)
+        resolver.deferreds[0].resolve(doclist(1, 3))
+        expect(document_store.adds).toEqual([{ doclist: { docids: [ 1, 2 ] }, documents: { '1': doc(1), '2': doc(2) }}])
 
     describe 'n', ->
       it 'should begin undefined', ->
-        dl = new DocumentList(new MockSelection(), resolver)
+        dl = new DocumentList(cache, new MockSelection())
         expect(dl.n).toBeUndefined()
+
+    describe 'destroy', ->
+      it 'should call DocumentStore.remove_doclist()', ->
+        dl = new DocumentList(cache, new MockSelection())
+        dl.slice(0, 2)
+        resolver.deferreds[0].resolve(doclist(1, 3))
+        dl.destroy()
+        expect(document_store.removes).toEqual([{ docids: [ 1, 2 ] }])

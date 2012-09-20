@@ -20,7 +20,8 @@ document_list_controller = (div, cache, state) ->
     document_list.slice(need_documents[0], max)
 
   refresh_document_list = () ->
-    document_list = new DocumentList(listed_selection, cache.needs_resolver)
+    document_list.destroy() if document_list?
+    document_list = new DocumentList(cache, listed_selection)
     if !view?
       view = new DocumentListView(div, cache, document_list, state, VIEW_OPTIONS)
     else
