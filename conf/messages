@@ -96,5 +96,3 @@ views.Welcome.show.title=The Overview Project
 views.Welcome.show.h1=Browse lots of documents
 views.Welcome.show.p1=You''re a journalist who used to think you never found enough documents. Now you have too many.
 views.Welcome.show.p2=Overview will automatically file documents into folders for you. That way, you can focus on what''s important: the story.
-views.Welcome.show.login_h2=Log in
-views.Welcome.show.login_preamble=If you want Overview to help find your story, you need to log in and upload your documents. We''ll start with the easy part.
