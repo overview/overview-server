@@ -1,6 +1,6 @@
 brand.name=The Overview Project
 
-password.secure=This password isn''t secure. Please use a confusing, 8-character password with lowercase, uppercase, digits and symbols, or use a longer (and possibly simpler) passphrase.
+password.secure=This password is too insecure. Please use a password at least seven characters long.
 
 controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
 

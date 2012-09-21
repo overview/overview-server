@@ -3,6 +3,10 @@ package models.util
 import scala.util.matching.Regex
 
 class PasswordTester(val password: String) {
+  // 2012's fast GPUs can probably manage 10k passwords per second. Let's make
+  // passwords that will survive for 12 hours
+  val NumGuessesForSafePassword = BigInt(100000L) * 12 * 3600
+
   private class RichString(s: String) {
     def tr(a: String, b: String) = {
       s.map({ c =>
@@ -42,11 +46,6 @@ class PasswordTester(val password: String) {
     newcastle 1q2w3e4r5t pimpdaddy panasonic motherfucker peternorth 
     cardinals fortune12 
     """.split("""\s+""").map(_.normalize).toSet
-
-  // 2011's fast GPUs can manage 5 billion passwords per second
-  // 8-char, mixed-case alphanumeric passwords aren't secure, but we need to
-  // support them anyway.
-  val NumGuessesForSafePassword = BigInt(5000000000L) * 12 * 3600
 
   val Matchers : Seq[(String,String,Int)] = Seq(
     ("ASCII lowercase", """[a-z]""", 26),
