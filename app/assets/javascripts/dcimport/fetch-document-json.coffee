@@ -17,12 +17,13 @@ dcimport.fetch_document_json = (documentcloud_id, prompt_div) ->
   ret = new Deferred()
 
   url = "https://www.documentcloud.org/api/documents/#{documentcloud_id}.json"
-  deferred = dcimport.request_json_with_login(url, prompt_div)
+  #deferred = dcimport.request_json_with_login(url, prompt_div)
+  deferred = $.getJSON(url)
   deferred.done (json) ->
-    credentials = dcimport.get_credentials()
-    url_beginning = "https://#{encodeURIComponent(credentials.email)}:#{encodeURIComponent(credentials.password)}@www.documentcloud.org"
+    #credentials = dcimport.get_credentials()
+    #url_beginning = "https://#{encodeURIComponent(credentials.email)}:#{encodeURIComponent(credentials.password)}@www.documentcloud.org"
 
-    replace_url_beginnings(json.document.resources, url_beginning)
+    #replace_url_beginnings(json.document.resources, url_beginning)
     ret.resolve(json.document)
 
   ret

@@ -3,10 +3,8 @@
 <html>
   <head>
     <title>@document.title</title>
-    <!--
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
-    -->
     <style type="text/css">
       html, body, iframe {
         width: 100%;
@@ -18,20 +16,6 @@
     </style>
   </head>
   <body>
-    <iframe src="https://www.documentcloud.org/documents/@document.documentCloudId"></iframe>
-
-    <script type="text/javascript">
-      window.load_documentcloud_document = function(id) {
-        var iframe = document.getElementsByTagName('iframe')[0];
-        if (id) {
-          iframe.setAttribute('src', 'https://www.documentcloud.org/documents/' + id);
-        } else {
-          iframe.setAttribute('src', 'data:text/html,<html><body></body></html>');
-        }
-      }
-    </script>
-
-    <!--
     <div id="DV-container"></div>
 
     <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/viewer.js")"></script>
@@ -74,6 +58,5 @@
         window.load_documentcloud_document('@document.documentCloudId');
       });
     </script>
-    -->
   </body>
 </html>
