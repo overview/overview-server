@@ -3,7 +3,7 @@
 )(implicit lang: Lang)
 
 @defining(scopedMessages("views.User._form")) { m =>
-  <form method="post" action="@routes.UserController.create()" class="well form-horizontal">
+  <form method="post" action="@routes.UserController.create()" class="well form-horizontal" autocomplete="off">
     <h3>@m("h3")</h3>
     @if(form.hasGlobalErrors) {
       <div class="control-group error">
