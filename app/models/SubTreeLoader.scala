@@ -2,6 +2,7 @@ package models
 
 import anorm._
 import anorm.SqlParser._
+import DatabaseStructure.NodeData
 import java.sql.Connection
 import play.api.Play.current
 import play.api.db.DB
@@ -19,13 +20,17 @@ class SubTreeLoader(documentSetId: Long,
    */
   def load(nodeId: Long, depth: Int)(implicit connection : Connection) : Seq[core.Node] = {
 	
-    val nodeData = loader.loadNodeData(documentSetId, nodeId, depth)
-    val nodeIds = nodeData.map(_._1).distinct
+    val allNodeData = loader.loadNodeData(documentSetId, nodeId, depth + 1)
 
-    val documentData = loader.loadDocumentIds(nodeIds)
-    val nodeTagCountData = loader.loadNodeTagCounts(nodeIds)
+    val treeNodeData = nodesUntilDepth(nodeId, allNodeData, depth)
+
+    val allNodeIds = allNodeData.map(_._1).distinct
+    val treeNodeIds = treeNodeData.map(_._1).distinct
     
-    parser.createNodes(nodeData, documentData, nodeTagCountData)
+    val documentData = loader.loadDocumentIds(allNodeIds)
+    val nodeTagCountData = loader.loadNodeTagCounts(treeNodeIds)
+    
+    parser.createNodes(treeNodeData, documentData, nodeTagCountData)
   }
 
   /**
@@ -54,5 +59,19 @@ class SubTreeLoader(documentSetId: Long,
   def loadTags(documentSetId: Long)(implicit connection: Connection) : Seq[core.Tag] = {
     val tagData = loader.loadTags(documentSetId)
     parser.createTags(tagData)
+  }
+
+  private def nodesUntilDepth(rootId: Long, nodeData: List[NodeData], depth: Int) : List[NodeData] = {
+    val root = nodeData.find(_._2 == Some(rootId)).get
+    val children: List[NodeData] = nodeData.filter(_._1 == rootId)
+
+    if (depth == 1) root :: children
+    else {
+      root :: children.flatMap {
+	case (_, Some(c), _) => nodesUntilDepth(c, nodeData, depth - 1)
+	case leaf => List(leaf)
+      }
+    }
+
   }
 }
