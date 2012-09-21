@@ -31,7 +31,7 @@ object JobHandler {
       val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog: Progress) = {
         j.fractionComplete = prog.fraction
-	j.statusDescription = Some(prog.status)
+        j.statusDescription = Some(prog.status)
         DB.withConnection { implicit connection =>
           j.update
         }
@@ -57,6 +57,7 @@ object JobHandler {
       
     } catch {
       case t:Throwable =>
+        Logger.error("Job failed: " + t.toString)
         j.state = Error
         j.statusDescription = Some(t.getMessage)
         DB.withConnection { implicit connection => j.update }  
