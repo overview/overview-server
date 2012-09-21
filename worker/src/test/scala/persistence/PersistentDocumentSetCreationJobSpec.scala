@@ -83,6 +83,16 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       job.fractionComplete must be equalTo (0.5)
     }
 
+    "update job status" in new JobSetup {
+      insertJob
+      val status = "status message"
+      notStartedJob.statusDescription = Some(status)
+      notStartedJob.update
+      val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
+
+      job.statusDescription must beSome.like { case s => s must be equalTo(status) }
+    }
+
     "delete itself" in new JobSetup {
       insertJob
 
