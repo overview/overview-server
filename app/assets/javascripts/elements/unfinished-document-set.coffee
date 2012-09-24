@@ -15,7 +15,7 @@ $ ->
 
     state_description = (data) ->
       if data.n_jobs_ahead_in_queue
-        m.queue_description(data.n_jobs_ahead_in_queue)
+        i18n("views.DocumentSet._documentSet.jobs_to_process", data.n_jobs_ahead_in_queue)
       else
         data.state_description
 

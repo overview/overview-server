@@ -31,6 +31,10 @@
   </script>
 }
 
+@jsMessageKeys = @{Seq(
+  "views.DocumentSet._documentSet.jobs_to_process"
+)}
+
 @sampleForm(title: String, query: String, description: String) = {
   <form method="post" action="@routes.DocumentSetController.create" class="form-inline">
     <input type="hidden" name="title" value="@title"/>
@@ -42,7 +46,7 @@
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts) {
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @if(documentSets) {
       <ul class="unstyled document-sets">
         @documentSets.map(_documentSet(_))
