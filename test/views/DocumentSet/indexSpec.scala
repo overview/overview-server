@@ -27,8 +27,8 @@ class indexSpec extends Specification {
     }
 
     "Show a form for adding a new document set" in new ViewContext {
-      $("form").length must equalTo(1)
-      $("input[name=query]").length must equalTo(1)
+      $("form").length must equalTo(4)
+      $("input[name=query]").length must equalTo(4)
       $("input[type=submit]").length must equalTo(1)
     }
 
