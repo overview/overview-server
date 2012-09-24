@@ -9,6 +9,7 @@ echo 'Cleaning up old files...'
 rm -rf "$DIR/src-js" "$DIR/test-js"
 mkdir -p "$DIR/src-js" "$DIR/test-js"
 cp -a "$SOURCE_DIR/vendor" "$DIR/src-js/vendor"
+cp -a "$SOURCE_DIR/pegjs" "$DIR/src-js/pegjs"
 
 echo 'Watching CoffeeScript sources and tests and compiling as they change...'
 coffee -c -o "$DIR/src"-js -w "$SOURCE_DIR" &

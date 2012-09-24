@@ -1,28 +1,75 @@
-quote = "'"
+_walk_ast = (ast, args) ->
+  # The abstract syntax of a tree looks like this:
+  #
+  # [
+  #    "You've saved ",
+  #    {
+  #       "index": 0,
+  #       "format_type": "choice",
+  #       "format_style": [
+  #          {
+  #             "limit": 0,
+  #             "format": [
+  #                "nothing"
+  #             ]
+  #          },
+  #          "|",
+  #          {
+  #             "limit": 1,
+  #             "format": [
+  #                "one file"
+  #             ]
+  #          },
+  #          "|",
+  #          {
+  #             "limit": 1,
+  #             "format": [
+  #                "some ",
+  #                {
+  #                   "index": 0,
+  #                   "format_type": "number",
+  #                   "format_style": "integer"
+  #                },
+  #                " files"
+  #             ]
+  #          }
+  #       ]
+  #    }
+  # ]
+  #
+  # All we have to do is (recursively) convert objects into strings, then
+  # join the strings.
 
-_handle_unquoted_substring = (s, args) ->
-  s = s.replace /\{(\d+)(?:,(\w+))?(?:,([^\}]+))?\}/g, (match, index, format_type, format_style) ->
-    if format_type == 'number' && (m = /^(.*)\.(.*)$/.exec(format_style))
-      if m[0] != '0' && !(/^0+$/.test(m[2]))
-        throw 'We only support "0.00" float formats'
-      args[+index].toFixed(m[2].length)
-    else
-      args[+index]
+  _walk_ast_node(ast, args)
 
-_handle_string_parts = (s, args) ->
-  quote_index = s.indexOf(quote)
-
-  if quote_index == -1
-    _handle_unquoted_substring(s, args)
+_walk_ast_node = (node, args) ->
+  if _.isString(node)
+    node
+  else if _.isArray(node)
+    (_walk_ast_node(subnode, args) for subnode in node).join('')
   else
-    if quote_index == 0
-      if s[1] == "'"
-        "'" + _handle_string_parts(s.substring(2), args)
-      else
-        next_quote_index = s.indexOf(quote, 1)
-        s.substring(1, next_quote_index) + _handle_string_parts(s.substring(next_quote_index + 1), args)
+    _ast_node_to_string(node, args)
+
+_ast_node_to_string = (node, args) ->
+  value = args[node.index]
+  if node.format_type == 'number'
+    node.format_style ||= 'integer'
+    if node.format_style == 'integer'
+      "#{parseInt(value, 10)}"
     else
-      _handle_unquoted_substring(s.substring(0, quote_index), args) + _handle_string_parts(s.substring(quote_index), args)
+      # Doesn't handle currency or percent
+      digits = node.format_style.split('.')[1].length
+      parseFloat(value).toFixed(digits) # Doesn't handle number format
+  else if node.format_type == 'choice'
+    _choice_to_string(node.format_style, parseFloat(value), args)
+  else
+    "#{value}"
+
+_choice_to_string = (choices, number, args) ->
+  for choice in choices
+    if number <= choice.limit
+      return _walk_ast_node(choice.format, args)
+  return _walk_ast_node(choices[choices.length - 1].format, args)
 
 # Defines a method that translates messages based on keys.
 #
@@ -34,5 +81,7 @@ _handle_string_parts = (s, args) ->
 window.use_i18n_messages = (messages) ->
   (key) ->
     args = Array.prototype.slice.call(arguments, 1)
-    m = messages[key]
-    _handle_string_parts(m, args)
+    message = messages[key]
+
+    ast = message_format_parser.parse(message)
+    _walk_ast(ast, args)
