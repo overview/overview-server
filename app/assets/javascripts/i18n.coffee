@@ -79,9 +79,10 @@ _choice_to_string = (choices, number, args) ->
 # This implementation is incomplete; see unit tests for a list of supported
 # features.
 window.use_i18n_messages = (messages) ->
+  ast_cache = {}
+
   (key) ->
     args = Array.prototype.slice.call(arguments, 1)
-    message = messages[key]
+    ast = (ast_cache[key] ||= message_format_parser.parse(messages[key]))
 
-    ast = message_format_parser.parse(message)
     _walk_ast(ast, args)
