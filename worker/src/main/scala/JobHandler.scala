@@ -10,7 +10,7 @@ import com.jolbox.bonecp._
 
 import database.{ DatabaseConfiguration, DataSource, DB }
 import overview.clustering._
-import overview.util.Logger
+import overview.util.{ ExceptionStatusMessage, Logger }
 import overview.util.Progress._
 import persistence._
 import persistence.DocumentSetCreationJobState._
@@ -59,7 +59,7 @@ object JobHandler {
       case t:Throwable =>
         Logger.error("Job failed: " + t.toString)
         j.state = Error
-        j.statusDescription = Some(t.getMessage)
+        j.statusDescription = Some(ExceptionStatusMessage(t))
         DB.withConnection { implicit connection => j.update }  
     }
   }
