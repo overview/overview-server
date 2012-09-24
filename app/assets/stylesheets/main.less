@@ -114,7 +114,7 @@ body.document-set-show {
   #focus {
     position: relative;
     height: @focus_height + 2px;
-    margin: 0 5px 5px 5px;
+    margin: 0 5px;
     border: 1px solid #ccc; // including border-top
 
     .line {
@@ -152,7 +152,7 @@ body.document-set-show {
 
   #tag-list {
     ul {
-      margin: 0 5px;
+      margin: 0 5px 0 0;
       padding: 0;
       list-style: none;
     }
@@ -173,6 +173,9 @@ body.document-set-show {
     }
 
     .btn-group {
+      margin-left: 5px;
+      margin-top: 5px;
+
       & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
 
       &.selected {
