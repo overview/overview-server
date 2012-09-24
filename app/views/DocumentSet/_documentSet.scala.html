@@ -9,19 +9,21 @@
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
-    <h3>Query: <span class="query">@documentSet.query</span></h3>
+    <h3>@m("query", documentSet.query)</h3>
     <p class="status">
-    @documentSet.documentSetCreationJob.map { job =>
-      <label>
-        <span class="state">@m("job_state." + job.state.toString())</span>
-        <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
-      </label>
-      <!-- FIXME make i18n-friendly --><span class="state-description">@{
-        val jobsToProcess = job.jobsAheadInQueue
-	  if (jobsToProcess == 0) job.stateDescription
-	  else m("jobs_to_process", jobsToProcess)
-	}
-      </span>
+      @documentSet.documentSetCreationJob.map { job =>
+        <label>
+          <span class="state">@m("job_state." + job.state.toString())</span>
+          <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
+        </label>
+        <!-- FIXME make i18n-friendly --><span class="state-description">@{
+          val jobsToProcess = job.jobsAheadInQueue
+          if (jobsToProcess == 0) {
+            job.stateDescription
+          } else {
+            m("jobs_to_process", jobsToProcess)
+          }
+        }</span>
     }.getOrElse {
       <span class="document-count">@m("document_count", documentSet.documentCount)</span>
     }
