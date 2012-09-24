@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.{Request,PlainResult}
 import play.api.mvc.Results.{Redirect,Forbidden}
-import jp.t2v.lab.play20.auth.AuthConfig
+import jp.t2v.lab.play20.auth.{AuthConfig,CookieRelationResolver,RelationResolver}
 
 import models.orm.User
 
@@ -34,4 +34,6 @@ trait AuthConfigImpl extends AuthConfig {
   }
 
   override def authorize(user: User, authority: Authority) : Boolean = authority(user)
+
+  override def resolver[A](implicit request: Request[A]): RelationResolver[Id] = new CookieRelationResolver[Id,A](request)
 }
