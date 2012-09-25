@@ -20,13 +20,13 @@ object JobHandler {
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     try {
-      Logger.info("Handling job")  
+      Logger.info("Handling job")
       j.state = InProgress
       DB.withConnection { implicit connection =>
         j.update
       }
       val documentSetId = j.documentSetId
-  
+
       val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog: Progress) = {
@@ -35,35 +35,33 @@ object JobHandler {
         DB.withConnection { implicit connection =>
           j.update
         }
-        Logger.info("PROGRESS: " + prog.fraction*100+ "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
+        Logger.info("PROGRESS: " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
       }
-      
-      val (_, query)  = DB.withConnection { implicit connection =>
+
+      val (_, query) = DB.withConnection { implicit connection =>
         DocumentSetLoader.loadQuery(j.documentSetId).get
       }
-  
-      val dcSource = new DocumentCloudSource(query,
-                                             j.documentCloudUsername, 
-                                             j.documentCloudPassword)
-  
+
+      val dcSource = new DocumentCloudSource(query, j.documentCloudUsername, j.documentCloudPassword)
+
       val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
-  
+
       Logger.info("Indexing query: " + query)
       val tree = indexer.BuildTree()
-  
+
       DB.withConnection { implicit connection =>
         j.delete
       }
-      
+
     } catch {
-      case t:Throwable =>
+      case t: Throwable =>
         Logger.error("Job failed: " + t.toString)
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
-        DB.withConnection { implicit connection => j.update }  
+        DB.withConnection { implicit connection => j.update }
     }
   }
-  
+
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
 

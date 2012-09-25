@@ -32,7 +32,6 @@ object BulkHttpRetriever {
   private case class DocToRetrieve(doc: DocumentAtURL)
   private case class NoMoreDocsToRetrieve()
 
-  
   private class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Unit,
     finished: Promise[Seq[DocRetrievalError]])
     extends Actor {
@@ -70,10 +69,10 @@ object BulkHttpRetriever {
         requestQueue += doc
         spoolRequests
 
-      // Client sends this message to indicate that document listing is complete. 
+      // Client sends this message to indicate that document listing is complete.
       case NoMoreDocsToRetrieve =>
         allDocsIn = true
-        spoolRequests // needed to stop us, in boundary case when DocsToRetrieve was never sent to us 
+        spoolRequests // needed to stop us, in boundary case when DocsToRetrieve was never sent to us
 
       case GetTextSucceeded(doc, text, startTime) =>
         httpReqInFlight -= 1
@@ -88,9 +87,9 @@ object BulkHttpRetriever {
           writeDocument(doc.asInstanceOf[T], text)
         } catch {
           case e => {
-      	    Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
-      	    finished.failure(e)
-      	    context.stop(self)
+            Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
+            finished.failure(e)
+            context.stop(self)
           }
         }
 
@@ -106,8 +105,7 @@ object BulkHttpRetriever {
 
   implicit var context: ActorSystem = null
 
-  def apply[T <: DocumentAtURL](sourceDocList: Traversable[T],  writeDocument: (T, String) => Unit)
-    (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
+  def apply[T <: DocumentAtURL](sourceDocList: Traversable[T], writeDocument: (T, String) => Unit)(implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
     Logger.info("Beginning HTTP document set retrieval")
 

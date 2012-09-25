@@ -13,7 +13,7 @@ package overview.clustering
 import java.sql.Connection
 import overview.clustering.ClusterTypes._
 import overview.http._
-import overview.util.{Logger, WorkerActorSystem}
+import overview.util.{ Logger, WorkerActorSystem }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
 import persistence.{ DocumentWriter, NodeWriter }
@@ -49,7 +49,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
-    if (docTree.docs.size == 1 && docTree.description != "") 
+    if (docTree.docs.size == 1 && docTree.description != "")
       documentWriter.updateDescription(docTree.docs.head, docTree.description)
     else docTree.children.foreach(addDocumentDescriptions)
   }
@@ -62,18 +62,18 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
 
     WorkerActorSystem.withActorSystem { implicit context =>
       val retrievalDone = BulkHttpRetriever[DCDocumentAtURL](sourceDocList, (doc, text) => processDocument(doc, text))
-    
-      // Now, wait on this thread until all docs are in 
+
+      // Now, wait on this thread until all docs are in
       val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
       logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
     }
-    
+
     // Cluster (build the tree)
     progAbort(Progress(fetchingFraction, Clustering()))
     val t1 = System.nanoTime()
     val docVecs = vectorGen.documentVectors()
     val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
-    DB.withConnection { implicit connection =>  addDocumentDescriptions(docTree) }
+    DB.withConnection { implicit connection => addDocumentDescriptions(docTree) }
 
     logElapsedTime("Clustered documents", t1)
 

@@ -21,9 +21,10 @@ import overview.util.Logger
 // The main DocumentCloudSource class produces a sequence of these...
 class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
 
-// Define the bits of the DocumentCloud JSON response that we're interested in. 
+// Define the bits of the DocumentCloud JSON response that we're interested in.
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.)
-// Should really be private to DocumentCloudSource.parseResults but Jerkson gives errors, see https://groups.google.com/forum/?fromgroups#!topic/play-framework/MKNPYOj9LBA%5B1-25%5D
+// Should really be private to DocumentCloudSource.parseResults but Jerkson gives errors, see
+// https://groups.google.com/forum/?fromgroups#!topic/play-framework/MKNPYOj9LBA%5B1-25%5D
 case class DCDocumentResources(text: String)
 case class DCDocument(id: String, title: String, access: String, canonical_url: String, resources: DCDocumentResources)
 case class DCSearchResult(total: Int, documents: Seq[DCDocument])
@@ -33,8 +34,8 @@ class DocumentCloudSource(val query: String,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
   // --- configuration ---
-  private val pageSize = 100        // number of docs to retreive on each page of DC search results
-  private val maxDocuments = 1500   // cut off a document set if it's bigger than this
+  private val pageSize = 100 // number of docs to retreive on each page of DC search results
+  private val maxDocuments = 1500 // cut off a document set if it's bigger than this
 
   // --- private ---
   private var numDocuments: Option[Int] = None
@@ -54,7 +55,6 @@ class DocumentCloudSource(val query: String,
   private implicit val executionContext = AsyncHttpRequest.executionContext // needed to run the promise object
   private val done = Promise[Unit]()
 
-
   // Resolve a redirect of a private document, via async http request. Returns a Future that will eventually have the resolved URL
   private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String): Promise[DCDocumentAtURL] = {
     val privateQuery = (documentCloudUserName, documentCloudPassword) match {
@@ -65,24 +65,24 @@ class DocumentCloudSource(val query: String,
     val done = Promise[DCDocumentAtURL]()
 
     SimpleHttpRequest(privateQuery,
-    { response =>
-      val privateURL = response.getHeader("Location")
-      done.success(new DCDocumentAtURL(title, id, privateURL))
-    },
-    { t: Throwable =>
+      { response =>
+        val privateURL = response.getHeader("Location")
+        done.success(new DCDocumentAtURL(title, id, privateURL))
+      },
+      { t: Throwable =>
         Logger.error("Exception retrieving DocumentCloud query results: " + t)
         done.failure(t)
-    })
+      })
 
     done
   }
-  
+
   // Parse a single page of results (from JSON to DCDearchResult), create DocumentAtURL objects, call f on them
   // Returns number of documents processed
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
 
     var numParsed = 0
-    
+
     // For each returned document, package up the result in a DocumentAtURL object, and call f on it
     val result = parse[DCSearchResult](pageText)
     numDocuments = Some(scala.math.min(result.total, maxDocuments))
@@ -90,28 +90,28 @@ class DocumentCloudSource(val query: String,
 
     // For private documents, we have to resolve the redirect through DocumentCloud. Do this async
     var redirects = Seq[Future[DCDocumentAtURL]]()
-    
+
     for (doc <- result.documents) {
-      
+
       // capped returned documents at maxDocuments
-      if (numDocumentsReturned < maxDocuments) {    
+      if (numDocumentsReturned < maxDocuments) {
         val dcDocumentURL = "https://www.documentcloud.org/api/documents/" + doc.id + ".txt"
-  
-        if (doc.access == "public") 
-          f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL))                             // public doc, just call f immediately
-        else 
-          redirects = redirects :+  redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id)  // private doc, async call to redirct
-       
+
+        if (doc.access == "public")
+          f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL)) // public doc, just call f immediately
+        else
+          redirects = redirects :+ redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id) // private doc, async call to redirct
+
         numDocumentsReturned += 1
         numParsed += 1
       }
     }
-    
+
     // Wait for all our redirect calls to complete, then call f on each
     val urlsFuture = Future.sequence(redirects) // waits for all PrivateDocURL to complete, also rethrows exceptions
     val urls = Await.result(urlsFuture, Timeout.never.duration)
     urls.map(f)
-   
+
     numParsed
   }
 
@@ -146,7 +146,7 @@ class DocumentCloudSource(val query: String,
 
   // --- public ---
   def foreach[U](f: DCDocumentAtURL => U): Unit = {
-    getNextPage(1, f) // start at first page    
+    getNextPage(1, f) // start at first page
     Await.result(done, Timeout.never.duration) // wait here until all pages retrieved (will also rethrow any exceptions generated)
   }
 

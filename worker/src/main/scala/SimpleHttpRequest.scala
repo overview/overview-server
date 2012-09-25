@@ -16,10 +16,9 @@ object SimpleHttpRequest {
       setRequestTimeoutInMs(5 * 60 * 1000).
       build
   }
-  
+
   private lazy val asyncHttpClient = new AsyncHttpClient(getHttpConfig(followRedirects = false))
 
-  
   def apply(resource: DocumentAtURL,
     onSuccess: Response => Unit, onFailure: Throwable => Unit) = {
 
@@ -38,7 +37,7 @@ object SimpleHttpRequest {
       case _ => asyncHttpClient.prepareGet(resource.textURL).execute(responseHandler)
     }
   }
-  
+
   private def getWithBasicAuth(resource: DocumentAtURL with BasicAuth,
     responseHandler: AsyncCompletionHandler[Response])  = {
 
