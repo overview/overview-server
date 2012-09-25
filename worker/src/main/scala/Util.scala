@@ -34,27 +34,22 @@ object WorkerActorSystem {
 }
 
 
-object DocumentSetCreationJobStateDescription extends Enumeration {
-  type DocumentSetCreationJobStateDescription = Value
+sealed abstract class DocumentSetCreationJobStateDescription(key: String, arg: String = "") {
+  override def toString = if (!arg.isEmpty) key + ":" + arg
+			  else key
+}
 
-  val NoDescription = Value(0, "")
-  val OutOfMemory = Value(1, "out_of_memory")
-  val WorkerError = Value(2, "worker_error")
-  val Retrieving = Value(3, "retrieving_documents")
-  val Clustering = Value(4, "clustering_documents")
-  val ClusteringLevel1 = Value(5, "clustering_level_1")
-  val ClusteringLevel2 = Value(6, "clustering_level_2")
-  val ClusteringLevel3 = Value(7, "clustering_level_3")
-  val ClusteringLevel4 = Value(8, "clustering_level_4")
-  val ClusteringLevel5 = Value(9, "clustering_level_5")
-  val ClusteringLevel6 = Value(10, "clustering_level_6")
-  val ClusteringLevel7 = Value(11, "clustering_level_7")
-  val ClusteringLevel8 = Value(12, "clustering_level_8")
-  val ClusteringLevel9 = Value(13, "clustering_level_9")
-  val ClusteringLevel10 = Value(14, "clustering_level_10")
-  val ClusteringLevel11 = Value(15, "clustering_level_10")
-  val Saving = Value(16, "saving_document_tree")
-  val Done = Value(17, "job_complete")
+object DocumentSetCreationJobStateDescription {
+  private type Description = DocumentSetCreationJobStateDescription
+
+  case class NoDescription() extends Description("")
+  case class OutOfMemory() extends Description("out_of_memory")
+  case class WorkerError() extends Description("worker_error")
+  case class Retrieving() extends Description("retrieving_documents")
+  case class Clustering() extends Description("clustering")
+  case class Saving() extends Description("saving_document_tree")
+  case class Done() extends Description("job_complete")
+  case class ClusteringLevel(n: Int)  extends Description("clustering_level", n.toString)
 }
 
 object Progress {

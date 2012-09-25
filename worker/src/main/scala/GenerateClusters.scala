@@ -153,25 +153,20 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
     val numSteps:Double = threshSteps.size
 
-    val clusterStatuses = DocumentSetCreationJobStateDescription.values.view(ClusteringLevel1.id, Saving.id)
-    val currentStatus = clusterStatuses.iterator
-    
     // root thresh=1.0 is one node with all documents
-    progAbort(Progress(0, currentStatus.next))
+    progAbort(Progress(0, ClusteringLevel(1)))
     var topLevel = Set(docVecs.keys.toArray:_*)
     val root = new DocTreeNode(topLevel)
           
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
     var currentLeaves = List(root)  
     for (curStep <- 1 to threshSteps.size-2) {
-      val s = currentStatus.next
-      println("status: " + s)
-      progAbort(Progress(curStep/numSteps, s))
+      progAbort(Progress(curStep/numSteps, ClusteringLevel(curStep + 1)))
       currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
     }
        
     // bottom level thresh=0.0 is one leaf node for each document
-    progAbort(Progress((numSteps-1)/numSteps, currentStatus.next))
+    progAbort(Progress((numSteps-1)/numSteps, ClusteringLevel(numSteps.toInt)))
     for (node <- currentLeaves) {
       if (node.docs.size > 1)                                   // don't expand if already one node
         node.children = node.docs.map( item=> new DocTreeNode(Set(item)) )
