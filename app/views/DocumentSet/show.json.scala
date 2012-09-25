@@ -19,7 +19,7 @@ object show {
     try {
       m(DocumentSetCreationJobStateDescription.withName(description).toString)
     } catch {
-      case e: NoSuchElementException => ""
+      case e: NoSuchElementException => description
     }
   }
 
