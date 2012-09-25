@@ -13,8 +13,8 @@ object LoginForm {
         "password" -> Forms.text
       )(PotentialUser
       )(u => Some((u.email, u.password)))
-      .verifying("Invalid email or password", u => u.withValidCredentials.isDefined)
-      .verifying("User not confirmed", u => 
+      .verifying("forms.LoginForm.invalid_credentials", u => u.withValidCredentials.isDefined)
+      .verifying("forms.LoginForm.not_confirmed", u => 
         !(u.withConfirmationRequest.isDefined && u.withValidCredentials.isDefined))
     }
   }
