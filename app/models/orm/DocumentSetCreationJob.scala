@@ -17,7 +17,7 @@ object DocumentSetCreationJobState extends Enumeration {
 object DocumentSetCreationJobStateDescription extends Enumeration {
   type DocumentSetCreationJobStateDescription = Value
 
-  val NoDescription = Value(0, "")
+  val NoDescription = Value(0, "no_description")
   val OutOfMemory = Value(1, "out_of_memory")
   val WorkerError = Value(2, "worker_error")
 
