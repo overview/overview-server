@@ -14,6 +14,15 @@ object DocumentSetCreationJobState extends Enumeration {
   val Error = Value(2, "ERROR")
 }
 
+object DocumentSetCreationJobStateDescription extends Enumeration {
+  type DocumentSetCreationJobStateDescription = Value
+
+  val NoDescription = Value(0, "")
+  val OutOfMemory = Value(1, "out_of_memory")
+  val WorkerError = Value(2, "worker_error")
+
+}
+
 import DocumentSetCreationJobState._
 
 case class DocumentSetCreationJob(

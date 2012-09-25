@@ -2,6 +2,7 @@ package views.json.DocumentSet
 
 import models.orm.{ DocumentSet, DocumentSetCreationJob }
 import models.orm.DocumentSetCreationJobState._
+import models.orm.DocumentSetCreationJobStateDescription
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
@@ -13,18 +14,20 @@ object show {
 
   private val JobStateDescriptionKey = "job_state_description."
   private val JobStateKey = "job_state."
-  
-  private def stateDescription(description: String) : String = description match {
-    case "" => ""
-    case _ => m(JobStateDescriptionKey + description)
+
+  private def stateDescription(description: String): String = {
+    try {
+      m(DocumentSetCreationJobStateDescription.withName(description).toString)
+    } catch {
+      case e: NoSuchElementException => ""
+    }
   }
-  
+
   private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
     val notCompleteMap = Map(
       "state" -> toJson(m(JobStateKey + job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
-      "state_description" -> toJson(stateDescription(job.stateDescription))
-    )
+      "state_description" -> toJson(stateDescription(job.stateDescription)))
     val notStartedMap = job.state match {
       case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
       case _ => Map()
