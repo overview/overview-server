@@ -30,7 +30,7 @@ class showSpec extends Specification {
 
     trait InProgressDocumentSetContext extends DocumentSetWithJobContext {
       val job = DocumentSetCreationJob(1, Some("name"), Some("password"), InProgress,
-        .23, "")
+        .23, "description")
     }
 
     class FakeNotStartedJob(state: DocumentSetCreationJobState, description: String) extends DocumentSetCreationJob(1, Some("name"), Some("password"), state, 23, description) {
@@ -41,12 +41,12 @@ class showSpec extends Specification {
       val job = new FakeNotStartedJob(NotStarted, "description")
     }
 
-    trait OutOfMemoryJob extends DocumentSetWithJobContext {
-      val job = new FakeNotStartedJob(InProgress, "out_of_memory")
+    trait DescriptionWithArgument extends DocumentSetWithJobContext {
+      val job = new FakeNotStartedJob(InProgress, "clustering:8")
     }
 
-    trait WorkerErrorJob extends DocumentSetWithJobContext {
-      val job = new FakeNotStartedJob(InProgress, "worker_error")
+    trait EmptyStateDescription extends DocumentSetWithJobContext {
+      val job = new FakeNotStartedJob(InProgress, "")
     }
 
     "contain id, query, and html" in new CompleteDocumentSetContext {
@@ -59,7 +59,8 @@ class showSpec extends Specification {
     "show in progress job" in new InProgressDocumentSetContext {
       documentSetJson must /("state" -> "views.DocumentSet._documentSet.job_state.IN_PROGRESS")
       documentSetJson must /("percent_complete" -> job.fractionComplete * 100)
-      documentSetJson must /("state_description" -> job.stateDescription)
+      documentSetJson must /("state_description" ->
+        ("views.DocumentSet._documentSet.job_state_description." + job.stateDescription))
       documentSetJson must not contain ("n_jobs_ahead_in_queue")
     }
 
@@ -67,12 +68,13 @@ class showSpec extends Specification {
       documentSetJson must /("n_jobs_ahead_in_queue" -> 5)
     }
 
-    "show out of memory error" in new OutOfMemoryJob {
-      documentSetJson must /("state_description" -> "views.DocumentSet._documentSet.job_state_description.out_of_memory")
+    "expand description key with argument" in new DescriptionWithArgument {
+      documentSetJson must /("state_description" ->
+        ("views.DocumentSet._documentSet.job_state_description." + "clustering"))
     }
 
-    "show worker error" in new WorkerErrorJob {
-      documentSetJson must /("state_description" -> "views.DocumentSet._documentSet.job_state_description.worker_error")
+    "empty description leads to empty string" in new EmptyStateDescription {
+      documentSetJson must /("state_description" -> "")
     }
   }
 
