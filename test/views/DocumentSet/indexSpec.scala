@@ -12,7 +12,7 @@ import models.orm.DocumentSet
 class indexSpec extends Specification {
   trait ViewContext extends Scope {
     implicit lazy val flash = new Flash()
-    lazy val user = new models.orm.User("user@example.org", "")
+    lazy val user = new models.orm.User()
 
     var documentSets : Seq[DocumentSet] = Seq()
 

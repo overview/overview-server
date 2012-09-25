@@ -11,9 +11,9 @@ import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 
 case class User(
-  val email: String,
-  //var role: UserRole.UserRole,
-  @Column("password_hash") var passwordHash: String,
+  val email: String = "user@example.org",
+  @Column("password_hash") var passwordHash: String = "",
+  var role: UserRole.UserRole = UserRole.NormalUser,
   @Column("confirmation_token") var confirmationToken: Option[String] = None,
   @Column("confirmation_sent_at") var confirmationSentAt: Option[Timestamp] = None,
   @Column("confirmed_at") var confirmedAt: Option[Timestamp] = None //@Column("reset_password_token")
@@ -31,6 +31,8 @@ case class User(
   ) extends KeyedEntity[Long] {
 
   val id: Long = 0l
+
+  def this() = this(role = UserRole.NormalUser)
 
   lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] =
     Schema.documentSetUsers.right(this)
