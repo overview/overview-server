@@ -14,6 +14,7 @@ import java.sql.Connection
 import overview.clustering.ClusterTypes._
 import overview.http._
 import overview.util.{Logger, WorkerActorSystem}
+import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
 import persistence.{ DocumentWriter, NodeWriter }
 import database.DB
@@ -44,7 +45,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
       implicit connection => documentWriter.write(doc.title, doc.documentCloudId)
     }
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))
-    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, "Retrieving documents"))
+    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, Retrieving))
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
@@ -68,7 +69,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     }
     
     // Cluster (build the tree)
-    progAbort(Progress(fetchingFraction, "Clustering documents"))
+    progAbort(Progress(fetchingFraction, Clustering))
     val t1 = System.nanoTime()
     val docVecs = vectorGen.documentVectors()
     val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
@@ -77,13 +78,13 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     logElapsedTime("Clustered documents", t1)
 
     // Save tree to database
-    progAbort(Progress(savingFraction, "Saving document tree"))
+    progAbort(Progress(savingFraction, Saving))
     val t2 = System.nanoTime()
     DB.withTransaction { implicit connection =>
       nodeWriter.write(docTree)
     }
     logElapsedTime("Saved DocumentSet to DB", t2)
 
-    progAbort(Progress(1, "Done"))
+    progAbort(Progress(1, Done))
   }
 }

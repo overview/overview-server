@@ -14,6 +14,8 @@ package overview.clustering
 import scala.collection.mutable.{Set,Stack}
 import ClusterTypes._
 import overview.util.Progress._
+import overview.util.DocumentSetCreationJobStateDescription
+import overview.util.DocumentSetCreationJobStateDescription._
 
 object ConnectedComponents {
 
@@ -150,21 +152,26 @@ class DocTreeBuilder(val docVecs : DocumentSetVectors, val distanceFn : (Documen
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
     val numSteps:Double = threshSteps.size
+
+    val clusterStatuses = DocumentSetCreationJobStateDescription.values.view(ClusteringLevel1.id, Saving.id)
+    val currentStatus = clusterStatuses.iterator
     
     // root thresh=1.0 is one node with all documents
-    progAbort(Progress(0, "Clustering documents level 1"))
+    progAbort(Progress(0, currentStatus.next))
     var topLevel = Set(docVecs.keys.toArray:_*)
     val root = new DocTreeNode(topLevel)
           
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
     var currentLeaves = List(root)  
     for (curStep <- 1 to threshSteps.size-2) {
-      progAbort(Progress(curStep/numSteps, "Clustering documents level " + (curStep+1)))
+      val s = currentStatus.next
+      println("status: " + s)
+      progAbort(Progress(curStep/numSteps, s))
       currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
     }
        
     // bottom level thresh=0.0 is one leaf node for each document
-    progAbort(Progress((numSteps-1)/numSteps, "Clustering documents level " + numSteps.toInt))
+    progAbort(Progress((numSteps-1)/numSteps, currentStatus.next))
     for (node <- currentLeaves) {
       if (node.docs.size > 1)                                   // don't expand if already one node
         node.children = node.docs.map( item=> new DocTreeNode(Set(item)) )
