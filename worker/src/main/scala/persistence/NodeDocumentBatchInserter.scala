@@ -1,6 +1,6 @@
 /*
  * NodeDocumentBatchInserter.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
@@ -20,33 +20,33 @@ class NodeDocumentBatchInserter(threshold: Long) {
   var batchQuery: BatchSql = createBatchQuery
 
   resetBatch
-  
+
   /** queue up nodeId and documentId for insertion in the node_document table */
   def insert(nodeId: Long, documentId: Long)(implicit c: Connection) {
-	batchQuery = batchQuery.addBatchParams(nodeId, documentId)
-	insertCount += 1
+    batchQuery = batchQuery.addBatchParams(nodeId, documentId)
+    insertCount += 1
 
-	if (insertCount == threshold) {
-	  flush
-	}
+    if (insertCount == threshold) {
+      flush
+    }
   }
-  
+
   /** execute the batch insert */
   def flush(implicit c: Connection) {
-	  val result = batchQuery.execute
+    val result = batchQuery.execute
 
-	  resetBatch
+    resetBatch
   }
 
   private def resetBatch {
-    insertCount = 0l
+    insertCount = 0
     batchQuery = createBatchQuery
   }
-  
-  private def createBatchQuery: BatchSql = 
+
+  private def createBatchQuery: BatchSql =
     SQL("""
-        INSERT INTO node_document (node_id, document_id) 
+        INSERT INTO node_document (node_id, document_id)
         VALUES ({nodeDocument}, {documentId})
         """).asBatch
-  
+
 }

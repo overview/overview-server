@@ -1,6 +1,6 @@
 /*
  * NodeWriter.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
@@ -18,24 +18,24 @@ import java.sql.Connection
  */
 class NodeWriter(documentSetId: Long) {
   val batchInserter = new NodeDocumentBatchInserter(500)
-  
+
   def write(root: DocTreeNode)(implicit c: Connection) {
     writeSubTree(root, None)
     batchInserter.flush
   }
-  
+
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val nodeId = SQL("""
         INSERT INTO node (description, parent_id, document_set_id) VALUES
           ({description}, {parentId}, {documentSetId})
-        """).on("documentSetId" -> documentSetId, 
+        """).on("documentSetId" -> documentSetId,
                 "description" -> node.description,
                 "parentId" -> parentId).
-             executeInsert().get
-             
-     node.docs.foreach(batchInserter.insert(nodeId, _))
-     
-     node.children.foreach(writeSubTree(_, Some(nodeId)))
+      executeInsert().get
+
+    node.docs.foreach(batchInserter.insert(nodeId, _))
+
+    node.children.foreach(writeSubTree(_, Some(nodeId)))
   }
 
 }

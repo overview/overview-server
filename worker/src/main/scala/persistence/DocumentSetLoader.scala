@@ -10,8 +10,7 @@ object DocumentSetLoader {
     SQL("""
         SELECT title, query FROM document_set
         WHERE id = {documentSetId}
-        """).on("documentSetId" -> documentSetId)
-	    .as(str("title") ~ str("query") map(flatten) *).headOption
-        
+        """).on("documentSetId" -> documentSetId).
+      as(str("title") ~ str("query") map (flatten) *).headOption
   }
 }

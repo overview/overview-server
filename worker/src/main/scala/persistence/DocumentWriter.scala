@@ -1,6 +1,6 @@
 /*
  * DocumentWriter.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
@@ -17,7 +17,7 @@ class DocumentWriter(documentSetId: Long) {
 
   def write(title: String, documentCloudId: String)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO document (title, documentcloud_id, document_set_id) VALUES 
+        INSERT INTO document (title, documentcloud_id, document_set_id) VALUES
           ({title}, {documentCloudId}, {documentSetId})
         """).on("title" -> title, "documentCloudId" -> documentCloudId,
                 "documentSetId" -> documentSetId).executeInsert().get

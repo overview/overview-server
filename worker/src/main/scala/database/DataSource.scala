@@ -1,6 +1,6 @@
 /*
  * DataSource.scala
- * 
+ *
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
@@ -29,12 +29,12 @@ class DataSource(configuration: DatabaseConfiguration) {
   dataSource.setPartitionCount(1)
   dataSource.setDisableJMX(true)
   dataSource.setLogStatementsEnabled(true)
-    
-  def getConnection() : Connection = {
+
+  def getConnection(): Connection = {
     dataSource.getConnection()
   }
-    
-  def shutdown()  {
+
+  def shutdown() {
     dataSource.close()
   }
 }
