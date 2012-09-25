@@ -1,6 +1,6 @@
 /*
- * Node.scala 
- * 
+ * Node.scala
+ *
  * Overview Project
  * Created by Jonas Karlsson, July 2012
  */

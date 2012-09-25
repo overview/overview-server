@@ -30,7 +30,7 @@ class DocumentTagDataLoader {
     }
 
     SQL("""
-        SELECT document_tag.document_id, document_tag.tag_id 
+        SELECT document_tag.document_id, document_tag.tag_id
         FROM document_tag
         INNER JOIN tag ON document_tag.tag_id = tag.id """ +
       whereDocumentIsSelected +
@@ -46,7 +46,7 @@ class DocumentTagDataLoader {
       """
         SELECT id, title, documentcloud_id
         FROM document
-        WHERE id IN 
+        WHERE id IN
       """ + idList(documentIds)).
       as(documentParser map (flatten) *)
   }

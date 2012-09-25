@@ -6,75 +6,73 @@ import java.sql.Connection
 
 import org.squeryl.Session
 
-import DatabaseStructure._ 
+import DatabaseStructure._
 
 /**
- * Utility class form SubTreeLoader that performs database queries and returns results as 
+ * Utility class form SubTreeLoader that performs database queries and returns results as
  * a list of tuples.
  */
 class SubTreeDataLoader extends DocumentTagDataLoader {
-      
+
   /**
    * @return a list of tuples: (parentId, Some(childId), childDescription) for each node found in
-   * a breadth first traversal of the tree to the specified depth, starting at the specified 
+   * a breadth first traversal of the tree to the specified depth, starting at the specified
    * root. Nodes with no children will return (id, None, "")
-   * @throws IllegalArgumentException if depth < 1 
+   * @throws IllegalArgumentException if depth < 1
    */
-  def loadNodeData(documentSetId: Long, rootId: Long, depth: Int)
-                  (implicit connection: Connection) : List[NodeData] = {
+  def loadNodeData(documentSetId: Long, rootId: Long, depth: Int)(implicit connection: Connection): List[NodeData] = {
     require(depth > 0)
-    
+
     val rootNode = rootNodeQuery(documentSetId, rootId)
     val rootAsChild = rootNode.map(n => (NoId, Some(n._1), n._2))
     val childNodes = loadChildNodes(documentSetId, List(rootId), depth)
 
     rootAsChild ++ childNodes
   }
-  
+
   /**
    * @return Some(rootId) if the documentSetId has an associated root node,
    * None otherwise.
    */
   def loadRoot(documentSetId: Long)(implicit c: Connection): Option[Long] = {
-    rootQuery(documentSetId)  
+    rootQuery(documentSetId)
   }
-  
+
   /**
-   * @return a list of tuples:(nodeId, totalDocumentCount, documentId) for each nodeId. A maximum of 
+   * @return a list of tuples:(nodeId, totalDocumentCount, documentId) for each nodeId. A maximum of
    * 10 documentIds are returned for each documentId. totalDocumentCount is the total number of documents
    * associated with the nodeId in the database
    */
-  def loadDocumentIds(nodeIds : Seq[Long])(implicit connection: Connection) : List[NodeDocument] = {
+  def loadDocumentIds(nodeIds: Seq[Long])(implicit connection: Connection): List[NodeDocument] = {
     nodeDocumentQuery(nodeIds)
-  } 
-  
-  def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+  }
+
+  def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection): List[NodeTagCountData] = {
     nodeTagCountQuery(nodeIds)
   }
-  
-  def loadTags(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
+
+  def loadTags(documentSetId: Long)(implicit c: Connection): List[TagData] = {
     tagQuery(documentSetId)
   }
-  
-  private def loadChildNodes(documentSetId: Long, nodes: Seq[Long], depth: Int)
-                            (implicit connection: Connection) : List[NodeData] = {
+
+  private def loadChildNodes(documentSetId: Long, nodes: Seq[Long], depth: Int)(implicit connection: Connection): List[NodeData] = {
     if (depth == 0 || nodes.size == 0) Nil
     else {
       val childNodeData = childNodeQuery(documentSetId, nodes)
-      
+
       val leafNodeData = dataForLeafNodes(nodes, childNodeData)
-      
+
       val childNodeIds = childNodeData.map(_._2.get)
-      
-      childNodeData ++ leafNodeData ++ 
+
+      childNodeData ++ leafNodeData ++
         loadChildNodes(documentSetId, childNodeIds, depth - 1)
     }
   }
-  
-  private def dataForLeafNodes(nodes: Seq[Long], childNodeData: List[NodeData]) : Seq[NodeData] = {
+
+  private def dataForLeafNodes(nodes: Seq[Long], childNodeData: List[NodeData]): Seq[NodeData] = {
     val nodesWithChildNodes = childNodeData.map(_._1)
     val leafNodes = nodes.diff(nodesWithChildNodes)
-    
+
     leafNodes.map((_, None, ""))
   }
 
@@ -83,93 +81,91 @@ class SubTreeDataLoader extends DocumentTagDataLoader {
         select id FROM node
         WHERE document_set_id = {documentSetId} AND
         parent_id IS NULL
-        """).on("documentSetId" -> documentSetId).as(scalar[Long].singleOpt)  
+        """).on("documentSetId" -> documentSetId).as(scalar[Long].singleOpt)
   }
-  
-  private def rootNodeQuery(documentSetId: Long, rootNodeId: Long)(implicit c: Connection) : List[(Long, String)]= {
+
+  private def rootNodeQuery(documentSetId: Long, rootNodeId: Long)(implicit c: Connection): List[(Long, String)] = {
     val descriptionParser = long("id") ~ str("description")
-    
+
     SQL("""
-        SELECT node.id, node.description FROM node 
+        SELECT node.id, node.description FROM node
         WHERE id = {rootId} AND
         document_set_id = {documentSetId}
         """).
       on("rootId" -> rootNodeId, "documentSetId" -> documentSetId).
-      as(descriptionParser map(flatten) *)
+      as(descriptionParser map (flatten) *)
   }
-        
-  private def childNodeQuery(documentSetId: Long, nodeIds: Seq[Long])
-                            (implicit c: Connection) : List[NodeData] = {
+
+  private def childNodeQuery(documentSetId: Long, nodeIds: Seq[Long])(implicit c: Connection): List[NodeData] = {
     val nodeParser = long("parent_id") ~ get[Option[Long]]("id") ~ str("description")
 
     SQL(
       """
         SELECT node.parent_id, node.id, node.description
-        FROM node WHERE parent_id IN 
-      """ + idList(nodeIds) + """AND 
+        FROM node WHERE parent_id IN
+      """ + idList(nodeIds) + """AND
         document_set_id = {documentSetId}
-      """).on("documentSetId" -> documentSetId).as(nodeParser map(flatten) *)
+      """).on("documentSetId" -> documentSetId).as(nodeParser map (flatten) *)
   }
-  
-  private def nodeDocumentQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeDocument] = {
+
+  private def nodeDocumentQuery(nodeIds: Seq[Long])(implicit c: Connection): List[NodeDocument] = {
     val documentIdParser = long("node_id") ~ long("document_count") ~ long("document_id")
 
     SQL(
       """
         SELECT node_id, document_count, document_id
-	    FROM (
-    	  SELECT 
-    	    nd.node_id,
-    	    COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
-    	    nd.document_id,
-    	    RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
-    	  FROM node_document nd
-    	  WHERE nd.node_id IN 
-      """ + idList(nodeIds) + 
-      """
-    	  ORDER BY nd.document_id
+            FROM (
+          SELECT
+            nd.node_id,
+            COUNT(nd.document_id) OVER (PARTITION BY nd.node_id) AS document_count,
+            nd.document_id,
+            RANK() OVER (PARTITION BY nd.node_id ORDER BY nd.document_id) AS pos
+          FROM node_document nd
+          WHERE nd.node_id IN
+      """ + idList(nodeIds) +
+        """
+          ORDER BY nd.document_id
         ) ss
         WHERE ss.pos < 11
-      """
-    ).
-    as(documentIdParser map(flatten) *)
+      """).
+      as(documentIdParser map (flatten) *)
   }
-  
-  private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection) : List[NodeTagCountData] = {
+
+  private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection): List[NodeTagCountData] = {
     val whereNodeIsSelected = nodeIds match {
       case Nil => ""
-      case _ => "WHERE node_document.node_id IN " + idList(nodeIds) 
+      case _ => "WHERE node_document.node_id IN " + idList(nodeIds)
     }
-    
-	val nodeTagCountParser = long("node_id") ~ long("tag_id") ~ long("count")
-    
+
+    val nodeTagCountParser = long("node_id") ~ long("tag_id") ~ long("count")
+
     SQL("""
         SELECT node_document.node_id, document_tag.tag_id, COUNT(document_tag.tag_id)
-        FROM node_document 
+        FROM node_document
         INNER JOIN document_tag ON node_document.document_id = document_tag.document_id """ +
-        whereNodeIsSelected + 
-        """
+      whereNodeIsSelected +
+      """
         GROUP BY node_document.node_id, document_tag.tag_id
-    	""").as(nodeTagCountParser map(flatten) *)    
+        """).as(nodeTagCountParser map (flatten) *)
   }
-  
-  private def tagQuery(documentSetId: Long)(implicit c: Connection) : List[TagData] = {
-    val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~ 
-    				    get[Option[Long]]("document_id")
+
+  private def tagQuery(documentSetId: Long)(implicit c: Connection): List[TagData] = {
+    val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~
+      get[Option[Long]]("document_id")
     SQL("""
-    	SELECT tag_id, tag_name, document_count, document_id
-    	FROM (
-    	  SELECT t.id AS tag_id, t.name AS tag_name,
+        SELECT tag_id, tag_name, document_count, document_id
+        FROM (
+          SELECT t.id AS tag_id, t.name AS tag_name,
             COUNT(dt.document_id) OVER (PARTITION BY dt.tag_id) AS document_count,
-    		dt.document_id,
+                dt.document_id,
             RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
-    	  FROM tag t
-    	  LEFT JOIN document_tag dt ON t.id = dt.tag_id
+          FROM tag t
+          LEFT JOIN document_tag dt ON t.id = dt.tag_id
           WHERE t.document_set_id = {documentSetId}
-    	  ORDER BY t.name, dt.document_id
-    	) ss
-    	WHERE ss.pos < 11        
+          ORDER BY t.name, dt.document_id
+        ) ss
+        WHERE ss.pos < 11
         """).on("documentSetId" -> documentSetId).
-        as(tagDataParser map(flatten) *)
+      as(tagDataParser map (flatten) *)
   }
 }
