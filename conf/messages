@@ -2,6 +2,9 @@ brand.name=The Overview Project
 
 password.secure=This password is too insecure. Please use a password at least seven characters long.
 
+controllers.admin.UserController.update.success=User {0} updated
+controllers.admin.UserController.delete.success=User {0} deleted
+
 controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
 
 controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.
@@ -11,6 +14,9 @@ controllers.SessionController.create.success=You have logged in. Welcome back.
 controllers.SessionController.delete.success=You have logged out. We hope you''ll log in again sometime.
 
 controllers.UserController.create.success=Thank you for registering. There''s one more step: please check your email and click the confirmation link.
+
+forms.LoginForm.error.invalid_credentials=Invalid username or password
+forms.LoginForm.error.not_confirmed=We already sent an email to this user with a confirmation link. You need to click that link before you can log in.
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
@@ -28,6 +34,22 @@ models.DocumentSetCreationJob.JobState.Submitted=submitted
 models.DocumentSetCreationJob.JobState.InProgress=in progress
 models.DocumentSetCreationJob.JobState.Complete=complete
 
+views.admin.User.index.title=Users
+views.admin.User.index.h1=Users
+views.admin.User.index.th.email=Email
+views.admin.User.index.th.role=Role
+views.admin.User.index.th.confirmed_at=Confirmed
+views.admin.User.index.th.actions=Actions
+views.admin.User.index.role.NormalUser=Normal user
+views.admin.User.index.role.Administrator=Administrator
+views.admin.User.index.td.confirmed_at={0,date,medium}
+views.admin.User.index.td.confirmed_at_time={0,time,long}
+views.admin.User.index.action.promote=Promote to administrator
+views.admin.User.index.action.demote=Demote to normal user
+views.admin.User.index.action.delete=Delete
+views.admin.User.index.confirm.delete=Are you sure you want to delete {0}? You cannot undo this.
+
+views.components.navbar.link_admin_users=Users
 views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
 views.components.navbar.link_help=Help

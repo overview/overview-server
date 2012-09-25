@@ -34,5 +34,12 @@ POST /documentsets/:id/tags/:tag/add controllers.TagController.add(id: Long, tag
 POST /documentsets/:id/tags/:tag/remove controllers.TagController.remove(id: Long, tag: String)
 POST /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")
 
+GET /admin/users controllers.admin.UserController.index()
+POST /admin/users/:id controllers.admin.UserController.update(id: Long)
+# TODO fix to what it should be:
+#DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
+POST /admin/users/:id/DELETE controllers.admin.UserController.delete(id: Long)
+DELETE /admin/users/:id/DELETE controllers.admin.UserController.delete(id: Long)
+
 # Map static resources from the /public folder to the /assets URL path
 GET /assets/*file controllers.Assets.at(path="/public", file)

@@ -17,6 +17,14 @@
           <div class="logged-in pull-right">
             <p class="navbar-text pull-left">@(Html(HtmlFormat.escape(m("logged_in", "EMAIL")).toString.replace("EMAIL", "<strong>" + HtmlFormat.escape(user.email).toString + "</strong>")))</p>
             <ul class="nav">
+              @if(user.role == models.orm.UserRole.Administrator) {
+                <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+                  <ul class="dropdown-menu" role="menu">
+                    <li><a href="@controllers.admin.routes.UserController.index()">@m("link_admin_users")</a></li>
+                  </ul>
+                </li>
+              }
               <li><a href="@routes.DocumentSetController.index()">@m("link_document_sets")</a></li>
               <li><a href="@routes.SessionController.delete()">@m("link_logout")</a></li>
             </ul>

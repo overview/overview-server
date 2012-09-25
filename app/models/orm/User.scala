@@ -1,16 +1,18 @@
 package models.orm
 
 import java.sql.Timestamp
-import models.orm.Dsl.{ crypt, gen_hash }
 import org.joda.time.DateTime.now
 import org.squeryl.annotations.{ Column, Transient }
-import org.squeryl.dsl.{ ManyToMany, OneToMany }
+import org.squeryl.dsl.ManyToMany
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 
+import models.orm.Dsl.{ crypt, gen_hash }
+
 case class User(
+  val id: Long = 0L,
   val email: String = "user@example.org",
   @Column("password_hash") var passwordHash: String = "",
   var role: UserRole.UserRole = UserRole.NormalUser,
@@ -30,8 +32,6 @@ case class User(
   //var lastSignInIp: Option[String]
   ) extends KeyedEntity[Long] {
 
-  val id: Long = 0l
-
   def this() = this(role = UserRole.NormalUser)
 
   lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] =
@@ -46,14 +46,26 @@ case class User(
     documentSet
   }
 
-  def save = {
-    Schema.users.insertOrUpdate(this)
+  def save() : User = {
+    // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
+    if (id == 0L) {
+      Schema.users.insert(this)
+    } else {
+      Schema.users.update(this)
+    }
+    this
+  }
+
+  def delete = {
+    Schema.users.delete(id)
   }
 }
 
 object User {
   private val TokenLength = 26
   private val BcryptRounds = 7
+
+  def all() = from(Schema.users)(u => select(u).orderBy(u.email.asc))
 
   def findById(id: Long) = Schema.users.lookup(id)
 

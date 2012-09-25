@@ -1,0 +1,47 @@
+@(
+  user: models.orm.User,
+  users: Seq[models.orm.User]
+)(implicit lang: Lang, flash: Flash)
+
+@import models.orm.UserRole
+
+@defining(scopedMessages("views.admin.User.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1")) {
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th class="email">@m("th.email")</th>
+          <th class="role">@m("th.role")</th>
+          <th class="confirmed-at">@m("th.confirmed_at")</th>
+          <th class="actions">@m("th.actions")</th>
+        </tr>
+      </thead>
+      <tbody>
+        @users.map { otherUser =>
+          <tr>
+            <td class="email">@otherUser.email</td>
+            <td class="role">@m("role." + otherUser.role.toString())</td>
+            <td class="confirmed-at" title="@(otherUser.confirmedAt.map(m("td.confirmed_at_time", _)).getOrElse(""))">@(otherUser.confirmedAt.map(m("td.confirmed_at", _)).getOrElse(m("td.confirmed_at_none")))</td>
+            <td class="actions">
+              @if(otherUser.id != user.id) {
+                <form method="post" action="@controllers.admin.routes.UserController.update(otherUser.id)">
+                  <input type="hidden" name="email" value="@otherUser.email"/>
+                  @if(otherUser.role == UserRole.Administrator) {
+                    <input type="hidden" name="role" value="@UserRole.NormalUser.id"/>
+                    <input type="submit" value="@m("action.demote")"/>
+                  } else {
+                    <input type="hidden" name="role" value="@UserRole.Administrator.id"/>
+                    <input type="submit" value="@m("action.promote")"/>
+                  }
+                </form>
+                <form method="post" class="delete" data-confirm="@m("confirm.delete", otherUser.email)" action="@controllers.admin.routes.UserController.delete(otherUser.id)">
+                  <input type="submit" value="@m("action.delete")" />
+                </form>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
