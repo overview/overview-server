@@ -11,15 +11,17 @@ object show {
     play.api.i18n.Messages("views.DocumentSet._documentSet." + key, args: _*)
   }
 
-
+  private val JobStateDescriptionKey = "job_state_description."
+  private val JobStateKey = "job_state."
+  
   private def stateDescription(description: String) : String = description match {
     case "" => ""
-    case _ => m(description)
+    case _ => m(JobStateDescriptionKey + description)
   }
   
   private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
     val notCompleteMap = Map(
-      "state" -> toJson(m("job_state." + job.state.toString)),
+      "state" -> toJson(m(JobStateKey + job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
       "state_description" -> toJson(stateDescription(job.stateDescription))
     )

@@ -27,14 +27,13 @@ class showSpec extends Specification {
       val job: DocumentSetCreationJob
       override lazy val documentSet = DocumentSet(1, "a title", "a query", Some(20), Some(job))
     }
-    
+
     trait InProgressDocumentSetContext extends DocumentSetWithJobContext {
       val job = DocumentSetCreationJob(1, Some("name"), Some("password"), InProgress,
         .23, "")
     }
 
-    class FakeNotStartedJob(state: DocumentSetCreationJobState, description: String) extends
-      DocumentSetCreationJob(1, Some("name"), Some("password"), state, 23, description) {
+    class FakeNotStartedJob(state: DocumentSetCreationJobState, description: String) extends DocumentSetCreationJob(1, Some("name"), Some("password"), state, 23, description) {
       override val jobsAheadInQueue = 5l
     }
 
@@ -45,7 +44,11 @@ class showSpec extends Specification {
     trait OutOfMemoryJob extends DocumentSetWithJobContext {
       val job = new FakeNotStartedJob(InProgress, "out_of_memory")
     }
-    
+
+    trait WorkerErrorJob extends DocumentSetWithJobContext {
+      val job = new FakeNotStartedJob(InProgress, "worker_error")
+    }
+
     "contain id, query, and html" in new CompleteDocumentSetContext {
       documentSetJson must /("id" -> documentSet.id)
       documentSetJson must /("query" -> documentSet.query)
@@ -65,7 +68,11 @@ class showSpec extends Specification {
     }
 
     "show out of memory error" in new OutOfMemoryJob {
-      documentSetJson must /("state_description" -> "views.DocumentSet._documentSet.out_of_memory")
+      documentSetJson must /("state_description" -> "views.DocumentSet._documentSet.job_state_description.out_of_memory")
+    }
+
+    "show worker error" in new WorkerErrorJob {
+      documentSetJson must /("state_description" -> "views.DocumentSet._documentSet.job_state_description.worker_error")
     }
   }
 
