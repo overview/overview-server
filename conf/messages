@@ -62,14 +62,15 @@ views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
 
 views.DocumentSet._documentSet.action_delete=Delete
-views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
 views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
-views.DocumentSet._documentSet.query=Query: {0}
-views.DocumentSet._documentSet.job_state.ERROR=stalled
-views.DocumentSet._documentSet.job_state.NOT_STARTED=queued
-views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
+views.DocumentSet._documentSet.job_state.ERROR=stalled
+views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
+views.DocumentSet._documentSet.job_state.NOT_STARTED=queued
+views.DocumentSet._documentSet.job_state_description.out_of_memory=Import failed. Document Set too large.
 views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before this one: {0}
+views.DocumentSet._documentSet.query=Query: {0}
 
 views.Session._form.h3=Log in to your account
 views.Session._form.label_email=Email
