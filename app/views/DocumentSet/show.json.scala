@@ -2,7 +2,6 @@ package views.json.DocumentSet
 
 import models.orm.{ DocumentSet, DocumentSetCreationJob }
 import models.orm.DocumentSetCreationJobState._
-import models.orm.DocumentSetCreationJobStateDescription
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
@@ -16,10 +15,12 @@ object show {
   private val JobStateKey = "job_state."
 
   private def stateDescription(description: String): String = {
-    try {
-      m(DocumentSetCreationJobStateDescription.withName(description).toString)
-    } catch {
-      case e: NoSuchElementException => description
+    val keyWithArg = """([^:]*):(.*)""".r
+    
+    description match {
+      case keyWithArg(key, arg) => m(JobStateDescriptionKey + key, arg)
+      case "" => ""
+      case d => m(JobStateDescriptionKey + d)
     }
   }
 
