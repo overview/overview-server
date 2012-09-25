@@ -7,11 +7,6 @@ r = {
   }
 }
 
-m = {
-  import: 'Import',
-  document_count: (n) -> if n == 1 then "one document" else "#{n} documents",
-}
-
 template = _.template("""
   <li>
     <form method="post" class="form-inline" action="<%- r.DocumentSetController.create() %>">
@@ -20,11 +15,11 @@ template = _.template("""
       <input type="hidden" name="documentcloud_username" value="<%- credentials.email %>" />
       <input type="hidden" name="documentcloud_password" value="<%- credentials.password %>" />
       <button class="btn">
-        <i class="icon-download"></i> <%- m.import %>
+        <i class="icon-download"></i> <%- i18n('views.DocumentSet._documentSet.action_import') %>
       </button>
     </form>
     <h3><%- project.title %></h3>
-    <p class="status"><span class="document-count"><%- m.document_count(project.document_ids.length) %></span></p>
+    <p class="status"><span class="document-count"><%- i18n('views.DocumentSet._documentSet.document_count', project.document_ids.length) %></span></p>
   </li>""")
 
-window.dcimport.templates._project = (project, credentials) -> template({ project: project, m: m, r: r, credentials: credentials })
+window.dcimport.templates._project = (project, credentials) -> template({ project: project, r: r, credentials: credentials })

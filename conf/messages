@@ -61,6 +61,7 @@ views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public D
 views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
 
+views.DocumentSet._documentSet.action_import=Import
 views.DocumentSet._documentSet.action_delete=Delete
 views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
