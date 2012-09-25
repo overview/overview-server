@@ -61,6 +61,9 @@ views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public D
 views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
 
+views.DocumentSet.show.document_list.loading=Loading documents...
+views.DocumentSet.show.document_list.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
+
 views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
 views.DocumentSet._dcimport.error=You entered an invalid username or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email

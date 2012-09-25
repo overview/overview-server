@@ -30,7 +30,6 @@ class DocumentListView
     this._attach_selection()
     this._attach_document_list()
     this._attach_document_changed()
-    this._attach_scroll()
 
   _attach_click: () ->
     $div = $(@div)
@@ -60,15 +59,15 @@ class DocumentListView
     return @_document_height
 
   _attach_scroll: () ->
-    $(@div).scroll(=> this._refresh_need_documents())
+    $('ul', @div).on('scroll', this._refresh_need_documents.bind(this))
 
   _get_bottom_need_document_index: () ->
     return undefined if !@_buffer_documents?
     # Assumes there's no padding between documents
     document_height = this._get_document_height()
-    $div = $(@div)
-    div_bottom = $div.height() + $div.scrollTop()
-    Math.ceil(div_bottom / (document_height || 1)) + @_buffer_documents
+    $ul = $('ul', @div)
+    ul_bottom = $ul.height() + $ul.scrollTop()
+    Math.ceil(ul_bottom / (document_height || 1)) + @_buffer_documents
 
   _attach_selection: () ->
     @state.observe('selection-changed', this._refresh_selection.bind(this))
@@ -126,6 +125,9 @@ class DocumentListView
   _redraw: () ->
     $div = $(@div)
 
+    $ul = $div.children('ul')
+    scroll_top = if $ul.length then $ul[0].scrollTop else 0
+
     documents = @document_list.documents
     n = @document_list.n
 
@@ -141,12 +143,23 @@ class DocumentListView
       @_redraw_used_placeholders = true
       documents = @document_list.get_placeholder_documents(@cache)
 
-    $ul = $div.children('ul')
+    $num_documents = $div.children('.num-documents')
+    if $num_documents.length == 0
+      $num_documents = $('<p class="num-documents"></p>')
+      $div.prepend($num_documents)
 
+    $ul = $div.children('ul') # again, in case it was removed
     if $ul.length == 0
       $ul = $('<ul></ul>')
       $ul.attr('style', @_ul_style) if @_ul_style?
       $div.append($ul)
+      this._attach_scroll()
+
+    # Replace num_documents
+    if n?
+      $num_documents.text(i18n('views.DocumentSet.show.document_list.num_documents', n))
+    else
+      $num_documents.text(i18n('views.DocumentSet.show.document_list.loading'))
 
     index = 0
 
@@ -174,6 +187,8 @@ class DocumentListView
       $li = this._create_li(index)
       $ul.append($li)
       index++
+
+    $ul[0].scrollTop = scroll_top
 
     this._refresh_selection()
     this._refresh_need_documents()

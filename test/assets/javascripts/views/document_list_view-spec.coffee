@@ -60,6 +60,7 @@ describe 'views/document_list_view', ->
       ]
       div = $('<div></div>')[0]
       $('body').append(div)
+      window.i18n = () -> JSON.stringify(Array.prototype.slice.apply(arguments))
 
     afterEach ->
       options = {}
@@ -68,6 +69,7 @@ describe 'views/document_list_view', ->
       document_list = undefined
       document_store = undefined
       tag_store = undefined
+      delete window.i18n
 
     it 'should add nothing for an empty DocumentList', ->
       document_list.n = 0
@@ -205,6 +207,10 @@ describe 'views/document_list_view', ->
         document_list._notify()
         expect(view.need_documents).toEqual([[4, 6], [8, 10]])
 
+      it 'should show the number of documents', ->
+        view = create_view()
+        expect($('.num-documents', view.div).text()).toEqual('["views.DocumentSet.show.document_list.num_documents",10]')
+
       it 'should make need_documents empty when it is', ->
         view = create_view()
         for document in mock_document_array(6, 5)
@@ -287,6 +293,11 @@ describe 'views/document_list_view', ->
         document_list._notify()
         expect($(view.div).find('.placeholder').length).toEqual(0)
 
+      it 'should show a loading message instead of the number of documents', ->
+        view = create_view()
+        num_documents_text = $('.num-documents', view.div).text()
+        expect($('.num-documents', view.div).text()).toEqual('["views.DocumentSet.show.document_list.loading"]')
+
       it 'should set need_documents', ->
         view = create_view()
         expect(view.need_documents).toEqual([[0, undefined]])
@@ -297,12 +308,12 @@ describe 'views/document_list_view', ->
         document_list.n = 1000
         $(div).css({
           height: 100,
-          overflow: 'scroll',
+          overflow: 'hidden',
         })
         options = {
           buffer_documents: 10,
-          ul_style: 'margin:0;padding:0;list-style:none;',
-          li_style: 'display:block;margin:0;padding:0;height:10px;line-height:1;overflow:hidden;',
+          ul_style: 'margin:0;padding:0;list-style:none;height:100px;overflow:scroll;',
+          li_style: 'display:block;margin:0;padding:0;font-size:10px;height:10px;line-height:10px;overflow:hidden;',
         }
 
       it 'should limit need_documents to the scroll length + 10 documents', ->
@@ -317,8 +328,9 @@ describe 'views/document_list_view', ->
       it 'should make need_documents longer after scrolling', ->
         document_list.documents = mock_document_array(15) # so we can scroll down
         view = create_view()
-        div.scrollTop = 50 # scroll down 5 documents
-        $(div).scroll() # trigger listener
+        $ul = $('ul', div)
+        $ul[0].scrollTop = 50 # scroll down 5 documents
+        $ul.scroll() # trigger listener
         expect(view.need_documents).toEqual([[15, 25]])
 
       it 'should still start with [0, undefined]', ->
@@ -334,8 +346,9 @@ describe 'views/document_list_view', ->
         called = false
         view.observe('need-documents', -> called = true)
 
-        div.scrollTop = 50 # scroll down 5 documents
-        $(div).scroll() # trigger listener
+        $ul = $('ul', div)
+        $ul[0].scrollTop = 50 # scroll down 5 documents
+        $ul.scroll() # trigger listener
 
         expect(called).toBeTruthy()
 
@@ -346,13 +359,15 @@ describe 'views/document_list_view', ->
         called = false
         view.observe('need-documents', -> called = view.need_documents)
 
-        div.scrollTop = 10 # that's 1 doc. Another 10 doc are visible, 10 doc buffered = 21
-        $(div).scroll()
+        $ul = $('ul', div)
+        $ul[0].scrollTop = 10 # that's 1 doc. Another 10 doc are visible, 10 doc buffered = 21
+        $ul.scroll() # trigger listener
 
         expect(called).toBeFalsy()
 
       it 'should not create fractional needs', ->
         view = create_view()
-        div.scrollTop = 5 # half a line
-        $(div).scroll()
+        $ul = $('ul', div)
+        $ul[0].scrollTop = 5 # half a line
+        $ul.scroll() # trigger listener
         expect(view.need_documents).toEqual([[10, 21]])

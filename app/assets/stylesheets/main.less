@@ -217,23 +217,38 @@ body.document-set-show {
   }
 
   #document-list {
-    overflow: auto;
     box-sizing: border-box;
     margin: 5px;
-    padding: 5px;
+    padding: 0;
     border: 1px solid #ccc;
+    position: relative;
+
+    .num-documents {
+      margin: 0;
+      padding: 0 10px;
+      height: 1.8em;
+      line-height: 1.8;
+      border-bottom: 1px solid #ccc;
+      background: @wellBackground;
+    }
 
     ul {
-      margin: 0;
-      padding: 0;
+      overflow: auto;
+      position: absolute;
+      top: 1.8em;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: 1px 0 0; // from border-bottom on .num-documents
+      padding: 5px 0;
       list-style: none;
     }
 
     li {
       margin: 0;
       padding: 0;
-      list-style: none;
       white-space: nowrap;
+      line-height: 1.5;
 
       &.placeholder {
         color: @gray;
@@ -242,9 +257,9 @@ body.document-set-show {
 
     a {
       display: block;
+      padding: 0 10px;
       color: inherit;
       text-decoration: inherit;
-      width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
 
@@ -261,9 +276,9 @@ body.document-set-show {
     span.tags {
       span {
         display: inline-block;
-        width: .7em;
-        height: .7em;
-        margin: 0 .25em;
+        width: 10px;
+        height: 10px;
+        margin: 0 5px 0 0;
         border: 1px solid @gray;
       }
     }
