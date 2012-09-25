@@ -1,6 +1,6 @@
 /*
  * DocumentSet.scala
- * 
+ *
  * Overview Project
  * Created by Adam Hooper, Aug 2012
  */

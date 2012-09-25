@@ -25,7 +25,7 @@ case class DocumentSetCreationJob(
   @Column("status_description") val stateDescription: String = "") extends KeyedEntity[Long] {
   override val id: Long = 0
 
-  def this() = this(state = NotStarted) 
+  def this() = this(state = NotStarted)
 
   lazy val documentSet: ManyToOne[DocumentSet] = Schema.documentSetDocumentSetCreationJobs.right(this);
 

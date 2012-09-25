@@ -20,10 +20,10 @@ object Schema extends org.squeryl.Schema {
   val documentSetLogEntries =
     oneToManyRelation(documentSets, logEntries).
       via((ds, le) => ds.id === le.documentSetId)
-  
+
   val documentSetUsers =
     manyToManyRelation(documentSets, users, "document_set_user").
-      via[DocumentSetUser]((ds, u, dsu) => 
+      via[DocumentSetUser]((ds, u, dsu) =>
         (dsu.documentSetId === ds.id, dsu.userId === u.id))
 
   val userLogEntries =
