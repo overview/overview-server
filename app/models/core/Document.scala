@@ -1,6 +1,6 @@
 /*
- * Document.scala 
- * 
+ * Document.scala
+ *
  * Overview Project
  * Created by Jonas Karlsson, July 2012
  */

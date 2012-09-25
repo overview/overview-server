@@ -1,6 +1,6 @@
 /*
- * Tag.scala 
- * 
+ * Tag.scala
+ *
  * Overview Project
  * Created by Jonas Karlsson, August 2012
  */
