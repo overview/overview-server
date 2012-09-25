@@ -34,6 +34,11 @@ object WorkerActorSystem {
 }
 
 
+/**
+ * Enumeration for encoding job state descriptions into keys that can be internationalized by
+ * the client. Description types can be defined to take a single argument, which is encoded
+ * as "key:argument"
+ */
 sealed abstract class DocumentSetCreationJobStateDescription(key: String, arg: String = "") {
   override def toString = if (!arg.isEmpty) key + ":" + arg
 			  else key
@@ -42,7 +47,6 @@ sealed abstract class DocumentSetCreationJobStateDescription(key: String, arg: S
 object DocumentSetCreationJobStateDescription {
   private type Description = DocumentSetCreationJobStateDescription
 
-  case class NoDescription() extends Description("")
   case class OutOfMemory() extends Description("out_of_memory")
   case class WorkerError() extends Description("worker_error")
   case class Retrieving() extends Description("retrieving_documents")
