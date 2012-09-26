@@ -27,7 +27,9 @@ case class DocumentSetCreationJob(
 
   def this() = this(state = NotStarted)
 
-  lazy val documentSet: ManyToOne[DocumentSet] = Schema.documentSetDocumentSetCreationJobs.right(this);
+  lazy val documentSet: DocumentSet = Schema.documentSetDocumentSetCreationJobs.right(this).single
+
+  lazy val user: User = documentSet.users.single
 
   def jobsAheadInQueue: Long = {
     val queue = from(Schema.documentSetCreationJobs)(ds =>
@@ -37,3 +39,6 @@ case class DocumentSetCreationJob(
   }
 }
 
+object DocumentSetCreationJob {
+  def all() = from(Schema.documentSetCreationJobs)(j => select(j).orderBy(j.id.asc))
+}

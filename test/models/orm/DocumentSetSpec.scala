@@ -27,7 +27,7 @@ class DocumentSetSpec extends Specification {
 
       val job = documentSet.createDocumentSetCreationJob()
       
-      job.documentSet.head must be equalTo(documentSet)
+      job.documentSet must be equalTo(documentSet)
 
       val returnedJob = Schema.documentSetCreationJobs.single
       

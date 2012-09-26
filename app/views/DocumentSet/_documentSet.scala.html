@@ -12,7 +12,7 @@
     <p class="status">
       @documentSet.documentSetCreationJob.map { job =>
         <label>
-          <span class="state">@m("job_state." + job.state.toString())</span>
+          <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
           <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
         </label>
         <!-- FIXME make i18n-friendly --><span class="state-description">@{

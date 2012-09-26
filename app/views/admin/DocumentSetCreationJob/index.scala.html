@@ -1,0 +1,37 @@
+@(
+  user: models.orm.User,
+  jobs: Seq[models.orm.DocumentSetCreationJob]
+)(implicit lang: Lang, flash: Flash)
+
+@import views.html.helper.EnumToString
+
+@defining(scopedMessages("views.admin.DocumentSetCreationJob.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index") {
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th class="id">@m("th.id")</th>
+          <th class="state">@m("th.state")</th>
+          <th class="fraction-complete">@m("th.fraction_complete")</th>
+          <th class="state-description">@m("th.state_description")</th>
+          <th class="email">@m("th.email")</th>
+          <th class="title">@m("th.title")</th>
+          <th class="query">@m("th.query")</th>
+        </tr>
+      </thead>
+      <tbody>
+        @jobs.map { job =>
+          <tr>
+            <td class="id">@job.id</td>
+            <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
+            <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete" />@((job.fractionComplete * 100).toInt)%</td>
+            <td class="state-description">@job.stateDescription</td>
+            <td class="email">@job.user.email</td>
+            <td class="title">@job.documentSet.title</td>
+            <td class="query">@job.documentSet.query</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}

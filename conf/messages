@@ -30,9 +30,19 @@ mailers.User.createErrorUserAlreadyExists.case2=If you did, please rack your bra
 mailers.User.createErrorUserAlreadyExists.signoff=Happy analyzing,
 mailers.User.createErrorUserAlreadyExists.signature=The Overview Project developers
 
-models.DocumentSetCreationJob.JobState.Submitted=submitted
-models.DocumentSetCreationJob.JobState.InProgress=in progress
-models.DocumentSetCreationJob.JobState.Complete=complete
+models.DocumentSetCreationJob.state.ERROR=stalled
+models.DocumentSetCreationJob.state.IN_PROGRESS=importing
+models.DocumentSetCreationJob.state.NOT_STARTED=queued
+
+views.admin.DocumentSetCreationJob.index.title=Jobs
+views.admin.DocumentSetCreationJob.index.h1=Jobs
+views.admin.DocumentSetCreationJob.index.th.id=ID
+views.admin.DocumentSetCreationJob.index.th.state=Status
+views.admin.DocumentSetCreationJob.index.th.fraction_complete=Progress
+views.admin.DocumentSetCreationJob.index.th.state_description=Description
+views.admin.DocumentSetCreationJob.index.th.email=User
+views.admin.DocumentSetCreationJob.index.th.title=Title
+views.admin.DocumentSetCreationJob.index.th.query=Query
 
 views.admin.User.index.title=Users
 views.admin.User.index.h1=Users
@@ -50,6 +60,7 @@ views.admin.User.index.action.delete=Delete
 views.admin.User.index.confirm.delete=Are you sure you want to delete {0}? You cannot undo this.
 
 views.components.navbar.link_admin_users=Users
+views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
 views.components.navbar.link_help=Help
@@ -99,9 +110,6 @@ views.DocumentSet._documentSet.action_delete=Delete
 views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
-views.DocumentSet._documentSet.job_state.ERROR=stalled
-views.DocumentSet._documentSet.job_state.IN_PROGRESS=importing
-views.DocumentSet._documentSet.job_state.NOT_STARTED=queued
 views.DocumentSet._documentSet.job_state_description.clustering=Clustering
 views.DocumentSet._documentSet.job_state_description.clustering_level=Clustering level {0}
 views.DocumentSet._documentSet.job_state_description.job_complete=Import complete.
