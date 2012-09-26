@@ -45,12 +45,12 @@ sealed abstract class DocumentSetCreationJobStateDescription(key: String, arg: S
 object DocumentSetCreationJobStateDescription {
   private type Description = DocumentSetCreationJobStateDescription
 
-  case class OutOfMemory() extends Description("out_of_memory")
-  case class WorkerError() extends Description("worker_error")
-  case class Retrieving() extends Description("retrieving_documents")
-  case class Clustering() extends Description("clustering")
-  case class Saving() extends Description("saving_document_tree")
-  case class Done() extends Description("job_complete")
+  case object OutOfMemory extends Description("out_of_memory")
+  case object WorkerError extends Description("worker_error")
+  case object Retrieving extends Description("retrieving_documents")
+  case object Clustering extends Description("clustering")
+  case object Saving extends Description("saving_document_tree")
+  case object Done extends Description("job_complete")
   case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString)
 }
 
