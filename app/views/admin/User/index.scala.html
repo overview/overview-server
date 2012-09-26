@@ -34,7 +34,7 @@
                     <input type="submit" value="@m("action.promote")"/>
                   }
                 </form>
-                <form method="post" class="delete" data-confirm="@m("confirm.delete", otherUser.email)" action="@controllers.admin.routes.UserController.delete(otherUser.id)">
+                <form method="post" class="delete" data-confirm="@m("confirm.delete", otherUser.email)" action="@controllers.admin.routes.UserController.delete(otherUser.id)?X-HTTP-Method-Override=DELETE">
                   <input type="submit" value="@m("action.delete")" />
                 </form>
               }

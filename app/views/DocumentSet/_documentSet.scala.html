@@ -4,8 +4,7 @@
 
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
   <li id="document-set-@documentSet.id" class="@(documentSet.documentSetCreationJob.map(j => "unfinished"))">
-    <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)">
-      <input type="hidden" name="X-HTTP-Method-Override" value="DELETE" />
+    <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>

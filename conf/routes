@@ -18,7 +18,6 @@ GET /documentsets controllers.DocumentSetController.index()
 POST /documentsets controllers.DocumentSetController.create()
 GET /documentsets/:id.json controllers.DocumentSetController.showJson(id: Long)
 GET /documentsets/:id controllers.DocumentSetController.show(id: Long)
-POST /documentsets/:id controllers.DocumentSetController.delete(id: Long)
 DELETE /documentsets/:id controllers.DocumentSetController.delete(id: Long)
 
 GET /trees/:id/root controllers.TreeController.root(id: Long)
@@ -36,10 +35,7 @@ POST /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCount
 
 GET /admin/users controllers.admin.UserController.index()
 POST /admin/users/:id controllers.admin.UserController.update(id: Long)
-# TODO fix to what it should be:
-#DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
-POST /admin/users/:id/DELETE controllers.admin.UserController.delete(id: Long)
-DELETE /admin/users/:id/DELETE controllers.admin.UserController.delete(id: Long)
+DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET /assets/*file controllers.Assets.at(path="/public", file)
