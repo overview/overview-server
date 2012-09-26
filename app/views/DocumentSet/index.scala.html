@@ -4,8 +4,6 @@
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
-@import views.html.helper.EnumToString
-
 @javascripts = {
   <!-- See issue #33 -->
   <script src="@routes.Assets.at("javascripts/vendor-coffee/base64.js")"></script>
