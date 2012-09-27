@@ -39,8 +39,7 @@ object ClusterTypes {
   def DocumentVector = mutable.Map[TermID, TermWeight] _ // so we can do var t = DocumentVector()
 
   // Vectors for an entire document set must reference a string table
-  class DocumentSetVectors(val stringTable: StringTable) extends mutable.HashMap[DocumentID, DocumentVector] { // docid -> vector
-  }
+  class DocumentSetVectors(val stringTable: StringTable) extends mutable.HashMap[DocumentID, DocumentVector]  // docid -> vector
 
   object DocumentSetVectors {
     def apply(stringTable: StringTable) = new DocumentSetVectors(stringTable)

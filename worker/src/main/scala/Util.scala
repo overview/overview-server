@@ -60,7 +60,7 @@ object Progress {
   case class Progress(fraction: Double, status: DocumentSetCreationJobStateDescription, hasError: Boolean = false)
 
   // Callback function to inform of progress, and returns false if operation should abort
-  type ProgressAbortFn = (Progress) => Boolean
+  type ProgressAbortFn = Progress => Boolean
 
   // Turns a sub-task progress into overall task progress
   def makeNestedProgress(inner: ProgressAbortFn, startFraction: Double, endFraction: Double): ProgressAbortFn = {
