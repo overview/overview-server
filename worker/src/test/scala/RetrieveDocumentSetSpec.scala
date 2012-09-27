@@ -20,7 +20,7 @@ import scala.io.Source
 
 import overview.clustering._
 import overview.http._
-import overview.http.BulkHttpRetriever._
+import overview.http.BulkHttpRetriever
 import overview.util.WorkerActorSystem
 import helpers.DbSpecification
 import helpers.DbSetup._
@@ -59,11 +59,12 @@ class RetrieveDocumentSetSpec extends DbSpecification {
 
       val timeOut = Timeout(500)   // ms                                               
 
+      val bulkHttpRetriever = new BulkHttpRetriever[DocumentAtURL](new AsyncHttpRequest)
       
       WorkerActorSystem.withActorSystem { implicit context =>
 // Successful retrieval. Check the generated tree (will change if test file set changes)
 	val retrievalDone =
-	  BulkHttpRetriever[DocumentAtURL](docURLs, (doc,text) => processDocument(doc, text)) 
+	  bulkHttpRetriever.retrieve(docURLs, (doc,text) => processDocument(doc, text)) 
 	val result = Await.result(retrievalDone, timeOut.duration)
 
 	result.size must beEqualTo(0) // everything should be retrieved
@@ -79,7 +80,7 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       WorkerActorSystem.withActorSystem { implicit context =>
 	// adds to existing vectorGen, whatevs
 	val retrievalErr =
-	  BulkHttpRetriever[DocumentAtURL](docURLsWithErr, (doc,text) => processDocument(doc, text)) 
+	  bulkHttpRetriever.retrieve(docURLsWithErr, (doc,text) => processDocument(doc, text)) 
 	val resultErr = Await.result(retrievalErr, timeOut.duration)
 
 	resultErr.size must beEqualTo(1) // exactly one doc should be fail
