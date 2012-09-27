@@ -24,7 +24,7 @@ class PrivateDocumentAtURL(val textUrl: String, val username: String, val passwo
   extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritence is deprecated
 case class DocRetrievalError(doc: DocumentAtURL, error: Throwable)
 
-class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRequest) {
+class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriever) {
 
   // Case classes modeling the messages that our actors can send one another
   private case class GetText(doc: DocumentAtURL)

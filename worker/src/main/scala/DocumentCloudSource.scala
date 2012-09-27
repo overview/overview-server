@@ -15,7 +15,7 @@ import akka.util.Timeout
 import com.codahale.jerkson.Json._
 import com.ning.http.client.Response
 import java.net.URLEncoder
-import overview.http.{ AsyncHttpRequest, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
+import overview.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
 import overview.util.Logger
 
 // The main DocumentCloudSource class produces a sequence of these...
@@ -29,7 +29,7 @@ case class DCDocumentResources(text: String)
 case class DCDocument(id: String, title: String, access: String, canonical_url: String, resources: DCDocumentResources)
 case class DCSearchResult(total: Int, documents: Seq[DCDocument])
 
-class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRequest,
+class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   val query: String,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
@@ -156,7 +156,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRequest,
   override def size = {
     if (numDocuments.isEmpty) {
       Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
-      val pageText = asyncHttpRetriever.BlockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
+      val pageText = asyncHttpRetriever.blockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
       val result = parse[DCSearchResult](pageText)
       numDocuments = Some(scala.math.min(result.total, maxDocuments))
     }

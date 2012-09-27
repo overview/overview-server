@@ -19,7 +19,7 @@ import overview.util.Logger
 import scala.io.Source._
 
 // Single object that interfaces to Ning's Async HTTP library
-class AsyncHttpRequest {
+class AsyncHttpRequest extends AsyncHttpRetriever {
 
   // expose this type so that users don't need to import com.ning.http.client
   type Response = AHCResponse
@@ -77,7 +77,7 @@ class AsyncHttpRequest {
   }
 
   // Since AsyncHTTPClient has an executor anyway, allow re-use (if desired) for an Akka Promise execution context
-  lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
+  lazy val executionContext: ExecutionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
 
   // Execute an asynchronous HTTP request, with given callbacks for success and failure
   def request(resource: DocumentAtURL,
@@ -154,7 +154,7 @@ class AsyncHttpRequest {
 
   // You probably shouldn't ever call this :)
   // it will block the thread
-  def BlockingHttpRequest(url: String): String = {
+  def blockingHttpRequest(url: String): String = {
     val f = asyncHttpClient.prepareGet(url).execute()
     f.get().getResponseBody()
   }
