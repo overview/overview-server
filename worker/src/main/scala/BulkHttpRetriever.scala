@@ -103,7 +103,6 @@ object BulkHttpRetriever {
     }
   }
 
-  implicit var context: ActorSystem = null
 
   def apply[T <: DocumentAtURL](sourceDocList: Traversable[T], writeDocument: (T, String) => Unit)(implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
