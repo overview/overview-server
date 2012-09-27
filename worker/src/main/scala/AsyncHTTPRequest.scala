@@ -19,7 +19,7 @@ import overview.util.Logger
 import scala.io.Source._
 
 // Single object that interfaces to Ning's Async HTTP library
-object AsyncHttpRequest {
+class AsyncHttpRequest {
 
   // expose this type so that users don't need to import com.ning.http.client
   type Response = AHCResponse
@@ -80,7 +80,7 @@ object AsyncHttpRequest {
   lazy val executionContext = ExecutionContext.fromExecutor(asyncHttpClient.getConfig().executorService())
 
   // Execute an asynchronous HTTP request, with given callbacks for success and failure
-  def apply(resource: DocumentAtURL,
+  def request(resource: DocumentAtURL,
     onSuccess: (Response) => Unit,
     onFailure: (Throwable) => Unit) = {
 

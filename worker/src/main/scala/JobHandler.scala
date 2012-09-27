@@ -10,6 +10,7 @@ import com.jolbox.bonecp._
 
 import database.{ DatabaseConfiguration, DataSource, DB }
 import overview.clustering._
+import overview.http.AsyncHttpRequest
 import overview.util.{ ExceptionStatusMessage, Logger }
 import overview.util.Progress._
 import persistence._
@@ -17,6 +18,7 @@ import persistence.DocumentSetCreationJobState._
 
 object JobHandler {
 
+  val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     try {
@@ -42,7 +44,8 @@ object JobHandler {
         DocumentSetLoader.loadQuery(j.documentSetId).get
       }
 
-      val dcSource = new DocumentCloudSource(query, j.documentCloudUsername, j.documentCloudPassword)
+      val dcSource = new DocumentCloudSource(asyncHttpRetriever,
+	query, j.documentCloudUsername, j.documentCloudPassword)
 
       val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
 

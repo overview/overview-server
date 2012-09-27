@@ -13,9 +13,9 @@ package overview.clustering
 import akka.dispatch.{ Await, Future, Promise }
 import akka.util.Timeout
 import com.codahale.jerkson.Json._
+import com.ning.http.client.Response
 import java.net.URLEncoder
 import overview.http.{ AsyncHttpRequest, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
-import overview.http.AsyncHttpRequest.Response
 import overview.util.Logger
 
 // The main DocumentCloudSource class produces a sequence of these...
@@ -29,7 +29,8 @@ case class DCDocumentResources(text: String)
 case class DCDocument(id: String, title: String, access: String, canonical_url: String, resources: DCDocumentResources)
 case class DCSearchResult(total: Int, documents: Seq[DCDocument])
 
-class DocumentCloudSource(val query: String,
+class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRequest,
+  val query: String,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
@@ -52,7 +53,7 @@ class DocumentCloudSource(val query: String,
   }
 
   // we use a promise to sync the main call with our async callbacks, and propagate errors
-  private implicit val executionContext = AsyncHttpRequest.executionContext // needed to run the promise object
+  private implicit val executionContext = asyncHttpRetriever.executionContext // needed to run the promise object
   private val done = Promise[Unit]()
 
   // Resolve a redirect of a private document, via async http request. Returns a Future that will eventually have the resolved URL
@@ -119,7 +120,7 @@ class DocumentCloudSource(val query: String,
   private def getNextPage[U](pageNum: Int, f: DCDocumentAtURL => U): Unit = {
 
     Logger.debug("Retrieving DocumentCloud results for query " + query + ", page " + pageNum)
-    AsyncHttpRequest(pageQuery(pageNum),
+    asyncHttpRetriever.request(pageQuery(pageNum),
 
       { response: Response =>
 
@@ -155,7 +156,7 @@ class DocumentCloudSource(val query: String,
   override def size = {
     if (numDocuments.isEmpty) {
       Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
-      val pageText = AsyncHttpRequest.BlockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
+      val pageText = asyncHttpRetriever.BlockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
       val result = parse[DCSearchResult](pageText)
       numDocuments = Some(scala.math.min(result.total, maxDocuments))
     }

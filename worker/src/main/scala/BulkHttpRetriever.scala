@@ -16,6 +16,7 @@ import scala.collection.mutable
 import akka.dispatch.{ ExecutionContext, Future, Promise }
 import akka.actor._
 import akka.util.Timeout
+import com.ning.http.client.Response
 
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
@@ -23,7 +24,7 @@ class PrivateDocumentAtURL(val textUrl: String, val username: String, val passwo
   extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritence is deprecated
 case class DocRetrievalError(doc: DocumentAtURL, error: Throwable)
 
-object BulkHttpRetriever {
+class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRequest) {
 
   // Case classes modeling the messages that our actors can send one another
   private case class GetText(doc: DocumentAtURL)
@@ -50,8 +51,8 @@ object BulkHttpRetriever {
       while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
         val doc = requestQueue.dequeue
         val startTime = System.nanoTime
-        AsyncHttpRequest(doc,
-          { result: AsyncHttpRequest.Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
+        asyncHttpRetriever.request(doc,
+          { result: Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
           { t: Throwable => self ! GetTextFailed(doc, t) })
         httpReqInFlight += 1
       }
@@ -104,7 +105,8 @@ object BulkHttpRetriever {
   }
 
 
-  def apply[T <: DocumentAtURL](sourceDocList: Traversable[T], writeDocument: (T, String) => Unit)(implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
+  def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Unit)
+  (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
     Logger.info("Beginning HTTP document set retrieval")
 
