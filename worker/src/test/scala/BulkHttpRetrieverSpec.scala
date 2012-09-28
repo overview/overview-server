@@ -45,8 +45,6 @@ abstract class TestHttpRetriever extends AsyncHttpRetriever {
   val executionContext: ExecutionContext = actorSystem.dispatcher
 }
 
-
-
 trait RetrieverProvider {
   val retriever: TestHttpRetriever
 }
@@ -54,9 +52,18 @@ trait RetrieverProvider {
 trait SuccessfulRetriever extends RetrieverProvider {
   val retriever = new TestHttpRetriever {
     override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
-                         onFailure: Throwable => Unit) {
+      onFailure: Throwable => Unit) {
       val response = new TestResponse
       onSuccess(response)
+    }
+  }
+}
+
+trait FailingRetriever extends RetrieverProvider {
+  val retriever = new TestHttpRetriever {
+    override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
+      onFailure: Throwable => Unit) {
+      onFailure(new Exception("failed request"))
     }
   }
 }
@@ -82,7 +89,8 @@ class BulkHttpRetrieverSpec extends Specification {
     }
 
     trait SuccessfulRequests extends SuccessfulRetriever with SimulatedWebClient
-    
+    trait FailingRequests extends FailingRetriever with SimulatedWebClient
+
     "retrieve and process documents" in new SuccessfulRequests {
       val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
       val requestsWithErrors = Await.result(done, Timeout.never.duration)
@@ -91,7 +99,13 @@ class BulkHttpRetrieverSpec extends Specification {
       requestsProcessed must have size (urlsToRetrieve.size)
     }
 
-    
+    "collect failed requests" in new FailingRequests {
+      val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
+      val requestsWithErrors = Await.result(done, Timeout.never.duration)
+
+      requestsWithErrors must have size (urlsToRetrieve.size)
+    }
+
   }
 
 }
