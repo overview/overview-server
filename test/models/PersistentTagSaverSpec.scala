@@ -2,7 +2,7 @@ package models
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSetup.insertDocumentSet
+import helpers.DbSetup.{insertDocumentSet, insertTag}
 import helpers.DbTestContext
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
@@ -38,6 +38,20 @@ class PersistentTagSaverSpec extends Specification {
       val noId = tagSaver.save(documentSetId, name)
       
       noId must beNone
+    }
+
+    "delete a tag" in new DbTestContext {
+      val documentSetId = insertDocumentSet("TagSaverSpec")
+      val tagName = "a tag" 
+      val tagId = insertTag(documentSetId, tagName)
+      
+      val tagSaver = new PersistentTagSaver()
+      tagSaver.delete(tagId)
+
+      val noTag = SQL("SELECT id FROM tag WHERE id = {tagId}").on("tagId" -> tagId).
+        as(scalar[Long] *).headOption
+
+      noTag must beNone
     }
   }
   

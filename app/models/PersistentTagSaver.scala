@@ -13,4 +13,8 @@ class PersistentTagSaver {
           """).on("name" -> name, "documentSetId" -> documentSetId).executeInsert()
     } catch { case _ => None }
   }
+
+  def delete(id: Long)(implicit c: Connection): Int = {
+    SQL("DELETE FROM tag WHERE id = {tagId}").on("tagId" -> id).executeUpdate
+  }
 }
