@@ -5,6 +5,7 @@ import models.orm.DocumentSetCreationJobState._
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
+import views.Magic._
 
 object show {
   private def m(key: String, args: Any*) = {
@@ -12,8 +13,8 @@ object show {
   }
 
   private val JobStateDescriptionKey = "job_state_description."
-  private val JobStateKey = "job_state."
-
+  private val JobStateKey = "models.DocumentSetCreationJob.state."
+  
   private def stateDescription(description: String): String = {
     val keyWithArg = """([^:]*):(.*)""".r
     
@@ -26,7 +27,7 @@ object show {
 
   private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
     val notCompleteMap = Map(
-      "state" -> toJson(m(JobStateKey + job.state.toString)),
+      "state" -> toJson(t(JobStateKey + job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
       "state_description" -> toJson(stateDescription(job.stateDescription)))
     val notStartedMap = job.state match {

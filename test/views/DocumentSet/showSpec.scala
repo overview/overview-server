@@ -57,7 +57,7 @@ class showSpec extends Specification {
     }
 
     "show in progress job" in new InProgressDocumentSetContext {
-      documentSetJson must /("state" -> "views.DocumentSet._documentSet.job_state.IN_PROGRESS")
+      documentSetJson must /("state" -> "models.DocumentSetCreationJob.state.IN_PROGRESS")
       documentSetJson must /("percent_complete" -> job.fractionComplete * 100)
       documentSetJson must /("state_description" ->
         ("views.DocumentSet._documentSet.job_state_description." + job.stateDescription))
