@@ -9,7 +9,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap
 import com.ning.http.client.Response
 import java.net.URI
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
+import org.specs2.specification.After
 import overview.clustering.DCDocumentAtURL
 import scala.collection.JavaConversions._
 
@@ -35,48 +35,63 @@ class TestResponse extends Response {
   override def toString: String = "TestResponse"
 }
 
-class TestHttpRetriever extends AsyncHttpRetriever {
+abstract class TestHttpRetriever extends AsyncHttpRetriever {
 
   val actorSystem = ActorSystem("TestActorSystem")
 
-  def request(resource: DocumentAtURL, onSuccess: Response => Unit,
-    onFailure: Throwable => Unit) {
-
-    val response = new TestResponse
-    onSuccess(response)
-  }
+  def request(resource: DocumentAtURL, onSuccess: Response => Unit, onFailure: Throwable => Unit)
 
   def blockingHttpRequest(url: String): String = url
-
   val executionContext: ExecutionContext = actorSystem.dispatcher
+}
 
+
+
+trait RetrieverProvider {
+  val retriever: TestHttpRetriever
+}
+
+trait SuccessfulRetriever extends RetrieverProvider {
+  val retriever = new TestHttpRetriever {
+    override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
+                         onFailure: Throwable => Unit) {
+      val response = new TestResponse
+      onSuccess(response)
+    }
+  }
 }
 
 class BulkHttpRetrieverSpec extends Specification {
 
   "BulkHttpRetriever" should {
 
-    trait SimulatedWebClient extends Scope {
+    trait SimulatedWebClient extends After {
+      this: RetrieverProvider =>
       var requestsProcessed = new scala.collection.mutable.ArrayBuffer[String]
-      val retriever = new TestHttpRetriever
       val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](retriever)
       val urlsToRetrieve = Seq.fill(10)(new DCDocumentAtURL("title", "id", "url"))
 
       def processDocument(document: DCDocumentAtURL, result: String) {
-	requestsProcessed += result
+        requestsProcessed += result
       }
 
-      implicit val actorSystem = retriever.actorSystem
+      implicit def actorSystem = retriever.actorSystem
+
+      def after = actorSystem.shutdown
+
     }
 
-    "retrieve and process documents" in new SimulatedWebClient {
+    trait SuccessfulRequests extends SuccessfulRetriever with SimulatedWebClient
+    
+    "retrieve and process documents" in new SuccessfulRequests {
       val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
       val requestsWithErrors = Await.result(done, Timeout.never.duration)
 
       requestsWithErrors must beEmpty
       requestsProcessed must have size (urlsToRetrieve.size)
-
     }
+
+    
   }
 
 }
