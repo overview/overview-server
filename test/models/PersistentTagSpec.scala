@@ -37,7 +37,7 @@ class PersistentTagSpec extends Specification with Mockito {
         core.Document(2l, "document2", "documentCloudId", Seq(15l)))
 
       def before = {
-	loader loadByName (documentSetId, name) returns Some(dummyTagId)
+        loader loadByName (documentSetId, name) returns Some(dummyTagId)
         loader loadDocuments (documentIds) returns dummyDocumentData
         loader loadDocumentTags (documentIds) returns dummyDocumentTagData
         parser createDocuments (dummyDocumentData, dummyDocumentTagData) returns dummyDocuments
