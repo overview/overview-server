@@ -1,3 +1,9 @@
+/*
+ * BulkHttpRetrieverSpec
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, September 2012
+ */
 package overview.http
 
 import akka.actor.ActorSystem
@@ -13,6 +19,11 @@ import org.specs2.specification.After
 import overview.clustering.DCDocumentAtURL
 import scala.collection.JavaConversions._
 
+
+/**
+ * A dummy Response to a http request.
+ * Will be expanded to have actual test data in body and headers.
+ */
 class TestResponse extends Response {
   def getContentType: String = "content-type"
   def getCookies = Seq()
@@ -35,20 +46,27 @@ class TestResponse extends Response {
   override def toString: String = "TestResponse"
 }
 
+/**
+ * A mock AsyncHttpRetriever for testing. Provides an actor system with an execution context.
+ * Subclass to respond to requests in ways appropriate for your test.
+ */
 abstract class TestHttpRetriever extends AsyncHttpRetriever {
 
-  val actorSystem = ActorSystem("TestActorSystem")
+  val actorSystem = ActorSystem("TestActorSystem") // should probably be in separate trait
 
   def request(resource: DocumentAtURL, onSuccess: Response => Unit, onFailure: Throwable => Unit)
 
+  /** Will be expanded once needed by tests */
   def blockingHttpRequest(url: String): String = url
   val executionContext: ExecutionContext = actorSystem.dispatcher
 }
 
+/** Trait to be mixed in with test contexts that need a TestHttpRetriever */
 trait RetrieverProvider {
   val retriever: TestHttpRetriever
 }
 
+/** Provides a TestRetriever that responds successfully to all requests */
 trait SuccessfulRetriever extends RetrieverProvider {
   val retriever = new TestHttpRetriever {
     override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
@@ -59,6 +77,7 @@ trait SuccessfulRetriever extends RetrieverProvider {
   }
 }
 
+/** Provides a TestRetriever that responds with an Exception to all requests */
 trait FailingRetriever extends RetrieverProvider {
   val retriever = new TestHttpRetriever {
     override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
@@ -72,6 +91,9 @@ class BulkHttpRetrieverSpec extends Specification {
 
   "BulkHttpRetriever" should {
 
+    /**
+     * Context for counting number of processed requests to the AsyncHttpRetriever
+     */
     trait SimulatedWebClient extends After {
       this: RetrieverProvider =>
       var requestsProcessed = new scala.collection.mutable.ArrayBuffer[String]
