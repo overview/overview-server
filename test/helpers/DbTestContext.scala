@@ -27,6 +27,8 @@ import models.orm.SquerylPostgreSqlAdapter
  */
 trait DbTestContext extends Around {
   lazy implicit val connection = Session.currentSession.connection
+
+  def setupWithDb = {}
   
   def around[T <% Result](test: => T) = {
     DB.withTransaction { implicit connection =>
@@ -34,6 +36,7 @@ trait DbTestContext extends Around {
         val adapter = new SquerylPostgreSqlAdapter()
         val session = new Session(connection, adapter)
         using(session) { // sets thread-local variable
+	  setupWithDb
           test
         }
       } finally {
