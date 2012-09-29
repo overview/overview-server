@@ -22,7 +22,12 @@ object TagController extends BaseController {
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
       authorizedRemove(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
     )
-    
+
+  def delete(documentSetId: Long, tagName: String) =
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedDelete(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
+    )
+      
   def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = 
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
       authorizedNodeCounts(documentSetId, tagName, nodeIds)(_: Request[AnyContent], _: Connection)
@@ -90,6 +95,20 @@ object TagController extends BaseController {
     }
   }
 
+
+  def authorizedDelete(documentSetId: Long, tagName: String)
+  (implicit request: Request[AnyContent], connection: Connection) = {
+    PersistentTag.findByName(tagName, documentSetId) match {
+      case None => NotFound
+      case Some(tag) => {
+	val t = tag.loadTag
+	val taggedDocuments = tag.loadDocuments(t)
+	
+	tag.delete
+	Ok
+      }
+    }
+  }
 
   def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String) 
                           (implicit request: Request[AnyContent], connection: Connection) = {
