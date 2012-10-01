@@ -13,8 +13,8 @@ object DocumentSetForm {
   def apply() : FormType = {
     Form(
       Forms.mapping(
-        "title" -> Forms.text,
-        "query" -> Forms.text,
+        "title" -> Forms.nonEmptyText,
+        "query" -> Forms.nonEmptyText,
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text)
       )

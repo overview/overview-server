@@ -5,43 +5,9 @@
 @defining(scopedMessages("views.Session._form")) { m =>
   <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
     <h3>@m("h3")</h3>
-
-    @if(form.hasGlobalErrors) {
-      <div class="control-group error">
-        <ul class="unstyled controls">
-          @form.globalErrors.map { error =>
-            <li class="help-block error">@t(error.message, error.args: _*)</li>
-          }
-        </ul>
-      </div>
-    }
-
-    @form.forField("email") { field =>
-      <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
-        <label for="session-@field.name" class="control-label">@m("label_" + field.name)</label>
-        <div class="controls">
-          <input id="session-@field.name" type="email" name="@field.name" class="input-large" required="required" placeholder="@m("placeholder_" + field.name)" />
-          @field.errors.map { error =>
-            <p class="help-block">@t(error.message, error.args: _*)</span>
-          }
-        </div>
-      </fieldset>
-    }
-
-    @form.forField("password") { field =>
-      <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
-        <label for="session-@field.name" class="control-label">@m("label_" + field.name)</label>
-        <div class="controls">
-          <input id="session-@field.name" type="password" name="@field.name" class="input-large" required="required" />
-        </div>
-        @field.errors.map { error =>
-          <p class="help-block">@t(error.message, error.args: _*)</span>
-        }
-      </fieldset>
-    }
-
-    <fieldset class="form-actions">
-      <input type="submit" class="btn btn-primary" value="@m("submit")" />
-    </fieldset>
+    @helper.Form.errors(form.globalErrors)
+    @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
+    @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
+    @helper.Form.translatedSubmit(m)
   </form>
 }

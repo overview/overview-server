@@ -11,17 +11,21 @@ import models.OverviewUser
 object ConfirmationController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
 
-  val form = Form { mapping(
-   "token" -> text.verifying(OverviewUser.findByConfirmationToken(_).isDefined)
-   )(OverviewUser.findByConfirmationToken(_).
-     getOrElse(throw new Exception("User already confirmed")))(u => Some(u.confirmationToken))
-  }
+  private val form = forms.ConfirmationForm()
 
   def show(token: String) = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
     implicit val r = request
-    
+
     form.bindFromRequest()(request).fold(
-      formWithErrors => BadRequest(views.html.Confirmation.index(formWithErrors)),
+      formWithErrors => {
+        if (formWithErrors("token").value.getOrElse("").length > 0) {
+          // The user entered text, and it was wrong
+          BadRequest(views.html.Confirmation.index(formWithErrors))
+        } else {
+          // The user browsed to this page without entering anything
+          Ok(views.html.Confirmation.index(form))
+        }
+      },
       u => {
         u.confirm.save
         gotoLoginSucceeded(u.id).flashing("success" -> m("show.success"))

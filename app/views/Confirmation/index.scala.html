@@ -7,19 +7,9 @@
     <p>@m("intro")</p>
 
     <form method="get" action="@routes.ConfirmationController.show()" class="well form-horizontal">
-      <fieldset class="control-group@(if(form.errors("token").isEmpty) "" else " error")">
-        <label class="control-label" for="confirmation-token">@m("label_token")</label>
-        <div class="controls">
-          <input id="confirmation-token" name="token" type="text" class="input-large" required="required" placeholder="@m("placeholder_token")" />
-          @form.errors("token").map { error =>
-            <span class="help-inline">@t(error.message, error.args: _*)</span>
-          }
-        </div>
-      </fieldset>
-
-      <fieldset class="form-actions">
-        <input type="submit" class="btn btn-primary" value="@m("submit")" />
-      </fieldset>
+      @helper.Form.errors(form.globalErrors)
+      @helper.Form.translatedInput(form("token"), m)
+      @helper.Form.translatedSubmit(m)
     </form>
   }
 }

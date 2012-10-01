@@ -5,50 +5,10 @@
 @defining(scopedMessages("views.User._form")) { m =>
   <form method="post" action="@routes.UserController.create()" class="well form-horizontal" autocomplete="off">
     <h3>@m("h3")</h3>
-    @if(form.hasGlobalErrors) {
-      <div class="control-group error">
-        <ul class="unstyled controls">
-          @form.globalErrors.map { error =>
-            <li class="help-block error">@t(error.message, error.args: _*)</li>
-          }
-        </ul>
-      </div>
-    }
-
-    @form.forField("email") { field =>
-      <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
-        <label for="user-@field.name" class="control-label">@m("label_" + field.name)</label>
-        <div class="controls">
-          <input id="user-@field.name" type="email" name="@field.name" class="input-large" required="required" placeholder="@m("placeholder_" + field.name)" />
-          @field.errors.map { error =>
-            <p class="help-block">@t(error.message, error.args: _*)</span>
-          }
-        </div>
-      </fieldset>
-    }
-
-    @form.forField("password") { field =>
-      <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
-        <label for="user-@field.name" class="control-label">@m("label_" + field.name)</label>
-        <div class="controls">
-          <input id="user-@field.name" type="password" name="@field.name" class="input-large" required="required" />
-          @field.errors.map { error =>
-            <p class="help-block">@t(error.message, error.args: _*)</span>
-          }
-        </div>
-      </fieldset>
-    }
-
-    <fieldset class="control-group">
-      <label class="control-label" for="user-password2">@m("label_password2")</label>
-      <div class="controls">
-        <input id="user-password2" type="password" class="confirm-password input-large" required="required" data-confirm-password-error-does-not-match="@m("error_password2_does_not_match")" />
-        <p class="help-block">@m("help_password2")</p>
-      </div>
-    </fieldset>
-
-    <fieldset class="form-actions">
-      <input type="submit" class="btn btn-primary" value="@m("submit")" />
-    </fieldset>
+    @helper.Form.errors(form.globalErrors)
+    @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
+    @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
+    @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
+    @helper.Form.translatedSubmit(m)
   </form>
 }

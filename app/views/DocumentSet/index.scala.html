@@ -88,40 +88,7 @@
       <div class="manual">
         <p><a href="#">@m("import_from_documentcloud_manual")</a></p>
 
-        <form method="post" action="@routes.DocumentSetController.create" class="form-horizontal" style="@(if(form.hasErrors) "" else "display:none;")">
-          @if(form.hasGlobalErrors) {
-            <div class="control-group error">
-              <ul class="unstyled controls">
-                @form.globalErrors.map { error =>
-                  <li class="help-block error">@t(error.message, error.args: _*)</li>
-                }
-              </ul>
-            </div>
-          }
-
-          @for(fieldName <- Seq("title", "query")) {
-            @form.forField(fieldName) { field =>
-              <fieldset class="control-group@(if(field.errors.isEmpty) "" else " error")">
-                <label class="control-label" for="document-set-@field.name">@m(field.name + "_label")</label>
-                <div class="controls">
-                  <input id="document-set-@field.name" name="@field.name" type="text" class="input-large" required="required" placeholder="@m(field.name + "_placeholder")" />
-                  @defining(m(field.name + "_help")) { inlineHelp =>
-                    @if(!".".equals(inlineHelp)) {
-                      <span class="help-inline">@inlineHelp</span>
-                    }
-                  }
-                  @field.errors.map { error =>
-                    <span class="help-inline">@t(error.message, error.args: _*)</span>
-                  }
-                </div>
-              </fieldset>
-            }
-          }
-
-          <fieldset class="form-actions">
-            <input type="submit" class="btn btn-primary" value="@m("import_from_documentcloud_manual_submit")" />
-          </fieldset>
-        </form>
+        @views.html.DocumentSet._manualForm(form)
       </div>
     </div>
   }

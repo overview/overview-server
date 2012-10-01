@@ -15,6 +15,8 @@ controllers.SessionController.delete.success=You have logged out. We hope you''l
 
 controllers.UserController.create.success=Thank you for registering. There''s one more step: please check your email and click the confirmation link.
 
+forms.Confirmation.token.not_found=We could not find a user with this confirmation token. Please try clicking the link in your confirmation email again.
+
 forms.LoginForm.error.invalid_credentials=Invalid username or password
 forms.LoginForm.error.not_confirmed=We already sent an email to this user with a confirmation link. You need to click that link before you can log in.
 
@@ -75,24 +77,24 @@ views.Confirmation.create.body=An email was sent to @email. Please click on the 
 views.Confirmation.index.title=Enter confirmation code
 views.Confirmation.index.h1=Enter confirmation code
 views.Confirmation.index.intro=Have you received your confirmation email yet? If so, enter the token below or click the link in the email
-views.Confirmation.index.label_token=Token from email
-views.Confirmation.index.placeholder_token=1234567890qwertyuiopASDFGHJKL
+views.Confirmation.index.label.token=Token from email
+views.Confirmation.index.placeholder.token=1234567890qwertyuiopASDFGHJKL
 views.Confirmation.index.submit=Finish registering and log in
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
-views.DocumentSet.index.title_label=Title
-views.DocumentSet.index.title_placeholder=Title
-views.DocumentSet.index.title_help=.
-views.DocumentSet.index.query_label=Query
-views.DocumentSet.index.query_placeholder=frog
-views.DocumentSet.index.query_help=This query must follow DocumentCloud syntax
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.import_from_documentcloud=Import a document set
 views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project...
 views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)...
-views.DocumentSet.index.import_from_documentcloud_manual_submit=Import
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
+
+views.DocumentSet._manualForm.label.title=Title
+views.DocumentSet._manualForm.placeholder.title=Title
+views.DocumentSet._manualForm.label.query=Query
+views.DocumentSet._manualForm.placeholder.query=frog
+views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
+views.DocumentSet._manualForm.submit=Import
 
 views.DocumentSet.show.document_list.loading=Loading documents...
 views.DocumentSet.show.document_list.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
@@ -122,22 +124,21 @@ views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before 
 views.DocumentSet._documentSet.query=Query: {0}
 
 views.Session._form.h3=Log in to your account
-views.Session._form.label_email=Email
-views.Session._form.placeholder_email=user@example.org
-views.Session._form.label_password=Password
+views.Session._form.label.email=Email
+views.Session._form.placeholder.email=user@example.org
+views.Session._form.label.password=Password
 views.Session._form.submit=Log in
 
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
 views.User._form.h3=Create an account
-views.User._form.label_email=Email
-views.User._form.placeholder_email=user@example.org
-views.User._form.help_email=We will send a confirmation email to this address
-views.User._form.label_password=Password
-views.User._form.help_password=Either choose eight or more lowercase and uppercase letters and digits, or write a lowercase sentence you''ll remember that others won''t guess
-views.User._form.label_password2=Password (again)
-views.User._form.help_password2=Because if you don''t remember it now, you never will
+views.User._form.label.email=Email
+views.User._form.placeholder.email=user@example.org
+views.User._form.help.email=We will send a confirmation email to this address
+views.User._form.label.password=Password
+views.User._form.label.password2=Password (again)
+views.User._form.help.password2=Because if you don''t remember it now, you never will
 views.User._form.submit=Register and send confirmation email
 views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
 
