@@ -3,6 +3,24 @@ DEFAULT_OPTIONS = {
   node_vpadding: 0.5, # per cent of a node's height
 }
 
+# A DrawableNode is a node that is ready to draw.
+#
+# It has the following properties:
+#
+# * animated_node: the node it's drawing
+# * fraction: how complete the parent is, animation-wise (1.0 means animation
+#   is complete)
+# * width: How many units wide the node should be. 1 unit = 1 document.
+# * height: How many units high the node should be. 1 unit = 1 fully-loaded
+#   node. (If animation isn't complete, width and height can be lower than 1.)
+# * width_with_padding: width when factoring in "padding". Each node has a
+#   certain amount of horizontal padding on its left and right; this width
+#   includes them both.
+# * children: Child DrawableNodes, built using @animated_node's children.
+#   Children may affect width_with_padding, but they won't affect width.
+# * relative_x: set automatically on all children. Specifies how many units
+#   to the left (negative) or right (positive) the center of a DrawableNode
+#   should be, relative to its parent.
 class DrawableNode
   constructor: (@animated_node, @fraction) ->
     num_documents = @animated_node.node.doclist.n
