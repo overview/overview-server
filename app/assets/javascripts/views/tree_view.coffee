@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+DrawableNode = require('models/drawable_node').DrawableNode
 ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
@@ -72,7 +73,7 @@ class DrawOperation
     this.clear()
     return if !@tree.root?
 
-    @drawable_node = this._node_to_drawable_node(@tree.root)
+    @drawable_node = new DrawableNode(@tree.root, 1)
     @drawable_node.relative_x = 0
     depth = @drawable_node.height
 
@@ -98,70 +99,35 @@ class DrawOperation
 
   pixel_to_action: (x, y) ->
     drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
-    return undefined if !drawable_node?.node?
+    animated_node = drawable_node?.animated_node
+    return undefined if !animated_node?
 
     px = drawable_node.px
 
     event = if px.width > 20 && x > px.middle - 5 && x < px.middle + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
       if drawable_node.children?.length
         'collapse'
-      else if drawable_node.node.children?
+      else if !animated_node.loaded
         'expand'
       else
         'click'
     else
       'click'
 
-    return { event: event, id: drawable_node.node.id }
+    return { event: event, id: drawable_node.animated_node.node.id }
 
-  _node_is_complete: (node) ->
-    !_(node.children).any((n) => !n.loaded && !n.loaded_animation_fraction.current)
-
-  _node_to_drawable_node: (node) ->
-    fraction = node.loaded_animation_fraction.current
-    hpadding = @options.node_hpadding * fraction
-
-    drawable_node = {
-      node: node,
-      fraction: fraction,
-      width: node.num_documents.current * fraction,
-    }
-
-    width_of_this_node_with_padding = drawable_node.width + (2 * hpadding)
-
-    if !node.children.length || !this._node_is_complete(node)
-      drawable_node.width_with_padding = width_of_this_node_with_padding
-      drawable_node.height = fraction
-    else
-      drawable_node.children = _(node.children).map(this._node_to_drawable_node.bind(this))
-
-      width_of_children_with_padding = _(drawable_node.children).reduce(((s, n) -> s + n.width_with_padding), 0) + (drawable_node.children.length + 1) * hpadding
-      drawable_node.width_with_padding = if width_of_this_node_with_padding > width_of_children_with_padding
-        width_of_this_node_with_padding
-      else
-        width_of_children_with_padding
-
-      drawable_node.height = _(n.height for n in drawable_node.children).max() + fraction
-
-      x = -0.5 * drawable_node.width_with_padding + hpadding
-      for child in drawable_node.children
-        child.relative_x = x + child.width_with_padding * 0.5
-        x += child.width_with_padding + hpadding
-
-    drawable_node
-
-  _node_to_line_width: (node) ->
-    if node.selected
+  _animated_node_to_line_width: (animated_node) ->
+    if animated_node.selected
       @options.node_line_width_selected
-    else if node.children?.length is 0 # leaf node
+    else if animated_node.children?.length is 0 # leaf node
       @options.node_line_width_leaf
     else
       @options.node_line_width
 
-  _node_to_line_color: (node) ->
-    if node.selected
+  _animated_node_to_line_color: (animated_node) ->
+    if animated_node.selected
       @options.color.line_selected
-    else if node.children?.length is 0 # leaf node
+    else if animated_node.children?.length is 0 # leaf node
       @options.color.line_leaf
     else
       @options.color.line_loaded
@@ -196,9 +162,10 @@ class DrawOperation
     width = px.width - 6 # border+padding
     return if width < 15
 
-    id = drawable_node.node.id
-    real_node = @tree.on_demand_tree.nodes[id]
-    return if !real_node?.description
+    node = drawable_node.animated_node.node
+    description = node.description
+
+    return if !description
 
     ctx = @ctx
 
@@ -213,7 +180,7 @@ class DrawOperation
     ctx.rect(left, px.top, width, px.height)
     ctx.clip()
     ctx.fillStyle = gradient
-    ctx.fillText(real_node.description, left, px.top + 3)
+    ctx.fillText(description, left, px.top + 3)
     ctx.restore()
 
   _maybe_draw_collapse: (drawable_node) ->
@@ -232,7 +199,7 @@ class DrawOperation
         ctx.stroke()
 
   _maybe_draw_expand: (drawable_node) ->
-    if !drawable_node.children?.length && drawable_node.node.children?.length
+    if !drawable_node.animated_node.loaded
       px = drawable_node.px
       if px.width > 20
         ctx = @ctx
@@ -266,14 +233,15 @@ class DrawOperation
 
   _draw_measured_drawable_node: (drawable_node) ->
     px = drawable_node.px
-    node = drawable_node.node
+    animated_node = drawable_node.animated_node
+    node = animated_node.node
 
     if @tag? && tagcount = node.tagcounts?[@tag.id]
-      this._draw_tagcount(px.left, px.top, px.width, px.height, @tag.color, tagcount / node.num_documents.current)
+      this._draw_tagcount(px.left, px.top, px.width, px.height, @tag.color, tagcount / node.doclist.n)
 
     ctx = @ctx
-    ctx.lineWidth = this._node_to_line_width(node)
-    ctx.strokeStyle = this._node_to_line_color(node)
+    ctx.lineWidth = this._animated_node_to_line_width(animated_node)
+    ctx.strokeStyle = this._animated_node_to_line_color(animated_node)
 
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
@@ -333,7 +301,7 @@ class TreeView
       if @_zoom_document.current == -1
         root_id = @tree.id_tree.root
         if root_id?
-          @_zoom_document.current = @tree.root.num_documents.current / 2
+          @_zoom_document.current = @tree.root.node.doclist.n / 2
 
     update = this._set_needs_update.bind(this)
     @tree.observe('needs-update', update)
@@ -408,27 +376,6 @@ class TreeView
     return undefined if !@tree.root?
 
     @last_draw.pixel_to_action(x, y)
-
-  _nodeid_to_n_documents: (nodeid) ->
-    exact = @tree.nodes[nodeid]?.doclist?.n
-    return exact if exact?
-
-    # Divide the number of documents that must be in unresolved siblings by
-    # the number of unresolved siblings.
-    parent_nodeid = @tree.id_tree.parent[nodeid]
-    parent_node = @tree.nodes[parent_nodeid]
-
-    sibling_nodeids = @tree.id_tree.children[parent_nodeid]
-    n_unknown_documents = parent_node.doclist.n
-    n_unloaded_siblings = 0
-    for sibling_nodeid in sibling_nodeids
-      sibling = @tree.nodes[sibling_nodeid]
-      if sibling?
-        n_unknown_documents -= sibling.doclist.n
-      else
-        n_unloaded_siblings += 1
-
-    n_unknown_documents / n_unloaded_siblings # we know n_unloaded_siblings > 1 because we're here
 
   _redraw: () ->
     @last_draw = new DrawOperation(@canvas, @tree, @focus.zoom, @focus.pan, @options)

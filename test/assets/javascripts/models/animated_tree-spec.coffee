@@ -1,4 +1,4 @@
-# Not a unit test, because this is more useful
+# Not a unit test
 AnimatedTree = require('models/animated_tree').AnimatedTree
 
 observable = require('models/observable').observable
@@ -43,6 +43,10 @@ describe 'models/animated_tree', ->
 
     at = (ms, callback) -> Timecop.freeze new Date(ms), callback
 
+    select_nodes = (list) ->
+      state.selection.nodes = list
+      state._notify('selection-changed', state.selection)
+
     complete = (callback) ->
       at(1, callback)
       at(1001, -> animated_tree.update())
@@ -58,101 +62,94 @@ describe 'models/animated_tree', ->
       expect(animated_tree.root).toBeDefined()
 
     it 'should have children, loaded and unloaded nodes when resolved', ->
-      add_nodes([[1, [2], 3]])
+      add_nodes([
+        [1, [2], 3],
+        [2, [4], 3]
+      ])
       root = animated_tree.root
-      expect(root.loaded).toBe(true)
-      expect(root.loaded_animation_fraction.current).toEqual(1)
+      expect(root.loaded_fraction.current).toEqual(1)
       expect(root.children.length).toEqual(1)
-      expect(root.children[0].loaded).toBe(false)
-      expect(root.children[0].loaded_animation_fraction.current).toEqual(0)
-
-    it 'should set num_documents on loaded nodes', ->
-      add_nodes([[1, [2, 3], 3]])
-      expect(animated_tree.root.num_documents.current).toEqual(3)
-
-    it 'should spread num_documents over the unloaded nodes', ->
-      add_nodes([[1, [2, 3, 4], 7], [2, [], 3]])
-      expect(animated_tree.root.children[1].num_documents.current).toEqual(2)
+      expect(root.children[0].loaded_fraction.current).toEqual(0)
 
     it 'should allow a selected, loaded node', ->
-      complete ->
-        state.selection.nodes = [1]
-        state._notify('selection-changed', state.selection)
+      complete -> select_nodes([1])
       add_nodes([[1, [], 1]])
-      expect(animated_tree.root.selected).toBe(true)
-      expect(animated_tree.root.selected_animation_fraction.current).toEqual(1)
+      expect(animated_tree.root.selected_fraction.current).toEqual(1)
 
     it 'should allow a selected, unloaded node', ->
-      complete ->
-        state.selection.nodes = [2]
-        state._notify('selection-changed', state.selection)
+      complete -> select_nodes([1])
       add_nodes([[1, [2], 1]])
-      node = animated_tree.root.children[0]
-      expect(node.selected).toBe(true)
-      expect(node.selected_animation_fraction.current).toEqual(1)
+      expect(animated_tree.root.selected_fraction.current).toEqual(1)
 
     it 'should animate selection', ->
       add_nodes([[1, [2], 1]])
+      at 100, -> select_nodes([1])
       node = animated_tree.root
-      Timecop.freeze new Date(100), ->
-        state.selection.nodes = [1]
-        state._notify('selection-changed', state.selection)
-      expect(node.selected).toBe(true)
-      property = node.selected_animation_fraction
-      expect(property.v2).toEqual(1)
-      expect(property.current).toEqual(0)
+      expect(node.selected_fraction.current).toEqual(0)
+      expect(node.selected_fraction.v2).toEqual(1)
 
     it 'should animate a selection change', ->
-      complete ->
-        state.selection.nodes = [1, 2]
-        state._notify('selection-changed', state.selection)
-      add_nodes([[1, [2, 3], 3]])
+      complete -> select_nodes([1, 2])
+      add_nodes([
+        [1, [2, 3], 3],
+        [2, [], 2],
+        [3, [], 1],
+      ])
       n1 = animated_tree.root
       n2 = n1.children[0]
       n3 = n1.children[1]
-      Timecop.freeze new Date(100), ->
-        state.selection.nodes = [2, 3]
-        state._notify('selection-changed', state.selection)
+      at 100, -> select_nodes([2, 3])
       expect(n1.selected).toBe(false)
       expect(n2.selected).toBe(true)
       expect(n3.selected).toBe(true)
-      expect(n1.selected_animation_fraction.current).toBe(1)
-      expect(n2.selected_animation_fraction.current).toBe(1)
-      expect(n3.selected_animation_fraction.current).toBe(0)
+      expect(n1.selected_fraction.current).toBe(1)
+      expect(n2.selected_fraction.current).toBe(1)
+      expect(n3.selected_fraction.current).toBe(0)
 
     it 'should animate adding a node', ->
-      add_nodes([[1, [2, 3], 3]])
-      Timecop.freeze new Date(100), -> add_nodes([[2, [4, 5], 2]])
-      n2 = animated_tree.root.children[0]
-      expect(n2.loaded).toBe(true)
-      expect(n2.loaded_animation_fraction.current).toEqual(0)
-      expect(n2.children[0].loaded).toBe(false)
+      complete -> add_nodes([[1, [2, 3], 3]])
+      root = animated_tree.root
+      expect(root.loaded).toBe(false) # assertion
+
+      at 100, -> add_nodes([[2, [4, 5], 2], [3, [], 1]])
+      expect(root.loaded).toBe(true)
+      expect(root.loaded_fraction.current).toEqual(0)
+
+      n2 = root.children[0]
+      expect(n2.loaded).toBe(false)
+      expect(n2.loaded_fraction.current).toEqual(0)
+
       expect(animated_tree.needs_update()).toBe(true)
-      Timecop.freeze new Date(600), -> animated_tree.update()
-      expect(n2.loaded_animation_fraction.current).toEqual(0.5)
+      at 600, -> animated_tree.update()
+      expect(root.loaded_fraction.current).toEqual(0.5)
       expect(animated_tree.needs_update()).toBe(true)
-      Timecop.freeze new Date(1100), -> animated_tree.update()
-      expect(n2.loaded_animation_fraction.current).toEqual(1)
+      at 1100, -> animated_tree.update()
+      expect(root.loaded_fraction.current).toEqual(1)
       expect(animated_tree.needs_update()).toBe(false)
 
     it 'should animate removing/unloading nodes', ->
-      add_nodes([[1, [2, 3], 3], [2, [4, 5], 2]])
-      n2 = animated_tree.root.children[0]
-      n4 = n2.children[0]
-      Timecop.freeze new Date(100), -> remove_nodes([2])
-      # This should unload node 2 and remove nodes 4 and 5
-      expect(n2.loaded).toBe(false)
-      expect(n4.loaded).toBe(false)
-      expect(n2.loaded_animation_fraction.current).toEqual(1)
-      expect(n2.children.length).toEqual(2)
+      add_nodes([[1, [2, 3], 3], [2, [4, 5], 2], [3, [], 1]])
+      root = animated_tree.root
+      n2 = root.children[0]
+      expect(root.loaded).toBe(true) # assertion
+      expect(n2.loaded).toBe(false) # assertion
+
+      # This should unload node 2 and eventually remove it from the root
+      at 100, -> remove_nodes([2])
+
+      expect(root.loaded).toBe(false)
+      expect(root.loaded_fraction.current).toEqual(1)
+      expect(root.children).toBeDefined()
       expect(animated_tree.needs_update()).toBe(true)
-      Timecop.freeze new Date(600), -> animated_tree.update()
-      expect(n2.loaded_animation_fraction.current).toEqual(0.5)
-      expect(n2.children.length).toEqual(2)
+
+      at 600, -> animated_tree.update()
+      expect(root.loaded_fraction.current).toEqual(0.5)
+      expect(root.children).toBeDefined()
       expect(animated_tree.needs_update()).toBe(true)
-      Timecop.freeze new Date(1100), -> animated_tree.update()
-      expect(n2.loaded_animation_fraction.current).toEqual(0)
-      expect(n2.children.length).toEqual(0)
+
+      at 1100, -> animated_tree.update()
+      expect(root.loaded_fraction.current).toEqual(0)
+      expect(root.children).toBeUndefined()
       expect(animated_tree.needs_update()).toBe(false)
 
     it 'should signal :needs-update on first load', ->
@@ -176,21 +173,3 @@ describe 'models/animated_tree', ->
       state.selection.nodes = [1]
       state._notify('selection-changed', state.selection)
       expect(called).toBe(true)
-
-    it 'should update num_documents in just-loaded nodes', ->
-      at 100, -> add_nodes([[1, [2, 3], 3]])
-      n2 = animated_tree.root.children[0]
-      at 1100, -> animated_tree.update()
-      at 2000, -> add_nodes([[2, [4, 5], 2]])
-      expect(n2.num_documents.current).toEqual(1.5)
-      at 3000, -> animated_tree.update()
-      expect(n2.num_documents.current).toEqual(2)
-
-    it 'should update num_documents in siblings of just-loaded nodes', ->
-      at 100, -> add_nodes([[1, [2, 3], 3]])
-      n3 = animated_tree.root.children[1]
-      at 1100, -> animated_tree.update()
-      at 2000, -> add_nodes([[2, [4, 5], 2]])
-      expect(n3.num_documents.current).toEqual(1.5)
-      at 3000, -> animated_tree.update()
-      expect(n3.num_documents.current).toEqual(1)

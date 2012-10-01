@@ -1,5 +1,7 @@
 observable = require('models/observable').observable
 
+AnimatedNode = require('models/animated_node').AnimatedNode
+
 # A tree of animation nodes which tracks an OnDemandTree
 #
 # Callers need only create the AnimatedTree, pointed at an OnDemandTree,
@@ -31,7 +33,6 @@ class AnimatedTree
   constructor: (@on_demand_tree, @state, @animator) ->
     @id_tree = @on_demand_tree.id_tree
     @root = undefined # node with children property pointing to other nodes
-    @_nodes = {} # id => node
     @_last_selected_nodes = @state.selection.nodes
     @_needs_update = false
 
@@ -39,170 +40,90 @@ class AnimatedTree
 
   set_needs_update: () -> this._maybe_notifying_needs_update(->)
   needs_update: () -> @_needs_update || @animator.needs_update()
+
   update: () ->
     @_needs_update = false
     @animator.update()
 
   _attach: () ->
-    @id_tree.observe 'edit', (changes) =>
-      if @root?.id isnt @id_tree.root && @id_tree.root != -1
+    @id_tree.observe 'edit', () =>
+      if !@root? && @id_tree.root != -1
         this._load()
       else
-        this._change(changes)
+        this._change()
 
-    @state.observe('selection-changed', this._refresh_selection.bind(this))
+    @state.observe('selection-changed', this._change.bind(this))
 
   _maybe_notifying_needs_update: (callback) ->
     old_needs_update = this.needs_update()
     callback.apply(this)
     this._notify('needs-update') if !old_needs_update && this.needs_update()
 
-  _refresh_selection: () ->
-    this._maybe_notifying_needs_update ->
-      old_selection = @_last_selected_nodes
-      new_selection = @state.selection.nodes
-
-      time = Date.now()
-
-      removed = _.difference(old_selection, new_selection)
-      added = _.difference(new_selection, old_selection)
-
-      for id in removed
-        node = @_nodes[id]
-        if node?
-          node.selected = false
-          @animator.animate_object_properties(node, { selected_animation_fraction: 0 }, undefined, time)
-
-      for id in added
-        node = @_nodes[id]
-        if node?
-          node.selected = true
-          @animator.animate_object_properties(node, { selected_animation_fraction: 1 }, undefined, time)
-
-      @_last_selected_nodes = new_selection
-
   _load: () ->
-    @root = this._create_node(@id_tree.root)
-    @_nodes[@root.id] = @root
-
-    parent_node_queue = [ @root ]
-
-    while parent_node_queue.length
-      parent_node = parent_node_queue.pop()
-      nd = this._node_child_ids_to_num_documents(parent_node)
-
-      for child_id in @id_tree.children[parent_node.id]
-        node = this._create_node(child_id)
-        if node.loaded
-          parent_node_queue.push(node)
-        else
-          node.num_documents.current = nd[child_id]
-
-        parent_node.children.push(node)
-        @_nodes[node.id] = node
-
+    @root = this._create_animated_node(@id_tree.root)
     this._notify('needs-update')
 
-  _change: (changes) ->
+  _node_is_partially_loaded: (node) ->
+    node?.doclist?.n? && @id_tree.children[node?.id] || false
+
+  _node_is_fully_loaded: (node) ->
+    return false if !this._node_is_partially_loaded(node)
+
+    # Look at id_tree, not the node, because the node isn't the authority
+    childids = @id_tree.children[node.id]
+    child_nodes = childids?.map((childid) => @on_demand_tree.nodes[childid])
+    child_nodes?.every((child) => this._node_is_partially_loaded(child)) || false
+
+  _refresh_animated_node: (animated_node, selected_node_set, time) ->
+    node = animated_node.node
+
+    # Update whether it's selected
+    current_selected = animated_node.selected
+    new_selected = selected_node_set[node.id] || false
+    if current_selected != new_selected
+      animated_node.set_selected(new_selected, @animator, time)
+
+    # Update whether it's loaded
+    if !animated_node.children?
+      if this._node_is_fully_loaded(node)
+        animated_children = node.children.map((childid) => this._create_animated_node(childid))
+        if animated_children.indexOf(undefined) == -1
+          animated_node.load(animated_children, @animator, time)
+    else # animated_node.children?
+      if !this._node_is_fully_loaded(node)
+        animated_node.unload(@animator, time)
+      else
+        # Recurse
+        this._refresh_animated_node(child, selected_node_set, time) for child in animated_node.children
+
+    undefined
+
+  _change: () ->
+    return if !@root?
+
+    # Walk the entire tree, noticing differences and acting accordingly
     this._maybe_notifying_needs_update ->
       @_needs_update = true
+      selected_node_set = {}
+      selected_node_set[id] = true for id in @state.selection.nodes
+      this._refresh_animated_node(@root, selected_node_set, Date.now())
 
-      time = Date.now()
+  _create_animated_node: (id) ->
+    node = @on_demand_tree.nodes[id]
+    if node?
+      selected = @state.selection.nodes.indexOf(id) != -1
 
-      this._animate_remove_undefined_node(id, time) for id in changes.remove_undefined
-      this._animate_unload_node(id, time) for id in changes.remove
-      this._animate_load_node(id, time) for id in changes.add
-
-  _animate_load_node: (id, time) ->
-    node = @_nodes[id] # exists, but we know loaded = false
-
-    if node.loaded == true
-      throw "Trying to load #{node.id} but it is already loaded..."
-
-    real_node = @on_demand_tree.nodes[id]
-    node.loaded = true
-    node.tagcounts = real_node.tagcounts
-    @animator.animate_object_properties(node, {
-      loaded_animation_fraction: 1,
-    }, undefined, time)
-
-    # Update all num_documents at this level, including this node
-    this._animate_update_node_sibling_num_documents(id, time)
-
-    # Create child nodes, and set their num_documents
-    nd = this._node_child_ids_to_num_documents(node)
-    for child_id in @id_tree.children[id]
-      child_node = this._create_node(child_id)
-      # Even if the nodes are loaded, we'll add them here as unloaded nodes,
-      # then we'll switch them to loaded in later _animate_load_node() calls.
-      child_node.loaded = false
-      child_node.loaded_animation_fraction.current = 0
-      child_node.num_documents.current = nd[child_id]
-      @_nodes[child_node.id] = child_node
-      node.children.push(child_node)
-
-  _node_child_ids_to_num_documents: (node) ->
-    n = @on_demand_tree.nodes
-
-    ret = {}
-    undefined_child_ids = []
-    num_documents = n[node.id].doclist.n
-
-    for child_id in @id_tree.children[node.id]
-      child_num_documents = n[child_id]?.doclist?.n
-      if child_num_documents?
-        num_documents -= child_num_documents
-        ret[child_id] = child_num_documents
-      else
-        undefined_child_ids.push(child_id)
-
-    if undefined_child_ids.length
-      x = num_documents / undefined_child_ids.length
-      ret[child_id] = x for child_id in undefined_child_ids
-
-    ret
-
-  _animate_update_node_sibling_num_documents: (id, time) ->
-    parent_id = @id_tree.parent[id]
-    return if !parent_id? # root node
-
-    parent_node = @_nodes[parent_id]
-    nd = this._node_child_ids_to_num_documents(@_nodes[parent_id])
-
-    for sibling_node in parent_node.children
-      @animator.animate_object_properties(sibling_node, { num_documents: nd[sibling_node.id] }, undefined, time)
-
-  _animate_remove_undefined_node: (id, time) ->
-    node = @_nodes[id]
-    return if !node?
-    @animator.animate_object_properties(node, { loaded_animation_fraction: 0 }, undefined, time)
-    # We'll delete it from @_nodes in the parent's removal. We know the parent
-    # is being unloaded.
-
-  _animate_unload_node: (id, time) ->
-    node = @_nodes[id]
-    return if !node?
-    node.tagcounts = undefined
-    node.loaded = false
-    @animator.animate_object_properties(node, { loaded_animation_fraction: 0 }, =>
-      delete @_nodes[child.id] for child in node.children when @_nodes[child.id]?
-      @_nodes[id].children = [] if @_nodes[id]?
-    , time)
-
-  _create_node: (id) ->
-    n = @on_demand_tree.nodes[id]
-    loaded = n?
-    selected = @state.selection.nodes.indexOf(id) != -1
-    {
-      id: id,
-      loaded: loaded,
-      loaded_animation_fraction: { current: loaded && 1 || 0 },
-      selected: selected,
-      selected_animation_fraction: { current: selected && 1 || 0 },
-      num_documents: { current: n?.doclist?.n },
-      tagcounts: n?.tagcounts
-      children: [],
-    }
+      animated_children = node.children?.map((childid) => this._create_animated_node(childid))
+      # animated_children is now undefined if node.children is.
+      # It should also be undefined if it isn't complete:
+      if animated_children?.indexOf(undefined) != -1
+        animated_children = undefined
+      
+      new AnimatedNode(node, animated_children, selected)
+    else
+      # Undefined nodes are a recursion detail.
+      # They are NEVER inserted into the tree.
+      undefined
 
 exports = require.make_export_object('models/animated_tree')
 exports.AnimatedTree = AnimatedTree

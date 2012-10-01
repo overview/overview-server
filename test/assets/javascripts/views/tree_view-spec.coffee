@@ -33,7 +33,7 @@ class MockState
   constructor: () ->
     @selection = { nodes: [], tags: [], documents: [] }
 
-describe 'views/tree_view', ->
+xdescribe 'views/tree_view', ->
   describe 'TreeView', ->
     on_demand_tree = undefined
     animated_tree = undefined
