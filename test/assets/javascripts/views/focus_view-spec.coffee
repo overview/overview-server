@@ -27,6 +27,7 @@ describe 'views/focus_view', ->
       focus = undefined
       $(div).remove() # Removes all callbacks
       div = undefined
+      $('#mousemove-handler').remove()
       $(document).off('.focus-view')
 
     num = (s) -> parseFloat(s)

@@ -398,3 +398,18 @@ body.admin-user-index {
     }
   }
 }
+
+#mousemove-handler {
+  // When an iframe is on the page, it covers up mousemove and mouseup events.
+  // So we add a "#mousemove-handler" on top of the entire page, just in case,
+  // while dragging.
+  //
+  // Note: this disables "click" events, because the #mousemove-handler eats
+  // the mouseup event.
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: transparent;
+}

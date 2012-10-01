@@ -310,7 +310,7 @@ class TreeView
     @focus.observe('pan', update)
     $(window).on('resize.tree-view', update)
 
-    $(@canvas).on 'click', (e) =>
+    $(@canvas).on 'mousedown', (e) =>
       offset = $(@canvas).offset()
       $canvas = $(@canvas)
       x = e.pageX - offset.left
@@ -337,13 +337,15 @@ class TreeView
 
         this._notify('zoom-pan', { zoom: zoom, pan: start_pan - d_pan })
 
-      $('body').on 'mousemove.tree-view', (e) ->
+      $('body').append('<div id="mousemove-handler"></div>')
+      $(document).on 'mousemove.tree-view', (e) ->
         update_from_event(e)
         e.preventDefault()
 
-      $('body').on 'mouseup.tree-view', (e) ->
+      $(document).on 'mouseup.tree-view', (e) ->
         update_from_event(e)
-        $('body').off('.tree-view')
+        $('#mousemove-handler').remove()
+        $(document).off('.tree-view')
         e.preventDefault()
 
   _handle_mousewheel: () ->

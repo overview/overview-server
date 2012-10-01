@@ -63,8 +63,8 @@ xdescribe 'views/tree_view', ->
     afterEach ->
       options = {}
       $(div).remove() # Removes all callbacks
-      $(window).off('.tree-view')
-      $('body').off('.tree-view')
+      $('#mousemove-handler').remove()
+      $(document).off('.tree-view')
       div = undefined
       focus = undefined
       state = undefined

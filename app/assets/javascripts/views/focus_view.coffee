@@ -35,13 +35,16 @@ class FocusView
         pan = start_pan + d_pan
         this._notify('zoom-pan', { zoom: @focus.zoom, pan: start_pan + d_pan })
 
-      $('body').on 'mousemove.focus-view', (e) ->
+      $('body').append('<div id="mousemove-handler"></div>')
+
+      $(document).on 'mousemove.focus-view', (e) ->
         update_from_event(e)
         e.preventDefault()
 
-      $('body').on 'mouseup.focus-view', (e) ->
+      $(document).on 'mouseup.focus-view', (e) ->
         update_from_event(e)
-        $('body').off('.focus-view')
+        $('#mousemove-handler').remove()
+        $(document).off('.focus-view')
         e.preventDefault()
 
   _handle_dragging: () ->
@@ -71,12 +74,15 @@ class FocusView
 
         this._notify('zoom-pan', { zoom: zoom, pan: pan })
 
-      $('body').on 'mousemove.focus-view', (e) ->
+      $('body').append('<div id="mousemove-handler"></div>')
+
+      $(document).on 'mousemove.focus-view', (e) ->
         update_from_event(e)
         e.preventDefault()
-      $('body').on 'mouseup.focus-view', (e) ->
+      $(document).on 'mouseup.focus-view', (e) ->
         update_from_event(e)
-        $('body').off('.focus-view')
+        $('#mousemove-handler').remove()
+        $(document).off('.focus-view')
         e.preventDefault()
 
   _add_html_elements: () ->
