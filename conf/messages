@@ -132,6 +132,14 @@ views.Session._form.submit=Log in
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
+views.Tag._form.h3=Edit tag
+views.Tag._form.labels.name=Name
+views.Tag._form.labels.color=Color
+views.Tag._form.confirm_delete=Are you sure you want to delete this tag? You cannot undo this.
+views.Tag._form.delete=Delete tag
+views.Tag._form.close=Close without saving
+views.Tag._form.submit=Save tag
+
 views.User._form.h3=Create an account
 views.User._form.label.email=Email
 views.User._form.placeholder.email=user@example.org
