@@ -1,4 +1,4 @@
-package view.json.Tag
+package views.json.Tag
 
 import models.core.Tag
 import play.api.libs.json.JsValue

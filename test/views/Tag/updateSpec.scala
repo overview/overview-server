@@ -20,7 +20,7 @@ class updateSpec extends Specification {
 
       val tag = Tag(id, name, Some(color), docList)
 
-      val tagJson = toJson(tag).toString
+      val tagJson = toJson(views.json.Tag.update(tag)).toString
       tagJson must /("id" -> id)
       tagJson must /("name" -> name)
       tagJson must /("color" -> colorForJs)
