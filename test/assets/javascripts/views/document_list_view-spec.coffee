@@ -33,7 +33,7 @@ class MockState
     @selection = { nodes: [], tags: [], documents: [] }
 
 mock_document_array = (n, first=1) ->
-  ({ id: i, title: "doc#{i}", tagids: [1 + n%2] } for i in [first..(n+first-1)])
+  ({ id: i, title: "doc#{i}", tagids: [1 + (i-1)%2] } for i in [first..(n+first-1)])
 
 describe 'views/document_list_view', ->
   describe 'DocumentListView', ->
@@ -55,7 +55,7 @@ describe 'views/document_list_view', ->
       document_store = new MockDocumentStore()
       tag_store = new MockTagStore()
       tag_store.tags = [
-        { id: 1, position: 0, name: 'AA' },
+        { id: 1, position: 0, name: 'AA', color: '#123456' },
         { id: 2, position: 1, name: 'BB' },
       ]
       div = $('<div></div>')[0]
@@ -123,12 +123,22 @@ describe 'views/document_list_view', ->
         expect($div.find('a[href=#document-1]').length).toEqual(1)
         expect($div.find('a[href=#document-2]').length).toEqual(1)
 
-      it 'should add a tag with the proper color to each list item', ->
+      it 'should add a tag with its specified color to each list item', ->
         view = create_view()
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.length).toEqual(1)
-        expect($tags.children().length).toEqual(1)
-        expect($tags.children()[0].className).toMatch(/tag-color-\d+/)
+        expect($tags.children(':eq(0)').css('background-color')).toEqual('rgb(18, 52, 86)')
+
+      it 'should add a tag with a generated color to each list item', ->
+        view = create_view()
+        $tags = $('a:eq(1) span.tags', view.div)
+        expect($tags.length).toEqual(1)
+        expect($tags.children(':eq(0)').css('background-color')).toEqual('rgb(115, 120, 255)')
+
+      it 'should add a title to the tag span', ->
+        view = create_view()
+        $span = $('a:eq(0) span.tags span:eq(0)', view.div)
+        expect($span.attr('title')).toEqual('AA')
 
       it 'should add a tag to the list item after the document changes', ->
         view = create_view()
@@ -136,7 +146,13 @@ describe 'views/document_list_view', ->
         document_store._notify('document-changed', document_list.documents[0])
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(2)
-        expect($tags.children()[1].className).toMatch(/tag-color-\d/)
+
+      it 'should re-color tags after the tag list changes', ->
+        view = create_view()
+        tag_store.tags[0].color = '#234567'
+        tag_store._notify('tag-changed', tag_store.tags[0])
+        $tag = $('a:eq(0) span.tags span:eq(0)')
+        expect($tag.css('background-color')).toEqual('rgb(35, 69, 103)')
 
       it 'should not have any "last clicked" document', ->
         view = create_view()

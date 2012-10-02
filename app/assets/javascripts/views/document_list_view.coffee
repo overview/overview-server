@@ -30,6 +30,7 @@ class DocumentListView
     this._attach_selection()
     this._attach_document_list()
     this._attach_document_changed()
+    this._attach_tag_changed()
 
   _attach_click: () ->
     $div = $(@div)
@@ -82,17 +83,30 @@ class DocumentListView
   _attach_document_changed: () ->
     @cache.document_store.observe('document-changed', (document) => this._update_document(document))
 
+  _attach_tag_changed: () ->
+    @cache.tag_store.observe('tag-changed', (tag) => this._update_tag(tag))
+
   _update_document_a_tagids: ($tags, tagids) ->
     return if @cache.tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
     $tags.empty()
     for tagid in tagids
       tag = @cache.tag_store.find_tag_by_id(tagid)
-      tag_class = @color_table.get_tag_color_class(tag.name)
-      $tags.append("<span class=\"#{tag_class}\"/>")
+      color = tag.color || @color_table.get(tag.name)
+      $span = $("<span style=\"background-color: #{color}\"/>")
+      $span.attr('title', tag.name)
+      $tags.append($span)
 
   _update_document: (document) ->
     $tags = $("a[href=#document-#{document.id}] span.tags")
     this._update_document_a_tagids($tags, document.tagids || [])
+
+  _update_tag: (tag) ->
+    tagid = tag.id
+    for document in @document_list.documents
+      tagids = document?.tagids
+      index = tagids?.indexOf(tagid)
+      if index? && index != -1
+        this._update_document(document)
 
   _document_to_dom_node: (document) ->
     $a = $('<a></a>')
