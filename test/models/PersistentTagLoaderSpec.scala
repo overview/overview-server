@@ -115,8 +115,9 @@ class PersistentTagLoaderSpec extends Specification {
 
     "return tag data for tag id" in new TaggedDocuments {
       val totalTagged = numberOfNodes * documentsPerNode
+      val defaultColor: Option[String] = None
       
-      val expectedTagData = documentIds.take(10).map(d => (tagId, tagName, totalTagged, Some(d)))
+      val expectedTagData = documentIds.take(10).map(d => (tagId, tagName, totalTagged, Some(d), defaultColor))
       val tagData = tagLoader.loadTag(tagId)
 
       tagData must haveTheSameElementsAs(expectedTagData)

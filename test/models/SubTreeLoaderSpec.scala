@@ -134,7 +134,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     }
 
     "load tag information for nodes" in new MockComponents {
-      val dummyTagData = List((1l, "dummy", 55l, Some(10l)))
+      val dummyTagData = List((1l, "dummy", 55l, Some(10l), None))
       val dummyTags = List(core.Tag(1l, "dummy", null))
 
       loader loadTags (documentSetId) returns dummyTagData

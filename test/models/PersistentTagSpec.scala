@@ -107,7 +107,7 @@ class PersistentTagSpec extends Specification with Mockito {
 
     "ask loader and parser to create tag" in new ExistingTag {
 
-      val tagData = Seq((dummyTagId, name, 0l, None))
+      val tagData = Seq((dummyTagId, name, 0l, None, None))
       val dummyTag = core.Tag(dummyTagId, name, core.DocumentIdList(Nil, 0))
 
       loader loadTag (dummyTagId) returns tagData

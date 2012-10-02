@@ -123,8 +123,8 @@ class SubTreeDataParserSpec extends Specification {
     }    
     
     "create Tags from tuples" in {
-      val tagData = List((5l, "tag1", 11l, Some(10l)), (5l, "tag1", 11l, Some(20l)),
-                         (15l, "tag2", 0l, None))
+      val tagData = List((5l, "tag1", 11l, Some(10l), None), (5l, "tag1", 11l, Some(20l), None),
+                         (15l, "tag2", 0l, None, None))
                          
       val subTreeDataParser = new SubTreeDataParser()
       val tags = subTreeDataParser.createTags(tagData)

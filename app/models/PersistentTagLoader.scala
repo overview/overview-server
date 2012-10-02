@@ -41,14 +41,14 @@ class PersistentTagLoader extends DocumentTagDataLoader {
 
   def loadTag(tagId: Long)(implicit c: Connection): Seq[TagData] = {
     val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~
-      get[Option[Long]]("document_id")
+      get[Option[Long]]("document_id") ~ get[Option[String]]("tag_color")
 
     SQL("""
-        SELECT tag_id, tag_name, document_count, document_id
+        SELECT tag_id, tag_name, document_count, document_id, tag_color
         FROM (
-          SELECT t.id AS tag_id, t.name AS tag_name,
+          SELECT t.id AS tag_id, t.name AS tag_name, t.color AS tag_color,
             COUNT(dt.document_id) OVER (PARTITION BY dt.tag_id) AS document_count,
-                dt.document_id,
+                dt.document_id, 
             RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
           FROM tag t
           LEFT JOIN document_tag dt ON t.id = dt.tag_id

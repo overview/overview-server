@@ -33,10 +33,10 @@ object DatabaseStructure {
   type DocumentTagData = (Long, Long)
 
   /**
-   * tagId, name, count, Some(documentId).
+   * tagId, name, count, Some(documentId), Some(color).
    * If there are no documents with the tag, None appears in the documentId place
    */
-  type TagData = (Long, String, Long, Option[Long])
+  type TagData = (Long, String, Long, Option[Long], Option[String])
 
   /** used as parentId if a node has no parent */
   val NoId = -1l;
