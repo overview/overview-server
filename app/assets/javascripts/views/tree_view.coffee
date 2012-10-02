@@ -24,10 +24,11 @@ DEFAULT_OPTIONS = {
 
 class DrawOperation
   constructor: (@canvas, @tree, @zoom, @pan, @options) ->
-    if @tree.state.focused_tag?
+    tag = @tree.state.focused_tag
+    if tag?
       @tag = {
-        id: @tree.state.focused_tag.id,
-        color: new ColorTable().get(@tree.state.focused_tag.name)
+        id: tag.id,
+        color: tag.color || (new ColorTable().get(@tree.state.focused_tag.name))
       }
 
     $canvas = $(@canvas)
@@ -280,7 +281,7 @@ _ = window._
 class TreeView
   observable(this)
 
-  constructor: (@div, @tree, @focus, options={}) ->
+  constructor: (@div, @cache, @tree, @focus, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, DEFAULT_OPTIONS, options, { color: options_color })
 
@@ -308,6 +309,7 @@ class TreeView
     @focus.observe('needs-update', update)
     @focus.observe('zoom', update)
     @focus.observe('pan', update)
+    @cache.tag_store.observe('tag-changed', update)
     $(window).on('resize.tree-view', update)
 
     $(@canvas).on 'mousedown', (e) =>

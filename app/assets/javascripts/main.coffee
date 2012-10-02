@@ -28,7 +28,7 @@ jQuery ($) ->
     focus_controller(this, focus)
   $('#tree').each () ->
     tree_controller = require('controllers/tree_controller').tree_controller
-    tree_controller(this, world.cache.on_demand_tree, focus, world.state)
+    tree_controller(this, world.cache, focus, world.state)
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
     document_list_controller(this, world.cache, world.state)
