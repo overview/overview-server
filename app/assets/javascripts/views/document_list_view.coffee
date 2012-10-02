@@ -31,6 +31,7 @@ class DocumentListView
     this._attach_document_list()
     this._attach_document_changed()
     this._attach_tag_changed()
+    this._attach_tag_removed()
 
   _attach_click: () ->
     $div = $(@div)
@@ -85,6 +86,9 @@ class DocumentListView
 
   _attach_tag_changed: () ->
     @cache.tag_store.observe('tag-changed', (tag) => this._update_tag(tag))
+
+  _attach_tag_removed: () ->
+    @cache.tag_store.observe('tag-removed', (tag) => this._redraw())
 
   _update_document_a_tagids: ($tags, tagids) ->
     return if @cache.tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here

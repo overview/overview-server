@@ -147,12 +147,19 @@ describe 'views/document_list_view', ->
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(2)
 
-      it 'should re-color tags after the tag list changes', ->
+      it 'should re-color a tag after it changes', ->
         view = create_view()
         tag_store.tags[0].color = '#234567'
         tag_store._notify('tag-changed', tag_store.tags[0])
         $tag = $('a:eq(0) span.tags span:eq(0)')
         expect($tag.css('background-color')).toEqual('rgb(35, 69, 103)')
+
+      it 'should remove a tag after it is deleted', ->
+        view = create_view()
+        tag = tag_store.tags.shift()
+        tag_store._notify('tag-removed', tag)
+        $tags = $('a:eq(0) span.tags')
+        expect($tags.children().length).toEqual(0)
 
       it 'should not have any "last clicked" document', ->
         view = create_view()
