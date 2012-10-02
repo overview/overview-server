@@ -1,40 +1,39 @@
 package controllers
 
-
+import controllers.forms.TagForm
 import java.sql.Connection
 import models.orm.User
-import play.api.data.{Form,FormError}
+import play.api.data.{ Form, FormError }
 import play.api.db.DB
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.mvc.{ Action, AnyContent, Request }
 import play.api.Play.current
 
-import models.{PersistentDocumentList,PersistentTag,PersistentTagLoader}
+import models.{ PersistentDocumentList, PersistentTag, PersistentTagLoader }
 
 object TagController extends BaseController {
 
-    
-  def add(documentSetId: Long, tagName: String) = 
-    authorizedAction(userOwningDocumentSet(documentSetId))(user => 
-      authorizedAdd(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
-    )
-
-  def remove(documentSetId: Long, tagName: String) = 
+  def add(documentSetId: Long, tagName: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedRemove(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
-    )
+      authorizedAdd(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+
+  def remove(documentSetId: Long, tagName: String) =
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedRemove(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
 
   def delete(documentSetId: Long, tagName: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedDelete(documentSetId, tagName)(_: Request[AnyContent], _: Connection)
-    )
-      
-  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) = 
+      authorizedDelete(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+
+  def update(documentSetId: Long, tagName: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedNodeCounts(documentSetId, tagName, nodeIds)(_: Request[AnyContent], _: Connection)
-    )
-    
+      authorizedUpdate(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+
+  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) =
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedNodeCounts(documentSetId, tagName, nodeIds)(_: Request[AnyContent], _: Connection))
+
   private val idListFormat = new play.api.data.format.Formatter[Seq[Long]] {
-    def bind(key: String, data: Map[String,String]) : Either[Seq[FormError],Seq[Long]] = {
+    def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Seq[Long]] = {
       val idList = data.get(key).map(s => IdList(s)).getOrElse(Seq())
       Right(idList)
     }
@@ -47,19 +46,13 @@ object TagController extends BaseController {
     play.api.data.Forms.mapping(
       "documents" -> idList,
       "nodes" -> idList,
-      "tags" -> idList
-    )
-    ({ (documents, nodes, tags) =>
-      new PersistentDocumentList(documentSetId, nodes, tags, documents)
-    })
-    ( (documents: PersistentDocumentList) =>
-      // FIXME should be: Some((documents.documentIds, documents.nodeIds, documents.tagIds))
-      Some((Seq(), Seq(), Seq()))
-    )
-  )
+      "tags" -> idList)({ (documents, nodes, tags) =>
+        new PersistentDocumentList(documentSetId, nodes, tags, documents)
+      })((documents: PersistentDocumentList) =>
+        // FIXME should be: Some((documents.documentIds, documents.nodeIds, documents.tagIds))
+        Some((Seq(), Seq(), Seq()))))
 
-  def authorizedAdd(documentSetId: Long, tagName: String)
-                   (implicit request: Request[AnyContent], connection: Connection) = {
+  def authorizedAdd(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
     selectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       documents => {
@@ -70,14 +63,10 @@ object TagController extends BaseController {
         val taggedDocuments = tagData.loadDocuments(tag)
 
         Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
-      }
-    )
+      })
   }
-  
-  
-  
-  def authorizedRemove(documentSetId: Long, tagName: String)
-                      (implicit request: Request[AnyContent], connection: Connection) = {
+
+  def authorizedRemove(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
     PersistentTag.findByName(tagName, documentSetId) match {
       case None => NotFound
       case Some(tagData) => {
@@ -87,28 +76,37 @@ object TagController extends BaseController {
             val tagUpdateCount = documents.removeTag(tagData.id)
             val tag = tagData.loadTag
             val taggedDocuments = tagData.loadDocuments(tag)
-            
+
             Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
-          }
-        )
+          })
       }
     }
   }
 
-
-  def authorizedDelete(documentSetId: Long, tagName: String)
-  (implicit request: Request[AnyContent], connection: Connection) = {
+  def authorizedDelete(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
     PersistentTag.findByName(tagName, documentSetId) match {
       case None => NotFound
       case Some(tag) => {
-	tag.delete
-	Ok(views.json.Tag.delete(tag.id, tagName))
+        tag.delete
+        Ok(views.json.Tag.delete(tag.id, tagName))
       }
     }
   }
 
-  def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String) 
-                          (implicit request: Request[AnyContent], connection: Connection) = {
+  def authorizedUpdate(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
+    PersistentTag.findByName(tagName, documentSetId) match {
+      case None => NotFound
+      case Some(tagData) => TagForm().bindFromRequest.fold(
+	formWithErrors => BadRequest,
+	formData => {
+	  tagData.update(formData._1, formData._2)
+	  val tag = tagData.loadTag
+	  Ok(views.json.Tag.update(tag))
+	})
+    }
+  }
+
+  def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
     PersistentTag.findByName(tagName, documentSetId) match {
       case None => NotFound
       case Some(tag) => {
@@ -118,5 +116,4 @@ object TagController extends BaseController {
     }
   }
 }
-
 
