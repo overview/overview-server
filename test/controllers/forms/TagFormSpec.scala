@@ -17,12 +17,12 @@ class TagFormSpec extends Specification {
       type TagForm = Form[(String, String)]
       
       def bindForm(name: String, color: String): TagForm =
-	TagForm().bind(Map(nameField -> name, colorField -> color))
+        TagForm().bind(Map(nameField -> name, colorField -> color))
     }
     
     trait ValidForm extends FormContext {
       val name = "tagName"
-      val color = "#12abcc"
+      val color = "#12aBcc"
       
       val tagForm = bindForm(name, color)
     }
@@ -39,7 +39,7 @@ class TagFormSpec extends Specification {
       val (nameValue, colorValue) = tagForm.get
       
       nameValue must be equalTo(name)
-      colorValue must be equalTo(color)
+      colorValue must be equalTo("12abcc")
     }
 
     
