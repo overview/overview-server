@@ -43,7 +43,7 @@ object TagController extends BaseController {
   }
   private val idList = play.api.data.Forms.of(idListFormat)
 
-  def form(documentSetId: Long) = Form(
+  def selectionForm(documentSetId: Long) = Form(
     play.api.data.Forms.mapping(
       "documents" -> idList,
       "nodes" -> idList,
@@ -60,7 +60,7 @@ object TagController extends BaseController {
 
   def authorizedAdd(documentSetId: Long, tagName: String)
                    (implicit request: Request[AnyContent], connection: Connection) = {
-    form(documentSetId).bindFromRequest.fold(
+    selectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       documents => {
         val tagData = PersistentTag.findOrCreateByName(tagName, documentSetId)
@@ -81,7 +81,7 @@ object TagController extends BaseController {
     PersistentTag.findByName(tagName, documentSetId) match {
       case None => NotFound
       case Some(tagData) => {
-        form(documentSetId).bindFromRequest.fold(
+        selectionForm(documentSetId).bindFromRequest.fold(
           formWithErrors => BadRequest,
           documents => {
             val tagUpdateCount = documents.removeTag(tagData.id)
