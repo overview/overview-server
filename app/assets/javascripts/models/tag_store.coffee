@@ -14,6 +14,7 @@ class TagStore
   _calculate_positions: () ->
     @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
     t.position = i for t, i in @tags
+    undefined
 
   add: (tag) ->
     throw 'tagAlreadyExists' if @tags.some((v) -> v.name == tag.name)
