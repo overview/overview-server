@@ -23,6 +23,10 @@ class PersistentTagSaverSpec extends Specification {
       def findTag(tagName: String): Option[Long] =
         SQL("SELECT id FROM tag WHERE name = {name}").
           on("name" -> tagName).as(scalar[Long] *).headOption
+
+      def findTagColor(tagId: Long): Option[String] =
+        SQL("SELECT color FROM tag WHERE id = {id}").on("id" -> tagId).
+          as(get[Option[String]]("color") single)
     }
 
     trait TaggedDocument extends SavedTag {
@@ -58,12 +62,25 @@ class PersistentTagSaverSpec extends Specification {
 
     "rename tag" in new SavedTag {
       val newName = "new tag name"
+      val color = "112358"
 
-      tagSaver.update(tagId.get, newName)
+      tagSaver.update(tagId.get, newName, color)
       val notFound = findTag(name)
-      
+
       notFound must beNone
+
+      val renamed = findTag(newName)
+
+      renamed must beSome.like { case id => id must be equalTo (tagId.get) }
     }
+
+    "change tag color" in new SavedTag {
+      val color = "abcdef"
+
+      tagSaver.update(tagId.get, name, color)
+      findTagColor(tagId.get) must beSome.like { case c => c must be equalTo (color) }
+    }
+
   }
 
   step(stop)

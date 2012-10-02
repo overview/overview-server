@@ -14,10 +14,11 @@ class PersistentTagSaver {
     } catch { case _ => None }
   }
 
-  def update(id: Long, newName: String)(implicit c: Connection): Int = {
-    SQL("UPDATE tag SET name = {name} WHERE id = {id}").on("name" -> newName, "id" -> id).executeUpdate()
+  def update(id: Long, name: String, color: String)(implicit c: Connection): Int = {
+    SQL("UPDATE tag SET name = {name}, color = {color} WHERE id = {id}").
+      on("name" -> name, "color" -> color, "id" -> id).executeUpdate()
   }
-  
+
   def delete(id: Long)(implicit c: Connection): Long = {
     val docs = SQL("DELETE FROM document_tag WHERE tag_id = {tagId}").on("tagId" -> id).executeUpdate
     val tag = SQL("DELETE FROM tag WHERE id = {tagId}").on("tagId" -> id).executeUpdate
