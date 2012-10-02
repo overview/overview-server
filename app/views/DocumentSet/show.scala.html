@@ -38,6 +38,7 @@
   <script src="@routes.Assets.at("javascripts/views/focus_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/views/tree_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/views/tag_list_view.js")"></script>
+  <script src="@routes.Assets.at("javascripts/views/tag_form_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/start-logger.js")"></script>
   <script src="@routes.Assets.at("javascripts/controllers/log_controller.js")"></script>
   <script src="@routes.Assets.at("javascripts/controllers/document_contents_controller.js")"></script>
@@ -50,7 +51,14 @@
 }
 @jsMessageKeys = @{Seq(
   "views.DocumentSet.show.document_list.num_documents",
-  "views.DocumentSet.show.document_list.loading"
+  "views.DocumentSet.show.document_list.loading",
+  "views.Tag._form.h3",
+  "views.Tag._form.labels.name",
+  "views.Tag._form.labels.color",
+  "views.Tag._form.confirm_delete",
+  "views.Tag._form.delete",
+  "views.Tag._form.close",
+  "views.Tag._form.submit"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
   <div id="main">

@@ -16,6 +16,22 @@ class Cache
   load_root: () ->
     @on_demand_tree.demand_root()
 
+  # Removes all references to a tag from the cache
+  remove_tag: (tag) ->
+    @tag_store.remove(tag)
+
+    tagid_string = "#{tag.id}"
+    nodes = @on_demand_tree.nodes
+
+    @on_demand_tree.id_tree.edit ->
+      for __, node of nodes
+        tagcounts = node.tagcounts
+        if tagcounts?[tagid_string]?
+          delete tagcounts[tagid_string]
+
+      undefined
+
+  # Requests new node counts from the server, and updates the cache
   refresh_tagcounts: (tag) ->
     nodes = @on_demand_tree.nodes
     node_ids = _(nodes).keys()

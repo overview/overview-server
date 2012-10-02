@@ -13,6 +13,7 @@ class TagStore
 
   add: (tag) ->
     throw 'tagAlreadyExists' if @tags.some((v) -> v.name == tag.name)
+
     @tags.push(tag)
     @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
 
@@ -24,6 +25,7 @@ class TagStore
   remove: (tag) ->
     position = @tags.indexOf(tag)
     throw 'tagNotFound' if position == -1
+
     @tags.splice(position, 1)
 
     t.position = i for t, i in @tags

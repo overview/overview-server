@@ -26,5 +26,15 @@ class Server
       url: path,
     }))
 
+  delete: (route, data, options=undefined) ->
+    path = @router.route_to_path(route, options?.path_argument)
+
+    $.ajax($.extend({
+      data: data,
+    }, options || {}, {
+      type: 'DELETE',
+      url: path,
+    }))
+
 exports = require.make_export_object('models/server')
 exports.Server = Server

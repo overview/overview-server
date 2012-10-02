@@ -16,6 +16,22 @@ class RemoteTagList
   create_tag: (name) ->
     @tag_store.create_tag(name)
 
+  edit_tag: (tag, new_tag) ->
+    old_name = tag.name
+
+    @tag_store.change(tag, new_tag)
+
+    @cache.transaction_queue.queue =>
+      @cache.server.post('tag_edit', new_tag, { path_argument: old_name })
+
+  delete_tag: (tag) ->
+    @cache.remove_tag(tag)
+
+    old_name = tag.name
+
+    @cache.transaction_queue.queue =>
+      @cache.server.delete('tag_delete', {}, { path_argument: old_name })
+
   add_tag_to_selection: (tag, selection) ->
     documents = this._selection_to_documents(selection)
     return if !documents?

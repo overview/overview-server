@@ -14,6 +14,8 @@ class Router
       when 'create_log_entries' then this._create_log_entries_path()
       when 'tag_add' then this._tag_add_path(id)
       when 'tag_remove' then this._tag_remove_path(id)
+      when 'tag_edit' then this._tag_edit_path(id)
+      when 'tag_delete' then this._tag_delete_path(id)
       when 'tag_node_counts' then this._tag_node_counts_path(id)
 
   _root_path: () ->
@@ -36,6 +38,12 @@ class Router
 
   _tag_remove_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/remove"
+
+  _tag_edit_path: (name) ->
+    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}"
+
+  _tag_delete_path: (name) ->
+    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}"
 
   _tag_node_counts_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/node-counts"
