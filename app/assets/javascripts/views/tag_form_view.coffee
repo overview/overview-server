@@ -1,4 +1,5 @@
 observable = require('models/observable').observable
+ColorTable = require('views/color_table').ColorTable
 
 # A modal dialog that allows editing a tag.
 #
@@ -76,7 +77,7 @@ class TagFormView
             <div class="control-group">
               <label class="control-label" for="tag-form-color"><%- i18n('views.Tag._form.labels.color') %></label>
               <div class="controls">
-                <input type="color" name="color" id="tag-form-color" required="required" value="<%- tag.color %>" />
+                <input type="color" name="color" id="tag-form-color" required="required" value="<%- tag.color || color_table.get(tag.name) %>" />
               </div>
             </div>
           </form>
@@ -88,7 +89,7 @@ class TagFormView
           <button class="btn" data-dismiss="modal"><%- i18n('views.Tag._form.close') %></button>
           <button class="btn btn-primary"><%- i18n('views.Tag._form.submit') %></button>
         </div>
-      </div>""")({ tag: @tag })
+      </div>""")({ tag: @tag, color_table: new ColorTable() })
 
 exports = require.make_export_object('views/tag_form_view')
 exports.TagFormView = TagFormView

@@ -22,12 +22,15 @@ describe 'views/tag_form_view', ->
       view = new TagFormView(tag)
 
     afterEach ->
+      remove_view()
+      delete window.i18n
       $.fx = old_fx
+
+    remove_view = () ->
       $div = $('#tag-form-view-dialog')
       $div.modal('hide')
       $div.remove()
       $('.modal-backdrop').remove()
-      delete window.i18n
 
     actions = {
       submit: () -> $('form.form-horizontal', view.div).submit()
@@ -53,6 +56,13 @@ describe 'views/tag_form_view', ->
     it 'should have a "color" input with the start color', ->
       $input = $('input[name=color]', view.div)
       expect($input.val()).toEqual('#abcdef')
+
+    it 'should assign "color" based on tag name when the tag has no color', ->
+      remove_view()
+      delete tag.color
+      view = new TagFormView(tag)
+      $input = $('input[name=color]', view.div)
+      expect($input.val()).toEqual('#0089ff')
 
     it 'should trigger "change" on change', ->
       val = undefined
