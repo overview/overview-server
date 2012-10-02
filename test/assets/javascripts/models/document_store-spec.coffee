@@ -98,3 +98,9 @@ describe 'models/document_store', ->
       store.add(document)
       store.rewrite_tag_id(-1, 3)
       expect(document.tagids).toEqual([3])
+
+    it 'should remove_tag_id()', ->
+      document = { id: 1, title: 'foo', tagids: [ 1 ] }
+      store.add(document)
+      store.remove_tag_id(1)
+      expect(document.tagids).toEqual([])

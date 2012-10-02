@@ -19,6 +19,7 @@ class Cache
   # Removes all references to a tag from the cache
   remove_tag: (tag) ->
     @tag_store.remove(tag)
+    @document_store.remove_tag_id(tag.id)
 
     tagid_string = "#{tag.id}"
     nodes = @on_demand_tree.nodes

@@ -46,6 +46,15 @@ class DocumentStore
       index = tagids?.indexOf(old_tagid)
       if index? && index != -1
         tagids.splice(index, 1, new_tagid)
+    undefined
+
+  remove_tag_id: (tagid) ->
+    for _, document of @documents
+      tagids = document.tagids
+      index = tagids?.indexOf(tagid)
+      if index? && index != -1
+        tagids.splice(index, 1)
+    undefined
 
 exports = require.make_export_object('models/document_store')
 exports.DocumentStore = DocumentStore

@@ -109,6 +109,11 @@ describe 'models/cache', ->
         cache.remove_tag(tag)
         expect(cache.tag_store.remove).toHaveBeenCalledWith(tag)
 
+      it 'should remove_tag_id from the document_store', ->
+        spyOn(cache.document_store, 'remove_tag_id')
+        cache.remove_tag(tag)
+        expect(cache.document_store.remove_tag_id).toHaveBeenCalledWith(tag.id)
+
       it 'should call id_tree.edit()', ->
         cache.remove_tag(tag)
         expect(cache.on_demand_tree.id_tree.edited).toBe(true)
