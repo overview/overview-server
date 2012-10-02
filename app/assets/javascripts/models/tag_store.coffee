@@ -11,13 +11,15 @@ class TagStore
     id = @_last_unsaved_id -= 1
     this.add({ id: id, name: name, count: 0 })
 
+  _calculate_positions: () ->
+    @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
+    t.position = i for t, i in @tags
+
   add: (tag) ->
     throw 'tagAlreadyExists' if @tags.some((v) -> v.name == tag.name)
 
     @tags.push(tag)
-    @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
-
-    t.position = i for t, i in @tags
+    this._calculate_positions()
 
     this._notify('tag-added', tag)
     tag
@@ -27,7 +29,6 @@ class TagStore
     throw 'tagNotFound' if position == -1
 
     @tags.splice(position, 1)
-
     t.position = i for t, i in @tags
 
     this._notify('tag-removed', tag)
@@ -41,6 +42,8 @@ class TagStore
         tag[k] = undefined
       else
         tag[k] = JSON.parse(JSON.stringify(v))
+
+    this._calculate_positions()
 
     this._notify('tag-id-changed', old_tagid, tag) if old_tagid != tag.id
     this._notify('tag-changed', tag)

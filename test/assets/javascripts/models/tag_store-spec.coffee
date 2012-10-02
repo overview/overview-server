@@ -61,6 +61,19 @@ describe 'models/tag_store', ->
 
         tag_store.add(tag2)
 
+      it 'should reset positions before :tag-changed', ->
+        tag1 = dummy_tag(1, 'A')
+        tag2 = dummy_tag(2, 'B')
+        tag_store.add(tag1)
+        tag_store.add(tag2)
+
+        tag_store.observe 'tag-changed', (tag) ->
+          expect(tag.id).toEqual(1)
+          expect(tag1.position).toEqual(1)
+          expect(tag2.position).toEqual(0)
+
+        tag_store.change(tag1, { name: 'C' })
+
     describe 'beginning full', ->
       tag1 = undefined
       tag2 = undefined
@@ -104,8 +117,8 @@ describe 'models/tag_store', ->
         tag_store.remove(tag2)
 
       it 'should change a tag property', ->
-        tag_store.change(tag2, { name: 'foo' })
-        expect(tag_store.tags[1].name).toEqual('foo')
+        tag_store.change(tag2, { name: 'Afoo' })
+        expect(tag_store.tags[1].name).toEqual('Afoo')
 
       it 'should set changed values by value, not by reference', ->
         doclist = { n: 1, docids: [ 1 ] }
@@ -116,8 +129,8 @@ describe 'models/tag_store', ->
         expect(tag2.doclist.docids).toEqual([1])
 
       it 'should change a tag property to undefined', ->
-        tag_store.change(tag2, { name: undefined })
-        expect(tag_store.tags[1].name).toBeUndefined()
+        tag_store.change(tag2, { color: undefined })
+        expect(tag_store.tags[1].color).toBeUndefined()
 
       it 'should notify :tag-changed', ->
         val = undefined
