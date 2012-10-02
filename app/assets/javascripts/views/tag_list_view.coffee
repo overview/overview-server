@@ -11,6 +11,7 @@ class TagListView
     this._init_html()
     this._observe_tag_add()
     this._observe_tag_remove()
+    this._observe_tag_change()
     this._observe_tag_id_change()
     this._observe_shown_tag()
     this._observe_selected_tags()
@@ -42,6 +43,10 @@ class TagListView
       e.preventDefault()
       notify('remove-clicked', element_to_tag(this))
 
+    $ul.on 'click', 'a.tag-edit', (e) ->
+      e.preventDefault()
+      notify('edit-clicked', element_to_tag(this))
+
     this._refresh_shown_tag()
     this._refresh_selected_tags()
 
@@ -69,10 +74,10 @@ class TagListView
       this._notify('create-submitted', { name: name })
 
   _add_tag: (tag) ->
-    $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
+    $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-edit" alt="edit tag" title="edit tag"><i class="icon-edit"></i></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
     $li.attr("data-#{TAG_ID_KEY}", tag.id)
     $li.find('.tag-name').text(tag.name)
-    $li.find('.btn').addClass(@color_table.get_tag_color_class(tag.name))
+    $li.css('background-color', tag.color || @color_table.get(tag.name))
 
     $ul = $('ul', @div)
     $li.insertBefore($ul.children()[tag.position])
@@ -85,10 +90,22 @@ class TagListView
     @tag_list.observe 'tag-id-changed', (old_tagid, tag) =>
       $("li[data-#{TAG_ID_KEY}=#{old_tagid}]", @div).attr("data-#{TAG_ID_KEY}", tag.id)
 
+  _observe_tag_change: () ->
+    @tag_list.observe 'tag-changed', (tag) =>
+      this._change_tag(tag)
+
   _remove_tag: (tag) ->
-    $ul = $('ul', @div)
-    $li = $($ul.children()[tag.position])
+    $li = $("li[data-#{TAG_ID_KEY}=#{tag.id}]", @div)
     $li.remove()
+
+  _change_tag: (tag) ->
+    $li = $("li[data-#{TAG_ID_KEY}=#{tag.id}]", @div)
+    $li.css('background-color', tag.color || @color_table.get(tag.name))
+    $li.find('.tag-name').text(tag.name)
+
+    $ul = $li.parent()
+    $li.remove()
+    $li.insertBefore($ul.children()[tag.position])
 
   _observe_shown_tag: () ->
     @state.observe('focused_tag-changed', this._refresh_shown_tag.bind(this))

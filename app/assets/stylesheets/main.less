@@ -47,8 +47,7 @@
 @import 'bootstrap-fixes.less';
 
 @import 'vendor/progress-polyfill.less';
-
-@import 'tag-colors.less';
+@import 'vendor/spectrum.less';
 
 html {
   height: 100%;
@@ -166,15 +165,23 @@ body.document-set-show {
     }
 
     .tag-name {
-      min-width: 3em;
-      text-align: left;
-
       .border-radius(@inputBorderRadius);
+
+      #gradient > .vertical(fade(white, 70%), fade(white, 0%));
+      background-color: transparent;
+
+      min-width: 60px;
+      text-align: left;
     }
 
     .btn-group {
+      .border-radius(@inputBorderRadius);
       margin-left: 5px;
       margin-top: 5px;
+
+      .btn {
+        padding: 4px 10px; // same padding as other elements on this page
+      }
 
       & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
 
@@ -192,24 +199,35 @@ body.document-set-show {
         color: black;
       }
 
-      .tag-add, .tag-remove {
+      .tag-edit, .tag-add, .tag-remove {
         position: absolute;
-        padding: 4px 3px 4px;
+        background-color: whiteSmoke;
+        border-color: transparent;
+        padding: 3px;
         width: 12px;
-        top: 0;
-        right: 0;
+        top: 2px;
+        right: 2px;
         overflow: hidden;
         text-align: center;
+        border: none;
         opacity: 0.01;
         .transition(opacity 0.3s ease);
       }
 
+      .tag-edit {
+        right: 40px;
+      }
+
       .tag-add {
-        right: 18px;
+        right: 21px;
+      }
+
+      .tag-remove {
+        .border-right-radius(3px);
       }
 
       &:hover {
-        .tag-add, .tag-remove {
+        .tag-edit, .tag-add, .tag-remove {
           opacity: 1;
         }
       }
@@ -397,6 +415,11 @@ body.admin-user-index {
       text-decoration: underline;
     }
   }
+}
+
+#tag-form-view-dialog form.delete {
+  float: left;
+  margin: 0;
 }
 
 #mousemove-handler {
