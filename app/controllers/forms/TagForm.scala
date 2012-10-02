@@ -9,7 +9,7 @@ object TagForm {
     Form(
       tuple(
 	"name" -> nonEmptyText,
-	"color" -> nonEmptyText
+	"color" -> nonEmptyText.verifying("color.invalid_format", { c => c.matches("^#[0-9a-fA-F]{6}$")})
 	)
       )
 }
