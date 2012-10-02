@@ -151,14 +151,15 @@ describe 'views/document_list_view', ->
         view = create_view()
         tag_store.tags[0].color = '#234567'
         tag_store._notify('tag-changed', tag_store.tags[0])
-        $tag = $('a:eq(0) span.tags span:eq(0)')
+        $tag = $('a:eq(0) span.tags span:eq(0)', view.div)
         expect($tag.css('background-color')).toEqual('rgb(35, 69, 103)')
 
       it 'should remove a tag after it is deleted', ->
         view = create_view()
         tag = tag_store.tags.shift()
+        document_list.documents[0].tagids.pop()
         tag_store._notify('tag-removed', tag)
-        $tags = $('a:eq(0) span.tags')
+        $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(0)
 
       it 'should not have any "last clicked" document', ->
