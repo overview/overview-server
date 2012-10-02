@@ -1,6 +1,4 @@
 $ ->
-  $('form[data-confirm]').each ->
+  $('body').on 'submit', 'form[data-confirm]', (e) ->
     message = $(this).attr('data-confirm')
-
-    $(this).submit (e) ->
-      e.preventDefault() if !window.confirm(message)
+    e.preventDefault() if !window.confirm(message)
