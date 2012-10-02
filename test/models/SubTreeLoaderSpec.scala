@@ -80,7 +80,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val dummyTagData = List((10l, 5l), (20l, 15l))
 
       val tagDocumentIds = Seq(100l, 200l, 300l)
-      val dummyTag = core.Tag(2, "tag1", core.DocumentIdList(tagDocumentIds, 12l))
+      val dummyTag = core.Tag(2, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l))
 
       val allDocumentIds = documentIds ++ tagDocumentIds
 
@@ -135,7 +135,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
 
     "load tag information for nodes" in new MockComponents {
       val dummyTagData = List((1l, "dummy", 55l, Some(10l), None))
-      val dummyTags = List(core.Tag(1l, "dummy", null))
+      val dummyTags = List(core.Tag(1l, "dummy", None, null))
 
       loader loadTags (documentSetId) returns dummyTagData
       parser createTags (dummyTagData) returns dummyTags

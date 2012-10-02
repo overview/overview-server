@@ -10,7 +10,7 @@ class addSpec extends Specification {
     
     "contain tagid, added count, and total count" in {
       val tagId = 44l
-      val tag = Tag(tagId, "name", DocumentIdList(Nil, 0) )
+      val tag = Tag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val addedCount = 20l
       val documentId = 1l
       val documents = Seq(Document(documentId, "title", "documentCloudId", Seq(5l, 15l)))

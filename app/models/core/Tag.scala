@@ -7,4 +7,4 @@
 
 package models.core
 
-case class Tag(id: Long, name: String, documentIds: DocumentIdList)
+case class Tag(id: Long, name: String, color: Option[String], documentIds: DocumentIdList)

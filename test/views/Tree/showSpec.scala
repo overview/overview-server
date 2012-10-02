@@ -48,8 +48,8 @@ class showSpec extends Specification {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
       val tags = List(
-        Tag(5l, "tag1", DocumentIdList(Seq(), 0)),
-        Tag(15l, "tag2", DocumentIdList(Seq(), 0))
+        Tag(5l, "tag1", None, DocumentIdList(Seq(), 0)),
+        Tag(15l, "tag2", None, DocumentIdList(Seq(), 0))
       )
       val treeJson = show(dummyNodes, dummyDocuments, tags).toString
       

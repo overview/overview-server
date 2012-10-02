@@ -13,11 +13,12 @@ class DocumentListParser {
 
   def createTags(tagData: Seq[TagData]): Seq[core.Tag] = {
     val tagNames = mapTagsToNames(tagData)
+    val tagColors = mapTagsToColor(tagData)
     val tagDocumentCounts = mapTagsToDocumentCounts(tagData)
     val tagDocuments = mapTagsToDocuments(tagData)
 
     val tagIds = tagNames.keys.toSeq
-    tagIds.map(id => core.Tag(id, tagNames(id),
+    tagIds.map(id => core.Tag(id, tagNames(id), tagColors(id),
       core.DocumentIdList(tagDocuments(id), tagDocumentCounts(id))))
 
   }
@@ -38,6 +39,10 @@ class DocumentListParser {
     tagData.map(d => (d._1, d._2)).distinct.toMap
   }
 
+  private def mapTagsToColor(tagData: Seq[TagData]): Map[Long, Option[String]] = {
+    tagData.map(d => (d._1, d._5)).distinct.toMap
+  }
+  
   private def mapTagsToDocumentCounts(tagData: Seq[TagData]): Map[Long, Long] = {
     tagData.map(d => (d._1, d._3)).distinct.toMap
   }

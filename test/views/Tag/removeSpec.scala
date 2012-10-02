@@ -11,7 +11,7 @@ class removeSpec extends Specification {
     
     "contain tagid, removed count, and total count" in {
       val tagId = 44l
-      val tag = Tag(tagId, "name", DocumentIdList(Nil, 0) )
+      val tag = Tag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val removedCount = 20l
       val documentId = 1l
       val documents = Seq(Document(documentId, "title", "documentCloudId", Seq()))

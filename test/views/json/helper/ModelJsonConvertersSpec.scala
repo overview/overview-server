@@ -46,7 +46,7 @@ class ModelJsonConvertersSpec extends Specification {
       val id = 5l
       val name = "tag"
       val documentCount = 22l
-      val tag = Tag(id, name, DocumentIdList(Seq(10l), documentCount))
+      val tag = Tag(id, name, None, DocumentIdList(Seq(10l), documentCount))
       
       val tagJson = toJson(tag).toString
       

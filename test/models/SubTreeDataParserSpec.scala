@@ -123,14 +123,18 @@ class SubTreeDataParserSpec extends Specification {
     }    
     
     "create Tags from tuples" in {
-      val tagData = List((5l, "tag1", 11l, Some(10l), None), (5l, "tag1", 11l, Some(20l), None),
-                         (15l, "tag2", 0l, None, None))
+      val tagColor = Some("befab4")
+      val tagData = List(
+	(5l, "tag1", 11l, Some(10l), tagColor),
+	(5l, "tag1", 11l, Some(20l), tagColor),
+        (15l, "tag2", 0l, None, None))
                          
       val subTreeDataParser = new SubTreeDataParser()
       val tags = subTreeDataParser.createTags(tagData)
       
-      val expectedTags = List(core.Tag(5l, "tag1", core.DocumentIdList(Seq(10l, 20l), 11)),
-    		  				  core.Tag(15l, "tag2", core.DocumentIdList(Nil, 0)))
+      val expectedTags = List(
+	core.Tag(5l, "tag1", tagColor, core.DocumentIdList(Seq(10l, 20l), 11)),
+    	core.Tag(15l, "tag2", None, core.DocumentIdList(Nil, 0)))
 
       tags must haveTheSameElementsAs(expectedTags)
     }

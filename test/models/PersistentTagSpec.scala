@@ -28,7 +28,7 @@ class PersistentTagSpec extends Specification with Mockito {
     }
 
     trait DocumentsTagged extends MockComponents with Before {
-      val tag = core.Tag(dummyTagId, name, core.DocumentIdList(Seq(1l, 2l), 3))
+      val tag = core.Tag(dummyTagId, name, None, core.DocumentIdList(Seq(1l, 2l), 3))
       val dummyDocumentData = List((1l, "title", "dcId"), (2l, "title", "dcId"))
       val documentIds = List(1l, 2l)
       val dummyDocumentTagData = List((1l, 5l), (2l, 15l))
@@ -108,7 +108,7 @@ class PersistentTagSpec extends Specification with Mockito {
     "ask loader and parser to create tag" in new ExistingTag {
 
       val tagData = Seq((dummyTagId, name, 0l, None, None))
-      val dummyTag = core.Tag(dummyTagId, name, core.DocumentIdList(Nil, 0))
+      val dummyTag = core.Tag(dummyTagId, name, None, core.DocumentIdList(Nil, 0))
 
       loader loadTag (dummyTagId) returns tagData
       parser createTags (tagData) returns Seq(dummyTag)
