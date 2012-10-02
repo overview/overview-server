@@ -190,6 +190,8 @@ class DocumentListView
         if $li.hasClass('placeholder')
           $new_li = this._create_li(@document_list.documents[index])
           $li.replaceWith($new_li)
+        else
+          this._update_document(document)
       index++
 
     # Add new elements
