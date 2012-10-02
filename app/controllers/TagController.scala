@@ -101,11 +101,8 @@ object TagController extends BaseController {
     PersistentTag.findByName(tagName, documentSetId) match {
       case None => NotFound
       case Some(tag) => {
-	val t = tag.loadTag
-	val taggedDocuments = tag.loadDocuments(t)
-	
 	tag.delete
-	Ok
+	Ok(views.json.Tag.delete(tag.id, tagName))
       }
     }
   }
