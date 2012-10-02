@@ -20,9 +20,9 @@ class PersistentTagSaverSpec extends Specification {
       lazy val tagSaver = new PersistentTagSaver()
       lazy val tagId = tagSaver.save(documentSetId, name)
 
-      def findTag: Option[Long] = SQL("SELECT id FROM tag WHERE name = {name}").
-        on("name" -> name).as(scalar[Long] *).headOption
-
+      def findTag(tagName: String): Option[Long] =
+        SQL("SELECT id FROM tag WHERE name = {name}").
+          on("name" -> tagName).as(scalar[Long] *).headOption
     }
 
     trait TaggedDocument extends SavedTag {
@@ -35,7 +35,7 @@ class PersistentTagSaverSpec extends Specification {
     "add a new tag to the database, returning id" in new SavedTag {
       tagId must not beNone
 
-      val foundId = findTag
+      val foundId = findTag(name)
       tagId must be equalTo (foundId)
     }
 
@@ -51,9 +51,18 @@ class PersistentTagSaverSpec extends Specification {
 
       rowsDeleted must be equalTo (2)
 
-      val deletedTag = findTag
+      val deletedTag = findTag(name)
 
       deletedTag must beNone
+    }
+
+    "rename tag" in new SavedTag {
+      val newName = "new tag name"
+
+      tagSaver.update(tagId.get, newName)
+      val notFound = findTag(name)
+      
+      notFound must beNone
     }
   }
 
