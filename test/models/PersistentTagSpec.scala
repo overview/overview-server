@@ -148,6 +148,17 @@ class PersistentTagSpec extends Specification with Mockito {
 
       there was one(saver).delete(dummyTagId)
     }
+
+    "update the tag" in new ExistingTag {
+      val newName = "new name"
+      val newColor = "new color"
+
+      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
+
+      tag.update(newName, newColor)
+
+      there was one(saver).update(dummyTagId, newName, newColor)
+    }
   }
 }
 

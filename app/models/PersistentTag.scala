@@ -7,6 +7,7 @@ trait PersistentTag {
 
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection): Seq[(Long, Long)]
+  def update(name: String, color: String)(implicit c: Connection): Int
   def delete()(implicit c: Connection): Long
   def loadTag(implicit c: Connection): core.Tag
   def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document]
@@ -50,6 +51,10 @@ object PersistentTag {
       loader.countsPerNode(nodeIds, id)
     }
 
+    def update(name: String, color: String)(implicit c: Connection): Int = {
+      saver.update(id, name, color)
+    }
+    
     def delete()(implicit c: Connection): Long = {
       saver.delete(id)
     }
