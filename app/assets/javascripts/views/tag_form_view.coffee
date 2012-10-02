@@ -20,6 +20,12 @@ class TagFormView
   constructor: (@tag) ->
     $div = $(this._create_div_string())
     $('body').append($div)
+
+    $div.find('input[type=color]').spectrum({
+      preferredFormat: 'hex6'
+      showButtons: false
+    })
+
     $div.modal()
 
     $div.on 'hidden', () =>
