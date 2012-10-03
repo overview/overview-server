@@ -36,7 +36,8 @@ object ModelJsonConverters {
         "id" -> toJson(document.id),
         "title" -> toJson(document.title),
         "tagids" -> toJson(document.tags),
-        "documentcloud_id" -> toJson(document.documentCloudId)))
+        "documentcloud_id" -> toJson(document.documentCloudId),
+	"nodeids" -> toJson(document.nodes)))
     }
   }
 

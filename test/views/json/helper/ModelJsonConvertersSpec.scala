@@ -34,6 +34,7 @@ class ModelJsonConvertersSpec extends Specification {
       documentJson must /("id" -> id)
       documentJson must /("title" -> title)
       documentJson must contain(""""tagids":[1,2,3]""")
+      documentJson must contain(""""nodeids":[22,11,33]""")
     }
   }
 
