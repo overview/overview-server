@@ -34,8 +34,8 @@ class PersistentTagSpec extends Specification with Mockito {
       val dummyDocumentTagData = List((1l, 5l), (2l, 15l))
       val dummyNodeData = List((1l, 11l))
       val dummyDocuments = List(
-        core.Document(1l, "document1", "documentCloudId", Seq(5l)),
-        core.Document(2l, "document2", "documentCloudId", Seq(15l)))
+        core.Document(1l, "document1", "documentCloudId", Seq(5l), Seq(11l)),
+        core.Document(2l, "document2", "documentCloudId", Seq(15l), Seq(11l)))
 
       def before = {
         loader loadByName(documentSetId, name) returns Some(dummyTagId)

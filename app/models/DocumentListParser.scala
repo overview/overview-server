@@ -7,8 +7,10 @@ class DocumentListParser {
   def createDocuments(documentData: Seq[DocumentData],
     documentTagData: Seq[DocumentTagData], documentNodeData: Seq[DocumentNodeData]): Seq[core.Document] = {
     val tagIds = mapDocumentsToTagIds(documentTagData)
-
-    documentData.map(d => core.Document(d._1, d._2, d._3, tagIds.getOrElse(d._1, Nil)))
+    val nodeIds = mapDocumentsToNodeIds(documentNodeData)
+    
+    documentData.map(d => core.Document(d._1, d._2, d._3, tagIds.getOrElse(d._1, Nil),
+      nodeIds.getOrElse(d._1, Nil)))
   }
 
   def createTags(tagData: Seq[TagData]): Seq[core.Tag] = {
@@ -35,6 +37,10 @@ class DocumentListParser {
     groupById(documentTagData)
   }
 
+  private def mapDocumentsToNodeIds(documentNodeData: Seq[DocumentNodeData]): Map[Long, Seq[Long]] ={
+    groupById(documentNodeData)
+  }
+  
   private def mapTagsToNames(tagData: Seq[TagData]): Map[Long, String] = {
     tagData.map(d => (d._1, d._2)).distinct.toMap
   }
