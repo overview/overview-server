@@ -21,6 +21,12 @@ class DocumentTagDataLoader {
     }
   }
 
+  def loadNodes(documentIds: Seq[Long])(implicit connection: Connection): List[(Long, Long)] = {
+    
+    documentNodeQuery(documentIds)
+  }
+    
+
   protected def idList(ids: Seq[Long]): String = "(" + ids.mkString(", ") + ")"
 
   private def documentTagQuery(documentIds: Seq[Long])(implicit c: Connection): List[DocumentTagData] = {
@@ -51,4 +57,10 @@ class DocumentTagDataLoader {
       as(documentParser map (flatten) *)
   }
 
+  private def documentNodeQuery(documentIds: Seq[Long])(implicit c: Connection): List[(Long, Long)] = {
+    SQL("""
+      SELECT document_id, node_id FROM node_document
+      WHERE document_id IN
+      """ + idList(documentIds)).as(long("document_id") ~ long("node_id") map(flatten) *)
+  }
 }
