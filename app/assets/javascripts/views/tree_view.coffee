@@ -55,8 +55,9 @@ class DrawOperation
       @ctx.scale(ratio, ratio)
 
     @ctx.lineStyle = @options.color.line
-    @ctx.font = "#{11 * ratio}px Helvetica, Arial, sans-serif"
+    @ctx.font = "12px Helvetica, Arial, sans-serif"
     @ctx.textBaseline = 'top'
+    @ctx.shadowColor = 'white'
 
   clear: () ->
     @ctx.fillStyle = @options.color.background
@@ -173,7 +174,11 @@ class DrawOperation
     ctx.rect(left, px.top, width, px.height)
     ctx.clip()
     ctx.fillStyle = gradient
+    ctx.shadowBlur = 5
     ctx.fillText(description, left, px.top + 3)
+    ctx.fillText(description, left, px.top + 3) # for stronger shadow
+    ctx.fillText(description, left, px.top + 3) # for even stronger shadow
+    ctx.fillText(description, left, px.top + 3) # for even stronger stronger shadow
     ctx.restore()
 
   _maybe_draw_collapse: (drawable_node) ->
