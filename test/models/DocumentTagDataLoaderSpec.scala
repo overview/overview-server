@@ -12,6 +12,7 @@ class DocumentTagDataLoaderSpec extends Specification {
   step(start(FakeApplication()))
 
   "DocumentTagLoader" should {
+    val loader = new DocumentTagDataLoader
 
     trait DocumentsInBranches extends DbTestContext {
       var expectedNodeData: Seq[DocumentNodeData] = _
@@ -33,14 +34,12 @@ class DocumentTagDataLoaderSpec extends Specification {
     }
 
     "load nodes for documents" in new DocumentsInBranches {
-      val loader = new DocumentTagDataLoader
       val nodeData = loader.loadNodes(documentIds)
 
       nodeData must haveTheSameElementsAs(expectedNodeData)
     }
 
     "return empty list given no documentIds" in new DbTestContext {
-      val loader = new DocumentTagDataLoader
       val nodeData = loader.loadNodes(Nil)
 
       nodeData must beEmpty
