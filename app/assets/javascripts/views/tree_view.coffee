@@ -3,9 +3,7 @@ DrawableNode = require('models/drawable_node').DrawableNode
 ColorTable = require('views/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
-  node_hunits: 1,
   node_vunits: 1,
-  node_hpadding: 0.5,
   node_vpadding: 0.7,
   color: {
     background: '#ffffff',
@@ -18,18 +16,12 @@ DEFAULT_OPTIONS = {
   node_line_width: 2, # px
   node_line_width_selected: 4, # px
   node_line_width_leaf: 1, # px
-  animation_speed: 0, # no animations
   mousewheel_zoom_factor: 1.2,
 }
 
 class DrawOperation
-  constructor: (@canvas, @tree, @zoom, @pan, @options) ->
-    tag = @tree.state.focused_tag
-    if tag?
-      @tag = {
-        id: tag.id,
-        color: tag.color || (new ColorTable().get(@tree.state.focused_tag.name))
-      }
+  constructor: (@canvas, @tree, @tag_id_to_color, @zoom, @pan, @options) ->
+    @tagid = @tree.state.focused_tag?.id
 
     $canvas = $(@canvas)
     @width = +Math.ceil($canvas.parent().width())
@@ -147,7 +139,7 @@ class DrawOperation
     ctx.rect(left, top, width, height)
     ctx.clip()
 
-    ctx.fillStyle = @tag.color
+    ctx.fillStyle = color
 
     ctx.beginPath()
     ctx.moveTo(left, top)
@@ -237,8 +229,22 @@ class DrawOperation
     animated_node = drawable_node.animated_node
     node = animated_node.node
 
-    if @tag? && tagcount = node.tagcounts?[@tag.id]
-      this._draw_tagcount(px.left, px.top, px.width, px.height, @tag.color, tagcount / node.doclist.n)
+    tagid = undefined
+    tagcount = 0
+
+    if @tagid?
+      tagid = "#{@tagid}"
+      tagcount = node.tagcounts?[tagid] || 0
+
+    if !tagcount
+      for id, count of (node.tagcounts || {})
+        if !tagid? || count > tagcount
+          tagid = id
+          tagcount = count
+
+    if tagid? && tagcount
+      color = @tag_id_to_color[tagid]
+      this._draw_tagcount(px.left, px.top, px.width, px.height, color, tagcount / node.doclist.n)
 
     ctx = @ctx
     ctx.lineWidth = this._animated_node_to_line_width(animated_node)
@@ -274,9 +280,6 @@ class DrawOperation
         this._draw_line_from_parent_to_child(drawable_node.px, child_drawable_node.px)
 
     undefined
-
-$ = jQuery
-_ = window._
 
 class TreeView
   observable(this)
@@ -382,7 +385,14 @@ class TreeView
     @last_draw.pixel_to_action(x, y)
 
   _redraw: () ->
-    @last_draw = new DrawOperation(@canvas, @tree, @focus.zoom, @focus.pan, @options)
+    color_table = new ColorTable()
+    tag_id_to_color = {}
+    for tag in @cache.tag_store.tags
+      id = "#{tag.id}"
+      color = tag.color || color_table.get(tag.name)
+      tag_id_to_color[id] = color
+
+    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, @focus.zoom, @focus.pan, @options)
     @last_draw.draw()
 
   update: () ->
