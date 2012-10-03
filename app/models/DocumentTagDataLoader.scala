@@ -3,7 +3,7 @@ package models
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import models.DatabaseStructure.{ DocumentData, DocumentTagData }
+import models.DatabaseStructure.{ DocumentData, DocumentNodeData, DocumentTagData }
 
 class DocumentTagDataLoader {
 
@@ -21,8 +21,7 @@ class DocumentTagDataLoader {
     }
   }
 
-  def loadNodes(documentIds: Seq[Long])(implicit connection: Connection): List[(Long, Long)] = {
-    
+  def loadNodes(documentIds: Seq[Long])(implicit connection: Connection): List[DocumentNodeData] = {
     documentNodeQuery(documentIds)
   }
     
@@ -57,7 +56,7 @@ class DocumentTagDataLoader {
       as(documentParser map (flatten) *)
   }
 
-  private def documentNodeQuery(documentIds: Seq[Long])(implicit c: Connection): List[(Long, Long)] = {
+  private def documentNodeQuery(documentIds: Seq[Long])(implicit c: Connection): List[DocumentNodeData] = {
     SQL("""
       SELECT document_id, node_id FROM node_document
       WHERE document_id IN
