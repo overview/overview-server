@@ -8,7 +8,8 @@ class PersistentDocumentList(documentSetId: Long,
   documentIds: Seq[Long],
   loader: PersistentDocumentListDataLoader = new PersistentDocumentListDataLoader(),
   parser: DocumentListParser = new DocumentListParser(),
-  saver: PersistentDocumentListDataSaver = new PersistentDocumentListDataSaver()) {
+  saver: PersistentDocumentListDataSaver = new PersistentDocumentListDataSaver())
+  extends DocumentListLoader(loader, parser) {
 
   def loadSlice(start: Long, end: Long)(implicit c: Connection): Seq[core.Document] = {
     require(start >= 0)
@@ -19,9 +20,8 @@ class PersistentDocumentList(documentSetId: Long,
         start, end - start)
 
     val selectedDocumentIds = documentData.map(_._1)
-    val documentTagData = loader.loadDocumentTags(selectedDocumentIds)
 
-    parser.createDocuments(documentData, documentTagData)
+    createWithDocumentData(documentData, selectedDocumentIds)
   }
 
   def loadCount()(implicit c: Connection): Long = {
