@@ -9,7 +9,7 @@ class PersistentDocumentListParserSpec extends Specification {
     "return empty list given empty input" in {
       val persistentDocumentListParser = new DocumentListParser()
 
-      val documents = persistentDocumentListParser.createDocuments(Nil, Nil)
+      val documents = persistentDocumentListParser.createDocuments(Nil, Nil, Nil)
 
       documents must be empty
     }
@@ -19,10 +19,11 @@ class PersistentDocumentListParserSpec extends Specification {
 	(20l, "title2", "documentCloudId2"),
         (30l, "title3", "documentCloudId3"))
       val documentTagData = List((10l, 15l), (20l, 5l))
+      val documentNodeData = List((10l, 22l))
       val persistentDocumentListParser = new DocumentListParser()
 
       val documents = persistentDocumentListParser.createDocuments(documentData,
-        documentTagData)
+        documentTagData, documentNodeData)
 
       val ids = documents.map(_.id)
       val titles = documents.map(_.title)

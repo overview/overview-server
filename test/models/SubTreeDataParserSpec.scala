@@ -113,11 +113,12 @@ class SubTreeDataParserSpec extends Specification {
           core.Document(2l, "title2", "documentCloudId2", Seq(15l)),
           core.Document(3l, "title3", "documentCloudId3", Nil))
       
-      val tagData = Seq((1l, 5l), (1l, 15l), (2l, 15l))
       val documentData = expectedDocs.map(d => (d.id, d.title, d.documentCloudId))
-
+      val tagData = Seq((1l, 5l), (1l, 15l), (2l, 15l))
+      val nodeData = Seq((1l, 22l), (1l, 11l))
+      
       val subTreeDataParser = new SubTreeDataParser()
-      val documents = subTreeDataParser.createDocuments(documentData, tagData)
+      val documents = subTreeDataParser.createDocuments(documentData, tagData, nodeData)
       
       documents must be equalTo expectedDocs
     }    

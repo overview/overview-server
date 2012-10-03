@@ -13,7 +13,7 @@ class DocumentLoaderSpec extends Specification with Mockito {
       
       val dummyDocumentData = Some((10l, "title", "documentCloudId"))
       loader loadDocument(17l) returns dummyDocumentData
-      parser createDocuments(dummyDocumentData.toList, Nil) returns 
+      parser createDocuments(dummyDocumentData.toList, Nil, Nil) returns 
         Seq(core.Document(10l, "title", "documentCloudId", null))
       
       val documentLoader = new DocumentLoader(loader, parser)
@@ -21,7 +21,7 @@ class DocumentLoaderSpec extends Specification with Mockito {
       documentLoader.load(17l)
       
       there was one(loader).loadDocument(17l)
-      there was one(parser).createDocuments(dummyDocumentData.toList, Nil)
+      there was one(parser).createDocuments(dummyDocumentData.toList, Nil, Nil)
     }
     
     "be constructable with default loader and parser" in {

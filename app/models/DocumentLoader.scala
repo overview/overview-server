@@ -8,7 +8,8 @@ class DocumentLoader(loader: DocumentDataLoader = new DocumentDataLoader(),
   def load(id: Long)(implicit c: Connection): Option[core.Document] = {
     val documentData = loader.loadDocument(id)
     val noTagsNeeded = Nil
-
-    parser.createDocuments(documentData.toList, noTagsNeeded).headOption
+    val noNodesNeeded = Nil
+    
+    parser.createDocuments(documentData.toList, noTagsNeeded, noNodesNeeded).headOption
   }
 }

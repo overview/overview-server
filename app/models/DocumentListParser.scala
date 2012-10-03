@@ -1,11 +1,11 @@
 package models
 
-import DatabaseStructure.{ DocumentData, DocumentTagData, TagData }
+import DatabaseStructure.{ DocumentData, DocumentNodeData, DocumentTagData, TagData }
 
 class DocumentListParser {
 
   def createDocuments(documentData: Seq[DocumentData],
-    documentTagData: Seq[DocumentTagData]): Seq[core.Document] = {
+    documentTagData: Seq[DocumentTagData], documentNodeData: Seq[DocumentNodeData]): Seq[core.Document] = {
     val tagIds = mapDocumentsToTagIds(documentTagData)
 
     documentData.map(d => core.Document(d._1, d._2, d._3, tagIds.getOrElse(d._1, Nil)))

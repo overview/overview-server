@@ -14,6 +14,6 @@ abstract class DocumentListLoader(loader: DocumentTagDataLoader, parser: Documen
     val documentTagData = loader.loadDocumentTags(documentIds)
     val documentNodeData = loader.loadNodes(documentIds)
 
-    parser.createDocuments(documentData, documentTagData)
+    parser.createDocuments(documentData, documentTagData, documentNodeData)
   }
 }

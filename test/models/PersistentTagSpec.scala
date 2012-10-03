@@ -32,15 +32,18 @@ class PersistentTagSpec extends Specification with Mockito {
       val dummyDocumentData = List((1l, "title", "dcId"), (2l, "title", "dcId"))
       val documentIds = List(1l, 2l)
       val dummyDocumentTagData = List((1l, 5l), (2l, 15l))
+      val dummyNodeData = List((1l, 11l))
       val dummyDocuments = List(
         core.Document(1l, "document1", "documentCloudId", Seq(5l)),
         core.Document(2l, "document2", "documentCloudId", Seq(15l)))
 
       def before = {
-        loader loadByName (documentSetId, name) returns Some(dummyTagId)
-        loader loadDocuments (documentIds) returns dummyDocumentData
-        loader loadDocumentTags (documentIds) returns dummyDocumentTagData
-        parser createDocuments (dummyDocumentData, dummyDocumentTagData) returns dummyDocuments
+        loader loadByName(documentSetId, name) returns Some(dummyTagId)
+        loader loadDocuments(documentIds) returns dummyDocumentData
+        loader loadDocumentTags(documentIds) returns dummyDocumentTagData
+	loader loadNodes(documentIds) returns dummyNodeData
+	
+        parser createDocuments (dummyDocumentData, dummyDocumentTagData, dummyNodeData) returns dummyDocuments
       }
     }
 
@@ -131,7 +134,7 @@ class PersistentTagSpec extends Specification with Mockito {
 
       there was one(loader).loadDocuments(documentIds)
       there was one(loader).loadDocumentTags(documentIds)
-      there was one(parser).createDocuments(dummyDocumentData, dummyDocumentTagData)
+      there was one(parser).createDocuments(dummyDocumentData, dummyDocumentTagData, dummyNodeData)
 
       documents must be equalTo (dummyDocuments)
     }
