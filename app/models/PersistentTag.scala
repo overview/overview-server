@@ -40,7 +40,7 @@ object PersistentTag {
   private class PersistentTagImpl(tagId: Long, name: String,
     loader: PersistentTagLoader,
     parser: DocumentListParser,
-    saver: PersistentTagSaver) extends PersistentTag {
+    saver: PersistentTagSaver) extends DocumentListLoader(loader, parser) with PersistentTag {
     val id = tagId
 
     def count(implicit c: Connection): Long = {
@@ -66,10 +66,7 @@ object PersistentTag {
 
     def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document] = {
       val documentIds = tag.documentIds.firstIds
-      val documentData = loader.loadDocuments(documentIds)
-      val documentTagData = loader.loadDocumentTags(documentIds)
-
-      parser.createDocuments(documentData, documentTagData)
+      loadDocumentList(documentIds)
     }
 
   }

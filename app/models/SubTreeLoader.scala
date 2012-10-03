@@ -10,9 +10,8 @@ import play.api.db.DB
 /**
  * Loads data from the database about subTrees
  */
-class SubTreeLoader(documentSetId: Long,
-                    loader: SubTreeDataLoader = new SubTreeDataLoader(),
-                    parser: SubTreeDataParser = new SubTreeDataParser()) {
+class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTreeDataLoader(),
+  parser: SubTreeDataParser = new SubTreeDataParser()) extends DocumentListLoader(loader, parser) {
 
   /**
    * @return a list of all the Nodes in the subTree with root at nodeId
@@ -49,10 +48,7 @@ class SubTreeLoader(documentSetId: Long,
     val tagDocumentIds = tags.flatMap(_.documentIds.firstIds)
     val documentIds = nodeDocumentIds ++ tagDocumentIds
 
-    val documentData = loader.loadDocuments(documentIds.distinct.sorted)
-    val documentTagData = loader.loadDocumentTags(documentIds)
-
-    parser.createDocuments(documentData, documentTagData)
+    loadDocumentList(documentIds.distinct.sorted)
   }
 
   def loadTags(documentSetId: Long)(implicit connection: Connection): Seq[core.Tag] = {
