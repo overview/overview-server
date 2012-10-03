@@ -38,6 +38,14 @@ class DocumentTagDataLoaderSpec extends Specification {
 
       nodeData must haveTheSameElementsAs(expectedNodeData)
     }
+
+    "return empty list given no documentIds" in new DbTestContext {
+      val loader = new DocumentTagDataLoader
+      val nodeData = loader.loadNodes(Nil)
+
+      nodeData must beEmpty
+    }
+  
   }
 
   step(stop)

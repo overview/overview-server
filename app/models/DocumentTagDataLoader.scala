@@ -22,7 +22,10 @@ class DocumentTagDataLoader {
   }
 
   def loadNodes(documentIds: Seq[Long])(implicit connection: Connection): List[DocumentNodeData] = {
-    documentNodeQuery(documentIds)
+    documentIds match {
+      case Nil => Nil
+      case _ => documentNodeQuery(documentIds)
+    }
   }
     
 
