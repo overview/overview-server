@@ -12,6 +12,7 @@ abstract class DocumentListLoader(loader: DocumentTagDataLoader, parser: Documen
 
   protected def createWithDocumentData(documentData: Seq[DocumentData], documentIds: Seq[Long])(implicit c: Connection): Seq[core.Document] = {
     val documentTagData = loader.loadDocumentTags(documentIds)
+    val documentNodeData = loader.loadNodes(documentIds)
 
     parser.createDocuments(documentData, documentTagData)
   }

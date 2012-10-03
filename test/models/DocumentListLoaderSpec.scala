@@ -37,7 +37,8 @@ class DocumentListLoaderSpec extends Specification with Mockito {
       
       there was one(loader).loadDocuments(documentIds)
       there was one(loader).loadDocumentTags(documentIds)
-
+      there was one(loader).loadNodes(documentIds)
+      
       there was one(parser).createDocuments(documentData, documentTagData)
     }
   }
