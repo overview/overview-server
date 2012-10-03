@@ -1,62 +1,130 @@
-@(document: core.Document)
+@(document: core.Document)(implicit lang: Lang)
 
-<html>
-  <head>
-    <title>@document.title</title>
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
-    <style type="text/css">
-      html, body, iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="DV-container"></div>
-
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/viewer.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/templates.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor-coffee/base64.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/jquery-1-8-1.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/underscore.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/templates/login.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/login.js")"></script>
-    <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/fetch-document-json.js")"></script>
-
-    <script type="text/javascript">
-      var deferred, viewer;
-      window.load_documentcloud_document = function(id) {
-        if (deferred) {
-          deferred.resolve(undefined);
-          deferred = undefined;
+@defining(scopedMessages("views.Document.show")) { m =>
+  <html>
+    <head>
+      <title data-m-loading="@m("loading")">@document.title</title>
+      <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
+      <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
+      <style type="text/css">
+        html, body {
+          width: 100%;
+          height: 100%;
+          border: none;
+          margin: 0;
+          padding: 0;
         }
 
-        if (viewer) {
-          viewer.api.unload();
-          viewer = undefined;
+        h3 {
+          font-height: 16px;
+          line-height: 20px;
+          margin: 10px;
+          white-space: nowrap;
         }
 
-        var $container = $('#DV-container');
-        $container.empty();
+        ul.actions {
+          position: absolute;
+          line-height: 20px;
+          top: 0;
+          right: 0;
+          margin: 10px;
+          padding: 0;
+          list-style: none;
+          background: white;
+        }
 
-        if (id) {
-          deferred = dcimport.fetch_document_json(id, $container[0]);
-          deferred.done(function(json) {
-            if (!json) return;
+        li {
+          display: inline;
+        }
+      </style>
+    </head>
+    <body>
+      <h3 data-m-loading="@m("loading")">@document.title</h3>
+      <ul class="actions">
+        <li><a href="#" class="toggle-sidebar" data-m-enable="@m("sidebar.enable")" data-m-disable="@m("sidebar.disable")"></a></li>
+      </ul>
+      <div id="DV-container"></div>
 
-            viewer = DV.load(json, { container: $container[0], sidebar: false });
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/viewer.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/DV/templates.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor-coffee/base64.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/jquery-1-8-1.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/underscore.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/templates/login.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/login.js")"></script>
+      <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/fetch-document-json.js")"></script>
+
+      <script type="text/javascript">
+        var deferred, viewer, sidebar_enabled, document_json, $container, $h3, $title;
+
+        sidebar_enabled = localStorage.getItem("views.Document.show.sidebar") || false;
+
+        // Looks at "viewer" and "document_json" and "sidebar_enabled" and makes them match up
+        // WARNING: scrolls the document back to page 1.
+        refresh_viewer = function() {
+          if (viewer) {
+            viewer.api.unload();
+            viewer = undefined;
+            $container.empty();
+          }
+
+          if (document_json) {
+            $title.text(document_json.title)
+            $h3.text(document_json.title)
+            viewer = DV.load(document_json, { container: $container[0], sidebar: sidebar_enabled });
+          } else {
+            $title.text($title.attr('data-m-loading'));
+            $h3.text($h3.attr('data-m-loading'));
+          }
+        };
+
+        window.load_documentcloud_document = function(id) {
+          if (deferred) {
+            deferred.resolve(undefined);
+            deferred = undefined;
+          }
+
+          document_json = undefined;
+          refresh_viewer();
+
+          if (id) {
+            deferred = dcimport.fetch_document_json(id, $container[0]);
+            deferred.done(function(json) {
+              if (!json) return;
+
+              document_json = json;
+              refresh_viewer();
+            });
+            // TODO handle failure
+          }
+        };
+
+        $(function() {
+          $title = $('title');
+          $h3 = $('h3');
+          $container = $('#DV-container');
+
+          window.load_documentcloud_document('@document.documentCloudId');
+
+          var $a_sidebar = $('a.toggle-sidebar');
+
+          var refresh_a_sidebar = function() {
+            var text = $a_sidebar.attr("data-m-" + (sidebar_enabled ? 'disable' : 'enable'));
+            $a_sidebar.text(text);
+          };
+
+          $a_sidebar.on('click', function(e) {
+            e.preventDefault();
+
+            sidebar_enabled = !sidebar_enabled;
+
+            refresh_a_sidebar();
+            refresh_viewer(); // There's no way to enable the sidebar on a running viewer
           });
-          // TODO handle failure
-        }
-      };
 
-      $(function() {
-        window.load_documentcloud_document('@document.documentCloudId');
-      });
-    </script>
-  </body>
-</html>
+          refresh_a_sidebar();
+        });
+      </script>
+    </body>
+  </html>
+}
