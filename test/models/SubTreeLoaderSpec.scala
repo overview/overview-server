@@ -28,6 +28,13 @@ class SubTreeLoaderSpec extends Specification with Mockito {
 
   "SubTreeLoader" should {
 
+    "be constructable with default loader and parser" in {
+      val subTreeLoader = new SubTreeLoader(1l)
+
+      success
+    }
+
+    // test load()
     "load DocumentIds for unique parent nodes, parsing result" in new MockComponents {
       val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"), (2l, 4l, "grandChild"),
 	(1l, 3l, "child"),
@@ -74,58 +81,52 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       there was one(loader).loadDocumentIds(nodeIds)
     }
 
-    "call loader and parser to create documents from nodes and tags" in new MockComponents {
-      val documentIds = List(10l, 20l, 30l, 40l, 50l)
-      val dummyNodeList = createTwoDummyNodes(documentIds)
-      val dummyTagData = List((10l, 5l), (20l, 15l))
-      val dummyNodeData = List((10l, 22l))
+    // test loadDocuments() gets passed correct documentIds 
+    trait DocumentsInNodesAndTags extends MockComponents {
+      val nodeDocumentIds: List[Long]
+      val tagDocumentIds: Seq[Long]
       
-      val tagDocumentIds = Seq(100l, 200l, 300l)
-      val dummyTag = core.Tag(2, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l))
+      def dummyNodes = createTwoDummyNodes(nodeDocumentIds)
+      def dummyTags = Seq(core.Tag(1l, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l)))
+      def allDocumentIds = nodeDocumentIds ++ tagDocumentIds
+    }
 
-      val allDocumentIds = documentIds ++ tagDocumentIds
+    trait DistinctDocumentsInNodesAndTags extends DocumentsInNodesAndTags {
+      override val nodeDocumentIds = List(10l, 20l, 30l, 40l, 50l)
+      override val tagDocumentIds =  Seq(100l, 200l, 300l)
+    }
 
-      loader loadDocuments(allDocumentIds) returns dummyDocumentData
-      loader loadDocumentTags(allDocumentIds) returns dummyTagData
-      loader loadNodes(allDocumentIds) returns dummyNodeData
+    trait DuplicateDocuments extends DocumentsInNodesAndTags {
+      override val nodeDocumentIds = List(10l, 20l, 30l, 10l, 20l)
+      override val tagDocumentIds = List(100l, 200l, 20l, 30l)
+    }
+
+    trait UnsortedDocuments extends DocumentsInNodesAndTags {
+      override val nodeDocumentIds = List(30l, 20l, 40l, 10l, 60l)
+      override val tagDocumentIds = List(25l, 15l, 5l)
+    }
       
-      parser createDocuments (dummyDocumentData, dummyTagData, dummyNodeData) returns dummyDocuments
-
-      val documents = subTreeLoader.loadDocuments(dummyNodeList, Seq(dummyTag))
-
+    "load documents in nodes and tags" in new DistinctDocumentsInNodesAndTags {
+      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
+      
       there was one(loader).loadDocuments(allDocumentIds)
-      there was one(loader).loadDocumentTags(allDocumentIds)
-      there was one(parser).createDocuments(dummyDocumentData, dummyTagData, dummyNodeData)
     }
+
     
-    "not duplicate documents included in multiple nodes" in new MockComponents {
-      val documentIds = List(10l, 20l, 30l, 10l, 20l, 30l)
-      val dummyNodeList = createTwoDummyNodes(documentIds)
-      val dummyNodeData = List((10l, 22l), (20l, 33l))
-      val dummyTagData = Nil
+    "only create one document for each unique included document id" in  new DuplicateDocuments {
+      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
 
-      loader loadDocuments (documentIds.distinct) returns dummyDocumentData
-      parser createDocuments (dummyDocumentData, dummyTagData, dummyNodeData) returns dummyDocuments
-
-      val documents = subTreeLoader.loadDocuments(dummyNodeList, Nil)
-
-      there was one(loader).loadDocuments(documentIds.distinct)
+      there was one(loader).loadDocuments(allDocumentIds.distinct)
     }
 
-    "create documents in sorted order" in new MockComponents {
-      val documentIds = List(30l, 20l, 40l, 10l, 60l, 50l)
-      val dummyNodeList = createTwoDummyNodes(documentIds)
-      val dummyNodeData = List((10l, 22l), (20l, 33l))
-      val dummyTagData = Nil
+    "create documents in sorted order" in new UnsortedDocuments {
+      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
 
-      loader loadDocuments (documentIds.sorted) returns dummyDocumentData
-      parser createDocuments (dummyDocumentData, dummyTagData, dummyNodeData) returns dummyDocuments
-
-      val documents = subTreeLoader.loadDocuments(dummyNodeList, Nil)
-
-      there was one(loader).loadDocuments(documentIds.sorted)
+      there was one(loader).loadDocuments(allDocumentIds.sorted)
     }
 
+
+    // test loadRootId()
     "loads root node from loader" in new MockComponents {
       val dummyRootNodeId = Some(1l)
 
@@ -137,6 +138,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       rootId must be equalTo (dummyRootNodeId)
     }
 
+    // test loadTags()
     "load tag information for nodes" in new MockComponents {
       val dummyTagData = List((1l, "dummy", 55l, Some(10l), None))
       val dummyTags = List(core.Tag(1l, "dummy", None, null))
@@ -151,13 +153,6 @@ class SubTreeLoaderSpec extends Specification with Mockito {
 
       tags must be equalTo (dummyTags)
     }
-
-    "be constructable with default loader and parser" in {
-      val subTreeLoader = new SubTreeLoader(1l)
-
-      success
-    }
-
   }
 
 }
