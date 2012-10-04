@@ -80,31 +80,6 @@ class SubTreeDataLoaderDocumentQuerySpec extends Specification {
       val nodes = nodeDocumentIds.map(_._1)
       nodes.distinct must haveTheSameElementsAs(nodeIds)
     }
-
-    "return all documents in nodes" in new DocumentsLoaded {
-      val numberOfDocuments = 3
-      val documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, numberOfDocuments)
-
-      val documents = subTreeDataLoader.loadDocuments(documentIds)
-
-      documents must have size (nodeIds.size * numberOfDocuments)
-      documents.map(_._1) must haveTheSameElementsAs(documentIds)
-
-      val titles = (1 to numberOfDocuments).map("title-" + _)
-      documents.map(_._2) must containAllOf(titles)
-
-      val documentCloudIds = (1 to numberOfDocuments).map("documentcloudId-" + _)
-      documents.map(_._3) must containAllOf(documentCloudIds)
-    }
-
-    "return no documents if no document ids specified" in new DocumentsLoaded {
-      insertDocumentsForeachNode(documentSetId, nodeIds, 10)
-      val emptyDocumentIdList = Nil
-
-      val documents = subTreeDataLoader.loadDocuments(emptyDocumentIdList)
-
-      documents must be empty
-    }
   }
 
   step(stop)
