@@ -24,7 +24,7 @@ object ApplicationBuild extends Build {
 
   val playAppDependencies = appDependencies ++ Seq(
     "net.sf.opencsv" % "opencsv" % "2.3",
-    "jp.t2v" %% "play20.auth" % "0.3-SNAPSHOT",
+    "jp.t2v" %% "play20.auth" % "0.3",
     "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
   )
