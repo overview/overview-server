@@ -3,7 +3,7 @@ package models
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import models.DatabaseStructure.TagData
+import models.DatabaseStructure.{DocumentListData, TagData}
 
 class PersistentTagLoader extends DocumentTagDataLoader {
 
@@ -61,7 +61,7 @@ class PersistentTagLoader extends DocumentTagDataLoader {
       as(tagDataParser map (flatten) *)
   }
 
-  def loadDocumentList(tagId: Long)(implicit c: Connection): Seq[(Long, Option[Long])] = {
+  def loadDocumentList(tagId: Long)(implicit c: Connection): Seq[DocumentListData] = {
     val documentListDataParser = long("document_count") ~ get[Option[Long]]("document_id")
 
     SQL("""

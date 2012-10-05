@@ -35,6 +35,9 @@ object DatabaseStructure {
   /** documentId, tagId */
   type DocumentTagData = (Long, Long)
 
+  /** documentCount, documentId */
+  type DocumentListData = (Long, Option[Long])
+
   /**
    * tagId, name, count, Some(documentId), Some(color).
    * If there are no documents with the tag, None appears in the documentId place
