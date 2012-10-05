@@ -43,6 +43,7 @@ object DatabaseStructure {
    * If there are no documents with the tag, None appears in the documentId place
    */
   type TagData = (Long, String, Long, Option[Long], Option[String])
+  type TagData2 = (Long, String, Option[String], Long, Option[Long])    
 
   /** used as parentId if a node has no parent */
   val NoId = -1l;
