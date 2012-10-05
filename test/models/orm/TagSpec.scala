@@ -12,9 +12,12 @@ class TagSpec extends Specification {
 
   "Tag" should {
 
-    "be findable by name" in new DbTestContext {
-      val documentSetId = insertDocumentSet("TagSpec")
+    trait TagContext extends DbTestContext {
+      lazy val documentSetId = insertDocumentSet("TagSpec")
       val name = "some tag"
+    }
+    
+    "be findable by name" in new TagContext {
       val tagId = insertTag(documentSetId, name)
       
       val tag = Tag.findByName(documentSetId, name)
@@ -25,8 +28,15 @@ class TagSpec extends Specification {
 	t.name must be equalTo(name)
 	t.color must beNone
       }
-
     }
+
+    "be saveable" in new TagContext {
+      val tag = Tag(documentSetId = documentSetId, name = name)
+      tag.save
+
+      tag.id must not be equalTo(0)
+    }
+
   }
 
   step(stop)

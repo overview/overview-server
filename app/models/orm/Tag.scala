@@ -8,8 +8,11 @@ case class Tag(
   val id: Long = 0l,
   @Column("document_set_id") val documentSetId: Long,
   val name: String,
-  val color: Option[String] = None) extends KeyedEntity[Long]
+  val color: Option[String] = None) extends KeyedEntity[Long] {
 
+  def save: Tag = Schema.tags.insert(this)
+}
+ 
 object Tag {
 
   def findByName(documentSetId: Long, name: String): Option[Tag] = {
