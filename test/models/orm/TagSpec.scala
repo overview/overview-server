@@ -16,6 +16,15 @@ class TagSpec extends Specification {
       lazy val documentSetId = insertDocumentSet("TagSpec")
       val name = "some tag"
     }
+
+    trait ExistingTag extends TagContext {
+      lazy val tag = Tag(documentSetId = documentSetId, name = name)
+    }
+
+    trait TagForUpdate extends ExistingTag {
+      val newName = "some other tag now"
+      val newColor = "12adff"
+    }
     
     "be findable by name" in new TagContext {
       val tagId = insertTag(documentSetId, name)
@@ -30,23 +39,33 @@ class TagSpec extends Specification {
       }
     }
 
-    "be saveable" in new TagContext {
-      val tag = Tag(documentSetId = documentSetId, name = name)
+    "be saveable" in new ExistingTag {
       tag.save
-
       tag.id must not be equalTo(0)
     }
 
-    "be updateable" in new TagContext {
-      val newName = "some other tag now"
-      val newColor = "12adff"
-      
-      val tag = Tag(documentSetId = documentSetId, name = name)
-
+    "be updateable" in new TagForUpdate {
       val updatedTag = tag.withUpdate(newName, newColor)
 
       updatedTag.name must be equalTo(newName)
       updatedTag.color must beSome.like { case c => c must be equalTo(newColor) }
+    }
+
+    "be saveable after update" in new TagForUpdate {
+      tag.save
+      val tagId = tag.id
+      
+      val updatedTag = tag.withUpdate(newName, newColor)
+
+      updatedTag.save
+      val storedTag = Tag.findByName(documentSetId, newName)
+      storedTag must beSome.like { case t: Tag =>
+	t.id must be equalTo(tagId)
+	t.documentSetId must be equalTo(documentSetId)
+	t.name must be equalTo(newName)
+	t.color must beSome.like { case c => c must be equalTo(newColor) }
+      }
+      
     }
 
   }
