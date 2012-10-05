@@ -2,10 +2,15 @@ package models
 
 import java.sql.Connection
 
-trait PersistentTag {
+trait OverviewTag {
   val id: Long
   val name: String
   val color: Option[String]
+//  val documentIds: models.core.DocumentIdList
+}
+  
+
+trait PersistentTag extends OverviewTag {
 
   def documentIds(implicit c: Connection): models.core.DocumentIdList
 

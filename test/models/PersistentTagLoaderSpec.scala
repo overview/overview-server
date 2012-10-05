@@ -122,6 +122,15 @@ class PersistentTagLoaderSpec extends Specification {
 
       tagData must haveTheSameElementsAs(expectedTagData)
     }
+
+    "load document list data" in new TaggedDocuments {
+      val totalTagged = numberOfNodes * documentsPerNode
+      val expectedDocumentListData = documentIds.take(10).map(d => (totalTagged, Some(d)))
+	
+      val documentListData = tagLoader.loadDocumentList(tagId)
+	
+      documentListData must haveTheSameElementsAs(expectedDocumentListData)
+    }
   }
 
   step(stop)
