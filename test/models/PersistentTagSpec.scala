@@ -38,10 +38,17 @@ class PersistentTagSpec extends Specification with Mockito {
       }
     }
 
-    trait DocumentsTagged extends MockComponents  {
+    trait DocumentsTagged extends ExistingTag  {
       val dummyTagId = 23l
       val documentIds = Seq(1l, 2l)
       val tag = core.Tag(dummyTagId, name, None, core.DocumentIdList(documentIds, 3))
+
+      override def setupWithDb = {
+	super.setupWithDb
+	val dummyTagData = null
+	loader loadTag(tagId) returns dummyTagData
+	parser createTags(dummyTagData) returns Seq(tag)
+      }
     }
 
     "create tag if not in database" in new NoTag {
@@ -116,7 +123,7 @@ class PersistentTagSpec extends Specification with Mockito {
     "load documents referenced by tag" in new DocumentsTagged {
       val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
 
-      val documents = persistentTag.loadDocuments(tag)
+      val documents = persistentTag.loadDocuments
 
       there was one(loader).loadDocuments(documentIds)
     }

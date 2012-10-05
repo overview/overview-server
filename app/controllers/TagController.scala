@@ -60,7 +60,7 @@ object TagController extends BaseController {
 
         val tagUpdateCount = documents.addTag(tagData.id)
         val tag = tagData.loadTag
-        val taggedDocuments = tagData.loadDocuments(tag)
+        val taggedDocuments = tagData.loadDocuments
 
         Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
       })
@@ -75,7 +75,7 @@ object TagController extends BaseController {
           documents => {
             val tagUpdateCount = documents.removeTag(tagData.id)
             val tag = tagData.loadTag
-            val taggedDocuments = tagData.loadDocuments(tag)
+            val taggedDocuments = tagData.loadDocuments
 
             Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
           })

@@ -14,7 +14,7 @@ trait PersistentTag {
   def update(newName: String, newColor: String)(implicit c: Connection): Int
   def delete()(implicit c: Connection): Long
   def loadTag(implicit c: Connection): core.Tag
-  def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document]
+  def loadDocuments(implicit c: Connection): Seq[core.Document]
 }
 
 object PersistentTag {
@@ -75,9 +75,9 @@ object PersistentTag {
       parser.createTags(tagData).head
     }
 
-    def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document] = {
-      val documentIds = tag.documentIds.firstIds
-      loadDocumentList(documentIds)
+    def loadDocuments(implicit c: Connection): Seq[core.Document] = {
+      val documentIdList = documentIds.firstIds
+      loadDocumentList(documentIdList)
     }
 
   }
