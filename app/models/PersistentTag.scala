@@ -19,29 +19,28 @@ object PersistentTag {
     loader: PersistentTagLoader = new PersistentTagLoader(),
     parser: DocumentListParser = new DocumentListParser(),
     saver: PersistentTagSaver = new PersistentTagSaver())(implicit c: Connection): PersistentTag = {
-    val tagId = loader.loadByName(documentSetId, name) match {
-      case Some(id) => id
-      case None => saver.save(documentSetId, name).get
+
+    val tag = models.orm.Tag.findByName(documentSetId, name) match {
+      case Some(t) => t
+      case None => models.orm.Tag(documentSetId = documentSetId, name = name).save
     }
 
-    new PersistentTagImpl(tagId, name, loader, parser, saver)
+    new PersistentTagImpl(tag, name, loader, parser, saver)
   }
 
   def findByName(name: String, documentSetId: Long,
     loader: PersistentTagLoader = new PersistentTagLoader(),
     parser: DocumentListParser = new DocumentListParser(),
     saver: PersistentTagSaver = new PersistentTagSaver())(implicit c: Connection): Option[PersistentTag] = {
-    loader.loadByName(documentSetId, name) match {
-      case Some(id) => Some(new PersistentTagImpl(id, name, loader, parser, saver))
-      case None => None
-    }
+
+    models.orm.Tag.findByName(documentSetId, name).map(new PersistentTagImpl(_, name, loader, parser, saver))
   }
 
-  private class PersistentTagImpl(tagId: Long, name: String,
+  private class PersistentTagImpl(tag: models.orm.Tag, name: String,
     loader: PersistentTagLoader,
     parser: DocumentListParser,
     saver: PersistentTagSaver) extends DocumentListLoader(loader, parser) with PersistentTag {
-    val id = tagId
+    val id = tag.id
 
     def count(implicit c: Connection): Long = {
       loader.countDocuments(id)
@@ -54,7 +53,7 @@ object PersistentTag {
     def update(name: String, color: String)(implicit c: Connection): Int = {
       saver.update(id, name, color)
     }
-    
+
     def delete()(implicit c: Connection): Long = {
       saver.delete(id)
     }
