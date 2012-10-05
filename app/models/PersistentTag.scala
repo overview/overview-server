@@ -4,10 +4,14 @@ import java.sql.Connection
 
 trait PersistentTag {
   val id: Long
+  val name: String
+  val color: Option[String]
+
+  def documentIds(implicit c: Connection): models.core.DocumentIdList
 
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection): Seq[(Long, Long)]
-  def update(name: String, color: String)(implicit c: Connection): Int
+  def update(newName: String, newColor: String)(implicit c: Connection): Int
   def delete()(implicit c: Connection): Long
   def loadTag(implicit c: Connection): core.Tag
   def loadDocuments(tag: core.Tag)(implicit c: Connection): Seq[core.Document]
@@ -25,7 +29,7 @@ object PersistentTag {
       case None => models.orm.Tag(documentSetId = documentSetId, name = name).save
     }
 
-    new PersistentTagImpl(tag, name, loader, parser, saver)
+    new PersistentTagImpl(tag, loader, parser, saver)
   }
 
   def findByName(name: String, documentSetId: Long,
@@ -33,14 +37,22 @@ object PersistentTag {
     parser: DocumentListParser = new DocumentListParser(),
     saver: PersistentTagSaver = new PersistentTagSaver())(implicit c: Connection): Option[PersistentTag] = {
 
-    models.orm.Tag.findByName(documentSetId, name).map(new PersistentTagImpl(_, name, loader, parser, saver))
+    models.orm.Tag.findByName(documentSetId, name).map(new PersistentTagImpl(_, loader, parser, saver))
   }
 
-  private class PersistentTagImpl(tag: models.orm.Tag, name: String,
+  private class PersistentTagImpl(tag: models.orm.Tag,
     loader: PersistentTagLoader,
     parser: DocumentListParser,
     saver: PersistentTagSaver) extends DocumentListLoader(loader, parser) with PersistentTag {
+
     val id = tag.id
+    val name = tag.name
+    val color = tag.color
+
+    def documentIds(implicit c: Connection): models.core.DocumentIdList = {
+      val t = loadTag
+      t.documentIds
+    }
 
     def count(implicit c: Connection): Long = {
       loader.countDocuments(id)
@@ -50,8 +62,8 @@ object PersistentTag {
       loader.countsPerNode(nodeIds, id)
     }
 
-    def update(name: String, color: String)(implicit c: Connection): Int = {
-      saver.update(id, name, color)
+    def update(newName: String, newColor: String)(implicit c: Connection): Int = {
+      saver.update(id, newName, newColor)
     }
 
     def delete()(implicit c: Connection): Long = {
