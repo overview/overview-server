@@ -37,6 +37,18 @@ class TagSpec extends Specification {
       tag.id must not be equalTo(0)
     }
 
+    "be updateable" in new TagContext {
+      val newName = "some other tag now"
+      val newColor = "12adff"
+      
+      val tag = Tag(documentSetId = documentSetId, name = name)
+
+      val updatedTag = tag.withUpdate(newName, newColor)
+
+      updatedTag.name must be equalTo(newName)
+      updatedTag.color must beSome.like { case c => c must be equalTo(newColor) }
+    }
+
   }
 
   step(stop)

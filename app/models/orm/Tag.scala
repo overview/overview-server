@@ -11,6 +11,8 @@ case class Tag(
   val color: Option[String] = None) extends KeyedEntity[Long] {
 
   def save: Tag = Schema.tags.insert(this)
+
+  def withUpdate(newName: String, color: String): Tag = copy(name = newName, color = Some(color))
 }
  
 object Tag {
