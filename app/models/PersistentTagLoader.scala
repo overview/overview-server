@@ -3,7 +3,7 @@ package models
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
-import models.DatabaseStructure.{DocumentListData, TagData}
+import models.DatabaseStructure.{ DocumentListData, TagData }
 
 class PersistentTagLoader extends DocumentTagDataLoader {
 
@@ -39,8 +39,29 @@ class PersistentTagLoader extends DocumentTagDataLoader {
     nodeCounts ++ zeroCounts
   }
 
+  def loadTagByName(documentSetId: Long, name: String)(implicit c: Connection): List[(Long, String, Option[String], Long, Option[Long])] = {
+    val tagDataParser = long("tag_id") ~ str("tag_name") ~ get[Option[String]]("tag_color") ~
+      long("document_count") ~ get[Option[Long]]("document_id")
+
+    SQL("""
+        SELECT tag_id, tag_name, tag_color, document_count, document_id
+        FROM (
+          SELECT t.id AS tag_id, t.name AS tag_name, t.color AS tag_color,
+            COUNT(dt.document_id) OVER (PARTITION BY dt.tag_id) AS document_count,
+                dt.document_id, 
+            RANK() OVER (PARTITION BY dt.tag_id ORDER BY dt.document_id) AS pos
+          FROM tag t
+          LEFT JOIN document_tag dt ON t.id = dt.tag_id
+          WHERE t.document_set_id = {documentSetId} AND t.name = {tagName}
+          ORDER BY t.name, dt.document_id
+        ) ss
+        WHERE ss.pos < 11
+        """).on("documentSetId" -> documentSetId, "tagName" -> name).
+      as(tagDataParser map (flatten) *)
+  }
   
   def loadTag(tagId: Long)(implicit c: Connection): Seq[TagData] = {
+
     val tagDataParser = long("tag_id") ~ str("tag_name") ~ long("document_count") ~
       get[Option[Long]]("document_id") ~ get[Option[String]]("tag_color")
 
@@ -78,5 +99,5 @@ class PersistentTagLoader extends DocumentTagDataLoader {
         """).on("tagId" -> tagId).
       as(documentListDataParser map (flatten) *)
   }
-  
+
 }
