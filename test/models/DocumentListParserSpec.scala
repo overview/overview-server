@@ -38,4 +38,11 @@ class DocumentListParserSpec extends Specification {
       tags(1).documentIds.totalCount must be equalTo(0)
     }
   }
+
+  "return empty list if given no data" in {
+    val parser = new DocumentListParser
+    val tags = parser.createTags2(Nil)
+    
+    tags must beEmpty
+  }
 }
