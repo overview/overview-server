@@ -7,9 +7,9 @@ DEFAULT_OPTIONS = {
 
 # An incomplete tree structure.
 #
-# The tree depends upon a resolver. It will call
-# `resolver.get_deferred('node', [id])` and act upon the deferred JSON result.
-# The first call will be to `reoslver.get_deferred('root')`.
+# The tree depends upon a cache. It will call
+# `cache.resolve_deferred('node', [id])` and act upon the deferred JSON result.
+# The first call will be to `cache.resolve_deferred('root')`.
 #
 # Usage:
 #
@@ -37,7 +37,7 @@ DEFAULT_OPTIONS = {
 #
 # * cache_size (default 1000): number of nodes to *not* remove
 class OnDemandTree
-  constructor: (@resolver, options={}) ->
+  constructor: (@cache, options={}) ->
     @id_tree = new IdTree()
     @nodes = {}
     @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
@@ -152,10 +152,10 @@ class OnDemandTree
       undefined
 
   demand_root: () ->
-    @resolver.get_deferred('root').done(this._add_json.bind(this))
+    @cache.resolve_deferred('root').done(this._add_json.bind(this))
 
   demand_node: (id) ->
-    @resolver.get_deferred('node', id).done(this._add_json.bind(this))
+    @cache.resolve_deferred('node', id).done(this._add_json.bind(this))
 
   unload_node_children: (id) ->
     @id_tree.edit (editable) =>

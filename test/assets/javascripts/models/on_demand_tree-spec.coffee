@@ -6,21 +6,21 @@ class MockDocumentStore
   constructor: () ->
     @documents = {}
 
-class MockResolver
+class MockCache
   constructor: () ->
     @deferreds = []
 
-  get_deferred: (@type, @id) ->
+  resolve_deferred: (@type, @id) ->
     @deferreds.push(ret = new Deferred())
     ret
 
 describe 'models/on_demand_tree', ->
   describe 'OnDemandTree', ->
-    resolver = undefined
+    cache = undefined
     tree = undefined
 
     create_tree = (cache_size) ->
-      tree = new OnDemandTree(resolver, { cache_size: cache_size })
+      tree = new OnDemandTree(cache, { cache_size: cache_size })
 
     add_nodes_through_deferred = (nodes) ->
       deferred = tree.demand_node(nodes[0].id)
@@ -41,7 +41,7 @@ describe 'models/on_demand_tree', ->
       ret
 
     beforeEach ->
-      resolver = new MockResolver()
+      cache = new MockCache()
 
     describe 'starting with an empty tree', ->
       beforeEach ->
@@ -50,10 +50,10 @@ describe 'models/on_demand_tree', ->
       it 'should start with id_tree empty', ->
         expect(tree.id_tree.root).toEqual(-1)
 
-      it 'should demand_root() and call get_deferred("root")', ->
+      it 'should demand_root() and call resolve_deferred("root")', ->
         deferred = tree.demand_root()
-        expect(resolver.type).toEqual('root')
-        expect(resolver.id).toBeUndefined()
+        expect(cache.type).toEqual('root')
+        expect(cache.id).toBeUndefined()
         expect(deferred.done).toBeDefined()
 
       it 'should add results to the tree', ->
@@ -78,13 +78,13 @@ describe 'models/on_demand_tree', ->
 
       it 'should allow demand_node() on unresolved nodes', ->
         deferred = tree.demand_node(4)
-        expect(resolver.type).toEqual('node')
-        expect(resolver.id).toEqual(4)
+        expect(cache.type).toEqual('node')
+        expect(cache.id).toEqual(4)
 
       it 'should allow demand_node() on resolved nodes', ->
         deferred = tree.demand_node(1)
-        expect(resolver.type).toEqual('node')
-        expect(resolver.id).toEqual(1)
+        expect(cache.type).toEqual('node')
+        expect(cache.id).toEqual(1)
 
       it 'should add nodes added through demand_node()', ->
         deferred = tree.demand_node(4)

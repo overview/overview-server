@@ -8,8 +8,8 @@ PropertyInterpolator = require('models/property_interpolator').PropertyInterpola
 
 Deferred = jQuery.Deferred
 
-class MockResolver
-  get_deferred: (type, id) -> new Deferred()
+class MockCache
+  resolve_deferred: (type, id) -> new Deferred()
 
 class MockState
   observable(this)
@@ -27,8 +27,8 @@ describe 'models/animated_tree', ->
       interpolator = new PropertyInterpolator(1000, (x) -> x)
       animator = new Animator(interpolator)
       state = new MockState()
-      resolver = new MockResolver()
-      on_demand_tree = new OnDemandTree(resolver, { cache_size: 1000 })
+      cache = new MockCache()
+      on_demand_tree = new OnDemandTree(cache, { cache_size: 1000 })
       animated_tree = new AnimatedTree(on_demand_tree, state, animator)
 
     add_nodes = (list) ->

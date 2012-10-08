@@ -31,12 +31,13 @@ class DocumentList
   slice: (start, end) ->
     deferred_key = "#{start}..#{end}"
 
-    return @deferreds[deferred_key] if @deferreds[deferred_key]?
+    if @deferreds[deferred_key]?
+      return @deferreds[deferred_key]
 
     deferred = if end < @documents.length
       new Deferred().resolve(@documents.slice(start, end))
     else
-      @cache.needs_resolver.get_deferred('selection_documents_slice', { selection: @selection, start: start, end: end }).done((ret) =>
+      @cache.resolve_deferred('selection_documents_slice', { selection: @selection, start: start, end: end }).done((ret) =>
         document_store_input = {
           doclist: { docids: [] },
           documents: {},

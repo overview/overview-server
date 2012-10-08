@@ -13,14 +13,14 @@ handle_node_resolved = (needs_resolver, obj) ->
 
 resolve_root = (needs_resolver) ->
   needs_resolver.server.get('root').done (obj) ->
-    documents_hash = list_to_hash(obj.documents)
-
     tag_store = needs_resolver.tag_store
-    document_store = needs_resolver.document_store
+    for tag in obj.tags
+      tag_store.add(tag)
 
+    documents_hash = list_to_hash(obj.documents)
+    document_store = needs_resolver.document_store
     for tag in obj.tags
       document_store.add_doclist(tag.doclist, documents_hash)
-      tag_store.add(tag)
 
     handle_node_resolved(needs_resolver, obj)
 
