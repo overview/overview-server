@@ -18,7 +18,7 @@ controllers.UserController.create.success=Thank you for registering. There''s on
 forms.Confirmation.token.not_found=We could not find a user with this confirmation token. Please try clicking the link in your confirmation email again.
 
 forms.LoginForm.error.invalid_credentials=Invalid username or password
-forms.LoginForm.error.not_confirmed=We already sent an email to this user with a confirmation link. You need to click that link before you can log in.
+forms.LoginForm.error.not_confirmed=Your username and password are correct, but you can''t log in until you click the link in the confirmation email we sent you.
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
