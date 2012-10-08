@@ -14,9 +14,13 @@ class MockDocumentStore
   constructor: () ->
     @adds = []
     @removes = []
+    @documents = {}
 
   add_doclist: (doclist, documents) ->
     @adds.push({ doclist: doclist, documents: documents })
+    for docid in doclist.docids
+      @documents[docid] = documents[docid]
+    undefined
 
   remove_doclist: (doclist) ->
     @removes.push(doclist)

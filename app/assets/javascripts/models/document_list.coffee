@@ -44,7 +44,6 @@ class DocumentList
         }
 
         for document, i in ret.documents
-          @documents[start+i] = document
           document_store_input.doclist.docids.push(document.id)
           document_store_input.documents[document.id] = document
         @n = ret.total_items
@@ -52,6 +51,11 @@ class DocumentList
           document_store_input.doclist,
           document_store_input.documents
         )
+        for document, i in ret.documents
+          # FIXME make document_list a bunch of IDs, not actual documents
+          docid = document.id
+          real_document = @cache.document_store.documents[docid]
+          @documents[start+i] = real_document
         this._notify()
       ).pipe((ret) -> ret.documents)
 

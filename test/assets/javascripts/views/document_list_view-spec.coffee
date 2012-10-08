@@ -147,6 +147,14 @@ describe 'views/document_list_view', ->
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(2)
 
+      it 'should remove a tag from the list item after the document changes', ->
+        document_list.documents[0].tagids.push(2)
+        view = create_view()
+        document_list.documents[0].tagids.pop()
+        document_store._notify('document-changed', document_list.documents[0])
+        $tags = $('a:eq(0) span.tags', view.div)
+        expect($tags.children().length).toEqual(1)
+
       it 'should re-color a tag after it changes', ->
         view = create_view()
         tag_store.tags[0].color = '#234567'
