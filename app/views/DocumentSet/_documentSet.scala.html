@@ -2,6 +2,8 @@
   documentSet: models.orm.DocumentSet
 )(implicit lang: play.api.i18n.Lang)
 
+@import views.helper.DocumentSetHelper
+
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
   <li id="document-set-@documentSet.id" class="@(documentSet.documentSetCreationJob.map(j => "unfinished"))">
     <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
@@ -15,14 +17,7 @@
           <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
           <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
         </label>
-        <!-- FIXME make i18n-friendly --><span class="state-description">@{
-          val jobsToProcess = job.jobsAheadInQueue
-          if (jobsToProcess == 0) {
-            job.stateDescription
-          } else {
-            m("jobs_to_process", jobsToProcess)
-          }
-        }</span>
+        <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
     }.getOrElse {
       <span class="document-count">@m("document_count", documentSet.documentCount)</span>
     }

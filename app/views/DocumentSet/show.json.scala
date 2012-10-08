@@ -1,35 +1,22 @@
 package views.json.DocumentSet
 
-import models.orm.{ DocumentSet, DocumentSetCreationJob }
-import models.orm.DocumentSetCreationJobState._
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
-import views.Magic._
+
+import models.orm.{ DocumentSet, DocumentSetCreationJob }
+import models.orm.DocumentSetCreationJobState.NotStarted
 import views.ScopedMessages
+import views.helper.DocumentSetHelper
 
 object show {
-  private val KeyScope = "views.DocumentSet._documentSet"
-  private val StateKeyScope = "models.DocumentSetCreationJob.state"
-  private val JobStateDescriptionKey = "job_state_description."
-  private val m = ScopedMessages(KeyScope)
-  private val stateM = ScopedMessages(StateKeyScope)
-
-  private def stateDescription(description: String): String = {
-    val keyWithArg = """([^:]*):(.*)""".r
-
-    description match {
-      case keyWithArg(key, arg) => m(JobStateDescriptionKey + key, arg)
-      case "" => ""
-      case d => m(JobStateDescriptionKey + d)
-    }
-  }
+  private val jobStateKeyToMessage = ScopedMessages("models.DocumentSetCreationJob.state")
 
   private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
     val notCompleteMap = Map(
-      "state" -> toJson(stateM(job.state.toString)),
+      "state" -> toJson(jobStateKeyToMessage(job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
-      "state_description" -> toJson(stateDescription(job.stateDescription)))
+      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.stateDescription)))
     val notStartedMap = job.state match {
       case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
       case _ => Map()
