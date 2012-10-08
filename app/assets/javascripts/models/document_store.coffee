@@ -3,7 +3,7 @@ observable = require('models/observable').observable
 # Canonical store of all loaded documents
 #
 # A document is a play JS object that looks like this:
-# { id: [int], title: [string], tagids: [[int], [int],...] }
+# { id: (int), title: (string), tagids: [(int), ...], nodeids: [(int), ...] }
 class DocumentStore
   observable(this)
 

@@ -43,26 +43,14 @@ class Selection
     new Selection(obj)
 
   _node_ids_to_document_ids: (cache, node_ids) ->
-    c = cache.on_demand_tree.id_tree.children
-    n = cache.on_demand_tree.nodes
-
-    # get flat list of all node IDs, with descendents
-    all_node_ids = []
-    next_node_ids = node_ids.slice(0)
-    while next_node_ids.length
-      last_node_ids = next_node_ids
-      next_node_ids = []
-      for nextid in last_node_ids
-        continue if !n[nextid]?
-        continue if all_node_ids.indexOf(nextid) >= 0
-        all_node_ids.push(nextid)
-        if c[nextid]?
-          for childid in c[nextid]
-            next_node_ids.push(childid)
-
-    # turn that into documents
-    arrays = (n[nodeid].doclist.docids for nodeid in all_node_ids)
-    _.uniq(_.union.apply(null, arrays))
+    arrays = []
+    for nodeid in node_ids
+      array = []
+      for id, document of cache.document_store.documents
+        if document.nodeids.indexOf(nodeid) != -1
+          array.push(document.id) # not plain id, which is a String
+      arrays.push(array)
+    _.uniq(_.union.apply({}, arrays))
 
   _tag_ids_to_document_ids: (cache, tag_ids) ->
     arrays = []
