@@ -13,6 +13,7 @@ class World
     
   rewrite_tag_id: (old_tagid, tag) =>
     @cache.document_store.rewrite_tag_id(old_tagid, tag.id)
+    @cache.on_demand_tree.rewrite_tag_id(old_tagid, tag.id)
 
     index = @state.selection.tags.indexOf(old_tagid)
     if index != -1

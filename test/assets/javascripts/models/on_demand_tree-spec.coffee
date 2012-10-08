@@ -76,6 +76,10 @@ describe 'models/on_demand_tree', ->
       it 'should not get unresolved-node objects', ->
         expect(tree.nodes[4]).toBeUndefined()
 
+      it 'should rewrite a tag id', ->
+        tree.rewrite_tag_id(2, 7)
+        expect(tree.nodes[1].tagcounts).toEqual({ "1": 20, "7": 10 })
+
       it 'should allow demand_node() on unresolved nodes', ->
         deferred = tree.demand_node(4)
         expect(cache.type).toEqual('node')

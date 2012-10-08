@@ -217,5 +217,17 @@ class OnDemandTree
     parent = this.get_node_parent(node)
     this._add_tagcount_to_node_and_ancestors(parent, tagid, count) if parent?
 
+  rewrite_tag_id: (old_tagid, tagid) ->
+    old_tagid_string = "#{old_tagid}"
+    tagid_string = "#{tagid}"
+    for __, node of @nodes
+      tagcounts = node.tagcounts
+      tagcount = tagcounts[old_tagid_string]
+      if tagcount?
+        delete tagcounts[old_tagid_string]
+        tagcounts[tagid_string] = tagcount
+
+    undefined
+
 exports = require.make_export_object('models/on_demand_tree')
 exports.OnDemandTree = OnDemandTree
