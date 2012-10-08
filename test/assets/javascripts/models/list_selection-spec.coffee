@@ -97,3 +97,8 @@ describe 'models/list_selection', ->
       selection.add_or_remove_index(3)
       selection.set_range_from_last_index_to_index(4)
       expect(selection.get_indices()).toEqual([3, 4])
+
+    it 'should allow unset', ->
+      selection.set_index(4)
+      selection.unset()
+      expect(selection.get_indices()).toEqual([])

@@ -22,39 +22,30 @@ class ListSelection
   constructor: () ->
     @_selected_by_index = []
     @_last_index = undefined
-    @_last_range = []
 
   get_indices: () ->
     index for selected, index in @_selected_by_index when selected
 
+  unset: () ->
+    @_selected_by_index = []
+    @_last_index = undefined
+
   set_index: (index) ->
     @_selected_by_index = []
     @_selected_by_index[index] = true
-    @_last_range = []
     @_last_index = index
     undefined
 
   add_or_remove_index: (index) ->
     selected = @_selected_by_index[index] = !@_selected_by_index[index]
 
-    @_last_range = []
     @_last_index = if selected
       index
     else
       undefined
 
-  _undo_last_range: () ->
-    for selected, index in @_last_range
-      @_selected_by_index[index] = selected if selected?
-
-    undefined
-
-  _select_and_set_last_range: (start_index, end_index) ->
-    @_last_range = []
-    for i in [ start_index .. end_index ]
-      @_last_range[i] = @_selected_by_index[i] || false
-      @_selected_by_index[i] = true
-
+  _select_range: (start_index, end_index) ->
+    @_selected_by_index[i] = true for i in [ start_index .. end_index ]
     undefined
 
   add_or_expand_range_from_last_index_to_index: (index) ->
@@ -62,13 +53,13 @@ class ListSelection
       this.add_or_remove_index(index)
     else
       @_last_index ||= index
-      this._select_and_set_last_range(@_last_index, index)
+      this._select_range(@_last_index, index)
 
   set_range_from_last_index_to_index: (index) ->
     @_last_index = index if !@_last_index?
 
     this.set_index(@_last_index)
-    this._select_and_set_last_range(@_last_index, index)
+    this._select_range(@_last_index, index)
 
 exports = require.make_export_object('models/list_selection')
 exports.ListSelection = ListSelection

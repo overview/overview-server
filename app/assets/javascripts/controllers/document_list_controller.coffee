@@ -9,6 +9,8 @@ VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
+is_mac_os = () -> /Mac/.test(navigator.platform)
+
 document_list_controller = (div, cache, state) ->
   listed_selection = undefined
   document_list = undefined
@@ -43,12 +45,32 @@ document_list_controller = (div, cache, state) ->
 
   view.observe('need-documents', maybe_fetch)
 
-  view.observe 'document-clicked', ->
-    docid = view.last_document_id_clicked()
+  view.observe 'document-clicked', (docid, options) ->
     index = _(document_list.documents).pluck('id').indexOf(docid)
-    log('clicked document', "#{docid}")
+    log('clicked document', "#{docid} meta:#{options.meta} shift: #{options.shift}")
 
-    selected_indices.set_index(index)
+    if index == -1
+      selected_indices.unset() if !options.meta && !options.shift
+    else
+      # Update selection, taking modifier keys and platform into account
+      if !options.meta && !options.shift
+        selected_indices.set_index(index)
+      else if is_mac_os()
+        # Mac OS: Command key overrides Shift key
+        if options.meta # (Shift+Command or Command)
+          selected_indices.add_or_remove_index(index)
+        else # (Shift only)
+          selected_indices.set_range_from_last_index_to_index(index)
+      else
+        # Windows/Linux: Shift+Command adds ranges
+        if options.shift
+          if options.meta # (Shift+Ctrl)
+            selected_indices.add_or_expand_range_from_last_index_to_index(index)
+          else # (Shift only)
+            selected_indices.set_range_from_last_index_to_index(index)
+        else # (Ctrl only)
+          selected_indices.add_or_remove_index(index)
+
     selected_docids = selected_indices.get_indices().map((i) -> document_list.documents[i].id)
 
     state.set('selection', listed_selection.plus({ documents: selected_docids }))

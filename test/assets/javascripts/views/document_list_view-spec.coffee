@@ -170,29 +170,27 @@ describe 'views/document_list_view', ->
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(0)
 
-      it 'should not have any "last clicked" document', ->
-        view = create_view()
-        expect(view.last_document_id_clicked()).toBeUndefined()
-
-      it 'should set the proper "last clicked" document', ->
-        view = create_view()
-        $(view.div).find('a[href=#document-1]').click()
-        expect(view.last_document_id_clicked()).toEqual(1)
-
-      it 'should unset the "last clicked" document if we click somewhere else', ->
-        view = create_view()
-        $a = $(view.div).find('a[href=#document-1]')
-        $a.click()
-        $a.parent().click()
-        expect(view.last_document_id_clicked()).toBeUndefined()
-
       it 'should notify "document-clicked"', ->
         view = create_view()
         $a = $(view.div).find('a[href=#document-1]')
-        called = false
-        view.observe('document-clicked', () -> called = true)
+        id = undefined
+        view.observe('document-clicked', (docid) -> id = docid)
         $a.click()
-        expect(called).toBeTruthy()
+        expect(id).toEqual(1)
+
+      it 'should notify "document-clicked" with undefined when we click somewhere else', ->
+        view = create_view()
+        id = 'something-we-should-overwrite'
+        view.observe('document-clicked', (docid) -> id = docid)
+        $('a', view.div).parent().click()
+        expect(id).toBeUndefined()
+
+      it 'should have "meta" and "shift" options to the "document-clicked" event', ->
+        view = create_view()
+        o = undefined
+        view.observe('document-clicked', (docid, options) -> o = options)
+        $('a:eq(0)', view.div).click()
+        expect(o).toEqual({ meta: false, shift: false })
 
       it 'should add the "selected" class to selected documents', ->
         state.selection.documents = [1]

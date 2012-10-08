@@ -39,14 +39,14 @@ class DocumentListView
       e.preventDefault()
 
       $a = $(e.target).closest('a')
-      last_a_clicked = if !$a.length
-        undefined
-      else
-        $a[0]
 
-      if @_last_a_clicked != last_a_clicked
-        @_last_a_clicked = last_a_clicked
-        this._notify('document-clicked')
+      docid = if $a.length
+        href = $a.attr('href') # e.g., "document-132"
+        +(href.split(/-/g)[1])
+      else
+        undefined
+
+      this._notify('document-clicked', docid, { meta: e.ctrlKey || e.metaKey || false, shift: e.shiftKey || false })
 
   _get_document_height: () ->
     return @_document_height if @_document_height?
@@ -280,18 +280,6 @@ class DocumentListView
   get_top_need_documents: () ->
     return undefined if !@need_documents
     @need_documents[0]
-
-  last_document_id_clicked: () ->
-    return undefined if !@_last_a_clicked
-
-    href_parts = $(@_last_a_clicked).attr('href')?.split(/-/g)
-
-    return undefined if !href_parts?
-
-    if href_parts[0] == '#document'
-      +href_parts[href_parts.length-1]
-    else
-      undefined #+href_parts[href_parts.length-1]
 
 exports = require.make_export_object('views/document_list_view')
 exports.DocumentListView = DocumentListView
