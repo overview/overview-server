@@ -5,7 +5,7 @@ password.secure=This password is too insecure. Please use a password at least se
 controllers.admin.UserController.update.success=User {0} updated
 controllers.admin.UserController.delete.success=User {0} deleted
 
-controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration, and you are not logged in.
+controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration and logged in for the first time.
 
 controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.
 controllers.DocumentSetController.delete.success=You have deleted your document set.
