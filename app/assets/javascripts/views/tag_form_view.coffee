@@ -29,6 +29,7 @@ class TagFormView
     })
 
     $div.modal()
+    $div.find('input[type=text]').focus()
 
     $div.on 'hidden', () =>
       $div.remove()
