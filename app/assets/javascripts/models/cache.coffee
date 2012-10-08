@@ -40,12 +40,10 @@ class Cache
 
   # Removes all references to a tag from the cache
   remove_tag: (tag) ->
-    @tag_store.remove(tag)
     @document_store.remove_tag_id(tag.id)
 
     tagid_string = "#{tag.id}"
     nodes = @on_demand_tree.nodes
-
     @on_demand_tree.id_tree.edit ->
       for __, node of nodes
         tagcounts = node.tagcounts
@@ -53,6 +51,8 @@ class Cache
           delete tagcounts[tagid_string]
 
       undefined
+
+    @tag_store.remove(tag)
 
   # Requests new node counts from the server, and updates the cache
   refresh_tagcounts: (tag) ->
