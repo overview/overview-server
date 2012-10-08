@@ -17,8 +17,8 @@ controllers.UserController.create.success=Thank you for registering. There''s on
 
 forms.Confirmation.token.not_found=We could not find a user with this confirmation token. Please try clicking the link in your confirmation email again.
 
-forms.LoginForm.error.invalid_credentials=Invalid username or password
-forms.LoginForm.error.not_confirmed=Your username and password are correct, but you can''t log in until you click the link in the confirmation email we sent you.
+forms.LoginForm.error.invalid_credentials=Wrong email address or password
+forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can''t log in until you click the link in the confirmation email we sent you.
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
@@ -104,7 +104,7 @@ views.DocumentSet.show.document_list.loading=Loading documents...
 views.DocumentSet.show.document_list.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
 
 views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
-views.DocumentSet._dcimport.error=You entered an invalid username or password, or DocumentCloud is unavailable. Please try again.
+views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
 views.DocumentSet._dcimport.placeholders.email=user@example.org
