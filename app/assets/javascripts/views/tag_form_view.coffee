@@ -21,9 +21,11 @@ class TagFormView
     $div = $(this._create_div_string())
     $('body').append($div)
 
-    $div.find('input[type=color]').spectrum({
+    $color = $div.find('input[type=color]')
+    $color.spectrum({
       preferredFormat: 'hex6'
       showButtons: false
+      move: (color) -> $color.spectrum('set', color.toHexString()) # Issue #168
     })
 
     $div.modal()
