@@ -3,7 +3,7 @@
 @defining(scopedMessages("views.Document.show")) { m =>
   <html>
     <head>
-      <title data-m-loading="@m("loading")">@document.title</title>
+      <title data-m-loading="@m("loading")">@m("loading")</title>
       <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
       <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
       <style type="text/css">
@@ -39,7 +39,7 @@
       </style>
     </head>
     <body>
-      <h3 data-m-loading="@m("loading")">@document.title</h3>
+      <h3 data-m-loading="@m("loading")">@m("loading")</h3>
       <ul class="actions">
         <li><a href="#" class="toggle-sidebar" data-m-enable="@m("sidebar.enable")" data-m-disable="@m("sidebar.disable")"></a></li>
       </ul>
