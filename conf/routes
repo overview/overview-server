@@ -1,45 +1,50 @@
 # Routes
-# This file defines all application routes (Higher priority routes first)
+# This file defines all application routes (Higher priority routes first).
+# They're grouped by controller.
 
-GET / controllers.WelcomeController.show()
+GET    / controllers.WelcomeController.show()
 
-GET /help controllers.HelpController.show()
+GET    /help controllers.HelpController.show()
 
-GET /login controllers.SessionController.new_()
-POST /login controllers.SessionController.create()
-GET /logout controllers.SessionController.delete()
+GET    /login  controllers.SessionController.new_()
+POST   /login  controllers.SessionController.create()
+GET    /logout controllers.SessionController.delete()
 
-GET /confirm controllers.ConfirmationController.show(token: String ?= "")
+GET    /confirm controllers.ConfirmationController.show(token: String ?= "")
 
-GET /register controllers.UserController.new_()
-POST /register controllers.UserController.create()
+GET    /register controllers.UserController.new_()
+POST   /register controllers.UserController.create()
 
-GET /documentsets controllers.DocumentSetController.index()
-POST /documentsets controllers.DocumentSetController.create()
-GET /documentsets/:id.json controllers.DocumentSetController.showJson(id: Long)
-GET /documentsets/:id controllers.DocumentSetController.show(id: Long)
-DELETE /documentsets/:id controllers.DocumentSetController.delete(id: Long)
+GET    /documents/:id controllers.DocumentController.show(id: Long)
 
-GET /trees/:id/root controllers.TreeController.root(id: Long)
-GET /trees/:id/nodes/:nodeId controllers.TreeController.node(id: Long, nodeId: Long)
-GET /trees/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
+# Routes that relate to a DocumentSet
+GET    /documentsets          controllers.DocumentSetController.index()
+POST   /documentsets          controllers.DocumentSetController.create()
+GET    /documentsets/:id.json controllers.DocumentSetController.showJson(id: Long)
+GET    /documentsets/:id      controllers.DocumentSetController.show(id: Long)
+DELETE /documentsets/:id      controllers.DocumentSetController.delete(id: Long)
 
-GET /documents/:id controllers.DocumentController.show(id: Long)
+GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 
-POST /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)
-GET /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
+GET    /documentsets/:id/tree/nodes         controllers.NodeController.index(id: Long)
+GET    /documentsets/:id/tree/nodes/:nodeId controllers.NodeController.show(id: Long, nodeId: Long)
+POST   /documentsets/:id/tree/nodes/:nodeId controllers.NodeController.update(id: Long, nodeId: Long)
 
-POST /documentsets/:id/tags/:tag controllers.TagController.update(id: Long, tag: String)
-DELETE /documentsets/:id/tags/:tag controllers.TagController.delete(id: Long, tag: String)
-POST /documentsets/:id/tags/:tag/add controllers.TagController.add(id: Long, tag: String)
-POST /documentsets/:id/tags/:tag/remove controllers.TagController.remove(id: Long, tag: String)
-POST /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")
+POST   /documentsets/:id/log-entries/create-many controllers.LogEntryController.createMany(id: Long)
+GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
 
-GET /admin/users controllers.admin.UserController.index()
-POST /admin/users/:id controllers.admin.UserController.update(id: Long)
+POST   /documentsets/:id/tags/:tag             controllers.TagController.update(id: Long, tag: String)
+DELETE /documentsets/:id/tags/:tag             controllers.TagController.delete(id: Long, tag: String)
+POST   /documentsets/:id/tags/:tag/add         controllers.TagController.add(id: Long, tag: String)
+POST   /documentsets/:id/tags/:tag/remove      controllers.TagController.remove(id: Long, tag: String)
+POST   /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")
+
+# Admin section
+GET    /admin/users     controllers.admin.UserController.index()
+POST   /admin/users/:id controllers.admin.UserController.update(id: Long)
 DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
 
-GET /admin/jobs controllers.admin.DocumentSetCreationJobController.index()
+GET    /admin/jobs controllers.admin.DocumentSetCreationJobController.index()
 
 # Map static resources from the /public folder to the /assets URL path
-GET /assets/*file controllers.Assets.at(path="/public", file)
+GET    /assets/*file controllers.Assets.at(path="/public", file)

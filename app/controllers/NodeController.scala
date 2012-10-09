@@ -1,0 +1,59 @@
+package controllers
+
+import java.sql.Connection
+import play.api.mvc.{AnyContent,Request}
+import play.api.libs.json.JsValue
+import org.squeryl.PrimitiveTypeMode._
+
+import models.SubTreeLoader
+
+object NodeController extends BaseController {
+  def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedIndex(user, documentSetId)(_: Request[AnyContent], _: Connection))
+  def show(documentSetId: Long, id: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedShow(user, documentSetId, id)(_: Request[AnyContent], _: Connection))
+  def update(documentSetId: Long, id: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedUpdate(user, documentSetId, id)(_: Request[AnyContent], _: Connection))
+
+  private[controllers] def authorizedIndex(user: User, documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val subTreeLoader = new SubTreeLoader(documentSetId)
+
+    subTreeLoader.loadRootId match {
+      case Some(rootId) => {
+        val nodes = subTreeLoader.load(rootId, 4)
+
+        val tags = subTreeLoader.loadTags(documentSetId)
+        val documents = subTreeLoader.loadDocuments(nodes, tags)
+
+        val json = views.json.Tree.show(nodes, documents, tags)
+        Ok(json)
+      }
+      case None => NotFound
+    }
+  }
+
+  private[controllers] def authorizedShow(user: User, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val subTreeLoader = new SubTreeLoader(documentSetId)
+    val nodes = subTreeLoader.load(id, 2)
+    val documents = subTreeLoader.loadDocuments(nodes, Seq())
+
+    val json = views.json.Tree.show(nodes, documents, Seq())
+    Ok(json)
+  }
+
+  private[controllers] def authorizedUpdate(user: User, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val documentSet = user.documentSets.where(d => d.id === documentSetId).single
+    val optionalNode = documentSet.nodes.where(n => n.id === id).headOption
+
+    optionalNode match {
+      case None => NotFound
+      case Some(node) =>
+        val form = forms.NodeForm(node)
+
+        form.bindFromRequest().fold(
+          f => BadRequest,
+          node => {
+            val savedNode = node.save()
+            Ok(views.json.Node.show(savedNode))
+          }
+        )
+    }
+  }
+}

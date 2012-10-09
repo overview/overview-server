@@ -26,6 +26,8 @@ case class DocumentSet(
 
   lazy val documents = Schema.documentSetDocuments.left(this)
 
+  lazy val nodes = Schema.documentSetNodes.left(this)
+
   lazy val logEntries = Schema.documentSetLogEntries.left(this)
 
   lazy val orderedLogEntries = from(logEntries)(le => select(le).orderBy(le.date desc))

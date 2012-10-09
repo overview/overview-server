@@ -6,6 +6,7 @@ object Schema extends org.squeryl.Schema {
   val documents = table[Document]("document")
   val documentSets = table[DocumentSet]("document_set")
   val documentSetCreationJobs = table[DocumentSetCreationJob]("document_set_creation_job")
+  val nodes = table[Node]("node")
   val logEntries = table[LogEntry]("log_entry")
   val users = table[User]("user")
 
@@ -20,6 +21,10 @@ object Schema extends org.squeryl.Schema {
   val documentSetLogEntries =
     oneToManyRelation(documentSets, logEntries).
       via((ds, le) => ds.id === le.documentSetId)
+
+  val documentSetNodes =
+    oneToManyRelation(documentSets, nodes).
+      via((ds, n) => ds.id === n.documentSetId)
 
   val documentSetUsers =
     manyToManyRelation(documentSets, users, "document_set_user").

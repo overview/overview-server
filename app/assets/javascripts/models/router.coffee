@@ -18,17 +18,17 @@ class Router
       when 'tag_delete' then this._tag_delete_path(id)
       when 'tag_node_counts' then this._tag_node_counts_path(id)
 
-  _root_path: () ->
-    "/trees/#{@document_set_id}/root"
-
-  _node_path: (id) ->
-    "/trees/#{@document_set_id}/nodes/#{id}"
-
-  _documents_path: () ->
-    "/trees/#{@document_set_id}/documents"
-
   _document_view_path: (id) ->
     "/documents/#{id}"
+
+  _root_path: () ->
+    "/documentsets/#{@document_set_id}/tree/nodes"
+
+  _node_path: (id) ->
+    "/documentsets/#{@document_set_id}/tree/nodes/#{id}"
+
+  _documents_path: () ->
+    "/documentsets/#{@document_set_id}/documents"
 
   _create_log_entries_path: () ->
     "/documentsets/#{@document_set_id}/log-entries/create-many"
