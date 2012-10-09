@@ -33,9 +33,7 @@ class PersistentTagSpec extends Specification with Mockito {
     trait ExistingTag extends MockComponents  {
       var tagId: Long = _
       
-      override def setupWithDb = {
-	tagId = insertTag(documentSetId, name)
-      }
+      override def setupWithDb = tagId = insertTag(documentSetId, name)
     }
 
     trait DocumentsTagged extends ExistingTag  {
