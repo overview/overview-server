@@ -1,6 +1,6 @@
 package models
 
-import DatabaseStructure.{ DocumentData, DocumentNodeData, DocumentTagData, TagData, TagData2 }
+import DatabaseStructure._
 
 class DocumentListParser {
 
@@ -24,16 +24,11 @@ class DocumentListParser {
       core.DocumentIdList(tagDocuments(id), tagDocumentCounts(id))))
   }
 
-  def createTags2(tagData: Seq[TagData2]): Seq[OverviewTag] = {
-    val tagNames = mapTagsToNames2(tagData)
-    val tagColors = mapTagsToColor2(tagData)
-    val tagDocumentCounts = mapTagsToDocumentCounts2(tagData)
-    val tagDocuments = mapTagsToDocuments2(tagData)
-
-    val tagIds = tagNames.keys.toSeq
-
-    tagIds.map(id => OverviewTag(id, tagNames(id), tagColors(id),
-      core.DocumentIdList(tagDocuments(id), tagDocumentCounts(id))))
+  def createDocumentIdList(documentListData: Seq[DocumentListData]): core.DocumentIdList = {
+    val documentCount = documentListData.headOption.getOrElse((0l, None))._1
+    val documentIds = documentListData.collect { case (_, Some(d)) => d }
+    
+    core.DocumentIdList(documentIds, documentCount)
   }
   
   protected def groupById[A](data: Seq[(Long, A)]): Map[Long, Seq[A]] = {
@@ -66,27 +61,6 @@ class DocumentListParser {
 
   private def mapTagsToDocuments(tagData: Seq[TagData]): Map[Long, Seq[Long]] = {
     val tagAndDocument = tagData.map(d => (d._1, d._4))
-    val tagsToPossibleDocuments = groupById(tagAndDocument)
-
-    tagsToPossibleDocuments.map {
-      case (tag, documents) => (tag -> documents.collect { case Some(id) => id })
-    }
-  }
-
-  private def mapTagsToNames2(tagData: Seq[TagData2]): Map[Long, String] = {
-    tagData.map(d => (d._1, d._2)).distinct.toMap
-  }
-
-  private def mapTagsToColor2(tagData: Seq[TagData2]): Map[Long, Option[String]] = {
-    tagData.map(d => (d._1, d._3)).distinct.toMap
-  }
-  
-  private def mapTagsToDocumentCounts2(tagData: Seq[TagData2]): Map[Long, Long] = {
-    tagData.map(d => (d._1, d._4)).distinct.toMap
-  }
-
-  private def mapTagsToDocuments2(tagData: Seq[TagData2]): Map[Long, Seq[Long]] = {
-    val tagAndDocument = tagData.map(d => (d._1, d._5))
     val tagsToPossibleDocuments = groupById(tagAndDocument)
 
     tagsToPossibleDocuments.map {
