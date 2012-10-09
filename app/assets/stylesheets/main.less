@@ -241,13 +241,18 @@ body.document-set-show {
     border: 1px solid #ccc;
     position: relative;
 
-    .num-documents {
+    h4 {
       margin: 0;
       padding: 0 10px;
       height: 1.8em;
       line-height: 1.8;
+      white-space: nowrap;
+      font-weight: normal;
+      font-size: 1em;
       border-bottom: 1px solid #ccc;
       background: @wellBackground;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     ul {

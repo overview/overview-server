@@ -89,8 +89,8 @@ views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.import_from_documentcloud=Import a document set
-views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project...
-views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)...
+views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project…
+views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)…
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
 
 views.DocumentSet._manualForm.label.title=Title
@@ -100,8 +100,13 @@ views.DocumentSet._manualForm.placeholder.query=frog
 views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
 views.DocumentSet._manualForm.submit=Import
 
-views.DocumentSet.show.document_list.loading=Loading documents...
-views.DocumentSet.show.document_list.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
+views.DocumentSet.show.document_list.loading=Loading documents…
+views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
+views.DocumentSet.show.document_list.title_html=<strong>{0}</strong> in {1}
+views.DocumentSet.show.document_list.title.edit=edit…
+views.DocumentSet.show.document_list.title.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one node and {1,choice,1#one tag|1<{1} tags}|1<{0} nodes{1,choice,0#|1# and one tag|1< and {1} tags}}
+views.DocumentSet.show.document_list.title.node=node “{0}”
+views.DocumentSet.show.document_list.title.tag=tag “{0}”
 
 views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.

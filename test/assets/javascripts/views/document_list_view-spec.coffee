@@ -239,7 +239,8 @@ describe 'views/document_list_view', ->
 
       it 'should show the number of documents', ->
         view = create_view()
-        expect($('.num-documents', view.div).text()).toEqual('["views.DocumentSet.show.document_list.num_documents",10]')
+        # FIXME we don't unit-test the translations, even though they're non-trivial
+        expect($('h4', view.div).text()).toEqual('["views.DocumentSet.show.document_list.title_html","[\\"views.DocumentSet.show.document_list.title.num_documents\\",10]","[\\"views.DocumentSet.show.document_list.title.n_nodes_and_n_tags\\",0,0]"]')
 
       it 'should make need_documents empty when it is', ->
         view = create_view()
@@ -325,8 +326,8 @@ describe 'views/document_list_view', ->
 
       it 'should show a loading message instead of the number of documents', ->
         view = create_view()
-        num_documents_text = $('.num-documents', view.div).text()
-        expect($('.num-documents', view.div).text()).toEqual('["views.DocumentSet.show.document_list.loading"]')
+        num_documents_text = $('h4', view.div).text()
+        expect(num_documents_text).toEqual('["views.DocumentSet.show.document_list.loading"]')
 
       it 'should set need_documents', ->
         view = create_view()

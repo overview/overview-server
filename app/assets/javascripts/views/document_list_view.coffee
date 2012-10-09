@@ -123,6 +123,25 @@ class DocumentListView
 
     $a
 
+  _generate_title_html: (n) ->
+    # "4 documents"
+    num_documents_text = i18n('views.DocumentSet.show.document_list.title.num_documents', n)
+
+    selection = @document_list.selection
+    num_nodes = selection.nodes.length
+    num_tags = selection.tags.length
+
+    selection_description_text = if num_nodes == 1 && num_tags == 0
+      node = @cache.on_demand_tree.nodes[selection.nodes[0]]
+      i18n('views.DocumentSet.show.document_list.title.node', node.description)
+    else if num_tags == 1 && num_nodes == 0
+      tag = @cache.tag_store.find_tag_by_id(selection.tags[0])
+      i18n('views.DocumentSet.show.document_list.title.tag', tag.name)
+    else # plural
+      i18n('views.DocumentSet.show.document_list.title.n_nodes_and_n_tags', num_nodes, num_tags)
+
+    i18n('views.DocumentSet.show.document_list.title_html', num_documents_text, selection_description_text)
+
   _index_to_dom_node: (index) ->
     $a = $('<a></a>')
       .text('(loading...)')
@@ -161,10 +180,10 @@ class DocumentListView
       @_redraw_used_placeholders = true
       documents = @document_list.get_placeholder_documents(@cache)
 
-    $num_documents = $div.children('.num-documents')
-    if $num_documents.length == 0
-      $num_documents = $('<p class="num-documents"></p>')
-      $div.prepend($num_documents)
+    $h4 = $div.children('h4')
+    if $h4.length == 0
+      $h4 = $('<h4></h4>')
+      $div.prepend($h4)
 
     $ul = $div.children('ul') # again, in case it was removed
     if $ul.length == 0
@@ -174,10 +193,10 @@ class DocumentListView
       this._attach_scroll()
 
     # Replace num_documents
-    if n?
-      $num_documents.text(i18n('views.DocumentSet.show.document_list.num_documents', n))
+    if !n?
+      $h4.text(i18n('views.DocumentSet.show.document_list.loading'))
     else
-      $num_documents.text(i18n('views.DocumentSet.show.document_list.loading'))
+      $h4.html(this._generate_title_html(n))
 
     index = 0
 
