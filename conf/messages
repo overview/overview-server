@@ -132,6 +132,11 @@ views.DocumentSet._documentSet.job_state_description.worker_error=Import failed 
 views.DocumentSet._documentSet.jobs_to_process=Number of jobs to process before this one: {0}
 views.DocumentSet._documentSet.query=Query: {0}
 
+views.Node._form.h3=Edit node
+views.Node._form.labels.description=Description
+views.Node._form.close=Close without saving
+views.Node._form.submit=Save node
+
 views.Session._form.h3=Log in to your account
 views.Session._form.label.email=Email
 views.Session._form.placeholder.email=user@example.org

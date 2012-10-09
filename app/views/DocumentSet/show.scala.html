@@ -40,6 +40,7 @@
   <script src="@routes.Assets.at("javascripts/views/focus_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/views/tree_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/views/tag_list_view.js")"></script>
+  <script src="@routes.Assets.at("javascripts/views/node_form_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/views/tag_form_view.js")"></script>
   <script src="@routes.Assets.at("javascripts/start-logger.js")"></script>
   <script src="@routes.Assets.at("javascripts/controllers/log_controller.js")"></script>
@@ -65,7 +66,11 @@
   "views.Tag._form.confirm_delete",
   "views.Tag._form.delete",
   "views.Tag._form.close",
-  "views.Tag._form.submit"
+  "views.Tag._form.submit",
+  "views.Node._form.h3",
+  "views.Node._form.labels.description",
+  "views.Node._form.close",
+  "views.Node._form.submit"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
   <div id="main">

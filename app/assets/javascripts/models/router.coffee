@@ -9,6 +9,7 @@ class Router
     switch (route)
       when 'root' then this._root_path()
       when 'node' then this._node_path(id)
+      when 'node_update' then this._node_path(id)
       when 'documents' then this._documents_path()
       when 'document_view' then this._document_view_path(id)
       when 'create_log_entries' then this._create_log_entries_path()

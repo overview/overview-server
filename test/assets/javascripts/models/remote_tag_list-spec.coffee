@@ -133,7 +133,19 @@ describe 'models/remote_tag_list', ->
     describe 'with some default tags', ->
       beforeEach ->
         tag_store.tags = [ dummy_tag(1, 'AA'), dummy_tag(2, 'BB') ]
-        remote_tag_list = new RemoteTagList({ tag_store: tag_store, on_demand_tree: on_demand_tree, document_store: document_store, transaction_queue: transaction_queue, server: server, remove_tag: () -> })
+        cache = {
+          tag_store: tag_store
+          on_demand_tree: on_demand_tree
+          document_store: document_store
+          transaction_queue: transaction_queue
+          server: server
+          add_tag: () ->
+          edit_tag: () ->
+          update_tag: () ->
+          remove_tag: () ->
+          delete_tag: () ->
+        }
+        remote_tag_list = new RemoteTagList(cache)
 
       it 'should pass through :tag-added from the TagStore', ->
         expected = { position: 1, tag: dummy_tag(3, 'CC') }
@@ -166,6 +178,7 @@ describe 'models/remote_tag_list', ->
         expect(remote_tag_list.tags).toBe(tag_store.tags)
 
       it 'should create_tag() and return a tag', ->
+        spyOn(remote_tag_list.cache, 'add_tag').andReturn({ id: -1, name: 'foo', count: 0 })
         tag = remote_tag_list.create_tag('foo')
         expect(tag).toEqual({ id: -1, name: 'foo', count: 0 })
 
@@ -383,69 +396,3 @@ describe 'models/remote_tag_list', ->
 
               it 'should add the new doclist', ->
                 expect(document_store.added_doclists[0]).toEqual([ new_doclist, new_documents ])
-
-        describe 'after editing a tag name and color', ->
-          tag = undefined
-
-          beforeEach ->
-            tag = remote_tag_list.tags[0]
-            remote_tag_list.edit_tag(tag, { id: tag.id, name: 'foo', color: '#654321' })
-
-          it 'should set the tag name and color', ->
-            expect(tag.name).toEqual('foo')
-            expect(tag.color).toEqual('#654321')
-
-          it 'should queue a server call', ->
-            expect(transaction_queue.callbacks.length).toEqual(1)
-
-          describe 'after making the server call', ->
-            post = undefined
-
-            beforeEach ->
-              transaction_queue.next()
-              post = server.posts[0]
-
-            afterEach ->
-              post = undefined
-
-            it 'should have POSTed', ->
-              expect(post).toBeDefined()
-
-            it 'should post to tag_edit with the old tag name', ->
-              expect(post[0]).toEqual('tag_edit')
-              expect(post[2].path_argument).toEqual('AA')
-
-            it 'should post the new name and color', ->
-              expect(post[1].name).toEqual(tag.name)
-              expect(post[1].color).toEqual(tag.color)
-
-        describe 'after deleting a tag', ->
-          tag = undefined
-
-          beforeEach ->
-            tag = remote_tag_list.tags[0]
-            spyOn(remote_tag_list.cache, 'remove_tag')
-            remote_tag_list.delete_tag(tag)
-
-          it 'should call cache.remove_tag', ->
-            expect(remote_tag_list.cache.remove_tag).toHaveBeenCalledWith(tag)
-
-          it 'should queue a server call', ->
-            expect(transaction_queue.callbacks.length).toEqual(1)
-
-          describe 'after making the server call', ->
-            post = undefined # "post", not "delete", because "delete" is a keyword
-
-            beforeEach ->
-              transaction_queue.next()
-              post = server.deletes[0]
-
-            afterEach ->
-              post = undefined
-
-            it 'should have DELETEd', ->
-              expect(post).toBeDefined()
-
-            it 'should DELETE to tag_delete with the tag name', ->
-              expect(post[0]).toEqual('tag_delete')
-              expect(post[2].path_argument).toEqual('AA')

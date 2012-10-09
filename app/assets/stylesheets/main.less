@@ -253,6 +253,19 @@ body.document-set-show {
       background: @wellBackground;
       overflow: hidden;
       text-overflow: ellipsis;
+
+      a {
+        display: none;
+        float: right;
+        color: @linkColor;
+        height: 1.8em;
+        line-height: 1.8em;
+      }
+    }
+
+    h4:hover a {
+      display: block;
+      position: relative; // otherwise users can't click, in Chrome 22
     }
 
     ul {
@@ -425,6 +438,12 @@ body.admin-user-index {
 #tag-form-view-dialog form.delete {
   float: left;
   margin: 0;
+}
+
+#node-form-view-dialog input[name=description] {
+  box-sizing: border-box;
+  height: 30px; // goes with box-sizing
+  width: 100%;
 }
 
 #mousemove-handler {

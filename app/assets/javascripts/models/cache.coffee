@@ -6,6 +6,19 @@ TransactionQueue = require('models/transaction_queue').TransactionQueue
 
 Deferred = $.Deferred
 
+# A Cache stores documents, nodes and tags, plus a transaction queue.
+#
+# Nodes, documents and tags are plain old data objects, stored in
+# @document_store, @tag_store and @on_demand_tree.
+#
+# @transaction_queue can be used to fetch data from the server and
+# send modifications to the server.
+#
+# * add_*, edit_*, remove_*: Add or remove objects from their appropriate
+#   stores. (The methods are here when removals cross boundaries: for example,
+#   removing a tag means all documents must be modified.)
+# * create_*, update_*, delete_*: Update the cache, *and* queue a transaction to
+#   modify the server's data.
 class Cache
   constructor: () ->
     @document_store = new DocumentStore()
@@ -38,22 +51,6 @@ class Cache
 
     deferred
 
-  # Removes all references to a tag from the cache
-  remove_tag: (tag) ->
-    @document_store.remove_tag_id(tag.id)
-
-    tagid_string = "#{tag.id}"
-    nodes = @on_demand_tree.nodes
-    @on_demand_tree.id_tree.edit ->
-      for __, node of nodes
-        tagcounts = node.tagcounts
-        if tagcounts?[tagid_string]?
-          delete tagcounts[tagid_string]
-
-      undefined
-
-    @tag_store.remove(tag)
-
   # Requests new node counts from the server, and updates the cache
   refresh_tagcounts: (tag) ->
     nodes = @on_demand_tree.nodes
@@ -83,6 +80,59 @@ class Cache
             delete tagcounts[tagid]
 
         undefined
+
+  add_tag: (name) ->
+    @tag_store.create_tag(name)
+
+  edit_tag: (tag, new_tag) ->
+    @tag_store.change(tag, new_tag)
+
+  update_tag: (tag, new_tag) ->
+    old_name = tag.name
+
+    this.edit_tag(tag, new_tag)
+
+    @transaction_queue.queue =>
+      @server.post('tag_edit', new_tag, { path_argument: old_name })
+
+  remove_tag: (tag) ->
+    @document_store.remove_tag_id(tag.id)
+
+    tagid_string = "#{tag.id}"
+    nodes = @on_demand_tree.nodes
+    @on_demand_tree.id_tree.edit ->
+      for __, node of nodes
+        tagcounts = node.tagcounts
+        if tagcounts?[tagid_string]?
+          delete tagcounts[tagid_string]
+
+      undefined
+
+    @tag_store.remove(tag)
+
+  delete_tag: (tag) ->
+    old_name = tag.name
+
+    this.remove_tag(tag)
+
+    @transaction_queue.queue =>
+      @server.delete('tag_delete', {}, { path_argument: old_name })
+
+  edit_node: (node, new_node) ->
+    @on_demand_tree.id_tree.edit ->
+      for k, v of new_node
+        if !v?
+          node[k] = undefined
+        else
+          node[k] = JSON.parse(JSON.stringify(v))
+
+  update_node: (node, new_node) ->
+    id = node.id
+
+    this.edit_node(node, new_node)
+
+    @transaction_queue.queue =>
+      @server.post('node_update', new_node, { path_argument: id })
 
 exports = require.make_export_object('models/cache')
 exports.Cache = Cache

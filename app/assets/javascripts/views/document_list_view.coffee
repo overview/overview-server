@@ -32,6 +32,7 @@ class DocumentListView
     this._attach_document_changed()
     this._attach_tag_changed()
     this._attach_tag_removed()
+    this._attach_node_changed()
 
   _attach_click: () ->
     $div = $(@div)
@@ -90,6 +91,9 @@ class DocumentListView
   _attach_tag_removed: () ->
     @cache.tag_store.observe('tag-removed', (tag) => this._redraw())
 
+  _attach_node_changed: () ->
+    @cache.on_demand_tree.id_tree.observe('edit', this._refresh_title.bind(this))
+
   _update_document_a_tagids: ($tags, tagids) ->
     return if @cache.tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
     $tags.empty()
@@ -112,6 +116,8 @@ class DocumentListView
       if index? && index != -1
         this._update_document(document)
 
+    this._refresh_title()
+
   _document_to_dom_node: (document) ->
     $a = $('<a></a>')
       .text(document.title)
@@ -123,7 +129,16 @@ class DocumentListView
 
     $a
 
-  _generate_title_html: (n) ->
+  _refresh_title: () ->
+    $h4 = $('h4', @div)
+    n = @document_list.n
+
+    $h4.empty()
+
+    if !n?
+      $h4.text(i18n('views.DocumentSet.show.document_list.loading'))
+      return
+
     # "4 documents"
     num_documents_text = i18n('views.DocumentSet.show.document_list.title.num_documents', n)
 
@@ -131,6 +146,7 @@ class DocumentListView
     num_nodes = selection.nodes.length
     num_tags = selection.tags.length
 
+    # "node 'blah'" or "tag 'blah'" or "one node and 3 tags"
     selection_description_text = if num_nodes == 1 && num_tags == 0
       node = @cache.on_demand_tree.nodes[selection.nodes[0]]
       i18n('views.DocumentSet.show.document_list.title.node', node.description)
@@ -140,7 +156,20 @@ class DocumentListView
     else # plural
       i18n('views.DocumentSet.show.document_list.title.n_nodes_and_n_tags', num_nodes, num_tags)
 
-    i18n('views.DocumentSet.show.document_list.title_html', num_documents_text, selection_description_text)
+    # "<strong>4 documents</strong> in node 'blah'"
+    $h4.append(i18n('views.DocumentSet.show.document_list.title_html', num_documents_text, selection_description_text))
+
+    # Edit link, if we're on a single node or single tag
+    if num_nodes + num_tags == 1
+      $a = $('<a href="#"></a>')
+      $a.text(i18n('views.DocumentSet.show.document_list.title.edit'))
+      $a.on 'click', (e) =>
+        e.preventDefault()
+        if num_nodes
+          this._notify('edit-node', selection.nodes[0])
+        else
+          this._notify('edit-tag', selection.tags[0])
+      $h4.prepend($a) # prepend, so float: right; works
 
   _index_to_dom_node: (index) ->
     $a = $('<a></a>')
@@ -192,11 +221,7 @@ class DocumentListView
       $div.append($ul)
       this._attach_scroll()
 
-    # Replace num_documents
-    if !n?
-      $h4.text(i18n('views.DocumentSet.show.document_list.loading'))
-    else
-      $h4.html(this._generate_title_html(n))
+    this._refresh_title()
 
     index = 0
 

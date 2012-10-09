@@ -49,7 +49,7 @@ class NodeFormView
         <div class="modal-body">
           <div class="form-horizontal">
             <div class="control-group">
-              <label class="control-albel" for="node-form-description"><%- i18n('views.Node._form.labels.description') %></label>
+              <label class="control-label" for="node-form-description"><%- i18n('views.Node._form.labels.description') %></label>
               <div class="controls">
                 <input type="text" name="description" id="node-form-description" required="required" value="<%- node.description %>" />
               </div>

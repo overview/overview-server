@@ -41,15 +41,17 @@ describe 'views/document_list_view', ->
     document_store = undefined
     tag_store = undefined
     document_list = undefined
+    on_demand_tree = undefined
     div = undefined
     options = undefined
 
     create_view = () ->
-      cache = { document_store: document_store, tag_store: tag_store, on_demand_tree: {} }
+      cache = { document_store: document_store, tag_store: tag_store, on_demand_tree: on_demand_tree }
       new DocumentListView(div, cache, document_list, state, options)
 
     beforeEach ->
       options = {}
+      on_demand_tree = { nodes: {}, id_tree: { observe: -> undefined} }
       state = new MockState()
       document_list = new MockDocumentList(state.selection)
       document_store = new MockDocumentStore()
@@ -241,6 +243,25 @@ describe 'views/document_list_view', ->
         view = create_view()
         # FIXME we don't unit-test the translations, even though they're non-trivial
         expect($('h4', view.div).text()).toEqual('["views.DocumentSet.show.document_list.title_html","[\\"views.DocumentSet.show.document_list.title.num_documents\\",10]","[\\"views.DocumentSet.show.document_list.title.n_nodes_and_n_tags\\",0,0]"]')
+
+      it 'should add an "edit" link that triggers "edit-node"', ->
+        on_demand_tree.nodes["3"] = { description: 'blah' }
+        state.selection.nodes.push(3)
+        view = create_view()
+        $a = $('h4 a', view.div)
+        x = undefined
+        view.observe('edit-node', (id) -> x = id)
+        $a.click()
+        expect(x).toEqual(3)
+
+      it 'should add an "edit" link that triggers "edit-tag"', ->
+        state.selection.tags.push(1)
+        view = create_view()
+        $a = $('h4 a', view.div)
+        x = undefined
+        view.observe('edit-tag', (id) -> x = id)
+        $a.click()
+        expect(x).toEqual(1)
 
       it 'should make need_documents empty when it is', ->
         view = create_view()

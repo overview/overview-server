@@ -1,4 +1,7 @@
 DocumentList = require('models/document_list').DocumentList
+
+TagFormView = require('views/tag_form_view').TagFormView
+NodeFormView = require('views/node_form_view').NodeFormView
 ListSelection = require('models/list_selection').ListSelection
 DocumentListView = require('views/document_list_view').DocumentListView
 log = require('globals').logger.for_component('document_list')
@@ -44,6 +47,23 @@ document_list_controller = (div, cache, state) ->
   state.observe('selection-changed', maybe_update_stored_selection)
 
   view.observe('need-documents', maybe_fetch)
+
+  view.observe 'edit-node', (nodeid) ->
+    node = cache.on_demand_tree.nodes[nodeid]
+    form = new NodeFormView(node)
+    form.observe('closed', -> form = undefined)
+    form.observe('change', (new_node) -> cache.update_node(node, new_node))
+
+  view.observe 'edit-tag', (tagid) ->
+    tag = cache.tag_store.find_tag_by_id(tagid)
+    form = new TagFormView(tag)
+    form.observe('closed', -> form = undefined)
+    form.observe('change', (new_tag) -> cache.update_tag(tag, new_tag))
+    form.observe 'delete', ->
+      if state.focused_tag?.id == tag.id
+        state.set('focused_tag', undefined)
+      state.set('selection', state.selection.minus({ tags: [ tag.id ] }))
+      cache.remove_tag(tag)
 
   view.observe 'document-clicked', (docid, options) ->
     index = _(document_list.documents).pluck('id').indexOf(docid)
