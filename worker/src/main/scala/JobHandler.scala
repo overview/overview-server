@@ -58,7 +58,7 @@ object JobHandler {
 
     } catch {
       case t: Throwable =>
-        Logger.error("Job failed: " + t.toString)
+        Logger.error("Job failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
         DB.withConnection { implicit connection => j.update }
