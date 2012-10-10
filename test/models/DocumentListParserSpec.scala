@@ -1,5 +1,6 @@
 package models
 
+import models.core.DocumentIdList
 import org.specs2.mutable.Specification
 
 class DocumentListParserSpec extends Specification {
@@ -36,5 +37,27 @@ class DocumentListParserSpec extends Specification {
       documentIdList.firstIds must haveTheSameElementsAs(firstDocumentIds)
       documentIdList.totalCount must be equalTo (docCount)
     }
+
+    "create Tags from tuples" in {
+      val tagColor = Some("befab4")
+      val tagData = List(
+	(5l, "tag1", 11l, Some(10l), tagColor),
+	(5l, "tag1", 11l, Some(20l), tagColor),
+        (15l, "tag2", 0l, None, None))
+                         
+      val parser = new DocumentListParser()
+      val tags = parser.createTags(tagData)
+
+      case class TestTag(id: Long, name: String, color: Option[String], documentIds: DocumentIdList) extends PersistentTagInfo
+      val expectedTags = List[PersistentTagInfo](
+	TestTag(5l, "tag1", tagColor, core.DocumentIdList(Seq(10l, 20l), 11)),
+    	TestTag(15l, "tag2", None, core.DocumentIdList(Nil, 0)))
+
+      def equalTags(a: PersistentTagInfo, b: PersistentTagInfo): Boolean =
+	a.id == b.id && a.name == b.name && a.color == b.color && a.documentIds == b.documentIds
+      
+      tags must haveTheSameElementsAs(expectedTags) ^^ equalTags _
+    }
+
   }
 }

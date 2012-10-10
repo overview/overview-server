@@ -13,14 +13,17 @@ class DocumentListParser {
       nodeIds.getOrElse(d._1, Nil)))
   }
 
-  def createTags(tagData: Seq[TagData]): Seq[core.Tag] = {
+  def createTags(tagData: Seq[TagData]): Seq[PersistentTagInfo] = {
     val tagNames = mapTagsToNames(tagData)
     val tagColors = mapTagsToColor(tagData)
     val tagDocumentCounts = mapTagsToDocumentCounts(tagData)
     val tagDocuments = mapTagsToDocuments(tagData)
 
     val tagIds = tagNames.keys.toSeq
-    tagIds.map(id => core.Tag(id, tagNames(id), tagColors(id),
+
+    case class TagInfo(id: Long, name: String, color: Option[String], documentIds: core.DocumentIdList) extends PersistentTagInfo
+    
+    tagIds.map(id => TagInfo(id, tagNames(id), tagColors(id),
       core.DocumentIdList(tagDocuments(id), tagDocumentCounts(id))))
   }
 
