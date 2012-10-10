@@ -1,7 +1,7 @@
 package views.json.helper
 
 import models.PersistentTagInfo
-import models.core.{ Document, DocumentIdList, Tag }
+import models.core.{ Document, DocumentIdList }
 import play.api.libs.json.{ JsValue, Writes }
 import play.api.libs.json.Json.toJson
 
@@ -12,22 +12,6 @@ object ModelJsonConverters {
       toJson(Map(
         "docids" -> toJson(documentIdList.firstIds),
         "n" -> toJson(documentIdList.totalCount)))
-    }
-  }
-
-  implicit object JsonTag extends Writes[Tag] {
-    override def writes(tag: Tag): JsValue = {
-      val tagValues = Map(
-        "id" -> toJson(tag.id),
-        "name" -> toJson(tag.name),
-        "doclist" -> toJson(tag.documentIds))
-
-      val tagColorValue = tag.color match {
-	case Some(c) => Map("color" -> toJson('#' + c))
-	case None => Nil
-      }
-
-      toJson(tagValues ++ tagColorValue)
     }
   }
 

@@ -39,35 +39,6 @@ class ModelJsonConvertersSpec extends Specification {
     }
   }
 
-  "JsonTag" should {
-    import views.json.helper.ModelJsonConverters.JsonTag
-
-    "write tag attributes" in {
-      val id = 5l
-      val name = "tag"
-      val color = "013370"
-      val colorForJs = "#" + color
-      val documentCount = 22l
-      val tag = Tag(id, name, Some(color), DocumentIdList(Seq(10l), documentCount))
-
-      val tagJson = toJson(tag).toString
-
-      tagJson must /("id" -> id)
-      tagJson must /("name" -> name)
-      tagJson must /("color" -> colorForJs)
-      tagJson must /("doclist") */ ("n" -> documentCount)
-    }
-
-    "omit color value if color is not set" in {
-      val noColor = None
-      val tag = Tag(0, "", noColor, DocumentIdList(Seq(10l), 4))
-
-      val tagJson = toJson(tag).toString
-
-      tagJson must not / ("color")
-    }
-  }
-
   "JsonPersistentTag" should {
     import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
     import helpers.TestTag
