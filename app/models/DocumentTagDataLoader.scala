@@ -1,3 +1,9 @@
+/*
+ * DocumentTagDataLoader.scala
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
 package models
 
 import anorm._
@@ -5,14 +11,20 @@ import anorm.SqlParser._
 import java.sql.Connection
 import models.DatabaseStructure.{ DocumentData, DocumentNodeData, DocumentTagData }
 
+/**
+ * Superclass for loaders that need query the database for information related to Tags
+ */
 class DocumentTagDataLoader {
 
+  /**
+   * @return a list of tuples: (documentId, tagId) for each documentId
+   */
   def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection): List[DocumentTagData] = {
     documentTagQuery(documentIds)
   }
 
   /**
-   * @ return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
+   * @return a list of tuples: (documentId, title, textUrl, viewUrl) for each documentId.
    */
   def loadDocuments(documentIds: Seq[Long])(implicit connection: Connection): List[DocumentData] = {
     documentIds match {
@@ -21,6 +33,9 @@ class DocumentTagDataLoader {
     }
   }
 
+  /**
+   * @return a list of tuples: (documentId, nodeId) for each documentId.
+   */
   def loadNodes(documentIds: Seq[Long])(implicit connection: Connection): List[DocumentNodeData] = {
     documentIds match {
       case Nil => Nil

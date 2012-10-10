@@ -1,7 +1,14 @@
+/*
+ * DocumentListParser.scala
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
 package models
 
 import DatabaseStructure._
 
+// FIXME: These methods have mutated so they may no longer be common among subclasses
 class DocumentListParser {
 
   def createDocuments(documentData: Seq[DocumentData],

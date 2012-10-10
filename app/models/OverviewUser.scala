@@ -1,3 +1,10 @@
+/*
+ * OverviewUser.scala
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
+
 package models
 
 import java.sql.Timestamp
