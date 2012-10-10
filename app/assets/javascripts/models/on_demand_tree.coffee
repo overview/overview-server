@@ -17,9 +17,8 @@ DEFAULT_OPTIONS = {
 #     tree.demand_root() # will notify :added (with IDs) and :root
 #     deferred = tree.demand(id) # will demand node and fire :add if it's new
 #     node = tree.nodes[id] # will return node, only if present
-#     nodes = tree.get_node_children(node) # undefined if not loaded
 #     nodeids = tree.id_tree.children[node.id] # valid for all nodes
-#     tree.demand(id).done(-> tree.get_node_children(node)) # guaranteed
+#     tree.demand(id).done(-> tree.id_tree.children[node.id]) # guaranteed
 #     id_tree = tree.id_tree # for optimized algorithms (see `IdTree`)
 #
 # The tree will automatically remove unused nodes, as specified by
@@ -43,20 +42,42 @@ class OnDemandTree
     @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
 
   # Our @_paging_strategy suggests a node to remove, but it might be high up.
-  # Let's suggest removing children instead.
-  _id_to_first_leaf: (id) ->
+  # Let's suggest the lowest-possible nodes.
+  #
+  # In a tree like this:
+  #
+  #             1
+  #      2      3      4
+  #   6   7 8
+  # 9 10
+  #
+  # _id_to_deep_descendent_id(1) will return [9, 10], because they are the
+  # deepest leaf nodes and thus the best candidates for removal.
+  _id_to_deep_descendent_ids: (id) ->
     c = @id_tree.children
 
-    _first_defined_child_id = (id) ->
-      for child_id in c[id]
-        return child_id if c[child_id]?
+    d = {} # depth of each node
+    max_depth = -1
+    leaf_nodeids = []
+
+    visit_nodeid_at_depth = (nodeid, depth) ->
+      d[nodeid] = depth
+      max_depth = depth if depth > max_depth
+
+      is_leaf = true
+
+      for childid in c[nodeid]
+        if c[childid]?
+          is_leaf = false
+          visit_nodeid_at_depth(childid, depth + 1)
+
+      leaf_nodeids.push(nodeid) if is_leaf
+
       undefined
 
-    loop
-      nextid = _first_defined_child_id(id)
+    visit_nodeid_at_depth(id, 0)
 
-      return id if !nextid?
-      id = nextid
+    leaf_nodeids.filter((leafid) -> d[leafid] == max_depth)
 
   # Returns IDs that relate to the given one.
   #
@@ -95,11 +116,12 @@ class OnDemandTree
 
     loop
       # Assume if a node isn't frozen, nothing below it is frozen
-      leafid = this._id_to_first_leaf(id)
-      this._remove_leaf_node(editable, leafid)
-      removed += 1
+      deepest_leaf_nodeids = this._id_to_deep_descendent_ids(id)
+      for nodeid in deepest_leaf_nodeids
+        this._remove_leaf_node(editable, nodeid)
+        removed += 1
 
-      return removed if leafid == id || removed >= n
+      return removed if deepest_leaf_nodeids[0] == id || removed >= n
 
   _remove_n_nodes: (editable, n) ->
     while n > 0
@@ -111,13 +133,15 @@ class OnDemandTree
 
     @id_tree.edit (editable) =>
       # (This comes in handy later)
-      frozen_ids = this._id_to_important_other_ids(json.nodes[0].id)
+      top_added_id = json.nodes[0].id # this ID is already in the tree
+      frozen_ids = this._id_to_important_other_ids(top_added_id)
+      frozen_ids.push(top_added_id) if @nodes[top_added_id]?
 
       added_ids = []
 
       # Actually add to the tree
       for node in json.nodes
-        if !@id_tree.children[node.id]?
+        if !@nodes[node.id]?
           @nodes[node.id] = node
           editable.add(node.id, node.children)
           added_ids.push(node.id)
@@ -157,10 +181,20 @@ class OnDemandTree
   demand_node: (id) ->
     @cache.resolve_deferred('node', id).done(this._add_json.bind(this))
 
+  _collapse_node: (editable, id) ->
+    c = @id_tree.children
+
+    for childid in c[id]
+      if c[childid]?
+        this._collapse_node(editable, childid)
+        editable.remove(childid)
+        delete @nodes[childid]
+        @_paging_strategy.free(childid)
+
+  # "Collapse" a node (public-facing method)
   unload_node_children: (id) ->
     @id_tree.edit (editable) =>
-      this._remove_leaf_node(editable, nodeid) for nodeid in @id_tree.loaded_descendents(id)
-      undefined
+      this._collapse_node(editable, id)
 
   get_loaded_node_children: (node) ->
     _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])

@@ -135,7 +135,7 @@ describe 'models/on_demand_tree', ->
           tree.add_tag_to_node(1, { id: 1 })
           expect(tree.nodes[1].tagcounts[1]).toEqual(50)
 
-        it 'should set children counds to be equal to their doclist sizes', ->
+        it 'should set children counts to be equal to their doclist sizes', ->
           tree.add_tag_to_node(1, { id: 1 })
           expect(tree.nodes[2].tagcounts[1]).toEqual(30)
 
@@ -156,14 +156,14 @@ describe 'models/on_demand_tree', ->
 
         add_nodes_through_deferred(id_to_stub_node(id) for id in [ 1..1+3+9+27 ])
 
-      it 'should remove a node while adding a new node', ->
+      it 'should collapse a node while adding a new node', ->
         o = create_listen_object()
         add_node_through_deferred(41, [99, 100, 101])
         expect(o.add).toEqual([[41]])
         expect(o.remove.length).toEqual(1)
-        expect(o.remove[0].length).toEqual(1)
+        expect(o.remove[0].length).toEqual(3)
         expect(o.remove_undefined.length).toEqual(1)
-        expect(o.remove_undefined[0].length).toEqual(3)
+        expect(o.remove_undefined[0].length).toEqual(9)
 
       it 'should not remove an important node when adding a new node', ->
         o = create_listen_object()
