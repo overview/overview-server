@@ -66,9 +66,8 @@ object TagController extends BaseController {
 
 	val tagInfo = PersistentTag(tag)
         val taggedDocuments = tagInfo.loadDocuments
-	val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
 
-         Ok(views.json.Tag.add(tmpTag, tagUpdateCount, taggedDocuments))
+        Ok(views.json.Tag.add(tagInfo, tagUpdateCount, taggedDocuments))
       })
   }
 
@@ -83,8 +82,8 @@ object TagController extends BaseController {
 
 	    val tagInfo = PersistentTag(tag)
             val taggedDocuments = tagInfo.loadDocuments
-	    val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
-            Ok(views.json.Tag.remove(tmpTag, tagUpdateCount, taggedDocuments))
+
+            Ok(views.json.Tag.remove(tagInfo, tagUpdateCount, taggedDocuments))
           }
 	}
       }
@@ -111,8 +110,8 @@ object TagController extends BaseController {
   	  case Some(tag) => {
 	    val updatedTag = tag.withName(formData._1).withColor(formData._2).save
 	    val tagInfo = PersistentTag(updatedTag)
-	    val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
-    	    Ok(views.json.Tag.update(tmpTag))
+
+    	    Ok(views.json.Tag.update(tagInfo))
 	  }
 	}
       }

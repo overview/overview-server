@@ -18,7 +18,7 @@ class updateSpec extends Specification {
       val documentCount = 233l
       val docList = DocumentIdList(Seq(10l), documentCount)
 
-      val tag = Tag(id, name, Some(color), docList)
+      val tag = TestTag(id, name, Some(color), docList)
 
       val tagJson = toJson(views.json.Tag.update(tag)).toString
       tagJson must /("id" -> id)
