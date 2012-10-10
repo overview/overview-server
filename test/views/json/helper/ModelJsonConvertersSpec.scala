@@ -1,5 +1,6 @@
 package views.json.helper
 
+import models.PersistentTagInfo
 import models.core._
 import org.specs2.mutable.Specification
 import play.api.libs.json.Json.toJson
@@ -64,6 +65,27 @@ class ModelJsonConvertersSpec extends Specification {
       val tagJson = toJson(tag).toString
 
       tagJson must not / ("color")
+    }
+  }
+
+  "JsonPersistentTag" should {
+    import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
+
+    "write tag attributes" in {
+      val documentCount = 5l
+      val tag: PersistentTagInfo = new PersistentTagInfo {
+	val id: Long = 44l
+	val name: String = "a tag"
+	val color: Some[String] = Some("e1e100")
+	val documentIds: models.core.DocumentIdList = DocumentIdList(Seq(10l), documentCount)
+      }
+      val colorForJs = "#" + tag.color.get
+      
+      val tagJson = toJson(tag).toString
+      tagJson must /("id" -> tag.id)
+      tagJson must /("name" -> tag.name)
+      tagJson must /("color" -> colorForJs)
+      tagJson must /("doclist") */ ("n" -> documentCount)
     }
   }
 }

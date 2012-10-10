@@ -2,9 +2,14 @@ package models
 
 import java.sql.Connection
 
-trait PersistentTag {
+trait PersistentTagInfo {
+  val id: Long
+  val name: String
+  val color: Option[String]
   val documentIds: models.core.DocumentIdList
+}
 
+trait PersistentTag extends PersistentTagInfo {
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection): Seq[(Long, Long)]
   def loadDocuments(implicit c: Connection): Seq[core.Document]
@@ -23,6 +28,9 @@ object PersistentTag {
     loader: PersistentTagLoader,
     parser: DocumentListParser)(implicit c: Connection) extends DocumentListLoader(loader, parser) with PersistentTag {
 
+    val id: Long = tag.id
+      val name: String = tag.name
+      val color: Option[String] = tag.withColor.map(_.color)
     val documentIds = loadDocumentIds(tag.id)
       
     private def loadDocumentIds(id: Long)(implicit c: Connection): models.core.DocumentIdList = {
