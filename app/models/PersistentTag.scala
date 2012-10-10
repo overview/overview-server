@@ -3,7 +3,8 @@ package models
 import java.sql.Connection
 
 trait PersistentTag {
-  def documentIds(implicit c: Connection): models.core.DocumentIdList
+  val documentIds: models.core.DocumentIdList
+
   def count(implicit c: Connection): Long
   def countsPerNode(nodeIds: Seq[Long])(implicit c: Connection): Seq[(Long, Long)]
   def loadDocuments(implicit c: Connection): Seq[core.Document]
@@ -13,17 +14,19 @@ object PersistentTag {
 
   def apply(tag: OverviewTag,
     loader: PersistentTagLoader = new PersistentTagLoader(),
-    parser: DocumentListParser = new DocumentListParser()): PersistentTag = {
+    parser: DocumentListParser = new DocumentListParser())(implicit c: Connection): PersistentTag = {
 
     new PersistentTagImpl(tag, loader, parser)
   }
 
   private class PersistentTagImpl(tag: models.OverviewTag,
     loader: PersistentTagLoader,
-    parser: DocumentListParser) extends DocumentListLoader(loader, parser) with PersistentTag {
+    parser: DocumentListParser)(implicit c: Connection) extends DocumentListLoader(loader, parser) with PersistentTag {
 
-    def documentIds(implicit c: Connection): models.core.DocumentIdList = {
-      val documentListData = loader.loadDocumentList(tag.id)
+    val documentIds = loadDocumentIds(tag.id)
+      
+    private def loadDocumentIds(id: Long)(implicit c: Connection): models.core.DocumentIdList = {
+      val documentListData = loader.loadDocumentList(id)
       parser.createDocumentIdList(documentListData)
     }
 

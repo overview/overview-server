@@ -30,17 +30,16 @@ class PersistentTagSpec extends Specification with Mockito {
     trait ExistingTag extends MockComponents  {
       val tagId = 32l
       val testTag = TestTag(tagId, name, color)
-      val tag = PersistentTag(testTag, loader, parser)
-    }
-
-    trait DocumentsTagged extends ExistingTag  {
-      val documentIds = Seq(1l, 2l, 3l)
       val dummyDocumentListData = Seq((0l, None))
+      val documentIds = Seq(1l, 2l, 3l)
       val dummyDocumentIdList = models.core.DocumentIdList(documentIds, 33l)
       
       loader loadDocumentList(tagId) returns dummyDocumentListData
       parser createDocumentIdList(dummyDocumentListData) returns dummyDocumentIdList
+
+      val tag = PersistentTag(testTag, loader, parser)
     }
+
 
 
     "should ask loader for number of documents with tag" in new ExistingTag {
@@ -67,7 +66,7 @@ class PersistentTagSpec extends Specification with Mockito {
       counts must be equalTo (dummyCounts)
     }
 
-    "ask loader and parser to create document Id List" in new DocumentsTagged {
+    "ask loader and parser to create document Id List" in new ExistingTag {
       val documentIdList = tag.documentIds
 
       there was one(loader).loadDocumentList(tagId)
@@ -76,7 +75,7 @@ class PersistentTagSpec extends Specification with Mockito {
       documentIdList must be equalTo(dummyDocumentIdList)
     }
 
-    "load documents referenced by tag" in new DocumentsTagged {
+    "load documents referenced by tag" in new ExistingTag {
       val documents = tag.loadDocuments
 
       there was one(loader).loadDocuments(documentIds)
