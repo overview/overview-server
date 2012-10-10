@@ -68,7 +68,16 @@ class TagSpec extends Specification {
       
     }
 
+    "be deleteable" in new ExistingTag {
+      tag.save
+      tag.delete
+
+      val deletedTag = Tag.findByName(documentSetId, name)
+    
+      deletedTag must beNone
+    }
   }
+    
 
   step(stop)
 

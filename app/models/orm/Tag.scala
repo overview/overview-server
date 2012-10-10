@@ -19,6 +19,10 @@ case class Tag(
     }
     this
   }
+
+  def delete {
+    Schema.tags.deleteWhere(t => t.id === id)
+  }
   
   def withUpdate(newName: String, color: String): Tag = copy(name = newName, color = Some(color))
 }
