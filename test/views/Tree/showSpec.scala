@@ -1,7 +1,9 @@
 package views.json.Tree
 
-import org.specs2.mutable.Specification
+
+import helpers.TestTag
 import models.core._
+import org.specs2.mutable.Specification
 
 import play.api.libs.json.Json.toJson
 
@@ -19,7 +21,7 @@ class showSpec extends Specification {
       )
       
       val dummyDocuments = List[Document]()
-      val dummyTags = List[Tag]()
+      val dummyTags = List[TestTag]()
       
       val treeJson = show(nodes, dummyDocuments, dummyTags).toString
       
@@ -35,7 +37,7 @@ class showSpec extends Specification {
     	Document(20l, "title", "documentCloudId", Seq(), Seq(22l)),
     	Document(30l, "title", "documentCloudId", Seq(), Seq(22l))
       )
-      val dummyTags = List[Tag]()
+      val dummyTags = List[TestTag]()
       
       val treeJson = show(dummyNodes, documents, dummyTags).toString
       
@@ -48,8 +50,8 @@ class showSpec extends Specification {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
       val tags = List(
-        Tag(5l, "tag1", None, DocumentIdList(Seq(), 0)),
-        Tag(15l, "tag2", None, DocumentIdList(Seq(), 0))
+        TestTag(5l, "tag1", None, DocumentIdList(Seq(), 0)),
+        TestTag(15l, "tag2", None, DocumentIdList(Seq(), 0))
       )
       val treeJson = show(dummyNodes, dummyDocuments, tags).toString
       
