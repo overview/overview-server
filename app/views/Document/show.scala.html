@@ -55,7 +55,7 @@
       <script type="text/javascript" src="@routes.Assets.at("javascripts/dcimport/fetch-document-json.js")"></script>
 
       <script type="text/javascript">
-        var deferred, viewer, sidebar_enabled, document_json, $container, $h3, $title;
+        var deferred, viewer, sidebar_enabled, document_id, document_json, $container, $h3, $title, $a_sidebar;
 
         sidebar_enabled = localStorage.getItem("views.Document.show.sidebar") || false;
 
@@ -67,6 +67,8 @@
             viewer = undefined;
             $container.empty();
           }
+
+          $title.add($h3).add($container).add($a_sidebar).toggle(!!document_id);
 
           if (document_json) {
             $title.text(document_json.title)
@@ -84,6 +86,7 @@
             deferred = undefined;
           }
 
+          document_id = id;
           document_json = undefined;
           refresh_viewer();
 
@@ -103,10 +106,9 @@
           $title = $('title');
           $h3 = $('h3');
           $container = $('#DV-container');
+          $a_sidebar = $('a.toggle-sidebar');
 
           window.load_documentcloud_document('@document.documentCloudId');
-
-          var $a_sidebar = $('a.toggle-sidebar');
 
           var refresh_a_sidebar = function() {
             var text = $a_sidebar.attr("data-m-" + (sidebar_enabled ? 'disable' : 'enable'));
