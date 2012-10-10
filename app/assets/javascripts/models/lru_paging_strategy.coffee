@@ -31,7 +31,7 @@
 class LruPagingStrategy
   constructor: (@n_pages) ->
     @_pages = []
-    @_ids = []
+    @_ids = {}
     @_n = 0
     @_counter = 0
 
