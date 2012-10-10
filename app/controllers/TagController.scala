@@ -93,14 +93,13 @@ object TagController extends BaseController {
     
 
   def authorizedDelete(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    // PersistentTag.findByName(tagName, documentSetId) match {
-    //   case None => NotFound
-    //   case Some(tag) => {
-    //     tag.delete
-    //     Ok(views.json.Tag.delete(tag.id, tagName))
-    //   }
-    // }
-	Ok("ok")
+    PotentialTag(tagName).inDocumentSet(documentSetId) match {
+      case None => NotFound
+      case Some(tag) => {
+	tag.delete
+	Ok(views.json.Tag.delete(tag.id, tag.name))
+      }
+    }
   }
 
   def authorizedUpdate(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
