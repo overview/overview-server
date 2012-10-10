@@ -164,19 +164,26 @@ class DrawOperation
     left = px.left + 3
     right = left + width
 
+    whiteGradient = ctx.createLinearGradient(left, 0, right, 0)
+    whiteGradient.addColorStop((width-10)/width, 'rgba(255, 255, 255, 0.85)')
+    whiteGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
+
     gradient = ctx.createLinearGradient(left, 0, right, 0)
-    gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 0.7)')
+    gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 1)')
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+
     ctx.save()
     ctx.beginPath()
     ctx.rect(left, px.top, width, px.height)
     ctx.clip()
-    ctx.fillStyle = gradient
-    ctx.shadowBlur = 5
+    ctx.shadowBlur = 3 # ctx.shadowColor is white
+    # Build a white background for the text
+    ctx.fillStyle = whiteGradient
     ctx.fillText(description, left, px.top + 3)
     ctx.fillText(description, left, px.top + 3) # for stronger shadow
-    ctx.fillText(description, left, px.top + 3) # for even stronger shadow
-    ctx.fillText(description, left, px.top + 3) # for even stronger stronger shadow
+    # And draw black on it
+    ctx.fillStyle = gradient
+    ctx.fillText(description, left, px.top + 3)
     ctx.restore()
 
   _maybe_draw_collapse: (drawable_node) ->
