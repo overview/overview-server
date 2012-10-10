@@ -70,15 +70,13 @@ class ModelJsonConvertersSpec extends Specification {
 
   "JsonPersistentTag" should {
     import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
-
+    import helpers.TestTag
+    
     "write tag attributes" in {
       val documentCount = 5l
-      val tag: PersistentTagInfo = new PersistentTagInfo {
-	val id: Long = 44l
-	val name: String = "a tag"
-	val color: Some[String] = Some("e1e100")
-	val documentIds: models.core.DocumentIdList = DocumentIdList(Seq(10l), documentCount)
-      }
+      val tag: PersistentTagInfo =
+	TestTag(44l, "a tag", Some("e1e100"), DocumentIdList(Seq(10l), documentCount))
+
       val colorForJs = "#" + tag.color.get
       
       val tagJson = toJson(tag).toString
@@ -87,5 +85,15 @@ class ModelJsonConvertersSpec extends Specification {
       tagJson must /("color" -> colorForJs)
       tagJson must /("doclist") */ ("n" -> documentCount)
     }
+
+    "omit color value if color is not set" in {
+      val noColor = None
+      val tag: PersistentTagInfo = TestTag(0, "", noColor, DocumentIdList(Seq(10l), 4))
+
+      val tagJson = toJson(tag).toString
+
+      tagJson must not / ("color")
+    }
+  
   }
 }
