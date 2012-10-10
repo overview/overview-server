@@ -21,6 +21,9 @@ object Lexer {
   for (l <- io.Source.fromFile(stopWordsFileName).getLines)
     stopWords += l
 
+  // longest token we'll tolerate (silently truncates, to prevent bad input from destroying everything downstream)
+  val maxTokenLength = 40
+  
   // Remove certain types of terms. At the moment:
   //  - we insist that terms are at least three chars
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
@@ -51,8 +54,8 @@ object Lexer {
     // allow only alphanum, dash, apostrophe, space
     text = text.filter(c => c.isDigit || c.isLetter || " -'".contains(c))
 
-    // split on space, keep only "acceptable" terms
-    text.split(' ').filter(termAcceptable)
+    // split on space, keep only "acceptable" terms, truncate to max length
+    text.split(' ').filter(termAcceptable).map(_.take(maxTokenLength))
   }
 
 }

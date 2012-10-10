@@ -1,0 +1,10 @@
+# --- !Ups
+
+ALTER TABLE node ALTER COLUMN description TYPE VARCHAR;
+ALTER TABLE document ALTER COLUMN title TYPE VARCHAR;
+
+# --- !Downs
+
+ALTER TABLE node ALTER COLUMN description TYPE VARCHAR(255);
+ALTER TABLE document ALTER COLUMN title TYPE VARCHAR(255);
+ 

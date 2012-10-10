@@ -28,6 +28,12 @@ class MakeDocumentTreeSpec extends Specification {
       val terms = Seq("quick", "brown", "fox", "jumps", "lazy")
       Lexer.makeTerms(sentence) must beEqualTo(terms)
     }
+    
+    "truncate long words" in {
+      val longword = "thequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydog"
+      val sentence = "now is the time for all good " + longword + " to come to the aid of their module."
+      Lexer.makeTerms(sentence).map(_.length).max must beEqualTo(Lexer.maxTokenLength)      
+    }
   }    
 
   // must match computation in DocumentVector generator exactly, including rounding issues
