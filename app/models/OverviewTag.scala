@@ -17,11 +17,6 @@ trait OverviewTag {
 trait TagColor {
   val color: String
 }
-
-trait TaggedDocumentInformation {
-  val documentIds: models.core.DocumentIdList
-}
-
   
 case class PotentialTag(name: String) {
 
