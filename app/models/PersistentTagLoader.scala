@@ -1,3 +1,10 @@
+/*
+ * PersistentTagLoader.scala
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
+
 package models
 
 import anorm._
@@ -5,13 +12,21 @@ import anorm.SqlParser._
 import java.sql.Connection
 import models.DatabaseStructure.{ DocumentListData, TagData }
 
+/**
+ * Executes queries related to tags.
+ */
 class PersistentTagLoader extends DocumentTagDataLoader {
 
+  /** @return number of documents with the tag  */
   def countDocuments(id: Long)(implicit c: Connection): Long = {
     SQL("SELECT COUNT(*) from document_tag WHERE tag_id = {tagId}").
       on("tagId" -> id).as(scalar[Long] single)
   }
 
+  /**
+   * @return collection of (nodeIds, counts) tuples, indicating the number of documents
+   * with the tag in the node
+   */
   def countsPerNode(nodeIds: Seq[Long], id: Long)(implicit c: Connection): Seq[(Long, Long)] = {
     val nodeWhere = nodeIds match {
       case Nil => ""
@@ -27,13 +42,20 @@ class PersistentTagLoader extends DocumentTagDataLoader {
         GROUP BY node_document.node_id
         """).on("tagId" -> id).as(long("node_id") ~ long("count") map (flatten) *)
 
+    // insert tuples with count 0 for nodes with no tagged documents
     val nodesWithTaggedDocuments = nodeCounts.map(_._1)
     val nodesWithNoTaggedDocuments = nodeIds.diff(nodesWithTaggedDocuments)
-    val zeroCounts = nodesWithNoTaggedDocuments.map((_, 0l))
+    val zeroCounts = nodesWithNoTaggedDocuments.map((_, 0l)) 
 
     nodeCounts ++ zeroCounts
   }
 
+
+  /**
+   * @return collection of (count, Some(documentId)), for the 10 first documents with
+   * the tag. count will be the same in each tuple, indicating the total number of documents
+   * tagged. If there are no documents tagged, the result will be (0, None)
+   */
   def loadDocumentList(tagId: Long)(implicit c: Connection): Seq[DocumentListData] = {
     val documentListDataParser = long("document_count") ~ get[Option[Long]]("document_id")
 
