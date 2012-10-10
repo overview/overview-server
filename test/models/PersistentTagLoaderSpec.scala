@@ -87,29 +87,6 @@ class PersistentTagLoaderSpec extends Specification {
       foundTagData must haveTheSameElementsAs(tagData)
     }
 
-    "get tag id by name if it exists" in new TagSetup {
-      val foundTag = tagLoader.loadByName(documentSetId, tagName)
-
-      foundTag must be equalTo (Some(tagId))
-    }
-
-    "get tag id by name from the correct document set" in new TagSetup {
-      val documentSetId2 = insertDocumentSet("OtherDocumentSet")
-      val tagId2 = insertTag(documentSetId2, tagName)
-
-      val foundTag1 = tagLoader.loadByName(documentSetId, tagName)
-      val foundTag2 = tagLoader.loadByName(documentSetId2, tagName)
-
-      foundTag1 must beSome.like { case t => t must be equalTo (tagId) }
-      foundTag2 must beSome.like { case t => t must be equalTo (tagId2) }
-    }
-
-    "get None if tag does not exist" in new TagSetup {
-      val missingTag = tagLoader.loadByName(documentSetId, "no tag")
-
-      missingTag must beNone
-    }
-
     "count total number of documents tagged" in new NodesWithDocuments {
       val initialCount = tagLoader.countDocuments(tagId)
       initialCount must be equalTo (0)
