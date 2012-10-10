@@ -2,6 +2,7 @@ package controllers
 
 import controllers.forms.TagForm
 import java.sql.Connection
+import models.PotentialTag
 import models.orm.User
 import play.api.data.{ Form, FormError }
 import play.api.db.DB
@@ -56,64 +57,80 @@ object TagController extends BaseController {
     selectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       documents => {
-        val tagData = PersistentTag.findOrCreateByName(tagName, documentSetId)
+	val tag = PotentialTag(tagName).inDocumentSet(documentSetId) match {
+	  case Some(t) => t
+	  case None => PotentialTag(tagName).create(documentSetId)
+	}
+	
+        val tagUpdateCount = documents.addTag(tag.id)
 
-        val tagUpdateCount = documents.addTag(tagData.id)
-        val tag = tagData.loadTag
-        val taggedDocuments = tagData.loadDocuments
+	val tagInfo = PersistentTag(tag)
+        val taggedDocuments = tagInfo.loadDocuments
+	val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
 
-        Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
+         Ok(views.json.Tag.add(tmpTag, tagUpdateCount, taggedDocuments))
       })
   }
 
   def authorizedRemove(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PersistentTag.findByName(tagName, documentSetId) match {
-      case None => NotFound
-      case Some(tagData) => {
-        selectionForm(documentSetId).bindFromRequest.fold(
-          formWithErrors => BadRequest,
-          documents => {
-            val tagUpdateCount = documents.removeTag(tagData.id)
-            val tag = tagData.loadTag
-            val taggedDocuments = tagData.loadDocuments
+    selectionForm(documentSetId).bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      documents => {
+        PotentialTag(tagName).inDocumentSet(documentSetId) match {
+	  case None => NotFound
+	  case Some(tag) => {
+	    val tagUpdateCount = documents.removeTag(tag.id)
 
-            Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
-          })
+	    val tagInfo = PersistentTag(tag)
+            val taggedDocuments = tagInfo.loadDocuments
+	    val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
+            Ok(views.json.Tag.remove(tmpTag, tagUpdateCount, taggedDocuments))
+          }
+	}
       }
-    }
+    )
   }
+    
 
   def authorizedDelete(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PersistentTag.findByName(tagName, documentSetId) match {
-      case None => NotFound
-      case Some(tag) => {
-        tag.delete
-        Ok(views.json.Tag.delete(tag.id, tagName))
-      }
-    }
+    // PersistentTag.findByName(tagName, documentSetId) match {
+    //   case None => NotFound
+    //   case Some(tag) => {
+    //     tag.delete
+    //     Ok(views.json.Tag.delete(tag.id, tagName))
+    //   }
+    // }
+	Ok("ok")
   }
 
   def authorizedUpdate(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PersistentTag.findByName(tagName, documentSetId) match {
-      case None => NotFound
-      case Some(tagData) => TagForm().bindFromRequest.fold(
-	formWithErrors => BadRequest,
-	formData => {
-	  tagData.update(formData._1, formData._2)
-	  val tag = tagData.loadTag
-	  Ok(views.json.Tag.update(tag))
-	})
-    }
+    TagForm().bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      formData => {
+	PotentialTag(tagName).inDocumentSet(documentSetId) match {
+	  case None => NotFound
+  	  case Some(tag) => {
+	    val updatedTag = tag.withName(formData._1).withColor(formData._2)
+	    updatedTag.save
+	    val tagInfo = PersistentTag(updatedTag)
+	    val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
+    	    Ok(views.json.Tag.update(tmpTag))
+	  }
+	}
+      }
+    )
   }
 
   def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PersistentTag.findByName(tagName, documentSetId) match {
+    PotentialTag(tagName).inDocumentSet(documentSetId) match {
       case None => NotFound
       case Some(tag) => {
-        val nodeCounts = tag.countsPerNode(IdList(nodeIds))
+	val nodeCounts = PersistentTag(tag).countsPerNode(IdList(nodeIds))
         Ok(views.json.Tag.nodeCounts(nodeCounts))
       }
     }
   }
+
+
 }
 
