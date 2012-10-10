@@ -1,6 +1,5 @@
 package models
 
-import java.sql.Connection
 import models.orm.Tag
 
 trait OverviewTag {
@@ -10,8 +9,6 @@ trait OverviewTag {
   def withName(newName: String): OverviewTag
   def withColor(newColor: String): OverviewTag with TagColor
   def withColor: Option[OverviewTag with TagColor]
-
-  def withDocumentInformation(implicit c: Connection): OverviewTag with TaggedDocumentInformation
   
   def save: Unit
 }
@@ -59,19 +56,8 @@ object OverviewTag {
     override def withColor: Option[OverviewTag with TagColor] = tag.color.map(new ColoredTag(tag, _))
 
     override def save = tag.save
-
-    override def withDocumentInformation(implicit c: Connection): TaggedDocumentInformationImpl =
-      new TaggedDocumentInformationImpl(tag)
-
   }
 
-  private[models] class TaggedDocumentInformationImpl(tag: Tag, loader: PersistentTagLoader = new PersistentTagLoader, parser: DocumentListParser = new DocumentListParser)(implicit c: Connection) extends OverviewTagImpl(tag) with TaggedDocumentInformation {
-    
-    override val documentIds: models.core.DocumentIdList = {
-      val documentListData = loader.loadDocumentList(id)
-      parser.createDocumentIdList(documentListData)
-    }
-  }
 
   
 }
