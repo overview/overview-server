@@ -43,7 +43,7 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
    * The list is sorted by document IDs and all the elements are distinct, even if documentIds
    * referenced multiple times.
    */
-  def loadDocuments(nodes: Seq[core.Node], tags: Seq[core.Tag])(implicit connection: Connection): Seq[core.Document] = {
+  def loadDocuments(nodes: Seq[core.Node], tags: Seq[PersistentTagInfo])(implicit connection: Connection): Seq[core.Document] = {
     val nodeDocumentIds = nodes.flatMap(_.documentIds.firstIds)
     val tagDocumentIds = tags.flatMap(_.documentIds.firstIds)
     val documentIds = nodeDocumentIds ++ tagDocumentIds
@@ -51,7 +51,7 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
     loadDocumentList(documentIds.distinct.sorted)
   }
 
-  def loadTags(documentSetId: Long)(implicit connection: Connection): Seq[core.Tag] = {
+  def loadTags(documentSetId: Long)(implicit connection: Connection): Seq[PersistentTagInfo] = {
     val tagData = loader.loadTags(documentSetId)
     parser.createTags(tagData)
   }

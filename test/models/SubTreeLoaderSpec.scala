@@ -1,5 +1,6 @@
 package models
 
+import helpers.TestTag
 import org.specs2.mock._
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -87,7 +88,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val tagDocumentIds: Seq[Long]
       
       def dummyNodes = createTwoDummyNodes(nodeDocumentIds)
-      def dummyTags = Seq(core.Tag(1l, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l)))
+      def dummyTags: Seq[PersistentTagInfo] = Seq(TestTag(1l, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l)))
       def allDocumentIds = nodeDocumentIds ++ tagDocumentIds
     }
 
@@ -141,7 +142,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     // test loadTags()
     "load tag information for nodes" in new MockComponents {
       val dummyTagData = List((1l, "dummy", 55l, Some(10l), None))
-      val dummyTags = List(core.Tag(1l, "dummy", None, null))
+      val dummyTags = List(TestTag(1l, "dummy", None, null))
 
       loader loadTags (documentSetId) returns dummyTagData
       parser createTags (dummyTagData) returns dummyTags
