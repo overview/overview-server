@@ -20,9 +20,7 @@ DEFAULT_OPTIONS = {
 }
 
 class DrawOperation
-  constructor: (@canvas, @tree, @tag_id_to_color, @zoom, @pan, @options) ->
-    @tagid = @tree.state.focused_tag?.id
-
+  constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @zoom, @pan, @options) ->
     $canvas = $(@canvas)
     @width = +Math.ceil($canvas.parent().width())
     @height = +Math.ceil($canvas.parent().height())
@@ -237,10 +235,14 @@ class DrawOperation
     tagid = undefined
     tagcount = 0
 
-    if @tagid?
-      tagid = "#{@tagid}"
-      tagcount = node.tagcounts?[tagid] || 0
+    # Use the most-recently-focused tag, if there's a count
+    for past_focused_tagid in @focus_tagids
+      if node.tagcounts?[past_focused_tagid]
+        tagid = past_focused_tagid
+        tagcount = node.tagcounts[past_focused_tagid]
+        break
 
+    # If no recently-focused tags work, use the most-used tag
     if !tagcount
       for id, count of (node.tagcounts || {})
         if !tagid? || count > tagcount
@@ -320,6 +322,9 @@ class TreeView
     @cache.tag_store.observe('tag-changed', update)
     $(window).on('resize.tree-view', update)
 
+    @cache.tag_store.observe('tag-removed', this._on_tag_removed.bind(this))
+    @cache.tag_store.observe('tag-id-changed', this._on_tagid_changed.bind(this))
+
     $(@canvas).on 'mousedown', (e) =>
       offset = $(@canvas).offset()
       $canvas = $(@canvas)
@@ -330,6 +335,19 @@ class TreeView
 
     this._handle_drag()
     this._handle_mousewheel()
+
+  _on_tag_removed: (tag) ->
+    tagid = tag.id
+    index = @focus_tagids.indexOf(tagid)
+    if index != -1
+      @focus_tagids.splice(index, 1)
+    # No need to redraw: that will happen elsewhere if necessary.
+
+  _on_tagid_changed: (old_tagid, tag) ->
+    index = @focus_tagids.indexOf(old_tagid)
+    if index != -1
+      @focus_tagids[index] = tag.id
+    # No need to redraw: it would produce the same result.
 
   _handle_drag: () ->
     $(@canvas).on 'mousedown', (e) =>
@@ -397,7 +415,18 @@ class TreeView
       color = tag.color || color_table.get(tag.name)
       tag_id_to_color[id] = color
 
-    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, @focus.zoom, @focus.pan, @options)
+    # Add the focused tag to "focus tagids": stack of recently-viewed tags
+    @focus_tagids ||= []
+    tagid = @tree.state.focused_tag?.id
+    if tagid
+      index = @focus_tagids.indexOf(tagid)
+      if index == -1
+        @focus_tagids.unshift(tagid)
+      else if index != 0
+        @focus_tagids.splice(index, 1)
+        @focus_tagids.unshift(tagid)
+
+    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, @focus_tagids, @focus.zoom, @focus.pan, @options)
     @last_draw.draw()
 
   update: () ->
