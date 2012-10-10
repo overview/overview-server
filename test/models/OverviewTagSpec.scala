@@ -78,7 +78,7 @@ class OverviewTagSpec extends Specification {
       val tagWithColor: OverviewTag = tag.withColor(newColor)
       val coloredTag = tagWithColor.withColor
 
-      coloredTag must beSome.like { case t => t.color must be equalTo(newColor) }
+      coloredTag must beSome.like { case t => t.color must be equalTo (newColor) }
     }
 
     "be saveable" in new LoadedTag {
@@ -87,6 +87,14 @@ class OverviewTagSpec extends Specification {
 
       val renamedTag = PotentialTag(newName).inDocumentSet(documentSetId)
       renamedTag must beSome.like { case t => t.id must be equalTo tag.id }
+    }
+
+    "be deleteable" in new LoadedTag {
+      tag.delete
+
+      val deletedTag = PotentialTag(tagName).inDocumentSet(documentSetId)
+
+      deletedTag must beNone
     }
   }
 

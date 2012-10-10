@@ -16,6 +16,7 @@ class PersistentTagSpec extends Specification with Mockito {
       override def withColor(newColor: String): OverviewTag with TagColor = this
       override def withColor: Option[OverviewTag with TagColor] = Some(this)
       override def save {}
+      override def delete {}
     }
     
     trait MockComponents extends Scope {

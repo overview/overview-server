@@ -11,6 +11,7 @@ trait OverviewTag {
   def withColor: Option[OverviewTag with TagColor]
   
   def save: Unit
+  def delete: Unit
 }
 
 trait TagColor {
@@ -56,6 +57,7 @@ object OverviewTag {
     override def withColor: Option[OverviewTag with TagColor] = tag.color.map(new ColoredTag(tag, _))
 
     override def save = tag.save
+    override def delete = tag.delete
   }
 
 
