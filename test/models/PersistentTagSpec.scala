@@ -1,84 +1,51 @@
 package models
 
-import helpers.DbSetup._
-import helpers.DbTestContext
 import org.specs2.mock._
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
 
   
 class PersistentTagSpec extends Specification with Mockito {
-
-
-  step(start(FakeApplication()))
+  implicit val unusedConnection: java.sql.Connection = null
   
   "PersistentTag" should {
 
-    trait MockComponents extends DbTestContext {
+    case class TestTag(id: Long, name: String, color: String) extends OverviewTag with TagColor {
+      override def withName(newName: String): OverviewTag = this
+      override def withColor(newColor: String): OverviewTag with TagColor = this
+      override def withColor: Option[OverviewTag with TagColor] = Some(this)
+      override def save {}
+    }
+    
+    trait MockComponents extends Scope {
       val loader = mock[PersistentTagLoader]
       val parser = mock[DocumentListParser]
       val saver = mock[PersistentTagSaver]
       val name = "a tag"
-      lazy val documentSetId = insertDocumentSet("PersistentTagSpec")
-
-    }
-
-    trait NoTag extends MockComponents  {
-      override def setupWithDb = loader loadByName (documentSetId, name) returns None
+      val color = "eeee11"
     }
 
     trait ExistingTag extends MockComponents  {
-      var tagId: Long = _
-      
-      override def setupWithDb = tagId = insertTag(documentSetId, name)
+      val tagId = 32l
+      val testTag = TestTag(tagId, name, color)
+      val tag = PersistentTag(testTag, loader, parser)
     }
 
     trait DocumentsTagged extends ExistingTag  {
-      val dummyTagId = 23l
-      val documentIds = Seq(1l, 2l)
-      val tag = core.Tag(dummyTagId, name, None, core.DocumentIdList(documentIds, 3))
-
-      override def setupWithDb = {
-	super.setupWithDb
-	val dummyTagData = null
-	loader loadTag(tagId) returns dummyTagData
-	parser createTags(dummyTagData) returns Seq(tag)
-      }
+      val documentIds = Seq(1l, 2l, 3l)
+      val dummyDocumentListData = Seq((0l, None))
+      val dummyDocumentIdList = models.core.DocumentIdList(documentIds, 33l)
+      
+      loader loadDocumentList(tagId) returns dummyDocumentListData
+      parser createDocumentIdList(dummyDocumentListData) returns dummyDocumentIdList
     }
 
-    "create tag if not in database" in new NoTag {
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-      tag.id must not be equalTo(0)
-    }
-
-    "be loaded by findOrCreateByName factory method if in database" in new ExistingTag {
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-
-      tag.id must be equalTo (tagId)
-
-    }
-
-    "be loaded by findByName if in database" in new ExistingTag {
-      val tag = PersistentTag.findByName(name, documentSetId, loader, parser, saver)
-
-      tag must beSome
-      tag.get.id must be equalTo (tagId)
-    }
-
-    "return None from findByName if tag is not in database" in new NoTag {
-      val tag = PersistentTag.findByName(name, documentSetId, loader, parser, saver)
-
-      tag must beNone
-    }
 
     "should ask loader for number of documents with tag" in new ExistingTag {
       val dummyCount = 454
       loader countDocuments (tagId) returns dummyCount
 
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       val count = tag.count
 
       there was one(loader).countDocuments(tagId)
@@ -92,7 +59,6 @@ class PersistentTagSpec extends Specification with Mockito {
 
       loader countsPerNode (nodeIds, tagId) returns dummyCounts
 
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
       val counts = tag.countsPerNode(nodeIds)
 
       there was one(loader).countsPerNode(nodeIds, tagId)
@@ -100,57 +66,22 @@ class PersistentTagSpec extends Specification with Mockito {
       counts must be equalTo (dummyCounts)
     }
 
-    "ask loader and parser to create tag" in new ExistingTag {
+    "ask loader and parser to create document Id List" in new DocumentsTagged {
+      val documentIdList = tag.documentIds
 
-      val tagData = Seq((tagId, name, 0l, None, None))
-      val dummyTag = core.Tag(tagId, name, None, core.DocumentIdList(Nil, 0))
+      there was one(loader).loadDocumentList(tagId)
+      there was one(parser).createDocumentIdList(dummyDocumentListData)
 
-      loader loadTag (tagId) returns tagData
-      parser createTags (tagData) returns Seq(dummyTag)
-
-      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-
-      val tag = persistentTag.loadTag
-
-      there was one(loader).loadTag(tagId)
-      there was one(parser).createTags(tagData)
-
-      tag must be equalTo (dummyTag)
+      documentIdList must be equalTo(dummyDocumentIdList)
     }
 
     "load documents referenced by tag" in new DocumentsTagged {
-      val persistentTag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-
-      val documents = persistentTag.loadDocuments
+      val documents = tag.loadDocuments
 
       there was one(loader).loadDocuments(documentIds)
     }
 
-    "delete the tag" in new ExistingTag {
-      val rowsDeleted = 10
-      saver delete (tagId) returns rowsDeleted
-
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-
-      val count = tag.delete()
-
-      count must be equalTo (rowsDeleted)
-
-      there was one(saver).delete(tagId)
-    }
-
-    "update the tag" in new ExistingTag {
-      val newName = "new name"
-      val newColor = "new color"
-
-      val tag = PersistentTag.findOrCreateByName(name, documentSetId, loader, parser, saver)
-
-      tag.update(newName, newColor)
-
-      there was one(saver).update(tagId, newName, newColor)
-    }
   }
 
-  step(stop)
 }
 
