@@ -35,8 +35,8 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
   // --- configuration ---
-  private val pageSize = 100 // number of docs to retreive on each page of DC search results
-  private val maxDocuments = 1500 // cut off a document set if it's bigger than this
+  private val pageSize = 20 // number of docs to retreive on each page of DC search results
+  private val maxDocuments = 6500 // cut off a document set if it's bigger than this
 
   // --- private ---
   private var numDocuments: Option[Int] = None
@@ -63,6 +63,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
       case _ => throw new Exception("Can't access private documents without credentials")
     }
 
+    Logger.debug("Retrieving private document from " + docURL)
     val done = Promise[DCDocumentAtURL]()
 
     SimpleHttpRequest(privateQuery,
