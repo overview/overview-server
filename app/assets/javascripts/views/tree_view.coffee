@@ -408,13 +408,6 @@ class TreeView
     @last_draw.pixel_to_action(x, y)
 
   _redraw: () ->
-    color_table = new ColorTable()
-    tag_id_to_color = {}
-    for tag in @cache.tag_store.tags
-      id = "#{tag.id}"
-      color = tag.color || color_table.get(tag.name)
-      tag_id_to_color[id] = color
-
     # Add the focused tag to "focus tagids": stack of recently-viewed tags
     @focus_tagids ||= []
     tagid = @tree.state.focused_tag?.id
@@ -425,6 +418,18 @@ class TreeView
       else if index != 0
         @focus_tagids.splice(index, 1)
         @focus_tagids.unshift(tagid)
+
+    # Cache colors. Only the currently-focused tag is bright; the rest are desaturated.
+    color_table = new ColorTable()
+    tag_id_to_color = {}
+    for tag in @cache.tag_store.tags
+      id = "#{tag.id}"
+      bright_color = tag.color || color_table.get(tag.name)
+      color = if tag.id == @focus_tagids[0]
+        bright_color
+      else
+        tinycolor.lighten(tinycolor.desaturate(bright_color, 40), 10).toHexString(true)
+      tag_id_to_color[id] = color
 
     @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, @focus_tagids, @focus.zoom, @focus.pan, @options)
     @last_draw.draw()
