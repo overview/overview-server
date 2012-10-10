@@ -56,37 +56,6 @@ class PersistentTagLoaderSpec extends Specification {
 
   "PersistentTagLoader" should {
 
-    "get tag by name if it exists" in new TagSetup {
-      val foundTagData = tagLoader.loadTagByName(documentSetId, tagName)
-
-      foundTagData must haveTheSameElementsAs(tagData)
-    }
-
-    "get no data if tag does not exist" in new TagSetup {
-      val notTagName = "not the name"
-      val foundTagData = tagLoader.loadTagByName(documentSetId, notTagName)
-
-      foundTagData must be empty
-    }
-
-    "get tag by name from the correct document set" in new TagSetup {
-      val documentSetId2 = insertDocumentSet("OtherDocumentSet")
-      val tagId2 = insertTag(documentSetId2, tagName)
-      val otherTagData = Seq((tagId2, tagName, noColor, 0, noDocumentId))
-
-      val foundTagData = tagLoader.loadTagByName(documentSetId, tagName)
-      val otherFoundTagData = tagLoader.loadTagByName(documentSetId2, tagName)
-
-      foundTagData must haveTheSameElementsAs(tagData)
-      otherFoundTagData must haveTheSameElementsAs(otherTagData)
-    }
-
-    "get tagged document data" in new TaggedDocuments {
-      val foundTagData = tagLoader.loadTagByName(documentSetId, tagName)
-
-      foundTagData must haveTheSameElementsAs(tagData)
-    }
-
     "count total number of documents tagged" in new NodesWithDocuments {
       val initialCount = tagLoader.countDocuments(tagId)
       initialCount must be equalTo (0)
