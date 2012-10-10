@@ -10,6 +10,7 @@ object Schema extends org.squeryl.Schema {
   val logEntries = table[LogEntry]("log_entry")
   val users = table[User]("user")
   val tags = table[Tag]("tag")
+  val documentTags = table[DocumentTag]("document_tag")
   
   val documentSetDocuments =
     oneToManyRelation(documentSets, documents).

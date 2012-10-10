@@ -21,6 +21,7 @@ case class Tag(
   }
 
   def delete {
+    Schema.documentTags.deleteWhere(dt => dt.tagId === id)
     Schema.tags.deleteWhere(t => t.id === id)
   }
   

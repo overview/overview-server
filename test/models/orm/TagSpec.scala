@@ -2,6 +2,7 @@ package models.orm
 
 import helpers.DbSetup._
 import helpers.DbTestContext
+import org.postgresql.util.PSQLException
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{start, stop}
@@ -21,6 +22,18 @@ class TagSpec extends Specification {
       lazy val tag = Tag(documentSetId = documentSetId, name = name)
     }
 
+    trait SavedTag extends ExistingTag {
+      override def setupWithDb = tag.save
+    }
+    
+    trait DocumentsTagged extends SavedTag {
+      override def setupWithDb = {
+	super.setupWithDb
+	val documentId = insertDocument(documentSetId, "title", "dcId")
+	tagDocuments(tag.id, Seq(documentId))
+      }
+    }
+    
     trait TagForUpdate extends ExistingTag {
       val newName = "some other tag now"
       val newColor = "12adff"
@@ -74,6 +87,13 @@ class TagSpec extends Specification {
 
       val deletedTag = Tag.findByName(documentSetId, name)
     
+      deletedTag must beNone
+    }
+
+    "be deletable when documents are tagged" in new DocumentsTagged {
+      tag.delete must not(throwA[java.lang.RuntimeException])
+
+      val deletedTag = Tag.findByName(documentSetId, name)
       deletedTag must beNone
     }
   }
