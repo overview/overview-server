@@ -109,8 +109,7 @@ object TagController extends BaseController {
 	PotentialTag(tagName).inDocumentSet(documentSetId) match {
 	  case None => NotFound
   	  case Some(tag) => {
-	    val updatedTag = tag.withName(formData._1).withColor(formData._2)
-	    updatedTag.save
+	    val updatedTag = tag.withName(formData._1).withColor(formData._2).save
 	    val tagInfo = PersistentTag(updatedTag)
 	    val tmpTag = models.core.Tag(tag.id, tag.name, tag.withColor.map(_.color), tagInfo.documentIds)
     	    Ok(views.json.Tag.update(tmpTag))

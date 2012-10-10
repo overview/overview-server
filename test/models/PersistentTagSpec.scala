@@ -15,14 +15,14 @@ class PersistentTagSpec extends Specification with Mockito {
       override def withName(newName: String): OverviewTag = this
       override def withColor(newColor: String): OverviewTag with TagColor = this
       override def withColor: Option[OverviewTag with TagColor] = Some(this)
-      override def save {}
+      override def save = this
       override def delete {}
     }
     
     trait MockComponents extends Scope {
       val loader = mock[PersistentTagLoader]
       val parser = mock[DocumentListParser]
-      val saver = mock[PersistentTagSaver]
+
       val name = "a tag"
       val color = "eeee11"
     }
