@@ -1,4 +1,4 @@
-package views.json.Tag
+package helpers
 
 import models.PersistentTagInfo
 import models.core.DocumentIdList

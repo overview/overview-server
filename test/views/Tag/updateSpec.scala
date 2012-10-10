@@ -1,10 +1,11 @@
 package views.json.Tag
 
+import helpers.TestTag
 import models.core.DocumentIdList
 import models.core.Tag
 import org.specs2.mutable.Specification
 import play.api.libs.json.Json.toJson
-import views.json.helper.ModelJsonConverters.JsonTag
+import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
 
 class updateSpec extends Specification {
 

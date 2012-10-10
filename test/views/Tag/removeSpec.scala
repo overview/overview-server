@@ -1,5 +1,6 @@
 package views.json.Tag
 
+import helpers.TestTag
 import models.PersistentTagInfo
 import models.core.{Document, DocumentIdList}
 import org.specs2.mutable.Specification

@@ -1,5 +1,6 @@
 package views.json.Tag
 
+import helpers.TestTag
 import models.PersistentTagInfo
 import models.core.{Document, DocumentIdList}
 import org.specs2.mutable.Specification
@@ -11,7 +12,7 @@ class addSpec extends Specification {
 
     "contain tagid, added count, and total count" in {
       val tagId = 44l
-      val tag = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
+      val tag: PersistentTagInfo = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val addedCount = 20l
       val documentId = 1l
       val documents = Seq(Document(documentId, "title", "documentCloudId", Seq(5l, 15l), Seq(22l)))
