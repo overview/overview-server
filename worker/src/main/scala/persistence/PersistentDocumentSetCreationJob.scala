@@ -28,12 +28,12 @@ trait PersistentDocumentSetCreationJob {
 object PersistentDocumentSetCreationJob {
 
   private type DocumentSetCreationJobData = (Long, // id
-  Long, // documentSetId
-  Int, // state
-  Double, // fractionComplete
-  Option[String], // statusDescription
-  Option[String], // documentCloudUserName
-  Option[String]) // doucmentCloudPassword
+    Long, // documentSetId
+    Int, // state
+    Double, // fractionComplete
+    Option[String], // statusDescription
+    Option[String], // documentCloudUserName
+    Option[String]) // doucmentCloudPassword
 
   def findAllSubmitted(implicit c: Connection): List[PersistentDocumentSetCreationJob] = {
     val jobData =
@@ -53,6 +53,25 @@ object PersistentDocumentSetCreationJob {
     jobData.map(new PersistentDocumentSetCreationJobImpl(_))
   }
 
+  def findAllInProgress(implicit c: Connection): List[PersistentDocumentSetCreationJob] = {
+    val jobData =
+      SQL("""
+          SELECT id, document_set_id, state, fraction_complete, status_description,
+                 documentcloud_username, documentcloud_password
+          FROM document_set_creation_job
+          WHERE state = {state}
+          ORDER BY id
+          """).on("state" -> InProgress.id).
+        as(long("id") ~ long("document_set_id") ~ int("state") ~
+          get[Double]("fraction_complete") ~
+          get[Option[String]]("status_description") ~
+          get[Option[String]]("documentcloud_username") ~
+          get[Option[String]]("documentcloud_password") map (flatten) *)
+
+    jobData.map(new PersistentDocumentSetCreationJobImpl(_))
+  }
+  
+  
   private class PersistentDocumentSetCreationJobImpl(data: DocumentSetCreationJobData)
     extends PersistentDocumentSetCreationJob {
 

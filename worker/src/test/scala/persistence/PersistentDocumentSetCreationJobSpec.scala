@@ -64,6 +64,15 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       allNotStartedJobs.map(_.documentSetId).distinct must contain(documentSetId).only
     }
 
+    "find all in progress jobs" in new JobSetup {
+      insertJobsWithState(documentSetId, Seq(Submitted.id, InProgress.id, InProgress.id))
+
+      val allInProgressJobs = PersistentDocumentSetCreationJob.findAllInProgress
+
+      allInProgressJobs must have size(2)
+      allInProgressJobs.map(_.state).distinct must contain(InProgress).only
+    }
+    
     "update job state" in new JobSetup {
       insertJob
       notStartedJob.state = InProgress
