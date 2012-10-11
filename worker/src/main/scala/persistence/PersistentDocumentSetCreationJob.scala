@@ -49,7 +49,8 @@ trait PersistentDocumentSetCreationJob {
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
 
-  private type DocumentSetCreationJobData = (Long, // id
+  private type DocumentSetCreationJobData = (
+    Long, // id
     Long, // documentSetId
     Int, // state
     Double, // fractionComplete
@@ -76,7 +77,7 @@ object PersistentDocumentSetCreationJob {
     jobData.map(new PersistentDocumentSetCreationJobImpl(_))
   }
     
-  /** Private implementation created from database data */
+  /** Private implementation or PersistentDocumentSet created from database data */
   private class PersistentDocumentSetCreationJobImpl(data: DocumentSetCreationJobData)
     extends PersistentDocumentSetCreationJob {
 
