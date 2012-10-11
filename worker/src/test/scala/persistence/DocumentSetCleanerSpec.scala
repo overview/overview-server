@@ -18,13 +18,20 @@ class DocumentSetCleanerSpec extends DbSpecification {
   
   "DocumentSetCleaner" should {
 
-    "delete node related data" in new DbTestContext {
-      val documentSetId = insertDocumentSet("DocumentSetCleanerSpec")
-      val nodeId = insertNode(documentSetId, None, "description")
-      val documentId = insertDocument(documentSetId, "title", "dcId")
-      insertNodeDocument(nodeId, documentId)
-
+    trait DocumentSetContext extends DbTestContext {
+      lazy val documentSetId = insertDocumentSet("DocumentSetCleanerSpec")
+      var nodeId: Long = _
+      var documentId: Long = _
       val cleaner = new DocumentSetCleaner
+
+      override def setupWithDb = {
+	nodeId = insertNode(documentSetId, None, "description")
+	documentId = insertDocument(documentSetId, "title", "dcId")
+	insertNodeDocument(nodeId, documentId)
+      }
+    }
+
+    "delete node related data" in new DocumentSetContext {
       cleaner.clean(documentSetId)
 
       val noNodeDocument = SQL(
