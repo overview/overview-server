@@ -27,54 +27,69 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       executeInsert().getOrElse(throw new Exception("failed Insert"))
   }
 
+  def insertDocumentCloudJob(documentSetId: Long, state: Int, dcUserName: String, dcPassword: String)(implicit c: Connection): Long = {
+    SQL("""
+        INSERT INTO document_set_creation_job (document_set_id, state,
+          documentcloud_username, documentcloud_password)
+        VALUES ({documentSetId}, {state}, {name}, {password})
+        """).on("documentSetId" -> documentSetId, "state" -> state, 
+	        "name" -> dcUserName, "password" -> dcPassword).
+    executeInsert().getOrElse(throw new Exception("failed Insert"))
+  }
+  
   def insertJobsWithState(documentSetId: Long, states: Seq[Int])(implicit c: Connection) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
   }
 
-  trait JobSetup extends DbTestContext {
+  trait DocumentSetContext extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
-    lazy val allNotStartedJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
-    lazy val notStartedJob = allNotStartedJobs.head
-
-    def insertJob = insertDocumentSetCreationJob(documentSetId, Submitted.id)
+  }
+  
+  trait JobSetup extends DocumentSetContext {
+    var notStartedJob: PersistentDocumentSetCreationJob = _
+    var jobId: Long = _
+    
+    override def setupWithDb = {
+      jobId = insertDocumentSetCreationJob(documentSetId, Submitted.id)
+      notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+    }
   }
 
-  trait DocumentCloudJobSetup extends JobSetup {
+  trait JobQueueSetup extends DocumentSetContext {
+    override def setupWithDb = {
+      insertJobsWithState(documentSetId, Seq(Submitted.id, InProgress.id, Submitted.id, InProgress.id))
+    }
+  }
+
+  trait DocumentCloudJobSetup extends DocumentSetContext {
     val dcUsername = "user@documentcloud.org"
     val dcPassword = "dcPassword"
-
-    lazy val jobId = insertJob
-
-    def insertDocumentCloudJob: Long =
-      SQL("""
-	  UPDATE document_set_creation_job
-	  SET documentcloud_username = {userName},
-	      documentcloud_password = {password}
-	  WHERE id = {jobId}
-	 """).on("userName" -> dcUsername, "password" -> dcPassword, "jobId" -> jobId).
-        executeUpdate()
+    var dcJob: PersistentDocumentSetCreationJob = _
+    
+    override def setupWithDb = {
+      insertDocumentCloudJob(documentSetId, Submitted.id, dcUsername, dcPassword)
+      dcJob = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+    }
   }
 
   "PersistentDocumentSetCreationJob" should {
 
-    "find all submitted jobs" in new JobSetup {
-      insertJobsWithState(documentSetId, Seq(Submitted.id, Submitted.id, InProgress.id))
+    "find all submitted jobs" in new JobQueueSetup {
+      val notStarted = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
 
-      allNotStartedJobs.map(_.state).distinct must contain(Submitted).only
-      allNotStartedJobs.map(_.documentSetId).distinct must contain(documentSetId).only
+      notStarted must have size(2)
+      notStarted.map(_.state).distinct must contain(Submitted).only
+      notStarted.map(_.documentSetId).distinct must contain(documentSetId).only
     }
 
-    "find all in progress jobs" in new JobSetup {
-      insertJobsWithState(documentSetId, Seq(Submitted.id, InProgress.id, InProgress.id))
+    "find all in progress jobs" in new JobQueueSetup {
+      val inProgress = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
 
-      val allInProgressJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
-
-      allInProgressJobs must have size(2)
-      allInProgressJobs.map(_.state).distinct must contain(InProgress).only
+      inProgress must have size(2)
+      inProgress.map(_.state).distinct must contain(InProgress).only
     }
     
     "update job state" in new JobSetup {
-      insertJob
       notStartedJob.state = InProgress
       notStartedJob.update
 
@@ -83,8 +98,6 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
 
     "update percent complete" in new JobSetup {
-      insertJob
-
       notStartedJob.fractionComplete = 0.5
       notStartedJob.update
       val job = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
@@ -93,7 +106,6 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
 
     "update job status" in new JobSetup {
-      insertJob
       val status = "status message"
       notStartedJob.statusDescription = Some(status)
       notStartedJob.update
@@ -103,8 +115,6 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
 
     "delete itself" in new JobSetup {
-      insertJob
-
       notStartedJob.delete
 
       val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
@@ -113,16 +123,13 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
 
     "have empty username and password if not available" in new JobSetup {
-      insertJob
-
-      allNotStartedJobs.head.documentCloudUsername must beNone
-      allNotStartedJobs.head.documentCloudPassword must beNone
+      notStartedJob.documentCloudUsername must beNone
+      notStartedJob.documentCloudPassword must beNone
     }
 
     "have username and password if available" in new DocumentCloudJobSetup {
-      insertDocumentCloudJob
 
-      allNotStartedJobs.head.documentCloudUsername must beSome.like {
+      dcJob.documentCloudUsername must beSome.like {
         case n =>
           n must be equalTo (dcUsername)
       }
