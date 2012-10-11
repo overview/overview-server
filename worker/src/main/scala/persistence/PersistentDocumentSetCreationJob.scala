@@ -1,30 +1,52 @@
+/*
+ * PersistentDocumentSetCreationJob.scala
+ *
+ * Overview Project
+ * Created by Jonas Karlsson, Aug 2012
+ */
+
 package persistence
 
 import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 
+/** Possible states of a DocumentSetCreationJob */
 object DocumentSetCreationJobState extends Enumeration {
   type DocumentSetCreationJobState = Value
-  val Submitted, InProgress, Error = Value
+  val Submitted, InProgress, Error = Value // order matters, must correspond to: 0, 1, 2
 }
 
 import DocumentSetCreationJobState._
 
+/**
+ * Contains attributes of a DocumentSetCreationJob
+ * and allows updates and deletions.
+ */ 
 trait PersistentDocumentSetCreationJob {
 
   val documentSetId: Long
+
+  // Only some jobs require DocumentCloud credentials
   val documentCloudUsername: Option[String]
   val documentCloudPassword: Option[String]
 
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
-  var statusDescription: Option[String]
+  var statusDescription: Option[String] 
 
+  /**
+   * Updates state, fractionComplete, and statusDescription
+   * @return 1 on success, 0 otherwise
+   */
   def update(implicit c: Connection): Long
+
+  /** @return 1 on successful deletion, 0 otherwise */
   def delete(implicit c: Connection): Long
 }
 
+
+/** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
 
   private type DocumentSetCreationJobData = (Long, // id
@@ -35,6 +57,7 @@ object PersistentDocumentSetCreationJob {
     Option[String], // documentCloudUserName
     Option[String]) // doucmentCloudPassword
 
+  /** Find all jobs in the specified state */
   def findJobsWithState(state: DocumentSetCreationJobState)(implicit c: Connection): List[PersistentDocumentSetCreationJob] = {
     val jobData =
       SQL("""
@@ -53,7 +76,7 @@ object PersistentDocumentSetCreationJob {
     jobData.map(new PersistentDocumentSetCreationJobImpl(_))
   }
     
-  
+  /** Private implementation created from database data */
   private class PersistentDocumentSetCreationJobImpl(data: DocumentSetCreationJobData)
     extends PersistentDocumentSetCreationJob {
 
