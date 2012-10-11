@@ -16,4 +16,12 @@ import java.sql.Connection
  */
 class DocumentSetCleaner {
 
+  def clean(documentSetId: Long)(implicit c: Connection) {
+    SQL("""
+      DELETE FROM node_document WHERE node_id IN
+        (SELECT id FROM node WHERE document_set_id = {id})
+      """).on("id" -> documentSetId).executeUpdate
+    SQL("DELETE FROM node WHERE document_set_id = {id}").on("id" -> documentSetId).executeUpdate
+  }
+
 }
