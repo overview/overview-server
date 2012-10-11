@@ -33,7 +33,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   trait JobSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
-    lazy val allNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
+    lazy val allNotStartedJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
     lazy val notStartedJob = allNotStartedJobs.head
 
     def insertJob = insertDocumentSetCreationJob(documentSetId, Submitted.id)
@@ -67,7 +67,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "find all in progress jobs" in new JobSetup {
       insertJobsWithState(documentSetId, Seq(Submitted.id, InProgress.id, InProgress.id))
 
-      val allInProgressJobs = PersistentDocumentSetCreationJob.findAllInProgress
+      val allInProgressJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
 
       allInProgressJobs must have size(2)
       allInProgressJobs.map(_.state).distinct must contain(InProgress).only
@@ -78,7 +78,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       notStartedJob.state = InProgress
       notStartedJob.update
 
-      val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findAllSubmitted
+      val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
       remainingNotStartedJobs must be empty
     }
 
@@ -87,7 +87,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
       notStartedJob.fractionComplete = 0.5
       notStartedJob.update
-      val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
+      val job = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
 
       job.fractionComplete must be equalTo (0.5)
     }
@@ -97,7 +97,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val status = "status message"
       notStartedJob.statusDescription = Some(status)
       notStartedJob.update
-      val job = PersistentDocumentSetCreationJob.findAllSubmitted.head
+      val job = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
 
       job.statusDescription must beSome.like { case s => s must be equalTo(status) }
     }
@@ -107,7 +107,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
       notStartedJob.delete
 
-      val remainingJobs = PersistentDocumentSetCreationJob.findAllSubmitted
+      val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
 
       remainingJobs must be empty
     }

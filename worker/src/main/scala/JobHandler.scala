@@ -69,7 +69,7 @@ object JobHandler {
   def scanForJobs: Unit = {
 
     val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { implicit connection =>
-      PersistentDocumentSetCreationJob.findAllSubmitted
+      PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
     }
 
     for (j <- submittedJobs) {
