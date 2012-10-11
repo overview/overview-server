@@ -23,14 +23,22 @@ class DocumentSetCleaner {
   }
 
   private def removeNodeData(documentSetId: Long)(implicit c: Connection) {
-    SQL("""
+    val nodeDocumentUpdate = SQL("""
       DELETE FROM node_document WHERE node_id IN
         (SELECT id FROM node WHERE document_set_id = {id})
-      """).on("id" -> documentSetId).executeUpdate
-    SQL("DELETE FROM node WHERE document_set_id = {id}").on("id" -> documentSetId).executeUpdate
+      """)
+    val nodeUpdate = SQL("DELETE FROM node WHERE document_set_id = {id}")
+
+    updateOnDocumentSet(nodeDocumentUpdate, documentSetId)
+    updateOnDocumentSet(nodeUpdate, documentSetId)
   }
 
   private def removeDocumentData(documentSetId: Long)(implicit c: Connection) {
-    SQL("DELETE FROM document WHERE document_set_id = {id}").on("id" -> documentSetId).executeUpdate
+    val update = SQL("DELETE FROM document WHERE document_set_id = {id}")
+    updateOnDocumentSet(update, documentSetId)
   }
+
+  // Assumes query wants to bind "id" to documentSetId
+  private def updateOnDocumentSet(query: anorm.SqlQuery, documentSetId: Long)(implicit c: Connection): Long =
+    query.on("id" -> documentSetId).executeUpdate
 }

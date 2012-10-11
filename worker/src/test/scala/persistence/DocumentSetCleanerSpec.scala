@@ -11,6 +11,7 @@ import anorm._
 import anorm.SqlParser._
 import helpers.DbSetup._
 import helpers.DbSpecification
+import java.sql.Connection
 import org.specs2.mutable.Specification
 
 class DocumentSetCleanerSpec extends DbSpecification {
@@ -31,25 +32,33 @@ class DocumentSetCleanerSpec extends DbSpecification {
       }
     }
 
+    def findNodeWithDocument(documentSetId: Long)(implicit c: Connection): Option[Long] =
+      SQL("""
+	    SELECT node_id FROM node_document WHERE node_id IN
+	      (SELECT id FROM node WHERE document_set_id = {id})
+          """).on("id" -> documentSetId).as(long("node_id") *).headOption
+
+    def findNode(nodeId: Long)(implicit c: Connection): Option[Long] =
+      SQL("SELECT id FROM node WHERE id = {id}").on("id" -> nodeId).as(long("id") *).headOption
+
+    def findDocument(documentSetId: Long)(implicit c: Connection): Option[Long] =
+      SQL("SELECT id FROM document WHERE document_set_id = {id}").
+        on("id" -> documentSetId).as(long("id") *).headOption
+
     "delete node related data" in new DocumentSetContext {
       cleaner.clean(documentSetId)
 
-      val noNodeDocument = SQL(
-        """
-	  SELECT node_id FROM node_document WHERE node_id IN
-	    (SELECT id FROM node WHERE document_set_id = {id})
-	""").on("id" -> documentSetId).as(long("node_id") *).headOption
+      val noNodeDocument = findNodeWithDocument(documentSetId)
       noNodeDocument must beNone
 
-      val noNode = SQL("SELECT id FROM node WHERE id = {id}").on("id" -> nodeId).as(long("id") *).headOption
+      val noNode = findNode(nodeId)
       noNode must beNone
     }
 
     "delete document related data" in new DocumentSetContext {
       cleaner.clean(documentSetId)
 
-      val noDocument = SQL("SELECT id FROM document WHERE document_set_id = {id}").
-        on("id" -> documentSetId).as(long("id") *).headOption
+      val noDocument = findDocument(documentSetId)
 
       noDocument must beNone
     }
