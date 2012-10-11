@@ -25,9 +25,13 @@ class DbSpecification extends Specification {
   trait DbTestContext extends Around {
     lazy implicit val connection = DB.getConnection()
 
+    /** setup method called after database connection is established */
+    def setupWithDb {}
+    
     def around[T <% Result](test: => T) = {
       try {
         connection.setAutoCommit(false)
+	setupWithDb
         test
       } finally {
         connection.rollback()
