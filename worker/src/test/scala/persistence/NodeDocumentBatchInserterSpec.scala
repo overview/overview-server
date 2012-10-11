@@ -19,7 +19,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
   
   trait DocumentsSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("NodeDocumentBatchInserterSpec")
-    lazy val nodeId = insertNode(documentSetId)
+    lazy val nodeId = insertNode(documentSetId, None, "description")
   }
   
   def findNodeDocuments(implicit c: Connection) : Seq[(Long, Long)] = {

@@ -28,11 +28,23 @@ object DbSetup {
         ).executeInsert().getOrElse(failInsert)
   }
   
-  def insertNode(documentSetId: Long)(implicit c: Connection): Long = {
+  def insertNode(documentSetId: Long, parentId: Option[Long], description: String)
+                (implicit c: Connection) : Long = {
     SQL("""
-        INSERT INTO node (description, document_set_id) VALUES 
-        ('description', {documentSetId})
-        """).on("documentSetId" -> documentSetId).executeInsert().getOrElse(failInsert)
+      INSERT INTO node (document_set_id, parent_id, description)
+      VALUES ({document_set_id}, {parent_id}, {description})
+      """).on(
+        'document_set_id -> documentSetId,
+        'parent_id -> parentId,
+        'description -> description
+      ).executeInsert().getOrElse(failInsert)
+  }
+
+  def insertNodeDocument(nodeId: Long, documentId: Long)(implicit c: Connection) : Long = {
+    SQL("""
+        INSERT INTO node_document(node_id, document_id) VALUES ({nodeId}, {documentId})
+        """).on("nodeId" -> nodeId, "documentId" -> documentId).
+             executeInsert().getOrElse(failInsert)
   }
 
   def insertDocument(documentSetId: Long, title: String, documentCloudId: String)
