@@ -14,6 +14,11 @@ class createSpec extends Specification {
     val user = new OverviewUser with ConfirmationRequest {
       val id = 5l
       val email = "email@example.org"
+      override def currentSignInAt = None
+      override def currentSignInIp = None
+      override def lastSignInAt = None
+      override def lastSignInIp = None
+      override def recordLogin(ip: String, date: java.util.Date) = this
       def passwordMatches(password: String) = true
       def withConfirmationRequest = Some(this)
       def save {}

@@ -27,7 +27,10 @@ object SessionController extends Controller with TransactionActionController wit
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
-      user => gotoLoginSucceeded(user.id).flashing("success" -> m("create.success"))
+      user => {
+        user.recordLogin(request.remoteAddress, new java.util.Date()).save
+        gotoLoginSucceeded(user.id).flashing("success" -> m("create.success"))
+      }
     )
   }
 }

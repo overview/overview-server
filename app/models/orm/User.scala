@@ -1,7 +1,6 @@
 package models.orm
 
 import java.sql.Timestamp
-import org.joda.time.DateTime.now
 import org.squeryl.annotations.{ Column, Transient }
 import org.squeryl.dsl.ManyToMany
 import org.squeryl.KeyedEntity
@@ -18,18 +17,19 @@ case class User(
   var role: UserRole.UserRole = UserRole.NormalUser,
   @Column("confirmation_token") var confirmationToken: Option[String] = None,
   @Column("confirmation_sent_at") var confirmationSentAt: Option[Timestamp] = None,
-  @Column("confirmed_at") var confirmedAt: Option[Timestamp] = None //@Column("reset_password_token")
+  @Column("confirmed_at") var confirmedAt: Option[Timestamp] = None,
+  //@Column("reset_password_token")
   //var resetPasswordToken: Option[String],
   //@Column("reset_password_sent_at")
   //var resetPasswordSentAt: Option[DateTime],
-  //@Column("current_sign_in_at")
-  //var currentSignInAt: Option[DateTime],
-  //@Column("current_sign_in_ip")
-  //var currentSignInIp: Option[String],
-  //@Column("last_sign_in_at")
-  //var lastSignInAt: Option[DateTime],
-  //@Column("last_sign_in_ip")
-  //var lastSignInIp: Option[String]
+  @Column("current_sign_in_at")
+  var currentSignInAt: Option[Timestamp] = None,
+  @Column("current_sign_in_ip")
+  var currentSignInIp: Option[String] = None,
+  @Column("last_sign_in_at")
+  var lastSignInAt: Option[Timestamp] = None,
+  @Column("last_sign_in_ip")
+  var lastSignInIp: Option[String] = None
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)

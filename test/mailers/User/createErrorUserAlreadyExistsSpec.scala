@@ -13,6 +13,11 @@ class createErrorUserAlreadyExistsSpec extends Specification {
     val user = new models.OverviewUser {
       val id = 4l
       val email = "email@example.org"
+      override def currentSignInAt = None
+      override def currentSignInIp = None
+      override def lastSignInAt = None
+      override def lastSignInIp = None
+      override def recordLogin(ip: String, date: java.util.Date) = this
       def passwordMatches(password: String) = true
       def withConfirmationRequest = None
       

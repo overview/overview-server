@@ -27,7 +27,7 @@ object ConfirmationController extends Controller with TransactionActionControlle
         }
       },
       u => {
-        u.confirm.save
+        u.confirm.recordLogin(request.remoteAddress, new java.util.Date()).save
         gotoLoginSucceeded(u.id).flashing("success" -> m("show.success"))
       }
     )

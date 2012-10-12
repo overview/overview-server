@@ -19,10 +19,17 @@ trait OverviewUser {
   val id: Long
   val email: String
 
+  def currentSignInAt: Option[Timestamp]
+  def currentSignInIp: Option[String]
+  def lastSignInAt: Option[Timestamp]
+  def lastSignInIp: Option[String]
+
   def passwordMatches(password: String): Boolean
 
   /** @return None if the user has no open confirmation request */
   def withConfirmationRequest: Option[OverviewUser with ConfirmationRequest]
+
+  def recordLogin(ip: String, date: java.util.Date): OverviewUser
 
   def save: Unit
 }
@@ -125,6 +132,11 @@ object OverviewUser {
     val id = user.id
     val email = user.email
 
+    override def currentSignInAt = user.currentSignInAt
+    override def currentSignInIp = user.currentSignInIp
+    override def lastSignInAt = user.lastSignInAt
+    override def lastSignInIp = user.lastSignInIp
+
     def passwordMatches(password: String): Boolean = {
       password.isBcrypted(user.passwordHash)
     }
@@ -132,6 +144,15 @@ object OverviewUser {
     def withConfirmationRequest: Option[OverviewUser with ConfirmationRequest] = {
       if (user.confirmationToken.isDefined) Some(new UnconfirmedUser(user))
       else None
+    }
+
+    override def recordLogin(ip: String, date: java.util.Date) : OverviewUser = {
+      user.lastSignInAt = user.currentSignInAt
+      user.lastSignInIp = user.currentSignInIp
+      user.currentSignInAt = Some(new java.sql.Timestamp(date.getTime()))
+      user.currentSignInIp = Some(ip)
+
+      this
     }
 
     def save: Unit = user.save
