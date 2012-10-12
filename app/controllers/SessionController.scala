@@ -6,14 +6,19 @@ import play.api.mvc.{AnyContent,Controller,Request}
 
 import models.OverviewUser
 
-object SessionController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl with HttpsEnforcer {
+object SessionController extends BaseController with LoginLogout {
   val loginForm = controllers.forms.LoginForm()
   val registrationForm = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.SessionController")
 
-  def new_ = HttpsAction { implicit request =>
-    Ok(views.html.Session.new_(loginForm, registrationForm))
+  def new_() = optionallyAuthorizedAction({ user: Option[User] => optionallyAuthorizedNew_(user)(_: Request[AnyContent], _: Connection)})
+
+  def optionallyAuthorizedNew_(optionalUser: Option[User])(implicit request: Request[AnyContent], connection: Connection) = {
+    optionalUser match {
+      case Some(user) => Redirect(routes.WelcomeController.show)
+      case _ => Ok(views.html.Session.new_(loginForm, registrationForm))
+    }
   }
 
   def delete = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>

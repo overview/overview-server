@@ -5,13 +5,13 @@ import play.api.mvc.{AnyContent, Controller, Request}
 
 import models.{OverviewUser, PotentialUser}
 
-object UserController extends Controller with TransactionActionController with HttpsEnforcer {
+object UserController extends BaseController {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.UserController")
 
-  def new_() = HttpsAction { implicit request => Ok(views.html.Session.new_(loginForm, userForm)) }
+  def new_ = SessionController.new_
 
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
     implicit val r = request
