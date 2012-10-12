@@ -110,20 +110,20 @@ object TagController extends BaseController {
   }
 
   def authorizedUpdate(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    TagForm().bindFromRequest.fold(
-      formWithErrors => BadRequest,
-      formData => {
-	PotentialTag(tagName).inDocumentSet(documentSetId) match {
-	  case None => NotFound
-  	  case Some(tag) => {
-	    val updatedTag = tag.withName(formData._1).withColor(formData._2).save
+    PotentialTag(tagName).inDocumentSet(documentSetId) match {
+      case None => NotFound
+      case Some(tag) => {
+	TagForm(tag).bindFromRequest.fold(
+	  formWithErrors => BadRequest,
+	  updatedTag => {
+	    updatedTag.save
 	    val tagInfo = PersistentTag(updatedTag)
 
     	    Ok(views.json.Tag.update(tagInfo))
 	  }
-	}
+	)
       }
-    )
+    }
   }
 
   def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
