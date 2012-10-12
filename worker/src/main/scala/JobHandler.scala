@@ -7,11 +7,11 @@
  */
 
 import com.jolbox.bonecp._
-
 import database.{ DatabaseConfiguration, DataSource, DB }
+import java.sql.Connection 
 import overview.clustering._
 import overview.http.AsyncHttpRequest
-import overview.util.{ ExceptionStatusMessage, Logger }
+import overview.util.{ ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._
 import persistence._
 import persistence.DocumentSetCreationJobState._
@@ -78,6 +78,14 @@ object JobHandler {
     }
   }
 
+
+  def restartInterruptedJobs(implicit c: Connection) {
+    val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
+    val restarter = new JobRestarter(new DocumentSetCleaner)
+    
+    restarter.restart(interruptedJobs)
+  }
+  
   def main(args: Array[String]) {
 
     val pollingInterval = 500 //milliseconds
@@ -87,6 +95,10 @@ object JobHandler {
 
     DB.connect(dataSource)
 
+    DB.withConnection { implicit connection =>
+      restartInterruptedJobs
+    }
+    
     while (true) {
       scanForJobs
       Thread.sleep(pollingInterval)
