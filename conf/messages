@@ -25,7 +25,7 @@ mailers.User.create.body=You have just registered to use the Overview Project. T
 mailers.User.create.signoff=Happy analyzing,
 mailers.User.create.signature=The Overview Project developers
 
-mailers.User.createErrorUserAlreadyExists.subject=Overview Project account confirmation
+mailers.User.createErrorUserAlreadyExists.subject=Overview Project re-registration attempt
 mailers.User.createErrorUserAlreadyExists.intro=Somebody with this email address has tried to register to use the Overview Project. You already have an account, so your password has not changed.
 mailers.User.createErrorUserAlreadyExists.case1=If you did not recently try to register, please ignore this email.
 mailers.User.createErrorUserAlreadyExists.case2=If you did, please rack your brain to remember your password, and log in here:
