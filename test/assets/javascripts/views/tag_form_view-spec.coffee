@@ -33,18 +33,16 @@ describe 'views/tag_form_view', ->
       $('.modal-backdrop').remove()
 
     actions = {
-      submit: () -> $('form.form-horizontal', view.div).submit()
-      close: () -> $(view.div).modal('hide')
-      delete: () ->
-        $form = $('form.delete')
-        $form.removeAttr('data-confirm')
-        $form.submit()
+      submit: () -> $(view.form).submit()
+      close: () -> $(view.form).modal('hide')
+      delete: () -> $('input.delete', view.form).removeAttr('data-confirm').click()
+      delete_with_prompt: () -> $('input.delete', view.form).click()
       set_name: (name) ->
-        $input = $('input[name=name]', view.div)
+        $input = $('input[name=name]', view.form)
         $input.val(name)
         $input.change()
       set_color: (color) ->
-        $input = $('input[name=color]', view.div)
+        $input = $('input[name=color]', view.form)
         $input.val(color)
         $input.change()
     }
@@ -119,7 +117,7 @@ describe 'views/tag_form_view', ->
       deleted = false
       view.observe('delete', () -> deleted = true)
       spyOn(window, 'confirm').andReturn(true)
-      $('form.delete', view.div).submit()
+      actions.delete_with_prompt()
       expect(window.confirm).toHaveBeenCalledWith('Confirm delete')
       expect(deleted).toBe(true)
 
@@ -128,6 +126,6 @@ describe 'views/tag_form_view', ->
       view.observe('delete', () -> failed = true)
       view.observe('change', () -> failed = true)
       spyOn(window, 'confirm').andReturn(false)
-      $('form.delete', view.div).submit()
+      actions.delete_with_prompt()
       expect(window.confirm).toHaveBeenCalledWith('Confirm delete')
       expect(failed).toBe(false)

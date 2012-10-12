@@ -18,47 +18,43 @@ class TagFormView
   observable(this)
 
   constructor: (@tag) ->
-    $div = $(this._create_div_string())
-    $('body').append($div)
+    $form = $(this._create_form_string())
+    $('body').append($form)
 
-    $color = $div.find('input[type=color]')
+    $color = $form.find('input[type=color]')
     $color.spectrum({
       preferredFormat: 'hex6'
       showButtons: false
       move: (color) -> $color.spectrum('set', color.toHexString()) # Issue #168
     })
 
-    $div.modal()
-    $div.find('input[type=text]').focus()
+    $form.modal()
+    $form.find('input[type=text]').focus()
 
-    $div.on 'hidden', () =>
-      $div.remove()
+    $form.on 'hidden', () =>
+      $form.remove()
       this._notify('closed')
 
-    $div.find('form.form-horizontal').on 'submit', (e) =>
+    $form.on 'submit', (e) =>
       e.preventDefault()
       new_tag = this._build_tag_from_form()
       this._notify('change', new_tag)
-      $div.modal('hide')
+      $form.modal('hide')
 
-    $div.find('form.delete').on 'submit', (e) =>
+    $input_delete = $form.find('input.delete')
+    $input_delete.on 'click', (e) =>
       e.preventDefault()
-      e.stopPropagation() # So form-with-confirm doesn't run
 
-      $form = $(e.target)
-      message = $form.attr('data-confirm')
+      message = $input_delete.attr('data-confirm')
 
       if !message || window.confirm(message)
         this._notify('delete')
-        $div.modal('hide')
+        $form.modal('hide')
 
-    $div.find('.btn-primary').on 'click', (e) ->
-      $div.find('form.form-horizontal').submit()
-
-    @div = $div[0] # for unit testing
+    @form = $form[0] # for unit testing
 
   _build_tag_from_form: () ->
-    $form = $('form', @div)
+    $form = $(@form)
 
     $name = $form.find('input[name=name]')
     $color = $form.find('input[name=color]')
@@ -68,15 +64,15 @@ class TagFormView
 
     { id: @tag.id, name: name, color: color }
 
-  _create_div_string: () ->
+  _create_form_string: () ->
     _.template("""
-      <div id="tag-form-view-dialog" class="modal" role="dialog">
+      <form method="get" action="#" id="tag-form-view-dialog" class="modal" role="dialog">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">×</button>
           <h3><%- i18n('views.Tag._form.h3') %></h3>
         </div>
         <div class="modal-body">
-          <form class="form-horizontal" method="post" action="#">
+          <div class="form-horizontal" method="post" action="#">
             <div class="control-group">
               <label class="control-label" for="tag-form-name"><%- i18n('views.Tag._form.labels.name') %></label>
               <div class="controls">
@@ -89,16 +85,14 @@ class TagFormView
                 <input type="color" name="color" id="tag-form-color" required="required" value="<%- tag.color || color_table.get(tag.name) %>" />
               </div>
             </div>
-          </form>
+          </div>
         </div>
         <div class="modal-footer">
-          <form class="delete form-inline" data-confirm="<%- i18n('views.Tag._form.confirm_delete') %>" action="#">
-            <input type="submit" class="btn btn-danger" value="<%- i18n('views.Tag._form.delete') %>" />
-          </form>
-          <button class="btn" data-dismiss="modal"><%- i18n('views.Tag._form.close') %></button>
-          <button class="btn btn-primary"><%- i18n('views.Tag._form.submit') %></button>
+          <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete') %>" value="<%- i18n('views.Tag._form.delete') %>" />
+          <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Tag._form.close') %>" />
+          <input type="submit" class="btn btn-primary" value="<%- i18n('views.Tag._form.submit') %>" />
         </div>
-      </div>""")({ tag: @tag, color_table: new ColorTable() })
+      </form>""")({ tag: @tag, color_table: new ColorTable() })
 
 exports = require.make_export_object('views/tag_form_view')
 exports.TagFormView = TagFormView
