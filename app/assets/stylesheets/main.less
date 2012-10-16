@@ -270,6 +270,7 @@ body.document-set-show {
     h4:hover a {
       display: block;
       position: relative; // otherwise users can't click, in Chrome 22
+      background: @wellBackground; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
     }
 
     ul {
