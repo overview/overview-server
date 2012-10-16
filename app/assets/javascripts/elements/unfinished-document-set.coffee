@@ -21,7 +21,11 @@ $ ->
       $li.find('.state-description').text(state_description(data))
 
     refresh = ->
-      $.get json_href, (data) ->
+      ajax = $.ajax({
+        url: json_href
+        cache: false
+      })
+      ajax.done (data) ->
         if data.html?
           done(data)
         else
