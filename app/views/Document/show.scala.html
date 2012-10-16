@@ -56,11 +56,11 @@
       </style>
     </head>
     <body>
-      <h3 data-m-loading="@m("loading")">@m("loading")</h3>
+      <h3 data-m-loading="@m("loading")" style="display:none;">@m("loading")</h3>
       <ul class="actions">
-        <li><a href="#" class="toggle-sidebar" data-m-enable="@m("sidebar.enable")" data-m-disable="@m("sidebar.disable")"></a></li>
+        <li><a href="#" class="toggle-sidebar" data-m-enable="@m("sidebar.enable")" data-m-disable="@m("sidebar.disable")" style="display:none;"></a></li>
       </ul>
-      <div class="container"><iframe src="data:text/html,&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div>
+      <div class="container"><iframe src=""></iframe></div>
 
       <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/jquery-1-8-1.js")"></script>
 
@@ -73,14 +73,14 @@
           if (document_id) {
             $container.attr('src', 'https://www.documentcloud.org/documents/' + document_id + '?sidebar=' + (sidebar_enabled ? 'true' : 'false'));
             $title.text('');
-            $h3.text('');
+            //$h3.text('');
           } else {
             $container.attr('src', default_src);
             $title.text($title.attr('data-m-loading'));
-            $h3.text($h3.attr('data-m-loading'));
+            //$h3.text($h3.attr('data-m-loading'));
           }
 
-          $title.add($h3).add($container).add($a_sidebar).toggle(!!document_id);
+          $title/*.add($h3)*/.add($container).add($a_sidebar).toggle(!!document_id);
         };
 
         window.load_documentcloud_document = function(id) {
