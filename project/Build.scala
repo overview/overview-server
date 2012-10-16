@@ -19,7 +19,8 @@ object ApplicationBuild extends Build {
     "org.squeryl" %% "squeryl" % "0.9.5-2",
     "postgresql" % "postgresql" % "9.1-901.jdbc4",
     "org.mockito" % "mockito-all" % "1.9.0",
-    "org.jodd" % "jodd-wot" % "3.3.4"
+    "org.jodd" % "jodd-wot" % "3.3.4",
+    "javax.mail" % "mail" % "1.4"
   )
 
   val playAppDependencies = appDependencies ++ Seq(
