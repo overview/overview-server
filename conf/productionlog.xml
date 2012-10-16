@@ -1,0 +1,39 @@
+<configuration>
+
+    <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+      <smtpHost>smtp.sendgrid.net</smtpHost>
+      <username>${SENDGRID_USERNAME}</username>
+      <password>${SENDGRID_PASSWORD}</password>
+      <smtpPort>587</smtpPort>
+      <to>${LOG_RECEIVER_1}</to>
+      <to>${LOG_RECEIVER_2}</to>
+      <to>${LOG_RECEIVER_3}</to>
+      <from>${SERVER_NAME}-server@overviewproject.org</from>
+      <subject>SERVER ERROR: %logger{20} - %m</subject>
+      <layout class="ch.qos.logback.classic.PatternLayout">
+	<pattern>%date{HH:mm:ss.SSS} %-5level %logger{36} - %message%n</pattern>
+      </layout>       
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{36} - %message%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.jolbox.bonecp" level="ERROR">
+        <appender-ref ref="EMAIL" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="play" level="ERROR">
+        <appender-ref ref="EMAIL" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <logger name="application" level="ERROR">
+        <appender-ref ref="EMAIL" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+</configuration>
