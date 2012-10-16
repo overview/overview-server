@@ -42,8 +42,7 @@ class DocumentListView
       $a = $(e.target).closest('a')
 
       docid = if $a.length
-        href = $a.attr('href') # e.g., "document-132"
-        +(href.split(/-/g)[1])
+        href = +$a.attr('data-docid')
       else
         undefined
 
@@ -105,7 +104,7 @@ class DocumentListView
       $tags.append($span)
 
   _update_document: (document) ->
-    $tags = $("a[href=#document-#{document.id}] span.tags")
+    $tags = $("a[data-docid=#{document.id}] span.tags")
     this._update_document_a_tagids($tags, document.tagids || [])
 
   _update_tag: (tag) ->
@@ -119,9 +118,9 @@ class DocumentListView
     this._refresh_title()
 
   _document_to_dom_node: (document) ->
-    $a = $('<a></a>')
+    $a = $('<a href="#"></a>')
       .text(document.title)
-      .attr('href', "#document-#{document.id}")
+      .attr('data-docid', "#{document.id}")
 
     $tags = $('<span class="tags"/>')
     this._update_document_a_tagids($tags, document.tagids || [])
@@ -172,9 +171,9 @@ class DocumentListView
       $h4.prepend($a) # prepend, so float: right; works
 
   _index_to_dom_node: (index) ->
-    $a = $('<a></a>')
+    $a = $('<a href="#"></a>')
       .text('(loading...)')
-      .attr('href', "#loading-document-#{index}")
+      .attr('data-docindex', "#{index}")
 
   _create_li: (document_or_index) ->
     $li = $('<li></li>')
@@ -262,7 +261,7 @@ class DocumentListView
     $div.find('.selected').removeClass('selected')
     for document_or_id in @state.selection.documents
       documentid = document_or_id.id? && document_or_id.id || document_or_id
-      $div.find("a[href=#document-#{documentid}]").addClass('selected')
+      $div.find("a[data-docid=#{documentid}]").addClass('selected')
 
   _refresh_need_documents: () ->
     documents = @document_list.documents

@@ -122,8 +122,8 @@ describe 'views/document_list_view', ->
         view = create_view()
         $div = $(view.div)
         expect($div.children().length).toBeTruthy()
-        expect($div.find('a[href=#document-1]').length).toEqual(1)
-        expect($div.find('a[href=#document-2]').length).toEqual(1)
+        expect($div.find('a[data-docid=1]').length).toEqual(1)
+        expect($div.find('a[data-docid=2]').length).toEqual(1)
 
       it 'should add a tag with its specified color to each list item', ->
         view = create_view()
@@ -174,7 +174,7 @@ describe 'views/document_list_view', ->
 
       it 'should notify "document-clicked"', ->
         view = create_view()
-        $a = $(view.div).find('a[href=#document-1]')
+        $a = $(view.div).find('a[data-docid=1]')
         id = undefined
         view.observe('document-clicked', (docid) -> id = docid)
         $a.click()
@@ -198,22 +198,22 @@ describe 'views/document_list_view', ->
         state.selection.documents = [1]
         view = create_view()
         $div = $(view.div)
-        expect($div.find('a[href=#document-1]').hasClass('selected')).toBeTruthy()
-        expect($div.find('a[href=#document-2]').hasClass('selected')).toBeFalsy()
+        expect($div.find('a[data-docid=1]').hasClass('selected')).toBeTruthy()
+        expect($div.find('a[data-docid=2]').hasClass('selected')).toBeFalsy()
 
       it 'should remove the "selected" class when the selection changes', ->
         state.selection.documents = [1]
         view = create_view()
         state.selection.documents = []
         state._notify('selection-changed', state.selection)
-        expect($(view.div).find('a[href=#document-1]').hasClass('selected')).toBeFalsy()
+        expect($(view.div).find('a[data-docid=1]').hasClass('selected')).toBeFalsy()
 
       it 'should add the "selected" class when the selection changes', ->
         state.selection.documents = [1]
         view = create_view()
         state.selection.documents = [1,2]
         state._notify('selection-changed', state.selection)
-        expect($(view.div).find('a[href=#document-2]').hasClass('selected')).toBeTruthy()
+        expect($(view.div).find('a[data-docid=2]').hasClass('selected')).toBeTruthy()
 
     describe 'starting with an incomplete list', ->
       beforeEach ->
@@ -223,8 +223,8 @@ describe 'views/document_list_view', ->
       it 'should only show the incomplete list', ->
         view = create_view()
         $div = $(view.div)
-        expect($div.find('a[href=#document-4]').length).toEqual(1)
-        expect($div.find('a[href=#document-5]').length).toEqual(0)
+        expect($div.find('a[data-docid=4]').length).toEqual(1)
+        expect($div.find('a[data-docid=5]').length).toEqual(0)
 
       it 'should set need_documents', ->
         view = create_view()
@@ -287,7 +287,7 @@ describe 'views/document_list_view', ->
 
       it 'should show a placeholder at the end of the list', ->
         view = create_view()
-        $a = $(view.div).find('a[href=#loading-document-4]') # indices start at 0, so this is the 5th
+        $a = $(view.div).find('a[data-docindex=4]') # indices start at 0, so this is the 5th
         expect($a.length).toEqual(1)
         expect($a.closest('.placeholder').length).toEqual(1)
 
@@ -302,17 +302,17 @@ describe 'views/document_list_view', ->
           document_list.documents.push(document)
         document_list._notify()
         $div = $(view.div)
-        expect($div.find('a[href=#loading-document-4]').length).toEqual(0)
-        expect($div.find('a[href=#loading-document-8]').length).toEqual(1)
-        expect($div.find('a[href=#document-6]').length).toEqual(1)
+        expect($div.find('a[data-docindex=4]').length).toEqual(0)
+        expect($div.find('a[data-docindex=8]').length).toEqual(1)
+        expect($div.find('a[data-docid=6]').length).toEqual(1)
 
       it 'should update the list in-place', ->
         view = create_view()
-        $(view.div).find('a[href=#document-2]').data('foo', 'bar') # this should stay put
+        $(view.div).find('a[data-docid=2]').data('foo', 'bar') # this should stay put
         for document in mock_document_array(4, 5)
           document_list.documents.push(document)
         document_list._notify()
-        expect($(view.div).find('a[href=#document-2]').data('foo')).toEqual('bar')
+        expect($(view.div).find('a[data-docid=2]').data('foo')).toEqual('bar')
 
       it 'should not put a placeholder when the list becomes complete', ->
         view = create_view()
