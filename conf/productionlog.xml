@@ -5,11 +5,9 @@
       <username>${SENDGRID_USERNAME}</username>
       <password>${SENDGRID_PASSWORD}</password>
       <smtpPort>587</smtpPort>
-      <to>${LOG_RECEIVER_1}</to>
-      <to>${LOG_RECEIVER_2}</to>
-      <to>${LOG_RECEIVER_3}</to>
+      <to>${LOG_EMAIL}</to>
       <from>${SERVER_NAME}-server@overviewproject.org</from>
-      <subject>SERVER ERROR: %logger{20} - %m</subject>
+      <subject>${LOG_SUBJECT_PREFIX}: %logger{20} - %m</subject>
       <layout class="ch.qos.logback.classic.PatternLayout">
 	<pattern>%date{HH:mm:ss.SSS} %-5level %logger{36} - %message%n</pattern>
       </layout>       
