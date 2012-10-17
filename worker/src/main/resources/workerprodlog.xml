@@ -1,0 +1,39 @@
+<configuration>
+
+    <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+      <smtpHost>smtp.sendgrid.net</smtpHost>
+      <username>${SENDGRID_USERNAME}</username>
+      <password>${SENDGRID_PASSWORD}</password>
+      <smtpPort>587</smtpPort>
+      <to>${LOG_EMAIL}</to>
+      <from>${SERVER_NAME}-server@overviewproject.org</from>
+      <subject>${LOG_SUBJECT_PREFIX}: %logger{20} - %m</subject>
+      <layout class="ch.qos.logback.classic.PatternLayout">
+	<pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
+      </layout>       
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{36} - %message%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="ERROR">
+        <appender-ref ref="EMAIL"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <!-- turn off Ning HTTP output -->
+    <logger name="com.ning.http.client" level="ERROR">
+        <appender-ref ref="EMAIL"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!-- for the moment, lots of debug info for the worker -->
+    <logger name="WORKER" level="ERROR">
+        <appender-ref ref="EMAIL"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+</configuration>
