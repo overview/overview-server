@@ -15,6 +15,7 @@
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
     <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")" />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
   </head>
   <body class="@bodyClass">
     @views.html.components.navbar(optionalUser)
@@ -30,6 +31,15 @@
       }
       @content
     </div>
+
+    <!--[if lte IE 8]>
+      <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js"></script>
+      <script type="text/javascript">
+       CFInstall.check({
+          mode: "overlay",
+       });
+      </script>
+    <![endif]-->
 
     @if(!jsMessageKeys.isEmpty) {
       <script type="text/javascript" src="@routes.Assets.at("javascripts/pegjs/message_format.js")"></script>
