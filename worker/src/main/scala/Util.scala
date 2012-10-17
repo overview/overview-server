@@ -47,7 +47,7 @@ object DocumentSetCreationJobStateDescription {
 
   case object OutOfMemory extends Description("out_of_memory")
   case object WorkerError extends Description("worker_error")
-  case object Retrieving extends Description("retrieving_documents")
+  case class Retrieving(docNum: Int) extends Description("retrieving_documents", docNum.toString)
   case object Clustering extends Description("clustering")
   case object Saving extends Description("saving_document_tree")
   case object Done extends Description("job_complete")
