@@ -57,13 +57,27 @@ request_json_with_login_recursive = (deferred, url, prompt_div, attempt=0) ->
     $div.empty()
     $div.append(dcimport.templates.loading())
 
-    ajax = $.ajax({
-      url: url,
-      timeout: 20000,
-      dataType: 'json',
-      beforeSend: (xhr) ->
-        xhr.setRequestHeader('Authorization', credentials_to_authorization_header(credentials))
-    })
+    ajax_options = if $.support.cors
+      {
+        # Request from DocumentCloud directly
+        type: 'GET'
+        url: url
+        timeout: 20000
+        dataType: 'json'
+        beforeSend: (xhr) ->
+          xhr.setRequestHeader('Authorization', credentials_to_authorization_header(credentials))
+      }
+    else
+      {
+        # Request through our own proxy: /documentcloud-proxy/* instead of DC's /api/*
+        type: 'POST'
+        url: url.replace(/^.*\/api\//, '/documentcloud-proxy/')
+        timeout: 20000
+        dataType: 'json'
+        data: { email: credentials.email, password: credentials.password }
+      }
+
+    ajax = $.ajax(ajax_options)
     ajax.fail(-> recurse(true))
     ajax.done((json) -> deferred.resolve(json))
   else

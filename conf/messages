@@ -119,7 +119,8 @@ views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
 views.DocumentSet._dcimport.placeholders.email=user@example.org
 views.DocumentSet._dcimport.submit=Log in to DocumentCloud
-views.DocumentSet._dcimport.explanation=Your browser will store these credentials in memory. They will not be sent to Overview servers until you decide to import a project. Overview servers will only use the credentials to import your project, then they will delete them.
+views.DocumentSet._dcimport.explanation=Your browser will store these credentials in memory. They will only be sent (securely) to Overview servers when you import a project. Overview servers will only use the credentials to import your project, then they will delete them.
+views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
 
 views.DocumentSet._documentSet.action_import=Import
 views.DocumentSet._documentSet.action_delete=Delete

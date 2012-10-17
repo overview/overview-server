@@ -21,7 +21,7 @@ template = _.template("""
       <label class="control-label" for="dcimport-password"><%- i18n('views.DocumentSet._dcimport.labels.password') %></label>
       <div class="controls">
         <input type="password" name="dcimport_password" id="dcimport-password" required="required" />
-        <span class="help-inline"><%- i18n('views.DocumentSet._dcimport.explanation') %></span>
+        <span class="help-inline"><%- i18n('views.DocumentSet._dcimport.explanation#{if $.support.cors then '' else '_no_cors'}') %></span>
       </div>
     </div>
     <div class="control-group">
