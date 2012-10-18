@@ -280,7 +280,7 @@ describe 'models/cache', ->
 
           it 'should post to tag_edit with the old tag name', ->
             expect(post[0]).toEqual('tag_edit')
-            expect(post[2].path_argument).toEqual('AA')
+            expect(post[2].path_argument).toEqual(1)
 
           it 'should post the new name and color', ->
             expect(post[1].name).toEqual(tag.name)

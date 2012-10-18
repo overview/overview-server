@@ -33,9 +33,9 @@ object TagController extends BaseController {
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
       authorizedDelete(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
 
-  def update(documentSetId: Long, tagName: String) =
+  def update(documentSetId: Long, tagId: Long) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedUpdate(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+      authorizedUpdate(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
 
   def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
@@ -107,8 +107,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedUpdate(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PotentialTag(tagName).inDocumentSet(documentSetId) match {
+  def authorizedUpdate(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
 	TagForm(t).bindFromRequest.fold(
