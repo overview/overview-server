@@ -371,9 +371,9 @@ describe 'models/remote_tag_list', ->
             it 'should have POSTed', ->
               expect(post).toBeDefined()
 
-            it 'should post to tag_remove with tag name', ->
+            it 'should post to tag_remove with tag id', ->
               expect(post[0]).toEqual('tag_remove')
-              expect(post[2].path_argument).toEqual('BB')
+              expect(post[2].path_argument).toEqual(2)
 
             it 'should post the proper selection', ->
               expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })

@@ -10,7 +10,7 @@ package controllers
 
 import controllers.forms.TagForm
 import java.sql.Connection
-import models.PotentialTag
+import models.{ OverviewTag, PotentialTag }
 import models.orm.User
 import play.api.data.{ Form, FormError }
 import play.api.db.DB
@@ -25,9 +25,9 @@ object TagController extends BaseController {
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
       authorizedAdd(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
 
-  def remove(documentSetId: Long, tagName: String) =
+  def remove(documentSetId: Long, tagId: Long) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedRemove(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+      authorizedRemove(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
 
   def delete(documentSetId: Long, tagName: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
@@ -77,8 +77,8 @@ object TagController extends BaseController {
       })
   }
 
-  def authorizedRemove(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PotentialTag(tagName).inDocumentSet(documentSetId) match {
+  def authorizedRemove(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
 	val tag = PersistentTag(t)

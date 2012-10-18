@@ -56,7 +56,7 @@ class RemoteTagList
 
     selection_post_data = this._selection_to_post_data(selection)
     @cache.transaction_queue.queue =>
-      deferred = @cache.server.post('tag_remove', selection_post_data, { path_argument: tag.name })
+      deferred = @cache.server.post('tag_remove', selection_post_data, { path_argument: tag.id })
       deferred.done(this._after_tag_add_or_remove.bind(this, tag))
       if !selection.allows_correct_tagcount_adjustments()
         deferred.done(=> @cache.refresh_tagcounts(tag))
