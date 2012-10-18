@@ -56,7 +56,7 @@ class Cache
     nodes = @on_demand_tree.nodes
     node_ids = _(nodes).keys()
     node_ids_string = node_ids.join(',')
-    deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tag.name })
+    deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tag.id })
     deferred.done (data) =>
       @on_demand_tree.id_tree.edit ->
         tagid = tag.id

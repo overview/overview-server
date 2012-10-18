@@ -141,7 +141,7 @@ describe 'models/cache', ->
 
       it 'should POST to the tag\'s /node-counts', ->
         cache.refresh_tagcounts({ id: 1, name: 'foo' })
-        expect(cache.server.posts[0]).toEqual([ 'tag_node_counts', { nodes: '1,2,3' }, { path_argument: 'foo' } ])
+        expect(cache.server.posts[0]).toEqual([ 'tag_node_counts', { nodes: '1,2,3' }, { path_argument: 1 } ])
 
       describe 'When receiving a response', ->
         tag = undefined

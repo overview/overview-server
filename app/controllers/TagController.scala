@@ -37,9 +37,9 @@ object TagController extends BaseController {
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
       authorizedUpdate(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
 
-  def nodeCounts(documentSetId: Long, tagName: String, nodeIds: String) =
+  def nodeCounts(documentSetId: Long, tagId: Long, nodeIds: String) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedNodeCounts(documentSetId, tagName, nodeIds)(_: Request[AnyContent], _: Connection))
+      authorizedNodeCounts(documentSetId, tagId, nodeIds)(_: Request[AnyContent], _: Connection))
 
   private val idListFormat = new play.api.data.format.Formatter[Seq[Long]] {
     def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Seq[Long]] = {
@@ -124,8 +124,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedNodeCounts(documentSetId: Long, tagName: String, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    PotentialTag(tagName).inDocumentSet(documentSetId) match {
+  def authorizedNodeCounts(documentSetId: Long, tagId: Long, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
+    OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
 	val tag = PersistentTag(t)

@@ -46,8 +46,8 @@ class Router
   _tag_delete_path: (id) ->
     "/documentsets/#{@document_set_id}/tags/#{id}"
 
-  _tag_node_counts_path: (name) ->
-    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/node-counts"
+  _tag_node_counts_path: (id) ->
+    "/documentsets/#{@document_set_id}/tags/#{id}/node-counts"
 
 exports = require.make_export_object('models/router')
 exports.Router = Router
