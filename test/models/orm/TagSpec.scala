@@ -39,6 +39,19 @@ class TagSpec extends Specification {
       val newColor = "12adff"
     }
     
+    "be findable by id" in new TagContext {
+      val tagId = insertTag(documentSetId, name)
+
+      val tag = Tag.findById(documentSetId, tagId)
+
+      tag must beSome.like { case t: Tag =>
+	t.id must be equalTo(tagId)
+	t.documentSetId must be equalTo(documentSetId)
+	t.name must be equalTo(name)
+	t.color must beNone
+      }
+    }
+    
     "be findable by name" in new TagContext {
       val tagId = insertTag(documentSetId, name)
       

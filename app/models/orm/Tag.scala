@@ -33,4 +33,9 @@ object Tag {
   def findByName(documentSetId: Long, name: String): Option[Tag] = {
     Schema.tags.where(t => t.documentSetId === documentSetId and t.name === name).headOption
   }
+
+  def findById(documentSetId: Long, tagId: Long): Option[Tag] = {
+    Schema.tags.where(t => t.documentSetId === documentSetId and t.id === tagId).headOption
+  }
+
 }
