@@ -66,6 +66,10 @@ case class PotentialTag(name: String) {
  */
 object OverviewTag {
 
+  /** @return optional tag if tag with tagId exists in the documentSet, None otherwise */
+  def findById(documentSetId: Long, tagId: Long): Option[OverviewTag] =
+    Tag.findById(documentSetId, tagId).map(new OverviewTagImpl(_))
+  
   /** @return optional tag if tagName exists in the documentSet, None otherwise */
   def findByName(documentSetId: Long, tagName: String): Option[OverviewTag] =
     Tag.findByName(documentSetId, tagName).map(new OverviewTagImpl(_))

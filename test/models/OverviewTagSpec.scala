@@ -46,6 +46,12 @@ class OverviewTagSpec extends Specification {
       foundTag must beSome.like { case t => t.id must be equalTo (tagId) }
     }
 
+    "be loaded by id" in new ExistingTag {
+      val foundTag = OverviewTag.findById(documentSetId, tagId)
+
+      foundTag must beSome.like { case t => t.id must be equalTo(tagId) }
+    }
+    
     "load None if not in document set" in new DocumentSetContext {
       val foundTag: Option[OverviewTag] = potentialTag.inDocumentSet(documentSetId)
 
