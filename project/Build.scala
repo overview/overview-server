@@ -35,8 +35,8 @@ object ApplicationBuild extends Build {
     (base / "app" / "assets" / "stylesheets" ** "DV.less")
   )
 
-
-  val worker = Project("overview-worker", file("worker"), settings =
+   
+  val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++ 
       Seq(libraryDependencies ++= 
         appDependencies ++
@@ -70,5 +70,8 @@ object ApplicationBuild extends Build {
   ).settings(
     CucumberPlugin.cucumberFeaturesDir := file("test/features"),
     CucumberPlugin.cucumberStepsBasePackage := "steps"
-  ).dependsOn(worker).aggregate(worker)
+  )
+
+
+val all = Project("all", file("all")).aggregate(main,worker)
 }
