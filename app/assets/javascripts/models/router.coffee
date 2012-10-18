@@ -37,14 +37,14 @@ class Router
   _tag_add_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/add"
 
-  _tag_remove_path: (name) ->
-    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/remove"
+  _tag_remove_path: (id) ->
+    "/documentsets/#{@document_set_id}/tags/#{id}/remove"
 
   _tag_edit_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}"
 
-  _tag_delete_path: (name) ->
-    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}"
+  _tag_delete_path: (id) ->
+    "/documentsets/#{@document_set_id}/tags/#{id}"
 
   _tag_node_counts_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/node-counts"
