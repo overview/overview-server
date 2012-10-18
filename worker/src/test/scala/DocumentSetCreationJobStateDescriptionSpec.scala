@@ -12,7 +12,6 @@ class DocumentSetCreationJobStateDescriptionSpec extends Specification {
 
       OutOfMemory.toString must be equalTo("out_of_memory")
       WorkerError.toString must be equalTo("worker_error")
-      Retrieving.toString must be equalTo("retrieving_documents")
       Clustering.toString must be equalTo("clustering")
       Saving.toString must be equalTo("saving_document_tree")
       Done.toString must be equalTo("job_complete")
@@ -20,6 +19,7 @@ class DocumentSetCreationJobStateDescriptionSpec extends Specification {
 
     "convert states with argument" in {
       ClusteringLevel(4).toString must be equalTo("clustering_level:4")
+      Retrieving(123).toString must be equalTo("retrieving_documents:123")
     }
   }
 }
