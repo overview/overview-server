@@ -111,12 +111,12 @@ class Cache
     @tag_store.remove(tag)
 
   delete_tag: (tag) ->
-    old_name = tag.name
+    old_id = tag.id
 
     this.remove_tag(tag)
 
     @transaction_queue.queue =>
-      @server.delete('tag_delete', {}, { path_argument: old_name })
+      @server.delete('tag_delete', {}, { path_argument: old_id })
 
   edit_node: (node, new_node) ->
     @on_demand_tree.id_tree.edit ->

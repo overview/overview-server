@@ -34,7 +34,7 @@ POST   /documentsets/:id/log-entries/create-many controllers.LogEntryController.
 GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
 
 POST   /documentsets/:id/tags/:tag             controllers.TagController.update(id: Long, tag: String)
-DELETE /documentsets/:id/tags/:tag             controllers.TagController.delete(id: Long, tag: String)
+DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tag/add         controllers.TagController.add(id: Long, tag: String)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tag/node-counts controllers.TagController.nodeCounts(id: Long, tag: String, nodes: String ?= "")

@@ -331,6 +331,6 @@ describe 'models/cache', ->
           it 'should have DELETEd', ->
             expect(post).toBeDefined()
 
-          it 'should DELETE to tag_delete with the tag name', ->
+          it 'should DELETE to tag_delete with the tag id', ->
             expect(post[0]).toEqual('tag_delete')
-            expect(post[2].path_argument).toEqual('AA')
+            expect(post[2].path_argument).toEqual(1)
