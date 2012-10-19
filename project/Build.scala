@@ -65,7 +65,7 @@ object ApplicationBuild extends Build {
         System.setProperty("mail.from", "sender@example.org")
       })
     )
-  ).settings(aggregate := false, aggregate in Compile := true
+  ).settings(aggregate in Test := false, aggregate in Compile := true
   ).settings(
     CucumberPlugin.cucumberSettings : _*
   ).settings(
