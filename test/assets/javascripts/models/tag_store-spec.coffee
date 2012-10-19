@@ -141,9 +141,6 @@ describe 'models/tag_store', ->
       it 'should throw an exception when removing if the tag is not present', ->
         expect(-> tag_store.remove(dummy_tag(4, 'other'))).toThrow('tagNotFound')
 
-      it 'should throw an exception when adding if another tag with the same name exists', ->
-        expect(-> tag_store.add(dummy_tag(4, 'AA'))).toThrow('tagAlreadyExists')
-
       it 'should find_tag_by_name() for an existing tag', ->
         tag = tag_store.find_tag_by_name('AA')
         expect(tag).toBe(tag1)

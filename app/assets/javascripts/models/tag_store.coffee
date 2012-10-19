@@ -17,8 +17,6 @@ class TagStore
     undefined
 
   add: (tag) ->
-    throw 'tagAlreadyExists' if @tags.some((v) -> v.name == tag.name)
-
     @tags.push(tag)
     this._calculate_positions()
 
