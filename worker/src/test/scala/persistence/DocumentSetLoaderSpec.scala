@@ -2,8 +2,8 @@ package persistence
 
 import anorm._
 import anorm.SqlParser
-import helpers.DbSetup._
 import helpers.DbSpecification
+import testutil.DbSetup._
 
 class DocumentSetLoaderSpec extends DbSpecification {
   step(setupDb)
@@ -12,7 +12,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
     
     "load query and title from id" in new DbTestContext {
       val query = "DocumentSetLoaderSpec"
-      val title = "DocumentSet for " + query
+      val title = "From query: " + query
       
       val documentSetId = insertDocumentSet(query)
 

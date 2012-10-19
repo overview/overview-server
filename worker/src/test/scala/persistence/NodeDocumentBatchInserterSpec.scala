@@ -10,8 +10,8 @@ package persistence
 import anorm._
 import anorm.SqlParser._
 import helpers.DbSpecification
-import helpers.DbSetup._
 import java.sql.Connection
+import testutil.DbSetup._
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 

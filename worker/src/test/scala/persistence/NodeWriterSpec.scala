@@ -11,13 +11,12 @@ import anorm._
 import anorm.SqlParser._
 
 import helpers.DbSpecification
-import helpers.DbSetup._
 import java.sql.Connection
 import overview.clustering.DocTreeNode
 import overview.clustering.ClusterTypes.DocumentID
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
-
+import testutil.DbSetup._
 
 
 

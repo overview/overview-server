@@ -9,11 +9,11 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSetup._
 import helpers.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import persistence.DocumentSetCreationJobState._
+import testutil.DbSetup._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
