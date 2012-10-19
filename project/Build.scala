@@ -75,7 +75,7 @@ object ApplicationBuild extends Build {
   ).settings(
     CucumberPlugin.cucumberFeaturesDir := file("test/features"),
     CucumberPlugin.cucumberStepsBasePackage := "steps"
-  ).aggregate(worker)
+  ).dependsOn(common).aggregate(worker)
 
 
   val all = Project("all",  file("all")).aggregate(main,worker)
