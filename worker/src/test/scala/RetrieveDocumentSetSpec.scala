@@ -30,15 +30,6 @@ class RetrieveDocumentSetSpec extends DbSpecification {
   
   step(setupDb)
 
-  private def failInsert = { throw new Exception("failed insert") }
-  
-  def insertDocumentSet(query: String)(implicit c: Connection): Long = {
-    SQL("""
-        INSERT INTO document_set (title, query) 
-        VALUES('Title', 'NodeWriterSpec')
-      """).executeInsert().getOrElse(failInsert)
-  }
-  
   def findNodeDocuments(implicit c: Connection) : Seq[(Long, Long)] = {
     SQL("SELECT node_id, document_id FROM node_document").
      as(long("node_id") ~ long("document_id") map(flatten) *)
