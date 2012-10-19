@@ -8,6 +8,9 @@
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
     @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
-    @helper.Form.translatedSubmit(m)
+    <fieldset class="form-actions">
+      <input type="submit" class="btn btn-primary" value="@m("submit")" />
+      <span class="help-block muted forgot-password">@Html(m("forgot_password_html", routes.PasswordController.new_()))</span>
+    </fieldset>
   </form>
 }

@@ -188,6 +188,7 @@ views.Session._form.label.email=Email
 views.Session._form.placeholder.email=user@example.org
 views.Session._form.label.password=Password
 views.Session._form.submit=Log in
+views.Session._form.forgot_password_html=Forgot your password? <a href="{0}">Reset it</a>.
 
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
