@@ -35,7 +35,11 @@ object ApplicationBuild extends Build {
     (base / "app" / "assets" / "stylesheets" ** "DV.less")
   )
 
-   
+
+  val common = Project("common", file("common"), settings =
+    Defaults.defaultSettings ++
+      Seq(libraryDependencies ++= Seq("play" %% "play" % "2.0.3")))
+  
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++ 
       Seq(libraryDependencies ++= 
@@ -49,7 +53,7 @@ object ApplicationBuild extends Build {
       ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
       ).settings(
         initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
-      ).settings(parallelExecution in (Test) := false)
+      ).settings(parallelExecution in (Test) := false).dependsOn(common)
 
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
