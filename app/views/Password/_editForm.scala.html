@@ -1,0 +1,13 @@
+@(
+  token: String,
+  form: Form[String]
+)(implicit lang: Lang)
+
+@defining(scopedMessages("views.Password._editForm")) { m =>
+  <form method="post" action="@routes.PasswordController.update(token)" class="well form-horizontal" autocomplete="off">
+    @helper.Form.errors(form.globalErrors)
+    @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
+    @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
+    @helper.Form.translatedSubmit(m)
+  </form>
+}

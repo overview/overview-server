@@ -10,6 +10,9 @@ controllers.ConfirmationController.show.success=Welcome! You have confirmed your
 controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.
 controllers.DocumentSetController.delete.success=You have deleted your document set.
 
+controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
+controllers.PasswordController.update.success=You have updated your password, and you are now logged in.
+
 controllers.SessionController.create.success=You have logged in. Welcome back.
 controllers.SessionController.delete.success=You have logged out. We hope you''ll log in again sometime.
 
@@ -31,6 +34,21 @@ mailers.User.createErrorUserAlreadyExists.case1=If you did not recently try to r
 mailers.User.createErrorUserAlreadyExists.case2=If you did, please rack your brain to remember your password, and log in here:
 mailers.User.createErrorUserAlreadyExists.signoff=Happy analyzing,
 mailers.User.createErrorUserAlreadyExists.signature=The Overview Project developers
+
+mailers.Password.create.subject=Overview Project password reset
+mailers.Password.create.body=You (or somebody else) entered your email address in the password-reset form for the Overview Project.
+mailers.Password.create.case1=If you do not want to reset your password, please ignore this email.
+mailers.Password.create.case2=If you do, please follow this link to finish resetting your password and log in:
+mailers.Password.create.signoff=Happy analyzing,
+mailers.Password.create.signature=The Overview Project developers
+
+mailers.Password.createErrorUserDoesNotExist.subject=Overview Project password reset attempted
+mailers.Password.createErrorUserDoesNotExist.intro=You (or somebody else) entered your email address in the password-reset form on the Overview Project website.
+mailers.Password.createErrorUserDoesNotExist.body=However, you do not have an account, so we cannot help you reset your password.
+mailers.Password.createErrorUserDoesNotExist.case1=If you are not an Overview user, please ignore this email.
+mailers.Password.createErrorUserDoesNotExist.case2=If you are an Overview user and you were expecting this email, please enter a different email in the password-reset form to try again:
+mailers.Password.createErrorUserDoesNotExist.signoff=Happy analyzing,
+mailers.Password.createErrorUserDoesNotExist.signature=The Overview Project developers
 
 models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
@@ -142,6 +160,28 @@ views.Node._form.h3=Edit node
 views.Node._form.labels.description=Description
 views.Node._form.close=Close without saving
 views.Node._form.submit=Save node
+
+views.Password._editForm.label.password=New password
+views.Password._editForm.label.password2=New password (again)
+views.Password._editForm.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
+views.Password._editForm.submit=Set new password and log in
+
+views.Password._newForm.label.email=Email
+views.Password._newForm.placeholder.email=user@example.org
+views.Password._newForm.submit=Email instructions to this address
+
+views.Password.edit.title=Enter a new password
+views.Password.edit.h1=Enter a new password
+views.Password.edit.p=You clicked the link we sent you, so we know you are {0}. Please choose a new password for next time.
+
+views.Password.editError.title=Password reset failure
+views.Password.editError.h1=We cannot reset your password
+views.Password.editError.p=The password-reset link you followed is invalid. Either it expired, it was replaced by a newer one, or it never existed.
+views.Password.editError.link_html=Please fill in the <a href="{0}">reset-password form</a> to restart the process.
+
+views.Password.new_.title=Reset your password
+views.Password.new_.h1=Reset your password
+views.Password.new_.p=We can help you reset your password. All you need to know is the email address you registered with.
 
 views.Session._form.h3=Log in to your account
 views.Session._form.label.email=Email

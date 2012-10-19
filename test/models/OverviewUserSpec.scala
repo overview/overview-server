@@ -1,6 +1,5 @@
 package models
 
-import helpers.DbTestContext
 import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
@@ -9,6 +8,7 @@ import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import ua.t3hnar.bcrypt._
 
+import helpers.DbTestContext
 
 class OverviewUserSpec  extends Specification {
   
@@ -28,6 +28,9 @@ class OverviewUserSpec  extends Specification {
     lazy val user : OverviewUser = OverviewUser.findById(id).get
   }
     
+  trait LoadedUserWithResetRequestContext extends ExistingUserContext {
+    lazy val user : OverviewUser with ResetPasswordRequest = OverviewUser.findById(id).get.withResetPasswordRequest
+  }
 
   step(start(FakeApplication()))
   
@@ -85,6 +88,20 @@ class OverviewUserSpec  extends Specification {
       val user3 = user2.recordLogin("2.2.2.2", new java.util.Date(6000))
       user3.lastSignInAt must beSome(new java.sql.Timestamp(5000))
       user3.lastSignInIp must beSome("1.1.1.1")
+    }
+
+    "generate a reset-password token" in new LoadedUserContext {
+      val user2 = user.withResetPasswordRequest
+      user2.resetPasswordToken must_!= ""
+      user2.resetPasswordSentAt.getTime must_!= 0
+    }
+
+    "reset the user's password" in new LoadedUserWithResetRequestContext {
+      val user2 = user.withNewPassword("great new password")
+      user2.passwordMatches("great new password") must beTrue
+      val ormUser = models.orm.User.findById(user2.id).get
+      ormUser.resetPasswordToken must beNone
+      ormUser.resetPasswordSentAt must beNone
     }
   }
 

@@ -15,6 +15,11 @@ GET    /confirm controllers.ConfirmationController.show(token: String ?= "")
 GET    /register controllers.UserController.new_()
 POST   /register controllers.UserController.create()
 
+GET    /reset-password        controllers.PasswordController.new_()
+POST   /reset-password        controllers.PasswordController.create()
+GET    /reset-password/:token controllers.PasswordController.edit(token)
+POST   /reset-password/:token controllers.PasswordController.update(token)
+
 GET    /documents/:id controllers.DocumentController.show(id: Long)
 
 # Routes that relate to a DocumentSet

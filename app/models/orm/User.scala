@@ -18,18 +18,12 @@ case class User(
   @Column("confirmation_token") var confirmationToken: Option[String] = None,
   @Column("confirmation_sent_at") var confirmationSentAt: Option[Timestamp] = None,
   @Column("confirmed_at") var confirmedAt: Option[Timestamp] = None,
-  //@Column("reset_password_token")
-  //var resetPasswordToken: Option[String],
-  //@Column("reset_password_sent_at")
-  //var resetPasswordSentAt: Option[DateTime],
-  @Column("current_sign_in_at")
-  var currentSignInAt: Option[Timestamp] = None,
-  @Column("current_sign_in_ip")
-  var currentSignInIp: Option[String] = None,
-  @Column("last_sign_in_at")
-  var lastSignInAt: Option[Timestamp] = None,
-  @Column("last_sign_in_ip")
-  var lastSignInIp: Option[String] = None
+  @Column("reset_password_token") var resetPasswordToken: Option[String] = None,
+  @Column("reset_password_sent_at") var resetPasswordSentAt: Option[Timestamp] = None,
+  @Column("current_sign_in_at") var currentSignInAt: Option[Timestamp] = None,
+  @Column("current_sign_in_ip") var currentSignInIp: Option[String] = None,
+  @Column("last_sign_in_at") var lastSignInAt: Option[Timestamp] = None,
+  @Column("last_sign_in_ip") var lastSignInIp: Option[String] = None
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
@@ -46,19 +40,12 @@ case class User(
     documentSet
   }
 
-  def save() : User = {
-    // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
-    if (id == 0L) {
-      Schema.users.insert(this)
-    } else {
-      Schema.users.update(this)
-    }
-    this
-  }
+  // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
+  override def isPersisted(): Boolean = (id > 0)
 
-  def delete = {
-    Schema.users.delete(id)
-  }
+  def save: User = Schema.users.insertOrUpdate(this)
+
+  def delete = Schema.users.delete(id)
 }
 
 object User {
@@ -74,6 +61,13 @@ object User {
   }
 
   def findByConfirmationToken(token: String): Option[User] = {
-    Schema.users.where(u => u.confirmationToken.getOrElse("") === token).headOption
+    Schema.users.where(u => u.confirmationToken === Some(token)).headOption
+  }
+
+  def findByResetPasswordTokenAndMinDate(token: String, minDate: java.util.Date): Option[User] = {
+    Schema.users
+      .where(u => u.resetPasswordToken === Some(token))
+      .where(u => u.resetPasswordSentAt >= Some(new Timestamp(minDate.getTime)))
+      .headOption
   }
 }

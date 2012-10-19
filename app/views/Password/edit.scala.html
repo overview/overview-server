@@ -1,0 +1,12 @@
+@(
+  userWithResetToken: models.OverviewUser with models.ResetPasswordRequest,
+  form: Form[String]
+)(implicit lang: Lang, flash: Flash)
+
+@defining(scopedMessages("views.Password.edit")) { m =>
+  @main(optionalUser=None, title=m("title"), bodyClass="password-edit", h1=m("h1")) {
+    <p>@m("p", userWithResetToken.email)</p>
+
+    @views.html.Password._editForm(userWithResetToken.resetPasswordToken, form)
+  }
+}

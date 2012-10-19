@@ -1,4 +1,4 @@
-package mailers.User
+package mailers.Password
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
@@ -7,22 +7,21 @@ import play.api.Play.{start,stop}
 import play.api.i18n.Lang
 import play.api.test.{FakeApplication,FakeRequest}
 
-class createErrorUserAlreadyExistsSpec extends Specification {
+class createErrorUserDoesNotExistSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurContext extends Scope with Mockito {
-    val user = mock[models.OverviewUser]
-    user.email returns "email@example.org"
+    val email = "email@example.org"
 
     val lang = Lang("fu", "BA")
-    val request = FakeRequest("POST", "https://example.org/user/create")
+    val request = FakeRequest("POST", "https://example.org/password/create")
 
-    lazy val mailer = createErrorUserAlreadyExists(user)(lang, request)
+    lazy val mailer = createErrorUserDoesNotExist(email)(lang, request)
   }
 
   "createErrorUserAlreadyExists()" should {
     "send to the user and only the user" in new OurContext {
-      mailer.recipients.must(equalTo(Seq(user.email)))
+      mailer.recipients.must(equalTo(Seq(email)))
     }
   }
 

@@ -1,0 +1,11 @@
+@(
+  form: Form[String]
+)(implicit lang: Lang, flash: Flash)
+
+@defining(scopedMessages("views.Password.new_")) { m =>
+  @main(optionalUser=None, title=m("title"), bodyClass="password-new", h1=m("h1")) {
+    <p>@m("p")</p>
+
+    @views.html.Password._newForm(form)
+  }
+}
