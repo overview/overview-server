@@ -12,7 +12,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification._
 import overview.clustering.ClusterTypes._
 
-class PackedDocumentVector extends Specification {
+class DocumentVectorSpec extends Specification {
   
   "DocumentVectorSpec" should {
 
