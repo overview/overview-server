@@ -46,47 +46,52 @@ class RetrieveDocumentSetSpec extends DbSpecification {
 
   "DocumentSetIndexer" should {
 
-    "retrieve a local document set" in {
-            
-      // turn every doc in the test directory into a file:// URL
+    // turn every doc in the test directory into a file:// URL
+    def makeDocURLs = {
       val filenames =  new File("worker/src/test/resources/docs").listFiles.sorted
-      val docURLs = filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))
-
+      filenames.map(fname => DocumentAtURL("file://" + fname.getAbsolutePath))
+    }
+    
+    // Retrieve a list of documents, returning the document vector generator and the list of retrieval errors
+    def retrieveDocs(docURLs:Seq[DocumentAtURL]) : Pair[DocumentVectorGenerator, Seq[DocRetrievalError]] = {
+      var result = Seq[DocRetrievalError]() 
+      
       val vectorGen = new DocumentVectorGenerator      
       def processDocument(doc: DocumentAtURL, text:String) : Unit = {
         vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))          
       }      
 
-      val timeOut = Timeout(500)   // ms                                               
-
+      val timeOut = Timeout(500)  // ms. We're reading from files here so 500ms should be plenty                                               
       val bulkHttpRetriever = new BulkHttpRetriever[DocumentAtURL](new AsyncHttpRequest)
       
       WorkerActorSystem.withActorSystem { implicit context =>
-// Successful retrieval. Check the generated tree (will change if test file set changes)
-	val retrievalDone =
-	  bulkHttpRetriever.retrieve(docURLs, (doc,text) => processDocument(doc, text)) 
-	val result = Await.result(retrievalDone, timeOut.duration)
-
-	result.size must beEqualTo(0) // everything should be retrieved
+        // Successful retrieval. Check the generated tree (will change if test file set changes)
+        val retrievalDone = bulkHttpRetriever.retrieve(docURLs, (doc,text) => processDocument(doc, text)) 
+        result = Await.result(retrievalDone, timeOut.duration)
       }
       
-      val docTree = BuildDocTree(vectorGen.documentVectors()).toString      
-      docTree must beEqualTo("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
+      (vectorGen, result)
+    }
+
+    "retrieve a local document set" in {
+      val docURLs = makeDocURLs
+      val (vectorGen, retrievalErrors) = retrieveDocs(docURLs)
       
-      // Failed retrieval: add a URL that doesn't exist, test that the error is returned to us
-      val errURL = DocumentAtURL("file:///xyzzy")
+      retrievalErrors.size must beEqualTo(0) // everything should be retrieved
+
+      val docTree = BuildDocTree(vectorGen.documentVectors()).toString      
+      docTree must beEqualTo  ("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
+    }
+
+    "return a list of documents that cannot be retrieved" in {
+      val docURLs = makeDocURLs
+      val errURL = DocumentAtURL("file:///xyzzy")   // file doesn't exist, so this document should end up in the retrievalErrors
       val docURLsWithErr = docURLs :+ errURL
 
-      WorkerActorSystem.withActorSystem { implicit context =>
-	// adds to existing vectorGen, whatevs
-	val retrievalErr =
-	  bulkHttpRetriever.retrieve(docURLsWithErr, (doc,text) => processDocument(doc, text)) 
-	val resultErr = Await.result(retrievalErr, timeOut.duration)
+      val (vectorGen, retrievalErrors) = retrieveDocs(docURLsWithErr)
 
-	resultErr.size must beEqualTo(1) // exactly one doc should be fail
-	resultErr.head.doc must beEqualTo(errURL)
-      }
-      success
+    	retrievalErrors.size must beEqualTo(1) // exactly one doc should be fail
+    	retrievalErrors.head.doc must beEqualTo(errURL)
     }
 
 /*

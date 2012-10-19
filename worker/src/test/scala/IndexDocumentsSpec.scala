@@ -12,6 +12,7 @@
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 import overview.clustering._
+import overview.clustering.ClusterTypes._
 import scala.io.Source
 import java.io.File
 
@@ -63,28 +64,28 @@ class MakeDocumentTreeSpec extends Specification {
       
       // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
       val idf = vectorGen.Idf()
-      idf.get(catId).get must beEqualTo(computeIDF(4,3)) 
-      idf.get(ratId).get must beEqualTo(computeIDF(4,3))
+      idf(catId) must beEqualTo(computeIDF(4,3)) 
+      idf(ratId) must beEqualTo(computeIDF(4,3))
       idf.size must beEqualTo(2)      
       
       // Finally, check actual vectors. 
       val vecs = vectorGen.documentVectors()
        
       // doc1: only cat remains
-      vecs.get(1).get must beEqualTo(Map(catId->1.0)) 
+      DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
       
       // doc2: cat and rat have same freq, vector normalized
       val sqrhalf = math.sqrt(0.5).toFloat
-      vecs.get(2).get must_== Map(ratId->sqrhalf, catId->sqrhalf) 
+      DocumentVectorMap(vecs(2)) must_== Map(ratId->sqrhalf, catId->sqrhalf) 
 
       // doc3: only rat remains
-      vecs.get(3).get must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
+      DocumentVectorMap(vecs(3)) must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
       
       // doc4: cat and rat remain, with different weights (which we recompute from scratch here)
-      val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * idf.get(ratId).get
-      val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * idf.get(catId).get
+      val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * idf(ratId)
+      val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * idf(catId)
       val len = math.sqrt(ratTfIdf*ratTfIdf + catTfIdf*catTfIdf).toFloat
-      vecs.get(4).get must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
+      DocumentVectorMap(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
     }
  
 
@@ -122,14 +123,15 @@ class MakeDocumentTreeSpec extends Specification {
       
       // each document vector must contain only terms in IDF and the source document, and be normalized
       for ((filename,terms) <- docterms) {
-        val docvec = vecs.get(filename.hashCode)
-        docvec must not beNull
-
-        val docTerms = docvec.get.map(_._1).toSet
+        val packedDocVec = vecs.get(filename.hashCode)
+        packedDocVec must not beNull
+        val docvec = DocumentVectorMap(packedDocVec.get)
+        
+        val docTerms = docvec.map(_._1).toSet
         docTerms.subsetOf(terms.map( vectorGen.stringToId(_) ).toSet) must beTrue    // all terms in vector must be in doc
         docTerms.subsetOf(idfVocab) must beTrue       // all terms in vector must be in IDF vocabulary
         
-        val docWeights = docvec.get.map(_._2)
+        val docWeights = docvec.map(_._2)
         val length = docWeights.foldLeft(0f)((sum,weight) => sum + weight*weight)
         length must beCloseTo(1f, 0.00001f)   // allowable numerical error in normalization
         for (weight <- docWeights) {

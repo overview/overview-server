@@ -28,6 +28,8 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
   documentWriter: DocumentWriter,
   progAbort: ProgressAbortFn) {
 
+  // --- private ---
+  
   private var fractionFetched = 0
   private val fetchingFraction = 0.9 // what percent done do we say when we're all done fetching docs?
   private val savingFraction = 0.99
@@ -54,6 +56,8 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     else docTree.children.foreach(addDocumentDescriptions)
   }
 
+  // --- main entrypoint ---
+  
   def BuildTree(): Unit = {
 
     val t0 = System.nanoTime()

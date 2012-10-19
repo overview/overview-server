@@ -92,11 +92,11 @@ class GenerateClustersSpec extends Specification {
   val A=0; val B=1; val C=2; val D=4    // we won't actually use strings, just IDs
   
   val docSet = DocumentSetVectors(new StringTable)  
-  docSet +=  (1L -> Map(A -> dist01, B -> dist06))
-  docSet +=  (2L -> Map(A -> dist01, B -> dist06))
-  docSet +=  (3L -> Map(B -> dist06, C -> dist02))
-  docSet +=  (4L -> Map(B -> dist06, C -> dist02, D -> dist04))
-  docSet +=  (5L -> Map(D -> dist04))
+  docSet +=  (1L -> DocumentVector(Map(A -> dist01, B -> dist06)))
+  docSet +=  (2L -> DocumentVector(Map(A -> dist01, B -> dist06)))
+  docSet +=  (3L -> DocumentVector(Map(B -> dist06, C -> dist02)))
+  docSet +=  (4L -> DocumentVector(Map(B -> dist06, C -> dist02, D -> dist04)))
+  docSet +=  (5L -> DocumentVector(Map(D -> dist04)))
     
  "DocTreeBuilder" should {
    "build a small tree" in {

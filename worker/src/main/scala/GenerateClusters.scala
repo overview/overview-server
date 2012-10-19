@@ -59,17 +59,31 @@ object ConnectedComponents {
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
 object DistanceFn {
+  
   // sparse dot product on two term->float maps
-  private def SparseDotCore(a: DocumentVector, b: DocumentVector): Double = {
-    a.foldLeft(0.0) { case (sum, (term, weight)) => sum + b.getOrElse(term, 0f).toDouble * weight.toDouble }
-  }
-
-  // fold by scanning the the shorter list, for efficiency
-  private def SparseDot(a: DocumentVector, b: DocumentVector) = {
-    if (a.size < b.size)
-      SparseDotCore(a, b)
-    else
-      SparseDotCore(b, a)
+  // Not written in very functional style, as DocumentVector uses an awkward representation as arrays for space reasons
+  // Basic intersection of sorted lists algorithm
+  private def SparseDot(a: DocumentVector, b: DocumentVector): Double = {
+    var a_idx = 0
+    var b_idx = 0
+    var dot = 0.0
+    
+    while (a_idx < a.length && b_idx < b.length) {
+      val a_term = a.terms(a_idx)
+      val b_term = b.terms(b_idx)
+      
+      if (a_term < b_term) {
+        a_idx += 1
+      } else if (b_term < a_term) {
+        b_idx += 1
+      } else {
+        dot += a.weights(a_idx).toDouble * b.weights(b_idx).toDouble
+        a_idx += 1
+        b_idx += 1
+      } 
+    }
+  
+    dot
   }
 
   // Document distance computation. Returns 1 - similarity, where similarity is cosine of normalized vectors
@@ -173,20 +187,15 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
     root
   }
 
-  // recursively create node descriptions, by summing document vectors across all docs in a ndoe
-  def labelClusters(docTree: DocTreeNode, progAbort: ProgressAbortFn): Unit = {
-
-    var nodeVec = DocumentVector
-  }
 
   // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
-  def makeDescription(vec: DocumentVector): String = {
+  def makeDescription(vec: DocumentVectorMap): String = {
     val maxTerms = 15
     vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
   }
 
   // Sparse vector sum, used for computing node descriptions
-  def accumDocumentVector(acc: DocumentVector, v: DocumentVector): Unit = {
+  def accumDocumentVector(acc: DocumentVectorMap, v: DocumentVectorMap): Unit = {
     v foreach {
       case (id, weight) => acc.update(id, acc.getOrElse(id, 0f) + weight)
     }
@@ -194,16 +203,17 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 
   // Create a descriptive string for each node, by taking the sum of all document vectors in that node.
   // Building all descriptions at once allows a lot of re-use of sub-sums.
-  def labelNode(node: DocTreeNode): DocumentVector = {
+  def labelNode(node: DocTreeNode): DocumentVectorMap = {
+    
     if (node.docs.size == 1) {
       require(node.children.isEmpty)
-      val vec = docVecs.get(node.docs.head).get // get document vector corresponding to our single document ID
+      val vec = DocumentVectorMap(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
       node.description = makeDescription(vec)
       vec
     } else {
-      var vec = DocumentVector()
-      for (node <- node.children) {
-        accumDocumentVector(vec, labelNode(node)) // sum the document vectors of all child nodes
+      var vec = DocumentVectorMap()
+      for (child <- node.children) {
+        accumDocumentVector(vec, labelNode(child)) // sum the document vectors of all child nodes
       }
       node.description = makeDescription(vec)
       vec
