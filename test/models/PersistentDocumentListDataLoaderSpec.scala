@@ -2,12 +2,12 @@ package models
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+import testutil.DbSetup._
 
 
 class PersistentDocumentListDataLoaderSpec extends Specification {

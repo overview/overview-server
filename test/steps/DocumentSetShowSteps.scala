@@ -3,7 +3,7 @@ package steps
 import anorm._
 
 import controllers.routes
-import helpers.DbSetup
+import testutil.DbSetup
 
 import cucumber.runtime.{EN, ScalaDsl, PendingException}
 import org.specs2.matcher.MustMatchers

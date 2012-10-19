@@ -1,11 +1,12 @@
 package models
 
-import helpers.DbSetup._
 import helpers.DbTestContext
 import models.DatabaseStructure.{DocumentData, DocumentNodeData, DocumentTagData}
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+import testutil.DbSetup._
+
 
 class DocumentTagDataLoaderSpec extends Specification {
 

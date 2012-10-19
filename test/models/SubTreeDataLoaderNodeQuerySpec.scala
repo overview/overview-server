@@ -2,15 +2,14 @@ package models
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import org.squeryl.Session
-
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
+import testutil.DbSetup._
 
 class SubTreeDataLoaderNodeQuerySpec extends Specification  {
   

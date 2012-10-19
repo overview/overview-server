@@ -2,11 +2,11 @@ package models
 
 
 import helpers.DbTestContext
-import helpers.DbSetup._
 import org.specs2.mutable.Specification
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
+import testutil.DbSetup._
 
 
 class SubTreeDataLoaderTagQuerySpec extends Specification {

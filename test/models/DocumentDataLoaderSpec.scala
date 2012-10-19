@@ -2,11 +2,12 @@ package models
 
 import anorm._
 import anorm.SqlParser._
-import helpers.{DbSetup,DbTestContext}
+import helpers.DbTestContext
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+import testutil.DbSetup._
 
 class DocumentDataLoaderSpec extends Specification {
 
@@ -15,8 +16,8 @@ class DocumentDataLoaderSpec extends Specification {
   "DocumentDataLoader" should {
     
     "Load document data for specified id" in new DbTestContext {
-      val documentSetId = DbSetup.insertDocumentSet("DocumentDataLoaderSpec")
-      val insertedDocumentId = DbSetup.insertDocument(documentSetId, "title", "documentCloudId")
+      val documentSetId = insertDocumentSet("DocumentDataLoaderSpec")
+      val insertedDocumentId = insertDocument(documentSetId, "title", "documentCloudId")
 
       val documentDataLoader = new DocumentDataLoader()
       val document = documentDataLoader.loadDocument(insertedDocumentId)
