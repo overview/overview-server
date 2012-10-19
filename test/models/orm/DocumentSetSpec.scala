@@ -2,13 +2,13 @@ package models.orm
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSetup._
 import helpers.DbTestContext
 import models.orm._
 import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+import testutil.DbSetup._
 
 
 

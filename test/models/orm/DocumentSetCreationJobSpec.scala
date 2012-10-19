@@ -3,13 +3,13 @@
 package models.orm
 
 import anorm._
-import helpers.DbSetup._
 import helpers.DbTestContext
 import java.sql.Connection
 import models.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+import testutil.DbSetup._
 
 class DocumentSetCreationJobSpec extends Specification {
 
