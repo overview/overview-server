@@ -65,13 +65,14 @@ object ApplicationBuild extends Build {
         System.setProperty("mail.from", "sender@example.org")
       })
     )
+  ).settings(aggregate := false, aggregate in Compile := true
   ).settings(
     CucumberPlugin.cucumberSettings : _*
   ).settings(
     CucumberPlugin.cucumberFeaturesDir := file("test/features"),
     CucumberPlugin.cucumberStepsBasePackage := "steps"
-  )
+  ).aggregate(worker)
 
 
-val all = Project("all", file("all")).aggregate(main,worker)
+  val all = Project("all",  file("all")).aggregate(main,worker)
 }
