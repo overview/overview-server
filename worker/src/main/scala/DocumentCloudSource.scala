@@ -36,7 +36,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
 
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
-  private val maxDocuments = 6500 // cut off a document set if it's bigger than this
+  private val maxDocuments = 10000 // cut off a document set if it's bigger than this
 
   // --- private ---
   private var numDocuments: Option[Int] = None
