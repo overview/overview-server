@@ -55,7 +55,9 @@ object Lexer {
     text = text.filter(c => c.isDigit || c.isLetter || " -'".contains(c))
 
     // split on space, keep only "acceptable" terms, truncate to max length
-    text.split(' ').filter(termAcceptable).map(_.take(maxTokenLength))
+    // And then create a new string for each term, because split() refers back to original text, and we want it to be garbage collected
+    // (10/19/2012 a problem in practice -- tokens in the document vector string table were keeping all original doc text in memory!)
+    text.split(' ').filter(termAcceptable).map(_.take(maxTokenLength)).map(new String(_))
   }
 
 }
