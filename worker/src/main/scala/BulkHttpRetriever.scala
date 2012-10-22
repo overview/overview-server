@@ -48,6 +48,9 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     // This initiates more HTTP requests up to maxInFlight. When each request completes or fails, we get a message
     // We also check here to see if we are all done, in which case we set the promise
     def spoolRequests {
+      if (requestQueue.isEmpty && httpReqInFlight == 0)
+        Logger.debug("BulkHttpRetriever idle: request queue is empty, no documents in flight.")
+        
       while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
         val doc = requestQueue.dequeue
         val startTime = System.nanoTime
