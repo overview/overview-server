@@ -4,6 +4,8 @@ import PlayProject._
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 import templemore.xsbt.cucumber.CucumberPlugin
 
+import org.overviewproject.sbt.assetbundler.AssetBundlerPlugin
+
 object ApplicationBuild extends Build {
 
   override def settings = super.settings ++
@@ -35,20 +37,19 @@ object ApplicationBuild extends Build {
     (base / "app" / "assets" / "stylesheets" ** "DV.less")
   )
 
-
   val common = Project("common", file("common"), settings =
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++= Seq("play" %% "play" % "2.0.3")))
-  
+
   val worker = Project("worker", file("worker"), settings =
-    Defaults.defaultSettings ++ 
-      Seq(libraryDependencies ++= 
+    Defaults.defaultSettings ++
+      Seq(libraryDependencies ++=
         appDependencies ++
         Seq("play" %% "play" % "2.0.3") ++
         Seq("org.specs2" %% "specs2" % "1.11" % "test"))
       ).settings(
         testOptions in Test ++= Seq(
-          Tests.Argument("xonly"), 
+          Tests.Argument("xonly"),
           Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)))
       ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
       ).settings(
@@ -58,8 +59,10 @@ object ApplicationBuild extends Build {
 
   val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
-    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",         
+    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
+    // remove JS and Coffee--we use OverviewAssetPlugin
+    resourceGenerators in Compile <<= LessCompiler(Seq(_)),
     templatesImport += "views.Magic._"
   ).settings(
     testOptions in Test ++= Seq(
@@ -75,8 +78,11 @@ object ApplicationBuild extends Build {
   ).settings(
     CucumberPlugin.cucumberFeaturesDir := file("test/features"),
     CucumberPlugin.cucumberStepsBasePackage := "steps"
+  ).settings(
+    AssetBundlerPlugin.assetSettings: _*
+  ).settings(
+    (AssetBundlerPlugin.Keys.configFile in (Compile, AssetBundlerPlugin.Keys.assetBundler)) := file("conf/assets.conf")
   ).dependsOn(common).aggregate(worker)
-
 
   val all = Project("all",  file("all")).aggregate(main,worker)
 }

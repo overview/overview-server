@@ -1,6 +1,9 @@
 package views
 
 import play.api.i18n.{Lang,Messages}
+import play.api.templates.Html
+import play.api.Play
+import play.api.Play.current
 
 /**
  * A convenience class on top of Messages.
@@ -42,4 +45,32 @@ case class ScopedMessages(scope: String) {
 object Magic {
   val t = play.api.i18n.Messages
   val scopedMessages = ScopedMessages
+
+  private def basePathToMinifiedPath(basePath: String, extension: String) : String = {
+    import java.security.MessageDigest
+    import javax.xml.bind.annotation.adapters.HexBinaryAdapter
+
+    val resource : java.net.URL = Play.resource("/public/" + basePath + extension).get
+
+    val source = io.Source.fromURL(resource)
+    val contents = source.mkString
+    source.close
+    val md5 = MessageDigest.getInstance("MD5")
+    val md5bytes = md5.digest(contents.getBytes)
+    val hash = (new HexBinaryAdapter).marshal(md5bytes).toLowerCase()
+
+    basePath + "-" + hash + ".min" + extension
+  }
+
+  def bundleJavascript(bundleKey: String) : Html = {
+    val basePath = "javascripts/" + bundleKey
+
+    val path = if (Play.configuration.getBoolean("assets.compress").getOrElse(false)) {
+      basePathToMinifiedPath(basePath, ".js")
+    } else {
+      basePath + ".js"
+    }
+
+    Html(<script type="text/javascript" src={"/assets/" + path}></script>.toString)
+  }
 }

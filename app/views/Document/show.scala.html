@@ -62,7 +62,7 @@
       </ul>
       <div class="container"><iframe src=""></iframe></div>
 
-      <script type="text/javascript" src="@routes.Assets.at("javascripts/vendor/jquery-1-8-1.js")"></script>
+      @bundleJavascript("jquery")
 
       <script type="text/javascript">
         var default_content, document_id, sidebar_enabled, $container, $h3, $title, $a_sidebar;

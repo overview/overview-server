@@ -47,7 +47,7 @@ object AssetBundlerPlugin extends Plugin {
   private def assetSettingsIn(c: Configuration) : Seq[Setting[_]] =
     inConfig(c)(assetSettings0 ++ Seq(
       sourceDirectory in assetBundler <<= (sourceDirectory in c) { _ / "assets" },
-      resourceManaged in assetBundler <<= (resourceManaged in c) { _ / "public" / "assets" }
+      resourceManaged in assetBundler <<= (resourceManaged in c) { _ / "public" }
     )) ++ Seq(
       cleanFiles <+= (resourceManaged in assetBundler in c),
       resourceGenerators in c <+= assetBundler in c,
