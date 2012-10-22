@@ -1,4 +1,4 @@
-/*
+/**
  * <progress> polyfill
  * Don't forget to also include progress-polyfill.css!
  * @author Lea Verou http://leaverou.me
