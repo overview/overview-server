@@ -14,7 +14,7 @@
   <head>
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.min.css")" />
+    @bundleStylesheet("main")
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
   </head>
   <body class="@bodyClass">

@@ -21,17 +21,6 @@ object AssetBundlerPlugin extends Plugin {
     loadAssetBundleConfig(configFile).loadBundles(sourceDirectory, destinationDirectory)
   }
 
-  private def compileBundleIfChanged(bundle: AssetBundle) : Unit = {
-    val files : Seq[(File,File)] = bundle.sourceAndDestinationFiles
-    ScriptCompiler.compileAllChangedOrThrow(files)
-
-    val destinationFiles = files.map(_._2)
-    val output = bundle.outputFile
-    ScriptCompiler.concatenateDestinationFiles(destinationFiles, output)
-    val minimizedOutput = bundle.minimizedOutputFile
-    ScriptCompiler.compileDestinationFiles(destinationFiles, minimizedOutput)
-  }
-
   private val assetBundlesTask : Initialize[Task[Seq[File]]] =
     (configFile in assetBundler,
      sourceDirectory in assetBundler,
@@ -39,7 +28,8 @@ object AssetBundlerPlugin extends Plugin {
   {
     (configFile, sourceDirectory, destinationDirectory) => {
       val bundles = loadAssetBundles(configFile, sourceDirectory, destinationDirectory)
-      bundles.foreach(compileBundleIfChanged(_))
+      val compilers = bundles.map(BundleCompiler(_))
+      compilers.foreach(_.compile)
       bundles.map(_.outputFile) ++ bundles.map(_.minimizedOutputFile)
     }
   }

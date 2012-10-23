@@ -62,15 +62,25 @@ object Magic {
     basePath + "-" + hash + ".min" + extension
   }
 
-  def bundleJavascript(bundleKey: String) : Html = {
-    val basePath = "javascripts/" + bundleKey
+  private def bundlePath(bundleType: String, bundleKey: String, extension: String) : String = {
+    val basePath = bundleType + "/" + bundleKey
 
     val path = if (Play.configuration.getBoolean("assets.compress").getOrElse(false)) {
-      basePathToMinifiedPath(basePath, ".js")
+      basePathToMinifiedPath(basePath, extension)
     } else {
-      basePath + ".js"
+      basePath + extension
     }
 
-    Html(<script type="text/javascript" src={"/assets/" + path}></script>.toString)
+    "/assets/" + path
+  }
+
+  def bundleJavascript(bundleKey: String) : Html = {
+    val path = bundlePath("javascripts", bundleKey, ".js")
+    Html(<script type="text/javascript" src={path}></script>.toString)
+  }
+
+  def bundleStylesheet(bundleKey: String) : Html = {
+    val path = bundlePath("stylesheets", bundleKey, ".css")
+    Html(<link rel="stylesheet" href={path} />.toString)
   }
 }
