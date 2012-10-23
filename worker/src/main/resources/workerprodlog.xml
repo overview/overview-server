@@ -1,5 +1,9 @@
 <configuration>
 
+    <turboFilter class="ch.qos.logback.classic.turbo.DuplicateMessageFilter">
+      <AllowedRepetitions>2</AllowedRepetitions>
+    </turboFilter>
+
     <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
       <smtpHost>smtp.sendgrid.net</smtpHost>
       <username>${SENDGRID_USERNAME}</username>
@@ -23,17 +27,5 @@
         <appender-ref ref="EMAIL"/>
         <appender-ref ref="STDOUT"/>
     </root>
-
-    <!-- turn off Ning HTTP output -->
-    <logger name="com.ning.http.client" level="ERROR">
-        <appender-ref ref="EMAIL"/>
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <!-- for the moment, lots of debug info for the worker -->
-    <logger name="WORKER" level="ERROR">
-        <appender-ref ref="EMAIL"/>
-        <appender-ref ref="STDOUT"/>
-    </logger>
 
 </configuration>
