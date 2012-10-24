@@ -21,9 +21,13 @@ import models.{ PersistentDocumentList, PersistentTag, PersistentTagLoader }
 
 object TagController extends BaseController {
 
-  def add(documentSetId: Long, tagName: String) =
+  def create(documentSetId: Long) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedAdd(documentSetId, tagName)(_: Request[AnyContent], _: Connection))
+      authorizedCreate(documentSetId)(_: Request[AnyContent], _: Connection))
+
+  def add(documentSetId: Long, tagId: Long) =
+    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
+      authorizedAdd(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
 
   def remove(documentSetId: Long, tagId: Long) =
     authorizedAction(userOwningDocumentSet(documentSetId))(user =>
@@ -63,32 +67,31 @@ object TagController extends BaseController {
 
   def authorizedCreate(documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val newTag = PotentialTag("_new_tag").create(documentSetId)
-
     TagForm(newTag).bindFromRequest.fold(
       formWithErrors => BadRequest,
       updatedTag => {
         updatedTag.save
         val tag = PersistentTag(updatedTag)
-
-        Ok(views.json.Tag.update(tag))
-      }
-    )
+        Ok(views.json.Tag.create(tag.id, tag.name))
+      })
   }
 
-  def authorizedAdd(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    val tag = PotentialTag(tagName).inDocumentSet(documentSetId) match {
-      case Some(t) => PersistentTag(t)
-      case None => PersistentTag(PotentialTag(tagName).create(documentSetId))
+  def authorizedAdd(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    OverviewTag.findById(documentSetId, tagId) match {
+      case None => NotFound
+      case Some(t) => {
+        val tag = PersistentTag(t)
+
+        selectionForm(documentSetId).bindFromRequest.fold(
+          formWithErrors => BadRequest,
+          documents => {
+            val tagUpdateCount = documents.addTag(tag.id)
+            val taggedDocuments = tag.loadDocuments
+
+            Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
+          })
+      }
     }
-
-    selectionForm(documentSetId).bindFromRequest.fold(
-      formWithErrors => BadRequest,
-      documents => {
-        val tagUpdateCount = documents.addTag(tag.id)
-        val taggedDocuments = tag.loadDocuments
-
-        Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
-      })
   }
 
   def authorizedRemove(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
