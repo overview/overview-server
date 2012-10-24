@@ -14,7 +14,11 @@ class RemoteTagList
     @tag_store.observe('tag-changed', (v) => this._notify('tag-changed', v))
 
   # FIXME remove these
-  create_tag: (name) -> @cache.add_tag(name)
+  create_tag: (name) ->
+    new_tag = @cache.add_tag(name)
+    @cache.create_tag(new_tag)
+    new_tag
+
   edit_tag: (tag, new_tag) -> @cache.update_tag(tag, new_tag)
   delete_tag: (tag) -> @cache.delete_tag(tag)
 

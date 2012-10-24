@@ -140,6 +140,7 @@ describe 'models/remote_tag_list', ->
           transaction_queue: transaction_queue
           server: server
           add_tag: () ->
+          create_tag: () ->
           edit_tag: () ->
           update_tag: () ->
           remove_tag: () ->
@@ -178,10 +179,13 @@ describe 'models/remote_tag_list', ->
         expect(remote_tag_list.tags).toBe(tag_store.tags)
 
       it 'should create_tag() and return a tag', ->
-        spyOn(remote_tag_list.cache, 'add_tag').andReturn({ id: -1, name: 'foo', count: 0 })
+        spyOn(remote_tag_list.cache, 'add_tag').andReturn({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
+        spyOn(remote_tag_list.cache, 'create_tag').andCallThrough()
+        
         tag = remote_tag_list.create_tag('foo')
-        expect(tag).toEqual({ id: -1, name: 'foo', count: 0 })
-
+        expect(tag).toEqual({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
+        expect(remote_tag_list.cache.create_tag).toHaveBeenCalledWith({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
+        
       it 'should send nothing to the server in create_tag()', ->
         tag = remote_tag_list.create_tag('foo')
         expect(transaction_queue.callbacks.length).toEqual(0)
