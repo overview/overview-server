@@ -90,7 +90,7 @@ trait BundleCompiler {
 class ScriptBundleCompiler(val bundle: AssetBundle) extends BundleCompiler {
   def compileOne(source: File, destination: File) : Unit = {
     val contents = fileContents(source)
-    val filename = source.toPath.toString
+    val filename = source.toString
 
     val output = if (filename.endsWith(".coffee")) {
       ScriptCompiler.compileCoffeeScript(contents, source)

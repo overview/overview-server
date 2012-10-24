@@ -77,7 +77,7 @@ class AssetBundle(
   lazy val sourceAndDestinationFiles : Seq[(File,File)] = sourceFiles.map(f => (f, sourceToDestination(f)))
 
   private lazy val outputFileMainPart : String = {
-    destinationRoot.toPath.resolve(bundleType).resolve(bundleKey).toString
+    Seq(destinationRoot, bundleType, bundleKey).mkString(File.separator)
   }
 
   /**
