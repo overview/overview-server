@@ -5,6 +5,8 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.data.Form
 import play.api.data.Forms.{email,nonEmptyText,mapping}
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
 
 class new_Spec extends Specification {
   trait OurContext extends Scope {
@@ -17,6 +19,8 @@ class new_Spec extends Specification {
     def $(selector: String) = j.$(selector)
   }
 
+  step(start(FakeApplication()))
+
   "new_()" should {
     "show two form" in new OurContext {
       $("form").length.must(beEqualTo(2))
@@ -26,4 +30,6 @@ class new_Spec extends Specification {
       $("input[type=password].confirm-password").length.must(beEqualTo(1))
     }
   }
+
+  step(stop)
 }

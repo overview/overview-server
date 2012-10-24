@@ -5,7 +5,10 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.data.Form
 import play.api.data.Forms.{mapping,text}
-import models.{ConfirmationRequest, OverviewUser}
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
+
+import models.{ConfirmationRequest,OverviewUser}
 
 class indexSpec extends Specification {
   trait OurContext extends Scope {
@@ -23,10 +26,14 @@ class indexSpec extends Specification {
     def $(selector: String) = j.$(selector)
   }
 
+  step(start(FakeApplication()))
+
   "index()" should {
     "show a form" in new OurContext {
       $("form").length.must(beEqualTo(1))
     }
   }
+
+  step(stop)
 }
 
