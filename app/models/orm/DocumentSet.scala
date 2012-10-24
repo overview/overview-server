@@ -7,20 +7,21 @@
 package models.orm
 
 import anorm.SQL
+import java.util.Date
+import java.sql.Timestamp
 import org.squeryl.dsl.OneToMany
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.annotations.Transient
+import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 
 case class DocumentSet(
     val id: Long = 0,
     val title: String = "",
     val query: String = "",
-    @(Transient @field)
-    val providedDocumentCount: Option[Long] = None,
-    @(Transient @field)
-    val documentSetCreationJob: Option[DocumentSetCreationJob] = None
+    @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
+    @(Transient @field) val providedDocumentCount: Option[Long] = None,
+    @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None
     ) extends KeyedEntity[Long] {
   lazy val users = Schema.documentSetUsers.left(this)
 

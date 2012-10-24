@@ -56,13 +56,16 @@ models.DocumentSetCreationJob.state.NOT_STARTED=queued
 
 views.admin.DocumentSetCreationJob.index.title=Jobs
 views.admin.DocumentSetCreationJob.index.h1=Jobs
+views.admin.DocumentSetCreationJob.index.current_time_sentence=The current time is {0,time,long} on {0,date,medium}.
 views.admin.DocumentSetCreationJob.index.th.id=ID
+views.admin.DocumentSetCreationJob.index.th.created_at=Created
 views.admin.DocumentSetCreationJob.index.th.state=Status
 views.admin.DocumentSetCreationJob.index.th.fraction_complete=Progress
 views.admin.DocumentSetCreationJob.index.th.state_description=Description
 views.admin.DocumentSetCreationJob.index.th.email=User
 views.admin.DocumentSetCreationJob.index.th.title=Title
 views.admin.DocumentSetCreationJob.index.th.query=Query
+views.admin.DocumentSetCreationJob.index.td.created_at={0,date,medium} at {0,time,short}
 
 views.admin.User.index.title=Users
 views.admin.User.index.h1=Users

@@ -38,8 +38,8 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       documentSets ++= Seq(
-        DocumentSet(1, "title1", "query1", Some(10)),
-        DocumentSet(2, "title2", "query2", Some(15))
+        DocumentSet(1, "title1", "query1", providedDocumentCount=Some(10)),
+        DocumentSet(2, "title2", "query2", providedDocumentCount=Some(15))
       )
 
       $("ul.document-sets").length must equalTo(1)

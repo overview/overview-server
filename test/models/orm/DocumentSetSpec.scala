@@ -2,15 +2,16 @@ package models.orm
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbTestContext
-import models.orm._
+import java.util.Date
+import org.specs2.specification.Scope
 import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+
 import testutil.DbSetup._
-
-
+import helpers.DbTestContext
+import models.orm._
 
 class DocumentSetSpec extends Specification {
 
@@ -34,6 +35,11 @@ class DocumentSetSpec extends Specification {
       val returnedSet = Schema.documentSets.where(ds => ds.query === query).single
       returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(Some(returnedJob))
     }
+
+    inExample("set createdAt to the current date by default") in new Scope {
+      val documentSet = DocumentSet(0L)
+      documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
+    }
     
     inExample("throw exception if job creation is attempted before db insertion") in new DbTestContext {
       val query = "query"
@@ -45,7 +51,7 @@ class DocumentSetSpec extends Specification {
     
     inExample("delete all references in other tables") in new DbTestContext {
       val query = "query"
-      val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
+      val documentSet = Schema.documentSets.insert(DocumentSet(0L, query))
       val id = documentSet.id
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
       

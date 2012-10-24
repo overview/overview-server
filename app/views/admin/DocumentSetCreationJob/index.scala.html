@@ -7,10 +7,12 @@
 
 @defining(scopedMessages("views.admin.DocumentSetCreationJob.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index") {
+    <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
     <table class="table table-hover">
       <thead>
         <tr>
           <th class="id">@m("th.id")</th>
+          <th class="date-started">@m("th.created_at")</th>
           <th class="state">@m("th.state")</th>
           <th class="fraction-complete">@m("th.fraction_complete")</th>
           <th class="state-description">@m("th.state_description")</th>
@@ -23,6 +25,7 @@
         @jobs.map { job =>
           <tr>
             <td class="id">@job.id</td>
+            <td class="date-started">@m("td.created_at", job.documentSet.createdAt)</td>
             <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete" />@((job.fractionComplete * 100).toInt)%</td>
             <td class="state-description">@job.stateDescription</td>

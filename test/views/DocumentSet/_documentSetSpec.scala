@@ -17,13 +17,13 @@ class _documentSetSpec extends Specification {
   }
 
   trait NormalDocumentSetContext extends ViewContext {
-    override val documentSet = DocumentSet(1, "a title", "a query", Some(20))
+    override val documentSet = DocumentSet(1, "a title", "a query", providedDocumentCount=Some(20))
   }
 
   trait DocumentSetWithJobContext extends ViewContext {
     val documentSetId = 1L
     val job : DocumentSetCreationJob
-    override lazy val documentSet = DocumentSet(documentSetId, "a title", "a query", Some(10), Some(job))
+    override lazy val documentSet = DocumentSet(documentSetId, title="a title", query="a query", providedDocumentCount=Some(10), documentSetCreationJob=Some(job))
   }
 
 

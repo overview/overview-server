@@ -10,8 +10,8 @@ object DbSetup {
   
   def insertDocumentSet(query: String)(implicit c: Connection) : Long = {
     SQL("""
-      INSERT INTO document_set (title, query)
-      VALUES ({title}, {query})
+      INSERT INTO document_set (title, query, created_at)
+      VALUES ({title}, {query}, TIMESTAMP '1970-01-01 00:00:00')
       """).on(
         'title -> ("From query: " + query),
         'query -> query

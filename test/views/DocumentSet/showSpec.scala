@@ -20,12 +20,12 @@ class showSpec extends Specification {
     }
 
     trait CompleteDocumentSetContext extends DocumentSetContext {
-      override val documentSet = DocumentSet(1, "a title", "a query", Some(20))
+      override val documentSet = DocumentSet(1, "a title", "a query", providedDocumentCount=Some(20))
     }
 
     trait DocumentSetWithJobContext extends DocumentSetContext {
       val job: DocumentSetCreationJob
-      override lazy val documentSet = DocumentSet(1, "a title", "a query", Some(20), Some(job))
+      override lazy val documentSet = DocumentSet(1, "a title", "a query", providedDocumentCount=Some(20), documentSetCreationJob=Some(job))
     }
 
     trait InProgressDocumentSetContext extends DocumentSetWithJobContext {
