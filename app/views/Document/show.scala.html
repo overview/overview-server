@@ -4,8 +4,7 @@
   <html>
     <head>
       <title data-m-loading="@m("loading")">@m("loading")</title>
-      <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")" />
-      <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/DV.css")" />
+      @bundleStylesheet("main")
       <style type="text/css">
         html, body {
           width: 100%;
