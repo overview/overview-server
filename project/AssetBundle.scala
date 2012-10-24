@@ -47,14 +47,17 @@ class AssetBundle(
     bundlePathFinders.reduce(_ +++ _)
   }
 
-  private lazy val sourcePath = sourceRoot.toPath
-  private lazy val destinationPath = destinationRoot.toPath.resolve("asset-bundler").resolve(bundleType).resolve(bundleKey)
   private lazy val outputExtension = if (bundleType == "javascripts") "js" else "css"
 
   private def sourceToDestination(sourceFile: File) : File = {
-    val relativePath = sourcePath.relativize(sourceFile.toPath).toString
-    val relativePathWithExtension = relativePath.replaceFirst("""[^\.]+$""", outputExtension)
-    destinationPath.resolve(relativePathWithExtension).toFile
+    val sourceURI = sourceRoot.toURI
+
+    val relativeURI = sourceURI.relativize(sourceFile.toURI).toString
+    val relativeURIWithExtension = relativeURI.replaceFirst("""[^\.]+$""", outputExtension)
+
+    val path = Seq(destinationRoot, "asset-bundler", bundleType, bundleKey, relativeURIWithExtension).mkString(File.pathSeparator)
+
+    new File(path)
   }
 
   /**
