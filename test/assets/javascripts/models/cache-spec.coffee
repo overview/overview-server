@@ -260,11 +260,7 @@ describe 'models/cache', ->
         tagFromServer = { id: 1, name: newTag.name }
             
         beforeEach ->
-          spyOn(cache, 'add_tag').andCallThrough()
-          cache.create_tag(newTag.name)
-
-        it 'should call add_tag', ->
-          expect(cache.add_tag).toHaveBeenCalledWith(newTag.name)
+          cache.create_tag(newTag)
 
         it 'should queue a server call', ->
           expect(cache.transaction_queue.callbacks.length).toEqual(1)
