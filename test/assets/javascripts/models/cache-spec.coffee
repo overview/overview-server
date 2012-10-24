@@ -10,7 +10,7 @@ class MockTagStore
     @tags = []
 
   create_tag: (name) ->
-    this.add({ id: -1, name: name, count: 0 })
+    this.add({ id: -1, name: name, count: 0, color: '#fabcde' })
 
   add: (tag) ->
     @tags.push(tag)
@@ -256,7 +256,7 @@ describe 'models/cache', ->
 
 
       describe 'create_tag', ->
-        newTag = { id: -1, name: 'AA', count: 0 }
+        newTag = { id: -1, name: 'foo', count: 0, color: '#fabcde' }
         tagFromServer = { id: 1, name: newTag.name }
             
         beforeEach ->
@@ -286,6 +286,7 @@ describe 'models/cache', ->
           it 'should post to tag_create with new tag', ->
             expect(post[0]).toEqual('tag_create')
             expect(post[1].name).toEqual(newTag.name)
+            expect(post[1].color).toEqual(newTag.color)
 
           it 'should change the tag in the tag store', ->
             cache.server.deferreds[0].resolve(tagFromServer)
