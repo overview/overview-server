@@ -61,12 +61,26 @@ object TagController extends BaseController {
         // FIXME should be: Some((documents.documentIds, documents.nodeIds, documents.tagIds))
         Some((Seq(), Seq(), Seq()))))
 
+  def authorizedCreate(documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+    val newTag = PotentialTag("_new_tag").create(documentSetId)
+
+    TagForm(newTag).bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      updatedTag => {
+        updatedTag.save
+        val tag = PersistentTag(updatedTag)
+
+        Ok(views.json.Tag.update(tag))
+      }
+    )
+  }
+
   def authorizedAdd(documentSetId: Long, tagName: String)(implicit request: Request[AnyContent], connection: Connection) = {
     val tag = PotentialTag(tagName).inDocumentSet(documentSetId) match {
       case Some(t) => PersistentTag(t)
       case None => PersistentTag(PotentialTag(tagName).create(documentSetId))
     }
-	
+
     selectionForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       documents => {
@@ -81,28 +95,26 @@ object TagController extends BaseController {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
-	val tag = PersistentTag(t)
+        val tag = PersistentTag(t)
 
-	selectionForm(documentSetId).bindFromRequest.fold(
-	  formWithErrors => BadRequest,
-	  documents => {
-    	    val tagUpdateCount = documents.removeTag(tag.id)
+        selectionForm(documentSetId).bindFromRequest.fold(
+          formWithErrors => BadRequest,
+          documents => {
+            val tagUpdateCount = documents.removeTag(tag.id)
             val taggedDocuments = tag.loadDocuments
 
             Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
-	  }
-	)
+          })
       }
     }
   }
-    
 
   def authorizedDelete(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
-	tag.delete
-	Ok(views.json.Tag.delete(tag.id, tag.name))
+        tag.delete
+        Ok(views.json.Tag.delete(tag.id, tag.name))
       }
     }
   }
@@ -111,15 +123,14 @@ object TagController extends BaseController {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
-	TagForm(t).bindFromRequest.fold(
-	  formWithErrors => BadRequest,
-	  updatedTag => {
-	    updatedTag.save
-	    val tag = PersistentTag(updatedTag)
+        TagForm(t).bindFromRequest.fold(
+          formWithErrors => BadRequest,
+          updatedTag => {
+            updatedTag.save
+            val tag = PersistentTag(updatedTag)
 
-    	    Ok(views.json.Tag.update(tag))
-	  }
-	)
+            Ok(views.json.Tag.update(tag))
+          })
       }
     }
   }
@@ -128,14 +139,13 @@ object TagController extends BaseController {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
-	val tag = PersistentTag(t)
-	val nodeCounts = tag.countsPerNode(IdList(nodeIds))
+        val tag = PersistentTag(t)
+        val nodeCounts = tag.countsPerNode(IdList(nodeIds))
 
         Ok(views.json.Tag.nodeCounts(nodeCounts))
       }
     }
   }
-
 
 }
 
