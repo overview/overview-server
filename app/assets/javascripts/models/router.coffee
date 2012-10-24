@@ -38,8 +38,8 @@ class Router
   _tag_create: () ->
     "/documentsets/#{@document_set_id}/tags"
 
-  _tag_add_path: (name) ->
-    "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/add"
+  _tag_add_path: (id) ->
+    "/documentsets/#{@document_set_id}/tags/#{id}/add"
 
   _tag_remove_path: (id) ->
     "/documentsets/#{@document_set_id}/tags/#{id}/remove"
