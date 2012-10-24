@@ -13,6 +13,7 @@ class Router
       when 'documents' then this._documents_path()
       when 'document_view' then this._document_view_path(id)
       when 'create_log_entries' then this._create_log_entries_path()
+      when 'tag_create' then this._tag_create()
       when 'tag_add' then this._tag_add_path(id)
       when 'tag_remove' then this._tag_remove_path(id)
       when 'tag_edit' then this._tag_edit_path(id)
@@ -33,6 +34,9 @@ class Router
 
   _create_log_entries_path: () ->
     "/documentsets/#{@document_set_id}/log-entries/create-many"
+
+  _tag_create: () ->
+    "/documentsets/#{@document_set_id}/tags"
 
   _tag_add_path: (name) ->
     "/documentsets/#{@document_set_id}/tags/#{encodeURIComponent(name)}/add"
