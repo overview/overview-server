@@ -254,6 +254,43 @@ describe 'models/cache', ->
           expect(tag.name).toEqual('foo')
           expect(tag.color).toEqual('#654321')
 
+
+      describe 'create_tag', ->
+        newTag = { id: -1, name: 'AA', count: 0 }
+        tagFromServer = { id: 1, name: newTag.name }
+            
+        beforeEach ->
+          spyOn(cache, 'add_tag').andCallThrough()
+          cache.create_tag(newTag.name)
+
+        it 'should call add_tag', ->
+          expect(cache.add_tag).toHaveBeenCalledWith(newTag.name)
+
+        it 'should queue a server call', ->
+          expect(cache.transaction_queue.callbacks.length).toEqual(1)
+
+        describe 'after making the server call', ->
+          post = undefined
+        
+          beforeEach ->
+            spyOn(cache.tag_store, 'change')
+            cache.transaction_queue.next()
+            post = cache.server.posts[0]
+
+          afterEach ->
+            post = undefined
+
+          it 'should have POSTed', ->
+            expect(post).toBeDefined()
+
+          it 'should post to tag_create with new tag', ->
+            expect(post[0]).toEqual('tag_create')
+            expect(post[1].name).toEqual(newTag.name)
+
+          it 'should change the tag in the tag store', ->
+            cache.server.deferreds[0].resolve(tagFromServer)
+            expect(cache.tag_store.change).toHaveBeenCalledWith(newTag, tagFromServer)
+                
       describe 'update_tag', ->
         beforeEach ->
           spyOn(cache, 'edit_tag').andCallThrough()
@@ -278,13 +315,14 @@ describe 'models/cache', ->
           it 'should have POSTed', ->
             expect(post).toBeDefined()
 
-          it 'should post to tag_edit with the old tag name', ->
+          it 'should post to tag_edit with the old tag id', ->
             expect(post[0]).toEqual('tag_edit')
             expect(post[2].path_argument).toEqual(1)
 
           it 'should post the new name and color', ->
             expect(post[1].name).toEqual(tag.name)
             expect(post[1].color).toEqual(tag.color)
+
 
       describe 'remove_tag', ->
         it 'should remove_tag from the tag_store', ->

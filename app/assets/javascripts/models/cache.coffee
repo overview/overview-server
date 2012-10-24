@@ -81,6 +81,14 @@ class Cache
 
         undefined
 
+  create_tag: (name) ->
+    new_tag = this.add_tag(name)
+
+    @transaction_queue.queue =>
+      deferred = @server.post('tag_create', new_tag)
+      deferred.done (tag_from_server) =>
+        @tag_store.change(new_tag, tag_from_server)
+
   add_tag: (name) ->
     @tag_store.create_tag(name)
 
