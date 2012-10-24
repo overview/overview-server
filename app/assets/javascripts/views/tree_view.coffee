@@ -1,6 +1,6 @@
 observable = require('models/observable').observable
 DrawableNode = require('models/drawable_node').DrawableNode
-ColorTable = require('views/color_table').ColorTable
+ColorTable = require('models/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
   node_vunits: 1,

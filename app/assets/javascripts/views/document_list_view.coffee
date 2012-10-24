@@ -1,5 +1,5 @@
 observable = require('models/observable').observable
-ColorTable = require('views/color_table').ColorTable
+ColorTable = require('models/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
   buffer_documents: undefined, # retrieve all documents

@@ -49,5 +49,5 @@ class ColorTable
     i = string_to_colors_index(s)
     "tag-color-#{i}"
 
-exports = require.make_export_object('views/color_table')
+exports = require.make_export_object('models/color_table')
 exports.ColorTable = ColorTable

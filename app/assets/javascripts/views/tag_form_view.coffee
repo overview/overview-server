@@ -1,5 +1,5 @@
 observable = require('models/observable').observable
-ColorTable = require('views/color_table').ColorTable
+ColorTable = require('models/color_table').ColorTable
 
 # A modal dialog that allows editing a tag.
 #
