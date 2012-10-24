@@ -276,9 +276,9 @@ describe 'models/remote_tag_list', ->
             it 'should have POSTed', ->
               expect(post).toBeDefined()
 
-            it 'should post to tag_add with tag name', ->
+            it 'should post to tag_add with tag id', ->
               expect(post[0]).toEqual('tag_add')
-              expect(post[2].path_argument).toEqual('AA')
+              expect(post[2].path_argument).toEqual(1)
 
             it 'should post the proper selection', ->
               expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })
@@ -318,10 +318,10 @@ describe 'models/remote_tag_list', ->
             transaction_queue.next()
             expect(server.posts[0][1]).toEqual({ nodes: '2', tags: '', documents: '' })
 
-          it 'should call with a new tag name, if the name changed since', ->
+          it 'should call with the old id, even if the name changed since', ->
             remote_tag_list.tags[0].name = 'AA-changed'
             transaction_queue.next()
-            expect(server.posts[0][2].path_argument).toEqual('AA-changed')
+            expect(server.posts[0][2].path_argument).toEqual(1)
 
         describe 'after removing a tag from a node', ->
           beforeEach ->
