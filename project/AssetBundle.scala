@@ -55,7 +55,7 @@ class AssetBundle(
     val relativeURI = sourceURI.relativize(sourceFile.toURI).toString
     val relativeURIWithExtension = relativeURI.replaceFirst("""[^\.]+$""", outputExtension)
 
-    val path = Seq(destinationRoot, "asset-bundler", bundleType, bundleKey, relativeURIWithExtension).mkString(File.pathSeparator)
+    val path = Seq(destinationRoot, "asset-bundler", bundleType, bundleKey, relativeURIWithExtension).mkString(File.separator)
 
     new File(path)
   }
