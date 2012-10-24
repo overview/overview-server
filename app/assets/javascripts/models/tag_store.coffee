@@ -1,15 +1,17 @@
 observable = require('models/observable').observable
+ColorTable = require('models/color_table').ColorTable
 
 class TagStore
   observable(this)
 
   constructor: () ->
+    @color_table = new ColorTable()
     @tags = []
     @_last_unsaved_id = 0
 
   create_tag: (name) ->
     id = @_last_unsaved_id -= 1
-    this.add({ id: id, name: name, count: 0 })
+    this.add({ id: id, name: name, count: 0, color: @color_table.get(name) })
 
   _calculate_positions: () ->
     @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))

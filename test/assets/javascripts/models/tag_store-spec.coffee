@@ -1,4 +1,5 @@
 TagStore = require('models/tag_store').TagStore
+ColorTable = require('models/color_table').ColorTable
 
 describe 'models/tag_store', ->
   describe 'TagStore', ->
@@ -14,12 +15,15 @@ describe 'models/tag_store', ->
       { id: id, name: name, count: 1 }
 
     describe 'beginning at empty', ->
+      newTagName = 'foo'
+      color_table = new ColorTable()
+
       it 'should start empty', ->
         expect(tag_store.tags).toEqual([])
 
       it 'should create a tag', ->
-        tag = tag_store.create_tag('foo')
-        expect(tag).toEqual({ id: -1, name: 'foo', count: 0, position: 0 })
+        tag = tag_store.create_tag(newTagName)
+        expect(tag).toEqual({ id: -1, name: newTagName, count: 0, position: 0, color: color_table.get(newTagName) })
 
       it 'should add a tag', ->
         tag1 = dummy_tag(1, 'Tag')
