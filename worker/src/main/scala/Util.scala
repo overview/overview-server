@@ -38,8 +38,8 @@ object WorkerActorSystem {
  * the client. Description types can be defined to take a single argument, which is encoded
  * as "key:argument"
  */
-sealed abstract class DocumentSetCreationJobStateDescription(key: String, arg: String = "") {
-  override def toString = if (!arg.isEmpty) key + ":" + arg else key
+sealed abstract class DocumentSetCreationJobStateDescription(keys: String*) {
+  override def toString = keys.mkString(":")
 }
 
 object DocumentSetCreationJobStateDescription {
@@ -47,7 +47,7 @@ object DocumentSetCreationJobStateDescription {
 
   case object OutOfMemory extends Description("out_of_memory")
   case object WorkerError extends Description("worker_error")
-  case class Retrieving(docNum: Int) extends Description("retrieving_documents", docNum.toString)
+  case class Retrieving(docNum: Int, total: Int) extends Description("retrieving_documents", docNum.toString, total.toString)
   case object Clustering extends Description("clustering")
   case object Saving extends Description("saving_document_tree")
   case object Done extends Description("job_complete")

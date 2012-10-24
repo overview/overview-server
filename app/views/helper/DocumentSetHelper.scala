@@ -10,13 +10,13 @@ object DocumentSetHelper {
    * @returns A translated string, like "Clustering (4)"
    */
   def jobDescriptionKeyToMessage(jobDescriptionKey: String)(implicit lang: Lang): String = {
-    val keyWithArg = """(.*):(.*)""".r
-    val m = views.ScopedMessages("views.DocumentSet._documentSet.job_state_description")
-
-    jobDescriptionKey match {
-      case keyWithArg(key, arg) => m(key, arg)
-      case "" => ""
-      case key => m(key)
+    val keyAndArgs : Seq[String] = jobDescriptionKey.split(':')
+    val key = keyAndArgs.head
+    if (key == "") {
+      ""
+    } else {
+      val m = views.ScopedMessages("views.DocumentSet._documentSet.job_state_description")
+      m(keyAndArgs.head, keyAndArgs.drop(1) : _*)
     }
   }
 

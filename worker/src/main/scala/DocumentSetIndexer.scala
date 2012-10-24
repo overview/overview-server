@@ -47,7 +47,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
       implicit connection => documentWriter.write(doc.title, doc.documentCloudId)
     }
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))
-    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, Retrieving(vectorGen.numDocs)))
+    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, Retrieving(vectorGen.numDocs, sourceDocList.size)))
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
