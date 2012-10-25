@@ -95,11 +95,10 @@ class Cache
     @tag_store.change(tag, new_tag)
 
   update_tag: (tag, new_tag) ->
-    old_id = tag.id
     this.edit_tag(tag, new_tag)
 
     @transaction_queue.queue =>
-      @server.post('tag_edit', new_tag, { path_argument: old_id })
+      @server.post('tag_edit', new_tag, { path_argument: tag.id })
 
   remove_tag: (tag) ->
     @document_store.remove_tag_id(tag.id)

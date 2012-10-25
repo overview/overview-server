@@ -287,7 +287,20 @@ describe 'models/cache', ->
           it 'should change the tag in the tag store', ->
             cache.server.deferreds[0].resolve(tagFromServer)
             expect(cache.tag_store.change).toHaveBeenCalledWith(newTag, tagFromServer)
+
+        describe 'when updating before id returned from server', ->
+          post = undefined
+
+          beforeEach ->
+            cache.update_tag(newTag, { name: 'bar', color: '#edcbaf' })
+            cache.transaction_queue.next()
+            cache.server.deferreds[0].resolve(tagFromServer)                
+            cache.transaction_queue.next()
+            post = cache.server.posts[1]
                 
+          it 'should send the update with the new id', ->
+            expect(post[2].path_argument).toEqual(tagFromServer.id)
+                   
       describe 'update_tag', ->
         beforeEach ->
           spyOn(cache, 'edit_tag').andCallThrough()
