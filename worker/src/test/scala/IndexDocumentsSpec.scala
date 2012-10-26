@@ -140,7 +140,7 @@ class MakeDocumentTreeSpec extends Specification {
         }
       }      
       
-      3 must beEqualTo(3)   // needed to compile, sucky
+      success
     }
   }  
 }

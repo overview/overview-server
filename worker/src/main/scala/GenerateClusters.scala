@@ -11,7 +11,7 @@
 
 package overview.clustering
 
-import scala.collection.mutable.{ Set, Stack }
+import scala.collection.mutable.{ Set, Stack, PriorityQueue, Map }
 import ClusterTypes._
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription
@@ -127,11 +127,108 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
-  def reachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
-    for (otherDoc <- otherDocs; if distanceFn(docVecs(thisDoc), docVecs(otherDoc)) <= thresh)
+  private def allReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
+    for (otherDoc <- otherDocs; 
+        if distanceFn(docVecs(thisDoc), docVecs(otherDoc)) <= thresh)
       yield otherDoc
   }
+  
+  // Same logic as above, but only looks through edges stored in sampledEdges
+  private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {        
+    for ((otherDoc, distance) <- sampledEdges.getOrElse(thisDoc, Map());
+         if otherDocs.contains(otherDoc);
+         if distance <= thresh)
+      yield otherDoc
+  }
+  
+  // Returns an edge walking function suitable for ConnectedComponents, using the sampled edge set if we have it
+  private def createEdgeEnumerator(thresh:Double) = {
+    if (!sampledEdges.isEmpty)
+      (doc:DocumentID,docSet:Set[DocumentID]) => sampledReachableDocs(thresh, doc, docSet)
+    else
+      (doc:DocumentID,docSet:Set[DocumentID]) => allReachableDocs(thresh, doc, docSet)
+  }
+    
+  // Store all edges that the "short edge" sampling has produced, map from doc to (doc,weight) 
+  private var sampledEdges = Map[ DocumentID, Map[DocumentID, Double]]()
+  
+  // utility function to add a single edge to sampledEdges, which is a bit more of pain than it should be
+  private def addSymmetricEdge(a:DocumentID, b:DocumentID, distance:Double) : Unit = {
+    val aEdges = sampledEdges.getOrElse(a, Map[DocumentID, Double]())
+    aEdges += (b -> distance)
+    sampledEdges += (a -> aEdges)
+    val bEdges = sampledEdges.getOrElse(b, Map[DocumentID, Double]())
+    bEdges += (a -> distance)
+    sampledEdges += (b -> bEdges)
+  }
+  
 
+  case class WeightPair(val id:DocumentID, val weight:TermWeight)
+  case class TermProduct(val term:TermID, val weight:TermWeight, val remainingDocs:List[WeightPair], val product:Float)
+  
+  // Order ProductTriples decreasing their "product", 
+  // which is the weight on this term times the largest weight on this term in remainingDocs
+  private implicit object TermProductOrdering extends Ordering[TermProduct] {
+    def compare(a:TermProduct, b:TermProduct) = (b.product - a.product).toInt
+  }
+  
+  // Generate the numEdgesPerDoc shortest edges going out from each document (approximately)
+  // Algorithm from http://www.cs.ubc.ca/nest/imager/tr/2012/modiscotag/
+  // Basic idea is we create a table indexed by term, listing all docs containing that term in decreasing weight
+  // Then for each document in term, we create a priority queue with one value for each term in the doc,
+  // sorted by the product of the term weight by the weight of the same term in the document with the highest term value
+  // We generate an edge by pulling the first item from this queue and extracting the document index, then
+  // replace the item with a new product with the highest term weight among remaining docs.
+  // Effectively, this samples edges in order of the largest term in their dot-product.
+  def sampleCloseEdges(numEdgesPerDoc:Int = 200) : Unit = {  
+    val numDims = docVecs.stringTable.numTerms
+    
+    // For each dimension (term), list of docs containing that term, and weight on each doc, sorted by weight
+    var d = Array.fill(numDims)(List[WeightPair]())  
+    
+    // First construct d: for each term, a list of containing docs, sorted by weight
+    docVecs.foreach { case (id,vec) =>
+      vec.foreach { case (term, weight) =>
+        d(term) = WeightPair(id, weight) :: d(term)
+      }
+    }
+    d.transform(_.sortBy(-_.weight)) // sort each dim by decreasing weight
+
+    
+    // Now use d to produce numEdgesPerDoc "short" edges starting from each document
+    docVecs.foreach { case (id,vec) =>
+      
+      // pq stores one entry for each term in the doc, 
+      // sorted by product of term weight times largest weight on that term in all docs
+      var pq = PriorityQueue[TermProduct]()
+      vec.foreach { case (term,weight) =>
+        val termList = d(term)
+        pq += TermProduct(term, weight, termList, weight*termList.head.weight)  // add term to this doc's queue
+      }
+      
+      // Now we just pop edges out of the queue on by one
+      var numEdgesLeft = numEdgesPerDoc
+      while (numEdgesLeft>0 && !pq.isEmpty) {
+        
+        // Generate edge from this doc to the doc with the highest term product
+        val termProduct = pq.dequeue
+        val otherId = termProduct.remainingDocs.head.id
+        val distance = DistanceFn.CosineDistance(docVecs(id), docVecs(otherId))
+        addSymmetricEdge(id, otherId, distance)
+                
+        // Put this term back in the queue, with a new product entry 
+        // We multiply this term's weight by weight on the document with the next highest weight on this term
+        val remainingDocs = termProduct.remainingDocs.tail
+        if (!remainingDocs.isEmpty) {
+          pq += TermProduct(termProduct.term, termProduct.weight, remainingDocs, termProduct.weight*remainingDocs.head.weight)
+        }
+        
+        numEdgesLeft -= 1
+      }   
+    }
+    
+  }
+  
   // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components
   // Returns new set of leaf nodes
   private def ExpandTree(currentLeaves: List[DocTreeNode], thresh: Double) = {
@@ -139,7 +236,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 
     for (node <- currentLeaves) {
 
-      val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, reachableDocs(thresh, _, _))
+      val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, createEdgeEnumerator(thresh))
 
       if (childComponents.size == 1) {
         // lower threshold did not split this component, pass unchanged to next level
@@ -225,18 +322,18 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 object BuildDocTree {
 
+  val numDocsWhereSamplingHelpful = 1000
+  
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in 0.1 increments
     val distanceFn = DistanceFn.CosineDistance _
     val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
 
-    // Build the tree
     val builder = new DocTreeBuilder(docVecs, distanceFn)
-    val tree = builder.BuildTree(threshSteps, progAbort)
-
-    // Now recurse to create a label for each node
-    builder.labelNode(tree)
-    //println(tree.prettyString())
+    if (docVecs.size > numDocsWhereSamplingHelpful)             
+      builder.sampleCloseEdges()                                // use sampled edges if the docset is large
+    val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
+    builder.labelNode(tree)                                     // create a descriptive label for each node
 
     tree
   }

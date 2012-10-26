@@ -32,6 +32,8 @@ object ClusterTypes {
     def idToString(id: TermID): String = {
       _idToString(id)
     }
+    
+    def numTerms = _idToString.size
   }
 
   // --- DocumentVectorMap ----
@@ -57,11 +59,18 @@ object ClusterTypes {
   // Document vector and vector set that has very efficient storage, but not mutable
   // - extracts terms and weights into separate arrays
   // - sorted by term ID for fast vector/vector products
+  // But, also extends Traversable so appears as a sequence of Pair[TermID, TermWeight]
   
-  class DocumentVector(val terms:Array[TermID], val weights:Array[TermWeight]) {
+  class DocumentVector(val terms:Array[TermID], val weights:Array[TermWeight]) extends Traversable[Pair[TermID, TermWeight]] {
+    
     require(terms.length == weights.length)
     
     def length = terms.length
+    
+    def foreach[U](f: Pair[TermID, TermWeight] => U): Unit = {
+      for (i <- 0 until length)
+        f((terms(i), weights(i)))
+    }
   }
   
   // separate companion object because there is currently no way in scala to have temporary variables in the ctor that are not in the object
