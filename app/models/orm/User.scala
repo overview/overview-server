@@ -3,7 +3,7 @@ package models.orm
 import java.sql.Timestamp
 import org.squeryl.annotations.{ Column, Transient }
 import org.squeryl.dsl.ManyToMany
-import org.squeryl.KeyedEntity
+import org.squeryl.{KeyedEntity,Query}
 import org.squeryl.PrimitiveTypeMode._
 import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
@@ -30,6 +30,9 @@ case class User(
 
   lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] =
     Schema.documentSetUsers.right(this)
+
+  lazy val orderedDocumentSets: Query[DocumentSet] =
+    from(documentSets)(ds => select(ds).orderBy(ds.createdAt.desc))
 
   def createDocumentSet(query: String): DocumentSet = {
     require(id != 0l)

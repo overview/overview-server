@@ -1,6 +1,5 @@
 package models.orm
 
-import helpers.DbTestContext
 import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
@@ -8,6 +7,8 @@ import org.squeryl.PrimitiveTypeMode._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import ua.t3hnar.bcrypt._
+
+import helpers.DbTestContext
 
 class UserSpec extends Specification {
   trait UserContext extends DbTestContext {
@@ -35,6 +36,18 @@ class UserSpec extends Specification {
 
     "Not create a DocumentSet if not inserted in database" in new UserContext {
       user.createDocumentSet(query) must throwAn[IllegalArgumentException]
+    }
+
+    inExample("order document sets from oldest to newest") in new UserContext {
+      val user2 = Schema.users.insert(user)
+      user2.documentSets.associate(DocumentSet(0L, title="earliest", createdAt=new Timestamp(1351519451289L)).save)
+      user2.documentSets.associate(DocumentSet(0L, title="later", createdAt=new Timestamp(1351519465652L)).save)
+
+      val user3 = User.findById(user2.id).get
+
+      val documentSets = user3.orderedDocumentSets
+      documentSets.size must be equalTo(2)
+      documentSets.head.title must be equalTo("later")
     }
 
     inExample("throw an exception if confirmation token is not unique") in new UserContext{

@@ -14,7 +14,7 @@ trait AuthorizedDocumentSetController {
   private val form = controllers.forms.DocumentSetForm()
 
   def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = { 
-    val documentSets = user.documentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
+    val documentSets = user.orderedDocumentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
     Ok(views.html.DocumentSet.index(user, documentSets, form))
   }
 
