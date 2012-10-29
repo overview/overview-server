@@ -46,20 +46,29 @@ object Magic {
   val t = play.api.i18n.Messages
   val scopedMessages = ScopedMessages
 
-  private def basePathToMinifiedPath(basePath: String, extension: String) : String = {
+  private def streamToHash(stream: java.io.InputStream) : String = {
     import java.security.MessageDigest
     import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
-    val resource : java.net.URL = Play.resource("/public/" + basePath + extension).get
-
-    val source = io.Source.fromURL(resource, "utf-8")
-    val contents = source.mkString
-    source.close
     val md5 = MessageDigest.getInstance("MD5")
-    val md5bytes = md5.digest(contents.getBytes)
-    val hash = (new HexBinaryAdapter).marshal(md5bytes).toLowerCase()
+    val digestStream = new java.security.DigestInputStream(stream, md5)
 
-    basePath + "-" + hash + ".min" + extension
+    // Read entire file and ignore its contents (updates md5)
+    val uselessByteArray = new Array[Byte](10240)
+    while (-1 != digestStream.read(uselessByteArray)) {}
+
+    (new HexBinaryAdapter).marshal(md5.digest).toLowerCase()
+  }
+
+  private def basePathToMinifiedPath(basePath: String, extension: String) : String = {
+    val stream = Play.resourceAsStream("/public/" + basePath + extension).get
+
+    try {
+      val hash = streamToHash(stream)
+      basePath + "-" + hash + ".min" + extension
+    } finally {
+      stream.close
+    }
   }
 
   private def bundlePath(bundleType: String, bundleKey: String, extension: String) : String = {

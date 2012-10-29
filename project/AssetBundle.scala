@@ -2,8 +2,6 @@ package org.overviewproject.sbt.assetbundler
 
 import com.typesafe.config.{Config,ConfigFactory}
 import java.io.File
-import java.security.MessageDigest
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 import sbt.{GlobFilter,PathFinder}
 
 /** An asset bundle.
@@ -28,8 +26,6 @@ class AssetBundle(
     val bundleType: String,
     val bundleKey: String,
     val paths: Seq[String]) {
-  private lazy val md5 = MessageDigest.getInstance("MD5")
-
   private lazy val pathFinder : PathFinder = {
     val bundleRoot = PathFinder(sourceRoot) / bundleType
 
@@ -93,21 +89,29 @@ class AssetBundle(
    */
   def minimizedOutputFile : File = new File(outputFileMainPart + "-" + hash + ".min." + outputExtension)
 
-  private def fileContents(file: File) : String = {
-    val source = scala.io.Source.fromFile(file, "utf-8")
-    val contents = source.mkString
-    source.close
-    contents
-  }
-
   /**
    * Returns an md5 hash of the given string.
    *
-   * This only works after the caller has written to outputFile.
+   * This reads outputFile, so it only works after the caller
+   * has written to outputFile.
    */
   lazy val hash : String = {
-    val contents = fileContents(outputFile)
-    val bytes = md5.digest(contents.getBytes)
-    (new HexBinaryAdapter).marshal(bytes).toLowerCase()
+    import java.security.{MessageDigest,DigestInputStream}
+    import javax.xml.bind.annotation.adapters.HexBinaryAdapter
+
+    val inputStream = new java.io.FileInputStream(outputFile)
+
+    try {
+      val md5 = MessageDigest.getInstance("MD5")
+      val digestStream = new DigestInputStream(inputStream, md5)
+
+      // Read entire file and ignore its contents (updates md5)
+      val uselessByteArray = new Array[Byte](10240)
+      while (-1 != digestStream.read(uselessByteArray)) {}
+
+      (new HexBinaryAdapter).marshal(md5.digest).toLowerCase()
+    } finally {
+      inputStream.close
+    }
   }
 }
