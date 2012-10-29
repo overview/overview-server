@@ -5,6 +5,8 @@ import java.io.File
 import com.google.javascript.jscomp.{Compiler,CompilerOptions,JSSourceFile,CompilationLevel}
 
 object ScriptCompiler {
+  private lazy val utf8 = java.nio.charset.Charset.forName("utf-8")
+  
   case class CompilationException(val file: Option[File], val message: String, val line: Int, val column: Int) extends Exception(message) {
     override def toString =  "in " + file.getOrElse("") + " - " + super.toString()
   }
@@ -25,7 +27,7 @@ object ScriptCompiler {
     * @return A string of compressed JavaScript code.
     */
   def compileFiles(files: Seq[File]) : String = {
-    val sourceFiles : Seq[JSSourceFile] = files.map(JSSourceFile.fromFile(_))
+    val sourceFiles : Seq[JSSourceFile] = files.map(JSSourceFile.fromFile(_, utf8))
     val compiler = new Compiler()
     val options = new CompilerOptions()
     CompilationLevel.SIMPLE_OPTIMIZATIONS.setOptionsForCompilationLevel(options)

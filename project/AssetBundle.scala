@@ -94,7 +94,7 @@ class AssetBundle(
   def minimizedOutputFile : File = new File(outputFileMainPart + "-" + hash + ".min." + outputExtension)
 
   private def fileContents(file: File) : String = {
-    val source = scala.io.Source.fromFile(file)
+    val source = scala.io.Source.fromFile(file, "utf-8")
     val contents = source.mkString
     source.close
     contents

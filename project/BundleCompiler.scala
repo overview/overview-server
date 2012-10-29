@@ -22,7 +22,7 @@ trait BundleCompiler {
 
   /** @return A string with the contents of the given file. */
   protected def fileContents(file: File) : String = {
-    val source = io.Source.fromFile(file)
+    val source = io.Source.fromFile(file, "utf-8")
     val contents = source.mkString
     source.close
     contents
