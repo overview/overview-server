@@ -52,7 +52,7 @@ object Magic {
 
     val resource : java.net.URL = Play.resource("/public/" + basePath + extension).get
 
-    val source = io.Source.fromURL(resource)
+    val source = io.Source.fromURL(resource, "utf-8")
     val contents = source.mkString
     source.close
     val md5 = MessageDigest.getInstance("MD5")
