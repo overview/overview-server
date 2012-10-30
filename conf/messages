@@ -118,6 +118,7 @@ views.DocumentSet.index.import_from_documentcloud=Import a document set
 views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project…
 views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)…
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
+views.DocumentSet.index.upload=Upload a document set
 
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=Title
@@ -125,6 +126,9 @@ views.DocumentSet._manualForm.label.query=Query
 views.DocumentSet._manualForm.placeholder.query=frog
 views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
 views.DocumentSet._manualForm.submit=Import
+
+views.DocumentSet._uploadForm.help=Select a CSV file from your computer.
+views.DocumentSet._uploadForm.submit=Upload
 
 views.DocumentSet.show.document_list.loading=Loading documents…
 views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}

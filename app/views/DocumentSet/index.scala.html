@@ -6,23 +6,6 @@
 
 @javascripts = {
   @bundleJavascript("document-set-index")
-
-  <script type="text/javascript">
-    var node = $('#documentcloud-import .with-login')[0];
-    dcimport.import_project_with_login(node);
-
-    var $manual_root = $('#documentcloud-import .manual');
-    $manual_root.find('a:eq(0)').on('click', function(e) {
-      e.preventDefault();
-      $manual_root.find('form').toggle();
-    });
-
-    var $sample_root = $('#documentcloud-import .sample');
-    $sample_root.find('a:eq(0)').on('click', function(e) {
-      e.preventDefault();
-      $sample_root.find('ul').toggle();
-    });
-  </script>
 }
 
 @jsMessageKeys = @{Seq(
@@ -86,6 +69,14 @@
         <p><a href="#">@m("import_from_documentcloud_manual")</a></p>
 
         @views.html.DocumentSet._manualForm(form)
+      </div>
+
+      <hr />
+
+      <div class="upload">
+        <p><a href="#">@m("upload")</a></p>
+
+        @views.html.DocumentSet._uploadForm()
       </div>
     </div>
   }

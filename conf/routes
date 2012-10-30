@@ -22,6 +22,9 @@ POST   /reset-password/:token controllers.PasswordController.update(token)
 
 GET    /documents/:id controllers.DocumentController.show(id: Long)
 
+HEAD   /uploads/:uuid controllers.UploadController.show(uuid: UUID)
+POST   /uploads/:uuid controllers.UploadController.create(uuid: UUID)
+
 # Routes that relate to a DocumentSet
 GET    /documentsets          controllers.DocumentSetController.index()
 POST   /documentsets          controllers.DocumentSetController.create()

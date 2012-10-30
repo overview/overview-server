@@ -1,0 +1,8 @@
+@()(implicit lang: Lang)
+@defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
+  <form class="form-inline" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
+    <p>@m("help")</p>
+    <input type="file" name="file" />
+    <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
+  </form>
+}
