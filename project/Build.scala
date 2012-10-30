@@ -59,7 +59,8 @@ object ApplicationBuild extends Build {
     // Left messy after gaining a fatalist view of sbt code
     resourceGenerators in Compile <<= ((definedSbtPlugins in Compile, resourceManaged in Compile) map Defaults.writePluginsDescriptor)(Seq(_)),
 
-    templatesImport += "views.Magic._"
+    templatesImport += "views.Magic._",
+    routesImport += "utils.Binders._"
   ).settings(
     testOptions in Test ++= Seq(
       Tests.Argument("xonly"),
