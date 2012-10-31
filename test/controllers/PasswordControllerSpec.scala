@@ -1,17 +1,15 @@
 package controllers
 
 import helpers.DbTestContext
+import mailers.Mailer
+import models.{OverviewUser, ResetPasswordRequest}
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.specs2.mock.Mockito
-import play.api.mvc.{Request,AnyContent,AnyContentAsFormUrlEncoded}
-import play.api.test.Helpers.{contentAsString,status,BAD_REQUEST,OK,SEE_OTHER}
-import play.api.Play.{start,stop}
-import play.api.test.{FakeApplication,FakeRequest}
-
-import helpers.DbTestContext
-import mailers.Mailer
-import models.{OverviewUser,ResetPasswordRequest}
+import play.api.Play.{start, stop}
+import play.api.mvc.{AnyContent, Request, RequestHeader}
+import play.api.test.{FakeApplication, FakeRequest}
+import play.api.test.Helpers.{BAD_REQUEST, OK, SEE_OTHER, contentAsString, status}
 
 class PasswordControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -51,7 +49,7 @@ class PasswordControllerSpec extends Specification {
         lastMail = Some(mail)
       }
 
-      override def loginSucceeded[A](request: Request[A]) = {
+      override def loginSucceeded(request: RequestHeader) = {
         loggedIn = true
         super.loginSucceeded(request)
       }

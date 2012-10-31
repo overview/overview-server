@@ -1,10 +1,9 @@
 package controllers
 
-import play.api.mvc.{Request,PlainResult}
-import play.api.mvc.Results.{Redirect,Forbidden}
-import jp.t2v.lab.play20.auth.{AuthConfig,CookieRelationResolver,RelationResolver}
-
+import jp.t2v.lab.play20.auth.{AuthConfig, CookieRelationResolver, RelationResolver}
 import models.orm.User
+import play.api.mvc.{PlainResult, Request, RequestHeader}
+import play.api.mvc.Results.{Forbidden, Redirect}
 
 trait AuthConfigImpl extends AuthConfig {
   type Id = Long
@@ -17,23 +16,23 @@ trait AuthConfigImpl extends AuthConfig {
 
   override def resolveUser(id: Id) : Option[User] = User.findById(id)
 
-  override def loginSucceeded[A](request: Request[A]): PlainResult = {
+  override def loginSucceeded(request: RequestHeader): PlainResult = {
     val uri = request.session.get("access_uri").getOrElse(routes.DocumentSetController.index.url)
     request.session - "access_uri"
     Redirect(uri)
   }
 
-  override def logoutSucceeded[A](request: Request[A]): PlainResult = Redirect(routes.WelcomeController.show)
+  override def logoutSucceeded(request: RequestHeader): PlainResult = Redirect(routes.WelcomeController.show)
 
-  override def authenticationFailed[A](request: Request[A]): PlainResult = {
+  override def authenticationFailed(request: RequestHeader): PlainResult = {
     Redirect(routes.SessionController.new_).withSession("access_uri" -> request.uri)
   }
 
-  override def authorizationFailed[A](request: Request[A]): PlainResult = {
+  override def authorizationFailed(request: RequestHeader): PlainResult = {
     Forbidden(views.html.http.forbidden())
   }
 
   override def authorize(user: User, authority: Authority) : Boolean = authority(user)
 
-  override def resolver[A](implicit request: Request[A]): RelationResolver[Id] = new CookieRelationResolver[Id,A](request)
+  override def resolver(implicit request: RequestHeader): RelationResolver[Id] = new CookieRelationResolver[Id](request)
 }

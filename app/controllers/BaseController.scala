@@ -2,11 +2,10 @@ package controllers
 
 import java.sql.Connection
 import jp.t2v.lab.play20.auth.Auth
-import org.squeryl.PrimitiveTypeMode._
-import play.api.mvc.{Controller,Action,BodyParser,BodyParsers,Request,Result,AnyContent}
-import play.api.Play.current
-
 import models.orm.User
+import org.squeryl.PrimitiveTypeMode._
+import play.api.Play.current
+import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, Result}
 
 trait BaseController extends Controller with TransactionActionController with Auth with AuthConfigImpl {
   protected def authorizedAction[A](p: BodyParser[A], authority: Authority)(f: User => ActionWithConnection[A]): Action[A] = {
@@ -30,7 +29,7 @@ trait BaseController extends Controller with TransactionActionController with Au
   }
 
   // copy/pasted from play20-auth
-  private def restoreUser[A](implicit request: Request[A]): Option[User] = for {
+  private def restoreUser(implicit request: RequestHeader): Option[User] = for {
     sessionId <- request.session.get("sessionId")
     userId <- resolver.sessionId2userId(sessionId)
     user <- resolveUser(userId)
@@ -46,7 +45,7 @@ trait BaseController extends Controller with TransactionActionController with Au
    *  // do something
    * }
    */
-  protected def anyUser() : Authority = { user => true }
+  protected def anyUser : Authority = { user => true }
 
   /*
    * Actions may be defined like this:
