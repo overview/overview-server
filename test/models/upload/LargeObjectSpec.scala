@@ -1,14 +1,10 @@
 package models.upload
 
-import com.jolbox.bonecp.ConnectionHandle
-import org.postgresql.PGConnection
+import helpers.PgConnectionContext
 import org.postgresql.util.PSQLException
-import org.specs2.execute.Result
-import org.specs2.mutable.Around
-import org.specs2.mutable.Specification
-import play.api.db.DB
+import org.specs2.mutable.{Around, Specification}
+import play.api.Play.{current, start, stop}
 import play.api.test.FakeApplication
-import play.api.Play.{ current, start, stop }
 
 class LargeObjectSpec extends Specification {
 
@@ -16,34 +12,7 @@ class LargeObjectSpec extends Specification {
 
   "LargeObject" should {
 
-    // We can't use DbTestContext, because it uses a connection
-    // returned from DB.withConnection, which is an AutoCleanConnection wrapper
-    // around bonecp.ConnectionHandle
-    trait PGConnectionContext extends Around {
-      implicit var pgConnection: PGConnection = _
-
-      def setupWithDb = {}
-      
-      def around[T <% Result](test: => T) = {
-	// DB.getConnection returns an unwrapped bonecp.ConnectionHandle
-	// hopefully we are not leaking statements, but as long as we
-	// just use the LargeObjectAPI, we should be ok...
-        val connection = DB.getConnection(autocommit = false)
-        try {
-          val connectionHandle = connection.asInstanceOf[ConnectionHandle]
-          pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
-
-	  setupWithDb
-	  
-          test
-        } finally {
-          connection.rollback()
-          connection.close()
-        }
-      }
-    }
-
-    trait LoContext extends PGConnectionContext {
+    trait LoContext extends PgConnectionContext {
       var oid: Long = _
       
       override def setupWithDb = {
@@ -55,12 +24,12 @@ class LargeObjectSpec extends Specification {
       }
     }
 
-    "create a new instance" in new PGConnectionContext {
+    "create a new instance" in new PgConnectionContext {
       LO.withLargeObject { _.oid must not be equalTo(-1) }
     }
 
     // See if there are better ways to handle errors.
-    "return None for non existent oid" in new PGConnectionContext {
+    "return None for non existent oid" in new PgConnectionContext {
       val noid = LO.withLargeObject(234) { _.oid }
       noid must beNone
     }
@@ -111,7 +80,7 @@ class LargeObjectSpec extends Specification {
       LO.withLargeObject(oid) { _.read(10) } must beNone
     }
 
-    "throw exception when deleting nonexisting objects" in new PGConnectionContext {
+    "throw exception when deleting nonexisting objects" in new PgConnectionContext {
       LO.delete(223) must throwA[PSQLException]
     }
   }
