@@ -2,7 +2,6 @@ package models.upload
 
 import java.sql.Timestamp
 import java.util.UUID
-import models.OverviewUser
 import models.orm.Upload
 
 trait OverviewUpload {
@@ -12,17 +11,21 @@ trait OverviewUpload {
   val contentsOid: Long
 
   def withUploadedBytes(bytesUploaded: Long): OverviewUpload
+  def save: OverviewUpload
 }
 
 object OverviewUpload {
-
-  def apply(user: OverviewUser, uuid: UUID, filename: String, totalSize: Long, oid: Long): OverviewUpload = {
+  
+  def apply(userId: Long, guid: UUID, filename: String, totalSize: Long, oid: Long): OverviewUpload = {
     val upload =
-      Upload(userId = user.id, guid = uuid, lastActivity = now, filename = filename, bytesUploaded = 0,
+      Upload(userId = userId, guid = guid, lastActivity = now, filename = filename, bytesUploaded = 0,
 	bytesTotal = totalSize, contentsOid = oid)
   
     new OverviewUploadImpl(upload)
   }
+
+  def find(userId: Long, guid: UUID): Option[OverviewUpload] =
+    Upload.findUserUpload(userId, guid).map(new OverviewUploadImpl(_))
   
   private class OverviewUploadImpl(upload: Upload) extends OverviewUpload {
     val userId = upload.userId
@@ -32,6 +35,12 @@ object OverviewUpload {
 
     def withUploadedBytes(bytesUploaded: Long): OverviewUpload =
       new OverviewUploadImpl(upload.copy(bytesUploaded = bytesUploaded, lastActivity = now))
+
+    def save: OverviewUpload = {
+      upload.save
+      this
+    }
+      
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis)

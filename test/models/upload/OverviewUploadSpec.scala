@@ -15,19 +15,17 @@ class OverviewUploadSpec extends Specification {
   "OverviewUpload" should {
 
     trait UploadContext extends PgConnectionContext {
-      val uuid = randomUUID
+      val guid = randomUUID
       val filename = "file"
       val totalSize = 42l
       val chunk: Array[Byte] = Array(0x12, 0x13, 0x14)
-      var user: OverviewUser = _
-
-      override def setupWithDb = user = OverviewUser.findById(1).get
+      var userId = 1l
     }
     
     "be created with 0 size uploaded" in new UploadContext {
       LO.withLargeObject { lo =>
 	val before = new Timestamp(System.currentTimeMillis)
-	val upload = OverviewUpload(user, uuid, filename, totalSize, lo.oid)
+	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
 
 	upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
 	upload.bytesUploaded must be equalTo(0)
@@ -38,7 +36,7 @@ class OverviewUploadSpec extends Specification {
     "update bytesUploaded" in new UploadContext {
       LO.withLargeObject { lo =>
 	val before = new Timestamp(System.currentTimeMillis)
-	val upload = OverviewUpload(user, uuid, filename, totalSize, lo.oid)
+	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
 
 	val uploadedSize = lo.add(chunk)
 
@@ -48,6 +46,16 @@ class OverviewUploadSpec extends Specification {
 	updatedUpload.lastActivity.compareTo(updateTime) must beGreaterThanOrEqualTo(0)
 	updatedUpload.bytesUploaded must be equalTo(uploadedSize)
       }
+    }
+
+    "be saveable and findable by (userid, guid)" in new UploadContext {
+      LO.withLargeObject { lo =>
+	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+	upload.save
+      }
+
+      val found = OverviewUpload.find(userId, guid)
+      found must beSome
     }
     
   }
