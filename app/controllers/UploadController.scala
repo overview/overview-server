@@ -47,7 +47,7 @@ object UploadController extends BaseController {
 
   def fileUploadBodyParser(user: User, guid: UUID): BodyParser[Option[OverviewUpload]] = BodyParser("File upload") { request => fileInfoFromHeader(request) match {
 	case Some((filename, contentLength)) =>
-    FileUploadIteratee.store(user.id, guid, filename, contentLength) mapDone { upload => Right(upload) }
+    FileUploadIteratee.store(user.id, guid, filename, 0, contentLength) mapDone { upload => Right(upload) }
       case None => Error("Bad header", Input.EOF)
   }
   }

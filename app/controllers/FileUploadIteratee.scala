@@ -14,14 +14,23 @@ import play.api.mvc.Result
 import play.api.mvc.Results._
 import play.api.Play.current
 
+/**
+ * Manages the upload of a file. Responsible for making sure the OverviewUpload object
+ * is in sync with the LargeObject where the file is stored.
+ */
 trait FileUploadIteratee {
 
-  def store(userId: Long, guid: UUID, filename: String, contentLength: Long): Iteratee[Array[Byte], Option[OverviewUpload]] = {
-    val emptyUpload = createUpload(userId, guid, filename, contentLength)
-    Iteratee.fold[Array[Byte], Option[OverviewUpload]](emptyUpload) { (upload, chunk) =>
+  def store(userId: Long, guid: UUID, filename: String, start: Long, contentLength: Long): Iteratee[Array[Byte], Option[OverviewUpload]] = {
+    val upload = findUpload(userId, guid).map { u =>
+      if (start == 0) u.truncate
+      else u
+    }.orElse(createUpload(userId, guid, filename, contentLength))
+    Iteratee.fold[Array[Byte], Option[OverviewUpload]](upload) { (upload, chunk) =>
       upload.flatMap(appendChunk(_, chunk))
     }
   }
+
+  def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 
   def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload]
 
@@ -30,12 +39,14 @@ trait FileUploadIteratee {
 
 object FileUploadIteratee extends FileUploadIteratee {
 
+  def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
+
   def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = withPgConnection { implicit c =>
     LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, contentLength, lo.oid).save }
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.contentsOid) { lo =>  upload.withUploadedBytes(lo.add(chunk)).save }
+    LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
   private def withPgConnection[A](f: PGConnection => A) = {
@@ -48,8 +59,8 @@ object FileUploadIteratee extends FileUploadIteratee {
         val pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
 
         val r = f(pgConnection)
-	connection.commit
-	r
+        connection.commit
+        r
       }
     } finally {
       connection.close
