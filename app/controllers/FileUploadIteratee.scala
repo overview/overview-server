@@ -16,22 +16,22 @@ import play.api.Play.current
 
 trait FileUploadIteratee {
 
-  def store(userId: Long, guid: UUID): Iteratee[Array[Byte], Option[OverviewUpload]] = {
-    val emptyUpload = createUpload(userId, guid)
+  def store(userId: Long, guid: UUID, filename: String, contentLength: Long): Iteratee[Array[Byte], Option[OverviewUpload]] = {
+    val emptyUpload = createUpload(userId, guid, filename, contentLength)
     Iteratee.fold[Array[Byte], Option[OverviewUpload]](emptyUpload) { (upload, chunk) =>
       upload.flatMap(appendChunk(_, chunk))
     }
   }
 
-  def createUpload(userId: Long, guid: UUID): Option[OverviewUpload]
+  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload]
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload]
 }
 
 object FileUploadIteratee extends FileUploadIteratee {
 
-  def createUpload(userId: Long, guid: UUID): Option[OverviewUpload] = withPgConnection { implicit c =>
-    LO.withLargeObject { lo => OverviewUpload(userId, guid, "filename", 43l, lo.oid).save }
+  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = withPgConnection { implicit c =>
+    LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, contentLength, lo.oid).save }
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c =>

@@ -39,7 +39,7 @@ class FileUploadIterateeSpec extends Specification {
 
       var currentUpload: TestUpload = _
 
-      def createUpload(userId: Long, guid: UUID): Option[OverviewUpload] = {
+      def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
         currentUpload = TestUpload(userId, guid, 0l)
         Some(currentUpload)
       }
@@ -64,7 +64,7 @@ class FileUploadIterateeSpec extends Specification {
       val enumerator: Enumerator[Array[Byte]]
       def upload: Option[OverviewUpload] = {
 	val uploadPromise = for {
-	  doneIt <- enumerator(uploadIteratee.store(userId, guid))
+	  doneIt <- enumerator(uploadIteratee.store(userId, guid, "file", 100))
 	  result: Option[OverviewUpload] <- doneIt.run
 	} yield result
 	uploadPromise.await.get
