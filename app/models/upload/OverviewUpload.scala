@@ -12,6 +12,7 @@ trait OverviewUpload {
 
   def withUploadedBytes(bytesUploaded: Long): OverviewUpload
   def save: OverviewUpload
+  def truncate: OverviewUpload
 }
 
 object OverviewUpload {
@@ -40,6 +41,9 @@ object OverviewUpload {
       upload.save
       this
     }
+
+    def truncate: OverviewUpload = new OverviewUploadImpl(upload.copy(bytesUploaded = 0l, lastActivity = now))
+      
       
   }
 

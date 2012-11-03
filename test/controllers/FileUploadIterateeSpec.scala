@@ -35,6 +35,7 @@ class FileUploadIterateeSpec extends Specification {
         def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
 
 	def save: TestUpload = this
+	def truncate: TestUpload = this
       }
 
       var currentUpload: TestUpload = _

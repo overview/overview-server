@@ -57,6 +57,15 @@ class OverviewUploadSpec extends Specification {
       val found = OverviewUpload.find(userId, guid)
       found must beSome
     }
+
+
+    "truncate large object" in new UploadContext {
+      LO.withLargeObject { lo =>
+	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid).withUploadedBytes(234)
+	val truncatedUpload = upload.truncate
+	truncatedUpload.bytesUploaded must be equalTo(0)
+      }
+    }
     
   }
 
