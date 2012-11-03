@@ -57,7 +57,7 @@ object UploadController extends BaseController {
       contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
       contentLength <- header.headers.get("CONTENT-LENGTH")
     } yield {
-      val disposition = "[^=]*=\"?([^\"]*)\"?".r
+      val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes)
       val disposition(filename) = contentDisposition
       (filename, contentLength.toLong)
     }
