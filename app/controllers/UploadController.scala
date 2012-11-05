@@ -50,10 +50,7 @@ trait UploadController extends BaseController {
   def authorizedFileUploadBodyParser(uuid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, uuid) }
 
   def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
-    UploadInfo(request) match {
-      case Some(info) => fileUploadIteratee(user.id, guid, info)
-      case None => Error("Bad header", Input.EOF) // Done(Left(Some sort of bad header error), Input.Empty)
-    }
+	fileUploadIteratee(user.id, guid, request)  
   }
 
   protected case class UploadInfo(filename: String, start: Long, contentLength: Long)
@@ -71,12 +68,12 @@ trait UploadController extends BaseController {
     }
   }
 
-  protected def fileUploadIteratee(userId: Long, guid: UUID, uploadInfo: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
+  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
 }
 
 object UploadController extends UploadController {
 
-  def fileUploadIteratee(userId: Long, guid: UUID, uploadInfo: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
-    FileUploadIteratee.store(userId, guid, uploadInfo.filename, uploadInfo.start, uploadInfo.contentLength) 
+  def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+    FileUploadIteratee.store(userId, guid, requestHeader) 
 }
  

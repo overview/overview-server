@@ -13,18 +13,36 @@ import play.api.libs.iteratee.{ Error, Input, Iteratee }
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import play.api.Play.current
+import play.api.mvc.RequestHeader
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
  * is in sync with the LargeObject where the file is stored.
  */
 trait FileUploadIteratee {
+  private case class UploadInfo(filename: String, start: Long, contentLength: Long)
 
-  def store(userId: Long, guid: UUID, filename: String, start: Long, contentLength: Long): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
-    val upload = findUpload(userId, guid).map { u =>
-      if (start == 0) u.truncate
-      else u
-    }.orElse(createUpload(userId, guid, filename, contentLength))
+  private object UploadInfo {
+    def apply(header: RequestHeader): Option[UploadInfo] = {
+      for {
+        contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
+        contentLength <- header.headers.get("CONTENT-LENGTH")
+      } yield {
+        val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes)
+        val disposition(filename) = contentDisposition
+        UploadInfo(filename, 0, contentLength.toLong)
+      }
+    }
+  }
+  def store(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+    val r = UploadInfo(requestHeader)
+    
+    val upload = UploadInfo(requestHeader).flatMap { r =>
+      findUpload(userId, guid).map { u =>
+      	if (r.start == 0) u.truncate
+      	else u
+      }.orElse(createUpload(userId, guid, r.filename, r.contentLength))
+    }
     Iteratee.fold[Array[Byte], Option[OverviewUpload]](upload) { (upload, chunk) =>
       upload.flatMap(appendChunk(_, chunk))
     } mapDone {

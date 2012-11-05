@@ -1,23 +1,26 @@
 package controllers
 
 import java.util.UUID
+
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+
 import models.orm.User
 import models.upload.OverviewUpload
-import org.specs2.mutable.Specification
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ Action, Result }
+import play.api.mvc.RequestHeader
+import play.api.mvc.Result
 import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import org.specs2.mock.Mockito
 
 class UploadControllerSpec extends Specification with Mockito {
 
   class TestUploadController extends UploadController {
 
-    def fileUploadIteratee(userId: Long, guid: UUID, uploadInfo: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = Done(Right(mock[OverviewUpload]), Input.EOF)
+    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = 
+      Done(Right(mock[OverviewUpload]), Input.EOF)
   }
 
   "UploadController" should {

@@ -12,33 +12,37 @@ import play.api.libs.iteratee.Enumerator
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.Result
 import scala.util.Random
+import play.api.test.FakeHeaders
+import play.api.test.FakeRequest
+import play.api.mvc.RequestHeader
 
-class FileUploadIterateeSpec extends Specification {
+class FileUploadIterateeSpec extends Specification with Mockito {
 
   "FileUploadIteratee" should {
 
+    /** OverviewUpload implementation that stores data in an attribute */
+    case class TestUpload(userId: Long, guid: UUID, val bytesUploaded: Long, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
+      val lastActivity: Timestamp = new Timestamp(0)
+      val contentsOid: Long = 1l
+
+      def upload(chunk: Array[Byte]): TestUpload = {
+        data = data ++ chunk
+        withUploadedBytes(data.size)
+      }
+
+      def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
+
+      def save: TestUpload = this
+      def truncate: TestUpload = { println("truvn"); this.copy(bytesUploaded = 0, data = Array[Byte]()) }
+
+    }
+
     /**
-     * Implentation of FileUploadIteratee for testing, avoiding using the database
+     * Implementation of FileUploadIteratee for testing, avoiding using the database
      */
     class TestIteratee extends FileUploadIteratee {
 
-      // Upload implementation that store data in an attribute 
-      case class TestUpload(userId: Long, guid: UUID, val bytesUploaded: Long, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
-        val lastActivity: Timestamp = new Timestamp(0)
-        val contentsOid: Long = 1l
-
-        def upload(chunk: Array[Byte]): TestUpload = {
-          data = data ++ chunk
-          withUploadedBytes(data.size)
-        }
-
-        def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
-
-        def save: TestUpload = this
-        def truncate: TestUpload = { println("truvn"); this.copy(bytesUploaded = 0, data = Array[Byte]()) }
-
-      }
-
+      // store the upload as TestUpload to avoid need for downcasting
       var currentUpload: Option[TestUpload] = None
 
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
@@ -65,13 +69,21 @@ class FileUploadIterateeSpec extends Specification {
       val uploadIteratee = new TestIteratee
 
       def input = new ByteArrayInputStream(chunk)
+
+      // implement enumerator in sub-classes to setup specific context
       def enumerator: Enumerator[Array[Byte]]
 
+      val request = mock[RequestHeader]
+      request.headers returns FakeHeaders(Map(
+        ("CONTENT-DISPOSITION", Seq("attachment;filename=foo.bar")),
+        ("CONTENT-LENGTH", Seq("1000"))))
+
+      // Drive the iteratee with the enumerator to generate a result
       def upload: OverviewUpload = {
         val uploadPromise = for {
-          doneIt <- enumerator(uploadIteratee.store(userId, guid, "file", 0, 100))
+          doneIt <- enumerator(uploadIteratee.store(userId, guid, request))
           result: Either[Result, OverviewUpload] <- doneIt.run
-        } yield result.right.get 
+        } yield result.right.get
         uploadPromise.await.get
       }
 
@@ -86,7 +98,7 @@ class FileUploadIterateeSpec extends Specification {
     }
 
     "process Enumerator with one chunk only" in new SingleChunk {
-      upload.bytesUploaded must be equalTo (chunk.size) 
+      upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
@@ -99,7 +111,7 @@ class FileUploadIterateeSpec extends Specification {
       val initialUpload = upload
       val restartedUpload = upload
 
-      restartedUpload.bytesUploaded must be equalTo (chunk.size) 
+      restartedUpload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
