@@ -34,15 +34,15 @@ class FileUploadIterateeSpec extends Specification {
 
         def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
 
-	def save: TestUpload = this
-	def truncate: TestUpload = {println("truvn");this.copy(bytesUploaded = 0, data = Array[Byte]())}
+        def save: TestUpload = this
+        def truncate: TestUpload = { println("truvn"); this.copy(bytesUploaded = 0, data = Array[Byte]()) }
 
       }
 
       var currentUpload: Option[TestUpload] = None
 
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
-      
+
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
         currentUpload = Some(TestUpload(userId, guid, 0l))
         currentUpload
@@ -59,22 +59,22 @@ class FileUploadIterateeSpec extends Specification {
     trait UploadContext extends Scope {
       val chunk = new Array[Byte](100)
       Random.nextBytes(chunk)
-      
+
       val userId = 1l
       val guid = UUID.randomUUID
       val uploadIteratee = new TestIteratee
-      
+
       def input = new ByteArrayInputStream(chunk)
       def enumerator: Enumerator[Array[Byte]]
 
-      def upload: Option[OverviewUpload] = {
-	val uploadPromise = for {
-	  doneIt <- enumerator(uploadIteratee.store(userId, guid, "file", 0, 100))
-	  result: Option[OverviewUpload] <- doneIt.run
-	} yield result
-	uploadPromise.await.get
+      def upload: OverviewUpload = {
+        val uploadPromise = for {
+          doneIt <- enumerator(uploadIteratee.store(userId, guid, "file", 0, 100))
+          result: Either[Result, OverviewUpload] <- doneIt.run
+        } yield result.right.get 
+        uploadPromise.await.get
       }
-      
+
     }
 
     trait SingleChunk extends UploadContext {
@@ -85,25 +85,23 @@ class FileUploadIterateeSpec extends Specification {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
-
-
     "process Enumerator with one chunk only" in new SingleChunk {
-      upload must beSome.like { case u => u.bytesUploaded must be equalTo(chunk.size) }
-      uploadIteratee.uploadedData must be equalTo(chunk)
+      upload.bytesUploaded must be equalTo (chunk.size) 
+      uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
     "process Enumerator with multiple chunks" in new MultipleChunks {
-      upload must beSome.like { case u => u.bytesUploaded must be equalTo(chunk.size) }
-      uploadIteratee.uploadedData must be equalTo(chunk)
+      upload.bytesUploaded must be equalTo (chunk.size)
+      uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
     "truncate upload if restarted at byte 0" in new SingleChunk {
       val initialUpload = upload
       val restartedUpload = upload
 
-      restartedUpload must beSome.like { case u => u.bytesUploaded must be equalTo(chunk.size) }
-      uploadIteratee.uploadedData must be equalTo(chunk)
+      restartedUpload.bytesUploaded must be equalTo (chunk.size) 
+      uploadIteratee.uploadedData must be equalTo (chunk)
     }
-    
+
   }
 }

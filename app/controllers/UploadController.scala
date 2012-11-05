@@ -9,11 +9,12 @@ import org.squeryl.Session
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.iteratee.Error
-  import play.api.libs.iteratee.Input
-import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader }
+import play.api.libs.iteratee.Input
+import play.api.libs.iteratee.Iteratee
+import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import scalax.io.Input
 
-object UploadController extends BaseController {
+trait UploadController extends BaseController {
 
   protected def authorizeInTransaction(authority: Authority)(implicit r: RequestHeader) = {
     DB.withTransaction { implicit connection =>
@@ -36,31 +37,46 @@ object UploadController extends BaseController {
     Ok("ok")
   }
 
-  def create(uuid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(uuid)) { (request: Request[Option[OverviewUpload]], connection: Connection) =>
+  def create(uuid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(uuid)) { (request: Request[OverviewUpload], connection: Connection) =>
     println("Total: " + request.body)
     Ok("ok")
   }
 
-  
-  
+  private[controllers] def createUpload(request: Request[Option[OverviewUpload]], connection: Connection): Result = {
+    println("Total: " + request.body)
+    Ok("ok")
+  }
+
   def authorizedFileUploadBodyParser(uuid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, uuid) }
 
-  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[Option[OverviewUpload]] = BodyParser("File upload") { request => fileInfoFromHeader(request) match {
-	case Some((filename, contentLength)) =>
-    FileUploadIteratee.store(user.id, guid, filename, 0, contentLength) mapDone { upload => Right(upload) }
-      case None => Error("Bad header", Input.EOF)
-  }
-  }
-
-  private def fileInfoFromHeader(header: RequestHeader): Option[(String, Long)] = {
-    for {
-      contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
-      contentLength <- header.headers.get("CONTENT-LENGTH")
-    } yield {
-      val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes)
-      val disposition(filename) = contentDisposition
-      (filename, contentLength.toLong)
+  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
+    UploadInfo(request) match {
+      case Some(info) => fileUploadIteratee(user.id, guid, info)
+      case None => Error("Bad header", Input.EOF) // Done(Left(Some sort of bad header error), Input.Empty)
     }
   }
-  
+
+  protected case class UploadInfo(filename: String, start: Long, contentLength: Long)
+
+  protected object UploadInfo {
+    def apply(header: RequestHeader): Option[UploadInfo] = {
+      for {
+        contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
+        contentLength <- header.headers.get("CONTENT-LENGTH")
+      } yield {
+        val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes)
+        val disposition(filename) = contentDisposition
+        UploadInfo(filename, 0, contentLength.toLong)
+      }
+    }
+  }
+
+  protected def fileUploadIteratee(userId: Long, guid: UUID, uploadInfo: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
 }
+
+object UploadController extends UploadController {
+
+  def fileUploadIteratee(userId: Long, guid: UUID, uploadInfo: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+    FileUploadIteratee.store(userId, guid, uploadInfo.filename, uploadInfo.start, uploadInfo.contentLength) 
+}
+ 

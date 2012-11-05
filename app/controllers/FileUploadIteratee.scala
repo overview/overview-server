@@ -20,13 +20,16 @@ import play.api.Play.current
  */
 trait FileUploadIteratee {
 
-  def store(userId: Long, guid: UUID, filename: String, start: Long, contentLength: Long): Iteratee[Array[Byte], Option[OverviewUpload]] = {
+  def store(userId: Long, guid: UUID, filename: String, start: Long, contentLength: Long): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
     val upload = findUpload(userId, guid).map { u =>
       if (start == 0) u.truncate
       else u
     }.orElse(createUpload(userId, guid, filename, contentLength))
     Iteratee.fold[Array[Byte], Option[OverviewUpload]](upload) { (upload, chunk) =>
       upload.flatMap(appendChunk(_, chunk))
+    } mapDone {
+      case Some(upload) => Right(upload)
+      case None => Left(InternalServerError)
     }
   }
 
