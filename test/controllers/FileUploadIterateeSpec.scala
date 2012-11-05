@@ -73,22 +73,29 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       // implement enumerator in sub-classes to setup specific context
       def enumerator: Enumerator[Array[Byte]]
 
-      val request = mock[RequestHeader]
-      request.headers returns FakeHeaders(Map(
-        ("CONTENT-DISPOSITION", Seq("attachment;filename=foo.bar")),
-        ("CONTENT-LENGTH", Seq("1000"))))
-
+      def request: RequestHeader
       // Drive the iteratee with the enumerator to generate a result
-      def upload: OverviewUpload = {
-        val uploadPromise = for {
+      def resultPromise: Promise[Either[Result, OverviewUpload]] =
+        for {
           doneIt <- enumerator(uploadIteratee.store(userId, guid, request))
           result: Either[Result, OverviewUpload] <- doneIt.run
-        } yield result.right.get
-        uploadPromise.await.get
-      }
-
+        } yield result
     }
 
+    trait GoodHeaders {
+      self: UploadContext =>
+      def request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(Map(
+          ("CONTENT-DISPOSITION", Seq("attachment;filename=foo.bar")),
+          ("CONTENT-LENGTH", Seq("1000"))))
+
+        r
+      }
+
+      def upload: OverviewUpload = resultPromise.await.get.right.get
+    }
+    
     trait SingleChunk extends UploadContext {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
     }
@@ -97,17 +104,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
-    "process Enumerator with one chunk only" in new SingleChunk {
+    "process Enumerator with one chunk only" in new SingleChunk with GoodHeaders {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "process Enumerator with multiple chunks" in new MultipleChunks {
+    "process Enumerator with multiple chunks" in new MultipleChunks with GoodHeaders {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "truncate upload if restarted at byte 0" in new SingleChunk {
+    "truncate upload if restarted at byte 0" in new SingleChunk with GoodHeaders {
       val initialUpload = upload
       val restartedUpload = upload
 
