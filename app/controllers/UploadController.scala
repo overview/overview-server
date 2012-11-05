@@ -14,8 +14,16 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import scalax.io.Input
 
+/**
+ * Handles a file upload, storing the file in a LargeObject, updating the upload table,
+ * and starting a DocumentSetCreationJob. Most of the work related to the upload happens
+ * in FileUploadIteratee.
+ */
 trait UploadController extends BaseController {
 
+  // authorizeInTransaction and authorizedBodyParser don't belong here.
+  // Should move into BaseController and/or TransactionAction, but it's not
+  // clear how, since the usage here flips the dependency
   protected def authorizeInTransaction(authority: Authority)(implicit r: RequestHeader) = {
     DB.withTransaction { implicit connection =>
       val adapter = new SquerylPostgreSqlAdapter()
@@ -25,7 +33,8 @@ trait UploadController extends BaseController {
       }
     }
   }
-
+  
+  // Move this along with authorizeInTransaction
   def authorizedBodyParser[A](authority: Authority)(f: User => BodyParser[A]) = parse.using { implicit request =>
     authorizeInTransaction(authority) match {
       case Left(e) => parse.error(e)
@@ -33,44 +42,32 @@ trait UploadController extends BaseController {
     }
   }
 
+  // TODO: handle HEAD request
   def show(uuid: UUID) = Action(BodyParsers.parse.anyContent) { request =>
     Ok("ok")
   }
 
+  /** Handle file upload and kick of documentSetCreationJob */
   def create(uuid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(uuid)) { (request: Request[OverviewUpload], connection: Connection) =>
     println("Total: " + request.body)
     Ok("ok")
   }
 
-  private[controllers] def createUpload(request: Request[Option[OverviewUpload]], connection: Connection): Result = {
-    println("Total: " + request.body)
-    Ok("ok")
-  }
+ /** Gets the guid and user info to the body parser handling the file upload */
+  def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
-  def authorizedFileUploadBodyParser(uuid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, uuid) }
-
+ 
   def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
 	fileUploadIteratee(user.id, guid, request)  
   }
 
-  protected case class UploadInfo(filename: String, start: Long, contentLength: Long)
-
-  protected object UploadInfo {
-    def apply(header: RequestHeader): Option[UploadInfo] = {
-      for {
-        contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
-        contentLength <- header.headers.get("CONTENT-LENGTH")
-      } yield {
-        val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes)
-        val disposition(filename) = contentDisposition
-        UploadInfo(filename, 0, contentLength.toLong)
-      }
-    }
-  }
-
+  /** Abstract method for creating the Iteratee that handles the upload */
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
 }
 
+/**
+ * UploadController implementation that uses FileUploadIteratee
+ */
 object UploadController extends UploadController {
 
   def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
