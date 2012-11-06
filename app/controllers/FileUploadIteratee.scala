@@ -55,7 +55,7 @@ trait FileUploadIteratee {
     uploadInfo.fold(
       r => Done(Left(r), Input.Empty),
       info => {
-        val upload = findUpload(userId, guid).orElse(createUpload(userId, guid, info.filename, info.contentLength))
+        val upload = findUpload(userId, guid)
 
         val validUploadRestart = upload.map(u => 
           info.start match {
