@@ -53,24 +53,38 @@ trait FileUploadIteratee {
     val uploadInfo = UploadInfo(requestHeader).toRight(BadRequest)
 
     uploadInfo.fold(
-      r => Done(Left(r), Input.Empty),
-      info => {
-        val upload = findUpload(userId, guid)
-
-        val validUploadRestart = upload.map(u => 
-          info.start match {
-            case 0 => Right(u.truncate)
-            case n if n == u.bytesUploaded => Right(u)
-            case _ => Left(BadRequest)
-          })
-
-        val initialUpload = validUploadRestart.getOrElse(createUpload(userId, guid, info.filename, info.contentLength).toRight(InternalServerError))
-
-        Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](initialUpload) { (upload, chunk) =>
-          upload.right.map(appendChunk(_, chunk).get)
-        }
-      })
+      errorStatus => Done(Left(errorStatus), Input.Empty),
+      info => handleUploadRequest(userId, guid, info))
   }
+
+  /**
+   * @return an Iteratee for processing an upload request specified by info
+   * The Iteratee will continue to consume the uploaded data even if an
+   * error is encountered, but will not ignore the data received after the
+   * error occurs.
+   */
+  private def handleUploadRequest(userId: Long, guid: UUID, info: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+    val initialUpload = findValidUploadRestart(userId, guid, info)
+      .getOrElse(createUpload(userId, guid, info.filename, info.contentLength).toRight(InternalServerError))
+
+    Iteratee.fold(initialUpload) { (upload, chunk) =>
+      upload.right.map(appendChunk(_, chunk).get)
+    }
+  }
+
+  /**
+   * If the upload exists, verify the validity of the restart.
+   * @return None if upload does not exist, otherwise an Either containing
+   * an error status if request is invalid or the valid OverviewUpload.
+   * If start is 0, any previously uploaded data is truncated.
+   */
+  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadInfo): Option[Either[Result, OverviewUpload]] =
+    findUpload(userId, guid).map(u =>
+      info.start match {
+        case 0 => Right(u.truncate)
+        case n if n == u.bytesUploaded => Right(u)
+        case _ => Left(BadRequest)
+      })
 
   // Find an existing upload attempt
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
