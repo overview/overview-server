@@ -30,7 +30,7 @@ trait FileUploadIteratee {
   private object UploadInfo {
     def apply(header: RequestHeader): Option[UploadInfo] = {
       def defaultContentRange(length: String) = "0-%1$s/%1$s".format(length)
-      
+
       for {
         contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
         contentLength <- header.headers.get("CONTENT-LENGTH")
@@ -49,19 +49,24 @@ trait FileUploadIteratee {
    * Checks the validity of the requests and processes the upload.
    */
   def store(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
-	
+
     val uploadInfo = UploadInfo(requestHeader).toRight(BadRequest)
 
     uploadInfo.fold(
       r => Done(Left(r), Input.Empty),
       info => {
         val upload = findUpload(userId, guid).orElse(createUpload(userId, guid, info.filename, info.contentLength))
-        val validUpload = upload.map(u =>
-          if (info.start == 0) u.truncate
-          else u
-        ).toRight(InternalServerError)
 
-        Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](validUpload) { (upload, chunk) =>
+        val validUploadRestart = upload.map(u => 
+          info.start match {
+            case 0 => Right(u.truncate)
+            case n if n == u.bytesUploaded => Right(u)
+            case _ => Left(BadRequest)
+          })
+
+        val initialUpload = validUploadRestart.getOrElse(createUpload(userId, guid, info.filename, info.contentLength).toRight(InternalServerError))
+
+        Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](initialUpload) { (upload, chunk) =>
           upload.right.map(appendChunk(_, chunk).get)
         }
       })

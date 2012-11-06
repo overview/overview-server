@@ -105,6 +105,19 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def result = resultPromise.await.get
     }
 
+    trait InProgressHeader {
+      self: UploadContext =>
+
+      def request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(Map(
+          ("CONTENT-DISPOSITION", Seq("attachement;filename=foo.bar")),
+          ("CONTENT-LENGTH", Seq("1000")),
+          ("CONTENT-RANGE", Seq("100-199/1000"))))
+      }
+      def result = resultPromise.await.get
+    }
+
     trait SingleChunk extends UploadContext {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
     }
@@ -132,8 +145,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return BAD_REQUEST if headers are bad" in new SingleChunk with BadHeader {
-      result must beLeft.like { case r => status(r) must be equalTo(BAD_REQUEST) }
+      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
 
+    "return BAD_REQUEST if CONTENT_RANGE starts at the wrong byte" in new SingleChunk with InProgressHeader {
+      uploadIteratee.createUpload(userId, guid, "foo", 1000)
+      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+    }
   }
 }
