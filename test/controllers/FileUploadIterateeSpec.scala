@@ -42,7 +42,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     /**
      * Implementation of FileUploadIteratee for testing, avoiding using the database
      */
-    class TestIteratee extends FileUploadIteratee {
+    class TestIteratee(appendSucceeds: Boolean = true) extends FileUploadIteratee {
 
       // store the upload as TestUpload to avoid need for downcasting
       var currentUpload: Option[TestUpload] = None
@@ -55,8 +55,10 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
 
       def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
-        currentUpload = Some(upload.asInstanceOf[TestUpload].upload(chunk))
-        currentUpload
+        if (appendSucceeds) {
+          currentUpload = Some(upload.asInstanceOf[TestUpload].upload(chunk))
+          currentUpload
+        } else None
       }
 
       def uploadedData: Array[Byte] = currentUpload.map(_.data).orNull
@@ -68,7 +70,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       val userId = 1l
       val guid = UUID.randomUUID
-      val uploadIteratee = new TestIteratee
+      val uploadIteratee: TestIteratee
 
       def input = new ByteArrayInputStream(chunk)
 
@@ -81,9 +83,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         val resultPromise = for {
           doneIt <- enumerator(uploadIteratee.store(userId, guid, request))
           result: Either[Result, OverviewUpload] <- doneIt.run
-        } yield result 
+        } yield result
         resultPromise.await.get
       }
+    }
+
+    trait GoodUpload extends UploadContext {
+      val uploadIteratee = new TestIteratee
+    }
+
+    trait FailingUpload extends UploadContext {
+      val uploadIteratee = new TestIteratee(appendSucceeds = false)
     }
 
     trait GoodHeader {
@@ -105,7 +115,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     trait InProgressHeader {
-  
+
       def request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
@@ -115,25 +125,27 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
     }
 
-    trait SingleChunk extends UploadContext {
+    trait SingleChunk {
+      self: UploadContext =>
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
     }
 
-    trait MultipleChunks extends UploadContext {
+    trait MultipleChunks {
+      self: UploadContext =>
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
-    "process Enumerator with one chunk only" in new SingleChunk with GoodHeader {
+    "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "process Enumerator with multiple chunks" in new MultipleChunks with GoodHeader {
+    "process Enumerator with multiple chunks" in new GoodUpload with MultipleChunks with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "truncate upload if restarted at byte 0" in new SingleChunk with GoodHeader {
+    "truncate upload if restarted at byte 0" in new GoodUpload with SingleChunk with GoodHeader {
       val initialUpload = upload
       val restartedUpload = upload
 
@@ -141,21 +153,24 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "return BAD_REQUEST if headers are bad" in new SingleChunk with BadHeader {
+    "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
 
-    "return BAD_REQUEST if CONTENT_RANGE starts at the wrong byte" in new SingleChunk with InProgressHeader {
+    "return BAD_REQUEST if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", 1000)
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
-    
-    "return Upload on valid restart" in new SingleChunk with InProgressHeader {
-       val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000).get
-       uploadIteratee.appendChunk(initialUpload, chunk)
-       
-       result must beRight.like { case u => u.bytesUploaded must be equalTo(200) }
-      
+
+    "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
+      val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000).get
+      uploadIteratee.appendChunk(initialUpload, chunk)
+
+      result must beRight.like { case u => u.bytesUploaded must be equalTo (200) }
+    }
+
+    "return INTERNAL_SERVER_ERROR if error occurs during upload" in new FailingUpload with MultipleChunks with GoodHeader {
+      result must beLeft.like { case r => status(r) must be equalTo (INTERNAL_SERVER_ERROR)}
     }
   }
 }

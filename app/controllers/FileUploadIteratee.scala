@@ -74,7 +74,7 @@ trait FileUploadIteratee {
       .getOrElse(createUpload(userId, guid, request.filename, request.contentLength).toRight(InternalServerError))
 
     Iteratee.fold(initialUpload) { (upload, chunk) =>
-      upload.right.map(appendChunk(_, chunk).get)
+      upload.right.flatMap(u => appendChunk(u, chunk).toRight(InternalServerError))
     }
   }
 
