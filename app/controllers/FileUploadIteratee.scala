@@ -1,13 +1,10 @@
 package controllers
 
 import java.util.UUID
-
 import org.postgresql.PGConnection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
-
 import com.jolbox.bonecp.ConnectionHandle
-
 import models.orm.SquerylPostgreSqlAdapter
 import models.upload.LO
 import models.upload.OverviewUpload
@@ -15,50 +12,59 @@ import play.api.db.DB
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
-import play.api.mvc.Results.InternalServerError
+import play.api.mvc.Results.{ BadRequest, InternalServerError }
 import play.api.Play.current
+import play.api.libs.iteratee.Done
+import play.api.libs.iteratee.Input
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
  * is in sync with the LargeObject where the file is stored.
  */
 trait FileUploadIteratee {
-  
+
   /** package for information extracted from request header */
   private case class UploadInfo(filename: String, start: Long, contentLength: Long)
 
   /** extract useful information from request header */
   private object UploadInfo {
     def apply(header: RequestHeader): Option[UploadInfo] = {
+      def defaultContentRange(length: String) = "0-%1$s/%1$s".format(length)
+      
       for {
-        contentDisposition <- header.headers.get("CONTENT-DISPOSITION") 
+        contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
         contentLength <- header.headers.get("CONTENT-LENGTH")
+        contentRange <- header.headers.get("CONTENT-RANGE").orElse(Some(defaultContentRange(contentLength)))
       } yield {
         val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
         val disposition(filename) = contentDisposition
-        UploadInfo(filename, 0, contentLength.toLong)
+        val range = """(\d+)-(\d+)/\d+""".r
+        val range(start, end) = contentRange
+        UploadInfo(filename, start.toLong, contentLength.toLong)
       }
     }
   }
-  
+
   /**
    * Checks the validity of the requests and processes the upload.
    */
   def store(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+	
+    val uploadInfo = UploadInfo(requestHeader).toRight(BadRequest)
 
-    val upload = UploadInfo(requestHeader).flatMap { r =>
-      findUpload(userId, guid).map { u =>
-      	if (r.start == 0) u.truncate
-      	else u
-      }.orElse(createUpload(userId, guid, r.filename, r.contentLength))
-    }
-    
-    Iteratee.fold[Array[Byte], Option[OverviewUpload]](upload) { (upload, chunk) =>
-      upload.flatMap(appendChunk(_, chunk))
-    } mapDone {
-      case Some(upload) => Right(upload)
-      case None => Left(InternalServerError)  // Result of error when accessing database
-    }
+    uploadInfo.fold(
+      r => Done(Left(r), Input.Empty),
+      info => {
+        val upload = findUpload(userId, guid).orElse(createUpload(userId, guid, info.filename, info.contentLength))
+        val validUpload = upload.map(u =>
+          if (info.start == 0) u.truncate
+          else u
+        ).toRight(InternalServerError)
+
+        Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](validUpload) { (upload, chunk) =>
+          upload.right.map(appendChunk(_, chunk).get)
+        }
+      })
   }
 
   // Find an existing upload attempt
@@ -70,7 +76,6 @@ trait FileUploadIteratee {
   // process a chunk of file data. @return the current OverviewUpload status, or None on failure	  
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload]
 }
-
 
 /** Implementation that writes to database */
 object FileUploadIteratee extends FileUploadIteratee {
@@ -90,7 +95,7 @@ object FileUploadIteratee extends FileUploadIteratee {
    * enables us to get a hold of a PGConnection.
    * DB.withConnection gives us a Play AutoCleanConnection, which we can't cast.
    * DB.getConnection gives us a BoneCP ConnectionHandle, which can
-   * be converted to the PGConnection we need for dealing with Postgres 
+   * be converted to the PGConnection we need for dealing with Postgres
    * LargeObjects.
    */
   private def withPgConnection[A](f: PGConnection => A) = {
@@ -103,7 +108,7 @@ object FileUploadIteratee extends FileUploadIteratee {
         val pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
 
         val r = f(pgConnection)
-        connection.commit      // simply closing the connection does not seem to commit the transaction.
+        connection.commit // simply closing the connection does not seem to commit the transaction.
         r
       }
     } finally {

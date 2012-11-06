@@ -3,18 +3,20 @@ package controllers
 import java.io.ByteArrayInputStream
 import java.sql.Timestamp
 import java.util.UUID
-import models.upload.OverviewUpload
+import scala.Array.canBuildFrom
+import scala.util.Random
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import models.upload.OverviewUpload
 import play.api.libs.concurrent.Promise
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.iteratee.Iteratee
+import play.api.mvc.RequestHeader
 import play.api.mvc.Result
-import scala.util.Random
 import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
-import play.api.mvc.RequestHeader
+import play.api.test.Helpers._
+import scala.Either.LeftProjection
 
 class FileUploadIterateeSpec extends Specification with Mockito {
 
@@ -33,7 +35,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
 
       def save: TestUpload = this
-      def truncate: TestUpload = { println("truvn"); this.copy(bytesUploaded = 0, data = Array[Byte]()) }
+      def truncate: TestUpload = { this.copy(bytesUploaded = 0, data = Array[Byte]()) }
 
     }
 
@@ -82,7 +84,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         } yield result
     }
 
-    trait GoodHeaders {
+    trait GoodHeader {
       self: UploadContext =>
       def request: RequestHeader = {
         val r = mock[RequestHeader]
@@ -95,7 +97,14 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def upload: OverviewUpload = resultPromise.await.get.right.get
     }
-    
+
+    trait BadHeader {
+      self: UploadContext =>
+      def request: RequestHeader = FakeRequest()
+
+      def result = resultPromise.await.get
+    }
+
     trait SingleChunk extends UploadContext {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
     }
@@ -104,22 +113,26 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
-    "process Enumerator with one chunk only" in new SingleChunk with GoodHeaders {
+    "process Enumerator with one chunk only" in new SingleChunk with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "process Enumerator with multiple chunks" in new MultipleChunks with GoodHeaders {
+    "process Enumerator with multiple chunks" in new MultipleChunks with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
-    "truncate upload if restarted at byte 0" in new SingleChunk with GoodHeaders {
+    "truncate upload if restarted at byte 0" in new SingleChunk with GoodHeader {
       val initialUpload = upload
       val restartedUpload = upload
 
       restartedUpload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
+    }
+
+    "return BAD_REQUEST if headers are bad" in new SingleChunk with BadHeader {
+      result must beLeft.like { case r => status(r) must be equalTo(BAD_REQUEST) }
     }
 
   }
