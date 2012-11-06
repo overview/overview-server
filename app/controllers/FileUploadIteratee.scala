@@ -1,21 +1,25 @@
 package controllers
 
 import java.util.UUID
+
 import org.postgresql.PGConnection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
+
 import com.jolbox.bonecp.ConnectionHandle
+
 import models.orm.SquerylPostgreSqlAdapter
 import models.upload.LO
 import models.upload.OverviewUpload
 import play.api.db.DB
+import play.api.libs.iteratee.Done
+import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
-import play.api.mvc.Results.{ BadRequest, InternalServerError }
+import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.InternalServerError
 import play.api.Play.current
-import play.api.libs.iteratee.Done
-import play.api.libs.iteratee.Input
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -24,11 +28,11 @@ import play.api.libs.iteratee.Input
 trait FileUploadIteratee {
 
   /** package for information extracted from request header */
-  private case class UploadInfo(filename: String, start: Long, contentLength: Long)
+  private case class UploadRequest(filename: String, start: Long, contentLength: Long)
 
   /** extract useful information from request header */
-  private object UploadInfo {
-    def apply(header: RequestHeader): Option[UploadInfo] = {
+  private object UploadRequest {
+    def apply(header: RequestHeader): Option[UploadRequest] = {
       def defaultContentRange(length: String) = "0-%1$s/%1$s".format(length)
 
       for {
@@ -40,7 +44,7 @@ trait FileUploadIteratee {
         val disposition(filename) = contentDisposition
         val range = """(\d+)-(\d+)/\d+""".r
         val range(start, end) = contentRange
-        UploadInfo(filename, start.toLong, contentLength.toLong)
+        UploadRequest(filename, start.toLong, contentLength.toLong)
       }
     }
   }
@@ -50,9 +54,9 @@ trait FileUploadIteratee {
    */
   def store(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
 
-    val uploadInfo = UploadInfo(requestHeader).toRight(BadRequest)
+    val uploadRequest = UploadRequest(requestHeader).toRight(BadRequest)
 
-    uploadInfo.fold(
+    uploadRequest.fold(
       errorStatus => Done(Left(errorStatus), Input.Empty),
       info => handleUploadRequest(userId, guid, info))
   }
@@ -63,9 +67,9 @@ trait FileUploadIteratee {
    * error is encountered, but will not ignore the data received after the
    * error occurs.
    */
-  private def handleUploadRequest(userId: Long, guid: UUID, info: UploadInfo): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
-    val initialUpload = findValidUploadRestart(userId, guid, info)
-      .getOrElse(createUpload(userId, guid, info.filename, info.contentLength).toRight(InternalServerError))
+  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+    val initialUpload = findValidUploadRestart(userId, guid, request)
+      .getOrElse(createUpload(userId, guid, request.filename, request.contentLength).toRight(InternalServerError))
 
     Iteratee.fold(initialUpload) { (upload, chunk) =>
       upload.right.map(appendChunk(_, chunk).get)
@@ -78,7 +82,7 @@ trait FileUploadIteratee {
    * an error status if request is invalid or the valid OverviewUpload.
    * If start is 0, any previously uploaded data is truncated.
    */
-  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadInfo): Option[Either[Result, OverviewUpload]] =
+  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] =
     findUpload(userId, guid).map(u =>
       info.start match {
         case 0 => Right(u.truncate)
