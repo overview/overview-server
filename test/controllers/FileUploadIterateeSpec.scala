@@ -77,11 +77,13 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def request: RequestHeader
       // Drive the iteratee with the enumerator to generate a result
-      def resultPromise: Promise[Either[Result, OverviewUpload]] =
-        for {
+      def result: Either[Result, OverviewUpload] = {
+        val resultPromise = for {
           doneIt <- enumerator(uploadIteratee.store(userId, guid, request))
           result: Either[Result, OverviewUpload] <- doneIt.run
-        } yield result
+        } yield result 
+        resultPromise.await.get
+      }
     }
 
     trait GoodHeader {
@@ -95,19 +97,15 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         r
       }
 
-      def upload: OverviewUpload = resultPromise.await.get.right.get
+      def upload: OverviewUpload = result.right.get
     }
 
     trait BadHeader {
-      self: UploadContext =>
       def request: RequestHeader = FakeRequest()
-
-      def result = resultPromise.await.get
     }
 
     trait InProgressHeader {
-      self: UploadContext =>
-
+  
       def request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
@@ -115,7 +113,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
           (CONTENT_LENGTH, Seq("1000")),
           (CONTENT_RANGE, Seq("100-199/1000"))))
       }
-      def result = resultPromise.await.get
     }
 
     trait SingleChunk extends UploadContext {
@@ -151,6 +148,14 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     "return BAD_REQUEST if CONTENT_RANGE starts at the wrong byte" in new SingleChunk with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", 1000)
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+    }
+    
+    "return Upload on valid restart" in new SingleChunk with InProgressHeader {
+       val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000).get
+       uploadIteratee.appendChunk(initialUpload, chunk)
+       
+       result must beRight.like { case u => u.bytesUploaded must be equalTo(200) }
+      
     }
   }
 }
