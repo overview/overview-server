@@ -12,6 +12,7 @@ import models.orm.SquerylPostgreSqlAdapter
 import models.upload.LO
 import models.upload.OverviewUpload
 import play.api.db.DB
+import play.api.http.HeaderNames._
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
@@ -36,9 +37,9 @@ trait FileUploadIteratee {
       def defaultContentRange(length: String) = "0-%1$s/%1$s".format(length)
 
       for {
-        contentDisposition <- header.headers.get("CONTENT-DISPOSITION")
-        contentLength <- header.headers.get("CONTENT-LENGTH")
-        contentRange <- header.headers.get("CONTENT-RANGE").orElse(Some(defaultContentRange(contentLength)))
+        contentDisposition <- header.headers.get(CONTENT_DISPOSITION)
+        contentLength <- header.headers.get(CONTENT_LENGTH)
+        contentRange <- header.headers.get(CONTENT_RANGE).orElse(Some(defaultContentRange(contentLength)))
       } yield {
         val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
         val disposition(filename) = contentDisposition
@@ -58,7 +59,7 @@ trait FileUploadIteratee {
 
     uploadRequest.fold(
       errorStatus => Done(Left(errorStatus), Input.Empty),
-      info => handleUploadRequest(userId, guid, info))
+      request => handleUploadRequest(userId, guid, request))
   }
 
   /**
