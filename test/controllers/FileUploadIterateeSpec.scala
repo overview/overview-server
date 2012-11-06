@@ -125,6 +125,15 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
     }
 
+    trait MalformedHeader {
+      def request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(Map(
+          (CONTENT_DISPOSITION, Seq("attachement;filename=foo.bar")),
+          (CONTENT_LENGTH, Seq("Bad Field"))))
+      }
+    }
+
     trait SingleChunk {
       self: UploadContext =>
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
@@ -170,7 +179,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return INTERNAL_SERVER_ERROR if error occurs during upload" in new FailingUpload with MultipleChunks with GoodHeader {
-      result must beLeft.like { case r => status(r) must be equalTo (INTERNAL_SERVER_ERROR)}
+      result must beLeft.like { case r => status(r) must be equalTo (INTERNAL_SERVER_ERROR) }
+    }
+
+    "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {
+      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
   }
 }

@@ -21,6 +21,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.Play.current
+import scala.util.control.Exception._
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -34,20 +35,18 @@ trait FileUploadIteratee {
   /** extract useful information from request header */
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
-      def defaultContentRange(length: String) = "0-%1$s/%1$s".format(length)
+      def defaultContentRange(length: String) = Some("0-%1$s/%1$s".format(length))
+
+      val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
+val range = """(\d+)-(\d+)/\d+""".r // start-end/length
 
       for {
-        contentDisposition <- header.headers.get(CONTENT_DISPOSITION)
+        contentDisposition <- header.headers.get(CONTENT_DISPOSITION)       
         contentLength <- header.headers.get(CONTENT_LENGTH)
-      } yield {
-        val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
-        val disposition(filename) = contentDisposition
-
-        val contentRange = header.headers.get(CONTENT_RANGE).getOrElse(defaultContentRange(contentLength))
-        val range = """(\d+)-(\d+)/\d+""".r // start-end/length
-        val range(start, end) = contentRange
-        UploadRequest(filename, start.toLong, contentLength.toLong)
-      }
+        contentRange <- header.headers.get(CONTENT_RANGE).orElse(defaultContentRange(contentLength))
+        disposition(filename) <- disposition findFirstIn contentDisposition
+        range(start, end) <- range findFirstIn contentRange
+      } yield UploadRequest(filename, start.toLong, contentLength.toLong)
     }
   }
 
