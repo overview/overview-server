@@ -5,6 +5,10 @@
 )(implicit lang: Lang, flash: Flash)
 
 @javascripts = {
+  <!--[if IE 9]>
+    @bundleJavascript("silverlight-upload-request")
+  <![endif]-->
+
   @bundleJavascript("document-set-index")
 }
 
