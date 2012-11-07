@@ -1,3 +1,4 @@
+extend = jQuery.extend
 Deferred = jQuery.Deferred
 ajax = jQuery.ajax
 md5 = CryptoJS.MD5
@@ -79,13 +80,26 @@ class Upload
   #     file: an HTML5 File object
   #     url_prefix: String. For instance, `http://example.org/upload/` will
   #                 send files to `http://example.org/upload/__uuid__`.
-  constructor: (@file, url_prefix) ->
+  #     options: Key/value pairs including these:
+  #       xhr_factory: function that accepts an "upload-progress" callback of
+  #                    signature function(bytes_loaded, bytes_total) and returns
+  #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
+  constructor: (@file, url_prefix, options={}) ->
     @url = url_prefix + this._generate_uuid()
     @state = states.WAITING
     # bytes_uploaded is accurate when leaving STARTING and entering UPLOADING.
     # We send a computed `loaded` variable when notifying progress() callbacks
     # while UPLOADING.
     @bytes_uploaded = 0
+
+    @options = extend({
+      xhr_factory: (callback) ->
+        xhr = new XMLHttpRequest()
+        xhr.upload.addEventListener 'progress', (e) ->
+          callback(e.loaded, e.total)
+        xhr
+
+    }, options)
 
     # Copy jQuery's Deferred interface
     @deferred = new Deferred()
@@ -184,7 +198,7 @@ class Upload
           this._set_state(states.UPLOADING)
       else
         # Failed! Retry
-        console.log("Error! Retrying. jqxhr: ", jqxhr)
+        console.log("Error during upload. Retrying. jqxhr: ", jqxhr)
         this._cancel_jqxhr('starting_jqxhr')
         this._waiting_to_starting()
 
@@ -213,11 +227,9 @@ class Upload
     jqxhr = undefined
 
     create_xhr = () =>
-      xhr = new XMLHttpRequest()
-      xhr.upload.addEventListener 'progress', (e) =>
+      @options.xhr_factory (loaded, total) =>
         return if !jqxhr? or jqxhr isnt @uploading_jqxhr
-        @deferred.notify({ state: 'uploading', loaded: @bytes_uploaded + e.loaded, total: @file.size })
-      xhr
+        @deferred.notify({ state: 'uploading', loaded: loaded, total: total })
 
     @uploading_jqxhr = ajax({
       url: @url
