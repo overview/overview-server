@@ -116,12 +116,28 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
+          (CONTENT_RANGE, Seq("0-999/1000")),
           (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
           (CONTENT_LENGTH, Seq("1000"))))
 
         r
       }
 
+      def upload: OverviewUpload = result.right.get
+    }
+
+    trait MsHackHeader {
+      self: UploadContext =>
+      def request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(Map(
+          ("X-MSHACK-Content-Range", Seq("0-999/1000")),
+          (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
+          (CONTENT_LENGTH, Seq("1000"))))
+
+        r
+      }
+      
       def upload: OverviewUpload = result.right.get
     }
 
@@ -175,6 +191,10 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       restartedUpload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
+    }
+
+    "use X-MSHACK-Content-Range if Content-Range header not specified" in new GoodUpload with SingleChunk with MsHackHeader {
+      upload.bytesUploaded must be equalTo (chunk.size)
     }
 
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {

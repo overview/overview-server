@@ -27,22 +27,22 @@ import java.sql.SQLException
  * is in sync with the LargeObject where the file is stored.
  */
 trait FileUploadIteratee {
-
+  private def X_MSHACK_CONTENT_RANGE: String = "X-MSHACK-Content-Range"
+    
   /** package for information extracted from request header */
   private case class UploadRequest(filename: String, start: Long, contentLength: Long)
 
   /** extract useful information from request header */
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
-      def defaultContentRange(length: String) = Some("0-%1$s/%1$s".format(length))
-
+      
       val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
       val range = """(\d+)-(\d+)/\d+""".r // start-end/length
 
       for {
         contentDisposition <- header.headers.get(CONTENT_DISPOSITION)
         contentLength <- header.headers.get(CONTENT_LENGTH)
-        contentRange <- header.headers.get(CONTENT_RANGE).orElse(defaultContentRange(contentLength))
+        contentRange <- header.headers.get(CONTENT_RANGE).orElse(header.headers.get(X_MSHACK_CONTENT_RANGE))
         disposition(filename) <- disposition findFirstIn contentDisposition
         range(start, end) <- range findFirstIn contentRange
       } yield UploadRequest(filename, start.toLong, contentLength.toLong)
