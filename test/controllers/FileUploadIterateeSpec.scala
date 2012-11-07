@@ -36,7 +36,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def save: TestUpload = this
       def truncate: TestUpload = { this.copy(bytesUploaded = 0, data = Array[Byte]()) }
-
+      def delete {}
     }
 
     /**

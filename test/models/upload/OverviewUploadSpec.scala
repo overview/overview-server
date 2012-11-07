@@ -5,13 +5,13 @@ import java.sql.Timestamp
 import java.util.UUID._
 import models.OverviewUser
 import org.specs2.mutable.Specification
-import play.api.Play.{start, stop}
+import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 class OverviewUploadSpec extends Specification {
 
   step(start(FakeApplication()))
-  
+
   "OverviewUpload" should {
 
     trait UploadContext extends PgConnectionContext {
@@ -21,52 +21,61 @@ class OverviewUploadSpec extends Specification {
       val chunk: Array[Byte] = Array(0x12, 0x13, 0x14)
       var userId = 1l
     }
-    
+
     "be created with 0 size uploaded" in new UploadContext {
       LO.withLargeObject { lo =>
-	val before = new Timestamp(System.currentTimeMillis)
-	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+        val before = new Timestamp(System.currentTimeMillis)
+        val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
 
-	upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
-	upload.bytesUploaded must be equalTo(0)
-	upload.contentsOid must be equalTo(lo.oid)
+        upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
+        upload.bytesUploaded must be equalTo (0)
+        upload.contentsOid must be equalTo (lo.oid)
       }
     }
 
     "update bytesUploaded" in new UploadContext {
       LO.withLargeObject { lo =>
-	val before = new Timestamp(System.currentTimeMillis)
-	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+        val before = new Timestamp(System.currentTimeMillis)
+        val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
 
-	val uploadedSize = lo.add(chunk)
+        val uploadedSize = lo.add(chunk)
 
-	val updateTime = new Timestamp(System.currentTimeMillis)
-	val updatedUpload = upload.withUploadedBytes(uploadedSize)
-	
-	updatedUpload.lastActivity.compareTo(updateTime) must beGreaterThanOrEqualTo(0)
-	updatedUpload.bytesUploaded must be equalTo(uploadedSize)
+        val updateTime = new Timestamp(System.currentTimeMillis)
+        val updatedUpload = upload.withUploadedBytes(uploadedSize)
+
+        updatedUpload.lastActivity.compareTo(updateTime) must beGreaterThanOrEqualTo(0)
+        updatedUpload.bytesUploaded must be equalTo (uploadedSize)
       }
     }
 
     "be saveable and findable by (userid, guid)" in new UploadContext {
       LO.withLargeObject { lo =>
-	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
-	upload.save
+        val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+        upload.save
       }
 
       val found = OverviewUpload.find(userId, guid)
       found must beSome
     }
 
+    "be deleted" in new UploadContext {
+      LO.withLargeObject { lo =>
+      	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+      	upload.save
+      	upload.delete
+      }
+      
+OverviewUpload.find(userId, guid) must beNone
+    }
 
     "truncate large object" in new UploadContext {
       LO.withLargeObject { lo =>
-	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid).withUploadedBytes(234)
-	val truncatedUpload = upload.truncate
-	truncatedUpload.bytesUploaded must be equalTo(0)
+        val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid).withUploadedBytes(234)
+        val truncatedUpload = upload.truncate
+        truncatedUpload.bytesUploaded must be equalTo (0)
       }
     }
-    
+
   }
 
   step(stop)
