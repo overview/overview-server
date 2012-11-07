@@ -49,8 +49,9 @@ trait BundleCompiler {
     *         not exist.
     */
   private def needToRecompile(source: File, destination: File) : Boolean = {
+    val canonicalSource = source.getCanonicalFile
     // if destination does not exist, lastModified = 0L
-    source.lastModified > destination.lastModified
+    canonicalSource.lastModified > destination.lastModified
   }
 
   /**
