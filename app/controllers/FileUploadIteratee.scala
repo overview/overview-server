@@ -37,16 +37,15 @@ trait FileUploadIteratee {
     def apply(header: RequestHeader): Option[UploadRequest] = {
       
       val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
-      val range = """(\d+)-(\d+)/\d+""".r // start-end/length
+      val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
 
       val headers = header.headers
       for {
         contentDisposition <- headers.get(CONTENT_DISPOSITION)
-        contentLength <- headers.get(CONTENT_LENGTH)
         contentRange <- headers.get(CONTENT_RANGE).orElse(headers.get(X_MSHACK_CONTENT_RANGE))
         disposition(filename) <- disposition findFirstIn contentDisposition
-        range(start, end) <- range findFirstIn contentRange
-      } yield UploadRequest(filename, start.toLong, contentLength.toLong)
+        range(start, end, length) <- range findFirstIn contentRange
+      } yield UploadRequest(filename, start.toLong, length.toLong)
     }
   }
 

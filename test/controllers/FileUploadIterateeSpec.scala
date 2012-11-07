@@ -154,9 +154,9 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
-          ("X-MSHACK-Content-Range", Seq("0-29/50")),
+          ("Content-Range", Seq("0-29/50")),
           (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("30"))))
+          (CONTENT_LENGTH, Seq("100"))))
 
         r
       }     
