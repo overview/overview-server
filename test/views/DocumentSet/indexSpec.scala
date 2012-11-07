@@ -30,10 +30,9 @@ class indexSpec extends Specification {
       $("ul.document-sets").length must equalTo(0)
     }
 
-    "Show a form for adding a new document set" in new ViewContext {
+    "Show forms for adding new document sets" in new ViewContext {
       $("form").length must equalTo(5)
       $("input[name=query]").length must equalTo(4)
-      $("input[type=submit]").length must equalTo(1)
     }
 
     "Show links to DocumentSets if there are some" in new ViewContext {
