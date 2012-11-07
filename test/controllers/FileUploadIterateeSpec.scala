@@ -17,6 +17,7 @@ import play.api.test.FakeHeaders
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.Either.LeftProjection
+import java.sql.SQLException
 
 class FileUploadIterateeSpec extends Specification with Mockito {
 
@@ -42,7 +43,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     /**
      * Implementation of FileUploadIteratee for testing, avoiding using the database
      */
-    class TestIteratee(appendSucceeds: Boolean = true) extends FileUploadIteratee {
+    class TestIteratee(appendSucceeds: Boolean = true, throwOnCancel: Boolean = false) extends FileUploadIteratee {
 
       // store the upload as TestUpload to avoid need for downcasting
       var currentUpload: Option[TestUpload] = None
@@ -58,8 +59,10 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
 
       def cancelUpload(upload: OverviewUpload) {
-        currentUpload = None
-        uploadCancelled = true
+        if (!throwOnCancel) {
+          currentUpload = None
+          uploadCancelled = true
+        } else throw new SQLException()
       }
 
       def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
@@ -102,6 +105,10 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
     trait FailingUpload extends UploadContext {
       val uploadIteratee = new TestIteratee(appendSucceeds = false)
+    }
+
+    trait FailingCancel extends UploadContext {
+      val uploadIteratee = new TestIteratee(throwOnCancel = true)
     }
 
     trait GoodHeader {
@@ -181,6 +188,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       uploadIteratee.uploadCancelled must beTrue
     }
 
+    "not throw exception if cancel fails" in new FailingCancel with SingleChunk with InProgressHeader {
+      uploadIteratee.createUpload(userId, guid, "foo", 1000)
+
+      result must not(throwA[SQLException])
+    }
+
     "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
       val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000).get
       uploadIteratee.appendChunk(initialUpload, chunk)
@@ -195,5 +208,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
+
   }
 }

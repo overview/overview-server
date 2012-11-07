@@ -20,6 +20,7 @@ import play.api.mvc.Results.InternalServerError
 import play.api.Play.current
 import scala.util.control.Exception._
 import org.apache.commons.lang.NotImplementedException
+import java.sql.SQLException
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -87,7 +88,7 @@ trait FileUploadIteratee {
         case 0 => Right(u.truncate)
         case n if n == u.bytesUploaded => Right(u)
         case _ => {
-          cancelUpload(u)
+          ignoring(classOf[SQLException]) { cancelUpload(u) } 
           Left(BadRequest)
         }
       })
@@ -118,9 +119,11 @@ object FileUploadIteratee extends FileUploadIteratee {
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
-  def cancelUpload(upload: OverviewUpload) {
-    throw new NotImplementedException()
+  def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
+    LO.delete(upload.contentsOid)
+    upload.delete
   }
+
   /**
    * Duplicates functionality in TransactionActionController, but in a way that
    * enables us to get a hold of a PGConnection.
