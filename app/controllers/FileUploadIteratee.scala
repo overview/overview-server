@@ -36,7 +36,7 @@ trait FileUploadIteratee {
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
       
-      val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
+      val disposition = """[^=]*=\\?"?([^"\\]*)\\?"?""".r // attachment ; filename="foo.bar" (optional quotes) 
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
 
       val headers = header.headers
