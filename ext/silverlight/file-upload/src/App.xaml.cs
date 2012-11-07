@@ -24,8 +24,8 @@ namespace OverviewProject.FileUpload {
     }
 
     private void Application_UnhandledException(object sender, ApplicationUnhandledExceptionEventArgs e) {
-      MessageBox.Show("Exception!");
-      MessageBox.Show(e.ExceptionObject.Message);
+      MessageBox.Show("Exception! " + e.ExceptionObject);
+      e.Handled = true;
     }
   }
 }

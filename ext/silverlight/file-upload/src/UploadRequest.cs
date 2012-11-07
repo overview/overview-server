@@ -168,7 +168,6 @@ namespace OverviewProject.FileUpload {
         }
       } catch (Exception e) {
         OnFailed(e);
-        throw;
       }
     }
 
@@ -187,7 +186,6 @@ namespace OverviewProject.FileUpload {
         }
       } catch (Exception e) {
         OnFailed(e);
-        throw;
       }
     }
 #endregion
