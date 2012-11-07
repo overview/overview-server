@@ -27,6 +27,10 @@ case class Upload(
     }
     this
   }
+  
+  def delete {
+    Schema.uploads.deleteWhere(u => u.userId === userId and u.guid === guid)
+  }
 }
 
 

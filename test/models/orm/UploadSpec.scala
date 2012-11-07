@@ -19,11 +19,11 @@ class UploadSpec extends Specification {
       val timestamp = new Timestamp(System.currentTimeMillis)
       val user = User()
       var upload: Upload = _
-      
+
       override def setupWithDb = {
         Schema.users.insert(user)
-	upload = Upload(0l, user.id, uploadId, timestamp, "file", 0, 100, 0)
-	upload.save   
+        upload = Upload(0l, user.id, uploadId, timestamp, "file", 0, 100, 0)
+        upload.save
       }
     }
 
@@ -36,10 +36,16 @@ class UploadSpec extends Specification {
 
     "be findable by UUID and user_id" in new UploadContext {
       val foundUpload = Upload.findUserUpload(user.id, uploadId)
-      
+
       foundUpload must beSome
     }
-
+    
+    "be deleted" in new UploadContext {
+      upload.delete
+      val notFound = Upload.findUserUpload(user.id, uploadId)
+      
+      notFound must beNone
+    }
 
   }
 
