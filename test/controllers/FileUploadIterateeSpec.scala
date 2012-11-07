@@ -24,7 +24,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
   "FileUploadIteratee" should {
 
     /** OverviewUpload implementation that stores data in an attribute */
-    case class TestUpload(userId: Long, guid: UUID, val bytesUploaded: Long, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
+    case class TestUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
       val lastActivity: Timestamp = new Timestamp(0)
       val contentsOid: Long = 1l
 
@@ -54,7 +54,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
         uploadCancelled = false
-        currentUpload = Some(TestUpload(userId, guid, 0l))
+        currentUpload = Some(TestUpload(userId, guid, 0l, contentLength))
         currentUpload
       }
 
@@ -99,6 +99,14 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
     }
 
+    // The tests specify:
+    // - an Iteratee, that reacts in certain ways
+    // - headers, different well-formed headers, as well as bad ones
+    // - an enumarator that generates the data in different ways
+    // Tests are setup by mixing traits that provide these three components
+    // in different combinations
+    
+    // Iteraratees
     trait GoodUpload extends UploadContext {
       val uploadIteratee = new TestIteratee
     }
@@ -111,6 +119,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       val uploadIteratee = new TestIteratee(throwOnCancel = true)
     }
 
+    // Headers
     trait GoodHeader {
       self: UploadContext =>
       def request: RequestHeader = {
@@ -118,7 +127,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         r.headers returns FakeHeaders(Map(
           (CONTENT_RANGE, Seq("0-999/1000")),
           (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("1000"))))
+          (CONTENT_LENGTH, Seq("100"))))
 
         r
       }
@@ -133,12 +142,24 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         r.headers returns FakeHeaders(Map(
           ("X-MSHACK-Content-Range", Seq("0-999/1000")),
           (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("1000"))))
+          (CONTENT_LENGTH, Seq("100"))))
 
         r
       }
       
       def upload: OverviewUpload = result.right.get
+    }
+    
+    trait ShortUploadHeader {
+      def request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(Map(
+          ("X-MSHACK-Content-Range", Seq("0-29/50")),
+          (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
+          (CONTENT_LENGTH, Seq("30"))))
+
+        r
+      }     
     }
 
     trait BadHeader {
@@ -151,7 +172,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
           (CONTENT_DISPOSITION, Seq("attachement;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("1000")),
+          (CONTENT_LENGTH, Seq("100")),
           (CONTENT_RANGE, Seq("100-199/1000"))))
       }
     }
@@ -161,10 +182,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(Map(
           (CONTENT_DISPOSITION, Seq("attachement;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("Bad Field"))))
+          (CONTENT_RANGE, Seq("Bad Field"))))
       }
     }
 
+    
+    // Enumerators
     trait SingleChunk {
       self: UploadContext =>
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
@@ -175,6 +198,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
+    
     "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
@@ -228,6 +252,9 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
-
+    
+    "return BAD_REQUEST if upload is longer than expected" in new GoodUpload with SingleChunk with ShortUploadHeader {
+      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+    }
   }
 }

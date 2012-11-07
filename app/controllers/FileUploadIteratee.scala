@@ -73,10 +73,18 @@ trait FileUploadIteratee {
       .getOrElse(createUpload(userId, guid, request.filename, request.contentLength).toRight(InternalServerError))
 
     Iteratee.fold(initialUpload) { (upload, chunk) =>
-      upload.right.flatMap(u => appendChunk(u, chunk).toRight(InternalServerError))
+      val validUpload = upload.right.flatMap(validUploadWithChunk(_, chunk).toRight(BadRequest))
+      validUpload.right.flatMap(appendChunk(_, chunk).toRight(InternalServerError))
     }
   }
 
+  /**
+   * If adding the chunk to the upload does not exceed the expected
+   * size of the upload, @return Some(upload), None otherwise
+   */
+  private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = 
+    Some(upload).filter(u => u.bytesUploaded + chunk.size <= u.size)
+    
   /**
    * If the upload exists, verify the validity of the restart.
    * @return None if upload does not exist, otherwise an Either containing
