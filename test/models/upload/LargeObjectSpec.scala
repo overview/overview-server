@@ -2,8 +2,8 @@ package models.upload
 
 import helpers.PgConnectionContext
 import org.postgresql.util.PSQLException
-import org.specs2.mutable.{Around, Specification}
-import play.api.Play.{current, start, stop}
+import org.specs2.mutable.{ Around, Specification }
+import play.api.Play.{ current, start, stop }
 import play.api.test.FakeApplication
 
 class LargeObjectSpec extends Specification {
@@ -14,13 +14,13 @@ class LargeObjectSpec extends Specification {
 
     trait LoContext extends PgConnectionContext {
       var oid: Long = _
-      
+
       override def setupWithDb = {
-	oid = LO.withLargeObject { _.oid }.get
+        oid = LO.withLargeObject { _.oid }.get
       }
 
       def addData(data: Array[Byte]): Long = {
-	LO.withLargeObject(oid) { _.add(data) }.get
+        LO.withLargeObject(oid) { _.add(data) }.get
       }
     }
 
@@ -40,34 +40,33 @@ class LargeObjectSpec extends Specification {
 
     "add data" in new LoContext {
       val data = Array[Byte](1, 2, 3, 4)
-      
+
       LO.withLargeObject(oid) { largeObject =>
-	val size = largeObject.add(data)
-	size must be equalTo(data.size)
+        val size = largeObject.add(data)
+        size must be equalTo (data.size)
       }
 
-
       LO.withLargeObject(oid) { largeObject =>
-	val readData = largeObject.read(10)
-	readData must be equalTo(data)
+        val readData = largeObject.read(10)
+        readData must be equalTo (data)
       }
     }
 
     "append data" in new LoContext {
       val allData = Array[Byte](1, 2, 3, 4, 5, 6, 7, 8)
-      addData(allData.take(4)) must be equalTo(4)
-      addData(allData.drop(4)) must be equalTo(8)
+      addData(allData.take(4)) must be equalTo (4)
+      addData(allData.drop(4)) must be equalTo (8)
 
-      LO.withLargeObject(oid) { _.read(10) must be equalTo(allData) }
+      LO.withLargeObject(oid) { _.read(10) must be equalTo (allData) }
     }
 
     "truncate the stored data" in new LoContext {
       val data = Array[Byte](1, 2, 3, 4)
-      addData(data) must be equalTo(4)
+      addData(data) must be equalTo (4)
 
       LO.withLargeObject(oid) { largeObject =>
-	largeObject.truncate
-	addData(data) must be equalTo(4)
+        largeObject.truncate
+        addData(data) must be equalTo (4)
       }
     }
 
