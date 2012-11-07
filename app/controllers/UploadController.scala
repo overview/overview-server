@@ -48,11 +48,10 @@ trait UploadController extends BaseController {
   }
 
   /** Handle file upload and kick of documentSetCreationJob */
-  def create(uuid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(uuid)) { (request: Request[OverviewUpload], connection: Connection) =>
-    println("Total: " + request.body)
-    Ok("ok")
-  }
+  def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
+  private [controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = Ok
+   
  /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
