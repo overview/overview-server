@@ -30,6 +30,7 @@ class OverviewUploadSpec extends Specification {
         upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
         upload.bytesUploaded must be equalTo (0)
         upload.contentsOid must be equalTo (lo.oid)
+        upload.size must be equalTo (totalSize)
       }
     }
 
@@ -60,12 +61,12 @@ class OverviewUploadSpec extends Specification {
 
     "be deleted" in new UploadContext {
       LO.withLargeObject { lo =>
-      	val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
-      	upload.save
-      	upload.delete
+        val upload = OverviewUpload(userId, guid, filename, totalSize, lo.oid)
+        upload.save
+        upload.delete
       }
-      
-OverviewUpload.find(userId, guid) must beNone
+
+      OverviewUpload.find(userId, guid) must beNone
     }
 
     "truncate large object" in new UploadContext {
