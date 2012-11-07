@@ -47,11 +47,19 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       // store the upload as TestUpload to avoid need for downcasting
       var currentUpload: Option[TestUpload] = None
 
+      var uploadCancelled: Boolean = false
+
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
 
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
+        uploadCancelled = false
         currentUpload = Some(TestUpload(userId, guid, 0l))
         currentUpload
+      }
+
+      def cancelUpload(upload: OverviewUpload) {
+        currentUpload = None
+        uploadCancelled = true
       }
 
       def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
@@ -166,9 +174,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }
 
-    "return BAD_REQUEST if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
+    "return BAD_REQUEST and cancel upload if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", 1000)
+
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+      uploadIteratee.uploadCancelled must beTrue
     }
 
     "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {

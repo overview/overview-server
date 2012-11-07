@@ -1,13 +1,10 @@
 package controllers
 
 import java.util.UUID
-
 import org.postgresql.PGConnection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
-
 import com.jolbox.bonecp.ConnectionHandle
-
 import models.orm.SquerylPostgreSqlAdapter
 import models.upload.LO
 import models.upload.OverviewUpload
@@ -22,6 +19,7 @@ import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.Play.current
 import scala.util.control.Exception._
+import org.apache.commons.lang.NotImplementedException
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object
@@ -38,10 +36,10 @@ trait FileUploadIteratee {
       def defaultContentRange(length: String) = Some("0-%1$s/%1$s".format(length))
 
       val disposition = "[^=]*=\"?([^\"]*)\"?".r // attachment ; filename="foo.bar" (optional quotes) TODO: Handle quoted quotes
-val range = """(\d+)-(\d+)/\d+""".r // start-end/length
+      val range = """(\d+)-(\d+)/\d+""".r // start-end/length
 
       for {
-        contentDisposition <- header.headers.get(CONTENT_DISPOSITION)       
+        contentDisposition <- header.headers.get(CONTENT_DISPOSITION)
         contentLength <- header.headers.get(CONTENT_LENGTH)
         contentRange <- header.headers.get(CONTENT_RANGE).orElse(defaultContentRange(contentLength))
         disposition(filename) <- disposition findFirstIn contentDisposition
@@ -88,7 +86,10 @@ val range = """(\d+)-(\d+)/\d+""".r // start-end/length
       info.start match {
         case 0 => Right(u.truncate)
         case n if n == u.bytesUploaded => Right(u)
-        case _ => Left(BadRequest)
+        case _ => {
+          cancelUpload(u)
+          Left(BadRequest)
+        }
       })
 
   // Find an existing upload attempt
@@ -99,6 +100,9 @@ val range = """(\d+)-(\d+)/\d+""".r // start-end/length
 
   // process a chunk of file data. @return the current OverviewUpload status, or None on failure	  
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload]
+
+  // Remove all data from previously started upload
+  def cancelUpload(upload: OverviewUpload)
 }
 
 /** Implementation that writes to database */
@@ -114,6 +118,9 @@ object FileUploadIteratee extends FileUploadIteratee {
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
+  def cancelUpload(upload: OverviewUpload) {
+    throw new NotImplementedException()
+  }
   /**
    * Duplicates functionality in TransactionActionController, but in a way that
    * enables us to get a hold of a PGConnection.
