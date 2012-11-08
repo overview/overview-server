@@ -18,7 +18,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.Either.LeftProjection
 import java.sql.SQLException
+import org.junit.runner.RunWith
+import org.specs2.runner.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class FileUploadIterateeSpec extends Specification with Mockito {
 
   "FileUploadIteratee" should {
