@@ -95,10 +95,16 @@ class UploadControllerSpec extends Specification with Mockito {
 
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
       val headers = result.header.headers
-      headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-1000/1000") }
+      headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-999/1000") }
       headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo ("attachment;filename=" + filename) }
       
       status(result) must be equalTo (OK)
+    }
+    
+    "return PARTIAL_CONTENT if upload is not complete" in new HeadRequest with IncompleteUpload {
+      result.header.headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-99/1000") }
+      
+      status(result) must be equalTo (PARTIAL_CONTENT)
     }
   }
 }

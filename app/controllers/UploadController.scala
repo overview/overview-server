@@ -50,10 +50,11 @@ trait UploadController extends BaseController {
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
-    def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded, upload.size)
+    def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = "attachment;filename=%s".format(upload.filename)
     findUpload(user.id, guid).map { u =>
-      Ok.withHeaders(
+      val result = if (u.bytesUploaded == u.size) Ok else PartialContent
+      result.withHeaders(
         (CONTENT_RANGE, contentRange(u)),
         (CONTENT_DISPOSITION, contentDisposition(u)))
     } getOrElse (NotFound)
