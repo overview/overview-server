@@ -5,7 +5,10 @@ import org.postgresql.util.PSQLException
 import org.specs2.mutable.{ Around, Specification }
 import play.api.Play.{ current, start, stop }
 import play.api.test.FakeApplication
+import org.junit.runner.RunWith
+import org.specs2.runner.JUnitRunner
 
+@RunWith(classOf[JUnitRunner])
 class LargeObjectSpec extends Specification {
 
   step(start(FakeApplication()))
@@ -66,6 +69,9 @@ class LargeObjectSpec extends Specification {
 
       LO.withLargeObject(oid) { largeObject =>
         largeObject.truncate
+      }
+
+      LO.withLargeObject(oid) { largeObject =>
         addData(data) must be equalTo (4)
       }
     }
