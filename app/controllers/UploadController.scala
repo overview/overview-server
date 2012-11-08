@@ -86,7 +86,6 @@ object UploadController extends UploadController {
   def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
-  def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] =
-    throw new NotImplementedException("findUpload")
+  def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 }
  
