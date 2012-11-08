@@ -13,6 +13,8 @@ import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import scalax.io.Input
+import org.apache.commons.lang.NotImplementedException
+import play.api.mvc.AnyContent
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
@@ -42,19 +44,23 @@ trait UploadController extends BaseController {
     }
   }
 
-  // TODO: handle HEAD request
-  def show(uuid: UUID) = Action(BodyParsers.parse.anyContent) { request =>
-    Ok("ok")
-  }
-
+  /** @return state of upload */
+  def show(guid: UUID) = authorizedAction(anyUser){ user => authorizedShow(user, guid)(_: Request[AnyContent], _:Connection) }
+  
   /** Handle file upload and kick of documentSetCreationJob */
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
+  private [controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
+    findUpload(user.id, guid).map { u => Ok } getOrElse(NotFound)
+  }
+  
   private [controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
-    val upload: OverviewUpload = request.body	
+    val upload: OverviewUpload = request.body
     if (upload.bytesUploaded == upload.size) Ok
     else PartialContent
   }
+  
+  
    
  /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
@@ -66,6 +72,7 @@ trait UploadController extends BaseController {
 
   /** Abstract method for creating the Iteratee that handles the upload */
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
+  protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 }
 
 /**
@@ -75,5 +82,8 @@ object UploadController extends UploadController {
 
   def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader) 
+    
+    def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] =
+      throw new NotImplementedException("findUpload")
 }
  
