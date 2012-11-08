@@ -53,7 +53,7 @@ trait UploadController extends BaseController {
 
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded - 1, upload.size)
-    def contentDisposition(upload: OverviewUpload): String = "attachment;filename=%s".format(upload.filename)
+    def contentDisposition(upload: OverviewUpload): String = "attachment; filename=%s".format(upload.filename)
     findUpload(user.id, guid).map { u =>
       uploadResult(u).withHeaders(
         (CONTENT_RANGE, contentRange(u)),
