@@ -49,12 +49,13 @@ trait UploadController extends BaseController {
   /** Handle file upload and kick of documentSetCreationJob */
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
+  private def uploadResult(upload: OverviewUpload) = if (upload.bytesUploaded == upload.size) Ok else PartialContent
+
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = "attachment;filename=%s".format(upload.filename)
     findUpload(user.id, guid).map { u =>
-      val result = if (u.bytesUploaded == u.size) Ok else PartialContent
-      result.withHeaders(
+      uploadResult(u).withHeaders(
         (CONTENT_RANGE, contentRange(u)),
         (CONTENT_DISPOSITION, contentDisposition(u)))
     } getOrElse (NotFound)
@@ -62,8 +63,7 @@ trait UploadController extends BaseController {
 
   private[controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
     val upload: OverviewUpload = request.body
-    if (upload.bytesUploaded == upload.size) Ok
-    else PartialContent
+    uploadResult(upload)
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
