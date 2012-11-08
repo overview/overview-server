@@ -16,6 +16,7 @@ trait OverviewUpload {
   val lastActivity: Timestamp
   val bytesUploaded: Long
   val size: Long
+  val filename: String
   val contentsOid: Long
   
   /** @return a copy with bytesUploaded updated to the new value */
@@ -51,6 +52,7 @@ object OverviewUpload {
     val lastActivity = upload.lastActivity
     val bytesUploaded = upload.bytesUploaded
     val size = upload.bytesTotal
+    val filename = upload.filename
     val contentsOid = upload.contentsOid
 
     def withUploadedBytes(bytesUploaded: Long): OverviewUpload =

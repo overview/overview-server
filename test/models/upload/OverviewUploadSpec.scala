@@ -1,5 +1,7 @@
 package models.upload
 
+import org.junit.runner.RunWith
+import org.specs2.runner.JUnitRunner
 import helpers.PgConnectionContext
 import java.sql.Timestamp
 import java.util.UUID._
@@ -8,6 +10,7 @@ import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
+@RunWith(classOf[JUnitRunner])
 class OverviewUploadSpec extends Specification {
 
   step(start(FakeApplication()))
@@ -31,6 +34,7 @@ class OverviewUploadSpec extends Specification {
         upload.bytesUploaded must be equalTo (0)
         upload.contentsOid must be equalTo (lo.oid)
         upload.size must be equalTo (totalSize)
+        upload.filename must be equalTo(filename)
       }
     }
 
