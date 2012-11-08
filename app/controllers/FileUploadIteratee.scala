@@ -28,14 +28,14 @@ import java.sql.SQLException
  */
 trait FileUploadIteratee {
   private def X_MSHACK_CONTENT_RANGE: String = "X-MSHACK-Content-Range"
-    
+
   /** package for information extracted from request header */
   private case class UploadRequest(filename: String, start: Long, contentLength: Long)
 
   /** extract useful information from request header */
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
-      
+
       val disposition = """[^=]*=\\?"?([^"\\]*)\\?"?""".r // attachment ; filename="foo.bar" (optional quotes) 
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
 
@@ -81,9 +81,9 @@ trait FileUploadIteratee {
    * If adding the chunk to the upload does not exceed the expected
    * size of the upload, @return Some(upload), None otherwise
    */
-  private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = 
+  private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] =
     Some(upload).filter(u => u.bytesUploaded + chunk.size <= u.size)
-    
+
   /**
    * If the upload exists, verify the validity of the restart.
    * @return None if upload does not exist, otherwise an Either containing
@@ -93,10 +93,10 @@ trait FileUploadIteratee {
   private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] =
     findUpload(userId, guid).map(u =>
       info.start match {
-        case 0 => Right(u.truncate)
+        case 0 => truncateUpload(u).toRight(InternalServerError)
         case n if n == u.bytesUploaded => Right(u)
         case _ => {
-          ignoring(classOf[SQLException]) { cancelUpload(u) } 
+          ignoring(classOf[SQLException]) { cancelUpload(u) }
           Left(BadRequest)
         }
       })
@@ -109,6 +109,10 @@ trait FileUploadIteratee {
 
   // process a chunk of file data. @return the current OverviewUpload status, or None on failure	  
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload]
+
+  // Truncate the upload, deleting all previously uploaded data
+  // @return the truncated OverviewUpload status, or None on failure
+  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload]
 
   // Remove all data from previously started upload
   def cancelUpload(upload: OverviewUpload)
@@ -126,6 +130,12 @@ object FileUploadIteratee extends FileUploadIteratee {
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c =>
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
+
+  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] =
+    allCatch opt {
+      upload.truncate
+      upload.save
+    }
 
   def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
     LO.delete(upload.contentsOid)

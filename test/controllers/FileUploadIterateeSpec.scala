@@ -52,7 +52,8 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       var currentUpload: Option[TestUpload] = None
 
       var uploadCancelled: Boolean = false
-
+      var uploadTruncated: Boolean = false
+      
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
 
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
@@ -73,6 +74,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
           currentUpload = Some(upload.asInstanceOf[TestUpload].upload(chunk))
           currentUpload
         } else None
+      }
+      
+      def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] = {
+        uploadTruncated = true
+        currentUpload.map(_.truncate)
       }
 
       def uploadedData: Array[Byte] = currentUpload.map(_.data).orNull
@@ -229,6 +235,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       restartedUpload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
+      uploadIteratee.uploadTruncated must beTrue
     }
 
     "use X-MSHACK-Content-Range if Content-Range header not specified" in new GoodUpload with SingleChunk with MsHackHeader {
