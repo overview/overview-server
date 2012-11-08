@@ -131,11 +131,12 @@ object FileUploadIteratee extends FileUploadIteratee {
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
-  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] =
-    allCatch opt {
-      upload.truncate
-      upload.save
+  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] = withPgConnection { implicit c =>
+    LO.withLargeObject(upload.contentsOid) { lo =>
+      lo.truncate
+      upload.truncate.save
     }
+  }
 
   def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
     LO.delete(upload.contentsOid)
