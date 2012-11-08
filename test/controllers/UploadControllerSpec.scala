@@ -58,22 +58,24 @@ class UploadControllerSpec extends Specification with Mockito {
     def upload: OverviewUpload = null
   }
 
-  trait CompleteUpload {
+  trait StartedUpload {
+    val filename = "file.name"
+    def bytesUploaded: Long
+
     def upload: OverviewUpload = {
       val u = mock[OverviewUpload]
       u.filename returns "file.name"
-      u.bytesUploaded returns 1000
+      u.bytesUploaded returns bytesUploaded
       u.size returns 1000
     }
   }
 
-  trait IncompleteUpload {
-    def upload: OverviewUpload = {
-      val u = mock[OverviewUpload]
-      u.filename returns "file.name"
-      u.bytesUploaded returns 100
-      u.size returns 1000
-    }
+  trait CompleteUpload extends StartedUpload {
+    override def bytesUploaded: Long = 1000
+  }
+
+  trait IncompleteUpload extends StartedUpload {
+    override def bytesUploaded: Long = 100
   }
 
   "UploadController.create" should {
@@ -94,7 +96,8 @@ class UploadControllerSpec extends Specification with Mockito {
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
       val headers = result.header.headers
       headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-1000/1000") }
-      headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo ("attachment;filename=file.name") }
+      headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo ("attachment;filename=" + filename) }
+      
       status(result) must be equalTo (OK)
     }
   }
