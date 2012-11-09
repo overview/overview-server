@@ -21,7 +21,6 @@ import play.api.test.Helpers._
 import scala.Either.LeftProjection
 import java.sql.SQLException
 
-
 @RunWith(classOf[JUnitRunner])
 class FileUploadIterateeSpec extends Specification with Mockito {
 
@@ -54,7 +53,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       var uploadCancelled: Boolean = false
       var uploadTruncated: Boolean = false
-      
+
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
 
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
@@ -76,7 +75,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
           currentUpload
         } else None
       }
-      
+
       def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] = {
         uploadTruncated = true
         currentUpload.map(_.truncate)
@@ -132,81 +131,57 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     // Headers
-    trait GoodHeader {
-      self: UploadContext =>
+    trait UploadHeader {
+      val contentDisposition = "attachment; filename=foo.bar"
+      def headers: Map[String, Seq[String]]
       def request: RequestHeader = {
         val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          (CONTENT_RANGE, Seq("0-999/1000")),
-          (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("100"))))
+        r.headers returns FakeHeaders(headers)
 
         r
       }
     }
 
-    trait MsHackHeader {
-      self: UploadContext =>
-      def request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          ("X-MSHACK-Content-Range", Seq("0-999/1000")),
-          (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("100"))))
-
-        r
-      }
+    trait GoodHeader extends UploadHeader {
+      def headers = Map(
+        (CONTENT_RANGE, Seq("0-999/1000")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)),
+        (CONTENT_LENGTH, Seq("100")))
     }
 
-    trait FilenameWithEscapedQuotes {
-      var filename = "file.name"
-
-      def request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          ("X-MSHACK-Content-Range", Seq("0-999/1000")),
-          (CONTENT_DISPOSITION, Seq("""attachment;filename=\"%s\"""".format(filename))),
-          (CONTENT_LENGTH, Seq("100"))))
-
-        r
-      }
-
+    trait MsHackHeader extends UploadHeader {
+      def headers = Map(
+        ("X-MSHACK-Content-Range", Seq("0-999/1000")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)),
+        (CONTENT_LENGTH, Seq("100")))
     }
 
-    trait ShortUploadHeader {
-      def request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          ("Content-Range", Seq("0-29/50")),
-          (CONTENT_DISPOSITION, Seq("attachment;filename=foo.bar")),
-          (CONTENT_LENGTH, Seq("100"))))
+    trait NoContentDisposition extends UploadHeader {
+      def headers = Map(("Content-Range", Seq("0-999/1000")))
+    }
 
-        r
-      }
+    trait ShortUploadHeader extends UploadHeader {
+      def headers = Map(
+        ("Content-Range", Seq("0-29/50")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)),
+        (CONTENT_LENGTH, Seq("100")))
     }
 
     trait BadHeader {
       def request: RequestHeader = FakeRequest()
     }
 
-    trait InProgressHeader {
-
-      def request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          (CONTENT_DISPOSITION, Seq("attachement;filename=foo.bar")),
+    trait InProgressHeader extends UploadHeader {
+      def headers = Map(
+          (CONTENT_DISPOSITION, Seq(contentDisposition)),
           (CONTENT_LENGTH, Seq("100")),
-          (CONTENT_RANGE, Seq("100-199/1000"))))
-      }
+          (CONTENT_RANGE, Seq("100-199/1000")))
     }
 
-    trait MalformedHeader {
-      def request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(Map(
-          (CONTENT_DISPOSITION, Seq("attachement;filename=foo.bar")),
-          (CONTENT_RANGE, Seq("Bad Field"))))
-      }
+    trait MalformedHeader extends UploadHeader {
+      def headers = Map(
+          (CONTENT_DISPOSITION, Seq(contentDisposition)),
+          (CONTENT_RANGE, Seq("Bad Field")))
     }
 
     // Enumerators
@@ -243,11 +218,14 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       upload.bytesUploaded must be equalTo (chunk.size)
     }
 
-    "extract filename with escaped quotes" in new GoodUpload with SingleChunk with FilenameWithEscapedQuotes {
-      result must beRight
-      uploadIteratee.currentUpload must beSome.like { case u => u.filename must be equalTo (filename) }
+    "set filename to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
+      upload.filename must be equalTo(contentDisposition)
     }
 
+    "set filename to empty string if no Content-Disposition header is found" in new GoodUpload with SingleChunk with NoContentDisposition {
+      upload.filename must be equalTo("")
+    }
+    
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }

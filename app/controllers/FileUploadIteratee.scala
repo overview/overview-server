@@ -35,17 +35,17 @@ trait FileUploadIteratee {
   /** extract useful information from request header */
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
-
-      val disposition = """[^=]*=\\?"?([^"\\]*)\\?"?""".r // attachment ; filename="foo.bar" (optional quotes) 
-      val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
-
       val headers = header.headers
+      
+      val filename = headers.get(CONTENT_DISPOSITION).getOrElse("")
+      val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       for {
-        contentDisposition <- headers.get(CONTENT_DISPOSITION)
         contentRange <- headers.get(CONTENT_RANGE).orElse(headers.get(X_MSHACK_CONTENT_RANGE))
-        disposition(filename) <- disposition findFirstIn contentDisposition
-        range(start, end, length) <- range findFirstIn contentRange
-      } yield UploadRequest(filename, start.toLong, length.toLong)
+        rangeMatch <- range.findFirstMatchIn(contentRange)
+      } yield {
+        val List(start, end, length) = rangeMatch.subgroups.take(3)
+        UploadRequest(filename, start.toLong, length.toLong)
+      }
     }
   }
 
