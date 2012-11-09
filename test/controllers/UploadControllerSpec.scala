@@ -25,11 +25,13 @@ import play.api.mvc.AnyContent
 class UploadControllerSpec extends Specification with Mockito {
 
   class TestUploadController(upload: Option[OverviewUpload] = None) extends UploadController {
+    var uploadDeleted: Boolean = false
 
     def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
+    def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
   }
 
   trait UploadContext[A] extends Scope {
@@ -52,6 +54,13 @@ class UploadControllerSpec extends Specification with Mockito {
     val controller = new TestUploadController(Option(upload))
     val request: Request[AnyContent] = FakeRequest()
     val result = controller.authorizedShow(user, guid)(request, null)
+  }
+
+  trait DeleteRequest extends UploadContext[AnyContent] {
+    val user = User(1l)
+    val controller = new TestUploadController(Option(upload))
+    val request: Request[AnyContent] = FakeRequest()
+    val result = controller.authorizedDelete(user, guid)(request, null)
   }
 
   trait NoStartedUpload {
@@ -97,14 +106,25 @@ class UploadControllerSpec extends Specification with Mockito {
       val headers = result.header.headers
       headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-999/1000") }
       headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo ("attachment; filename=" + filename) }
-      
+
       status(result) must be equalTo (OK)
     }
-    
+
     "return PARTIAL_CONTENT if upload is not complete" in new HeadRequest with IncompleteUpload {
       result.header.headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-99/1000") }
-      
+
       status(result) must be equalTo (PARTIAL_CONTENT)
+    }
+  }
+
+  "UploadController.delete" should {
+    "return NOT_FOUND if upload does not exist" in new DeleteRequest with NoStartedUpload {
+      status(result) must be equalTo (NOT_FOUND)
+    }
+
+    "Delete the upload" in new DeleteRequest with IncompleteUpload {
+      status(result) must be equalTo (OK)
+      controller.uploadDeleted must beTrue
     }
   }
 }

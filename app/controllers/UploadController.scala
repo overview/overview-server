@@ -14,6 +14,7 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import org.apache.commons.lang.NotImplementedException
 import play.api.mvc.AnyContent
+import models.upload.LO
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
@@ -49,6 +50,9 @@ trait UploadController extends BaseController {
   /** Handle file upload and kick of documentSetCreationJob */
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
+  /** Delete the upload */
+  def delete(guid: UUID) = authorizedAction(anyUser) { user => authorizedDelete(user, guid)(_: Request[AnyContent], _: Connection) }
+
   private def uploadResult(upload: OverviewUpload) = if (upload.bytesUploaded == upload.size) Ok else PartialContent
 
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
@@ -66,6 +70,13 @@ trait UploadController extends BaseController {
     uploadResult(upload)
   }
 
+  private[controllers] def authorizedDelete(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
+    findUpload(user.id, guid).map { u =>
+      deleteUpload(u)
+      Ok
+    }.getOrElse(NotFound)
+  }
+
   /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
@@ -73,19 +84,24 @@ trait UploadController extends BaseController {
     fileUploadIteratee(user.id, guid, request)
   }
 
-  /** Abstract method for creating the Iteratee that handles the upload */
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
+  protected def deleteUpload(upload: OverviewUpload)
 }
 
 /**
  * UploadController implementation that uses FileUploadIteratee
  */
-object UploadController extends UploadController {
+object UploadController extends UploadController with PgConnection {
 
   def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
+
+  def deleteUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
+    LO.delete(upload.contentsOid)
+    upload.delete
+  }
 }
  
