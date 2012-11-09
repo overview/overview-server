@@ -28,19 +28,19 @@ class FileUploadIterateeSpec extends Specification with Mockito {
   "FileUploadIteratee" should {
 
     /** OverviewUpload implementation that stores data in an attribute */
-    case class TestUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, filename: String, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
+    case class DummyUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, filename: String, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
       val lastActivity: Timestamp = new Timestamp(0)
       val contentsOid: Long = 1l
 
-      def upload(chunk: Array[Byte]): TestUpload = {
+      def upload(chunk: Array[Byte]): DummyUpload = {
         data = data ++ chunk
         withUploadedBytes(data.size)
       }
 
-      def withUploadedBytes(bytesUploaded: Long): TestUpload = this.copy(bytesUploaded = bytesUploaded)
+      def withUploadedBytes(bytesUploaded: Long): DummyUpload = this.copy(bytesUploaded = bytesUploaded)
 
-      def save: TestUpload = this
-      def truncate: TestUpload = { this.copy(bytesUploaded = 0, data = Array[Byte]()) }
+      def save: DummyUpload = this
+      def truncate: DummyUpload = { this.copy(bytesUploaded = 0, data = Array[Byte]()) }
       def delete {}
     }
 
@@ -49,8 +49,8 @@ class FileUploadIterateeSpec extends Specification with Mockito {
      */
     class TestIteratee(appendSucceeds: Boolean = true, throwOnCancel: Boolean = false) extends FileUploadIteratee {
 
-      // store the upload as TestUpload to avoid need for downcasting
-      var currentUpload: Option[TestUpload] = None
+      // store the upload as DummyUpload to avoid need for downcasting
+      var currentUpload: Option[DummyUpload] = None
 
       var uploadCancelled: Boolean = false
       var uploadTruncated: Boolean = false
@@ -59,7 +59,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
         uploadCancelled = false
-        currentUpload = Some(TestUpload(userId, guid, 0l, contentLength, filename))
+        currentUpload = Some(DummyUpload(userId, guid, 0l, contentLength, filename))
         currentUpload
       }
 
@@ -72,7 +72,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
         if (appendSucceeds) {
-          currentUpload = Some(upload.asInstanceOf[TestUpload].upload(chunk))
+          currentUpload = Some(upload.asInstanceOf[DummyUpload].upload(chunk))
           currentUpload
         } else None
       }
