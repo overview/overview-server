@@ -68,12 +68,12 @@ class UploadControllerSpec extends Specification with Mockito {
   }
 
   trait StartedUpload {
-    val filename = "file.name"
+    def contentDisposition = "attachment; filename=file.name"
     def bytesUploaded: Long
 
     def upload: OverviewUpload = {
       val u = mock[OverviewUpload]
-      u.filename returns "file.name"
+      u.filename returns contentDisposition 
       u.bytesUploaded returns bytesUploaded
       u.size returns 1000
     }
@@ -85,6 +85,10 @@ class UploadControllerSpec extends Specification with Mockito {
 
   trait IncompleteUpload extends StartedUpload {
     override def bytesUploaded: Long = 100
+  }
+  
+  trait EmptyUpload extends StartedUpload {
+    override def bytesUploaded: Long = 0
   }
 
   "UploadController.create" should {
@@ -105,7 +109,7 @@ class UploadControllerSpec extends Specification with Mockito {
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
       val headers = result.header.headers
       headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-999/1000") }
-      headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo ("attachment; filename=" + filename) }
+      headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo (contentDisposition) }
 
       status(result) must be equalTo (OK)
     }
@@ -114,6 +118,11 @@ class UploadControllerSpec extends Specification with Mockito {
       result.header.headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-99/1000") }
 
       status(result) must be equalTo (PARTIAL_CONTENT)
+    }
+    
+    "return NOT_FOUND if upload is empty" in new HeadRequest with EmptyUpload {
+      result.header.headers.get(CONTENT_RANGE) must beNone
+      status(result) must be equalTo (NOT_FOUND)
     }
   }
 

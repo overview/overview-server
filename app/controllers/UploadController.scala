@@ -53,15 +53,22 @@ trait UploadController extends BaseController {
   /** Delete the upload */
   def delete(guid: UUID) = authorizedAction(anyUser) { user => authorizedDelete(user, guid)(_: Request[AnyContent], _: Connection) }
 
-  private def uploadResult(upload: OverviewUpload) = if (upload.bytesUploaded == upload.size) Ok else PartialContent
+  private def uploadResult(upload: OverviewUpload) =
+    if (upload.bytesUploaded == 0) NotFound
+    else if (upload.bytesUploaded == upload.size) Ok
+    else PartialContent
 
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded - 1, upload.size)
-    def contentDisposition(upload: OverviewUpload): String = "attachment; filename=%s".format(upload.filename)
+    def contentDisposition(upload: OverviewUpload): String = upload.filename
+    
     findUpload(user.id, guid).map { u =>
-      uploadResult(u).withHeaders(
-        (CONTENT_RANGE, contentRange(u)),
-        (CONTENT_DISPOSITION, contentDisposition(u)))
+      uploadResult(u) match {
+        case NotFound => NotFound
+        case r => r.withHeaders(
+          (CONTENT_RANGE, contentRange(u)),
+          (CONTENT_DISPOSITION, contentDisposition(u)))
+      }
     } getOrElse (NotFound)
   }
 
