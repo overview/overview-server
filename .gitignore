@@ -23,3 +23,7 @@ test/assets/javascripts/test-js
 \#*
 .\#*
 
+.worksheet
+*.sc
+
+
