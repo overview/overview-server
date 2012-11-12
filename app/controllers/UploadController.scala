@@ -12,7 +12,6 @@ import play.api.libs.iteratee.Error
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
-import org.apache.commons.lang.NotImplementedException
 import play.api.mvc.AnyContent
 import models.upload.LO
 

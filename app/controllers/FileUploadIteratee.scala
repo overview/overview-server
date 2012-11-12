@@ -19,7 +19,6 @@ import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 import play.api.Play.current
 import scala.util.control.Exception._
-import org.apache.commons.lang.NotImplementedException
 import java.sql.SQLException
 
 /**
