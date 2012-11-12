@@ -281,7 +281,7 @@ class Upload
 
   _to_done: () ->
     # Send a 100%-progress event
-    @deferred.notify({ state: 'done', loaded: @bytes_uploaded, total: @file.size })
+    @deferred.notify({ state: 'done', loaded: @file.size, total: @file.size })
     @deferred.resolve()
 
   _starting_to_done: () ->
