@@ -17,9 +17,16 @@ state_to_key = (state) ->
     return k if v == state
   throw "Unknown state: #{state}"
 
-# A Content-Range header looks like "0-1234/1234"
-content_range_to_start = (s) -> s? && parseInt(s.split(/-/)[1], 10) || 0
-content_range_to_end = (s) -> s? && parseInt(s.split(/-/)[2], 10) || 0
+# A Content-Range header looks like "0-1233/1234"
+#
+# The "end" byte is inclusive in HTTP/1.1, but it's exclusive everywhere else
+# we deal with strings in our code. This method adds one to the provided number.
+content_range_to_end = (s) ->
+  if s?
+    i = parseInt(s.split(/-/)[1], 10)
+    i + 1
+  else
+    0
 
 ## We only read CHUNK_SIZE of the file into memory at a time, meaning we only
 ## send CHUNK_SIZE bytes at a time.
@@ -229,7 +236,7 @@ class Upload
     create_xhr = () =>
       @options.xhr_factory (loaded, total) =>
         return if !jqxhr? or jqxhr isnt @uploading_jqxhr
-        @deferred.notify({ state: 'uploading', loaded: loaded, total: total })
+        @deferred.notify({ state: 'uploading', loaded: @bytes_uploaded + loaded, total: @bytes_uploaded + total })
 
     @uploading_jqxhr = ajax({
       url: @url
