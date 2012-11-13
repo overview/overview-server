@@ -45,7 +45,7 @@ object LO {
    * @return None if an error occurs, and Option[A] (return type of block) on success.
    * Returning an Either might be more fun.
    */
-  def withLargeObject[A](block: LargeObject => A)(implicit pgConnection: PGConnection): Option[A] = {
+  def withLargeObject[A](block: LargeObject => A)(implicit pgConnection: PGConnection): A = {
     val oid = loManager.createLO
 
     withLargeObject(oid)(block)
@@ -57,15 +57,11 @@ object LO {
    * and Option[A] on success.
    * Returning an Either might be more fun here too.
    */
-  def withLargeObject[A](oid: Long)(block: LargeObject => A)(implicit pgConnection: PGConnection): Option[A] = {
-    val lo = catching(classOf[SQLException]) opt loManager.open(oid)
-    
-    lo.map { lo =>
-      val r = block(new LargeObjectImpl(lo))
-      lo.close
-      
-      r
-    }
+  def withLargeObject[A](oid: Long)(block: LargeObject => A)(implicit pgConnection: PGConnection): A = {
+    val lo = loManager.open(oid)
+    val r = block(new LargeObjectImpl(lo))
+    lo.close
+    r
   }
 
   /**

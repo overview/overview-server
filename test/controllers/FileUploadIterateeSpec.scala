@@ -46,44 +46,43 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     /**
      * Implementation of FileUploadIteratee for testing, avoiding using the database
      */
-    class TestIteratee(appendSucceeds: Boolean = true, throwOnCancel: Boolean = false) extends FileUploadIteratee {
+    class TestIteratee(throwOnCancel: Boolean = false) extends FileUploadIteratee {
 
       // store the upload as DummyUpload to avoid need for downcasting
-      var currentUpload: Option[DummyUpload] = None
+      var currentUpload: DummyUpload = _
 
       var appendCount: Int = 0
       var uploadCancelled: Boolean = false
       var uploadTruncated: Boolean = false
 
-      def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = currentUpload
+      def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = Option(currentUpload)
 
-      def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = {
+      def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload = {
         uploadCancelled = false
-        currentUpload = Some(DummyUpload(userId, guid, 0l, contentLength, filename))
+        currentUpload = DummyUpload(userId, guid, 0l, contentLength, filename)
         currentUpload
       }
 
       def cancelUpload(upload: OverviewUpload) {
         if (!throwOnCancel) {
-          currentUpload = None
+          currentUpload = null
           uploadCancelled = true
         } else throw new SQLException()
       }
 
-      def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
+      def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = {
         appendCount = appendCount + 1
-        if (appendSucceeds) {
-          currentUpload = Some(upload.asInstanceOf[DummyUpload].upload(chunk))
-          currentUpload
-        } else None
+
+        currentUpload = upload.asInstanceOf[DummyUpload].upload(chunk)
+        currentUpload
       }
 
-      def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] = {
+      def truncateUpload(upload: OverviewUpload): OverviewUpload = {
         uploadTruncated = true
-        currentUpload.map(_.truncate)
+        currentUpload.truncate
       }
 
-      def uploadedData: Array[Byte] = currentUpload.map(_.data).orNull
+      def uploadedData: Array[Byte] = currentUpload.data
     }
 
     trait UploadContext extends Scope {
@@ -122,10 +121,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     // Iteraratees
     trait GoodUpload extends UploadContext {
       val uploadIteratee = new TestIteratee
-    }
-
-    trait FailingUpload extends UploadContext {
-      val uploadIteratee = new TestIteratee(appendSucceeds = false)
     }
 
     trait FailingCancel extends UploadContext {
@@ -203,6 +198,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
+      result must beRight
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
@@ -260,14 +256,10 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
-      val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000).get
+      val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000)
       uploadIteratee.appendChunk(initialUpload, chunk)
 
       result must beRight.like { case u => u.bytesUploaded must be equalTo (200) }
-    }
-
-    "return INTERNAL_SERVER_ERROR if error occurs during upload" in new FailingUpload with MultipleChunks with GoodHeader {
-      result must beLeft.like { case r => status(r) must be equalTo (INTERNAL_SERVER_ERROR) }
     }
 
     "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {

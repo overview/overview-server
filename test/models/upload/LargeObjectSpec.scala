@@ -19,11 +19,11 @@ class LargeObjectSpec extends Specification {
       var oid: Long = _
 
       override def setupWithDb = {
-        oid = LO.withLargeObject { _.oid }.get
+        oid = LO.withLargeObject { _.oid }
       }
 
       def addData(data: Array[Byte]): Long = {
-        LO.withLargeObject(oid) { _.add(data) }.get
+        LO.withLargeObject(oid) { _.add(data) }
       }
     }
 
@@ -32,9 +32,8 @@ class LargeObjectSpec extends Specification {
     }
 
     // See if there are better ways to handle errors.
-    "return None for non existent oid" in new PgConnectionContext {
-      val noid = LO.withLargeObject(234) { _.oid }
-      noid must beNone
+    "throw exception for non existent oid" in new PgConnectionContext {
+      LO.withLargeObject(234) { _.oid } must throwA[PSQLException]
     }
 
     "return a LargeObject if oid exists" in new LoContext {
@@ -82,7 +81,7 @@ class LargeObjectSpec extends Specification {
 
       LO.delete(oid)
 
-      LO.withLargeObject(oid) { _.read(10) } must beNone
+      LO.withLargeObject(oid) { _.read(10) } must throwA[PSQLException]
     }
 
     "throw exception when deleting nonexisting objects" in new PgConnectionContext {

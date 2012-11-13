@@ -69,7 +69,7 @@ trait FileUploadIteratee {
    */
   private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
     val initialUpload = findValidUploadRestart(userId, guid, request)
-      .getOrElse(createUpload(userId, guid, request.filename, request.contentLength).toRight(InternalServerError))
+      .getOrElse(Right(createUpload(userId, guid, request.filename, request.contentLength)))
 
     var buffer = Array[Byte]()
 
@@ -79,7 +79,7 @@ trait FileUploadIteratee {
         if ((buffer.size + chunk.size) >= bufferSize) {
           val bufferedChunk = buffer ++ chunk
           buffer = Array[Byte]()
-          appendChunk(u, bufferedChunk).toRight(InternalServerError)
+          Right(appendChunk(u, bufferedChunk))
         }
         else {
           buffer ++= chunk
@@ -87,7 +87,7 @@ trait FileUploadIteratee {
         }    
       }
     } mapDone { u =>
-      if (buffer.size > 0) u.right.flatMap(appendChunk(_, buffer).toRight(InternalServerError))
+      if (buffer.size > 0) u.right.map(appendChunk(_, buffer))
       else u
     }
   }
@@ -108,7 +108,7 @@ trait FileUploadIteratee {
   private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] =
     findUpload(userId, guid).map(u =>
       info.start match {
-        case 0 => truncateUpload(u).toRight(InternalServerError)
+        case 0 => Right(truncateUpload(u))
         case n if n == u.bytesUploaded => Right(u)
         case _ => {
           ignoring(classOf[SQLException]) { cancelUpload(u) }
@@ -120,14 +120,14 @@ trait FileUploadIteratee {
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 
   // create a new upload attempt
-  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload]
+  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload
 
   // process a chunk of file data. @return the current OverviewUpload status, or None on failure	  
-  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload]
+  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload
 
   // Truncate the upload, deleting all previously uploaded data
   // @return the truncated OverviewUpload status, or None on failure
-  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload]
+  def truncateUpload(upload: OverviewUpload): OverviewUpload
 
   // Remove all data from previously started upload
   def cancelUpload(upload: OverviewUpload)
@@ -138,15 +138,15 @@ object FileUploadIteratee extends FileUploadIteratee with PgConnection {
 
   def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
 
-  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): Option[OverviewUpload] = withPgConnection { implicit c =>
+  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
     LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, contentLength, lo.oid).save }
   }
 
-  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c => println("Appending %d bytes".format(chunk.size))
+  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c => println("Appending %d bytes".format(chunk.size))
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
-  def truncateUpload(upload: OverviewUpload): Option[OverviewUpload] = withPgConnection { implicit c =>
+  def truncateUpload(upload: OverviewUpload): OverviewUpload = withPgConnection { implicit c =>
     LO.withLargeObject(upload.contentsOid) { lo =>
       lo.truncate
       upload.truncate.save
