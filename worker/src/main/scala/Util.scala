@@ -22,6 +22,12 @@ object Logger {
   def info(msg: String) = logger.info(msg)
   def warn(msg: String) = logger.warn(msg)
   def error(msg: String) = logger.error(msg)
+  
+  def logElapsedTime(op: String, t0: Long) {
+    val t1 = System.nanoTime()
+    info(op + ", time: " + ("%.2f" format (t1 - t0) / 1e9) + " seconds")
+  }
+
 }
 
 // Singleton Akka actor system object. One per process, managing all actors.

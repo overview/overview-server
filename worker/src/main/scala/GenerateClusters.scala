@@ -13,9 +13,11 @@ package overview.clustering
 
 import scala.collection.mutable.{ Set, Stack, PriorityQueue, Map }
 import ClusterTypes._
+import overview.util.Logger
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription
 import overview.util.DocumentSetCreationJobStateDescription._
+import scala.collection.mutable.AddingBuilder
 
 object ConnectedComponents {
 
@@ -164,7 +166,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
   
 
   case class WeightPair(val id:DocumentID, val weight:TermWeight)
-  case class TermProduct(val term:TermID, val weight:TermWeight, val remainingDocs:List[WeightPair], val product:Float)
+  case class TermProduct(val term:TermID, val weight:TermWeight, val docIdx:Int, val product:Float)
   
   // Order ProductTriples decreasing their "product", 
   // which is the weight on this term times the largest weight on this term in remainingDocs
@@ -183,17 +185,21 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
   def sampleCloseEdges(numEdgesPerDoc:Int = 200) : Unit = {  
     val numDims = docVecs.stringTable.numTerms
     
+    val t0 = System.nanoTime()
+    
     // For each dimension (term), list of docs containing that term, and weight on each doc, sorted by weight
-    var d = Array.fill(numDims)(List[WeightPair]())  
+    var d = Array.fill(numDims)(scala.collection.mutable.ArrayBuffer[WeightPair]())  
     
     // First construct d: for each term, a list of containing docs, sorted by weight
-    docVecs.foreach { case (id,vec) =>
+    docVecs.foreach { case (id,vec) => 
       vec.foreach { case (term, weight) =>
-        d(term) = WeightPair(id, weight) :: d(term)
+        d(term) += WeightPair(id, weight)
       }
     }
-    d.transform(_.sortBy(-_.weight)) // sort each dim by decreasing weight
+    d.transform(_.sortBy(-_.weight).result) // sort each dim by decreasing weight
 
+    Logger.logElapsedTime("generated term/dimension array.", t0)
+    val t1 = System.nanoTime()
     
     // Now use d to produce numEdgesPerDoc "short" edges starting from each document
     docVecs.foreach { case (id,vec) =>
@@ -202,8 +208,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
       // sorted by product of term weight times largest weight on that term in all docs
       var pq = PriorityQueue[TermProduct]()
       vec.foreach { case (term,weight) =>
-        val termList = d(term)
-        pq += TermProduct(term, weight, termList, weight*termList.head.weight)  // add term to this doc's queue
+        pq += TermProduct(term, weight, 0, weight*d(term)(0).weight)  // add term to this doc's queue
       }
       
       // Now we just pop edges out of the queue on by one
@@ -212,21 +217,22 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
         
         // Generate edge from this doc to the doc with the highest term product
         val termProduct = pq.dequeue
-        val otherId = termProduct.remainingDocs.head.id
-        val distance = DistanceFn.CosineDistance(docVecs(id), docVecs(otherId))
+        val otherId = d(termProduct.term)(termProduct.docIdx).id
+        val distance = distanceFn(docVecs(id), docVecs(otherId))
         addSymmetricEdge(id, otherId, distance)
                 
         // Put this term back in the queue, with a new product entry 
         // We multiply this term's weight by weight on the document with the next highest weight on this term
-        val remainingDocs = termProduct.remainingDocs.tail
-        if (!remainingDocs.isEmpty) {
-          pq += TermProduct(termProduct.term, termProduct.weight, remainingDocs, termProduct.weight*remainingDocs.head.weight)
+        val newDocIdx = termProduct.docIdx + 1
+        if (newDocIdx < d(termProduct.term).size) {
+          pq += TermProduct(termProduct.term, termProduct.weight, newDocIdx, termProduct.weight*d(termProduct.term)(newDocIdx).weight)
         }
         
         numEdgesLeft -= 1
       }   
     }
     
+    Logger.logElapsedTime("generated sampled edges.", t1)
   }
   
   // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components

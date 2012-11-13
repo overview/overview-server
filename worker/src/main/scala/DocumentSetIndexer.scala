@@ -34,11 +34,6 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
   private val fetchingFraction = 0.9 // what percent done do we say when we're all done fetching docs?
   private val savingFraction = 0.99
 
-  private def logElapsedTime(op: String, t0: Long) {
-    val t1 = System.nanoTime()
-    Logger.info(op + ", time: " + ("%.2f" format (t1 - t0) / 1e9) + " seconds")
-  }
-
   private val vectorGen = new DocumentVectorGenerator
 
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
@@ -70,7 +65,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
 
       // Now, wait on this thread until all docs are in
       val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
-      logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
+      Logger.logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
     }
 
     // Cluster (build the tree)
@@ -80,7 +75,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
     DB.withConnection { implicit connection => addDocumentDescriptions(docTree) }
 
-    logElapsedTime("Clustered documents", t1)
+    Logger.logElapsedTime("Clustered documents", t1)
 
     // Save tree to database
     progAbort(Progress(savingFraction, Saving))
@@ -88,7 +83,7 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     DB.withTransaction { implicit connection =>
       nodeWriter.write(docTree)
     }
-    logElapsedTime("Saved DocumentSet to DB", t2)
+    Logger.logElapsedTime("Saved DocumentSet to DB", t2)
 
     progAbort(Progress(1, Done))
   }
