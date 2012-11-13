@@ -51,6 +51,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       // store the upload as DummyUpload to avoid need for downcasting
       var currentUpload: Option[DummyUpload] = None
 
+      var appendCount: Int = 0
       var uploadCancelled: Boolean = false
       var uploadTruncated: Boolean = false
 
@@ -70,6 +71,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       }
 
       def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = {
+        appendCount = appendCount + 1
         if (appendSucceeds) {
           currentUpload = Some(upload.asInstanceOf[DummyUpload].upload(chunk))
           currentUpload
@@ -101,7 +103,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       // Drive the iteratee with the enumerator to generate a result
       def result: Either[Result, OverviewUpload] = {
         val resultPromise = for {
-          doneIt <- enumerator(uploadIteratee.store(userId, guid, request))
+          doneIt <- enumerator(uploadIteratee.store(userId, guid, request, 15))
           result: Either[Result, OverviewUpload] <- doneIt.run
         } yield result
         resultPromise.await.get
@@ -173,15 +175,15 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
     trait InProgressHeader extends UploadHeader {
       def headers = Map(
-          (CONTENT_DISPOSITION, Seq(contentDisposition)),
-          (CONTENT_LENGTH, Seq("100")),
-          (CONTENT_RANGE, Seq("100-199/1000")))
+        (CONTENT_DISPOSITION, Seq(contentDisposition)),
+        (CONTENT_LENGTH, Seq("100")),
+        (CONTENT_RANGE, Seq("100-199/1000")))
     }
 
     trait MalformedHeader extends UploadHeader {
       def headers = Map(
-          (CONTENT_DISPOSITION, Seq(contentDisposition)),
-          (CONTENT_RANGE, Seq("Bad Field")))
+        (CONTENT_DISPOSITION, Seq(contentDisposition)),
+        (CONTENT_RANGE, Seq("Bad Field")))
     }
 
     // Enumerators
@@ -195,6 +197,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
     }
 
+    trait LastChunkWillNotFillBuffer {
+      self: UploadContext =>
+      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 8)
+    }
+
     "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
@@ -203,6 +210,15 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     "process Enumerator with multiple chunks" in new GoodUpload with MultipleChunks with GoodHeader {
       upload.bytesUploaded must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
+    }
+
+    "buffer incoming data" in new GoodUpload with MultipleChunks with GoodHeader {
+      upload.bytesUploaded must be equalTo (chunk.size)
+      uploadIteratee.appendCount must be equalTo (5)
+    }
+
+    "process last chunk of data if buffer not full at end of upload" in new GoodUpload with LastChunkWillNotFillBuffer with GoodHeader {
+      upload.bytesUploaded must be equalTo (chunk.size)
     }
 
     "truncate upload if restarted at byte 0" in new GoodUpload with SingleChunk with GoodHeader {
@@ -219,13 +235,13 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "set filename to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
-      upload.filename must be equalTo(contentDisposition)
+      upload.filename must be equalTo (contentDisposition)
     }
 
     "set filename to empty string if no Content-Disposition header is found" in new GoodUpload with SingleChunk with NoContentDisposition {
-      upload.filename must be equalTo("")
+      upload.filename must be equalTo ("")
     }
-    
+
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
     }

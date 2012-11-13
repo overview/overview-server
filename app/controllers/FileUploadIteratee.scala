@@ -27,6 +27,7 @@ import java.sql.SQLException
  */
 trait FileUploadIteratee {
   private def X_MSHACK_CONTENT_RANGE: String = "X-MSHACK-Content-Range"
+  private def DefaultBufferSize: Int = 1024 * 1024
 
   /** package for information extracted from request header */
   private case class UploadRequest(filename: String, start: Long, contentLength: Long)
@@ -35,7 +36,7 @@ trait FileUploadIteratee {
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
       val headers = header.headers
-      
+
       val filename = headers.get(CONTENT_DISPOSITION).getOrElse("")
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       for {
@@ -51,13 +52,13 @@ trait FileUploadIteratee {
   /**
    * Checks the validity of the requests and processes the upload.
    */
-  def store(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+  def store(userId: Long, guid: UUID, requestHeader: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
 
     val uploadRequest = UploadRequest(requestHeader).toRight(BadRequest)
 
     uploadRequest.fold(
       errorStatus => Done(Left(errorStatus), Input.Empty),
-      request => handleUploadRequest(userId, guid, request))
+      request => handleUploadRequest(userId, guid, request, bufferSize))
   }
 
   /**
@@ -66,13 +67,28 @@ trait FileUploadIteratee {
    * error is encountered, but will not ignore the data received after the
    * error occurs.
    */
-  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
     val initialUpload = findValidUploadRestart(userId, guid, request)
       .getOrElse(createUpload(userId, guid, request.filename, request.contentLength).toRight(InternalServerError))
 
-    Iteratee.fold(initialUpload) { (upload, chunk) =>
+    var buffer = Array[Byte]()
+
+    Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](initialUpload) { (upload, chunk) =>
       val validUpload = upload.right.flatMap(validUploadWithChunk(_, chunk).toRight(BadRequest))
-      validUpload.right.flatMap(appendChunk(_, chunk).toRight(InternalServerError))
+      validUpload.right.flatMap { u =>
+        if ((buffer.size + chunk.size) >= bufferSize) {
+          val bufferedChunk = buffer ++ chunk
+          buffer = Array[Byte]()
+          appendChunk(u, bufferedChunk).toRight(InternalServerError)
+        }
+        else {
+          buffer ++= chunk
+          Right(u)
+        }    
+      }
+    } mapDone { u =>
+      if (buffer.size > 0) u.right.flatMap(appendChunk(_, buffer).toRight(InternalServerError))
+      else u
     }
   }
 
@@ -126,7 +142,7 @@ object FileUploadIteratee extends FileUploadIteratee with PgConnection {
     LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, contentLength, lo.oid).save }
   }
 
-  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c =>
+  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] = withPgConnection { implicit c => println("Appending %d bytes".format(chunk.size))
     LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
