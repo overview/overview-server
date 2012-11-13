@@ -7,6 +7,7 @@
 // * We require a header
 // * We allow blank lines (anytime after the header)
 // * We allow "\r" or "\n" alone to divide lines, not just "\r\n"
+// * We allow "\v", "\t" and "\f"
 // * We allow truncated files
 
 start = file
@@ -50,4 +51,4 @@ _2DQUOTE = '""' { return '"'; }
 
 TEXTDATA = c:[\x20\x21\x23-\x2b\u002d-\uffff]* { return c.join(''); }
 
-ESCAPED_TEXTDATA = c:[\r\n\x20\x21\u0023-\uffff]+ { return c.join(''); }
+ESCAPED_TEXTDATA = c:[\t-\r\x20\x21\u0023-\uffff]+ { return c.join(''); }
