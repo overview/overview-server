@@ -1,8 +1,51 @@
 @()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
-  <form class="form-inline" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
-    <p>@m("help")</p>
-    <input type="file" name="file" />
-    <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
+  <form class="modal hide fade" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
+    <div class="modal-header">
+      <button type="reset" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>@m("h3")</h3>
+    </div>
+    <div class="modal-body">
+      <p><label>@m("label.file") <input type="file" name="file" /></label></p>
+      <p class="charset">
+        <label>
+          @m("label.charset")
+          <select name="charset">
+            <option value="utf-8" selected="selected">@m("charset.utf8")</option>
+            <option value="windows-1252">@m("charset.windows1252")</option>
+            <option value="utf-16">@m("charset.utf16")</option>
+          </select>
+        </label>
+      </p>
+      <div class="requirements">
+        <p class="help">@m("help.requirements")</p>
+        <ul>
+          <li class="text">@m("requirements.text")</li>
+          <li class="csv">@m("requirements.csv")</li>
+          <li class="header">@m("requirements.header")</li>
+          <li class="data">@m("requirements.data")</li>
+        </ul>
+        <p class="error" style="display:none;">@m("error.requirements")</li>
+        <p class="ok"><button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button></p>
+      </div>
+      <div class="preview" style="display:none;">
+        <h4>@m("preview.h4")</h4>
+        <div class="error"></div>
+        <pre></pre>
+        <table>
+          <thead>
+            <tr><th/></tr>
+          </thead>
+          <tbody>
+            <tr><td/></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="reset" class="btn">@m("cancel")</button>
+      <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
+      <progress max="100" value="0"><span class="status"></span>
+    </div>
   </form>
 }

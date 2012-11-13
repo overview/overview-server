@@ -410,6 +410,101 @@ body.document-set-index {
     .manual form {
       margin-bottom: 0;
     }
+
+    .upload form {
+      width: 80%;
+      margin-left: -40%;
+      margin-top: -325px;
+
+      .modal-body {
+        max-height: 550px; // TODO make it expand with the window
+      }
+
+      input[type=file] {
+        line-height: inherit;
+        height: auto;
+      }
+
+      select {
+        margin-bottom: 0;
+      }
+
+      .preview {
+        .error {
+          color: @red;
+          font-weight: bold;
+        }
+
+        pre {
+          font-size: .8em;
+          overflow: auto;
+
+          ol {
+            margin-left: 4em;
+            background: white;
+          }
+
+          li:hover {
+            background: @tableBackgroundHover;
+          }
+        }
+
+        table {
+          .table;
+          .table-condensed;
+          .table-bordered;
+          font-family: monospace;
+          white-space: pre;
+
+          //table-layout: fixed; ... too ugly!
+          width: auto;
+
+          th, td {
+            font-size: .8em;
+          }
+
+          div {
+            max-height: 10em;
+            max-width: 300px;
+            overflow: auto;
+          }
+        }
+      }
+
+      progress {
+        box-sizing: border-box;
+        display: none;
+        border-left: 5px solid transparent;
+        width: 200px;
+      }
+      span.status {
+        display: none;
+      }
+
+      .requirements li {
+        list-style-position: inside;
+        list-style-type: disc;
+
+        &.ok {
+          list-style-type: none;
+          color: @green;
+
+          &:before {
+            content: "✔";
+          }
+        }
+
+        &.bad {
+          list-style-type: none;
+          color: @red;
+          font-weight: bold;
+
+          &:before {
+            content: "✘";
+          }
+        }
+      }
+    }
   }
 }
 
