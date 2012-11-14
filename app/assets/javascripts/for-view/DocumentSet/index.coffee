@@ -193,7 +193,20 @@ make_csv_upload_form = (form_element) ->
 
     # You can't set innerHTML on a <table> or <thead> or <tbody> in IE
     table_template = "<table><thead>#{thead_template}</thead><tbody>#{tbody_template}</tbody></table>"
-    table_html = _.template(table_template, csv, { variable: 'data' })
+
+    records = csv.records
+    if records.length > 2
+      # Since we're dealing with a truncated file, the final row may have been
+      # trucnated. Hide it.
+      # (We don't do this if we only have one or two records, because we want
+      # at least *some* data to be shown.)
+      records = records.slice(0, -1)
+
+    table_html = _.template(
+      table_template,
+      { header: csv.header, records: records },
+      { variable: 'data' }
+    )
 
     $table.replaceWith(table_html)
 
