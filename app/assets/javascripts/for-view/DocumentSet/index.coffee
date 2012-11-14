@@ -138,12 +138,12 @@ make_csv_upload_form = (form_element) ->
     header = csv_reader.result.header
     lower_header = header.map((s) -> s.toLowerCase())
 
-    id_index = lower_header.indexOf('id')
     text_index = lower_header.indexOf('text')
 
-    return -1 if id_index < 0 || text_index < 0
-
-    Math.max(id_index, text_index) + 1
+    if text_index < 0
+      -1
+    else
+      text_index + 1
 
   has_header = () ->
     #return false if !has_csv()
