@@ -1,13 +1,20 @@
 package models.orm
 
-import helpers.DbTestContext
 import java.sql.Timestamp
 import java.util.UUID
-import org.specs2.mutable.Specification
-import org.squeryl.PrimitiveTypeMode._
-import play.api.test.FakeApplication
-import play.api.Play.{ start, stop }
 
+import org.junit.runner.RunWith
+import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import org.squeryl.PrimitiveTypeMode.__thisDsl
+import org.squeryl.PrimitiveTypeMode.long2ScalarLong
+
+import helpers.DbTestContext
+import play.api.Play.start
+import play.api.Play.stop
+import play.api.test.FakeApplication
+
+@RunWith(classOf[JUnitRunner])
 class UploadSpec extends Specification {
 
   step(start(FakeApplication()))
@@ -18,11 +25,14 @@ class UploadSpec extends Specification {
       val uploadId = UUID.randomUUID
       val timestamp = new Timestamp(System.currentTimeMillis)
       val user = User()
+      val uploadedFile = UploadedFile(0l, timestamp, 0l,"content-disposition", "content-type", 100l)
       var upload: Upload = _
 
       override def setupWithDb = {
         Schema.users.insert(user)
-        upload = Upload(0l, user.id, uploadId, timestamp, "file", 0, 100, 0)
+        uploadedFile.save
+        upload = Upload(0l, user.id, uploadId, uploadedFile.id, timestamp, 100)
+        
         upload.save
       }
     }
@@ -46,6 +56,8 @@ class UploadSpec extends Specification {
       
       notFound must beNone
     }
+    
+    
 
   }
 

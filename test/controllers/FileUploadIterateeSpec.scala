@@ -20,6 +20,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.Either.LeftProjection
 import java.sql.SQLException
+import models.upload.OverviewUploadedFile
 
 @RunWith(classOf[JUnitRunner])
 class FileUploadIterateeSpec extends Specification with Mockito {
@@ -27,12 +28,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
   "FileUploadIteratee" should {
 
     /** OverviewUpload implementation that stores data in an attribute */
-    case class DummyUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, filename: String, var data: Array[Byte] = Array[Byte]()) extends OverviewUpload {
+    case class DummyUpload(userId: Long, guid: UUID, val bytesUploaded: Long, val size: Long, 
+      var data: Array[Byte] = Array[Byte](), uploadedFile: OverviewUploadedFile = mock[OverviewUploadedFile]) extends OverviewUpload {
+      
       val lastActivity: Timestamp = new Timestamp(0)
       val contentsOid: Long = 1l
 
+
       def upload(chunk: Array[Byte]): DummyUpload = {
         data = data ++ chunk
+        uploadedFile.size returns (data.size)
+
         withUploadedBytes(data.size)
       }
 
@@ -57,9 +63,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = Option(currentUpload)
 
-      def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload = {
+      def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentLength: Long): OverviewUpload = {
         uploadCancelled = false
-        currentUpload = DummyUpload(userId, guid, 0l, contentLength, filename)
+        val uploadedFile = mock[OverviewUploadedFile]
+        uploadedFile.contentDisposition returns contentDisposition
+        currentUpload = DummyUpload(userId, guid, 0l, contentLength, uploadedFile = uploadedFile)
         currentUpload
       }
 
@@ -199,43 +207,43 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
     "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
       result must beRight
-      upload.bytesUploaded must be equalTo (chunk.size)
+      upload.uploadedFile.size must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
     "process Enumerator with multiple chunks" in new GoodUpload with MultipleChunks with GoodHeader {
-      upload.bytesUploaded must be equalTo (chunk.size)
+      upload.uploadedFile.size must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
     }
 
     "buffer incoming data" in new GoodUpload with MultipleChunks with GoodHeader {
-      upload.bytesUploaded must be equalTo (chunk.size)
+      upload.uploadedFile.size must be equalTo (chunk.size)
       uploadIteratee.appendCount must be equalTo (5)
     }
 
     "process last chunk of data if buffer not full at end of upload" in new GoodUpload with LastChunkWillNotFillBuffer with GoodHeader {
-      upload.bytesUploaded must be equalTo (chunk.size)
+      upload.uploadedFile.size must be equalTo (chunk.size)
     }
 
     "truncate upload if restarted at byte 0" in new GoodUpload with SingleChunk with GoodHeader {
       val initialUpload = upload
       val restartedUpload = upload
 
-      restartedUpload.bytesUploaded must be equalTo (chunk.size)
+      restartedUpload.uploadedFile.size must be equalTo (chunk.size)
       uploadIteratee.uploadedData must be equalTo (chunk)
       uploadIteratee.uploadTruncated must beTrue
     }
 
     "use X-MSHACK-Content-Range if Content-Range header not specified" in new GoodUpload with SingleChunk with MsHackHeader {
-      upload.bytesUploaded must be equalTo (chunk.size)
+      upload.uploadedFile.size must be equalTo (chunk.size)
     }
 
-    "set filename to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
-      upload.filename must be equalTo (contentDisposition)
+    "set contentDisposition to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
+      upload.uploadedFile.contentDisposition must be equalTo (contentDisposition)
     }
 
-    "set filename to empty string if no Content-Disposition header is found" in new GoodUpload with SingleChunk with NoContentDisposition {
-      upload.filename must be equalTo ("")
+    "set contentDisposition to empty string if no Content-Disposition header is found" in new GoodUpload with SingleChunk with NoContentDisposition {
+      upload.uploadedFile.contentDisposition must be equalTo ("")
     }
 
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
@@ -249,17 +257,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       uploadIteratee.uploadCancelled must beTrue
     }
 
-    "not throw exception if cancel fails" in new FailingCancel with SingleChunk with InProgressHeader {
+    "throw exception if cancel fails" in new FailingCancel with SingleChunk with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", 1000)
 
-      result must not(throwA[SQLException])
+      result must throwA[SQLException]
     }
 
     "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
       val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000)
       uploadIteratee.appendChunk(initialUpload, chunk)
 
-      result must beRight.like { case u => u.bytesUploaded must be equalTo (200) }
+      result must beRight.like { case u => u.uploadedFile.size must be equalTo (200) }
     }
 
     "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {

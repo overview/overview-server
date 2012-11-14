@@ -31,8 +31,8 @@ trait PgConnectionContext extends Around {
       pgConnection = connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
 
       using(session) {
-	setupWithDb
-	test
+        setupWithDb
+        test
       }
     } finally {
       connection.rollback()

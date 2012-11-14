@@ -80,11 +80,10 @@ trait FileUploadIteratee {
           val bufferedChunk = buffer ++ chunk
           buffer = Array[Byte]()
           Right(appendChunk(u, bufferedChunk))
-        }
-        else {
+        } else {
           buffer ++= chunk
           Right(u)
-        }    
+        }
       }
     } mapDone { u =>
       if (buffer.size > 0) u.right.map(appendChunk(_, buffer))
@@ -97,7 +96,7 @@ trait FileUploadIteratee {
    * size of the upload, @return Some(upload), None otherwise
    */
   private def validUploadWithChunk(upload: OverviewUpload, chunk: Array[Byte]): Option[OverviewUpload] =
-    Some(upload).filter(u => u.bytesUploaded + chunk.size <= u.size)
+    Some(upload).filter(u => u.uploadedFile.size + chunk.size <= u.size)
 
   /**
    * If the upload exists, verify the validity of the restart.
@@ -109,9 +108,9 @@ trait FileUploadIteratee {
     findUpload(userId, guid).map(u =>
       info.start match {
         case 0 => Right(truncateUpload(u))
-        case n if n == u.bytesUploaded => Right(u)
+        case n if n == u.uploadedFile.size => Right(u)
         case _ => {
-          ignoring(classOf[SQLException]) { cancelUpload(u) }
+          cancelUpload(u)
           Left(BadRequest)
         }
       })
@@ -139,22 +138,23 @@ object FileUploadIteratee extends FileUploadIteratee with PgConnection {
   def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
 
   def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, contentLength, lo.oid).save }
+    LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, "content_type", contentLength, lo.oid).save }
   }
 
-  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c => println("Appending %d bytes".format(chunk.size))
-    LO.withLargeObject(upload.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
+  def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c =>
+    LO.withLargeObject(upload.uploadedFile.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
   def truncateUpload(upload: OverviewUpload): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.contentsOid) { lo =>
+    LO.withLargeObject(upload.uploadedFile.contentsOid) { lo =>
       lo.truncate
       upload.truncate.save
     }
   }
 
   def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
-    LO.delete(upload.contentsOid)
+    LO.delete(upload.uploadedFile.contentsOid)
+    upload.uploadedFile.delete
     upload.delete
   }
 }

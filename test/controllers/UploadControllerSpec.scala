@@ -6,6 +6,7 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import models.upload.OverviewUpload
+import models.upload.OverviewUploadedFile
 import play.api.http.HeaderNames._
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
@@ -73,8 +74,10 @@ class UploadControllerSpec extends Specification with Mockito {
 
     def upload: OverviewUpload = {
       val u = mock[OverviewUpload]
-      u.filename returns contentDisposition 
-      u.bytesUploaded returns bytesUploaded
+      val f = mock[OverviewUploadedFile]
+      u.uploadedFile returns f
+      f.size returns bytesUploaded
+      f.contentDisposition returns contentDisposition
       u.size returns 1000
     }
   }

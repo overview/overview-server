@@ -11,11 +11,9 @@ case class Upload(
   id: Long = 0L,
   @Column("user_id") userId: Long,
   guid: UUID,
+  @Column("uploaded_file_id") uploadedFileId: Long,
   @Column("last_activity") lastActivity: Timestamp,
-  filename: String,
-  @Column("bytes_uploaded") bytesUploaded: Long,
-  @Column("bytes_total") bytesTotal: Long,
-  @Column("contents_oid") contentsOid: Long
+  @Column("total_size") totalSize: Long
   ) extends KeyedEntity[Long] {
 
   def save: Upload = {

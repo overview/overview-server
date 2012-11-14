@@ -53,13 +53,13 @@ trait UploadController extends BaseController {
   def delete(guid: UUID) = authorizedAction(anyUser) { user => authorizedDelete(user, guid)(_: Request[AnyContent], _: Connection) }
 
   private def uploadResult(upload: OverviewUpload) =
-    if (upload.bytesUploaded == 0) NotFound
-    else if (upload.bytesUploaded == upload.size) Ok
+    if (upload.uploadedFile.size == 0) NotFound
+    else if (upload.uploadedFile.size == upload.size) Ok
     else PartialContent
 
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
-    def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.bytesUploaded - 1, upload.size)
-    def contentDisposition(upload: OverviewUpload): String = upload.filename
+    def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
+    def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
     
     findUpload(user.id, guid).map { u =>
       uploadResult(u) match {
@@ -106,7 +106,7 @@ object UploadController extends UploadController with PgConnection {
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 
   def deleteUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
-    LO.delete(upload.contentsOid)
+    LO.delete(upload.uploadedFile.contentsOid)
     upload.delete
   }
 }
