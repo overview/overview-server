@@ -6,6 +6,7 @@ using System.Windows.Media;
 
 namespace OverviewProject.FileUpload {
   public partial class App : Application {
+    private FileReaderFactory fileReaderFactory;
     private UploadRequestFactory uploadRequestFactory;
 
     public App() {
@@ -19,7 +20,10 @@ namespace OverviewProject.FileUpload {
       this.RootVisual = new FilePickerControl();
       HtmlPage.RegisterScriptableObject("FilePickerControl", this.RootVisual);
 
+      this.fileReaderFactory = new FileReaderFactory();
       this.uploadRequestFactory = new UploadRequestFactory();
+
+      HtmlPage.RegisterScriptableObject("FileReaderFactory", this.fileReaderFactory);
       HtmlPage.RegisterScriptableObject("UploadRequestFactory", this.uploadRequestFactory);
     }
 

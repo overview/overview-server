@@ -192,7 +192,7 @@
     var doDefineProperty = function(obj, jsKey, slKey) {
       Object.defineProperty(obj, jsKey, {
         enumerable: true,
-        get: function() { return silverlightObject[slKey] }
+        get: function() { return silverlightObject[slKey]; }
       });
     };
     for (jsKey in keys) {
@@ -205,6 +205,47 @@
     return new Blob(this._silverlightObject.slice(start, end));
   };
 
+  // FileReader API. http://www.w3.org/TR/FileAPI/#FileReader-interface
+  function FileReader(silverlightPlugin) {
+    var silverlightObject = this._silverlightObject =
+      silverlightPlugin.Content.FileReaderFactory.CreateFileReader();
+
+    Object.defineProperty(this, 'readyState', {
+      enumerable: true,
+      get: function() { return silverlightObject.ReadyState; }
+    });
+    Object.defineProperty(this, 'result', {
+      enumerable: true,
+      get: function() { return silverlightObject.Result; }
+    });
+    Object.defineProperty(this, 'error', {
+      enumerable: true,
+      get: function() {
+        if (silverlightObject.Error) {
+          return { name: silverlightObject.Error.Name };
+        } else {
+          return null;
+        }
+      }
+    });
+
+    this.onloadend = function() {};
+
+    var _this = this;
+    var silverlight_onloadend = function(sender, args) {
+      _this.onloadend({
+        lengthComputable: args.LengthComputable,
+        length: args.Length,
+        total: args.Total
+      });
+    };
+    silverlightObject.addEventListener('OnLoadEnd', silverlight_onloadend);
+  }
+
+  FileReader.prototype.readAsText = function(blob, encoding) {
+    this._silverlightObject.ReadAsText(blob._silverlightObject, encoding);
+  }
+
   window.SilverlightFileUploadPlugin = function(silverlightPlugin, fileSelectedCallback) {
     var picker = silverlightPlugin.Content.FilePickerControl;
     picker.addEventListener('FileSelected', function(sender, args) {
@@ -215,6 +256,9 @@
     return {
       createXMLHttpUploadRequest: function(callback) {
         return new XMLHttpUploadRequest(silverlightPlugin, callback);
+      },
+      createFileReader: function() {
+        return new FileReader(silverlightPlugin);
       }
     };
   };

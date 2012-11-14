@@ -40,6 +40,8 @@
     </ApplicationDefinition>
     <Compile Include="src\App.xaml.cs">
       <DependentUpon>src\App.xaml</DependentUpon>
+      <DependentUpon>src\FileReaderFactory.cs</DependentUpon>
+      <DependentUpon>src\UploadRequestFactory.cs</DependentUpon>
     </Compile>
     <ApplicationDefinition Include="src\FilePickerControl.xaml">
       <SubType>Designer</SubType>
@@ -47,6 +49,7 @@
     </ApplicationDefinition>
     <Compile Include="src\FilePickerControl.xaml.cs">
       <DependentUpon>src\FilePickerControl.xaml</DependentUpon>
+      <DependentUpon>src\File.cs</DependentUpon>
     </Compile>
     <Compile Include="src\Blob.cs" />
     <Compile Include="src\File.cs">
@@ -57,6 +60,12 @@
     </Compile>
     <Compile Include="src\UploadRequestFactory.cs">
       <DependentUpon>src\UploadRequest.cs</DependentUpon>
+    </Compile>
+    <Compile Include="src\FileReaderFactory.cs">
+      <DependentUpon>src\FileReader.cs</DependentUpon>
+    </Compile>
+    <Compile Include="src\FileReader.cs">
+      <DependentUpon>src\Blob.cs</DependentUpon>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\Silverlight\v5.0\Microsoft.Silverlight.CSharp.targets" />
