@@ -1,26 +1,32 @@
 package models.orm
 
-import anorm._
-import anorm.SqlParser._
 import java.util.Date
-import org.specs2.specification.Scope
+
+import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import org.specs2.specification.Scope
 import org.squeryl.PrimitiveTypeMode._
-import play.api.test.FakeApplication
-import play.api.Play.{ start, stop }
 
-import testutil.DbSetup._
+import anorm.SQL
+import anorm.SqlParser.flatten
+import anorm.SqlParser.scalar
+import anorm.sqlToSimple
+import anorm.toParameterValue
 import helpers.DbTestContext
-import models.orm._
+import play.api.Play.start
+import play.api.Play.stop
+import play.api.test.FakeApplication
+import testutil.DbSetup._
 
+@RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
 
   step(start(FakeApplication()))
   
   "DocumentSet" should {
     
-    // Need inExample because Squeryl messes up implicit conversion
-    inExample("create a DocumentSetCreationJob") in new DbTestContext {
+    "create a DocumentSetCreationJob" in new DbTestContext {
       val query = "query"
       val title = "title"
 
@@ -36,12 +42,12 @@ class DocumentSetSpec extends Specification {
       returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(Some(returnedJob))
     }
 
-    inExample("set createdAt to the current date by default") in new Scope {
+    "set createdAt to the current date by default" in new Scope {
       val documentSet = DocumentSet(0L)
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
     
-    inExample("throw exception if job creation is attempted before db insertion") in new DbTestContext {
+    "throw exception if job creation is attempted before db insertion" in new DbTestContext {
       val query = "query"
       val title = "title"
       val documentSet = new DocumentSet(0L, title, query)
@@ -49,7 +55,7 @@ class DocumentSetSpec extends Specification {
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
     
-    inExample("delete all references in other tables") in new DbTestContext {
+    "delete all references in other tables" in new DbTestContext {
       val query = "query"
       val documentSet = Schema.documentSets.insert(DocumentSet(0L, query))
       val id = documentSet.id
