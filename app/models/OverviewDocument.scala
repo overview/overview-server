@@ -1,0 +1,70 @@
+package models
+
+import models.orm.{Document,DocumentSet}
+
+/** A document in the database */
+sealed trait OverviewDocument {
+  /** database ID */
+  val id: Long
+
+  /** DocumentSet (models.orm.DocumentSet.
+    * FIXME: should be models.OverviewDocumentSet, but we don't have one
+    */
+  def documentSet: models.orm.DocumentSet
+
+  /** Title of the document. (Empty string is allowed.) */
+  val title: String
+
+  /** URL to view the document.
+    *
+    * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
+    */
+  def url(pattern: String) : String
+}
+
+object OverviewDocument {
+  trait OverviewDocumentImpl extends OverviewDocument {
+    protected val ormDocument: Document
+
+    override val id = ormDocument.id
+    override lazy val documentSet = ormDocument.documentSet.single
+    override val title = ormDocument.title
+    override def url(pattern: String) : String = {
+      ormDocument.url.getOrElse(pattern.replace("{0}", "" + id))
+    }
+  }
+
+  case class CsvImportDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
+    private def throwOnNull = throw new Exception("CsvImportDocument has NULL values it should not have")
+
+    /** Full-text contents of the document */
+    lazy val text: String = ormDocument.text.getOrElse(throwOnNull)
+
+    /** User-provided ID of the document.
+      *
+      * This is nothing but metadata. We do not enforce anything on it.
+      */
+    lazy val suppliedId: Option[String] = ormDocument.suppliedId
+  }
+
+  case class DocumentCloudDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
+    private def throwOnNull = throw new Exception("DocumentCloudDocument has NULL values it should not have")
+
+    /** DocumentCloud document ID */
+    lazy val documentcloudId: String = ormDocument.documentcloudId.getOrElse(throwOnNull)
+
+    /** URL to view the document on DocumentCloud */
+    override def url(pattern: String) : String = {
+      "https://www.documentcloud.org/documents/" + documentcloudId
+    }
+  }
+
+  /** Factory method */
+  def apply(ormDocument: Document) : OverviewDocument = {
+    ormDocument.documentType.value match {
+      case "CsvImportDocument" => CsvImportDocument(ormDocument)
+      case "DocumentCloudDocument" => DocumentCloudDocument(ormDocument)
+      case _ => throw new Exception("Impossible document type " + ormDocument.documentType.value)
+    }
+  }
+}
