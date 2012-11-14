@@ -58,7 +58,9 @@ namespace OverviewProject.FileUpload {
       public override int Read(byte[] buffer, int offset, int count) {
         // Read from the stream, but never more than count
         if ((long) count > length - position) count = (int) (length - position);
-        return inputStream.Read(buffer, offset, count);
+        int bytesRead = inputStream.Read(buffer, offset, count);
+        this.position += bytesRead;
+        return bytesRead;
       }
 
       public override void Write(byte[] a, int b, int c) {
