@@ -32,6 +32,7 @@ make_csv_upload_form = (form_element) ->
   upload = undefined
   upload_options = {}
   csv_reader = undefined
+  csv_reader_options = {}
   ready_to_submit = false
 
   select_file = (new_file) ->
@@ -53,7 +54,7 @@ make_csv_upload_form = (form_element) ->
     if file
       preview_blob = file.slice(0, Math.min(file.size, FILE_PREVIEW_SIZE))
 
-      csv_reader = new CsvReader()
+      csv_reader = new CsvReader(csv_reader_options)
       csv_reader.onloadend = on_preview_loadend
       csv_reader.read(preview_blob, charset)
 
@@ -188,13 +189,13 @@ make_csv_upload_form = (form_element) ->
 
   refresh_preview_table = ($table, csv, error) ->
     thead_template = '<% _.each(data.header, function(col) { %><th><%- col %></th><% }); %>'
-    thead_html = _.template(thead_template, { header: csv.header }, { variable: 'data' })
-
     tbody_template = '<% _.each(data.records, function(record) { %><tr><% _.each(record, function(value) { %><td><div><%- value %></td><% }); %></div></tr><% }); %>'
-    tbody_html = _.template(tbody_template, { records: csv.records }, { variable: 'data' })
 
-    $table.children('thead')[0].innerHTML = thead_html
-    $table.children('tbody')[0].innerHTML = tbody_html
+    # You can't set innerHTML on a <table> or <thead> or <tbody> in IE
+    table_template = "<table><thead>#{thead_template}</thead><tbody>#{tbody_template}</tbody></table>"
+    table_html = _.template(table_template, csv, { variable: 'data' })
+
+    $table.replaceWith(table_html)
 
   refresh_preview_pre = ($pre, text, error) ->
     lines = text.split(/\r\n|\r|\n/g)
@@ -279,9 +280,11 @@ make_csv_upload_form = (form_element) ->
       file_upload_api = new window.SilverlightFileUploadPlugin host, (new_selected_file) ->
         select_file(new_selected_file)
 
-    upload_options.xhr_factory = (callback) ->
-      file_upload_api.createXMLHttpUploadRequest (progress_obj) ->
-        callback(progress_obj.loaded, progress_obj.total)
+      upload_options.xhr_factory = (callback) ->
+        file_upload_api.createXMLHttpUploadRequest (progress_obj) ->
+          callback(progress_obj.loaded, progress_obj.total)
+
+      csv_reader_options.file_reader_factory = file_upload_api.createFileReader
 
     # Add the Silverlight HTML, which will call on_silverlight_load
     silverlight_html = Silverlight.createObjectEx({
@@ -299,7 +302,7 @@ make_csv_upload_form = (form_element) ->
     $silverlight_div = $('<div class="silverlight-file-upload"></div>')
     $silverlight_div.css({
       display: 'inline-block'
-      height: $file.outerHeight()
+      height: 30 # HACK -- we'd like to use :file's height, but we can't compute it here
       width: 200
       verticalAlign: 'middle'
     })
