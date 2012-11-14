@@ -1,5 +1,9 @@
 csv_parser = window.csv_parser
 
+DEFAULT_OPTIONS = {
+  file_reader_factory: () -> new FileReader()
+}
+
 # Reads CSV data from a Blob, asynchronously.
 #
 # This class behaves similarly to FileReader, as in this example code:
@@ -22,15 +26,16 @@ csv_parser = window.csv_parser
 #
 # See FileReader doc: https://developer.mozilla.org/en-US/docs/DOM/FileReader
 class CsvReader
-  constructor: () ->
+  constructor: (options = {}) ->
     @error = null
     @text = null
     @result = null
     @readyState = 0
+    @options = _.extend({}, DEFAULT_OPTIONS, options)
     @onloadend = () ->
 
   read: (blob, encoding) ->
-    file_reader = new FileReader()
+    file_reader = @options.file_reader_factory()
     file_reader.onloadend = () =>
       this._handle_loadend(
         file_reader.readyState, file_reader.error, file_reader.result)
