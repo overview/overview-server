@@ -14,15 +14,30 @@ import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
+import org.squeryl.customtypes.StringField
+
+
+object DocumentSetType extends Enumeration {
+  type DocumentSetType = Value
+  val DocumentCloudDocumentSet = Value(0, "DocumentCloudDocumentSet")
+  val CsvImportDocumentSet = Value(1, "CsvImportDocumentSet")
+  
+  implicit def convertToString(t: DocumentSetType): String = t.toString
+}
+
+import DocumentSetType._
 
 case class DocumentSet(
     val id: Long = 0,
     val title: String = "",
     val query: String = "",
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
+    @Column("contents_oid") val contentsOid: Option[Long] = None,
+    @Column("type") val documentSetType: String = DocumentCloudDocumentSet,
     @(Transient @field) val providedDocumentCount: Option[Long] = None,
     @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None
     ) extends KeyedEntity[Long] {
+  
   lazy val users = Schema.documentSetUsers.left(this)
 
   lazy val documents = Schema.documentSetDocuments.left(this)
