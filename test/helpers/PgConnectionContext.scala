@@ -15,7 +15,8 @@ import play.api.Play.current
 // around bonecp.ConnectionHandle
 trait PgConnectionContext extends Around {
   implicit var pgConnection: PGConnection = _
-
+  lazy implicit val connection = Session.currentSession.connection
+  
   def setupWithDb = {}
 
   def around[T <% Result](test: => T) = {
