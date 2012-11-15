@@ -14,6 +14,9 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import play.api.mvc.AnyContent
 import models.upload.LO
+import models.orm.DocumentSet
+import models.orm.DocumentSetType._
+import models.orm.User
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
@@ -60,7 +63,7 @@ trait UploadController extends BaseController {
   private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
-    
+
     findUpload(user.id, guid).map { u =>
       uploadResult(u) match {
         case NotFound => NotFound
@@ -73,6 +76,8 @@ trait UploadController extends BaseController {
 
   private[controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
     val upload: OverviewUpload = request.body
+    startDocumentSetCreationJob(upload)
+    
     uploadResult(upload)
   }
 
@@ -93,6 +98,7 @@ trait UploadController extends BaseController {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload)
+  protected def startDocumentSetCreationJob(upload: OverviewUpload)
 }
 
 /**
@@ -108,6 +114,15 @@ object UploadController extends UploadController with PgConnection {
   def deleteUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
     LO.delete(upload.uploadedFile.contentsOid)
     upload.delete
+  }
+
+  def startDocumentSetCreationJob(upload: OverviewUpload) {
+    val documentSet = DocumentSet(
+      documentSetType = CsvImportDocumentSet,
+      contentsOid = Some(upload.uploadedFile.contentsOid)).save()
+
+    User.findById(upload.userId).map(documentSet.users.associate(_))
+    documentSet.createDocumentSetCreationJob()
   }
 }
  

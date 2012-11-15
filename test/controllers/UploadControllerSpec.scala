@@ -27,12 +27,14 @@ class UploadControllerSpec extends Specification with Mockito {
 
   class TestUploadController(upload: Option[OverviewUpload] = None) extends UploadController {
     var uploadDeleted: Boolean = false
-
+    var jobStarted: Boolean = false
+    
     def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
     def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
+    def startDocumentSetCreationJob(upload: OverviewUpload) { jobStarted = true }
   }
 
   trait UploadContext[A] extends Scope {
@@ -101,6 +103,11 @@ class UploadControllerSpec extends Specification with Mockito {
 
     "return PARTIAL_CONTENT if upload is not complete" in new CreateRequest with IncompleteUpload {
       status(result) must be equalTo (PARTIAL_CONTENT)
+    }
+    
+    "start a DocumentSetCreationJob" in new CreateRequest with CompleteUpload {
+      status(result) must be equalTo(OK)
+      controller.jobStarted must beTrue
     }
   }
 
