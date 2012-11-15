@@ -52,9 +52,6 @@ trait UploadController extends BaseController {
   /** Handle file upload and kick of documentSetCreationJob */
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
-  /** Delete the upload */
-  def delete(guid: UUID) = authorizedAction(anyUser) { user => authorizedDelete(user, guid)(_: Request[AnyContent], _: Connection) }
-
   private def uploadResult(upload: OverviewUpload) =
     if (upload.uploadedFile.size == 0) NotFound
     else if (upload.uploadedFile.size == upload.size) Ok
@@ -78,18 +75,14 @@ trait UploadController extends BaseController {
     val upload: OverviewUpload = request.body
     
     val result = uploadResult(upload)
-    if (result == Ok) startDocumentSetCreationJob(upload)
+    if (result == Ok) {
+      startDocumentSetCreationJob(upload)
+      deleteUpload(upload)
+    }
     
     result
   }
-
-  private[controllers] def authorizedDelete(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
-    findUpload(user.id, guid).map { u =>
-      deleteUpload(u)
-      Ok
-    }.getOrElse(NotFound)
-  }
-
+  
   /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
@@ -114,7 +107,6 @@ object UploadController extends UploadController with PgConnection {
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)
 
   def deleteUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
-    LO.delete(upload.uploadedFile.contentsOid)
     upload.delete
   }
 

@@ -106,9 +106,10 @@ class UploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo (PARTIAL_CONTENT)
     }
     
-    "start a DocumentSetCreationJob" in new CreateRequest with CompleteUpload {
+    "start a DocumentSetCreationJob and delete the upload" in new CreateRequest with CompleteUpload {
       status(result) must be equalTo(OK)
       controller.jobStarted must beTrue
+      controller.uploadDeleted must beTrue
     }
     
     "not start a DocumentSetCreationJob if upload is not complete" in new CreateRequest with IncompleteUpload {
@@ -141,17 +142,6 @@ class UploadControllerSpec extends Specification with Mockito {
     "return NOT_FOUND if upload is empty" in new HeadRequest with EmptyUpload {
       result.header.headers.get(CONTENT_RANGE) must beNone
       status(result) must be equalTo (NOT_FOUND)
-    }
-  }
-
-  "UploadController.delete" should {
-    "return NOT_FOUND if upload does not exist" in new DeleteRequest with NoStartedUpload {
-      status(result) must be equalTo (NOT_FOUND)
-    }
-
-    "Delete the upload" in new DeleteRequest with IncompleteUpload {
-      status(result) must be equalTo (OK)
-      controller.uploadDeleted must beTrue
     }
   }
 }
