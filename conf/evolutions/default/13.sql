@@ -19,10 +19,14 @@ CREATE TABLE upload (
 );
 
 ALTER TABLE document_set ADD COLUMN type VARCHAR NOT NULL DEFAULT 'DocumentCloudDocumentSet' CHECK (type IN ('DocumentCloudDocumentSet', 'CsvImportDocumentSet')); 
-ALTER TABLE document_set ADD COLUMN contents_oid OID;
+ALTER TABLE document_set ADD COLUMN uploaded_file_id BIGINT REFERENCES uploaded_file (id);
 ALTER TABLE document_set ALTER COLUMN query DROP NOT NULL;
-ALTER TABLE document_set ADD CONSTRAINT document_set_document_cloud_type_check CHECK (type <> 'DocumentCloudDocumentSet' OR (query IS NOT NULL AND contents_oid IS NULL));
-ALTER TABLE document_set ADD CONSTRAINT document_set_csv_import_type_check CHECK (type <> 'CsvImportDocumentSet' OR (query IS NULL AND contents_oid IS NOT NULL));
+ALTER TABLE document_set ADD CONSTRAINT document_set_document_cloud_type_check 
+  CHECK (type <> 'DocumentCloudDocumentSet' OR 
+    (query IS NOT NULL AND uploaded_file_id IS NULL));
+ALTER TABLE document_set ADD CONSTRAINT document_set_csv_import_type_check
+   CHECK (type <> 'CsvImportDocumentSet' OR
+     (query IS NULL AND uploaded_file_id IS NOT NULL));
 
 CREATE TYPE DocumentType AS ENUM ('DocumentCloudDocument', 'CsvImportDocument');
 ALTER TABLE document ADD COLUMN type DocumentType NOT NULL DEFAULT 'DocumentCloudDocument';
@@ -55,7 +59,7 @@ DROP TYPE DocumentType;
 ALTER TABLE document_set DROP CONSTRAINT document_set_csv_import_type_check;
 ALTER TABLE document_set DROP CONSTRAINT document_set_document_cloud_type_check;
 ALTER TABLE document_set ALTER COLUMN query SET NOT NULL;
-ALTER TABLE document_set DROP COLUMN contents_oid;
+ALTER TABLE document_set DROP COLUMN uploaded_file_id;
 ALTER TABLE document_set DROP COLUMN type;
 
 DROP TABLE IF EXISTS upload CASCADE;

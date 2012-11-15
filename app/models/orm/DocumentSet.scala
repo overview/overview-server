@@ -32,7 +32,7 @@ case class DocumentSet(
     val title: String = "",
     val query: Option[String] = None,
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
-    @Column("contents_oid") val contentsOid: Option[Long] = None,
+    @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
     @Column("type") val documentSetType: String = DocumentCloudDocumentSet,
     @(Transient @field) val providedDocumentCount: Option[Long] = None,
     @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None
