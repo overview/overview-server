@@ -37,7 +37,7 @@ case class User(
   def createDocumentSet(query: String): DocumentSet = {
     require(id != 0l)
 
-    val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query))
+    val documentSet = Schema.documentSets.insert(new DocumentSet(0L, query=Some(query)))
     documentSets.associate(documentSet)
 
     documentSet
