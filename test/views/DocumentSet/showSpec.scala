@@ -51,7 +51,7 @@ class showSpec extends Specification {
 
     "contain id, query, and html" in new CompleteDocumentSetContext {
       documentSetJson must /("id" -> documentSet.id)
-      documentSetJson must /("query" -> documentSet.query)
+      documentSetJson must /("query" -> documentSet.query.get)
       documentSetJson must beMatching(""".*"html":"[^<]*<.*>[^>]*".*""")
       documentSetJson must not contain ("state")
     }
