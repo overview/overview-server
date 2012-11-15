@@ -4,11 +4,12 @@ import java.sql.Timestamp
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
+import java.util.Date
 
 
 case class UploadedFile(
   id: Long = 0L,
-  @Column("uploaded_at") uploadedAt: Timestamp,
+  @Column("uploaded_at") uploadedAt: Timestamp = new Timestamp(new Date().getTime),
   @Column("contents_oid") contentsOid: Long,
   @Column("content_disposition") contentDisposition: String,
   @Column("content_type") contentType: String,
