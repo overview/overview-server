@@ -18,8 +18,7 @@ CREATE TABLE upload (
   total_size                BIGINT NOT NULL
 );
 
-CREATE TYPE DocumentSetType AS ENUM ('DocumentCloudDocumentSet', 'CsvImportDocumentSet');
-ALTER TABLE document_set ADD COLUMN type DocumentSetType NOT NULL DEFAULT 'DocumentCloudDocumentSet';
+ALTER TABLE document_set ADD COLUMN type VARCHAR NOT NULL DEFAULT 'DocumentCloudDocumentSet' CHECK (type IN ('DocumentCloudDocumentSet', 'CsvImportDocumentSet')); 
 ALTER TABLE document_set ADD COLUMN contents_oid OID;
 ALTER TABLE document_set ALTER COLUMN query DROP NOT NULL;
 ALTER TABLE document_set ADD CONSTRAINT document_set_document_cloud_type_check CHECK (type <> 'DocumentCloudDocumentSet' OR (query IS NOT NULL AND contents_oid IS NULL));
@@ -58,7 +57,6 @@ ALTER TABLE document_set DROP CONSTRAINT document_set_document_cloud_type_check;
 ALTER TABLE document_set ALTER COLUMN query SET NOT NULL;
 ALTER TABLE document_set DROP COLUMN contents_oid;
 ALTER TABLE document_set DROP COLUMN type;
-DROP TYPE DocumentSetType;
 
 DROP TABLE IF EXISTS upload CASCADE;
 SELECT lo_unlink(contents_oid) FROM uploaded_file;
