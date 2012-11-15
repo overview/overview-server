@@ -14,7 +14,7 @@ class NodeControllerSpec extends Specification {
   trait ValidUpdateProcess extends DbTestContext {
     // HACK: These are called within setupWithDb()
     lazy val user = User().save
-    lazy val documentSet = DocumentSet(0L, "title", "query").save
+    lazy val documentSet = DocumentSet(0L, "title", Some("query")).save
     lazy val node = Node(0L, documentSet.id, "description").save
 
     override def setupWithDb = {

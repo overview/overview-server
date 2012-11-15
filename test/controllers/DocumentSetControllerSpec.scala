@@ -41,7 +41,7 @@ class DocumentSetControllerSpec extends Specification {
       val result = controller.authorizedCreate(user)
       documentSet must beSome
       documentSetCreationJob must beSome
-      documentSet.get.query must be equalTo(query)
+      documentSet.get.query must beSome equalTo(Some(query))
       documentSet.get.title must be equalTo(title)
       documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
     }

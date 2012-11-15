@@ -30,7 +30,7 @@ import DocumentSetType._
 case class DocumentSet(
     val id: Long = 0,
     val title: String = "",
-    val query: String = "",
+    val query: Option[String] = None,
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
     @Column("contents_oid") val contentsOid: Option[Long] = None,
     @Column("type") val documentSetType: String = DocumentCloudDocumentSet,

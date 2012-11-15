@@ -1,13 +1,11 @@
 package models.orm
 
 import java.util.Date
-
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import org.squeryl.PrimitiveTypeMode._
-
 import anorm.SQL
 import anorm.SqlParser.flatten
 import anorm.SqlParser.scalar
@@ -18,6 +16,8 @@ import play.api.Play.start
 import play.api.Play.stop
 import play.api.test.FakeApplication
 import testutil.DbSetup._
+import models.orm.DocumentSetType._
+import org.postgresql.util.PSQLException
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
@@ -27,7 +27,7 @@ class DocumentSetSpec extends Specification {
   "DocumentSet" should {
     
     "create a DocumentSetCreationJob" in new DbTestContext {
-      val query = "query"
+      val query = Some("query")
       val title = "title"
 
       val documentSet = Schema.documentSets.insert(DocumentSet(0L, title, query))
@@ -47,17 +47,22 @@ class DocumentSetSpec extends Specification {
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
     
+    "create a job with type CsvImportDocumentSet" in new DbTestContext {
+      val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, contentsOid = Some(100))
+      documentSet.save must not(throwA[Exception])
+    }
+    
     "throw exception if job creation is attempted before db insertion" in new DbTestContext {
       val query = "query"
       val title = "title"
-      val documentSet = new DocumentSet(0L, title, query)
+      val documentSet = new DocumentSet(0L, title, Some(query))
       
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
     
     "delete all references in other tables" in new DbTestContext {
       val query = "query"
-      val documentSet = Schema.documentSets.insert(DocumentSet(0L, query))
+      val documentSet: DocumentSet = Schema.documentSets.insert(DocumentSet(0L, query = Some(query)))
       val id = documentSet.id
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
       

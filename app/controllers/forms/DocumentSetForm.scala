@@ -18,8 +18,8 @@ object DocumentSetForm {
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text)
       )
-      ((title, query, username, password) => (DocumentSet(0L, title, query), Credentials(username, password)))
-      ((tuple) => Some((tuple._1.title, tuple._1.query, tuple._2.username, tuple._2.password)))
+      ((title, query, username, password) => (DocumentSet(0L, title, Some(query)), Credentials(username, password)))
+      ((tuple) => Some((tuple._1.title, tuple._1.query.getOrElse(""), tuple._2.username, tuple._2.password)))
     )
   }
 }
