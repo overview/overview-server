@@ -60,13 +60,6 @@ class UploadControllerSpec extends Specification with Mockito {
     val result = controller.authorizedShow(user, guid)(request, null)
   }
 
-  trait DeleteRequest extends UploadContext[AnyContent] {
-    val user = User(1l)
-    val controller = new TestUploadController(Option(upload))
-    val request: Request[AnyContent] = FakeRequest()
-    val result = controller.authorizedDelete(user, guid)(request, null)
-  }
-
   trait NoStartedUpload {
     def upload: OverviewUpload = null
   }
