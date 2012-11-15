@@ -21,6 +21,7 @@ import play.api.test.Helpers.status
 import org.specs2.specification.Scope
 import models.orm.User
 import play.api.mvc.AnyContent
+import play.api.mvc.SimpleResult
 
 @RunWith(classOf[JUnitRunner])
 class UploadControllerSpec extends Specification with Mockito {
@@ -109,6 +110,11 @@ class UploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo(OK)
       controller.jobStarted must beTrue
     }
+    
+    "not start a DocumentSetCreationJob if upload is not complete" in new CreateRequest with IncompleteUpload {
+      status(result) must be equalTo(PARTIAL_CONTENT)
+      controller.jobStarted must beFalse
+    }
   }
 
   "UploadController.show" should {
@@ -117,7 +123,9 @@ class UploadControllerSpec extends Specification with Mockito {
     }
 
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
-      val headers = result.header.headers
+      val headers = result match {
+        case SimpleResult(header, _) => header.headers
+      }
       headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-999/1000") }
       headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo (contentDisposition) }
 

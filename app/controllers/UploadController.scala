@@ -76,9 +76,11 @@ trait UploadController extends BaseController {
 
   private[controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
     val upload: OverviewUpload = request.body
-    startDocumentSetCreationJob(upload)
     
-    uploadResult(upload)
+    val result = uploadResult(upload)
+    if (result == Ok) startDocumentSetCreationJob(upload)
+    
+    result
   }
 
   private[controllers] def authorizedDelete(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
