@@ -8,9 +8,9 @@
 
 import com.jolbox.bonecp._
 import database.{ DatabaseConfiguration, DataSource, DB }
-import java.sql.Connection 
+import java.sql.Connection
 import overview.clustering._
-import overview.http.AsyncHttpRequest
+import overview.http.{AsyncHttpRequest, DocumentCloudDocumentProducer}
 import overview.util.{ ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._
 import persistence._
@@ -45,13 +45,15 @@ object JobHandler {
       }
 
       val dcSource = new DocumentCloudSource(asyncHttpRetriever,
-	query, j.documentCloudUsername, j.documentCloudPassword)
+        query, j.documentCloudUsername, j.documentCloudPassword)
 
-      val indexer = new DocumentSetIndexer(dcSource, nodeWriter, documentWriter, progFn)
-
+      val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
+      val producer = new DocumentCloudDocumentProducer(dcSource,indexer, progFn)
+      
       Logger.info("Indexing query: " + query)
-      val tree = indexer.BuildTree()
-
+      //val tree = indexer.BuildTree()
+      producer.produce()
+      
       DB.withConnection { implicit connection =>
         j.delete
       }
@@ -78,14 +80,13 @@ object JobHandler {
     }
   }
 
-
   def restartInterruptedJobs(implicit c: Connection) {
     val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
     val restarter = new JobRestarter(new DocumentSetCleaner)
-    
+
     restarter.restart(interruptedJobs)
   }
-  
+
   def main(args: Array[String]) {
 
     val pollingInterval = 500 //milliseconds
@@ -98,7 +99,7 @@ object JobHandler {
     DB.withConnection { implicit connection =>
       restartInterruptedJobs
     }
-    
+
     while (true) {
       scanForJobs
       Thread.sleep(pollingInterval)

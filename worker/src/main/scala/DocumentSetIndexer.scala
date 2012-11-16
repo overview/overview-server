@@ -23,13 +23,10 @@ import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 
-class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
-  nodeWriter: NodeWriter,
-  documentWriter: DocumentWriter,
-  progAbort: ProgressAbortFn) {
+class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) {
 
   // --- private ---
-  
+  val t0 = System.nanoTime()
   private var fractionFetched = 0
   private val fetchingFraction = 0.9 // what percent done do we say when we're all done fetching docs?
   private val savingFraction = 0.99
@@ -37,12 +34,11 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
   private val vectorGen = new DocumentVectorGenerator
 
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
-  private def processDocument(doc: DCDocumentAtURL, text: String): Unit = {
+  def processDocument(doc: DCDocumentAtURL, text: String): Unit = {
     val documentId = DB.withConnection {
       implicit connection => documentWriter.write(doc.title, doc.documentCloudId)
     }
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))
-    progAbort(Progress(vectorGen.numDocs * fetchingFraction / sourceDocList.size, Retrieving(vectorGen.numDocs, sourceDocList.size)))
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
@@ -51,24 +47,9 @@ class DocumentSetIndexer(sourceDocList: Traversable[DCDocumentAtURL],
     else docTree.children.foreach(addDocumentDescriptions)
   }
 
-  // --- main entrypoint ---
-  
-  def BuildTree(): Unit = {
-
-    val t0 = System.nanoTime()
-
-    // Retrieve all that stuff!
-
-    WorkerActorSystem.withActorSystem { implicit context =>
-      val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](new AsyncHttpRequest)
-      val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, (doc, text) => processDocument(doc, text))
-
-      // Now, wait on this thread until all docs are in
-      val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
-      Logger.logElapsedTime("Retrieved" + vectorGen.numDocs + " documents, with " + docsNotFetched.length + " not fetched", t0)
-    }
-
-    // Cluster (build the tree)
+  def productionComplete() {
+    logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
+    
     progAbort(Progress(fetchingFraction, Clustering))
     val t1 = System.nanoTime()
     val docVecs = vectorGen.documentVectors()
