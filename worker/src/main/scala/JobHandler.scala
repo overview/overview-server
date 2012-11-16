@@ -40,17 +40,17 @@ object JobHandler {
         Logger.info("PROGRESS: " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
       }
 
-      val (_, query) = DB.withConnection { implicit connection =>
+      val documentSet = DB.withConnection { implicit connection =>
         DocumentSetLoader.loadQuery(j.documentSetId).get
       }
 
       val dcSource = new DocumentCloudSource(asyncHttpRetriever,
-        query, j.documentCloudUsername, j.documentCloudPassword)
+        documentSet.query.get, j.documentCloudUsername, j.documentCloudPassword)
 
       val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
       val producer = new DocumentCloudDocumentProducer(dcSource,indexer, progFn)
       
-      Logger.info("Indexing query: " + query)
+      Logger.info("Indexing query: " + documentSet.query.get)
       //val tree = indexer.BuildTree()
       producer.produce()
       
