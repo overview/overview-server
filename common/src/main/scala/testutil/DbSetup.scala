@@ -24,6 +24,16 @@ object DbSetup {
       'title -> ("From query: " + query),
       'query -> query).executeInsert().getOrElse(failInsert)
   }
+  
+  def insertUploadedFile(oid: Long, contentDisposition: String, contentType: String)(implicit c: Connection): Long = {
+    SQL("""
+        INSERT INTO uploaded_file (contents_oid, content_disposition, content_type, uploaded_at, size)
+        VALUES ({oid}, {contentDisposition}, {contentType}, TIMESTAMP '1970-01-01 00:00:00', 0)
+        """).on(
+            "oid" -> oid,
+            "contentDisposition" -> contentDisposition,
+            "contentType" -> contentType).executeInsert().getOrElse(failInsert)
+  }
 
   def insertNode(documentSetId: Long, parentId: Option[Long], description: String)(implicit c: Connection): Long = {
     SQL("""
