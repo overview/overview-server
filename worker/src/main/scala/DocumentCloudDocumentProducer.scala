@@ -4,12 +4,12 @@ import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 import overview.clustering.{ DCDocumentAtURL, DocumentSetIndexer }
-import overview.util.{ Logger, WorkerActorSystem }
+import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
 
-class DocumentCloudDocumentProducer(sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentSetIndexer,
-  progAbort: ProgressAbortFn) {
+class DocumentCloudDocumentProducer(sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
+  progAbort: ProgressAbortFn)  extends DocumentProducer {
 
   private val FetchingFraction = 0.9
   private var numDocs = 0

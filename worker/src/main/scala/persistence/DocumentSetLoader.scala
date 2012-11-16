@@ -8,7 +8,7 @@ case class DocumentSet(documentSetType: String, title: String, query: Option[Str
 
 object DocumentSetLoader {
 
-  def loadQuery(documentSetId: Long)(implicit c: Connection): Option[DocumentSet] = {
+  def load(documentSetId: Long)(implicit c: Connection): Option[DocumentSet] = {
     SQL("""
         SELECT type, title, query, uploaded_file_id FROM document_set
         WHERE id = {documentSetId}

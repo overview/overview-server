@@ -16,7 +16,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
 
       val documentSetId = insertDocumentSet(query)
 
-      val documentSet = DocumentSetLoader.loadQuery(documentSetId)
+      val documentSet = DocumentSetLoader.load(documentSetId)
       documentSet must beSome.like {
         case d =>
           d.documentSetType must be equalTo("DocumentCloudDocumentSet")
@@ -29,7 +29,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
       val uploadedFileId = insertUploadedFile(0, "contentDisposition", "contentType")
       val documentSetId = insertCsvImportDocumentSet(uploadedFileId)
       
-      val documentSet = DocumentSetLoader.loadQuery(documentSetId)
+      val documentSet = DocumentSetLoader.load(documentSetId)
       documentSet must beSome.like { 
         case d =>
           d.documentSetType must be equalTo("CsvImportDocumentSet")

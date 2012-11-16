@@ -13,7 +13,7 @@ package overview.clustering
 import java.sql.Connection
 import overview.clustering.ClusterTypes._
 import overview.http._
-import overview.util.{ Logger, WorkerActorSystem }
+import overview.util.{ DocumentConsumer, Logger, WorkerActorSystem }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
 import persistence.{ DocumentWriter, NodeWriter }
@@ -23,7 +23,7 @@ import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 
-class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) {
+class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 
   // --- private ---
   val t0 = System.nanoTime()

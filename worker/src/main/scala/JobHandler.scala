@@ -41,17 +41,16 @@ object JobHandler {
       }
 
       val documentSet = DB.withConnection { implicit connection =>
-        DocumentSetLoader.loadQuery(j.documentSetId).get
+        DocumentSetLoader.load(j.documentSetId).get
       }
 
       val dcSource = new DocumentCloudSource(asyncHttpRetriever,
         documentSet.query.get, j.documentCloudUsername, j.documentCloudPassword)
 
       val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
-      val producer = new DocumentCloudDocumentProducer(dcSource,indexer, progFn)
+      val producer = new DocumentCloudDocumentProducer(dcSource, indexer, progFn)
       
       Logger.info("Indexing query: " + documentSet.query.get)
-      //val tree = indexer.BuildTree()
       producer.produce()
       
       DB.withConnection { implicit connection =>
