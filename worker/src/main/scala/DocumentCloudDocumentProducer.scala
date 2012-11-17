@@ -7,8 +7,9 @@ import overview.clustering.{ DCDocumentAtURL, DocumentSetIndexer }
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
+import database.DB
 
-class DocumentCloudDocumentProducer(sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
+class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
   progAbort: ProgressAbortFn)  extends DocumentProducer {
 
   private val FetchingFraction = 0.9
@@ -32,7 +33,10 @@ class DocumentCloudDocumentProducer(sourceDocList: Traversable[DCDocumentAtURL],
   }
 
   private def notify(doc: DCDocumentAtURL, text: String) {
-    consumer.processDocument(doc, text)
+    val id =  DB.withConnection { implicit connection =>
+      doc.write(documentSetId)
+    }
+    consumer.processDocument(id, text)
     numDocs += 1
     progAbort(
       Progress(numDocs * FetchingFraction / sourceDocList.size, Retrieving(numDocs, sourceDocList.size)))

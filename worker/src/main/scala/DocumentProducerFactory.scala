@@ -11,7 +11,7 @@ trait DocumentProducer {
 }
 
 trait DocumentConsumer {
-  def processDocument(doc: DCDocumentAtURL, text: String)
+  def processDocument(documentSetId: Long, text: String)
   def productionComplete()
 }
 
@@ -20,6 +20,6 @@ object DocumentProducerFactory {
       progAbort: ProgressAbortFn, asyncHttpRetriever: AsyncHttpRetriever): DocumentProducer = {
     val dcSource = new DocumentCloudSource(asyncHttpRetriever,
       documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
-    new DocumentCloudDocumentProducer(dcSource, consumer, progAbort)
+    new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, progAbort)
   }
 }

@@ -48,7 +48,7 @@ object JobHandler {
         documentSet.query.get, j.documentCloudUsername, j.documentCloudPassword)
 
       val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
-      val producer = new DocumentCloudDocumentProducer(dcSource, indexer, progFn)
+      val producer = new DocumentCloudDocumentProducer(j.documentSetId, dcSource, indexer, progFn)
       
       Logger.info("Indexing query: " + documentSet.query.get)
       producer.produce()

@@ -17,9 +17,10 @@ import com.ning.http.client.Response
 import java.net.URLEncoder
 import overview.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
 import overview.util.Logger
+import persistence.PersistentDocumentCloudDocument
 
 // The main DocumentCloudSource class produces a sequence of these...
-class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
+class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL) with PersistentDocumentCloudDocument
 
 // Define the bits of the DocumentCloud JSON response that we're interested in.
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.)

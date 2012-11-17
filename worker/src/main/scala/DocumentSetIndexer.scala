@@ -34,10 +34,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
   private val vectorGen = new DocumentVectorGenerator
 
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
-  def processDocument(doc: DCDocumentAtURL, text: String): Unit = {
-    val documentId = DB.withConnection {
-      implicit connection => documentWriter.write(doc.title, doc.documentCloudId)
-    }
+  def processDocument(documentId: Long, text: String): Unit = {
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))
   }
 
