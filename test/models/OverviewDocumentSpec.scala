@@ -8,14 +8,13 @@ import play.api.test.FakeApplication
 // OverviewDocument wraps models.orm.Document. Let's be transparent about that
 // in this test.
 import models.orm.{Document,DocumentType}
-import helpers.DbTestContext
 
 class OverviewDocumentSpec extends Specification {
   step(start(FakeApplication()))
 
   "OverviewDocument" should {
     trait OneDocument {
-      def ormDocument : Document
+      def ormDocument: Document
       lazy val document = OverviewDocument(ormDocument)
 
       lazy val urlWithSimplePattern = document.url("https://localhost/{0}")
