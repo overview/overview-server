@@ -15,16 +15,11 @@ case class UploadedFile(
   @Column("content_type") contentType: String,
   size: Long) extends KeyedEntity[Long] {
 
-  def save: UploadedFile = {
-    if (id == 0l) {
-      Schema.uploadedFiles.insert(this)
-    }
-    else {
-      Schema.uploadedFiles.update(this)
-    }
-    this
-  }
-  
+  // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
+  override def isPersisted(): Boolean = (id > 0)
+
+  def save: UploadedFile = Schema.uploadedFiles.insertOrUpdate(this)
+
   def delete { Schema.uploadedFiles.deleteWhere(u => u.id === id) }
 }
 
