@@ -35,6 +35,10 @@ object Schema extends org.squeryl.Schema {
       via[DocumentSetUser]((ds, u, dsu) =>
         (dsu.documentSetId === ds.id, dsu.userId === u.id))
 
+  val uploadedFileDocumentSets =
+    oneToManyRelation(uploadedFiles, documentSets).
+      via((uf, ds) => uf.id === ds.uploadedFileId)
+
   val userLogEntries =
     oneToManyRelation(users, logEntries).
       via((u, le) => u.id === le.userId)
