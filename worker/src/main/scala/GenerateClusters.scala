@@ -328,7 +328,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 object BuildDocTree {
 
-  val numDocsWhereSamplingHelpful = 1000
+  val numDocsWhereSamplingHelpful = 100000 // turn off sampling for now as we are memory constrained -- jms 11/19/12
   
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in 0.1 increments
