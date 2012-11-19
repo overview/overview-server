@@ -8,6 +8,7 @@ import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
 import models.orm.DocumentSet
+import models.orm.DocumentSetType._
 
 class indexSpec extends Specification {
   trait ViewContext extends Scope {
@@ -37,8 +38,8 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       documentSets ++= Seq(
-        DocumentSet(1, "title1", Some("query1"), providedDocumentCount=Some(10)),
-        DocumentSet(2, "title2", Some("query2"), providedDocumentCount=Some(15))
+        DocumentSet(DocumentCloudDocumentSet, 1, "title1", Some("query1"), providedDocumentCount=Some(10)),
+        DocumentSet(DocumentCloudDocumentSet, 2, "title2", Some("query2"), providedDocumentCount=Some(15))
       )
 
       $("ul.document-sets").length must equalTo(1)

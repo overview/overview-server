@@ -43,7 +43,7 @@ trait AuthorizedDocumentSetController {
         val documentSet = tuple._1
         val credentials = tuple._2
 
-        val saved = documentSet.save()
+        val saved = documentSet.save
         saved.users.associate(user)
         saved.createDocumentSetCreationJob(username=credentials.username, password=credentials.password)
         Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))

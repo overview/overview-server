@@ -16,27 +16,28 @@ import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 import org.squeryl.customtypes.StringField
 
+class DocumentSetType(v: String) extends StringField(v)
 
-object DocumentSetType extends Enumeration {
-  type DocumentSetType = Value
-  val DocumentCloudDocumentSet = Value(0, "DocumentCloudDocumentSet")
-  val CsvImportDocumentSet = Value(1, "CsvImportDocumentSet")
-  
-  implicit def convertToString(t: DocumentSetType): String = t.toString
+object DocumentSetType {
+  val DocumentCloudDocumentSet = new DocumentSetType("DocumentCloudDocumentSet")
+  val CsvImportDocumentSet = new DocumentSetType("CsvImportDocumentSet")
 }
 
 import DocumentSetType._
 
 case class DocumentSet(
+    @Column("type") val documentSetType: DocumentSetType,
     val id: Long = 0,
     val title: String = "",
     val query: Option[String] = None,
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
     @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
-    @Column("type") val documentSetType: String = DocumentCloudDocumentSet,
     @(Transient @field) val providedDocumentCount: Option[Long] = None,
-    @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None
+    @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
+    @(Transient @field) val uploadedFile: Option[UploadedFile] = None
     ) extends KeyedEntity[Long] {
+
+  def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
   
   lazy val users = Schema.documentSetUsers.left(this)
 
@@ -65,20 +66,25 @@ case class DocumentSet(
     Schema.documentSetDocumentSetCreationJobs.left(this).headOption
   )
 
+  def withUploadedFile = copy(uploadedFile =
+    Schema.uploadedFileDocumentSets.right(this).headOption
+  )
+
   def documentCount : Long = {
     providedDocumentCount.getOrElse(
       from(Schema.documents)(d => where(d.documentSetId === this.id) compute(count)).single.measures
     )
   }
 
-  def save(): DocumentSet = {
-    require(id == 0L)
+  // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
+  override def isPersisted(): Boolean = (id > 0)
 
-    Schema.documentSets.insertOrUpdate(this)
-  }
+  def save: DocumentSet = Schema.documentSets.insertOrUpdate(this)
 }
 
 object DocumentSet {
+  def findById(id: Long) = Schema.documentSets.lookup(id)
+
   def delete(id: Long)(implicit connection: java.sql.Connection) = {
     SQL("DELETE FROM log_entry WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_tag WHERE tag_id IN (SELECT id FROM tag WHERE document_set_id = {id})").on('id -> id).executeUpdate()
@@ -106,6 +112,12 @@ object DocumentSet {
     ).map(dscj => dscj.documentSetId -> dscj).toMap
   }
 
+  private def findIdToUploadedFileMap(ids: Seq[Long]) : Map[Long,UploadedFile] = {
+    from(Schema.uploadedFiles)(uf =>
+      where(uf.id in ids).select(uf)
+    ).map(uf => uf.id -> uf).toMap
+  }
+
   def addDocumentCounts(documentSets: Seq[DocumentSet]) : Seq[DocumentSet] = {
     val ids = documentSets.map(_.id)
     val counts = findIdToDocumentCountMap(ids)
@@ -118,10 +130,22 @@ object DocumentSet {
     documentSets.map(ds => ds.copy(documentSetCreationJob=creationJobs.get(ds.id)))
   }
 
+  def addUploadedFiles(documentSets: Seq[DocumentSet]) : Seq[DocumentSet] = {
+    val optionalIds : Seq[Option[Long]] = documentSets.map(_.uploadedFileId)
+    val ids : Seq[Long] = optionalIds.flatten
+    if (ids.length > 0) {
+      val uploadedFiles = findIdToUploadedFileMap(ids)
+      documentSets.map(ds => ds.copy(uploadedFile = ds.uploadedFileId.flatMap(uploadedFiles.get)))
+    } else {
+      documentSets
+    }
+  }
+
   object ImplicitHelper {
     class DocumentSetSeq(documentSets: Seq[DocumentSet]) {
       def withDocumentCounts = DocumentSet.addDocumentCounts(documentSets)
       def withCreationJobs = DocumentSet.addCreationJobs(documentSets)
+      def withUploadedFiles = DocumentSet.addUploadedFiles(documentSets)
     }
 
     implicit def seqDocumentSetToDocumentSetSeq(documentSets: Seq[DocumentSet]) = new DocumentSetSeq(documentSets)

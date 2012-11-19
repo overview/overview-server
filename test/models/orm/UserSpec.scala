@@ -9,6 +9,7 @@ import play.api.Play.{ start, stop }
 import ua.t3hnar.bcrypt._
 
 import helpers.DbTestContext
+import models.orm.DocumentSetType._
 
 class UserSpec extends Specification {
   trait UserContext extends DbTestContext {
@@ -40,8 +41,8 @@ class UserSpec extends Specification {
 
     inExample("order document sets from oldest to newest") in new UserContext {
       val user2 = Schema.users.insert(user)
-      user2.documentSets.associate(DocumentSet(0L, title="earliest", query=Some("early"), createdAt=new Timestamp(1351519451289L)).save)
-      user2.documentSets.associate(DocumentSet(0L, title="later", query=Some("late"), createdAt=new
+      user2.documentSets.associate(DocumentSet(DocumentCloudDocumentSet, 0L, title="earliest", query=Some("early"), createdAt=new Timestamp(1351519451289L)).save)
+      user2.documentSets.associate(DocumentSet(DocumentCloudDocumentSet, 0L, title="later", query=Some("late"), createdAt=new
           Timestamp(1351519465652L)).save)
 
       val user3 = User.findById(user2.id).get

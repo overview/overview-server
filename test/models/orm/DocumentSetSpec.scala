@@ -33,7 +33,7 @@ class DocumentSetSpec extends Specification {
       val query = Some("query")
       val title = "title"
 
-      val documentSet = Schema.documentSets.insert(DocumentSet(0L, title, query))
+      val documentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, title, query))
 
       val job = documentSet.createDocumentSetCreationJob()
 
@@ -46,7 +46,7 @@ class DocumentSetSpec extends Specification {
     }
 
     "set createdAt to the current date by default" in new Scope {
-      val documentSet = DocumentSet(0L)
+      val documentSet = DocumentSet(DocumentCloudDocumentSet, 0L)
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
@@ -63,14 +63,14 @@ class DocumentSetSpec extends Specification {
     "throw exception if job creation is attempted before db insertion" in new DbTestContext {
       val query = "query"
       val title = "title"
-      val documentSet = new DocumentSet(0L, title, Some(query))
+      val documentSet = new DocumentSet(DocumentCloudDocumentSet, 0L, title, Some(query))
 
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
 
     "delete all references in other tables" in new DbTestContext {
       val query = "query"
-      val documentSet: DocumentSet = Schema.documentSets.insert(DocumentSet(0L, query = Some(query)))
+      val documentSet: DocumentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, query = Some(query)))
       val id = documentSet.id
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
 

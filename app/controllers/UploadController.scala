@@ -113,7 +113,7 @@ object UploadController extends UploadController with PgConnection {
   def startDocumentSetCreationJob(upload: OverviewUpload) {
     val documentSet = DocumentSet(
       documentSetType = CsvImportDocumentSet,
-      uploadedFileId = Some(upload.uploadedFile.id)).save()
+      uploadedFileId = Some(upload.uploadedFile.id)).save
 
     User.findById(upload.userId).map(documentSet.users.associate(_))
     documentSet.createDocumentSetCreationJob()

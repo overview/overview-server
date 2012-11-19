@@ -1,14 +1,16 @@
 package views.json.DocumentSet
 
 import helpers.DbTestContext
-import models.orm.{ DocumentSet, DocumentSetCreationJob }
-import models.orm.DocumentSetCreationJobState._
 import org.specs2.mock._
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.json.Json.toJson
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+
+import models.orm.{ DocumentSet, DocumentSetCreationJob }
+import models.orm.DocumentSetCreationJobState._
+import models.orm.DocumentSetType._
 
 class showSpec extends Specification {
 
@@ -20,12 +22,12 @@ class showSpec extends Specification {
     }
 
     trait CompleteDocumentSetContext extends DocumentSetContext {
-      override val documentSet = DocumentSet(1, "a title", Some("a query"), providedDocumentCount=Some(20))
+      override val documentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
     }
 
     trait DocumentSetWithJobContext extends DocumentSetContext {
       val job: DocumentSetCreationJob
-      override lazy val documentSet = DocumentSet(1, "a title", Some("a query"), providedDocumentCount=Some(20), documentSetCreationJob=Some(job))
+      override lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20), documentSetCreationJob=Some(job))
     }
 
     trait InProgressDocumentSetContext extends DocumentSetWithJobContext {
