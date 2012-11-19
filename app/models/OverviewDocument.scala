@@ -67,4 +67,9 @@ object OverviewDocument {
       case _ => throw new Exception("Impossible document type " + ormDocument.documentType.value)
     }
   }
+
+  /** Lookup */
+  def findById(id: Long) : Option[OverviewDocument] = {
+    Document.findById(id).map(OverviewDocument.apply)
+  }
 }
