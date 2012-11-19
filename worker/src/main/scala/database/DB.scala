@@ -10,6 +10,8 @@ package database
 import java.sql.Connection
 import java.sql.Statement
 import java.sql.Savepoint
+import org.postgresql.PGConnection
+import com.jolbox.bonecp.ConnectionHandle
 
 /**
  * Convenience object for database access. Call DB.connect(datasSource) once at the start
@@ -68,5 +70,14 @@ object DB {
       }
     }
   }
+
+  /**
+   * Extracts the internal PGConnection
+   */
+  def pgConnection(implicit connection: Connection): PGConnection = {
+    val connectionHandle = connection.asInstanceOf[ConnectionHandle]
+    connectionHandle.getInternalConnection.asInstanceOf[PGConnection]
+  }
+
 }
 

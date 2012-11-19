@@ -13,10 +13,13 @@ import helpers.DbSpecification
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.specs2.mutable.Specification
+import testutil.DbSetup._
+import org.postgresql.PGConnection
+import java.sql.SQLException
 
 class DBSpec extends DbSpecification {
-  step(setupDb) 
-  
+  step(setupDb)
+
   "DB object" should {
 
     "provide scope with connection" in {
@@ -26,7 +29,7 @@ class DBSpec extends DbSpecification {
       }
     }
 
-    "provide scope with transaction" in  {
+    "provide scope with transaction" in {
       DB.withTransaction { implicit connection =>
         SQL("""
           INSERT INTO document_set (title, query, created_at) 
@@ -41,10 +44,10 @@ class DBSpec extends DbSpecification {
         id must beNone
       }
     }
-    
+
     "rollback transaction on exception" in {
       val exceptionMessage = "trigger rollback"
-        
+
       try {
         DB.withTransaction { implicit connection =>
           SQL("""
@@ -54,17 +57,22 @@ class DBSpec extends DbSpecification {
 
           throw new Exception(exceptionMessage)
         }
-      }
-      catch {
-        case e => e.getMessage must be equalTo(exceptionMessage) 
+      } catch {
+        case e => e.getMessage must be equalTo (exceptionMessage)
       }
 
       DB.withConnection { implicit connection =>
-        val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)  
+        val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)
         id must beNone
       }
     }
+
+    "provide PGConnection" in {
+      DB.withConnection { implicit connection =>
+        DB.pgConnection.getLargeObjectAPI() must not(throwA[SQLException])
+      }
+    }
   }
-  
+
   step(shutdownDb)
 }
