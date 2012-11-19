@@ -20,7 +20,9 @@ class DocumentContentsView
     $iframe = $('<iframe frameborder="0" width="1" height="1"></iframe>')
     url = this._get_iframe_url(document)
     $iframe.attr('src', this._get_iframe_url(document))
-    $(@div).append($iframe)
+    $div = $(@div)
+    $div.empty()
+    $div.append($iframe)
     @iframe = $iframe[0]
 
   _refresh: () ->
@@ -28,16 +30,30 @@ class DocumentContentsView
     return if docid == @_last_docid
     @_last_docid = docid
 
+    done = false
+
     if docid?
       document = @cache.document_store.documents[docid]
 
       if @iframe?
-        @iframe.contentWindow.load_documentcloud_document(document.documentcloud_id)
+        try
+          @iframe.contentWindow.load_document(document)
+          done = true
+        catch e
+          # ignore
       else
         this._create_iframe(document)
+        done = true
     else
       if @iframe?
-        @iframe.contentWindow.load_documentcloud_document(undefined)
+        try
+          @iframe.contentWindow.load_documentcloud(undefined)
+          done = true
+        catch e
+          #ignore
+
+    if !done
+      this._create_iframe(document)
 
 exports = require.make_export_object('views/document_contents_view')
 exports.DocumentContentsView = DocumentContentsView

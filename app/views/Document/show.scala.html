@@ -1,10 +1,9 @@
-@(document: core.Document)(implicit lang: Lang)
+@(document: OverviewDocument)(implicit lang: Lang)
 
 @defining(scopedMessages("views.Document.show")) { m =>
   <html>
     <head>
       <title data-m-loading="@m("loading")">@m("loading")</title>
-      @bundleStylesheet("main")
       <style type="text/css">
         html, body {
           width: 100%;
@@ -13,36 +12,57 @@
           margin: 0;
           padding: 0;
           position: relative;
+          font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif
         }
 
         h3 {
-          font-height: 16px;
+          position: absolute;
+          box-sizing: border-box;
+          top: 0;
+          left: 0;
+          height: 40px;
+          width: 100%;
+          overflow: hidden;
+          font-size: 20px;
           line-height: 20px;
           padding: 10px;
           margin: 0;
           white-space: nowrap;
         }
 
+        div.document {
+          position: absolute;
+          top: 40px;
+          bottom: 0;
+          left: 0;
+          right: 0;
+        }
+
         ul.actions {
           position: absolute;
+          box-sizing: border-box;
           line-height: 20px;
-          top: 0;
+          height: 40px;
+          top: -40px;
           right: 0;
-          margin: 10px;
-          padding: 0;
+          padding: 10px;
+          margin: 0;
           list-style: none;
+
+          padding-left: 20px;
           background: white;
+          background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtdWNnZy1nZW5lcmF0ZWQpIiAvPgo8L3N2Zz4=);
+          background: -moz-linear-gradient(left, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 10px);
+          background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(255,255,255,0)), color-stop(10px,rgba(255,255,255,1)));
+          background: -webkit-linear-gradient(left, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 10px);
+          background: -o-linear-gradient(left, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 10px);
+          background: -ms-linear-gradient(left, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 10px);
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 10px);
+          filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=1 );
         }
 
         li {
           display: inline;
-        }
-
-        div.container {
-          position: absolute;
-          top: 40px;
-          bottom: 0;
-          width: 100%;
         }
 
         iframe {
@@ -53,69 +73,33 @@
           width: 100%;
         }
       </style>
+      <!--[if gte IE 9]>
+        <style type="text/css">
+          ul.actions {
+            filter: none;
+          }
+        </style>
+      <![endif]-->
     </head>
     <body>
-      <h3 data-m-loading="@m("loading")" style="display:none;">@m("loading")</h3>
-      <ul class="actions">
-        <li><a href="#" class="toggle-sidebar" data-m-enable="@m("sidebar.enable")" data-m-disable="@m("sidebar.disable")" style="display:none;"></a></li>
-      </ul>
-      <div class="container"><iframe src=""></iframe></div>
-
-      @bundleJavascript("jquery")
-
-      <script type="text/javascript">
-        var default_content, document_id, sidebar_enabled, $container, $h3, $title, $a_sidebar;
-
-        // Looks at "viewer" and "document_json" and "sidebar_enabled" and makes them match up
-        // WARNING: scrolls the document back to page 1.
-        refresh_viewer = function() {
-          if (document_id) {
-            $container.attr('src', 'https://www.documentcloud.org/documents/' + document_id + '?sidebar=' + (sidebar_enabled ? 'true' : 'false'));
-            $title.text('');
-            //$h3.text('');
-          } else {
-            $container.attr('src', default_src);
-            $title.text($title.attr('data-m-loading'));
-            //$h3.text($h3.attr('data-m-loading'));
+      <h3 data-m-loading="@m("loading")">@document.title</h3>
+      <div class="document">
+        @document match {
+          case d: OverviewDocument.DocumentCloudDocument => {
+            @views.html.Document._documentCloudDocument(Some(d))
+            @views.html.Document._csvImportDocument(None)
           }
+          case d: OverviewDocument.CsvImportDocument => {
+            @views.html.Document._documentCloudDocument(None)
+            @views.html.Document._csvImportDocument(Some(d))
+          }
+          case _ => {
+            throw new Exception("Unsupported document type")
+          }
+        }
+      </div>
 
-          $title/*.add($h3)*/.add($container).add($a_sidebar).toggle(!!document_id);
-        };
-
-        window.load_documentcloud_document = function(id) {
-          if (id == document_id) return;
-          document_id = id;
-          refresh_viewer();
-        };
-
-        $(function() {
-          $title = $('title');
-          $h3 = $('h3');
-          $a_sidebar = $('a.toggle-sidebar');
-          $container = $('iframe');
-
-          sidebar_enabled = localStorage.getItem("views.Document.show.sidebar") || false; // TODO make cookie
-          default_src = $container.attr('src');
-
-          window.load_documentcloud_document('@document.documentCloudId');
-
-          var refresh_a_sidebar = function() {
-            var text = $a_sidebar.attr("data-m-" + (sidebar_enabled ? 'disable' : 'enable'));
-            $a_sidebar.text(text);
-          };
-
-          $a_sidebar.on('click', function(e) {
-            e.preventDefault();
-
-            sidebar_enabled = !sidebar_enabled;
-
-            refresh_a_sidebar();
-            refresh_viewer(); // There's no way to enable the sidebar on a running viewer
-          });
-
-          refresh_a_sidebar();
-        });
-      </script>
+      @bundleJavascript("document-show")
     </body>
   </html>
 }

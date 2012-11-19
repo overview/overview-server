@@ -1,10 +1,9 @@
 package controllers
 
 import java.sql.Connection
-import models.DocumentLoader
-import play.api.mvc.{Action,AnyContent, Request}
-import play.api.db.DB
-import play.api.Play.current
+import play.api.mvc.{AnyContent,Request}
+
+import models.OverviewDocument
 
 object DocumentController extends BaseController {
   def show(documentId: Long) =
@@ -12,10 +11,8 @@ object DocumentController extends BaseController {
       this.authorizedShow(documentId)(_: Request[AnyContent], _: Connection))
 
   def authorizedShow(documentId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentLoader = new DocumentLoader()
-    val document = documentLoader.load(documentId)
-    document match {
-      case Some(d) => Ok(views.html.Document.show(d))
+    OverviewDocument.findById(documentId) match {
+      case Some(document) => Ok(views.html.Document.show(document))
       case None => NotFound
     }
   }
