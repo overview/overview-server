@@ -176,7 +176,8 @@ views.DocumentSet._documentSet.job_state_description.retrieving_documents=Retrie
 views.DocumentSet._documentSet.job_state_description.saving_document_tree=Saving document tree
 views.DocumentSet._documentSet.job_state_description.worker_error=Import failed (system error)
 views.DocumentSet._documentSet.jobs_to_process=Waiting for {0} other jobs to complete before processing can begin
-views.DocumentSet._documentSet.query=Query: {0}
+views.DocumentSet._documentSet.subtitle.query=Query: {0}
+views.DocumentSet._documentSet.subtitle.other=From uploaded file
 
 views.Node._form.h3=Edit node
 views.Node._form.labels.description=Description

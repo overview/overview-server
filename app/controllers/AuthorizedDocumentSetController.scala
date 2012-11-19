@@ -5,8 +5,10 @@ import play.api.data.Forms._
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode._
+
 import models.orm.{DocumentSet,DocumentSetCreationJob, User}
 import models.orm.DocumentSet.ImplicitHelper._
+import models.OverviewDocumentSet
 
 trait AuthorizedDocumentSetController {
   this: Controller =>
@@ -14,12 +16,18 @@ trait AuthorizedDocumentSetController {
   private val form = controllers.forms.DocumentSetForm()
 
   def authorizedIndex(user: User)(implicit request: Request[AnyContent], connection: Connection) = { 
-    val documentSets = user.orderedDocumentSets.page(0, 20).toSeq.withDocumentCounts.withCreationJobs
+    val documentSets = user.orderedDocumentSets
+      .page(0, 20)
+      .toSeq
+      .withDocumentCounts
+      .withCreationJobs
+      .withUploadedFiles
+      .map(OverviewDocumentSet.apply)
     Ok(views.html.DocumentSet.index(user, documentSets, form))
   }
 
   def authorizedShow(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentSet = user.documentSets.where(d => d.id === id).headOption
+    val documentSet = OverviewDocumentSet.findById(id)
     documentSet match {
       case Some(ds) => Ok(views.html.DocumentSet.show(user, ds))
       case None => NotFound
@@ -27,7 +35,7 @@ trait AuthorizedDocumentSetController {
   }
 
   def authorizedShowJson(user: User, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentSet = user.documentSets.where(d => d.id === id).toSeq.withCreationJobs.headOption
+    val documentSet = user.documentSets.where(d => d.id === id).toSeq.withCreationJobs.headOption.map(OverviewDocumentSet.apply)
     documentSet match {
       case Some(ds) => Ok(views.json.DocumentSet.show(ds))
       case None => NotFound

@@ -11,23 +11,25 @@ import play.api.test.FakeApplication
 import models.orm.{ DocumentSet, DocumentSetCreationJob }
 import models.orm.DocumentSetCreationJobState._
 import models.orm.DocumentSetType._
+import models.OverviewDocumentSet
 
 class showSpec extends Specification {
 
   "DocumentSet view generated Json" should {
 
     trait DocumentSetContext extends Scope {
-      val documentSet: DocumentSet
+      val ormDocumentSet: DocumentSet
+      val documentSet: OverviewDocumentSet = OverviewDocumentSet(ormDocumentSet)
       lazy val documentSetJson = show(documentSet).toString
     }
 
     trait CompleteDocumentSetContext extends DocumentSetContext {
-      override val documentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
+      override val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
     }
 
     trait DocumentSetWithJobContext extends DocumentSetContext {
       val job: DocumentSetCreationJob
-      override lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20), documentSetCreationJob=Some(job))
+      override lazy val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20), documentSetCreationJob=Some(job))
     }
 
     trait InProgressDocumentSetContext extends DocumentSetWithJobContext {
@@ -51,9 +53,8 @@ class showSpec extends Specification {
       val job = new FakeNotStartedJob(InProgress, "")
     }
 
-    "contain id, query, and html" in new CompleteDocumentSetContext {
+    "contain id and html" in new CompleteDocumentSetContext {
       documentSetJson must /("id" -> documentSet.id)
-      documentSetJson must /("query" -> documentSet.query.get)
       documentSetJson must beMatching(""".*"html":"[^<]*<.*>[^>]*".*""")
       documentSetJson must not contain ("state")
     }

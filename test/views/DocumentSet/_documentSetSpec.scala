@@ -6,11 +6,13 @@ import org.specs2.specification.Scope
 
 import models.orm.{DocumentSet, DocumentSetCreationJob}
 import models.orm.DocumentSetCreationJobState._
+import models.OverviewDocumentSet
 import models.orm.DocumentSetType._
 
 class _documentSetSpec extends Specification {
   trait ViewContext extends Scope {
-    val documentSet: DocumentSet
+    val ormDocumentSet: DocumentSet
+    val documentSet = OverviewDocumentSet(ormDocumentSet)
 
     lazy val body = _documentSet(documentSet).body
     lazy val j = jerry(body)
@@ -18,13 +20,13 @@ class _documentSetSpec extends Specification {
   }
 
   trait NormalDocumentSetContext extends ViewContext {
-    override val documentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
+    override val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
   }
 
   trait DocumentSetWithJobContext extends ViewContext {
     val documentSetId = 1L
     val job : DocumentSetCreationJob
-    override lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, documentSetId, title="a title", query=Some("a query"), providedDocumentCount=Some(10), documentSetCreationJob=Some(job))
+    override lazy val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, documentSetId, title="a title", query=Some("a query"), providedDocumentCount=Some(10), documentSetCreationJob=Some(job))
   }
 
 

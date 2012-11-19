@@ -1,18 +1,27 @@
 @(
-  documentSet: models.orm.DocumentSet
+  documentSet: OverviewDocumentSet
 )(implicit lang: play.api.i18n.Lang)
 
 @import views.helper.DocumentSetHelper
 
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
-  <li id="document-set-@documentSet.id" class="@(documentSet.documentSetCreationJob.map(j => "unfinished"))">
+  <li id="document-set-@documentSet.id" class="@(documentSet.creationJob.map(j => "unfinished"))">
     <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
-    <h3>@m("query", documentSet.query)</h3>
+    <h3>
+      @documentSet match {
+        case ds: OverviewDocumentSet.DocumentCloudDocumentSet => {
+          @m("subtitle.query", ds.query)
+        }
+        case _ => {
+          @m("subtitle.other")
+        }
+      }
+    </h3>
     <p class="status">
-      @documentSet.documentSetCreationJob.map { job =>
+      @documentSet.creationJob.map { job =>
         <label>
           <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
           <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />

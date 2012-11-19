@@ -7,6 +7,7 @@ import play.api.mvc.Flash
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
+import models.OverviewDocumentSet
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 
@@ -15,7 +16,7 @@ class indexSpec extends Specification {
     implicit lazy val flash = new Flash()
     lazy val user = new models.orm.User()
 
-    var documentSets : Seq[DocumentSet] = Seq()
+    var documentSets : Seq[OverviewDocumentSet] = Seq()
 
     implicit lazy val j = jerry(index(user, documentSets, form).body)
   }
@@ -40,7 +41,7 @@ class indexSpec extends Specification {
       documentSets ++= Seq(
         DocumentSet(DocumentCloudDocumentSet, 1, "title1", Some("query1"), providedDocumentCount=Some(10)),
         DocumentSet(DocumentCloudDocumentSet, 2, "title2", Some("query2"), providedDocumentCount=Some(15))
-      )
+      ).map(OverviewDocumentSet.apply)
 
       $("ul.document-sets").length must equalTo(1)
       $("ul.document-sets li#document-set-1 a").attr("href") must endWith("/1")

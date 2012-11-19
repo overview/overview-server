@@ -4,8 +4,9 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-import models.orm.{ DocumentSet, DocumentSetCreationJob }
+import models.orm.{DocumentSetCreationJob }
 import models.orm.DocumentSetCreationJobState.NotStarted
+import models.OverviewDocumentSet
 import views.ScopedMessages
 import views.helper.DocumentSetHelper
 
@@ -25,17 +26,14 @@ object show {
     notCompleteMap ++ notStartedMap
   }
 
-  private[DocumentSet] def documentSetProperties(documentSet: DocumentSet)(implicit lang: Lang) = {
-    Map(
-      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
+  private[DocumentSet] def documentSetProperties(documentSet: OverviewDocumentSet)(implicit lang: Lang) = {
+    Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
   }
 
-  private[DocumentSet] implicit def documentSetToJson(documentSet: DocumentSet): JsValue = {
-    val documentSetMap = Map(
-      "id" -> toJson(documentSet.id),
-      "query" -> toJson(documentSet.query))
+  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet): JsValue = {
+    val documentSetMap = Map("id" -> toJson(documentSet.id))
 
-    val jobStatusMap = documentSet.documentSetCreationJob match {
+    val jobStatusMap = documentSet.creationJob match {
       case Some(documentSetCreationJob) => documentSetCreationJobProperties(documentSetCreationJob)
       case None => documentSetProperties(documentSet)
     }
@@ -43,7 +41,7 @@ object show {
     toJson(documentSetMap ++ jobStatusMap)
   }
 
-  def apply(documentSet: DocumentSet): JsValue = {
+  def apply(documentSet: OverviewDocumentSet): JsValue = {
     documentSetToJson(documentSet)
   }
 }
