@@ -11,7 +11,7 @@ import database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
 import overview.clustering._
 import overview.http.{AsyncHttpRequest, DocumentCloudDocumentProducer}
-import overview.util.{ ExceptionStatusMessage, JobRestarter, Logger }
+import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._
 import persistence._
 import persistence.DocumentSetCreationJobState._
@@ -44,12 +44,8 @@ object JobHandler {
         DocumentSetLoader.load(j.documentSetId).get
       }
 
-      val dcSource = new DocumentCloudSource(asyncHttpRetriever,
-        documentSet.query.get, j.documentCloudUsername, j.documentCloudPassword)
-
       val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
-      val producer = new DocumentCloudDocumentProducer(j.documentSetId, dcSource, indexer, progFn)
-      
+      val producer = DocumentProducerFactory.create(j, documentSet, indexer, progFn, asyncHttpRetriever)
       Logger.info("Indexing query: " + documentSet.query.get)
       producer.produce()
       
