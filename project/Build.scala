@@ -34,7 +34,9 @@ object ApplicationBuild extends Build {
 
   val common = Project("common", file("common"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++= Seq("play" %% "play" % "2.0.3")))
+      Seq(libraryDependencies ++= Seq(
+	"play" %% "play" % "2.0.3",
+	"postgresql" % "postgresql" % "9.1-901.jdbc4")))
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
