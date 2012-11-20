@@ -45,7 +45,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
   }
 
   def productionComplete() {
-    logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
+    Logger.logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
     
     progAbort(Progress(fetchingFraction, Clustering))
     val t1 = System.nanoTime()
