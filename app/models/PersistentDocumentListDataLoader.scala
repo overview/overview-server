@@ -39,7 +39,7 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
         LIMIT {maxRows} OFFSET {offset}
         """).on("maxRows" -> maxRows, "offset" -> firstRow,
       "documentSetId" -> documentSetId).
-      as(long("id") ~ str("title") ~ str("documentcloud_id") map (flatten) *)
+      as(long("id") ~ str("title") ~ get[Option[String]]("documentcloud_id") map (flatten) *)
   }
 
   private def countQueryWhere(documentSetId: Long, where: String)(implicit c: Connection): Long = {

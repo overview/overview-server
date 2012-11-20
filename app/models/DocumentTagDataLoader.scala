@@ -63,7 +63,7 @@ class DocumentTagDataLoader {
   }
 
   private def documentQuery(documentIds: Seq[Long])(implicit c: Connection): List[DocumentData] = {
-    val documentParser = long("id") ~ str("title") ~ str("documentcloud_id")
+    val documentParser = long("id") ~ str("title") ~ get[Option[String]]("documentcloud_id")
 
     SQL(
       """
