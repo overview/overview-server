@@ -36,14 +36,17 @@ object ApplicationBuild extends Build {
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++= Seq(
 	"play" %% "play" % "2.0.3",
-	"postgresql" % "postgresql" % "9.1-901.jdbc4")))
+	"postgresql" % "postgresql" % "9.1-901.jdbc4"
+  )))
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++=
-        appDependencies ++
-        Seq("play" %% "play" % "2.0.3") ++
-        Seq("org.specs2" %% "specs2" % "1.11" % "test"))
+        appDependencies ++ Seq(
+	  "play" %% "play" % "2.0.3",
+          "org.specs2" %% "specs2" % "1.11" % "test",
+	  "net.sf.opencsv" % "opencsv" % "2.3"
+	))
       ).settings(
         testOptions in Test ++= Seq(
           Tests.Argument("xonly"),
