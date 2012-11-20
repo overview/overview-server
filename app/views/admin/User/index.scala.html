@@ -14,7 +14,7 @@
           <th class="email">@m("th.email")</th>
           <th class="admin">@m("th.admin")</th>
           <th class="confirmed-at">@m("th.confirmed_at")</th>
-          <th class="logged-in-at">@m("th.logged_in_at")</th>
+          <th class="activity-at">@m("th.activity_at")</th>
           <th class="actions">@m("th.actions")</th>
         </tr>
       </thead>
@@ -22,12 +22,12 @@
         @users.map { otherUser =>
           <tr>
             <td class="email">@otherUser.email</td>
-            <td class="admin">@m("td.admin", otherUser.isAdministrator)</td>
+            <td class="admin">@m("td.admin", if(otherUser.isAdministrator) 1 else 0)</td>
             <td class="confirmed-at" title="@(otherUser.asConfirmed.map(u => m("td.confirmed_at_time", u.confirmedAt)).getOrElse(""))">
-              @(otherUser.asConfirmed.map(u => m("td.confirmed_at", u.confirmedAt)).getOrElse(m("td.confirmed_at_none")))
+              @otherUser.asConfirmed.map(u => m("td.confirmed_at", u.confirmedAt))
             </td>
-            <td class="logged-in-at" title="@(otherUser.currentSignInIp.getOrElse(""))">
-              @(otherUser.currentSignInAt.map(m("td.logged_in_at", _)).getOrElse(m("td.logged_in_at_none")))
+            <td class="activity-at">
+              @otherUser.lastActivityAt.map(m("td.activity_at", _))
             </td>
             <td class="actions">
               @if(otherUser.id != user.id) {
