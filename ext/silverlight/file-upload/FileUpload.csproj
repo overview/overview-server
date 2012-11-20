@@ -66,7 +66,9 @@
     </Compile>
     <Compile Include="src\FileReader.cs">
       <DependentUpon>src\Blob.cs</DependentUpon>
+      <DependentUpon>src\Windows1252Encoding.cs</DependentUpon>
     </Compile>
+    <Compile Include="src\Windows1252Encoding.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\Silverlight\v5.0\Microsoft.Silverlight.CSharp.targets" />
 </Project>

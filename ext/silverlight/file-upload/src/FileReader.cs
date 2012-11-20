@@ -79,18 +79,22 @@ namespace OverviewProject.FileUpload {
     public Encoding LookupEncoding(string tryEncoding) {
       Encoding encoding = null;
 
-      try {
-        encoding = Encoding.GetEncoding(tryEncoding);
-      } catch (ArgumentException) {
-        // The user didn't present a valid string such as "utf-8".
-        // We're supposed to do auto-encoding here, but I'm too lazy. Guess
-        // at "utf-8". Don't throw an error.
-        // http://www.w3.org/TR/FileAPI/#encoding-determination
-        //
-        // Silverlight actually only supports UTF-8 and UTF-16, so this
-        // fallback will happen lots.
-        // http://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.95).aspx
-        encoding = Encoding.UTF8;
+      if (tryEncoding == "windows-1252") {
+        encoding = new Windows1252Encoding();
+      } else {
+        try {
+          encoding = Encoding.GetEncoding(tryEncoding);
+        } catch (ArgumentException) {
+          // The user didn't present a valid string such as "utf-8".
+          // We're supposed to do auto-encoding here, but I'm too lazy. Guess
+          // at "utf-8". Don't throw an error.
+          // http://www.w3.org/TR/FileAPI/#encoding-determination
+          //
+          // Silverlight actually only supports UTF-8 and UTF-16, so this
+          // fallback will happen lots.
+          // http://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.95).aspx
+          encoding = Encoding.UTF8;
+        }
       }
 
       return encoding;
