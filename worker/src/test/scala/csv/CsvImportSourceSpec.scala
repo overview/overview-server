@@ -27,7 +27,7 @@ class CsvImportSourceSpec extends Specification {
                      |1, this is line1, stuff1""".stripMargin
     }
 
-       trait MissingTextColumn extends CsvImportContext {
+    trait MissingTextColumn extends CsvImportContext {
       def input = """|id, text, stuff
                      |0, this is line0, stuff0
                      |Messed up Row
@@ -42,14 +42,14 @@ class CsvImportSourceSpec extends Specification {
 
     "find the text column" in new ValidInput {
       val expectedText: Seq[String] = Seq.tabulate(3) { "this is line" + _ }
-      val textColumns = csvImportSource.map(_.trim)
-      textColumns must be equalTo (expectedText)
+      val text = csvImportSource.map(_.text.trim)
+      text must be equalTo (expectedText)
     }
 
     "fail if no text header found" in new MissingHeader {
       csvImportSource.foreach(println) must throwA[Exception]
     }
-    
+
     "Skip rows with not enough columns" in new MissingTextColumn {
       csvImportSource.size must beEqualTo(2)
     }
