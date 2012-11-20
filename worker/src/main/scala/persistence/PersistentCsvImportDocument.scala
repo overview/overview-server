@@ -5,7 +5,7 @@ import java.sql.Connection
 
 trait PersistentCsvImportDocument {
   val text: String
-  val title: String = ""
+  val title: String = "Implement Title"
   
   def write(documentSetId: Long)(implicit c: Connection): Long = {
     SQL("""
