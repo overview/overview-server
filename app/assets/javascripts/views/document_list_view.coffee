@@ -96,8 +96,9 @@ class DocumentListView
   _update_document_a_tagids: ($tags, tagids) ->
     return if @cache.tag_store.tags.length == 0 # XXX remove when we're sure /root has been loaded before we get here
     $tags.empty()
-    for tagid in tagids
-      tag = @cache.tag_store.find_tag_by_id(tagid)
+
+    sorted_tags = @cache.tag_store.tags.filter((t) -> t.id in tagids)
+    for tag in sorted_tags
       color = tag.color || @color_table.get(tag.name)
       $span = $("<span style=\"background-color: #{color}\"/>")
       $span.attr('title', tag.name)

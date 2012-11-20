@@ -172,6 +172,12 @@ describe 'views/document_list_view', ->
         $tags = $('a:eq(0) span.tags', view.div)
         expect($tags.children().length).toEqual(0)
 
+      it 'should order tags as in the tag store', ->
+        document_store.documents[1].tagids = [2, 1]
+        view = create_view()
+        $tags = $('a[data-docid=1] span.tags', view.div)
+        expect($tags.children(':eq(0)').attr('title')).toEqual('AA')
+
       it 'should notify "document-clicked"', ->
         view = create_view()
         $a = $(view.div).find('a[data-docid=1]')
