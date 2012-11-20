@@ -13,13 +13,13 @@ class DocumentContentsView
     else
       @state.selection.documents_from_cache(@cache)[0]?.id
 
-  _get_iframe_url: (document) ->
-    @cache.server.router.route_to_path('document_view', document.id)
+  _get_iframe_url: (docid) ->
+    docid && @cache.server.router.route_to_path('document_view', docid) || 'about:blank'
 
   _create_iframe: (document) ->
     $iframe = $('<iframe frameborder="0" width="1" height="1"></iframe>')
-    url = this._get_iframe_url(document)
-    $iframe.attr('src', this._get_iframe_url(document))
+    url = this._get_iframe_url(document?.id)
+    $iframe.attr('src', url)
     $div = $(@div)
     $div.empty()
     $div.append($iframe)
@@ -38,22 +38,16 @@ class DocumentContentsView
       if @iframe?
         try
           @iframe.contentWindow.load_document(document)
-          done = true
         catch e
-          # ignore
+          this._create_iframe(document)
       else
         this._create_iframe(document)
-        done = true
     else
       if @iframe?
         try
           @iframe.contentWindow.load_documentcloud(undefined)
-          done = true
         catch e
-          #ignore
-
-    if !done
-      this._create_iframe(document)
+          this._create_iframe(undefined)
 
 exports = require.make_export_object('views/document_contents_view')
 exports.DocumentContentsView = DocumentContentsView
