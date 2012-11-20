@@ -8,7 +8,10 @@
       <ColumnDefinition Width="auto" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
-    <Button Grid.Column="0" Name="Button" Click="Button_Click" Margin="0,10,0,0" VerticalAlignment="Center" Content="Choose File…" />
+    <Grid.RowDefinitions>
+      <RowDefinition />
+    </Grid.RowDefinitions>
+    <Button Grid.Column="0" Name="Button" Click="Button_Click" Margin="0,0,5,0" VerticalAlignment="Center" Content="Choose File…" />
     <TextBlock Grid.Column="1" Name="Label" Text="" TextTrimming="WordEllipsis" VerticalAlignment="Center" />
   </Grid>
 </UserControl>
