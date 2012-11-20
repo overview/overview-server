@@ -6,7 +6,7 @@ class MockState
   observable(this)
 
   constructor: () ->
-    @selection = { nodes: [], tags: [], documents: [] }
+    @selection = { nodes: [], tags: [], documents: [], documents_from_cache: () -> [] }
 
 class MockCache
   constructor: () ->
@@ -47,13 +47,20 @@ describe 'views/document_contents_view', ->
       beforeEach ->
         view = create_view()
 
-      it 'should be empty when there is no selected document', ->
+      it 'should be empty when there are no documents in the selection', ->
         expect($(view.div).children().length).toEqual(0)
 
       it 'should build an iframe when there is a selected document', ->
         state.selection.documents = [1]
         state._notify('selection-changed', state.selection)
         expect(view.iframe.getAttribute('src')).toEqual('/document_view/1')
+
+      it 'should build an iframe when there is a selection that resolves to a document', ->
+        state.selection.documents_from_cache = () -> [ { id: 1 } ]
+        spyOn(state.selection, 'documents_from_cache').andReturn([{ id: 1 }])
+        state._notify('selection-changed', state.selection)
+        expect(view.iframe.getAttribute('src')).toEqual('/document_view/1')
+        expect(state.selection.documents_from_cache).toHaveBeenCalledWith(cache)
 
     describe 'beginning on a document', ->
       beforeEach ->

@@ -201,6 +201,16 @@ describe 'views/document_list_view', ->
         expect($div.find('a[data-docid=1]').hasClass('selected')).toBeTruthy()
         expect($div.find('a[data-docid=2]').hasClass('selected')).toBeFalsy()
 
+      it 'should not have "all-selected" when there are documents selected', ->
+        state.selection.documents = [1]
+        view = create_view()
+        expect($(view.div).hasClass('all-selected')).toBeFalsy()
+
+      it 'should have "all-selected" when there are no documents selected', ->
+        state.selection.documents = []
+        view = create_view()
+        expect($(view.div).hasClass('all-selected')).toBeTruthy()
+
       it 'should remove the "selected" class when the selection changes', ->
         state.selection.documents = [1]
         view = create_view()
