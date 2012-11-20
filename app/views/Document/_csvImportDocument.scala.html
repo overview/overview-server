@@ -2,6 +2,6 @@
 
 @defining(scopedMessages("views.Document.show")) { m =>
   <div class="type-CsvImportDocument" style="@document.map(_ => "").getOrElse("display:none;")">
-    @document.map(d => <pre>@d.text</pre>)
+    @document.map(d => <pre>{d.text}</pre>)
   </div>
 }
