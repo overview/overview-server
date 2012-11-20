@@ -7,14 +7,15 @@ import play.api.mvc.Flash
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
-import models.OverviewDocumentSet
+import models.{OverviewDocumentSet,OverviewUser}
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 
 class indexSpec extends Specification {
   trait ViewContext extends Scope {
     implicit lazy val flash = new Flash()
-    lazy val user = new models.orm.User()
+    lazy val ormUser = new models.orm.User()
+    lazy val user = OverviewUser(ormUser)
 
     var documentSets : Seq[OverviewDocumentSet] = Seq()
 

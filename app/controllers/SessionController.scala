@@ -33,8 +33,8 @@ object SessionController extends BaseController with LoginLogout {
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
       user => {
-        user.recordLogin(request.remoteAddress, new java.util.Date()).save
-        gotoLoginSucceeded(user.id).flashing("success" -> m("create.success"))
+        val recordedUser = user.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
+        gotoLoginSucceeded(recordedUser.id).flashing("success" -> m("create.success"))
       }
     )
   }

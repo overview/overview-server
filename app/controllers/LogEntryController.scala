@@ -17,15 +17,16 @@ import au.com.bytecode.opencsv.CSVWriter
 
 import org.squeryl.PrimitiveTypeMode._
 
-import models.orm.{DocumentSet,LogEntry,User}
+import models.OverviewUser
+import models.orm.{DocumentSet,LogEntry}
 import models.orm.LogEntry.ImplicitHelper._
 
 object LogEntryController extends BaseController {
   def index(id: Long, extension: String) = authorizedAction(userOwningDocumentSet(id))(user => authorizedIndex(user, id, extension)(_: Request[AnyContent], _: Connection))
   def createMany(id: Long) = authorizedAction(parse.json, userOwningDocumentSet(id))(user => authorizedCreateMany(user, id)(_: Request[JsValue], _: Connection))
 
-  private[controllers] def authorizedIndex(user: User, documentSetId: Long, extension: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentSet = user.documentSets.where(ds => ds.id === documentSetId).headOption
+  private[controllers] def authorizedIndex(user: OverviewUser, documentSetId: Long, extension: String)(implicit request: Request[AnyContent], connection: Connection) = {
+    val documentSet = DocumentSet.findById(documentSetId)
 
     documentSet.map({ ds =>
       val logEntries = ds.orderedLogEntries.page(0, 5000).toSeq.withUsers
@@ -39,7 +40,7 @@ object LogEntryController extends BaseController {
     )
   }
 
-  private[controllers] def authorizedCreateMany(user: User, documentSetId: Long)(implicit request: Request[JsValue], connection: Connection) = {
+  private[controllers] def authorizedCreateMany(user: OverviewUser, documentSetId: Long)(implicit request: Request[JsValue], connection: Connection) = {
     request.body match {
       case jsArray: JsArray =>
         var ok = true
@@ -82,7 +83,7 @@ object LogEntryController extends BaseController {
     }
   }
 
-  def logEntryForm(documentSetId: Long, user: User) = Form(
+  def logEntryForm(documentSetId: Long, user: OverviewUser) = Form(
     mapping(
       "date" -> of[Timestamp],
       "component" -> nonEmptyText,
@@ -104,7 +105,7 @@ object LogEntryController extends BaseController {
     Ok(stringWriter.toString()).as("text/csv")
   }
 
-  private def verifyAndInsertLogEntry(documentSetId: Long, user: User, jsValue: JsValue) : Boolean = {
+  private def verifyAndInsertLogEntry(documentSetId: Long, user: OverviewUser, jsValue: JsValue) : Boolean = {
     jsValueToMap(jsValue).map(m =>
       logEntryForm(documentSetId, user).bind(m).fold(
         formWithErrors => false,

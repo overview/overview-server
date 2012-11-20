@@ -1,8 +1,5 @@
 package controllers
 
-import helpers.DbTestContext
-import mailers.Mailer
-import models.{OverviewUser, ResetPasswordRequest}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -10,6 +7,10 @@ import play.api.Play.{start, stop}
 import play.api.mvc.{AnyContent, Request, RequestHeader}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers.{BAD_REQUEST, OK, SEE_OTHER, contentAsString, status}
+
+import helpers.DbTestContext
+import mailers.Mailer
+import models.{OverviewUser, ResetPasswordRequest}
 
 class PasswordControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -22,7 +23,7 @@ class PasswordControllerSpec extends Specification {
     val user = mock[OverviewUser]
     user.email returns "user@example.org"
     user.passwordMatches("hash") returns true
-    user.recordLogin(anyString, any[java.util.Date]) returns user
+    user.withLoginRecorded(anyString, any[java.util.Date]) returns user
     user.save returns user
 
     val userWithRequest = mock[UserWithRequest]
@@ -65,12 +66,12 @@ class PasswordControllerSpec extends Specification {
 
   "PasswordController" should {
     "new() should redirect from the 'new' page when logged in" in new OurScope {
-      val result = controller.optionallyAuthorizedNew_(Some(models.orm.User()))
+      val result = controller.optionallyAuthorizedNew_(Some(OverviewUser(models.orm.User())))
       status(result) must equalTo(SEE_OTHER)
     }
 
     "edit() should redirect from the 'edit' page when logged in" in new OurScope {
-      val result = controller.optionallyAuthorizedEdit(Some(models.orm.User()), "invalid-token")
+      val result = controller.optionallyAuthorizedEdit(Some(OverviewUser(models.orm.User())), "invalid-token")
       status(result) must equalTo(SEE_OTHER)
     }
 
@@ -161,7 +162,7 @@ class PasswordControllerSpec extends Specification {
       override val formParameters = Some(Seq("password" -> "aklsd@23k;"))
       val result = controller.doUpdate(userWithRequest.resetPasswordToken)
       got {
-        one(user).recordLogin(anyString, any[java.util.Date])
+        one(user).withLoginRecorded(anyString, any[java.util.Date])
       }
       controller.loggedIn must beTrue
     }

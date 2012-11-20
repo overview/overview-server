@@ -12,7 +12,7 @@ import models.orm.DocumentSetType._
 class _documentSetSpec extends Specification {
   trait ViewContext extends Scope {
     val ormDocumentSet: DocumentSet
-    val documentSet = OverviewDocumentSet(ormDocumentSet)
+    def documentSet = OverviewDocumentSet(ormDocumentSet)
 
     lazy val body = _documentSet(documentSet).body
     lazy val j = jerry(body)
@@ -29,12 +29,10 @@ class _documentSetSpec extends Specification {
     override lazy val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, documentSetId, title="a title", query=Some("a query"), providedDocumentCount=Some(10), documentSetCreationJob=Some(job))
   }
 
-
   class FakeDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState,
     fractionComplete: Double = 0.0, override val jobsAheadInQueue: Long = -1l) extends
-  DocumentSetCreationJob(documentSetId, state = state, fractionComplete = fractionComplete)
-  
-  
+    DocumentSetCreationJob(documentSetId, state = state, fractionComplete = fractionComplete)
+
   "DocumentSet._documentSet" should {
     "be an <li>" in new NormalDocumentSetContext {
       body must beMatching("""(?s)\A\s*<li.*</li>\s*\z$""".r)
@@ -62,7 +60,6 @@ class _documentSetSpec extends Specification {
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
       override val job = new FakeDocumentSetCreationJob(documentSetId, NotStarted) 
-      
       $("li.unfinished").length must be_>=(1)
     }
 

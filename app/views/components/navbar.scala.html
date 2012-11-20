@@ -1,5 +1,5 @@
 @(
-  optionalUser: Option[models.orm.User]
+  optionalUser: Option[OverviewUser]
 )(
   implicit lang: Lang
 )
@@ -17,7 +17,7 @@
           <div class="logged-in pull-right">
             <p class="navbar-text pull-left">@(Html(HtmlFormat.escape(m("logged_in", "EMAIL")).toString.replace("EMAIL", "<strong>" + HtmlFormat.escape(user.email).toString + "</strong>")))</p>
             <ul class="nav">
-              @if(user.role == models.orm.UserRole.Administrator) {
+              @if(user.isAdministrator) {
                 <li class="dropdown">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
                   <ul class="dropdown-menu" role="menu">

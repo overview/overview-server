@@ -9,6 +9,7 @@ import play.api.test.{FakeApplication,FakeHeaders,FakeRequest}
 import play.api.test.Helpers._
 
 import models.orm.{DocumentSet,LogEntry,User}
+import models.OverviewUser
 
 class LogEntryControllerSpec extends Specification {
   import helpers.DbTestContext
@@ -16,9 +17,10 @@ class LogEntryControllerSpec extends Specification {
   step(start(FakeApplication()))
 
   trait OurDbContext extends DbTestContext {
-    lazy val user = (User(email = "email@example.org", passwordHash = "hash")).save
-    lazy val documentSet1 = user.createDocumentSet("foo")
-    lazy val documentSet2 = user.createDocumentSet("bar")
+    lazy val ormUser = (User(email = "email@example.org", passwordHash = "hash")).save
+    lazy val user = OverviewUser(ormUser)
+    lazy val documentSet1 = ormUser.createDocumentSet("foo")
+    lazy val documentSet2 = ormUser.createDocumentSet("bar")
   }
 
   "createMany()" should {

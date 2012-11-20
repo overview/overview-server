@@ -1,20 +1,23 @@
 package controllers
 
 import jp.t2v.lab.play20.auth.{AuthConfig, CookieRelationResolver, RelationResolver}
-import models.orm.User
 import play.api.mvc.{PlainResult, Request, RequestHeader}
 import play.api.mvc.Results.{Forbidden, Redirect}
 
+import models.OverviewUser
+
 trait AuthConfigImpl extends AuthConfig {
   type Id = Long
-  type User = models.orm.User
-  type Authority = User => Boolean
+  type User = OverviewUser
+  type Authority = OverviewUser => Boolean
 
   override val idManifest : ClassManifest[Id] = classManifest[Id]
 
   override val sessionTimeoutInSeconds : Int = 3600
 
-  override def resolveUser(id: Id) : Option[User] = User.findById(id)
+  override def resolveUser(id: Id) : Option[OverviewUser] = {
+    OverviewUser.findById(id)
+  }
 
   override def loginSucceeded(request: RequestHeader): PlainResult = {
     val uri = request.session.get("access_uri").getOrElse(routes.DocumentSetController.index.url)

@@ -24,15 +24,15 @@ trait PasswordController extends BaseController with LoginLogout {
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def new_() = optionallyAuthorizedAction({ user: Option[User] => optionallyAuthorizedNew_(user)(_: Request[AnyContent], _: Connection)})
-  def edit(token: String) = optionallyAuthorizedAction({ user: Option[User] => optionallyAuthorizedEdit(user, token)(_: Request[AnyContent], _: Connection)})
+  def new_() = optionallyAuthorizedAction({ user: Option[OverviewUser] => optionallyAuthorizedNew_(user)(_: Request[AnyContent], _: Connection)})
+  def edit(token: String) = optionallyAuthorizedAction({ user: Option[OverviewUser] => optionallyAuthorizedEdit(user, token)(_: Request[AnyContent], _: Connection)})
   def create() = ActionInTransaction { doCreate()(_: Request[AnyContent], _: Connection) }
   def update(token: String) = ActionInTransaction { doUpdate(token)(_: Request[AnyContent], _: Connection) }
 
   private def doRedirect = Redirect(routes.WelcomeController.show)
   private def showInvalidToken(implicit request: Request[AnyContent]) = BadRequest(views.html.Password.editError())
 
-  private[controllers] def optionallyAuthorizedNew_(optionalUser: Option[User])(implicit request: Request[AnyContent], connection: Connection) = {
+  private[controllers] def optionallyAuthorizedNew_(optionalUser: Option[OverviewUser])(implicit request: Request[AnyContent], connection: Connection) = {
     optionalUser.map(userAlreadyLoggedIn => doRedirect).getOrElse({
       Ok(views.html.Password.new_(newForm))
     })
@@ -60,7 +60,7 @@ trait PasswordController extends BaseController with LoginLogout {
     )
   }
 
-  private[controllers] def optionallyAuthorizedEdit(optionalUser: Option[User], token: String)(implicit request: Request[AnyContent], connection: Connection) = {
+  private[controllers] def optionallyAuthorizedEdit(optionalUser: Option[OverviewUser], token: String)(implicit request: Request[AnyContent], connection: Connection) = {
     optionalUser.map(userAlreadyLoggedIn => doRedirect).getOrElse({
       tokenToUser(token).map({ user =>
         Ok(views.html.Password.edit(user, editForm))
@@ -75,7 +75,7 @@ trait PasswordController extends BaseController with LoginLogout {
         newPassword => {
           val userWithNewPassword = user
             .withNewPassword(newPassword)
-            .recordLogin(request.remoteAddress, new java.util.Date())
+            .withLoginRecorded(request.remoteAddress, new java.util.Date())
             .save
           gotoLoginSucceeded(userWithNewPassword.id).flashing("success" -> m("update.success"))
         }

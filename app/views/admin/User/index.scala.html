@@ -1,6 +1,6 @@
 @(
-  user: models.orm.User,
-  users: Seq[models.orm.User]
+  user: OverviewUser,
+  users: Seq[OverviewUser]
 )(implicit lang: Lang, flash: Flash)
 
 @import models.orm.UserRole
@@ -12,7 +12,7 @@
       <thead>
         <tr>
           <th class="email">@m("th.email")</th>
-          <th class="role">@m("th.role")</th>
+          <th class="admin">@m("th.admin")</th>
           <th class="confirmed-at">@m("th.confirmed_at")</th>
           <th class="logged-in-at">@m("th.logged_in_at")</th>
           <th class="actions">@m("th.actions")</th>
@@ -22,14 +22,18 @@
         @users.map { otherUser =>
           <tr>
             <td class="email">@otherUser.email</td>
-            <td class="role">@m("role." + otherUser.role.toString())</td>
-            <td class="confirmed-at" title="@(otherUser.confirmedAt.map(m("td.confirmed_at_time", _)).getOrElse(""))">@(otherUser.confirmedAt.map(m("td.confirmed_at", _)).getOrElse(m("td.confirmed_at_none")))</td>
-            <td class="logged-in-at" title="@(otherUser.currentSignInIp.getOrElse(""))">@(otherUser.currentSignInAt.map(m("td.logged_in_at", _)).getOrElse(m("td.logged_in_at_none")))</td>
+            <td class="admin">@m("td.admin", otherUser.isAdministrator)</td>
+            <td class="confirmed-at" title="@(otherUser.asConfirmed.map(u => m("td.confirmed_at_time", u.confirmedAt)).getOrElse(""))">
+              @(otherUser.asConfirmed.map(u => m("td.confirmed_at", u.confirmedAt)).getOrElse(m("td.confirmed_at_none")))
+            </td>
+            <td class="logged-in-at" title="@(otherUser.currentSignInIp.getOrElse(""))">
+              @(otherUser.currentSignInAt.map(m("td.logged_in_at", _)).getOrElse(m("td.logged_in_at_none")))
+            </td>
             <td class="actions">
               @if(otherUser.id != user.id) {
                 <form method="post" action="@controllers.admin.routes.UserController.update(otherUser.id)">
                   <input type="hidden" name="email" value="@otherUser.email"/>
-                  @if(otherUser.role == UserRole.Administrator) {
+                  @if(otherUser.isAdministrator) {
                     <input type="hidden" name="role" value="@UserRole.NormalUser.id"/>
                     <input type="submit" value="@m("action.demote")"/>
                   } else {

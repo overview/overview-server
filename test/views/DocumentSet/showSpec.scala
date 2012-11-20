@@ -19,7 +19,7 @@ class showSpec extends Specification {
 
     trait DocumentSetContext extends Scope {
       val ormDocumentSet: DocumentSet
-      val documentSet: OverviewDocumentSet = OverviewDocumentSet(ormDocumentSet)
+      lazy val documentSet: OverviewDocumentSet = OverviewDocumentSet(ormDocumentSet)
       lazy val documentSetJson = show(documentSet).toString
     }
 

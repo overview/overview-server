@@ -5,8 +5,6 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import models.upload.OverviewUpload
-import models.upload.OverviewUploadedFile
 import play.api.http.HeaderNames._
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
@@ -19,9 +17,12 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{ NOT_FOUND, OK, PARTIAL_CONTENT }
 import play.api.test.Helpers.status
 import org.specs2.specification.Scope
-import models.orm.User
 import play.api.mvc.AnyContent
 import play.api.mvc.SimpleResult
+
+import models.upload.{OverviewUpload,OverviewUploadedFile}
+import models.OverviewUser
+import models.orm.User
 
 @RunWith(classOf[JUnitRunner])
 class UploadControllerSpec extends Specification with Mockito {
@@ -54,7 +55,7 @@ class UploadControllerSpec extends Specification with Mockito {
   }
 
   trait HeadRequest extends UploadContext[AnyContent] {
-    val user = User(1l)
+    val user = OverviewUser(User(1l))
     val controller = new TestUploadController(Option(upload))
     val request: Request[AnyContent] = FakeRequest()
     val result = controller.authorizedShow(user, guid)(request, null)

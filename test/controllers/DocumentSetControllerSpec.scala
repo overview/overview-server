@@ -6,8 +6,6 @@
  */
 package controllers
 
-import helpers.DbTestContext
-import models.orm.{DocumentSet, DocumentSetCreationJob, Schema, User}
 import org.specs2.mutable.Specification
 import org.squeryl.PrimitiveTypeMode._
 import play.api.mvc.Controller
@@ -15,7 +13,9 @@ import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
 
-
+import helpers.DbTestContext
+import models.orm.{DocumentSet, DocumentSetCreationJob, Schema, User}
+import models.OverviewUser
 
 class DocumentSetControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -28,13 +28,13 @@ class DocumentSetControllerSpec extends Specification {
     implicit val authorizedRequest = 
       FakeRequest().withFormUrlEncodedBody("query" -> query, "title" -> title)
     val controller = new TestDocumentSetController()
-    lazy val user = 
+    lazy val ormUser = 
       Schema.users.where(u => u.email === "admin@overview-project.org").head
+    lazy val user = OverviewUser(ormUser)
     lazy val documentSet = Schema.documentSets.headOption
     lazy val documentSetCreationJob = Schema.documentSetCreationJobs.headOption
   }
 
-  
   "The DocumentSet Controller" should {
     
     inExample("submit a DocumentSetCreationJob when a new query is received") in new AuthorizedSession {
