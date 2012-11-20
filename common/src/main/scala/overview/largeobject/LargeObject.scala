@@ -24,8 +24,8 @@ trait LargeObject {
   /** Appends data to the end of the LargeObject. @return total size of object */
   def add(data: Array[Byte]): Long
 
-  /** Read the first n bytes. FIXME: for testing only right now. Proper methods later */
-  def read(length: Int): Array[Byte]
+  /** @return an InputStream for reading the stored data */
+  def inputStream: java.io.InputStream
 
   /** delete all stored data */
   def truncate
@@ -83,9 +83,7 @@ object LO {
       pgLo.tell
     }
 
-    def read(length: Int): Array[Byte] = {
-      pgLo.read(length)
-    }
+    def inputStream: java.io.InputStream = pgLo.getInputStream()
 
     def truncate { pgLo.truncate(0) }
   }
