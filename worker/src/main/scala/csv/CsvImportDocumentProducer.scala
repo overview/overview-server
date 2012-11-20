@@ -9,17 +9,22 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   private val uploadReader = new UploadReader(uploadedFileId)
 
   def produce() {
-    DB.withConnection { implicit connection =>
+    DB.withTransaction { implicit connection =>
       uploadReader.read { reader =>
         val documentSource = new CsvImportSource(reader)
-        
+
         documentSource.foreach { doc =>
-          val documentId = doc.write(documentSetId)
+          val documentId = writeAndCommitDocument(documentSetId, doc)
           consumer.processDocument(documentId, doc.text)
         }
-        
+
         consumer.productionComplete()
       }
     }
   }
+
+  private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long =
+    DB.withConnection { implicit connection =>
+      doc.write(documentSetId)
+    }
 }
