@@ -5,10 +5,10 @@ import java.io.Reader
 import au.com.bytecode.opencsv.CSVReader
 import scala.annotation.tailrec
 
-class CsvImportSource(reader: Reader) extends Iterable[String] {
+class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val TextColumn: String = "text"
 
-  val iterator = new Iterator[String] {
+  val iterator = new Iterator[CsvImportDocument] {
     private val csvParser = new CSVReader(reader)
     private var nextLine = csvParser.readNext()
 
@@ -16,11 +16,11 @@ class CsvImportSource(reader: Reader) extends Iterable[String] {
 
     def hasNext: Boolean = nextLine != null
 
-    def next(): String = {
+    def next(): CsvImportDocument = {
       require(columns.get(TextColumn).isDefined)
       
       var currentLine: Array[String] = nextValidRow
-      Option(currentLine).map(_(columns(TextColumn))).orNull
+      Option(currentLine).map(c => new CsvImportDocument(c(columns(TextColumn)))).orNull
     }
 
     @tailrec
