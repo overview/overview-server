@@ -58,7 +58,8 @@ object User {
   private val TokenLength = 26
   private val BcryptRounds = 7
 
-  def all() = from(Schema.users)(u => select(u).orderBy(u.email.asc))
+  //def all() = from(Schema.users)(u => select(u).orderBy(u.email.asc))
+  def all() = from(Schema.users)(u => select(u).orderBy(u.lastActivityAt.desc))
 
   def findById(id: Long) = Schema.users.lookup(id)
 
