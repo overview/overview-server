@@ -24,7 +24,9 @@ case class User(
   @Column("current_sign_in_at") var currentSignInAt: Option[Timestamp] = None,
   @Column("current_sign_in_ip") var currentSignInIp: Option[String] = None,
   @Column("last_sign_in_at") var lastSignInAt: Option[Timestamp] = None,
-  @Column("last_sign_in_ip") var lastSignInIp: Option[String] = None
+  @Column("last_sign_in_ip") var lastSignInIp: Option[String] = None,
+  @Column("last_activity_at") var lastActivityAt: Option[Timestamp] = None,
+  @Column("last_activity_ip") var lastActivityIp: Option[String] = None
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
