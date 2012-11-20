@@ -10,7 +10,7 @@ import anorm.SQL
 import java.util.Date
 import java.sql.Timestamp
 import org.squeryl.dsl.OneToMany
-import org.squeryl.KeyedEntity
+import org.squeryl.{KeyedEntity,Query}
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
@@ -84,6 +84,14 @@ case class DocumentSet(
 
 object DocumentSet {
   def findById(id: Long) = Schema.documentSets.lookup(id)
+
+  def findByUserIdOrderedByCreatedAt(userId: Long) : Query[DocumentSet] = {
+    from(Schema.documentSetUsers.thisTable, Schema.documentSets)((dsu, ds) =>
+      where(dsu.documentSetId === ds.id and dsu.userId === userId)
+      select(ds)
+      orderBy(ds.createdAt.desc)
+    )
+  }
 
   def delete(id: Long)(implicit connection: java.sql.Connection) = {
     SQL("DELETE FROM log_entry WHERE document_set_id = {id}").on('id -> id).executeUpdate()
