@@ -258,10 +258,13 @@ class DocumentListView
 
   _refresh_selection: () ->
     $div = $(@div)
+    $div.removeClass('all-selected')
     $div.find('.selected').removeClass('selected')
-    for document_or_id in @state.selection.documents
-      documentid = document_or_id.id? && document_or_id.id || document_or_id
-      $div.find("a[data-docid=#{documentid}]").addClass('selected')
+    if @state.selection.documents.length
+      for id in @state.selection.documents
+        $div.find("a[data-docid=#{id}]").addClass('selected')
+    else
+      $div.addClass('all-selected')
 
   _refresh_need_documents: () ->
     documents = @document_list.documents

@@ -8,7 +8,10 @@ class DocumentContentsView
     this._refresh()
 
   _get_docid: () ->
-    @state.selection.documents[0]
+    if @state.selection.documents.length
+      @state.selection.documents[0]
+    else
+      @state.selection.documents_from_cache(@cache)[0]?.id
 
   _get_iframe_url: (document) ->
     @cache.server.router.route_to_path('document_view', document.id)
