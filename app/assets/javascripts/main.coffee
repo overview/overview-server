@@ -3,12 +3,14 @@ Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
 RemoteTagList = require('models/remote_tag_list').RemoteTagList
 World = require('models/world').World
+Selection = require('models/selection').Selection
 
 world = new World()
 
 remote_tag_list = new RemoteTagList(world.cache)
 
-world.cache.load_root()
+world.cache.load_root().done ->
+  world.state.set('selection', new Selection({ nodes: [world.cache.on_demand_tree.id_tree.root] }))
 
 log = require('globals').logger
 
