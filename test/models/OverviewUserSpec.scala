@@ -77,17 +77,23 @@ class OverviewUserSpec  extends Specification {
       OverviewUser.findByConfirmationToken("not a real token") must beNone
     }
 
-    "record login data in recordLogin()" in new LoadedUserContext {
-      val user2 = user.recordLogin("1.1.1.1", new java.util.Date(5000))
+    "record login data in withLoginRecorded()" in new LoadedUserContext {
+      val user2 = user.withLoginRecorded("1.1.1.1", new java.util.Date(5000))
       user2.currentSignInAt must beSome(new java.sql.Timestamp(5000))
       user2.currentSignInIp must beSome("1.1.1.1")
     }
 
-    "store previous recordLogin() data when calling recordLogin()" in new LoadedUserContext {
-      val user2 = user.recordLogin("1.1.1.1", new java.util.Date(5000)) // relies on previous test passing
-      val user3 = user2.recordLogin("2.2.2.2", new java.util.Date(6000))
+    "store previous withLoginRecorded() data when calling withLoginRecorded()" in new LoadedUserContext {
+      val user2 = user.withLoginRecorded("1.1.1.1", new java.util.Date(5000)) // relies on previous test passing
+      val user3 = user2.withLoginRecorded("2.2.2.2", new java.util.Date(6000))
       user3.lastSignInAt must beSome(new java.sql.Timestamp(5000))
       user3.lastSignInIp must beSome("1.1.1.1")
+    }
+
+    "record login activity in withActivityRecorded()" in new LoadedUserContext {
+      val user2 = user.withActivityRecorded("1.1.1.1", new java.util.Date(5000))
+      user2.lastActivityAt must beSome(new java.sql.Timestamp(5000))
+      user2.lastActivityIp must beSome("1.1.1.1")
     }
 
     "generate a reset-password token" in new LoadedUserContext {

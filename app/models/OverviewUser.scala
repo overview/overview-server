@@ -7,11 +7,12 @@
 
 package models
 
-import java.util.Date
 import java.sql.Timestamp
-import models.orm.User
-import org.joda.time.DateTime.now
+import java.util.Date
+import org.squeryl.PrimitiveTypeMode._
 import ua.t3hnar.bcrypt._
+
+import models.orm.{User,UserRole}
 
 /**
  * A user that exists in the database
@@ -20,23 +21,53 @@ trait OverviewUser {
   val id: Long
   val email: String
 
-  val currentSignInAt: Option[Timestamp]
+  val currentSignInAt: Option[Date]
   val currentSignInIp: Option[String]
-  val lastSignInAt: Option[Timestamp]
+  val lastSignInAt: Option[Date]
   val lastSignInIp: Option[String]
+  val lastActivityAt: Option[Date]
+  val lastActivityIp: Option[String]
 
   def passwordMatches(password: String): Boolean
 
   /** @return None if the user has no open confirmation request */
   def withConfirmationRequest: Option[OverviewUser with ConfirmationRequest]
 
+  /** @Return None if the user has not confirmed */
+  def asConfirmed: Option[OverviewUser with Confirmation]
+
   /** @return The same user, with a new reset-password token. Save to commit. */
   def withResetPasswordRequest: OverviewUser with ResetPasswordRequest
 
-  def recordLogin(ip: String, date: Date): OverviewUser
+  /** @return The same user, with new lastSignIn(At|Ip) */
+  def withLoginRecorded(ip: String, date: Date): OverviewUser
+
+  /** @return The same user, with new lastActivity(At|Ip) */
+  def withActivityRecorded(ip: String, date: Date): OverviewUser
+
+  /** @return The same user, with a different email */
+  def withEmail(email: String): OverviewUser
+
+  /** @return The same user, as an administrator */
+  def asAdministrator: OverviewUser
+
+  /** @return The same user, as a non-administrator */
+  def asNormalUser: OverviewUser
+
+  /** @return True if the user has permission to read/write the DocumentSet */
+  def isAllowedDocumentSet(documentSetId: Long): Boolean
+
+  /** @return True if the user has permission to read/write the Document */
+  def isAllowedDocument(documentId: Long): Boolean
+
+  /** @return True if the user has permission to administer the website */
+  def isAdministrator: Boolean
 
   /** @return The same user, but saved in the database. (Users are immutable, conceptually.) */
   def save: OverviewUser
+
+  /** Deletes the user from the database. */
+  def delete: Unit
 }
 
 /**
@@ -44,7 +75,7 @@ trait OverviewUser {
  */
 trait ConfirmationRequest {
   val confirmationToken: String
-  val confirmationSentAt: Timestamp
+  val confirmationSentAt: Date
 
   /**
    * After confirming, the values in ConfirmationRequest will still
@@ -61,13 +92,20 @@ trait ConfirmationRequest {
  */
 trait ResetPasswordRequest {
   val resetPasswordToken: String
-  val resetPasswordSentAt: Timestamp
+  val resetPasswordSentAt: Date
 
   /**
    * Converts this OverviewUser to one with the new password. Save the return
    * value to make the change permanent.
    */
   def withNewPassword(password: String): OverviewUser
+}
+
+/**
+ * A confirmed user (who has logged in at least once)
+ */
+trait Confirmation {
+  val confirmedAt: Date
 }
 
 /**
@@ -120,11 +158,13 @@ object OverviewUser {
   private val BcryptRounds = 7
 
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
-  private def generateTimestamp = new Timestamp(now().getMillis())
+  private def generateTimestamp = new Timestamp(new Date().getTime())
 
-  def findById(id: Long): Option[OverviewUser] = create(User.findById(id))
+  def all = User.all.map(OverviewUser.apply)
 
-  def findByEmail(email: String): Option[OverviewUser] = create(User.findByEmail(email))
+  def findById(id: Long): Option[OverviewUser] = apply(User.findById(id))
+
+  def findByEmail(email: String): Option[OverviewUser] = apply(User.findByEmail(email))
 
   def findByResetPasswordTokenAndMinDate(token: String, minDate: Date): Option[OverviewUser with ResetPasswordRequest] = {
     val user = User.findByResetPasswordTokenAndMinDate(token, minDate)
@@ -146,11 +186,11 @@ object OverviewUser {
     new UnconfirmedUser(user)
   }
 
-  private def create(userData: Option[User]): Option[OverviewUser] = {
+  private def apply(userData: Option[User]): Option[OverviewUser] = {
     userData.map(new OverviewUserImpl(_))
   }
 
-  def create(user: User): OverviewUser = new OverviewUserImpl(user)
+  def apply(user: User): OverviewUser = new OverviewUserImpl(user)
 
   /**
    * Underlying implementation that manages the User object that is the conduit to the
@@ -164,6 +204,8 @@ object OverviewUser {
     override val currentSignInIp = user.currentSignInIp
     override val lastSignInAt = user.lastSignInAt
     override val lastSignInIp = user.lastSignInIp
+    override val lastActivityAt = user.lastActivityAt
+    override val lastActivityIp = user.lastActivityIp
 
     def passwordMatches(password: String): Boolean = {
       password.isBcrypted(user.passwordHash)
@@ -181,7 +223,11 @@ object OverviewUser {
       ))
     }
 
-    override def recordLogin(ip: String, date: java.util.Date) : OverviewUser = {
+    def asConfirmed: Option[OverviewUser with Confirmation] = {
+      user.confirmedAt.map(d => new ConfirmedUser(user, d))
+    }
+
+    override def withLoginRecorded(ip: String, date: java.util.Date) : OverviewUser = {
       new OverviewUserImpl(user.copy(
         lastSignInAt = user.currentSignInAt,
         lastSignInIp = user.currentSignInIp,
@@ -190,7 +236,38 @@ object OverviewUser {
       ))
     }
 
+    override def withActivityRecorded(ip: String, date: java.util.Date) : OverviewUser = {
+      new OverviewUserImpl(user.copy(
+        lastActivityAt = Some(new java.sql.Timestamp(date.getTime())),
+        lastActivityIp = Some(ip)
+      ))
+    }
+
+    def withEmail(email: String) : OverviewUser = {
+      new OverviewUserImpl(user.copy(email=email))
+    }
+
+    def asAdministrator: OverviewUser = {
+      new OverviewUserImpl(user.copy(role=UserRole.Administrator))
+    }
+
+    def asNormalUser: OverviewUser = {
+      new OverviewUserImpl(user.copy(role=UserRole.NormalUser))
+    }
+
+    def isAllowedDocumentSet(id: Long) = {
+      user.documentSets.where((ds) => ds.id === id).nonEmpty
+    }
+
+    def isAllowedDocument(id: Long) = {
+      user.documentSets.where(ds => id in from(ds.documents)(d => select(d.id))).nonEmpty
+    }
+
+    def isAdministrator = user.role == UserRole.Administrator
+
     def save: OverviewUser = copy(user.save)
+
+    def delete = user.delete
   }
 
   /**
@@ -202,10 +279,16 @@ object OverviewUser {
 
     override def confirm: OverviewUser = {
       user.confirmationToken = None
-      user.confirmedAt = Some(new Timestamp(now().getMillis))
+      user.confirmedAt = Some(generateTimestamp)
 
       this
     }
+  }
+
+  /**
+   * A User who has confirmed
+   */
+  private class ConfirmedUser(user: User, val confirmedAt: Date) extends OverviewUserImpl(user) with Confirmation {
   }
 
   private class UserWithResetPasswordRequest(user: User) extends OverviewUserImpl(user) with ResetPasswordRequest {
