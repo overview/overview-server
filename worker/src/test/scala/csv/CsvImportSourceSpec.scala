@@ -15,18 +15,24 @@ class CsvImportSourceSpec extends Specification {
     }
 
     trait ValidInput extends CsvImportContext {
-      def input = """|id,text,stuff
-                     |0, this is line0, stuff0
-                     |1, this is line1, stuff1
-                     |2, this is line2, stuff2""".stripMargin
+      def input = """|text,stuff
+                     |this is line0, stuff0
+                     |this is line1, stuff1
+                     |this is line2, stuff2""".stripMargin
+    }
 
+    trait ValidInputWithId extends CsvImportContext {
+      def input = """|text,stuff,id
+                     |this is line0,stuff0,0
+                     |this is line1,stuff1,1
+                     |this is line2,stuff2,2""".stripMargin
     }
 
     trait ValidInputWithUpperCaseHeader extends CsvImportContext {
-      def input = """|ID,TEXT,STUFF
-                     |0, this is line0, stuff0
-                     |1, this is line1, stuff1
-                     |2, this is line2, stuff2""".stripMargin
+      def input = """|TEXT,STUFF
+                     |this is line0, stuff0
+                     |this is line1, stuff1
+                     |this is line2, stuff2""".stripMargin
 
     }
 
@@ -40,8 +46,15 @@ class CsvImportSourceSpec extends Specification {
                      |0, this is line0, stuff0
                      |Messed up Row
                      |2, this is line2, stuff2""".stripMargin
-
     }
+
+    trait MissingIdColumn extends CsvImportContext {
+      def input = """|text,stuff,id
+                     |this is line0,stuff0,
+                     |this is line1,stuff1,1
+                     |this is line2,stuff2,2""".stripMargin
+    }
+
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
 
@@ -54,6 +67,22 @@ class CsvImportSourceSpec extends Specification {
       text must be equalTo (expectedText)
     }
 
+    "find id column" in new ValidInputWithId {
+      val expectedIds: Seq[Option[String]] = Seq.tabulate(3)(n => Some(n.toString))
+      val ids = csvImportSource.map(_.suppliedId)
+      ids must be equalTo (expectedIds)
+    }
+
+    "leave id empty no header found" in new ValidInput {
+      val ids = csvImportSource.map(_.suppliedId)
+      ids.head must beNone
+    }
+    
+    "leave id empty for rows with no id set" in new MissingIdColumn {
+      val ids = csvImportSource.map(_.suppliedId)
+      ids.head must beNone
+    }
+    
     "fail if no text header found" in new MissingHeader {
       csvImportSource.foreach(println) must throwA[Exception]
     }
@@ -61,9 +90,9 @@ class CsvImportSourceSpec extends Specification {
     "Skip rows with not enough columns" in new MissingTextColumn {
       csvImportSource.size must beEqualTo(2)
     }
-    
+
     "handle uppercase header" in new ValidInputWithUpperCaseHeader {
-      csvImportSource.foreach(println) must not(throwA[Exception])
+      csvImportSource.foreach(_.text) must not(throwA[Exception])
     }
   }
 }

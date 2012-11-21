@@ -7,7 +7,8 @@ import scala.annotation.tailrec
 
 class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val TextColumn: String = "text"
-
+  private val SuppliedIdColumn: String = "id"
+    
   val iterator = new Iterator[CsvImportDocument] {
     private val csvParser = new CSVReader(reader)
     private var nextLine = csvParser.readNext()
@@ -20,7 +21,8 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
       require(columns.get(TextColumn).isDefined)
       
       var currentLine: Array[String] = nextValidRow
-      Option(currentLine).map(c => new CsvImportDocument(c(columns(TextColumn)))).orNull
+      Option(currentLine).map(c => 
+        new CsvImportDocument(c(columns(TextColumn)), suppliedId(c))).orNull
     }
 
     @tailrec
@@ -32,6 +34,12 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
       }
     }
     
+    private def suppliedId(row: Array[String]) : Option[String] =
+      columns.get(SuppliedIdColumn).flatMap(row(_) match {
+        case s if s.isEmpty => None
+        case s => Some(s)
+      })
+      
     private def readRow: Array[String] = {
       val row = nextLine
       nextLine = csvParser.readNext()
