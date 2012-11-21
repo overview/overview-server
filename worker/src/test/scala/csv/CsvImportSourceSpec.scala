@@ -15,7 +15,15 @@ class CsvImportSourceSpec extends Specification {
     }
 
     trait ValidInput extends CsvImportContext {
-      def input = """|id, text, stuff
+      def input = """|id,text,stuff
+                     |0, this is line0, stuff0
+                     |1, this is line1, stuff1
+                     |2, this is line2, stuff2""".stripMargin
+
+    }
+
+    trait ValidInputWithUpperCaseHeader extends CsvImportContext {
+      def input = """|ID,TEXT,STUFF
                      |0, this is line0, stuff0
                      |1, this is line1, stuff1
                      |2, this is line2, stuff2""".stripMargin
@@ -28,7 +36,7 @@ class CsvImportSourceSpec extends Specification {
     }
 
     trait MissingTextColumn extends CsvImportContext {
-      def input = """|id, text, stuff
+      def input = """|id,text,stuff
                      |0, this is line0, stuff0
                      |Messed up Row
                      |2, this is line2, stuff2""".stripMargin
@@ -52,6 +60,10 @@ class CsvImportSourceSpec extends Specification {
 
     "Skip rows with not enough columns" in new MissingTextColumn {
       csvImportSource.size must beEqualTo(2)
+    }
+    
+    "handle uppercase header" in new ValidInputWithUpperCaseHeader {
+      csvImportSource.foreach(println) must not(throwA[Exception])
     }
   }
 }

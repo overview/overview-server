@@ -40,7 +40,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     
     private def readHeaders: Map[String, Int] = {
       val headerRow = readRow
-      headerRow.map(_.trim).zipWithIndex.toMap
+      headerRow.map(_.trim.toLowerCase).zipWithIndex.toMap
     }
   }
 
