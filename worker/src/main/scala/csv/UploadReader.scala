@@ -11,16 +11,22 @@ import overview.largeobject.LargeObject
 
 class UploadReader(uploadedFileId: Long) {
 
+  private var countingInputStream: CountingInputStream = _
+
   var size: Option[Long] = None
-  
+  def bytesRead: Long =
+    if (countingInputStream != null) countingInputStream.bytesRead
+    else 0l
+
   def read[T](block: Reader => T)(implicit connection: Connection): T = {
     implicit val pgc = DB.pgConnection
 
     val upload = UploadedFileLoader.load(uploadedFileId)
     size = Some(upload.size)
-        
+
     LO.withLargeObject(upload.contentsOid) { largeObject =>
-      val reader = new BufferedReader(new InputStreamReader(largeObject.inputStream))
+      countingInputStream = new CountingInputStream(largeObject.inputStream)
+      val reader = new BufferedReader(new InputStreamReader(countingInputStream))
       block(reader)
     }
   }

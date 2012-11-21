@@ -15,8 +15,9 @@ class UploadReaderSpec extends DbSpecification {
   "UploadReader" should {
 
     trait UploadContext extends DbTestContext {
-      val data = Array[Byte](74, 79, 78, 75)
-      val uploadSize = 100l
+      val uploadSize = 10000 // large enough so to fill read's 8k buffer
+      
+      val data: Array[Byte] = Array.fill(uploadSize)(74)
 
       var uploadReader: UploadReader = _
 
@@ -33,10 +34,9 @@ class UploadReaderSpec extends DbSpecification {
 
     "create reader from uploaded file" in new UploadContext {
       uploadReader.read { reader =>
-        val buffer = new Array[Char](128)
+        val buffer = new Array[Char](20480)
         val numRead = reader.read(buffer)
-        numRead must be equalTo (data.size)
-        buffer.take(numRead) must be equalTo (data.map(_.toChar))
+        buffer.take(numRead) must be equalTo (data.map(_.toChar).take(numRead))
       }
     }
 
@@ -45,6 +45,18 @@ class UploadReaderSpec extends DbSpecification {
 
       uploadReader.read { reader =>
         uploadReader.size must beSome.like { case s => s must be equalTo (uploadSize) }
+      }
+    }
+    
+    "return bytesRead" in new UploadContext {
+      uploadReader.bytesRead must be equalTo(0)
+      
+      uploadReader.read { reader =>
+        val buffer = new Array[Char](20480)
+        val numRead = reader.read(buffer)
+        uploadReader.bytesRead must be equalTo(numRead)
+        reader.read(buffer)
+        uploadReader.bytesRead must be equalTo(uploadSize)
       }
     }
   }
