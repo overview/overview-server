@@ -58,6 +58,7 @@ object DocumentSetCreationJobStateDescription {
   case object Saving extends Description("saving_document_tree")
   case object Done extends Description("job_complete")
   case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString)
+  case class Parsing(parsed: Long, total: Long) extends Description("parsing_data", parsed.toString, total.toString)
 }
 
 object Progress {

@@ -20,6 +20,7 @@ class DocumentSetCreationJobStateDescriptionSpec extends Specification {
     "convert states with argument" in {
       ClusteringLevel(4).toString must be equalTo("clustering_level:4")
       Retrieving(123, 345).toString must be equalTo("retrieving_documents:123:345")
+      Parsing(543l, 129402l).toString must be equalTo("parsing_data:543:129402")
     }
   }
 }
