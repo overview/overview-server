@@ -18,7 +18,9 @@ CREATE TABLE upload (
   total_size                BIGINT NOT NULL
 );
 
-ALTER TABLE document_set ADD COLUMN type VARCHAR NOT NULL DEFAULT 'DocumentCloudDocumentSet' CHECK (type IN ('DocumentCloudDocumentSet', 'CsvImportDocumentSet')); 
+CREATE TYPE document_set_type AS ENUM ('CsvImportDocumentSet', 'DocumentCloudDocumentSet');
+ALTER TABLE document_set ADD COLUMN type document_set_type NOT NULL DEFAULT 'DocumentCloudDocumentSet';
+ALTER TABLE document_set ALTER COLUMN type DROP DEFAULT;
 ALTER TABLE document_set ADD COLUMN uploaded_file_id BIGINT REFERENCES uploaded_file (id);
 ALTER TABLE document_set ALTER COLUMN query DROP NOT NULL;
 ALTER TABLE document_set ADD CONSTRAINT document_set_document_cloud_type_check 
@@ -28,8 +30,9 @@ ALTER TABLE document_set ADD CONSTRAINT document_set_csv_import_type_check
    CHECK (type <> 'CsvImportDocumentSet' OR
      (query IS NULL AND uploaded_file_id IS NOT NULL));
 
-CREATE TYPE DocumentType AS ENUM ('DocumentCloudDocument', 'CsvImportDocument');
-ALTER TABLE document ADD COLUMN type DocumentType NOT NULL DEFAULT 'DocumentCloudDocument';
+CREATE TYPE document_type AS ENUM ('DocumentCloudDocument', 'CsvImportDocument');
+ALTER TABLE document ADD COLUMN type document_type NOT NULL DEFAULT 'DocumentCloudDocument';
+ALTER TABLE document ALTER COLUMN type DROP DEFAULT;
 ALTER TABLE document ADD COLUMN text VARCHAR;
 ALTER TABLE document ADD COLUMN url VARCHAR;
 ALTER TABLE document ADD COLUMN supplied_id VARCHAR;
@@ -54,13 +57,14 @@ ALTER TABLE document DROP COLUMN url;
 ALTER TABLE document DROP COLUMN text;
 ALTER TABLE document DROP COLUMN supplied_id;
 ALTER TABLE document DROP COLUMN type;
-DROP TYPE DocumentType;
+DROP TYPE document_type;
 
 ALTER TABLE document_set DROP CONSTRAINT document_set_csv_import_type_check;
 ALTER TABLE document_set DROP CONSTRAINT document_set_document_cloud_type_check;
 ALTER TABLE document_set ALTER COLUMN query SET NOT NULL;
 ALTER TABLE document_set DROP COLUMN uploaded_file_id;
 ALTER TABLE document_set DROP COLUMN type;
+DROP TYPE document_set_type;
 
 DROP TABLE IF EXISTS upload CASCADE;
 SELECT lo_unlink(contents_oid) FROM uploaded_file;
