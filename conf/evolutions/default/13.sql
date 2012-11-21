@@ -19,7 +19,7 @@ CREATE TABLE upload (
 );
 
 CREATE TYPE document_set_type AS ENUM ('CsvImportDocumentSet', 'DocumentCloudDocumentSet');
-ALTER TABLE document_set ADD COLUMN type document_set_type NOT NULL DEFAULT 'DocumentCloudDocumentSet';
+ALTER TABLE document_set ADD COLUMN type document_set_type NOT NULL DEFAULT 'DocumentCloudDocumentSet'::document_set_type;
 ALTER TABLE document_set ALTER COLUMN type DROP DEFAULT;
 ALTER TABLE document_set ADD COLUMN uploaded_file_id BIGINT REFERENCES uploaded_file (id);
 ALTER TABLE document_set ALTER COLUMN query DROP NOT NULL;
@@ -31,7 +31,7 @@ ALTER TABLE document_set ADD CONSTRAINT document_set_csv_import_type_check
      (query IS NULL AND uploaded_file_id IS NOT NULL));
 
 CREATE TYPE document_type AS ENUM ('DocumentCloudDocument', 'CsvImportDocument');
-ALTER TABLE document ADD COLUMN type document_type NOT NULL DEFAULT 'DocumentCloudDocument';
+ALTER TABLE document ADD COLUMN type document_type NOT NULL DEFAULT 'DocumentCloudDocument'::document_type;
 ALTER TABLE document ALTER COLUMN type DROP DEFAULT;
 ALTER TABLE document ADD COLUMN text VARCHAR;
 ALTER TABLE document ADD COLUMN url VARCHAR;
