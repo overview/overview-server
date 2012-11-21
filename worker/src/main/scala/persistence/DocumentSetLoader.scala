@@ -10,7 +10,7 @@ object DocumentSetLoader {
 
   def load(documentSetId: Long)(implicit c: Connection): Option[DocumentSet] = {
     SQL("""
-        SELECT type, title, query, uploaded_file_id FROM document_set
+        SELECT type::VARCHAR, title, query, uploaded_file_id FROM document_set
         WHERE id = {documentSetId}
         """).on("documentSetId" -> documentSetId).
       as(str("type") ~ str("title") ~ (str("query")?) ~ (long("uploaded_file_id")?) map (flatten) *).headOption map {
