@@ -10,22 +10,21 @@ class SquerylPostgreSqlAdapter extends PostgreSqlAdapter {
   // Handles Postgres ENUM types properly
   // https://groups.google.com/forum/?fromgroups=#!topic/squeryl/pTXgPe8pQIs
   override protected def writeValue(o: AnyRef, fmd: FieldMetaData, sw: StatementWriter): String = {
+    val v = fmd.get(o)
+
     if (sw.isForDisplay) {
-      val v = fmd.get(o)
       if (v != null)
         v.toString
       else
         "null"
     } else {
-      sw.addParam(convertToJdbcValue(fmd.get(o)))
+      sw.addParam(convertToJdbcValue(v))
 
-      val enumtype = fmd.columnAttributes.find {
-        case DBType(t) if t.endsWith("_type") => true
-        case _ => false
+      if (fmd.isCustomType && v.isInstanceOf[PostgresqlEnum]) {
+        "? :: " + v.asInstanceOf[PostgresqlEnum].typeName
+      } else {
+        "?"
       }
-      enumtype.map({
-          case DBType(t) => "? ::" + t
-      }).getOrElse("?")
     }
   }
 }

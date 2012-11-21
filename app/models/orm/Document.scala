@@ -3,9 +3,8 @@ package models.orm
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.Column
-import org.squeryl.customtypes.StringField
 
-class DocumentType(v: String) extends StringField(v)
+class DocumentType(v: String) extends PostgresqlEnum(v, "document_type")
 
 case class Document(
     @Column("type") val documentType: DocumentType,

@@ -15,9 +15,8 @@ import org.squeryl.{KeyedEntity,Query}
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
-import org.squeryl.customtypes.StringField
 
-class DocumentSetType(v: String) extends StringField(v)
+class DocumentSetType(v: String) extends PostgresqlEnum(v, "document_set_type")
 
 object DocumentSetType {
   val DocumentCloudDocumentSet = new DocumentSetType("DocumentCloudDocumentSet")

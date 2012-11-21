@@ -1,18 +1,27 @@
 package models.orm
 
 import org.squeryl.PrimitiveTypeMode._
+import org.squeryl.customtypes.StringField
+
+class PostgresqlEnum(v: String, val typeName: String) extends StringField(v)
 
 object Schema extends org.squeryl.Schema {
-  val documents = table[Document]("document")
-  val documentSets = table[DocumentSet]("document_set")
-  val documentSetCreationJobs = table[DocumentSetCreationJob]("document_set_creation_job")
-  val nodes = table[Node]("node")
-  val logEntries = table[LogEntry]("log_entry")
-  val users = table[User]("user")
-  val tags = table[Tag]("tag")
-  val documentTags = table[DocumentTag]("document_tag")
-  val uploads = table[Upload]("upload")
-  val uploadedFiles = table[UploadedFile]("uploaded_file")
+  //override def columnNameFromPropertyName (propertyName: String) =
+  //    NamingConventionTransforms.snakify(propertyName) 
+
+  override def tableNameFromClassName (className: String) =
+      NamingConventionTransforms.snakify(className)
+
+  val documents = table[Document]
+  val documentSets = table[DocumentSet]
+  val documentSetCreationJobs = table[DocumentSetCreationJob]
+  val nodes = table[Node]
+  val logEntries = table[LogEntry]
+  val users = table[User]
+  val tags = table[Tag]
+  val documentTags = table[DocumentTag]
+  val uploads = table[Upload]
+  val uploadedFiles = table[UploadedFile]
   
   val documentSetDocuments =
     oneToManyRelation(documentSets, documents).
