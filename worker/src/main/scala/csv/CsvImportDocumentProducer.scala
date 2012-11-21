@@ -18,7 +18,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
         documentSource.foreach { doc =>
           val documentId = writeAndCommitDocument(documentSetId, doc)
           consumer.processDocument(documentId, doc.text)
-          progAbort(Progress(FetchingFraction * uploadReader.bytesRead / uploadReader.size.get, Retrieving(uploadReader.bytesRead.toInt, uploadReader.size.get.toInt)))
+          progAbort(Progress(FetchingFraction * uploadReader.bytesRead / uploadReader.size.getOrElse(1l), Parsing(uploadReader.bytesRead, uploadReader.size.getOrElse(0))))
         }
 
         consumer.productionComplete()
