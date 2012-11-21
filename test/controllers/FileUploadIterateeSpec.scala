@@ -63,10 +63,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = Option(currentUpload)
 
-      def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentLength: Long): OverviewUpload = {
+      def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = {
         uploadCancelled = false
         val uploadedFile = mock[OverviewUploadedFile]
         uploadedFile.contentDisposition returns contentDisposition
+        uploadedFile.contentType returns contentType
+        
         currentUpload = DummyUpload(userId, guid, 0l, contentLength, uploadedFile = uploadedFile)
         currentUpload
       }
@@ -138,6 +140,8 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     // Headers
     trait UploadHeader {
       val contentDisposition = "attachment; filename=foo.bar"
+      val contentType = "text/html; charset=ISO-8859-4"
+        
       def headers: Map[String, Seq[String]]
       def request: RequestHeader = {
         val r = mock[RequestHeader]
@@ -151,7 +155,9 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       def headers = Map(
         (CONTENT_RANGE, Seq("0-999/1000")),
         (CONTENT_DISPOSITION, Seq(contentDisposition)),
-        (CONTENT_LENGTH, Seq("100")))
+        (CONTENT_LENGTH, Seq("100")),
+        (CONTENT_TYPE, Seq(contentType))  
+      )
     }
 
     trait MsHackHeader extends UploadHeader {
@@ -161,7 +167,7 @@ class FileUploadIterateeSpec extends Specification with Mockito {
         (CONTENT_LENGTH, Seq("100")))
     }
 
-    trait NoContentDisposition extends UploadHeader {
+    trait NoOptionalContentHeader extends UploadHeader {
       def headers = Map(("Content-Range", Seq("0-999/1000")))
     }
 
@@ -241,9 +247,14 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     "set contentDisposition to raw value of Content-Dispositon" in new GoodUpload with SingleChunk with GoodHeader {
       upload.uploadedFile.contentDisposition must be equalTo (contentDisposition)
     }
+    
+    "set contentType to raw value of Content-Type" in new GoodUpload with SingleChunk with GoodHeader {
+      upload.uploadedFile.contentType must be equalTo (contentType)
+    }
 
-    "set contentDisposition to empty string if no Content-Disposition header is found" in new GoodUpload with SingleChunk with NoContentDisposition {
+    "set content* to empty string if no header is found" in new GoodUpload with SingleChunk with NoOptionalContentHeader {
       upload.uploadedFile.contentDisposition must be equalTo ("")
+      upload.uploadedFile.contentType must be equalTo ("")
     }
 
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
@@ -251,20 +262,20 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return BAD_REQUEST and cancel upload if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
-      uploadIteratee.createUpload(userId, guid, "foo", 1000)
+      uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
 
       result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
       uploadIteratee.uploadCancelled must beTrue
     }
 
     "throw exception if cancel fails" in new FailingCancel with SingleChunk with InProgressHeader {
-      uploadIteratee.createUpload(userId, guid, "foo", 1000)
+      uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
 
       result must throwA[SQLException]
     }
 
     "return Upload on valid restart" in new GoodUpload with SingleChunk with InProgressHeader {
-      val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", 1000)
+      val initialUpload = uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
       uploadIteratee.appendChunk(initialUpload, chunk)
 
       result must beRight.like { case u => u.uploadedFile.size must be equalTo (200) }

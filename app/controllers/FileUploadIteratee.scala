@@ -30,21 +30,22 @@ trait FileUploadIteratee {
   private def DefaultBufferSize: Int = 1024 * 1024
 
   /** package for information extracted from request header */
-  private case class UploadRequest(filename: String, start: Long, contentLength: Long)
+  private case class UploadRequest(contentDisposition: String, contentType: String, start: Long, contentLength: Long)
 
   /** extract useful information from request header */
   private object UploadRequest {
     def apply(header: RequestHeader): Option[UploadRequest] = {
       val headers = header.headers
 
-      val filename = headers.get(CONTENT_DISPOSITION).getOrElse("")
+      val contentDisposition = headers.get(CONTENT_DISPOSITION).getOrElse("")
+      val contentType = headers.get(CONTENT_TYPE).getOrElse("")
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       for {
         contentRange <- headers.get(CONTENT_RANGE).orElse(headers.get(X_MSHACK_CONTENT_RANGE))
         rangeMatch <- range.findFirstMatchIn(contentRange)
       } yield {
         val List(start, end, length) = rangeMatch.subgroups.take(3)
-        UploadRequest(filename, start.toLong, length.toLong)
+        UploadRequest(contentDisposition, contentType, start.toLong, length.toLong)
       }
     }
   }
@@ -69,7 +70,7 @@ trait FileUploadIteratee {
    */
   private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
     val initialUpload = findValidUploadRestart(userId, guid, request)
-      .getOrElse(Right(createUpload(userId, guid, request.filename, request.contentLength)))
+      .getOrElse(Right(createUpload(userId, guid, request.contentDisposition, request.contentType, request.contentLength)))
 
     var buffer = Array[Byte]()
 
@@ -119,7 +120,7 @@ trait FileUploadIteratee {
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
 
   // create a new upload attempt
-  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload
+  def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload
 
   // process a chunk of file data. @return the current OverviewUpload status, or None on failure	  
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload
@@ -137,8 +138,8 @@ object FileUploadIteratee extends FileUploadIteratee with PgConnection {
 
   def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
 
-  def createUpload(userId: Long, guid: UUID, filename: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject { lo => OverviewUpload(userId, guid, filename, "content_type", contentLength, lo.oid).save }
+  def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
+    LO.withLargeObject { lo => OverviewUpload(userId, guid, contentDisposition, contentType, contentLength, lo.oid).save }
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c =>
