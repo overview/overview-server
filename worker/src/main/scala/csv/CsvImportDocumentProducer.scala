@@ -3,9 +3,11 @@ package csv
 import overview.util.{ DocumentConsumer, DocumentProducer }
 import overview.util.Progress._
 import database.DB
+import overview.util.DocumentSetCreationJobStateDescription._
 
 class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {
 
+  private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader(uploadedFileId)
 
   def produce() {
@@ -16,6 +18,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
         documentSource.foreach { doc =>
           val documentId = writeAndCommitDocument(documentSetId, doc)
           consumer.processDocument(documentId, doc.text)
+          progAbort(Progress(FetchingFraction * uploadReader.bytesRead / uploadReader.size.get, Retrieving(uploadReader.bytesRead.toInt, uploadReader.size.get.toInt)))
         }
 
         consumer.productionComplete()
