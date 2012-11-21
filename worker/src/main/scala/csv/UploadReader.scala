@@ -1,6 +1,7 @@
 package csv
 
 import java.io.Reader
+import java.nio.charset.Charset
 import database.DB
 import overview.largeobject.LO
 import persistence.UploadedFileLoader
@@ -8,11 +9,14 @@ import java.sql.Connection
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import overview.largeobject.LargeObject
+import scala.util.control.Exception.allCatch
+import java.nio.charset.CharsetDecoder
 
 class UploadReader(uploadedFileId: Long) {
 
   private var countingInputStream: CountingInputStream = _
-
+  private var DefaultCharSet: String = "UTF-8"
+    
   var size: Option[Long] = None
   def bytesRead: Long =
     if (countingInputStream != null) countingInputStream.bytesRead
@@ -26,9 +30,14 @@ class UploadReader(uploadedFileId: Long) {
 
     LO.withLargeObject(upload.contentsOid) { largeObject =>
       countingInputStream = new CountingInputStream(largeObject.inputStream)
-      val reader = new BufferedReader(new InputStreamReader(countingInputStream))
+      val reader = new BufferedReader(new InputStreamReader(countingInputStream, decoder(upload.encoding)))
       block(reader)
     }
   }
 
+  private def decoder(encoding: Option[String]): CharsetDecoder = {
+    val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n)  }
+    
+    charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
+  }
 }
