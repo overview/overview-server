@@ -26,7 +26,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
     }
     
     "load title and uploadedFileId for CsvImportDocumentSets" in new DbTestContext {
-      val uploadedFileId = insertUploadedFile(0, "contentDisposition", "contentType")
+      val uploadedFileId = insertUploadedFile(0, "contentDisposition", "contentType", 100)
       val documentSetId = insertCsvImportDocumentSet(uploadedFileId)
       
       val documentSet = DocumentSetLoader.load(documentSetId)

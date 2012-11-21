@@ -9,11 +9,12 @@ class UploadedFileLoaderSpec extends DbSpecification {
   
   "UploadedFileLoader" should {
     
-    "load contentsOid value" in new DbTestContext {
+    "load uploaded file values" in new DbTestContext {
       val oid = 100l
-      val uploadedFileId = insertUploadedFile(oid, "content-disposition", "content-type")
+      val size = 1999l
+      val uploadedFileId = insertUploadedFile(oid, "content-disposition", "content-type", size)
       
-      UploadedFileLoader.load(uploadedFileId) must be equalTo(oid)
+      UploadedFileLoader.load(uploadedFileId) must be equalTo(UploadedFile(oid, size))
     }
   }
   

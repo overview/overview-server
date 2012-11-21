@@ -20,7 +20,7 @@ class UploadReaderSpec extends DbSpecification {
         lo.add(data)
         lo.oid
       }
-      val uploadId = insertUploadedFile(loid, "content-disposition", "content-type")
+      val uploadId = insertUploadedFile(loid, "content-disposition", "content-type", 100)
 
       val uploadReader = new UploadReader(uploadId)
       uploadReader.read { reader =>

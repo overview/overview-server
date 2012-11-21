@@ -14,9 +14,9 @@ class UploadReader(uploadedFileId: Long) {
   def read[T](block: Reader => T)(implicit connection: Connection): T = {
     implicit val pgc = DB.pgConnection
 
-    val oid = UploadedFileLoader.load(uploadedFileId)
+    val upload = UploadedFileLoader.load(uploadedFileId)
 
-    LO.withLargeObject(oid) { largeObject =>
+    LO.withLargeObject(upload.contentsOid) { largeObject =>
       val reader = new BufferedReader(new InputStreamReader(largeObject.inputStream))
       block(reader)
     }
