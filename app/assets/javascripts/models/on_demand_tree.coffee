@@ -2,7 +2,7 @@ IdTree = require('models/id_tree').IdTree
 LruPagingStrategy = require('models/lru_paging_strategy').LruPagingStrategy
 
 DEFAULT_OPTIONS = {
-  cache_size: 2000,
+  cache_size: 5000,
 }
 
 # An incomplete tree structure.
