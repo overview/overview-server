@@ -9,8 +9,19 @@ trait OverviewUploadedFile {
   val contentsOid: Long
   val contentDisposition: String
   val contentType: String
-  val size: Long 
-  
+  val size: Long
+
+  def filename: String = {
+    val Token = """[^\s()<>,;:\\"\/\[\]?=]+"""
+    val ConDisp = """\s*%s\s*""".format(Token)
+    val BrokenUnquoted = """^%s.*;\sfilename=(%s)""".format(ConDisp, Token).r
+    
+    contentDisposition match {
+      case BrokenUnquoted(f) => f
+      case _ => ""
+    }
+  }
+
   def withSize(size: Long): OverviewUploadedFile
   def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile
   def save: OverviewUploadedFile
@@ -18,7 +29,7 @@ trait OverviewUploadedFile {
 }
 
 object OverviewUploadedFile {
-  def apply(uploadedFile: UploadedFile) : OverviewUploadedFile = {
+  def apply(uploadedFile: UploadedFile): OverviewUploadedFile = {
     new OverviewUploadedFileImpl(uploadedFile)
   }
 
@@ -33,7 +44,7 @@ object OverviewUploadedFile {
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis())
 
-  private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile  {
+  private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
     val contentsOid = uploadedFile.contentsOid
@@ -43,7 +54,7 @@ object OverviewUploadedFile {
 
     def withSize(size: Long): OverviewUploadedFile = new OverviewUploadedFileImpl(uploadedFile.copy(uploadedAt = now, size = size))
 
-    def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile = 
+    def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile =
       new OverviewUploadedFileImpl(uploadedFile.copy(contentDisposition = contentDisposition, contentType = contentType))
 
     def save: OverviewUploadedFile = new OverviewUploadedFileImpl(uploadedFile.save)

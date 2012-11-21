@@ -1,6 +1,7 @@
 package models.upload
 
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import org.junit.runner.RunWith
@@ -8,9 +9,10 @@ import org.specs2.runner.JUnitRunner
 import helpers.PgConnectionContext
 import java.sql.Timestamp
 import play.api.test.FakeApplication
+import org.specs2.mock.Mockito
 
 @RunWith(classOf[JUnitRunner])
-class OverviewUploadedFileSpec extends Specification {
+class OverviewUploadedFileSpec extends Specification with Mockito {
 
   step(start(FakeApplication()))
 
@@ -63,4 +65,36 @@ class OverviewUploadedFileSpec extends Specification {
 
   }
   step(stop)
+
+  "OverviewUploadedFile contentDisposition" should {
+
+    class TestOverviewUploadedFile(val contentDisposition: String) extends OverviewUploadedFile {
+      val id: Long = 0
+      val uploadedAt: Timestamp = null
+      val contentsOid: Long = 0
+      val contentType: String = ""
+      val size: Long = 0
+
+      def withSize(size: Long): OverviewUploadedFile = this
+      def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile = this
+      def save: OverviewUploadedFile = this
+      def delete {}
+    }
+    
+    trait ContentDispositionContext extends Scope {
+      def dispParams: String
+      def contentDisposition = "attachment; " + dispParams
+
+      lazy val overviewUploadedFile = new TestOverviewUploadedFile(contentDisposition)
+    }
+
+    trait SimpleContentDisposition extends ContentDispositionContext {
+      val name = "afile.foo"
+      def dispParams: String = "filename=" + name
+    }
+
+    "find filename in simplest possible case" in new SimpleContentDisposition {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+  }
 }
