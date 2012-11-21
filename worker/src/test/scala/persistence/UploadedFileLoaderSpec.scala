@@ -22,10 +22,17 @@ class UploadedFileLoaderSpec extends DbSpecification {
   
   step(shutdownDb)
   
- /* "UploadedFile" should {
+  "UploadedFile" should {
     
     "return None if no encoding can be found" in {
       val uploadedFile = UploadedFile(0l, "application/octet-stream", 100)
+      uploadedFile.encoding must beNone
     }
-  }*/
+    
+    "return specified encoding" in {
+      val encoding = "someEncoding"
+      val uploadedFile = UploadedFile(0l, "application/octet-stream; charset=" + encoding, 100)
+      uploadedFile.encoding must beSome.like { case c => c must be equalTo(encoding) }
+    }
+  }
 }

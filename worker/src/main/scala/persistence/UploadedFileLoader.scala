@@ -4,7 +4,14 @@ import anorm._
 import anorm.SqlParser._
 import java.sql.Connection
 
-case class UploadedFile(contentsOid: Long, contentType: String, size: Long)
+case class UploadedFile(contentsOid: Long, contentType: String, size: Long) {
+  private var ContentTypeEncoding = ".*charset=([^\\s]*)".r
+
+  def encoding: Option[String] = contentType match {
+    case ContentTypeEncoding(c) => Some(c)
+    case _ => None
+  }
+}
 
 object UploadedFileLoader {
 
