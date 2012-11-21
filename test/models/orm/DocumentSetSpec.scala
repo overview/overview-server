@@ -128,15 +128,17 @@ class DocumentSetSpec extends Specification {
 
     inExample("delete uploadedFile and LargeObject for CsvImportDocumentsets") in new PgConnectionContext {
       val oid = LO.withLargeObject { lo =>
-        val uploadedFile = UploadedFile(contentsOid = lo.oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100).save
-        val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
-        DocumentSet.delete(documentSet.id)
-        UploadedFile.findById(uploadedFile.id) must beNone
+        lo.add(Array.fill(100)(10))
         lo.oid
       }
 
+      val uploadedFile = UploadedFile(contentsOid = oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100).save
+      val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
+      DocumentSet.delete(documentSet.id)
+      UploadedFile.findById(uploadedFile.id) must beNone
+
       LO.withLargeObject(oid) { lo => lo.oid } must throwA[Exception]
-    }.pendingUntilFixed
+    }
   }
 
   step(stop)

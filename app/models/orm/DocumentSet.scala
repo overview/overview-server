@@ -7,6 +7,7 @@
 package models.orm
 
 import anorm.SQL
+import anorm.SqlParser._
 import java.util.Date
 import java.sql.Timestamp
 import org.squeryl.dsl.OneToMany
@@ -94,6 +95,9 @@ object DocumentSet {
   }
 
   def delete(id: Long)(implicit connection: java.sql.Connection) = {
+    val documentSet = DocumentSet.findById(id)
+    val uploadedFileId = documentSet.map( _.uploadedFileId)
+    
     SQL("DELETE FROM log_entry WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_tag WHERE tag_id IN (SELECT id FROM tag WHERE document_set_id = {id})").on('id -> id).executeUpdate()
     SQL("DELETE FROM tag WHERE document_set_id = {id}").on('id -> id).executeUpdate()
@@ -101,8 +105,14 @@ object DocumentSet {
     SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_set_user WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+    
     Schema.documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
     Schema.documentSets.delete(id)
+    
+    uploadedFileId.map { u => 
+      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
+      SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
+    }
     // And return the count
   }
 
