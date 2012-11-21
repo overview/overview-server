@@ -11,6 +11,7 @@ import java.io.InputStreamReader
 import overview.largeobject.LargeObject
 import scala.util.control.Exception.allCatch
 import java.nio.charset.CharsetDecoder
+import java.nio.charset.CodingErrorAction
 
 class UploadReader(uploadedFileId: Long) {
 
@@ -38,6 +39,7 @@ class UploadReader(uploadedFileId: Long) {
   private def decoder(encoding: Option[String]): CharsetDecoder = {
     val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n)  }
     
-    charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
+    val decoder = charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
+    decoder.onMalformedInput(CodingErrorAction.REPLACE)
   }
 }

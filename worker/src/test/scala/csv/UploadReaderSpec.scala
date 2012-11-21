@@ -6,6 +6,7 @@ import overview.largeobject.LO
 import database.DB
 import testutil.DbSetup._
 import java.io.InputStreamReader
+import java.nio.charset.Charset
 import persistence.UploadedFile
 
 class UploadReaderSpec extends DbSpecification {
@@ -35,21 +36,28 @@ class UploadReaderSpec extends DbSpecification {
     trait LargeData extends UploadContext {
       def uploadSize = 10000
       def data: Array[Byte] = Array.fill(uploadSize)(74)
-      def contentType = "text/csv"
+      def contentType = "application/octet-stream"
     }
 
+    implicit def b(x: Int): Byte = x.toByte
+
     trait Windows1252Data extends UploadContext {
-      implicit private def b(x: Int): Byte = x.toByte
       def data: Array[Byte] = Array[Byte](159, 128, 154)
       val windows1252Text = new String(data, "windows-1252")
-      def contentType = "text/csv ; charset=windows-1252"
+      def contentType = "application/octet-stream ; charset=windows-1252"
       def uploadSize = data.size
     }
-    
+
     trait InvalidEncoding extends UploadContext {
       def uploadSize = 5
       def data: Array[Byte] = Array.fill(uploadSize)(74)
-      def contentType = "text/csv ; charset=notArealCharSet"
+      def contentType = "application/octet-stream ; charset=notArealCharSet"
+    }
+
+    trait InvalidInput extends UploadContext {
+      def uploadSize = 1
+      def data: Array[Byte] = Array[Byte](255)
+      def contentType = "application/octet-stream ; charset=utf-8"
     }
 
     "create reader from uploaded file" in new LargeData {
@@ -84,16 +92,27 @@ class UploadReaderSpec extends DbSpecification {
       uploadReader.read { reader =>
         val buffer = new Array[Char](uploadSize)
         reader.read(buffer)
-        
+
         buffer must be equalTo (windows1252Text.toCharArray())
       }
     }
-    
+
     "default to UTF-8 if specified encoding is not valid" in new InvalidEncoding {
       uploadReader.read { reader =>
         val buffer = new Array[Char](uploadSize)
         reader.read(buffer)
         buffer must be equalTo data.map(_.toChar)
+      }
+    }
+
+    "insert replacement character for invalid input" in new InvalidInput {
+      val replacement = Charset.forName("UTF-8").newDecoder.replacement.toCharArray()
+
+      uploadReader.read { reader =>
+        val buffer = new Array[Char](uploadSize)
+        reader.read(buffer)
+
+        buffer must be equalTo (replacement)
       }
     }
   }
