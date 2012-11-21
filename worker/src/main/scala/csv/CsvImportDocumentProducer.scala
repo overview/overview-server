@@ -9,7 +9,8 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
 
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader(uploadedFileId)
-
+  private var bytesRead = 0l
+  
   def produce() {
     DB.withTransaction { implicit connection =>
       uploadReader.read { reader =>
@@ -18,11 +19,18 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
         documentSource.foreach { doc =>
           val documentId = writeAndCommitDocument(documentSetId, doc)
           consumer.processDocument(documentId, doc.text)
-          progAbort(Progress(FetchingFraction * uploadReader.bytesRead / uploadReader.size.getOrElse(1l), Parsing(uploadReader.bytesRead, uploadReader.size.getOrElse(0))))
+          reportProgress(uploadReader.bytesRead, uploadReader.size.getOrElse(1))
         }
 
         consumer.productionComplete()
       }
+    }
+  }
+  
+  private def reportProgress(n: Long, size: Long) {
+    if (n != bytesRead) {
+      bytesRead = n
+      progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
     }
   }
 
