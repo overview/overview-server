@@ -23,7 +23,7 @@ class DocumentDataLoaderSpec extends Specification {
       val document = documentDataLoader.loadDocument(insertedDocumentId)
 
       document must beSome
-      document.get must be equalTo((insertedDocumentId, "title", "documentCloudId"))
+      document.get must be equalTo((insertedDocumentId, "title", Some("documentCloudId")))
     }
     
     "Returns None for non-existing id" in new DbTestContext {

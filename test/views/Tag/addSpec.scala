@@ -15,7 +15,7 @@ class addSpec extends Specification {
       val tag: PersistentTagInfo = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val addedCount = 20l
       val documentId = 1l
-      val documents = Seq(Document(documentId, "title", "documentCloudId", Seq(5l, 15l), Seq(22l)))
+      val documents = Seq(Document(documentId, "title", Some("documentCloudId"), Seq(5l, 15l), Seq(22l)))
       
       val resultJson = toJson(views.json.Tag.add(tag, addedCount, documents)).toString 
       

@@ -33,9 +33,9 @@ class showSpec extends Specification {
     "contain all documents" in {
       val dummyNodes = List[Node]()
       val documents = List(
-    	Document(10l, "title", "documentCloudId", Seq(), Seq(22l)),
-    	Document(20l, "title", "documentCloudId", Seq(), Seq(22l)),
-    	Document(30l, "title", "documentCloudId", Seq(), Seq(22l))
+    	Document(10l, "title", Some("documentCloudId"), Seq(), Seq(22l)),
+    	Document(20l, "title", Some("documentCloudId"), Seq(), Seq(22l)),
+    	Document(30l, "title", Some("documentCloudId"), Seq(), Seq(22l))
       )
       val dummyTags = List[TestTag]()
       
