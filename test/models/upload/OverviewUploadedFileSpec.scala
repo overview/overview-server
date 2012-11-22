@@ -100,7 +100,7 @@ class OverviewUploadedFileSpec extends Specification {
     }
 
     trait FilenameWithEscapedQuote extends DispositionParameter {
-      val unquotedName = "quote\\\"me\\\""
+      val unquotedName = """quote\"me\""""
       val name = """"%s"""".format(unquotedName)
     }
 
@@ -154,7 +154,7 @@ class OverviewUploadedFileSpec extends Specification {
     }
 
     "find filename with escaped quotes" in new ContentDispositionContext with FilenameWithEscapedQuote {
-      overviewUploadedFile.filename must be equalTo (unquotedName)
+      overviewUploadedFile.filename must be equalTo (unquotedName.replaceAllLiterally("""\""", ""))
     }
 
     "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {

@@ -34,16 +34,23 @@ trait OverviewUploadedFile {
         case _ => None
       }
     }
-    
+
     def stripQuotes(filename: String): String = {
       val QuotedString = """^".*"$"""
+      // Using regexp to extract filename results in escaped quotes being unescaped
       if (filename.matches(QuotedString)) filename.substring(1, filename.length - 1)
       else filename
     }
-    
+
+    def unescapeQuotes(filename: String): String = {
+      val EscapedChar = """\\([\\"])""".r
+      EscapedChar.replaceAllIn(filename, m => m.group(0))
+    }
+
     findFileName map { n =>
-      stripQuotes(n)  
-    } getOrElse("")
+      unescapeQuotes(
+        stripQuotes(n))
+    } getOrElse ("")
   }
 
   def withSize(size: Long): OverviewUploadedFile
