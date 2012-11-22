@@ -17,6 +17,7 @@ import overview.util.Logger
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription
 import overview.util.DocumentSetCreationJobStateDescription._
+import overview.util.CompactPairArray
 import scala.collection.mutable.AddingBuilder
 
 object ConnectedComponents {
@@ -165,7 +166,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
   }
   
 
-  case class WeightPair(val id:DocumentID, val weight:TermWeight)
+  //case class WeightPair(val id:DocumentID, val weight:TermWeight)
   case class TermProduct(val term:TermID, val weight:TermWeight, val docIdx:Int, val product:Float)
   
   // Order ProductTriples decreasing their "product", 
@@ -187,16 +188,22 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
     
     val t0 = System.nanoTime()
     
+    var totalTerms = 0
+    
     // For each dimension (term), list of docs containing that term, and weight on each doc, sorted by weight
-    var d = Array.fill(numDims)(scala.collection.mutable.ArrayBuffer[WeightPair]())  
+    var d = Map[TermID, CompactPairArray[DocumentID,TermWeight]]()
     
     // First construct d: for each term, a list of containing docs, sorted by weight
     docVecs.foreach { case (id,vec) => 
       vec.foreach { case (term, weight) =>
-        d(term) += WeightPair(id, weight)
+        d.getOrElseUpdate(term, new CompactPairArray[DocumentID, TermWeight]) += Pair(id, weight)
+        totalTerms += 1
       }
     }
-    d.transform(_.sortBy(-_.weight).result) // sort each dim by decreasing weight
+    d.transform({ case (key, value) => value.sortBy(-_._2).result } ) // sort each dim by decreasing weight. result call also resizes to save space
+
+    Logger.info("Average terms per doc = " + totalTerms / docVecs.size)
+    Logger.info("Used terms = " + d.size)
 
     Logger.logElapsedTime("generated term/dimension array.", t0)
     val t1 = System.nanoTime()
@@ -208,7 +215,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
       // sorted by product of term weight times largest weight on that term in all docs
       var pq = PriorityQueue[TermProduct]()
       vec.foreach { case (term,weight) =>
-        pq += TermProduct(term, weight, 0, weight*d(term)(0).weight)  // add term to this doc's queue
+        pq += TermProduct(term, weight, 0, weight*d(term)(0)._2)  // add term to this doc's queue
       }
       
       // Now we just pop edges out of the queue on by one
@@ -217,7 +224,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
         
         // Generate edge from this doc to the doc with the highest term product
         val termProduct = pq.dequeue
-        val otherId = d(termProduct.term)(termProduct.docIdx).id
+        val otherId = d(termProduct.term)(termProduct.docIdx)._1
         val distance = distanceFn(docVecs(id), docVecs(otherId))
         addSymmetricEdge(id, otherId, distance)
                 
@@ -225,7 +232,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
         // We multiply this term's weight by weight on the document with the next highest weight on this term
         val newDocIdx = termProduct.docIdx + 1
         if (newDocIdx < d(termProduct.term).size) {
-          pq += TermProduct(termProduct.term, termProduct.weight, newDocIdx, termProduct.weight*d(termProduct.term)(newDocIdx).weight)
+          pq += TermProduct(termProduct.term, termProduct.weight, newDocIdx, termProduct.weight*d(termProduct.term)(newDocIdx)._2)
         }
         
         numEdgesLeft -= 1
@@ -328,7 +335,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn: (DocumentV
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 object BuildDocTree {
 
-  val numDocsWhereSamplingHelpful = 100000 // turn off sampling for now as we are memory constrained -- jms 11/19/12
+  val numDocsWhereSamplingHelpful = 1000 
   
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in 0.1 increments
