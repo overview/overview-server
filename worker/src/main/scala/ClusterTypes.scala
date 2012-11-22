@@ -10,6 +10,7 @@
 
 package overview.clustering
 
+import overview.util.CompactPairArray
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -94,13 +95,5 @@ object ClusterTypes {
   }
   
   type DocumentDistanceFn = (DocumentVector, DocumentVector) => Double
-  
-  class SampledEdges extends mutable.HashMap[ DocumentID, mutable.Map[DocumentID, Double]] {
-/*    type edgeMap = mutable.Map[DocumentID,Double] 
-    def += (kv:(DocumentID,edgeMap)) = super.+=(kv)
-    def -= (d:DocumentID) =  super.-=(d)
-    def iterator = super.iterator
-    def get(d:DocumentID) = super.get(d) */
-  }
 
 }

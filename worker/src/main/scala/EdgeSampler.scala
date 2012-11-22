@@ -21,20 +21,54 @@ import overview.util.Logger
 import overview.util.CompactPairArray
 //import scala.collection.mutable.AddingBuilder
 
+
+// A subset of edges from the complete graph. Optimized for adding many edges, small space. 
+class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Float] ] {
+  
+  def addEdge(a:DocumentID, b:DocumentID, dist:Float) : Unit = {
+    getOrElseUpdate(a, new CompactPairArray[DocumentID, Float]) += Pair(b,dist)
+  }
+
+  // Binary search the CompactPairArray first field (Document) to see if it contains an edge to node b
+  // Consider toLent the top of the array, as we'll be appending new symmetrized edges after
+  private def edgeArrayContains(ar:CompactPairArray[DocumentID, Float], toLen:Int, node:DocumentID) : Boolean = {
+    
+      def search(key:DocumentID, ar:IndexedSeq[DocumentID], lo:Int, hi:Int) : Int = {
+        if (hi <= lo) return -1;
+        val mid = lo + (hi - lo)/2;
+  
+        ar(mid).compareTo(key) match {
+          case n if n > 0 => search(key, ar, lo, mid);
+          case n if n < 0 => search(key, ar, mid+1, hi);
+          case 0 => mid;
+        }
+      }
+
+    search(node, ar.aSeq, 0, toLen) >= 0
+  }
+  
+  def symmetrize() : Unit = {
+    // start by sorting edges for each node by id of other end
+    this.transform( { case (k,v) => v.sortBy(_._1) } )  
+    val lengths = this.map( { case (k,v) => (k, v.size) } )   // keep original lengths around
+    
+    // for each edge (a,b,dist), if (b,a,dist) doesn't exist, add it
+    this foreach { case (a,v) => 
+      v foreach { case (b,dist) =>
+        if (!edgeArrayContains(get(b).get, lengths(b), a))    // pass lengths(b) so we only search edges that were there when we sorted
+          addEdge(b, a, dist)
+      }
+    }
+    
+    this foreach { case (k,v) => v.result }   // resizes to final size, hold on to as little memory as possible
+  }
+}
+
+
 class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanceFn) {
   
   // Store all edges that the "short edge" sampling has produced, map from doc to (doc,weight) 
   private var mySampledEdges = new SampledEdges
-  
-  // utility function to add a single edge to sampledEdges, which is a bit more of pain than it should be
-  private def addSymmetricEdge(a:DocumentID, b:DocumentID, distance:Double) : Unit = {
-    val aEdges = mySampledEdges.getOrElse(a, Map[DocumentID, Double]())
-    aEdges += (b -> distance)
-    mySampledEdges += (a -> aEdges)
-    val bEdges = mySampledEdges.getOrElse(b, Map[DocumentID, Double]())
-    bEdges += (a -> distance)
-    mySampledEdges += (b -> bEdges)
-  }
   
   //case class WeightPair(val id:DocumentID, val weight:TermWeight)
   case class TermProduct(val term:TermID, val weight:TermWeight, val docIdx:Int, val product:Float)
@@ -93,8 +127,8 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
         // Generate edge from this doc to the doc with the highest term product
         val termProduct = pq.dequeue
         val otherId = d(termProduct.term)(termProduct.docIdx)._1
-        val distance = distanceFn(docVecs(id), docVecs(otherId))
-        addSymmetricEdge(id, otherId, distance)
+        val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
+        mySampledEdges.addEdge(id, otherId, distance)
                 
         // Put this term back in the queue, with a new product entry 
         // We multiply this term's weight by weight on the document with the next highest weight on this term
@@ -106,6 +140,8 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
         numEdgesLeft -= 1
       }   
     }
+    
+    mySampledEdges.symmetrize
     
     Logger.logElapsedTime("generated sampled edges.", t1)
   }

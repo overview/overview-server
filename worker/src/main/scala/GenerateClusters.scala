@@ -139,11 +139,17 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDis
   }
   
   // Same logic as above, but only looks through edges stored in sampledEdges
-  private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {        
-    for ((otherDoc, distance) <- sampledEdges.getOrElse(thisDoc, Map());
-         if otherDocs.contains(otherDoc);
-         if distance <= thresh)
-      yield otherDoc
+  private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
+    val g = sampledEdges.get(thisDoc)
+    if (g.isDefined) {
+      val a = g.get.toArray
+      for ((otherDoc, distance) <- a
+           if otherDocs.contains(otherDoc);
+           if distance <= thresh)
+        yield otherDoc
+    } else {
+      Nil
+    }
   }
   
   // Returns an edge walking function suitable for ConnectedComponents, using the sampled edge set if we have it

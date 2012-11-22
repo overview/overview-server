@@ -28,8 +28,12 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   var bArray = new Array[B](0)
   var numStoredElements = 0
   
+  def aSeq : IndexedSeq[A] = aArray // very bad leaky abstraction! allows access into space not filled with elements
+  def bSeq : IndexedSeq[B] = bArray
+  
   def availableSize = aArray.size
     
+  
   // Set the size of the backing store. Throws away elements if newSize < numStoredElements
   protected def resizeStorage(newSize:Int) : Unit = {
     if (newSize != availableSize) {
