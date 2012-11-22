@@ -106,6 +106,11 @@ class OverviewUploadedFileSpec extends Specification {
       val name = """hi"and"bye"""
     }
 
+    trait FilenameFollowedByGarbage extends DispositionParameter {
+      val name = "afile.foo"
+      override lazy val dispParams: String = "filename=%s;blablabla".format(name)	  
+    }
+
     trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
@@ -122,7 +127,7 @@ class OverviewUploadedFileSpec extends Specification {
       overviewUploadedFile.filename must be equalTo (name)
     }
 
-    "find quoted filename" in  new ContentDispositionContext with FilenameInQuotes {
+    "find quoted filename" in new ContentDispositionContext with FilenameInQuotes {
       overviewUploadedFile.filename must be equalTo (name)
     }
 
@@ -132,6 +137,10 @@ class OverviewUploadedFileSpec extends Specification {
 
     "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {
       overviewUploadedFile.filename must not be equalTo("")
+    }
+
+    "extract filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
+      overviewUploadedFile.filename must be equalTo (name)
     }
   }
 }

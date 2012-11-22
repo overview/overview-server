@@ -20,12 +20,12 @@ trait OverviewUploadedFile {
     }
     
     val FilenameParam = DispParam(key = "filename", groupValue = true).r
-    val BrokenUnquoted = """^%s.*;\sfilename=(%s)""".format(ConDisp, Token).r
+    val BrokenUnquoted = """^%s.*;\sfilename=(%s).*""".format(ConDisp, Token).r
     val Rfc2183 = """^%s((?:%s)+)$""".format(ConDisp, DispParam(key = Token, groupValue = false)).r
     
     contentDisposition match {
-      case BrokenUnquoted(f) => f
       case Rfc2183(p) =>  FilenameParam.findFirstMatchIn(p).map(_.group(1)).getOrElse("")
+      case BrokenUnquoted(f) => f	
       case _ => ""
     }
   }
