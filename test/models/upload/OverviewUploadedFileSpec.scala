@@ -108,9 +108,29 @@ class OverviewUploadedFileSpec extends Specification {
 
     trait FilenameFollowedByGarbage extends DispositionParameter {
       val name = "afile.foo"
-      override lazy val dispParams: String = "filename=%s;blablabla".format(name)	  
+      override lazy val dispParams: String = "filename=%s;blablabla".format(name)
     }
 
+    trait QuotedFilenameFollowedByGarbage extends DispositionParameter {
+      val name = "afile.foo"
+      override lazy val dispParams: String = """filename="%s" ;blablabla=""".format(name)
+    }
+
+    trait ValidMixedCase extends DispositionParameter {
+      val name = "afile.foo"
+      override lazy val dispParams: String = "FileName=%s".format(name)
+    }
+
+    trait MixedCaseFollowedByGarbage extends DispositionParameter {
+      val name = "afile.foo"
+      override lazy val dispParams: String = "filEnamE=%s;blablabla".format(name)
+    }
+
+    trait MixedCaseWithQuotedFilenameFollowedByGarbage extends DispositionParameter {
+      val name = "afile.foo"
+      override lazy val dispParams: String = """FILENAME="%s" ;blablabla=""".format(name)
+    }
+    
     trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
@@ -139,7 +159,23 @@ class OverviewUploadedFileSpec extends Specification {
       overviewUploadedFile.filename must not be equalTo("")
     }
 
-    "extract filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
+    "find filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "find quoted filename parameter followed by garbage" in new ContentDispositionContext with QuotedFilenameFollowedByGarbage {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "Handle mixed case - RFC2183" in new ContentDispositionContext with ValidMixedCase {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+    
+    "Handle mixed case - Broken Unquoted" in new ContentDispositionContext with MixedCaseFollowedByGarbage {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+    
+    "Handle mixed case - Broken quoted" in new ContentDispositionContext with MixedCaseWithQuotedFilenameFollowedByGarbage {
       overviewUploadedFile.filename must be equalTo (name)
     }
   }
