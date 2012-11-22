@@ -85,14 +85,22 @@ object ClusterTypes {
     }
   }
   
-  // We can also create a DocumentVectorMap from a DocumentVector
-  
   // Set of vectors for all documents. Acts like a map from document ID -> vector
   // A set of document vectors is not interpretable without a StringTable, which must be provided to ctor
   class DocumentSetVectors(val stringTable: StringTable) extends mutable.HashMap[DocumentID, DocumentVector]  
 
   object DocumentSetVectors {
     def apply(stringTable: StringTable) = new DocumentSetVectors(stringTable)
+  }
+  
+  type DocumentDistanceFn = (DocumentVector, DocumentVector) => Double
+  
+  class SampledEdges extends mutable.HashMap[ DocumentID, mutable.Map[DocumentID, Double]] {
+/*    type edgeMap = mutable.Map[DocumentID,Double] 
+    def += (kv:(DocumentID,edgeMap)) = super.+=(kv)
+    def -= (d:DocumentID) =  super.-=(d)
+    def iterator = super.iterator
+    def get(d:DocumentID) = super.get(d) */
   }
 
 }
