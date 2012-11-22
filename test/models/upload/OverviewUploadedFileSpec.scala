@@ -80,22 +80,33 @@ class OverviewUploadedFileSpec extends Specification {
       def delete {}
     }
 
-  
     trait DispositionParameter {
-      val dispParams: String
+      val name: String
+      lazy val dispParams: String = "filename=%s".format(name)
     }
 
     trait SimpleParameter extends DispositionParameter {
       val name = "afile.foo"
-      val dispParams: String = "filename=" + name
     }
 
     trait MultipleParameters extends DispositionParameter {
       val name = "afile.foo"
-      val dispParams: String = "param1=value1; filename=%s; param2=value2".format(name)
+      override lazy val dispParams: String = "param1=value1; filename=%s; param2=value2".format(name)
     }
 
-      trait ContentDispositionContext extends Scope {
+    trait FilenameInQuotes extends DispositionParameter {
+      val name = """"afile.foo""""
+    }
+
+    trait FilenameWithEscapedQuote extends DispositionParameter {
+      val name = """"quote\"me\"""""
+    }
+
+    trait UnfortunatelyAccepted extends DispositionParameter {
+      val name = """hi"and"bye"""
+    }
+
+    trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
       def contentDisposition = "attachment; " + dispParams
@@ -109,6 +120,18 @@ class OverviewUploadedFileSpec extends Specification {
 
     "find filename among multiple parameters (RFC2183)" in new ContentDispositionContext with MultipleParameters {
       overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "find quoted filename" in  new ContentDispositionContext with FilenameInQuotes {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "find filename with escaped quotes" in new ContentDispositionContext with FilenameWithEscapedQuote {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {
+      overviewUploadedFile.filename must not be equalTo("")
     }
   }
 }
