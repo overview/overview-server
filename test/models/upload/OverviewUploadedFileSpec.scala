@@ -9,10 +9,9 @@ import org.specs2.runner.JUnitRunner
 import helpers.PgConnectionContext
 import java.sql.Timestamp
 import play.api.test.FakeApplication
-import org.specs2.mock.Mockito
 
 @RunWith(classOf[JUnitRunner])
-class OverviewUploadedFileSpec extends Specification with Mockito {
+class OverviewUploadedFileSpec extends Specification {
 
   step(start(FakeApplication()))
 
@@ -81,28 +80,34 @@ class OverviewUploadedFileSpec extends Specification with Mockito {
       def delete {}
     }
 
-    trait ContentDispositionContext extends Scope {
-      def dispParams: String
+  
+    trait DispositionParameter {
+      val dispParams: String
+    }
+
+    trait SimpleParameter extends DispositionParameter {
+      val name = "afile.foo"
+      val dispParams: String = "filename=" + name
+    }
+
+    trait MultipleParameters extends DispositionParameter {
+      val name = "afile.foo"
+      val dispParams: String = "param1=value1; filename=%s; param2=value2".format(name)
+    }
+
+      trait ContentDispositionContext extends Scope {
+      self: DispositionParameter =>
+
       def contentDisposition = "attachment; " + dispParams
 
       lazy val overviewUploadedFile = new TestOverviewUploadedFile(contentDisposition)
     }
 
-    trait SimpleContentDisposition extends ContentDispositionContext {
-      val name = "afile.foo"
-      def dispParams: String = "filename=" + name
-    }
-
-    trait MultipleDispParams extends ContentDispositionContext {
-      val name = "afile.foo"
-      def dispParams: String = "param1=value1; filename=%s; param2=value2".format(name)
-    }
-
-    "find filename in simplest possible case" in new SimpleContentDisposition {
+    "find filename in simplest possible case" in new ContentDispositionContext with SimpleParameter {
       overviewUploadedFile.filename must be equalTo (name)
     }
-    
-    "find filename among multiple parameters (RFC2183)" in new MultipleDispParams {
+
+    "find filename among multiple parameters (RFC2183)" in new ContentDispositionContext with MultipleParameters {
       overviewUploadedFile.filename must be equalTo (name)
     }
   }
