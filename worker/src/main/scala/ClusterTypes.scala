@@ -15,7 +15,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object ClusterTypes {
 
-  type DocumentID = Long
+  type DocumentID = Int
   type TermWeight = Float
   type TermID = Int
 
