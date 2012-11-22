@@ -73,16 +73,16 @@ trait UploadController extends BaseController {
 
   private[controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
     val upload: OverviewUpload = request.body
-    
+
     val result = uploadResult(upload)
     if (result == Ok) {
       startDocumentSetCreationJob(upload)
       deleteUpload(upload)
     }
-    
+
     result
   }
-  
+
   /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
@@ -112,7 +112,7 @@ object UploadController extends UploadController with PgConnection {
 
   def startDocumentSetCreationJob(upload: OverviewUpload) {
     val documentSet = DocumentSet(
-        title = upload.uploadedFile.filename,
+      title = upload.uploadedFile.filename,
       documentSetType = CsvImportDocumentSet,
       uploadedFileId = Some(upload.uploadedFile.id)).save
 
