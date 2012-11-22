@@ -14,24 +14,36 @@ trait OverviewUploadedFile {
   def filename: String = {
     // Based on behavior described by
     // https://github.com/rack/rack/blob/master/lib/rack/multipart.rb
-    val Token = """[^\s()<>,;:\\"\/\[\]?=]+"""
-    val ConDisp = """\s*%s\s*""".format(Token)
-    def DispParam(key: String, groupValue: Boolean) = {
-      val captureGroup = if (!groupValue) "?:" else ""
-      """;\s*(?:%s)=(%s"(?:\\"|[^"])*"|%s)*""".format(key, captureGroup, Token)
+    def findFileName: Option[String] = {
+      val Token = """[^\s()<>,;:\\"\/\[\]?=]+"""
+      val ConDisp = """\s*%s\s*""".format(Token)
+      def DispParam(key: String, groupValue: Boolean) = {
+        val captureGroup = if (!groupValue) "?:" else ""
+        """;\s*(?:%s)=(%s"(?:\\"|[^"])*"|%s)*""".format(key, captureGroup, Token)
+      }
+
+      val FilenameParam = DispParam(key = "(?i)filename", groupValue = true).r
+      val BrokenQuoted = """^%s.*;\s(?i)filename="([^"]*)"(?:\s*$|\s*;\s*%s=).*""".format(ConDisp, Token).r
+      val BrokenUnquoted = """^%s.*;\s(?i)filename=(%s).*""".format(ConDisp, Token).r
+      val Rfc2183 = """^%s((?:%s)+)$""".format(ConDisp, DispParam(key = Token, groupValue = false)).r
+
+      contentDisposition match {
+        case Rfc2183(p) => FilenameParam.findFirstMatchIn(p).map(_.group(1))
+        case BrokenUnquoted(f) => Some(f)
+        case BrokenQuoted(f) => Some(f)
+        case _ => None
+      }
     }
     
-    val FilenameParam = DispParam(key = "(?i)filename", groupValue = true).r
-    val BrokenQuoted =   """^%s.*;\s(?i)filename="([^"]*)"(?:\s*$|\s*;\s*%s=).*""".format(ConDisp, Token).r
-    val BrokenUnquoted = """^%s.*;\s(?i)filename=(%s).*""".format(ConDisp, Token).r
-    val Rfc2183 = """^%s((?:%s)+)$""".format(ConDisp, DispParam(key = Token, groupValue = false)).r
-    
-    contentDisposition match {
-      case Rfc2183(p) =>  FilenameParam.findFirstMatchIn(p).map(_.group(1)).getOrElse("")
-      case BrokenUnquoted(f) => f	
-      case BrokenQuoted(f) => f
-      case _ => ""
+    def stripQuotes(filename: String): String = {
+      val QuotedString = """^".*"$"""
+      if (filename.matches(QuotedString)) filename.substring(1, filename.length - 1)
+      else filename
     }
+    
+    findFileName map { n =>
+      stripQuotes(n)  
+    } getOrElse("")
   }
 
   def withSize(size: Long): OverviewUploadedFile
