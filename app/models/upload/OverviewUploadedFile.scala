@@ -14,10 +14,18 @@ trait OverviewUploadedFile {
   def filename: String = {
     val Token = """[^\s()<>,;:\\"\/\[\]?=]+"""
     val ConDisp = """\s*%s\s*""".format(Token)
+    def DispParam(key: String, groupValue: Boolean) = {
+      val captureGroup = if (!groupValue) "?:" else ""
+      """;\s*(?:%s)=(%s"(?:\\"|[^"])*"|%s)*""".format(key, captureGroup, Token)
+    }
+    
+    val FilenameParam = DispParam(key = "filename", groupValue = true).r
     val BrokenUnquoted = """^%s.*;\sfilename=(%s)""".format(ConDisp, Token).r
+    val Rfc2183 = """^%s((?:%s)+)$""".format(ConDisp, DispParam(key = Token, groupValue = false)).r
     
     contentDisposition match {
       case BrokenUnquoted(f) => f
+      case Rfc2183(p) =>  FilenameParam.findFirstMatchIn(p).map(_.group(1)).getOrElse("")
       case _ => ""
     }
   }

@@ -80,7 +80,7 @@ class OverviewUploadedFileSpec extends Specification with Mockito {
       def save: OverviewUploadedFile = this
       def delete {}
     }
-    
+
     trait ContentDispositionContext extends Scope {
       def dispParams: String
       def contentDisposition = "attachment; " + dispParams
@@ -93,7 +93,16 @@ class OverviewUploadedFileSpec extends Specification with Mockito {
       def dispParams: String = "filename=" + name
     }
 
+    trait MultipleDispParams extends ContentDispositionContext {
+      val name = "afile.foo"
+      def dispParams: String = "param1=value1; filename=%s; param2=value2".format(name)
+    }
+
     "find filename in simplest possible case" in new SimpleContentDisposition {
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+    
+    "find filename among multiple parameters (RFC2183)" in new MultipleDispParams {
       overviewUploadedFile.filename must be equalTo (name)
     }
   }
