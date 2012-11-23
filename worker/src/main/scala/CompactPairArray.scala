@@ -20,7 +20,8 @@ import scala.collection.generic.SeqFactory
 
 
 class CompactPairArray[A : ClassManifest,B : ClassManifest] 
-    extends IndexedSeqOptimized[Pair[A,B], CompactPairArray[A,B]] 
+    extends IndexedSeq[Pair[A,B]] 
+    with IndexedSeqOptimized[Pair[A,B], CompactPairArray[A,B]] 
     with Builder[Pair[A,B], CompactPairArray[A,B]] 
 {
   // Internal state: two Arrays, plus a size
@@ -74,10 +75,10 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
     bArray(idx) = elem._2
   }
 
-  def seq = iterator
+//  def seq = iterator
 
   // We are our own builder
-  protected def newBuilder = {
+  override protected def newBuilder = {
     new CompactPairArray[A,B]
   }
   

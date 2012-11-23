@@ -142,8 +142,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDis
   private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
     val g = sampledEdges.get(thisDoc)
     if (g.isDefined) {
-      val a = g.get.toArray
-      for ((otherDoc, distance) <- a
+      for ((otherDoc, distance) <- g.get
            if otherDocs.contains(otherDoc);
            if distance <= thresh)
         yield otherDoc
