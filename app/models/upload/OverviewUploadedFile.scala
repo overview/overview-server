@@ -1,7 +1,9 @@
 package models.upload
 
+import java.net.URLDecoder
 import java.sql.Timestamp
 import models.orm.UploadedFile
+import scala.util.control.Exception._
 
 trait OverviewUploadedFile {
   val id: Long
@@ -47,9 +49,14 @@ trait OverviewUploadedFile {
       EscapedChar.replaceAllIn(filename, m => m.group(0))
     }
 
-    findFileName map { n =>
-      unescapeQuotes(
-        stripQuotes(n))
+    def decode(filename: String): Option[String] = {
+      allCatch opt { URLDecoder.decode(filename, "UTF-8") }
+    }
+
+    findFileName flatMap { n =>
+      decode(
+        unescapeQuotes(
+          stripQuotes(n)))
     } getOrElse ("")
   }
 

@@ -133,6 +133,14 @@ class OverviewUploadedFileSpec extends Specification {
       override lazy val dispParams: String = """FILENAME="%s" ;blablabla=""".format(name)
     }
     
+    trait UrlEncodedName extends DispositionParameter {
+      val name = """"%68%65%6C%6C%6F"""" // "hello"
+    }
+    
+    trait InvalidEncoding extends DispositionParameter {
+      val name = """"%XY%4-b""""
+    }
+    
     trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
@@ -167,6 +175,14 @@ class OverviewUploadedFileSpec extends Specification {
 
     "find quoted filename parameter followed by garbage" in new ContentDispositionContext with QuotedFilenameFollowedByGarbage {
       overviewUploadedFile.filename must be equalTo (name)
+    }
+    
+    "Decoded encoded filename" in new ContentDispositionContext with UrlEncodedName {
+      overviewUploadedFile.filename must be equalTo("hello")
+    }
+    
+    "Handle invalid encoding" in new ContentDispositionContext with InvalidEncoding {
+      overviewUploadedFile.filename must be equalTo("")
     }
 
     "Handle mixed case - RFC2183" in new ContentDispositionContext with ValidMixedCase {
