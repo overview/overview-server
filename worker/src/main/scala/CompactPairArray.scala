@@ -13,10 +13,8 @@
 package overview.util
 
 
-import scala.collection.mutable.IndexedSeqOptimized
-import scala.collection.mutable.Builder
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.generic.SeqFactory 
+import scala.collection.mutable.{IndexedSeq, IndexedSeqOptimized, Builder}
+import scala.collection.generic.{SeqFactory, CanBuildFrom}
 
 
 class CompactPairArray[A : ClassManifest,B : ClassManifest] 
@@ -33,8 +31,7 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   def bSeq : IndexedSeq[B] = bArray
   
   def availableSize = aArray.size
-    
-  
+   
   // Set the size of the backing store. Throws away elements if newSize < numStoredElements
   protected def resizeStorage(newSize:Int) : Unit = {
     if (newSize != availableSize) {
@@ -108,12 +105,33 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
     if (size > numStoredElements)
       resizeStorage(numStoredElements)
   }
+  
+  import CompactPairArray.canBuildFrom    // bring into scope so we get the right conversions for map etc.
 }
 
 // Companion object provides nice ctor syntax 
 object CompactPairArray {
  
-  // var c = CompactPairArray((1,2.0), (3,4.0), ... ) 
+  // trait CanBuildFrom[-From, -Elem, +To]
+ 
+  implicit def canBuildFrom[A,B] : CanBuildFrom[CompactPairArray[A,B], Pair[A,B], CompactPairArray[A,B]] = 
+    new CanBuildFrom[CompactPairArray[A, B], Pair[A,B], CompactPairArray[A, B]] {
+    
+      def apply(): Builder[Pair[A,B], CompactPairArray[A,B]] = {
+        println("CBF with no arguments")
+        new CompactPairArray[A,B]()(
+            Manifest.Object.asInstanceOf[ClassManifest[A]],
+            Manifest.Object.asInstanceOf[ClassManifest[B]])
+      }
+            
+      def apply(from: CompactPairArray[A,B]): Builder[Pair[A,B], CompactPairArray[A, B]] = {
+         println("CBF with an argument!")
+         from.newBuilder
+      }
+  }
+  
+  // Construct from a sequence: var c = CompactPairArray((1,2.0), (3,4.0), ... ) 
+  // Really, we need to figure out how to derive from SeqFactory and we'll get this and more (e.g. Fill, Tabulate)
   def apply[A:ClassManifest,B:ClassManifest](v : Pair[A,B]*) = {
     var cpa = new CompactPairArray[A,B]
     cpa.sizeHint(v.size)
