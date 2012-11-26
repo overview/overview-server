@@ -70,24 +70,24 @@ describe 'views/document_contents_view', ->
       it 'should show the iframe', ->
         expect($(view.div).find('iframe[src="/document_view/1"]').length).toEqual(1)
 
-      it 'should call the iframe load_documentcloud_document() on change', ->
-        id = undefined
+      it 'should call the iframe load_document() on change', ->
+        doc = undefined
         view.iframe = {
           contentWindow: {
-            load_documentcloud_document: (x) -> id = x
+            load_document: (x) -> doc = x
           }
         }
         state.selection.documents = [2]
         state._notify('selection-changed', state.selection)
-        expect(id).toEqual('2-doc-2')
+        expect(doc?.id).toEqual(2)
 
-      it 'should call load_documentcloud_document() when the selection changes but the selected document does not', ->
-        id = undefined
+      it 'should call load_document() when the selection changes but the selected document does not', ->
+        doc = undefined
         view.iframe = {
           contentWindow: {
-            load_documentcloud_document: (x) -> id = x
+            load_document: (x) -> doc = x
           }
         }
-        state.selection.nodes = [1]
+        state.selection.nodes = [4]
         state._notify('selection-changed', state.selection)
-        expect(id).toBeUndefined()
+        expect(doc).toBeUndefined()
