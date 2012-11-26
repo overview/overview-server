@@ -53,6 +53,8 @@
 
     @bundleJavascript("defaults")
 
+    @javascripts
+
     @defining(Play.application.configuration.getString("analytics.ga_tracking_id").getOrElse("")) { trackingId =>
       @if(trackingId.length > 0) {
         <script type="text/javascript">
