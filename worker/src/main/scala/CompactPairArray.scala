@@ -118,14 +118,12 @@ object CompactPairArray {
     new CanBuildFrom[CompactPairArray[A, B], Pair[A,B], CompactPairArray[A, B]] {
     
       def apply(): Builder[Pair[A,B], CompactPairArray[A,B]] = {
-        println("CBF with no arguments")
         new CompactPairArray[A,B]()(
             Manifest.Object.asInstanceOf[ClassManifest[A]],
             Manifest.Object.asInstanceOf[ClassManifest[B]])
       }
             
       def apply(from: CompactPairArray[A,B]): Builder[Pair[A,B], CompactPairArray[A, B]] = {
-         println("CBF with an argument!")
          from.newBuilder
       }
   }
