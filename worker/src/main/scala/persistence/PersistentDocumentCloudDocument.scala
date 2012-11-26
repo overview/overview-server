@@ -9,8 +9,8 @@ trait PersistentDocumentCloudDocument {
   
   def write(documentSetId: Long)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO document (title, documentcloud_id, document_set_id) VALUES
-          ({title}, {documentCloudId}, {documentSetId})
+        INSERT INTO document (type, title, documentcloud_id, document_set_id) VALUES
+          ('DocumentCloudDocument'::document_type, {title}, {documentCloudId}, {documentSetId})
         """).on("title" -> title, "documentCloudId" -> documentCloudId,
                 "documentSetId" -> documentSetId).executeInsert().get
   }
