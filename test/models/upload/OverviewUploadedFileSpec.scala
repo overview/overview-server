@@ -23,7 +23,7 @@ class OverviewUploadedFileSpec extends Specification {
 
       override def setupWithDb = LO.withLargeObject { lo =>
         before = new Timestamp(System.currentTimeMillis)
-        overviewUploadedFile = OverviewUploadedFile(lo.oid, "content-disposition", "content-type")
+        overviewUploadedFile = OverviewUploadedFile(lo.oid, "attachment; filename=name", "content-type")
       }
     }
 
@@ -61,8 +61,25 @@ class OverviewUploadedFileSpec extends Specification {
 
       foundUploadedFile must beNone
     }
-
   }
+
   step(stop)
 
+  "OverviewUploadedFile filename" should {
+
+    "return filename from content-disposition" in {
+      val name = "file.name"
+      val overviewUploadedFile = OverviewUploadedFile(0, "attachment; filename=" + name, "content-type")
+      overviewUploadedFile.filename must be equalTo (name)
+    }
+
+    "return Upload <date> if no content-disposition found" in {
+      val overviewUploadedFile = OverviewUploadedFile(0, "bad-content-disposition", "content-type")
+      val now = new Timestamp(System.currentTimeMillis())
+      val defaultFilename = "Upload " + now
+      // bad test - only checks that timestamp specifies today's date
+      // could fail if executed at midnight.
+      overviewUploadedFile.filename.take(17) must be equalTo(defaultFilename.take(17))
+    }
+  }
 }
