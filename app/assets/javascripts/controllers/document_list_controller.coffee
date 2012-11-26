@@ -93,7 +93,7 @@ document_list_controller = (div, cache, state) ->
 
     selected_docids = selected_indices.get_indices().map((i) -> document_list.documents[i].id)
 
-    state.set('selection', listed_selection.plus({ documents: selected_docids }))
+    state.set('selection', listed_selection.replace({ documents: selected_docids }))
 
 exports = require.make_export_object('controllers/document_list_controller')
 exports.document_list_controller = document_list_controller
