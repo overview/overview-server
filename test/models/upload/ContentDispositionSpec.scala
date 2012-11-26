@@ -1,6 +1,5 @@
 package models.upload
 
-
 import org.specs2.mutable.Specification
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
@@ -9,11 +8,11 @@ import org.specs2.specification.Scope
 
 @RunWith(classOf[JUnitRunner])
 class ContentDispositionSpec extends Specification {
- "OverviewUploadedFile contentDisposition" should {
+  "OverviewUploadedFile contentDisposition" should {
 
     class TestOverviewUploadedFile(val contentDisposition: String) extends OverviewUploadedFile {
       val id: Long = 0
-      val uploadedAt: Timestamp = null
+      val uploadedAt: Timestamp = new Timestamp(0)
       val contentsOid: Long = 0
       val contentType: String = ""
       val size: Long = 0
@@ -76,15 +75,15 @@ class ContentDispositionSpec extends Specification {
       val name = "afile.foo"
       override lazy val dispParams: String = """FILENAME="%s" ;blablabla=""".format(name)
     }
-    
+
     trait UrlEncodedName extends DispositionParameter {
       val name = """"%68%65%6C%6C%6F"""" // "hello"
     }
-    
+
     trait InvalidEncoding extends DispositionParameter {
       val name = """"%XY%4-b""""
     }
-    
+
     trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
@@ -94,51 +93,54 @@ class ContentDispositionSpec extends Specification {
     }
 
     "find filename in simplest possible case" in new ContentDispositionContext with SimpleParameter {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
 
     "find filename among multiple parameters (RFC2183)" in new ContentDispositionContext with MultipleParameters {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
 
     "find quoted filename" in new ContentDispositionContext with FilenameInQuotes {
-      overviewUploadedFile.filename must be equalTo (unquotedName)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (unquotedName) }
     }
 
     "find filename with escaped quotes" in new ContentDispositionContext with FilenameWithEscapedQuote {
-      overviewUploadedFile.filename must be equalTo (unquotedName.replaceAllLiterally("""\""", ""))
+      ContentDisposition.filename(contentDisposition) must beSome.like {
+        case n =>
+          n must be equalTo (unquotedName.replaceAllLiterally("""\""", ""))
+      }
     }
 
     "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {
-      overviewUploadedFile.filename must not be equalTo("")
+      ContentDisposition.filename(contentDisposition) must beSome
     }
 
     "find filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
 
     "find quoted filename parameter followed by garbage" in new ContentDispositionContext with QuotedFilenameFollowedByGarbage {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
-    
+
     "Decoded encoded filename" in new ContentDispositionContext with UrlEncodedName {
-      overviewUploadedFile.filename must be equalTo("hello")
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo ("hello") }
     }
-    
+
     "Handle invalid encoding" in new ContentDispositionContext with InvalidEncoding {
-      overviewUploadedFile.filename must be equalTo("")
+      ContentDisposition.filename(contentDisposition) must beNone
     }
 
     "Handle mixed case - RFC2183" in new ContentDispositionContext with ValidMixedCase {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
-    
+
     "Handle mixed case - Broken Unquoted" in new ContentDispositionContext with MixedCaseFollowedByGarbage {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
-    
+
     "Handle mixed case - Broken quoted" in new ContentDispositionContext with MixedCaseWithQuotedFilenameFollowedByGarbage {
-      overviewUploadedFile.filename must be equalTo (name)
+      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
     }
   }
 
