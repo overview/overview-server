@@ -72,7 +72,7 @@ $ ->
     refresh_dc_iframe()
 
   window.load_document = (document) ->
-    set_title(document.title || '')
+    set_title(document.title || i18n('views.Document.show.title.empty_document'))
 
     if document.documentcloud_id
       load_documentcloud_document(document)

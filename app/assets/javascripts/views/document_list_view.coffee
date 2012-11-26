@@ -162,7 +162,7 @@ class DocumentListView
 
   _document_to_dom_node: (document) ->
     $a = $('<a href="#"></a>')
-      .text(document.title)
+      .text(document.title || i18n('views.DocumentSet.show.document_list.document.empty_title'))
       .attr('data-docid', "#{document.id}")
 
     $tags = $('<span class="tags"/>')

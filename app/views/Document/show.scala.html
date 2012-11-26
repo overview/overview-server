@@ -1,5 +1,9 @@
 @(document: OverviewDocument)(implicit lang: Lang)
 
+@jsMessageKeys = @{Seq(
+  "views.Document.show.title.empty_document"
+)}
+
 @defining(scopedMessages("views.Document.show")) { m =>
   <html>
     <head>
@@ -86,7 +90,13 @@
       <![endif]-->
     </head>
     <body>
-      <h3 data-m-loading="@m("loading")">@document.title</h3>
+      <h3 data-m-loading="@m("loading")">
+        @if(document.title.length > 0) {
+          @document.title
+        } else {
+          @m("title.empty_document")
+        }
+      </h3>
       <div class="document">
         @document match {
           case d: OverviewDocument.DocumentCloudDocument => {
@@ -102,6 +112,11 @@
           }
         }
       </div>
+
+      @bundleJavascript("i18n")
+      <script type="text/javascript">
+        window.i18n = window.use_i18n_messages(@Html(views.JsMessages(jsMessageKeys)));
+      </script>
 
       @bundleJavascript("document-show")
     </body>
