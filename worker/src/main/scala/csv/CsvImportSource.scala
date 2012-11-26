@@ -10,7 +10,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val SuppliedIdColumn: String = "id"
     
   val iterator = new Iterator[CsvImportDocument] {
-    private val csvParser = new CSVReader(reader)
+    private val csvParser = new CSVReader(reader, ',', '\"', '\0')
     private var nextLine = csvParser.readNext()
 
     private val columns = readHeaders	

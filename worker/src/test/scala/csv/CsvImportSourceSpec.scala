@@ -55,6 +55,11 @@ class CsvImportSourceSpec extends Specification {
                      |this is line2,stuff2,2""".stripMargin
     }
 
+    trait IgnoredEscape extends CsvImportContext {
+      def input = """|text,id
+                     |some text\"aa\"bb,34""".stripMargin
+    }
+    
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
 
@@ -93,6 +98,13 @@ class CsvImportSourceSpec extends Specification {
 
     "handle uppercase header" in new ValidInputWithUpperCaseHeader {
       csvImportSource.foreach(_.text) must not(throwA[Exception])
+    }
+    
+    "don't interpret \\ as escape" in new IgnoredEscape {
+      val doc = csvImportSource.head
+      doc.text must be equalTo("""some text\"aa\"bb""")
+      
+      doc.suppliedId must beSome.like { case s => s must be equalTo("34") }
     }
   }
 }
