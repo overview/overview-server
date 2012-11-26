@@ -18,8 +18,8 @@ object DbSetup {
 
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (title, query, created_at)
-      VALUES ({title}, {query}, TIMESTAMP '1970-01-01 00:00:00')
+      INSERT INTO document_set (type, title, query, created_at)
+      VALUES ('DocumentCloudDocumentSet'::document_set_type, {title}, {query}, TIMESTAMP '1970-01-01 00:00:00')
       """).on(
       'title -> ("From query: " + query),
       'query -> query).executeInsert().getOrElse(failInsert)
@@ -48,8 +48,8 @@ object DbSetup {
 
   def insertDocument(documentSetId: Long, title: String, documentCloudId: String)(implicit connection: Connection): Long = {
     SQL("""
-        INSERT INTO document(document_set_id, title, documentcloud_id) VALUES 
-          ({documentSetId}, {title}, {documentCloudId})
+        INSERT INTO document (type, document_set_id, title, documentcloud_id)
+        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {title}, {documentCloudId})
         """).on("documentSetId" -> documentSetId,
       "title" -> title, "documentCloudId" -> documentCloudId).
       executeInsert().getOrElse(failInsert)
