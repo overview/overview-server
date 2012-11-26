@@ -10,19 +10,6 @@ import org.specs2.specification.Scope
 class ContentDispositionSpec extends Specification {
   "OverviewUploadedFile contentDisposition" should {
 
-    class TestOverviewUploadedFile(val contentDisposition: String) extends OverviewUploadedFile {
-      val id: Long = 0
-      val uploadedAt: Timestamp = new Timestamp(0)
-      val contentsOid: Long = 0
-      val contentType: String = ""
-      val size: Long = 0
-
-      def withSize(size: Long): OverviewUploadedFile = this
-      def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile = this
-      def save: OverviewUploadedFile = this
-      def delete {}
-    }
-
     trait DispositionParameter {
       val name: String
       lazy val dispParams: String = "filename=%s".format(name)
@@ -88,8 +75,6 @@ class ContentDispositionSpec extends Specification {
       self: DispositionParameter =>
 
       def contentDisposition = "attachment; " + dispParams
-
-      lazy val overviewUploadedFile = new TestOverviewUploadedFile(contentDisposition)
     }
 
     "find filename in simplest possible case" in new ContentDispositionContext with SimpleParameter {
