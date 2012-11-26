@@ -35,7 +35,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
 
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
-    vectorGen.addDocument(documentId.toInt, Lexer.makeTerms(text))
+    vectorGen.addDocument(documentId, Lexer.makeTerms(text))
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
