@@ -1,6 +1,8 @@
 observable = require('models/observable').observable # a small unit-testing transgression
 DocumentListView = require('views/document_list_view').DocumentListView
 
+$ = jQuery
+
 class MockDocumentList
   observable(this)
 
@@ -49,6 +51,20 @@ describe 'views/document_list_view', ->
       cache = { document_store: document_store, tag_store: tag_store, on_demand_tree: on_demand_tree }
       new DocumentListView(div, cache, document_list, state, options)
 
+    fire_keydown = (letter, options) ->
+      int = if letter.charCodeAt?
+        letter.charCodeAt(0)
+      else
+        letter
+
+      event = $.Event('keydown', {
+        which: int,
+        shiftKey: options?.shiftKey || false,
+        metaKey: options?.metaKey || false
+      })
+
+      $(document).triggerHandler(event)
+
     beforeEach ->
       options = {}
       on_demand_tree = { nodes: {}, id_tree: { observe: -> undefined} }
@@ -65,6 +81,7 @@ describe 'views/document_list_view', ->
       window.i18n = () -> JSON.stringify(Array.prototype.slice.apply(arguments))
 
     afterEach ->
+      $('document').off('.document-list-view')
       options = {}
       $(div).remove() # Removes all callbacks
       div = undefined
@@ -339,6 +356,100 @@ describe 'views/document_list_view', ->
         expect($div.find('a').length).toEqual(10)
         expect($div.find('.placeholder').length).toEqual(0)
 
+      it 'should have a cursor_index that starts at 0', ->
+        view = create_view()
+        expect(view.cursor_index).toEqual(0)
+
+      it 'should set cursor_index when moving around', ->
+        view = create_view()
+        fire_keydown('j')
+        expect(view.cursor_index).toEqual(1)
+
+      describe 'starting with cursor index 2', ->
+        view = undefined
+        last_click_docid = undefined
+        last_click_options = undefined
+        handler = (docid, options) ->
+          last_click_docid = docid
+          last_click_options = options
+
+        beforeEach ->
+          view = create_view()
+          view.cursor_index = 2
+          last_click_docid = undefined
+          last_click_options = undefined
+          view.observe('document-clicked', handler)
+
+        afterEach ->
+          view.unobserve('document-clicked', handler)
+
+        it 'should set the ".cursor" class on the item with the cursor', ->
+          fire_keydown('j')
+          expect($('li:eq(3)', view.div)[0].className).toMatch(/\bcursor\b/)
+
+        it 'should move the ".cursor" class when scrolling with the keyboard', ->
+          $('li:eq(2)', view.div).addClass('cursor')
+          fire_keydown('j')
+          expect($('li:eq(2)', view.div)[0].className).not.toMatch(/\bcursor\b/)
+
+        it 'should move the cursor_index when clicking', ->
+          $('li:eq(3) a', view.div).click()
+          expect(view.cursor_index).toEqual(3)
+
+        it 'should not move the cursor when the selection changes and the current index is included', ->
+          state.selection.documents = [2, 3]
+          state._notify('selection-changed', state.selection)
+          expect(view.cursor_index).toEqual(2)
+
+        it 'should move the cursor when the selection changes to a new one which does not include the current index', ->
+          state.selection.documents = [4]
+          state._notify('selection-changed', state.selection)
+          expect(view.cursor_index).toEqual(3)
+
+        it 'should move the cursor to 0 when the selection changes to an empty one', ->
+          state.selection.documents = []
+          state._notify('selection-changed', state.selection)
+          expect(view.cursor_index).toEqual(0)
+
+        it 'should fire document-clicked on keypress "j"', ->
+          fire_keydown('j')
+          expect(last_click_docid).toEqual(4) # index=3, docid=4
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
+        it 'should not fire document-clicked when scrolling to an unloaded document', ->
+          view.cursor_index = 3
+          fire_keydown('j')
+          expect(last_click_docid).toBeUndefined()
+
+        it 'should fire document-clicked on keypress "k"', ->
+          fire_keydown('k')
+          expect(last_click_docid).toEqual(2) # index=1, docid=2
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
+        it 'should fire document-clicked on capitalized "J"', ->
+          fire_keydown('J')
+          expect(last_click_docid).toEqual(4) # index=3, docid=4
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
+        it 'should fire document-clicked on down-arrow', ->
+          fire_keydown(40)
+          expect(last_click_docid).toEqual(4) # index=3, docid=4
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
+        it 'should fire document-clicked on up-arrow', ->
+          fire_keydown(38)
+          expect(last_click_docid).toEqual(2) # index=1, docid=2
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
+        it 'should set "meta" and "shift" when firing document-clicked off keyboard events', ->
+          fire_keydown('J', { shiftKey: true, metaKey: true })
+          expect(last_click_options).toEqual({ meta: true, shift: true })
+
+        it 'should select undefined when hitting Ctrl-A, without a meta', ->
+          fire_keydown('A', { metaKey: true, shiftKey: false })
+          expect(last_click_docid).toBeUndefined()
+          expect(last_click_options).toEqual({ meta: false, shift: false })
+
     describe 'starting with just placeholder data', ->
       beforeEach ->
         document_list.placeholder_documents = mock_document_array(4)
@@ -387,6 +498,26 @@ describe 'views/document_list_view', ->
       it 'should limit need_documents to the scroll length + 10 documents', ->
         view = create_view()
         expect(view.need_documents).toEqual([[10, 20]])
+
+      it 'should scroll down below the bottom of the cursor_index document', ->
+        view = create_view()
+        view.cursor_index = 8
+        fire_keydown('j') # updates scrollTop with cursor_index=9
+        $ul = $('ul', view.div)
+        top = $ul.scrollTop()
+        bottom = top + $ul.height()
+        document_height = $ul.find('li:first').height()
+        expect(bottom).toBeGreaterThan((view.cursor_index + 1) * document_height)
+
+      it 'should scroll up above the top of the cursor_index document', ->
+        view = create_view()
+        view.cursor_index = 4
+        $ul = $('ul', view.div)
+        $ul.scrollTop(1000)
+        fire_keydown('k') # updates scrollTop with cursor_index=3
+        top = $ul.scrollTop()
+        document_height = $ul.find('li:first').height()
+        expect(top).toBeLessThan(view.cursor_index * document_height)
 
       it 'should set no need_documents if we have enough to fill the view', ->
         document_list.documents = mock_document_array(20)

@@ -15,6 +15,7 @@ class DocumentListView
   constructor: (@div, @cache, @document_list, @state, options={}) ->
     @color_table = new ColorTable()
     @need_documents = [] # list of [start, end] pairs of needed documents
+    @cursor_index = 0
     @_last_a_clicked = undefined
     @_redraw_used_placeholders = false
 
@@ -27,6 +28,7 @@ class DocumentListView
 
   _attach: () ->
     this._attach_click()
+    this._attach_keyboard()
     this._attach_selection()
     this._attach_document_list()
     this._attach_document_changed()
@@ -39,14 +41,54 @@ class DocumentListView
     $div.on 'click', (e) =>
       e.preventDefault()
 
-      $a = $(e.target).closest('a')
+      $a = $(e.target).closest('a[data-docid]')
 
-      docid = if $a.length
-        href = +$a.attr('data-docid')
-      else
-        undefined
+      docid = undefined
+      index = undefined
+
+      if $a.length
+        docid = +$a.attr('data-docid')
+        index = $a.closest('li').prevAll().length
+
+      if index?
+        @cursor_index = index
+        this._refresh_cursor()
 
       this._notify('document-clicked', docid, { meta: e.ctrlKey || e.metaKey || false, shift: e.shiftKey || false })
+
+  _attach_keyboard: () ->
+    maybe_click_document = (e, diff) =>
+      i = @cursor_index + diff
+      $a = $(@div).find("li:eq(#{i}) a[data-docid]")
+
+      if $a.length
+        docid = +$a.attr('data-docid')
+        @cursor_index = i
+        this._refresh_cursor()
+        this._notify('document-clicked', docid, { meta: e.ctrlKey || e.metaKey || false, shift: e.shiftKey || false })
+
+    deselect_all = () =>
+      # "meta" must be false: otherwise, it's treated as a ctrl-click on blank
+      # space, which means nothing changes.
+      this._notify('document-clicked', undefined, { meta: false, shift: false })
+
+    $(document).on 'keydown.document-list-view', (e) ->
+      diff = switch e.which
+        when 40 then +1 # down
+        when 'j'.charCodeAt(0) then +1
+        when 'J'.charCodeAt(0) then +1
+        when 38 then -1 # up
+        when 'k'.charCodeAt(0) then -1
+        when 'K'.charCodeAt(0) then -1
+        else 0
+
+      if diff
+        maybe_click_document(e, diff)
+        e.preventDefault()
+
+      if (e.ctrlKey || e.metaKey) && (e.which == 'a'.charCodeAt(0) || e.which == 'A'.charCodeAt(0))
+        deselect_all()
+        e.preventDefault()
 
   _get_document_height: () ->
     return @_document_height if @_document_height?
@@ -254,8 +296,44 @@ class DocumentListView
 
     $ul[0].scrollTop = scroll_top
 
+    this._refresh_cursor()
     this._refresh_selection()
     this._refresh_need_documents()
+
+  _ensure_scroll_includes_cursor: () ->
+    $ul = $('ul', @div)
+    document_height = this._get_document_height() || 10
+
+    top_index = $ul.scrollTop() / document_height
+    num_documents = $ul.height() / document_height
+    bottom_index = top_index + num_documents
+
+    if @cursor_index > (bottom_index - 3)
+      $ul.scrollTop(document_height * (@cursor_index + 3 - num_documents))
+    else if @cursor_index < (top_index + 2)
+      new_top_index = @cursor_index - 2
+      new_top_index = 0 if new_top_index < 0
+      $ul.scrollTop(document_height * new_top_index)
+
+  _refresh_cursor: () ->
+    $div = $(@div)
+    $div.find('.cursor').removeClass('cursor')
+    $div.find("li:eq(#{@cursor_index})").addClass('cursor')
+    this._ensure_scroll_includes_cursor()
+
+  _maybe_move_cursor_index_to_accommodate_selection: () ->
+    docid = +$("li:eq(#{@cursor_index}) a[data-docid]", @div).attr('data-docid')
+    selection_documents = @state.selection.documents
+
+    if !docid || !selection_documents.length || selection_documents.indexOf(docid) == -1
+      index = if selection_documents.length > 0
+        $new_cursor_a = $("li a[data-docid=#{selection_documents[0]}]", @div)
+        $new_cursor_a.closest('li').prevAll().length
+      else
+        0
+
+      @cursor_index = index
+      this._refresh_cursor()
 
   _refresh_selection: () ->
     $div = $(@div)
@@ -266,6 +344,7 @@ class DocumentListView
         $div.find("a[data-docid=#{id}]").addClass('selected')
     else
       $div.addClass('all-selected')
+    this._maybe_move_cursor_index_to_accommodate_selection()
 
   _refresh_need_documents: () ->
     documents = @document_list.documents
