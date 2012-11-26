@@ -9,7 +9,10 @@
   content: Html
 )(
   implicit lang: Lang, flash: Flash
-)<!DOCTYPE html>
+)
+@import play.api.Play
+@import play.api.Play.current
+<!DOCTYPE html>
 <html lang="@lang.code">
   <head>
     <title>@title</title>
@@ -50,20 +53,22 @@
 
     @bundleJavascript("defaults")
 
-    @javascripts
+    @defining(Play.application.configuration.getString("analytics.ga_tracking_id").getOrElse("")) { trackingId =>
+      @if(trackingId.length > 0) {
+        <script type="text/javascript">
+          if (/https:\/\/www.overviewproject.org/.test("" + window.location)) {
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', '@trackingId']);
+            _gaq.push(['_trackPageview']);
 
-    <script type="text/javascript">
-      if (/https:\/\/www.overviewproject.org/.test("" + window.location)) {
-        var _gaq = _gaq || [];
-        _gaq.push(['_setAccount', 'UA-34992611-1']);
-        _gaq.push(['_trackPageview']);
-
-        (function() {
-         var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-         ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-       })();
+            (function() {
+             var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+             ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+           })();
+          }
+        </script>
       }
-    </script>
+    }
   </body>
 </html>
