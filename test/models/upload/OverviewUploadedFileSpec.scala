@@ -9,6 +9,7 @@ import org.specs2.runner.JUnitRunner
 import helpers.PgConnectionContext
 import java.sql.Timestamp
 import play.api.test.FakeApplication
+import overview.largeobject.LO
 
 @RunWith(classOf[JUnitRunner])
 class OverviewUploadedFileSpec extends Specification {

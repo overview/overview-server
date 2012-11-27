@@ -6,7 +6,7 @@ import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
 import com.jolbox.bonecp.ConnectionHandle
 import models.orm.SquerylPostgreSqlAdapter
-import models.upload.LO
+import overview.largeobject.LO
 import models.upload.OverviewUpload
 import play.api.db.DB
 import play.api.http.HeaderNames._

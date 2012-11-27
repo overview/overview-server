@@ -19,7 +19,7 @@ import testutil.DbSetup._
 import models.orm.DocumentSetType._
 import org.postgresql.util.PSQLException
 import helpers.PgConnectionContext
-import models.upload.LO
+import overview.largeobject.LO
 import java.sql.Timestamp
 
 @RunWith(classOf[JUnitRunner])

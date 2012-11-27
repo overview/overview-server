@@ -9,6 +9,7 @@ import models.OverviewUser
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+import overview.largeobject.LO
 
 @RunWith(classOf[JUnitRunner])
 class OverviewUploadSpec extends Specification {
