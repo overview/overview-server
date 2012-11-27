@@ -46,7 +46,7 @@ object JobHandler {
 
       val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
       val producer = DocumentProducerFactory.create(j, documentSet, indexer, progFn, asyncHttpRetriever)
-      //Logger.info("Indexing query: " + documentSet.query.get)
+
       producer.produce()
       
       DB.withConnection { implicit connection =>

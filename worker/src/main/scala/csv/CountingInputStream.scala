@@ -1,8 +1,18 @@
+/*
+ * CountingInputStream.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, November 2012
+ */
 package csv
 
 import java.io.FilterInputStream
 import java.io.InputStream
 
+/**
+ * An InputStream that tracks the number of bytes read, allowing
+ * progress to be reported.
+ */
 class CountingInputStream(stream: InputStream) extends FilterInputStream(stream) {
   
   private var bytesReadCount: Long = 0l

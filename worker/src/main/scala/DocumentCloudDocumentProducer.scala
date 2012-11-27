@@ -1,3 +1,9 @@
+/*
+ * DocumentCloudDocumentProducer.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, November 2012
+ */
 package overview.http
 
 import akka.actor._
@@ -9,6 +15,7 @@ import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.database.DB
 
+/** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
   progAbort: ProgressAbortFn)  extends DocumentProducer {
 
