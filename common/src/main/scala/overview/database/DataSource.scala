@@ -7,8 +7,9 @@
 
 package overview.database
 
-import com.jolbox.bonecp._
+
 import java.sql.Connection
+import com.jolbox.bonecp._
 
 /**
  * Wrapper for BoneCPDataSource, that applies the given configuration.

@@ -8,8 +8,6 @@
 package overview.database
 
 import java.sql.Connection
-import java.sql.Statement
-import java.sql.Savepoint
 import org.postgresql.PGConnection
 import com.jolbox.bonecp.ConnectionHandle
 

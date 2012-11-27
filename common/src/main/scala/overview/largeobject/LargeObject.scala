@@ -7,12 +7,10 @@
  
 package overview.largeobject
 
-
-import java.sql.SQLException
+import scala.util.control.Exception._
+import org.postgresql.PGConnection
 import org.postgresql.largeobject.{LargeObject => PGLargeObject}
 import org.postgresql.largeobject.LargeObject._
-import org.postgresql.PGConnection
-import scala.util.control.Exception._
 
 /**
  * Interface to a Postgres LargeObject
