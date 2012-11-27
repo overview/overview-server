@@ -10,7 +10,7 @@ package testutil
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.specs2.mutable.Specification
-import overview.database.{DataSource, DatabaseConfiguration, DB}
+import overview.database.{ DataSource, DatabaseConfiguration, DB }
 
 /**
  * Tests that access the database should extend DbSpecification.
@@ -18,20 +18,20 @@ import overview.database.{DataSource, DatabaseConfiguration, DB}
  */
 class DbSpecification extends Specification {
 
-/**
- * Context for test accessing the database. All tests are run inside a transaction
- * which is rolled back after the test is complete.
- */
+  /**
+   * Context for test accessing the database. All tests are run inside a transaction
+   * which is rolled back after the test is complete.
+   */
   trait DbTestContext extends Around {
     lazy implicit val connection = DB.getConnection()
 
     /** setup method called after database connection is established */
     def setupWithDb {}
-    
+
     def around[T <% Result](test: => T) = {
       try {
         connection.setAutoCommit(false)
-	setupWithDb
+        setupWithDb
         test
       } finally {
         connection.rollback()
@@ -40,14 +40,13 @@ class DbSpecification extends Specification {
     }
   }
 
-  
   def setupDb() {
     val dataSource = new DataSource(new DatabaseConfiguration)
-    DB.connect(dataSource)  
+    DB.connect(dataSource)
   }
 
   def shutdownDb() {
     DB.close()
   }
-  
+
 }

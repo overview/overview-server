@@ -42,7 +42,7 @@ object ApplicationBuild extends Build {
     testOptions in Test ++= Seq(
       Tests.Argument("xonly"),
       Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)))  
-  )
+  ).settings(parallelExecution in (Test) := false)
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
