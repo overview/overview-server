@@ -22,7 +22,7 @@ import overview.clustering._
 import overview.http._
 import overview.http.BulkHttpRetriever
 import overview.util.WorkerActorSystem
-import helpers.DbSpecification
+import testutil.DbSpecification
 import persistence._
 import testutil.DbSetup._
 

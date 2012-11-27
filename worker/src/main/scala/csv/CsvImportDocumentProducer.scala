@@ -2,7 +2,7 @@ package csv
 
 import overview.util.{ DocumentConsumer, DocumentProducer }
 import overview.util.Progress._
-import database.DB
+import overview.database.DB
 import overview.util.DocumentSetCreationJobStateDescription._
 
 class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {

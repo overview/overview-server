@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, June 2012
  */
 
-package database
+package overview.database
 
 /**
  * Sets up properties needed to configure the database.

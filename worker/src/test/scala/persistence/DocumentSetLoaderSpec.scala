@@ -2,7 +2,7 @@ package persistence
 
 import anorm._
 import anorm.SqlParser
-import helpers.DbSpecification
+import testutil.DbSpecification
 import testutil.DbSetup._
 
 class DocumentSetLoaderSpec extends DbSpecification {

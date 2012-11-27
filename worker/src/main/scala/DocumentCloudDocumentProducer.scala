@@ -7,7 +7,7 @@ import overview.clustering.{ DCDocumentAtURL, DocumentSetIndexer }
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
-import database.DB
+import overview.database.DB
 
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
   progAbort: ProgressAbortFn)  extends DocumentProducer {

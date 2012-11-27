@@ -1,9 +1,9 @@
 package csv
 
-import helpers.DbSpecification
+import testutil.DbSpecification
 import org.specs2.execute.PendingUntilFixed
 import overview.largeobject.LO
-import database.DB
+import overview.database.DB
 import testutil.DbSetup._
 import java.io.InputStreamReader
 import java.nio.charset.Charset

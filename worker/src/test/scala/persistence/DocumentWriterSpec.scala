@@ -9,7 +9,7 @@ package persistence
 
 import anorm._
 import anorm.SqlParser._
-import helpers.DbSpecification
+import testutil.DbSpecification
 import org.specs2.mutable.Specification
 import testutil.DbSetup._
 

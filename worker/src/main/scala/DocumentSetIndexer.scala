@@ -17,7 +17,7 @@ import overview.util.{ DocumentConsumer, Logger, WorkerActorSystem }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
 import persistence.{ DocumentWriter, NodeWriter }
-import database.DB
+import overview.database.DB
 
 import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }

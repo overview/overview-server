@@ -35,16 +35,21 @@ object ApplicationBuild extends Build {
   val common = Project("common", file("common"), settings =
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++= Seq(
-	"play" %% "play" % "2.0.3",
-	"postgresql" % "postgresql" % "9.1-901.jdbc4"
-  )))
+	    "play" %% "play" % "2.0.3",
+	    "org.specs2" %% "specs2" % "1.11",
+	    "postgresql" % "postgresql" % "9.1-901.jdbc4"))
+  ).settings(
+    testOptions in Test ++= Seq(
+      Tests.Argument("xonly"),
+      Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)))  
+  )
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
       Seq(libraryDependencies ++=
         appDependencies ++ Seq(
 	  "play" %% "play" % "2.0.3",
-          "org.specs2" %% "specs2" % "1.11" % "test",
+      "org.specs2" %% "specs2" % "1.11" % "test",
 	  "net.sf.opencsv" % "opencsv" % "2.3"
 	))
       ).settings(

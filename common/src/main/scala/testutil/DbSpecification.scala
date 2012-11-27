@@ -5,12 +5,12 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package helpers
+package testutil
 
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.specs2.mutable.Specification
-import database.{DataSource, DatabaseConfiguration, DB}
+import overview.database.{DataSource, DatabaseConfiguration, DB}
 
 /**
  * Tests that access the database should extend DbSpecification.

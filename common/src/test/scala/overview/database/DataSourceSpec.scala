@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package database
+package overview.database
 
 import anorm._
 import org.specs2.mutable.Specification

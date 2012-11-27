@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package database
+package overview.database
 
 import com.jolbox.bonecp._
 import java.sql.Connection
