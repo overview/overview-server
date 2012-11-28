@@ -47,9 +47,11 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     def next(): CsvImportDocument = {
       require(columns.get(TextColumn).isDefined)
 
-      nextValidRow.map { c =>
-        new CsvImportDocument(c(columns(TextColumn)), suppliedId(c))
-      }.orNull
+      readRow match {
+        case null => null
+        case c if c.length > columns(TextColumn) => new CsvImportDocument(c(columns(TextColumn)), suppliedId(c))
+        case c => new CsvImportDocument("", suppliedId(c))
+      }
     }
 
     // Look for the next row with sufficient columns that
@@ -66,10 +68,12 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
     // Return user supplied id value if found.
     private def suppliedId(row: Array[String]): Option[String] =
-      columns.get(SuppliedIdColumn).flatMap(row(_) match {
-        case s if s.isEmpty => None
-        case s => Some(s)
-      })
+      columns.get(SuppliedIdColumn).flatMap(c =>
+        row match {
+          case r if r.size <= c => None
+          case r if r(c).isEmpty => None
+          case r => Some(r(c))
+        })
 
     // Read ahead and return current row
     private def readRow: Array[String] = {

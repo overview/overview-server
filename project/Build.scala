@@ -50,6 +50,7 @@ object ApplicationBuild extends Build {
         appDependencies ++ Seq(
 	  "play" %% "play" % "2.0.3",
       "org.specs2" %% "specs2" % "1.11" % "test",
+      "junit" % "junit" % "4.8.1" % "test",
 	  "net.sf.opencsv" % "opencsv" % "2.3"
 	))
       ).settings(
