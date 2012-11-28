@@ -49,31 +49,21 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
       readRow match {
         case null => null
-        case c if c.length > columns(TextColumn) => new CsvImportDocument(c(columns(TextColumn)), suppliedId(c))
-        case c => new CsvImportDocument("", suppliedId(c))
+        case c => new CsvImportDocument(text(c), suppliedId(c))
       }
     }
 
-    // Look for the next row with sufficient columns that
-    // we can index the text column. Gratuitously recursive approach was
-    // prettier than explicitly looping.
-    @tailrec
-    private def nextValidRow: Option[Array[String]] = {
-      readRow match {
-        case null => None
-        case row if row.length > columns(TextColumn) => Some(row)
-        case _ => nextValidRow
-      }
+    // Return text if the column exists, "" otherwise.
+    private def text(row: Array[String]): String = {
+      if (row.length > columns(TextColumn)) row(columns(TextColumn))
+      else ""
     }
 
     // Return user supplied id value if found.
     private def suppliedId(row: Array[String]): Option[String] =
       columns.get(SuppliedIdColumn).flatMap(c =>
-        row match {
-          case r if r.size <= c => None
-          case r if r(c).isEmpty => None
-          case r => Some(r(c))
-        })
+        if (row.size > c && !row(c).isEmpty) Some(row(c))
+        else None)
 
     // Read ahead and return current row
     private def readRow: Array[String] = {
