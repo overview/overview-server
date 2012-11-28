@@ -77,7 +77,7 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // Order ProductTriples decreasing their "product", 
   // which is the weight on this term times the largest weight on this term in remainingDocs
   private implicit object TermProductOrdering extends Ordering[TermProduct] {
-    def compare(a:TermProduct, b:TermProduct) = (b.product - a.product).toInt
+    def compare(a:TermProduct, b:TermProduct) = b.product compare a.product
   }
   
   // Generate a table of lists indexed by term. Each list has all docs containing that term, sorted in decreasing weight.
