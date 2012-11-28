@@ -42,13 +42,12 @@ class CompactPairArraySpec extends Specification {
       cpa(1) must beEqualTo(smallestPair)
       cpa(2) must throwA[java.lang.ArrayIndexOutOfBoundsException]
           
-      //  must be able to construct from varargs
+      //  must be able to construct from argument list of pairs
       var manuallySortedCpa = CompactPairArray(smallestPair, pair1)
 
       // sorted() must return correct type and value (inherited via IndexSeqLike)
       var sortedCpa : CompactPairArray[Int, Double] = cpa.sorted
-      // sortedCpa.sameElements(manuallySortedCpa) must beTrue   // doesn't compile, not sure why...
-      sortedCpa(0) must beEqualTo(smallestPair)
+      sortedCpa.sameElements(manuallySortedCpa) must beTrue
     }
   }
     
