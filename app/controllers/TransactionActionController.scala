@@ -1,13 +1,14 @@
 package controllers
 
 import java.sql.Connection
-import org.squeryl.Session
-import org.squeryl.PrimitiveTypeMode._
-import play.api.mvc.{Action,BodyParser,BodyParsers,Request,Result,AnyContent}
-import play.api.db.DB
 import play.api.Play.current
-
+import play.api.db.DB
+import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result }
+import org.squeryl.PrimitiveTypeMode._
+import org.squeryl.Session
+import controllers.util.HttpsEnforcer
 import models.orm.SquerylPostgreSqlAdapter
+
 
 trait TransactionActionController extends HttpsEnforcer {
   protected type ActionWithConnection[A] = {

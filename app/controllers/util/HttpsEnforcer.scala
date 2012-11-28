@@ -1,4 +1,4 @@
-package controllers
+package controllers.util
 
 import play.api.mvc._
 import play.api.mvc.Results.Redirect
