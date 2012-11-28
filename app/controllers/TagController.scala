@@ -16,8 +16,8 @@ import play.api.data.{ Form, FormError }
 import play.api.db.DB
 import play.api.mvc.{ Action, AnyContent, Request }
 import play.api.Play.current
-
 import models.{ PersistentDocumentList, PersistentTag, PersistentTagLoader }
+import controllers.util.IdList
 
 object TagController extends BaseController {
 

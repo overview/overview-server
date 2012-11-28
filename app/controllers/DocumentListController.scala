@@ -1,10 +1,9 @@
 package controllers
 
 import java.sql.Connection
-import play.api.mvc.{ Action, AnyContent, Request }
-
+import play.api.mvc.{AnyContent, Request}
+import controllers.util.{ IdList, SaneRange }
 import models.PersistentDocumentList
-import models.orm.User
 
 trait DocumentListController extends BaseController {
   def index(documentSetId: Long, nodeids: String, tagids: String,
