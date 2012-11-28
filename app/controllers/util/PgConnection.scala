@@ -1,4 +1,4 @@
-package controllers
+package controllers.util
 
 import org.postgresql.PGConnection
 import play.api.db.DB

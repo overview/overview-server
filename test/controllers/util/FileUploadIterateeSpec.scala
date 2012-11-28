@@ -1,4 +1,4 @@
-package controllers
+package controllers.util
 
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner

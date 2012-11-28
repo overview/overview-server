@@ -1,4 +1,4 @@
-package controllers
+package controllers.util
 
 import java.util.UUID
 import org.postgresql.PGConnection
