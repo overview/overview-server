@@ -1,12 +1,12 @@
 package controllers.util
 
-import org.postgresql.PGConnection
 import play.api.db.DB
 import play.api.Play.current
-import models.orm.SquerylPostgreSqlAdapter
-import org.squeryl.Session
+import org.postgresql.PGConnection
 import org.squeryl.PrimitiveTypeMode.using
+import org.squeryl.Session
 import com.jolbox.bonecp.ConnectionHandle
+import models.orm.SquerylPostgreSqlAdapter
 
 trait PgConnection {
 

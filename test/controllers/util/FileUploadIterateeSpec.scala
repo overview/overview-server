@@ -1,26 +1,19 @@
 package controllers.util
 
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import java.io.ByteArrayInputStream
-import java.sql.Timestamp
+import java.sql.{SQLException, Timestamp}
 import java.util.UUID
-import scala.Array.canBuildFrom
 import scala.util.Random
+import play.api.libs.iteratee.Enumerator
+import play.api.mvc.{RequestHeader, Result}
+import play.api.test.{FakeHeaders, FakeRequest}
+import play.api.test.Helpers._
+import org.junit.runner.RunWith
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
-import models.upload.OverviewUpload
-import play.api.libs.concurrent.Promise
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
-import play.api.test.FakeHeaders
-import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import scala.Either.LeftProjection
-import java.sql.SQLException
-import models.upload.OverviewUploadedFile
+import models.upload.{OverviewUpload, OverviewUploadedFile}
 
 @RunWith(classOf[JUnitRunner])
 class FileUploadIterateeSpec extends Specification with Mockito {

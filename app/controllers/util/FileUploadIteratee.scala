@@ -1,25 +1,13 @@
 package controllers.util
 
 import java.util.UUID
-import org.postgresql.PGConnection
-import org.squeryl.PrimitiveTypeMode.using
-import org.squeryl.Session
-import com.jolbox.bonecp.ConnectionHandle
-import models.orm.SquerylPostgreSqlAdapter
+import scala.util.control.Exception._
+import play.api.http.HeaderNames._
+import play.api.libs.iteratee.{ Done, Input, Iteratee }
+import play.api.mvc.{ RequestHeader, Result }
+import play.api.mvc.Results.BadRequest
 import overview.largeobject.LO
 import models.upload.OverviewUpload
-import play.api.db.DB
-import play.api.http.HeaderNames._
-import play.api.libs.iteratee.Done
-import play.api.libs.iteratee.Input
-import play.api.libs.iteratee.Iteratee
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
-import play.api.mvc.Results.BadRequest
-import play.api.mvc.Results.InternalServerError
-import play.api.Play.current
-import scala.util.control.Exception._
-import java.sql.SQLException
 
 /**
  * Manages the upload of a file. Responsible for making sure the OverviewUpload object

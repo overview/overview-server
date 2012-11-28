@@ -1,8 +1,6 @@
 package controllers.util
 
 import org.specs2.mutable.Specification
-import java.util.IllegalFormatConversionException
-
 
 class IdListSpec extends Specification {
 
