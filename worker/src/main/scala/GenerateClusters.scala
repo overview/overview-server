@@ -20,45 +20,6 @@ import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.CompactPairArray
 import scala.collection.mutable.AddingBuilder
 
-object ConnectedComponents {
-
-  // Takes a node, and a set of unvisited nodes, and yields all nodes we an visit next
-  type EdgeEnumerationFn[T] = (T, Set[T]) => Iterable[T]
-
-  // Returns component containing startNode, plus all nodes not in component
-  def SingleComponent[T](startNode: T, allNodes: Set[T], edgeEnumerator: EdgeEnumerationFn[T]): (Set[T], Set[T]) = {
-    var component = Set[T](startNode) // all nodes found to be in the component so far
-    val frontier = Stack[T](startNode) // nodes in the component that we have not checked the edges of
-    var remaining = allNodes - startNode // nodes not yet visited
-
-    // walk outward from each node in the frontier, until the frontier is empty or we run out of nodes
-    while (!frontier.isEmpty && !remaining.isEmpty) {
-      val a = frontier.pop
-
-      for (b <- edgeEnumerator(a, remaining)) { // for every remaining we can reach from a...
-        component += b
-        frontier.push(b)
-        remaining -= b
-      }
-    }
-
-    (component, remaining)
-  }
-
-  // Produce all connected components
-  def AllComponents[T](allNodes: Set[T], edgeEnumerator: EdgeEnumerationFn[T]): Set[Set[T]] = {
-    var components = Set[Set[T]]()
-    var remaining = allNodes
-
-    while (!remaining.isEmpty) {
-      val (newComponent, leftOvers) = SingleComponent(remaining.head, remaining, edgeEnumerator)
-      components += newComponent
-      remaining = leftOvers
-    }
-
-    components
-  }
-}
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
 object DistanceFn {
@@ -113,7 +74,7 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDis
     val g = sampledEdges.get(thisDoc)
     if (g.isDefined) {
       for ((otherDoc, distance) <- g.get
-           if otherDocs.contains(otherDoc);
+           if otherDocs.contains(otherDoc)
            if distance <= thresh)
         yield otherDoc
     } else {
