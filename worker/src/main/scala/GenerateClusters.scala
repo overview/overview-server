@@ -57,9 +57,9 @@ object DistanceFn {
 }
 
 
-class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDistanceFn) {
+class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected val distanceFn:DocumentDistanceFn) {
 
-  var sampledEdges = new SampledEdges
+  private var sampledEdges = new SampledEdges
   
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
@@ -145,15 +145,24 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDis
     root
   }
 
+  def sampleCloseEdges(numEdgesPerDoc:Int) : Unit = {
+    sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
+  }
 
+}
+
+// Add node labeling to the Tree Builder
+class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn:DocumentDistanceFn)
+  extends ConnectedComponentDocTreeBuilder(docVecs, distanceFn) {
+  
   // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
-  def makeDescription(vec: DocumentVectorMap): String = {
+  private def makeDescription(vec: DocumentVectorMap): String = {
     val maxTerms = 15
     vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
   }
 
   // Sparse vector sum, used for computing node descriptions
-  def accumDocumentVector(acc: DocumentVectorMap, v: DocumentVectorMap): Unit = {
+  private def accumDocumentVector(acc: DocumentVectorMap, v: DocumentVectorMap): Unit = {
     v foreach {
       case (id, weight) => acc.update(id, acc.getOrElse(id, 0f) + weight)
     }
@@ -177,29 +186,30 @@ class DocTreeBuilder(val docVecs: DocumentSetVectors, val distanceFn:DocumentDis
       vec
     }
   }
-  
-  def sampleCloseEdges() : Unit = {
-    sampledEdges = new EdgeSampler(docVecs, distanceFn).edges
-  }
-
 }
 
+
 // Given a set of document vectors, generate a tree of nodes and their descriptions
+// This is where all of the hard-coded algorithmic constants live
 object BuildDocTree {
 
-  val numDocsWhereSamplingHelpful = 1000 
   
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in 0.1 increments
     val distanceFn = DistanceFn.CosineDistance _
     val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
 
-    val builder = new DocTreeBuilder(docVecs, distanceFn)
+    // Use edge sampling if docset is large enough, with hard-coded number of samples
+    // Random graph connectivity arguments suggest num samples does not need to scale with docset size
+    val numDocsWhereSamplingHelpful = 1000 
+    val numSampledEdgesPerDoc = 200
+    
+    val builder = new LabellingDocTreeBuilder(docVecs, distanceFn)
     if (docVecs.size > numDocsWhereSamplingHelpful)             
-      builder.sampleCloseEdges()                                // use sampled edges if the docset is large
+      builder.sampleCloseEdges(numSampledEdgesPerDoc)           // use sampled edges if the docset is large
     val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
     builder.labelNode(tree)                                     // create a descriptive label for each node
-
+    
     tree
   }
 

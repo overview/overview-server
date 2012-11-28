@@ -154,15 +154,15 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   
   // Generate the numEdgesPerDoc shortest edges going out from each document (approximately)
   // Algorithm from http://www.cs.ubc.ca/nest/imager/tr/2012/modiscotag/
-  private def sampleCloseEdges(numEdgesPerDoc:Int = 200) : Unit = {  
+  private def sampleCloseEdges(numEdgesPerDoc:Int) : Unit = {  
     val termTable = createTermTable()
     createSampledEdges(termTable, numEdgesPerDoc)    
     mySampledEdges.symmetrize
   }
   
   // --- Main ---
-  def edges = {
-    sampleCloseEdges()
+  def edges(numEdgesPerDoc:Int) = {
+    sampleCloseEdges(numEdgesPerDoc)
     mySampledEdges
   }
 

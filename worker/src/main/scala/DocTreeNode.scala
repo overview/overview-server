@@ -18,7 +18,7 @@ class DocTreeNode(val docs: Set[DocumentID]) {
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
 
   // return children in predictable order. Sort descending by size, then ascending by document IDs
-  def OrderedChildren: List[DocTreeNode] = {
+  def orderedChildren: List[DocTreeNode] = {
     children.toList.sortWith((a, b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))
   }
 
@@ -26,7 +26,7 @@ class DocTreeNode(val docs: Set[DocumentID]) {
   override def toString = {
     "(" + docs.toList.sorted.mkString(",") +
       (if (!children.isEmpty)
-        ", " + OrderedChildren.mkString(", ")
+        ", " + orderedChildren.mkString(", ")
       else
         "") +
       ")"
@@ -37,7 +37,7 @@ class DocTreeNode(val docs: Set[DocumentID]) {
     " " * indent + docs.toList.sorted.mkString(",") +
       " -- " + description +
       (if (!children.isEmpty)
-        "\n" + OrderedChildren.map(_.prettyString(indent + 4)).mkString("\n")
+        "\n" + orderedChildren.map(_.prettyString(indent + 4)).mkString("\n")
       else
         "")
   }
