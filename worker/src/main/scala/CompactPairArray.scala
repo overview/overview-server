@@ -102,7 +102,7 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   }
   
   override def sizeHint(size:Int) : Unit = {
-      resizeStorage(math.max(size,numStoredElements))
+    resizeStorage(math.max(size,numStoredElements))
   }
   
   import CompactPairArray.canBuildFrom    // bring into scope so we get the right conversions for map etc.
@@ -124,14 +124,13 @@ object CompactPairArray {
       // I'm not sure if this no-argument version will ever be called in practice. The only call I know
       // is in PriorityQueue.dequeueAll, but then we wouldn't be building from a CompactPairArray
       // Also somewhat complex to implement due to type erasure, since CPA needs to know the types of A,B
-      // to create its array. 
-      // Nonetheless, we implement this here by creating a CompactPairArray[Any,Any] --jms 11/27/12
+      // to create its array, and we don't have the appropriate manifests here. 
+      // Nonetheless, implement by creating a CompactPairArray[Any,Any], which should work --jms 11/27/12
       def apply(): Builder[Pair[A,B], CompactPairArray[A,B]] = {
         new CompactPairArray[A,B]()(
             Manifest.Any.asInstanceOf[ClassManifest[A]],
             Manifest.Any.asInstanceOf[ClassManifest[B]])
-      }
-            
+      }          
   }
   
   // Construct from a sequence: var c = CompactPairArray((1,2.0), (3,4.0), ... ) 
