@@ -19,6 +19,7 @@ class PersistentCsvImportDocumentSpec extends DbSpecification {
     val document = new PersistentCsvImportDocument {
       val text = documentText
       val suppliedId = None
+      val url = None
     }
 
     var id: Long = _
@@ -28,10 +29,11 @@ class PersistentCsvImportDocumentSpec extends DbSpecification {
     }
   }
 
-  trait DocumentWithId extends Setup {
+  trait DocumentWithAllValues extends Setup {
     val document = new PersistentCsvImportDocument {
       val text = documentText
       val suppliedId = Some("user id")
+      val url = Some("url")
     }
 
     var id: Long = _
@@ -40,6 +42,8 @@ class PersistentCsvImportDocumentSpec extends DbSpecification {
       id = document.write(documentSetId)
     }
   }
+  
+  trait DocumentWithUrl
 
   "PersistentCsvImportDocument" should {
 
@@ -57,10 +61,16 @@ class PersistentCsvImportDocumentSpec extends DbSpecification {
       documents must haveTheSameElementsAs(Seq((id, None)))
     }
 
-    "write supplied_id if set" in new DocumentWithId {
+    "write supplied_id if set" in new DocumentWithAllValues {
       val documents =
         SQL("SELECT id, supplied_id FROM document").as(long("id") ~ (str("supplied_id")?) map (flatten) *)
       documents must haveTheSameElementsAs(Seq((id, document.suppliedId)))
+    }
+
+    "write url if set" in new DocumentWithAllValues {
+      val documents =
+        SQL("SELECT id, url FROM document").as(long("id") ~ (str("url")?) map (flatten) *)
+      documents must haveTheSameElementsAs(Seq((id, document.url)))
     }
   }
 
