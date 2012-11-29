@@ -17,21 +17,6 @@ object ApplicationBuild extends Build {
   val appDatabaseUrl = "postgres://overview:overview@localhost/overview-dev"
   val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
 
-  val appDependencies = Seq(
-    "org.squeryl" %% "squeryl" % "0.9.5-2",
-    "postgresql" % "postgresql" % "9.1-901.jdbc4",
-    "org.mockito" % "mockito-all" % "1.9.0",
-    "org.jodd" % "jodd-wot" % "3.3.4",
-    "javax.mail" % "mail" % "1.4"
-  )
-
-  val playAppDependencies = appDependencies ++ Seq(
-    "net.sf.opencsv" % "opencsv" % "2.3",
-    "jp.t2v" %% "play20.auth" % "0.4-SNAPSHOT",
-    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
-    "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
-  )
-
   // shared dependencies
   val playDep = "play" %% "play" % "2.0.3"
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
