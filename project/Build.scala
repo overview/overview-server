@@ -32,12 +32,43 @@ object ApplicationBuild extends Build {
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4"
   )
 
+  // shared dependencies
+  val playDep = "play" %% "play" % "2.0.3"
+  val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
+  val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
+  val specs2Dep = "org.specs2" %% "specs2" % "1.11"
+
+  // Project dependencies
+  val serverProjectDependencies = Seq(
+    openCsvDep,
+    postgresqlDep,
+    "com.typesafe" %% "play-plugins-mailer" % "2.0.4",
+    "jp.t2v" %% "play20.auth" % "0.4-SNAPSHOT",
+    "org.jodd" % "jodd-wot" % "3.3.4",
+    "org.squeryl" %% "squeryl" % "0.9.5-2",
+    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
+    "org.mockito" % "mockito-all" % "1.9.0" % "test"
+  )
+
+  // Dependencies for the project named 'common'. Not dependencies common to all projects...
+  val commonProjectDependencies = Seq(
+    playDep,
+    postgresqlDep,
+    specs2Dep
+  )
+
+  val workerProjectDependencies = Seq(
+    openCsvDep,
+    playDep,
+    specs2Dep % "test",
+    "junit" % "junit" % "4.8.1" % "test",
+    "org.mockito" % "mockito-all" % "1.9.0" % "test"
+  )
+
+  // Project definitions
   val common = Project("common", file("common"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++= Seq(
-	    "play" %% "play" % "2.0.3",
-	    "org.specs2" %% "specs2" % "1.11",
-	    "postgresql" % "postgresql" % "9.1-901.jdbc4"))
+      Seq(libraryDependencies ++= commonProjectDependencies)
   ).settings(
     testOptions in Test ++= Seq(
       Tests.Argument("xonly"),
@@ -46,23 +77,17 @@ object ApplicationBuild extends Build {
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++=
-        appDependencies ++ Seq(
-	  "play" %% "play" % "2.0.3",
-      "org.specs2" %% "specs2" % "1.11" % "test",
-      "junit" % "junit" % "4.8.1" % "test",
-	  "net.sf.opencsv" % "opencsv" % "2.3"
-	))
-      ).settings(
-        testOptions in Test ++= Seq(
-          Tests.Argument("xonly"),
-          Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)))
-      ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
-      ).settings(
-        initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
-      ).settings(parallelExecution in (Test) := false).dependsOn(common)
+      Seq(libraryDependencies ++= workerProjectDependencies)
+  ).settings(
+    testOptions in Test ++= Seq(
+      Tests.Argument("xonly"),
+      Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)))
+  ).settings(scalacOptions ++= Seq("-deprecation", "-unchecked")
+  ).settings(
+    initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }
+  ).settings(parallelExecution in (Test) := false).dependsOn(common)
 
-  val main = PlayProject(appName, appVersion, playAppDependencies, mainLang = SCALA).settings(
+  val main = PlayProject(appName, appVersion, serverProjectDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
     resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",
 
