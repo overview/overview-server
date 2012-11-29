@@ -21,6 +21,7 @@ import au.com.bytecode.opencsv.CSVReader
 class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val TextColumn: String = "text"
   private val SuppliedIdColumn: String = "id"
+  private val UrlColumn: String = "url"
 
   /**
    * An iterator that returns CsvImportDocuments, based on the header information
@@ -49,7 +50,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
       readRow match {
         case null => null
-        case c => new CsvImportDocument(text(c), suppliedId(c))
+        case c => new CsvImportDocument(text(c), suppliedId(c), url(c))
       }
     }
 
@@ -62,6 +63,11 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     // Return user supplied id value if found.
     private def suppliedId(row: Array[String]): Option[String] =
       columns.get(SuppliedIdColumn).flatMap(c =>
+        if (row.size > c && !row(c).isEmpty) Some(row(c))
+        else None)
+
+    private def url(row: Array[String]): Option[String] =
+      columns.get(UrlColumn).flatMap(c =>
         if (row.size > c && !row(c).isEmpty) Some(row(c))
         else None)
 

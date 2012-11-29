@@ -31,6 +31,13 @@ class CsvImportSourceSpec extends Specification {
                      |this is line2,stuff2,2""".stripMargin
     }
 
+    trait ValidInputWithUrl extends CsvImportContext {
+      def input = """|text,url,id
+                     |t0,url0,id0
+                     |t1,url1,id1
+                     |t2,url2,id2""".stripMargin
+    }
+
     trait ValidInputWithUpperCaseHeader extends CsvImportContext {
       def input = """|TEXT,STUFF
                      |this is line0, stuff0
@@ -113,6 +120,17 @@ class CsvImportSourceSpec extends Specification {
     "create documents with empty text if no text is found" in new MissingText {
       val texts = csvImportSource.map(_.text)
       texts must haveTheSameElementsAs(Seq.fill(5)(""))
+    }
+
+    "leave url empty if no header found" in new ValidInput {
+      val urls = csvImportSource.map(_.url)
+      urls.head must beNone
+    }
+    
+    "find urls" in new ValidInputWithUrl {
+      val expectedUrls: Seq[Option[String]] = Seq.tabulate(3)(n => Some("url" + n))
+      val urls = csvImportSource.map(_.url)
+      urls must be equalTo (expectedUrls)
     }
   }
 }
