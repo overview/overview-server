@@ -61,16 +61,15 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     }
 
     // Return user supplied id value if found.
-    private def suppliedId(row: Array[String]): Option[String] =
-      columns.get(SuppliedIdColumn).flatMap(c =>
+    private def suppliedId(row: Array[String]): Option[String] = getOptColumn(row, SuppliedIdColumn)
+
+    private def url(row: Array[String]): Option[String] = getOptColumn(row, UrlColumn)
+      
+    private def getOptColumn(row: Array[String], columnName: String): Option[String] =
+      columns.get(columnName).flatMap(c =>
         if (row.size > c && !row(c).isEmpty) Some(row(c))
         else None)
-
-    private def url(row: Array[String]): Option[String] =
-      columns.get(UrlColumn).flatMap(c =>
-        if (row.size > c && !row(c).isEmpty) Some(row(c))
-        else None)
-
+        
     // Read ahead and return current row
     private def readRow: Array[String] = {
       val row = nextLine
