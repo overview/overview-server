@@ -14,12 +14,12 @@ VBOXMANAGE=VBoxManage # From VirtualBox
 NETCAT=nc
 
 # Helper variables
-BOOT_ISO_ORIG=boot.iso.orig
+BOOT_ISO_ORIG=boot-orig.iso
 BOOT_ISO=boot.iso
 MACHINE_NAME=$(PROJECT)-$(PROJECT_VERSION)-$(PACKAGING_VERSION)
 IMAGE_FILENAME=$(MACHINE_NAME)/$(MACHINE_NAME).vdi
 
-all: $(MACHINE_NAME).copy-files.done
+all: $(MACHINE_NAME).ova
 
 $(BOOT_ISO_ORIG).done:
 	$(CURL) $(BOOT_ISO_REMOTE) -o $(BOOT_ISO_ORIG)
@@ -92,8 +92,9 @@ $(MACHINE_NAME).ubuntu.done: $(MACHINE_NAME).create.done $(BOOT_ISO).done
 		--medium $(BOOT_ISO)
 	# Install Ubuntu
 	$(VBOXMANAGE) startvm $(MACHINE_NAME) --type gui # FIXME change to headless
-	@echo "Press Enter when prompted"
-	@echo "Power off when finished"
+	@echo "Wait for the install to finish; it should do everything automatically."
+	sleep 5 # Ensure boot prompt is loaded
+	$(VBOXMANAGE) controlvm $(MACHINE_NAME) keyboardputscancode 1c 9c # press Enter to boot
 	util/wait_for_is_off.sh $(VBOXMANAGE) $(MACHINE_NAME)
 	# Remove IDE controller
 	$(VBOXMANAGE) storagectl $(MACHINE_NAME) \
@@ -164,7 +165,7 @@ vm-files.tar.gz: $(find vm-files/)
 	tar zcvf $@ vm-files
 
 $(MACHINE_NAME).copy-files.done: $(MACHINE_NAME).ubuntu.done dist.zip vm-files.tar.gz vm-setup.sh
-	# Start the VM
+	# Start the VM, if it isn't running
 	$(VBOXMANAGE) startvm $(MACHINE_NAME) || true
 	util/wait_for_is_ready.sh $(NETCAT) $(LOCAL_PORT_SSH)
 	# Copy dist.zip
@@ -192,9 +193,29 @@ $(MACHINE_NAME).copy-files.done: $(MACHINE_NAME).ubuntu.done dist.zip vm-files.t
 		--password overview \
 		--wait-exit \
 		-- /home/overview/vm-setup.sh
-	# Leave the machine running. We're done!
+	# The script should shut down the machine. Wait for that to happen.
+	util/wait_for_is_off.sh $(VBOXMANAGE) $(MACHINE_NAME)
 	touch $@
+
+$(MACHINE_NAME).ova: $(MACHINE_NAME).copy-files.done
+	# Stop the VM, if it's running
+	$(VBOXMANAGE) controlvm $(MACHINE_NAME) poweroff || true
+	util/wait_for_is_off.sh $(VBOXMANAGE) $(MACHINE_NAME)
+	# Compact the disk image
+	$(VBOXMANAGE) modifyhd $(IMAGE_FILENAME) --compact
+	# Export the OVA
+	$(VBOXMANAGE) export $(MACHINE_NAME) \
+		--output $(MACHINE_NAME)-incomplete.ova \
+		--manifest \
+		--vsys 0 \
+		--product "Overview Personal virtual server" \
+		--producturl "http://www.overviewproject.org" \
+		--vendor "The Overview Project" \
+		--vendorurl "http://www.overviewproject.org" \
+		--version "$(MACHINE_NAME)"
+	# Rename
+	mv $(MACHINE_NAME)-incomplete.ova $(MACHINE_NAME).ova
 
 clean:
 	$(VBOXMANAGE) list vms | grep $(MACHINE_NAME) && $(VBOXMANAGE) unregistervm $(MACHINE_NAME) || true
-	rm -rf *.done *.zip *.tar.gz $(MACHINE_NAME) $(MACHINE_NAME.vdi) $(BOOT_ISO) $(BOOT_ISO)-fs
+	rm -rf *.done *.zip *.tar.gz $(MACHINE_NAME) $(BOOT_ISO) $(BOOT_ISO)-fs *.vdi *.ova
