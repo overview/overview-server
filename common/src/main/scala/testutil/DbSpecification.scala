@@ -10,6 +10,7 @@ package testutil
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import overview.database.{ DataSource, DatabaseConfiguration, DB }
+import org.overviewproject.test.Specification
 
 /**
  * Tests that access the database should extend DbSpecification.

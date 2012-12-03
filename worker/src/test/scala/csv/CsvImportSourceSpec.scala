@@ -2,7 +2,7 @@ package csv
 
 import java.io.StringReader
 import org.specs2.specification.Scope
-import testutil.Specification
+import org.overviewproject.test.Specification
 
 class CsvImportSourceSpec extends Specification {
 
