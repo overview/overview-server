@@ -13,7 +13,7 @@ import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
 import persistence.DocumentSetCreationJobState._
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 

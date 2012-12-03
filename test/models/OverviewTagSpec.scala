@@ -5,7 +5,7 @@ import models.orm.Tag
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class OverviewTagSpec extends Specification {
 

@@ -5,7 +5,7 @@ import org.postgresql.util.PSQLException
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{start, stop}
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class TagSpec extends Specification {
 

@@ -24,7 +24,7 @@ import overview.http.BulkHttpRetriever
 import overview.util.WorkerActorSystem
 import org.overviewproject.test.DbSpecification
 import persistence._
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class RetrieveDocumentSetSpec extends DbSpecification {
   

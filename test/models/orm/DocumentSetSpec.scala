@@ -15,7 +15,7 @@ import helpers.DbTestContext
 import play.api.Play.start
 import play.api.Play.stop
 import play.api.test.FakeApplication
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 import models.orm.DocumentSetType._
 import org.postgresql.util.PSQLException
 import helpers.PgConnectionContext

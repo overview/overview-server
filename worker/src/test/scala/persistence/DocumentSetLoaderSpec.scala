@@ -3,7 +3,7 @@ package persistence
 import anorm._
 import anorm.SqlParser
 import org.overviewproject.test.DbSpecification
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class DocumentSetLoaderSpec extends DbSpecification {
   step(setupDb)

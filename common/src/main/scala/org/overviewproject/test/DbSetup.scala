@@ -1,4 +1,4 @@
-package testutil
+package org.overviewproject.test
 
 import anorm._
 import java.sql.Connection

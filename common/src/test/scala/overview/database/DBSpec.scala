@@ -13,7 +13,7 @@ import org.overviewproject.test.DbSpecification
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.specs2.mutable.Specification
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 import org.postgresql.PGConnection
 import java.sql.SQLException
 

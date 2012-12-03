@@ -12,7 +12,7 @@ import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class DocumentSetCleanerSpec extends DbSpecification {
   step(setupDb)

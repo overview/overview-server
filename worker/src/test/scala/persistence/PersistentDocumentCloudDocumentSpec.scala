@@ -3,7 +3,7 @@ package persistence
 import anorm._
 import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 import org.specs2.mutable.Specification
 
 class PersistentDocumentCloudDocumentSpec extends DbSpecification {

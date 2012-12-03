@@ -11,7 +11,7 @@ import anorm._
 import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 

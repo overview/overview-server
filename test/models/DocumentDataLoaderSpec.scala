@@ -7,7 +7,7 @@ import java.sql.Connection
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
-import testutil.DbSetup._
+import org.overviewproject.test.DbSetup._
 
 class DocumentDataLoaderSpec extends Specification {
 
