@@ -1,0 +1,17 @@
+#!/bin/sh
+
+DIR="`dirname $0`/.."
+LIBS="$DIR/lib"
+DB="postgres://overview:overview@localhost/overview"
+HTTP_PORT=6837
+JAVA_OPTS="-Xms128M -Xmx384M"
+
+exec java $JAVA_OPTS \
+       -cp "$LIBS/*" \
+       -Dhttp.port="$HTTP_PORT" \
+       -DapplyEvolutions.default=true \
+       -Ddb.default.url="$DB" \
+       -Ddb.default.driver=org.postgresql.Driver \
+       -Dconfig.file="$DIR/application.conf" \
+       -Ddatasource.default_url="$DB" \
+       play.core.server.NettyServer "$DIR"

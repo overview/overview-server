@@ -1,0 +1,12 @@
+#!/bin/sh
+
+DIR="`dirname $0`/.."
+LIBS="$DIR/lib"
+DB="postgres://overview:overview@localhost/overview"
+JAVA_OPTS="-Xms128M -Xmx1024M"
+
+exec java $JAVA_OPTS \
+       -cp "$LIBS/*" \
+       -Ddatasource.default.url="$DB" \
+       -Ddatasource.default.driver=org.postgresql.Driver \
+       JobHandler

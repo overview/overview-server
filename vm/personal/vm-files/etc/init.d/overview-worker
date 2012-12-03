@@ -1,0 +1,55 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:		overview-server
+# Required-Start:	$local_fs $remote_fs $network $time $syslog
+# Required-Stop:	$local_fs $remote_fs $network $time $syslog
+# Default-Start:	2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	Overview server process
+### END INIT INFO
+
+NAME=overview-worker
+DESCRIPTION="Overview worker process"
+PIDFILE=/opt/overview/run/worker.pid
+PROCESS_NAME=/usr/bin/java # to check if PID matches process name
+SCRIPT=/opt/overview/script/start-worker
+USER=overview
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting $DESCRIPTION" $NAME || true
+    if start-stop-daemon --start --quiet --oknodo --pidfile $PIDFILE --chuid $USER --background --make-pidfile --exec $SCRIPT; then
+      log_end_msg 0 || true
+    else
+      log_end_msg 1 || true
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping $DESCRIPTION" $NAME || true
+    if start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE; then
+      log_end_msg 0 || true
+    else
+      log_end_msg 1 || true
+    fi
+    ;;
+  restart|reload|force-reload)
+    "$0" stop || true
+    "$0" start
+    ;;
+  try-reload)
+    "$0" stop && "$0" start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE $PROCESS_NAME $NAME
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0
+
