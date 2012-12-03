@@ -6,6 +6,9 @@ DB="postgres://overview:overview@localhost/overview"
 HTTP_PORT=6837
 JAVA_OPTS="-Xms128M -Xmx384M"
 
+# Netty puts this weird "RUNNING_PID" file in. We don't want it, ever.
+rm -f "$DIR/RUNNING_PID"
+
 exec java $JAVA_OPTS \
        -cp "$LIBS/*" \
        -Dhttp.port="$HTTP_PORT" \
