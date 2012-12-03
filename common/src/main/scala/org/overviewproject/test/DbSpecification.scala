@@ -5,12 +5,13 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package testutil
+package org.overviewproject.test
 
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import overview.database.{ DataSource, DatabaseConfiguration, DB }
-import org.overviewproject.test.Specification
+import org.junit.runner.RunWith
+import org.specs2.runner.JUnitRunner
 
 /**
  * Tests that access the database should extend DbSpecification.

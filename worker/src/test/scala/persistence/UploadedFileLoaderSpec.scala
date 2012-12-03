@@ -1,6 +1,6 @@
 package persistence
 
-import testutil.DbSpecification
+import org.overviewproject.test.DbSpecification
 import testutil.DbSetup._
 
 class UploadedFileLoaderSpec extends DbSpecification {

@@ -1,6 +1,6 @@
 package models.upload
 
-import testutil.DbSpecification
+import org.overviewproject.test.DbSpecification
 import org.postgresql.util.PSQLException
 import org.specs2.mutable.{ Around, Specification }
 import play.api.Play.{ current, start, stop }

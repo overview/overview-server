@@ -1,6 +1,6 @@
 package csv
 
-import testutil.DbSpecification
+import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
 import overview.largeobject.LO
 import overview.database.DB
