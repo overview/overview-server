@@ -1,6 +1,6 @@
 package csv
 
-import org.specs2.mutable.Specification
+import testutil.Specification
 import org.specs2.specification.Scope
 import java.io.ByteArrayInputStream
 

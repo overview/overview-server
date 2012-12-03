@@ -1,12 +1,9 @@
 package csv
 
 import java.io.StringReader
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
+import testutil.Specification
 
-@RunWith(classOf[JUnitRunner])
 class CsvImportSourceSpec extends Specification {
 
   "CsvImportSource" should {

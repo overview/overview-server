@@ -39,12 +39,14 @@ object ApplicationBuild extends Build {
   val commonProjectDependencies = Seq(
     playDep,
     postgresqlDep,
-    specs2Dep
+    specs2Dep,
+    "junit" % "junit" % "4.8.1"
   )
 
   val workerProjectDependencies = Seq(
     openCsvDep,
     playDep,
+    "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT",
     specs2Dep % "test",
     "junit" % "junit" % "4.8.1" % "test",
     "org.mockito" % "mockito-all" % "1.9.0" % "test"
@@ -62,7 +64,9 @@ object ApplicationBuild extends Build {
 
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++= workerProjectDependencies)
+      Seq(
+        resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+        libraryDependencies ++= workerProjectDependencies)
   ).settings(
     testOptions in Test ++= Seq(
       Tests.Argument("xonly"),

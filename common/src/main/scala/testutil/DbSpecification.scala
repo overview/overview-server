@@ -9,7 +9,6 @@ package testutil
 
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
-import org.specs2.mutable.Specification
 import overview.database.{ DataSource, DatabaseConfiguration, DB }
 
 /**
