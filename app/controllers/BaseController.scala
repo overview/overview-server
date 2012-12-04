@@ -5,6 +5,7 @@ import org.squeryl.PrimitiveTypeMode._
 import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, PlainResult}
+import scala.util.control.Exception.catching
 
 import models.orm.{DocumentSet,Document}
 import models.OverviewUser
@@ -46,6 +47,12 @@ trait BaseController extends Controller with TransactionActionController with Au
     authorizedAction(BodyParsers.parse.anyContent, authority)(f)
   }
 
+  private def request2user(request: RequestHeader) : Option[OverviewUser] = for {
+    userIdString <- request.session.get(AuthConfigImpl.AuthUserIdKey)
+    userId <- catching(classOf[NumberFormatException]).opt(userIdString.toLong)
+    user <- OverviewUser.findById(userId)
+  } yield user
+
   protected def optionallyAuthorizedAction[A](p: BodyParser[A])(f: Option[OverviewUser] => ActionWithConnection[A]): Action[A] = {
     ActionInTransaction(p) { (request: Request[A], connection: Connection) =>
       val user = restoreUser(request)
@@ -64,10 +71,7 @@ trait BaseController extends Controller with TransactionActionController with Au
   // copied from play20-auth
   private def restoreUser(implicit request: RequestHeader): Option[OverviewUser] = {
     if (BaseController.isMultiUser) {
-      for {
-        userId <- resolver.sessionId2userId("") // play20-auth ignores sessionId
-        user <- resolveUser(userId)
-      } yield user
+      request2user(request)
     } else {
       val user = OverviewUser.findById(1L).getOrElse(throw new Exception("Singleton user not found")).asNormalUser
       Some(user)
