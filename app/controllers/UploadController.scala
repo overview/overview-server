@@ -29,12 +29,12 @@ trait UploadController extends BaseController {
   // authorizeInTransaction and authorizedBodyParser don't belong here.
   // Should move into BaseController and/or TransactionAction, but it's not
   // clear how, since the usage here flips the dependency
-  protected def authorizeInTransaction(authority: Authority)(implicit r: RequestHeader) = {
+  protected def authorizeInTransaction(authority: Authority)(implicit request: RequestHeader) = {
     DB.withTransaction { implicit connection =>
       val adapter = new SquerylPostgreSqlAdapter()
       val session = new Session(connection, adapter)
       using(session) { // sets thread-local variable
-        authorized(authority)
+        userPassingAuthorization(request, authority)
       }
     }
   }

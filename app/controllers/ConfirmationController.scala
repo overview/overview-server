@@ -1,7 +1,6 @@
 package controllers
 
 import java.sql.Connection
-import jp.t2v.lab.play20.auth.LoginLogout
 import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}

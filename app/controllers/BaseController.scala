@@ -1,25 +1,28 @@
 package controllers
 
 import java.sql.Connection
-import jp.t2v.lab.play20.auth.Auth
 import org.squeryl.PrimitiveTypeMode._
 import play.api.Play
 import play.api.Play.current
-import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, Result}
+import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, PlainResult}
 
 import models.orm.{DocumentSet,Document}
 import models.OverviewUser
 
-trait BaseController extends Controller with TransactionActionController with Auth with AuthConfigImpl {
+trait BaseController extends Controller with TransactionActionController with AuthConfigImpl {
   protected def authorizedAction[A](p: BodyParser[A], authority: Authority)(f: OverviewUser => ActionWithConnection[A]): Action[A] = {
     ActionInTransaction(p) { (request: Request[A], connection: Connection) =>
-      val user = userAuthenticatedAuthorizedAndRecordedAsRight(request, authority)
+      val user = userPassingAuthorization(request, authority)
 
       user.fold(
         errorResult => errorResult,
         user => f(user)(request, connection)
       )
     }
+  }
+
+  protected def userPassingAuthorization(request: RequestHeader, authority: Authority) : Either[PlainResult, User] = {
+    userAuthenticatedAuthorizedAndRecordedAsRight(request, authority)
   }
 
   /** Returns a Right[OverviewUser] if the user exists. */

@@ -13,5 +13,5 @@ trait AdminController extends controllers.BaseController {
     adminAction(BodyParsers.parse.anyContent)(f)
   }
 
-  protected def adminUser() : Authority = { user => user.isAdministrator }
+  protected def adminUser: Authority = { user => user.isAdministrator }
 }

@@ -2,7 +2,6 @@ package controllers
 
 import java.util.Date
 import java.sql.Connection
-import jp.t2v.lab.play20.auth.LoginLogout
 import play.api.mvc.{AnyContent,Controller,Request}
 
 import mailers.Mailer

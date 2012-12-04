@@ -1,7 +1,6 @@
 package controllers
 
 import java.sql.Connection
-import jp.t2v.lab.play20.auth.LoginLogout
 import play.api.mvc.{AnyContent,Controller,Request}
 
 import models.OverviewUser
