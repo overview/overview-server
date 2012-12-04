@@ -120,15 +120,7 @@
   };
 
   XMLHttpUploadRequest.prototype.getAllResponseHeaders = function() {
-    var lines = [];
-    var key, value;
-
-    for (key in this.response.Headers.AllKeys) {
-      value = this.response.Headers[key];
-      lines.push(key + ': ' + value);
-    }
-
-    return lines.join('\r\n');
+    return this.response.AllHeaders;
   };
 
   XMLHttpUploadRequest.prototype.send = function(blob) {
