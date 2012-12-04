@@ -1,20 +1,15 @@
 package controllers
 
-import play.api.mvc._
-import play.api.mvc.Cookie
-import play.api.libs.Crypto
+import play.api.mvc.{Controller,Request,PlainResult}
 
 trait LoginLogout {
   self: Controller with AuthConfigImpl =>
 
-  def gotoLoginSucceeded[A](userId: Id)(implicit request: Request[A]): PlainResult = {
-    resolver.removeByUserId(userId)
-    val session = resolver.store("", userId, sessionTimeoutInSeconds) // play20-auth ignores session ID
-    loginSucceeded(request).withSession(session + ("sessionId" -> ""))
+  def gotoLoginSucceeded[A](userId: Long)(implicit request: Request[A]): PlainResult = {
+    loginSucceeded(request).withSession(request.session + (AuthConfigImpl.AuthUserIdKey -> userId.toString))
   }
 
   def gotoLogoutSucceeded[A](implicit request: Request[A]): PlainResult = {
-    request.session.get("sessionId") foreach resolver.removeBySessionId
-    logoutSucceeded(request).withNewSession
+    logoutSucceeded(request).withSession(session - AuthConfigImpl.AuthUserIdKey)
   }
 }
