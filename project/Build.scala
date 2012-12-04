@@ -28,7 +28,6 @@ object ApplicationBuild extends Build {
     openCsvDep,
     postgresqlDep,
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4",
-    "jp.t2v" %% "play20.auth" % "0.4",
     "org.jodd" % "jodd-wot" % "3.3.4",
     "org.squeryl" %% "squeryl" % "0.9.5-2",
     "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
