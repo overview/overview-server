@@ -21,9 +21,10 @@ IMAGE_FILENAME=$(MACHINE_NAME)/$(MACHINE_NAME).vdi
 
 all: $(MACHINE_NAME).ova
 
-$(BOOT_ISO_ORIG).done:
-	$(CURL) $(BOOT_ISO_REMOTE) -o $(BOOT_ISO_ORIG)
-	touch $@
+$(BOOT_ISO_ORIG):
+	rm -f $@.part
+	$(CURL) $(BOOT_ISO_REMOTE) -o $@.part
+	mv $@.part $@
 
 $(MACHINE_NAME).create.done:
 	# Unregister the VM, if it's registered
@@ -74,7 +75,7 @@ $(MACHINE_NAME).create.done:
 		--medium $(IMAGE_FILENAME)
 	touch $@
 
-$(MACHINE_NAME).ubuntu.done: $(MACHINE_NAME).create.done $(BOOT_ISO).done
+$(MACHINE_NAME).ubuntu.done: $(MACHINE_NAME).create.done $(BOOT_ISO)
 	# Remove IDE controller if it exists
 	$(VBOXMANAGE) showvminfo $(MACHINE_NAME) | grep '^hd (' && $(VBOXMANAGE) storagectl $(MACHINE_NAME) --name hd --remove || true
 	# Add IDE controller (for boot CD)
@@ -102,7 +103,7 @@ $(MACHINE_NAME).ubuntu.done: $(MACHINE_NAME).create.done $(BOOT_ISO).done
 		--remove
 	touch $@
 
-$(BOOT_ISO)-fs.done: $(BOOT_ISO_ORIG).done
+$(BOOT_ISO)-fs.done: $(BOOT_ISO_ORIG)
 	# In case we were interrupted, umount...
 	[ -d ./$(BOOT_ISO_ORIG)-fs ] && sudo umount -f ./$(BOOT_ISO_ORIG)-fs || true
 	sudo rm -rf ./$(BOOT_ISO_ORIG)-fs $(BOOT_ISO)-fs
@@ -131,17 +132,17 @@ $(BOOT_ISO)-fs.done: $(BOOT_ISO_ORIG).done
 	mv -f $(BOOT_ISO)-fs/new-prompt.cfg $(BOOT_ISO)-fs/prompt.cfg
 	touch $@
 
-$(BOOT_ISO).initrd.done: $(BOOT_ISO)-fs.done preseed.cfg
+$(BOOT_ISO)-fs/initrd.gz: $(BOOT_ISO)-fs.done preseed.cfg
 	sudo rm -rf $(BOOT_ISO)-fs/initrd
 	mkdir -p $(BOOT_ISO)-fs/initrd
 	cd $(BOOT_ISO)-fs/initrd \
 		&& cat ../initrd.gz | gzip -d - | sudo cpio -id \
 		&& cp ../../preseed.cfg . \
-		&& find . | cpio --create --format=newc | gzip - > ../initrd.gz
+		&& find . | cpio --create --format=newc | gzip - > ../initrd.gz2
 	sudo rm -rf $(BOOT_ISO)-fs/initrd
-	touch $@
+	mv $(BOOT_ISO)-fs/initrd.gz2 $@
 
-$(BOOT_ISO).done: $(BOOT_ISO).initrd.done
+$(BOOT_ISO): $(BOOT_ISO)-fs/initrd.gz
 	genisoimage \
 		-D \
 		-r \
@@ -153,9 +154,9 @@ $(BOOT_ISO).done: $(BOOT_ISO).initrd.done
 		-no-emul-boot \
 		-boot-load-size 4 \
 		-boot-info-table \
-		-o $(BOOT_ISO) \
+		-o $@.part \
 		$(BOOT_ISO)-fs
-	touch $@
+	mv $@.part $@
 
 dist.zip: ../../dist/overview-server-1.0-SNAPSHOT.zip
 	cp $^ $@
@@ -218,4 +219,4 @@ $(MACHINE_NAME).ova: $(MACHINE_NAME).copy-files.done
 
 clean:
 	$(VBOXMANAGE) list vms | grep $(MACHINE_NAME) && $(VBOXMANAGE) unregistervm $(MACHINE_NAME) || true
-	rm -rf *.done *.zip *.tar.gz $(MACHINE_NAME) $(BOOT_ISO) $(BOOT_ISO)-fs *.vdi *.ova
+	rm -rf *.done *.part *.zip *.tar.gz $(MACHINE_NAME) $(BOOT_ISO) $(BOOT_ISO)-fs *.vdi *.ova
