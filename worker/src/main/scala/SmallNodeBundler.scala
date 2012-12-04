@@ -13,7 +13,7 @@
 
 package overview.clustering
 
-import overview.clustering.ClusterTypes._
+import org.overviewproject.clustering.ClusterTypes._
 import scala.collection.mutable.Set
 
 object SmallNodeBundler {

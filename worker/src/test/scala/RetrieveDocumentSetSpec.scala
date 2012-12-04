@@ -19,6 +19,7 @@ import org.specs2.specification._
 import scala.io.Source
 
 import overview.clustering._
+import org.overviewproject.clustering.BuildDocTree
 import overview.http._
 import overview.http.BulkHttpRetriever
 import overview.util.WorkerActorSystem

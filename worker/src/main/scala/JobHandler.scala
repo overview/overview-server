@@ -15,6 +15,7 @@ import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobResta
 import overview.util.Progress._
 import persistence._
 import persistence.DocumentSetCreationJobState._
+import org.overviewproject.clustering.DocumentSetIndexer
 
 object JobHandler {
 

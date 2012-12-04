@@ -12,7 +12,7 @@
 package overview.clustering
 
 import scala.collection.mutable.Map
-import overview.clustering.ClusterTypes._
+import org.overviewproject.clustering.ClusterTypes._
 
 // Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once
 class DocumentVectorGenerator {

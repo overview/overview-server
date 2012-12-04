@@ -10,7 +10,7 @@
 
 import org.specs2.mutable.Specification
 import org.specs2.specification._
-import overview.clustering.ClusterTypes._
+import org.overviewproject.clustering.ClusterTypes._
 
 class DocumentVectorSpec extends Specification {
   
@@ -28,7 +28,7 @@ class DocumentVectorSpec extends Specification {
     "fail if given ctor arguments of differing length" in {
       val twoTerms = Array[TermID](1,2)
       val threeWeights = Array[TermWeight](0.1f, 0.2f, 0.3f)
-      new overview.clustering.ClusterTypes.DocumentVector(twoTerms, threeWeights) must throwA[java.lang.IllegalArgumentException]
+      new org.overviewproject.clustering.ClusterTypes.DocumentVector(twoTerms, threeWeights) must throwA[java.lang.IllegalArgumentException]
     }
   }    
 

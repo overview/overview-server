@@ -8,20 +8,16 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
 import java.sql.Connection
-import overview.clustering.ClusterTypes._
-import overview.http._
-import overview.util.{ DocumentConsumer, Logger, WorkerActorSystem }
-import overview.util.DocumentSetCreationJobStateDescription._
-import overview.util.Progress._
-import persistence.{ DocumentWriter, NodeWriter }
+import overview.clustering.{DocTreeNode, DocumentVectorGenerator, Lexer}
 import overview.database.DB
-
-import akka.actor._
-import akka.dispatch.{ Future, Promise, Await }
-import akka.util.Timeout
+import overview.util.DocumentConsumer
+import overview.util.DocumentSetCreationJobStateDescription.{Clustering, Done, Saving}
+import overview.util.Logger
+import overview.util.Progress.{Progress, ProgressAbortFn, makeNestedProgress}
+import persistence.{DocumentWriter, NodeWriter}
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 

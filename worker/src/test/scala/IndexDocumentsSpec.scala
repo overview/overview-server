@@ -9,12 +9,12 @@
  */
 
 
-import org.specs2.mutable.Specification
-import org.specs2.specification._
-import overview.clustering._
-import overview.clustering.ClusterTypes._
-import scala.io.Source
 import java.io.File
+
+import scala.Array.canBuildFrom
+import org.overviewproject.clustering.ClusterTypes.DocumentVectorMap
+import org.specs2.mutable.Specification
+import overview.clustering.{DocumentVectorGenerator, Lexer}
 
 class MakeDocumentTreeSpec extends Specification {
   

@@ -8,9 +8,8 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
-import overview.util.CompactPairArray
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 

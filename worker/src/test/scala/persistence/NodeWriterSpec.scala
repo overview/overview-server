@@ -7,17 +7,13 @@
 
 package persistence
 
-import anorm._
-import anorm.SqlParser._
-
-import org.overviewproject.test.DbSpecification
-import java.sql.Connection
-import overview.clustering.DocTreeNode
-import overview.clustering.ClusterTypes.DocumentID
-import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
-import org.overviewproject.test.DbSetup._
-
+import anorm.{sqlToSimple, toParameterValue}
+import anorm.SQL
+import anorm.SqlParser.{flatten, get, long, str}
+import org.overviewproject.test.DbSetup.{insertDocument, insertDocumentSet}
+import org.overviewproject.test.DbSpecification
+import overview.clustering.DocTreeNode
 
 
 class NodeWriterSpec extends DbSpecification {

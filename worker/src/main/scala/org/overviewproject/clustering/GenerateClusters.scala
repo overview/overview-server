@@ -9,16 +9,13 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
-import scala.collection.mutable.{ Set, Stack, PriorityQueue, Map }
-import ClusterTypes._
-import overview.util.Logger
-import overview.util.Progress._
-import overview.util.DocumentSetCreationJobStateDescription
-import overview.util.DocumentSetCreationJobStateDescription._
-import overview.util.CompactPairArray
-import scala.collection.mutable.AddingBuilder
+import scala.collection.mutable.Set
+import overview.clustering.{ConnectedComponents, DocTreeNode}
+import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import overview.util.Progress.{NoProgressReporting, Progress, ProgressAbortFn}
+import org.overviewproject.clustering.ClusterTypes._
 
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated

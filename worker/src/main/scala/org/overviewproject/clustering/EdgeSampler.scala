@@ -13,12 +13,11 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
-import scala.collection.mutable.{ Set, Stack, PriorityQueue, Map, HashMap}
-import ClusterTypes._
-import overview.util.Logger
-import overview.util.CompactPairArray
+import scala.collection.mutable.{HashMap, Map, PriorityQueue}
+import overview.util.{CompactPairArray, Logger}
+import org.overviewproject.clustering.ClusterTypes._
 //import scala.collection.mutable.AddingBuilder
 
 

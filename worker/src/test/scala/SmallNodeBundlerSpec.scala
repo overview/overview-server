@@ -7,7 +7,7 @@
  */
 
 import scala.collection.mutable.Set
-import overview.clustering.ClusterTypes.DocumentID
+import org.overviewproject.clustering.ClusterTypes.DocumentID
 import overview.clustering.{SmallNodeBundler, DocTreeNode}
 import org.specs2.mutable.Specification
 import org.specs2.specification._
