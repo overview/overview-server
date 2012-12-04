@@ -9,7 +9,7 @@ package overview.http
 import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
-import overview.clustering.{ DCDocumentAtURL }
+import org.overviewproject.clustering.DCDocumentAtURL 
 import org.overviewproject.clustering.DocumentSetIndexer
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._

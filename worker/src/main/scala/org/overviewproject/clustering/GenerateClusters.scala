@@ -12,10 +12,10 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
-import overview.clustering.{ConnectedComponents, DocTreeNode}
 import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import overview.util.Progress.{NoProgressReporting, Progress, ProgressAbortFn}
 import org.overviewproject.clustering.ClusterTypes._
+
 
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated

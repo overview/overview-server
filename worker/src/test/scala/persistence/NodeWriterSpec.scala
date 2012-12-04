@@ -13,7 +13,7 @@ import anorm.SQL
 import anorm.SqlParser.{flatten, get, long, str}
 import org.overviewproject.test.DbSetup.{insertDocument, insertDocumentSet}
 import org.overviewproject.test.DbSpecification
-import overview.clustering.DocTreeNode
+import org.overviewproject.clustering.DocTreeNode
 
 
 class NodeWriterSpec extends DbSpecification {

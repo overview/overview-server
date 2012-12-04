@@ -9,9 +9,8 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
-import scala.collection.mutable.Map
 import org.overviewproject.clustering.ClusterTypes._
 
 // Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once

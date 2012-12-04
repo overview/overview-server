@@ -8,24 +8,18 @@
  * 
  */
 
-import akka.dispatch.{Future,Promise,Await}
-import akka.util.Timeout
-import anorm._
-import anorm.SqlParser._
 import java.io.File
 import java.sql.Connection
-import org.specs2.mutable.Specification
-import org.specs2.specification._
-import scala.io.Source
-
-import overview.clustering._
-import org.overviewproject.clustering.BuildDocTree
-import overview.http._
-import overview.http.BulkHttpRetriever
-import overview.util.WorkerActorSystem
+import scala.Array.canBuildFrom
+import akka.dispatch.Await
+import akka.util.Timeout
+import anorm.SQL
+import anorm.SqlParser.{flatten, long}
+import org.overviewproject.clustering.{BuildDocTree, DocumentVectorGenerator, Lexer}
 import org.overviewproject.test.DbSpecification
-import persistence._
-import org.overviewproject.test.DbSetup._
+import overview.http.{AsyncHttpRequest, BulkHttpRetriever, DocRetrievalError, DocumentAtURL}
+import overview.util.WorkerActorSystem
+
 
 class RetrieveDocumentSetSpec extends DbSpecification {
   

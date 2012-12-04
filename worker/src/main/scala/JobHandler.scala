@@ -9,7 +9,6 @@
 import com.jolbox.bonecp._
 import overview.database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
-import overview.clustering._
 import overview.http.{AsyncHttpRequest, DocumentCloudDocumentProducer}
 import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._

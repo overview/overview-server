@@ -8,7 +8,7 @@
 package persistence
 
 import anorm._
-import overview.clustering.DocTreeNode
+import org.overviewproject.clustering.DocTreeNode
 import java.sql.Connection
 
 /**

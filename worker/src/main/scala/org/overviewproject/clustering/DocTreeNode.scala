@@ -8,7 +8,8 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
+
 import scala.collection.mutable.Set
 import org.overviewproject.clustering.ClusterTypes._
 

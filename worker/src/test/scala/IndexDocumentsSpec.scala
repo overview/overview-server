@@ -10,11 +10,11 @@
 
 
 import java.io.File
-
 import scala.Array.canBuildFrom
 import org.overviewproject.clustering.ClusterTypes.DocumentVectorMap
 import org.specs2.mutable.Specification
-import overview.clustering.{DocumentVectorGenerator, Lexer}
+import org.overviewproject.clustering.DocumentVectorGenerator
+import org.overviewproject.clustering.Lexer
 
 class MakeDocumentTreeSpec extends Specification {
   

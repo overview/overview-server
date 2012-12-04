@@ -16,7 +16,7 @@ import com.ning.http.client.Response
 import java.net.URI
 import org.specs2.mutable.Specification
 import org.specs2.specification.After
-import overview.clustering.DCDocumentAtURL
+import org.overviewproject.clustering.DCDocumentAtURL
 import scala.collection.JavaConversions._
 
 

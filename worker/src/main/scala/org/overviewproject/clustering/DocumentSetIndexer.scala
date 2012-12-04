@@ -11,13 +11,14 @@
 package org.overviewproject.clustering
 
 import java.sql.Connection
-import overview.clustering.{DocTreeNode, DocumentVectorGenerator, Lexer}
+
 import overview.database.DB
-import overview.util.DocumentConsumer
+import overview.util.{ DocumentConsumer, Logger }
 import overview.util.DocumentSetCreationJobStateDescription.{Clustering, Done, Saving}
-import overview.util.Logger
 import overview.util.Progress.{Progress, ProgressAbortFn, makeNestedProgress}
+
 import persistence.{DocumentWriter, NodeWriter}
+
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 

@@ -11,10 +11,10 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
 
-import org.overviewproject.clustering.ClusterTypes._
 import scala.collection.mutable.Set
+import org.overviewproject.clustering.ClusterTypes._
 
 object SmallNodeBundler {
   

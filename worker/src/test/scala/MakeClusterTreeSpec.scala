@@ -9,11 +9,9 @@
  */
 
 import scala.collection.mutable.{Map, Set}
-
-import org.overviewproject.clustering.{ConnectedComponentDocTreeBuilder, DistanceFn}
+import org.overviewproject.clustering.{ConnectedComponentDocTreeBuilder, ConnectedComponents, DistanceFn}
 import org.overviewproject.clustering.ClusterTypes._
 import org.specs2.mutable.Specification
-import overview.clustering.ConnectedComponents
 
 class GenerateClustersSpec extends Specification {
   

@@ -8,10 +8,10 @@
  * Created by Jonathan Stray, June 2012
  *
  */
-package overview.clustering
+package org.overviewproject.clustering
 
-import scala.util.matching.Regex
-import scala.io.Source
+import scala.Array.canBuildFrom
+import scala.Array.fallbackCanBuildFrom
 
 object Lexer {
 

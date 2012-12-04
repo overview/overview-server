@@ -8,9 +8,10 @@
 
 import scala.collection.mutable.Set
 import org.overviewproject.clustering.ClusterTypes.DocumentID
-import overview.clustering.{SmallNodeBundler, DocTreeNode}
+import org.overviewproject.clustering.DocTreeNode
 import org.specs2.mutable.Specification
 import org.specs2.specification._
+import org.overviewproject.clustering.SmallNodeBundler
 
 class SmallNodeBundlerSpec extends Specification {
 

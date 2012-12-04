@@ -8,7 +8,8 @@
  *
  */
 
-package overview.clustering
+package org.overviewproject.clustering
+
 import scala.collection.mutable.{Stack, Set}
 
 object ConnectedComponents {
