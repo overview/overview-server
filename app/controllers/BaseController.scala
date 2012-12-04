@@ -3,6 +3,7 @@ package controllers
 import java.sql.Connection
 import jp.t2v.lab.play20.auth.Auth
 import org.squeryl.PrimitiveTypeMode._
+import play.api.Play
 import play.api.Play.current
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, Result}
 
@@ -12,14 +13,30 @@ import models.OverviewUser
 trait BaseController extends Controller with TransactionActionController with Auth with AuthConfigImpl {
   protected def authorizedAction[A](p: BodyParser[A], authority: Authority)(f: OverviewUser => ActionWithConnection[A]): Action[A] = {
     ActionInTransaction(p) { (request: Request[A], connection: Connection) =>
-      authorized(authority)(request).right.map(user => {
-        val recordedUser = user
-          .withActivityRecorded(request.remoteAddress, new java.util.Date())
-          .save
+      val user = userAuthenticatedAuthorizedAndRecordedAsRight(request, authority)
 
-        f(recordedUser)(request, connection)
-      }).merge
+      user.fold(
+        errorResult => errorResult,
+        user => f(user)(request, connection)
+      )
     }
+  }
+
+  /** Returns a Right[OverviewUser] if the user exists. */
+  private def userAuthenticatedAsRight(request: RequestHeader) = {
+    restoreUser(request).toRight(authenticationFailed(request))
+  }
+
+  /** Returns a Right[OverviewUser] if the user is authorized under the authority. */
+  private def userAuthorizedAsRight(request: RequestHeader, user: OverviewUser, authority: Authority) = {
+    Either.cond(authority(user), user, authorizationFailed(request))
+  }
+
+  /** Returns a Right[OverviewUser], saved to the DB, if the user is authenticated and authorized. */
+  private def userAuthenticatedAuthorizedAndRecordedAsRight(request: RequestHeader, authority: Authority) = {
+    userAuthenticatedAsRight(request)
+      .right.flatMap(user => userAuthorizedAsRight(request, user, authority))
+      .right.map(user => user.withActivityRecorded(request.remoteAddress, new java.util.Date()).save)
   }
 
   protected def authorizedAction(authority: Authority)(f: OverviewUser => ActionWithConnection[AnyContent]): Action[AnyContent] = {
@@ -41,14 +58,17 @@ trait BaseController extends Controller with TransactionActionController with Au
     optionallyAuthorizedAction(BodyParsers.parse.anyContent)(f)
   }
 
-  // copy/pasted from play20-auth
-  private def restoreUser(implicit request: RequestHeader): Option[OverviewUser] = for {
-    sessionId <- request.session.get("sessionId")
-    userId <- resolver.sessionId2userId(sessionId)
-    user <- resolveUser(userId)
-  } yield {
-    resolver.prolongTimeout(sessionId, sessionTimeoutInSeconds)
-    user
+  // copied from play20-auth
+  private def restoreUser(implicit request: RequestHeader): Option[OverviewUser] = {
+    if (BaseController.isMultiUser) {
+      for {
+        userId <- resolver.sessionId2userId("") // play20-auth ignores sessionId
+        user <- resolveUser(userId)
+      } yield user
+    } else {
+      val user = OverviewUser.findById(1L).getOrElse(throw new Exception("Singleton user not found")).asNormalUser
+      Some(user)
+    }
   }
 
   /*
@@ -73,5 +93,11 @@ trait BaseController extends Controller with TransactionActionController with Au
   
   protected def userOwningDocument(id: Long) : Authority = { user =>
     user.isAllowedDocument(id)
+  }
+}
+
+object BaseController {
+  private lazy val isMultiUser : Boolean = {
+    Play.configuration.getBoolean("overview.multi_user").getOrElse(true)
   }
 }
