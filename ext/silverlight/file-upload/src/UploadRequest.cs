@@ -154,17 +154,20 @@ namespace OverviewProject.FileUpload {
           await CopyStreamToStreamAsync(blobStream, sendStream);
         }
 
-        using (HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse) {
-          using (Stream responseStream = response.GetResponseStream())
-          using (StreamReader reader = new StreamReader(responseStream)) {
-            string body = await reader.ReadToEndAsync();
-            HttpStatusCode status = response.StatusCode;
-            WebHeaderCollection headers = response.GetRealOrFakeHeaders();
+        HttpStatusCode status;
+        WebHeaderCollection headers;
+        string body;
 
-            var eventArgs = new CompletedEventArgs(status, headers, body);
-            OnCompleted(eventArgs);
-          }
+        using (HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse)
+        using (Stream responseStream = response.GetResponseStream())
+        using (StreamReader reader = new StreamReader(responseStream)) {
+          status = response.StatusCode;
+          headers = response.GetRealOrFakeHeaders();
+          body = await reader.ReadToEndAsync();
         }
+
+        var eventArgs = new CompletedEventArgs(status, headers, body);
+        OnCompleted(eventArgs);
       } catch (Exception e) {
         OnFailed(e);
       }
