@@ -1,6 +1,6 @@
 @()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
-  <form class="modal hide fade" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
+  <form class="modal hide fade document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
     <div class="modal-header">
       <button type="reset" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
       <h3>@m("h3")</h3>

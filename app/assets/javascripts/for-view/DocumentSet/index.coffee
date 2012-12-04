@@ -268,18 +268,25 @@ make_csv_upload_form = (form_element) ->
     e.preventDefault()
     start_upload()
 
-  $form.on 'reset', (e) ->
-    # don't preventDefault()
+  cancel = () ->
     upload.stop() if upload
 
-    file = undefined
-    upload = undefined
-    csv_reader = undefined
-    ready_to_submit = false
+    #file = undefined
+    #upload = undefined
+    #csv_reader = undefined
+    #ready_to_submit = false
 
-    refresh_from_csv_reader()
-    refresh_charset()
-    refresh_progress_visible()
+    #refresh_from_csv_reader()
+    #refresh_charset()
+    #refresh_progress_visible()
+
+  $form.on 'reset', (e) ->
+    # don't preventDefault()
+    $form.modal('hide')
+
+  $form.on 'hidden', ->
+    cancel()
+    $form.remove()
 
   if window.File? # util.net.Upload will use HTML5
     $form.find(':file').on 'change', (e) ->
@@ -338,10 +345,11 @@ $ ->
   make_toggle_link('#documentcloud-import .sample')
 
   $upload_div = $('#documentcloud-import .upload')
-  $upload_modal = $upload_div.children('form')
+  $upload_modal = $upload_div.children('form').remove()
+
   $upload_div.find('a:eq(0)').on 'click', (e) ->
     e.preventDefault()
-    $upload_modal.modal('show')
-  $upload_modal.find('button[type=reset]').on 'click', (e) ->
-    $upload_modal.modal('hide')
-  make_csv_upload_form($upload_modal)
+    $modal_clone = $upload_modal.clone()
+    $('body').append($modal_clone)
+    make_csv_upload_form($modal_clone[0])
+    $modal_clone.modal('show')
