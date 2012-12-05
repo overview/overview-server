@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Browser;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Browser;
 
 namespace OverviewProject.FileUpload {
@@ -59,31 +61,32 @@ namespace OverviewProject.FileUpload {
 #endregion
 
   public class UploadRequest {
-    private HttpWebRequest request;
-    private Blob blob;
+    private Uri uri;
+    private HttpWebRequest request; // for Abort()
     private SynchronizationContext syncContext;
     private bool completed = false; // ensures we don't call Complete() twice
-
-    [ScriptableMember]
-    public WebHeaderCollection Headers { get { return request.Headers; } }
+    private string headerAccept = null;
+    private string headerContentType = null;
+    private string headerContentRange = null;
+    private Dictionary<string,string> headers = new Dictionary<string,string>();
 
     /** Allow JavaScript to change headers */
     [ScriptableMember]
     public void AddRequestHeader(string key, string val) {
       switch (key) {
         case "Accept":
-          request.Accept = val;
+          headerAccept = val;
           break;
         case "Content-Length":
           break; // ignore
         case "Content-Type":
-          request.ContentType = val;
+          headerContentType = val;
           break;
         case "Content-Range":
-          Headers["X-MSHACK-Content-Range"] = val;
+          headerContentRange = val;
           break;
         default:
-          Headers[key] = val;
+          headers[key] = val;
           break;
       }
     }
@@ -101,6 +104,16 @@ namespace OverviewProject.FileUpload {
         StatusText = status.ToString();
         AllHeaders = headers.AsHttpString();
         Body = body;
+      }
+    }
+
+    private class ChunkStatus {
+      public int BytesSent { get; set; }
+      public CompletedEventArgs Args { get; set; }
+
+      public ChunkStatus(int bytesSent, CompletedEventArgs args) {
+        BytesSent = bytesSent;
+        Args = args;
       }
     }
 
@@ -122,21 +135,18 @@ namespace OverviewProject.FileUpload {
 #endregion
 
     public UploadRequest(string url) {
-      this.request = WebRequest.Create(url) as HttpWebRequest;
-      this.request.Method = "POST";
-      this.request.ContentType = "application/octet-stream"; // default
+      this.uri = new Uri(url);
     }
 
 #region Send and Abort
     [ScriptableMember]
     public void Send(Blob blob) {
       this.syncContext = SynchronizationContext.Current;
-      this.blob = blob;
 
       // We don't need to worry about CancellationToken: when we Abort() the
       // sending stream will close, an exception will be thrown and caught,
       // and we'll call OnFailed()
-      SendAsync();
+      SendAsync(blob);
     }
 
     [ScriptableMember]
@@ -145,50 +155,79 @@ namespace OverviewProject.FileUpload {
       request.Abort();
     }
 
-    private async void SendAsync() {
+    private async void SendAsync(Blob blob) {
+      // We can't set AllowWriteStreamBuffering = false on an HttpWebRequest
+      // without disabling HTTPOnly cookies. Our workaround: send a bunch of
+      // chunks.
+      long bytesUploaded = 0;
+      long bytesTotal = blob.Size;
+      int chunkSize = 512*1024; // 512kb. Arbitrary.
+
+      long bytesContentRangeStart = 0;
+      if (headerContentRange != null) {
+        int hyphen = headerContentRange.IndexOf('-');
+        if (hyphen > 0) {
+          string contentRangeStart = headerContentRange.Substring(0, hyphen);
+          // Throw an exception if it isn't an int
+          bytesContentRangeStart = Int64.Parse(contentRangeStart);
+        }
+      }
+
       try {
-        this.request.ContentLength = this.blob.Size;
-
-        using (Stream sendStream = await request.GetRequestStreamAsync())
         using (Stream blobStream = blob.OpenStream()) {
-          await CopyStreamToStreamAsync(blobStream, sendStream);
+          ChunkStatus status = null;
+
+          while (bytesUploaded < bytesTotal) {
+            status = await SendNextChunkAsync(blobStream, chunkSize, bytesUploaded + bytesContentRangeStart, bytesTotal);
+            bytesUploaded += status.BytesSent;
+            OnUploadProgress(new UploadProgressEventArgs(bytesUploaded, bytesTotal));
+          }
+
+          if (status != null) OnCompleted(status.Args);
         }
-
-        HttpStatusCode status;
-        WebHeaderCollection headers;
-        string body;
-
-        using (HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse)
-        using (Stream responseStream = response.GetResponseStream())
-        using (StreamReader reader = new StreamReader(responseStream)) {
-          status = response.StatusCode;
-          headers = response.GetRealOrFakeHeaders();
-          body = await reader.ReadToEndAsync();
-        }
-
-        var eventArgs = new CompletedEventArgs(status, headers, body);
-        OnCompleted(eventArgs);
       } catch (Exception e) {
         OnFailed(e);
       }
     }
 
-    // Like Stream.copyToAsync(), but with progress and no "async" keyword
-    private async Task CopyStreamToStreamAsync(Stream source, Stream destination) {
-      try {
-        var buffer = new byte[0x1000];
-        long totalBytes = 0;
-        int bytesRead;
+    private async Task<ChunkStatus> SendNextChunkAsync(Stream blobStream, int chunkSize, long chunkStart, long bytesTotal) {
+      // Errors will be caught by the caller.
+      var buffer = new byte[chunkSize];
+      int bytesTransferred = await blobStream.ReadAsync(buffer, 0, chunkSize);
 
-        while (0 != (bytesRead = await source.ReadAsync(buffer, 0, buffer.Length))) {
-          await destination.WriteAsync(buffer, 0, bytesRead);
-
-          totalBytes += bytesRead;
-          OnUploadProgress(new UploadProgressEventArgs(totalBytes, blob.Size));
-        }
-      } catch (Exception e) {
-        OnFailed(e);
+      this.request = WebRequestCreator.BrowserHttp.Create(uri) as HttpWebRequest;
+      request.Method = "POST";
+      request.ContentType = "application/octet-stream"; // default
+      request.ContentLength = bytesTransferred;
+      // Set headers
+      foreach (var entry in this.headers) {
+        request.Headers[entry.Key] = entry.Value;
       }
+      if (headerAccept != null) request.Accept = headerAccept;
+      if (headerContentType != null) request.ContentType = headerContentType;
+      // Set content-range, specially
+      if (headerContentRange != null) {
+        request.Headers["X-MSHACK-Content-Range"] = "" + chunkStart + "-" + (chunkStart + bytesTransferred - 1) + "/" + bytesTotal;
+      }
+
+      using (Stream sendStream = await request.GetRequestStreamAsync()) {
+        await sendStream.WriteAsync(buffer, 0, bytesTransferred);
+      }
+
+      HttpStatusCode status;
+      WebHeaderCollection headers;
+      string body;
+
+      using (HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse)
+      using (Stream responseStream = response.GetResponseStream())
+      using (StreamReader reader = new StreamReader(responseStream)) {
+        status = response.StatusCode;
+        headers = response.GetRealOrFakeHeaders();
+        body = await reader.ReadToEndAsync();
+      }
+
+      CompletedEventArgs args = new CompletedEventArgs(status, headers, body);
+      return new ChunkStatus(bytesTransferred, args);
     }
 #endregion
 
@@ -204,6 +243,7 @@ namespace OverviewProject.FileUpload {
     }
 
     protected void OnFailed(Exception e) {
+      MessageBox.Show(e.ToString());
       this.OnCompleted(new CompletedEventArgs(HttpStatusCode.InternalServerError, new WebHeaderCollection(), "" + e));
     }
 
