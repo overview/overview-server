@@ -7,6 +7,7 @@ import play.api.Play.current
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, PlainResult}
 import scala.util.control.Exception.catching
 
+import controllers.auth.AuthConfigImpl
 import models.orm.{DocumentSet,Document}
 import models.OverviewUser
 

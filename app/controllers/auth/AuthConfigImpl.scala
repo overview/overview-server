@@ -1,4 +1,4 @@
-package controllers
+package controllers.auth
 
 import play.api.mvc.{PlainResult, Request, RequestHeader}
 import play.api.mvc.Results.{Forbidden, Redirect}
@@ -10,14 +10,14 @@ trait AuthConfigImpl {
   type Authority = OverviewUser => Boolean
 
   def loginSucceeded(request: RequestHeader): PlainResult = {
-    val uri = request.session.get(AuthConfigImpl.AccessUriKey).getOrElse(routes.DocumentSetController.index.url)
+    val uri = request.session.get(AuthConfigImpl.AccessUriKey).getOrElse(controllers.routes.DocumentSetController.index.url)
     Redirect(uri).withSession(request.session - AuthConfigImpl.AccessUriKey)
   }
 
-  def logoutSucceeded(request: RequestHeader): PlainResult = Redirect(routes.WelcomeController.show)
+  def logoutSucceeded(request: RequestHeader): PlainResult = Redirect(controllers.routes.WelcomeController.show)
 
   def authenticationFailed(request: RequestHeader): PlainResult = {
-    Redirect(routes.SessionController.new_).withSession(AuthConfigImpl.AccessUriKey -> request.uri)
+    Redirect(controllers.routes.SessionController.new_).withSession(AuthConfigImpl.AccessUriKey -> request.uri)
   }
 
   def authorizationFailed(request: RequestHeader): PlainResult = {

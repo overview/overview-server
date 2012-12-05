@@ -3,6 +3,7 @@ package controllers
 import java.sql.Connection
 import play.api.mvc.{AnyContent,Controller,Request}
 
+import controllers.auth.LoginLogout
 import models.OverviewUser
 
 object SessionController extends BaseController with LoginLogout {

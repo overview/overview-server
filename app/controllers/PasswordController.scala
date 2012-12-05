@@ -4,6 +4,7 @@ import java.util.Date
 import java.sql.Connection
 import play.api.mvc.{AnyContent,Controller,Request}
 
+import controllers.auth.LoginLogout
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest}
 

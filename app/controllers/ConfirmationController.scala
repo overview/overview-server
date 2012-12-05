@@ -5,6 +5,7 @@ import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 
+import controllers.auth.{AuthConfigImpl,LoginLogout}
 import models.OverviewUser
 
 object ConfirmationController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
