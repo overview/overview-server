@@ -7,11 +7,14 @@
 
 package org.overviewproject.test
 
+import org.junit.runner.RunWith
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
-import overview.database.{ DataSource, DatabaseConfiguration, DB }
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
+import org.squeryl.PrimitiveTypeMode._
+import org.squeryl.Session
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+
+import overview.database.{DB, DataSource, DatabaseConfiguration}
 
 /**
  * Tests that access the database should extend DbSpecification.
@@ -19,8 +22,8 @@ import org.specs2.runner.JUnitRunner
  */
 class DbSpecification extends Specification {
   private val DatabaseProperty = "datasource.default.url"
-  private val TestDatabase = "postgres://overview:overview@localhost/overview-test"		
-      
+  private val TestDatabase = "postgres://overview:overview@localhost/overview-test"
+
   /**
    * Context for test accessing the database. All tests are run inside a transaction
    * which is rolled back after the test is complete.
@@ -34,8 +37,12 @@ class DbSpecification extends Specification {
     def around[T <% Result](test: => T) = {
       try {
         connection.setAutoCommit(false)
-        setupWithDb
-        test
+        val adapter = new SquerylPostgreSqlAdapter()
+        val session = new Session(connection, adapter)
+        using(session) { // sets thread-local variable
+          setupWithDb
+          test
+        }
       } finally {
         connection.rollback()
         connection.close()
