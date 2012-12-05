@@ -21,7 +21,9 @@ class OverviewDocumentSpec extends Specification {
     }
 
     trait CsvImportDocumentScope extends Scope with OneDocument {
-      override def ormDocument = Document(new DocumentType("CsvImportDocument"))
+      def ormDocumentId : Long = 1L
+      def suppliedUrl : Option[String] = Some("http://example.org")
+      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl)
       lazy val csvImportDocument = document.asInstanceOf[OverviewDocument.CsvImportDocument]
     }
 
@@ -39,13 +41,39 @@ class OverviewDocumentSpec extends Specification {
     }
 
     "give the proper url for a CsvImportDocument with a url" in new CsvImportDocumentScope {
-      override def ormDocument = super.ormDocument.copy(url = Some("https://example.org/foo"))
+      override def suppliedUrl = Some("https://example.org/foo")
       urlWithSimplePattern must beEqualTo("https://example.org/foo")
     }
 
-    "give the proper url for a CsvImprotDocument with no url" in new CsvImportDocumentScope {
-      override def ormDocument = super.ormDocument.copy(id = 4L)
+    "give the proper url for a CsvImportDocument with no url" in new CsvImportDocumentScope {
+      override def suppliedUrl = None
+      override def ormDocumentId = 4L
       urlWithSimplePattern must beEqualTo("https://localhost/4")
+    }
+
+    "give no suppliedUrl for a CsvImportDocument that has none" in new CsvImportDocumentScope {
+      override def suppliedUrl = None
+      csvImportDocument.suppliedUrl must beNone
+    }
+
+    "give a suppliedUrl for a CsvImportDocument if there is one" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("http://example.org")
+      csvImportDocument.suppliedUrl must beSome("http://example.org")
+    }
+
+    "give no secureSuppliedUrl for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
+      override def suppliedUrl = None
+      csvImportDocument.secureSuppliedUrl must beNone
+    }
+
+    "give no secureSuppliedUrl for a CsvImportDocument if the suppleidUrl is not https" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("http://example.org")
+      csvImportDocument.secureSuppliedUrl must beNone
+    }
+
+    "give a secureSuppliedUrl for a CsvImportDocument" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("https://example.org")
+      csvImportDocument.secureSuppliedUrl must beSome("https://example.org")
     }
 
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {

@@ -45,6 +45,15 @@ object OverviewDocument {
       * This is nothing but metadata. We do not enforce anything on it.
       */
     lazy val suppliedId: Option[String] = ormDocument.suppliedId
+
+    /** User-provided URL for displaying the document.
+      *
+      * This is metadata. We can use it to render the document differently.
+      */
+    lazy val suppliedUrl: Option[String] = ormDocument.url
+
+    /** User-provided URL, if it begins with https:// */
+    lazy val secureSuppliedUrl : Option[String] = ormDocument.url.filter(_.startsWith("https://"))
   }
 
   case class DocumentCloudDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
