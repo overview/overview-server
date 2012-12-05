@@ -18,7 +18,9 @@ import org.specs2.runner.JUnitRunner
  * Before any examples, call step(setupDB), and after examples call step(shutdownDB).
  */
 class DbSpecification extends Specification {
-
+  private val DatabaseProperty = "datasource.default.url"
+  private val TestDatabase = "postgres://overview:overview@localhost/overview-test"		
+      
   /**
    * Context for test accessing the database. All tests are run inside a transaction
    * which is rolled back after the test is complete.
@@ -42,6 +44,7 @@ class DbSpecification extends Specification {
   }
 
   def setupDb() {
+    System.setProperty(DatabaseProperty, TestDatabase)
     val dataSource = new DataSource(new DatabaseConfiguration)
     DB.connect(dataSource)
   }
