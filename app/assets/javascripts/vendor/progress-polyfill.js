@@ -201,23 +201,4 @@ for(var i=self.progresses.length-1; i>=0; i--) {
 	self.init(self.progresses[i]);
 }
 
-// Take care of future ones too, if supported
-if(document.addEventListener) {
-	document.addEventListener('DOMAttrModified', function(evt) {
-		var node = evt.target, attribute = evt.attrName;
-		
-		if(/^progress$/i.test(node.nodeName) && (attribute === 'max' || attribute === 'value')) {
-			self.redraw(node);
-		}
-	}, false);
-	
-	document.addEventListener('DOMNodeInserted', function(evt) {
-		var node = evt.target;
-		
-		if(/^progress$/i.test(node.nodeName)) {
-			self.init(node);
-		}
-	}, false);
-}
-
 })();
