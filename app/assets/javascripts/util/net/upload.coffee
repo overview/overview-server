@@ -60,6 +60,8 @@ UPLOADING_TIMEOUT=600000 # 10min
 #
 #     console.log(upload.bytes_uploaded, upload.bytes_total)
 #
+#     upload.abort()
+#
 # progress() callbacks are called with an object that looks like this:
 #     { state: state, loaded: 0, total: 1024 }
 #
@@ -149,6 +151,7 @@ class Upload
 
   start: () -> this._set_state(states.STARTING) if @state != states.UPLOADING
   stop: () -> this._set_state(states.WAITING)
+  abort: () -> this._set_state(states.FAILED) if @state != states.DONE
 
   _cancel_jqxhr: (name) ->
     this[name].abort() if this[name].state() == 'pending'
