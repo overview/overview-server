@@ -17,13 +17,14 @@ object Lexer {
 
   // Load stopwords on startup
   var stopWords = Set[String]()
-  val stopWordsFileName = "conf/stopwords.csv"
-  for (l <- io.Source.fromFile(stopWordsFileName).getLines)
+  val stopWordsFileName = "/stopwords.csv"
+
+  for (l <- io.Source.fromInputStream(getClass.getResourceAsStream(stopWordsFileName)).getLines)
     stopWords += l
 
   // longest token we'll tolerate (silently truncates, to prevent bad input from destroying everything downstream)
   val maxTokenLength = 40
-  
+
   // Remove certain types of terms. At the moment:
   //  - we insist that terms are at least three chars
   //  - discard if a) starts with a digit and b) 40% or more of the characters are digits
