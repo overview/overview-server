@@ -11,13 +11,16 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.clustering.ClusterTypes.DocumentID
+
+class DocumentIdCache(val numberOfDocuments: Int, val documentIds: Array[DocumentID])
 
 // Document tree node. Contains items, children, and a description which lists top terms in all docs of this node
 class DocTreeNode(val docs: Set[DocumentID]) {
   var description = ""
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
-
+  var documentIdCache: DocumentIdCache = _
+  
   // return children in predictable order. Sort descending by size, then ascending by document IDs
   def orderedChildren: List[DocTreeNode] = {
     children.toList.sortWith((a, b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))
