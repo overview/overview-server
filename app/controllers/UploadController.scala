@@ -2,7 +2,7 @@ package controllers
 
 import java.sql.Connection
 import java.util.UUID
-import models.orm.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import models.upload.OverviewUpload
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session

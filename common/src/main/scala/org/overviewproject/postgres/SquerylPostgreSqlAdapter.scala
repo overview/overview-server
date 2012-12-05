@@ -1,4 +1,4 @@
-package models.orm
+package org.overviewproject.postgres
 
 import org.squeryl.adapters.PostgreSqlAdapter
 import org.squeryl.internals.{DBType,FieldMetaData,StatementWriter}

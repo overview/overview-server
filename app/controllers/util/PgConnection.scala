@@ -6,7 +6,7 @@ import org.postgresql.PGConnection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
 import com.jolbox.bonecp.ConnectionHandle
-import models.orm.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
 trait PgConnection {
 

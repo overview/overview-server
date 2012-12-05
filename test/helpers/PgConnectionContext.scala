@@ -1,7 +1,7 @@
 package helpers
 
 import com.jolbox.bonecp.ConnectionHandle
-import models.orm.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.postgresql.PGConnection
 import org.specs2.execute.Result
 import org.specs2.mutable.Around

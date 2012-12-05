@@ -3,6 +3,7 @@ package models.orm
 import org.squeryl.KeyedEntity
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.Column
+import org.overviewproject.postgres.PostgresqlEnum
 
 class DocumentType(v: String) extends PostgresqlEnum(v, "document_type")
 

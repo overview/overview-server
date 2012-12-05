@@ -1,9 +1,7 @@
 package models.orm
 
 import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.customtypes.StringField
 
-class PostgresqlEnum(v: String, val typeName: String) extends StringField(v)
 
 object Schema extends org.squeryl.Schema {
   //override def columnNameFromPropertyName (propertyName: String) =

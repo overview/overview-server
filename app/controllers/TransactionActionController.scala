@@ -7,7 +7,7 @@ import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Resul
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import controllers.util.HttpsEnforcer
-import models.orm.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
 
 trait TransactionActionController extends HttpsEnforcer {

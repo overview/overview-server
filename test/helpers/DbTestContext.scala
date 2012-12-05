@@ -17,7 +17,7 @@ import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._
 
-import models.orm.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
 
 /**

@@ -8,7 +8,6 @@ import org.squeryl.PrimitiveTypeMode._
 import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 
-import models.orm.Dsl.{ crypt, gen_hash }
 import models.orm.DocumentSetType.DocumentCloudDocumentSet
 
 case class User(
