@@ -10,6 +10,7 @@ package persistence
 import anorm._
 import org.overviewproject.clustering.DocTreeNode
 import java.sql.Connection
+import org.overviewproject.tree.orm.{ Node, Schema }
 
 /**
  * Writes out tree with the given root node to the database.
@@ -25,17 +26,12 @@ class NodeWriter(documentSetId: Long) {
   }
 
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
-    val nodeId = SQL("""
-        INSERT INTO node (description, parent_id, document_set_id) VALUES
-          ({description}, {parentId}, {documentSetId})
-        """).on("documentSetId" -> documentSetId,
-                "description" -> node.description,
-                "parentId" -> parentId).
-      executeInsert().get
+    val n = new Node(documentSetId, parentId, node.description)
+    Schema.nodes.insert(n)
 
-    node.docs.foreach(batchInserter.insert(nodeId, _))
+    node.docs.foreach(batchInserter.insert(n.id, _))
 
-    node.children.foreach(writeSubTree(_, Some(nodeId)))
+    node.children.foreach(writeSubTree(_, Some(n.id)))
   }
 
 }

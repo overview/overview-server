@@ -11,7 +11,7 @@ class NodeSpec extends DbSpecification {
     
     "write and read from the database" in new DbTestContext {
       val documentSetId = insertDocumentSet("NodeSpec")
-      val node = new Node(0, documentSetId, None, "description")
+      val node = new Node(documentSetId, None, "description")
       
       Schema.nodes.insert(node)
       
