@@ -62,7 +62,7 @@ $ ->
     $csv.hide()
     $dc.hide()
     # Replace our URL with the new ID after the final "/"
-    window.location = "#{window.location}".replace(/\d*$/, document.id)
+    window.location.replace("#{window.location}".replace(/\d*$/, document.id))
 
   $dc_sidebar_toggle.on 'click', (e) ->
     e.preventDefault()
