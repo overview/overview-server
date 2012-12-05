@@ -10,7 +10,7 @@ class SquerylPostgreSqlAdapter extends PostgreSqlAdapter {
   // Handles Postgres ENUM types properly
   // https://groups.google.com/forum/?fromgroups=#!topic/squeryl/pTXgPe8pQIs
   override protected def writeValue(o: AnyRef, fmd: FieldMetaData, sw: StatementWriter): String = {
-    val v = fmd.get(o)
+    val v = fmd.getNativeJdbcValue(o)
 
     if (sw.isForDisplay) {
       if (v != null)
