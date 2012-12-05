@@ -9,6 +9,7 @@ BOOT_ISO_REMOTE="http://archive.ubuntu.com/ubuntu/dists/quantal/main/installer-i
 
 # Dependencies (these must be in your path)
 GENISOIMAGE=genisoimage # a.k.a. mkisofs
+HDIUTIL=hdiutil # for Mac
 CURL=curl
 VBOXMANAGE=VBoxManage # From VirtualBox
 NETCAT=nc
@@ -143,19 +144,26 @@ $(BOOT_ISO)-fs/initrd.gz: $(BOOT_ISO)-fs.done preseed.cfg
 	mv $(BOOT_ISO)-fs/initrd.gz2 $@
 
 $(BOOT_ISO): $(BOOT_ISO)-fs/initrd.gz
-	genisoimage \
-		-D \
-		-r \
-		-V "Overview" \
-		-J \
-		-l \
-		-b isolinux.bin \
-		-c boot.cat \
-		-no-emul-boot \
-		-boot-load-size 4 \
-		-boot-info-table \
-		-o $@.part \
-		$(BOOT_ISO)-fs
+	which $(GENISOIMAGE) && \
+		genisoimage \
+			-D \
+			-r \
+			-V "Overview" \
+			-J \
+			-l \
+			-b isolinux.bin \
+			-c boot.cat \
+			-no-emul-boot \
+			-boot-load-size 4 \
+			-boot-info-table \
+			-o $@.part \
+			$(BOOT_ISO)-fs \
+		|| which $(HDIUTIL) && \
+			hdiutil makehybrid \
+				-iso \
+				-joliet \
+				-o $@.part \
+				$(BOOT_ISO)-fs
 	mv $@.part $@
 
 dist.zip: ../../dist/overview-server-1.0-SNAPSHOT.zip
