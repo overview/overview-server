@@ -51,6 +51,7 @@ case "\$1" in
     echo "Freeing space on hard drive and turning off"
     initctl stop rsyslog || true
     sleep 1 # just in case
+    rm -f /var/log/* /var/log/*/* || true # not rm -r -- ignore directories
     mount -o remount,ro -n -t ext4 /dev/sda5 /
     zerofree /dev/sda5
     mount -o remount,rw -n -t ext4 /dev/sda5 /
