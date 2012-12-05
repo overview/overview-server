@@ -1,7 +1,17 @@
 @(document: Option[OverviewDocument.CsvImportDocument])(implicit lang: Lang)
 
-@defining(scopedMessages("views.Document.show")) { m =>
+@defining(scopedMessages("views.Document.show._csvImportDocument")) { m =>
   <div class="type-CsvImportDocument" style="@document.map(_ => "").getOrElse("display:none;")">
-    @document.map(d => <pre>{d.text}</pre>)
+    @document.map { d =>
+      @d.suppliedUrl.map({ url =>
+        <p class="source"><span>{m("source")}</span><a href={url} target="_blank">{url}</a></p>
+      })
+
+      @d.secureSuppliedUrl.map({ url =>
+        <iframe src={url} width="100" height="100"></iframe>
+      }).getOrElse({
+        <pre>{d.text}</pre>
+      })
+    }
   </div>
 }

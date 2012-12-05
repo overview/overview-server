@@ -18,7 +18,7 @@ $ ->
   $csv = $('.type-CsvImportDocument')
 
   $dc = $('.type-DocumentCloudDocument')
-  $dc_iframe = $('iframe')
+  $dc_iframe = $dc.find('iframe')
   $dc_sidebar_toggle = $('.toggle-sidebar')
 
   refresh_dc_sidebar_toggle = () ->

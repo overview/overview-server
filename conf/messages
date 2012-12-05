@@ -108,6 +108,7 @@ views.Document.show.loading=Loading…
 views.Document.show.title.empty_document=(document without text)
 views.Document.show.sidebar.enable=⇠ Show sidebar
 views.Document.show.sidebar.disable=Hide sidebar ⇢
+views.Document.show._csvImportDocument.source=Source: 
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets

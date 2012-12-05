@@ -42,6 +42,12 @@
           right: 0;
         }
 
+        div.document > div {
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+
         ul.actions {
           position: absolute;
           box-sizing: border-box;
@@ -69,16 +75,32 @@
           display: inline;
         }
 
+        p.source {
+          margin: 0;
+          padding: 10px;
+          height: 14px;
+          line-height: 14px;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+
         pre, iframe {
           margin: 0;
           padding: 0;
           border: none;
-          height: 100%;
           width: 100%;
+          height: 100%;
+        }
+
+        p.source + pre, p.source + iframe {
+          box-sizing: border-box;
+          border-bottom: 34px solid white; /* p.source padding + 1 line */
         }
 
         pre {
           overflow: auto;
+          background: #f8f8f8;
+          padding: 10px;
         }
       </style>
       <!--[if gte IE 9]>
