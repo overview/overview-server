@@ -5,7 +5,11 @@ LIBS="$DIR/lib"
 DB="postgres://overview:overview@localhost/overview"
 JAVA_OPTS="-Xms128M -Xmx1024M"
 
-sleep 10 # wait for overview-server to start: it will apply evolutions
+# Wait until document_set_creation_job table exists, because
+# the worker will crash if it doesn't exist.
+until $(psql overview -c '\d document_set_creation_job' > /dev/null 2>&1); do
+  sleep 1
+done
 
 exec java $JAVA_OPTS \
        -cp "$LIBS/*" \
