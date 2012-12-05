@@ -31,8 +31,8 @@ class DocumentSetControllerSpec extends Specification {
     lazy val ormUser = 
       Schema.users.where(u => u.email === "admin@overview-project.org").head
     lazy val user = OverviewUser(ormUser)
-    lazy val documentSet = Schema.documentSets.headOption
-    lazy val documentSetCreationJob = Schema.documentSetCreationJobs.headOption
+    lazy val documentSet = from(Schema.documentSets)(ds => select(ds)).headOption
+    lazy val documentSetCreationJob = from(Schema.documentSetCreationJobs)(dscj => select(dscj)).headOption
   }
 
   "The DocumentSet Controller" should {
@@ -41,7 +41,7 @@ class DocumentSetControllerSpec extends Specification {
       val result = controller.authorizedCreate(user)
       documentSet must beSome
       documentSetCreationJob must beSome
-      documentSet.get.query must beSome equalTo(Some(query))
+      documentSet.get.query must beSome.like { case q => q must be equalTo(query) }
       documentSet.get.title must be equalTo(title)
       documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
     }

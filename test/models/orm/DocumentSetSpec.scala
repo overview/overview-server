@@ -39,10 +39,10 @@ class DocumentSetSpec extends Specification {
 
       job.documentSet must be equalTo (documentSet)
 
-      val returnedJob = Schema.documentSetCreationJobs.single
+      val returnedJob = Schema.documentSetCreationJobs.lookup(job.id)
 
       val returnedSet = Schema.documentSets.where(ds => ds.query === query).single
-      returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(Some(returnedJob))
+      returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(returnedJob)
     }
 
     "set createdAt to the current date by default" in new Scope {

@@ -22,14 +22,15 @@ object ApplicationBuild extends Build {
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
   val specs2Dep = "org.specs2" %% "specs2" % "1.11"
-
+  val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT"
+    
   // Project dependencies
   val serverProjectDependencies = Seq(
     openCsvDep,
     postgresqlDep,
+    squerylDep,
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4",
     "org.jodd" % "jodd-wot" % "3.3.4",
-    "org.squeryl" %% "squeryl" % "0.9.5-2",
     "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
     "org.mockito" % "mockito-all" % "1.9.0" % "test"
   )
@@ -39,13 +40,14 @@ object ApplicationBuild extends Build {
     playDep,
     postgresqlDep,
     specs2Dep,
+    squerylDep,
     "junit" % "junit" % "4.8.1"
   )
 
   val workerProjectDependencies = Seq(
     openCsvDep,
     playDep,
-    "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT",
+    squerylDep,
     specs2Dep % "test",
     "junit" % "junit" % "4.8.1" % "test",
     "org.mockito" % "mockito-all" % "1.9.0" % "test"
@@ -54,7 +56,8 @@ object ApplicationBuild extends Build {
   // Project definitions
   val common = Project("common", file("common"), settings =
     Defaults.defaultSettings ++
-      Seq(libraryDependencies ++= commonProjectDependencies)
+      Seq(resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+          libraryDependencies ++= commonProjectDependencies)
   ).settings(
     testOptions in Test ++= Seq(
       Tests.Argument("xonly"),

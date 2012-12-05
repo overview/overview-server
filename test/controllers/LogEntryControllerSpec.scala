@@ -120,7 +120,7 @@ class LogEntryControllerSpec extends Specification {
 
       val result = jsonToResponse(documentSet1.id, json)
       status(result).must(equalTo(OK))
-      documentSet1.logEntries.toSeq.length.must(equalTo(2))
+      documentSet1.logEntries.iterator.toSeq.length.must(equalTo(2))
     }
 
     "not add any rows to the database when the first row is valid but subsequent ones are invalid" in new AuthorizedCreateManyContext {
@@ -132,7 +132,7 @@ class LogEntryControllerSpec extends Specification {
 
       val result = jsonToResponse(documentSet1.id, json)
       status(result).must(equalTo(BAD_REQUEST))
-      documentSet1.logEntries.toSeq.length.must(equalTo(0))
+      documentSet1.logEntries.iterator.toSeq.length.must(equalTo(0))
     }
   }
 
