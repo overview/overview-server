@@ -7,11 +7,11 @@ import play.api.Play.current
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Controller, Request, RequestHeader, PlainResult}
 import scala.util.control.Exception.catching
 
-import controllers.auth.AuthConfigImpl
+import controllers.auth.{AuthConfigImpl,Authenticatable}
 import models.orm.{DocumentSet,Document}
 import models.OverviewUser
 
-trait BaseController extends Controller with TransactionActionController with AuthConfigImpl {
+trait BaseController extends Controller with TransactionActionController with AuthConfigImpl with Authenticatable {
   protected def authorizedAction[A](p: BodyParser[A], authority: Authority)(f: OverviewUser => ActionWithConnection[A]): Action[A] = {
     ActionInTransaction(p) { (request: Request[A], connection: Connection) =>
       val user = userPassingAuthorization(request, authority)
@@ -67,6 +67,14 @@ trait BaseController extends Controller with TransactionActionController with Au
 
   protected def optionallyAuthorizedAction(f: Option[OverviewUser] => ActionWithConnection[AnyContent]): Action[AnyContent] = {
     optionallyAuthorizedAction(BodyParsers.parse.anyContent)(f)
+  }
+
+  def authenticationFailed(request: RequestHeader): PlainResult = {
+    Redirect(controllers.routes.SessionController.new_).withSession(AuthConfigImpl.AccessUriKey -> request.uri)
+  }
+
+  def authorizationFailed(request: RequestHeader): PlainResult = {
+    Forbidden(views.html.http.forbidden())
   }
 
   // copied from play20-auth
