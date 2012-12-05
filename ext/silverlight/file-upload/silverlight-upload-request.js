@@ -72,7 +72,6 @@
 
   // XMLHttpRequest lookalike
   function XMLHttpUploadRequest(silverlightPlugin, progressCallback) {
-    console.log("new XMLHttpUploadRequest");
     this.uploadRequestFactory = function(url) {
       // We can't grab a handle to a Silverlight method, hence this wrapper factory
       return silverlightPlugin.Content.UploadRequestFactory.CreateUploadRequest(url);
