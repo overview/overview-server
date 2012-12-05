@@ -6,6 +6,14 @@ CsvReader = require('util/csv_reader').CsvReader
 Upload = require('util/net/upload').Upload
 i18n = window.i18n
 
+if !window.requestAnimationFrame
+  window.requestAnimationFrame = (callback) ->
+    cur_time = new Date().getTime()
+    time_to_call = Math.max(0, 16 - (cur_time - last_time))
+    id = window.setTimeout((-> callback(cur_time + time_to_call)), time_to_call)
+    last_time = cur_time + time_to_call
+    id
+
 show_hidden_characters = (s) ->
   # Copied from PegJS's parser's quote() function
   s.replace(/\x08/g, '\\b'
@@ -27,6 +35,14 @@ make_csv_upload_form = (form_element) ->
 
   given_url = $form.attr('action')
   url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'
+
+  # Progress polyfill
+  if window.ProgressPolyfill
+    # progress was polyfilled when the page loaded. But then we cloned it.
+    # Remove the polyfill's breadcrumbs and polyfill anew.
+    $progress = $form.find('progress')
+    $progress.attr('role', false)
+    window.ProgressPolyfill.init($form.find('progress')[0])
 
   file = undefined
   upload = undefined
@@ -171,7 +187,7 @@ make_csv_upload_form = (form_element) ->
 
       if error
         $error = $preview.children('.error')
-        console.log("Error reading CSV:", error)
+        console?.log("Error reading CSV:", error)
         refresh_preview_error($error, error)
         $error.show()
 
@@ -228,7 +244,7 @@ make_csv_upload_form = (form_element) ->
 
   start_upload = () ->
     if upload?
-      upload.stop()
+      upload.abort()
       upload = undefined
 
     if file?
@@ -239,11 +255,34 @@ make_csv_upload_form = (form_element) ->
         url_prefix,
         _.extend({ contentType: "text/csv; charset=#{charset}" }, upload_options))
 
+      progress_elem = $form.find('progress')[0]
+      bytes_uploaded = 0
+      last_rendered_bytes_uploaded = bytes_uploaded
+      bytes_total = 1
+      stopped = false
+
+      refresh_progress = ->
+        if !stopped
+          if last_rendered_bytes_uploaded != bytes_uploaded
+            # We don't want to change things when we don't need to
+            last_rendered_bytes_uploaded = bytes_uploaded
+
+            percent = 100 * bytes_uploaded / bytes_total
+            progress_elem.value = percent
+
+          # requestAnimationFrame is too fast. We'll slow it by 50ms
+          window.setTimeout((-> requestAnimationFrame(refresh_progress)), 50)
+
+      requestAnimationFrame(refresh_progress)
+
+      # There are *lots* of progress events with a fast connection. They become
+      # a bottleneck. Hence the requestAnimationFrame...
       upload.progress (e) ->
-        $form.find('progress').attr('value', 100 * (e.loaded || 0) / (e.total || 1))
-        $form.find('.status').text(e.state)
+        bytes_uploaded = e.loaded || 0
+        bytes_total = e.total || 1
+      upload.always -> stopped = true
       upload.done -> window.location.reload()
-      upload.fail -> console.log('Upload failed', arguments)
+      upload.fail -> console?.log('Upload failed', arguments)
       upload.start()
 
     refresh_form_enabled()
@@ -257,10 +296,14 @@ make_csv_upload_form = (form_element) ->
   refresh_progress_visible = () ->
     $progress = $form.find('progress')
     if upload?
-      $progress.show()
-      width = $progress.width()
-      $progress.css({ width: 0 })
-      $progress.animate({ width: width })
+      if window.ProgressPolyfill
+        # We have so many if-statements it's hardly a polyfill any more...
+        # IE9 goes wonky when we animate.
+        $progress.css({ display: 'inline-block', width: 200, paddingRight: 200 })
+        window.ProgressPolyfill.redraw($progress[0])
+      else
+        $progress.css({ display: 'inline-block', width: 0 })
+        $progress.animate({ width: 200 })
     else
       $progress.hide()
 
@@ -269,7 +312,7 @@ make_csv_upload_form = (form_element) ->
     start_upload()
 
   cancel = () ->
-    upload.stop() if upload
+    upload?.abort()
 
     #file = undefined
     #upload = undefined
