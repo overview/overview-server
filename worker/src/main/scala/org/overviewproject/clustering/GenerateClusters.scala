@@ -206,7 +206,11 @@ object BuildDocTree {
       builder.sampleCloseEdges(numSampledEdgesPerDoc)           // use sampled edges if the docset is large
     val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
     builder.labelNode(tree)                                     // create a descriptive label for each node
-    
+    val t1 = System.nanoTime()
+    overview.util.Logger.logElapsedTime("starting cache gen", t1)
+    DocumentIdCacheGenerator(tree)
+    val t2 = System.nanoTime()
+    overview.util.Logger.logElapsedTime("cache gen done", t2)
     tree
   }
 
