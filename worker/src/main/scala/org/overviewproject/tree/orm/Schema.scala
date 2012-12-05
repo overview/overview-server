@@ -1,6 +1,6 @@
 package org.overviewproject.tree.orm
 
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.CustomTypes._
 
 
 object Schema extends org.squeryl.Schema {
