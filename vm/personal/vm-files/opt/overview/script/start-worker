@@ -5,6 +5,8 @@ LIBS="$DIR/lib"
 DB="postgres://overview:overview@localhost/overview"
 JAVA_OPTS="-Xms128M -Xmx1024M"
 
+sleep 10 # wait for overview-server to start: it will apply evolutions
+
 exec java $JAVA_OPTS \
        -cp "$LIBS/*" \
        -Ddatasource.default.url="$DB" \
