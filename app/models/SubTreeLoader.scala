@@ -40,6 +40,17 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
     parser.createNodes(treeNodeData, documentData, nodeTagCountData)
   }
 
+  def load(node: core.Node, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
+    val nodes = nodeLoader.loadTree(documentSetId, node, depth + 1)
+    val treeNodes = treeUntilDepth(node, nodes, depth)
+
+    val nodeIds = treeNodes.map(_.id)
+
+    val nodeTagCountData = loader.loadNodeTagCounts(Nil)
+
+    parser.addTagDataToNodes(treeNodes, nodeTagCountData)
+  }
+
   /**
    * @return Some(rootId) if the documentSet has a root node, None otherwise.
    */
@@ -66,6 +77,14 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
   def loadTags(documentSetId: Long)(implicit connection: Connection): Seq[PersistentTagInfo] = {
     val tagData = loader.loadTags(documentSetId)
     parser.createTags(tagData)
+  }
+
+  private def treeUntilDepth(root: core.Node, nodes: Seq[core.Node], depth: Int): Seq[Node] = {
+    if (depth == 0) Seq(root)
+    else {
+      val childNodes = root.childNodeIds.flatMap(c => nodes.find(_.id == c))
+      root +: childNodes.flatMap(treeUntilDepth(_, nodes, depth - 1))
+    }
   }
 
   private def nodesUntilDepth(rootId: Long, nodeData: List[NodeData], depth: Int): List[NodeData] = {
