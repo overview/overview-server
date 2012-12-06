@@ -11,14 +11,16 @@
 package org.overviewproject.clustering
 
 import java.sql.Connection
-
+import org.squeryl.PrimitiveTypeMode.using
+import org.squeryl.Session
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import overview.database.DB
-import overview.util.{ DocumentConsumer, Logger }
+import overview.util.DocumentConsumer
 import overview.util.DocumentSetCreationJobStateDescription.{Clustering, Done, Saving}
+import overview.util.Logger
 import overview.util.Progress.{Progress, ProgressAbortFn, makeNestedProgress}
 
 import persistence.{DocumentWriter, NodeWriter}
-
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 
@@ -43,7 +45,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
 
   def productionComplete() {
     Logger.logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
-    
+
     progAbort(Progress(fetchingFraction, Clustering))
     val t1 = System.nanoTime()
     val docVecs = vectorGen.documentVectors()
@@ -56,7 +58,11 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
     progAbort(Progress(savingFraction, Saving))
     val t2 = System.nanoTime()
     DB.withTransaction { implicit connection =>
-      nodeWriter.write(docTree)
+      val adapter = new SquerylPostgreSqlAdapter()
+      val session = new Session(connection, adapter)
+      using(session) {
+        nodeWriter.write(docTree)
+      }
     }
     Logger.logElapsedTime("Saved DocumentSet to DB", t2)
 
