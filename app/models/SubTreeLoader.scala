@@ -13,11 +13,13 @@ import DatabaseStructure.NodeData
 import java.sql.Connection
 import play.api.Play.current
 import play.api.db.DB
+import models.core.Node
 
 /**
  * Loads data from the database about subTrees
  */
 class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTreeDataLoader(),
+  nodeLoader: NodeLoader = new NodeLoader(),
   parser: SubTreeDataParser = new SubTreeDataParser()) extends DocumentListLoader(loader, parser) {
 
   /**
@@ -45,6 +47,9 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
     loader.loadRoot(documentSetId)
   }
 
+  def loadRoot()(implicit connection: Connection): Option[Node] = {
+    nodeLoader.loadRoot(documentSetId)
+  }
   /**
    * @return a list of Documents whose ids are referenced by the passed in nodes and tags.
    * The list is sorted by document IDs and all the elements are distinct, even if documentIds

@@ -2,8 +2,9 @@ package models
 
 import helpers.TestTag
 import org.specs2.mock._
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.test.Specification
+import models.core.Node
 
 class SubTreeLoaderSpec extends Specification with Mockito {
   implicit val unusedConnection: java.sql.Connection = null
@@ -11,8 +12,10 @@ class SubTreeLoaderSpec extends Specification with Mockito {
   trait MockComponents extends Scope {
     val loader = mock[SubTreeDataLoader]
     val parser = mock[SubTreeDataParser]
+    val nodeLoader = mock[NodeLoader]
+    
     val documentSetId = 123l;
-    val subTreeLoader = new SubTreeLoader(documentSetId, loader, parser)
+    val subTreeLoader = new SubTreeLoader(documentSetId, loader, nodeLoader, parser)
 
     val dummyDocuments = List(core.Document(10l, "documents", Some("documentCloudId"), Seq(5l), Seq(22l)))
     val dummyDocumentData = List((10l, "actually", "all data"))
@@ -33,6 +36,14 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       val subTreeLoader = new SubTreeLoader(1l)
 
       success
+    }
+    
+    "load root node" in new MockComponents {
+      val root = Node(documentSetId, "root", Seq.empty, null, Map())
+      nodeLoader loadRoot(documentSetId) returns Some(root)
+
+      subTreeLoader.loadRoot must beSome.like { case r => r must be equalTo root }
+      there was one(nodeLoader).loadRoot(documentSetId)
     }
 
     // test load()
