@@ -8,6 +8,7 @@
 package models
 
 import DatabaseStructure._
+import org.overviewproject.tree.orm.Node
 
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
@@ -30,6 +31,12 @@ class SubTreeDataParser extends DocumentListParser {
 
     nodeIds.map(n => createOneNode(n, nodeDescriptions, childNodeIds, documentIds, documentCounts,
       tagCounts))
+  }
+
+  def addTagDataToNodes(nodes: Seq[core.Node], nodeTagCountData: Seq[NodeTagCountData]): Seq[core.Node] = {
+    val tagCounts = mapNodesToTagCounts(nodeTagCountData)
+
+    nodes.map(n => n.copy(tagCounts = tagCounts.getOrElse(n.id, Map())))
   }
 
   // Instantiate a single core.Node object from the lists of id's returned from the database
