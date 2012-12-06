@@ -4,8 +4,10 @@ import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.Specification
+import org.overviewproject.tree.orm.{ Node => OrmNode }
 import helpers.DbTestContext
-import org.overviewproject.tree.orm.Node
+import models.core.Node
+import models.core.DocumentIdList
 
 class NodeLoaderSpec extends Specification {
   step(start(FakeApplication()))
@@ -15,12 +17,13 @@ class NodeLoaderSpec extends Specification {
     trait NodeContext extends DbTestContext {
       var documentSetId: Long = _
       var root: Node = _
-
+      
       val nodeLoader = new NodeLoader
 
       override def setupWithDb = {
         documentSetId = insertDocumentSet("SubTreeDataLoaderSpec")
-        root = Node(documentSetId, None, "root", 0, Array[Long]()).save
+        val r = OrmNode(documentSetId, None, "root", 0, Array[Long]()).save
+        root = Node(r.id, r.description, Seq.empty, DocumentIdList(Seq.empty, 0), Map())
       }
     }
 
@@ -34,7 +37,7 @@ class NodeLoaderSpec extends Specification {
 
       protected def createNextLevel(nodeId: Long): Seq[Long] = {
         for (i <- 1 to 2) yield {
-          val c = Node(documentSetId, Some(nodeId), "child", 0, Array[Long]()).save
+          val c = OrmNode(documentSetId, Some(nodeId), "child", 0, Array[Long]()).save
           c.id
         }
       }
