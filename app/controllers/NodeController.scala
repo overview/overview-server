@@ -4,6 +4,7 @@ import java.sql.Connection
 import play.api.mvc.{AnyContent,Request}
 import play.api.libs.json.JsValue
 import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.tree.orm.Node
 
 import models.{OverviewUser,SubTreeLoader}
 import models.orm.DocumentSet

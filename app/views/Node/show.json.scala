@@ -3,7 +3,7 @@ package views.json.Node
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-import models.orm.Node
+import org.overviewproject.tree.orm.Node
 
 object show {
   def apply(node: Node) : JsValue = {

@@ -12,7 +12,7 @@ class NodeSpec extends DbSpecification {
     
     inExample("write and read from the database") in new DbTestContext {
       val documentSetId = insertDocumentSet("NodeSpec")
-      val node = new Node(documentSetId, None, "description", 10, Array[Long](1, 2, 3, 4, 5))
+      val node = Node(documentSetId, None, "description", 10, Array[Long](1, 2, 3, 4, 5))
       
       Schema.nodes.insert(node)
       

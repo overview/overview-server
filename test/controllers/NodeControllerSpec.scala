@@ -1,13 +1,15 @@
 package controllers
 
-import org.specs2.mutable.Specification
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start,stop}
 
+import org.overviewproject.test.Specification
+import org.overviewproject.tree.orm.Node
+
 import helpers.DbTestContext
 import models.OverviewUser
-import models.orm.{DocumentSet,Node,User}
+import models.orm.{DocumentSet,User}
 import models.orm.DocumentSetType._
 
 class NodeControllerSpec extends Specification {
@@ -18,7 +20,7 @@ class NodeControllerSpec extends Specification {
     lazy val ormUser = User().save
     lazy val user = OverviewUser(ormUser)
     lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 0L, "title", Some("query")).save
-    lazy val node = Node(0L, documentSet.id, "description").save
+    lazy val node = Node(documentSet.id, None, "description", 0, Array[Long]()).save
 
     override def setupWithDb = {
       // TODO: don't rely on DB
@@ -32,6 +34,7 @@ class NodeControllerSpec extends Specification {
   "NodeController" should {
     "edit a node" in new ValidUpdateProcess {
       val result = NodeController.authorizedUpdate(user, documentSet.id, node.id)
+      
       val node2 = documentSet.nodes.single
       node2.description must be equalTo("new description")
     }
