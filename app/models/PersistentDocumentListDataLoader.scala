@@ -35,7 +35,7 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
         SELECT id, title, documentcloud_id FROM document
         """ + where +
       """
-        ORDER BY id
+        ORDER BY title, id
         LIMIT {maxRows} OFFSET {offset}
         """).on("maxRows" -> maxRows, "offset" -> firstRow,
       "documentSetId" -> documentSetId).
