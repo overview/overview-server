@@ -25,7 +25,7 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
   /**
    * @return a list of all the Nodes in the subTree with root at nodeId
    */
-  def load(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
+  def load2(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
 
     val allNodeData = loader.loadNodeData(documentSetId, nodeId, depth + 1)
 
@@ -40,17 +40,13 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
     parser.createNodes(treeNodeData, documentData, nodeTagCountData)
   }
 
-  def load(node: core.Node, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
-    val nodes = nodeLoader.loadTree(documentSetId, node, depth + 1)
-    val root = nodes.find(_.id == node.id).get // make sure child ids are loaded
-    
-    val treeNodes = treeUntilDepth(root, nodes, depth)
-    
-    val nodeIds = treeNodes.map(_.id)
+  def load(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
+    val nodes = nodeLoader.loadTree(documentSetId, nodeId, depth)
+    val nodeIds = nodes.map(_.id)
 
     val nodeTagCountData = loader.loadNodeTagCounts(nodeIds)
 
-    parser.addTagDataToNodes(treeNodes, nodeTagCountData)
+    parser.addTagDataToNodes(nodes, nodeTagCountData)
   }
 
   /**

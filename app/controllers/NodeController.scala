@@ -17,9 +17,9 @@ object NodeController extends BaseController {
   private[controllers] def authorizedIndex(user: OverviewUser, documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
-    subTreeLoader.loadRoot match {
-      case Some(root) => {
-        val nodes = subTreeLoader.load(root, 3)
+    subTreeLoader.loadRootId match {
+      case Some(rootId) => {
+        val nodes = subTreeLoader.load(rootId, 3)
 
         val tags = subTreeLoader.loadTags(documentSetId)
         val documents = subTreeLoader.loadDocuments(nodes, tags)
@@ -34,16 +34,11 @@ object NodeController extends BaseController {
   private[controllers] def authorizedShow(user: OverviewUser, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
-    subTreeLoader.loadNode(id) match {
-      case Some(node) => {
-        val nodes = subTreeLoader.load(node, 1)
-        val documents = subTreeLoader.loadDocuments(nodes, Seq())
+    val nodes = subTreeLoader.load(id, 1)
+    val documents = subTreeLoader.loadDocuments(nodes, Seq())
 
-        val json = views.json.Tree.show(nodes, documents, Seq())
-        Ok(json)
-      }
-      case None => NotFound
-    }
+    val json = views.json.Tree.show(nodes, documents, Seq())
+    Ok(json)
   }
 
   private[controllers] def authorizedUpdate(user: OverviewUser, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {

@@ -41,9 +41,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     val root = Node(1, "root", Seq(2, 3), documentIdList, Map())
     val children = Seq(
       Node(2, "child", Seq(4, 5), documentIdList, Map()),
-      Node(3, "leaf", Seq.empty, documentIdList, Map()),
-      Node(4, "leaf", Seq.empty, documentIdList, Map()),
-      Node(5, "leaf", Seq.empty, documentIdList, Map()))
+      Node(3, "leaf", Seq.empty, documentIdList, Map()))
     val treeNodes = root +: children.take(2)
     val tagCounts = List()
 
@@ -66,12 +64,12 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       there was one(nodeLoader).loadRoot(documentSetId)
     }
 
-    "load one extra level to get child node info" in new TreeContext {
-      nodeLoader loadTree (documentSetId, root, 2) returns root +: children
+    "load tree and add tag info" in new TreeContext {
+      nodeLoader loadTree (documentSetId, root.id, 1) returns root +: children
       loader loadNodeTagCounts (Seq(1, 2, 3)) returns tagCounts
       
-      val nodes = subTreeLoader.load(root, 1)
-      there was one(nodeLoader).loadTree(documentSetId, root, 2)
+      val nodes = subTreeLoader.load(root.id, 1)
+      there was one(nodeLoader).loadTree(documentSetId, root.id, 1)
       there was one(loader).loadNodeTagCounts(Seq(1, 2, 3)) // doesn't actually check arguments
       
       nodes must have size(3)
@@ -98,7 +96,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
 
       parser createNodes (nodeData.take(6), documentData, dummyNodeTagCountsData) returns dummyNodes
 
-      val nodes = subTreeLoader.load(1l, 2)
+      val nodes = subTreeLoader.load2(1l, 2)
 
       there was one(loader).loadNodeData(documentSetId, 1, 3)
       there was one(loader).loadDocumentIds(nodeIds ++ extraNodeIds)
@@ -117,7 +115,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       loader loadNodeData (documentSetId, 54l, 3) returns nodeData
       loader loadDocumentIds (nodeIds) returns documentData
 
-      val nodes = subTreeLoader.load(54l, 2)
+      val nodes = subTreeLoader.load2(54l, 2)
 
       there was one(loader).loadDocumentIds(nodeIds)
     }
