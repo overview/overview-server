@@ -19,12 +19,17 @@ object NodeController extends BaseController {
 
     subTreeLoader.loadRootId match {
       case Some(rootId) => {
+        val t0 = System.nanoTime
         val nodes = subTreeLoader.load(rootId, 3)
-
+        val t1 = System.nanoTime
         val tags = subTreeLoader.loadTags(documentSetId)
+        val t2 = System.nanoTime()
         val documents = subTreeLoader.loadDocuments(nodes, tags)
-
+        val t3 = System.nanoTime()
         val json = views.json.Tree.show(nodes, documents, tags)
+        val t4 = System.nanoTime()
+        
+        println("Times: %d %d %d %d".format(t1 - t0, t2 - t1, t3 - t2, t4 - t3))
         Ok(json)
       }
       case None => NotFound
