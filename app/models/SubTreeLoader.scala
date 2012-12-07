@@ -42,11 +42,13 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
 
   def load(node: core.Node, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
     val nodes = nodeLoader.loadTree(documentSetId, node, depth + 1)
-    val treeNodes = treeUntilDepth(node, nodes, depth)
-
+    val root = nodes.find(_.id == node.id).get // make sure child ids are loaded
+    
+    val treeNodes = treeUntilDepth(root, nodes, depth)
+    
     val nodeIds = treeNodes.map(_.id)
 
-    val nodeTagCountData = loader.loadNodeTagCounts(Nil)
+    val nodeTagCountData = loader.loadNodeTagCounts(nodeIds)
 
     parser.addTagDataToNodes(treeNodes, nodeTagCountData)
   }
@@ -60,6 +62,10 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
 
   def loadRoot()(implicit connection: Connection): Option[Node] = {
     nodeLoader.loadRoot(documentSetId)
+  }
+  
+  def loadNode(id: Long)(implicit connection: Connection): Option[Node] = {
+    nodeLoader.loadNode(documentSetId, id)
   }
   /**
    * @return a list of Documents whose ids are referenced by the passed in nodes and tags.
