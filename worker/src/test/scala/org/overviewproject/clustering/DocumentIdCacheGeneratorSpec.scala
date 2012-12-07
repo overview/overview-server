@@ -68,13 +68,10 @@ class DocumentIdCacheGeneratorSpec extends Specification {
     "sets the cache for intermediate nodes" in new LargeTree {
       DocumentIdCacheGenerator(root)
       
-      val childCaches = idsWithDescriptions.grouped(50).map(_.sortBy(_._2).map(_._1)).toSeq
-      root.children.toSeq.zip(childCaches).map { m =>
-        val n = m._1
-        val ids = m._2
-        n.documentIdCache.numberOfDocuments must be equalTo (ids.size)
-        n.documentIdCache.documentIds.toSeq must be equalTo (ids.take(10))
-      }
+      val childCaches = idsWithDescriptions.grouped(50).map(_.sortBy(_._2).map(_._1)).map(_.take(10)).toSeq
+      
+      val caches = root.children.map(_.documentIdCache.documentIds.toSeq)
+      caches must haveTheSameElementsAs(childCaches)
     }
   }
 
