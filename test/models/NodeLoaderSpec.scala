@@ -22,9 +22,12 @@ class NodeLoaderSpec extends Specification {
 
       override def setupWithDb = {
         documentSetId = insertDocumentSet("SubTreeDataLoaderSpec")
-        val r = OrmNode(documentSetId, None, "root", 0, Array[Long]()).save
+        val r = createNode(None, "root")
         root = Node(r.id, r.description, Seq.empty, DocumentIdList(Seq.empty, 0), Map())
       }
+
+      protected def createNode(parentId: Option[Long], description: String, size: Int = 0): OrmNode =
+        OrmNode(documentSetId, parentId, description, size, Array[Long]()).save
     }
 
     trait SmallTreeContext extends NodeContext {
@@ -37,10 +40,11 @@ class NodeLoaderSpec extends Specification {
 
       protected def createNextLevel(nodeId: Long): Seq[Long] = {
         for (i <- 1 to 2) yield {
-          val c = OrmNode(documentSetId, Some(nodeId), "child", 0, Array[Long]()).save
+          val c = createNode(Some(nodeId), "child")
           c.id
         }
       }
+
     }
 
     trait LargerTreeContext extends SmallTreeContext {
@@ -53,6 +57,19 @@ class NodeLoaderSpec extends Specification {
       }
     }
 
+    trait ChildNodesToBeOrdered extends NodeContext {
+      var idsSortedBySizeAndId: Seq[Long] = _
+
+      override def setupWithDb = {
+        super.setupWithDb
+        val nodeSizes = Seq(1000, 2000, 2000, 3000, 2000, 5000)
+        val children = nodeSizes.map(s => createNode(Some(root.id), "child", s))
+        val childIds = children.map(_.id)
+        idsSortedBySizeAndId =
+          childIds.zip(nodeSizes).sortWith((a, b) =>
+            (a._2 > b._2) || (a._2 == b._2 && a._1 < b._1)).map(_._1)
+      }
+    }
 
     "find the root node id" in new NodeContext {
       nodeLoader.loadRootId(documentSetId) must beSome.like { case id => id must be equalTo root.id }
@@ -77,6 +94,11 @@ class NodeLoaderSpec extends Specification {
       val nodes = nodeLoader.loadTree(documentSetId, root.id, 2)
       nodes.map(_.id) must haveTheSameElementsAs(nodeIds.take(7))
       nodes.map(_.childNodeIds).map { l => l must not beEmpty }
+    }
+
+    "return child ids sorted by node size and id" in new ChildNodesToBeOrdered {
+      val nodes = nodeLoader.loadTree(documentSetId, root.id, 0)
+      nodes(0).childNodeIds must be equalTo(idsSortedBySizeAndId)
     }
   }
   step(stop)

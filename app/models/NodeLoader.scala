@@ -26,15 +26,25 @@ class NodeLoader {
     if (depth == 0) Seq.empty
     else {
       val baseIds = baseNodes.map(_.id)
-      val nextLevel = loadChildren(documentSetId, baseIds) 
+      val nextLevel = loadChildren(documentSetId, baseIds)
       val baseWithChildIds = baseNodes.map { n => 
-        val childIds = nextLevel.filter(_.parentId == Some(n.id)).map(_.id)
+        val childNodes = nextLevel.filter(_.parentId == Some(n.id))
+        val childIds = sortNodes(childNodes).map(_.id)
         n.copy(childNodeIds = childIds)  
       }
       baseWithChildIds ++ loadLevels(documentSetId, nextLevel.map(makePartialNode), depth - 1)
     }
   }
   
+  private def sortNodes(nodes: Seq[Node]): Seq[Node] = {
+    def nodeOrder(a: Node, b: Node) = 
+      (a.cachedSize > b.cachedSize) || (a.cachedSize == b.cachedSize && a.id < b.id)
+      
+    nodes.sortWith(nodeOrder(_, _))  
+  } 
+
+    
+    
   private def loadChildren(documentSetId: Long, nodeIds: Seq[Long]): Seq[Node] = {
     nodes.where(n => n.documentSetId === documentSetId and (n.parentId in nodeIds)).iterator.toSeq
   }
