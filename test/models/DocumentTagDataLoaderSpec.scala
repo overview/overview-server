@@ -2,10 +2,10 @@ package models
 
 import helpers.DbTestContext
 import models.DatabaseStructure.{ DocumentData, DocumentNodeData, DocumentTagData }
-import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import org.overviewproject.test.DbSetup._
+import org.overviewproject.test.Specification
 
 class DocumentTagDataLoaderSpec extends Specification {
 
@@ -41,9 +41,10 @@ class DocumentTagDataLoaderSpec extends Specification {
       var documentIds: Seq[Long] = _
 
       override def setupWithDb = {
-        documentIds = Seq.fill(3)(insertDocument(documentSetId, "title", "dcId"))
+        val titles = Seq.tabulate(3)(i => "title-" + (5 - i))
+        documentIds = titles.map(insertDocument(documentSetId, _, "dcId"))
 
-        expectedDocumentData = documentIds.map((_, "title", Some("dcId")))
+        expectedDocumentData = documentIds.zip(titles).map(dt => (dt._1, dt._2, Some("dcId")))
       }
     }
 
@@ -79,10 +80,11 @@ class DocumentTagDataLoaderSpec extends Specification {
       nodeData must beEmpty
     }
 
-    "return all documents in nodes" in new DocumentsLoaded {
+    "return all documents in nodes sorted by title and id" in new DocumentsLoaded {
       val documentData = loader.loadDocuments(documentIds)
 
       documentData must haveTheSameElementsAs(expectedDocumentData)
+      documentData must be equalTo(documentData.sortBy(d => (d._2, d._1)))
     }
 
     "return no documents if no document ids specified" in new DocumentsLoaded {

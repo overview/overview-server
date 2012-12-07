@@ -70,7 +70,10 @@ class DocumentTagDataLoader {
         SELECT id, title, documentcloud_id
         FROM document
         WHERE id IN
-      """ + idList(documentIds)).
+      """ + idList(documentIds) +
+      """
+        ORDER BY title, id
+      """).
       as(documentParser map (flatten) *)
   }
 
