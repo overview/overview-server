@@ -14,6 +14,12 @@ class NodeLoader {
     }
   }
   
+  def loadNode(documentSetId: Long, nodeId: Long): Option[core.Node] = {
+    nodes.where(n => n.documentSetId === documentSetId and n.id === nodeId).headOption.map { n =>
+      core.Node(n.id, n.description, Seq.empty, DocumentIdList(n.cachedDocumentIds, n.cachedSize), Map())
+    }
+  }
+  
   def loadTree(documentSetId: Long, root: core.Node, depth: Int): Seq[core.Node] = {
     if (depth == 0) Seq(root)
     else {
@@ -26,4 +32,5 @@ class NodeLoader {
       }
     }
   }
+
 }

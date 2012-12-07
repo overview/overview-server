@@ -59,6 +59,12 @@ class NodeLoaderSpec extends Specification {
       node must beSome.like { case n => n.id must be equalTo root.id }
     }
 
+    "load a node" in new SmallTreeContext {
+      val childId = nodeIds(1)
+      val node = nodeLoader.loadNode(documentSetId, childId)
+      
+      node must beSome.like { case n => n.id must be equalTo childId }
+    }
     "load a small tree" in new SmallTreeContext {
       val nodes = nodeLoader.loadTree(documentSetId, root, 1)
       nodes.map(_.id) must haveTheSameElementsAs(nodeIds)
