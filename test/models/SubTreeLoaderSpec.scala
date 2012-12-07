@@ -55,15 +55,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
 
       success
     }
-
-    "load root node" in new MockComponents {
-      val root = Node(documentSetId, "root", Seq.empty, null, Map())
-      nodeLoader loadRoot (documentSetId) returns Some(root)
-
-      subTreeLoader.loadRoot must beSome.like { case r => r must be equalTo root }
-      there was one(nodeLoader).loadRoot(documentSetId)
-    }
-
+    
     "load tree and add tag info" in new TreeContext {
       nodeLoader loadTree (documentSetId, root.id, 1) returns root +: children
       loader loadNodeTagCounts (Seq(1, 2, 3)) returns tagCounts
@@ -73,51 +65,6 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       there was one(loader).loadNodeTagCounts(Seq(1, 2, 3)) // doesn't actually check arguments
       
       nodes must have size(3)
-    }
-
-    // test load()
-    "load DocumentIds for unique parent nodes, parsing result" in new MockComponents {
-      val nodeData = List((-1l, 1l, "root"), (1l, 2l, "child"), (2l, 4l, "grandChild"),
-        (1l, 3l, "child"),
-        (3l, 5l, "grandChild"),
-        (3l, 6l, "grandchild"),
-        (4l, 7l, "extra"),
-        (5l, 8l, "extra"),
-        (6l, 9l, "extra")).map(d => (d._1, Some(d._2), d._3))
-      val nodeIds = List(-1l, 1l, 2l, 3l)
-      val extraNodeIds = List(4l, 5l, 6l)
-      val documentData = List((1l, 34l, 20l))
-      val dummyNodes = List(core.Node(1l, "standin for lots of Nodes", Nil, null, Map()))
-      val dummyNodeTagCountsData = List((1l, 2l, 4l))
-
-      loader loadNodeData (documentSetId, 1, 3) returns nodeData
-      loader loadDocumentIds (nodeIds ++ extraNodeIds) returns documentData
-      loader loadNodeTagCounts (nodeIds) returns dummyNodeTagCountsData
-
-      parser createNodes (nodeData.take(6), documentData, dummyNodeTagCountsData) returns dummyNodes
-
-      val nodes = subTreeLoader.load2(1l, 2)
-
-      there was one(loader).loadNodeData(documentSetId, 1, 3)
-      there was one(loader).loadDocumentIds(nodeIds ++ extraNodeIds)
-      there was one(loader).loadNodeTagCounts(nodeIds)
-      there was one(parser).createNodes(nodeData.take(6), documentData, dummyNodeTagCountsData)
-
-      nodes must be equalTo (dummyNodes)
-    }
-
-    "load DocumentIds for leaf nodes with no children" in new MockComponents {
-      val nodeData = List((-1l, Some(54l), "in subtree with no children"),
-        (54l, None, ""))
-      val documentData = List((54l, 34l, 20l), (54l, 34l, 30l))
-      val nodeIds = List(-1l, 54l)
-
-      loader loadNodeData (documentSetId, 54l, 3) returns nodeData
-      loader loadDocumentIds (nodeIds) returns documentData
-
-      val nodes = subTreeLoader.load2(54l, 2)
-
-      there was one(loader).loadDocumentIds(nodeIds)
     }
 
     // test loadDocuments() gets passed correct documentIds 

@@ -53,21 +53,9 @@ class NodeLoaderSpec extends Specification {
       }
     }
 
-    "find the root Node" in new NodeContext {
-      val node = nodeLoader.loadRoot(documentSetId)
-
-      node must beSome.like { case n => n.id must be equalTo root.id }
-    }
 
     "find the root node id" in new NodeContext {
       nodeLoader.loadRootId(documentSetId) must beSome.like { case id => id must be equalTo root.id }
-    }
-
-    "load a node" in new SmallTreeContext {
-      val childId = nodeIds(1)
-      val node = nodeLoader.loadNode(documentSetId, childId)
-
-      node must beSome.like { case n => n.id must be equalTo childId }
     }
 
     "load a small tree" in new SmallTreeContext {

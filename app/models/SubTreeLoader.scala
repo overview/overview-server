@@ -22,24 +22,6 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
   nodeLoader: NodeLoader = new NodeLoader(),
   parser: SubTreeDataParser = new SubTreeDataParser()) extends DocumentListLoader(loader, parser) {
 
-  /**
-   * @return a list of all the Nodes in the subTree with root at nodeId
-   */
-  def load2(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
-
-    val allNodeData = loader.loadNodeData(documentSetId, nodeId, depth + 1)
-
-    val treeNodeData = nodesUntilDepth(nodeId, allNodeData, depth)
-
-    val allNodeIds = allNodeData.map(_._1).distinct
-    val treeNodeIds = treeNodeData.map(_._1).distinct
-
-    val documentData = loader.loadDocumentIds(allNodeIds)
-    val nodeTagCountData = loader.loadNodeTagCounts(treeNodeIds)
-
-    parser.createNodes(treeNodeData, documentData, nodeTagCountData)
-  }
-
   def load(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
     val nodes = nodeLoader.loadTree(documentSetId, nodeId, depth)
     val nodeIds = nodes.map(_.id)
@@ -55,14 +37,7 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
   def loadRootId()(implicit connection: Connection): Option[Long] = {
     loader.loadRoot(documentSetId)
   }
-
-  def loadRoot()(implicit connection: Connection): Option[Node] = {
-    nodeLoader.loadRoot(documentSetId)
-  }
   
-  def loadNode(id: Long)(implicit connection: Connection): Option[Node] = {
-    nodeLoader.loadNode(documentSetId, id)
-  }
   /**
    * @return a list of Documents whose ids are referenced by the passed in nodes and tags.
    * The list is sorted by document IDs and all the elements are distinct, even if documentIds
