@@ -57,27 +57,27 @@ class DocumentIdCacheGeneratorSpec extends Specification {
     }
     
     "return the cache for a leaf node, consisting of one id" in new SingleLeafNode {
-      DocumentIdCacheGenerator(leafNode)
+      DocumentIdCacheGenerator.createCache(leafNode)
 
       leafNode.documentIdCache.numberOfDocuments must be equalTo (1)
       leafNode.documentIdCache.documentIds(0) must be equalTo (1l)
     }
 
     "return the cache, sorted by document description" in new SimpleTree {
-      DocumentIdCacheGenerator(root)
+      DocumentIdCacheGenerator.createCache(root)
       root.documentIdCache.numberOfDocuments must be equalTo (3)
       root.documentIdCache.documentIds.toSeq must be equalTo (Seq(1l, 2l, 3l))
     }
 
     "return a cache of size 10" in new LargeTree {
-      DocumentIdCacheGenerator(root)
+      DocumentIdCacheGenerator.createCache(root)
       root.documentIdCache.numberOfDocuments must be equalTo (idsWithDescriptions.size)
 
       root.documentIdCache.documentIds.toSeq must be equalTo (expectedCache)
     }
 
     "sets the cache for intermediate nodes" in new LargeTree {
-      DocumentIdCacheGenerator(root)
+      DocumentIdCacheGenerator.createCache(root)
       
       val childCaches = idsWithDescriptions.grouped(50).map(_.sortBy(_._2).map(_._1)).map(_.take(10)).toSeq
       
@@ -86,7 +86,7 @@ class DocumentIdCacheGeneratorSpec extends Specification {
     }
     
     "sort by id if descriptions are the same" in new EqualDescriptions {
-      DocumentIdCacheGenerator(root)
+      DocumentIdCacheGenerator.createCache(root)
       val ids = root.documentIdCache.documentIds
       ids must be equalTo (ids.sorted)
     }

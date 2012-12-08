@@ -207,7 +207,7 @@ object BuildDocTree {
     val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
     builder.labelNode(tree)                                     // create a descriptive label for each node
 
-    DocumentIdCacheGenerator(tree)
+    DocumentIdCacheGenerator.createCache(tree)
 
 
 

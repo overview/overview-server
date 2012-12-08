@@ -11,8 +11,7 @@ object DocumentIdCacheGenerator {
 
   private val CacheSize = 10
   
-  def apply(node: DocTreeNode) {
-
+  def createCache(node: DocTreeNode) {
     val documentIds = documentIdCacheWithDescriptions(node).map(_._1).toArray
 
     node.documentIdCache = new DocumentIdCache(node.docs.size, documentIds)
