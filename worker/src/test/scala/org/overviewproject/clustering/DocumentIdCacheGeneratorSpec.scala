@@ -43,9 +43,19 @@ class DocumentIdCacheGeneratorSpec extends Specification {
       val level2Nodes = level1Nodes.grouped(5).map { createParentNode }
       val root = createParentNode(level2Nodes.toSeq)
 
-      val expectedCache = idsWithDescriptions.sortBy(_._2).map(_._1).take(10)
+      val expectedCache = idsWithDescriptions.sortBy(x => (x._2, x._1)).map(_._1).take(10)
     }
 
+    trait EqualDescriptions extends Setup {
+      val documentIds = Set[DocumentID](10l, 4l, 7l, 3l)
+
+      val root = new DocTreeNode(documentIds)
+      documentIds.foreach { i =>
+        val n = createLeafNode("same for all", i)
+        root.children.add(n)
+      }
+    }
+    
     "return the cache for a leaf node, consisting of one id" in new SingleLeafNode {
       DocumentIdCacheGenerator(leafNode)
 
@@ -62,6 +72,7 @@ class DocumentIdCacheGeneratorSpec extends Specification {
     "return a cache of size 10" in new LargeTree {
       DocumentIdCacheGenerator(root)
       root.documentIdCache.numberOfDocuments must be equalTo (idsWithDescriptions.size)
+
       root.documentIdCache.documentIds.toSeq must be equalTo (expectedCache)
     }
 
@@ -72,6 +83,12 @@ class DocumentIdCacheGeneratorSpec extends Specification {
       
       val caches = root.children.map(_.documentIdCache.documentIds.toSeq)
       caches must haveTheSameElementsAs(childCaches)
+    }
+    
+    "sort by id if descriptions are the same" in new EqualDescriptions {
+      DocumentIdCacheGenerator(root)
+      val ids = root.documentIdCache.documentIds
+      ids must be equalTo (ids.sorted)
     }
   }
 

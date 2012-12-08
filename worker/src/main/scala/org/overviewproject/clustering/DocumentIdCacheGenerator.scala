@@ -40,8 +40,8 @@ object DocumentIdCacheGenerator {
     if (cache1.isEmpty) merge ++ cache2 take(CacheSize)
     else if (cache2.isEmpty) merge ++ cache1 take(CacheSize)
     else {
-      val caches = if (cache1.head._2 < cache2.head._2) (cache1, cache2) else (cache2, cache1)
-      cacheMerge(caches._1.tail, caches._2, merge :+ caches._1.head)
+      val caches = Seq(cache1, cache2).sortBy(c => (c.head._2, c.head._1))
+      cacheMerge(caches(0).tail, caches(1), merge :+ caches(0).head)
     }
 
 }
