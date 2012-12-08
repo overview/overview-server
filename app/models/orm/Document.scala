@@ -18,8 +18,6 @@ case class Document(
     @Column("documentcloud_id") val documentcloudId: Option[String] = None
     ) extends KeyedEntity[Long] {
 
-  def this() = this(documentType = new DocumentType("DocumentCloudDocument")) // For Squeryl
-
   lazy val documentSet = Schema.documentSetDocuments.right(this)
 
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
