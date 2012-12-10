@@ -6,9 +6,10 @@ import play.api.db.DB
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result }
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
-import controllers.util.HttpsEnforcer
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
+import controllers.util.HttpsEnforcer
+import models.OverviewDatabase
 
 trait TransactionActionController extends HttpsEnforcer {
   protected type ActionWithConnection[A] = {
@@ -17,12 +18,8 @@ trait TransactionActionController extends HttpsEnforcer {
 
   protected def ActionInTransaction[A](p: BodyParser[A])(f: ActionWithConnection[A]) = {
     HttpsAction(p) { implicit request =>
-      DB.withTransaction { implicit connection =>
-        val adapter = new SquerylPostgreSqlAdapter()
-        val session = new Session(connection, adapter)
-        using(session) { // sets thread-local variable
-          f(request, connection)
-        }
+      OverviewDatabase.inTransaction { () =>
+        f(request, OverviewDatabase.currentConnection)
       }
     }
   }
