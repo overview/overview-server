@@ -4,7 +4,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
-import play.api.mvc.{AnyContent, Request, RequestHeader}
+import play.api.mvc.{AnyContent, Request, RequestHeader, PlainResult}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers.{BAD_REQUEST, OK, SEE_OTHER, contentAsString, status}
 
@@ -50,9 +50,9 @@ class PasswordControllerSpec extends Specification {
         lastMail = Some(mail)
       }
 
-      override def loginSucceeded(request: RequestHeader) = {
+      override def gotoLoginSucceeded[A](userId: Long)(implicit request: Request[A]): PlainResult = {
         loggedIn = true
-        super.loginSucceeded(request)
+        super.gotoLoginSucceeded(userId)(request)
       }
     }
 
