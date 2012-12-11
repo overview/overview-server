@@ -2,8 +2,9 @@ package controllers
 
 import java.sql.Connection
 import play.api.mvc.{AnyContent, Request}
+
 import controllers.util.{ IdList, SaneRange }
-import models.PersistentDocumentList
+import models.{OverviewUser,PersistentDocumentList}
 
 trait DocumentListController extends BaseController {
   def index(documentSetId: Long, nodeids: String, tagids: String,
@@ -14,7 +15,7 @@ trait DocumentListController extends BaseController {
       }
   }
 
-  protected def authorizedIndex(user: User, documentSetId: Long, nodeids: String, tagids: String,
+  protected def authorizedIndex(user: OverviewUser, documentSetId: Long, nodeids: String, tagids: String,
     documentids: String, start: Int, end: Int)(implicit request: Request[AnyContent], connection: Connection) = {
     val (validStart, validEnd) = SaneRange(start, end)
 
