@@ -67,7 +67,7 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "createdAt should point to the ORM document" in new CsvImportDocumentSetScope {
-      documentSet.createdAt must beEqualTo(createdAt)
+      documentSet.createdAt.getTime must beEqualTo(createdAt.getTime)
     }
 
     "title should be the title" in new DocumentCloudDocumentSetScope {
