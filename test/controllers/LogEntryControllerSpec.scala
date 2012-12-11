@@ -8,6 +8,7 @@ import play.api.libs.json._
 import play.api.test.{FakeApplication,FakeHeaders,FakeRequest}
 import play.api.test.Helpers._
 
+import controllers.auth.AuthorizedRequest
 import models.orm.{DocumentSet,LogEntry,User}
 import models.OverviewUser
 
@@ -33,12 +34,13 @@ class LogEntryControllerSpec extends Specification {
       ))))
 
       def createRequest(json: JsValue) = {
-        FakeRequest("GET", "/", FakeHeaders(Map("Content-Type" -> Seq("application/json"))), json)
+        val normalRequest = FakeRequest("GET", "/", FakeHeaders(Map("Content-Type" -> Seq("application/json"))), json)
+        new AuthorizedRequest(normalRequest, user)
       }
 
       def jsonToResponse(documentSetId: Long, json: JsValue)(implicit connection: java.sql.Connection) = {
         val request = createRequest(json)
-        LogEntryController.authorizedCreateMany(user, documentSetId)(request, connection)
+        LogEntryController.createMany(documentSetId)(request)
       }
     }
 
@@ -139,7 +141,8 @@ class LogEntryControllerSpec extends Specification {
   "index()" should {
     trait AuthorizedIndexTrait extends OurDbContext {
       def getResult(documentSetId: Long, extension: String = ".html") = {
-        LogEntryController.authorizedIndex(user, documentSetId, extension)(FakeRequest(), connection)
+        val request = new AuthorizedRequest(FakeRequest(), user)
+        LogEntryController.index(documentSetId, extension)(request)
       }
 
       def getValidResult(extension: String = ".html") = {

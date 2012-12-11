@@ -3,12 +3,12 @@ package controllers
 import scala.collection.JavaConversions._
 
 import java.io.StringWriter
-import java.sql.{Connection,Timestamp}
+import java.sql.Timestamp
 
 import play.api.libs.json._
 import play.api.data.{Form,FormError}
 import play.api.data.Forms._
-import play.api.mvc.{Action,Controller,Request,AnyContent}
+import play.api.mvc.{Action,BodyParsers,Controller,Request,AnyContent}
 
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -17,55 +17,54 @@ import au.com.bytecode.opencsv.CSVWriter
 
 import org.squeryl.PrimitiveTypeMode._
 
-import models.OverviewUser
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userOwningDocumentSet
+import models.{OverviewDatabase,OverviewUser}
 import models.orm.{DocumentSet,LogEntry}
 import models.orm.LogEntry.ImplicitHelper._
 
-object LogEntryController extends BaseController {
-  def index(id: Long, extension: String) = authorizedAction(userOwningDocumentSet(id))(user => authorizedIndex(user, id, extension)(_: Request[AnyContent], _: Connection))
-  def createMany(id: Long) = authorizedAction(parse.json, userOwningDocumentSet(id))(user => authorizedCreateMany(user, id)(_: Request[JsValue], _: Connection))
+trait LogEntryController extends BaseController {
+  def findOrmDocumentSetById(id: Long): Option[DocumentSet]
 
-  private[controllers] def authorizedIndex(user: OverviewUser, documentSetId: Long, extension: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    val documentSet = DocumentSet.findById(documentSetId)
-
-    documentSet.map({ ds =>
-      val logEntries = ds.orderedLogEntries.page(0, 5000).toSeq.withUsers
+  def index(id: Long, extension: String) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    findOrmDocumentSetById(id).map({ documentSet =>
+      val logEntries = documentSet.orderedLogEntries.page(0, 5000).toSeq.withUsers
 
       extension match {
         case ".csv" => logEntriesToCsv(logEntries)
-        case _ => Ok(views.html.LogEntry.index(user, ds, logEntries))
+        case _ => Ok(views.html.LogEntry.index(request.user, documentSet, logEntries))
       }
     }).getOrElse(
       NotFound("Invalid document set ID")
     )
   }
 
-  private[controllers] def authorizedCreateMany(user: OverviewUser, documentSetId: Long)(implicit request: Request[JsValue], connection: Connection) = {
+  def createMany(id: Long) = AuthorizedAction(BodyParsers.parse.tolerantJson, userOwningDocumentSet(id)) { implicit request =>
     request.body match {
       case jsArray: JsArray =>
         var ok = true
 
         for (jsValue <- jsArray.as[List[JsValue]]) {
-          ok &&= verifyAndInsertLogEntry(documentSetId, user, jsValue)
+          ok &&= verifyAndInsertLogEntry(id, request.user, jsValue)
         }
 
         if (ok) {
           Ok("added log entries")
         } else {
-          connection.rollback()
+          OverviewDatabase.currentConnection.rollback()
           BadRequest(createManyJsonInstructions)
         }
       case _ => BadRequest(createManyJsonInstructions)
     }
   }
 
-  val createManyJsonInstructions =
+  private val createManyJsonInstructions =
       "Request must be of type application/json and look like " +
       "'[{date: \"ISO8601-datetime\", component: \"component\", action: \"action\", details: \"details\"}, ...]'"
 
-  lazy val isoDateTimeFormat = ISODateTimeFormat.dateTime()
+  private lazy val isoDateTimeFormat = ISODateTimeFormat.dateTime()
 
-  implicit def iso8601DateFormatter = new play.api.data.format.Formatter[Timestamp] {
+  private implicit def iso8601DateFormatter = new play.api.data.format.Formatter[Timestamp] {
     override val format = Some("format.iso8601_date", Nil)
 
     def bind(key: String, data: Map[String,String]) = {
@@ -83,7 +82,7 @@ object LogEntryController extends BaseController {
     }
   }
 
-  def logEntryForm(documentSetId: Long, user: OverviewUser) = Form(
+  private def logEntryForm(documentSetId: Long, user: OverviewUser) = Form(
     mapping(
       "date" -> of[Timestamp],
       "component" -> nonEmptyText,
@@ -124,4 +123,8 @@ object LogEntryController extends BaseController {
       case _ => None
     }
   }
+}
+
+object LogEntryController extends LogEntryController {
+  def findOrmDocumentSetById(id: Long) = DocumentSet.findById(id)
 }
