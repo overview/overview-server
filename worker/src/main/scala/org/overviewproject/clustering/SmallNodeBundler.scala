@@ -18,6 +18,8 @@ import org.overviewproject.clustering.ClusterTypes._
 
 object SmallNodeBundler {
   
+  val bundledDescription = "(other)"
+    
   def apply(root:DocTreeNode, desiredMaxChildren:Int) : Unit = limitTreeMaxChildren(root, desiredMaxChildren)
   
   
@@ -26,27 +28,29 @@ object SmallNodeBundler {
   
     var kidsRemaining = n.children.size
 
-    if (kidsRemaining > maxChildren) {
-      kidsRemaining += 1                              // we create a new node to put the bundled kids under
-      
-      var kids = n.orderedChildren.reverse            //  this list goes from smallest to biggest
-      var bundledNodes = Set[DocTreeNode]()
-      var bundledDocs = Set[DocumentID]()
-      
-      while (kidsRemaining > maxChildren) {           // each iteration bundles a kid, until only maxChildren left
-        val eatKid = kids.head
-        bundledNodes += eatKid
-        bundledDocs ++= eatKid.docs
-        kids = kids.tail
-        kidsRemaining -= 1
-      }
-
-      var otherNode = new DocTreeNode(bundledDocs)    // create new node that will hold all the kids we bundled
-      otherNode.children = bundledNodes
-      otherNode.description = "(other)"
+    if (n.description != bundledDescription) {
+      if (kidsRemaining > maxChildren) {
+        kidsRemaining += 1                              // we create a new node to put the bundled kids under
         
-      n.children = Set(kids: _*) + otherNode
-    } 
+        var kids = n.orderedChildren.reverse            //  this list goes from smallest to biggest
+        var bundledNodes = Set[DocTreeNode]()
+        var bundledDocs = Set[DocumentID]()
+        
+        while (kidsRemaining > maxChildren) {           // each iteration bundles a kid, until only maxChildren left
+          val eatKid = kids.head
+          bundledNodes += eatKid
+          bundledDocs ++= eatKid.docs
+          kids = kids.tail
+          kidsRemaining -= 1
+        }
+  
+        var otherNode = new DocTreeNode(bundledDocs)    // create new node that will hold all the kids we bundled
+        otherNode.children = bundledNodes
+        otherNode.description = bundledDescription
+          
+        n.children = Set(kids: _*) + otherNode
+      } 
+    }
   }
   
   def limitTreeMaxChildren(n:DocTreeNode, maxChildren:Int) : Unit = {

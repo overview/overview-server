@@ -198,18 +198,20 @@ object BuildDocTree {
 
     // Use edge sampling if docset is large enough, with hard-coded number of samples
     // Random graph connectivity arguments suggest num samples does not need to scale with docset size
-    val numDocsWhereSamplingHelpful = 1000 
+    val numDocsWhereSamplingHelpful = 10000 
     val numSampledEdgesPerDoc = 200
+    
+    // Maximum arity of the tree (smallest nodes will be bundled)
+    val maxChildrenPerNode = 5
     
     val builder = new LabellingDocTreeBuilder(docVecs, distanceFn)
     if (docVecs.size > numDocsWhereSamplingHelpful)             
       builder.sampleCloseEdges(numSampledEdgesPerDoc)           // use sampled edges if the docset is large
     val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
     builder.labelNode(tree)                                     // create a descriptive label for each node
-
+    SmallNodeBundler(tree, maxChildrenPerNode)                  // prune the tree
+    
     DocumentIdCacheGenerator.createCache(tree)
-
-
 
     tree
   }
