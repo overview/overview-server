@@ -1,16 +1,14 @@
 package controllers.admin
 
-import java.sql.Connection
-import play.api.mvc.{AnyContent,Request}
+import play.api.mvc.Controller
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.adminUser
 import models.orm.DocumentSetCreationJob
-import models.OverviewUser
 
-object DocumentSetCreationJobController extends AdminController {
-  def index() = adminAction((user: OverviewUser) => authorizedIndex(user)(_: Request[AnyContent], _: Connection))
-
-  def authorizedIndex(user: OverviewUser)(implicit request: Request[AnyContent], connection: Connection) = {
+object DocumentSetCreationJobController extends Controller {
+  def index() = AuthorizedAction(adminUser) { implicit request =>
     val jobs = DocumentSetCreationJob.all.iterator.toSeq
-    Ok(views.html.admin.DocumentSetCreationJob.index(user, jobs))
+    Ok(views.html.admin.DocumentSetCreationJob.index(request.user, jobs))
   }
 }
