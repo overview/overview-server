@@ -21,16 +21,18 @@ object OverviewDatabase {
     * If the block succeeds, this method will end with a database COMMIT.
     * Otherwise, it will ROLLBACK.
     *
-    * This method may not be nested.
+    * If this method is nested, the inner call will not COMMIT.
     */
-  def inTransaction[A](block: () => A) = {
-    if (isInTransaction) throw new Exception("inTransaction may not be nested")
-
-    DB.withTransaction { implicit connection =>
-      val adapter = new SquerylPostgreSqlAdapter()
-      val session = new Session(connection, adapter)
-      PrimitiveTypeMode.using(session) { // sets thread-local variable
-        block()
+  def inTransaction[A](block: => A) : A = {
+    if (isInTransaction) {
+      block
+    } else {
+      DB.withTransaction { implicit connection =>
+        val adapter = new SquerylPostgreSqlAdapter()
+        val session = new Session(connection, adapter)
+        PrimitiveTypeMode.using(session) { // sets thread-local variable
+          block
+        }
       }
     }
   }
