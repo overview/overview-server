@@ -8,43 +8,18 @@
 
 package controllers
 
-import controllers.forms.TagForm
-import java.sql.Connection
 import models.{ OverviewTag, PotentialTag }
 import models.orm.User
 import play.api.data.{ Form, FormError }
-import play.api.db.DB
-import play.api.mvc.{ Action, AnyContent, Request }
-import play.api.Play.current
-import models.{ PersistentDocumentList, PersistentTag, PersistentTagLoader }
+import play.api.mvc.Controller
+
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.forms.TagForm
 import controllers.util.IdList
+import models.{ PersistentDocumentList, PersistentTag, PersistentTagLoader }
 
-object TagController extends BaseController {
-
-  def create(documentSetId: Long) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedCreate(documentSetId)(_: Request[AnyContent], _: Connection))
-
-  def add(documentSetId: Long, tagId: Long) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedAdd(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
-
-  def remove(documentSetId: Long, tagId: Long) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedRemove(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
-
-  def delete(documentSetId: Long, tagId: Long) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedDelete(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
-
-  def update(documentSetId: Long, tagId: Long) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedUpdate(documentSetId, tagId)(_: Request[AnyContent], _: Connection))
-
-  def nodeCounts(documentSetId: Long, tagId: Long, nodeIds: String) =
-    authorizedAction(userOwningDocumentSet(documentSetId))(user =>
-      authorizedNodeCounts(documentSetId, tagId, nodeIds)(_: Request[AnyContent], _: Connection))
-
+object TagController extends Controller {
   private val idListFormat = new play.api.data.format.Formatter[Seq[Long]] {
     def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Seq[Long]] = {
       val idList = data.get(key).map(s => IdList(s)).getOrElse(Seq())
@@ -65,7 +40,8 @@ object TagController extends BaseController {
         // FIXME should be: Some((documents.documentIds, documents.nodeIds, documents.tagIds))
         Some((Seq(), Seq(), Seq()))))
 
-  def authorizedCreate(documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     val newTag = PotentialTag("_new_tag").create(documentSetId)
     TagForm(newTag).bindFromRequest.fold(
       formWithErrors => BadRequest,
@@ -76,7 +52,8 @@ object TagController extends BaseController {
       })
   }
 
-  def authorizedAdd(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
@@ -94,7 +71,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedRemove(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
@@ -112,7 +90,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedDelete(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def delete(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
@@ -122,7 +101,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedUpdate(documentSetId: Long, tagId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def update(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
@@ -138,7 +118,8 @@ object TagController extends BaseController {
     }
   }
 
-  def authorizedNodeCounts(documentSetId: Long, tagId: Long, nodeIds: String)(implicit request: Request[AnyContent], connection: Connection) = {
+  def nodeCounts(documentSetId: Long, tagId: Long, nodeIds: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
