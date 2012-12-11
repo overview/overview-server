@@ -6,6 +6,8 @@ import play.api.mvc.{AnyContent,Request,ResponseHeader,SimpleResult}
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.ws.WS
 
+import models.OverviewUser
+
 /**
  * Pretends to be DocumentCloud.
  *
@@ -21,7 +23,7 @@ trait DocumentCloudProxyController extends BaseController {
 
   def projects() = authorizedAction(anyUser)(user => authorizedProjects(user)(_: Request[AnyContent], _: Connection))
 
-  private[controllers] def authorizedProjects(user: User)(implicit request: Request[AnyContent], connection: Connection) = {
+  private[controllers] def authorizedProjects(user: OverviewUser)(implicit request: Request[AnyContent], connection: Connection) = {
     val form = Form(Forms.tuple(
       "email" -> Forms.text,
       "password" -> Forms.text
