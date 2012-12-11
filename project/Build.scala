@@ -18,7 +18,7 @@ object ApplicationBuild extends Build {
   val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
 
   // shared dependencies
-  val playDep = "play" %% "play" % "2.0.3"
+  val playDep = "play" %% "play" % "2.0.4"
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
   val specs2Dep = "org.specs2" %% "specs2" % "1.11"
