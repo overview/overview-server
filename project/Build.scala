@@ -21,7 +21,7 @@ object ApplicationBuild extends Build {
   val playDep = "play" %% "play" % "2.0.4"
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
-  val specs2Dep = "org.specs2" %% "specs2" % "1.12.3"
+  val specs2Dep = "org.specs2" %% "specs2" % "1.11"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT"
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val junitDep = "junit" % "junit" % "4.11"
