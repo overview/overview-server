@@ -295,11 +295,11 @@ class DocumentListView
       $ul.append($li)
       index++
 
-    $ul[0].scrollTop = scroll_top
-
     this._refresh_cursor()
     this._refresh_selection()
     this._refresh_need_documents()
+
+    $ul[0].scrollTop = scroll_top
 
   _ensure_scroll_includes_cursor: () ->
     $ul = $('ul', @div)
