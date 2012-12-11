@@ -1,7 +1,6 @@
 package models.orm
 
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.Column
 import org.overviewproject.postgres.PostgresqlEnum
 
@@ -18,18 +17,7 @@ case class Document(
     @Column("documentcloud_id") val documentcloudId: Option[String] = None
     ) extends KeyedEntity[Long] {
 
-  lazy val documentSet = Schema.documentSetDocuments.right(this)
-
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
   override def isPersisted(): Boolean = (id > 0)
-
-  def save: Document = Schema.documents.insertOrUpdate(this)
-
-  def delete = Schema.documents.delete(id)
 }
 
-object Document {
-  def all() = from(Schema.documents)(d => select(d).orderBy(d.id.desc))
-
-  def findById(id: Long) = Schema.documents.lookup(id)
-}

@@ -1,6 +1,6 @@
 package models
 
-import models.orm.{Document,DocumentSet}
+import models.orm.{Document,DocumentSet, Schema}
 
 /** A document in the database */
 sealed trait OverviewDocument {
@@ -24,10 +24,12 @@ sealed trait OverviewDocument {
 
 object OverviewDocument {
   trait OverviewDocumentImpl extends OverviewDocument {
+    import models.orm.Schema.documentSetDocuments
+    
     protected val ormDocument: Document
 
     override val id = ormDocument.id
-    override lazy val documentSet = ormDocument.documentSet.single
+    override lazy val documentSet = documentSetDocuments.right(ormDocument).single
     override val title = ormDocument.title
     override def url(pattern: String) : String = {
       ormDocument.url.getOrElse(pattern.replace("{0}", "" + id))
@@ -79,6 +81,7 @@ object OverviewDocument {
 
   /** Lookup */
   def findById(id: Long) : Option[OverviewDocument] = {
-    Document.findById(id).map(OverviewDocument.apply)
+    import org.squeryl.PrimitiveTypeMode._
+    Schema.documents.lookup(id).map(OverviewDocument.apply)
   }
 }
