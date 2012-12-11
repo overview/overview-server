@@ -7,7 +7,6 @@
 
 package helpers
 
-import anorm._
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.squeryl.Session
@@ -17,8 +16,7 @@ import play.api.Play.current
 import play.api.test._
 import play.api.test.Helpers._
 
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-
+import models.OverviewDatabase
 
 /**
  * A helper class for tests that access the test-database. Wraps the test in a
@@ -31,14 +29,10 @@ trait DbTestContext extends Around {
   def setupWithDb = {}
   
   def around[T <% Result](test: => T) = {
-    DB.withTransaction { implicit connection =>
+    OverviewDatabase.inTransaction {
       try {
-        val adapter = new SquerylPostgreSqlAdapter()
-        val session = new Session(connection, adapter)
-        using(session) { // sets thread-local variable
-	  setupWithDb
-          test
-        }
+        setupWithDb
+        test
       } finally {
         connection.rollback()
       }
