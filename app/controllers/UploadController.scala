@@ -10,7 +10,7 @@ import play.api.db.DB
 import play.api.libs.iteratee.Error
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
+import play.api.mvc.{ BodyParser, BodyParsers, Controller, Request, RequestHeader, Result }
 import play.api.mvc.AnyContent
 
 import overview.largeobject.LO
@@ -18,7 +18,8 @@ import models.orm.{DocumentSet,User}
 import models.orm.DocumentSetType._
 import models.{OverviewDatabase,OverviewUser}
 import models.upload.OverviewUpload
-import controllers.auth.{Authority,UserFactory}
+import controllers.auth.{AuthorizedAction,Authority,UserFactory}
+import controllers.auth.Authorities.anyUser
 import controllers.util.{ FileUploadIteratee, PgConnection }
 
 /**
@@ -26,7 +27,7 @@ import controllers.util.{ FileUploadIteratee, PgConnection }
  * and starting a DocumentSetCreationJob. Most of the work related to the upload happens
  * in FileUploadIteratee.
  */
-trait UploadController extends BaseController {
+trait UploadController extends Controller with TransactionActionController {
 
   // authorizedBodyParser doesn't belong here.
   // Should move into BaseController and/or TransactionAction, but it's not
@@ -39,9 +40,6 @@ trait UploadController extends BaseController {
     }
   }
 
-  /** @return state of upload */
-  def show(guid: UUID) = authorizedAction(anyUser) { user => authorizedShow(user, guid)(_: Request[AnyContent], _: Connection) }
-
   /** Handle file upload and kick of documentSetCreationJob */
   def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
 
@@ -50,11 +48,11 @@ trait UploadController extends BaseController {
     else if (upload.uploadedFile.size == upload.size) Ok
     else PartialContent
 
-  private[controllers] def authorizedShow(user: OverviewUser, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
+  def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
-    findUpload(user.id, guid).map { u =>
+    findUpload(request.user.id, guid).map { u =>
       uploadResult(u) match {
         case NotFound => NotFound
         case r => r.withHeaders(

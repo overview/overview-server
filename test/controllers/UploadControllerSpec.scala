@@ -5,27 +5,28 @@ import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import play.api.http.HeaderNames._
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.Request
 import play.api.mvc.RequestHeader
 import play.api.mvc.Result
-import play.api.test.FakeHeaders
-import play.api.test.FakeRequest
-import play.api.test.Helpers.{ NOT_FOUND, OK, PARTIAL_CONTENT }
-import play.api.test.Helpers.status
+import play.api.Play.{start, stop}
+import play.api.test.{FakeHeaders, FakeRequest, FakeApplication}
+import play.api.test.Helpers._
 import org.specs2.specification.Scope
 import play.api.mvc.AnyContent
 import play.api.mvc.SimpleResult
+import play.api.test.Helpers._
 
+import controllers.auth.AuthorizedRequest
 import models.upload.{OverviewUpload,OverviewUploadedFile}
 import models.OverviewUser
 import models.orm.User
 
 @RunWith(classOf[JUnitRunner])
 class UploadControllerSpec extends Specification with Mockito {
+  step(start(FakeApplication()))
 
   class TestUploadController(upload: Option[OverviewUpload] = None) extends UploadController {
     var uploadDeleted: Boolean = false
@@ -57,8 +58,8 @@ class UploadControllerSpec extends Specification with Mockito {
   trait HeadRequest extends UploadContext[AnyContent] {
     val user = OverviewUser(User(1l))
     val controller = new TestUploadController(Option(upload))
-    val request: Request[AnyContent] = FakeRequest()
-    val result = controller.authorizedShow(user, guid)(request, null)
+    val request = new AuthorizedRequest(FakeRequest(), user)
+    val result = controller.show(guid)(request)
   }
 
   trait NoStartedUpload {
@@ -118,24 +119,23 @@ class UploadControllerSpec extends Specification with Mockito {
     }
 
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
-      val headers = result match {
-        case SimpleResult(header, _) => header.headers
-      }
-      headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-999/1000") }
-      headers.get(CONTENT_DISPOSITION) must beSome.like { case d => d must be equalTo (contentDisposition) }
+      header(CONTENT_RANGE, result) must beSome.like { case r => r must be equalTo ("0-999/1000") }
+      header(CONTENT_DISPOSITION, result) must beSome.like { case d => d must be equalTo (contentDisposition) }
 
       status(result) must be equalTo (OK)
     }
 
     "return PARTIAL_CONTENT if upload is not complete" in new HeadRequest with IncompleteUpload {
-      result.header.headers.get(CONTENT_RANGE) must beSome.like { case r => r must be equalTo ("0-99/1000") }
+      header(CONTENT_RANGE, result) must beSome.like { case r => r must be equalTo ("0-99/1000") }
 
       status(result) must be equalTo (PARTIAL_CONTENT)
     }
     
     "return NOT_FOUND if upload is empty" in new HeadRequest with EmptyUpload {
-      result.header.headers.get(CONTENT_RANGE) must beNone
+      header(CONTENT_RANGE, result) must beNone
       status(result) must be equalTo (NOT_FOUND)
     }
   }
+
+  step(stop)
 }
