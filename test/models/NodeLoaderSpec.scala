@@ -5,9 +5,11 @@ import play.api.Play.{ start, stop }
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.{ Node => OrmNode }
+import org.squeryl.PrimitiveTypeMode._
 import helpers.DbTestContext
 import models.core.Node
 import models.core.DocumentIdList
+import models.orm.Schema.nodes
 
 class NodeLoaderSpec extends Specification {
   step(start(FakeApplication()))
@@ -27,7 +29,7 @@ class NodeLoaderSpec extends Specification {
       }
 
       protected def createNode(parentId: Option[Long], description: String, size: Int = 0): OrmNode =
-        OrmNode(documentSetId, parentId, description, size, Array[Long]()).save
+        nodes.insertOrUpdate(OrmNode(documentSetId, parentId, description, size, Array[Long]()))
     }
 
     trait SmallTreeContext extends NodeContext {
@@ -72,7 +74,9 @@ class NodeLoaderSpec extends Specification {
     }
 
     "find the root node id" in new NodeContext {
-      nodeLoader.loadRootId(documentSetId) must beSome.like { case id => id must be equalTo root.id }
+      val rootId = nodeLoader.loadRootId(documentSetId)  
+      rootId must beSome
+      rootId.get must be equalTo(root.id)
     }
 
     "load a small tree" in new SmallTreeContext {
@@ -92,14 +96,17 @@ class NodeLoaderSpec extends Specification {
 
     "handle multiple levels" in new LargerTreeContext {
       val nodes = nodeLoader.loadTree(documentSetId, root.id, 2)
+    
       nodes.map(_.id) must haveTheSameElementsAs(nodeIds.take(7))
       nodes.map(_.childNodeIds).map { l => l must not beEmpty }
+
     }
 
     "return child ids sorted by node size and id" in new ChildNodesToBeOrdered {
       val nodes = nodeLoader.loadTree(documentSetId, root.id, 0)
       nodes(0).childNodeIds must be equalTo(idsSortedBySizeAndId)
     }
+    
   }
   step(stop)
 }

@@ -15,6 +15,4 @@ case class Node(
   
   override def isPersisted(): Boolean = (id > 0)
 
-  def save(): Node = Schema.nodes.insertOrUpdate(this)
-
 }

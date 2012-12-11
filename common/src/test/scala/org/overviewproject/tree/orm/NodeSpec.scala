@@ -4,7 +4,6 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.squeryl.PrimitiveTypeMode._
 
-
 class NodeSpec extends DbSpecification {
   step(setupDb)
 

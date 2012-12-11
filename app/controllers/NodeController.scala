@@ -10,6 +10,7 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import models.{ OverviewUser, SubTreeLoader }
 import models.orm.DocumentSet
+import models.orm.Schema.nodes
 
 object NodeController extends Controller {
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
@@ -52,7 +53,7 @@ object NodeController extends Controller {
         form.bindFromRequest().fold(
           f => BadRequest,
           node => {
-            val savedNode = node.save()
+            val savedNode = nodes.insertOrUpdate(node)
             Ok(views.json.Node.show(savedNode))
           })
     }
