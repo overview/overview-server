@@ -4,7 +4,8 @@ import java.util.Date
 import java.sql.Connection
 import play.api.mvc.{AnyContent,Controller,Request}
 
-import controllers.auth.LoginLogout
+import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
+import controllers.auth.Authorities.anyUser
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest}
 
@@ -19,24 +20,30 @@ import models.{OverviewUser,ResetPasswordRequest}
  * update: (given a token and password) changes the password, clears the token
  *         and logs in
  */
-trait PasswordController extends BaseController with LoginLogout {
+trait PasswordController extends Controller with TransactionActionController {
   private lazy val newForm = controllers.forms.NewPasswordForm()
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
-  def new_() = optionallyAuthorizedAction({ user: Option[OverviewUser] => optionallyAuthorizedNew_(user)(_: Request[AnyContent], _: Connection)})
-  def edit(token: String) = optionallyAuthorizedAction({ user: Option[OverviewUser] => optionallyAuthorizedEdit(user, token)(_: Request[AnyContent], _: Connection)})
+  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    request.user.map(userAlreadyLoggedIn => doRedirect).getOrElse({
+      Ok(views.html.Password.new_(newForm))
+    })
+  }
+
+  def edit(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    request.user.map(userAlreadyLoggedIn => doRedirect).getOrElse({
+      tokenToUser(token).map({ user =>
+        Ok(views.html.Password.edit(user, editForm))
+      }).getOrElse(showInvalidToken)
+    })
+  }
+
   def create() = ActionInTransaction { doCreate()(_: Request[AnyContent], _: Connection) }
   def update(token: String) = ActionInTransaction { doUpdate(token)(_: Request[AnyContent], _: Connection) }
 
   private def doRedirect = Redirect(routes.WelcomeController.show)
   private def showInvalidToken(implicit request: Request[AnyContent]) = BadRequest(views.html.Password.editError())
-
-  private[controllers] def optionallyAuthorizedNew_(optionalUser: Option[OverviewUser])(implicit request: Request[AnyContent], connection: Connection) = {
-    optionalUser.map(userAlreadyLoggedIn => doRedirect).getOrElse({
-      Ok(views.html.Password.new_(newForm))
-    })
-  }
 
   private[controllers] def doCreate()(implicit request: Request[AnyContent], connection: Connection) = {
     newForm.bindFromRequest.fold(
@@ -60,14 +67,6 @@ trait PasswordController extends BaseController with LoginLogout {
     )
   }
 
-  private[controllers] def optionallyAuthorizedEdit(optionalUser: Option[OverviewUser], token: String)(implicit request: Request[AnyContent], connection: Connection) = {
-    optionalUser.map(userAlreadyLoggedIn => doRedirect).getOrElse({
-      tokenToUser(token).map({ user =>
-        Ok(views.html.Password.edit(user, editForm))
-      }).getOrElse(showInvalidToken)
-    })
-  }
-
   private[controllers] def doUpdate(token: String)(implicit request: Request[AnyContent], connection: Connection) = {
     tokenToUser(token).map({ user =>
       editForm.bindFromRequest.fold(
@@ -77,7 +76,7 @@ trait PasswordController extends BaseController with LoginLogout {
             .withNewPassword(newPassword)
             .withLoginRecorded(request.remoteAddress, new java.util.Date())
             .save
-          gotoLoginSucceeded(userWithNewPassword.id).flashing("success" -> m("update.success"))
+          AuthResults.loginSucceeded(request, userWithNewPassword).flashing("success" -> m("update.success"))
         }
       )
     }).getOrElse(showInvalidToken)

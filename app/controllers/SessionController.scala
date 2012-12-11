@@ -3,19 +3,18 @@ package controllers
 import java.sql.Connection
 import play.api.mvc.{AnyContent,Controller,Request}
 
-import controllers.auth.LoginLogout
+import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
+import controllers.auth.Authorities.anyUser
 import models.OverviewUser
 
-object SessionController extends BaseController with LoginLogout {
+object SessionController extends Controller with TransactionActionController {
   val loginForm = controllers.forms.LoginForm()
   val registrationForm = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.SessionController")
 
-  def new_() = optionallyAuthorizedAction({ user: Option[User] => optionallyAuthorizedNew_(user)(_: Request[AnyContent], _: Connection)})
-
-  def optionallyAuthorizedNew_(optionalUser: Option[User])(implicit request: Request[AnyContent], connection: Connection) = {
-    optionalUser match {
+  def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    request.user match {
       case Some(user) => Redirect(routes.WelcomeController.show)
       case _ => Ok(views.html.Session.new_(loginForm, registrationForm))
     }
@@ -23,18 +22,17 @@ object SessionController extends BaseController with LoginLogout {
 
   def delete = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
     implicit val r = request
-    gotoLogoutSucceeded.flashing("success" -> m("delete.success"))
+    AuthResults.logoutSucceeded(request).flashing("success" -> m("delete.success"))
   }
 
   def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
     implicit val r = request
-    implicit val c = connection
 
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
       user => {
         val recordedUser = user.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
-        gotoLoginSucceeded(recordedUser.id).flashing("success" -> m("create.success"))
+        AuthResults.loginSucceeded(request, user).flashing("success" -> m("create.success"))
       }
     )
   }

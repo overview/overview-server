@@ -6,8 +6,9 @@ import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
 import play.api.mvc.{AnyContent, Request, RequestHeader, PlainResult}
 import play.api.test.{FakeApplication, FakeRequest}
-import play.api.test.Helpers.{BAD_REQUEST, OK, SEE_OTHER, contentAsString, status}
+import play.api.test.Helpers.{BAD_REQUEST, OK, SEE_OTHER, contentAsString, status, session}
 
+import controllers.auth.OptionallyAuthorizedRequest
 import helpers.DbTestContext
 import mailers.Mailer
 import models.{OverviewUser, ResetPasswordRequest}
@@ -15,7 +16,7 @@ import models.{OverviewUser, ResetPasswordRequest}
 class PasswordControllerSpec extends Specification {
   step(start(FakeApplication()))
 
-  trait OurScope extends DbTestContext with Mockito {
+  trait OurScope extends Scope with Mockito {
     // We need DbTestContext for the "implicit Connection", even though we never use it
     trait UserWithRequest extends OverviewUser with ResetPasswordRequest
 
@@ -49,47 +50,48 @@ class PasswordControllerSpec extends Specification {
       def sendMail(mail: Mailer) : Unit = {
         lastMail = Some(mail)
       }
-
-      override def gotoLoginSucceeded[A](userId: Long)(implicit request: Request[A]): PlainResult = {
-        loggedIn = true
-        super.gotoLoginSucceeded(userId)(request)
-      }
     }
 
     val controller = new OurPasswordController()
     val formParameters : Option[Seq[(String,String)]] = None
+    val fakeConnection : java.sql.Connection = null // TODO remove this parameter from TransactionActionController
 
-    implicit lazy val request : Request[AnyContent] = {
-      formParameters.map(FakeRequest().withFormUrlEncodedBody(_:_*)).getOrElse(FakeRequest())
+    def requestWithUser(user: Option[OverviewUser]) = {
+      new OptionallyAuthorizedRequest(FakeRequest(), user)
+    }
+
+    implicit lazy val formRequest : Request[AnyContent] = {
+      val fakeRequest = formParameters.map(FakeRequest().withFormUrlEncodedBody(_:_*)).getOrElse(FakeRequest())
+      new OptionallyAuthorizedRequest(fakeRequest, None)
     }
   }
 
   "PasswordController" should {
     "new() should redirect from the 'new' page when logged in" in new OurScope {
-      val result = controller.optionallyAuthorizedNew_(Some(OverviewUser(models.orm.User())))
+      val result = controller.new_()(requestWithUser(Some(OverviewUser(models.orm.User()))))
       status(result) must equalTo(SEE_OTHER)
     }
 
     "edit() should redirect from the 'edit' page when logged in" in new OurScope {
-      val result = controller.optionallyAuthorizedEdit(Some(OverviewUser(models.orm.User())), "invalid-token")
+      val result = controller.edit("invalid-token")(requestWithUser(Some(OverviewUser(models.orm.User()))))
       status(result) must equalTo(SEE_OTHER)
     }
 
     "new() show the 'new' page when not logged in" in new OurScope {
-      val result = controller.optionallyAuthorizedNew_(None)
+      val result = controller.new_()(requestWithUser(None))
       status(result) must equalTo(OK)
     }
 
     "create() should return BadRequest and show a form when the user does not enter a valid email address" in new OurScope {
       override val formParameters = Some(Seq("email" -> "."))
-      val result = controller.doCreate()
+      val result = controller.doCreate()(formRequest, fakeConnection)
       status(result) must equalTo(BAD_REQUEST)
       contentAsString(result) must contain("<form")
     }
 
     "create() should email a non-user when the email address is not found" in new OurScope {
       override val formParameters = Some(Seq("email" -> "invalid@example.org"))
-      controller.doCreate()
+      controller.doCreate()(formRequest, fakeConnection)
       controller.lastMail must beSome.which({ mail: Mailer =>
         mail.subject must beEqualTo("Overview Project password reset attempted")
       })
@@ -97,13 +99,13 @@ class PasswordControllerSpec extends Specification {
 
     "create() should redirect when emailing a non-user" in new OurScope {
       override val formParameters = Some(Seq("email" -> "invalid@example.org"))
-      val result = controller.doCreate()
+      val result = controller.doCreate()(formRequest, fakeConnection)
       status(result) must beEqualTo(SEE_OTHER)
     }
 
     "create() should call withResetPasswordRequest and save on a user" in new OurScope {
       override val formParameters = Some(Seq("email" -> user.email))
-      controller.doCreate()
+      controller.doCreate()(formRequest, fakeConnection)
       got {
         one(user).withResetPasswordRequest
         one(userWithRequest).save
@@ -112,7 +114,7 @@ class PasswordControllerSpec extends Specification {
 
     "create() should email a user" in new OurScope {
       override val formParameters = Some(Seq("email" -> user.email))
-      controller.doCreate()
+      controller.doCreate()(formRequest, fakeConnection)
       controller.lastMail must beSome.which({ mail: Mailer =>
         mail.subject must beEqualTo("Overview Project password reset")
       })
@@ -120,30 +122,30 @@ class PasswordControllerSpec extends Specification {
 
     "create() should redirect when emailing a user" in new OurScope {
       override val formParameters = Some(Seq("email" -> user.email))
-      val result = controller.doCreate()
+      val result = controller.doCreate()(formRequest, fakeConnection)
       status(result) must beEqualTo(SEE_OTHER)
     }
 
     "edit() should show the edit page" in new OurScope {
-      val result = controller.optionallyAuthorizedEdit(None, userWithRequest.resetPasswordToken)
+      val result = controller.edit(userWithRequest.resetPasswordToken)(requestWithUser(None))
       status(result) must beEqualTo(OK)
       contentAsString(result) must contain("<form")
     }
 
     "edit() should show an 'invalid token' page" in new OurScope {
-      val result = controller.optionallyAuthorizedEdit(None, "bad-token")
+      val result = controller.edit("bad-token")(requestWithUser(None))
       status(result) must beEqualTo(BAD_REQUEST)
     }
 
     "update() should show an 'invalid token' page" in new OurScope {
       override val formParameters = Some(Seq("password" -> "good-password"))
-      val result = controller.doUpdate("bad-token")
+      val result = controller.doUpdate("bad-token")(formRequest, fakeConnection)
       status(result) must beEqualTo(BAD_REQUEST)
     }
 
     "update() should show an error and form when given a bad password" in new OurScope {
       override val formParameters = Some(Seq("password" -> ""))
-      val result = controller.doUpdate(userWithRequest.resetPasswordToken)
+      val result = controller.doUpdate(userWithRequest.resetPasswordToken)(formRequest, fakeConnection)
       status(result) must beEqualTo(BAD_REQUEST)
       contentAsString(result) must contain("<form")
     }
@@ -151,7 +153,7 @@ class PasswordControllerSpec extends Specification {
     "update() should call withNewPassword and save" in new OurScope {
       val greatPassword = "alksjgh3D~;"
       override val formParameters = Some(Seq("password" -> greatPassword))
-      val result = controller.doUpdate(userWithRequest.resetPasswordToken)
+      val result = controller.doUpdate(userWithRequest.resetPasswordToken)(formRequest, fakeConnection)
       got {
         one(userWithRequest).withNewPassword(greatPassword)
         one(user).save
@@ -160,16 +162,16 @@ class PasswordControllerSpec extends Specification {
 
     "update() should log the user in" in new OurScope {
       override val formParameters = Some(Seq("password" -> "aklsd@23k;"))
-      val result = controller.doUpdate(userWithRequest.resetPasswordToken)
+      val result = controller.doUpdate(userWithRequest.resetPasswordToken)(formRequest, fakeConnection)
       got {
         one(user).withLoginRecorded(anyString, any[java.util.Date])
       }
-      controller.loggedIn must beTrue
+      session(result).get("AUTH_USER_ID") must beSome
     }
 
     "update() should redirect on success" in new OurScope {
       override val formParameters = Some(Seq("password" -> "aklsd@23k;"))
-      val result = controller.doUpdate(userWithRequest.resetPasswordToken)
+      val result = controller.doUpdate(userWithRequest.resetPasswordToken)(formRequest, fakeConnection)
       status(result) must beEqualTo(SEE_OTHER)
     }
   }
