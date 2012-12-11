@@ -18,7 +18,7 @@ trait TransactionActionController extends HttpsEnforcer {
 
   protected def ActionInTransaction[A](p: BodyParser[A])(f: ActionWithConnection[A]) = {
     HttpsAction(p) { implicit request =>
-      OverviewDatabase.inTransaction { () =>
+      OverviewDatabase.inTransaction {
         f(request, OverviewDatabase.currentConnection)
       }
     }
