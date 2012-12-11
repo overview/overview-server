@@ -1,19 +1,22 @@
 package controllers
 
-import java.sql.Connection
-import play.api.mvc.{AnyContent,Request}
+import play.api.mvc.Controller
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userOwningDocument
 import models.OverviewDocument
 
-object DocumentController extends BaseController {
-  def show(documentId: Long) =
-    authorizedAction(userOwningDocument(documentId))(user =>
-      this.authorizedShow(documentId)(_: Request[AnyContent], _: Connection))
+trait DocumentController extends Controller {
+  def findDocumentById(documentId: Long): Option[OverviewDocument]
 
-  def authorizedShow(documentId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
-    OverviewDocument.findById(documentId) match {
+  def show(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+    findDocumentById(documentId) match {
       case Some(document) => Ok(views.html.Document.show(document))
       case None => NotFound
     }
   }
+}
+
+object DocumentController extends DocumentController {
+  override def findDocumentById(documentId: Long) = OverviewDocument.findById(documentId)
 }
