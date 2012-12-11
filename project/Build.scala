@@ -21,18 +21,20 @@ object ApplicationBuild extends Build {
   val playDep = "play" %% "play" % "2.0.4"
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
-  val specs2Dep = "org.specs2" %% "specs2" % "1.11"
+  val specs2Dep = "org.specs2" %% "specs2" % "1.12.3"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT"
-    
+  val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
+  val junitDep = "junit" % "junit" % "4.11"
+  
   // Project dependencies
   val serverProjectDependencies = Seq(
     openCsvDep,
     postgresqlDep,
     squerylDep,
+    mockitoDep % "test",
     "com.typesafe" %% "play-plugins-mailer" % "2.0.4",
-    "org.jodd" % "jodd-wot" % "3.3.4",
-    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4",
-    "org.mockito" % "mockito-all" % "1.9.0" % "test"
+    "org.jodd" % "jodd-wot" % "3.3.1",
+    "ua.t3hnar.bcrypt" % "scala-bcrypt" % "1.4"
   )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
@@ -41,16 +43,16 @@ object ApplicationBuild extends Build {
     postgresqlDep,
     specs2Dep,
     squerylDep,
-    "junit" % "junit" % "4.8.1"
+    junitDep
   )
 
   val workerProjectDependencies = Seq(
     openCsvDep,
     playDep,
     squerylDep,
+    mockitoDep % "test",
     specs2Dep % "test",
-    "junit" % "junit" % "4.8.1" % "test",
-    "org.mockito" % "mockito-all" % "1.9.0" % "test"
+    junitDep % "test"
   )
 
   // Project definitions
