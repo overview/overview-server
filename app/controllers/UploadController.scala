@@ -3,7 +3,6 @@ package controllers
 import java.sql.Connection
 import java.util.UUID
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import models.upload.OverviewUpload
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import play.api.Play.current
@@ -13,10 +12,13 @@ import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ Action, BodyParser, BodyParsers, Request, RequestHeader, Result }
 import play.api.mvc.AnyContent
+
 import overview.largeobject.LO
-import models.orm.DocumentSet
+import models.orm.{DocumentSet,User}
 import models.orm.DocumentSetType._
-import models.orm.User
+import models.{OverviewDatabase,OverviewUser}
+import models.upload.OverviewUpload
+import controllers.auth.{Authority,UserFactory}
 import controllers.util.{ FileUploadIteratee, PgConnection }
 
 /**
@@ -26,22 +28,12 @@ import controllers.util.{ FileUploadIteratee, PgConnection }
  */
 trait UploadController extends BaseController {
 
-  // authorizeInTransaction and authorizedBodyParser don't belong here.
+  // authorizedBodyParser doesn't belong here.
   // Should move into BaseController and/or TransactionAction, but it's not
   // clear how, since the usage here flips the dependency
-  protected def authorizeInTransaction(authority: Authority)(implicit request: RequestHeader) = {
-    DB.withTransaction { implicit connection =>
-      val adapter = new SquerylPostgreSqlAdapter()
-      val session = new Session(connection, adapter)
-      using(session) { // sets thread-local variable
-        userPassingAuthorization(request, authority)
-      }
-    }
-  }
-
-  // Move this along with authorizeInTransaction
-  def authorizedBodyParser[A](authority: Authority)(f: User => BodyParser[A]) = parse.using { implicit request =>
-    authorizeInTransaction(authority) match {
+  def authorizedBodyParser[A](authority: Authority)(f: OverviewUser => BodyParser[A]) = parse.using { implicit request =>
+    val user : Either[Result, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
+    user match {
       case Left(e) => parse.error(e)
       case Right(user) => f(user)
     }
@@ -58,7 +50,7 @@ trait UploadController extends BaseController {
     else if (upload.uploadedFile.size == upload.size) Ok
     else PartialContent
 
-  private[controllers] def authorizedShow(user: User, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
+  private[controllers] def authorizedShow(user: OverviewUser, guid: UUID)(implicit request: Request[AnyContent], connection: Connection) = {
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
@@ -87,7 +79,7 @@ trait UploadController extends BaseController {
   /** Gets the guid and user info to the body parser handling the file upload */
   def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
-  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
+  def fileUploadBodyParser(user: OverviewUser, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
     fileUploadIteratee(user.id, guid, request)
   }
 
