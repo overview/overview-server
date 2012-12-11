@@ -1,18 +1,16 @@
 package controllers
 
-import java.sql.Connection
-import play.api.mvc.{Request,AnyContent}
+import play.api.mvc.Controller
 
-import models.OverviewUser
+import controllers.auth.OptionallyAuthorizedAction
+import controllers.auth.Authorities.anyUser
 
-object WelcomeController extends BaseController {
+object WelcomeController extends Controller {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
 
-  def show() = optionallyAuthorizedAction({user: Option[OverviewUser] => optionallyAuthorizedShow(user)(_: Request[AnyContent], _: Connection)})
-
-  private def optionallyAuthorizedShow(optionalUser: Option[OverviewUser])(implicit request: Request[AnyContent], connection: Connection) = {
-    optionalUser.map(user =>
+  def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    request.user.map(user =>
       Redirect(routes.DocumentSetController.index())
     ).getOrElse(
       Ok(views.html.Welcome.show(loginForm, userForm))

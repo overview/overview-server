@@ -1,14 +1,13 @@
 package controllers
 
-import java.sql.Connection
-import play.api.mvc.{Request,AnyContent}
+import play.api.mvc.Controller
 
+import controllers.auth.OptionallyAuthorizedAction
+import controllers.auth.Authorities.anyUser
 import models.OverviewUser
 
-object HelpController extends BaseController with TransactionActionController {
-  def show() = optionallyAuthorizedAction({user: Option[OverviewUser] => optionallyAuthorizedShow(user)(_: Request[AnyContent], _: Connection)})
-
-  private def optionallyAuthorizedShow(optionalUser: Option[OverviewUser])(implicit request: Request[AnyContent], connection: Connection) = {
-    Ok(views.html.Help.show(optionalUser))
+object HelpController extends Controller {
+  def show() = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    Ok(views.html.Help.show(request.user))
   }
 }
