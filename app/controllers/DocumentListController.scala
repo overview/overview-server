@@ -1,22 +1,20 @@
 package controllers
 
 import java.sql.Connection
-import play.api.mvc.{AnyContent, Request}
+import play.api.mvc.{AnyContent, Controller, Request}
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.util.{ IdList, SaneRange }
-import models.{OverviewUser,PersistentDocumentList}
+import models.{OverviewDatabase, PersistentDocumentList}
 
-trait DocumentListController extends BaseController {
+trait DocumentListController extends Controller {
   def index(documentSetId: Long, nodeids: String, tagids: String,
-    documentids: String, start: Int, end: Int) = authorizedAction(userOwningDocumentSet(documentSetId)) {
-    user =>
-      (request: Request[AnyContent], connection: Connection) => {
-        authorizedIndex(user, documentSetId, nodeids, tagids, documentids, start, end)(request, connection)
-      }
-  }
+            documentids: String, start: Int, end: Int)
+            = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
 
-  protected def authorizedIndex(user: OverviewUser, documentSetId: Long, nodeids: String, tagids: String,
-    documentids: String, start: Int, end: Int)(implicit request: Request[AnyContent], connection: Connection) = {
+    implicit val connection = OverviewDatabase.currentConnection
+
     val (validStart, validEnd) = SaneRange(start, end)
 
     val documents =
