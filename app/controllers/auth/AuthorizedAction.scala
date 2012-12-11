@@ -9,23 +9,21 @@ trait AuthorizedAction[A] extends Action[A] {
   val authority: Authority
   val block: (AuthorizedRequest[A] => Result)
 
-  def apply(request: AuthorizedRequest[A]): Result = {
-    /*
-     * We special-case AuthorizedRequest[A] to short-circuit auth, so we can
-     * write tests that don't hit UserFactory.
-     */
-    OverviewDatabase.inTransaction {
-      block(request)
-    }
-  }
-
   def apply(request: Request[A]): Result = {
     OverviewDatabase.inTransaction {
-      UserFactory.loadUser(request, authority) match {
-        case Left(plainResult) => plainResult
-        case Right(user) => {
-          val authorizedRequest = new AuthorizedRequest(request, user)
-          block(authorizedRequest)
+      /*
+       * We special-case AuthorizedRequest[A] to short-circuit auth, so we can
+       * write tests that don't hit UserFactory.
+       *
+       * We can't use overloading (because Request is a trait) or matching
+       * (because of type erasure), but we can prove this is type-safe.
+       */
+      if (request.isInstanceOf[AuthorizedRequest[_]]) {
+        block(request.asInstanceOf[AuthorizedRequest[A]])
+      } else {
+        UserFactory.loadUser(request, authority) match {
+          case Left(plainResult) => plainResult
+          case Right(user) => block(new AuthorizedRequest(request, user))
         }
       }
     }

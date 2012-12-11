@@ -9,22 +9,15 @@ trait OptionallyAuthorizedAction[A] extends Action[A] {
   val authority: Authority
   val block: (OptionallyAuthorizedRequest[A] => Result)
 
-  def apply(request: OptionallyAuthorizedRequest[A]) : Result = {
-    /*
-     * We special-case OptionallyAuthorizedAction[A] to short-circuit auth.
-     *
-     * This helps with testing.
-     */
-    OverviewDatabase.inTransaction {
-      block(request)
-    }
-  }
-
   def apply(request: Request[A]): Result = {
     OverviewDatabase.inTransaction {
+      /*
+       * We special-case OptionallyAuthorizedAction[A] to short-circuit auth.
+       *
+       * This helps with testing. It's type-safe, despite erasure.
+       */
       if (request.isInstanceOf[OptionallyAuthorizedRequest[_]]) {
-        val oar = request.asInstanceOf[OptionallyAuthorizedRequest[A]]
-        block(oar)
+        block(request.asInstanceOf[OptionallyAuthorizedRequest[A]])
       } else {
         val optionalUser = UserFactory.loadUser(request, authority).right.toOption
         val optionallyAuthorizedRequest = new OptionallyAuthorizedRequest(request, optionalUser)
