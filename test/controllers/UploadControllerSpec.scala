@@ -52,7 +52,7 @@ class UploadControllerSpec extends Specification with Mockito {
   trait CreateRequest extends UploadContext[OverviewUpload] {
     val controller = new TestUploadController
     val request = FakeRequest[OverviewUpload]("POST", "/upload", FakeHeaders(), upload, "controllers.UploadController.create")
-    val result = controller.authorizedCreate(guid)(request, null)
+    val result = controller.create(guid)(request)
   }
 
   trait HeadRequest extends UploadContext[AnyContent] {

@@ -6,6 +6,7 @@ import play.api.mvc.{AnyContent,Controller,Request}
 
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
+import controllers.util.TransactionAction
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest}
 
@@ -20,7 +21,7 @@ import models.{OverviewUser,ResetPasswordRequest}
  * update: (given a token and password) changes the password, clears the token
  *         and logs in
  */
-trait PasswordController extends Controller with TransactionActionController {
+trait PasswordController extends Controller {
   private lazy val newForm = controllers.forms.NewPasswordForm()
   private lazy val editForm = controllers.forms.EditPasswordForm()
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
@@ -39,13 +40,10 @@ trait PasswordController extends Controller with TransactionActionController {
     })
   }
 
-  def create() = ActionInTransaction { doCreate()(_: Request[AnyContent], _: Connection) }
-  def update(token: String) = ActionInTransaction { doUpdate(token)(_: Request[AnyContent], _: Connection) }
-
   private def doRedirect = Redirect(routes.WelcomeController.show)
   private def showInvalidToken(implicit request: Request[AnyContent]) = BadRequest(views.html.Password.editError())
 
-  private[controllers] def doCreate()(implicit request: Request[AnyContent], connection: Connection) = {
+  def create() = TransactionAction { implicit request =>
     newForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Password.new_(formWithErrors)), // no email address given
       email => {
@@ -67,7 +65,7 @@ trait PasswordController extends Controller with TransactionActionController {
     )
   }
 
-  private[controllers] def doUpdate(token: String)(implicit request: Request[AnyContent], connection: Connection) = {
+  def update(token: String) = TransactionAction { implicit request =>
     tokenToUser(token).map({ user =>
       editForm.bindFromRequest.fold(
         formWithErrors => BadRequest(views.html.Password.edit(user, editForm)),

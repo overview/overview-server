@@ -5,9 +5,10 @@ import play.api.mvc.{AnyContent,Controller,Request}
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
+import controllers.util.TransactionAction
 import models.OverviewUser
 
-object SessionController extends Controller with TransactionActionController {
+object SessionController extends Controller {
   val loginForm = controllers.forms.LoginForm()
   val registrationForm = controllers.forms.UserForm()
 
@@ -20,14 +21,11 @@ object SessionController extends Controller with TransactionActionController {
     }
   }
 
-  def delete = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
-    implicit val r = request
+  def delete = TransactionAction { implicit request =>
     AuthResults.logoutSucceeded(request).flashing("success" -> m("delete.success"))
   }
 
-  def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) =>
-    implicit val r = request
-
+  def create = TransactionAction { implicit request =>
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
       user => {

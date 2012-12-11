@@ -5,17 +5,16 @@ import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}
 
-import controllers.auth.{AuthConfigImpl,LoginLogout}
+import controllers.auth.AuthResults
+import controllers.util.TransactionAction
 import models.OverviewUser
 
-object ConfirmationController extends Controller with TransactionActionController with LoginLogout with AuthConfigImpl {
+object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
 
   private val form = forms.ConfirmationForm()
 
-  def show(token: String) = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
-    implicit val r = request
-
+  def show(token: String) = TransactionAction { implicit request =>
     form.bindFromRequest()(request).fold(
       formWithErrors => {
         if (formWithErrors("token").value.getOrElse("").length > 0) {
@@ -28,7 +27,7 @@ object ConfirmationController extends Controller with TransactionActionControlle
       },
       u => {
         u.confirm.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
-        gotoLoginSucceeded(u.id).flashing("success" -> m("show.success"))
+        AuthResults.loginSucceeded(request, u).flashing("success" -> m("show.success"))
       }
     )
   }

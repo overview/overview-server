@@ -1,11 +1,11 @@
 package controllers
 
-import java.sql.Connection
-import play.api.mvc.{AnyContent, Request, Controller}
+import play.api.mvc.{Controller, RequestHeader}
 
+import controllers.util.TransactionAction
 import models.{OverviewUser, PotentialUser}
 
-object UserController extends Controller with TransactionActionController {
+object UserController extends Controller {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
 
@@ -13,10 +13,8 @@ object UserController extends Controller with TransactionActionController {
 
   def new_ = SessionController.new_
 
-  def create = ActionInTransaction { (request: Request[AnyContent], connection: Connection) => 
-    implicit val r = request
-    
-    userForm.bindFromRequest()(request).fold(
+  def create = TransactionAction { implicit request =>
+    userForm.bindFromRequest().fold(
       formWithErrors => BadRequest(views.html.Session.new_(loginForm, formWithErrors)),
       user => {
         user.withRegisteredEmail match {
@@ -29,11 +27,11 @@ object UserController extends Controller with TransactionActionController {
     )
   }
 
-  private def handleExistingUser(user: OverviewUser)(implicit request: Request[AnyContent]) {
+  private def handleExistingUser(user: OverviewUser)(implicit request: RequestHeader) {
     mailers.User.createErrorUserAlreadyExists(user).send  
   }
   
-  private def registerNewUser(user: PotentialUser)(implicit request: Request[AnyContent]) {
+  private def registerNewUser(user: PotentialUser)(implicit request: RequestHeader) {
    val registeredUser = user.requestConfirmation
    registeredUser.save
    mailers.User.create(registeredUser).send

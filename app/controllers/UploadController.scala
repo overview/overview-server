@@ -20,14 +20,14 @@ import models.{OverviewDatabase,OverviewUser}
 import models.upload.OverviewUpload
 import controllers.auth.{AuthorizedAction,Authority,UserFactory}
 import controllers.auth.Authorities.anyUser
-import controllers.util.{ FileUploadIteratee, PgConnection }
+import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
  * and starting a DocumentSetCreationJob. Most of the work related to the upload happens
  * in FileUploadIteratee.
  */
-trait UploadController extends Controller with TransactionActionController {
+trait UploadController extends Controller {
 
   // authorizedBodyParser doesn't belong here.
   // Should move into BaseController and/or TransactionAction, but it's not
@@ -41,7 +41,17 @@ trait UploadController extends Controller with TransactionActionController {
   }
 
   /** Handle file upload and kick of documentSetCreationJob */
-  def create(guid: UUID) = ActionInTransaction(authorizedFileUploadBodyParser(guid)) { authorizedCreate(guid)(_: Request[OverviewUpload], _: Connection) }
+  def create(guid: UUID) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
+    val upload: OverviewUpload = request.body
+
+    val result = uploadResult(upload)
+    if (result == Ok) {
+      startDocumentSetCreationJob(upload)
+      deleteUpload(upload)
+    }
+
+    result
+  }
 
   private def uploadResult(upload: OverviewUpload) =
     if (upload.uploadedFile.size == 0) NotFound
@@ -60,18 +70,6 @@ trait UploadController extends Controller with TransactionActionController {
           (CONTENT_DISPOSITION, contentDisposition(u)))
       }
     } getOrElse (NotFound)
-  }
-
-  private[controllers] def authorizedCreate(guid: UUID)(implicit request: Request[OverviewUpload], connection: Connection) = {
-    val upload: OverviewUpload = request.body
-
-    val result = uploadResult(upload)
-    if (result == Ok) {
-      startDocumentSetCreationJob(upload)
-      deleteUpload(upload)
-    }
-
-    result
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
