@@ -15,7 +15,9 @@ import org.squeryl.{KeyedEntity,Query}
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
+
 import org.overviewproject.postgres.PostgresqlEnum
+import models.OverviewDatabase
 
 class DocumentSetType(v: String) extends PostgresqlEnum(v, "document_set_type")
 
@@ -28,7 +30,7 @@ import DocumentSetType._
 
 case class DocumentSet(
     @Column("type") val documentSetType: DocumentSetType,
-    val id: Long = 0,
+    override val id: Long = 0,
     val title: String = "",
     val query: Option[String] = None,
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
@@ -94,9 +96,15 @@ object DocumentSet {
     )
   }
 
-  def delete(id: Long)(implicit connection: java.sql.Connection) = {
+  /** Deletes a DocumentSet by ID.
+    *
+    * @return true if the deletion suceeded, false if it failed.
+    */
+  def delete(id: Long) : Boolean = {
+    implicit val connection = OverviewDatabase.currentConnection
+
     val documentSet = DocumentSet.findById(id)
-    val uploadedFileId = documentSet.map( _.uploadedFileId)
+    val uploadedFileId = documentSet.map(_.uploadedFileId)
     
     SQL("DELETE FROM log_entry WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_tag WHERE tag_id IN (SELECT id FROM tag WHERE document_set_id = {id})").on('id -> id).executeUpdate()
@@ -105,15 +113,17 @@ object DocumentSet {
     SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
     SQL("DELETE FROM document_set_user WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-    
+
     Schema.documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
-    Schema.documentSets.delete(id)
-    
+
+    val success = Schema.documentSets.delete(id)
+
     uploadedFileId.map { u => 
       SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
       SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
     }
-    // And return the count
+
+    success
   }
 
   private def findIdToDocumentCountMap(ids: Seq[Long]) : Map[Long,Long] = {
