@@ -1,11 +1,11 @@
 package controllers
 
 import java.sql.Connection
-import play.api.mvc.{AnyContent, Controller, Request}
+import play.api.mvc.{AnyContent, Request, Controller}
 
 import models.{OverviewUser, PotentialUser}
 
-object UserController extends BaseController {
+object UserController extends Controller with TransactionActionController {
   val loginForm = controllers.forms.LoginForm()
   val userForm = controllers.forms.UserForm()
 

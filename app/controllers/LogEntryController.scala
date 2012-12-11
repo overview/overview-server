@@ -23,7 +23,7 @@ import models.{OverviewDatabase,OverviewUser}
 import models.orm.{DocumentSet,LogEntry}
 import models.orm.LogEntry.ImplicitHelper._
 
-trait LogEntryController extends BaseController {
+trait LogEntryController extends Controller {
   def findOrmDocumentSetById(id: Long): Option[DocumentSet]
 
   def index(id: Long, extension: String) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

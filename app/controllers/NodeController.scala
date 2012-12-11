@@ -1,7 +1,7 @@
 package controllers
 
 import java.sql.Connection
-import play.api.mvc.{ AnyContent, Request }
+import play.api.mvc.Controller
 import play.api.libs.json.JsValue
 import org.squeryl.PrimitiveTypeMode._
 import org.overviewproject.tree.orm.Node
@@ -11,7 +11,7 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import models.{ OverviewUser, SubTreeLoader }
 import models.orm.DocumentSet
 
-object NodeController extends BaseController {
+object NodeController extends Controller {
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     implicit val connection = models.OverviewDatabase.currentConnection
     val subTreeLoader = new SubTreeLoader(documentSetId)
