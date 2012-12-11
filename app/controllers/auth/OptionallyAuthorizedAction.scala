@@ -3,6 +3,7 @@ package controllers.auth
 import java.sql.Connection
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result}
 
+import controllers.util.HttpsEnforcer
 import models.{OverviewDatabase,OverviewUser}
 
 trait OptionallyAuthorizedAction[A] extends Action[A] {
@@ -32,12 +33,19 @@ trait OptionallyAuthorizedAction[A] extends Action[A] {
 }
 
 object OptionallyAuthorizedAction {
+  /** Creates a new OptionallyAuthorizedAction.
+    *
+    * The BodyParser will be wrapped by HttpsEnforcer, and the
+    * OptionallyAuthorizedRequest's user will only be set when a logged-in
+    * user passes the aAuthority check.
+    */
   def apply[A](bodyParser: BodyParser[A], aAuthority: Authority)(aBlock: OptionallyAuthorizedRequest[A] => Result): OptionallyAuthorizedAction[A] = new OptionallyAuthorizedAction[A] {
-    override def parser = bodyParser
+    override def parser = HttpsEnforcer.HttpsBodyParser(bodyParser)
     override val authority = aAuthority
     override val block = aBlock
   }
 
+  /** Creates a new AuthorizedAction[AnyContent], with a default BodyParser. */
   def apply(authority: Authority)(block: OptionallyAuthorizedRequest[AnyContent] => Result): OptionallyAuthorizedAction[AnyContent] = {
     apply(BodyParsers.parse.anyContent, authority)(block)
   }
