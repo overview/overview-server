@@ -2,6 +2,7 @@ package controllers.admin
 
 import play.api.mvc.{Action,AnyContent,BodyParser,BodyParsers}
 
+import controllers.auth.Authority
 import models.OverviewUser
 
 trait AdminController extends controllers.BaseController {
@@ -13,5 +14,7 @@ trait AdminController extends controllers.BaseController {
     adminAction(BodyParsers.parse.anyContent)(f)
   }
 
-  protected def adminUser: Authority = { user => user.isAdministrator }
+  protected def adminUser = new Authority {
+    def apply(user: OverviewUser) = user.isAdministrator
+  }
 }
