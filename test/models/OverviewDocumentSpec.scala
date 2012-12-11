@@ -7,7 +7,7 @@ import play.api.test.FakeApplication
 
 // OverviewDocument wraps models.orm.Document. Let's be transparent about that
 // in this test.
-import models.orm.{Document,DocumentType}
+import org.overviewproject.tree.orm.{ Document, DocumentType }
 
 class OverviewDocumentSpec extends Specification {
   step(start(FakeApplication()))

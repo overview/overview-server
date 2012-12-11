@@ -1,6 +1,7 @@
 package models
 
-import models.orm.{Document,DocumentSet,DocumentSetCreationJob}
+import org.overviewproject.tree.orm.Document
+import models.orm.{ DocumentSet, DocumentSetCreationJob }
 import models.upload.OverviewUploadedFile
 
 sealed trait OverviewDocumentSet {
