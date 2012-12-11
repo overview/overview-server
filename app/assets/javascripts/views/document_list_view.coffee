@@ -73,6 +73,7 @@ class DocumentListView
       this._notify('document-clicked', undefined, { meta: false, shift: false })
 
     $(document).on 'keydown.document-list-view', (e) ->
+      return if $(e.target).is(':input')
       diff = switch e.which
         when 40 then +1 # down
         when 'j'.charCodeAt(0) then +1
