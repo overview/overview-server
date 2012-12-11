@@ -6,15 +6,14 @@ import play.api.libs.json.JsValue
 import org.squeryl.PrimitiveTypeMode._
 import org.overviewproject.tree.orm.Node
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.userOwningDocumentSet
 import models.{ OverviewUser, SubTreeLoader }
 import models.orm.DocumentSet
 
 object NodeController extends BaseController {
-  def index(documentSetId: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedIndex(user, documentSetId)(_: Request[AnyContent], _: Connection))
-  def show(documentSetId: Long, id: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedShow(user, documentSetId, id)(_: Request[AnyContent], _: Connection))
-  def update(documentSetId: Long, id: Long) = authorizedAction(userOwningDocumentSet(documentSetId))(user => authorizedUpdate(user, documentSetId, id)(_: Request[AnyContent], _: Connection))
-
-  private[controllers] def authorizedIndex(user: OverviewUser, documentSetId: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
     subTreeLoader.loadRootId match {
@@ -36,7 +35,8 @@ object NodeController extends BaseController {
     }
   }
 
-  private[controllers] def authorizedShow(user: OverviewUser, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    implicit val connection = models.OverviewDatabase.currentConnection
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
     val nodes = subTreeLoader.load(id, 1)
@@ -46,7 +46,7 @@ object NodeController extends BaseController {
     Ok(json)
   }
 
-  private[controllers] def authorizedUpdate(user: OverviewUser, documentSetId: Long, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val optionalNode = DocumentSet.findById(documentSetId)
       .flatMap(ds => ds.nodes.where(n => n.id === id).headOption)
 

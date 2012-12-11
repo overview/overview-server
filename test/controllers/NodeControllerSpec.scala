@@ -7,6 +7,7 @@ import play.api.Play.{start,stop}
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.Node
 
+import controllers.auth.AuthorizedRequest
 import helpers.DbTestContext
 import models.OverviewUser
 import models.orm.{DocumentSet,User}
@@ -17,26 +18,25 @@ class NodeControllerSpec extends Specification {
 
   trait ValidUpdateProcess extends DbTestContext {
     // HACK: These are called within setupWithDb()
-    lazy val ormUser = User().save
-    lazy val user = OverviewUser(ormUser)
+    lazy val user = OverviewUser(User())
     lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 0L, "title", Some("query")).save
     lazy val node = Node(documentSet.id, None, "description", 0, Array[Long]()).save
 
     override def setupWithDb = {
       // TODO: don't rely on DB
-      ormUser.documentSets.associate(documentSet)
       documentSet.nodes.associate(node)
     }
 
-    implicit lazy val request = FakeRequest().withFormUrlEncodedBody("description" -> "new description")
+    lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
   }
 
   "NodeController" should {
     "edit a node" in new ValidUpdateProcess {
-      val result = NodeController.authorizedUpdate(user, documentSet.id, node.id)
-      
+      val result = NodeController.update(documentSet.id, node.id)(request)
+      status(result) must beEqualTo(OK)
+
       val node2 = documentSet.nodes.single
-      node2.description must be equalTo("new description")
+      node2.description must beEqualTo("new description")
     }
   }
 
