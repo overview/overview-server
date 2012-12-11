@@ -8,6 +8,11 @@ object Authorities {
     def apply(user: OverviewUser) = true
   }
 
+  /** Allows only admin users. */
+  def adminUser = new Authority {
+    def apply(user: OverviewUser) = user.isAdministrator
+  }
+
   /** Allows any user with access to the given DocumentSet ID. */
   def userOwningDocumentSet(id: Long) = new Authority {
     def apply(user: OverviewUser) = user.isAllowedDocumentSet(id)
