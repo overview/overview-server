@@ -11,13 +11,14 @@ import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import controllers.util.HttpsEnforcer
 import models.OverviewDatabase
 
-trait TransactionActionController extends HttpsEnforcer {
+trait TransactionActionController {
   protected type ActionWithConnection[A] = {
     def apply(request: Request[A], connection: Connection): Result
   }
 
   protected def ActionInTransaction[A](p: BodyParser[A])(f: ActionWithConnection[A]) = {
-    HttpsAction(p) { implicit request =>
+    val httpsParser = HttpsEnforcer.HttpsBodyParser(p)
+    Action(httpsParser) { implicit request =>
       OverviewDatabase.inTransaction {
         f(request, OverviewDatabase.currentConnection)
       }
