@@ -1,11 +1,12 @@
 package controllers
 
-import java.sql.Connection
 import play.api.data.{Form,Forms}
-import play.api.mvc.{AnyContent,Request,ResponseHeader,SimpleResult}
+import play.api.mvc.{Controller,ResponseHeader,SimpleResult}
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.ws.WS
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.anyUser
 import models.OverviewUser
 
 /**
@@ -18,12 +19,10 @@ import models.OverviewUser
  * Why does this exist at all? Because Internet Explorer can't send information
  * to a different domain than ours.
  */
-trait DocumentCloudProxyController extends BaseController {
+trait DocumentCloudProxyController extends Controller {
   val DocumentCloudApiProjectsUrl = "https://www.documentcloud.org/api/projects.json"
 
-  def projects() = authorizedAction(anyUser)(user => authorizedProjects(user)(_: Request[AnyContent], _: Connection))
-
-  private[controllers] def authorizedProjects(user: OverviewUser)(implicit request: Request[AnyContent], connection: Connection) = {
+  def projects() = AuthorizedAction(anyUser) { implicit request =>
     val form = Form(Forms.tuple(
       "email" -> Forms.text,
       "password" -> Forms.text
