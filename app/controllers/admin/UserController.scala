@@ -1,24 +1,21 @@
 package controllers.admin
 
-import java.sql.Connection
-import play.api.mvc.{AnyContent,Request}
+import play.api.mvc.Controller
 
+import controllers.auth.AuthorizedAction
+import controllers.auth.Authorities.adminUser
 import controllers.forms.AdminUserForm
 import models.OverviewUser
 
-object UserController extends AdminController {
+object UserController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
 
-  def index() = adminAction((user: OverviewUser) => authorizedIndex(user)(_: Request[AnyContent], _: Connection))
-  def update(id: Long) = adminAction((user: OverviewUser) => authorizedUpdate(user, id)(_: Request[AnyContent], _: Connection))
-  def delete(id: Long) = adminAction((user: OverviewUser) => authorizedDelete(user, id)(_: Request[AnyContent], _: Connection))
-
-  def authorizedIndex(user: OverviewUser)(implicit request: Request[AnyContent], connection: Connection) = {
+  def index() = AuthorizedAction(adminUser) { implicit request =>
     val users = OverviewUser.all.toSeq
-    Ok(views.html.admin.User.index(user, users))
+    Ok(views.html.admin.User.index(request.user, users))
   }
 
-  def authorizedUpdate(user: OverviewUser, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
     OverviewUser.findById(id).map({ otherUser =>
       AdminUserForm(otherUser).bindFromRequest().fold(
         formWithErrors => BadRequest,
@@ -31,9 +28,9 @@ object UserController extends AdminController {
     }).getOrElse(NotFound)
   }
 
-  def authorizedDelete(user: OverviewUser, id: Long)(implicit request: Request[AnyContent], connection: Connection) = {
+  def delete(id: Long) = AuthorizedAction(adminUser) { implicit request =>
     OverviewUser.findById(id).map({ otherUser =>
-      if (otherUser.id == user.id) {
+      if (otherUser.id == request.user.id) {
         BadRequest
       } else {
         otherUser.delete
