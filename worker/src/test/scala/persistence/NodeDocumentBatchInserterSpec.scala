@@ -12,6 +12,7 @@ import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.overviewproject.test.DbSetup._
+import org.squeryl.PrimitiveTypeMode._
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 
@@ -22,9 +23,10 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
     lazy val nodeId = insertNode(documentSetId, None, "description")
   }
   
-  def findNodeDocuments(implicit c: Connection) : Seq[(Long, Long)] = {
-	SQL("SELECT node_id, document_id FROM node_document").
-	   as(long("node_id") ~ long("document_id") map(flatten) *)
+  def findNodeDocumentIds: Seq[(Long, Long)] = {
+    import persistence.Schema.nodeDocuments
+    
+    from(nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
   }
   
   "NodeDocumentBatchInserter" should {
@@ -36,12 +38,12 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       
       documentIds.take(threshold - 1).foreach(inserter.insert(nodeId, _))
       
-      val beforeThresholdReached = findNodeDocuments
+      val beforeThresholdReached = findNodeDocumentIds
       beforeThresholdReached must be empty
       
       documentIds.slice(threshold - 1, threshold).foreach(inserter.insert(nodeId, _))
       
-      val afterThreshold = findNodeDocuments
+      val afterThreshold = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((nodeId, _))
       
       afterThreshold must haveTheSameElementsAs(expectedNodeDocuments)
@@ -57,12 +59,12 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       firstBatch.foreach(inserter.insert(nodeId, _))
       secondBatch.take(2).foreach(inserter.insert(nodeId, _))
       
-      val firstBatchInserted = findNodeDocuments
+      val firstBatchInserted = findNodeDocumentIds
       firstBatchInserted must have size(threshold)
       
       secondBatch.drop(2).foreach(inserter.insert(nodeId, _))
       
-      val allInserted = findNodeDocuments
+      val allInserted = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((nodeId, _))
       
       allInserted must haveTheSameElementsAs(expectedNodeDocuments)
@@ -77,7 +79,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       documentIds.foreach(inserter.insert(nodeId, _))
       inserter.flush
       
-      val flushedDocuments = findNodeDocuments
+      val flushedDocuments = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((nodeId, _))
       
       flushedDocuments must haveTheSameElementsAs(expectedNodeDocuments)

@@ -7,8 +7,7 @@
 
 package persistence
 
-import anorm._
-import java.sql.Connection
+import scala.collection.mutable.Seq
 
 /**
  * Batches the insertion of nodeIds and documentIds into the node_document table.
@@ -17,13 +16,14 @@ import java.sql.Connection
  */
 class NodeDocumentBatchInserter(threshold: Long) {
   var insertCount: Long = _
-  var batchQuery: BatchSql = createBatchQuery
+  var currentBatch: Seq[NodeDocument] = Seq()
 
   resetBatch
 
   /** queue up nodeId and documentId for insertion in the node_document table */
-  def insert(nodeId: Long, documentId: Long)(implicit c: Connection) {
-    batchQuery = batchQuery.addBatchParams(nodeId, documentId)
+  def insert(nodeId: Long, documentId: Long){
+    currentBatch +:= NodeDocument(nodeId, documentId)
+    
     insertCount += 1
 
     if (insertCount == threshold) {
@@ -32,21 +32,15 @@ class NodeDocumentBatchInserter(threshold: Long) {
   }
 
   /** execute the batch insert */
-  def flush(implicit c: Connection) {
-    val result = batchQuery.execute
+  def flush {
+    import persistence.Schema.nodeDocuments
+    nodeDocuments.insert(currentBatch)
 
     resetBatch
   }
 
   private def resetBatch {
     insertCount = 0
-    batchQuery = createBatchQuery
+    currentBatch = Seq.empty
   }
-
-  private def createBatchQuery: BatchSql =
-    SQL("""
-        INSERT INTO node_document (node_id, document_id)
-        VALUES ({nodeDocument}, {documentId})
-        """).asBatch
-
 }
