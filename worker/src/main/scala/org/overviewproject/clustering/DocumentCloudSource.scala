@@ -17,10 +17,10 @@ import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
 import overview.http.{AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest}
 import overview.util.Logger
-import persistence.PersistentDocumentCloudDocument
+
 
 // The main DocumentCloudSource class produces a sequence of these...
-class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL) with PersistentDocumentCloudDocument
+class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
 
 // Define the bits of the DocumentCloud JSON response that we're interested in.
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.)
