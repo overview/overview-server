@@ -8,4 +8,5 @@ object Schema extends org.squeryl.Schema {
   
   val nodes = table[Node]
   val documents = table[Document]
+  val nodeDocuments = table[NodeDocument]
 }
