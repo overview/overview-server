@@ -16,11 +16,11 @@ import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import overview.database.DB
 import overview.util.DocumentConsumer
-import overview.util.DocumentSetCreationJobStateDescription.{Clustering, Done, Saving}
+import overview.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
 import overview.util.Logger
-import overview.util.Progress.{Progress, ProgressAbortFn, makeNestedProgress}
-
-import persistence.{DocumentWriter, NodeWriter}
+import overview.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
+import persistence.{ DocumentWriter, NodeWriter }
+import overview.database.Database
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 
@@ -38,8 +38,9 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
-    if (docTree.docs.size == 1 && docTree.description != "")
-      documentWriter.updateDescription(docTree.docs.head, docTree.description)
+    if (docTree.docs.size == 1 && docTree.description != "") Database.inTransaction { 
+        DocumentWriter.updateDescription(docTree.docs.head, docTree.description)
+    }
     else docTree.children.foreach(addDocumentDescriptions)
   }
 
@@ -57,12 +58,9 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
     // Save tree to database
     progAbort(Progress(savingFraction, Saving))
     val t2 = System.nanoTime()
-    DB.withTransaction { implicit connection =>
-      val adapter = new SquerylPostgreSqlAdapter()
-      val session = new Session(connection, adapter)
-      using(session) {
-        nodeWriter.write(docTree)
-      }
+    Database.inTransaction {
+      implicit val connection = Database.currentConnection
+      nodeWriter.write(docTree)
     }
     Logger.logElapsedTime("Saved DocumentSet to DB", t2)
 
