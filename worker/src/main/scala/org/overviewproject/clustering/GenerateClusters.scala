@@ -209,7 +209,7 @@ object BuildDocTree {
       builder.sampleCloseEdges(numSampledEdgesPerDoc)           // use sampled edges if the docset is large
     val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
     builder.labelNode(tree)                                     // create a descriptive label for each node
-    SmallNodeBundler(tree, maxChildrenPerNode)                  // prune the tree
+    //SmallNodeBundler(tree, maxChildrenPerNode)                  // prune the tree
     
     DocumentIdCacheGenerator.createCache(tree)
 
