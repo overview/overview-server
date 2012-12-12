@@ -6,7 +6,7 @@ import org.squeryl.dsl._
 import org.squeryl.adapters.PostgreSqlAdapter
 import java.sql.Connection
 import java.sql.ResultSet
-import overview.database.DB
+import org.overviewproject.database.DB
 
 sealed trait TPgArray
 sealed trait TOptionPgArray

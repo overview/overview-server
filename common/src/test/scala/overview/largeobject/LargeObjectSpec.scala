@@ -4,7 +4,7 @@ import org.overviewproject.test.DbSpecification
 import org.postgresql.util.PSQLException
 import org.specs2.mutable.{ Around, Specification }
 import play.api.Play.{ current, start, stop }
-import overview.database.DB
+import org.overviewproject.database.DB
 import overview.largeobject.LO
 import org.postgresql.PGConnection
 

@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package overview.database
+package org.overviewproject.database
 
 
 import java.sql.Connection

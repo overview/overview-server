@@ -14,7 +14,7 @@ import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 
-import overview.database.{DB, DataSource, DatabaseConfiguration}
+import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration}
 
 /**
  * Tests that access the database should extend DbSpecification.

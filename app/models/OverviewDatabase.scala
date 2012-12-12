@@ -6,7 +6,7 @@ import play.api.Play.current
 import play.api.db.DB
 
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import overview.database.TransactionProvider
+import org.overviewproject.database.TransactionProvider
 
 /** Manages database connections for a Play application
  *  Implements the method to execute a block inside a 

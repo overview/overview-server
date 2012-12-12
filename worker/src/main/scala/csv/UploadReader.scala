@@ -14,7 +14,7 @@ import java.nio.charset.CharsetDecoder
 import java.nio.charset.CodingErrorAction
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
-import overview.database.DB
+import org.overviewproject.database.DB
 import overview.largeobject.LO
 import persistence.UploadedFileLoader
 

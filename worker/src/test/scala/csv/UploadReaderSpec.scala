@@ -3,7 +3,7 @@ package csv
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
 import overview.largeobject.LO
-import overview.database.DB
+import org.overviewproject.database.DB
 import org.overviewproject.test.DbSetup._
 import java.io.InputStreamReader
 import java.nio.charset.Charset

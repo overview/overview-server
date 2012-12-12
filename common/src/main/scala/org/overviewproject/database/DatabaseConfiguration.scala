@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, June 2012
  */
 
-package overview.database
+package org.overviewproject.database
 
 /**
  * Sets up properties needed to configure the database.

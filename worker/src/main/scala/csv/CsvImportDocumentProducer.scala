@@ -6,11 +6,12 @@
  */
 package csv
 
-import overview.database.DB
+import org.overviewproject.database.DB
 import overview.util.{ DocumentConsumer, DocumentProducer }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
-import overview.database.Database
+
+import org.overviewproject.database.Database;
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import persistence.DocumentWriter

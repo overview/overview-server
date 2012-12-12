@@ -9,6 +9,8 @@ package overview.database
 
 import anorm._
 import anorm.SqlParser._
+
+import org.overviewproject.database.DB;
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.Result
 import org.specs2.mutable.Around

@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, July 2012
  */
 
-package overview.database
+package org.overviewproject.database
 
 import com.avaje.ebean.config.GlobalProperties
 

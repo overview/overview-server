@@ -11,13 +11,13 @@ import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.database.Database;
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
 import persistence.DocumentWriter
-import overview.database.Database
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,

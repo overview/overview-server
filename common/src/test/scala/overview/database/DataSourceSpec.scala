@@ -5,11 +5,12 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package overview.database
+package org.overviewproject.database
 
 import anorm._
 import org.specs2.mutable.Specification
 import java.sql.SQLException
+
 
 class DataSourceSpec extends Specification {
 

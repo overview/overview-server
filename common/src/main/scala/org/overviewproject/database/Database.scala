@@ -1,4 +1,4 @@
-package overview.database
+package org.overviewproject.database
 
 import java.sql.Connection
 
