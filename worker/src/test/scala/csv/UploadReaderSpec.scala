@@ -2,7 +2,7 @@ package csv
 
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
-import overview.largeobject.LO
+import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
 import org.overviewproject.test.DbSetup._
 import java.io.InputStreamReader

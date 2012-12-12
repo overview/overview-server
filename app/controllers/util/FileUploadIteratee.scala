@@ -6,7 +6,7 @@ import play.api.http.HeaderNames._
 import play.api.libs.iteratee.{ Done, Input, Iteratee }
 import play.api.mvc.{ RequestHeader, Result }
 import play.api.mvc.Results.BadRequest
-import overview.largeobject.LO
+import org.overviewproject.postgres.LO
 import models.upload.OverviewUpload
 
 /**

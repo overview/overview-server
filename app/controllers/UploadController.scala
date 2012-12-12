@@ -13,7 +13,7 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ BodyParser, BodyParsers, Controller, Request, RequestHeader, Result }
 import play.api.mvc.AnyContent
 
-import overview.largeobject.LO
+import org.overviewproject.postgres.LO
 import models.orm.{DocumentSet,User}
 import models.orm.DocumentSetType._
 import models.{OverviewDatabase,OverviewUser}

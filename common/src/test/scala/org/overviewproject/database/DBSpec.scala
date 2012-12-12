@@ -5,18 +5,12 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package overview.database
+package org.overviewproject.database
 
 import anorm._
 import anorm.SqlParser._
-
-import org.overviewproject.database.DB;
 import org.overviewproject.test.DbSpecification
-import org.specs2.execute.Result
-import org.specs2.mutable.Around
-import org.specs2.mutable.Specification
 import org.overviewproject.test.DbSetup._
-import org.postgresql.PGConnection
 import java.sql.SQLException
 
 class DBSpec extends DbSpecification {
