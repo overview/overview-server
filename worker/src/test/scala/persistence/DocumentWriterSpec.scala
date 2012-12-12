@@ -7,13 +7,13 @@
 
 package persistence
 
-import anorm._
-import anorm.SqlParser._
+import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import org.specs2.mutable.Specification
-import org.overviewproject.test.DbSetup._
-import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentType.{CsvImportDocument, DocumentCloudDocument}
+import org.squeryl.PrimitiveTypeMode._
+
+import persistence.Schema.documents
 
 class DocumentWriterSpec extends DbSpecification {
 
@@ -30,18 +30,20 @@ class DocumentWriterSpec extends DbSpecification {
     }
 
     "update description of document" in new Setup {
+      import persistence.Schema.documents
+      
       val title = "title"
-      val documentCloudId = "documentCloud-id"
+      val documentCloudId = Some("documentCloud-id")
       val description = "some,terms,together"
 
-      val id = insertDocument(documentSetId, title, documentCloudId)
-      DocumentWriter.updateDescription(id, description)
+      val document = Document(DocumentCloudDocument, documentSetId, documentcloudId = documentCloudId)
+      DocumentWriter.write(document)
+      DocumentWriter.updateDescription(document.id, description)
 
-      val documents =
-        SQL("SELECT id, title, documentcloud_id FROM document").
-          as(long("id") ~ str("title") ~ str("documentcloud_id") map (flatten) *)
+      val updatedDocument = documents.lookup(document.id) 
 
-      documents must haveTheSameElementsAs(Seq((id, description, documentCloudId)))
+      updatedDocument must beSome
+      updatedDocument.get.title must be equalTo description 
 
     }
 
@@ -55,7 +57,7 @@ class DocumentWriterSpec extends DbSpecification {
     "write a csv import document" in new Setup {
       val document = Document(CsvImportDocument, documentSetId, text = Some("text"), url = None)
       DocumentWriter.write(document)
-      
+
       document.id must not be equalTo(0)
     }
   }
