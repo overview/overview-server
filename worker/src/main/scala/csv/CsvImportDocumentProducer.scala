@@ -10,6 +10,10 @@ import overview.database.DB
 import overview.util.{ DocumentConsumer, DocumentProducer }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
+import overview.database.Database
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
+import persistence.DocumentWriter
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -19,10 +23,11 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader(uploadedFileId)
   private var bytesRead = 0l
-  
+
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
-    DB.withTransaction { implicit connection =>
+    Database.inTransaction {
+      implicit val connection = Database.currentConnection
       uploadReader.read { reader =>
         val documentSource = new CsvImportSource(reader)
 
@@ -36,19 +41,20 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
       }
     }
   }
-  
-  
+
   private def reportProgress(n: Long, size: Long) {
     // The input stream is buffered so new documents may be produced while
     // bytesRead stays the same. Only update if there is a change.
-    if (n != bytesRead) { 
+    if (n != bytesRead) {
       bytesRead = n
       progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
     }
   }
 
-  private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long =
-    DB.withConnection { implicit connection =>
-      doc.write(documentSetId)
-    }
+  private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
+    val document = Document(CsvImportDocumentType, documentSetId, doc.title,
+      suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
+    DocumentWriter.write(document)
+    document.id
+  }
 }
