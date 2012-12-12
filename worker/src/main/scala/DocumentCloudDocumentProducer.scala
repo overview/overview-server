@@ -9,12 +9,15 @@ package overview.http
 import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
-import org.overviewproject.clustering.DCDocumentAtURL 
+import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.clustering.DocumentSetIndexer
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
-import overview.database.DB
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentType._
+import persistence.DocumentWriter
+import overview.database.Database
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
@@ -41,8 +44,10 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
   }
 
   private def notify(doc: DCDocumentAtURL, text: String) {
-    val id =  DB.withConnection { implicit connection =>
-      doc.write(documentSetId)
+    val id =  Database.inTransaction{
+      val document = Document(DocumentCloudDocument, documentSetId, doc.title, documentcloudId = Some(doc.documentCloudId))
+      DocumentWriter.write(document)
+      document.id
     }
     consumer.processDocument(id, text)
     numDocs += 1
