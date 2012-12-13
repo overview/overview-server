@@ -4,8 +4,8 @@ import org.overviewproject.postgres.CustomTypes._
 import org.overviewproject.tree.orm.{ Document, Node }
 
 object Schema extends org.squeryl.Schema {
-  //override def columnNameFromPropertyName (propertyName: String) =
-  //    NamingConventionTransforms.snakify(propertyName) 
+  override def columnNameFromPropertyName (propertyName: String) =
+    NamingConventionTransforms.snakify(propertyName) 
 
   override def tableNameFromClassName (className: String) =
       NamingConventionTransforms.snakify(className)
