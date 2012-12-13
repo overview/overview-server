@@ -17,7 +17,7 @@ object show {
     val notCompleteMap = Map(
       "state" -> toJson(jobStateKeyToMessage(job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
-      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.stateDescription)))
+      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.statusDescription)))
     val notStartedMap = job.state match {
       case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
       case _ => Map()

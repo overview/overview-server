@@ -30,7 +30,7 @@ object DocumentSetHelper {
     if (n > 0) {
       views.Magic.t("views.DocumentSet._documentSet.jobs_to_process", n)
     } else {
-      jobDescriptionKeyToMessage(job.stateDescription)
+      jobDescriptionKeyToMessage(job.statusDescription)
     }
   }
 }

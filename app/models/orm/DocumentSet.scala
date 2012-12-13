@@ -61,7 +61,7 @@ case class DocumentSet(
    */
   def createDocumentSetCreationJob(username: Option[String]=None, password: Option[String]=None): DocumentSetCreationJob = {
     require(id != 0l)
-    val documentSetCreationJob = new DocumentSetCreationJob(id, username=username, password=password)
+    val documentSetCreationJob = new DocumentSetCreationJob(id, documentcloudUsername=username, documentcloudPassword=password)
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
   }
 

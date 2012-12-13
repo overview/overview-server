@@ -28,7 +28,7 @@
             <td class="date-started">@m("td.created_at", job.documentSet.createdAt)</td>
             <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete" />@((job.fractionComplete * 100).toInt)%</td>
-            <td class="state-description">@job.stateDescription</td>
+            <td class="state-description">@job.statusDescription</td>
             <td class="email">@job.user.email</td>
             <td class="title">@job.documentSet.title</td>
             <td class="query">@job.documentSet.query</td>

@@ -17,12 +17,12 @@ object DocumentSetCreationJobState extends Enumeration {
 import DocumentSetCreationJobState._
 
 case class DocumentSetCreationJob(
-  @Column("document_set_id") val documentSetId: Long = 0,
-  @Column("documentcloud_username") val username: Option[String] = None,
-  @Column("documentcloud_password") val password: Option[String] = None,
+  val documentSetId: Long = 0,
+  val documentcloudUsername: Option[String] = None,
+  val documentcloudPassword: Option[String] = None,
   val state: DocumentSetCreationJobState = NotStarted,
-  @Column("fraction_complete") val fractionComplete: Double = 0.0,
-  @Column("status_description") val stateDescription: String = "") extends KeyedEntity[Long] {
+  val fractionComplete: Double = 0.0,
+  val statusDescription: String = "") extends KeyedEntity[Long] {
   override val id: Long = 0
 
   def this() = this(state = NotStarted)

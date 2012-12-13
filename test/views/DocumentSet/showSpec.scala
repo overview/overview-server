@@ -63,7 +63,7 @@ class showSpec extends Specification {
       documentSetJson must /("state" -> "models.DocumentSetCreationJob.state.IN_PROGRESS")
       documentSetJson must /("percent_complete" -> job.fractionComplete * 100)
       documentSetJson must /("state_description" ->
-        ("views.DocumentSet._documentSet.job_state_description." + job.stateDescription))
+        ("views.DocumentSet._documentSet.job_state_description." + job.statusDescription))
       documentSetJson must not contain ("n_jobs_ahead_in_queue")
     }
 
