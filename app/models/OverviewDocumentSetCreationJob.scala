@@ -8,7 +8,14 @@ trait OverviewDocumentSetCreationJob {
   val documentSetId: Long
   val state: DocumentSetCreationJobState
 
+  def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials
+
   def save: OverviewDocumentSetCreationJob
+}
+
+trait DocumentCloudCredentials {
+  val username: String
+  val password: String
 }
 
 object OverviewDocumentSetCreationJob {
@@ -29,10 +36,26 @@ object OverviewDocumentSetCreationJob {
     val documentSetId: Long = documentSetCreationJob.documentSetId
     val state: DocumentSetCreationJobState = documentSetCreationJob.state
 
+    def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = {
+      val credentialedJob = documentSetCreationJob.copy(documentcloudUsername = Some(username), documentcloudPassword = Some(password))
+      new JobWithDocumentCloudCredentials(credentialedJob)
+    }
+
     def save: OverviewDocumentSetCreationJob = {
       documentSetCreationJobs.insertOrUpdate(documentSetCreationJob)
 
       copy(documentSetCreationJob)
     }
   }
+
+  private class JobWithDocumentCloudCredentials(documentSetCreationJob: DocumentSetCreationJob)
+    extends OverviewDocumentSetCreationJobImpl(documentSetCreationJob) with DocumentCloudCredentials {
+    require(documentSetCreationJob.documentcloudUsername.isDefined)
+    require(documentSetCreationJob.documentcloudPassword.isDefined)
+
+    val username = documentSetCreationJob.documentcloudUsername.get
+    val password = documentSetCreationJob.documentcloudPassword.get
+
+  }
+
 }
