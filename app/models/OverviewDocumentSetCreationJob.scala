@@ -24,13 +24,19 @@ object OverviewDocumentSetCreationJob {
 
   def apply(documentSet: OverviewDocumentSet): OverviewDocumentSetCreationJob = {
     val documentSetCreationJob = DocumentSetCreationJob(documentSet.id, state = NotStarted)
-    new OverviewDocumentSetCreationJobImpl(documentSetCreationJob)
+    OverviewDocumentSetCreationJobImpl(documentSetCreationJob)
   }
 
   def all: Seq[OverviewDocumentSetCreationJob] = {
     from(documentSetCreationJobs)(j => select(j).orderBy(j.id.asc)).toSeq.map(OverviewDocumentSetCreationJobImpl)
   }
 
+  def findByDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
+    val documentSetCreationJob = from(documentSetCreationJobs)(j => where(j.documentSetId === documentSetId) select(j)).headOption
+    
+    documentSetCreationJob.map(OverviewDocumentSetCreationJobImpl)
+  }
+  
   private case class OverviewDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob) extends OverviewDocumentSetCreationJob {
     val id: Long = documentSetCreationJob.id
     val documentSetId: Long = documentSetCreationJob.documentSetId

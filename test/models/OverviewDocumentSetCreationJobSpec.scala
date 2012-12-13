@@ -24,6 +24,15 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
         job = OverviewDocumentSetCreationJob(OverviewDocumentSet(documentSet))
       }
     }
+    
+    trait SavedJobContext extends DocumentSetContext {
+      var savedJob: OverviewDocumentSetCreationJob = _
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        savedJob = job.save
+      }
+    }
 
     trait MultipleJobs extends DbTestContext {
       var jobs: Seq[OverviewDocumentSetCreationJob] = _
@@ -43,9 +52,7 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       job.state must be equalTo (NotStarted)
     }
 
-    "save job to database" in new DocumentSetContext {
-      val savedJob = job.save
-
+    "save job to database" in new SavedJobContext {
       savedJob.id must not be equalTo(0)
     }
 
@@ -53,7 +60,11 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       OverviewDocumentSetCreationJob.all must be equalTo (jobs.sortBy(_.id))
     }
 
-    inExample("create a job with DocumentCloud credentials") in new DocumentSetContext {
+    "find job by document set id" in new SavedJobContext {
+      OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id) must beSome
+    }
+    
+    "create a job with DocumentCloud credentials" in new DocumentSetContext {
       val username = "name"
       val password = "password"
 
@@ -67,7 +78,6 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
 
       j.documentcloudUsername must beSome
       j.documentcloudPassword must beSome
-
     }
   }
 
