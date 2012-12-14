@@ -7,8 +7,9 @@ import play.api.libs.json.Json.toJson
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import org.overviewproject.test.Specification
-import models.orm.{ DocumentSet, DocumentSetCreationJob }
-import models.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJob 
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 import models.OverviewDocumentSet
 import models.OverviewDocumentSetCreationJob

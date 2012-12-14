@@ -1,7 +1,7 @@
 package models
 
-import models.orm.DocumentSetCreationJobState._
-import models.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 trait OverviewDocumentSetCreationJob {
   val id: Long

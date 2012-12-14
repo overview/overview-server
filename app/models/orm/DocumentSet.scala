@@ -17,6 +17,7 @@ import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 
 import org.overviewproject.postgres.PostgresqlEnum
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import models.OverviewDatabase
 
 class DocumentSetType(v: String) extends PostgresqlEnum(v, "document_set_type")

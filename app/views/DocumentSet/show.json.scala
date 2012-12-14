@@ -4,8 +4,8 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-import models.orm.{DocumentSetCreationJob }
-import models.orm.DocumentSetCreationJobState.NotStarted
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import views.ScopedMessages
 import views.helper.DocumentSetHelper

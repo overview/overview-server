@@ -4,8 +4,9 @@ import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import models.orm.{ DocumentSet, DocumentSetCreationJob }
-import models.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import models.orm.DocumentSet
 import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import models.orm.DocumentSetType._
 

@@ -13,9 +13,10 @@ import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
 
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import controllers.auth.AuthorizedRequest
 import helpers.DbTestContext
-import models.orm.{DocumentSet, DocumentSetCreationJob, Schema, User}
+import models.orm.{DocumentSet, Schema, User}
 import models.OverviewUser
 
 class DocumentSetControllerSpec extends Specification {

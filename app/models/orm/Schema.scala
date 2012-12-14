@@ -1,7 +1,7 @@
 package models.orm
 
 import org.overviewproject.postgres.CustomTypes._
-import org.overviewproject.tree.orm.{ Document, Node }
+import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, Node }
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName (propertyName: String) =
