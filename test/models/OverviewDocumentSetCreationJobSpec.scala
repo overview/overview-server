@@ -89,6 +89,12 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       updatedJob.stateDescription must be equalTo(description)
     }
     
+    "report position in queue" in new MultipleJobContext {
+      val queuePosition = jobs.sortBy(_.id).map(_.jobsAheadInQueue)
+      
+      queuePosition must be equalTo Seq.range(1, jobs.size + 1)
+    }
+    
     "create a job with DocumentCloud credentials" in new DocumentSetContext {
       val username = "name"
       val password = "password"

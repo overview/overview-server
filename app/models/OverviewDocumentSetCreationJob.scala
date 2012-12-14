@@ -10,7 +10,9 @@ trait OverviewDocumentSetCreationJob {
   val documentSet: OverviewDocumentSet
   val fractionComplete: Double
   val stateDescription: String
-  
+
+  def jobsAheadInQueue: Int
+
   def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials
 
   def save: OverviewDocumentSetCreationJob
@@ -46,10 +48,17 @@ object OverviewDocumentSetCreationJob {
     val state: DocumentSetCreationJobState = documentSetCreationJob.state
     val fractionComplete: Double = documentSetCreationJob.fractionComplete
     val stateDescription: String = documentSetCreationJob.statusDescription
-          
+
     override lazy val documentSet: OverviewDocumentSet = {
       val documentSet = documentSetDocumentSetCreationJobs.right(documentSetCreationJob).single
       OverviewDocumentSet(documentSet)
+    }
+
+    def jobsAheadInQueue: Int = {
+      val queue = from(documentSetCreationJobs)(ds =>
+        where(ds.state === NotStarted) select (ds.id) orderBy (ds.id))
+
+      queue.toSeq.indexOf(id) + 1
     }
 
     def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = {
