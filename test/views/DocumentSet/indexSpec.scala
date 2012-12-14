@@ -7,7 +7,7 @@ import play.api.mvc.Flash
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
-import models.{OverviewDocumentSet,OverviewUser}
+import models.{OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser}
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 
@@ -17,7 +17,7 @@ class indexSpec extends Specification {
     lazy val ormUser = new models.orm.User()
     lazy val user = OverviewUser(ormUser)
 
-    var documentSets : Seq[OverviewDocumentSet] = Seq()
+    var documentSets : Seq[(OverviewDocumentSet, Option[OverviewDocumentSetCreationJob])] = Seq()
 
     implicit lazy val j = jerry(index(user, documentSets, form).body)
   }
@@ -40,9 +40,9 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       documentSets ++= Seq(
-        DocumentSet(DocumentCloudDocumentSet, 1, "title1", Some("query1"), providedDocumentCount=Some(10)),
+        DocumentSet(DocumentCloudDocumentSet, 1, "title1", Some("query1"), providedDocumentCount=Some(10)), 
         DocumentSet(DocumentCloudDocumentSet, 2, "title2", Some("query2"), providedDocumentCount=Some(15))
-      ).map(OverviewDocumentSet.apply)
+      ).map(d => (OverviewDocumentSet.apply(d), None))
 
       $("ul.document-sets").length must equalTo(1)
       $("ul.document-sets li#document-set-1 a").attr("href") must endWith("/1")

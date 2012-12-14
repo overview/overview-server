@@ -19,10 +19,10 @@ trait DocumentSetController extends Controller {
       .page(0, 20)
       .toSeq
       .withDocumentCounts
-      .withCreationJobs
       .withUploadedFiles
       .map(OverviewDocumentSet.apply)
-    Ok(views.html.DocumentSet.index(request.user, documentSets, form))
+    val setsWithJobs = documentSets.map(d => (d, OverviewDocumentSetCreationJob.findByDocumentSetId(d.id)))
+    Ok(views.html.DocumentSet.index(request.user, setsWithJobs, form))
   }
 
   def show(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

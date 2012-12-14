@@ -27,11 +27,5 @@ case class DocumentSetCreationJob(
 
   def this() = this(state = NotStarted)
 
-  def jobsAheadInQueue: Long = {
-    val queue = from(Schema.documentSetCreationJobs)(ds =>
-      where(ds.state === NotStarted) select (ds.id) orderBy (ds.id))
-
-    queue.toSeq.indexOf(id) + 1
-  }
 }
 
