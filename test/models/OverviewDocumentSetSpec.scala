@@ -1,14 +1,14 @@
 package models
 
-import org.specs2.mutable.Specification
+import org.overviewproject.test.Specification
 import org.specs2.specification.Scope
 import play.api.Play.{start,stop}
 import play.api.test.FakeApplication
-
-// OverviewDocumentSet wraps models.orm.DocumentSet.
 import models.orm.{DocumentSet,UploadedFile}
 import models.orm.DocumentSetType._
 import models.upload.OverviewUploadedFile
+import helpers.DbTestContext
+import models.orm.Schema
 
 class OverviewDocumentSetSpec extends Specification {
   step(start(FakeApplication()))
@@ -17,6 +17,7 @@ class OverviewDocumentSetSpec extends Specification {
     trait OneDocumentSet {
       def throwWrongType = throw new Exception("Wrong DocumentSet type")
       def ormDocumentSet: DocumentSet
+      
       lazy val documentSet = OverviewDocumentSet(ormDocumentSet)
     }
 
@@ -58,6 +59,18 @@ class OverviewDocumentSetSpec extends Specification {
       )
     }
 
+    trait DocumentSetWithUserScope extends DbTestContext {
+      import models.orm.Schema.documentSetUsers
+      
+      var documentSet: OverviewDocumentSet = _
+      // Will become cleaner when OverviewDocumentSet is cleared up
+      override def setupWithDb = {
+        val admin = models.orm.User.findById(1l).getOrElse(throw new Exception("Missing admin user from db"))
+        val ormDocumentSet = admin.createDocumentSet("query").save
+        documentSet = OverviewDocumentSet(ormDocumentSet)
+      }
+    }
+    
     "apply() should generate a CsvImportDocumentSet" in new CsvImportDocumentSetScope {
       documentSet must beAnInstanceOf[OverviewDocumentSet.CsvImportDocumentSet]
     }
@@ -78,6 +91,12 @@ class OverviewDocumentSetSpec extends Specification {
       documentSet.documentCount must beEqualTo(count)
     }
 
+    "user should be the user" in new DocumentSetWithUserScope {
+      val d = OverviewDocumentSet.findById(documentSet.id).get
+      d.user.id must be equalTo(1l)
+      d.user.email must be equalTo("admin@overview-project.org")
+    }
+    
     "CSV document sets must have an uploadedFile" in new CsvImportDocumentSetScope {
       documentSet match {
         case csvDs: OverviewDocumentSet.CsvImportDocumentSet => {

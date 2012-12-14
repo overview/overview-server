@@ -30,6 +30,9 @@ sealed trait OverviewDocumentSet {
 
   /** Creation date (without milliseconds) */
   val createdAt: java.util.Date
+  
+  /** The user owning the document set */
+  val user: OverviewUser
 }
 
 object OverviewDocumentSet {
@@ -41,6 +44,9 @@ object OverviewDocumentSet {
     override lazy val documentCount = ormDocumentSet.documentCount.toInt
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt
+    override lazy val user = {
+      OverviewUser.findById(ormDocumentSet.users.single.id).get 
+    }
   }
 
   case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {

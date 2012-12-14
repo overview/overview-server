@@ -8,6 +8,7 @@ import helpers.DbTestContext
 import models.orm.DocumentSetType._
 import models.orm.DocumentSet
 import models.orm.DocumentSetCreationJobState._
+import org.openqa.selenium.internal.selenesedriver.GetActiveElement
 
 class OverviewDocumentSetCreationJobSpec extends Specification {
   step(start(FakeApplication()))
@@ -34,7 +35,7 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       }
     }
 
-    trait MultipleJobs extends DbTestContext {
+    trait MultipleJobContext extends DbTestContext {
       var jobs: Seq[OverviewDocumentSetCreationJob] = _
 
       override def setupWithDb = {
@@ -43,7 +44,20 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
           documentSets.insert(d)
           OverviewDocumentSetCreationJob(OverviewDocumentSet(d)).save
         }
-
+      }
+    }
+    
+    trait UpdatedStateContext extends SavedJobContext {
+      val fractionComplete = 0.55
+      val description = "state description"
+        
+      override def setupWithDb = {
+        super.setupWithDb
+        update(documentSetCreationJobs)(j =>
+          where(j.id === savedJob.id)
+          set( j.fractionComplete := fractionComplete,
+               j.statusDescription := description)
+        )
       }
     }
 
@@ -56,12 +70,23 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       savedJob.id must not be equalTo(0)
     }
 
-    "list all saved jobs ordered by ascending ids" in new MultipleJobs {
+    "list all saved jobs ordered by ascending ids" in new MultipleJobContext {
       OverviewDocumentSetCreationJob.all must be equalTo (jobs.sortBy(_.id))
     }
 
     "find job by document set id" in new SavedJobContext {
       OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id) must beSome
+    }
+    
+    "return the document set" in new SavedJobContext {
+      val j = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).get
+      j.documentSet.id must be equalTo(documentSet.id)
+    }
+    
+    "read state information" in new UpdatedStateContext {
+      val updatedJob = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).get
+      updatedJob.fractionComplete must be equalTo(fractionComplete)
+      updatedJob.stateDescription must be equalTo(description)
     }
     
     "create a job with DocumentCloud credentials" in new DocumentSetContext {
