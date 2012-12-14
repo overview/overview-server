@@ -33,6 +33,9 @@ sealed trait OverviewDocumentSet {
   
   /** The user owning the document set */
   val user: OverviewUser
+  
+  /** FIXME: Only here because admin page expects it of all jobs */
+  val query: String
 }
 
 object OverviewDocumentSet {
@@ -47,6 +50,7 @@ object OverviewDocumentSet {
     override lazy val user = {
       OverviewUser.findById(ormDocumentSet.users.single.id).get 
     }
+    override lazy val query = ""
   }
 
   case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
@@ -57,7 +61,7 @@ object OverviewDocumentSet {
   case class DocumentCloudDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
     private def throwOnNull = throw new Exception("DocumentCloudDocumentSet has NULL values it should not have")
 
-    lazy val query : String = ormDocumentSet.query.getOrElse(throwOnNull)
+    override lazy val query : String = ormDocumentSet.query.getOrElse(throwOnNull)
   }
 
   /** Factory method */
