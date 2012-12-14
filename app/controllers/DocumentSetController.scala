@@ -7,7 +7,7 @@ import org.squeryl.PrimitiveTypeMode._ // TODO: remove this!
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.orm.{DocumentSet,User} // TODO: remove this!
 import models.orm.DocumentSet.ImplicitHelper._ // TODO: remove this!
-import models.OverviewDocumentSet
+import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -35,7 +35,7 @@ trait DocumentSetController extends Controller {
 
   def showJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     OverviewDocumentSet.findById(id) match {
-      case Some(ds) => Ok(views.json.DocumentSet.show(ds))
+      case Some(ds) => Ok(views.json.DocumentSet.show(ds, OverviewDocumentSetCreationJob.findByDocumentSetId(ds.id)))
       case None => NotFound
     }
   }

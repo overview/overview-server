@@ -6,18 +6,18 @@ import play.api.libs.json.Json.toJson
 
 import models.orm.{DocumentSetCreationJob }
 import models.orm.DocumentSetCreationJobState.NotStarted
-import models.OverviewDocumentSet
+import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import views.ScopedMessages
 import views.helper.DocumentSetHelper
 
 object show {
   private val jobStateKeyToMessage = ScopedMessages("models.DocumentSetCreationJob.state")
 
-  private def documentSetCreationJobProperties(job: DocumentSetCreationJob)(implicit lang: Lang) = {
+  private def documentSetCreationJobProperties(job: OverviewDocumentSetCreationJob)(implicit lang: Lang) = {
     val notCompleteMap = Map(
       "state" -> toJson(jobStateKeyToMessage(job.state.toString)),
       "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
-      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.statusDescription)))
+      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.stateDescription)))
     val notStartedMap = job.state match {
       case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
       case _ => Map()
@@ -30,10 +30,10 @@ object show {
     Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
   }
 
-  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet): JsValue = {
+  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {
     val documentSetMap = Map("id" -> toJson(documentSet.id))
 
-    val jobStatusMap = documentSet.creationJob match {
+    val jobStatusMap = job match {
       case Some(documentSetCreationJob) => documentSetCreationJobProperties(documentSetCreationJob)
       case None => documentSetProperties(documentSet)
     }
@@ -41,7 +41,7 @@ object show {
     toJson(documentSetMap ++ jobStatusMap)
   }
 
-  def apply(documentSet: OverviewDocumentSet): JsValue = {
-    documentSetToJson(documentSet)
+  def apply(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {
+    documentSetToJson(documentSet, job)
   }
 }
