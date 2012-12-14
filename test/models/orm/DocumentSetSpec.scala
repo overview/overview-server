@@ -29,15 +29,13 @@ class DocumentSetSpec extends Specification {
 
   "DocumentSet" should {
 
-    "create a DocumentSetCreationJob" in new DbTestContext {
+    inExample("create a DocumentSetCreationJob") in new DbTestContext {
       val query = Some("query")
       val title = "title"
 
       val documentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, title, query))
 
       val job = documentSet.createDocumentSetCreationJob()
-
-      job.documentSet must be equalTo (documentSet)
 
       val returnedJob = Schema.documentSetCreationJobs.lookup(job.id)
 
