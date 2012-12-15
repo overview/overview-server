@@ -12,7 +12,7 @@ import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.specs2.mutable.Specification
-import persistence.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.test.DbSetup._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
@@ -50,14 +50,14 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var jobId: Long = _
     
     override def setupWithDb = {
-      jobId = insertDocumentSetCreationJob(documentSetId, Submitted.id)
-      notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+      jobId = insertDocumentSetCreationJob(documentSetId, NotStarted.id)
+      notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
 
   trait JobQueueSetup extends DocumentSetContext {
     override def setupWithDb = {
-      insertJobsWithState(documentSetId, Seq(Submitted.id, InProgress.id, Submitted.id, InProgress.id))
+      insertJobsWithState(documentSetId, Seq(NotStarted.id, InProgress.id, NotStarted.id, InProgress.id))
     }
   }
 
@@ -67,18 +67,18 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var dcJob: PersistentDocumentSetCreationJob = _
     
     override def setupWithDb = {
-      insertDocumentCloudJob(documentSetId, Submitted.id, dcUsername, dcPassword)
-      dcJob = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+      insertDocumentCloudJob(documentSetId, NotStarted.id, dcUsername, dcPassword)
+      dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
 
   "PersistentDocumentSetCreationJob" should {
 
     "find all submitted jobs" in new JobQueueSetup {
-      val notStarted = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
+      val notStarted = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
       notStarted must have size(2)
-      notStarted.map(_.state).distinct must contain(Submitted).only
+      notStarted.map(_.state).distinct must contain(NotStarted).only
       notStarted.map(_.documentSetId).distinct must contain(documentSetId).only
     }
 
@@ -93,14 +93,14 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       notStartedJob.state = InProgress
       notStartedJob.update
 
-      val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
+      val remainingNotStartedJobs = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
       remainingNotStartedJobs must be empty
     }
 
     "update percent complete" in new JobSetup {
       notStartedJob.fractionComplete = 0.5
       notStartedJob.update
-      val job = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+      val job = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
 
       job.fractionComplete must be equalTo (0.5)
     }
@@ -109,7 +109,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val status = "status message"
       notStartedJob.statusDescription = Some(status)
       notStartedJob.update
-      val job = PersistentDocumentSetCreationJob.findJobsWithState(Submitted).head
+      val job = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
 
       job.statusDescription must beSome.like { case s => s must be equalTo(status) }
     }
@@ -117,7 +117,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "delete itself" in new JobSetup {
       notStartedJob.delete
 
-      val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
+      val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
       remainingJobs must be empty
     }

@@ -7,22 +7,12 @@
 
 package persistence
 
-import anorm._
-import anorm.SqlParser._
-import java.sql.Connection
-
-/** Possible states of a DocumentSetCreationJob */
-object DocumentSetCreationJobState extends Enumeration {
-  type DocumentSetCreationJobState = Value
-  val Submitted, InProgress, Error = Value // order matters, must correspond to: 0, 1, 2
-}
-
-import DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 /**
  * Contains attributes of a DocumentSetCreationJob
  * and allows updates and deletions.
- */ 
+ */
 trait PersistentDocumentSetCreationJob {
 
   val documentSetId: Long
@@ -33,78 +23,96 @@ trait PersistentDocumentSetCreationJob {
 
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
-  var statusDescription: Option[String] 
+  var statusDescription: Option[String]
 
   /**
    * Updates state, fractionComplete, and statusDescription
-   * @return 1 on success, 0 otherwise
    */
-  def update(implicit c: Connection): Long
+  def update
 
-  /** @return 1 on successful deletion, 0 otherwise */
-  def delete(implicit c: Connection): Long
+  /** delete the object from the database */
+  def delete
 }
-
 
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
+  import org.squeryl.PrimitiveTypeMode._
+  import org.overviewproject.tree.orm.DocumentSetCreationJob
+  import persistence.Schema.documentSetCreationJobs
 
-  private type DocumentSetCreationJobData = (
-    Long, // id
-    Long, // documentSetId
-    Int, // state
-    Double, // fractionComplete
-    Option[String], // statusDescription
-    Option[String], // documentCloudUserName
-    Option[String]) // doucmentCloudPassword
+  private type DocumentSetCreationJobData = (Long, // id
+  Long, // documentSetId
+  Int, // state
+  Double, // fractionComplete
+  Option[String], // statusDescription
+  Option[String], // documentCloudUserName
+  Option[String]) // doucmentCloudPassword
 
   /** Find all jobs in the specified state */
-  def findJobsWithState(state: DocumentSetCreationJobState)(implicit c: Connection): List[PersistentDocumentSetCreationJob] = {
-    val jobData =
-      SQL("""
-          SELECT id, document_set_id, state, fraction_complete, status_description,
-                 documentcloud_username, documentcloud_password
-          FROM document_set_creation_job
-          WHERE state = {state}
-          ORDER BY id
-          """).on("state" -> state.id).
-        as(long("id") ~ long("document_set_id") ~ int("state") ~
-          get[Double]("fraction_complete") ~
-          get[Option[String]]("status_description") ~
-          get[Option[String]]("documentcloud_username") ~
-          get[Option[String]]("documentcloud_password") map (flatten) *)
+  def findJobsWithState(state: DocumentSetCreationJobState): List[PersistentDocumentSetCreationJob] = {
 
-    jobData.map(new PersistentDocumentSetCreationJobImpl(_))
+    val jobs = from(documentSetCreationJobs)(d => where(d.state === state) select (d))
+    jobs.map(new PersistentDocumentSetCreationJobImpl(_)).toList
   }
-    
-  /** Private implementation or PersistentDocumentSet created from database data */
-  private class PersistentDocumentSetCreationJobImpl(data: DocumentSetCreationJobData)
+
+  private class PersistentDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob)
     extends PersistentDocumentSetCreationJob {
+    val documentSetId: Long = documentSetCreationJob.documentSetId
+    val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
+    val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
 
-    val (id, documentSetId, stateNumber, complete, status,
-      documentCloudUsername, documentCloudPassword) = data
+    var state: DocumentSetCreationJobState = documentSetCreationJob.state
+    var fractionComplete: Double = documentSetCreationJob.fractionComplete
+    var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)
 
-    var statusDescription = status
-    var state = DocumentSetCreationJobState(stateNumber)
-    var fractionComplete = complete
-
-    def update(implicit c: Connection): Long = {
-      SQL("""
-          UPDATE document_set_creation_job SET
-          state = {state}, fraction_complete = {fractionComplete},
-          status_description = {status}
-          WHERE id = {id}
-          """).on("state" -> state.id, "fractionComplete" -> fractionComplete,
-                  "status" -> statusDescription, "id" -> id).executeUpdate()
+    /**
+     * Updates state, fractionComplete, and statusDescription
+     * @return 1 on success, 0 otherwise
+     */
+    def update {
+      val updatedJob = org.squeryl.PrimitiveTypeMode.update(documentSetCreationJobs)(d =>
+        where(d.id === documentSetCreationJob.id)
+          set(d.documentSetId := documentSetId, 
+          d.state := state,
+          d.fractionComplete := fractionComplete, 
+          d.statusDescription := statusDescription.getOrElse("")))
+          
     }
 
-    def delete(implicit c: Connection): Long = {
-      SQL("""
-          DELETE FROM document_set_creation_job
-          WHERE id = {id}
-          """).on("id" -> id).executeUpdate()
-
+    /** @return 1 on successful deletion, 0 otherwise */
+    def delete {
+      documentSetCreationJobs.deleteWhere(d => d.id === documentSetCreationJob.id)
     }
-
   }
+//
+//  /** Private implementation or PersistentDocumentSet created from database data */
+//  private class PersistentDocumentSetCreationJobImpl2(data: DocumentSetCreationJobData)
+//    extends PersistentDocumentSetCreationJob {
+//
+//    val (id, documentSetId, stateNumber, complete, status,
+//      documentCloudUsername, documentCloudPassword) = data
+//
+//    var statusDescription = status
+//    var state = DocumentSetCreationJobState(stateNumber)
+//    var fractionComplete = complete
+//
+//    def update(implicit c: Connection): Long = {
+//      SQL("""
+//          UPDATE document_set_creation_job SET
+//          state = {state}, fraction_complete = {fractionComplete},
+//          status_description = {status}
+//          WHERE id = {id}
+//          """).on("state" -> state.id, "fractionComplete" -> fractionComplete,
+//        "status" -> statusDescription, "id" -> id).executeUpdate()
+//    }
+//
+//    def delete(implicit c: Connection): Long = {
+//      SQL("""
+//          DELETE FROM document_set_creation_job
+//          WHERE id = {id}
+//          """).on("id" -> id).executeUpdate()
+//
+//    }
+//
+//  }
 }

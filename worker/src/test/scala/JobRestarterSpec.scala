@@ -4,7 +4,7 @@ import java.sql.Connection
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
-import persistence.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class JobRestarterSpec extends Specification with Mockito {
   implicit val unusedConnection: Connection = null
@@ -20,12 +20,12 @@ class JobRestarterSpec extends Specification with Mockito {
 
     var updateCalled: Boolean = false
     
-    def update(implicit c: Connection): Long = {
+    def update = {
       updateCalled = true
       1l
     }
 
-    def delete(implicit c: Connection): Long = 1l
+    def delete {}
   }
 
   "JobRestarter" should {
@@ -38,7 +38,7 @@ class JobRestarterSpec extends Specification with Mockito {
 
       jobRestarter.restart(Seq(job))
 
-      job.state must be equalTo (Submitted)
+      job.state must be equalTo (NotStarted)
       job.updateCalled must beTrue 
 
       there was one(cleaner).clean(job.documentSetId)

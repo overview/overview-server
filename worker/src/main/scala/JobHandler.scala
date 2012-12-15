@@ -13,8 +13,9 @@ import overview.http.{AsyncHttpRequest, DocumentCloudDocumentProducer}
 import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._
 import persistence._
-import persistence.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.database.Database
 
 object JobHandler {
 
@@ -24,9 +25,8 @@ object JobHandler {
     try {
       Logger.info("Handling job")
       j.state = InProgress
-      DB.withConnection { implicit connection =>
-        j.update
-      }
+      Database.inTransaction { j.update }
+      
       val documentSetId = j.documentSetId
 
       val documentWriter = new DocumentWriter(documentSetId)
@@ -34,9 +34,7 @@ object JobHandler {
       def progFn(prog: Progress) = {
         j.fractionComplete = prog.fraction
         j.statusDescription = Some(prog.status.toString)
-        DB.withConnection { implicit connection =>
-          j.update
-        }
+        Database.inTransaction { j.update }
         Logger.info("PROGRESS: " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
       }
 
@@ -49,24 +47,23 @@ object JobHandler {
 
       producer.produce()
       
-      DB.withConnection { implicit connection =>
-        j.delete
-      }
+      Database.inTransaction{ j.delete }
+      
 
     } catch {
       case t: Throwable =>
         Logger.error("Job failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
-        DB.withConnection { implicit connection => j.update }
+        Database.inTransaction{ j.update }
     }
   }
 
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
 
-    val submittedJobs: Seq[PersistentDocumentSetCreationJob] = DB.withConnection { implicit connection =>
-      PersistentDocumentSetCreationJob.findJobsWithState(Submitted)
+    val submittedJobs: Seq[PersistentDocumentSetCreationJob] = Database.inTransaction{ 
+      PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
     }
 
     for (j <- submittedJobs) {
@@ -76,7 +73,7 @@ object JobHandler {
   }
 
   def restartInterruptedJobs(implicit c: Connection) {
-    val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
+    val interruptedJobs = Database.inTransaction { PersistentDocumentSetCreationJob.findJobsWithState(InProgress) }
     val restarter = new JobRestarter(new DocumentSetCleaner)
 
     restarter.restart(interruptedJobs)
