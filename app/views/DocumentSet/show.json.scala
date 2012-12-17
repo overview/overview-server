@@ -33,7 +33,7 @@ object show {
   private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {
     val documentSetMap = Map("id" -> toJson(documentSet.id))
 
-    val jobStatusMap = job match {
+    val jobStatusMap = documentSet.creationJob match {
       case Some(documentSetCreationJob) => documentSetCreationJobProperties(documentSetCreationJob)
       case None => documentSetProperties(documentSet)
     }
