@@ -12,8 +12,9 @@ class Server
     $.ajax($.extend({
       dataType: 'json',
     }, options || {}, {
-      type: 'GET',
-      url: path,
+      type: 'GET'
+      url: path
+      cache: false
     }))
 
   post: (route, data, options=undefined) ->
@@ -22,7 +23,7 @@ class Server
     $.ajax($.extend({
       data: data,
     }, options || {}, {
-      type: 'POST',
+      type: 'POST'
       url: path,
     }))
 
@@ -32,8 +33,8 @@ class Server
     $.ajax($.extend({
       data: data,
     }, options || {}, {
-      type: 'DELETE',
-      url: path,
+      type: 'DELETE'
+      url: path
     }))
 
 exports = require.make_export_object('models/server')
