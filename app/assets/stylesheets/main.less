@@ -353,9 +353,20 @@ body.document-set-index {
       }
     }
 
-    label {
-      display: inline;
-      margin: 0;
+    p.status {
+      /* See #199. IE9 has a rendering bug in p.status, and really-dumb float:left is a workaround. */
+      label {
+        display: block;
+        float: left;
+        margin: 0 10px 0 0;
+      }
+
+      span.state-description {
+        display: block;
+        float: left;
+      }
+
+      .clearfix()
     }
 
     h3 {
