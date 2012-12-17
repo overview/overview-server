@@ -14,6 +14,10 @@ class FocusView
     this._handle_dragging_middle()
     this._handle_dragging()
     this._handle_focus_changes()
+    this._handle_window_resize()
+
+  _handle_window_resize: () ->
+    $(window).on('resize.focus-view', () => this.update())
 
   _handle_focus_changes: () ->
     @focus.observe('zoom', => this.update())

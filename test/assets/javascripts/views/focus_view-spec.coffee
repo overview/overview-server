@@ -29,6 +29,7 @@ describe 'views/focus_view', ->
       div = undefined
       $('#mousemove-handler').remove()
       $(document).off('.focus-view')
+      $(window).off('.focus-view')
 
     num = (s) -> parseFloat(s)
 
@@ -73,6 +74,11 @@ describe 'views/focus_view', ->
       it 'should update when pan changes', ->
         spyOn(view, 'update')
         focus._notify('pan', 0)
+        expect(view.update).toHaveBeenCalled()
+
+      it 'should update when the window resizes', ->
+        spyOn(view, 'update')
+        $(window).trigger('resize')
         expect(view.update).toHaveBeenCalled()
 
       it 'should center handles that are not at edges', ->
