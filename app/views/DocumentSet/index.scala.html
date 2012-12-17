@@ -1,6 +1,6 @@
 @(
   user: OverviewUser,
-  documentSetsWithJobs: Seq[(OverviewDocumentSet, Option[OverviewDocumentSetCreationJob])],
+  documentSets: Seq[OverviewDocumentSet],
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
@@ -39,9 +39,9 @@
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @if(documentSetsWithJobs) {
+    @if(documentSets) {
       <ul class="unstyled document-sets">
-        @documentSetsWithJobs.map(d => _documentSet(d._1))
+        @documentSets.map(d => _documentSet(d))
       </ul>
     } else {
       <p class="no-document-sets">@m("no_document_sets")</p>

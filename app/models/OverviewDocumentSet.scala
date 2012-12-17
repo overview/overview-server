@@ -4,7 +4,7 @@ import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob }
 import models.orm.DocumentSet
 import models.upload.OverviewUploadedFile
 
-sealed trait OverviewDocumentSet {
+trait OverviewDocumentSet {
   /** database ID */
   val id: Long
 
