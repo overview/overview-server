@@ -30,7 +30,7 @@ object show {
     Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
   }
 
-  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {
+  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet): JsValue = {
     val documentSetMap = Map("id" -> toJson(documentSet.id))
 
     val jobStatusMap = documentSet.creationJob match {
@@ -41,7 +41,7 @@ object show {
     toJson(documentSetMap ++ jobStatusMap)
   }
 
-  def apply(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {
-    documentSetToJson(documentSet, job)
+  def apply(documentSet: OverviewDocumentSet): JsValue = {
+    documentSetToJson(documentSet)
   }
 }

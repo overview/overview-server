@@ -36,7 +36,7 @@ class showSpec extends Specification {
     trait DocumentSetContext extends Scope {
       val job: Option[OverviewDocumentSetCreationJob]
       lazy val documentSet: OverviewDocumentSet = FakeOverviewDocumentSet(job)
-      lazy val documentSetJson = show(documentSet, job).toString
+      lazy val documentSetJson = show(documentSet).toString
     }
 
     trait CompleteDocumentSetContext extends DocumentSetContext {
