@@ -28,11 +28,10 @@ class indexSpec extends Specification {
 
     var documentSets: Seq[OverviewDocumentSet] = Seq()
     implicit lazy val j = jerry(index(user, documentSets, form).body)
+    def $(selector: java.lang.String) = j.$(selector) 
   }
 
   val form = controllers.forms.DocumentSetForm()
-
-  def $(selector: java.lang.String)(implicit j: jodd.lagarto.dom.jerry.Jerry) = { j.$(selector) }
 
   step(start(FakeApplication()))
 
