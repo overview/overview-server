@@ -16,9 +16,11 @@ import models.OverviewDocumentSetCreationJob
 
 class showSpec extends Specification {
 
+  step(start(FakeApplication()))
+  
   "DocumentSet view generated Json" should {
 
-    trait DocumentSetContext extends Scope {
+    trait DocumentSetContext extends DbTestContext {
       val ormDocumentSet: DocumentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount=Some(20))
       val job: Option[OverviewDocumentSetCreationJob]
       lazy val documentSet: OverviewDocumentSet = OverviewDocumentSet(ormDocumentSet)
@@ -65,7 +67,7 @@ class showSpec extends Specification {
     }
 
     "show in progress job" in new InProgressDocumentSetContext {
-      documentSetJson must /("state" -> "models.DocumentSetCreationJob.state.IN_PROGRESS")
+      documentSetJson must /("state" -> "importing")
       documentSetJson must /("percent_complete" -> job.get.fractionComplete * 100)
       documentSetJson must /("state_description" ->
         ("views.DocumentSet._documentSet.job_state_description." + job.get.stateDescription))
@@ -77,12 +79,13 @@ class showSpec extends Specification {
     }
 
     "expand description key with argument" in new DescriptionWithArgument {
-      documentSetJson must /("state_description" ->
-        ("views.DocumentSet._documentSet.job_state_description." + "clustering"))
+      documentSetJson must /("state_description" -> "Clustering")
     }
 
     "empty description leads to empty string" in new EmptyStateDescription {
       documentSetJson must /("state_description" -> "")
     }
   }
+  
+  step(stop)
 }

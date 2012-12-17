@@ -27,7 +27,7 @@ object show {
   }
 
   private[DocumentSet] def documentSetProperties(documentSet: OverviewDocumentSet)(implicit lang: Lang) = {
-    Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet, None).toString))
+    Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
   }
 
   private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet, job: Option[OverviewDocumentSetCreationJob]): JsValue = {

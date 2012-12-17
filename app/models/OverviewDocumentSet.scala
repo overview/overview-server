@@ -16,7 +16,7 @@ sealed trait OverviewDocumentSet {
   /** Creation job, if this DocumentSet isn't complete yet.
     * FIXME: should be models.OverviewDocumentSetCreationJob, but we don't have one
     */
-  def creationJob: Option[DocumentSetCreationJob]
+  def creationJob: Option[OverviewDocumentSetCreationJob]
 
   /** Number of documents.
     *
@@ -43,7 +43,7 @@ object OverviewDocumentSet {
     protected val ormDocumentSet: DocumentSet
 
     override val id = ormDocumentSet.id
-    override lazy val creationJob = ormDocumentSet.documentSetCreationJob
+    override lazy val creationJob = OverviewDocumentSetCreationJob.findByDocumentSetId(id)
     override lazy val documentCount = ormDocumentSet.documentCount.toInt
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt

@@ -41,7 +41,7 @@
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @if(documentSetsWithJobs) {
       <ul class="unstyled document-sets">
-        @documentSetsWithJobs.map(d => _documentSet(d._1, d._2))
+        @documentSetsWithJobs.map(d => _documentSet(d._1))
       </ul>
     } else {
       <p class="no-document-sets">@m("no_document_sets")</p>

@@ -7,7 +7,6 @@ trait OverviewDocumentSetCreationJob {
   val id: Long
   val documentSetId: Long
   val state: DocumentSetCreationJobState
-  val documentSet: OverviewDocumentSet
   val fractionComplete: Double
   val stateDescription: String
 
@@ -48,11 +47,6 @@ object OverviewDocumentSetCreationJob {
     val state: DocumentSetCreationJobState = documentSetCreationJob.state
     val fractionComplete: Double = documentSetCreationJob.fractionComplete
     val stateDescription: String = documentSetCreationJob.statusDescription
-
-    override lazy val documentSet: OverviewDocumentSet = {
-      val documentSet = documentSetDocumentSetCreationJobs.right(documentSetCreationJob).single
-      OverviewDocumentSet(documentSet)
-    }
 
     def jobsAheadInQueue: Int = {
       val queue = from(documentSetCreationJobs)(ds =>

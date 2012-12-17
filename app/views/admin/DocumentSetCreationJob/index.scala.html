@@ -23,16 +23,18 @@
       </thead>
       <tbody>
         @jobs.map { job =>
+          @defining(OverviewDocumentSet.findById(job.documentSetId).get) { documentSet =>
           <tr>
             <td class="id">@job.id</td>
-            <td class="date-started">@m("td.created_at", job.documentSet.createdAt)</td>
+            <td class="date-started">@m("td.created_at", documentSet.createdAt)</td>
             <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete" />@((job.fractionComplete * 100).toInt)%</td>
             <td class="state-description">@job.stateDescription</td>
-            <td class="email">@job.documentSet.user.email</td>
-            <td class="title">@job.documentSet.title</td>
-            <td class="query">@job.documentSet.query</td>
+            <td class="email">@documentSet.user.email</td>
+            <td class="title">@documentSet.title</td>
+            <td class="query">@documentSet.query</td>
           </tr>
+          }
         }
       </tbody>
     </table>

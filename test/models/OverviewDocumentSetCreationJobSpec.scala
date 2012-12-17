@@ -79,11 +79,6 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id) must beSome
     }
     
-    "return the document set" in new SavedJobContext {
-      val j = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).get
-      j.documentSet.id must be equalTo(documentSet.id)
-    }
-    
     "read state information" in new UpdatedStateContext {
       val updatedJob = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).get
       updatedJob.fractionComplete must be equalTo(fractionComplete)

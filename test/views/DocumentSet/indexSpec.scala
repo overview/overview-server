@@ -10,9 +10,10 @@ import play.api.test.FakeApplication
 import models.{OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser}
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
+import helpers.DbTestContext
 
 class indexSpec extends Specification {
-  trait ViewContext extends Scope {
+  trait ViewContext extends DbTestContext {
     implicit lazy val flash = new Flash()
     lazy val ormUser = new models.orm.User()
     lazy val user = OverviewUser(ormUser)

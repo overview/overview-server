@@ -6,29 +6,41 @@ import org.specs2.specification.Scope
 
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import play.api.Play.{ start, stop }
+import play.api.test.FakeApplication
 import models.orm.DocumentSet
 import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import models.orm.DocumentSetType._
+import helpers.DbTestContext
 
 class _documentSetSpec extends Specification {
-  trait ViewContext extends Scope {
-    val ormDocumentSet: DocumentSet
-    def documentSet = OverviewDocumentSet(ormDocumentSet)
+  step(start(FakeApplication()))
+
+  trait ViewContext extends DbTestContext {
+    var ormDocumentSet: DocumentSet = _
+    var documentSet: OverviewDocumentSet = _
+
     val job: Option[OverviewDocumentSetCreationJob] = None
 
-    lazy val body = _documentSet(documentSet, job).body
+    lazy val body = _documentSet(documentSet).body
     lazy val j = jerry(body)
     def $(selector: java.lang.String) = j.$(selector)
   }
 
   trait NormalDocumentSetContext extends ViewContext {
-    override val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, 1, "a title", Some("a query"), providedDocumentCount = Some(20))
+    override def setupWithDb = {
+      ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, title = "a title", query = Some("a query")).save
+      documentSet = OverviewDocumentSet(ormDocumentSet)
+    }
   }
 
   trait DocumentSetWithJobContext extends ViewContext {
     val documentSetId = 1L
 
-    override lazy val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, documentSetId, title = "a title", query = Some("a query"), providedDocumentCount = Some(10))
+    override def setupWithDb = {
+      ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, title = "a title", query = Some("a query")).save
+      documentSet = OverviewDocumentSet(ormDocumentSet)
+    }
   }
 
   class FakeDocumentSetCreationJob(val documentSet: OverviewDocumentSet, val state: DocumentSetCreationJobState,
@@ -67,32 +79,39 @@ class _documentSetSpec extends Specification {
     }
 
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      override val job = Some(new FakeDocumentSetCreationJob(documentSet, NotStarted))
+      //override val job = Some(new FakeDocumentSetCreationJob(documentSet, NotStarted))
+      override val job = Some(OverviewDocumentSetCreationJob(documentSet).save)
       $("li.unfinished").length must be_>=(1)
     }
 
     "should show a progress bar" in new DocumentSetWithJobContext {
-      override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress, fractionComplete = 0.2))
+      //override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress, fractionComplete = 0.2))
+      models.orm.Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(documentSet.id, state = InProgress, fractionComplete = 0.2))
       $("progress").length must be_>=(1)
     }
 
     "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress, fractionComplete = 0.2))
+      //override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress, fractionComplete = 0.2))
+      models.orm.Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(documentSet.id, state = InProgress, fractionComplete = 0.2))
       $("progress").attr("value") must beEqualTo("20")
     }
 
     "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress))
-      $(".state").text() must endWith("IN_PROGRESS")
+     // override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = InProgress))
+      models.orm.Schema.documentSetCreationJobs.insert(DocumentSetCreationJob(documentSet.id, state = InProgress, fractionComplete = 0.2))
+      $(".state").text() must endWith("importing")
     }
 
     "should show a document count when complete" in new NormalDocumentSetContext {
-      $("span.document-count").text() must endWith("document_count")
+      $("span.document-count").text() must endWith("no documents")
     }
 
     "should show position in queue for NotStarted jobs" in new DocumentSetWithJobContext {
-      override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = NotStarted, jobsAheadInQueue = 1))
-      $(".state-description").text.trim must endWith("jobs_to_process")
+      //override val job = Some(new FakeDocumentSetCreationJob(documentSet, state = NotStarted, jobsAheadInQueue = 1))
+    	override val job = Some(OverviewDocumentSetCreationJob(documentSet).save)
+      $(".state-description").text.trim must endWith("Waiting for 1 other jobs to complete before processing can begin")
     }
   }
+
+  step(stop)
 }
