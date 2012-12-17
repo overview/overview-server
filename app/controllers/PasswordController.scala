@@ -68,7 +68,7 @@ trait PasswordController extends Controller {
   def update(token: String) = TransactionAction { implicit request =>
     tokenToUser(token).map({ user =>
       editForm.bindFromRequest.fold(
-        formWithErrors => BadRequest(views.html.Password.edit(user, editForm)),
+        formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
         newPassword => {
           val userWithNewPassword = user
             .withNewPassword(newPassword)

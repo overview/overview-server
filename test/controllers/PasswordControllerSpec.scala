@@ -150,6 +150,13 @@ class PasswordControllerSpec extends Specification {
       contentAsString(result) must contain("<form")
     }
 
+    "update() should show the actual error message when given a bad password" in new OurScope {
+      // Issue #254
+      override val formParameters = Some(Seq("password" -> "a"))
+      val result = controller.update(userWithRequest.resetPasswordToken)(formRequest)
+      contentAsString(result) must contain("<fieldset class=\"control-group error")
+    }
+
     "update() should call withNewPassword and save" in new OurScope {
       val greatPassword = "alksjgh3D~;"
       override val formParameters = Some(Seq("password" -> greatPassword))
