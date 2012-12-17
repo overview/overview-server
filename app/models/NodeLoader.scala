@@ -22,15 +22,12 @@ class NodeLoader {
     nodes.where(n => n.documentSetId === documentSetId and n.id === nodeId).headOption.map(makePartialNode)
   }
   
+  // Recursively load depth levels of the tree, bottom up.
   private def loadLevels(documentSetId: Long, baseNodes: Seq[core.Node], depth: Int): Seq[core.Node] = {
     if (depth == 0) Seq.empty
     else {
       val baseIds = baseNodes.map(_.id)
-      val nextLevelRaw = loadChildren(documentSetId, baseIds)
-      
-      // Filter out nodes too small to show
-      val baseNodeSizes = Map(baseNodes.map(n => (n.id,n.documentIds.totalCount)) : _*)
-      val nextLevel = nextLevelRaw.filter(n => showThisNode(n,baseNodeSizes(n.parentId.get)))
+      val nextLevel = loadChildren(documentSetId, baseIds)
       
       val baseWithChildIds = baseNodes.map { n => 
         val childNodes = nextLevel.filter(_.parentId == Some(n.id))
@@ -40,15 +37,7 @@ class NodeLoader {
       baseWithChildIds ++ loadLevels(documentSetId, nextLevel.map(makePartialNode), depth - 1)
     }
   }
-  
-  // Experimental node filtering: show a node if it has at least 8 docs, or 1/64 of parent size
-  private def showThisNode(n:Node, parentSize:Long) : Boolean = {
-      val showFixed = 8
-      val showFraction = 64
-    
-      n.cachedSize >= math.min(showFixed, parentSize / showFraction)
-  }
-  
+
   private def sortNodes(nodes: Seq[Node]): Seq[Node] = {
     
     // bundled (other) nodes always go at end, otherwise sort by num docs, 

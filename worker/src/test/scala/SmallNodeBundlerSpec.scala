@@ -32,14 +32,10 @@ class SmallNodeBundlerSpec extends Specification {
     "bundle a node" in {
       var n = makeNodeWithKids(100, 10)   // ten children, each with 10 nodes
       
-      SmallNodeBundler.limitNodeMaxChildren(n, 5)  
+      val bundler = new SmallNodeBundler(5)
+      bundler.cleanTree(n)  
       n.children.size must beEqualTo(5)
       (n.children find { _.description == "(other)" }).isDefined must beTrue // we must have made an "other" node
-      
-      SmallNodeBundler.limitNodeMaxChildren(n, 2)  
-      n.children.size must beEqualTo(2)
-
-      SmallNodeBundler.limitNodeMaxChildren(n, 1) must throwA[java.lang.IllegalArgumentException]
     }
     
     /* disable because we do not recursively bunder "(other)" nodes right now
