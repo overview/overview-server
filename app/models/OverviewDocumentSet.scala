@@ -89,12 +89,8 @@ object OverviewDocumentSet {
     
     deleteClientGeneratedInformation(id)
     
-    val inProgressJob = documentSetCreationJobs.where(dscj => 
-      dscj.documentSetId === id and 
-      (dscj.state === NotStarted or dscj.state === InProgress)).forUpdate.headOption
-      
-    if (inProgressJob.isDefined) inProgressJob.map(j => documentSetCreationJobs.update(j.copy(state = Cancelled)))
-    else deleteClusteringGeneratedInformation(id)
+    val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(id)
+    if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
   }
 
   private def deleteClientGeneratedInformation(id: Long) {

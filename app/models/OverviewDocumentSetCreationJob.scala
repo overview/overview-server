@@ -14,7 +14,7 @@ trait OverviewDocumentSetCreationJob {
 
   def withState(newState: DocumentSetCreationJobState): OverviewDocumentSetCreationJob
   def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials
-  
+
   def save: OverviewDocumentSetCreationJob
 }
 
@@ -42,6 +42,16 @@ object OverviewDocumentSetCreationJob {
     documentSetCreationJob.map(OverviewDocumentSetCreationJobImpl)
   }
 
+  def cancelJobWithDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
+    val cancellableJob = documentSetCreationJobs.where(dscj =>
+      dscj.documentSetId === documentSetId and
+        (dscj.state === NotStarted or dscj.state === InProgress)).forUpdate.headOption
+        
+    cancellableJob.map { job =>
+      new OverviewDocumentSetCreationJobImpl(job.copy(state = Cancelled)) save
+    }
+  }
+
   private case class OverviewDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob) extends OverviewDocumentSetCreationJob {
     val id: Long = documentSetCreationJob.id
     val documentSetId: Long = documentSetCreationJob.documentSetId
@@ -59,7 +69,7 @@ object OverviewDocumentSetCreationJob {
     def withState(newState: DocumentSetCreationJobState): OverviewDocumentSetCreationJob = {
       OverviewDocumentSetCreationJobImpl(documentSetCreationJob.copy(state = newState))
     }
-    
+
     def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = {
       val credentialedJob = documentSetCreationJob.copy(documentcloudUsername = Some(username), documentcloudPassword = Some(password))
       new JobWithDocumentCloudCredentials(credentialedJob)
