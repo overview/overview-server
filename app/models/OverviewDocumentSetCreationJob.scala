@@ -12,8 +12,9 @@ trait OverviewDocumentSetCreationJob {
 
   def jobsAheadInQueue: Int
 
+  def withState(newState: DocumentSetCreationJobState): OverviewDocumentSetCreationJob
   def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials
-
+  
   def save: OverviewDocumentSetCreationJob
 }
 
@@ -55,6 +56,10 @@ object OverviewDocumentSetCreationJob {
       queue.toSeq.indexOf(id) + 1
     }
 
+    def withState(newState: DocumentSetCreationJobState): OverviewDocumentSetCreationJob = {
+      OverviewDocumentSetCreationJobImpl(documentSetCreationJob.copy(state = newState))
+    }
+    
     def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = {
       val credentialedJob = documentSetCreationJob.copy(documentcloudUsername = Some(username), documentcloudPassword = Some(password))
       new JobWithDocumentCloudCredentials(credentialedJob)

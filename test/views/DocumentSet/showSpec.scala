@@ -29,6 +29,8 @@ class showSpec extends Specification {
       val fractionComplete = 23.45
       val stateDescription = description
       override val jobsAheadInQueue = 5
+      
+      def withState(newState: DocumentSetCreationJobState) = null
       def withDocumentCloudCredentials(username: String, password: String) = null
       def save = this
     }

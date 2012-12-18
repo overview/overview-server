@@ -106,6 +106,20 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       j.documentcloudUsername must beSome
       j.documentcloudPassword must beSome
     }
+    
+    "should update state" in new SavedJobContext {
+      val cancelledJob = savedJob.withState(Cancelled)
+      cancelledJob.state must be equalTo(Cancelled)
+
+      cancelledJob.save
+      val jobs = OverviewDocumentSetCreationJob.all
+      
+      jobs must have size(1)
+      jobs.head.state must be equalTo(Cancelled)
+    }    
+    
+    
+    
   }
 
   step(stop)

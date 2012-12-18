@@ -27,6 +27,8 @@ class _documentSetSpec extends Specification {
     val stateDescription = ""
 
     def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = null
+    def withState(newState: DocumentSetCreationJobState) = this
+    
     def save = this
   }
 
