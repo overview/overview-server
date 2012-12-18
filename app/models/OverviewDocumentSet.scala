@@ -13,16 +13,18 @@ trait OverviewDocumentSet {
    * an API for filtering and pagination--wrappers around Squeryl features.
    */
 
-  /** Creation job, if this DocumentSet isn't complete yet.
-    * FIXME: should be models.OverviewDocumentSetCreationJob, but we don't have one
-    */
+  /**
+   * Creation job, if this DocumentSet isn't complete yet.
+   * FIXME: should be models.OverviewDocumentSetCreationJob, but we don't have one
+   */
   def creationJob: Option[OverviewDocumentSetCreationJob]
 
-  /** Number of documents.
-    *
-    * If the DocumentSet hasn't finished being generated, this number may be
-    * less than its final value.
-    */
+  /**
+   * Number of documents.
+   *
+   * If the DocumentSet hasn't finished being generated, this number may be
+   * less than its final value.
+   */
   def documentCount: Int
 
   /** Title of the document set. (Empty string is allowed.) */
@@ -30,10 +32,10 @@ trait OverviewDocumentSet {
 
   /** Creation date (without milliseconds) */
   val createdAt: java.util.Date
-  
+
   /** The user owning the document set */
   val user: OverviewUser
-  
+
   /** FIXME: Only here because admin page expects it of all jobs */
   val query: String
 }
@@ -48,7 +50,7 @@ object OverviewDocumentSet {
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt
     override lazy val user = {
-      OverviewUser.findById(ormDocumentSet.users.single.id).get 
+      OverviewUser.findById(ormDocumentSet.users.single.id).get
     }
     override lazy val query = ""
   }
@@ -61,11 +63,11 @@ object OverviewDocumentSet {
   case class DocumentCloudDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
     private def throwOnNull = throw new Exception("DocumentCloudDocumentSet has NULL values it should not have")
 
-    override lazy val query : String = ormDocumentSet.query.getOrElse(throwOnNull)
+    override lazy val query: String = ormDocumentSet.query.getOrElse(throwOnNull)
   }
 
   /** Factory method */
-  def apply(ormDocumentSet: DocumentSet) : OverviewDocumentSet = {
+  def apply(ormDocumentSet: DocumentSet): OverviewDocumentSet = {
     ormDocumentSet.documentSetType.value match {
       case "CsvImportDocumentSet" => CsvImportDocumentSet(ormDocumentSet)
       case "DocumentCloudDocumentSet" => DocumentCloudDocumentSet(ormDocumentSet)
@@ -74,13 +76,49 @@ object OverviewDocumentSet {
   }
 
   /** Database lookup */
-  def findById(id: Long) : Option[OverviewDocumentSet] = {
+  def findById(id: Long): Option[OverviewDocumentSet] = {
     DocumentSet.findById(id).map({ ormDocumentSet =>
       OverviewDocumentSet(ormDocumentSet.withUploadedFile.withCreationJob)
     })
   }
-  
+
   def delete(id: Long) {
-    DocumentSet.delete(id)
+    import models.orm.Schema._
+    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+    
+    deleteClientGeneratedInformation(id)
+    
+    val inProgressJob = documentSetCreationJobs.where(dscj => 
+      dscj.documentSetId === id and 
+      (dscj.state === NotStarted or dscj.state === InProgress)).forUpdate.headOption
+      
+    if (inProgressJob.isDefined) inProgressJob.map(j => documentSetCreationJobs.update(j.copy(state = Cancelled)))
+    else deleteClusteringGeneratedInformation(id)
+  }
+
+  private def deleteClientGeneratedInformation(id: Long) {
+    import models.orm.Schema._
+    import org.squeryl.PrimitiveTypeMode._
+
+    logEntries.deleteWhere(le => le.documentSetId === id)
+    documentTags.deleteWhere(nt =>
+      nt.tagId in from(tags)(t => where(t.documentSetId === id) select (t.id)))
+    tags.deleteWhere(t => t.documentSetId === id)
+    documentSetUsers.deleteWhere(du => du.documentSetId === id)
+  }
+
+  private def deleteClusteringGeneratedInformation(id: Long) = {
+    import anorm._
+    import models.orm.Schema._
+    import org.squeryl.PrimitiveTypeMode._
+    implicit val connection = OverviewDatabase.currentConnection
+    SQL("""
+        DELETE FROM node_document WHERE node_id IN (
+          SELECT id FROM node WHERE document_set_id = {id}
+        )""").on('id -> id).executeUpdate()
+        
+    documents.deleteWhere(d => d.documentSetId === id)
+    nodes.deleteWhere(n => n.documentSetId === id)
   }
 }

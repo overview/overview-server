@@ -106,6 +106,7 @@ class OverviewDocumentSetSpec extends Specification {
     import models.orm.{ DocumentSet, DocumentTag, LogEntry, Tag, User }
     import org.overviewproject.postgres.LO
     import org.overviewproject.tree.orm.{ Document, Node, DocumentSetCreationJob }
+    import org.overviewproject.tree.orm.DocumentSetCreationJobState._
     import org.overviewproject.tree.orm.DocumentType._
 
     trait DocumentSetWithUserScope extends DbTestContext {
@@ -135,12 +136,27 @@ class OverviewDocumentSetSpec extends Specification {
         val tag = Tag(documentSetId = documentSet.id, name = "tag").save
         val node = nodes.insertOrUpdate(Node(documentSet.id, None, "description", 10, Array.empty))
         documentTags.insertOrUpdate(DocumentTag(document.id, tag.id))
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id))
 
         SQL("INSERT INTO node_document (node_id, document_id) VALUES ({n}, {d})").on("n" -> node.id, "d" -> document.id).executeInsert()
       }
     }
 
+    trait DocumentSetCreationInProgress extends DocumentSetReferencedByOtherTables {
+      override def setupWithDb = {
+        super.setupWithDb
+
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = InProgress))
+      }
+    }
+
+    trait DocumentSetCreationNotStarted extends DocumentSetReferencedByOtherTables {
+      override def setupWithDb = {
+        super.setupWithDb
+
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = NotStarted))
+      }
+    }
+    
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.user.id must be equalTo (1l)
@@ -151,14 +167,48 @@ class OverviewDocumentSetSpec extends Specification {
       OverviewDocumentSet.delete(documentSet.id)
 
       logEntries.allRows must have size (0)
-      documents.allRows must have size (0)
       tags.allRows must have size (0)
-      nodes.allRows must have size (0)
       documentTags.allRows must have size (0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documents.allRows must have size (0)
+      nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
-
+      
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (0)
     }
+
+    "cancel job and delete client generated information only if job in progress" in new DocumentSetCreationInProgress {
+      OverviewDocumentSet.delete(documentSet.id)
+      logEntries.allRows must have size (0)
+      tags.allRows must have size (0)
+      documentTags.allRows must have size (0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documents.allRows must have size (1)
+      nodes.allRows must have size (1)
+      documentSetCreationJobs.allRows must have size (1)
+
+      SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
+      val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
+      job must beSome
+      job.get.state must be equalTo(Cancelled)
+    }
+    
+    "cancel job and delete client generated information only if job not started" in new DocumentSetCreationNotStarted {
+      OverviewDocumentSet.delete(documentSet.id)
+      logEntries.allRows must have size (0)
+      tags.allRows must have size (0)
+      documentTags.allRows must have size (0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documents.allRows must have size (1)
+      nodes.allRows must have size (1)
+      documentSetCreationJobs.allRows must have size (1)
+
+      SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
+      val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
+      job must beSome
+      job.get.state must be equalTo(Cancelled)
+    }
+    
   }
   step(stop)
 }
