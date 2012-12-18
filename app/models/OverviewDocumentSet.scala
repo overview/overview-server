@@ -79,4 +79,8 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSet.withUploadedFile.withCreationJob)
     })
   }
+  
+  def delete(id: Long) {
+    DocumentSet.delete(id)
+  }
 }

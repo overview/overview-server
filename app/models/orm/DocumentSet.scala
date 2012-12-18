@@ -99,7 +99,7 @@ object DocumentSet {
 
   /** Deletes a DocumentSet by ID.
     *
-    * @return true if the deletion suceeded, false if it failed.
+    * @return true if the deletion succeeded, false if it failed.
     */
   def delete(id: Long) : Boolean = {
     implicit val connection = OverviewDatabase.currentConnection
