@@ -24,6 +24,8 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader(uploadedFileId)
   private var bytesRead = 0l
+  private var lastUpdateTime = 0l
+  private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
 
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
@@ -48,7 +50,12 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
     // bytesRead stays the same. Only update if there is a change.
     if (n != bytesRead) {
       bytesRead = n
-      progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
+      val now = scala.compat.Platform.currentTime
+
+      if (now - lastUpdateTime > UpdateInterval) {
+        progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
+        lastUpdateTime = now
+      }
     }
   }
 

@@ -43,7 +43,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     consumer.productionComplete()
   }
 
-  private def notify(doc: DCDocumentAtURL, text: String) {
+  private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
     val id =  Database.inTransaction{
       val document = Document(DocumentCloudDocument, documentSetId, doc.title, documentcloudId = Some(doc.documentCloudId))
       DocumentWriter.write(document)
@@ -51,7 +51,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     }
     consumer.processDocument(id, text)
     numDocs += 1
-    progAbort(
+    !progAbort(
       Progress(numDocs * FetchingFraction / sourceDocList.size, Retrieving(numDocs, sourceDocList.size)))
   }
 }

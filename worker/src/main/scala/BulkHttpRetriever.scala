@@ -33,7 +33,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
   private case class DocToRetrieve(doc: DocumentAtURL)
   private case class NoMoreDocsToRetrieve()
 
-  private class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Unit,
+  private class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]])
     extends Actor {
 
@@ -45,13 +45,15 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     var requestQueue = mutable.Queue[DocumentAtURL]()
     var errorQueue = mutable.Queue[DocRetrievalError]()
 
+    private var cancelJob: Boolean = false
+    
     // This initiates more HTTP requests up to maxInFlight. When each request completes or fails, we get a message
     // We also check here to see if we are all done, in which case we set the promise
     def spoolRequests {
       if (requestQueue.isEmpty && httpReqInFlight == 0)
         Logger.debug("BulkHttpRetriever idle: request queue is empty, no documents in flight.")
         
-      while (!requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
+      while (!cancelJob && !requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
         val doc = requestQueue.dequeue
         val startTime = System.nanoTime
         asyncHttpRetriever.request(doc,
@@ -60,7 +62,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         httpReqInFlight += 1
       }
 
-      if (allDocsIn && httpReqInFlight == 0 && requestQueue.isEmpty) {
+      if (cancelJob || (allDocsIn && httpReqInFlight == 0 && requestQueue.isEmpty)) {
         finished.success(errorQueue)
         context.stop(self)
       }
@@ -88,7 +90,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
           ", time: " + ("%.2f" format elapsedSeconds) +
           ", speed: " + ((text.size / 1024) / elapsedSeconds + 0.5).toInt + " KB/s")
         try {
-          writeDocument(doc.asInstanceOf[T], text)
+          if (!writeDocument(doc.asInstanceOf[T], text)) cancelJob = true
         } catch {
           case e => {
             Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
@@ -108,7 +110,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
   }
 
 
-  def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Unit)
+  def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Boolean)
   (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
     Logger.info("Beginning HTTP document set retrieval")

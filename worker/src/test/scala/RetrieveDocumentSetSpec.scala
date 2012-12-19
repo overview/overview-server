@@ -43,8 +43,9 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       var result = Seq[DocRetrievalError]() 
       
       val vectorGen = new DocumentVectorGenerator      
-      def processDocument(doc: DocumentAtURL, text:String) : Unit = {
-        vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))          
+      def processDocument(doc: DocumentAtURL, text:String) : Boolean = {
+        vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))
+        true
       }      
 
       val timeOut = Timeout(500)  // ms. We're reading from files here so 500ms should be plenty                                               

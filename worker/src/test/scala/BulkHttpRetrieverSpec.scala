@@ -100,8 +100,9 @@ class BulkHttpRetrieverSpec extends Specification {
       val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](retriever)
       val urlsToRetrieve = Seq.fill(10)(new DCDocumentAtURL("title", "id", "url"))
 
-      def processDocument(document: DCDocumentAtURL, result: String) {
+      def processDocument(document: DCDocumentAtURL, result: String): Boolean = {
         requestsProcessed += result
+        true
       }
 
       implicit def actorSystem = retriever.actorSystem

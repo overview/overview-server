@@ -38,8 +38,8 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
   }
 
   private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
-    if (docTree.docs.size == 1 && docTree.description != "") Database.inTransaction { 
-        DocumentWriter.updateDescription(docTree.docs.head, docTree.description)
+    if (docTree.docs.size == 1 && docTree.description != "") Database.inTransaction {
+      DocumentWriter.updateDescription(docTree.docs.head, docTree.description)
     }
     else docTree.children.foreach(addDocumentDescriptions)
   }
@@ -47,23 +47,25 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter,
   def productionComplete() {
     Logger.logElapsedTime("Retrieved " + vectorGen.numDocs, t0)
 
-    progAbort(Progress(fetchingFraction, Clustering))
-    val t1 = System.nanoTime()
-    val docVecs = vectorGen.documentVectors()
-    val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
-    DB.withConnection { implicit connection => addDocumentDescriptions(docTree) }
+    if (!progAbort(Progress(fetchingFraction, Clustering))) {
+      val t1 = System.nanoTime()
+      val docVecs = vectorGen.documentVectors()
+      val docTree = BuildDocTree(docVecs, makeNestedProgress(progAbort, fetchingFraction, savingFraction))
+      DB.withConnection { implicit connection => addDocumentDescriptions(docTree) }
 
-    Logger.logElapsedTime("Clustered documents", t1)
+      Logger.logElapsedTime("Clustered documents", t1)
 
-    // Save tree to database
-    progAbort(Progress(savingFraction, Saving))
-    val t2 = System.nanoTime()
-    Database.inTransaction {
-      implicit val connection = Database.currentConnection
-      nodeWriter.write(docTree)
+      // Save tree to database
+      if (!progAbort(Progress(savingFraction, Saving))) {
+        val t2 = System.nanoTime()
+        Database.inTransaction {
+          implicit val connection = Database.currentConnection
+          nodeWriter.write(docTree)
+        }
+        Logger.logElapsedTime("Saved DocumentSet to DB", t2)
+
+        progAbort(Progress(1, Done))
+      }
     }
-    Logger.logElapsedTime("Saved DocumentSet to DB", t2)
-
-    progAbort(Progress(1, Done))
   }
 }

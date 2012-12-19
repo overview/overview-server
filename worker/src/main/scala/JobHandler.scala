@@ -26,6 +26,7 @@ object JobHandler {
       Logger.info("Handling job")
       j.state = InProgress
       Database.inTransaction { j.update }
+      j.observeCancellation(deleteCancelledJob)
       
       val documentSetId = j.documentSetId
 
@@ -35,7 +36,12 @@ object JobHandler {
         j.fractionComplete = prog.fraction
         j.statusDescription = Some(prog.status.toString)
         Database.inTransaction { j.update }
-        Logger.info("PROGRESS: " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK")); false
+        val cancelJob = j.state == Cancelled
+        val logLabel = if (cancelJob) "CANCELLED" 
+        else "PROGRESS"
+          
+         Logger.info(logLabel + ": " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK"))
+         cancelJob
       }
 
       val documentSet = DB.withConnection { implicit connection =>
@@ -55,7 +61,10 @@ object JobHandler {
         Logger.error("Job failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
-        Database.inTransaction{ j.update }
+        Database.inTransaction{ 
+          j.update
+          if (j.state == Cancelled) j.delete
+        }
     }
   }
 
@@ -98,4 +107,33 @@ object JobHandler {
     }
   }
 
+  def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
+    import anorm._
+    import anorm.SqlParser._
+    import persistence.Schema._
+    import org.squeryl.PrimitiveTypeMode._
+    
+    Database.inTransaction {
+    implicit val connection = Database.currentConnection
+
+    
+    val id = job.documentSetId
+    SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+    val uploadedFileId = SQL("SELECT uploaded_file_id FROM document_set WHERE id = {id}").on('id -> id).as(scalar[Option[Long]].single)
+
+    SQL("DELETE FROM node_document WHERE node_id IN (SELECT id FROM node WHERE document_set_id = {id})").on('id -> id).executeUpdate()
+    SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+    SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+    
+
+    
+    SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate
+    
+
+    uploadedFileId.map { u => 
+      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
+      SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
+    }
+    }
+  }
 }
