@@ -144,7 +144,6 @@ class OverviewDocumentSetSpec extends Specification {
     trait DocumentSetCreationInProgress extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = InProgress))
       }
     }
@@ -152,8 +151,14 @@ class OverviewDocumentSetSpec extends Specification {
     trait DocumentSetCreationNotStarted extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = NotStarted))
+      }
+    }
+    
+    trait DocumentSetCreationCancelled extends DocumentSetReferencedByOtherTables {
+      override def setupWithDb = {
+        super.setupWithDb
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = Cancelled))
       }
     }
     
@@ -194,6 +199,22 @@ class OverviewDocumentSetSpec extends Specification {
     }
     
     "cancel job and delete client generated information only if job not started" in new DocumentSetCreationNotStarted {
+      OverviewDocumentSet.delete(documentSet.id)
+      logEntries.allRows must have size (0)
+      tags.allRows must have size (0)
+      documentTags.allRows must have size (0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documents.allRows must have size (1)
+      nodes.allRows must have size (1)
+      documentSetCreationJobs.allRows must have size (1)
+
+      SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
+      val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
+      job must beSome
+      job.get.state must be equalTo(Cancelled)
+    }
+
+    "cancel job and delete client generated information only if job cancelled" in new DocumentSetCreationCancelled {
       OverviewDocumentSet.delete(documentSet.id)
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
