@@ -110,7 +110,7 @@ class OverviewDocumentSetSpec extends Specification {
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
     import org.overviewproject.tree.orm.DocumentType._
     import helpers.PgConnectionContext
-    
+
     trait DocumentSetWithUserScope extends DbTestContext {
 
       var admin: User = _
@@ -123,11 +123,11 @@ class OverviewDocumentSetSpec extends Specification {
         documentSet = OverviewDocumentSet(ormDocumentSet)
       }
     }
-    
+
     trait DocumentSetWithUpload extends PgConnectionContext {
       var documentSet: OverviewDocumentSet = _
       var oid: Long = _
-      
+
       override def setupWithDb = {
         oid = LO.withLargeObject { largeObject =>
           val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = largeObject.oid, contentDisposition = "disposition", contentType = "type", size = 0l))
@@ -170,14 +170,14 @@ class OverviewDocumentSetSpec extends Specification {
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = NotStarted))
       }
     }
-    
+
     trait DocumentSetCreationCancelled extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = Cancelled))
       }
     }
-    
+
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.user.id must be equalTo (1l)
@@ -185,33 +185,35 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
+      OverviewDocumentSetCreationJob(documentSet).withState(Error).save
+
       OverviewDocumentSet.delete(documentSet.id)
 
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
       documents.allRows must have size (0)
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
-      
+
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (0)
       OverviewDocumentSet.findById(documentSet.id) must beNone
     }
 
     "delete Uploaded file and LargeObject" in new DocumentSetWithUpload {
       OverviewDocumentSet.delete(documentSet.id)
-      
+
       uploadedFiles.allRows must have size (0)
       LO.withLargeObject(oid) { lo => } must throwA[Exception]
     }
-    
+
     "cancel job and delete client generated information only if job in progress" in new DocumentSetCreationInProgress {
       OverviewDocumentSet.delete(documentSet.id)
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
@@ -219,15 +221,15 @@ class OverviewDocumentSetSpec extends Specification {
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
-      job.get.state must be equalTo(Cancelled)
+      job.get.state must be equalTo (Cancelled)
     }
-    
+
     "cancel job and delete client generated information only if job not started" in new DocumentSetCreationNotStarted {
       OverviewDocumentSet.delete(documentSet.id)
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
@@ -235,7 +237,7 @@ class OverviewDocumentSetSpec extends Specification {
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
-      job.get.state must be equalTo(Cancelled)
+      job.get.state must be equalTo (Cancelled)
     }
 
     "cancel job and delete client generated information only if job cancelled" in new DocumentSetCreationCancelled {
@@ -243,7 +245,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo(0)
+      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
@@ -251,9 +253,9 @@ class OverviewDocumentSetSpec extends Specification {
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
-      job.get.state must be equalTo(Cancelled)
+      job.get.state must be equalTo (Cancelled)
     }
-    
+
   }
   step(stop)
 }

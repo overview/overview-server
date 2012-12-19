@@ -88,7 +88,6 @@ object OverviewDocumentSet {
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
     deleteClientGeneratedInformation(id)
-
     val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(id)
     if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
   }
@@ -110,6 +109,8 @@ object OverviewDocumentSet {
     import models.orm.Schema._
     import org.squeryl.PrimitiveTypeMode._
     implicit val connection = OverviewDatabase.currentConnection
+    
+    
     SQL("""
         DELETE FROM node_document WHERE node_id IN (
           SELECT id FROM node WHERE document_set_id = {id}
@@ -118,9 +119,7 @@ object OverviewDocumentSet {
     documents.deleteWhere(d => d.documentSetId === id)
     nodes.deleteWhere(n => n.documentSetId === id)
 
-    // Get the uploadedFile Id, THEN delete document set before we can
-    // delete the UploadedFile
-    // What a tangled web we unweave, when first we practice to delete
+    documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
     val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).single
     documentSets.delete(id)
     
