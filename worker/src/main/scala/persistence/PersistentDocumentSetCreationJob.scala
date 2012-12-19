@@ -84,35 +84,4 @@ object PersistentDocumentSetCreationJob {
       documentSetCreationJobs.deleteWhere(d => d.id === documentSetCreationJob.id)
     }
   }
-//
-//  /** Private implementation or PersistentDocumentSet created from database data */
-//  private class PersistentDocumentSetCreationJobImpl2(data: DocumentSetCreationJobData)
-//    extends PersistentDocumentSetCreationJob {
-//
-//    val (id, documentSetId, stateNumber, complete, status,
-//      documentCloudUsername, documentCloudPassword) = data
-//
-//    var statusDescription = status
-//    var state = DocumentSetCreationJobState(stateNumber)
-//    var fractionComplete = complete
-//
-//    def update(implicit c: Connection): Long = {
-//      SQL("""
-//          UPDATE document_set_creation_job SET
-//          state = {state}, fraction_complete = {fractionComplete},
-//          status_description = {status}
-//          WHERE id = {id}
-//          """).on("state" -> state.id, "fractionComplete" -> fractionComplete,
-//        "status" -> statusDescription, "id" -> id).executeUpdate()
-//    }
-//
-//    def delete(implicit c: Connection): Long = {
-//      SQL("""
-//          DELETE FROM document_set_creation_job
-//          WHERE id = {id}
-//          """).on("id" -> id).executeUpdate()
-//
-//    }
-//
-//  }
 }
