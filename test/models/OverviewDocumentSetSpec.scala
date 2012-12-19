@@ -104,11 +104,13 @@ class OverviewDocumentSetSpec extends Specification {
     import org.squeryl.PrimitiveTypeMode._
     import models.orm.Schema._
     import models.orm.{ DocumentSet, DocumentTag, LogEntry, Tag, User }
+    import models.orm.DocumentSetType._
     import org.overviewproject.postgres.LO
     import org.overviewproject.tree.orm.{ Document, Node, DocumentSetCreationJob }
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
     import org.overviewproject.tree.orm.DocumentType._
-
+    import helpers.PgConnectionContext
+    
     trait DocumentSetWithUserScope extends DbTestContext {
 
       var admin: User = _
@@ -119,6 +121,20 @@ class OverviewDocumentSetSpec extends Specification {
         admin = User.findById(1l).getOrElse(throw new Exception("Missing admin user from db"))
         ormDocumentSet = admin.createDocumentSet("query").save
         documentSet = OverviewDocumentSet(ormDocumentSet)
+      }
+    }
+    
+    trait DocumentSetWithUpload extends PgConnectionContext {
+      var documentSet: OverviewDocumentSet = _
+      var oid: Long = _
+      
+      override def setupWithDb = {
+        oid = LO.withLargeObject { largeObject =>
+          val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = largeObject.oid, contentDisposition = "disposition", contentType = "type", size = 0l))
+          val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
+          documentSet = OverviewDocumentSet(ormDocumentSet)
+          oid
+        }
       }
     }
 
@@ -168,7 +184,7 @@ class OverviewDocumentSetSpec extends Specification {
       d.user.email must be equalTo ("admin@overview-project.org")
     }
 
-    "delete all associated information" in new DocumentSetReferencedByOtherTables {
+    "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
       OverviewDocumentSet.delete(documentSet.id)
 
       logEntries.allRows must have size (0)
@@ -180,8 +196,16 @@ class OverviewDocumentSetSpec extends Specification {
       documentSetCreationJobs.allRows must have size (0)
       
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (0)
+      OverviewDocumentSet.findById(documentSet.id) must beNone
     }
 
+    "delete Uploaded file and LargeObject" in new DocumentSetWithUpload {
+      OverviewDocumentSet.delete(documentSet.id)
+      
+      uploadedFiles.allRows must have size (0)
+      LO.withLargeObject(oid) { lo => } must throwA[Exception]
+    }
+    
     "cancel job and delete client generated information only if job in progress" in new DocumentSetCreationInProgress {
       OverviewDocumentSet.delete(documentSet.id)
       logEntries.allRows must have size (0)
