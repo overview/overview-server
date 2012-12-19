@@ -71,18 +71,24 @@ object PersistentDocumentSetCreationJob {
 
     /** Register a callback for notification if job is cancelled when delete is called  */
     def observeCancellation(f: PersistentDocumentSetCreationJob => Unit) { cancellationObserver = Some(f) }
-    
+
     /**
      * Updates state, fractionComplete, and statusDescription
+     * Does not change the state if job is cancelled
      * @return 1 on success, 0 otherwise
      */
     def update {
-      val updatedJob = org.squeryl.PrimitiveTypeMode.update(documentSetCreationJobs)(d =>
-        where(d.id === documentSetCreationJob.id)
-          set (d.documentSetId := documentSetId,
-            d.state := state,
-            d.fractionComplete := fractionComplete,
-            d.statusDescription := statusDescription.getOrElse("")))
+      val job = documentSetCreationJobs.lookup(documentSetCreationJob.id)
+
+      job.map { j =>
+        if (j.state == Cancelled) state = Cancelled
+          val updatedJob = org.squeryl.PrimitiveTypeMode.update(documentSetCreationJobs)(d =>
+            where(d.id === documentSetCreationJob.id)
+              set (d.documentSetId := documentSetId,
+                d.state := state.inhibitWhen(d.state == Cancelled),
+                d.fractionComplete := fractionComplete,
+                d.statusDescription := statusDescription.getOrElse("")))
+      }
 
     }
 
