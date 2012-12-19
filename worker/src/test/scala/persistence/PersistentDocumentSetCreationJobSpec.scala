@@ -114,7 +114,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       job.statusDescription must beSome.like { case s => s must be equalTo(status) }
     }
 
-    "delete itself" in new JobSetup {
+    "delete itself on completion, if not cancelled" in new JobSetup {
       notStartedJob.delete
 
       val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
