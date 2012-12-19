@@ -60,7 +60,7 @@ trait DocumentSetController extends Controller {
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-    DocumentSet.delete(id)
+    OverviewDocumentSet.delete(id)
     Redirect(routes.DocumentSetController.index()).flashing("success" -> m("delete.success"))
   }
 }
