@@ -25,6 +25,8 @@ trait PersistentDocumentSetCreationJob {
   var fractionComplete: Double
   var statusDescription: Option[String]
 
+  def observeCancellation(f: PersistentDocumentSetCreationJob => Unit)
+
   /**
    * Updates state, fractionComplete, and statusDescription
    */
@@ -65,6 +67,11 @@ object PersistentDocumentSetCreationJob {
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
     var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)
 
+    private var cancellationObserver: Option[PersistentDocumentSetCreationJob => Unit] = None
+
+    /** Register a callback for notification if job is cancelled when delete is called  */
+    def observeCancellation(f: PersistentDocumentSetCreationJob => Unit) { cancellationObserver = Some(f) }
+    
     /**
      * Updates state, fractionComplete, and statusDescription
      * @return 1 on success, 0 otherwise
@@ -72,16 +79,22 @@ object PersistentDocumentSetCreationJob {
     def update {
       val updatedJob = org.squeryl.PrimitiveTypeMode.update(documentSetCreationJobs)(d =>
         where(d.id === documentSetCreationJob.id)
-          set(d.documentSetId := documentSetId, 
-          d.state := state,
-          d.fractionComplete := fractionComplete, 
-          d.statusDescription := statusDescription.getOrElse("")))
-          
+          set (d.documentSetId := documentSetId,
+            d.state := state,
+            d.fractionComplete := fractionComplete,
+            d.statusDescription := statusDescription.getOrElse("")))
+
     }
 
     /** @return 1 on successful deletion, 0 otherwise */
     def delete {
-      documentSetCreationJobs.deleteWhere(d => d.id === documentSetCreationJob.id)
+      val lockedJob = from(documentSetCreationJobs)(dscj =>
+        where(dscj.id === documentSetCreationJob.id) select (dscj)).forUpdate.singleOption
+
+      lockedJob.map { j =>
+        if (j.state == Cancelled) cancellationObserver.map { notify => notify(this) }
+        else documentSetCreationJobs.delete(j.id)
+      }
     }
   }
 }

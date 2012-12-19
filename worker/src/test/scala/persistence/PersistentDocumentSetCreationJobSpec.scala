@@ -71,6 +71,17 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
+  
+  trait CancelledJob extends DocumentSetContext {
+    var cancelledJob: PersistentDocumentSetCreationJob = _
+    var cancelNotificationReceived: Boolean = false
+    
+    override def setupWithDb = {
+      insertDocumentSetCreationJob(documentSetId, Cancelled.id)
+      cancelledJob = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).head
+      cancelledJob.observeCancellation( j => cancelNotificationReceived = true)
+    }
+  }
 
   "PersistentDocumentSetCreationJob" should {
 
@@ -120,6 +131,13 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
       remainingJobs must be empty
+    }
+    
+    "Notify cancellation observer if job is cancelled" in new CancelledJob {
+      cancelledJob.delete
+      
+      cancelNotificationReceived must beTrue
+      PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).headOption must beSome
     }
 
     "have empty username and password if not available" in new JobSetup {

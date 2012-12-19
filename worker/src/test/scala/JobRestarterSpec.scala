@@ -26,6 +26,7 @@ class JobRestarterSpec extends Specification with Mockito {
     }
 
     def delete {}
+    def observeCancellation(f: PersistentDocumentSetCreationJob => Unit) {}
   }
 
   "JobRestarter" should {
