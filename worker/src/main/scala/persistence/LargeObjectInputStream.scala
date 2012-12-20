@@ -14,11 +14,14 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStr
 
   def read(): Int = {
     refreshBuffer()
-    
-    val b = 
+    readNextFromBuffer()
+  }
+
+  private def readNextFromBuffer(): Int = {
+    val b =
       if (bufferPosition < bufferEnd) buffer(bufferPosition)
       else -1
-      
+
     bufferPosition += 1
 
     b
