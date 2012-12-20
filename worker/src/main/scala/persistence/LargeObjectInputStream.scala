@@ -10,7 +10,7 @@ import java.io.IOException
 
 class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStream {
   private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
-  
+
   private val buffer = new Array[Byte](bufferSize)
   private var largeObjectPosition: Int = 0
   private var bufferPosition: Int = bufferSize
@@ -18,13 +18,35 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
   private var isOpen: Boolean = true
 
   def read(): Int = {
-    if (isOpen) {
-      handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply refreshBuffer()
-
+    ifOpen {
+      convertPsqlException(refreshBuffer())
       readNextFromBuffer()
     }
-    else throw new IOException(ReadWhenClosedExceptionMessage)
+    
 
+  }
+
+  override def read(outBuffer: Array[Byte], offset: Int, len: Int): Int = {
+    ifOpen {
+      convertPsqlException(refreshBuffer())
+
+      if (bufferPosition + len <= bufferEnd) {
+        Array.copy(buffer, bufferPosition, outBuffer, offset, len)
+        bufferPosition += len
+        len
+      } else {
+        val available = bufferEnd - bufferPosition
+        if (available != 0) {
+          Array.copy(buffer, bufferPosition, outBuffer, offset, available)
+          bufferPosition = bufferEnd
+          
+          refreshBuffer()
+          
+          if (bufferEnd == 0) available
+          else available + read(outBuffer, offset + available, len - available)
+        } else -1
+      }
+    }
   }
 
   override def close() { isOpen = false }
@@ -40,6 +62,13 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
   }
 
   private def toUnsignedInt(b: Byte): Int = 0xff & b
+
+  private def ifOpen[A](f: => A) = {
+    if (isOpen) f
+    else throw new IOException(ReadWhenClosedExceptionMessage)
+  }
+    
+  private def convertPsqlException(f: => Unit) { handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply f }
   
   private def refreshBuffer() {
     if (bufferPosition >= bufferSize) Database.inTransaction {
