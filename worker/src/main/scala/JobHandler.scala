@@ -9,7 +9,7 @@
 import com.jolbox.bonecp._
 import org.overviewproject.database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
-import overview.http.{AsyncHttpRequest, DocumentCloudDocumentProducer}
+import overview.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
 import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger }
 import overview.util.Progress._
 import persistence._
@@ -27,7 +27,7 @@ object JobHandler {
       j.state = InProgress
       Database.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
-      
+
       val documentSetId = j.documentSetId
 
       val documentWriter = new DocumentWriter(documentSetId)
@@ -37,11 +37,11 @@ object JobHandler {
         j.statusDescription = Some(prog.status.toString)
         Database.inTransaction { j.update }
         val cancelJob = j.state == Cancelled
-        val logLabel = if (cancelJob) "CANCELLED" 
+        val logLabel = if (cancelJob) "CANCELLED"
         else "PROGRESS"
-          
-         Logger.info(logLabel + ": " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK"))
-         cancelJob
+
+        Logger.info(logLabel + ": " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK"))
+        cancelJob
       }
 
       val documentSet = DB.withConnection { implicit connection =>
@@ -52,16 +52,15 @@ object JobHandler {
       val producer = DocumentProducerFactory.create(j, documentSet, indexer, progFn, asyncHttpRetriever)
 
       producer.produce()
-      
-      Database.inTransaction{ j.delete }
-      
+
+      Database.inTransaction { j.delete }
 
     } catch {
       case t: Throwable =>
         Logger.error("Job failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
-        Database.inTransaction{ 
+        Database.inTransaction {
           j.update
           if (j.state == Cancelled) j.delete
         }
@@ -71,7 +70,7 @@ object JobHandler {
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
 
-    val submittedJobs: Seq[PersistentDocumentSetCreationJob] = Database.inTransaction{ 
+    val submittedJobs: Seq[PersistentDocumentSetCreationJob] = Database.inTransaction {
       PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
     }
 
@@ -82,10 +81,12 @@ object JobHandler {
   }
 
   def restartInterruptedJobs(implicit c: Connection) {
-    val interruptedJobs = Database.inTransaction { PersistentDocumentSetCreationJob.findJobsWithState(InProgress) }
-    val restarter = new JobRestarter(new DocumentSetCleaner)
+    Database.inTransaction {
+      val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
+      val restarter = new JobRestarter(new DocumentSetCleaner)
 
-    restarter.restart(interruptedJobs)
+      restarter.restart(interruptedJobs)
+    }
   }
 
   def main(args: Array[String]) {
@@ -112,28 +113,24 @@ object JobHandler {
     import anorm.SqlParser._
     import persistence.Schema._
     import org.squeryl.PrimitiveTypeMode._
-    
+
     Database.inTransaction {
-    implicit val connection = Database.currentConnection
+      implicit val connection = Database.currentConnection
 
-    
-    val id = job.documentSetId
-    SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-    val uploadedFileId = SQL("SELECT uploaded_file_id FROM document_set WHERE id = {id}").on('id -> id).as(scalar[Option[Long]].single)
+      val id = job.documentSetId
+      SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+      val uploadedFileId = SQL("SELECT uploaded_file_id FROM document_set WHERE id = {id}").on('id -> id).as(scalar[Option[Long]].single)
 
-    SQL("DELETE FROM node_document WHERE node_id IN (SELECT id FROM node WHERE document_set_id = {id})").on('id -> id).executeUpdate()
-    SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-    SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-    
+      SQL("DELETE FROM node_document WHERE node_id IN (SELECT id FROM node WHERE document_set_id = {id})").on('id -> id).executeUpdate()
+      SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+      SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
 
-    
-    SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate
-    
+      SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate
 
-    uploadedFileId.map { u => 
-      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
-      SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
-    }
+      uploadedFileId.map { u =>
+        SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
+        SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
+      }
     }
   }
 }
