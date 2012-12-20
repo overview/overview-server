@@ -116,7 +116,6 @@ class DrawableNode
         @left_contour = @merge_contours(@left_contour, child_left_contour, Math.min)
         @right_contour = @merge_contours(@right_contour, child_right_contour, Math.max)
 
-
       # now center the packed child trees under this node, be adding offset to relative_x
       children_width = lastchild.relative_x + lastchild.width
       center_shift = @width/2 - children_width/2

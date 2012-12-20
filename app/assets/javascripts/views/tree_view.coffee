@@ -9,13 +9,14 @@ DEFAULT_OPTIONS = {
     background: '#ffffff',
     line: '#888888',
     line_selected: '#000000',
-    line_loaded: '#333333',
-    line_leaf: '#999999',
+    line_default: '#333333',
+    line_faded: '#999999',
   },
   connector_line_width: 1, # px
   node_line_width: 2, # px
   node_line_width_selected: 4, # px
   node_line_width_leaf: 1, # px
+  start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
   mousewheel_zoom_factor: 1.2,
 }
 
@@ -112,6 +113,23 @@ class DrawOperation
 
     return { event: event, id: drawable_node.animated_node.node.id }
 
+
+  # simple RGB space color interpolator. Returns a when t=0, b when t=1
+  _lerp_hexcolor: (a, b, t) ->
+    a_red   = parseInt(a.substring(1,3),16)
+    a_green = parseInt(a.substring(3,5),16)
+    a_blue  = parseInt(a.substring(5,7),16)
+    b_red   = parseInt(b.substring(1,3),16)
+    b_green = parseInt(b.substring(3,5),16)
+    b_blue  = parseInt(b.substring(5,7),16)
+  	     	  	
+    red   = Math.round(t*b_red + (1-t)*a_red)
+    green = Math.round(t*b_green + (1-t)*a_green)
+    blue  = Math.round(t*b_blue + (1-t)*a_blue)
+        
+    "#" + ("0" + red.toString(16)).slice(-2) + ("0" + green.toString(16)).slice(-2) + ("0" + blue.toString(16)).slice(-2)
+  	  
+  	  
   _animated_node_to_line_width: (animated_node) ->
     if animated_node.selected
       @options.node_line_width_selected
@@ -120,13 +138,22 @@ class DrawOperation
     else
       @options.node_line_width
 
-  _animated_node_to_line_color: (animated_node) ->
+
+  # choose color to draw node outline. selected has its own color, leaf nodes are faded, 
+  # and we also fade normal nodes when they get too narrow
+  _animated_node_to_line_color: (animated_node, drawable_node) ->
     if animated_node.selected
       @options.color.line_selected
     else if animated_node.children?.length is 0 # leaf node
-      @options.color.line_leaf
+      @options.color.line_faded
     else
-      @options.color.line_loaded
+      if drawable_node.px.width >= @options.start_fade_width
+        @options.color.line_default
+      else if drawable_node.px.width <= @px_per_hunit  # leaf node width
+        @options.color.line_faded      	
+      else 
+        t = (@options.start_fade_width - drawable_node.px.width) / (@options.start_fade_width - @px_per_hunit)
+        this._lerp_hexcolor(@options.color.line_default, @options.color.line_faded, t)
 
   _draw_tagcount: (left, top, width, height, color, fraction) ->
     return if fraction == 0
@@ -264,7 +291,7 @@ class DrawOperation
 
     ctx = @ctx
     ctx.lineWidth = this._animated_node_to_line_width(animated_node)
-    ctx.strokeStyle = this._animated_node_to_line_color(animated_node)
+    ctx.strokeStyle = this._animated_node_to_line_color(animated_node, drawable_node)
 
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
