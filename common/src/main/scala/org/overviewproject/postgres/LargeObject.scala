@@ -4,18 +4,18 @@
  * Overview Project
  * Created by Jonas Karlsson, Oct 2012
  */
- 
+
 package org.overviewproject.postgres
 
 import scala.util.control.Exception._
 import org.postgresql.PGConnection
-import org.postgresql.largeobject.{LargeObject => PGLargeObject}
+import org.postgresql.largeobject.{ LargeObject => PGLargeObject }
 import org.postgresql.largeobject.LargeObject._
-import org.postgresql.largeobject.{LargeObject => PGLargeObject}
+import org.postgresql.largeobject.{ LargeObject => PGLargeObject }
 
 /**
  * Interface to a Postgres LargeObject
- */ 
+ */
 trait LargeObject {
   /** The object id of the LargeObject in the database */
   val oid: Long
@@ -26,12 +26,17 @@ trait LargeObject {
   /** @return an InputStream for reading the stored data */
   def inputStream: java.io.InputStream
 
-  /** 
+  /**
    * read len bytes of data, storing it in the buffer, starting at offset
    * @return the number of bytes actually read.
    */
   def read(buffer: Array[Byte], offset: Int, len: Int): Int
-  
+
+  /**
+   * Sets the current position for reading to pos
+   */
+  def seek(pos: Int)
+
   /** delete all stored data */
   def truncate
 }
@@ -44,7 +49,7 @@ trait LargeObject {
  * correct abstraction.
  */
 object LO {
-  
+
   /**
    * Provides a scope with a newly created LargeObject.
    * @return None if an error occurs, and Option[A] (return type of block) on success.
@@ -76,7 +81,7 @@ object LO {
   def delete(oid: Long)(implicit pgConnection: PGConnection) {
     loManager.delete(oid)
   }
-  
+
   private def loManager(implicit pgConnection: PGConnection) = pgConnection.getLargeObjectAPI()
 
   private class LargeObjectImpl(pgLo: PGLargeObject) extends LargeObject {
@@ -87,12 +92,10 @@ object LO {
       pgLo.write(data, 0, data.size)
       pgLo.tell
     }
-    
+
     def read(buffer: Array[Byte], offset: Int, len: Int): Int = pgLo.read(buffer, offset, len)
-
-
+    def seek(pos: Int) = pgLo.seek(pos)
     def inputStream: java.io.InputStream = pgLo.getInputStream()
-
     def truncate { pgLo.truncate(0) }
   }
 }

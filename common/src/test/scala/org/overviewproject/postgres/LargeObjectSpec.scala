@@ -5,7 +5,6 @@ import org.overviewproject.database.DB
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
 
-
 class LargeObjectSpec extends DbSpecification {
 
   step(setupDb)
@@ -27,9 +26,8 @@ class LargeObjectSpec extends DbSpecification {
     }
 
     "create a new instance" in new LoContext {
-      oid must not be equalTo(-1) 
+      oid must not be equalTo(-1)
     }
-
 
     "throw exception for non existent oid" in new LoContext {
       LO.withLargeObject(234) { _.oid } must throwA[PSQLException]
@@ -60,9 +58,9 @@ class LargeObjectSpec extends DbSpecification {
       addData(allData.drop(4)) must be equalTo (8)
 
       LO.withLargeObject(oid) { largeObject =>
-    	val readData = new Array[Byte](8)
+        val readData = new Array[Byte](8)
         largeObject.inputStream.read(readData)
-        readData must be equalTo (allData) 
+        readData must be equalTo (allData)
       }
     }
 
@@ -96,17 +94,38 @@ class LargeObjectSpec extends DbSpecification {
 
     "read data into array" in new LoContext {
       val data = Array.tabulate[Byte](100)(b => b.toByte)
-      addData(data) 
-      
+      addData(data)
+
       val readData = new Array[Byte](60)
-      
+
       LO.withLargeObject(oid) { largeObject =>
         largeObject.read(readData, 0, 60) must be equalTo 60
         readData must be equalTo data.take(60)
-        
+
         largeObject.read(readData, 10, 60) must be equalTo 40
         readData.drop(10).take(40) must be equalTo data.drop(60)
-        
+
+        largeObject.read(readData, 0, 100) must be equalTo 0
+      }
+    }
+
+    "seek in the LargeObject" in new LoContext {
+      val data = Array.tabulate[Byte](100)(b => b.toByte)
+      addData(data)
+
+      val readData = new Array[Byte](100)
+      LO.withLargeObject(oid) { largeObject =>
+        largeObject.read(readData, 0, 50)
+      }
+
+      LO.withLargeObject(oid) { largeObject =>
+        largeObject.seek(50)
+        largeObject.read(readData, 50, 50)
+        readData must be equalTo(data)
+      }
+      
+      LO.withLargeObject(oid) { largeObject =>
+        largeObject.seek(500)
         largeObject.read(readData, 0, 100) must be equalTo 0
       }
     }
