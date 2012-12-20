@@ -99,7 +99,7 @@ class DrawableNode
 
       # min spacing between subtrees decreases as we go down the tree
       decreasing_level = Math.max(6-level, 1)
-      subtree_spacing = decreasing_level*decreasing_level * hpadding    # square to make spacing fall off non-linearly
+      subtree_spacing = decreasing_level*decreasing_level * hpadding * child_fraction   # square to make spacing fall off non-linearly
       
       # start with our left and right contours equal to that of first subtree
       @left_contour = firstchild.left_contour
