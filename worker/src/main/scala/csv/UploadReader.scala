@@ -17,25 +17,27 @@ import scala.util.control.Exception.allCatch
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO
 import persistence.UploadedFileLoader
+import org.overviewproject.database.Database
+import persistence.LargeObjectInputStream
 
 /**
- * Provides a context for reading an uploaded file from the database. The 
+ * Provides a context for reading an uploaded file from the database. The
  * reader uses the CharsetDecoder specified by the uploaded file's encoding.
  */
 class UploadReader(uploadedFileId: Long) {
 
   private var DefaultCharSet: String = "UTF-8"
   private var countingInputStream: CountingInputStream = _
-  
-  /** size is only known inside the read scope */
+
   var size: Option[Long] = None
-  
+  var reader: Reader = _
+
   /** @return the number of bytes read from the uploaded file */
   def bytesRead: Long =
     if (countingInputStream != null) countingInputStream.bytesRead
     else 0l
 
-  /** 
+  /**
    * Provide a scope with a Reader that can be used to read the uploaded file.
    */
   def read[T](block: Reader => T)(implicit connection: Connection): T = {
@@ -51,14 +53,31 @@ class UploadReader(uploadedFileId: Long) {
     }
   }
 
-  /** 
+
+  /**
+   * Must be called before reader is accessed. So ugly.
+   */
+  def initializeReader {
+    implicit val c = Database.currentConnection
+
+    val upload = UploadedFileLoader.load(uploadedFileId)
+    size = Some(upload.size)
+
+    val largeObjectInputStream = new LargeObjectInputStream(upload.contentsOid)
+    countingInputStream = new CountingInputStream(largeObjectInputStream)
+
+    reader = new BufferedReader(new InputStreamReader(countingInputStream, decoder(upload.encoding)))
+  }
+  
+  /**
    * @return a CharsetDecoder defined by encoding, if present and valid.
    * If not, a UTF-8 CharsetDecoder is returned.
    */
   private def decoder(encoding: Option[String]): CharsetDecoder = {
-    val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n)  }
-    
+    val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n) }
+
     val decoder = charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
     decoder.onMalformedInput(CodingErrorAction.REPLACE)
   }
+  
 }

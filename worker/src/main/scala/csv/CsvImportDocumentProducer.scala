@@ -30,19 +30,17 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
     Database.inTransaction {
-      implicit val connection = Database.currentConnection
-      uploadReader.read { reader =>
-        val documentSource = new CsvImportSource(reader)
-
-        documentSource.foreach { doc =>
-          val documentId = writeAndCommitDocument(documentSetId, doc)
-          consumer.processDocument(documentId, doc.text)
-          reportProgress(uploadReader.bytesRead, uploadReader.size.getOrElse(1))
-        }
-
-        consumer.productionComplete()
-      }
+      uploadReader.initializeReader
     }
+    val documentSource = new CsvImportSource(uploadReader.reader)
+
+    documentSource.foreach { doc =>
+      val documentId = writeAndCommitDocument(documentSetId, doc)
+      consumer.processDocument(documentId, doc.text)
+      reportProgress(uploadReader.bytesRead, uploadReader.size.getOrElse(1))
+    }
+
+    consumer.productionComplete()
   }
 
   private def reportProgress(n: Long, size: Long) {
@@ -60,9 +58,11 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   }
 
   private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
-    val document = Document(CsvImportDocumentType, documentSetId, doc.title,
-      suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
-    DocumentWriter.write(document)
-    document.id
+    Database.inTransaction {
+      val document = Document(CsvImportDocumentType, documentSetId, doc.title,
+        suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
+      DocumentWriter.write(document)
+      document.id
+    }
   }
 }

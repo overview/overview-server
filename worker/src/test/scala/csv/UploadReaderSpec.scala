@@ -30,6 +30,7 @@ class UploadReaderSpec extends DbSpecification {
         }
         val uploadId = insertUploadedFile(loid, "content-disposition", contentType, uploadSize)
         uploadReader = new UploadReader(uploadId)
+        uploadReader.initializeReader
       }
     }
 
@@ -61,59 +62,45 @@ class UploadReaderSpec extends DbSpecification {
     }
 
     "create reader from uploaded file" in new LargeData {
-      uploadReader.read { reader =>
-        val buffer = new Array[Char](20480)
-        val numRead = reader.read(buffer)
-        buffer.take(numRead) must be equalTo (data.map(_.toChar).take(numRead))
-      }
+      val buffer = new Array[Char](20480)
+      val numRead = uploadReader.reader.read(buffer)
+      buffer.take(numRead) must be equalTo (data.map(_.toChar).take(numRead))
     }
 
-    "return upload size inside read block" in new LargeData {
-      uploadReader.size must beNone
-
-      uploadReader.read { reader =>
-        uploadReader.size must beSome.like { case s => s must be equalTo (uploadSize) }
-      }
+    "return upload size" in new LargeData {
+      uploadReader.size must beSome.like { case s => s must be equalTo (uploadSize) }
     }
 
     "return bytesRead" in new LargeData {
       uploadReader.bytesRead must be equalTo (0)
 
-      uploadReader.read { reader =>
-        val buffer = new Array[Char](20480)
-        val numRead = reader.read(buffer)
-        uploadReader.bytesRead must be equalTo (numRead)
-        reader.read(buffer)
-        uploadReader.bytesRead must be equalTo (uploadSize)
-      }
+      val buffer = new Array[Char](20480)
+      val numRead = uploadReader.reader.read(buffer)
+      uploadReader.bytesRead must be equalTo (numRead)
+      uploadReader.reader.read(buffer)
+      uploadReader.bytesRead must be equalTo (uploadSize)
     }
 
     "read non-default encoding" in new Windows1252Data {
-      uploadReader.read { reader =>
-        val buffer = new Array[Char](uploadSize)
-        reader.read(buffer)
+      val buffer = new Array[Char](uploadSize)
+      uploadReader.reader.read(buffer)
 
-        buffer must be equalTo (windows1252Text.toCharArray())
-      }
+      buffer must be equalTo (windows1252Text.toCharArray())
     }
 
     "default to UTF-8 if specified encoding is not valid" in new InvalidEncoding {
-      uploadReader.read { reader =>
-        val buffer = new Array[Char](uploadSize)
-        reader.read(buffer)
-        buffer must be equalTo data.map(_.toChar)
-      }
+      val buffer = new Array[Char](uploadSize)
+      uploadReader.reader.read(buffer)
+      buffer must be equalTo data.map(_.toChar)
     }
 
     "insert replacement character for invalid input" in new InvalidInput {
       val replacement = Charset.forName("UTF-8").newDecoder.replacement.toCharArray()
 
-      uploadReader.read { reader =>
-        val buffer = new Array[Char](uploadSize)
-        reader.read(buffer)
+      val buffer = new Array[Char](uploadSize)
+      uploadReader.reader.read(buffer)
 
-        buffer must be equalTo (replacement)
-      }
+      buffer must be equalTo (replacement)
     }
   }
 
