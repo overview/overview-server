@@ -1,6 +1,6 @@
 DEFAULT_OPTIONS = {
-  node_hpadding: 2, # per cent of a 1-doc node's width
-  node_vpadding: 0.5, # per cent of a node's height
+  node_hpadding: 1, # fraction of a 1-doc node's width
+  node_vpadding: 0.5, # fraction of a node's height
 }
 
 # A DrawableNode is a node that is ready to draw.
@@ -57,7 +57,7 @@ class DrawableNode
     moveable_subtree.relative_x = hpadding - separation 
     
   # build a tree of DrawableNodes out of a tree of AnimatedNodes, where the root node is @fraction opened
-  constructor: (@animated_node, @fraction) ->
+  constructor: (@animated_node, @fraction, level) ->
     num_documents = @animated_node.node.doclist.n
     @width = num_documents * @fraction
 
@@ -74,16 +74,17 @@ class DrawableNode
     	
       # Non-leaf node. Recurse, construct all child nodes
       child_fraction = @fraction * @animated_node.loaded_fraction.current
-      @children = animated_children.map((an) -> new DrawableNode(an, child_fraction))
+      l1 = level + 1 # doesn't work if I replace l1 in call below, but why?
+      @children = animated_children.map((an) -> new DrawableNode(an, child_fraction, l1))
       @height = @fraction + _(dn.height for dn in @children).max()
 
       firstchild = @children[0]
       lastidx = @children.length - 1
       lastchild = @children[lastidx]
 
-      # spacing between subtrees at this level is a fraction of current node width (but don't get too small)
-      #subtree_spacing = Math.max(hpadding * @width/16, hpadding)
-      subtree_spacing = hpadding
+      # min spacing between subtrees decreases as we go down the tree
+      decreasing_level = Math.max(6-level, 1)
+      subtree_spacing = decreasing_level*decreasing_level * hpadding    # square to make spacing fall off non-linearly
       
       # start with our left and right contours equal to that of first subtree
       @left_contour = firstchild.left_contour

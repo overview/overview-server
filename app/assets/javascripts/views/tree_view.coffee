@@ -65,7 +65,7 @@ class DrawOperation
     this.clear()
     return if !@tree.root?
 
-    @drawable_node = new DrawableNode(@tree.root, 1)
+    @drawable_node = new DrawableNode(@tree.root, 1, 0)  # root node is fully open (fraction=1) and at level 0
     depth = @drawable_node.height
  
     tree_left_bound =  Math.min(@drawable_node.left_contour...) 
