@@ -45,7 +45,7 @@ object OverviewDocumentSetCreationJob {
   def cancelJobWithDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
     val cancellableJob = documentSetCreationJobs.where(dscj =>
       dscj.documentSetId === documentSetId and
-        (dscj.state === NotStarted or dscj.state === InProgress or dscj.state === Cancelled)).forUpdate.headOption
+        (dscj.state === InProgress or dscj.state === Cancelled)).forUpdate.headOption
         
     cancellableJob.map { job =>
       new OverviewDocumentSetCreationJobImpl(job.copy(state = Cancelled)) save

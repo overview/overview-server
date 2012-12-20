@@ -118,12 +118,10 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       jobs.head.state must be equalTo(Cancelled)
     }
     
-    "cancel NotStarted job" in new SavedJobContext {
+    "do not cancel NotStarted job" in new SavedJobContext {
       val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(documentSet.id)
       
-      cancelledJob must beSome
-      cancelledJob.get.state must be equalTo(Cancelled)
-      
+      cancelledJob must beNone
     }
     
     

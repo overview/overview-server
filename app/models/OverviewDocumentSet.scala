@@ -110,6 +110,7 @@ object OverviewDocumentSet {
     import org.squeryl.PrimitiveTypeMode._
     implicit val connection = OverviewDatabase.currentConnection
     
+    documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
     
     SQL("""
         DELETE FROM node_document WHERE node_id IN (
@@ -119,7 +120,6 @@ object OverviewDocumentSet {
     documents.deleteWhere(d => d.documentSetId === id)
     nodes.deleteWhere(n => n.documentSetId === id)
 
-    documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
     val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).single
     documentSets.delete(id)
     
