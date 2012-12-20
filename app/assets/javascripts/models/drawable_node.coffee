@@ -3,7 +3,8 @@ DEFAULT_OPTIONS = {
   node_vpadding: 0.5, # fraction of a node's height
 }
 
-# A DrawableNode is a node that is ready to draw.
+# A DrawableNode is a node that is ready to draw. It's constructed from a corresponding AnimatedNode,
+# and is responsible for tree layout.
 #
 # It has the following properties:
 #
@@ -13,14 +14,15 @@ DEFAULT_OPTIONS = {
 # * width: How many units wide the node should be. 1 unit = 1 document.
 # * height: How many units high the node should be. 1 unit = 1 fully-loaded
 #   node. (If animation isn't complete, width and height can be lower than 1.)
-# * width_with_padding: width when factoring in "padding". Each node has a
-#   certain amount of horizontal padding on its left and right; this width
-#   includes them both.
+# * left_contour / right_contour: an array which gives the coordinates of the 
+#   left/right-most node at each level of the tree, including this one.
+#   coordinates relative to left edge of current node.
 # * children: Child DrawableNodes, built using @animated_node's children.
-#   Children may affect width_with_padding, but they won't affect width.
-# * relative_x: set automatically on all children. Specifies how many units
-#   to the left (negative) or right (positive) the center of a DrawableNode
-#   should be, relative to center of its parent.
+# * relative_x: this is the primary value that the layour algorithm sets.
+#   Specifies how many units to the left (negative) or right (positive) the center 
+#   of a DrawableNode should be, relative to center of its parent.
+#   However, during intermediate computation this value is actually left edge of child 
+#   relative to left edge of parent.
 class DrawableNode
 
   # Combine contours of two sibling trees, to answer: 
