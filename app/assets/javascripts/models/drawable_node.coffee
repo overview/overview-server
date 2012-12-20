@@ -23,11 +23,11 @@ DEFAULT_OPTIONS = {
 #   should be, relative to center of its parent.
 class DrawableNode
 
-  # Combine boundary lists of two sibling trees, to answer: 
+  # Combine contours of two sibling trees, to answer: 
   # how far does the merged tree stick out to the right/left, at each depth?
-  # a and b are boundary lists of possibly different lengths (if subtrees have different depth) 
+  # a and b are contours of possibly different lengths (if subtrees have different depth) 
   # f is a function to merge elements at same depth: Math.min for left boundaries, Math.max for right
-  merge_boundaries: (a, b, f) ->
+  merge_contours: (a, b, f) ->
   	max_a = a.length
   	max_b = b.length
   	merged = []
@@ -42,25 +42,21 @@ class DrawableNode
     merged   	
   		 
   # places moveable_subtree as far left as possible, so that nodes have at least hpadding space between them at closest point
-  # takes right_boundary contour, in coordinates of parent node, and returns new right_boundary 
-  pack_subtree: (right_boundary, moveable_subtree, hpadding) ->
-    left_boundary = moveable_subtree.left_boundary
+  # takes right_contour contour, in coordinates of parent node
+  pack_subtree: (right_contour, moveable_subtree, hpadding) ->
+    left_contour = moveable_subtree.left_contour
 
-    # positive means trees do not touch, negative indicates overlap on some level
+    # positive separation means trees do not touch, negative indicates overlap on some level
     separation = Number.MAX_VALUE
     
     # walk down each level that exists in both subtrees
-    for i in [0 .. Math.min(right_boundary.length,left_boundary.length)-1]
-     separation = Math.min(separation, left_boundary[i] - right_boundary[i])    
+    for i in [0 .. Math.min(right_contour.length,left_contour.length)-1]
+     separation = Math.min(separation, left_contour[i] - right_contour[i])    
 
     # set relative_x that will give hpadding spacing at closest point between trees
     moveable_subtree.relative_x = hpadding - separation 
     
-    # return new right boundary, by merging in new right boundary of moved tree
-    moved_right_boundary = (moveable_subtree.relative_x + x for x in  moveable_subtree.right_boundary)  
-    @merge_boundaries(right_boundary, moved_right_boundary, Math.max)
-    
-
+  # build a tree of DrawableNodes out of a tree of AnimatedNodes, where the root node is @fraction opened
   constructor: (@animated_node, @fraction) ->
     num_documents = @animated_node.node.doclist.n
     @width = num_documents * @fraction
@@ -71,10 +67,11 @@ class DrawableNode
     if !animated_children?.length
       # Leaf node (with the current configuration of open nodes)
       @height = @fraction
-      @left_boundary = [0]
-      @right_boundary = [@width]
+      @left_contour = [0]
+      @right_contour = [@width]
       
     else
+    	
       # Non-leaf node. Recurse, construct all child nodes
       child_fraction = @fraction * @animated_node.loaded_fraction.current
       @children = animated_children.map((an) -> new DrawableNode(an, child_fraction))
@@ -88,29 +85,42 @@ class DrawableNode
       #subtree_spacing = Math.max(hpadding * @width/16, hpadding)
       subtree_spacing = hpadding
       
-      # pack child trees as close to each other as possible, from left to right 
+      # start with our left and right contours equal to that of first subtree
+      @left_contour = firstchild.left_contour
+      @right_contour = firstchild.right_contour
+      
+      # pack child trees as close to each other as possible, from left to right, updating contours of all subtrees so far as we go
       firstchild.relative_x = 0
-      children_right_boundary = firstchild.right_boundary
       for i in [1 ..lastidx]
-      	children_right_boundary = @pack_subtree(children_right_boundary, @children[i], subtree_spacing)
+        child = @children[i]
+        @pack_subtree(@right_contour, child, subtree_spacing)
 
-      # center the packed child tress under this node, by adding appropriate offset to relative_x 
+        # update contours based on just-placed sub-tree
+        child_left_contour = (child.relative_x + x for x in  child.left_contour)  
+        child_right_contour = (child.relative_x + x for x in  child.right_contour)  
+        @left_contour = @merge_contours(@left_contour, child_left_contour, Math.min)
+        @right_contour = @merge_contours(@right_contour, child_right_contour, Math.max)
+
+
+      # now center the packed child trees under this node, be adding offset to relative_x
       children_width = lastchild.relative_x + lastchild.width
-      shift = @width/2 - children_width/2
-      child.relative_x += shift for child in @children
-      
-      # create our left and right boundary lists
-      @left_boundary = @children.reduce(( (cumulative, current) -> @merge_boundaries(cumulative, (x + shift for x in current), Math.min) ), [])
-      @left_boundary.unshift(0)
-      @right_boundary = (x + shift for x in children_right_boundary)
-      @right_boundary.unshift(@width)
-      
-      # unreference child boundary lists since we're done with them
+      center_shift = @width/2 - children_width/2
       for child in @children
-        child.left_boundary = null 
-        child.right_boundary = null
+      	child.relative_x += center_shift 
       
-      # convert relative_x to give coordinate of center of child node relative to center of parent
+      # create our final left and right contours by shifting to center, and adding extent of this node at top level
+      @left_contour = (x + center_shift for x in @left_contour)
+      @left_contour.unshift(0)
+      @right_contour = (x + center_shift for x in @right_contour)
+      @right_contour.unshift(@width)
+      
+      # unreference child contour lists since we're done with them
+      for child in @children
+        child.left_contour = null 
+        child.right_contour = null
+      
+      # up to this point relative_x gives left edge of node relative to left edge of parent
+      # convert to center of child node relative to center of parent, as draw code expects
       for child in @children
       	child.relative_x += child.width/2 - @width/2      
             	
