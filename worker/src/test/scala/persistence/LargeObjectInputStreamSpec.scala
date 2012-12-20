@@ -36,9 +36,19 @@ class LargeObjectInputStreamSpec extends DbSpecification {
     "read beyond buffer size" in new LoContext {
       val readData = new Array[Byte](100)
       
-      loInputStream.read(readData, 0, 100)
+      loInputStream.read(readData, 0, 100) must be equalTo 100
       
       readData must be equalTo data
+    }
+    
+    "read beyond the end of the LargeObject" in new LoContext {
+      val readData = new Array[Byte](300)
+      
+      loInputStream.read(readData, 0, 200) must be equalTo 100
+      
+      readData.take(100) must be equalTo data
+      
+      loInputStream.read(readData, 0, 100) must be equalTo -1
     }
 
   }
