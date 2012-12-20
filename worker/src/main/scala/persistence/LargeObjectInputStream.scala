@@ -8,7 +8,7 @@ import org.overviewproject.database.DB
 import org.postgresql.util.PSQLException
 import java.io.IOException
 
-class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStream {
+class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStream {
   private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
   
   private val buffer = new Array[Byte](bufferSize)
