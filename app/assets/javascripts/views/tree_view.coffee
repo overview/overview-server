@@ -69,11 +69,13 @@ class DrawOperation
     @drawable_node.relative_x = 0
     depth = @drawable_node.height
 
-    @px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
+    #@px_per_hunit = @width / @drawable_node.width_with_padding / @zoom
+    @px_per_hunit = 1 / @zoom 
     @px_per_vunit = (@height - @options.node_line_width_selected) / ((depth > 1 && ((depth - 1) * @options.node_vpadding) || 0) + depth * @options.node_vunits)
     @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
-    this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width_with_padding * 0.5 * @px_per_hunit - @px_pan })
+    # this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width_with_padding * 0.5 * @px_per_hunit - @px_pan })
+    this._draw_drawable_node(@drawable_node, { middle: @drawable_node.width * 0.5 * @px_per_hunit - @px_pan })
 
   _pixel_is_within_node: (x, y, drawable_node) ->
     px = drawable_node.px
@@ -164,6 +166,9 @@ class DrawOperation
     left = px.left + 3
     right = left + width
 
+#    console.log(px)
+#    console.log("px: " + px + ", left: " + left + ", right: " +  right)
+    
     whiteGradient = ctx.createLinearGradient(left, 0, right, 0)
     whiteGradient.addColorStop((width-10)/width, 'rgba(255, 255, 255, 0.85)')
     whiteGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
@@ -227,12 +232,12 @@ class DrawOperation
     px = drawable_node.px = {
       middle: parent_px.middle + drawable_node.relative_x * px_per_hunit,
       width: drawable_node.width * px_per_hunit,
-      width_with_padding: drawable_node.width_with_padding * px_per_hunit,
+      #width_with_padding: drawable_node.width_with_padding * px_per_hunit,
       top: (parent_px.top? && (parent_px.top + parent_px.height + vpadding * vpx_of_fraction) || @options.node_line_width_selected * 0.5),
       height: @options.node_vunits * vpx_of_fraction,
     }
     px.left = px.middle - px.width * 0.5
-    px.left_with_padding = px.middle - px.width_with_padding * 0.5
+    #px.left_with_padding = px.middle - px.width_with_padding * 0.5
 
   _draw_measured_drawable_node: (drawable_node) ->
     px = drawable_node.px
