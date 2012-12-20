@@ -6,19 +6,28 @@ import org.overviewproject.database.Database
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
 import org.postgresql.util.PSQLException
+import java.io.IOException
 
 class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStream {
-
+  private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
+  
   private val buffer = new Array[Byte](bufferSize)
   private var largeObjectPosition: Int = 0
   private var bufferPosition: Int = bufferSize
   private var bufferEnd: Int = bufferSize
+  private var isOpen: Boolean = true
 
   def read(): Int = {
-    handling(classOf[PSQLException]) by (e => throw new java.io.IOException(e.getMessage)) apply refreshBuffer()
-    
-    readNextFromBuffer()
+    if (isOpen) {
+      handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply refreshBuffer()
+
+      readNextFromBuffer()
+    }
+    else throw new IOException(ReadWhenClosedExceptionMessage)
+
   }
+
+  override def close() { isOpen = false }
 
   private def readNextFromBuffer(): Int = {
     val b =
@@ -42,7 +51,5 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStr
         bufferPosition = 0
       }
     }
-
   }
-
 }
