@@ -9,20 +9,27 @@ DEFAULT_OPTIONS = {
 # It has the following properties:
 #
 # * animated_node: the node it's drawing
+#
 # * fraction: how complete the parent is, animation-wise (1.0 means animation
 #   is complete)
+#
 # * width: How many units wide the node should be. 1 unit = 1 document.
+#
 # * height: How many units high the node should be. 1 unit = 1 fully-loaded
 #   node. (If animation isn't complete, width and height can be lower than 1.)
+#
 # * left_contour / right_contour: an array which gives the coordinates of the 
 #   left/right-most node at each level of the tree, including this one.
 #   coordinates relative to left edge of current node.
+#
 # * children: Child DrawableNodes, built using @animated_node's children.
-# * relative_x: this is the primary value that the layour algorithm sets.
+#
+# * relative_x: this is the primary value that the layout algorithm sets.
 #   Specifies how many units to the left (negative) or right (positive) the center 
 #   of a DrawableNode should be, relative to center of its parent.
 #   However, during intermediate computation this value is actually left edge of child 
 #   relative to left edge of parent.
+#
 class DrawableNode
 
   # Combine contours of two sibling trees, to answer: 
@@ -43,10 +50,11 @@ class DrawableNode
       merged.push(m)
     merged   	
   		 
-  # places moveable_subtree as far left as possible, so that nodes have at least hpadding space between them at closest point
-  # takes right_contour contour, in coordinates of parent node
-  pack_subtree: (right_contour, moveable_subtree, hpadding) ->
-    left_contour = moveable_subtree.left_contour
+  # places moveable_node as far left as possible, so that nodes in subtrees have at least hpadding space between them at closest point
+  # fixed_node is sibling to movable_node, immediately to left, right_contour is in coordinates of parent node.
+  # fraction indicates where parent node is in opening animation
+  pack_subtree: (fixed_node, moveable_node, right_contour, hpadding, fraction) ->
+    left_contour = moveable_node.left_contour
 
     # positive separation means trees do not touch, negative indicates overlap on some level
     separation = Number.MAX_VALUE
@@ -56,7 +64,12 @@ class DrawableNode
      separation = Math.min(separation, left_contour[i] - right_contour[i])    
 
     # set relative_x that will give hpadding spacing at closest point between trees
-    moveable_subtree.relative_x = hpadding - separation 
+    # then interpolate with where node would be (right next to sibling fixed_node) if children not open
+    fraction *= moveable_node.animated_node.loaded_fraction.current
+    open_relative_x = hpadding - separation 
+    closed_relative_x = fixed_node.relative_x + fixed_node.width + hpadding 
+    moveable_node.relative_x = fraction*open_relative_x + (1-fraction)*closed_relative_x
+    
     
   # build a tree of DrawableNodes out of a tree of AnimatedNodes, where the root node is @fraction opened
   constructor: (@animated_node, @fraction, level) ->
@@ -78,7 +91,7 @@ class DrawableNode
       child_fraction = @fraction * @animated_node.loaded_fraction.current
       l1 = level + 1 # doesn't work if I replace l1 in call below, but why?
       @children = animated_children.map((an) -> new DrawableNode(an, child_fraction, l1))
-      @height = @fraction + _(dn.height for dn in @children).max()
+      @height = @fraction + _(child.height for child in @children).max()
 
       firstchild = @children[0]
       lastidx = @children.length - 1
@@ -95,12 +108,11 @@ class DrawableNode
       # pack child trees as close to each other as possible, from left to right, updating contours of all subtrees so far as we go
       firstchild.relative_x = 0
       for i in [1 ..lastidx]
-        child = @children[i]
-        @pack_subtree(@right_contour, child, subtree_spacing)
+        @pack_subtree(@children[i-1], @children[i], @right_contour, subtree_spacing, child_fraction)
 
         # update contours based on just-placed sub-tree
-        child_left_contour = (child.relative_x + x for x in  child.left_contour)  
-        child_right_contour = (child.relative_x + x for x in  child.right_contour)  
+        child_left_contour = (@children[i].relative_x + x for x in  @children[i].left_contour)  
+        child_right_contour = (@children[i].relative_x + x for x in  @children[i].right_contour)  
         @left_contour = @merge_contours(@left_contour, child_left_contour, Math.min)
         @right_contour = @merge_contours(@right_contour, child_right_contour, Math.max)
 
