@@ -191,9 +191,9 @@ class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn: DocumentD
 object BuildDocTree {
 
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    // By default: cosine distance, and step down in 0.1 increments
+    // By default: cosine distance, and step down in roughly 0.1 increments
     val distanceFn = DistanceFn.CosineDistance _
-    val threshSteps = List(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0) // can't do (1.0 to 0.1 by -0.1) cause last val must be exactly 0
+    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
 
     // Use edge sampling if docset is large enough, with hard-coded number of samples
     // Random graph connectivity arguments suggest num samples does not need to scale with docset size
