@@ -25,6 +25,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   private val uploadReader = new UploadReader(uploadedFileId)
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
+  private var jobCancelled: Boolean = false
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
 
   /** Start parsing the CSV upload and feeding the result to the consumer */
@@ -34,7 +35,10 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
     }
     val documentSource = new CsvImportSource(uploadReader.reader)
 
-    documentSource.foreach { doc =>
+    val iterator = documentSource.iterator
+    
+    while (!jobCancelled && iterator.hasNext) {
+      val doc = iterator.next
       val documentId = writeAndCommitDocument(documentSetId, doc)
       consumer.processDocument(documentId, doc.text)
       reportProgress(uploadReader.bytesRead, uploadReader.size.getOrElse(1))
@@ -51,7 +55,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
       val now = scala.compat.Platform.currentTime
 
       if (now - lastUpdateTime > UpdateInterval) {
-        progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
+        jobCancelled = progAbort(Progress(FetchingFraction * bytesRead / size, Parsing(bytesRead, size)))
         lastUpdateTime = now
       }
     }
