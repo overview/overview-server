@@ -37,23 +37,7 @@ class UploadReader(uploadedFileId: Long) {
     if (countingInputStream != null) countingInputStream.bytesRead
     else 0l
 
-  /**
-   * Provide a scope with a Reader that can be used to read the uploaded file.
-   */
-  def read[T](block: Reader => T)(implicit connection: Connection): T = {
-    implicit val pgc = DB.pgConnection
-
-    val upload = UploadedFileLoader.load(uploadedFileId)
-    size = Some(upload.size)
-
-    LO.withLargeObject(upload.contentsOid) { largeObject =>
-      countingInputStream = new CountingInputStream(largeObject.inputStream)
-      val reader = new BufferedReader(new InputStreamReader(countingInputStream, decoder(upload.encoding)))
-      block(reader)
-    }
-  }
-
-
+ 
   /**
    * Must be called before reader is accessed. So ugly.
    */
