@@ -50,6 +50,11 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       
       loInputStream.read(readData, 0, 100) must be equalTo -1
     }
+    
+    "throw IOException on error" in new DbTestContext {
+      val loInputStream = new LargeObjectInputStream(-1)
+      loInputStream.read must throwA[java.io.IOException]
+    }
 
   }
   step(shutdownDb)

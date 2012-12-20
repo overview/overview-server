@@ -1,9 +1,11 @@
 package persistence
 
+import scala.util.control.Exception._
 import java.io.InputStream
 import org.overviewproject.database.Database
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
+import org.postgresql.util.PSQLException
 
 class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStream {
 
@@ -13,7 +15,8 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStr
   private var bufferEnd: Int = bufferSize
 
   def read(): Int = {
-    refreshBuffer()
+    handling(classOf[PSQLException]) by (e => throw new java.io.IOException(e.getMessage)) apply refreshBuffer()
+    
     readNextFromBuffer()
   }
 
