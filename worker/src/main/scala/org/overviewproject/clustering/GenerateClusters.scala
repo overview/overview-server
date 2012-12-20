@@ -12,15 +12,14 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
+import scala.util.control.Breaks._
 import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import overview.util.Progress.{NoProgressReporting, Progress, ProgressAbortFn}
+import overview.util.Progress.{ NoProgressReporting, Progress, ProgressAbortFn }
 import org.overviewproject.clustering.ClusterTypes._
-
-
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
 object DistanceFn {
-  
+
   // sparse dot product on two term->float maps
   // Not written in very functional style, as DocumentVector uses an awkward representation as arrays for space reasons
   // Basic intersection of sorted lists algorithm
@@ -28,11 +27,11 @@ object DistanceFn {
     var a_idx = 0
     var b_idx = 0
     var dot = 0.0
-    
+
     while (a_idx < a.length && b_idx < b.length) {
       val a_term = a.terms(a_idx)
       val b_term = b.terms(b_idx)
-      
+
       if (a_term < b_term) {
         a_idx += 1
       } else if (b_term < a_term) {
@@ -41,9 +40,9 @@ object DistanceFn {
         dot += a.weights(a_idx).toDouble * b.weights(b_idx).toDouble
         a_idx += 1
         b_idx += 1
-      } 
+      }
     }
-  
+
     dot
   }
 
@@ -53,40 +52,39 @@ object DistanceFn {
   }
 }
 
-
-class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected val distanceFn:DocumentDistanceFn) {
+class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected val distanceFn: DocumentDistanceFn) {
 
   private var sampledEdges = new SampledEdges
-  
+
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
   private def allReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
-    for (otherDoc <- otherDocs; 
-        if distanceFn(docVecs(thisDoc), docVecs(otherDoc)) <= thresh)
-      yield otherDoc
+    for (
+      otherDoc <- otherDocs;
+      if distanceFn(docVecs(thisDoc), docVecs(otherDoc)) <= thresh
+    ) yield otherDoc
   }
-  
+
   // Same logic as above, but only looks through edges stored in sampledEdges
   private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
     val g = sampledEdges.get(thisDoc)
     if (g.isDefined) {
-      for ((otherDoc, distance) <- g.get
-           if otherDocs.contains(otherDoc)
-           if distance <= thresh)
-        yield otherDoc
+      for (
+        (otherDoc, distance) <- g.get if otherDocs.contains(otherDoc) if distance <= thresh
+      ) yield otherDoc
     } else {
       Nil
     }
   }
-  
+
   // Returns an edge walking function suitable for ConnectedComponents, using the sampled edge set if we have it
-  private def createEdgeEnumerator(thresh:Double) = {
+  private def createEdgeEnumerator(thresh: Double) = {
     if (!sampledEdges.isEmpty)
-      (doc:DocumentID,docSet:Set[DocumentID]) => sampledReachableDocs(thresh, doc, docSet)
+      (doc: DocumentID, docSet: Set[DocumentID]) => sampledReachableDocs(thresh, doc, docSet)
     else
-      (doc:DocumentID,docSet:Set[DocumentID]) => allReachableDocs(thresh, doc, docSet)
+      (doc: DocumentID, docSet: Set[DocumentID]) => allReachableDocs(thresh, doc, docSet)
   }
-  
+
   // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components
   // Returns new set of leaf nodes
   private def ExpandTree(currentLeaves: List[DocTreeNode], thresh: Double) = {
@@ -127,31 +125,34 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
     var currentLeaves = List(root)
-    for (curStep <- 1 to threshSteps.size - 2) {
-      progAbort(Progress(curStep / numSteps, ClusteringLevel(curStep + 1)))
-      currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
+
+    breakable {
+      for (curStep <- 1 to threshSteps.size - 2) {
+        if (progAbort(Progress(curStep / numSteps, ClusteringLevel(curStep + 1)))) break
+        currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
+      }
     }
 
     // bottom level thresh=0.0 is one leaf node for each document
-    progAbort(Progress((numSteps - 1) / numSteps, ClusteringLevel(numSteps.toInt)))
-    for (node <- currentLeaves) {
-      if (node.docs.size > 1) // don't expand if already one node
-        node.children = node.docs.map(item => new DocTreeNode(Set(item)))
+    if (!progAbort(Progress((numSteps - 1) / numSteps, ClusteringLevel(numSteps.toInt)))) {
+      for (node <- currentLeaves) {
+        if (node.docs.size > 1) // don't expand if already one node
+          node.children = node.docs.map(item => new DocTreeNode(Set(item)))
+      }
     }
-
     root
   }
 
-  def sampleCloseEdges(numEdgesPerDoc:Int) : Unit = {
+  def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
     sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
   }
 
 }
 
 // Add node labeling to the Tree Builder
-class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn:DocumentDistanceFn)
+class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn: DocumentDistanceFn)
   extends ConnectedComponentDocTreeBuilder(docVecs, distanceFn) {
-  
+
   // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
   private def makeDescription(vec: DocumentVectorMap): String = {
     val maxTerms = 15
@@ -168,7 +169,7 @@ class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn:DocumentDi
   // Create a descriptive string for each node, by taking the sum of all document vectors in that node.
   // Building all descriptions at once allows a lot of re-use of sub-sums.
   def labelNode(node: DocTreeNode): DocumentVectorMap = {
-    
+
     if (node.docs.size == 1) {
       require(node.children.isEmpty)
       val vec = DocumentVectorMap(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
@@ -185,12 +186,10 @@ class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn:DocumentDi
   }
 }
 
-
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 // This is where all of the hard-coded algorithmic constants live
 object BuildDocTree {
 
-  
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in 0.1 increments
     val distanceFn = DistanceFn.CosineDistance _
@@ -198,19 +197,19 @@ object BuildDocTree {
 
     // Use edge sampling if docset is large enough, with hard-coded number of samples
     // Random graph connectivity arguments suggest num samples does not need to scale with docset size
-    val numDocsWhereSamplingHelpful = 10000 
+    val numDocsWhereSamplingHelpful = 10000
     val numSampledEdgesPerDoc = 200
-    
+
     // Maximum arity of the tree (smallest nodes will be bundled)
     val maxChildrenPerNode = 5
-    
+
     val builder = new LabellingDocTreeBuilder(docVecs, distanceFn)
-    if (docVecs.size > numDocsWhereSamplingHelpful)             
-      builder.sampleCloseEdges(numSampledEdgesPerDoc)           // use sampled edges if the docset is large
-    val tree = builder.BuildTree(threshSteps, progAbort)        // actually build the tree!
-    builder.labelNode(tree)                                     // create a descriptive label for each node
-    ThresholdTreeCleaner(tree)                                  // prune the tree
-    
+    if (docVecs.size > numDocsWhereSamplingHelpful)
+      builder.sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
+    val tree = builder.BuildTree(threshSteps, progAbort) // actually build the tree!
+    builder.labelNode(tree) // create a descriptive label for each node
+    ThresholdTreeCleaner(tree) // prune the tree
+
     DocumentIdCacheGenerator.createCache(tree)
 
     tree
