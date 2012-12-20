@@ -3,6 +3,7 @@ package org.overviewproject.postgres
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.database.DB
 import org.postgresql.PGConnection
+import org.postgresql.util.PSQLException
 
 
 class LargeObjectSpec extends DbSpecification {
@@ -29,7 +30,7 @@ class LargeObjectSpec extends DbSpecification {
       oid must not be equalTo(-1) 
     }
 
-    /*
+
     "throw exception for non existent oid" in new LoContext {
       LO.withLargeObject(234) { _.oid } must throwA[PSQLException]
     }
@@ -92,7 +93,7 @@ class LargeObjectSpec extends DbSpecification {
     "throw exception when deleting nonexisting objects" in new LoContext {
       LO.delete(223) must throwA[PSQLException]
     }
-    */
+
   }
 
   step(shutdownDb)
