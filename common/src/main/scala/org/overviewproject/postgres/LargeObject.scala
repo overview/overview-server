@@ -26,6 +26,12 @@ trait LargeObject {
   /** @return an InputStream for reading the stored data */
   def inputStream: java.io.InputStream
 
+  /** 
+   * read len bytes of data, storing it in the buffer, starting at offset
+   * @return the number of bytes actually read.
+   */
+  def read(buffer: Array[Byte], offset: Int, len: Int): Int
+  
   /** delete all stored data */
   def truncate
 }
@@ -81,6 +87,9 @@ object LO {
       pgLo.write(data, 0, data.size)
       pgLo.tell
     }
+    
+    def read(buffer: Array[Byte], offset: Int, len: Int): Int = pgLo.read(buffer, offset, len)
+
 
     def inputStream: java.io.InputStream = pgLo.getInputStream()
 

@@ -94,6 +94,22 @@ class LargeObjectSpec extends DbSpecification {
       LO.delete(223) must throwA[PSQLException]
     }
 
+    "read data into array" in new LoContext {
+      val data = Array.tabulate[Byte](100)(b => b.toByte)
+      addData(data) 
+      
+      val readData = new Array[Byte](60)
+      
+      LO.withLargeObject(oid) { largeObject =>
+        largeObject.read(readData, 0, 60) must be equalTo 60
+        readData must be equalTo data.take(60)
+        
+        largeObject.read(readData, 10, 60) must be equalTo 40
+        readData.drop(10).take(40) must be equalTo data.drop(60)
+        
+        largeObject.read(readData, 0, 100) must be equalTo 0
+      }
+    }
   }
 
   step(shutdownDb)
