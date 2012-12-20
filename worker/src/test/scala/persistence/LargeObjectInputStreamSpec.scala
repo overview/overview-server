@@ -27,6 +27,10 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       }
     }
 
+    trait LoWith255 extends LoContext {
+      override val data = Array[Byte](255.toByte)
+    }
+    
     "read one byte at a time from chunk" in new LoContext {
       val readData = Array.fill(BufferSize)(loInputStream.read.toByte)
        
@@ -59,6 +63,11 @@ class LargeObjectInputStreamSpec extends DbSpecification {
     "throw IOException on error" in new DbTestContext {
       val loInputStream = new LargeObjectInputStream(-1)
       loInputStream.read must throwA[java.io.IOException]
+    }
+    
+    "not read 255 as end of stream" in new LoWith255 {
+      val b = loInputStream.read
+      b must be equalTo 0x00ff
     }
   }
   step(shutdownDb)

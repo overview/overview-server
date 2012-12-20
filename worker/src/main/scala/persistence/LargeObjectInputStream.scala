@@ -31,7 +31,7 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStr
 
   private def readNextFromBuffer(): Int = {
     val b =
-      if (bufferPosition < bufferEnd) buffer(bufferPosition)
+      if (bufferPosition < bufferEnd) toUnsignedInt(buffer(bufferPosition))
       else -1
 
     bufferPosition += 1
@@ -39,6 +39,8 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8012) extends InputStr
     b
   }
 
+  private def toUnsignedInt(b: Byte): Int = 0xff & b
+  
   private def refreshBuffer() {
     if (bufferPosition >= bufferSize) Database.inTransaction {
       implicit val pgc = DB.pgConnection(Database.currentConnection)
