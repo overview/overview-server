@@ -22,7 +22,6 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
       convertPsqlException(refreshBuffer())
       readNextFromBuffer()
     }
-    
 
   }
 
@@ -30,24 +29,22 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
     ifOpen {
       convertPsqlException(refreshBuffer())
 
-      if (bufferEnd == 0) -1 // no more data
+      val availableBytes = bufferEnd - bufferPosition
+
+      if (availableBytes == 0) -1 
       else if (bufferPosition + len <= bufferSize) {
-        val bytesRead = scala.math.min(len, bufferEnd)
+        val bytesRead = scala.math.min(len, availableBytes)
         Array.copy(buffer, bufferPosition, outBuffer, offset, bytesRead)
         bufferPosition += bytesRead
         bytesRead
-      } 
-      else {
-        val available = bufferEnd - bufferPosition
-        if (available != 0) {
-          Array.copy(buffer, bufferPosition, outBuffer, offset, available)
-          bufferPosition = bufferEnd
-          
-          refreshBuffer()
-          
-          if (bufferEnd == 0) available
-          else available + read(outBuffer, offset + available, len - available)
-        } else -1
+      } else {
+        Array.copy(buffer, bufferPosition, outBuffer, offset, availableBytes)
+        bufferPosition = bufferEnd
+
+        refreshBuffer()
+
+        if (bufferEnd == 0) availableBytes
+        else availableBytes + read(outBuffer, offset + availableBytes, len - availableBytes)
       }
     }
   }
@@ -70,9 +67,9 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
     if (isOpen) f
     else throw new IOException(ReadWhenClosedExceptionMessage)
   }
-    
+
   private def convertPsqlException(f: => Unit) { handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply f }
-  
+
   private def refreshBuffer() {
     if (bufferPosition >= bufferSize) Database.inTransaction {
       implicit val pgc = DB.pgConnection(Database.currentConnection)
