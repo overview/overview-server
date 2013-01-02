@@ -27,25 +27,26 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
 
   override def read(outBuffer: Array[Byte], offset: Int, len: Int): Int = {
     ifOpen {
-      convertPsqlException(refreshBuffer())
-
-      val availableBytes = bufferEnd - bufferPosition
-
-      if (availableBytes == 0) -1 
-      else if (bufferPosition + len <= bufferSize) {
-        val bytesRead = scala.math.min(len, availableBytes)
-        Array.copy(buffer, bufferPosition, outBuffer, offset, bytesRead)
-        bufferPosition += bytesRead
-        bytesRead
-      } else {
-        Array.copy(buffer, bufferPosition, outBuffer, offset, availableBytes)
-        bufferPosition = bufferEnd
-
-        refreshBuffer()
-
-        if (bufferEnd == 0) availableBytes
-        else availableBytes + read(outBuffer, offset + availableBytes, len - availableBytes)
+      readBytes(outBuffer, offset, len) match {
+        case 0 => -1
+        case n => n
       }
+    }
+  }
+
+  def readBytes(outBuffer: Array[Byte], offset: Int, len: Int): Int = {
+    convertPsqlException(refreshBuffer())
+
+    val availableBytes = bufferEnd - bufferPosition
+
+    if (len == 0 || availableBytes == 0) 0
+    else {
+      val bytesRead = scala.math.min(len, availableBytes)
+
+      Array.copy(buffer, bufferPosition, outBuffer, offset, bytesRead)
+      bufferPosition += bytesRead
+
+      bytesRead + readBytes(outBuffer, offset + bytesRead, len - bytesRead)
     }
   }
 

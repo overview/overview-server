@@ -88,6 +88,14 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       readData.take(8) must be equalTo data.take(8)
     }
     
+    "read beyond buffer in multiple chunks" in new LoContext {
+      val readData = new Array[Byte](20)
+      loInputStream.read(readData, 0, 5) must be equalTo 5
+      loInputStream.read(readData, 5, 15) must be equalTo 15
+      
+      readData must be equalTo data.take(20)
+    }
+    
     
   }
   step(shutdownDb)
