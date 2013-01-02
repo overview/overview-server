@@ -30,11 +30,14 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
     ifOpen {
       convertPsqlException(refreshBuffer())
 
-      if (bufferPosition + len <= bufferEnd) {
-        Array.copy(buffer, bufferPosition, outBuffer, offset, len)
-        bufferPosition += len
-        len
-      } else {
+      if (bufferEnd == 0) -1 // no more data
+      else if (bufferPosition + len <= bufferSize) {
+        val bytesRead = scala.math.min(len, bufferEnd)
+        Array.copy(buffer, bufferPosition, outBuffer, offset, bytesRead)
+        bufferPosition += bytesRead
+        bytesRead
+      } 
+      else {
         val available = bufferEnd - bufferPosition
         if (available != 0) {
           Array.copy(buffer, bufferPosition, outBuffer, offset, available)

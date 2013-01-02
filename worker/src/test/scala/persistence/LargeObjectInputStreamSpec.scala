@@ -69,6 +69,20 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       val b = loInputStream.read
       b must be equalTo 0x00ff
     }
+    
+    "read beyond data, but not beyond buffer" in new LoWith255 {
+      val readData = new Array[Byte](10)
+      
+      loInputStream.read(readData, 0, 5) must be equalTo 1
+    }
+    
+    "read buffer in multiple chunks" in new LoContext {
+      val readData = new Array[Byte](10)
+      loInputStream.read(readData, 0, 5) must be equalTo 5
+      loInputStream.read(readData, 5, 5) must be equalTo 5
+      
+      readData must be equalTo data.take(10)
+    }
   }
   step(shutdownDb)
 }
