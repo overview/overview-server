@@ -15,12 +15,15 @@ import akka.dispatch.{Await, Future, Promise}
 import akka.util.Timeout
 import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
-import org.overviewproject.http.{ AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, RedirectingHttpRequest }
+import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, RedirectingHttpRequest }
 import overview.util.Logger
+
 
 
 // The main DocumentCloudSource class produces a sequence of these...
 class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
+class PrivateDCDocumentAtURL(title: String, documentCloudId: String, textURL: String, val username: String, val password: String)
+  extends DCDocumentAtURL(title, documentCloudId, textURL) with BasicAuth // case-to-case class inheritance is deprecated
 
 // Define the bits of the DocumentCloud JSON response that we're interested in.
 // This omits many returned fields, but that's good for robustness (don't demand what we don't use.)
@@ -62,7 +65,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   // Resolve a redirect of a private document, via async http request. Returns a Future that will eventually have the resolved URL
   private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String): Promise[DCDocumentAtURL] = {
     val privateQuery = (documentCloudUserName, documentCloudPassword) match {
-      case (Some(n), Some(p)) => new PrivateDocumentAtURL(docURL, n, p)
+      case (Some(n), Some(p)) => new PrivateDCDocumentAtURL(title, id, docURL, n, p)
       case _ => throw new Exception("Can't access private documents without credentials")
     }
 
