@@ -15,7 +15,7 @@ import akka.dispatch.{Await, Future, Promise}
 import akka.util.Timeout
 import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
-import org.overviewproject.http.{ AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
+import org.overviewproject.http.{ AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, RedirectingHttpRequest }
 import overview.util.Logger
 
 
@@ -35,7 +35,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
-  private val redirectingHttpRetriever = new SimpleHttpRequest// TODO: combine with asyncHttpRetriever
+  private val redirectingHttpRetriever = new RedirectingHttpRequest// TODO: combine with asyncHttpRetriever
   
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results

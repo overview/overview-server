@@ -7,7 +7,7 @@ import com.ning.http.client._
 import com.ning.http.client.Response
 import com.ning.http.client.Realm.AuthScheme
 
-class SimpleHttpRequest extends AsyncHttpRetriever {
+class RedirectingHttpRequest extends AsyncHttpRetriever {
 
   private def getHttpConfig(followRedirects: Boolean = true) = {
     val builder = new AsyncHttpClientConfig.Builder
