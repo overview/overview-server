@@ -15,7 +15,7 @@ import akka.dispatch.{Await, Future, Promise}
 import akka.util.Timeout
 import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
-import overview.http.{AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest}
+import org.overviewproject.http.{ AsyncHttpRetriever, DocumentAtURL, PrivateDocumentAtURL, SimpleHttpRequest }
 import overview.util.Logger
 
 

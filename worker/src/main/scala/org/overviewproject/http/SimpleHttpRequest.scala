@@ -1,5 +1,5 @@
 
-package overview.http
+package org.overviewproject.http
 
 import com.ning.http.client._
 import com.ning.http.client.Realm.AuthScheme

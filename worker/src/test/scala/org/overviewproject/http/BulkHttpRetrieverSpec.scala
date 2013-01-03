@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, September 2012
  */
-package overview.http
+package org.overviewproject.http
 
 import akka.actor.ActorSystem
 import akka.dispatch.Await
@@ -18,7 +18,6 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.After
 import org.overviewproject.clustering.DCDocumentAtURL
 import scala.collection.JavaConversions._
-
 
 /**
  * A dummy Response to a http request.

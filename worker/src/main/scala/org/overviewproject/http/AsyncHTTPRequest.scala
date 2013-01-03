@@ -9,7 +9,7 @@
  *
  */
 
-package overview.http
+package org.overviewproject.http
 
 import akka.dispatch.{ ExecutionContext, Future, Promise }
 import com.ning.http.client._

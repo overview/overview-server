@@ -8,15 +8,15 @@
  *
  */
 
-package overview.http
+package org.overviewproject.http
 
 import overview.util.{ Logger, WorkerActorSystem }
-
 import scala.collection.mutable
 import akka.dispatch.{ ExecutionContext, Future, Promise }
 import akka.actor._
 import akka.util.Timeout
 import com.ning.http.client.Response
+
 
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
@@ -109,6 +109,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     }
   }
 
+  protected def retrieveDocument(retriever: ActorRef, doc: T): Unit =  retriever ! DocToRetrieve(doc)
 
   def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Boolean)
   (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
@@ -120,7 +121,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
 
     // Feed a sequence of DocumentAtURL objects to retriever
     for (doc <- sourceDocList) {
-      retriever ! DocToRetrieve(doc)
+      retrieveDocument(retriever, doc)      
     }
     retriever ! NoMoreDocsToRetrieve
 

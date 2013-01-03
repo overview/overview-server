@@ -1,8 +1,9 @@
 
-package overview.http
+package org.overviewproject.http
 
 import akka.dispatch.ExecutionContext
 import com.ning.http.client.Response
+import akka.dispatch.ExecutionContext
 
   
 trait AsyncHttpRetriever {
