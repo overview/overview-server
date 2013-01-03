@@ -35,6 +35,8 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
+  private val redirectingHttpRetriever = new SimpleHttpRequest// TODO: combine with asyncHttpRetriever
+  
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
   private val maxDocuments = 10000 // cut off a document set if it's bigger than this
@@ -67,7 +69,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
     Logger.debug("Retrieving private document from " + docURL)
     val done = Promise[DCDocumentAtURL]()
 
-    SimpleHttpRequest(privateQuery,
+    redirectingHttpRetriever.request(privateQuery,
       { response =>
         val privateURL = response.getHeader("Location")
         done.success(new DCDocumentAtURL(title, id, privateURL))
