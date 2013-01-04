@@ -68,11 +68,11 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
     }
   }
 
-  // Create an actor that can handle documentcloud private documents
+  /** Create an actor that can handle documentcloud private documents */
   override protected def createActor(writeDocument: (DCDocumentAtURL, String) => Boolean, retrievalDone: Promise[Seq[DocRetrievalError]]) =
     new DocumentCloudRetrieverActor(writeDocument, retrievalDone)
 
-  // If a document is private, request its url
+  /** If a document is private, request its url */
   override protected def retrieveDocument(doc: DCDocumentAtURL, retriever: ActorRef) = doc match {
     case pd: PrivateDCDocumentAtURL => retriever ! RetrievePrivateDocUrl(pd)
     case _ => super.retrieveDocument(doc, retriever)
