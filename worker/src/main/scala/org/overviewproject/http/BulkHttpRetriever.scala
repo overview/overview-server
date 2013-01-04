@@ -19,8 +19,11 @@ import com.ning.http.client.Response
 
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
+
+// Document requiring OAuth
 class PrivateDocumentAtURL(val textUrl: String, val username: String, val password: String)
   extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritance is deprecated
+  
 case class DocRetrievalError(doc: DocumentAtURL, error: Throwable)
 
 class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriever) {
@@ -108,19 +111,25 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         spoolRequests
     }
 
+    // Process the queued request
+    // TODO: startTime should be removed, only needed because Logging is tightly bound to execution
     protected def requestDocument(request: Request, startTime: Long) = { 
       val doc = request.doc
       asyncHttpRetriever.request(doc, request.handler(doc, startTime, _), requestFailed(doc, _))
     }
     
+    // Check if there are any outstanding requests
     protected def allRequestsProcessed: Boolean = allDocsIn && httpReqInFlight == 0 && requestQueue.isEmpty
-      
+     
+    // Default action if document is successfully retrieved
     protected def requestSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) =
       self ! GetTextSucceeded(doc, result.getResponseBody, startTime)
 
+    // Default action if request fails
     protected def requestFailed(doc: DocumentAtURL, t: Throwable) = self ! GetTextFailed(doc, t)
   }
 
+  // Factory method to allow subclasses to create their own actors
   protected def createActor(writeDocument: (T, String) => Boolean, retrievalDone: Promise[Seq[DocRetrievalError]])=
     new BulkHttpActor(writeDocument, retrievalDone)
 
