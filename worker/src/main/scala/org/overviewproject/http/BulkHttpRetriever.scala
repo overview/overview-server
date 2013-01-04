@@ -17,7 +17,6 @@ import akka.actor._
 import akka.util.Timeout
 import com.ning.http.client.Response
 
-
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
 class PrivateDocumentAtURL(val textUrl: String, val username: String, val password: String)
@@ -27,18 +26,18 @@ case class DocRetrievalError(doc: DocumentAtURL, error: Throwable)
 class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriever) {
 
   // Case classes modeling the messages that our actors can send one another
-  private case class GetText(doc: DocumentAtURL)
-  private case class GetTextSucceeded(doc: DocumentAtURL, text: String, startTime: Long)
-  private case class GetTextFailed(doc: DocumentAtURL, error: Throwable)
-  private case class DocToRetrieve(doc: DocumentAtURL)
-  private case class NoMoreDocsToRetrieve()
+  protected case class GetText(doc: DocumentAtURL)
+  protected case class GetTextSucceeded(doc: DocumentAtURL, text: String, startTime: Long)
+  protected case class GetTextFailed(doc: DocumentAtURL, error: Throwable)
+  protected case class DocToRetrieve(doc: DocumentAtURL)
+  protected case class NoMoreDocsToRetrieve()
 
   protected class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]])
     extends Actor {
 
     protected case class Request(doc: DocumentAtURL, handler: (DocumentAtURL, Long, Response) => Unit)
-    
+
     protected var allDocsIn: Boolean = false // have we received all documents to process (via DocsToRetrieve messages?)
     protected val maxInFlight = 4 // number of simultaneous HTTP connections to try
     protected var httpReqInFlight = 0
@@ -48,24 +47,23 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     protected var errorQueue = mutable.Queue[DocRetrievalError]()
 
     protected var cancelJob: Boolean = false
-    
+
     // This initiates more HTTP requests up to maxInFlight. When each request completes or fails, we get a message
     // We also check here to see if we are all done, in which case we set the promise
     def spoolRequests {
       if (requestQueue.isEmpty && httpReqInFlight == 0)
         Logger.debug("BulkHttpRetriever idle: request queue is empty, no documents in flight.")
-        
+
       while (!cancelJob && !requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
         val request = requestQueue.dequeue
-        val doc = request.doc
 
         val startTime = System.nanoTime
-        asyncHttpRetriever.request(doc, request.handler(doc, startTime, _), requestFailed(doc, _))
+        requestDocument(request, startTime)
 
         httpReqInFlight += 1
       }
 
-      if (cancelJob || (allDocsIn && httpReqInFlight == 0 && requestQueue.isEmpty)) {
+      if (cancelJob || allRequestsProcessed) {
         finished.success(errorQueue)
         context.stop(self)
       }
@@ -74,7 +72,6 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     def receive = {
       // When we get a message with a doc to retrieve, queue it up
       case DocToRetrieve(doc) =>
-        require(allDocsIn == false) // can't send DocsToRetrieve after AllDocsIn
         requestQueue += Request(doc, requestSucceeded)
         spoolRequests
 
@@ -110,26 +107,35 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         errorQueue += DocRetrievalError(doc, error)
         spoolRequests
     }
+
+    protected def requestDocument(request: Request, startTime: Long) = { 
+      val doc = request.doc
+      asyncHttpRetriever.request(doc, request.handler(doc, startTime, _), requestFailed(doc, _))
+    }
     
-    protected def requestSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) = 
+    protected def allRequestsProcessed: Boolean = allDocsIn && httpReqInFlight == 0 && requestQueue.isEmpty
+      
+    protected def requestSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) =
       self ! GetTextSucceeded(doc, result.getResponseBody, startTime)
 
-    protected def requestFailed(doc: DocumentAtURL, t: Throwable) =  self ! GetTextFailed(doc, t) 
+    protected def requestFailed(doc: DocumentAtURL, t: Throwable) = self ! GetTextFailed(doc, t)
   }
 
-  protected def retrieveDocument(retriever: ActorRef, doc: T): Unit =  retriever ! DocToRetrieve(doc)
+  protected def createActor(writeDocument: (T, String) => Boolean, retrievalDone: Promise[Seq[DocRetrievalError]])=
+    new BulkHttpActor(writeDocument, retrievalDone)
 
-  def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Boolean)
-  (implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
+  protected def retrieveDocument(doc: T, retriever: ActorRef) = retriever ! DocToRetrieve(doc)
+  
+  def retrieve(sourceDocList: Traversable[T], writeDocument: (T, String) => Boolean)(implicit context: ActorSystem): Promise[Seq[DocRetrievalError]] = {
 
     Logger.info("Beginning HTTP document set retrieval")
 
     val retrievalDone = Promise[Seq[DocRetrievalError]]
-    val retriever = context.actorOf(Props(new BulkHttpActor(writeDocument, retrievalDone)), name = "retriever")
+    val retriever = context.actorOf(Props(createActor(writeDocument, retrievalDone)), name = "retriever")
 
     // Feed a sequence of DocumentAtURL objects to retriever
     for (doc <- sourceDocList) {
-      retrieveDocument(retriever, doc)      
+      retrieveDocument(doc, retriever)
     }
     retriever ! NoMoreDocsToRetrieve
 
