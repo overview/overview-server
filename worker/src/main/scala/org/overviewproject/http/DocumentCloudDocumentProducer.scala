@@ -33,7 +33,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     // Retrieve all that stuff!
 
     WorkerActorSystem.withActorSystem { implicit context =>
-      val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](new AsyncHttpRequest)
+      val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(new AsyncHttpRequest, new RedirectingHttpRequest)
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in
