@@ -21,7 +21,7 @@ import com.ning.http.client.Response
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
 class PrivateDocumentAtURL(val textUrl: String, val username: String, val password: String)
-  extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritence is deprecated
+  extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritance is deprecated
 case class DocRetrievalError(doc: DocumentAtURL, error: Throwable)
 
 class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriever) {
@@ -33,19 +33,21 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
   private case class DocToRetrieve(doc: DocumentAtURL)
   private case class NoMoreDocsToRetrieve()
 
-  private class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Boolean,
+  protected class BulkHttpActor[T <: DocumentAtURL](writeDocument: (T, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]])
     extends Actor {
 
-    var allDocsIn: Boolean = false // have we received all documents to proces (via DocsToRetrieve messages?)
-    val maxInFlight = 4 // number of simultaneous HTTP connections to try
-    var httpReqInFlight = 0
-    var numRetrieved = 0
+    protected case class Request(doc: DocumentAtURL, handler: (DocumentAtURL, Long, Response) => Unit)
+    
+    protected var allDocsIn: Boolean = false // have we received all documents to process (via DocsToRetrieve messages?)
+    protected val maxInFlight = 4 // number of simultaneous HTTP connections to try
+    protected var httpReqInFlight = 0
+    protected var numRetrieved = 0
 
-    var requestQueue = mutable.Queue[DocumentAtURL]()
-    var errorQueue = mutable.Queue[DocRetrievalError]()
+    protected var requestQueue = mutable.Queue[Request]()
+    protected var errorQueue = mutable.Queue[DocRetrievalError]()
 
-    private var cancelJob: Boolean = false
+    protected var cancelJob: Boolean = false
     
     // This initiates more HTTP requests up to maxInFlight. When each request completes or fails, we get a message
     // We also check here to see if we are all done, in which case we set the promise
@@ -54,11 +56,12 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         Logger.debug("BulkHttpRetriever idle: request queue is empty, no documents in flight.")
         
       while (!cancelJob && !requestQueue.isEmpty && httpReqInFlight < maxInFlight) {
-        val doc = requestQueue.dequeue
+        val request = requestQueue.dequeue
+        val doc = request.doc
+
         val startTime = System.nanoTime
-        asyncHttpRetriever.request(doc,
-          { result: Response => self ! GetTextSucceeded(doc, result.getResponseBody, startTime) },
-          { t: Throwable => self ! GetTextFailed(doc, t) })
+        asyncHttpRetriever.request(doc, request.handler(doc, startTime, _), requestFailed(doc, _))
+
         httpReqInFlight += 1
       }
 
@@ -72,7 +75,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
       // When we get a message with a doc to retrieve, queue it up
       case DocToRetrieve(doc) =>
         require(allDocsIn == false) // can't send DocsToRetrieve after AllDocsIn
-        requestQueue += doc
+        requestQueue += Request(doc, requestSucceeded)
         spoolRequests
 
       // Client sends this message to indicate that document listing is complete.
@@ -107,6 +110,11 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         errorQueue += DocRetrievalError(doc, error)
         spoolRequests
     }
+    
+    protected def requestSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) = 
+      self ! GetTextSucceeded(doc, result.getResponseBody, startTime)
+
+    protected def requestFailed(doc: DocumentAtURL, t: Throwable) =  self ! GetTextFailed(doc, t) 
   }
 
   protected def retrieveDocument(retriever: ActorRef, doc: T): Unit =  retriever ! DocToRetrieve(doc)
