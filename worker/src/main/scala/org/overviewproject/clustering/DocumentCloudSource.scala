@@ -59,30 +59,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   // we use a promise to sync the main call with our async callbacks, and propagate errors
   private implicit val executionContext = asyncHttpRetriever.executionContext // needed to run the promise object
   private val done = Promise[Unit]()
-
-  // Resolve a redirect of a private document, via async http request. Returns a Future that will eventually have the resolved URL
-  private def redirectToPrivateDocURL[U](docURL: String, title: String, id: String): Promise[DCDocumentAtURL] = {
-    val privateQuery = (documentCloudUserName, documentCloudPassword) match {
-      case (Some(n), Some(p)) => new PrivateDCDocumentAtURL(title, id, docURL, n, p)
-      case _ => throw new Exception("Can't access private documents without credentials")
-    }
-
-    Logger.debug("Retrieving private document from " + docURL)
-    val done = Promise[DCDocumentAtURL]()
-
-    redirectingHttpRetriever.request(privateQuery,
-      { response =>
-        val privateURL = response.getHeader("Location")
-        done.success(new DCDocumentAtURL(title, id, privateURL))
-      },
-      { t: Throwable =>
-        Logger.error("Exception retrieving DocumentCloud query results: " + t)
-        done.failure(t)
-      })
-
-    done
-  }
-
+  
   // Parse a single page of results (from JSON to DCDearchResult), create DocumentAtURL objects, call f on them
   // Returns number of documents processed
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
