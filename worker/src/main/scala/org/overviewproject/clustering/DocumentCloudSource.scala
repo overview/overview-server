@@ -11,14 +11,12 @@
 package org.overviewproject.clustering
 
 import java.net.URLEncoder
-import akka.dispatch.{Await, Future, Promise}
+import akka.dispatch.{ Await, Future, Promise }
 import akka.util.Timeout
 import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
 import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, RedirectingHttpRequest }
 import overview.util.Logger
-
-
 
 // The main DocumentCloudSource class produces a sequence of these...
 class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)
@@ -38,8 +36,8 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
 
-  private val redirectingHttpRetriever = new RedirectingHttpRequest// TODO: combine with asyncHttpRetriever
-  
+  private val redirectingHttpRetriever = new RedirectingHttpRequest // TODO: combine with asyncHttpRetriever
+
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
   private val maxDocuments = 10000 // cut off a document set if it's bigger than this
@@ -107,8 +105,13 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
 
         if (doc.access == "public")
           f(new DCDocumentAtURL(doc.title, doc.id, dcDocumentURL)) // public doc, just call f immediately
-        else
-          redirects = redirects :+ redirectToPrivateDocURL(dcDocumentURL, doc.title, doc.id) // private doc, async call to redirct
+        else {
+          val privateQuery = (documentCloudUserName, documentCloudPassword) match {
+            case (Some(n), Some(p)) => new PrivateDCDocumentAtURL(doc.title, doc.id, dcDocumentURL, n, p)
+            case _ => throw new Exception("Can't access private documents without credentials")
+          }
+          f(privateQuery)
+        }
 
         numDocumentsReturned += 1
         numParsed += 1
