@@ -4,6 +4,7 @@ import akka.actor.ActorRef
 import akka.dispatch.Promise
 import org.overviewproject.clustering.{ DCDocumentAtURL, PrivateDCDocumentAtURL }
 import com.ning.http.client.Response
+import overview.util.Logger
 
 class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
   redirectingHttpRetriever: AsyncHttpRetriever) extends BulkHttpRetriever[DCDocumentAtURL](asyncHttpRetriever) {
@@ -14,8 +15,6 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
   protected class DocumentCloudRetrieverActor(writeDocument: (DCDocumentAtURL, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]]) extends BulkHttpActor[DCDocumentAtURL](writeDocument, finished) {
 
-    private var docRetrievalReqsInFlight = 0
-
     override protected def requestDocument(request: Request, startTime: Long) = request.doc match {
       case pd: PrivateDCDocumentAtURL =>
         redirectingHttpRetriever.request(pd, request.handler(pd, startTime, _), requestFailed(pd, _))
@@ -24,26 +23,27 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
 
     override def receive = receivePrivateDocumentMsg orElse super.receive
 
-    override protected def allRequestsProcessed: Boolean = docRetrievalReqsInFlight == 0 && super.allRequestsProcessed
+    override protected def allRequestsProcessed: Boolean = super.allRequestsProcessed
 
     private def receivePrivateDocumentMsg: PartialFunction[Any, Unit] = {
       case PrivateDocToRetrieve(pDoc) =>
+        Logger.debug("Requesting private doc URL for " + pDoc.textURL )
         requestQueue += Request(pDoc, requestForPrivateDocUrlSucceeded)
         spoolRequests
       case PrivateDocToRetrieve2(doc) =>
-        docRetrievalReqsInFlight -= 1
+        httpReqInFlight -= 1
+        Logger.debug("Number of private doc requests left: " + httpReqInFlight)
         requestQueue += Request(doc, requestSucceeded)
         spoolRequests
     }
 
     private def requestForPrivateDocUrlSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) = {
-      httpReqInFlight -= 1
       val privateDocInfo = doc.asInstanceOf[PrivateDCDocumentAtURL]
 
       val privateUrl = result.getHeader("Location")
       val privateDoc = new DCDocumentAtURL(privateDocInfo.title, privateDocInfo.documentCloudId, privateUrl)
       
-      docRetrievalReqsInFlight += 1
+      Logger.debug("Requesting private doc " + httpReqInFlight)
       self ! PrivateDocToRetrieve2(privateDoc)
     }
   }
