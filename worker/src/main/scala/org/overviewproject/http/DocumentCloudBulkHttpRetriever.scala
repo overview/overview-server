@@ -9,8 +9,8 @@ import overview.util.Logger
 class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
   redirectingHttpRetriever: AsyncHttpRetriever) extends BulkHttpRetriever[DCDocumentAtURL](asyncHttpRetriever) {
 
-  private case class PrivateDocToRetrieve(pDoc: PrivateDCDocumentAtURL)
-  private case class PrivateDocToRetrieve2(doc: DCDocumentAtURL)
+  private case class RetrievePrivateDocUrl(pDoc: PrivateDCDocumentAtURL)
+  private case class PrivateDocToRetrieve(doc: DCDocumentAtURL)
 
   protected class DocumentCloudRetrieverActor(writeDocument: (DCDocumentAtURL, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]]) extends BulkHttpActor[DCDocumentAtURL](writeDocument, finished) {
@@ -26,13 +26,12 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
     override protected def allRequestsProcessed: Boolean = super.allRequestsProcessed
 
     private def receivePrivateDocumentMsg: PartialFunction[Any, Unit] = {
-      case PrivateDocToRetrieve(pDoc) =>
-        Logger.debug("Requesting private doc URL for " + pDoc.textURL )
+      case RetrievePrivateDocUrl(pDoc) =>
+        Logger.info("Requesting private doc URL for " + pDoc.textURL )
         requestQueue += Request(pDoc, requestForPrivateDocUrlSucceeded)
         spoolRequests
-      case PrivateDocToRetrieve2(doc) =>
+      case PrivateDocToRetrieve(doc) =>
         httpReqInFlight -= 1
-        Logger.debug("Number of private doc requests left: " + httpReqInFlight)
         requestQueue += Request(doc, requestSucceeded)
         spoolRequests
     }
@@ -43,8 +42,7 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
       val privateUrl = result.getHeader("Location")
       val privateDoc = new DCDocumentAtURL(privateDocInfo.title, privateDocInfo.documentCloudId, privateUrl)
       
-      Logger.debug("Requesting private doc " + httpReqInFlight)
-      self ! PrivateDocToRetrieve2(privateDoc)
+      self ! PrivateDocToRetrieve(privateDoc)
     }
   }
 
@@ -52,7 +50,7 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
     new DocumentCloudRetrieverActor(writeDocument, retrievalDone)
 
   override protected def retrieveDocument(doc: DCDocumentAtURL, retriever: ActorRef) = doc match {
-    case pd: PrivateDCDocumentAtURL => retriever ! PrivateDocToRetrieve(pd)
+    case pd: PrivateDCDocumentAtURL => retriever ! RetrievePrivateDocUrl(pd)
     case _ => super.retrieveDocument(doc, retriever)
   }
 }
