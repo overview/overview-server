@@ -16,6 +16,9 @@ import overview.util.Logger
  * Manages a queue of http requests retrieving documents from DocumentCloud. If documents are private,
  * uses the redirectingHttpRetriever to find the private document url and submit a new
  * request for the actual document.
+ * The separate redirectingHttpRetriever is needed because AsyncHttpClient forwards Basic Auth
+ * headers in response to a redirect. The call to retrieve the document from amazon S3 then fails
+ * because it rejects the authentication.
  */
 class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
   redirectingHttpRetriever: AsyncHttpRetriever) extends BulkHttpRetriever[DCDocumentAtURL](asyncHttpRetriever) {

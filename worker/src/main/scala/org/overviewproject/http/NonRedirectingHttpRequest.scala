@@ -1,4 +1,9 @@
-
+/*
+ * NonRedirectingHttpRequest.scala
+ * 
+ * Overview Project
+ * Created by Jonas Karlsson, January 2013 
+ */
 package org.overviewproject.http
 
 import akka.dispatch.ExecutionContext
@@ -7,7 +12,10 @@ import com.ning.http.client._
 import com.ning.http.client.Response
 import com.ning.http.client.Realm.AuthScheme
 
-class RedirectingHttpRequest extends AsyncHttpRetriever {
+/**
+ * An AsyncHttpRetriever that does not follow redirects
+ */
+class NonRedirectingHttpRequest extends AsyncHttpRetriever {
 
   private def getHttpConfig(followRedirects: Boolean = true) = {
     val builder = new AsyncHttpClientConfig.Builder
