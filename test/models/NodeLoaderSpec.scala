@@ -122,6 +122,13 @@ class NodeLoaderSpec extends Specification {
       val nodes = nodeLoader.loadTree(documentSetId, root.id, 3)
       nodes.map(_.id) must haveTheSameElementsAs(nodeIds.take(2))
     }
+    
+    "Expand (other) node if root node" in new WithOtherNode {
+      val otherNodeId = nodeIds(1)
+      val nodes = nodeLoader.loadTree(documentSetId, otherNodeId, 3)
+      
+      nodes.map(_.id) must haveTheSameElementsAs(nodeIds.drop(1))
+    }
   }
   step(stop)
 }
