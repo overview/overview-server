@@ -6,6 +6,8 @@ import models.core.DocumentIdList
 
 class NodeLoader {
 
+  private val OtherNodeDescription: String = "(other)"
+    
   import models.orm.Schema._
 
   def loadRootId(documentSetId: Long): Option[Long] = {
@@ -37,7 +39,7 @@ class NodeLoader {
       val nodesToExpand =
         if (expandOtherNode) nextLevel
         else {
-          val findOther = baseNodes.find(_.description == "(other)")
+          val findOther = baseNodes.find(_.description == OtherNodeDescription)
 
           nextLevel.filterNot(n => findOther.map(o => n.parentId == Some(o.id)).getOrElse(false))
         }
