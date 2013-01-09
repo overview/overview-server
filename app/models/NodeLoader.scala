@@ -34,7 +34,11 @@ class NodeLoader {
         val childIds = sortNodes(childNodes).map(_.id)
         n.copy(childNodeIds = childIds)  
       }
-      baseWithChildIds ++ loadLevels(documentSetId, nextLevel.map(makePartialNode), depth - 1)
+      val findOther = baseNodes.find(_.description == "(other)")
+
+      val noOther = nextLevel.filterNot(n => findOther.map(o => n.parentId == Some(o.id)).getOrElse(false))
+
+      baseWithChildIds ++ loadLevels(documentSetId, noOther.map(makePartialNode), depth - 1)
     }
   }
 

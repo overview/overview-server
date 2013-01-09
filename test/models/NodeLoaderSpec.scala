@@ -59,6 +59,17 @@ class NodeLoaderSpec extends Specification {
       }
     }
 
+    trait WithOtherNode extends NodeContext {
+      var nodeIds: Seq[Long] = _
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        val otherNode = createNode(Some(root.id), "(other)", 1)
+        val nodeInOther = createNode(Some(otherNode.id), "just a node")
+        nodeIds = Seq(root.id, otherNode.id, nodeInOther.id)
+      }  
+    }
+    
     trait ChildNodesToBeOrdered extends NodeContext {
       var idsSortedBySizeAndId: Seq[Long] = _
 
@@ -107,6 +118,10 @@ class NodeLoaderSpec extends Specification {
       nodes(0).childNodeIds must be equalTo(idsSortedBySizeAndId)
     }
     
+    "Don't expand (other) node" in new WithOtherNode {
+      val nodes = nodeLoader.loadTree(documentSetId, root.id, 3)
+      nodes.map(_.id) must haveTheSameElementsAs(nodeIds.take(2))
+    }
   }
   step(stop)
 }
