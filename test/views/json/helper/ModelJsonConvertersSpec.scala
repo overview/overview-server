@@ -27,13 +27,13 @@ class ModelJsonConvertersSpec extends Specification {
 
     "write document attributes" in {
       val id = 39l
-      val title = "title"
-      val document = Document(id, title, Some("unused by Tree"), Seq(1, 2, 3), Seq(22l, 11l, 33l))
+      val description = "description"
+      val document = Document(id, description, Some("unused by Tree"), Seq(1, 2, 3), Seq(22l, 11l, 33l))
 
       val documentJson = toJson(document).toString
 
       documentJson must /("id" -> id)
-      documentJson must /("title" -> title)
+      documentJson must /("description" -> description)
       documentJson must contain(""""tagids":[1,2,3]""")
       documentJson must contain(""""nodeids":[22,11,33]""")
     }

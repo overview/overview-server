@@ -80,7 +80,7 @@ class Selection
     else
       _.values(cache.document_store.documents)
 
-    _.sortBy(documents, (d) -> d.title)
+    _.sortBy(documents, (d) -> d.description)
 
   allows_correct_tagcount_adjustments: () ->
     !!(@nodes.length && !@tags.length && !@documents.length)
