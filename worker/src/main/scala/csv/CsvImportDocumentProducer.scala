@@ -63,7 +63,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
 
   private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
     Database.inTransaction {
-      val document = Document(CsvImportDocumentType, documentSetId, doc.title,
+      val document = Document(CsvImportDocumentType, documentSetId, Some(doc.title),
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
       document.id

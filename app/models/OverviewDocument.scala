@@ -31,7 +31,7 @@ object OverviewDocument {
 
     override val id = ormDocument.id
     override lazy val documentSet = documentSetDocuments.right(ormDocument).single
-    override val title = ormDocument.title
+    override val title = ormDocument.title.getOrElse("")
     override def url(pattern: String) : String = {
       ormDocument.url.getOrElse(pattern.replace("{0}", "" + id))
     }

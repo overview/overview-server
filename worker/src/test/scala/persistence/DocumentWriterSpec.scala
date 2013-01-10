@@ -43,7 +43,7 @@ class DocumentWriterSpec extends DbSpecification {
       val updatedDocument = documents.lookup(document.id) 
 
       updatedDocument must beSome
-      updatedDocument.get.title must be equalTo description 
+      updatedDocument.get.title must be equalTo Some(description)
 
     }
 
