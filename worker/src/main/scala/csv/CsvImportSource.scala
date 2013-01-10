@@ -22,6 +22,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val TextColumn: String = "text"
   private val SuppliedIdColumn: String = "id"
   private val UrlColumn: String = "url"
+  private val TitleColumn: String = "title"
 
   /**
    * An iterator that returns CsvImportDocuments, based on the header information
@@ -50,7 +51,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
       readRow match {
         case null => null
-        case c => new CsvImportDocument(text(c), suppliedId(c), url(c))
+        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c))
       }
     }
 
@@ -63,13 +64,18 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     // Return user supplied id value if found.
     private def suppliedId(row: Array[String]): Option[String] = getOptColumn(row, SuppliedIdColumn)
 
+    // return the url if url column exists
     private def url(row: Array[String]): Option[String] = getOptColumn(row, UrlColumn)
-      
+
+    // return the title if title column exists
+    private def title(row: Array[String]): Option[String] = getOptColumn(row, TitleColumn)
+    
+    // if the columnName was defined in the header row, @return the value in the column, else None
     private def getOptColumn(row: Array[String], columnName: String): Option[String] =
       columns.get(columnName).flatMap(c =>
         if (row.size > c && !row(c).isEmpty) Some(row(c))
         else None)
-        
+
     // Read ahead and return current row
     private def readRow: Array[String] = {
       val row = nextLine

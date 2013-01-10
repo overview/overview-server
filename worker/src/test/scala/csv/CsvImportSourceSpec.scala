@@ -40,7 +40,11 @@ class CsvImportSourceSpec extends Specification {
                      |this is line0, stuff0
                      |this is line1, stuff1
                      |this is line2, stuff2""".stripMargin
+    }
 
+    trait ValidInputWithTitle extends CsvImportContext {
+      def input = """|text,title
+    	               |this is line0,title""".stripMargin
     }
 
     trait MissingHeader extends CsvImportContext {
@@ -88,6 +92,12 @@ class CsvImportSourceSpec extends Specification {
       ids must be equalTo (expectedIds)
     }
 
+    "find title column" in new ValidInputWithTitle {
+      val expectedTitle = Some("title")
+      val title = csvImportSource.map(_.title).head
+      title must be equalTo expectedTitle
+    }
+
     "leave id empty no header found" in new ValidInput {
       val ids = csvImportSource.map(_.suppliedId)
       ids.head must beNone
@@ -123,7 +133,7 @@ class CsvImportSourceSpec extends Specification {
       val urls = csvImportSource.map(_.url)
       urls.head must beNone
     }
-    
+
     "find urls" in new ValidInputWithUrl {
       val expectedUrls: Seq[Option[String]] = Seq.tabulate(3)(n => Some("url" + n))
       val urls = csvImportSource.map(_.url)
