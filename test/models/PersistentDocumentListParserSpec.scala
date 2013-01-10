@@ -1,8 +1,8 @@
 package models
 
-import org.specs2.mutable.Specification
+import org.overviewproject.test.DbSpecification
 
-class PersistentDocumentListParserSpec extends Specification {
+class PersistentDocumentListParserSpec extends DbSpecification {
 
   "PersisteDocumentListParser" should {
 
@@ -16,8 +16,8 @@ class PersistentDocumentListParserSpec extends Specification {
 
     "create documents from data" in {
       val documentData = List((10l, "description1", Some("documentCloudId1"), None),
-        (20l, "description2", Some("documentCloudId2"), None),
-        (30l, "description3", Some("documentCloudId3"), None))
+        (20l, "description2", Some("documentCloudId2"), Some("title2")),
+        (30l, "description3", Some("documentCloudId3"), Some("title3")))
       val documentTagData = List((10l, 15l), (20l, 5l))
       val documentNodeData = List((10l, 22l), (10l, 44l), (20l, 33l), (30l, 33l))
       val persistentDocumentListParser = new DocumentListParser()
@@ -25,15 +25,11 @@ class PersistentDocumentListParserSpec extends Specification {
       val documents = persistentDocumentListParser.createDocuments(documentData,
         documentTagData, documentNodeData)
 
-      val ids = documents.map(_.id)
-      val descriptions = documents.map(_.description)
-      val documentCloudIds = documents.map(_.documentCloudId)
+      val data = documents.map(d => (d.id, d.description, d.documentCloudId, d.title))
       val tags = documents.map(_.tags)
       val nodes = documents.map(_.nodes)
 
-      ids must haveTheSameElementsAs(List(10l, 20l, 30l))
-      descriptions must haveTheSameElementsAs(List("description1", "description2", "description3"))
-      documentCloudIds must haveTheSameElementsAs(List(Some("documentCloudId1"), Some("documentCloudId2"), Some("documentCloudId3")))
+      data must haveTheSameElementsAs(documentData)
       tags must haveTheSameElementsAs(List(Seq(5l), Seq(15l), Seq()))
       nodes must haveTheSameElementsAs(List(Seq(22l, 44l), Seq(33l), Seq(33l)))
     }

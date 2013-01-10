@@ -6,5 +6,5 @@
  */
 package models.core
 
-case class Document (id: Long, description: String, documentCloudId: Option[String], tags: Seq[Long], nodes: Seq[Long])
+case class Document (id: Long, description: String, title: Option[String], documentCloudId: Option[String], tags: Seq[Long], nodes: Seq[Long])
 

@@ -19,7 +19,7 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     val documentSetId = 123l;
     val subTreeLoader = new SubTreeLoader(documentSetId, loader, nodeLoader, parser)
 
-    val dummyDocuments = List(core.Document(10l, "documents", Some("documentCloudId"), Seq(5l), Seq(22l)))
+    val dummyDocuments = List(core.Document(10l, "documents", Some("title"), Some("documentCloudId"), Seq(5l), Seq(22l)))
     val dummyDocumentData = List((10l, "actually", "all data"))
 
     def createTwoDummyNodes(documentIds: List[Long]): List[core.Node] = {

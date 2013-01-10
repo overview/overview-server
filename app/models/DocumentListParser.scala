@@ -16,7 +16,7 @@ class DocumentListParser {
     val tagIds = mapDocumentsToTagIds(documentTagData)
     val nodeIds = mapDocumentsToNodeIds(documentNodeData)
     
-    documentData.map(d => core.Document(d._1, d._2, d._3, tagIds.getOrElse(d._1, Nil),
+    documentData.map(d => core.Document(d._1, d._2, d._4, d._3, tagIds.getOrElse(d._1, Nil),
       nodeIds.getOrElse(d._1, Nil)))
   }
 

@@ -16,7 +16,7 @@ class removeSpec extends Specification {
       val tag = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val removedCount = 20l
       val documentId = 1l
-      val documents = Seq(Document(documentId, "title", Some("documentCloudId"), Seq(), Seq(22l)))
+      val documents = Seq(Document(documentId, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l)))
       
       val resultJson = toJson(views.json.Tag.remove(tag, removedCount, documents)).toString 
       
