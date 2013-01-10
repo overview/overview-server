@@ -23,7 +23,7 @@ class DocumentListLoaderSpec extends Specification with Mockito {
 
       val documentListLoader = new TestDocumentListLoader(loader, parser)
       
-      val documentData = List((4l, "dummyTitle", Some("dummyId")))
+      val documentData = List((4l, "dummyTitle", Some("dummyId"), None))
       val documentTagData = List((4l, 6l))
       val documentNodeData = List((4l, 10l))
 

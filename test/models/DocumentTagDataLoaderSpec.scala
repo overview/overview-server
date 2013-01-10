@@ -44,7 +44,7 @@ class DocumentTagDataLoaderSpec extends Specification {
         val descriptions = Seq.tabulate(3)(i => "description-" + (5 - i))
         documentIds = descriptions.map(insertDocument(documentSetId, _, "dcId"))
 
-        expectedDocumentData = documentIds.zip(descriptions).map(dt => (dt._1, dt._2, Some("dcId")))
+        expectedDocumentData = documentIds.zip(descriptions).map(dt => (dt._1, dt._2, Some("dcId"), None))
       }
     }
 

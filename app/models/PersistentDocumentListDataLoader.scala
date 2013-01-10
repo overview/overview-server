@@ -31,15 +31,17 @@ class PersistentDocumentListDataLoader extends DocumentTagDataLoader with Persis
 
   private def documentSliceQueryWhere(documentSetId: Long,
     firstRow: Long, maxRows: Long, where: String)(implicit c: Connection): List[DocumentData] = {
+    val documentParser = long("id") ~ str("description") ~ get[Option[String]]("documentcloud_id") ~ get[Option[String]]("title")  
+    
     SQL("""
-        SELECT id, description, documentcloud_id FROM document
+        SELECT id, description, documentcloud_id, title FROM document
         """ + where +
       """
         ORDER BY description, id
         LIMIT {maxRows} OFFSET {offset}
         """).on("maxRows" -> maxRows, "offset" -> firstRow,
       "documentSetId" -> documentSetId).
-      as(long("id") ~ str("description") ~ get[Option[String]]("documentcloud_id") map (flatten) *)
+      as(documentParser map (flatten) *)
   }
 
   private def countQueryWhere(documentSetId: Long, where: String)(implicit c: Connection): Long = {

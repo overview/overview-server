@@ -15,9 +15,9 @@ class PersistentDocumentListParserSpec extends Specification {
     }
 
     "create documents from data" in {
-      val documentData = List((10l, "description1", Some("documentCloudId1")),
-	(20l, "description2", Some("documentCloudId2")),
-        (30l, "description3", Some("documentCloudId3")))
+      val documentData = List((10l, "description1", Some("documentCloudId1"), None),
+        (20l, "description2", Some("documentCloudId2"), None),
+        (30l, "description3", Some("documentCloudId3"), None))
       val documentTagData = List((10l, 15l), (20l, 5l))
       val documentNodeData = List((10l, 22l), (10l, 44l), (20l, 33l), (30l, 33l))
       val persistentDocumentListParser = new DocumentListParser()

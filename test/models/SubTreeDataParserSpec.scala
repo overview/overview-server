@@ -30,7 +30,7 @@ class SubTreeDataParserSpec extends Specification {
         core.Document(2l, "description2", Some("documentCloudId2"), Seq(15l), Seq(22l)),
         core.Document(3l, "description3", Some("documentCloudId3"), Nil, Seq(22l)))
 
-      val documentData = expectedDocs.map(d => (d.id, d.description, d.documentCloudId))
+      val documentData = expectedDocs.map(d => (d.id, d.description, d.documentCloudId, None))
       val tagData = Seq((1l, 5l), (1l, 15l), (2l, 15l))
       val nodeData = Seq((1l, 22l), (1l, 11l), (2l, 22l), (3l, 22l))
 

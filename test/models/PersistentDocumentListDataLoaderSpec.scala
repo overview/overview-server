@@ -46,11 +46,11 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
 
       val node1Data = documentIds.take(2).zipWithIndex.map {
         case (id, i) =>
-          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)))
+          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)), None)
       }
       val node2Data = documentIds.slice(2, 4).zipWithIndex.map {
         case (id, i) =>
-          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)))
+          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)), None)
       }
 
       val expectedDocumentData = node1Data ++ node2Data
