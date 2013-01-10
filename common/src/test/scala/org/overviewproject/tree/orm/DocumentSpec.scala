@@ -55,6 +55,16 @@ class DocumentSpec extends DbSpecification {
       
       foundDocument.title must be equalTo documentTitle
     }
+    
+    "set title to None by default" in new DocumentContext {
+      document.title must beNone
+      
+      Schema.documents.insert(document)
+      
+      val foundDocument = Schema.documents.lookup(document.id).get
+      
+      foundDocument.title must beNone
+    }
   }
   step(shutdownDb)
 }
