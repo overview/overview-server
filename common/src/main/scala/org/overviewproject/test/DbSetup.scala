@@ -46,12 +46,12 @@ object DbSetup {
       'description -> description).executeInsert().getOrElse(failInsert)
   }
 
-  def insertDocument(documentSetId: Long, description: String, documentCloudId: String)(implicit connection: Connection): Long = {
+  def insertDocument(documentSetId: Long, description: String, documentCloudId: String, title: Option[String] = None)(implicit connection: Connection): Long = {
     SQL("""
-        INSERT INTO document (type, document_set_id, description, documentcloud_id)
-        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId})
+        INSERT INTO document (type, document_set_id, description, documentcloud_id, title)
+        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId}, {title})
         """).on("documentSetId" -> documentSetId,
-      "description" -> description, "documentCloudId" -> documentCloudId).
+      "description" -> description, "documentCloudId" -> documentCloudId, "title" -> title).
       executeInsert().getOrElse(failInsert)
   }
 
