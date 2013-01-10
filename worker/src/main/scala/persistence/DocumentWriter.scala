@@ -16,13 +16,6 @@ import persistence.Schema.documents
 /**
  * Writes out document information associated with the documentSetId
  */
-class DocumentWriter(documentSetId: Long) {
-
-  def updateDescription(id: Long, description: String)(implicit c: Connection): Long = {
-    SQL("UPDATE document SET title = {description} WHERE id = {id}").
-      on("description" -> description, "id" -> id).executeUpdate()
-  }
-}
 
 object DocumentWriter {
   import persistence.Schema.documents

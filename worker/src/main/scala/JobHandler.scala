@@ -30,7 +30,6 @@ object JobHandler {
 
       val documentSetId = j.documentSetId
 
-      val documentWriter = new DocumentWriter(documentSetId)
       val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog: Progress) = {
         j.fractionComplete = prog.fraction
@@ -48,7 +47,7 @@ object JobHandler {
         DocumentSetLoader.load(j.documentSetId).get
       }
 
-      val indexer = new DocumentSetIndexer(nodeWriter, documentWriter, progFn)
+      val indexer = new DocumentSetIndexer(nodeWriter, progFn)
       val producer = DocumentProducerFactory.create(j, documentSet, indexer, progFn, asyncHttpRetriever)
 
       producer.produce()

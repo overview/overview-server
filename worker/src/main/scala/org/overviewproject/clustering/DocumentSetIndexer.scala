@@ -22,7 +22,7 @@ import overview.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
 import persistence.{ DocumentWriter, NodeWriter }
 import org.overviewproject.database.Database
 
-class DocumentSetIndexer(nodeWriter: NodeWriter, documentWriter: DocumentWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
+class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 
   // --- private ---
   val t0 = System.nanoTime()
