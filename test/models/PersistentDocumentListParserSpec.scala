@@ -15,9 +15,9 @@ class PersistentDocumentListParserSpec extends Specification {
     }
 
     "create documents from data" in {
-      val documentData = List((10l, "title1", Some("documentCloudId1")),
-	(20l, "title2", Some("documentCloudId2")),
-        (30l, "title3", Some("documentCloudId3")))
+      val documentData = List((10l, "description1", Some("documentCloudId1")),
+	(20l, "description2", Some("documentCloudId2")),
+        (30l, "description3", Some("documentCloudId3")))
       val documentTagData = List((10l, 15l), (20l, 5l))
       val documentNodeData = List((10l, 22l), (10l, 44l), (20l, 33l), (30l, 33l))
       val persistentDocumentListParser = new DocumentListParser()
@@ -26,13 +26,13 @@ class PersistentDocumentListParserSpec extends Specification {
         documentTagData, documentNodeData)
 
       val ids = documents.map(_.id)
-      val titles = documents.map(_.title)
+      val descriptions = documents.map(_.description)
       val documentCloudIds = documents.map(_.documentCloudId)
       val tags = documents.map(_.tags)
       val nodes = documents.map(_.nodes)
 
       ids must haveTheSameElementsAs(List(10l, 20l, 30l))
-      titles must haveTheSameElementsAs(List("title1", "title2", "title3"))
+      descriptions must haveTheSameElementsAs(List("description1", "description2", "description3"))
       documentCloudIds must haveTheSameElementsAs(List(Some("documentCloudId1"), Some("documentCloudId2"), Some("documentCloudId3")))
       tags must haveTheSameElementsAs(List(Seq(5l), Seq(15l), Seq()))
       nodes must haveTheSameElementsAs(List(Seq(22l, 44l), Seq(33l), Seq(33l)))

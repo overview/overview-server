@@ -32,7 +32,6 @@ class DocumentWriterSpec extends DbSpecification {
     "update description of document" in new Setup {
       import persistence.Schema.documents
       
-      val title = "title"
       val documentCloudId = Some("documentCloud-id")
       val description = "some,terms,together"
 
@@ -43,7 +42,7 @@ class DocumentWriterSpec extends DbSpecification {
       val updatedDocument = documents.lookup(document.id) 
 
       updatedDocument must beSome
-      updatedDocument.get.title must be equalTo Some(description)
+      updatedDocument.get.description must be equalTo description
 
     }
 

@@ -27,6 +27,6 @@ object DocumentWriter {
   def updateDescription(documentId: Long, description: String) {
     update(documents)(d =>
       where(d.id === documentId)
-      set (d.title := Some(description)))
+      set (d.description := description))
   }
 }

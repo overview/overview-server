@@ -23,7 +23,7 @@ object DatabaseStructure {
    */
   type NodeDocument = (Long, Long, Long)
 
-  /** documentId, title, documentCloudId */
+  /** documentId, description, documentCloudId */
   type DocumentData = (Long, String, Option[String])
 
   /** documentId, nodeId */
