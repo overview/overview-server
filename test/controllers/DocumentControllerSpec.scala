@@ -20,12 +20,12 @@ class DocumentControllerSpec extends Specification {
   trait DocumentScope extends Scope with Mockito {
     val validDocumentId = 1L
     val invalidDocumentId = 99L
-    val title = "Title"
+    val description = "Description"
     val url = "https://example.org/1"
 
     val document = mock[OverviewDocument]
     document.id returns validDocumentId
-    document.title returns title
+    document.description returns description
     document.url(anyString) returns url
 
     val user = mock[OverviewUser]

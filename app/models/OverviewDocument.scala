@@ -13,8 +13,8 @@ sealed trait OverviewDocument {
     */
   def documentSet: models.orm.DocumentSet
 
-  /** Title of the document. (Empty string is allowed.) */
-  val title: String
+  /** Description of the document. (Empty string is allowed.) */
+  val description: String
 
   /** URL to view the document.
     *
@@ -31,7 +31,7 @@ object OverviewDocument {
 
     override val id = ormDocument.id
     override lazy val documentSet = documentSetDocuments.right(ormDocument).single
-    override val title = ormDocument.title.getOrElse("")
+    override val description = ormDocument.description
     override def url(pattern: String) : String = {
       ormDocument.url.getOrElse(pattern.replace("{0}", "" + id))
     }
