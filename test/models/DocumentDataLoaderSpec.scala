@@ -17,13 +17,13 @@ class DocumentDataLoaderSpec extends Specification {
     
     "Load document data for specified id" in new DbTestContext {
       val documentSetId = insertDocumentSet("DocumentDataLoaderSpec")
-      val insertedDocumentId = insertDocument(documentSetId, "title", "documentCloudId")
+      val insertedDocumentId = insertDocument(documentSetId, "description", "documentCloudId")
 
       val documentDataLoader = new DocumentDataLoader()
       val document = documentDataLoader.loadDocument(insertedDocumentId)
 
       document must beSome
-      document.get must be equalTo((insertedDocumentId, "title", Some("documentCloudId")))
+      document.get must be equalTo((insertedDocumentId, "description", Some("documentCloudId")))
     }
     
     "Returns None for non-existing id" in new DbTestContext {

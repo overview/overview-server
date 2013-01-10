@@ -10,11 +10,45 @@ class DocumentSpec extends DbSpecification {
   
   "Document" should {
     
-    "read and write optional title" in new DbTestContext {
-      val documentSetId = insertDocumentSet("DocumentSpec")
+    trait DocumentContext extends DbTestContext {
+      var documentSetId: Long = _ 
+      var document: Document = _
+      
+      override def setupWithDb = {
+        documentSetId = insertDocumentSet("DocumentSpec")
+        document = createDocument
+      }
+      
+      def createDocument: Document = Document(DocumentCloudDocument, documentSetId, documentcloudId = Some("dcId"))
+    } 
+    
+    trait DocumentWithDescription extends DocumentContext {
+      val documentDescription = "description"
+        
+      override def createDocument: Document = Document(DocumentCloudDocument, documentSetId, documentDescription, documentcloudId = Some("dcId"))
+    }
+    
+    trait DocumentWithTitle extends DocumentContext {
       val documentTitle = Some("title")
       
-      val document = Document(DocumentCloudDocument, documentSetId, title = documentTitle, documentcloudId = Some("dcId"))
+      override def createDocument: Document = Document(DocumentCloudDocument, documentSetId, title = documentTitle, documentcloudId = Some("dcId"))
+    }
+    
+    "read and write description" in new DocumentWithDescription {
+      Schema.documents.insert(document)
+      
+      val foundDocument = Schema.documents.lookup(document.id).get
+      foundDocument.description must be equalTo documentDescription
+    }
+    
+    "set default description to empty String" in new DocumentContext {
+      Schema.documents.insert(document)
+      
+      val foundDocument = Schema.documents.lookup(document.id).get
+      foundDocument.description must be equalTo ""
+    }
+    
+    "read and write optional title" in new DocumentWithTitle {
       Schema.documents.insert(document)
       
       val foundDocument = Schema.documents.lookup(document.id).get

@@ -31,7 +31,7 @@ class DocumentTagDataLoaderSpec extends Specification {
           branch.map((documentId, _))
         }
 
-        documentIds = Seq.fill(2)(insertDocument(documentSetId, "title", "dcId"))
+        documentIds = Seq.fill(2)(insertDocument(documentSetId, "description", "dcId"))
         expectedNodeData = documentIds.flatMap(setupDocumentInBranch)
       }
     }
@@ -41,10 +41,10 @@ class DocumentTagDataLoaderSpec extends Specification {
       var documentIds: Seq[Long] = _
 
       override def setupWithDb = {
-        val titles = Seq.tabulate(3)(i => "title-" + (5 - i))
-        documentIds = titles.map(insertDocument(documentSetId, _, "dcId"))
+        val descriptions = Seq.tabulate(3)(i => "description-" + (5 - i))
+        documentIds = descriptions.map(insertDocument(documentSetId, _, "dcId"))
 
-        expectedDocumentData = documentIds.zip(titles).map(dt => (dt._1, dt._2, Some("dcId")))
+        expectedDocumentData = documentIds.zip(descriptions).map(dt => (dt._1, dt._2, Some("dcId")))
       }
     }
 
@@ -80,7 +80,7 @@ class DocumentTagDataLoaderSpec extends Specification {
       nodeData must beEmpty
     }
 
-    "return all documents in nodes sorted by title and id" in new DocumentsLoaded {
+    "return all documents in nodes sorted by description and id" in new DocumentsLoaded {
       val documentData = loader.loadDocuments(documentIds)
 
       documentData must haveTheSameElementsAs(expectedDocumentData)

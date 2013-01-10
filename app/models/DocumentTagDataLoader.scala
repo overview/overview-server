@@ -63,16 +63,16 @@ class DocumentTagDataLoader {
   }
 
   private def documentQuery(documentIds: Seq[Long])(implicit c: Connection): List[DocumentData] = {
-    val documentParser = long("id") ~ str("title") ~ get[Option[String]]("documentcloud_id")
+    val documentParser = long("id") ~ str("description") ~ get[Option[String]]("documentcloud_id")
 
     SQL(
       """
-        SELECT id, title, documentcloud_id
+        SELECT id, description, documentcloud_id
         FROM document
         WHERE id IN
       """ + idList(documentIds) +
       """
-        ORDER BY title, id
+        ORDER BY description, id
       """).
       as(documentParser map (flatten) *)
   }

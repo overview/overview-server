@@ -46,7 +46,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
 
   private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
     val id =  Database.inTransaction{
-      val document = Document(DocumentCloudDocument, documentSetId, Some(doc.title), documentcloudId = Some(doc.documentCloudId))
+      val document = Document(DocumentCloudDocument, documentSetId, title = Some(doc.title), documentcloudId = Some(doc.documentCloudId))
       DocumentWriter.write(document)
       document.id
     }

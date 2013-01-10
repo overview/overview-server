@@ -46,12 +46,12 @@ object DbSetup {
       'description -> description).executeInsert().getOrElse(failInsert)
   }
 
-  def insertDocument(documentSetId: Long, title: String, documentCloudId: String)(implicit connection: Connection): Long = {
+  def insertDocument(documentSetId: Long, description: String, documentCloudId: String)(implicit connection: Connection): Long = {
     SQL("""
-        INSERT INTO document (type, document_set_id, title, documentcloud_id)
-        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {title}, {documentCloudId})
+        INSERT INTO document (type, document_set_id, description, documentcloud_id)
+        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId})
         """).on("documentSetId" -> documentSetId,
-      "title" -> title, "documentCloudId" -> documentCloudId).
+      "description" -> description, "documentCloudId" -> documentCloudId).
       executeInsert().getOrElse(failInsert)
   }
 
@@ -71,8 +71,8 @@ object DbSetup {
   }
 
   def insertDocumentWithNode(documentSetId: Long,
-    title: String, documentCloudId: String, nodeId: Long)(implicit connection: Connection): Long = {
-    val documentId = insertDocument(documentSetId, title, documentCloudId)
+    description: String, documentCloudId: String, nodeId: Long)(implicit connection: Connection): Long = {
+    val documentId = insertDocument(documentSetId, description, documentCloudId)
     insertNodeDocument(nodeId, documentId)
 
     documentId
@@ -87,11 +87,11 @@ object DbSetup {
 
     nodeIds.flatMap(n =>
       for (i <- 1 to documentCount) yield insertDocumentWithNode(documentSetId,
-        "title-" + i, "documentcloudId-" + i, n))
+        "description-" + i, "documentcloudId-" + i, n))
   }
 
   def insertDocuments(documentSetId: Long, count: Int)(implicit c: Connection): Seq[Long] = {
-    for (i <- 1 to count) yield insertDocument(documentSetId, "title-" + i, "documentCloudId-" + i)
+    for (i <- 1 to count) yield insertDocument(documentSetId, "description-" + i, "documentCloudId-" + i)
   }
 
   def tagDocuments(tagId: Long, documentIds: Seq[Long])(implicit c: Connection): Long = {

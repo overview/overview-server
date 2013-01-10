@@ -14,6 +14,7 @@ object DocumentType {
 case class Document(
   @Column("type") val documentType: DocumentType,
   @Column("document_set_id") val documentSetId: Long = 0L,
+  val description: String = "",
   val title: Option[String] = Some(""),
   @Column("supplied_id") val suppliedId: Option[String] = None,
   val text: Option[String] = None,

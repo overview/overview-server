@@ -29,8 +29,8 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
         documentSetId = insertDocumentSet("PersistentDocumentListDataLoaderSpec")
         nodeIds = insertNodes(documentSetId, 3) // must access nodeIds in tests to insert them in Database
         documentIds = insertDocumentsForeachNode(documentSetId, nodeIds, 2)
-        val titles = for (n <- 1 to 3; d <- 1 to 2) yield "title-" + d
-        sortedDocumentIds = titles.zip(documentIds).sorted.map(_._2) // sort documentIds by title and id
+        val descriptions = for (n <- 1 to 3; d <- 1 to 2) yield "description-" + d
+        sortedDocumentIds = descriptions.zip(documentIds).sorted.map(_._2) // sort documentIds by description and id
         tag1 = insertTag(documentSetId, "tag1")
         tag2 = insertTag(documentSetId, "tag2")
         tag3 = insertTag(documentSetId, "tag3")
@@ -46,11 +46,11 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
 
       val node1Data = documentIds.take(2).zipWithIndex.map {
         case (id, i) =>
-          (id, "title-" + (i + 1), Some("documentcloudId-" + (i + 1)))
+          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)))
       }
       val node2Data = documentIds.slice(2, 4).zipWithIndex.map {
         case (id, i) =>
-          (id, "title-" + (i + 1), Some("documentcloudId-" + (i + 1)))
+          (id, "description-" + (i + 1), Some("documentcloudId-" + (i + 1)))
       }
 
       val expectedDocumentData = node1Data ++ node2Data
@@ -58,7 +58,7 @@ class PersistentDocumentListDataLoaderSpec extends Specification {
 
     }
 
-    "load documents sorted by title and id" in new NodesAndDocuments {
+    "load documents sorted by description and id" in new NodesAndDocuments {
       val selectedNodes = nodeIds.take(2)
       val documentData =
         dataLoader.loadSelectedDocumentSlice(documentSetId, selectedNodes, Nil, Nil, 0, 6)
