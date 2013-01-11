@@ -16,6 +16,9 @@ sealed trait OverviewDocument {
   /** Description of the document. (Empty string is allowed.) */
   val description: String
 
+  /** Optional title of the document */
+  val title: Option[String]
+  
   /** URL to view the document.
     *
     * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
@@ -32,6 +35,7 @@ object OverviewDocument {
     override val id = ormDocument.id
     override lazy val documentSet = documentSetDocuments.right(ormDocument).single
     override val description = ormDocument.description
+    override val title = ormDocument.title
     override def url(pattern: String) : String = {
       ormDocument.url.getOrElse(pattern.replace("{0}", "" + id))
     }

@@ -1,6 +1,6 @@
 package models
 
-import org.specs2.mutable.Specification
+import org.overviewproject.test.DbSpecification
 import org.specs2.specification.Scope
 import play.api.Play.{start,stop}
 import play.api.test.FakeApplication
@@ -9,7 +9,7 @@ import play.api.test.FakeApplication
 // in this test.
 import org.overviewproject.tree.orm.{ Document, DocumentType }
 
-class OverviewDocumentSpec extends Specification {
+class OverviewDocumentSpec extends DbSpecification {
   step(start(FakeApplication()))
 
   "OverviewDocument" should {
@@ -21,9 +21,11 @@ class OverviewDocumentSpec extends Specification {
     }
 
     trait CsvImportDocumentScope extends Scope with OneDocument {
-      def ormDocumentId : Long = 1L
-      def suppliedUrl : Option[String] = Some("http://example.org")
-      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl)
+      def ormDocumentId: Long = 1L
+      def suppliedUrl: Option[String] = Some("http://example.org")
+      def title: Option[String] = Some("title")
+      
+      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl, title = title)
       lazy val csvImportDocument = document.asInstanceOf[OverviewDocument.CsvImportDocument]
     }
 
@@ -79,6 +81,10 @@ class OverviewDocumentSpec extends Specification {
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {
       override def ormDocument = super.ormDocument.copy(documentcloudId=Some("foobar"))
       urlWithSimplePattern must beEqualTo("https://www.documentcloud.org/documents/foobar")
+    }
+    
+    "give a title for a Document if there is one" in new CsvImportDocumentScope {
+      document.title must be equalTo title
     }
   }
 
