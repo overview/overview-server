@@ -73,6 +73,9 @@ class DrawableNode
     
   # build a tree of DrawableNodes out of a tree of AnimatedNodes, where the root node is @fraction opened
   constructor: (@animated_node, @fraction, level) ->
+    if (typeof level == 'undefined')
+      level = 0
+      
     num_documents = @animated_node.node.doclist.n
     @width = num_documents * @fraction
 

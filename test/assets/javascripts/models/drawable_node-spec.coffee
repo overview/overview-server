@@ -21,9 +21,6 @@ describe 'models/drawable_node', ->
       it 'should have width=1', ->
         expect(drawable_node.width).toEqual(1)
 
-      it 'should have width_with_padding > width', ->
-        expect(drawable_node.width_with_padding).toBeGreaterThan(drawable_node.width)
-
       it 'should have children=undefined', ->
         expect(drawable_node.children).toBeUndefined()
 
@@ -58,9 +55,6 @@ describe 'models/drawable_node', ->
       it 'should have width=2', ->
         expect(drawable_node.width).toEqual(2)
 
-      it 'should have width_with_padding > width', ->
-        expect(drawable_node.width_with_padding).toBeGreaterThan(drawable_node.width)
-
       it 'should set relative_x on children, centering them', ->
         expect(drawable_node.children[0].relative_x).toBeLessThan(0)
         expect(drawable_node.children[1].relative_x).toBeGreaterThan(0)
@@ -80,9 +74,6 @@ describe 'models/drawable_node', ->
 
       it 'should set fraction=1 on the node', ->
         expect(drawable_node.fraction).toEqual(1)
-
-      it 'should have width_with_padding > width', ->
-        expect(drawable_node.width_with_padding).toBeGreaterThan(drawable_node.width)
 
       it 'should set fraction=0.05 on the children', ->
         expect(drawable_node.children.map((dn) -> dn.fraction)).toEqual([0.05, 0.05])
