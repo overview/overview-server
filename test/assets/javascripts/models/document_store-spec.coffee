@@ -14,7 +14,7 @@ describe 'models/document_store', ->
       expect(store.documents).toEqual({})
 
     it 'should store a document based on id', ->
-      document = { id: 1, title: 'foo' }
+      document = { id: 1, description: 'foo' }
       store.add(document)
       document2 = store.documents[document.id]
       expect(document2).toBe(document)
