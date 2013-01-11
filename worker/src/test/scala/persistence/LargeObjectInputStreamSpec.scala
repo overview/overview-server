@@ -31,6 +31,10 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       override val data = Array[Byte](255.toByte)
     }
     
+    trait LoWithSmallData extends LoContext {
+      override val data = Array.tabulate[Byte](BufferSize - 2)(i => i.toByte)
+    }
+    
     "read one byte at a time from chunk" in new LoContext {
       val readData = Array.fill(BufferSize)(loInputStream.read.toByte)
        
@@ -69,6 +73,30 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       val b = loInputStream.read
       b must be equalTo 0x00ff
     }
+    
+    "read beyond data, but not beyond buffer" in new LoWith255 {
+      val readData = new Array[Byte](10)
+      
+      loInputStream.read(readData, 0, 5) must be equalTo 1
+    }
+    
+    "read buffer in multiple chunks" in new LoWithSmallData {
+      val readData = new Array[Byte](10)
+      loInputStream.read(readData, 0, 5) must be equalTo 5
+      loInputStream.read(readData, 5, 4) must be equalTo 3
+      
+      readData.take(8) must be equalTo data.take(8)
+    }
+    
+    "read beyond buffer in multiple chunks" in new LoContext {
+      val readData = new Array[Byte](20)
+      loInputStream.read(readData, 0, 5) must be equalTo 5
+      loInputStream.read(readData, 5, 15) must be equalTo 15
+      
+      readData must be equalTo data.take(20)
+    }
+    
+    
   }
   step(shutdownDb)
 }

@@ -1,24 +1,10 @@
-/*
- * BulkHttpRetrieverSpec
- *
- * Overview Project
- * Created by Jonas Karlsson, September 2012
- */
-package overview.http
+package org.overviewproject.http
 
-import akka.actor.ActorSystem
-import akka.dispatch.Await
-import akka.dispatch.ExecutionContext
-import akka.util.Timeout
-import com.ning.http.client.Cookie
-import com.ning.http.client.FluentCaseInsensitiveStringsMap
-import com.ning.http.client.Response
 import java.net.URI
-import org.specs2.mutable.Specification
-import org.specs2.specification.After
-import org.overviewproject.clustering.DCDocumentAtURL
 import scala.collection.JavaConversions._
-
+import akka.actor.ActorSystem
+import akka.dispatch.ExecutionContext
+import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response}
 
 /**
  * A dummy Response to a http request.
@@ -50,9 +36,7 @@ class TestResponse extends Response {
  * A mock AsyncHttpRetriever for testing. Provides an actor system with an execution context.
  * Subclass to respond to requests in ways appropriate for your test.
  */
-abstract class TestHttpRetriever extends AsyncHttpRetriever {
-
-  val actorSystem = ActorSystem("TestActorSystem") // should probably be in separate trait
+abstract class TestHttpRetriever(actorSystem: ActorSystem) extends AsyncHttpRetriever {
 
   def request(resource: DocumentAtURL, onSuccess: Response => Unit, onFailure: Throwable => Unit)
 
@@ -63,12 +47,13 @@ abstract class TestHttpRetriever extends AsyncHttpRetriever {
 
 /** Trait to be mixed in with test contexts that need a TestHttpRetriever */
 trait RetrieverProvider {
+  lazy implicit val actorSystem = ActorSystem("TestActorSystem") // should probably be in separate trait
   val retriever: TestHttpRetriever
 }
 
 /** Provides a TestRetriever that responds successfully to all requests */
 trait SuccessfulRetriever extends RetrieverProvider {
-  val retriever = new TestHttpRetriever {
+  val retriever = new TestHttpRetriever(actorSystem) {
     override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
       onFailure: Throwable => Unit) {
       val response = new TestResponse
@@ -79,56 +64,10 @@ trait SuccessfulRetriever extends RetrieverProvider {
 
 /** Provides a TestRetriever that responds with an Exception to all requests */
 trait FailingRetriever extends RetrieverProvider {
-  val retriever = new TestHttpRetriever {
+  val retriever = new TestHttpRetriever(actorSystem) {
     override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
       onFailure: Throwable => Unit) {
       onFailure(new Exception("failed request"))
     }
   }
-}
-
-class BulkHttpRetrieverSpec extends Specification {
-
-  "BulkHttpRetriever" should {
-
-    /**
-     * Context for counting number of processed requests to the AsyncHttpRetriever
-     */
-    trait SimulatedWebClient extends After {
-      this: RetrieverProvider =>
-      var requestsProcessed = new scala.collection.mutable.ArrayBuffer[String]
-      val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](retriever)
-      val urlsToRetrieve = Seq.fill(10)(new DCDocumentAtURL("title", "id", "url"))
-
-      def processDocument(document: DCDocumentAtURL, result: String): Boolean = {
-        requestsProcessed += result
-        true
-      }
-
-      implicit def actorSystem = retriever.actorSystem
-
-      def after = actorSystem.shutdown
-
-    }
-
-    trait SuccessfulRequests extends SuccessfulRetriever with SimulatedWebClient
-    trait FailingRequests extends FailingRetriever with SimulatedWebClient
-
-    "retrieve and process documents" in new SuccessfulRequests {
-      val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
-      val requestsWithErrors = Await.result(done, Timeout.never.duration)
-
-      requestsWithErrors must beEmpty
-      requestsProcessed must have size (urlsToRetrieve.size)
-    }
-
-    "collect failed requests" in new FailingRequests {
-      val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
-      val requestsWithErrors = Await.result(done, Timeout.never.duration)
-
-      requestsWithErrors must have size (urlsToRetrieve.size)
-    }
-
-  }
-
 }

@@ -4,20 +4,21 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package overview.http
+package org.overviewproject.http
 
 import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.clustering.DocumentSetIndexer
-import org.overviewproject.database.Database;
+import org.overviewproject.database.Database
 import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
 import persistence.DocumentWriter
+
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
@@ -32,7 +33,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     // Retrieve all that stuff!
 
     WorkerActorSystem.withActorSystem { implicit context =>
-      val bulkHttpRetriever = new BulkHttpRetriever[DCDocumentAtURL](new AsyncHttpRequest)
+      val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(new AsyncHttpRequest, new NonRedirectingHttpRequest)
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in

@@ -7,7 +7,7 @@
 package overview.util
 
 import org.overviewproject.clustering.DocumentCloudSource
-import overview.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
+import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
 import overview.util.Progress._
 import csv.CsvImportDocumentProducer
 import persistence.DocumentSet

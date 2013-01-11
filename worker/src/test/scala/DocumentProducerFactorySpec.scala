@@ -2,7 +2,7 @@ package overview.util
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import overview.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
+import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
 import persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
 import org.specs2.mutable.Before
 import csv.CsvImportDocumentProducer

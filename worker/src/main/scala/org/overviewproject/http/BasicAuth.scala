@@ -1,4 +1,4 @@
-package overview.http
+package org.overviewproject.http
 
 
 trait BasicAuth {
