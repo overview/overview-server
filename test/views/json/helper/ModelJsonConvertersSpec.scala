@@ -1,11 +1,11 @@
 package views.json.helper
 
+import org.overviewproject.test.DbSpecification
 import models.PersistentTagInfo
 import models.core._
-import org.specs2.mutable.Specification
 import play.api.libs.json.Json.toJson
 
-class ModelJsonConvertersSpec extends Specification {
+class ModelJsonConvertersSpec extends DbSpecification {
 
   "JsonDocumentIdList" should {
     import views.json.helper.ModelJsonConverters.JsonDocumentIdList
@@ -28,14 +28,24 @@ class ModelJsonConvertersSpec extends Specification {
     "write document attributes" in {
       val id = 39l
       val description = "description"
-      val document = Document(id, description, None, Some("unused by Tree"), Seq(1, 2, 3), Seq(22l, 11l, 33l))
+      val title = "title"
+      val document = Document(id, description, Some(title), Some("unused by Tree"), Seq(1, 2, 3), Seq(22l, 11l, 33l))
 
       val documentJson = toJson(document).toString
 
       documentJson must /("id" -> id)
       documentJson must /("description" -> description)
+      documentJson must /("title" -> title)
       documentJson must contain(""""tagids":[1,2,3]""")
       documentJson must contain(""""nodeids":[22,11,33]""")
+    }
+    
+    "do not write title if missing" in {
+    	val document = Document(1l, "description", None, None, Seq(1, 2, 3), Seq(22l, 11l, 33l))
+    	
+    	val documentJson = toJson(document).toString
+    	
+    	documentJson must not contain("title")
     }
   }
 

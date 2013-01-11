@@ -22,10 +22,7 @@ object ModelJsonConverters {
         "name" -> toJson(tag.name),
         "doclist" -> toJson(tag.documentIds))
 
-      val tagColorValue = tag.color match {
-	case Some(c) => Map("color" -> toJson('#' + c))
-	case None => Nil
-      }
+      val tagColorValue = maybeMap("color", tag.color, '#' + _) 
 
       toJson(tagValues ++ tagColorValue)
     }
@@ -33,13 +30,21 @@ object ModelJsonConverters {
 
   implicit object JsonDocument extends Writes[Document] {
     override def writes(document: Document): JsValue = {
-      toJson(Map(
+      val documentValues = Map(
         "id" -> toJson(document.id),
         "description" -> toJson(document.description),
         "tagids" -> toJson(document.tags),
         "documentcloud_id" -> toJson(document.documentCloudId),
-	"nodeids" -> toJson(document.nodes)))
+        "nodeids" -> toJson(document.nodes)) 
+        
+      val titleValue = maybeMap("title", document.title)
+      
+      toJson(documentValues ++ titleValue)
     }
   }
+  
+  private def maybeMap(key: String, maybeValue: Option[String], toValue: String => String = identity): Map[String, JsValue] =
+    maybeValue.map(v => Map(key -> toJson(toValue(v)))).getOrElse(Map.empty)
+    
 
 }
