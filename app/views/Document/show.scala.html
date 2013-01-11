@@ -1,7 +1,7 @@
 @(document: OverviewDocument)(implicit lang: Lang)
 
 @jsMessageKeys = @{Seq(
-  "views.Document.show.description.empty_document"
+  "views.Document.show.title.empty_title"
 )}
 
 @defining(scopedMessages("views.Document.show")) { m =>
@@ -114,11 +114,11 @@
     </head>
     <body>
       <h3 data-m-loading="@m("loading")">
-        @if(document.description.length > 0) {
-          @document.description
-        } else {
-          @m("description.empty_document")
-        }
+        @{document.title match  {
+          case Some(t) => { t }
+          case None => { m("title.empty_title") }
+        }}
+        
       </h3>
       <div class="document">
         @document match {
