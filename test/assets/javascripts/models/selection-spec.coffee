@@ -98,13 +98,13 @@ describe 'models/', ->
 
         document_store = {
           documents: {
-            1: { id: 1, title: 'doc1', tagids: [1], nodeids: [1, 2, 4] },
-            2: { id: 2, title: 'doc2', tagids: [1, 2], nodeids: [ 1, 2, 4] },
-            3: { id: 3, title: 'doc3', tagids: [2], nodeids: [ 1, 2, 4 ] },
-            4: { id: 4, title: 'doc4', tagids: [1, 2], nodeids: [ 1, 2, 5 ] },
-            5: { id: 5, title: 'doc5', tagids: [1], nodeids: [ 1, 2, 5 ] },
-            6: { id: 6, title: 'doc6', tagids: [], nodeids: [ 1, 3, 6] },
-            7: { id: 7, title: 'doc7', tagids: [1], nodeids: [ 1, 3, 7 ] },
+            1: { id: 1, description: 'doc1', tagids: [1], nodeids: [1, 2, 4] },
+            2: { id: 2, description: 'doc2', tagids: [1, 2], nodeids: [ 1, 2, 4] },
+            3: { id: 3, description: 'doc3', tagids: [2], nodeids: [ 1, 2, 4 ] },
+            4: { id: 4, description: 'doc4', tagids: [1, 2], nodeids: [ 1, 2, 5 ] },
+            5: { id: 5, description: 'doc5', tagids: [1], nodeids: [ 1, 2, 5 ] },
+            6: { id: 6, description: 'doc6', tagids: [], nodeids: [ 1, 3, 6] },
+            7: { id: 7, description: 'doc7', tagids: [1], nodeids: [ 1, 3, 7 ] },
           }
         }
 
