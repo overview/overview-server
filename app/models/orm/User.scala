@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import org.squeryl.annotations.{ Column, Transient }
 import org.squeryl.dsl.ManyToMany
 import org.squeryl.{KeyedEntity,Query}
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 

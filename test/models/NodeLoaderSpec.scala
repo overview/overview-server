@@ -5,7 +5,7 @@ import play.api.Play.{ start, stop }
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.{ Node => OrmNode }
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import helpers.DbTestContext
 import models.core.Node
 import models.core.DocumentIdList

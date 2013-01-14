@@ -6,7 +6,7 @@ import play.api.Play.{start,stop}
 
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.Node
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import controllers.auth.AuthorizedRequest
 import helpers.DbTestContext
 import models.OverviewUser

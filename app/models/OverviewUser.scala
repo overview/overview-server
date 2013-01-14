@@ -9,7 +9,7 @@ package models
 
 import java.sql.Timestamp
 import java.util.Date
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import ua.t3hnar.bcrypt._
 
 import models.orm.{User,UserRole}

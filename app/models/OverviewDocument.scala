@@ -86,7 +86,7 @@ object OverviewDocument {
 
   /** Lookup */
   def findById(id: Long) : Option[OverviewDocument] = {
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
     Schema.documents.lookup(id).map(OverviewDocument.apply)
   }
 }

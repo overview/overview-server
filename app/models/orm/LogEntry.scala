@@ -2,7 +2,7 @@ package models.orm
 
 import java.sql.Timestamp
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 

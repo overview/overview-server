@@ -101,7 +101,7 @@ class OverviewDocumentSetSpec extends Specification {
 
     import anorm.SQL
     import anorm.SqlParser._
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
     import models.orm.Schema._
     import models.orm.{ DocumentSet, DocumentTag, LogEntry, Tag, User }
     import models.orm.DocumentSetType._

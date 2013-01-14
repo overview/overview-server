@@ -10,7 +10,7 @@ package persistence
 import java.sql.Connection
 import anorm.{ SQL, sqlToSimple, toParameterValue }
 import org.overviewproject.tree.orm.Document
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import persistence.Schema.documents
 
 /**

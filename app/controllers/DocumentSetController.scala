@@ -2,7 +2,7 @@ package controllers
 
 import java.sql.Connection
 import play.api.mvc.Controller
-import org.squeryl.PrimitiveTypeMode._ // TODO: remove this!
+import org.overviewproject.postgres.SquerylEntrypoint._ // TODO: remove this!
 
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.orm.{DocumentSet,User} // TODO: remove this!

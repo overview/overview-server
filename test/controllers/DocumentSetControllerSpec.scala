@@ -7,12 +7,12 @@
 package controllers
 
 import org.specs2.mutable.Specification
-import org.squeryl.PrimitiveTypeMode._
 import play.api.mvc.{AnyContent, Controller}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start, stop}
 
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import controllers.auth.AuthorizedRequest
 import helpers.DbTestContext

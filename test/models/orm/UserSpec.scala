@@ -3,7 +3,7 @@ package models.orm
 import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import ua.t3hnar.bcrypt._

@@ -4,7 +4,7 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import helpers.DbTestContext
 import models.orm.DocumentSetType._
 import models.orm.DocumentSet

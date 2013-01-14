@@ -6,7 +6,7 @@ import java.util.UUID
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 import helpers.DbTestContext
 import play.api.Play.start

@@ -6,7 +6,7 @@ import org.postgresql.PGConnection
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
 import org.squeryl.Session
-import org.squeryl.PrimitiveTypeMode.using
+import org.overviewproject.postgres.SquerylEntrypoint.using
 import play.api.db.DB
 import play.api.Play.current
 

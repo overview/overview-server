@@ -3,7 +3,7 @@ package controllers.util
 import play.api.db.DB
 import play.api.Play.current
 import org.postgresql.PGConnection
-import org.squeryl.PrimitiveTypeMode.using
+import org.overviewproject.postgres.SquerylEntrypoint.using
 import org.squeryl.Session
 import com.jolbox.bonecp.ConnectionHandle
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter

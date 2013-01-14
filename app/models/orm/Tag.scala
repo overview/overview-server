@@ -2,7 +2,7 @@ package models.orm
 
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 case class Tag(
   val id: Long = 0l,

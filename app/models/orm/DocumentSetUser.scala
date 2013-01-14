@@ -1,7 +1,7 @@
 package models.orm
 
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode.compositeKey
+import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
 import org.squeryl.dsl.CompositeKey2
 import org.squeryl.annotations.Column
 

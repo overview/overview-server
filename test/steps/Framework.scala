@@ -3,7 +3,7 @@ package steps
 import play.api.test.{TestBrowser,TestServer,FakeApplication}
 import play.api.Play
 import play.api.mvc.Call
-import org.squeryl.PrimitiveTypeMode.transaction
+import org.overviewproject.postgres.SquerylEntrypoint.transaction
 
 import java.sql.Connection
 import org.openqa.selenium.WebDriver

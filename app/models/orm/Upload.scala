@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.UUID
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 
 case class Upload(

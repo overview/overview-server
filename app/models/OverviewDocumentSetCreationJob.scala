@@ -24,7 +24,7 @@ trait DocumentCloudCredentials {
 }
 
 object OverviewDocumentSetCreationJob {
-  import org.squeryl.PrimitiveTypeMode._
+  import org.overviewproject.postgres.SquerylEntrypoint._
   import models.orm.Schema.{ documentSetCreationJobs, documentSetDocumentSetCreationJobs }
 
   def apply(documentSet: OverviewDocumentSet): OverviewDocumentSetCreationJob = {

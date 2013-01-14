@@ -15,7 +15,7 @@ import org.joda.time.format.ISODateTimeFormat
 
 import au.com.bytecode.opencsv.CSVWriter
 
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet

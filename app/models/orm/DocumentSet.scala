@@ -12,7 +12,7 @@ import java.util.Date
 import java.sql.Timestamp
 import org.squeryl.dsl.OneToMany
 import org.squeryl.{KeyedEntity,Query}
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 

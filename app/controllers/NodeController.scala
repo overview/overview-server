@@ -3,7 +3,7 @@ package controllers
 import java.sql.Connection
 import play.api.mvc.Controller
 import play.api.libs.json.JsValue
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.Node
 
 import controllers.auth.AuthorizedAction

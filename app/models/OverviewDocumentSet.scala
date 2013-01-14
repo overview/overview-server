@@ -84,7 +84,7 @@ object OverviewDocumentSet {
 
   def delete(id: Long) {
     import models.orm.Schema._
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
     deleteClientGeneratedInformation(id)
@@ -94,7 +94,7 @@ object OverviewDocumentSet {
 
   private def deleteClientGeneratedInformation(id: Long) {
     import models.orm.Schema._
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
 
     logEntries.deleteWhere(le => le.documentSetId === id)
     documentTags.deleteWhere(nt =>
@@ -107,7 +107,7 @@ object OverviewDocumentSet {
     import anorm._
     import anorm.SqlParser._
     import models.orm.Schema._
-    import org.squeryl.PrimitiveTypeMode._
+    import org.overviewproject.postgres.SquerylEntrypoint._
     implicit val connection = OverviewDatabase.currentConnection
     
     documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)

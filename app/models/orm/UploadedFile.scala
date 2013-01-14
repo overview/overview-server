@@ -3,7 +3,7 @@ package models.orm
 import java.sql.Timestamp
 import org.squeryl.annotations.Column
 import org.squeryl.KeyedEntity
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import java.util.Date
 
 
