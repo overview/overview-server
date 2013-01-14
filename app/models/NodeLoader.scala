@@ -1,7 +1,7 @@
 package models
 
 import org.overviewproject.tree.orm.Node
-import org.overviewproject.postgres.CustomTypes._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import models.core.DocumentIdList
 
 class NodeLoader {
