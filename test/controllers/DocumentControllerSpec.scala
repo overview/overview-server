@@ -26,6 +26,7 @@ class DocumentControllerSpec extends Specification {
     val document = mock[OverviewDocument]
     document.id returns validDocumentId
     document.description returns description
+    document.title returns None
     document.url(anyString) returns url
 
     val user = mock[OverviewUser]
