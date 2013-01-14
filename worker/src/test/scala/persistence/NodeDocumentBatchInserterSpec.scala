@@ -12,7 +12,7 @@ import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.overviewproject.test.DbSetup._
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 

@@ -38,7 +38,7 @@ trait PersistentDocumentSetCreationJob {
 
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
-  import org.squeryl.PrimitiveTypeMode._
+  import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJob
   import persistence.Schema.documentSetCreationJobs
 
@@ -82,7 +82,7 @@ object PersistentDocumentSetCreationJob {
 
       job.map { j =>
         if (j.state == Cancelled) state = Cancelled
-          val updatedJob = org.squeryl.PrimitiveTypeMode.update(documentSetCreationJobs)(d =>
+          val updatedJob = org.overviewproject.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
             where(d.id === documentSetCreationJob.id)
               set (d.documentSetId := documentSetId,
                 d.state := state.inhibitWhen(d.state == Cancelled),

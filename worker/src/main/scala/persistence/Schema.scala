@@ -1,6 +1,6 @@
 package persistence
 
-import org.overviewproject.postgres.CustomTypes._
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, Node }
 
 object Schema extends org.squeryl.Schema {

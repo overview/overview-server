@@ -11,7 +11,7 @@ import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{CsvImportDocument, DocumentCloudDocument}
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 import persistence.Schema.documents
 
