@@ -3,7 +3,7 @@ package org.overviewproject.tree.orm
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.DocumentType._
-import org.squeryl.PrimitiveTypeMode._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentSpec extends DbSpecification {
   step(setupDb)

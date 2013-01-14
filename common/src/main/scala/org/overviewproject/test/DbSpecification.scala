@@ -10,9 +10,9 @@ package org.overviewproject.test
 import org.junit.runner.RunWith
 import org.specs2.execute.Result
 import org.specs2.mutable.Around
-import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 import org.overviewproject.database.{DB, DataSource, DatabaseConfiguration}
 

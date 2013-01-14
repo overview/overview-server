@@ -1,8 +1,8 @@
 package org.overviewproject.database
 
 import java.sql.Connection
-import org.squeryl.{ PrimitiveTypeMode, Session }
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.squeryl.Session
+import org.overviewproject.postgres.{ SquerylEntrypoint, SquerylPostgreSqlAdapter }
 
 /**
  * Manages database connections.
@@ -33,7 +33,7 @@ abstract class TransactionProvider {
       transactionBlock { implicit connection =>
         val adapter = new SquerylPostgreSqlAdapter()
         val session = new Session(connection, adapter)
-        PrimitiveTypeMode.using(session) { // sets thread-local variable
+        SquerylEntrypoint.using(session) { // sets thread-local variable
           block
         }
       }
