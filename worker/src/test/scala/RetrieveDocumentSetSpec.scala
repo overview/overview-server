@@ -78,7 +78,7 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       val (vectorGen, retrievalErrors) = retrieveDocs(docURLsWithErr)
 
     	retrievalErrors.size must beEqualTo(1) // exactly one doc should be fail
-    	retrievalErrors.head.doc must beEqualTo(errURL)
+    	retrievalErrors.head.documentUrl must beEqualTo(errURL.textURL)
     }
 
 /*

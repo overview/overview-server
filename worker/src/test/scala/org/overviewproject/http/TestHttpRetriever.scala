@@ -10,11 +10,11 @@ import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response}
  * A dummy Response to a http request.
  * Will be expanded to have actual test data in body and headers.
  */
-class TestResponse extends Response {
+class TestResponse(statusCode: Int = 200, status: String = "OK") extends Response {
   def getContentType: String = "content-type"
   def getCookies = Seq()
   def getHeader(name: String): String = "header"
-  def getHeaders: FluentCaseInsensitiveStringsMap = new FluentCaseInsensitiveStringsMap()
+  def getHeaders: FluentCaseInsensitiveStringsMap = TestResponse.headers
   def getHeaders(name: String) = Seq()
   def getResponseBody: String = "body"
   def getResponseBody(charset: String): String = "body"
@@ -22,8 +22,8 @@ class TestResponse extends Response {
   def getResponseBodyAsStream = null
   def getResponseBodyExcerpt(maxLength: Int): String = "excerpt"
   def getResponseBodyExcerpt(maxLength: Int, charset: String) = null
-  def getStatusCode: Int = 400
-  def getStatusText: String = "OK"
+  def getStatusCode: Int = statusCode
+  def getStatusText: String = status
   def getUri: URI = new URI("uri")
   def hasResponseBody: Boolean = true
   def hasResponseHeaders: Boolean = true
@@ -32,6 +32,14 @@ class TestResponse extends Response {
   override def toString: String = "TestResponse"
 }
 
+object TestResponse {
+  val headers: FluentCaseInsensitiveStringsMap = {
+    val headers = new FluentCaseInsensitiveStringsMap()
+    headers.add("header1", "value1")
+    headers.add("header2", "value2")
+    headers    
+  }
+}
 /**
  * A mock AsyncHttpRetriever for testing. Provides an actor system with an execution context.
  * Subclass to respond to requests in ways appropriate for your test.
