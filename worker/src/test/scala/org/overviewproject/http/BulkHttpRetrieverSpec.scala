@@ -70,12 +70,9 @@ class BulkHttpRetrieverSpec extends DbSpecification {
 
     "collect requests with bad status" in new BadStatusRequests {
       val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
-      val errorMessage = """|header1:value1
-                            |header2:value2
-                            |
-                            |body""".stripMargin
+      val headers = "header1:value1\r\nheader2:value2"
                             
-      val expectedError = DocRetrievalError(urlsToRetrieve.head.textURL, errorMessage, Some(status))
+      val expectedError = DocRetrievalError(urlsToRetrieve.head.textURL, "body", Some(status), Some(headers))
       
       val requestsWithErrors = Await.result(done, Timeout.never.duration)
       

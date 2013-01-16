@@ -17,6 +17,7 @@ import akka.dispatch.{ ExecutionContext, Future, Promise }
 import akka.actor._
 import akka.util.Timeout
 import com.ning.http.client.Response
+import com.ning.http.client.FluentCaseInsensitiveStringsMap
 
 // Input and output types...
 case class DocumentAtURL(val textURL: String)
@@ -25,14 +26,14 @@ case class DocumentAtURL(val textURL: String)
 class PrivateDocumentAtURL(val textUrl: String, val username: String, val password: String)
   extends DocumentAtURL(textUrl) with BasicAuth // case-to-case class inheritance is deprecated
 
-case class DocRetrievalError(documentUrl: String, message: String, statusCode: Option[Int] = None)
+case class DocRetrievalError(documentUrl: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
 
 class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriever) {
 
   // Case classes modeling the messages that our actors can send one another
   protected case class GetText(doc: DocumentAtURL)
   protected case class GetTextSucceeded(doc: DocumentAtURL, text: String, startTime: Long)
-  protected case class GetTextFailed(doc: DocumentAtURL, message: String, statusCode: Option[Int] = None)
+  protected case class GetTextFailed(doc: DocumentAtURL, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
   protected case class DocToRetrieve(doc: DocumentAtURL)
   protected case class NoMoreDocsToRetrieve()
 
@@ -105,10 +106,10 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
 
         spoolRequests
 
-      case GetTextFailed(doc, error, statusCode) =>
+      case GetTextFailed(doc, error, statusCode, headers) =>
         httpReqInFlight -= 1
         Logger.warn("Exception retrieving document from " + doc.textURL + " : " + error.toString)
-        errorQueue += DocRetrievalError(doc.textURL, error, statusCode)
+        errorQueue += DocRetrievalError(doc.textURL, error, statusCode, headers)
         spoolRequests
     }
 
@@ -126,10 +127,10 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
     protected def requestSucceeded(doc: DocumentAtURL, startTime: Long, result: Response) = {
       if (result.getStatusCode() == 200) self ! GetTextSucceeded(doc, result.getResponseBody, startTime)
       else {
-        val message = result.getHeaders.iterator().map { h => h.getKey + ":" + h.getValue.mkString(",") }.mkString("\n") + "\n\n" +
-          result.getResponseBody
-
-        self ! GetTextFailed(doc, message, Some(result.getStatusCode()))
+        def formatHeaders(headers: FluentCaseInsensitiveStringsMap): String = headers.iterator.map { h => h.getKey + ":" + h.getValue.mkString(",") }.mkString("\r\n")
+        
+        val headers = formatHeaders(result.getHeaders)
+        self ! GetTextFailed(doc, result.getResponseBody, Some(result.getStatusCode), Some(headers))
       }
     }
 

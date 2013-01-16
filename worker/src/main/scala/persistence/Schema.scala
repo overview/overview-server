@@ -1,7 +1,8 @@
 package persistence
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, Node }
+import org.overviewproject.tree.orm._
+
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName (propertyName: String) = NamingConventionTransforms.snakify(propertyName) 
@@ -11,4 +12,5 @@ object Schema extends org.squeryl.Schema {
   val documents = table[Document]
   val nodeDocuments = table[NodeDocument]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
+  val documentProcessingErrors = table[DocumentProcessingError]
 }
