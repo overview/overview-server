@@ -108,7 +108,8 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
 
       case GetTextFailed(doc, error, statusCode, headers) =>
         httpReqInFlight -= 1
-        Logger.warn("Exception retrieving document from " + doc.textURL + " : " + error.toString)
+        val httpErrorInfo: String = statusCode.map(". Status Code: " + _).getOrElse("") + headers.map("\n" + _).getOrElse("")
+        Logger.warn("Unable to retrieve document from " + doc.textURL + httpErrorInfo + error )
         errorQueue += DocRetrievalError(doc.textURL, error, statusCode, headers)
         spoolRequests
     }
