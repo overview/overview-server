@@ -7,7 +7,7 @@ case class DocumentProcessingError(
     @Column("document_set_id") documentSetId: Long,
     @Column("text_url") textUrl: String,
     message: String,
-    @Column("status_code") statusCode: Option[Int],
+    @Column("status_code") statusCode: Option[Int] = None,
     id: Long = 0l) extends KeyedEntity[Long] {
 
 }

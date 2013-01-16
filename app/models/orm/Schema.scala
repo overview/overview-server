@@ -1,7 +1,7 @@
 package models.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, Node }
+import org.overviewproject.tree.orm.{ Document, DocumentProcessingError, DocumentSetCreationJob, Node }
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName (propertyName: String) =
@@ -20,6 +20,7 @@ object Schema extends org.squeryl.Schema {
   val documentTags = table[DocumentTag]
   val uploads = table[Upload]
   val uploadedFiles = table[UploadedFile]
+  val documentProcessingErrors = table[DocumentProcessingError]
   
   val documentSetDocuments =
     oneToManyRelation(documentSets, documents).

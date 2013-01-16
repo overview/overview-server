@@ -118,6 +118,7 @@ object OverviewDocumentSet {
         )""").on('id -> id).executeUpdate()
 
     documents.deleteWhere(d => d.documentSetId === id)
+    documentProcessingErrors.deleteWhere(dpe => dpe.documentSetId === id)
     nodes.deleteWhere(n => n.documentSetId === id)
 
     val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).single

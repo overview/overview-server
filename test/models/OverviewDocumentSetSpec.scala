@@ -106,7 +106,7 @@ class OverviewDocumentSetSpec extends Specification {
     import models.orm.{ DocumentSet, DocumentTag, LogEntry, Tag, User }
     import models.orm.DocumentSetType._
     import org.overviewproject.postgres.LO
-    import org.overviewproject.tree.orm.{ Document, Node, DocumentSetCreationJob }
+    import org.overviewproject.tree.orm.{ Document, Node, DocumentProcessingError, DocumentSetCreationJob }
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
     import org.overviewproject.tree.orm.DocumentType._
     import helpers.PgConnectionContext
@@ -149,6 +149,7 @@ class OverviewDocumentSetSpec extends Specification {
           date = new Timestamp(0),
           component = "test").save
         val document = documents.insertOrUpdate(Document(CsvImportDocument, documentSet.id, text = Some("test doc")))
+        val documentProcessingError = documentProcessingErrors.insertOrUpdate(DocumentProcessingError(documentSet.id, "url", "message"))
         val tag = Tag(documentSetId = documentSet.id, name = "tag").save
         val node = nodes.insertOrUpdate(Node(documentSet.id, None, "description", 10, Array.empty))
         documentTags.insertOrUpdate(DocumentTag(document.id, tag.id))
@@ -196,7 +197,8 @@ class OverviewDocumentSetSpec extends Specification {
       documents.allRows must have size (0)
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
-
+      documentProcessingErrors.allRows must have size 0
+      
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (0)
       OverviewDocumentSet.findById(documentSet.id) must beNone
     }
@@ -233,7 +235,8 @@ class OverviewDocumentSetSpec extends Specification {
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
-
+      documentProcessingErrors.allRows must have size 1
+      
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
@@ -249,7 +252,8 @@ class OverviewDocumentSetSpec extends Specification {
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
-
+      documentProcessingErrors.allRows must have size 1
+      
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome

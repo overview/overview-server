@@ -123,8 +123,9 @@ object JobHandler {
       SQL("DELETE FROM node_document WHERE node_id IN (SELECT id FROM node WHERE document_set_id = {id})").on('id -> id).executeUpdate()
       SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
       SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+      SQL("DELETE FROM document_processing_error WHERE document_set_id = {id}").on('id -> id).executeUpdate()
 
-      SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate
+      SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
 
       uploadedFileId.map { u =>
         SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
