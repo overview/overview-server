@@ -31,5 +31,10 @@
       <span class="document-count">@m("document_count", documentSet.documentCount)</span>
     }
     </p>
+    @if(documentSet.errorCount > 0) {
+     <p class="document-processing-errors">
+       <span class="error-count">@m("error_count", documentSet.errorCount)</span>
+     </p>
+   }
   </li>
 }

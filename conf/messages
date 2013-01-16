@@ -167,6 +167,7 @@ views.DocumentSet._documentSet.action_import=Import
 views.DocumentSet._documentSet.action_delete=Delete
 views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentSet._documentSet.error_count={0,choice,0#no errors|1#one document import error|1<{0,number,integer} document import errors}
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
 views.DocumentSet._documentSet.job_state_description.clustering=Clustering
 views.DocumentSet._documentSet.job_state_description.clustering_level=Clustering

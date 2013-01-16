@@ -11,14 +11,13 @@ import models.orm.DocumentSetType._
 
 class _documentSetSpec extends Specification {
 
-  case class FakeOverviewDocumentSet(creationJob: Option[OverviewDocumentSetCreationJob] = None) extends OverviewDocumentSet {
+  case class FakeOverviewDocumentSet(creationJob: Option[OverviewDocumentSetCreationJob] = None, errorCount: Int = 0) extends OverviewDocumentSet {
     val id = 1l
     val title = "a title"
     val query = "a query"
     val user = null
     val createdAt = null
     val documentCount = 15
-    val errorCount = 0
   }
 
   class FakeDocumentSetCreationJob(val state: DocumentSetCreationJobState,
@@ -48,6 +47,11 @@ class _documentSetSpec extends Specification {
   trait DocumentSetWithJobContext extends ViewContext {
     val job: OverviewDocumentSetCreationJob = new FakeDocumentSetCreationJob(InProgress, 0.2, 1)
     val documentSet = FakeOverviewDocumentSet(Some(job))
+  }
+  
+  trait DocumentSetWithErrorsContext extends ViewContext {
+    val numberOfErrors = 10
+    val documentSet = FakeOverviewDocumentSet(errorCount = numberOfErrors)
   }
 
   "DocumentSet._documentSet" should {
@@ -97,6 +101,14 @@ class _documentSetSpec extends Specification {
 
     "should show position in queue for NotStarted jobs" in new DocumentSetWithJobContext {
       $(".state-description").text.trim must endWith("jobs_to_process")
+    }
+    
+    "should not show error count if none exist" in new NormalDocumentSetContext {
+      $(".error-count").length must be_==(0)
+    }
+    
+    "should show error count if there are errors" in new DocumentSetWithErrorsContext {
+      $(".error-count").text.trim must endWith("error_count")
     }
   }
 }
