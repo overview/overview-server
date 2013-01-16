@@ -18,6 +18,7 @@ class _documentSetSpec extends Specification {
     val user = null
     val createdAt = null
     val documentCount = 15
+    val errorCount = 0
   }
 
   class FakeDocumentSetCreationJob(val state: DocumentSetCreationJobState,

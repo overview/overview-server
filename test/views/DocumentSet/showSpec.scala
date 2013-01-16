@@ -19,6 +19,7 @@ class showSpec extends Specification {
       val user = null
       val createdAt = null
       val documentCount = 15
+      val errorCount = 0
     }
     
 

@@ -260,6 +260,9 @@ class OverviewDocumentSetSpec extends Specification {
       job.get.state must be equalTo (Cancelled)
     }
 
+    "return error count" in new DocumentSetReferencedByOtherTables {
+      documentSet.errorCount must be equalTo(1)
+    }
   }
   step(stop)
 }

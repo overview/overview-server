@@ -17,6 +17,7 @@ class indexSpec extends Specification {
   case class FakeOverviewDocumentSet(id: Long, title: String, query: String) extends OverviewDocumentSet {
     def creationJob = None
     def documentCount = 10
+    def errorCount = 0
     val createdAt = null
     val user = null
   }
