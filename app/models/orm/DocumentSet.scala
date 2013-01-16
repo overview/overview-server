@@ -38,8 +38,7 @@ case class DocumentSet(
     @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
     @(Transient @field) val providedDocumentCount: Option[Long] = None,
     @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
-    @(Transient @field) val uploadedFile: Option[UploadedFile] = None,
-    @(Transient @field) val errorCount: Option[Long] = None
+    @(Transient @field) val uploadedFile: Option[UploadedFile] = None
     ) extends KeyedEntity[Long] {
 
   def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
@@ -81,6 +80,8 @@ case class DocumentSet(
     )
   }
 
+  def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute(count)).single.measures
+  
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
   override def isPersisted(): Boolean = (id > 0)
 
@@ -170,7 +171,7 @@ object DocumentSet {
       documentSets
     }
   }
-
+  
   object ImplicitHelper {
     class DocumentSetSeq(documentSets: Seq[DocumentSet]) {
       def withDocumentCounts = DocumentSet.addDocumentCounts(documentSets)

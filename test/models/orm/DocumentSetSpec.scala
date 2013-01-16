@@ -21,6 +21,7 @@ import org.postgresql.util.PSQLException
 import helpers.PgConnectionContext
 import org.overviewproject.postgres.LO
 import java.sql.Timestamp
+import org.overviewproject.tree.orm.DocumentProcessingError
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
@@ -142,8 +143,16 @@ class DocumentSetSpec extends Specification {
       LO.withLargeObject(oid) { lo => lo.oid } must throwA[Exception]
     }
 
-    inExample("have no documentProcessingErrorCount when there are no errors") in new DocumentSetContext {
-      documentSet.errorCount must beNone
+    "have no errorCount when there are no errors" in new DocumentSetContext {
+      documentSet.errorCount must be equalTo(0)
+    }
+
+    inExample("provide count of errors when they exist") in new DocumentSetContext {
+      val errorCount = 10
+      val errors = Seq.tabulate(errorCount)(i => DocumentProcessingError(documentSet.id, "url", "message"))
+      Schema.documentProcessingErrors.insert(errors)
+      
+      documentSet.errorCount must be equalTo(errorCount)
     }
   }
 
