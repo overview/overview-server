@@ -25,16 +25,22 @@ import java.sql.Timestamp
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
 
+  trait DocumentSetContext extends DbTestContext {
+    val query = Some("query")
+    val title = "title"
+
+    var documentSet: DocumentSet = _
+
+    override def setupWithDb = {
+      documentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, title, query))
+    }
+  }
+
   step(start(FakeApplication()))
 
   "DocumentSet" should {
 
-    inExample("create a DocumentSetCreationJob") in new DbTestContext {
-      val query = Some("query")
-      val title = "title"
-
-      val documentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, title, query))
-
+    inExample("create a DocumentSetCreationJob") in new DocumentSetContext {
       val job = documentSet.createDocumentSetCreationJob()
 
       val returnedJob = Schema.documentSetCreationJobs.lookup(job.id)
@@ -66,9 +72,7 @@ class DocumentSetSpec extends Specification {
       documentSet.createDocumentSetCreationJob() must throwAn[IllegalArgumentException]
     }
 
-    "delete all references in other tables" in new DbTestContext {
-      val query = "query"
-      val documentSet: DocumentSet = Schema.documentSets.insert(DocumentSet(DocumentCloudDocumentSet, 0L, query = Some(query)))
+    "delete all references in other tables" in new DocumentSetContext {
       val id = documentSet.id
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
 
@@ -136,6 +140,10 @@ class DocumentSetSpec extends Specification {
       UploadedFile.findById(uploadedFile.id) must beNone
 
       LO.withLargeObject(oid) { lo => lo.oid } must throwA[Exception]
+    }
+
+    inExample("have no documentProcessingErrorCount when there are no errors") in new DocumentSetContext {
+      documentSet.errorCount must beNone
     }
   }
 

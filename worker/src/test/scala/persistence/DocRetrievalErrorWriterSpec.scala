@@ -12,15 +12,16 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
 
   step(setupDb)
   
-  "write out error data" in new DbTestContext {
+  inExample("write out error data") in new DbTestContext {
     val documentSetId = insertDocumentSet("DocRetrievalErrorWriterSpec")
     
-    val errors = Seq.tabulate(10)(i => DocRetrievalError("url" + i, "error: " + i))
+    val errors = Seq.tabulate(10)(i => DocRetrievalError("url" + i, "error: " + i, Some(i), Some("header")))
         
     DocRetrievalErrorWriter.write(documentSetId, errors)    
     val foundErrors = documentProcessingErrors.where(dpe => dpe.documentSetId === documentSetId)
     
     foundErrors.size must be equalTo 10
+    foundErrors.head.headers must beSome.like { case h => h must be equalTo("header") }
   }
   
   step(shutdownDb)
