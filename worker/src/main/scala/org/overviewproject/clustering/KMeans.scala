@@ -10,14 +10,17 @@
 
 package org.overviewproject.clustering
 
-import scala.collection.mutable.Set
 import overview.util.LoopedIterator
+import overview.util.CompactPairArray
+import scala.collection.mutable.Set
+import scala.collection.mutable.ArrayBuffer
 
-abstract class KMeans[T : ClassManifest] {
+// T is element type, C is centroid type
+abstract class KMeans[T : ClassManifest, C : ClassManifest] {
   
   // -- Abstract members -- 
-  def distance(a:T, b:T) : Double
-  def mean(elems: Iterable[T]) : T
+  def distance(a:T, b:C) : Double
+  def mean(elems: Iterable[T]) : C
   
   // -- Algorithm parameters -- 
   // Public for now, for easy control
@@ -50,18 +53,27 @@ abstract class KMeans[T : ClassManifest] {
     meanElements
   }
   
-  def initialCentroids(elements:Iterable[T], k:Int) : Seq[T] = {
+  def initialCentroids(elements:Iterable[T], k:Int) : Seq[C] = {
     centroidSeedSets(elements, k) map mean
   }
 
+  // If a cluster ends up empty, create a new centroid. 
+  // ATM just picks a quasi-random element; should probably pick element most distant from all centroids
+  protected def newCentroid(clusters:CompactPairArray[T, Int], centroids:Seq[C], i:Int) : C = {
+    val skip = seedClusterSkip * (i+1)  // +1 to avoid picking an element originally part of seed set for cluster i
+    val elem = clusters(skip % clusters.length)
+    mean(List(elem._1))
+  }
   
   // For each element, compute index of closest centroid
   // Plus, for each centroid, compute index of closest element, used if no element is closest to centroid
   // Could do this in a more functional style with zipWithIndex + fold, but I don't think it would be shorter or clearer
   // plus performance matters here (this is the main inner loop on big data) so not having to think about hidden temps is nice
-
-  def assignClusters(elements:Seq[T], centroids:Seq[T]) : Seq[Int] = {
-    elements map { el => 
+ 
+  def assignClusters(elements:Iterable[T], centroids:Seq[C]) : CompactPairArray[T, Int] = {
+    val assignments = new CompactPairArray[T,Int]
+    
+    elements foreach { el => 
       var cItr = centroids.iterator
       var closestDist = distance(el, cItr.next)
       var closestIdx = 0
@@ -74,31 +86,33 @@ abstract class KMeans[T : ClassManifest] {
        }
        idx += 1
       }
-      closestIdx
+      assignments += Pair(el,closestIdx)
     }
+    
+    assignments
   }
 
   // Given assignments of elements to clusters, compute new centroids as means of clusters
-  def refineCentroids(elements:Seq[T], centroids:Seq[T], assigned:Seq[Int], k:Int) : Seq[T] = {
+  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C], k:Int) : Seq[C] = {
     Array.tabulate(k) { i =>
-      val clusterElems = elements.view.zip(assigned).filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
+      val clusterElems = clusters.view.filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
       if (clusterElems.isEmpty) 
-        mean(List(centroids(i),centroids((i+seedClusterSkip) % k)))
+        newCentroid(clusters, centroids, i) 
       else 
         mean(clusterElems)
     }
   }
   
   // -- Main --
-  def apply (elements:Seq[T], k:Int) : Seq[Int] = {
+  def apply (elements:Iterable[T], k:Int) : CompactPairArray[T,Int] = {
    var centroids = initialCentroids(elements, k)
-   var clusters = Seq[Int]()
+   var clusters = CompactPairArray[T, Int]()
    
  //  println("initial centroids: " +  centroids)
    var iterCount = 0
    while (iterCount < maxIterations) {
      clusters = assignClusters(elements, centroids)
-     centroids = refineCentroids(elements, centroids, clusters, k)
+     centroids = refineCentroids(clusters, centroids, k)
      iterCount += 1
  //    println("clusters: " + clusters)
  //    println("centroids: " +  centroids)

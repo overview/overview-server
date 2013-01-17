@@ -27,8 +27,8 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   var bArray = new Array[B](0)
   var numStoredElements = 0
   
-  def aSeq : IndexedSeq[A] = aArray // very bad leaky abstraction! allows access into space not filled with elements
-  def bSeq : IndexedSeq[B] = bArray
+  def aSeq : IndexedSeq[A] = aArray.view.take(numStoredElements)
+  def bSeq : IndexedSeq[B] = bArray.view.take(numStoredElements)
   
   def availableSize = aArray.size
    

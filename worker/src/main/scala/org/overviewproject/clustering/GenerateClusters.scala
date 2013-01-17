@@ -86,7 +86,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
     // root thresh=1.0 is one node with all documents
     progAbort(Progress(0, ClusteringLevel(1)))
-    var topLevel = Set(docVecs.keys.toArray: _*)
+    var topLevel = Set(docVecs.keys.toSeq:_*)
     val root = new DocTreeNode(topLevel)
 
     // intermediate levels created by successively thresholding all edges, (possibly) breaking each component apart
@@ -115,6 +115,33 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
 }
 
+class KMeansDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected val k:Int) {
+
+  val stopSize = 16   // keep breaking into clusters until <= 16 docs in a node
+  
+  private val km = new KMeansDocuments(docVecs)
+  
+  private def splitNode(node:DocTreeNode) : Unit = {
+    if (node.docs.size > stopSize) {
+      val assignments = km(docVecs.keys, k)
+      for (i <- 0 until k) { 
+        val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced   
+        node.children += new DocTreeNode(Set(docsInThisCluster:_*))
+      }
+    }
+  }
+  
+  def BuildTree(progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    // is one node with all documents
+    var topLevel = Set(docVecs.keys.toSeq:_*)
+    val root = new DocTreeNode(topLevel)
+    
+    splitNode(root)
+    println("----- Sizes of root children: " + root.children.map(_.docs.size).mkString(",") + " -----")
+    
+    root
+  }
+}
 
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 // This is where all of the hard-coded algorithmic constants live
@@ -145,9 +172,24 @@ object BuildDocTree {
     tree
   }
   
-  
- def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-   applyConnectedComponents(docVecs, progAbort)
- }
+  def applyKMeans(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+
+    val arity = 5
+
+    val builder = new KMeansDocTreeBuilder(docVecs, arity)
+    
+    val tree = builder.BuildTree(progAbort) // actually build the tree!
+    new TreeLabeler(docVecs).labelNode(tree) // create a descriptive label for each node
+    ThresholdTreeCleaner(tree) // prune the tree
+
+    DocumentIdCacheGenerator.createCache(tree)
+
+    tree
+  }
+    
+  def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    applyKMeans(docVecs, progAbort)
+    //applyConnectedComponents(docVecs, progAbort)
+  }
  
 }
