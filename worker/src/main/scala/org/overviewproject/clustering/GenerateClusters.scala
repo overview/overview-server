@@ -17,40 +17,6 @@ import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import overview.util.Progress.{ NoProgressReporting, Progress, ProgressAbortFn }
 import org.overviewproject.clustering.ClusterTypes._
 
-// Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
-object DistanceFn {
-
-  // sparse dot product on two term->float maps
-  // Not written in very functional style, as DocumentVector uses an awkward representation as arrays for space reasons
-  // Basic intersection of sorted lists algorithm
-  private def SparseDot(a: DocumentVector, b: DocumentVector): Double = {
-    var a_idx = 0
-    var b_idx = 0
-    var dot = 0.0
-
-    while (a_idx < a.length && b_idx < b.length) {
-      val a_term = a.terms(a_idx)
-      val b_term = b.terms(b_idx)
-
-      if (a_term < b_term) {
-        a_idx += 1
-      } else if (b_term < a_term) {
-        b_idx += 1
-      } else {
-        dot += a.weights(a_idx).toDouble * b.weights(b_idx).toDouble
-        a_idx += 1
-        b_idx += 1
-      }
-    }
-
-    dot
-  }
-
-  // Document distance computation. Returns 1 - similarity, where similarity is cosine of normalized vectors
-  def CosineDistance(a: DocumentVector, b: DocumentVector) = {
-    1.0 - SparseDot(a, b)
-  }
-}
 
 class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected val distanceFn: DocumentDistanceFn) {
 
@@ -159,13 +125,6 @@ class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn: DocumentD
     vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
   }
 
-  // Sparse vector sum, used for computing node descriptions
-  private def accumDocumentVector(acc: DocumentVectorMap, v: DocumentVectorMap): Unit = {
-    v foreach {
-      case (id, weight) => acc.update(id, acc.getOrElse(id, 0f) + weight)
-    }
-  }
-
   // Create a descriptive string for each node, by taking the sum of all document vectors in that node.
   // Building all descriptions at once allows a lot of re-use of sub-sums.
   def labelNode(node: DocTreeNode): DocumentVectorMap = {
@@ -178,7 +137,7 @@ class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn: DocumentD
     } else {
       var vec = DocumentVectorMap()
       for (child <- node.children) {
-        accumDocumentVector(vec, labelNode(child)) // sum the document vectors of all child nodes
+        vec.accumulate(labelNode(child)) // sum the document vectors of all child nodes
       }
       node.description = makeDescription(vec)
       vec
@@ -192,7 +151,7 @@ object BuildDocTree {
 
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in roughly 0.1 increments
-    val distanceFn = DistanceFn.CosineDistance _
+    val distanceFn = (a:DocumentVector,b:DocumentVector) => DistanceFn.CosineDistance(a,b) // can't use CosineDistance because of method overloading :(
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
 
     // Use edge sampling if docset is large enough, with hard-coded number of samples

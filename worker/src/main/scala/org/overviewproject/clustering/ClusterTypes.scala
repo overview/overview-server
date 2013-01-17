@@ -40,18 +40,31 @@ object ClusterTypes {
   // This class represents documents as a straightforward mutable map from terms (encoded as IDs) to weights
   // Not very storage efficient, but good for lots of updates
   
-  type DocumentVectorMap = mutable.Map[TermID, TermWeight] // term -> tf_idf
+  // basically just map from term -> tf_idf
+  class DocumentVectorMap extends mutable.HashMap[TermID, TermWeight] { 
+    
+    // Sparse vector sum, used for computing node descriptions
+    def accumulate(v: DocumentVectorMap): Unit = {
+      v foreach {
+        case (id, weight) => update(id, getOrElse(id, 0f) + weight)
+      }
+    }
+  }
 
   object DocumentVectorMap {
-    def apply() = mutable.Map[TermID, TermWeight]()     // construct an empty object
+    def apply() = new DocumentVectorMap()             // construct an empty object
 
-    def apply(t:Pair[TermID,TermWeight]*) = mutable.Map[TermID, TermWeight](t:_*)   // construct from pairs, like Map
+    def apply(t:Pair[TermID,TermWeight]*) = {         // construct from pairs, like Map
+      val d = new DocumentVectorMap
+      t foreach { d+= _ }
+      d
+    }
 
     def apply(v:DocumentVector) = {                   // construct from DocumentVector's packed format
-      val m = mutable.Map[TermID, TermWeight]()
+      val d = new DocumentVectorMap
       for (i <- 0 until v.length) 
-        m += (v.terms(i) -> v.weights(i))
-      m
+        d += (v.terms(i) -> v.weights(i))
+      d
     }
   }
 
