@@ -60,6 +60,17 @@ class UserSpec extends Specification {
       user1.save
       user2.save must throwA[java.lang.RuntimeException]
     }
+    
+    "return users sorted by last activity date descending, with nulls last" in new DbTestContext {
+      val activeUsers = Seq.tabulate(3)(i => User(email = "user " + i, lastActivityAt = Some(new Timestamp(1000 - i))))
+      val confirmedUsers = Seq.tabulate(3)(i => User(email = "user " + (10 + i), confirmedAt = Some(new Timestamp(1000 - i))))
+      
+      Schema.users.insert(confirmedUsers ++ activeUsers)
+      val users = User.all.filterNot(_.email != "admin@overviewproject.org") 
+      
+      users.map(_.email).toSeq must beSorted
+
+    }
   }
 
   step(stop)
