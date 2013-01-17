@@ -120,7 +120,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 // This is where all of the hard-coded algorithmic constants live
 object BuildDocTree {
 
-  def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyConnectedComponents(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: cosine distance, and step down in roughly 0.1 increments
     val distanceFn = (a:DocumentVector,b:DocumentVector) => DistanceFn.CosineDistance(a,b) // can't use CosineDistance because of method overloading :(
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
@@ -144,5 +144,10 @@ object BuildDocTree {
 
     tree
   }
-
+  
+  
+ def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+   applyConnectedComponents(docVecs, progAbort)
+ }
+ 
 }
