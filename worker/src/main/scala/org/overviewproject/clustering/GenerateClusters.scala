@@ -115,35 +115,6 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
 }
 
-// Add node labeling to the Tree Builder
-class LabellingDocTreeBuilder(docVecs: DocumentSetVectors, distanceFn: DocumentDistanceFn)
-  extends ConnectedComponentDocTreeBuilder(docVecs, distanceFn) {
-
-  // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
-  private def makeDescription(vec: DocumentVectorMap): String = {
-    val maxTerms = 15
-    vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
-  }
-
-  // Create a descriptive string for each node, by taking the sum of all document vectors in that node.
-  // Building all descriptions at once allows a lot of re-use of sub-sums.
-  def labelNode(node: DocTreeNode): DocumentVectorMap = {
-
-    if (node.docs.size == 1) {
-      require(node.children.isEmpty)
-      val vec = DocumentVectorMap(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
-      node.description = makeDescription(vec)
-      vec
-    } else {
-      var vec = DocumentVectorMap()
-      for (child <- node.children) {
-        vec.accumulate(labelNode(child)) // sum the document vectors of all child nodes
-      }
-      node.description = makeDescription(vec)
-      vec
-    }
-  }
-}
 
 // Given a set of document vectors, generate a tree of nodes and their descriptions
 // This is where all of the hard-coded algorithmic constants live
@@ -162,11 +133,11 @@ object BuildDocTree {
     // Maximum arity of the tree (smallest nodes will be bundled)
     val maxChildrenPerNode = 5
 
-    val builder = new LabellingDocTreeBuilder(docVecs, distanceFn)
+    val builder = new ConnectedComponentDocTreeBuilder(docVecs, distanceFn)
     if (docVecs.size > numDocsWhereSamplingHelpful)
       builder.sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
     val tree = builder.BuildTree(threshSteps, progAbort) // actually build the tree!
-    builder.labelNode(tree) // create a descriptive label for each node
+    new TreeLabeler(docVecs).labelNode(tree) // create a descriptive label for each node
     ThresholdTreeCleaner(tree) // prune the tree
 
     DocumentIdCacheGenerator.createCache(tree)

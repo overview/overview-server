@@ -43,7 +43,7 @@ object ClusterTypes {
   // basically just map from term -> tf_idf
   class DocumentVectorMap extends mutable.HashMap[TermID, TermWeight] { 
     
-    // Sparse vector sum, used for computing node descriptions
+    // Sparse vector sum
     def accumulate(v: DocumentVectorMap): Unit = {
       v foreach {
         case (id, weight) => update(id, getOrElse(id, 0f) + weight)
