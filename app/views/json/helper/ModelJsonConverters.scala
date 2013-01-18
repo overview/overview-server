@@ -5,6 +5,7 @@ import models.core.{ Document, DocumentIdList }
 import play.api.i18n.Lang
 import play.api.libs.json.{ JsValue, Writes }
 import play.api.libs.json.Json.toJson
+import org.overviewproject.tree.orm.DocumentProcessingError
 
 object ModelJsonConverters {
 
@@ -44,6 +45,24 @@ object ModelJsonConverters {
         
 
       toJson(documentValues)
+    }
+  }
+  
+  implicit object JsonDocumentProcessingError extends Writes[DocumentProcessingError] {
+    override def writes(documentProcessingError: DocumentProcessingError): JsValue = {
+      val m = views.ScopedMessages("views.DocumentProcessingErrorList.show.message")
+      
+      val message = documentProcessingError.statusCode match {
+        case Some(403) => m("access_denied")
+        case Some(404) => m("not_found")
+        case Some(_) => m("server_error")
+        case None => m("internal_error")
+      } 
+      
+      toJson(Map(
+          "text_url" -> documentProcessingError.textUrl,
+          "message" -> message))
+          
     }
   }
   
