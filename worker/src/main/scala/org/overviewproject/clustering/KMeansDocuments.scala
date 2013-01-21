@@ -24,8 +24,9 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
   def mean(elems: Iterable[DocumentID]) : DocumentVector = {
     var m = DocumentVectorMap()
     elems foreach { docId => m.accumulate(DocumentVectorMap(docVecs(docId))) }  // ...could save conversion time if we had accumulate(v:DocumentVector) 
-    val len = math.sqrt(m.values.map(v=>v*v).sum)
-    m.transform((k,v) => (v / len).toFloat)
+
+    val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
+    m.transform((k,v) => (v / len).toFloat) 
     
 //    println("New centroid has " +  m.size + " terms.")
 //    println("Top terms: " + m.toSeq.sortWith(_._2 > _._2).take(20))

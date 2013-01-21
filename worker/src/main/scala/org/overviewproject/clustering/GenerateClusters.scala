@@ -14,7 +14,7 @@ package org.overviewproject.clustering
 import scala.collection.mutable.Set
 import scala.util.control.Breaks._
 import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import overview.util.Progress.{ NoProgressReporting, Progress, ProgressAbortFn }
+import overview.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import org.overviewproject.clustering.ClusterTypes._
 
 
@@ -77,8 +77,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   }
 
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
-  def BuildTree(threshSteps: Seq[Double],
-    progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def BuildTree(threshSteps: Seq[Double], progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     require(threshSteps.head == 1.0)
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
@@ -123,21 +122,35 @@ class KMeansDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected 
   km.seedClusterSize = 1
   km.maxIterations = 15
   
-  private def splitNode(node:DocTreeNode) : Unit = {
-    
-    if (node.docs.size > stopSize) {
-      // split larger nodes into smaller ones by clustering
-      val assignments = km(node.docs, k)
-      for (i <- 0 until k) { 
-        val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced
-        if (docsInThisCluster.size > 0)
-          node.children += new DocTreeNode(Set(docsInThisCluster:_*))
+  private def splitNode(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
+   
+    if (!progAbort(Progress(0, ClusteringLevel(1)))) { // if we haven't been cancelled...
+  
+      if (node.docs.size > stopSize) {
+         
+        // split larger nodes into smaller ones by clustering
+        val assignments = km(node.docs, k)
+        for (i <- 0 until k) { 
+          val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced
+          if (docsInThisCluster.size > 0)
+            node.children += new DocTreeNode(Set(docsInThisCluster:_*))
+        }
+        
+        // recurse, computing progress along the way
+        var i=0
+        var denom = node.children.size.toDouble
+        node.children foreach { node =>
+          splitNode(node, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
+          i+=1
+        }
+        
+      } else {
+        // smaller nodes, produce a leaf for each doc
+        if (node.docs.size > 1) 
+          node.children = node.docs.map(item => new DocTreeNode(Set(item)))
       }
-      node.children foreach splitNode
-    } else {
-      // smaller nodes, produce a leaf for each doc
-      if (node.docs.size > 1) 
-        node.children = node.docs.map(item => new DocTreeNode(Set(item)))
+      
+      progAbort(Progress(1, ClusteringLevel(1)))
     }
   }
   
@@ -146,7 +159,7 @@ class KMeansDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected 
     var topLevel = Set(docVecs.keys.toSeq:_*)
     val root = new DocTreeNode(topLevel)
     
-    splitNode(root)
+    splitNode(root, progAbort)
     println("----- Sizes of root children: " + root.children.map(_.docs.size).mkString(",") + " -----")
     
     root

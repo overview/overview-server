@@ -81,7 +81,7 @@ object Progress {
   // Little class that represents progress
   case class Progress(fraction: Double, status: DocumentSetCreationJobStateDescription, hasError: Boolean = false)
 
-  // Callback function to inform of progress, and returns false if operation should abort
+  // Callback function to inform of progress, and returns true if operation should abort
   type ProgressAbortFn = Progress => Boolean
 
   // Turns a sub-task progress into overall task progress
