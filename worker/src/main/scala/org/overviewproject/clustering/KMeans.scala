@@ -26,11 +26,11 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
   // Public for now, for easy control
   
   // Cluster centroid initialization
-  var seedClusterSize = 10      // number of elements we average for each initial centroid
+  var seedClusterSize = 1      // number of elements we average for each initial centroid
   var seedClusterSkip = 11 // see initializeCentroids; performance decreases linearly due to drop()
   
   // Clustering
-  var maxIterations = 5        // max number of passes over all points
+  var maxIterations = 10        // max number of passes over all points
   
   // -- Implementation --
   
@@ -60,6 +60,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
   // If a cluster ends up empty, create a new centroid. 
   // ATM just picks a quasi-random element; should probably pick element most distant from all centroids
   protected def newCentroid(clusters:CompactPairArray[T, Int], centroids:Seq[C], i:Int) : C = {
+    println("New centroid for cluster " + i)
     val skip = seedClusterSkip * (i+1)  // +1 to avoid picking an element originally part of seed set for cluster i
     val elem = clusters(skip % clusters.length)
     mean(List(elem._1))
@@ -108,14 +109,16 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
    var centroids = initialCentroids(elements, k)
    var clusters = CompactPairArray[T, Int]()
    
+   println("---- starting k-means with " + elements.size + " items ----")
  //  println("initial centroids: " +  centroids)
    var iterCount = 0
    while (iterCount < maxIterations) {
      clusters = assignClusters(elements, centroids)
      centroids = refineCentroids(clusters, centroids, k)
      iterCount += 1
- //    println("clusters: " + clusters)
- //    println("centroids: " +  centroids)
+     
+     val clusterSizes = (0 until k).map(i => clusters.filter(_._2 == i).size)
+     println("cluster sizes: " + clusterSizes)
    }
    
    clusters

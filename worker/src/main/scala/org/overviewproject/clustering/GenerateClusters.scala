@@ -120,15 +120,19 @@ class KMeansDocTreeBuilder(protected val docVecs: DocumentSetVectors, protected 
   val stopSize = 16   // keep breaking into clusters until <= 16 docs in a node
   
   private val km = new KMeansDocuments(docVecs)
+  km.seedClusterSize = 1
+  km.maxIterations = 15
   
   private def splitNode(node:DocTreeNode) : Unit = {
     if (node.docs.size > stopSize) {
-      val assignments = km(docVecs.keys, k)
+      val assignments = km(node.docs, k)
       for (i <- 0 until k) { 
-        val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced   
-        node.children += new DocTreeNode(Set(docsInThisCluster:_*))
+        val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced
+        if (docsInThisCluster.size > 0)
+          node.children += new DocTreeNode(Set(docsInThisCluster:_*))
       }
     }
+    node.children foreach splitNode
   }
   
   def BuildTree(progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
@@ -188,8 +192,8 @@ object BuildDocTree {
   }
     
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    applyKMeans(docVecs, progAbort)
-    //applyConnectedComponents(docVecs, progAbort)
+    //applyKMeans(docVecs, progAbort)
+    applyConnectedComponents(docVecs, progAbort)
   }
  
 }
