@@ -384,6 +384,8 @@ make_csv_upload_form = (form_element) ->
 $ ->
   window.dcimport.import_project_with_login($('#documentcloud-import .with-login')[0])
 
+  $('#error-list-modal').on('hidden', (() -> $(this).removeData('modal')))
+
   make_toggle_link('#documentcloud-import .manual')
   make_toggle_link('#documentcloud-import .sample')
 
@@ -396,3 +398,4 @@ $ ->
     $('body').append($modal_clone)
     make_csv_upload_form($modal_clone[0])
     $modal_clone.modal('show')
+
