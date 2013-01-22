@@ -48,6 +48,8 @@ POST   /documentsets/:id/tags/:tagId/add           controllers.TagController.add
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long, nodes: String ?= "")
 
+GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
+
 # Routes for browsers that dont' support CORS
 # really GET, but with hidden password
 POST   /documentcloud-proxy/projects.json controllers.DocumentCloudProxyController.projects()

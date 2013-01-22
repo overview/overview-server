@@ -10,7 +10,7 @@ trait DocumentProcessingErrorController extends Controller {
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val errors = findDocumentProcessingErrors(documentSetId)
     
-    Ok("hi")//views.json.DocumentProcessingError.show(errors))
+    Ok(views.html.DocumentProcessingError.index(errors))
   }
   
   protected def findDocumentProcessingErrors(documentSetId: Long): Seq[DocumentProcessingError]
@@ -18,6 +18,9 @@ trait DocumentProcessingErrorController extends Controller {
 
 object DocumentProcessingErrorController extends DocumentProcessingErrorController {
   override protected def findDocumentProcessingErrors(documentSetId: Long): Seq[DocumentProcessingError] = {
-    Nil    
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    import models.orm.Schema.documentProcessingErrors
+    val errors = documentProcessingErrors.where(dpe => dpe.documentSetId === documentSetId)
+    errors.toSeq
   }
 }
