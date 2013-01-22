@@ -32,9 +32,7 @@
     }
     </p>
     @if(documentSet.errorCount > 0) {
-     <p class="document-processing-errors">
-       <span class="error-count">@m("error_count", documentSet.errorCount)</span>
-     </p>
+      <a class="error-list" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">@m("error_count", documentSet.errorCount)</a>
    }
   </li>
 }

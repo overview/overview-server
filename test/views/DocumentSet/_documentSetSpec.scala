@@ -78,7 +78,7 @@ class _documentSetSpec extends Specification {
     "should not have the \"unfinished\" class when finished" in new NormalDocumentSetContext {
       $("li.unfinished").length must beEqualTo(0)
     }
-
+    
     "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
       $("li.unfinished").length must be_>=(1)
     }
@@ -104,11 +104,13 @@ class _documentSetSpec extends Specification {
     }
     
     "should not show error count if none exist" in new NormalDocumentSetContext {
-      $(".error-count").length must be_==(0)
+      $(".error-list").length must be_==(0)
     }
     
-    "should show error count if there are errors" in new DocumentSetWithErrorsContext {
-      $(".error-count").text.trim must endWith("error_count")
+    "should show error count popup if there are errors" in new DocumentSetWithErrorsContext {
+      $(".error-list").text.trim must endWith("error_count")
+      $(".error-list").attr("href") must be equalTo("/documentsets/1/error-list")
+      $(".error-list").attr("data-target") must be equalTo("#error-list-modal")
     }
   }
 }
