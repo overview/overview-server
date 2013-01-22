@@ -1,0 +1,21 @@
+@(documentProcessingErrors: Seq[org.overviewproject.tree.orm.DocumentProcessingError])(implicit lang: Lang)
+
+@defining(scopedMessages("views.DocumentProcessingError.index")) { m =>
+
+  <table class="error-list">
+    <thead>
+	  <tr>
+        <th>@m("th.url")</th>
+        <th>@m("th.error")</th>
+      </tr>
+    </thead>
+    <tbody>
+      @documentProcessingErrors.map { e =>
+        <tr>
+      	  <td class="url"><a href=@e.textUrl>@helper.DocumentProcessingErrorDisplay.url(e.textUrl)</a></td>
+          <td class ="error">@helper.DocumentProcessingErrorDisplay.status(e.statusCode)</td>
+        </tr>
+	  }
+     </tbody>
+  </table>
+}
