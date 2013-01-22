@@ -55,6 +55,15 @@ class indexSpec extends Specification {
       $("ul.document-sets li#document-set-1 a").attr("href") must endWith("/1")
       $("ul.document-sets li#document-set-2").text must contain("title2")
     }
+    
+    "Define error-list popup if there are DocumentSets" in new ViewContext {
+      documentSets ++= Seq(
+        FakeOverviewDocumentSet(1, "title1", "query1"),
+        FakeOverviewDocumentSet(2, "title2", "query2"))
+
+      $("#error-list-modal").length must equalTo(1)
+      $("#error-list-modal .modal-header h3").text must equalTo("Failed document retrievals")
+    }
   }
   step(stop)
 }
