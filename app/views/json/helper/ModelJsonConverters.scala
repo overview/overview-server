@@ -48,26 +48,7 @@ object ModelJsonConverters {
     }
   }
   
-  implicit object JsonDocumentProcessingError extends Writes[DocumentProcessingError] {
-    override def writes(documentProcessingError: DocumentProcessingError): JsValue = {
-      val m = views.ScopedMessages("views.DocumentProcessingErrorList.show.message")
-      
-      val message = documentProcessingError.statusCode match {
-        case Some(403) => m("access_denied")
-        case Some(404) => m("not_found")
-        case Some(_) => m("server_error")
-        case None => m("internal_error")
-      } 
-      
-      toJson(Map(
-          "text_url" -> documentProcessingError.textUrl,
-          "message" -> message))
-          
-    }
-  }
-  
   private def maybeMap(key: String, maybeValue: Option[String], toValue: String => String = identity): Map[String, JsValue] =
     maybeValue.map(v => Map(key -> toJson(toValue(v)))).getOrElse(Map.empty)
-    
 
 }
