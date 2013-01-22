@@ -111,6 +111,14 @@ views.Document.show.sidebar.disable=Hide sidebar ⇢
 views.Document.show.title.empty_title=(document with no title)
 views.Document.show._csvImportDocument.source=Source: 
 
+views.DocumentProcessingError.index.th.url=Document URL
+views.DocumentProcessingError.index.th.error= Error
+views.DocumentProcessingError.error.td.access_denied=Access Denied
+views.DocumentProcessingError.error.td.not_found=Not Found
+views.DocumentProcessingError.error.td.server_error=Document Cloud Server Error
+views.DocumentProcessingError.error.td.internal_error=Internal Error
+
+
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
@@ -120,6 +128,7 @@ views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public D
 views.DocumentSet.index.import_sample_document_set=Import a sample document set
 views.DocumentSet.index.upload=Upload a document set
 
+views.DocumentSet._errorList.h3=Failed document retrievals
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=Title
 views.DocumentSet._manualForm.label.query=Query
