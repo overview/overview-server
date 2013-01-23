@@ -14,12 +14,12 @@ import java.nio.charset.CharsetDecoder
 import java.nio.charset.CodingErrorAction
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
-
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO
 import persistence.UploadedFileLoader
 import org.overviewproject.database.Database
 import persistence.LargeObjectInputStream
+import persistence.UploadedFile
 
 /**
  * Provides a context for reading an uploaded file from the database. The
@@ -30,29 +30,19 @@ class UploadReader(uploadedFileId: Long) {
   private var DefaultCharSet: String = "UTF-8"
   private var countingInputStream: CountingInputStream = _
 
-  var size: Option[Long] = None
-  var reader: Reader = _
+  /** @return a reader for the given UploadedFile */
+  def reader(uploadedFile: UploadedFile): Reader = {
+	val largeObjectInputStream = new LargeObjectInputStream(uploadedFile.contentsOid)
+    countingInputStream = new CountingInputStream(largeObjectInputStream)
 
+    new BufferedReader(new InputStreamReader(countingInputStream, decoder(uploadedFile.encoding)))
+  }
+  
   /** @return the number of bytes read from the uploaded file */
   def bytesRead: Long =
     if (countingInputStream != null) countingInputStream.bytesRead
     else 0l
 
- 
-  /**
-   * Must be called before reader is accessed. So ugly.
-   */
-  def initializeReader {
-    implicit val c = Database.currentConnection
-
-    val upload = UploadedFileLoader.load(uploadedFileId)
-    size = Some(upload.size)
-
-    val largeObjectInputStream = new LargeObjectInputStream(upload.contentsOid)
-    countingInputStream = new CountingInputStream(largeObjectInputStream)
-
-    reader = new BufferedReader(new InputStreamReader(countingInputStream, decoder(upload.encoding)))
-  }
   
   /**
    * @return a CharsetDecoder defined by encoding, if present and valid.

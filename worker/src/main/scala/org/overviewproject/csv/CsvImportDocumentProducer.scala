@@ -10,11 +10,11 @@ import org.overviewproject.database.DB
 import overview.util.{ DocumentConsumer, DocumentProducer }
 import overview.util.DocumentSetCreationJobStateDescription._
 import overview.util.Progress._
-
-import org.overviewproject.database.Database;
+import org.overviewproject.database.Database
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import persistence.DocumentWriter
+import persistence.UploadedFileLoader
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -30,10 +30,11 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
 
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
-    Database.inTransaction {
-      uploadReader.initializeReader
+    val uploadedFile = Database.inTransaction {
+      UploadedFileLoader.load(uploadedFileId)(Database.currentConnection)
     }
-    val documentSource = new CsvImportSource(uploadReader.reader)
+    val reader = uploadReader.reader(uploadedFile)
+    val documentSource = new CsvImportSource(reader)
 
     val iterator = documentSource.iterator
     
@@ -41,7 +42,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
       val doc = iterator.next
       val documentId = writeAndCommitDocument(documentSetId, doc)
       consumer.processDocument(documentId, doc.text)
-      reportProgress(uploadReader.bytesRead, uploadReader.size.getOrElse(1))
+      reportProgress(uploadReader.bytesRead, uploadedFile.size)
     }
 
     consumer.productionComplete()

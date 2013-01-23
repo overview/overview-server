@@ -8,6 +8,8 @@ import org.overviewproject.test.DbSetup._
 import java.io.InputStreamReader
 import java.nio.charset.Charset
 import persistence.UploadedFile
+import persistence.UploadedFileLoader
+import java.io.Reader
 
 class UploadReaderSpec extends DbSpecification {
 
@@ -20,7 +22,9 @@ class UploadReaderSpec extends DbSpecification {
       def data: Array[Byte]
       def contentType: String
 
+      var uploadId: Long = _
       var uploadReader: UploadReader = _
+      var reader: Reader = _
 
       override def setupWithDb = {
         implicit val pgc = DB.pgConnection
@@ -28,9 +32,12 @@ class UploadReaderSpec extends DbSpecification {
           lo.add(data)
           lo.oid
         }
-        val uploadId = insertUploadedFile(loid, "content-disposition", contentType, uploadSize)
+        uploadId = insertUploadedFile(loid, "content-disposition", contentType, uploadSize)
+        val uploadedFile = UploadedFileLoader.load(uploadId)
+        
         uploadReader = new UploadReader(uploadId)
-        uploadReader.initializeReader
+        
+        reader = uploadReader.reader(uploadedFile)
       }
     }
 
@@ -61,36 +68,32 @@ class UploadReaderSpec extends DbSpecification {
       def contentType = "application/octet-stream ; charset=utf-8"
     }
 
-    "create reader from uploaded file" in new LargeData {
+    "create reader from UploadedFile" in new LargeData {
       val buffer = new Array[Char](20480)
-      val numRead = uploadReader.reader.read(buffer)
+      val numRead = reader.read(buffer)
       buffer.take(numRead) must be equalTo (data.map(_.toChar).take(numRead))
     }
-
-    "return upload size" in new LargeData {
-      uploadReader.size must beSome.like { case s => s must be equalTo (uploadSize) }
-    }
-
+    
     "return bytesRead" in new LargeData {
       uploadReader.bytesRead must be equalTo (0)
 
       val buffer = new Array[Char](20480)
-      val numRead = uploadReader.reader.read(buffer)
+      val numRead = reader.read(buffer)
       uploadReader.bytesRead must be equalTo (numRead)
-      uploadReader.reader.read(buffer)
+      reader.read(buffer)
       uploadReader.bytesRead must be equalTo (uploadSize)
     }
 
     "read non-default encoding" in new Windows1252Data {
       val buffer = new Array[Char](uploadSize)
-      uploadReader.reader.read(buffer)
+      reader.read(buffer)
 
       buffer must be equalTo (windows1252Text.toCharArray())
     }
 
     "default to UTF-8 if specified encoding is not valid" in new InvalidEncoding {
       val buffer = new Array[Char](uploadSize)
-      uploadReader.reader.read(buffer)
+      reader.read(buffer)
       buffer must be equalTo data.map(_.toChar)
     }
 
@@ -98,7 +101,7 @@ class UploadReaderSpec extends DbSpecification {
       val replacement = Charset.forName("UTF-8").newDecoder.replacement.toCharArray()
 
       val buffer = new Array[Char](uploadSize)
-      uploadReader.reader.read(buffer)
+      reader.read(buffer)
 
       buffer must be equalTo (replacement)
     }
