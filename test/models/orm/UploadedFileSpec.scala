@@ -1,15 +1,12 @@
 package models.orm
 
-import org.specs2.mutable.Specification
+import org.overviewproject.test.Specification
 import helpers.DbTestContext
 import org.squeryl.PrimitiveTypeMode._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import java.sql.Timestamp
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 
-@RunWith(classOf[JUnitRunner])
 class UploadedFileSpec extends Specification {
 
   step(start(FakeApplication()))
@@ -28,12 +25,6 @@ class UploadedFileSpec extends Specification {
       uploadedFile.id must not be equalTo(0)
       val foundUploadedFile = UploadedFile.findById(uploadedFile.id)
       foundUploadedFile must beSome
-    }
-
-    "be deleted" in new UploadContext {
-      uploadedFile.delete
-      val foundUploadedFile = UploadedFile.findById(uploadedFile.id)
-      foundUploadedFile must beNone
     }
   }
   step(stop)

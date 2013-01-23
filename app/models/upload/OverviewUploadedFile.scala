@@ -40,6 +40,9 @@ object OverviewUploadedFile {
   private def now: Timestamp = new Timestamp(System.currentTimeMillis())
 
   private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
+    import models.orm.Schema.uploadedFiles
+    import org.overviewproject.postgres.SquerylEntrypoint._
+
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
     val contentsOid = uploadedFile.contentsOid
@@ -54,6 +57,8 @@ object OverviewUploadedFile {
 
     def save: OverviewUploadedFile = new OverviewUploadedFileImpl(uploadedFile.save)
 
-    def delete { uploadedFile.delete }
+    def delete {
+      uploadedFiles.deleteWhere(u => u.id === id)
+    }
   }
 }

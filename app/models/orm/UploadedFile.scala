@@ -19,11 +19,9 @@ case class UploadedFile(
   override def isPersisted(): Boolean = (id > 0)
 
   def save: UploadedFile = Schema.uploadedFiles.insertOrUpdate(this)
-
-  def delete { Schema.uploadedFiles.deleteWhere(u => u.id === id) }
 }
 
 object UploadedFile {
   def findById(id: Long): Option[UploadedFile] =
-    Schema.uploadedFiles.where(u => u.id === id).headOption
+    Schema.uploadedFiles.lookup(id)
 }
