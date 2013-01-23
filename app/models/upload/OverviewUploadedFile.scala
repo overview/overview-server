@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.UploadedFile
 trait OverviewUploadedFile {
   val id: Long
   val uploadedAt: Timestamp
-  val contentsOid: Long
+  val contentsOid: Option[Long]
   val contentDisposition: String
   val contentType: String
   val size: Long
@@ -45,7 +45,7 @@ object OverviewUploadedFile {
   private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
-    val contentsOid = uploadedFile.contentsOid.getOrElse(0l)
+    val contentsOid = uploadedFile.contentsOid
     val contentDisposition = uploadedFile.contentDisposition
     val contentType = uploadedFile.contentType
     val size = uploadedFile.size

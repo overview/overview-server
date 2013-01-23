@@ -123,7 +123,8 @@ trait FileUploadIteratee {
 
 /** Implementation that writes to database */
 object FileUploadIteratee extends FileUploadIteratee with PgConnection {
-
+  private val MissingOid: Long = -1; // Causes operations on LO to fail if we don't have a good loid.
+  
   def findUpload(userId: Long, guid: UUID) = withPgConnection { implicit c => OverviewUpload.find(userId, guid) }
 
   def createUpload(userId: Long, guid: UUID, contentDisposition: String, contentType: String, contentLength: Long): OverviewUpload = withPgConnection { implicit c =>
@@ -131,18 +132,18 @@ object FileUploadIteratee extends FileUploadIteratee with PgConnection {
   }
 
   def appendChunk(upload: OverviewUpload, chunk: Array[Byte]): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.uploadedFile.contentsOid) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
+    LO.withLargeObject(upload.uploadedFile.contentsOid.getOrElse(MissingOid)) { lo => upload.withUploadedBytes(lo.add(chunk)).save }
   }
 
   def truncateUpload(upload: OverviewUpload): OverviewUpload = withPgConnection { implicit c =>
-    LO.withLargeObject(upload.uploadedFile.contentsOid) { lo =>
+    LO.withLargeObject(upload.uploadedFile.contentsOid.getOrElse(MissingOid)) { lo =>
       lo.truncate
       upload.truncate.save
     }
   }
 
   def cancelUpload(upload: OverviewUpload) = withPgConnection { implicit c =>
-    LO.delete(upload.uploadedFile.contentsOid)
+    upload.uploadedFile.contentsOid.map(oid => LO.delete(oid))
     upload.uploadedFile.delete
     upload.delete
   }

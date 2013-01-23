@@ -34,7 +34,7 @@ class OverviewUploadSpec extends Specification {
 
         upload.lastActivity.compareTo(before) must beGreaterThanOrEqualTo(0)
         upload.size must be equalTo (totalSize)
-        upload.uploadedFile.contentsOid must be equalTo (lo.oid)
+        upload.uploadedFile.contentsOid must beSome.like { case oid => oid must be equalTo (lo.oid) }
         upload.uploadedFile.contentDisposition must be equalTo (contentDisposition)
         upload.uploadedFile.contentType must be equalTo (contentType)
         upload.uploadedFile.size must be equalTo (0)
