@@ -7,9 +7,14 @@
 package persistence
 
 import java.sql.Connection
+import org.overviewproject.tree.orm.UploadedFile
 
 /** Information describing an uploaded file */
-case class EncodedUploadFile(contentsOid: Long, contentType: String, size: Long) {
+trait EncodedUploadFile {
+  val contentsOid: Long
+  val contentType: String
+  val size: Long
+  
   private var ContentTypeEncoding = ".*charset=([^\\s]*)".r 
 
   /**
@@ -31,6 +36,14 @@ object EncodedUploadFile {
 
     val upload = Schema.uploadedFiles.lookup(uploadedFileId).get
 
-    EncodedUploadFile(upload.contentsOid, upload.contentType, upload.size)
+    new EncodedUploadFileImpl(upload)
+  }
+  
+  private class EncodedUploadFileImpl(uploadedFile: UploadedFile) extends EncodedUploadFile {
+    val contentsOid: Long = uploadedFile.contentsOid
+    val contentType: String = uploadedFile.contentType
+    val size: Long = uploadedFile.size
+    
+    
   }
 }

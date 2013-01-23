@@ -16,22 +16,30 @@ class UploadedFileLoaderSpec extends DbSpecification {
         
       val uploadedFileId = insertUploadedFile(oid, "content-disposition", contentType, size)
       
-      EncodedUploadFile.load(uploadedFileId) must be equalTo(EncodedUploadFile(oid, contentType, size))
+      val uploadedFile = EncodedUploadFile.load(uploadedFileId) 
+      uploadedFile.contentsOid must be equalTo oid
+      uploadedFile.contentType must be equalTo contentType
+      uploadedFile.size must be equalTo size
     }
   }
   
   step(shutdownDb)
   
+  case class TestUploadFile(contentType: String) extends EncodedUploadFile {
+    val contentsOid: Long = 0l
+    val size: Long = 100
+  }
+  
   "UploadedFile" should {
     
     "return None if no encoding can be found" in {
-      val uploadedFile = EncodedUploadFile(0l, "application/octet-stream", 100)
+      val uploadedFile = TestUploadFile("application/octet-stream")
       uploadedFile.encoding must beNone
     }
     
     "return specified encoding" in {
       val encoding = "someEncoding"
-      val uploadedFile = EncodedUploadFile(0l, "application/octet-stream; charset=" + encoding, 100)
+      val uploadedFile = TestUploadFile("application/octet-stream; charset=" + encoding)
       uploadedFile.encoding must beSome.like { case c => c must be equalTo(encoding) }
     }
   }
