@@ -3,6 +3,10 @@
  (Java doesn't like /dev/log, and UDP logging seems like too much configuration)
  -->
 <configuration>
+  <turboFilter class="ch.qos.logback.classic.turbo.DuplicateMessageFilter">
+    <AllowedRepetitions>3</AllowedRepetitions>
+  </turboFilter>
+
   <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
     <!-- Only email ERRORs -->
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -10,13 +14,14 @@
     </filter>
 
     <!-- Rely on environment variables for SMTP settings -->
-    <smtpHost>${smtp.host}</smtpHost>
-    <username>${smtp.username}</username>
-    <password>${smtp.password}</password>
-    <smtpPort>${smtp.port}</smtpPort>
-    <from>${logger.smtp_from}</from>
-    <to>${logger.smtp_to}</to>
-    <subject>${logger.smtp_subject_prefix}: %logger{20} - %m</subject>
+    <smtpHost>${SMTP_HOST}</smtpHost>
+    <username>${SMTP_USERNAME}</username>
+    <password>${SMTP_PASSWORD}</password>
+    <smtpPort>${SMTP_PORT}</smtpPort>
+    <ssl>${SMTP_SSL}</ssl>
+    <from>${LOGGER_SMTP_FROM}</from>
+    <to>${LOGGER_SMTP_TO}</to>
+    <subject>${LOGGER_SMTP_SUBJECT_PREFIX}: %logger{20} - %m</subject>
     <layout class="ch.qos.logback.classic.PatternLayout">
       <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
     </layout>
