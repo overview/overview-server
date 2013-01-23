@@ -6,7 +6,7 @@ import org.overviewproject.test.DbSetup._
 import org.overviewproject.database.DB
 import java.sql.Connection
 
-class EncodedUploadedFileSpec extends DbSpecification {
+class EncodedUploadFileSpec extends DbSpecification {
 
   step(setupDb)
 
