@@ -42,8 +42,9 @@
     @if(documentSets) {
       <ul class="unstyled document-sets">
         @documentSets.map(d => _documentSet(d))
-    	@views.html.DocumentSet._errorList()
       </ul>
+   	  @views.html.DocumentSet._errorList()
+      
     } else {
       <p class="no-document-sets">@m("no_document_sets")</p>
     }
