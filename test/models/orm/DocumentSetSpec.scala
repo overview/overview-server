@@ -37,6 +37,12 @@ class DocumentSetSpec extends Specification {
     }
   }
 
+  def saveUploadedFile(uploadedFile: UploadedFile): UploadedFile = {
+    import models.orm.Schema.uploadedFiles
+
+    uploadedFiles.insertOrUpdate(uploadedFile)
+  }
+
   step(start(FakeApplication()))
 
   "DocumentSet" should {
@@ -55,10 +61,10 @@ class DocumentSetSpec extends Specification {
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
-    "create a job with type CsvImportDocumentSet" in new PgConnectionContext {
+    inExample("create a job with type CsvImportDocumentSet") in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
-          UploadedFile(contentsOid = lo.oid, contentDisposition = "", contentType = "", size = 0).save
+          saveUploadedFile(UploadedFile(contentsOid = lo.oid, contentDisposition = "", contentType = "", size = 0))
         val documentSet =
           DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id))
         documentSet.save must not(throwA[Exception])
@@ -135,7 +141,7 @@ class DocumentSetSpec extends Specification {
         lo.oid
       }
 
-      val uploadedFile = UploadedFile(contentsOid = oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100).save
+      val uploadedFile = saveUploadedFile(UploadedFile(contentsOid = oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100))
       val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
       DocumentSet.delete(documentSet.id)
       UploadedFile.findById(uploadedFile.id) must beNone
@@ -144,15 +150,15 @@ class DocumentSetSpec extends Specification {
     }
 
     "have no errorCount when there are no errors" in new DocumentSetContext {
-      documentSet.errorCount must be equalTo(0)
+      documentSet.errorCount must be equalTo (0)
     }
 
     inExample("provide count of errors when they exist") in new DocumentSetContext {
       val errorCount = 10
       val errors = Seq.tabulate(errorCount)(i => DocumentProcessingError(documentSet.id, "url", "message"))
       Schema.documentProcessingErrors.insert(errors)
-      
-      documentSet.errorCount must be equalTo(errorCount)
+
+      documentSet.errorCount must be equalTo (errorCount)
     }
   }
 

@@ -55,7 +55,10 @@ object OverviewUploadedFile {
     def withContentInfo(contentDisposition: String, contentType: String): OverviewUploadedFile =
       new OverviewUploadedFileImpl(uploadedFile.copy(contentDisposition = contentDisposition, contentType = contentType))
 
-    def save: OverviewUploadedFile = new OverviewUploadedFileImpl(uploadedFile.save)
+    def save: OverviewUploadedFile = {
+      uploadedFiles.insertOrUpdate(uploadedFile)
+      new OverviewUploadedFileImpl(uploadedFile)
+    }
 
     def delete {
       uploadedFiles.deleteWhere(u => u.id === id)

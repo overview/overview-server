@@ -29,7 +29,7 @@ class UploadSpec extends Specification {
 
       override def setupWithDb = {
         Schema.users.insert(user)
-        uploadedFile.save
+        Schema.uploadedFiles.insert(uploadedFile)
         upload = Upload(0l, user.id, uploadId, uploadedFile.id, timestamp, 100)
         
         upload.save
