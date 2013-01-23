@@ -7,7 +7,7 @@ import org.overviewproject.database.DB
 import org.overviewproject.test.DbSetup._
 import java.io.InputStreamReader
 import java.nio.charset.Charset
-import persistence.UploadedFile
+import persistence.EncodedUploadFile
 import persistence.UploadedFileLoader
 import java.io.Reader
 

@@ -19,7 +19,7 @@ import org.overviewproject.postgres.LO
 import persistence.UploadedFileLoader
 import org.overviewproject.database.Database
 import persistence.LargeObjectInputStream
-import persistence.UploadedFile
+import persistence.EncodedUploadFile
 
 /**
  * Provides a context for reading an uploaded file from the database. The
@@ -31,7 +31,7 @@ class UploadReader(uploadedFileId: Long) {
   private var countingInputStream: CountingInputStream = _
 
   /** @return a reader for the given UploadedFile */
-  def reader(uploadedFile: UploadedFile): Reader = {
+  def reader(uploadedFile: EncodedUploadFile): Reader = {
 	val largeObjectInputStream = new LargeObjectInputStream(uploadedFile.contentsOid)
     countingInputStream = new CountingInputStream(largeObjectInputStream)
 
