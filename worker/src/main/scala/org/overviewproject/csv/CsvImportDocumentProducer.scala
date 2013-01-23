@@ -37,7 +37,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
     val documentSource = new CsvImportSource(reader)
 
     val iterator = documentSource.iterator
-    
+
     while (!jobCancelled && iterator.hasNext) {
       val doc = iterator.next
       val documentId = writeAndCommitDocument(documentSetId, doc)
@@ -46,6 +46,10 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
     }
 
     consumer.productionComplete()
+    
+    Database.inTransaction {
+      uploadedFile.deleteContent(Database.currentConnection)
+    }
   }
 
   private def reportProgress(n: Long, size: Long) {
