@@ -16,7 +16,7 @@ import java.sql.Connection
 import scala.util.control.Exception.allCatch
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO
-import persistence.UploadedFileLoader
+import persistence.EncodedUploadFile
 import org.overviewproject.database.Database
 import persistence.LargeObjectInputStream
 import persistence.EncodedUploadFile

@@ -16,7 +16,7 @@ class UploadedFileLoaderSpec extends DbSpecification {
         
       val uploadedFileId = insertUploadedFile(oid, "content-disposition", contentType, size)
       
-      UploadedFileLoader.load(uploadedFileId) must be equalTo(EncodedUploadFile(oid, contentType, size))
+      EncodedUploadFile.load(uploadedFileId) must be equalTo(EncodedUploadFile(oid, contentType, size))
     }
   }
   

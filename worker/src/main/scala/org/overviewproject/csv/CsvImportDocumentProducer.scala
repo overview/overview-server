@@ -14,7 +14,7 @@ import org.overviewproject.database.Database
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import persistence.DocumentWriter
-import persistence.UploadedFileLoader
+import persistence.EncodedUploadFile
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -31,7 +31,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
     val uploadedFile = Database.inTransaction {
-      UploadedFileLoader.load(uploadedFileId)(Database.currentConnection)
+      EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
     val reader = uploadReader.reader(uploadedFile)
     val documentSource = new CsvImportSource(reader)

@@ -23,7 +23,7 @@ case class EncodedUploadFile(contentsOid: Long, contentType: String, size: Long)
 }
 
 /** Helper for loading an UploadedFile from the database */
-object UploadedFileLoader {
+object EncodedUploadFile {
 
   /** @return the UploadedFile specified by the uploadedFileId */
   def load(uploadedFileId: Long)(implicit c: Connection): EncodedUploadFile = {
