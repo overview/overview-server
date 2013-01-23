@@ -5,6 +5,7 @@ import org.overviewproject.tree.orm.DocumentProcessingError
 
 trait OverviewDocumentProcessingError {
   val statusCode: Option[Int]
+  val url: String
 }
 
 object OverviewDocumentProcessingError {
@@ -24,6 +25,7 @@ object OverviewDocumentProcessingError {
     
   private class OverviewDocumentProcessingErrorImpl(documentProcessingError: DocumentProcessingError) extends OverviewDocumentProcessingError {
     val statusCode: Option[Int] = documentProcessingError.statusCode
+    val url: String = documentProcessingError.textUrl
   }
 
   private val InternalError: String = "Overview Internal Error"

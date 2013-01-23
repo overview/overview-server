@@ -34,6 +34,7 @@ class OverviewDocumentProcessingErrorSpec extends Specification {
     "return errors and reasons sorted by status code" in new HttpErrors {
       errorGroups must have size (statusCodes.groupBy(identity).size)
       errorGroups.map(e => e._2.head.statusCode) must beSorted
+      errorGroups.map(e => e._2.head.url) must beSorted
     }
 
     "return internal errors first in list" in new InternalErrors {
