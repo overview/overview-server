@@ -3,7 +3,7 @@ package models.upload
 import java.sql.Timestamp
 import java.util.UUID
 import models.orm.Upload
-import models.orm.UploadedFile
+import org.overviewproject.tree.orm.UploadedFile
 
 /**
  * Wrapper around models.orm.Upload hiding details of storage and managing

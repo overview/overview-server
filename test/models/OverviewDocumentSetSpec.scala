@@ -2,10 +2,11 @@ package models
 
 import java.sql.Timestamp
 import org.overviewproject.test.Specification
+import org.overviewproject.tree.orm.UploadedFile
 import org.specs2.specification.Scope
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
-import models.orm.{ DocumentSet, UploadedFile }
+import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 import models.upload.OverviewUploadedFile
 import helpers.DbTestContext

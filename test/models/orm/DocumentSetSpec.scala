@@ -17,11 +17,11 @@ import play.api.Play.stop
 import play.api.test.FakeApplication
 import org.overviewproject.test.DbSetup._
 import models.orm.DocumentSetType._
-import org.postgresql.util.PSQLException
 import helpers.PgConnectionContext
+import org.postgresql.util.PSQLException
 import org.overviewproject.postgres.LO
 import java.sql.Timestamp
-import org.overviewproject.tree.orm.DocumentProcessingError
+import org.overviewproject.tree.orm.{ DocumentProcessingError, UploadedFile }
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {

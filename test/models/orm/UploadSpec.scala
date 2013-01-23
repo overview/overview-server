@@ -7,6 +7,7 @@ import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.UploadedFile
 
 import helpers.DbTestContext
 import play.api.Play.start

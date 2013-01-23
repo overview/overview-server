@@ -2,8 +2,8 @@ package models.upload
 
 import java.net.URLDecoder
 import java.sql.Timestamp
-import models.orm.UploadedFile
 import scala.util.control.Exception._
+import org.overviewproject.tree.orm.UploadedFile
 
 trait OverviewUploadedFile {
   val id: Long
