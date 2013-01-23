@@ -128,7 +128,7 @@ object JobHandler {
       SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
 
       uploadedFileId.map { u =>
-        SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
+        SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id} AND contents_oid IS NOT NULL").on('id -> u).as(scalar[Int] *)
         SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
       }
     }
