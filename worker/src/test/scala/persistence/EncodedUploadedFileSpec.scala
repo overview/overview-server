@@ -4,6 +4,7 @@ import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.database.DB
+import java.sql.Connection
 
 class EncodedUploadedFileSpec extends DbSpecification {
 
@@ -34,6 +35,18 @@ class EncodedUploadedFileSpec extends DbSpecification {
       uploadedFile.size must be equalTo size
     }
     
+    "remove large object" in new UploadedFileContext {
+       val uploadedFile = EncodedUploadFile.load(uploadedFileId)
+    		   
+       uploadedFile.deleteContent
+       
+       val updatedUploadedFile = EncodedUploadFile.load(uploadedFileId)
+       updatedUploadedFile.contentsOid must beNone
+       
+       implicit val pgc = DB.pgConnection
+       LO.withLargeObject(oid) { lo => } must throwA[Exception]
+       
+    }
   }
 
   step(shutdownDb)
@@ -41,6 +54,8 @@ class EncodedUploadedFileSpec extends DbSpecification {
   case class TestUploadFile(contentType: String) extends EncodedUploadFile {
     val contentsOid: Option[Long] = None
     val size: Long = 100
+    
+    def deleteContent(implicit c: Connection): EncodedUploadFile = this
   }
 
   "EncodedUploadedFile" should {
