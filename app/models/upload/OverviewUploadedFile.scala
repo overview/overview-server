@@ -32,7 +32,7 @@ object OverviewUploadedFile {
   }
 
   def apply(oid: Long, contentDisposition: String, contentType: String): OverviewUploadedFile = {
-    val uploadedFile = UploadedFile(uploadedAt = now, contentsOid = oid, contentDisposition = contentDisposition, contentType = contentType, size = 0)
+    val uploadedFile = UploadedFile(uploadedAt = now, contentsOid = Some(oid), contentDisposition = contentDisposition, contentType = contentType, size = 0)
     apply(uploadedFile)
   }
 
@@ -45,7 +45,7 @@ object OverviewUploadedFile {
   private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
-    val contentsOid = uploadedFile.contentsOid
+    val contentsOid = uploadedFile.contentsOid.getOrElse(0l)
     val contentDisposition = uploadedFile.contentDisposition
     val contentType = uploadedFile.contentType
     val size = uploadedFile.size

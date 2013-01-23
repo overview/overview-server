@@ -64,7 +64,7 @@ class DocumentSetSpec extends Specification {
     inExample("create a job with type CsvImportDocumentSet") in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
-          saveUploadedFile(UploadedFile(contentsOid = lo.oid, contentDisposition = "", contentType = "", size = 0))
+          saveUploadedFile(UploadedFile(contentsOid = Some(lo.oid), contentDisposition = "", contentType = "", size = 0))
         val documentSet =
           DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id))
         documentSet.save must not(throwA[Exception])
@@ -141,7 +141,7 @@ class DocumentSetSpec extends Specification {
         lo.oid
       }
 
-      val uploadedFile = saveUploadedFile(UploadedFile(contentsOid = oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100))
+      val uploadedFile = saveUploadedFile(UploadedFile(contentsOid = Some(oid), contentDisposition = "content-disposition", contentType = "content-type", size = 100))
       val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
       DocumentSet.delete(documentSet.id)
       Schema.uploadedFiles.lookup(uploadedFile.id) must beNone

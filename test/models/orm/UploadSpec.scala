@@ -25,7 +25,7 @@ class UploadSpec extends Specification {
       val uploadId = UUID.randomUUID
       val timestamp = new Timestamp(System.currentTimeMillis)
       val user = User()
-      val uploadedFile = UploadedFile(0l, timestamp, 0l,"content-disposition", "content-type", 100l)
+      val uploadedFile = UploadedFile(0l, timestamp, Some(0l),"content-disposition", "content-type", 100l)
       var upload: Upload = _
 
       override def setupWithDb = {

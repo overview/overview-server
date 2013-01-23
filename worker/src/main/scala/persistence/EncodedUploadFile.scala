@@ -40,7 +40,7 @@ object EncodedUploadFile {
   }
   
   private class EncodedUploadFileImpl(uploadedFile: UploadedFile) extends EncodedUploadFile {
-    val contentsOid: Long = uploadedFile.contentsOid
+    val contentsOid: Long = uploadedFile.contentsOid.getOrElse(0l)
     val contentType: String = uploadedFile.contentType
     val size: Long = uploadedFile.size
     
