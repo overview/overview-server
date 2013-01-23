@@ -17,7 +17,7 @@
     <username>${SMTP_USERNAME}</username>
     <password>${SMTP_PASSWORD}</password>
     <smtpPort>${SMTP_PORT}</smtpPort>
-    <ssl>${SMTP_SSL}</ssl>
+    <SSL>${SMTP_SSL}</SSL>
     <from>${LOGGER_SMTP_FROM}</from>
     <to>${LOGGER_SMTP_TO}</to>
     <subject>${LOGGER_SMTP_SUBJECT_PREFIX} [worker]: %logger{20} - %m</subject>
