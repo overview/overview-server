@@ -1,8 +1,7 @@
-package csv
+package org.overviewproject.csv
 
 import java.io.StringReader
 import org.specs2.specification.Scope
-import org.overviewproject.csv.CsvImportSource;
 import org.overviewproject.test.Specification
 
 class CsvImportSourceSpec extends Specification {

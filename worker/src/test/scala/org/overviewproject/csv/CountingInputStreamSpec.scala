@@ -1,6 +1,5 @@
-package csv
+package org.overviewproject.csv
 
-import org.overviewproject.csv.CountingInputStream;
 import org.overviewproject.test.Specification
 import org.specs2.specification.Scope
 import java.io.ByteArrayInputStream
