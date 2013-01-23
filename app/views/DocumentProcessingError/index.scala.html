@@ -3,10 +3,10 @@
 @defining(scopedMessages("views.DocumentProcessingError.index")) { m =>
 
  @documentProcessingErrors.map { errorGroup => 
-    <h2>@errorGroup._1</h2>
-      <ul>
+    <h2>@m("failed_because", errorGroup._1)</h2>
+      <ul class="unstyled error-list">
         @errorGroup._2.map { error =>
-          <li>@helper.DocumentProcessingErrorDisplay.url(error.url)</li>
+          <li><a href=@error.url>@helper.DocumentProcessingErrorDisplay.url(error.url)</a></li>
         }
       </ul>
   }

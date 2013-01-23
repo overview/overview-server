@@ -111,13 +111,7 @@ views.Document.show.sidebar.disable=Hide sidebar ⇢
 views.Document.show.title.empty_title=(document with no title)
 views.Document.show._csvImportDocument.source=Source: 
 
-views.DocumentProcessingError.index.th.url=Document URL
-views.DocumentProcessingError.index.th.error= Error
-views.DocumentProcessingError.error.td.access_denied=Access Denied
-views.DocumentProcessingError.error.td.not_found=Not Found
-views.DocumentProcessingError.error.td.server_error=Document Cloud Server Error
-views.DocumentProcessingError.error.td.internal_error=Internal Error
-
+views.DocumentProcessingError.index.failed_because=Failed with error ''{0}''
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
