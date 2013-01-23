@@ -24,6 +24,9 @@ trait OverviewUploadedFile {
 }
 
 object OverviewUploadedFile {
+  import models.orm.Schema.uploadedFiles
+  import org.overviewproject.postgres.SquerylEntrypoint._
+
   def apply(uploadedFile: UploadedFile): OverviewUploadedFile = {
     new OverviewUploadedFileImpl(uploadedFile)
   }
@@ -34,15 +37,12 @@ object OverviewUploadedFile {
   }
 
   def findById(id: Long): Option[OverviewUploadedFile] = {
-    UploadedFile.findById(id).map(new OverviewUploadedFileImpl(_))
+    uploadedFiles.lookup(id).map(new OverviewUploadedFileImpl(_))
   }
 
   private def now: Timestamp = new Timestamp(System.currentTimeMillis())
 
   private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
-    import models.orm.Schema.uploadedFiles
-    import org.overviewproject.postgres.SquerylEntrypoint._
-
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
     val contentsOid = uploadedFile.contentsOid

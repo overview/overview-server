@@ -144,7 +144,7 @@ class DocumentSetSpec extends Specification {
       val uploadedFile = saveUploadedFile(UploadedFile(contentsOid = oid, contentDisposition = "content-disposition", contentType = "content-type", size = 100))
       val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
       DocumentSet.delete(documentSet.id)
-      UploadedFile.findById(uploadedFile.id) must beNone
+      Schema.uploadedFiles.lookup(uploadedFile.id) must beNone
 
       LO.withLargeObject(oid) { lo => lo.oid } must throwA[Exception]
     }
