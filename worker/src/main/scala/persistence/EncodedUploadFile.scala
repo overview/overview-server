@@ -11,7 +11,7 @@ import org.overviewproject.tree.orm.UploadedFile
 
 /** Information describing an uploaded file */
 trait EncodedUploadFile {
-  val contentsOid: Long
+  val contentsOid: Option[Long]
   val contentType: String
   val size: Long
   
@@ -40,7 +40,7 @@ object EncodedUploadFile {
   }
   
   private class EncodedUploadFileImpl(uploadedFile: UploadedFile) extends EncodedUploadFile {
-    val contentsOid: Long = uploadedFile.contentsOid.getOrElse(0l)
+    val contentsOid: Option[Long] = uploadedFile.contentsOid
     val contentType: String = uploadedFile.contentType
     val size: Long = uploadedFile.size
     

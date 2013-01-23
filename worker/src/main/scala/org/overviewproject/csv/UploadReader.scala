@@ -32,7 +32,7 @@ class UploadReader(uploadedFileId: Long) {
 
   /** @return a reader for the given UploadedFile */
   def reader(uploadedFile: EncodedUploadFile): Reader = {
-	val largeObjectInputStream = new LargeObjectInputStream(uploadedFile.contentsOid)
+	val largeObjectInputStream = new LargeObjectInputStream(uploadedFile.contentsOid.get) // if there is no oid, we throw an exception
     countingInputStream = new CountingInputStream(largeObjectInputStream)
 
     new BufferedReader(new InputStreamReader(countingInputStream, decoder(uploadedFile.encoding)))

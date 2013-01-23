@@ -29,7 +29,7 @@ class UploadedFileLoaderSpec extends DbSpecification {
 
     "load uploaded file values" in new UploadedFileContext {
       val uploadedFile = EncodedUploadFile.load(uploadedFileId)
-      uploadedFile.contentsOid must be equalTo oid
+      uploadedFile.contentsOid must beSome.like { case uoid => uoid must be equalTo oid }
       uploadedFile.contentType must be equalTo contentType
       uploadedFile.size must be equalTo size
     }
@@ -39,7 +39,7 @@ class UploadedFileLoaderSpec extends DbSpecification {
   step(shutdownDb)
 
   case class TestUploadFile(contentType: String) extends EncodedUploadFile {
-    val contentsOid: Long = 0l
+    val contentsOid: Option[Long] = None
     val size: Long = 100
   }
 
