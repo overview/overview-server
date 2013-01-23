@@ -5,7 +5,7 @@ import org.specs2.mock.Mockito
 import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
 import persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
 import org.specs2.mutable.Before
-import csv.CsvImportDocumentProducer
+import org.overviewproject.csv.CsvImportDocumentProducer
 
 class DocumentProducerFactorySpec extends Specification with Mockito {
 

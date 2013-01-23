@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package csv
+package org.overviewproject.csv
 
 import java.io.FilterInputStream
 import java.io.InputStream

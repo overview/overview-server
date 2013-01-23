@@ -9,7 +9,7 @@ package overview.util
 import org.overviewproject.clustering.DocumentCloudSource
 import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
 import overview.util.Progress._
-import csv.CsvImportDocumentProducer
+import org.overviewproject.csv.CsvImportDocumentProducer
 import persistence.DocumentSet
 import persistence.PersistentDocumentSetCreationJob
 

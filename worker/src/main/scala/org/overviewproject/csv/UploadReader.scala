@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package csv
+package org.overviewproject.csv
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -14,6 +14,7 @@ import java.nio.charset.CharsetDecoder
 import java.nio.charset.CodingErrorAction
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
+
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO
 import persistence.UploadedFileLoader

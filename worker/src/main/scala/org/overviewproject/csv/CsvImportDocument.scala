@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package csv
+package org.overviewproject.csv
 
 
 /** Document generated from a CsvImport. suppliedId is present if an "id" column exists in the source */
