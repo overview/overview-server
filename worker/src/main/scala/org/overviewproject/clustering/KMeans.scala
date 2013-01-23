@@ -60,7 +60,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
   // If a cluster ends up empty, create a new centroid. 
   // ATM just picks a quasi-random element; should probably pick element most distant from all centroids
   protected def newCentroid(clusters:CompactPairArray[T, Int], centroids:Seq[C], i:Int) : C = {
-    println("New centroid for cluster " + i)
+//    println("New centroid for cluster " + i)
     val skip = seedClusterSkip * (i+1)  // +1 to avoid picking an element originally part of seed set for cluster i
     val elem = clusters(skip % clusters.length)
     mean(List(elem._1))
@@ -109,7 +109,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
    var centroids = initialCentroids(elements, k)
    var clusters = CompactPairArray[T, Int]()
    
-   println("---- starting k-means with " + elements.size + " items ----")
+//   println("---- starting k-means with " + elements.size + " items ----")
  //  println("initial centroids: " +  centroids)
    var iterCount = 0
    while (iterCount < maxIterations) {
@@ -118,7 +118,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
      iterCount += 1
      
      val clusterSizes = (0 until k).map(i => clusters.filter(_._2 == i).size)
-     println("cluster sizes: " + clusterSizes)
+//     println("cluster sizes: " + clusterSizes)
    }
    
    clusters
