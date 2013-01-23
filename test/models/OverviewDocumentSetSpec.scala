@@ -28,7 +28,7 @@ class OverviewDocumentSetSpec extends Specification {
       val ormUploadedFile = UploadedFile(
         id = 0L,
         uploadedAt = new java.sql.Timestamp(new java.util.Date().getTime()),
-        contentsOid = Some(0L),
+        contentsOid = Some(0l),
         contentDisposition = "attachment; filename=foo.csv",
         contentType = "text/csv; charset=latin1",
         size = 0L)
@@ -139,6 +139,16 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
 
+    trait DocumentSetWithCompletedUpload extends PgConnectionContext {
+      var documentSet: OverviewDocumentSet = _
+
+      override def setupWithDb = {
+        val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = None, contentDisposition = "disposition", contentType = "type", size = 0l))
+        val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
+        documentSet = OverviewDocumentSet(ormDocumentSet)
+      }
+    }
+
     trait DocumentSetReferencedByOtherTables extends DocumentSetWithUserScope {
 
       var oid: Long = _
@@ -151,6 +161,7 @@ class OverviewDocumentSetSpec extends Specification {
           component = "test").save
         val document = documents.insertOrUpdate(Document(CsvImportDocument, documentSet.id, text = Some("test doc")))
         val documentProcessingError = documentProcessingErrors.insertOrUpdate(DocumentProcessingError(documentSet.id, "url", "message"))
+
         val tag = Tag(documentSetId = documentSet.id, name = "tag").save
         val node = nodes.insertOrUpdate(Node(documentSet.id, None, "description", 10, Array.empty))
         documentTags.insertOrUpdate(DocumentTag(document.id, tag.id))
@@ -199,7 +210,7 @@ class OverviewDocumentSetSpec extends Specification {
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
       documentProcessingErrors.allRows must have size 0
-      
+
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (0)
       OverviewDocumentSet.findById(documentSet.id) must beNone
     }
@@ -209,6 +220,12 @@ class OverviewDocumentSetSpec extends Specification {
 
       uploadedFiles.allRows must have size (0)
       LO.withLargeObject(oid) { lo => } must throwA[Exception]
+    }
+    
+    "do not try to delete LargeObject if upload is complete" in new DocumentSetWithCompletedUpload {
+      OverviewDocumentSet.delete(documentSet.id) 
+
+      uploadedFiles.allRows must have size (0)
     }
 
     "Delete job, document set and all associated information if job not started" in new DocumentSetCreationNotStarted {
@@ -226,7 +243,7 @@ class OverviewDocumentSetSpec extends Specification {
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beNone
     }
-    
+
     "cancel job and delete client generated information only if job in progress" in new DocumentSetCreationInProgress {
       OverviewDocumentSet.delete(documentSet.id)
       logEntries.allRows must have size (0)
@@ -237,7 +254,7 @@ class OverviewDocumentSetSpec extends Specification {
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
       documentProcessingErrors.allRows must have size 1
-      
+
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
@@ -254,7 +271,7 @@ class OverviewDocumentSetSpec extends Specification {
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
       documentProcessingErrors.allRows must have size 1
-      
+
       SQL("SELECT * FROM node_document").as(long("node_id") ~ long("document_id") map flatten *) must have size (1)
       val job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id)
       job must beSome
@@ -262,7 +279,7 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "return error count" in new DocumentSetReferencedByOtherTables {
-      documentSet.errorCount must be equalTo(1)
+      documentSet.errorCount must be equalTo (1)
     }
   }
   step(stop)
