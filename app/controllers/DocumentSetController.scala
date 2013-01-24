@@ -3,6 +3,7 @@ package controllers
 import java.sql.Connection
 import play.api.mvc.Controller
 import org.overviewproject.postgres.SquerylEntrypoint._ // TODO: remove this!
+import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
 
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.orm.{DocumentSet,User} // TODO: remove this!

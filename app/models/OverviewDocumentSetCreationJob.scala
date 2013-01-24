@@ -1,6 +1,7 @@
 package models
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 trait OverviewDocumentSetCreationJob {
@@ -26,11 +27,6 @@ trait DocumentCloudCredentials {
 object OverviewDocumentSetCreationJob {
   import org.overviewproject.postgres.SquerylEntrypoint._
   import models.orm.Schema.{ documentSetCreationJobs, documentSetDocumentSetCreationJobs }
-
-  def apply(documentSet: OverviewDocumentSet): OverviewDocumentSetCreationJob = {
-    val documentSetCreationJob = DocumentSetCreationJob(documentSet.id, state = NotStarted)
-    OverviewDocumentSetCreationJobImpl(documentSetCreationJob)
-  }
 
   def all: Seq[OverviewDocumentSetCreationJob] = {
     from(documentSetCreationJobs)(j => select(j).orderBy(j.id.asc)).toSeq.map(OverviewDocumentSetCreationJobImpl)

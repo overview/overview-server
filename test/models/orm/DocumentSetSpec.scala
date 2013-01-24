@@ -21,7 +21,8 @@ import helpers.PgConnectionContext
 import org.postgresql.util.PSQLException
 import org.overviewproject.postgres.LO
 import java.sql.Timestamp
-import org.overviewproject.tree.orm.{ DocumentProcessingError, UploadedFile }
+import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile }
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
@@ -47,11 +48,12 @@ class DocumentSetSpec extends Specification {
 
   "DocumentSet" should {
 
-    inExample("create a DocumentSetCreationJob") in new DocumentSetContext {
+    "create a DocumentSetCreationJob" in new DocumentSetContext {
       val job = documentSet.createDocumentSetCreationJob()
 
-      val returnedJob = Schema.documentSetCreationJobs.lookup(job.id)
-
+      val returnedJob: Option[DocumentSetCreationJob] = Schema.documentSetCreationJobs.lookup(job.id)
+      returnedJob.get.documentSetCreationJobType.value must be equalTo(DocumentCloudJob.value)
+      
       val returnedSet = Schema.documentSets.where(ds => ds.query === query).single
       returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(returnedJob)
     }
@@ -61,13 +63,16 @@ class DocumentSetSpec extends Specification {
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
-    inExample("create a job with type CsvImportDocumentSet") in new PgConnectionContext {
+    "create a job with type CsvImportDocumentSet" in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
           saveUploadedFile(UploadedFile(contentsOid = Some(lo.oid), contentDisposition = "", contentType = "", size = 0))
         val documentSet =
           DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id))
         documentSet.save must not(throwA[Exception])
+        
+        val job = documentSet.createDocumentSetCreationJob()
+        job.documentSetCreationJobType.value must be equalTo(CsvImportJob.value)
       }
     }
 

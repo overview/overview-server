@@ -3,6 +3,7 @@ package controllers
 import java.sql.Connection
 import java.util.UUID
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.overviewproject.tree.orm.DocumentSetCreationJobType.CsvImportJob
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import play.api.Play.current

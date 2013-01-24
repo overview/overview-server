@@ -17,7 +17,8 @@ import org.squeryl.annotations.{Column,Transient}
 import scala.annotation.target.field
 
 import org.overviewproject.postgres.PostgresqlEnum
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, UploadedFile }
+import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobType, UploadedFile }
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import models.OverviewDatabase
 
 class DocumentSetType(v: String) extends PostgresqlEnum(v, "document_set_type")
@@ -28,6 +29,7 @@ object DocumentSetType {
 }
 
 import DocumentSetType._
+
 
 case class DocumentSet(
     @Column("type") val documentSetType: DocumentSetType,
@@ -62,7 +64,12 @@ case class DocumentSet(
    */
   def createDocumentSetCreationJob(username: Option[String]=None, password: Option[String]=None): DocumentSetCreationJob = {
     require(id != 0l)
-    val documentSetCreationJob = new DocumentSetCreationJob(id, documentcloudUsername=username, documentcloudPassword=password)
+    val jobType = documentSetType match {
+      case DocumentCloudDocumentSet => DocumentCloudJob
+      case CsvImportDocumentSet => CsvImportJob
+    }
+    
+    val documentSetCreationJob = new DocumentSetCreationJob(id, jobType, documentcloudUsername=username, documentcloudPassword=password)
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
   }
 

@@ -109,6 +109,7 @@ class OverviewDocumentSetSpec extends Specification {
     import org.overviewproject.postgres.LO
     import org.overviewproject.tree.orm.{ Document, Node, DocumentProcessingError, DocumentSetCreationJob }
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+    import org.overviewproject.tree.orm.DocumentSetCreationJobType._
     import org.overviewproject.tree.orm.DocumentType._
     import helpers.PgConnectionContext
 
@@ -173,21 +174,21 @@ class OverviewDocumentSetSpec extends Specification {
     trait DocumentSetCreationInProgress extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = InProgress))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = InProgress))
       }
     }
 
     trait DocumentSetCreationNotStarted extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = NotStarted))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = NotStarted))
       }
     }
 
     trait DocumentSetCreationCancelled extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, state = Cancelled))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = Cancelled))
       }
     }
 
@@ -197,8 +198,9 @@ class OverviewDocumentSetSpec extends Specification {
       d.user.email must be equalTo ("admin@overview-project.org")
     }
 
-    "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
-      OverviewDocumentSetCreationJob(documentSet).withState(Error).save
+    inExample("delete document set and all associated information") in new DocumentSetReferencedByOtherTables {
+      val job: DocumentSetCreationJob = ormDocumentSet.createDocumentSetCreationJob()
+      documentSetCreationJobs.insertOrUpdate(job.copy(state = Error))
 
       OverviewDocumentSet.delete(documentSet.id)
 

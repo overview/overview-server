@@ -23,7 +23,8 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
 
       override def setupWithDb = {
         documentSets.insert(documentSet)
-        job = OverviewDocumentSetCreationJob(OverviewDocumentSet(documentSet))
+        documentSet.createDocumentSetCreationJob()
+        job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).head
       }
     }
     
@@ -41,10 +42,11 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
 
       override def setupWithDb = {
         val sets = Seq.fill(10)(DocumentSet(DocumentCloudDocumentSet, title = "title", query = Some("query")))
-        jobs = sets.map { d =>
+        sets.foreach { d =>
           documentSets.insert(d)
-          OverviewDocumentSetCreationJob(OverviewDocumentSet(d)).save
+          d.createDocumentSetCreationJob()
         }
+        jobs = OverviewDocumentSetCreationJob.all
       }
     }
     
