@@ -62,7 +62,7 @@ class indexSpec extends Specification {
         FakeOverviewDocumentSet(2, "title2", "query2"))
 
       $("#error-list-modal").length must equalTo(1)
-      $("#error-list-modal .modal-header h3").text must equalTo("Failed document retrievals")
+      $("#error-list-modal .modal-header h3").text must equalTo("Documents with errors")
     }
   }
   step(stop)
