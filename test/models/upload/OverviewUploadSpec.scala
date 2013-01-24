@@ -60,6 +60,7 @@ class OverviewUploadSpec extends Specification {
     "be saveable and findable by (userid, guid)" in new UploadContext {
       LO.withLargeObject { lo =>
         val upload = OverviewUpload(userId, guid, contentDisposition, contentType, totalSize, lo.oid)
+        upload.contentsOid must be equalTo(lo.oid)
         upload.save
       }
 
