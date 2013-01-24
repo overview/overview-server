@@ -16,6 +16,9 @@ ALTER TABLE document_set_creation_job ALTER COLUMN type SET NOT NULL;
 
 ALTER TABLE upload ADD COLUMN contents_oid OID NOT NULL;
 
+UPDATE upload SET contents_oid = uploaded_file.contents_oid 
+  FROM uploaded_file
+  WHERE upload.uploaded_file_id = uploaded_file.id;
 
 
 
