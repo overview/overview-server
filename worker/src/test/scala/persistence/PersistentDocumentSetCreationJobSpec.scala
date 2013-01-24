@@ -7,37 +7,29 @@
 
 package persistence
 
-import anorm._
-import anorm.SqlParser._
+import org.overviewproject.postgres.SquerylEntrypoint.kedForKeyedEntities
+import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import java.sql.Connection
-import org.specs2.mutable.Specification
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.test.DbSetup._
+
+import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   step(setupDb)
 
-  def insertDocumentSetCreationJob(documentSetId: Long, state: Int)(implicit c: Connection): Long = {
-    SQL("""
-        INSERT INTO document_set_creation_job (document_set_id, state)
-        VALUES ({documentSetId}, {state})
-        """).on("documentSetId" -> documentSetId, "state" -> state).
-      executeInsert().getOrElse(throw new Exception("failed Insert"))
+  def insertDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState): Long = {
+    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state)
+    Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
-  def insertDocumentCloudJob(documentSetId: Long, state: Int, dcUserName: String, dcPassword: String)(implicit c: Connection): Long = {
-    SQL("""
-        INSERT INTO document_set_creation_job (document_set_id, state,
-          documentcloud_username, documentcloud_password)
-        VALUES ({documentSetId}, {state}, {name}, {password})
-        """).on("documentSetId" -> documentSetId, "state" -> state, 
-	        "name" -> dcUserName, "password" -> dcPassword).
-    executeInsert().getOrElse(throw new Exception("failed Insert"))
+  def insertDocumentCloudJob(documentSetId: Long, state: DocumentSetCreationJobState, dcUserName: String, dcPassword: String): Long = {
+    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state, documentcloudUsername = Some(dcUserName), documentcloudPassword = Some(dcPassword))
+    Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
   
-  def insertJobsWithState(documentSetId: Long, states: Seq[Int])(implicit c: Connection) {
+  def insertJobsWithState(documentSetId: Long, states: Seq[DocumentSetCreationJobState]) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
   }
 
@@ -50,14 +42,14 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var jobId: Long = _
     
     override def setupWithDb = {
-      jobId = insertDocumentSetCreationJob(documentSetId, NotStarted.id)
+      jobId = insertDocumentSetCreationJob(documentSetId, NotStarted)
       notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
 
   trait JobQueueSetup extends DocumentSetContext {
     override def setupWithDb = {
-      insertJobsWithState(documentSetId, Seq(NotStarted.id, InProgress.id, NotStarted.id, InProgress.id))
+      insertJobsWithState(documentSetId, Seq(NotStarted, InProgress, NotStarted, InProgress))
     }
   }
 
@@ -67,7 +59,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var dcJob: PersistentDocumentSetCreationJob = _
     
     override def setupWithDb = {
-      insertDocumentCloudJob(documentSetId, NotStarted.id, dcUsername, dcPassword)
+      insertDocumentCloudJob(documentSetId, NotStarted, dcUsername, dcPassword)
       dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
@@ -77,7 +69,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var cancelNotificationReceived: Boolean = false
     
     override def setupWithDb = {
-      insertDocumentSetCreationJob(documentSetId, Cancelled.id)
+      insertDocumentSetCreationJob(documentSetId, Cancelled)
       cancelledJob = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).head
       cancelledJob.observeCancellation( j => cancelNotificationReceived = true)
     }
@@ -122,7 +114,8 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       notStartedJob.update
       val job = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
 
-      job.statusDescription must beSome.like { case s => s must be equalTo(status) }
+      job.statusDescription must beSome
+      job.statusDescription.get must be equalTo(status) 
     }
     
     "not update job state if cancelled" in new CancelledJob {
@@ -155,10 +148,8 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
     "have username and password if available" in new DocumentCloudJobSetup {
 
-      dcJob.documentCloudUsername must beSome.like {
-        case n =>
-          n must be equalTo (dcUsername)
-      }
+      dcJob.documentCloudUsername must beSome
+      dcJob.documentCloudUsername.get must be equalTo (dcUsername)
     }
     
     "find first job with a state, ordered by id" in new DocumentSetContext {
