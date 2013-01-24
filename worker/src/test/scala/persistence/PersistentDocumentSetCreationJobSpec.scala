@@ -12,7 +12,6 @@ import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-
 import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
