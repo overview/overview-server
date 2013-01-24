@@ -25,7 +25,7 @@ import persistence.EncodedUploadFile
  * Provides a context for reading an uploaded file from the database. The
  * reader uses the CharsetDecoder specified by the uploaded file's encoding.
  */
-class UploadReader(uploadedFileId: Long) {
+class UploadReader() {
 
   private var DefaultCharSet: String = "UTF-8"
   private var countingInputStream: CountingInputStream = _

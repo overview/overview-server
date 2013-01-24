@@ -22,7 +22,7 @@ import persistence.EncodedUploadFile
 class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {
 
   private val FetchingFraction = 0.9
-  private val uploadReader = new UploadReader(uploadedFileId)
+  private val uploadReader = new UploadReader()
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
   private var jobCancelled: Boolean = false
