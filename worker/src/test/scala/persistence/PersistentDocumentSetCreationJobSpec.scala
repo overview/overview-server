@@ -27,7 +27,12 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state, documentcloudUsername = Some(dcUserName), documentcloudPassword = Some(dcPassword))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
-  
+
+  def insertCsvImportJob(documentSetId: Long, state: DocumentSetCreationJobState, contentsOid: Long): Long = {
+    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state, contentsOid = Some(contentsOid))
+    Schema.documentSetCreationJobs.insertOrUpdate(job).id
+  }
+
   def insertJobsWithState(documentSetId: Long, states: Seq[DocumentSetCreationJobState]) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
   }
@@ -62,6 +67,17 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
+  
+  trait CsvImportJobSetup extends DocumentSetContext {
+    val contentsOid = 53
+    var csvImportJob: PersistentDocumentSetCreationJob = _
+    
+    override def setupWithDb = {
+      insertCsvImportJob(documentSetId, NotStarted, contentsOid)
+      csvImportJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
+    }
+  }
+  
   
   trait CancelledJob extends DocumentSetContext {
     var cancelledJob: PersistentDocumentSetCreationJob = _
@@ -151,9 +167,15 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       dcJob.documentCloudUsername.get must be equalTo (dcUsername)
     }
     
+
+    "have contentsOid if available" in new CsvImportJobSetup {
+      csvImportJob.contentsOid must beSome
+      csvImportJob.contentsOid.get must be equalTo(contentsOid)
+    }
+    
     "find first job with a state, ordered by id" in new DocumentSetContext {
       val documentSetId2 = insertDocumentSet("DocumentSet2")
-      val jobIds = Seq(documentSetId2, documentSetId).map(insertDocumentSetCreationJob(_, NotStarted.id))
+      val jobIds = Seq(documentSetId2, documentSetId).map(insertDocumentSetCreationJob(_, NotStarted))
      
       val firstNotStartedJob = PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
      

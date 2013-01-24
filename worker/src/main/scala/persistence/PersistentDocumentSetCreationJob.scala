@@ -21,6 +21,9 @@ trait PersistentDocumentSetCreationJob {
   val documentCloudUsername: Option[String]
   val documentCloudPassword: Option[String]
 
+  // Only CsvImportJobs require contentsOid
+  val contentsOid: Option[Long]
+  
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -69,7 +72,8 @@ object PersistentDocumentSetCreationJob {
     val documentSetId: Long = documentSetCreationJob.documentSetId
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
-
+    val contentsOid: Option[Long] = documentSetCreationJob.contentsOid
+    
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
     var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)

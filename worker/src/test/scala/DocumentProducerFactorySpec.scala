@@ -19,6 +19,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       def before() = {
         documentSetCreationJob.documentCloudUsername returns None
         documentSetCreationJob.documentCloudPassword returns None
+        documentSetCreationJob.contentsOid returns None
       }
     }
 
