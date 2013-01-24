@@ -46,6 +46,6 @@ object DocumentProducerFactory {
         documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
       new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, progAbort)
     case "CsvImportDocumentSet" =>
-      new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSet.uploadedFileId.get, consumer, progAbort)
+      new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, progAbort)
   }
 }

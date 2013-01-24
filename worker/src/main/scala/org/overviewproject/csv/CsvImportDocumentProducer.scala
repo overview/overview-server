@@ -19,7 +19,7 @@ import persistence.EncodedUploadFile
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
  */
-class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {
+class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {
 
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader()
@@ -33,7 +33,7 @@ class CsvImportDocumentProducer(documentSetId: Long, uploadedFileId: Long, consu
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
-    val reader = uploadReader.reader(uploadedFile)
+    val reader = uploadReader.reader(contentsOid, uploadedFile)
     val documentSource = new CsvImportSource(reader)
 
     val iterator = documentSource.iterator

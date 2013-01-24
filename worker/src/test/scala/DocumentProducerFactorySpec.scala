@@ -19,11 +19,24 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       def before() = {
         documentSetCreationJob.documentCloudUsername returns None
         documentSetCreationJob.documentCloudPassword returns None
+      }
+    }
+    
+    trait DocumentCloudJobContext extends DocumentSetCreationJobContext {
+      override def before() = {
         documentSetCreationJob.contentsOid returns None
+        super.before
+      }
+    }
+    
+    trait CsvImportJobContext extends DocumentSetCreationJobContext {
+      override def before() = {
+        documentSetCreationJob.contentsOid returns Some(0l)
+        super.before
       }
     }
 
-    "create a DocumentCloudDocumentProducer" in new DocumentSetCreationJobContext {
+    "create a DocumentCloudDocumentProducer" in new DocumentCloudJobContext {
 
       val documentSet = DocumentSet("DocumentCloudDocumentSet", "title", Some("query"))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, { _ => true }, asyncHttpRetriever)
@@ -34,7 +47,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
       }
     }
 
-    "create a CsvImportDocumentProducer" in new DocumentSetCreationJobContext {
+    "create a CsvImportDocumentProducer" in new CsvImportJobContext {
       val documentSet = DocumentSet("CsvImportDocumentSet", "title", uploadedFileId = Some(100l))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, {_ => true }, asyncHttpRetriever)
 

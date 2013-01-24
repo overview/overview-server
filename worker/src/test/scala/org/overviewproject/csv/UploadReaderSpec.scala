@@ -36,7 +36,7 @@ class UploadReaderSpec extends DbSpecification {
         
         uploadReader = new UploadReader
         
-        reader = uploadReader.reader(uploadedFile)
+        reader = uploadReader.reader(loid, uploadedFile)
       }
     }
 
