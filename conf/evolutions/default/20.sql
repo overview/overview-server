@@ -12,7 +12,7 @@ UPDATE document_set_creation_job SET type =
    END FROM document_set
    WHERE document_set.id = document_set_creation_job.document_set_id);
 
-
+ALTER TABLE document_set_creation_job ALTER COLUMN type SET NOT NULL;
 
 
 
