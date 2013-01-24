@@ -62,14 +62,14 @@ case class DocumentSet(
    *
    * Should only be called after the document set has been inserted into the database.
    */
-  def createDocumentSetCreationJob(username: Option[String]=None, password: Option[String]=None): DocumentSetCreationJob = {
+  def createDocumentSetCreationJob(username: Option[String] = None, password: Option[String] = None, contentsOid: Option[Long] = None): DocumentSetCreationJob = {
     require(id != 0l)
     val jobType = documentSetType match {
       case DocumentCloudDocumentSet => DocumentCloudJob
       case CsvImportDocumentSet => CsvImportJob
     }
     
-    val documentSetCreationJob = new DocumentSetCreationJob(id, jobType, documentcloudUsername=username, documentcloudPassword=password)
+    val documentSetCreationJob = new DocumentSetCreationJob(id, jobType, documentcloudUsername=username, documentcloudPassword=password, contentsOid = contentsOid)
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
   }
 

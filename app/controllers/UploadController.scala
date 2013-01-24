@@ -107,7 +107,7 @@ object UploadController extends UploadController with PgConnection {
       uploadedFileId = Some(upload.uploadedFile.id)).save
 
     User.findById(upload.userId).map(documentSet.users.associate(_))
-    documentSet.createDocumentSetCreationJob()
+    documentSet.createDocumentSetCreationJob(contentsOid = Some(upload.contentsOid))
   }
 }
  

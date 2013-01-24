@@ -71,8 +71,9 @@ class DocumentSetSpec extends Specification {
           DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id))
         documentSet.save must not(throwA[Exception])
         
-        val job = documentSet.createDocumentSetCreationJob()
+        val job = documentSet.createDocumentSetCreationJob(contentsOid = Some(lo.oid))
         job.documentSetCreationJobType.value must be equalTo(CsvImportJob.value)
+        job.contentsOid.get must be equalTo(lo.oid)
       }
     }
 
