@@ -23,15 +23,16 @@ class UploadSpec extends Specification {
 
     trait UploadContext extends DbTestContext {
       val uploadId = UUID.randomUUID
+      val contentsOid = 0l
       val timestamp = new Timestamp(System.currentTimeMillis)
       val user = User()
-      val uploadedFile = UploadedFile(0l, timestamp, Some(0l),"content-disposition", "content-type", 100l)
+      val uploadedFile = UploadedFile(0l, timestamp, Some(contentsOid),"content-disposition", "content-type", 100l)
       var upload: Upload = _
 
       override def setupWithDb = {
         Schema.users.insert(user)
         Schema.uploadedFiles.insert(uploadedFile)
-        upload = Upload(0l, user.id, uploadId, uploadedFile.id, timestamp, 100)
+        upload = Upload(0l, user.id, uploadId, contentsOid, uploadedFile.id, timestamp, 100)
         
         upload.save
       }

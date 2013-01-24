@@ -37,7 +37,7 @@ object OverviewUpload {
   def apply(userId: Long, guid: UUID, contentDisposition: String, contentType: String, totalSize: Long, oid: Long): OverviewUpload = {
     val uploadedFile = OverviewUploadedFile(oid, contentDisposition, contentType).save
     val upload =
-      Upload(userId = userId, guid = guid, uploadedFileId = uploadedFile.id, lastActivity = now, totalSize = totalSize)
+      Upload(userId = userId, guid = guid, contentsOid = oid, uploadedFileId = uploadedFile.id, lastActivity = now, totalSize = totalSize)
 
     new OverviewUploadImpl(upload, uploadedFile)
   }

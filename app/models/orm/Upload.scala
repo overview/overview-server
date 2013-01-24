@@ -11,6 +11,7 @@ case class Upload(
   id: Long = 0L,
   @Column("user_id") userId: Long,
   guid: UUID,
+  @Column("contents_oid") contentsOid: Long,
   @Column("uploaded_file_id") uploadedFileId: Long,
   @Column("last_activity") lastActivity: Timestamp,
   @Column("total_size") totalSize: Long
