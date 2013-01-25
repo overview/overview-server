@@ -116,6 +116,8 @@ object OverviewDocumentSet {
     import org.overviewproject.postgres.SquerylEntrypoint._
     implicit val connection = OverviewDatabase.currentConnection
 
+    SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
+
     documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
 
     SQL("""
@@ -132,10 +134,7 @@ object OverviewDocumentSet {
     val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).headOption.flatMap(identity)
     documentSets.delete(id)
 
-    uploadedFileId.map { uid =>
-      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id} AND contents_oid IS NOT NULL").on('id -> uid).as(scalar[Int] *)
-      uploadedFiles.deleteWhere(f => f.id === uid)
-    }
+    uploadedFileId.map { uid => uploadedFiles.deleteWhere(f => f.id === uid) }
 
   }
 }

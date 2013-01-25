@@ -128,14 +128,15 @@ class OverviewDocumentSetSpec extends Specification {
 
     trait DocumentSetWithUpload extends PgConnectionContext {
       var documentSet: OverviewDocumentSet = _
+      var ormDocumentSet: DocumentSet = _
       var oid: Long = _
 
       override def setupWithDb = {
-        oid = LO.withLargeObject { largeObject =>
+        LO.withLargeObject { largeObject =>
           val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = Some(largeObject.oid), contentDisposition = "disposition", contentType = "type", size = 0l))
-          val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
+          ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
           documentSet = OverviewDocumentSet(ormDocumentSet)
-          oid
+          oid = largeObject.oid
         }
       }
     }
@@ -198,7 +199,7 @@ class OverviewDocumentSetSpec extends Specification {
       d.user.email must be equalTo ("admin@overview-project.org")
     }
 
-    inExample("delete document set and all associated information") in new DocumentSetReferencedByOtherTables {
+    "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
       val job: DocumentSetCreationJob = ormDocumentSet.createDocumentSetCreationJob()
       documentSetCreationJobs.insertOrUpdate(job.copy(state = Error))
 
@@ -218,6 +219,9 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "delete Uploaded file and LargeObject" in new DocumentSetWithUpload {
+      val job: DocumentSetCreationJob = ormDocumentSet.createDocumentSetCreationJob(contentsOid = Some(oid))
+      documentSetCreationJobs.insertOrUpdate(job.copy(state = Error))
+      
       OverviewDocumentSet.delete(documentSet.id)
 
       uploadedFiles.allRows must have size (0)
