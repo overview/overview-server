@@ -7,7 +7,9 @@
 
 package persistence
 
-import org.overviewproject.postgres.SquerylEntrypoint.kedForKeyedEntities
+import org.overviewproject.database.DB
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSetCreationJob
@@ -40,11 +42,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   trait DocumentSetContext extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
   }
-  
+
   trait JobSetup extends DocumentSetContext {
     var notStartedJob: PersistentDocumentSetCreationJob = _
     var jobId: Long = _
-    
+
     override def setupWithDb = {
       jobId = insertDocumentSetCreationJob(documentSetId, NotStarted)
       notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
@@ -61,32 +63,35 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     val dcUsername = "user@documentcloud.org"
     val dcPassword = "dcPassword"
     var dcJob: PersistentDocumentSetCreationJob = _
-    
+
     override def setupWithDb = {
       insertDocumentCloudJob(documentSetId, NotStarted, dcUsername, dcPassword)
       dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
-  
+
   trait CsvImportJobSetup extends DocumentSetContext {
-    val contentsOid = 53
+    var contentsOid: Long = _
     var csvImportJob: PersistentDocumentSetCreationJob = _
-    
+
     override def setupWithDb = {
-      insertCsvImportJob(documentSetId, NotStarted, contentsOid)
-      csvImportJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
+      implicit val pgc = DB.pgConnection
+      LO.withLargeObject { lo =>
+        contentsOid = lo.oid
+        insertCsvImportJob(documentSetId, NotStarted, contentsOid)
+        csvImportJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
+      }
     }
   }
-  
-  
+
   trait CancelledJob extends DocumentSetContext {
     var cancelledJob: PersistentDocumentSetCreationJob = _
     var cancelNotificationReceived: Boolean = false
-    
+
     override def setupWithDb = {
       insertDocumentSetCreationJob(documentSetId, Cancelled)
       cancelledJob = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).head
-      cancelledJob.observeCancellation( j => cancelNotificationReceived = true)
+      cancelledJob.observeCancellation(j => cancelNotificationReceived = true)
     }
   }
 
@@ -95,7 +100,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "find all submitted jobs" in new JobQueueSetup {
       val notStarted = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
-      notStarted must have size(2)
+      notStarted must have size (2)
       notStarted.map(_.state).distinct must contain(NotStarted).only
       notStarted.map(_.documentSetId).distinct must contain(documentSetId).only
     }
@@ -103,10 +108,10 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "find all in progress jobs" in new JobQueueSetup {
       val inProgress = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
 
-      inProgress must have size(2)
+      inProgress must have size (2)
       inProgress.map(_.state).distinct must contain(InProgress).only
     }
-    
+
     "update job state" in new JobSetup {
       notStartedJob.state = InProgress
       notStartedJob.update
@@ -130,28 +135,31 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val job = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
 
       job.statusDescription must beSome
-      job.statusDescription.get must be equalTo(status) 
-    }
-    
-    "not update job state if cancelled" in new CancelledJob {
-       cancelledJob.state = InProgress
-       cancelledJob.update
-       PersistentDocumentSetCreationJob.findJobsWithState(InProgress) must be empty
-       val numberOfCancelledJobs = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).length 
-       numberOfCancelledJobs must be equalTo(1)
+      job.statusDescription.get must be equalTo (status)
     }
 
-    "delete itself on completion, if not cancelled" in new JobSetup {
-      notStartedJob.delete
+    "not update job state if cancelled" in new CancelledJob {
+      cancelledJob.state = InProgress
+      cancelledJob.update
+      PersistentDocumentSetCreationJob.findJobsWithState(InProgress) must be empty
+      val numberOfCancelledJobs = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).length
+      numberOfCancelledJobs must be equalTo (1)
+    }
+
+    "delete itself and LargeObject on completion, if not cancelled" in new CsvImportJobSetup {
+      csvImportJob.delete
 
       val remainingJobs = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
       remainingJobs must be empty
+
+      implicit val pgc = DB.pgConnection
+      LO.withLargeObject(contentsOid) { lo => } must throwA[Exception]
     }
-    
+
     "Notify cancellation observer if job is cancelled" in new CancelledJob {
       cancelledJob.delete
-      
+
       cancelNotificationReceived must beTrue
       PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).headOption must beSome
     }
@@ -166,11 +174,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       dcJob.documentCloudUsername must beSome
       dcJob.documentCloudUsername.get must be equalTo (dcUsername)
     }
-    
+
 
     "have contentsOid if available" in new CsvImportJobSetup {
       csvImportJob.contentsOid must beSome
-      csvImportJob.contentsOid.get must be equalTo(contentsOid)
+      csvImportJob.contentsOid.get must be equalTo (contentsOid)
     }
     
     "find first job with a state, ordered by id" in new DocumentSetContext {

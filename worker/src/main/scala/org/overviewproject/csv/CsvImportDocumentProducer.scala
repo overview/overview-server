@@ -46,10 +46,6 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     }
 
     consumer.productionComplete()
-    
-    Database.inTransaction {
-      uploadedFile.deleteContent(Database.currentConnection)
-    }
   }
 
   private def reportProgress(n: Long, size: Long) {

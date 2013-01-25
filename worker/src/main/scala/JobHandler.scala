@@ -117,6 +117,7 @@ object JobHandler {
       implicit val connection = Database.currentConnection
 
       val id = job.documentSetId
+      SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
       SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
       val uploadedFileId = SQL("SELECT uploaded_file_id FROM document_set WHERE id = {id}").on('id -> id).as(scalar[Option[Long]].single)
 
@@ -128,7 +129,6 @@ object JobHandler {
       SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
 
       uploadedFileId.map { u =>
-        SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id} AND contents_oid IS NOT NULL").on('id -> u).as(scalar[Int] *)
         SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
       }
     }

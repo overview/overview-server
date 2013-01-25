@@ -8,6 +8,9 @@
 package persistence
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.postgres.LO
+import org.overviewproject.database.DB
+import org.overviewproject.database.Database
 
 /**
  * Contains attributes of a DocumentSetCreationJob
@@ -110,7 +113,11 @@ object PersistentDocumentSetCreationJob {
 
       lockedJob.map { j =>
         if (j.state == Cancelled) cancellationObserver.map { notify => notify(this) }
-        else documentSetCreationJobs.delete(j.id)
+        else {
+          implicit val pgc = DB.pgConnection(Database.currentConnection)
+          documentSetCreationJobs.delete(j.id)
+          j.contentsOid.map { oid => LO.delete(oid) }
+        }
       }
     }
   }
