@@ -25,12 +25,11 @@ object DbSetup {
       'query -> query).executeInsert().getOrElse(failInsert)
   }
   
-  def insertUploadedFile(oid: Long, contentDisposition: String, contentType: String, size: Long)(implicit c: Connection): Long = {
+  def insertUploadedFile(contentDisposition: String, contentType: String, size: Long)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO uploaded_file (contents_oid, content_disposition, content_type, uploaded_at, size)
-        VALUES ({oid}, {contentDisposition}, {contentType}, TIMESTAMP '1970-01-01 00:00:00', {size})
+        INSERT INTO uploaded_file (content_disposition, content_type, uploaded_at, size)
+        VALUES ({contentDisposition}, {contentType}, TIMESTAMP '1970-01-01 00:00:00', {size})
         """).on(
-            "oid" -> oid,
             "contentDisposition" -> contentDisposition,
             "contentType" -> contentType,
             "size" -> size).executeInsert().getOrElse(failInsert)

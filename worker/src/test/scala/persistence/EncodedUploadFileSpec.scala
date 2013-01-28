@@ -17,13 +17,11 @@ class EncodedUploadFileSpec extends DbSpecification {
       val contentType = "application/octet-stream"
 
       var uploadedFileId: Long = _
-      var oid: Long = _
 
       override def setupWithDb {
         implicit val pgc = DB.pgConnection
         LO.withLargeObject { lo =>
-          uploadedFileId = insertUploadedFile(lo.oid, "content-disposition", contentType, size)
-          oid = lo.oid
+          uploadedFileId = insertUploadedFile("content-disposition", contentType, size)
         }
       }
     }
