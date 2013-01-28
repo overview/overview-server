@@ -10,7 +10,7 @@ import java.util.Date
 case class UploadedFile(
   id: Long = 0L,
   @Column("uploaded_at") uploadedAt: Timestamp = new Timestamp(new Date().getTime),
-  @Column("contents_oid") contentsOid: Option[Long],
+  @Column("contents_oid") contentsOid: Option[Long] = Some(1l),
   @Column("content_disposition") contentDisposition: String,
   @Column("content_type") contentType: String,
   size: Long) extends KeyedEntity[Long] {
