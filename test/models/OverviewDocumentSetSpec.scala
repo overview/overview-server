@@ -174,21 +174,21 @@ class OverviewDocumentSetSpec extends Specification {
     trait DocumentSetCreationInProgress extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = InProgress))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, DocumentCloudJob, state = InProgress))
       }
     }
 
     trait DocumentSetCreationNotStarted extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = NotStarted))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, DocumentCloudJob, state = NotStarted))
       }
     }
 
     trait DocumentSetCreationCancelled extends DocumentSetReferencedByOtherTables {
       override def setupWithDb = {
         super.setupWithDb
-        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, CsvImportJob, state = Cancelled))
+        documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, DocumentCloudJob, state = Cancelled))
       }
     }
 

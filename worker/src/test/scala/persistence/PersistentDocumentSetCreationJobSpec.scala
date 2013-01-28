@@ -14,7 +14,7 @@ import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
@@ -31,7 +31,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
 
   def insertCsvImportJob(documentSetId: Long, state: DocumentSetCreationJobState, contentsOid: Long): Long = {
-    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state, contentsOid = Some(contentsOid))
+    val job = DocumentSetCreationJob(documentSetId, CsvImportJob, state = state, contentsOid = Some(contentsOid))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
