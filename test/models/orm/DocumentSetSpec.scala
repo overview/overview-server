@@ -141,18 +141,11 @@ class DocumentSetSpec extends Specification {
       documentSetEntries must be empty
     }
 
-    inExample("delete uploadedFile and LargeObject for CsvImportDocumentsets") in new PgConnectionContext {
-      val oid = LO.withLargeObject { lo =>
-        lo.add(Array.fill(100)(10))
-        lo.oid
-      }
-
-      val uploadedFile = saveUploadedFile(UploadedFile(contentsOid = Some(oid), contentDisposition = "content-disposition", contentType = "content-type", size = 100))
+ 	"delete uploadedFile for CsvImportDocumentsets" in new PgConnectionContext {
+      val uploadedFile = saveUploadedFile(UploadedFile(contentDisposition = "content-disposition", contentType = "content-type", size = 100))
       val documentSet = DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id)).save
       DocumentSet.delete(documentSet.id)
       Schema.uploadedFiles.lookup(uploadedFile.id) must beNone
-
-      LO.withLargeObject(oid) { lo => lo.oid } must throwA[Exception]
     }
 
     "have no errorCount when there are no errors" in new DocumentSetContext {

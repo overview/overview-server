@@ -129,7 +129,6 @@ object DocumentSet {
     val success = Schema.documentSets.delete(id)
 
     uploadedFileId.map { u => 
-      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id}").on('id -> u).as(scalar[Int] *)
       SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
     }
 

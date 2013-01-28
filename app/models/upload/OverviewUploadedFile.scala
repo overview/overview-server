@@ -8,7 +8,6 @@ import org.overviewproject.tree.orm.UploadedFile
 trait OverviewUploadedFile {
   val id: Long
   val uploadedAt: Timestamp
-  val contentsOid: Option[Long]
   val contentDisposition: String
   val contentType: String
   val size: Long
@@ -32,7 +31,7 @@ object OverviewUploadedFile {
   }
 
   def apply(oid: Long, contentDisposition: String, contentType: String): OverviewUploadedFile = {
-    val uploadedFile = UploadedFile(uploadedAt = now, contentsOid = Some(oid), contentDisposition = contentDisposition, contentType = contentType, size = 0)
+    val uploadedFile = UploadedFile(uploadedAt = now, contentDisposition = contentDisposition, contentType = contentType, size = 0)
     apply(uploadedFile)
   }
 
@@ -45,7 +44,6 @@ object OverviewUploadedFile {
   private class OverviewUploadedFileImpl(uploadedFile: UploadedFile) extends OverviewUploadedFile {
     val id = uploadedFile.id
     val uploadedAt = uploadedFile.uploadedAt
-    val contentsOid = uploadedFile.contentsOid
     val contentDisposition = uploadedFile.contentDisposition
     val contentType = uploadedFile.contentType
     val size = uploadedFile.size
