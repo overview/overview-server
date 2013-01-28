@@ -28,7 +28,6 @@ class OverviewDocumentSetSpec extends Specification {
       val ormUploadedFile = UploadedFile(
         id = 0L,
         uploadedAt = new java.sql.Timestamp(new java.util.Date().getTime()),
-        contentsOid = Some(0l),
         contentDisposition = "attachment; filename=foo.csv",
         contentType = "text/csv; charset=latin1",
         size = 0L)
@@ -133,7 +132,7 @@ class OverviewDocumentSetSpec extends Specification {
 
       override def setupWithDb = {
         LO.withLargeObject { largeObject =>
-          val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = Some(largeObject.oid), contentDisposition = "disposition", contentType = "type", size = 0l))
+          val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
           ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
           documentSet = OverviewDocumentSet(ormDocumentSet)
           oid = largeObject.oid
@@ -145,7 +144,7 @@ class OverviewDocumentSetSpec extends Specification {
       var documentSet: OverviewDocumentSet = _
 
       override def setupWithDb = {
-        val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentsOid = None, contentDisposition = "disposition", contentType = "type", size = 0l))
+        val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
         val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
         documentSet = OverviewDocumentSet(ormDocumentSet)
       }
