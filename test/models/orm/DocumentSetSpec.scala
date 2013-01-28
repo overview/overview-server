@@ -66,7 +66,7 @@ class DocumentSetSpec extends Specification {
     "create a job with type CsvImportDocumentSet" in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
-          saveUploadedFile(UploadedFile(contentsOid = Some(lo.oid), contentDisposition = "", contentType = "", size = 0))
+          saveUploadedFile(UploadedFile(contentDisposition = "", contentType = "", size = 0))
         val documentSet =
           DocumentSet(documentSetType = CsvImportDocumentSet, uploadedFileId = Some(uploadedFile.id))
         documentSet.save must not(throwA[Exception])
