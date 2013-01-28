@@ -30,7 +30,6 @@ class EncodedUploadFileSpec extends DbSpecification {
 
     "load uploaded file values" in new UploadedFileContext {
       val uploadedFile = EncodedUploadFile.load(uploadedFileId)
-      uploadedFile.contentsOid must beSome.like { case uoid => uoid must be equalTo oid }
       uploadedFile.contentType must be equalTo contentType
       uploadedFile.size must be equalTo size
     }
@@ -41,7 +40,6 @@ class EncodedUploadFileSpec extends DbSpecification {
        uploadedFile.deleteContent
        
        val updatedUploadedFile = EncodedUploadFile.load(uploadedFileId)
-       updatedUploadedFile.contentsOid must beNone
        
        implicit val pgc = DB.pgConnection
        LO.withLargeObject(oid) { lo => } must throwA[Exception]
