@@ -12,6 +12,34 @@ VIEW_OPTIONS = {
   buffer_documents: 5,
 }
 
+tag_to_short_string = (tag) ->
+  "#{tag.id} (#{tag.name})"
+
+tag_diff_to_string = (tag1, tag2) ->
+  changed = false
+  s = ''
+  if tag1.name != tag2.name
+    s += " name: <<#{tag1.name}>> to <<#{tag2.name}>>"
+    changed = true
+  if tag1.color != tag2.color
+    s += " color: <<#{tag1.color}>> to <<#{tag2.color}>>"
+    changed = true
+  if !changed
+    s += " (no change)"
+  s
+
+node_to_short_string = (node) ->
+  "#{node.id} (#{node.description})"
+
+node_diff_to_string = (node1, node2) ->
+  changed = false
+  s = ''
+  if node1.description != node2.description
+    s += " description: <<#{node1.description}>> to <<#{node2.description}>>"
+  if !changed
+    s += ' (no change)'
+  s
+
 is_mac_os = () -> /Mac/.test(navigator.platform)
 
 document_list_controller = (div, cache, state) ->
@@ -50,20 +78,39 @@ document_list_controller = (div, cache, state) ->
 
   view.observe 'edit-node', (nodeid) ->
     node = cache.on_demand_tree.nodes[nodeid]
+    log('began editing node', node_to_short_string(node))
+
     form = new NodeFormView(node)
-    form.observe('closed', -> form = undefined)
-    form.observe('change', (new_node) -> cache.update_node(node, new_node))
+
+    form.observe 'closed', ->
+      log('stopped editing node', node_to_short_string(node))
+      form = undefined
+
+    form.observe 'change', (new_node) ->
+      log('edited node', "#{node.id}: #{node_diff_to_string(node, new_node)}")
+      cache.update_node(node, new_node)
 
   view.observe 'edit-tag', (tagid) ->
+    # TODO: remove this code--it duplicates tag_list_controller
     tag = cache.tag_store.find_tag_by_id(tagid)
+    log('began editing tag', tag_to_short_string(tag))
+
     form = new TagFormView(tag)
-    form.observe('closed', -> form = undefined)
-    form.observe('change', (new_tag) -> cache.update_tag(tag, new_tag))
+
+    form.observe 'closed', ->
+      log('stopped editing tag', tag_to_short_string(tag))
+      form = undefined
+
+    form.observe 'change', (new_tag) ->
+      log('edited tag', "#{tag.id}: #{tag_diff_to_string(tag, new_tag)}")
+      cache.update_tag(tag, new_tag)
+
     form.observe 'delete', ->
+      log('deleted tag', tag_to_short_string(tag))
       if state.focused_tag?.id == tag.id
         state.set('focused_tag', undefined)
       state.set('selection', state.selection.minus({ tags: [ tag.id ] }))
-      cache.remove_tag(tag)
+      cache.delete_tag(tag)
 
   view.observe 'document-clicked', (docid, options) ->
     index = _(document_list.documents).pluck('id').indexOf(docid)
