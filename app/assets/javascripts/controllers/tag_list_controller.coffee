@@ -3,7 +3,7 @@ TagListView = require('views/tag_list_view').TagListView
 TagFormView = require('views/tag_form_view').TagFormView
 Selection = require('models/selection').Selection
 
-log = require('globals').logger.for_component('tag-list')
+log = require('globals').logger.for_component('tag_list')
 
 tag_to_short_string = (tag) ->
   "#{tag.id} (#{tag.name})"
