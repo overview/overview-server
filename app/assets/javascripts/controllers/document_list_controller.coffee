@@ -1,6 +1,6 @@
 DocumentList = require('models/document_list').DocumentList
 
-TagFormView = require('views/tag_form_view').TagFormView
+node_form_controller = require('controllers/node_form_controller').node_form_controller
 NodeFormView = require('views/node_form_view').NodeFormView
 ListSelection = require('models/list_selection').ListSelection
 DocumentListView = require('views/document_list_view').DocumentListView
@@ -14,19 +14,6 @@ VIEW_OPTIONS = {
 
 tag_to_short_string = (tag) ->
   "#{tag.id} (#{tag.name})"
-
-tag_diff_to_string = (tag1, tag2) ->
-  changed = false
-  s = ''
-  if tag1.name != tag2.name
-    s += " name: <<#{tag1.name}>> to <<#{tag2.name}>>"
-    changed = true
-  if tag1.color != tag2.color
-    s += " color: <<#{tag1.color}>> to <<#{tag2.color}>>"
-    changed = true
-  if !changed
-    s += " (no change)"
-  s
 
 node_to_short_string = (node) ->
   "#{node.id} (#{node.description})"
@@ -79,38 +66,12 @@ document_list_controller = (div, cache, state) ->
   view.observe 'edit-node', (nodeid) ->
     node = cache.on_demand_tree.nodes[nodeid]
     log('began editing node', node_to_short_string(node))
-
-    form = new NodeFormView(node)
-
-    form.observe 'closed', ->
-      log('stopped editing node', node_to_short_string(node))
-      form = undefined
-
-    form.observe 'change', (new_node) ->
-      log('edited node', "#{node.id}: #{node_diff_to_string(node, new_node)}")
-      cache.update_node(node, new_node)
+    node_form_controller(node, cache, state)
 
   view.observe 'edit-tag', (tagid) ->
-    # TODO: remove this code--it duplicates tag_list_controller
     tag = cache.tag_store.find_tag_by_id(tagid)
-    log('began editing tag', tag_to_short_string(tag))
-
-    form = new TagFormView(tag)
-
-    form.observe 'closed', ->
-      log('stopped editing tag', tag_to_short_string(tag))
-      form = undefined
-
-    form.observe 'change', (new_tag) ->
-      log('edited tag', "#{tag.id}: #{tag_diff_to_string(tag, new_tag)}")
-      cache.update_tag(tag, new_tag)
-
-    form.observe 'delete', ->
-      log('deleted tag', tag_to_short_string(tag))
-      if state.focused_tag?.id == tag.id
-        state.set('focused_tag', undefined)
-      state.set('selection', state.selection.minus({ tags: [ tag.id ] }))
-      cache.delete_tag(tag)
+    log('clicked edit tag', tag_to_short_string(tag))
+    tag_form_controller(tag, cache, state)
 
   view.observe 'document-clicked', (docid, options) ->
     index = _(document_list.documents).pluck('id').indexOf(docid)
