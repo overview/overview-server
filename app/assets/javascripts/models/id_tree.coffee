@@ -71,11 +71,30 @@ class IdTree
       root: undefined,
     }
 
+  # Returns true iff the node's list of children is loaded.
+  #
+  # Running time: O(1)
   has: (id) ->
     @children[id]?
 
+  # Returns all node IDs for which the list of children is loaded.
+  #
+  # Running time: O(n), where n is the number of nodes in the tree.
   all: () ->
     +i for i, _ of @children
+
+  # Returns true iff id1 is higher than id2 in the tree.
+  #
+  # Running time: O(h), where h is the height of the tree.
+  is_id_ancestor_of_id: (id1, id2) ->
+    throw 'MissingNode' if !@parent[id1]? && id1 != @root
+    throw 'MissingNode' if !@parent[id2]? && id2 != @root
+
+    while @parent[id2]?
+      return true if @parent[id2] == id1
+      id2 = @parent[id2]
+
+    false
 
   edit: (callback) ->
     callback(@_editor)

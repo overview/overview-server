@@ -93,6 +93,41 @@ describe 'models/id_tree', ->
         do_add(6, [10, 11])
         expect(id_tree.loaded_descendents(1)).toEqual([ 6, 4, 3, 2 ])
 
+      describe 'is_id_ancestor_of_id', ->
+        it 'should throw MissingNode if id1 is not in the tree', ->
+          expect(->
+            id_tree.is_id_ancestor_of_id(10, 4)
+          ).toThrow('MissingNode')
+
+        it 'should throw MissingNode if id2 is not in the tree', ->
+          expect(->
+            id_tree.is_id_ancestor_of_id(1, 10)
+          ).toThrow('MissingNode')
+
+        it 'should return false if id2 is the root', ->
+          ret = id_tree.is_id_ancestor_of_id(2, 1)
+          expect(ret).toBe(false)
+
+        it 'should return false if id1 is a leaf', ->
+          ret = id_tree.is_id_ancestor_of_id(9, 3)
+          expect(ret).toBe(false)
+
+        it 'should return false if id1 == i2', ->
+          ret = id_tree.is_id_ancestor_of_id(2, 2)
+          expect(ret).toBe(false)
+
+        it 'should return true if id1 is parent of id2', ->
+          ret = id_tree.is_id_ancestor_of_id(1, 2)
+          expect(ret).toBe(true)
+
+        it 'should return true if id1 is a grandparent of id2', ->
+          ret = id_tree.is_id_ancestor_of_id(2, 9)
+          expect(ret).toBe(true)
+
+        it 'should return false if id1 is not an ancestor of id2', ->
+          ret = id_tree.is_id_ancestor_of_id(3, 9)
+          expect(ret).toBe(false)
+
     describe 'after removing a child', ->
       beforeEach ->
         do_add(1, [2, 3])
