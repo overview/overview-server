@@ -20,7 +20,8 @@
     <SSL>${SMTP_SSL}</SSL>
     <from>${LOGGER_SMTP_FROM}</from>
     <to>${LOGGER_SMTP_TO}</to>
-    <subject>${LOGGER_SMTP_SUBJECT_PREFIX} [worker]: %logger{20} - %m</subject>
+    <subject>${LOGGER_SMTP_SUBJECT_PREFIX}: %logger{20} - %m</subject>
+    <asynchronousSending>false</asynchronousSending>
     <layout class="ch.qos.logback.classic.PatternLayout">
       <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
     </layout>
