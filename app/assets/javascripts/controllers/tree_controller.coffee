@@ -5,6 +5,18 @@ PropertyInterpolator = require('models/property_interpolator').PropertyInterpola
 
 log = require('globals').logger.for_component('tree')
 
+update_selection_to_parent_of_nodeid_if_necessary = (selection, nodeid, on_demand_tree) ->
+  to_remove = []
+
+  for maybe_child_nodeid in selection.nodes
+    if on_demand_tree.id_tree.is_id_ancestor_of_id(nodeid, maybe_child_nodeid)
+      to_remove.push(maybe_child_nodeid)
+
+  if to_remove.length
+    selection.minus({ nodes: to_remove }).plus({ nodes: [ nodeid ] })
+  else
+    selection
+
 # Shim window.requestAnimationFrame(), as per
 # http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
 (->
@@ -65,6 +77,8 @@ tree_controller = (div, cache, focus, state) ->
   view.observe 'collapse', (nodeid) ->
     return if !nodeid?
     log('collapsed node', "#{nodeid}")
+    new_selection = update_selection_to_parent_of_nodeid_if_necessary(state.selection, nodeid, cache.on_demand_tree)
+    state.set('selection', new_selection)
     cache.on_demand_tree.unload_node_children(nodeid)
 
   view.observe 'zoom-pan', (obj) ->
