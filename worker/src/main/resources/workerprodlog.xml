@@ -21,7 +21,10 @@
     <from>${LOGGER_SMTP_FROM}</from>
     <to>${LOGGER_SMTP_TO}</to>
     <subject>${LOGGER_SMTP_SUBJECT_PREFIX}: %logger{20} - %m</subject>
-    <asynchronousSending>false</asynchronousSending>
+    <cyclicBufferTracker class="ch.qos.logback.core.spi.CyclicBufferTrackerImpl">
+      <!-- send just one log entry per email -->
+      <bufferSize>1</bufferSize>
+    </cyclicBufferTracker>
     <layout class="ch.qos.logback.classic.PatternLayout">
       <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
     </layout>
