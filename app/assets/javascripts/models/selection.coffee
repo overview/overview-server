@@ -82,6 +82,9 @@ class Selection
 
     _.sortBy(documents, (d) -> d.description)
 
+  to_string: () ->
+    JSON.stringify(this)
+
   allows_correct_tagcount_adjustments: () ->
     !!(@nodes.length && !@tags.length && !@documents.length)
 
