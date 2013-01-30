@@ -51,7 +51,7 @@ $ ->
 
     # Set the new iframe src
     # Do it in a callback, so the iframe has a chance to be cleared.
-    $dc_frame.once 'load', ->
+    $dc_iframe.one 'load', ->
       $dc_iframe.attr('data-documentcloud-id', document.documentcloud_id)
       refresh_dc_iframe()
 

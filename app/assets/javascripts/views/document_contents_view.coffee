@@ -45,7 +45,7 @@ class DocumentContentsView
     else
       if @iframe?
         try
-          @iframe.contentWindow.load_documentcloud(undefined)
+          @iframe.contentWindow.load_document(undefined)
         catch e
           this._create_iframe(undefined)
 
