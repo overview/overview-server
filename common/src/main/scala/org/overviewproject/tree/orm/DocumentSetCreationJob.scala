@@ -37,6 +37,7 @@ case class DocumentSetCreationJob(
   documentcloudUsername: Option[String] = None,
   documentcloudPassword: Option[String] = None,
   contentsOid: Option[Long] = None,
+  sourceDocumentSetId: Option[Long] = None,
   state: DocumentSetCreationJobState = NotStarted,
   fractionComplete: Double = 0.0,
   statusDescription: String = "",

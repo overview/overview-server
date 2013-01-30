@@ -34,6 +34,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     val job = DocumentSetCreationJob(documentSetId, CsvImportJob, state = state, contentsOid = Some(contentsOid))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
+  
+  def insertCloneJob(documentSetId: Long, state: DocumentSetCreationJobState, sourceDocumentSetId: Long): Long = {
+    val job = DocumentSetCreationJob(documentSetId, CloneJob, state = state, sourceDocumentSetId = Some(sourceDocumentSetId))
+    Schema.documentSetCreationJobs.insertOrUpdate(job).id
+  }
 
   def insertJobsWithState(documentSetId: Long, states: Seq[DocumentSetCreationJobState]) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
@@ -81,6 +86,16 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
         insertCsvImportJob(documentSetId, NotStarted, contentsOid)
         csvImportJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
       }
+    }
+  }
+  
+  trait CloneJobSetup extends DocumentSetContext {
+    val sourceDocumentSetId = 1l
+    var cloneJob: PersistentDocumentSetCreationJob = _
+    
+    override def setupWithDb = {
+      insertCloneJob(documentSetId, NotStarted, sourceDocumentSetId)
+      cloneJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
   }
 
@@ -179,6 +194,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     "have contentsOid if available" in new CsvImportJobSetup {
       csvImportJob.contentsOid must beSome
       csvImportJob.contentsOid.get must be equalTo (contentsOid)
+    }
+    
+    inExample("have sourceDocumentSetId if available") in new CloneJobSetup {
+      cloneJob.sourceDocumentSetId must beSome
+      cloneJob.sourceDocumentSetId.get must be equalTo (sourceDocumentSetId)
     }
     
     "find first job with a state, ordered by id" in new DocumentSetContext {

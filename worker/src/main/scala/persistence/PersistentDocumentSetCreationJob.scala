@@ -27,6 +27,9 @@ trait PersistentDocumentSetCreationJob {
   // Only CsvImportJobs require contentsOid
   val contentsOid: Option[Long]
   
+  // Only CloneJobs require sourceDocumentSetId
+  val sourceDocumentSetId: Option[Long]
+  
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -48,14 +51,6 @@ object PersistentDocumentSetCreationJob {
   import org.overviewproject.tree.orm.DocumentSetCreationJob
   import persistence.Schema.documentSetCreationJobs
 
-  private type DocumentSetCreationJobData = (Long, // id
-  Long, // documentSetId
-  Int, // state
-  Double, // fractionComplete
-  Option[String], // statusDescription
-  Option[String], // documentCloudUserName
-  Option[String]) // doucmentCloudPassword
-
   /** Find all jobs in the specified state */
   def findJobsWithState(state: DocumentSetCreationJobState): List[PersistentDocumentSetCreationJob] = {
 
@@ -76,6 +71,7 @@ object PersistentDocumentSetCreationJob {
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val contentsOid: Option[Long] = documentSetCreationJob.contentsOid
+    val sourceDocumentSetId: Option[Long] = documentSetCreationJob.sourceDocumentSetId
     
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
