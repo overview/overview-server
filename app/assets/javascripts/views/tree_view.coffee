@@ -69,12 +69,12 @@ class DrawOperation
     @drawable_node = new DrawableNode(@tree.root, 1, 0)  # root node is fully open (fraction=1) and at level 0
     depth = @drawable_node.height
  
-    tree_left_bound =  Math.min(@drawable_node.left_contour...) 
+    tree_left_bound =  Math.min(@drawable_node.left_contour...)
     tree_right_bound =  Math.max(@drawable_node.right_contour...)
-    tree_width = tree_right_bound - tree_left_bound 
+    tree_width = tree_right_bound - tree_left_bound
     @drawable_node.relative_x = @drawable_node.width/2 - (tree_left_bound + tree_right_bound)/2  # set center of root to center whole tree
 
-    @px_per_hunit = @width / tree_width / @zoom 
+    @px_per_hunit = @width / tree_width / @zoom
     @px_per_vunit = (@height - @options.node_line_width_selected) / ((depth > 1 && ((depth - 1) * @options.node_vpadding) || 0) + depth * @options.node_vunits)
     @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
 
