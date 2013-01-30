@@ -34,7 +34,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     val job = DocumentSetCreationJob(documentSetId, CsvImportJob, state = state, contentsOid = Some(contentsOid))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
-  
+
   def insertCloneJob(documentSetId: Long, state: DocumentSetCreationJobState, sourceDocumentSetId: Long): Long = {
     val job = DocumentSetCreationJob(documentSetId, CloneJob, state = state, sourceDocumentSetId = Some(sourceDocumentSetId))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
@@ -88,11 +88,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       }
     }
   }
-  
+
   trait CloneJobSetup extends DocumentSetContext {
     val sourceDocumentSetId = 1l
     var cloneJob: PersistentDocumentSetCreationJob = _
-    
+
     override def setupWithDb = {
       insertCloneJob(documentSetId, NotStarted, sourceDocumentSetId)
       cloneJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
@@ -195,8 +195,8 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       csvImportJob.contentsOid must beSome
       csvImportJob.contentsOid.get must be equalTo (contentsOid)
     }
-    
-    inExample("have sourceDocumentSetId if available") in new CloneJobSetup {
+
+    "have sourceDocumentSetId if available" in new CloneJobSetup {
       cloneJob.sourceDocumentSetId must beSome
       cloneJob.sourceDocumentSetId.get must be equalTo (sourceDocumentSetId)
     }
