@@ -238,6 +238,7 @@ views.User._form.label.password=Password
 views.User._form.label.password2=Password (again)
 views.User._form.help.password2=Because if you don''t remember it now, you never will
 views.User._form.submit=Register and send confirmation email
+views.User._form.submit_feedback=Registering...
 views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
 
 views.User.new.title=Register

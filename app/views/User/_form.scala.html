@@ -9,6 +9,6 @@
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
     @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
     @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
-    @helper.Form.translatedSubmit(m)
+    @helper.Form.translatedSubmit(m, Map(Symbol("data-feedback") -> m("submit_feedback")))
   </form>
 }

@@ -69,10 +69,15 @@ object Form {
     input(field, options ++ map)
   }
 
-  def translatedSubmit(m: views.ScopedMessages)(implicit lang: Lang) : Html = {
+  private implicit def mapToAttributes(in: Map[Symbol,String]) = {
+    in.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next))
+  }
+
+  def translatedSubmit(m: views.ScopedMessages, attributes: Map[Symbol,String] = Map())(implicit lang: Lang) : Html = {
     Html(
       <fieldset class="form-actions">
-        <input type="submit" class="btn btn-primary" value={m("submit")} />
-      </fieldset>.buildString(false))
+        {(<input type="submit" class="btn btn-primary" value={m("submit")} />) % attributes}
+      </fieldset>.buildString(false)
+    )
   }
 }
