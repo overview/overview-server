@@ -1,10 +1,12 @@
 # --- !Ups
 
-ALTER TABLE upload ADD COLUMN contents_oid OID NOT NULL;
+ALTER TABLE upload ADD COLUMN contents_oid OID;
 
 UPDATE upload SET contents_oid = uploaded_file.contents_oid 
   FROM uploaded_file
   WHERE upload.uploaded_file_id = uploaded_file.id;
+
+ALTER TABLE upload ALTER COLUMN contents_oid SET NOT NULL;
 
 ALTER TABLE document_set_creation_job ADD COLUMN contents_oid OID;
 UPDATE document_set_creation_job SET contents_oid = uploaded_file.contents_oid 
