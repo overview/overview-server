@@ -32,9 +32,9 @@ object UserController extends Controller {
   }
   
   private def registerNewUser(user: PotentialUser)(implicit request: RequestHeader) {
-   val registeredUser = user.requestConfirmation
-   registeredUser.save
-   mailers.User.create(registeredUser).send
+    val registeredUser = user.requestConfirmation
+    registeredUser.save
+    mailers.User.create(registeredUser).send
   }
 }
 
