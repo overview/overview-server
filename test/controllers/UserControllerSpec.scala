@@ -56,11 +56,7 @@ class UserControllerSpec extends Specification {
   }
 
   trait OurScopeWithUser extends OurScope {
-    /*
-     * We mock out a user with a ConfirmationRequest, so addConfirmationRequestToUser
-     * doesn't need to do any work.
-     */
-    val optionalOverviewUser : Option[OverviewUser with ConfirmationRequest]
+    val optionalOverviewUser : Option[OverviewUser]
     lazy val potentialUser = PotentialUser(validEmail, validPassword, optionalOverviewUser)
 
     trait TestUserControllerWithUser extends TestUserController {
@@ -76,7 +72,7 @@ class UserControllerSpec extends Specification {
   }
 
   trait OurScopeWithExistingUser extends OurScopeWithUser {
-    val overviewUser = mock[OverviewUser with ConfirmationRequest]
+    val overviewUser = mock[OverviewUser]
     overviewUser.email returns validEmail
     override val optionalOverviewUser = Some(overviewUser)
   }
