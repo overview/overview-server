@@ -150,8 +150,8 @@ class DrawOperation
       if drawable_node.px.width >= @options.start_fade_width
         @options.color.line_default
       else if drawable_node.px.width <= @px_per_hunit  # leaf node width
-        @options.color.line_faded      	
-      else 
+        @options.color.line_faded
+      else
         t = (@options.start_fade_width - drawable_node.px.width) / (@options.start_fade_width - @px_per_hunit)
         this._lerp_hexcolor(@options.color.line_default, @options.color.line_faded, t)
 
