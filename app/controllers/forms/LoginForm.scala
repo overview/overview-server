@@ -11,7 +11,7 @@ object LoginForm {
       Forms.mapping(
         "email" -> Forms.email,
         "password" -> Forms.text
-      )(PotentialUser
+      )(PotentialUser.apply
       )(u => Some((u.email, u.password)))
       .transform[Option[OverviewUser]](_.withValidCredentials, _.map(u => PotentialUser(u.email, "")).get) // we can't reverse the password ... but really, we don't need to
       .verifying("forms.LoginForm.error.invalid_credentials", u => u.isDefined)

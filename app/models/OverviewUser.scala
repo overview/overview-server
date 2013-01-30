@@ -113,8 +113,7 @@ trait Confirmation {
  * Different methods attempt to convert the user into a known state,
  * returning None if conversion can't be completed.
  */
-case class PotentialUser(val email: String, val password: String) {
-  private val user = OverviewUser.findByEmail(email)
+case class PotentialUser(val email: String, val password: String, private val user: Option[OverviewUser]) {
 
   /**
    * @return OverviewUser if exists, without checking password
@@ -148,6 +147,12 @@ case class PotentialUser(val email: String, val password: String) {
   def requestConfirmation: OverviewUser with ConfirmationRequest =
     OverviewUser.prepareNewRegistration(email, password)
 
+}
+
+object PotentialUser {
+  def apply(email: String, password: String) : PotentialUser = {
+    PotentialUser(email, password, OverviewUser.findByEmail(email))
+  }
 }
 
 /**
