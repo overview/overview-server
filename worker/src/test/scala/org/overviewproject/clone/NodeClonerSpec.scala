@@ -10,10 +10,13 @@ class NodeClonerSpec extends DbSpecification {
   step(setupDb)
 
   trait CloneContext extends DbTestContext {
+    val documentIdMapping: Map[Long, Long] = Seq.tabulate[(Long, Long)](10)(i => (i, 100 + i)).toMap
+    val documentCache: Array[Long] = documentIdMapping.keys.toArray
+    
     def createTree(documentSetId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
       if (depth == 0) Nil
       else {
-        val child = Node(documentSetId, parentId, "node height: " + depth, 0, Array())
+        val child = Node(documentSetId, parentId, "node height: " + depth, 100, documentCache)
 
         Schema.nodes.insert(child)
         child +: createTree(documentSetId, Some(child.id), depth - 1)
@@ -27,9 +30,10 @@ class NodeClonerSpec extends DbSpecification {
     override def setupWithDb = {
       val documentSetId = insertDocumentSet("NodeClonerSpec")
       val documentSetCloneId = insertDocumentSet("ClonedNodeClonerSpec")
+      
       sourceNodes = createTree(documentSetId, None, 10)
 
-      nodeIdMapping = NodeCloner.clone(documentSetId, documentSetCloneId)
+      nodeIdMapping = NodeCloner.clone(documentSetId, documentSetCloneId, documentIdMapping)
       cloneNodes = Schema.nodes.where(n => n.documentSetId === documentSetCloneId).toSeq
     }
   }
@@ -44,6 +48,12 @@ class NodeClonerSpec extends DbSpecification {
 	  val mappedIds = sourceNodes.flatMap(n => nodeIdMapping.get(n.id))
 	  
 	  mappedIds must be equalTo(cloneNodes.sortBy(_.id).map(_.id))
+	}
+	
+	inExample("map document id cache") in new CloneContext {
+	  val cloneCache = documentIdMapping.values
+	  
+	  cloneNodes.head.cachedDocumentIds.toSeq must haveTheSameElementsAs(cloneCache)
 	}
   }
 
