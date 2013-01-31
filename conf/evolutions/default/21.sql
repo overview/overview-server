@@ -28,6 +28,15 @@ ALTER TABLE document_set_creation_job ADD CONSTRAINT document_set_creation_job_c
     AND documentcloud_username IS NULL
     AND documentcloud_password IS NULL));
 
+
+ALTER TABLE document_set_creation_job ADD CONSTRAINT document_set_creation_job_clone_job_type_check
+  CHECK (type <> 'CloneJob' OR (
+    source_document_set_id IS NOT NULL
+    AND contents_oid IS NULL
+    AND documentcloud_username IS NULL
+    AND documentcloud_password IS NULL));
+
+
 # --- !Downs
 
 

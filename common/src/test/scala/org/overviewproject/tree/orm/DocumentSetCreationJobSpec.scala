@@ -23,7 +23,7 @@ class DocumentSetCreationJobSpec extends DbSpecification {
       val jobTypes = Seq(DocumentCloudJob, CsvImportJob, CloneJob)
       val dcJob = DocumentSetCreationJob(documentSetId, documentSetCreationJobType = DocumentCloudJob)
       val csvJob = DocumentSetCreationJob(documentSetId, documentSetCreationJobType = CsvImportJob, contentsOid = Some(oid))
-      val cloneJob = DocumentSetCreationJob(documentSetId, documentSetCreationJobType = CloneJob)
+      val cloneJob = DocumentSetCreationJob(documentSetId, documentSetCreationJobType = CloneJob, sourceDocumentSetId = Some(1l))
       
       val jobs = Seq(dcJob, csvJob, cloneJob)
       Schema.documentSetCreationJobs.insert(jobs)
