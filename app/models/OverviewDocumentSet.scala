@@ -31,7 +31,7 @@ trait OverviewDocumentSet {
    * Number of documents that could not be processed because of errors. May change over time.
    */
   def errorCount: Int
-  
+
   /** Title of the document set. (Empty string is allowed.) */
   val title: String
 
@@ -115,9 +115,9 @@ object OverviewDocumentSet {
     import models.orm.Schema._
     import org.overviewproject.postgres.SquerylEntrypoint._
     implicit val connection = OverviewDatabase.currentConnection
-    
+
     documentSetCreationJobs.deleteWhere(dscj => dscj.documentSetId === id)
-    
+
     SQL("""
         DELETE FROM node_document WHERE node_id IN (
           SELECT id FROM node WHERE document_set_id = {id}
@@ -127,12 +127,12 @@ object OverviewDocumentSet {
     documentProcessingErrors.deleteWhere(dpe => dpe.documentSetId === id)
     nodes.deleteWhere(n => n.documentSetId === id)
 
-    val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).single
+    val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).headOption.flatMap(identity)
     documentSets.delete(id)
-    
-    uploadedFileId.map { u =>
-      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id} AND contents_oid IS NOT NULL").on('id -> u).as(scalar[Int] *)
-      uploadedFiles.deleteWhere(f => f.id === u)
+
+    uploadedFileId.map { uid =>
+      SQL("SELECT lo_unlink(contents_oid) FROM uploaded_file WHERE id = {id} AND contents_oid IS NOT NULL").on('id -> uid).as(scalar[Int] *)
+      uploadedFiles.deleteWhere(f => f.id === uid)
     }
 
   }
