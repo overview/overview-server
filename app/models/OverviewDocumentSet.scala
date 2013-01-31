@@ -127,6 +127,8 @@ object OverviewDocumentSet {
     documentProcessingErrors.deleteWhere(dpe => dpe.documentSetId === id)
     nodes.deleteWhere(n => n.documentSetId === id)
 
+    // use headOption rather than single to handle case where uploadedFileId is deleted already
+    // flatMap identity to transform from Option[Option[Long]] to Option[Long]
     val uploadedFileId = from(documentSets)(d => where(d.id === id) select (d.uploadedFileId)).headOption.flatMap(identity)
     documentSets.delete(id)
 
