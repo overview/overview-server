@@ -12,24 +12,45 @@ class DocumentClonerSpec extends DbSpecification {
 
   "DocumentCloner" should {
 
-    "Create document clones" in new DbTestContext {
-      val uploadedFileId = insertUploadedFile("contentDisp", "contentType", 100)
-      val documentSetId = insertCsvImportDocumentSet(uploadedFileId)
+    trait CloneContext extends DbTestContext {
+      var documentSetId: Long = _
+      var documentSetCloneId: Long = _
+      var expectedCloneData: Seq[(String, Long, String)] = _
+      var documentCloner: DocumentCloner = _
+      var sourceDocuments: Seq[Document] = _
+      var clonedDocuments: Seq[Document] = _
 
-      val uploadedFileCloneId = insertUploadedFile("contentDisp", "contentType", 100)
-      val documentSetCloneId = insertCsvImportDocumentSet(uploadedFileCloneId)
+      def createCsvImportDocumentSet: Long = {
+        val uploadedFileId = insertUploadedFile("contentDisp", "contentType", 100)
+        insertCsvImportDocumentSet(uploadedFileId)
+      }
 
-      val sourceDocuments = Seq.tabulate(10)(i =>
-        Document(CsvImportDocument, documentSetId, text = Some("text-" + i)))
-      
-      val expectedCloneData = sourceDocuments.map(d => (CsvImportDocument.value, documentSetCloneId, d.text))
-      
-      Schema.documents.insert(sourceDocuments)
-      
-      val documentCloner = DocumentCloner.clone(documentSetId, documentSetCloneId)
-      val clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId)
-      val clonedData = clonedDocuments.map(d => (CsvImportDocument.value, d.documentSetId, d.text))
+      override def setupWithDb = {
+        documentSetId = createCsvImportDocumentSet
+        documentSetCloneId = createCsvImportDocumentSet
+
+        val documents = Seq.tabulate(10)(i =>
+          Document(CsvImportDocument, documentSetId, text = Some("text-" + i)))
+        Schema.documents.insert(documents)
+        sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
+
+        expectedCloneData = sourceDocuments.map(d => (CsvImportDocument.value, documentSetCloneId, d.text.get))
+
+        documentCloner = DocumentCloner.clone(documentSetId, documentSetCloneId)
+        clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
+
+      }
+    }
+
+    "Create document clones" in new CloneContext {
+      val clonedData = clonedDocuments.map(d => (CsvImportDocument.value, d.documentSetId, d.text.get))
       clonedData must haveTheSameElementsAs(expectedCloneData)
+    }
+
+    "Map source document ids to clone document ids" in new CloneContext {
+      val mappedIds = sourceDocuments.flatMap(d => documentCloner.getCloneId(d.id))
+
+      mappedIds must haveTheSameElementsAs(clonedDocuments.map(_.id))
     }
   }
   step(shutdownDb)
