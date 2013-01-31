@@ -1,18 +1,8 @@
 package org.overviewproject.clone
 
-class DocumentCloner(sourceDocumentIds: Iterable[Long], cloneDocumentIds: Iterable[Long]) {
-  
-  val mapping: Map[Long, Long] = sourceDocumentIds.zip(cloneDocumentIds).toMap
-
-  def getCloneId(sourceDocumentId: Long): Option[Long] = {
-    mapping.get(sourceDocumentId)
-  }
-  
-  
-}
 
 object DocumentCloner {
-  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): DocumentCloner = {
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Map[Long, Long] = {
     import persistence.Schema
     import org.overviewproject.postgres.SquerylEntrypoint._
     
@@ -23,6 +13,6 @@ object DocumentCloner {
       clone.id
     }
 
-    new DocumentCloner(sourceDocuments.map(_.id), cloneIds)
+    sourceDocuments.map(_.id).zip(cloneIds).toMap
   }
 }
