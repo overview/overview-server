@@ -69,11 +69,11 @@ object JobHandler {
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
 
-    val submittedJobs: Seq[PersistentDocumentSetCreationJob] = Database.inTransaction {
-      PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
+    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = Database.inTransaction {
+      PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
     }
 
-    for (j <- submittedJobs) {
+    firstSubmittedJob.map { j =>
       handleSingleJob(j)
       System.gc()
     }
