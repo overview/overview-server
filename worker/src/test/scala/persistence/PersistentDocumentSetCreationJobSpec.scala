@@ -160,6 +160,17 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
           n must be equalTo (dcUsername)
       }
     }
+    
+    "find first job with a state, ordered by id" in new DocumentSetContext {
+      val documentSetId2 = insertDocumentSet("DocumentSet2")
+      val jobIds = Seq(documentSetId2, documentSetId).map(insertDocumentSetCreationJob(_, NotStarted.id))
+     
+      val firstNotStartedJob = PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
+     
+      firstNotStartedJob must beSome
+      // test documentSetId since we can't get at job.id directly
+      firstNotStartedJob.get.documentSetId must be equalTo(documentSetId2)
+    }
   }
 
   step(shutdownDb)

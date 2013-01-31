@@ -56,6 +56,13 @@ object PersistentDocumentSetCreationJob {
     val jobs = from(documentSetCreationJobs)(d => where(d.state === state) select (d))
     jobs.map(new PersistentDocumentSetCreationJobImpl(_)).toList
   }
+  
+  /** Find first job, ordered by id, in the specified state */
+  def findFirstJobWithState(state: DocumentSetCreationJobState): Option[PersistentDocumentSetCreationJob] = {
+    val job = from(documentSetCreationJobs)(d => where(d.state === state) select(d) orderBy(d.id)).page(0, 1).headOption
+
+    job.map(new PersistentDocumentSetCreationJobImpl(_))
+  }
 
   private class PersistentDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob)
     extends PersistentDocumentSetCreationJob {
