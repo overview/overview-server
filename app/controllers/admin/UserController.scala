@@ -1,11 +1,11 @@
 package controllers.admin
 
 import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.forms.AdminUserForm
 import models.OverviewUser
+import models.orm.DocumentSet
 
 object UserController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
@@ -23,8 +23,7 @@ object UserController extends Controller {
           updatedUser.save
           Redirect(routes.UserController.index()).
             flashing("success" -> m("update.success", otherUser.email))
-        }
-      )
+        })
     }).getOrElse(NotFound)
   }
 
@@ -33,9 +32,14 @@ object UserController extends Controller {
       if (otherUser.id == request.user.id) {
         BadRequest
       } else {
-        otherUser.delete
-        Redirect(routes.UserController.index()).
-          flashing("success" -> m("delete.success", otherUser.email))
+        val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(otherUser.id)
+        if (documentSets.headOption.isEmpty) {
+          otherUser.delete
+          Redirect(routes.UserController.index()).
+            flashing("success" -> m("delete.success", otherUser.email))
+        }
+        else Redirect(routes.UserController.index()).flashing("error" -> m("delete.failure", otherUser.email))
+        
       }
     }).getOrElse(NotFound)
   }
