@@ -103,10 +103,10 @@ class OverviewDocumentSetSpec extends Specification {
     import anorm.SqlParser._
     import org.overviewproject.postgres.SquerylEntrypoint._
     import models.orm.Schema._
-    import models.orm.{ DocumentSet, DocumentTag, LogEntry, Tag, User }
+    import models.orm.{ DocumentSet, LogEntry, Tag, User }
     import models.orm.DocumentSetType._
     import org.overviewproject.postgres.LO
-    import org.overviewproject.tree.orm.{ Document, Node, DocumentProcessingError, DocumentSetCreationJob }
+    import org.overviewproject.tree.orm.{ Document, Node, DocumentProcessingError, DocumentSetCreationJob, DocumentTag }
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
     import org.overviewproject.tree.orm.DocumentSetCreationJobType._
     import org.overviewproject.tree.orm.DocumentType._

@@ -1,8 +1,8 @@
-package models.orm
+package org.overviewproject.tree.orm
 
+import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
 import org.squeryl.dsl.CompositeKey2
 import org.squeryl.KeyedEntity
-import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
 
 case class DocumentTag(
   documentId: Long,
