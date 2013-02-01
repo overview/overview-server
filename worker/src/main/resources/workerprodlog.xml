@@ -11,7 +11,7 @@
       <smtpPort>587</smtpPort>
       <to>${LOG_EMAIL}</to>
       <from>${SERVER_NAME}-server@overviewproject.org</from>
-      <subject>${LOG_SUBJECT_PREFIX} (worker): %logger{20} - %m</subject>
+      <subject>${LOG_SUBJECT_PREFIX} [worker] : %logger{20} - %m</subject>
       <layout class="ch.qos.logback.classic.PatternLayout">
 	<pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
       </layout>       
