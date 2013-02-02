@@ -15,4 +15,5 @@ object Schema extends org.squeryl.Schema {
   val documentProcessingErrors = table[DocumentProcessingError]
   val uploadedFiles = table[UploadedFile]
   val tags = table[Tag]
+  val documentTags = table[DocumentTag]
 }
