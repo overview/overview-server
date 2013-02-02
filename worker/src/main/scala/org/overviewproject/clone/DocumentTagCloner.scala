@@ -13,12 +13,11 @@ object DocumentTagCloner {
       from(Schema.documentTags)(dt => where(dt.documentId in sourceDocuments) select dt).toSeq
 
     val cloneDocumentTags: Seq[DocumentTag] = 
-      sourceDocumentTags.flatMap(dt =>
-        documentMapping.get(dt.documentId).flatMap { documentId =>
-          tagMapping.get(dt.tagId).map { tagId =>
-            DocumentTag(documentId, tagId)
-          }
-        })
+      for {
+        dt <- sourceDocumentTags
+        documentId <- documentMapping.get(dt.documentId)
+        tagId <- tagMapping.get(dt.tagId)
+      } yield DocumentTag(documentId, tagId)
 
     Schema.documentTags.insert(cloneDocumentTags)
   }
