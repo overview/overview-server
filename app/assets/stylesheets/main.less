@@ -127,8 +127,9 @@ body.document-set-show {
     .handle {
       top: 0;
       height: @focus_height;
-      background: #ddd;
-      border: 1px solid @grayLight;
+      background: transparent;
+      border: none;
+      z-index: 1;
 
       &.right {
         cursor: e-resize;
@@ -146,8 +147,6 @@ body.document-set-show {
       cursor: move;
       background: #ddd;
       border: 1px solid @grayLight;
-      border-left: none;
-      border-right: none;
     }
   }
 

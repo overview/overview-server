@@ -14,6 +14,7 @@ class MockFocus
 
 describe 'views/focus_view', ->
   describe 'FocusView', ->
+    HANDLE_WIDTH=10
     div = undefined
     focus = undefined
     view = undefined
@@ -52,7 +53,9 @@ describe 'views/focus_view', ->
 
     describe 'starting at (1, 0)', ->
       beforeEach ->
-        view = new FocusView(div, focus)
+        view = new FocusView(div, focus, {
+          handle_width: HANDLE_WIDTH
+        })
 
       it 'should add handles at the edges and a middle', ->
         $handle1 = $(div).find('.handle.left')
@@ -63,8 +66,8 @@ describe 'views/focus_view', ->
         expect($middle.length).toEqual(1)
         expect(num($handle1.css('left'))).toEqual(0)
         expect(num($handle2.css('left')) + $handle2.outerWidth()).toEqual(100)
-        expect(num($middle.css('left'))).toEqual($handle1.outerWidth())
-        expect(num($middle.css('width'))).toEqual(num($handle2.css('left')) - $handle1.outerWidth())
+        expect(num($middle.css('left'))).toEqual(0)
+        expect(num($middle.css('width'))).toEqual(100)
 
       it 'should update when zoom changes', ->
         spyOn(view, 'update')
@@ -88,13 +91,21 @@ describe 'views/focus_view', ->
         $handle1 = $(div).find('.handle.left')
         $handle2 = $(div).find('.handle.right')
         $middle = $(div).find('.middle')
-        expect($handle1.length).toEqual(1)
-        expect($handle2.length).toEqual(1)
-        expect($middle.length).toEqual(1)
-        expect(num($handle1.css('left')) + $handle1.outerWidth() / 2).toEqual(62.5)
-        expect(num($handle2.css('left')) + $handle2.outerWidth() / 2).toEqual(87.5)
-        expect(num($middle.css('left')) - $handle1.outerWidth() / 2).toEqual(62.5)
-        expect(num($middle.css('width'))).toEqual(25 - $handle1.outerWidth())
+        expect($middle.width()).toEqual(25)
+        expect(num($handle1.css('left')) + $handle1.outerWidth() / 2).toEqual(num($middle.css('left')))
+        expect(num($handle2.css('left')) + $handle2.outerWidth() / 2).toEqual(num($middle.css('left')) + $middle.width())
+
+      it 'should ensure HANDLE_WIDTH px between the edges', ->
+        # See https://github.com/overview/overview-server/issues/266
+        focus.zoom = 0.00000001
+        focus.pan = 0
+        view.update()
+        $handle1 = $(div).find('.handle.left')
+        $handle2 = $(div).find('.handle.right')
+        $middle = $(div).find('.middle')
+        expect(num($handle1.css('left')) + $handle1.outerWidth()).toBeCloseTo(50 - HANDLE_WIDTH * 0.5, 4)
+        expect($middle.width()).toEqual(HANDLE_WIDTH)
+        expect(num($handle2.css('left'))).toBeCloseTo(50 + HANDLE_WIDTH * 0.5, 4)
 
       it 'should signal when a handle is dragged', ->
         focus.zoom = 0.5

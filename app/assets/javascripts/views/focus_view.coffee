@@ -1,8 +1,7 @@
 observable = require('models/observable').observable
 
 DEFAULT_OPTIONS = {
-  handle_width: 11, #px
-  handle_border_width: 1, #px
+  handle_width: 11 #px
 }
 
 class FocusView
@@ -61,14 +60,18 @@ class FocusView
 
       $elem = $(e.target)
       left_or_right = $elem.hasClass('left') && 'left' || 'right'
-      positions = this._get_left_and_right_x_from_focus_and_width()
+      xs_and_widths = this._get_xs_and_widths()
+      positions = {
+        left: xs_and_widths.middle.left
+        right: xs_and_widths.middle.left + xs_and_widths.middle.width
+      }
       start_x = e.pageX
       width = $(@div).width()
 
       update_from_event = (e) =>
         dx = e.pageX - start_x
         this_x = positions[left_or_right] + dx
-        other_x = left_or_right == 'left' && positions['right'] || positions['left']
+        other_x = left_or_right == 'left' && positions.right || positions.left
 
         x1 = if other_x < this_x then other_x else this_x
         x2 = if other_x < this_x then this_x else other_x
@@ -94,32 +97,72 @@ class FocusView
     $div.append('<div class="line"/><div class="handle left"/><div class="middle"/><div class="handle right"/>')
     height = $div.height()
     $div.find('.line').css({
-      position: 'absolute',
-      left: 0,
-      right: 0,
+      position: 'absolute'
+      left: 0
+      right: 0
     })
     $div.find('.handle').css({
-      position: 'absolute',
-      top: 0,
-      bottom: 0,
-      'border-width': @options.handle_border_width,
-      width: @options.handle_width,
+      position: 'absolute'
+      top: 0
+      bottom: 0
+      width: @options.handle_width
     })
     $div.find('.middle').css({
       position: 'absolute',
     })
     this._redraw()
 
-  _get_left_and_right_x_from_focus_and_width: () ->
+  # Returns { left: { left: px, width: px }, middle: {}, right: {} }
+  #
+  # The position:absolute handles should be positioned according to these
+  # numbers.
+  #
+  # There are a few guarantees:
+  # * "left" and "right" width will == @options.handle_width
+  # * "middle" width will be >= @options.handle_width
+  # * "left" and "right" may overlap "middle", but they will always leave
+  #   @options.handle_width pixels *not* overlapped.
+  _get_xs_and_widths: () ->
     zoom = @focus.zoom
     pan = @focus.pan
 
     width = $(@div).width()
 
-    {
-      left: (0.5 + pan - zoom * 0.5) * width,
-      right: (0.5 + pan + zoom * 0.5) * width,
+    ret = {
+      middle: {
+        left: (0.5 + pan - zoom * 0.5) * width
+        width: zoom * width
+      }
     }
+
+    if ret.middle.width < @options.handle_width
+      handle_width_missing = @options.handle_width - ret.middle.width
+      ret.middle.left -= handle_width_missing * 0.5
+      ret.middle.width = @options.handle_width
+
+    ret.left = {
+      left: ret.middle.left - @options.handle_width * 0.5
+      width: @options.handle_width
+    }
+
+    ret.right = {
+      left: ret.middle.left + ret.middle.width - @options.handle_width * 0.5
+      width: @options.handle_width
+    }
+
+    if ret.left.left < 0
+      ret.left.left = 0
+
+    if ret.right.left + ret.right.width > width
+      ret.right.left = width - ret.right.width
+
+    space_between = ret.right.left - (ret.left.left + ret.left.width)
+    if space_between < @options.handle_width
+      diff = @options.handle_width - space_between
+      ret.left.left -= diff * 0.5
+      ret.right.left += diff * 0.5
+
+    ret
 
   _redraw: () ->
     $div = $(@div)
@@ -128,32 +171,11 @@ class FocusView
     $middle = $div.find('.middle')
     $handle2 = $div.find('.handle.right')
 
-    positions = this._get_left_and_right_x_from_focus_and_width()
+    positions = this._get_xs_and_widths()
 
-    handle_width = $handle1.outerWidth()
-
-    positions.left_minus_handle = positions.left - handle_width * 0.5
-    positions.left_plus_handle = positions.left + handle_width * 0.5
-    positions.right_minus_handle = positions.right - handle_width * 0.5
-    positions.right_plus_handle = positions.right + handle_width * 0.5
-
-    if positions.left_minus_handle < 0
-      d = positions.left_minus_handle
-      positions.left -= d
-      positions.left_plus_handle -= d
-      positions.left_minus_handle -= d
-
-    width = $(@div).width()
-
-    if positions.right_plus_handle > width
-      d = positions.right_plus_handle - width
-      positions.right_plus_handle -= d
-      positions.right -= d
-      positions.right_minus_handle -= d
-
-    $handle1.css({ left: positions.left_minus_handle })
-    $middle.css({ left: positions.left_plus_handle, width: positions.right_minus_handle - positions.left_plus_handle })
-    $handle2.css({ left: positions.right_minus_handle })
+    $handle1.css(positions.left)
+    $middle.css(positions.middle)
+    $handle2.css(positions.right)
 
   update: () ->
     this._redraw()
