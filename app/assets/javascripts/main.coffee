@@ -14,6 +14,27 @@ world.cache.load_root().done ->
 
 log = require('globals').logger
 
+refresh_height = () ->
+  MARGIN = 5 #px
+
+  # Make the main div go below the (variable-height) navbar
+  h = $('body>nav').height()
+  $('#main, #document').css({ top: h })
+
+  # Shrink the document list to available space
+  $tag_list = $('#tag-list')
+  $document_list = $('#document-list')
+  parent_height = $document_list.parent().height()
+  tag_list_bottom = $tag_list.position().top + $tag_list.outerHeight()
+  $document_list.height(parent_height - tag_list_bottom - MARGIN * 3) # dunno why 3
+
+  # Round the iframe's parent's width, because it needs an integer number of px
+  $document = $('#document')
+  $iframe = $document.find('iframe')
+  $iframe.width(1)
+  w = Math.floor($document.width(), 10)
+  $iframe.width(w)
+
 jQuery ($) ->
   log_controller = require('controllers/log_controller').log_controller
   log_controller(log, world.cache.server)
@@ -34,17 +55,11 @@ jQuery ($) ->
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
     document_list_controller(this, world.cache, world.state)
-
-    $document_list = $(this)
-    refresh_height = () ->
-      parent_height = +$document_list.parent().height()
-      prevall_height = _($document_list.prevAll()).reduce(((sum, el) -> sum + (+$(el).height())), 0)
-      $document_list.height(parent_height - prevall_height - 30) # FIXME remove "30px"
-
-    refresh_height()
-    $(window).resize(refresh_height)
     world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
     world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
     document_contents_controller(this, world.cache, world.state)
+
+  $(window).resize(refresh_height)
+  refresh_height()

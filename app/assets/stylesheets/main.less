@@ -76,7 +76,8 @@ body.document-set-show {
     right: 5px;
     left: @left_width;
     margin-left: 5px;
-    top: 42px + 5px; // navbar
+    top: 42px; // navbar -- will be resized
+    margin-top: 5px;
     bottom: 5px;
     border: 1px solid #ccc;
 
@@ -96,7 +97,7 @@ body.document-set-show {
     position: absolute;
     left: 0;
     width: @left_width;
-    top: 42px; // navbar
+    top: 42px; // navbar -- will be altered in JS
     bottom: 0;
     box-sizing: border-box;
   }

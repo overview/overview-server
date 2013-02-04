@@ -22,6 +22,7 @@ class DocumentContentsView
     $iframe.attr('src', url)
     $div = $(@div)
     $div.empty()
+    $iframe.width(Math.floor($div.width()))
     $div.append($iframe)
     @iframe = $iframe[0]
 
