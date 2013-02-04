@@ -137,6 +137,9 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
       if (docsInThisCluster.size > 0)
         node.children += new DocTreeNode(Set(docsInThisCluster:_*))
     }
+    
+    if (node.children.size == 1)    // if all docs went into single node, make this a leaf, we are done
+      node.children.clear           // (probably indicates clustering alg problem, but let's not infinite loop)
   }
 }
 
@@ -149,6 +152,8 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
   private def splitNode(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {  
     if (!progAbort(Progress(0, ClusteringLevel(1)))) { // if we haven't been cancelled...
   
+      require(node.docs.size > 0)
+      
       if (node.docs.size > stopSize) {
          
         splitNode(node)
@@ -270,8 +275,8 @@ object BuildDocTree {
   }
 
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    val tree = applyHybrid(docVecs, progAbort)
-    //val tree = applyKMeans(docVecs, progAbort)    
+    //val tree = applyHybrid(docVecs, progAbort)
+    val tree = applyKMeans(docVecs, progAbort)    
     //val tree = applyConnectedComponents(docVecs, progAbort)
     
     new TreeLabeler(docVecs).labelNode(tree)    // create a descriptive label for each node
