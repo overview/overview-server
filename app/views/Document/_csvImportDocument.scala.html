@@ -7,10 +7,14 @@
         <p class="source"><span>{m("source")}</span><a href={url} target="_blank">{url}</a></p>
       })
 
-      @d.secureSuppliedUrl.map({ url =>
-        <iframe src={url} width="100" height="100"></iframe>
+      @d.twitterUrl.map({ twitterUrl =>
+        <blockquote data-twitter-url={twitterUrl}>{d.text}</blockquote>
       }).getOrElse({
-        <pre>{d.text}</pre>
+        d.secureSuppliedUrl.map({ url =>
+          <iframe src={url} width="100" height="100"></iframe>
+        }).getOrElse({
+          <pre>{d.text}</pre>
+        })
       })
     }
   </div>
