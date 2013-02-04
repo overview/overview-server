@@ -68,7 +68,7 @@ class OverviewDocumentSpec extends DbSpecification {
       csvImportDocument.secureSuppliedUrl must beNone
     }
 
-    "give no secureSuppliedUrl for a CsvImportDocument if the suppleidUrl is not https" in new CsvImportDocumentScope {
+    "give no secureSuppliedUrl for a CsvImportDocument if the suppliedUrl is not https" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("http://example.org")
       csvImportDocument.secureSuppliedUrl must beNone
     }
@@ -76,6 +76,31 @@ class OverviewDocumentSpec extends DbSpecification {
     "give a secureSuppliedUrl for a CsvImportDocument" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("https://example.org")
       csvImportDocument.secureSuppliedUrl must beSome("https://example.org")
+    }
+
+    "give no twitterUrl for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
+      override def suppliedUrl = None
+      csvImportDocument.twitterUrl must beNone
+    }
+
+    "give no twitterUrl for a CsvImportDocument if the suppliedUrl is not a Twitter one" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("https://example.org")
+      csvImportDocument.twitterUrl must beNone
+    }
+
+    "give a twitterUrl for an http://twitter.com URL" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("http://twitter.com/adamhooper/status/1234")
+      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
+    }
+
+    "give a twitterUrl for an https://twitter.com URL" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("https://twitter.com/adamhooper/status/1234")
+      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
+    }
+
+    "give a twitterUrl for an http://www.twitter.com URL" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("http://www.twitter.com/adamhooper/status/1234")
+      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
     }
 
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {

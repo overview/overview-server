@@ -42,6 +42,7 @@ object OverviewDocument {
   }
 
   case class CsvImportDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
+    private lazy val twitterRegex = """^https?://(www\.)?twitter\.com[#/$].*"""
     private def throwOnNull = throw new Exception("CsvImportDocument has NULL values it should not have")
 
     /** Full-text contents of the document */
@@ -60,7 +61,10 @@ object OverviewDocument {
     lazy val suppliedUrl: Option[String] = ormDocument.url
 
     /** User-provided URL, if it begins with https:// */
-    lazy val secureSuppliedUrl : Option[String] = ormDocument.url.filter(_.startsWith("https://"))
+    lazy val secureSuppliedUrl : Option[String] = suppliedUrl.filter(_.startsWith("https://"))
+
+    /** User-provided URL, if it comes from Twitter */
+    lazy val twitterUrl : Option[String] = suppliedUrl.filter(_.matches(twitterRegex))
   }
 
   case class DocumentCloudDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
