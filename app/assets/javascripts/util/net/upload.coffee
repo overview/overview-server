@@ -90,6 +90,7 @@ class Upload
   #     url_prefix: String. For instance, `http://example.org/upload/` will
   #                 send files to `http://example.org/upload/__uuid__`.
   #     options: Key/value pairs including these:
+  #       contentType: Content-Type header (passed to jQuery.ajax())
   #       xhr_factory: function that accepts an "upload-progress" callback of
   #                    signature function(bytes_loaded, bytes_total) and returns
   #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
@@ -248,10 +249,10 @@ class Upload
       data: blob
       timeout: UPLOADING_TIMEOUT
       xhr: create_xhr
+      contentType: @options.contentType || 'application/octet-stream'
       headers: {
         'Content-Disposition': "attachment; filename=#{@file.name}"
         'Content-Range': "#{@bytes_uploaded}-#{@file.size}/#{@file.size}"
-        'Content-Type': 'application/octet-stream'
       }
     })
 
