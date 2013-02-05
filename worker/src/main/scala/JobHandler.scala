@@ -17,6 +17,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
+import org.overviewproject.clone.CloneDocumentSet
 
 object JobHandler {
 
@@ -41,13 +42,9 @@ object JobHandler {
         cancelJob
       }
 
-      val documentSet = DB.withConnection { implicit connection =>
-        DocumentSetLoader.load(j.documentSetId).get
-      }
-
       j.jobType.value match {
-        case CsvImportJob.value | DocumentCloudJob.value => handleCreationJob(j, documentSet, progFn)
-        case CloneJob.value => handleCloneJob
+        case CsvImportJob.value | DocumentCloudJob.value => handleCreationJob(j, progFn)
+        case CloneJob.value => handleCloneJob(j)
       }
 
       Database.inTransaction { j.delete }
@@ -132,7 +129,10 @@ object JobHandler {
     }
   }
 
-  private def handleCreationJob(job: PersistentDocumentSetCreationJob, documentSet: DocumentSet, progressFn: ProgressAbortFn) {
+  private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn) {
+    val documentSet = DB.withConnection { implicit connection =>
+      DocumentSetLoader.load(job.documentSetId).get
+    }
     val nodeWriter = new NodeWriter(job.documentSetId)
 
     val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
@@ -142,8 +142,12 @@ object JobHandler {
 
   }
 
-  private def handleCloneJob() {
-
+  private def handleCloneJob(job: PersistentDocumentSetCreationJob) {
+    job.sourceDocumentSetId.map { sourceDocumentSetId =>
+      Database.inTransaction {
+        CloneDocumentSet(sourceDocumentSetId, job.documentSetId)
+      }
+    }
   }
 }
 

@@ -35,7 +35,6 @@ object CloneDocumentSet {
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
     }
-    
     cloner.clone(sourceDocumentSetId, cloneDocumentSetId)
   }
 }
