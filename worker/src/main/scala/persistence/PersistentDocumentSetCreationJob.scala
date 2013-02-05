@@ -8,6 +8,7 @@
 package persistence
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobType
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
 import org.overviewproject.database.Database
@@ -20,6 +21,8 @@ trait PersistentDocumentSetCreationJob {
 
   val documentSetId: Long
 
+  val jobType: DocumentSetCreationJobType
+  
   // Only some jobs require DocumentCloud credentials
   val documentCloudUsername: Option[String]
   val documentCloudPassword: Option[String]
@@ -68,6 +71,7 @@ object PersistentDocumentSetCreationJob {
   private class PersistentDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob)
     extends PersistentDocumentSetCreationJob {
     val documentSetId: Long = documentSetCreationJob.documentSetId
+    val jobType: DocumentSetCreationJobType = documentSetCreationJob.documentSetCreationJobType
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val contentsOid: Option[Long] = documentSetCreationJob.contentsOid

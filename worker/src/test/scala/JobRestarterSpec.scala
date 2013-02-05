@@ -5,11 +5,13 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
 class JobRestarterSpec extends Specification with Mockito {
   implicit val unusedConnection: Connection = null
 
   class TestJob extends PersistentDocumentSetCreationJob {
+    val jobType = CsvImportJob
     val documentSetId = 1l
     val documentCloudUsername: Option[String] = None
     val documentCloudPassword: Option[String] = None

@@ -211,6 +211,10 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       // test documentSetId since we can't get at job.id directly
       firstNotStartedJob.get.documentSetId must be equalTo(documentSetId2)
     }
+    
+    "have a type" in new CsvImportJobSetup {
+      csvImportJob.jobType.value must be equalTo(CsvImportJob.value)
+    }
   }
 
   step(shutdownDb)
