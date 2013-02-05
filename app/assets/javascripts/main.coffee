@@ -54,7 +54,8 @@ jQuery ($) ->
     focus_controller(this, focus)
   $('#tree').each () ->
     tree_controller = require('controllers/tree_controller').tree_controller
-    tree_controller(this, world.cache, focus, world.state)
+    controller = tree_controller(this, world.cache, focus, world.state)
+    keyboard_controller.add_controller('TreeController', controller)
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
     controller = document_list_controller(this, world.cache, world.state)

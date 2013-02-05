@@ -12,7 +12,7 @@
 # This list must be sorted alphabetically. This helps us avoid duplicates.
 events = {
   'Control+a': 'DocumentListController.select_all'
-  'Down': 'TreeController.go_down'
+  'Down': 'TreeController.go_down_or_expand'
   'Left': 'TreeController.go_left'
   'PageDown': 'DocumentContentsController.page_down'
   'PageUp': 'DocumentContentsController.page_up'
@@ -22,7 +22,7 @@ events = {
   'd': 'TreeController.go_right'
   'j': 'DocumentListController.go_down'
   'k': 'DocumentListController.go_up'
-  's': 'TreeController.go_down'
+  's': 'TreeController.go_down_or_expand'
   'w': 'TreeController.go_up'
 }
 
@@ -63,22 +63,22 @@ class KeyboardController
     key = switch
       when A <= i <= Z then String.fromCharCode(i).toLowerCase()
       when a <= i <= z then String.fromCharCode(i)
-      when 8 then 'Backspace'
-      when 9 then 'Tab'
-      when 13 then 'Enter'
-      when 27 then 'Escape'
-      when 32 then 'Space'
-      when 33 then 'PageUp'
-      when 34 then 'PageDown'
-      when 35 then 'End'
-      when 36 then 'Home'
-      when 37 then 'Left'
-      when 38 then 'Up'
-      when 39 then 'Right'
-      when 40 then 'Down'
-      when 45 then 'Insert'
-      when 46 then 'Delete'
-      when 191 then 'Slash'
+      when i == 8 then 'Backspace'
+      when i == 9 then 'Tab'
+      when i == 13 then 'Enter'
+      when i == 27 then 'Escape'
+      when i == 32 then 'Space'
+      when i == 33 then 'PageUp'
+      when i == 34 then 'PageDown'
+      when i == 35 then 'End'
+      when i == 36 then 'Home'
+      when i == 37 then 'Left'
+      when i == 38 then 'Up'
+      when i == 39 then 'Right'
+      when i == 40 then 'Down'
+      when i == 45 then 'Insert'
+      when i == 46 then 'Delete'
+      when i == 191 then 'Slash'
       else undefined
 
     if key

@@ -58,6 +58,8 @@ class DrawOperation
     @ctx.textBaseline = 'top'
     @ctx.shadowColor = 'white'
 
+    @drawn_nodes = {} # hash of nodeid -> DrawableNode
+
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
@@ -113,7 +115,6 @@ class DrawOperation
 
     return { event: event, id: drawable_node.animated_node.node.id }
 
-
   # simple RGB space color interpolator. Returns a when t=0, b when t=1
   _lerp_hexcolor: (a, b, t) ->
     a_red   = parseInt(a.substring(1,3),16)
@@ -129,7 +130,6 @@ class DrawOperation
         
     "#" + ("0" + red.toString(16)).slice(-2) + ("0" + green.toString(16)).slice(-2) + ("0" + blue.toString(16)).slice(-2)
   	  
-  	  
   _animated_node_to_line_width: (animated_node) ->
     if animated_node.selected
       @options.node_line_width_selected
@@ -137,7 +137,6 @@ class DrawOperation
       @options.node_line_width_leaf
     else
       @options.node_line_width
-
 
   # choose color to draw node outline. selected has its own color, leaf nodes are faded, 
   # and we also fade normal nodes when they get too narrow
@@ -299,6 +298,8 @@ class DrawOperation
     this._maybe_draw_expand(drawable_node)
     this._maybe_draw_description(drawable_node)
 
+    @drawn_nodes[node.id] = drawable_node
+
   _draw_line_from_parent_to_child: (parent_px, child_px) ->
     x1 = parent_px.middle
     y1 = parent_px.top + parent_px.height
@@ -342,6 +343,47 @@ class TreeView
 
     this._attach()
     this.update()
+
+  nodeid_above: (nodeid) ->
+    @tree.id_tree.parent[nodeid]
+
+  nodeid_below: (nodeid) ->
+    node = @last_draw?.drawn_nodes?[nodeid]
+    if node
+      best_distance = undefined
+      best_child_node = undefined
+      if node.children?
+        for child_node in node.children
+          distance = Math.abs(child_node.px.middle - node.px.middle)
+          if !best_distance?
+            best_distance = distance
+            best_child_node = child_node
+          else if distance < best_distance
+            best_distance = distance
+            best_child_node = child_node
+          else
+            # We're traversing from left to right. If something is further
+            # from the midpoint than the one before it, then we've passed
+            # the middle and all the next ones will be further still
+            break
+
+      best_child_node?.animated_node?.node?.id
+    else
+      undefined
+
+  _nodeid_sibling: (nodeid, index_diff) ->
+    parent_nodeid = @tree.id_tree.parent[nodeid]
+    siblings = @tree.id_tree.children[parent_nodeid]
+    node_index = siblings.indexOf(nodeid)
+    sibling_index = node_index + index_diff
+    if 0 <= sibling_index < siblings.length
+      siblings[sibling_index]
+    else
+      undefined
+
+  nodeid_left: (nodeid) -> @_nodeid_sibling(nodeid, -1)
+
+  nodeid_right: (nodeid) -> @_nodeid_sibling(nodeid, 1)
 
   _attach: () ->
     @tree.id_tree.observe 'edit', =>

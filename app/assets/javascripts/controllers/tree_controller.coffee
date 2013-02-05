@@ -86,5 +86,46 @@ tree_controller = (div, cache, focus, state) ->
     focus.set_zoom(obj.zoom)
     focus.set_pan(obj.pan)
 
+  select_nodeid = (nodeid) ->
+    new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
+    state.set('selection', new_selection)
+
+  selected_nodeid = () ->
+    state.selection.nodes[0] || cache.on_demand_tree.id_tree.root
+
+  # Moves selection in the given direction.
+  #
+  # Returns the new nodeid, which may be undefined
+  go = (finder, e) ->
+    nodeid = selected_nodeid()
+    new_nodeid = view[finder](nodeid)
+    if new_nodeid?
+      log("moved to #{finder}", "nodeid_before:#{nodeid} nodeid_after:#{new_nodeid}")
+      select_nodeid(new_nodeid)
+    else
+      log("failed to move to #{finder}", "nodeid_before:#{nodeid}")
+    new_nodeid
+
+  go_up = (e) -> go('nodeid_above', e)
+  go_left = (e) -> go('nodeid_left', e)
+  go_right = (e) -> go('nodeid_right', e)
+  go_down = (e) -> go('nodeid_below', e)
+
+  go_down_or_expand = (e) ->
+    nodeid = selected_nodeid()
+    new_nodeid = go_down()
+    if !new_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
+      # Children aren't loaded, but they exist
+      log('expanded node', "#{nodeid}")
+      cache.on_demand_tree.demand_node(nodeid)
+
+  {
+    go_up: go_up
+    go_down: go_down
+    go_left: go_left
+    go_right: go_right
+    go_down_or_expand: go_down_or_expand
+  }
+
 exports = require.make_export_object('controllers/tree_controller')
 exports.tree_controller = tree_controller
