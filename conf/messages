@@ -139,7 +139,6 @@ views.DocumentSet._uploadForm.submit=Upload
 views.DocumentSet._uploadForm.cancel=Cancel
 views.DocumentSet._uploadForm.uploading=Uploading…
 views.DocumentSet._uploadForm.charset.utf8=Unicode (UTF-8)
-views.DocumentSet._uploadForm.charset.utf16=Unicode (UTF-16LE)
 views.DocumentSet._uploadForm.charset.windows1252=Western (Windows-1252, ISO-8859-1)
 views.DocumentSet._uploadForm.help.requirements=Your file must meet these requirements.
 views.DocumentSet._uploadForm.requirements.text=The file must contain text (in an encoding Overview supports).
