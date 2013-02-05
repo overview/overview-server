@@ -20,6 +20,8 @@ class indexSpec extends Specification {
     def errorCount = 0
     val createdAt = null
     val user = null
+    
+    def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
   }
 
   trait ViewContext extends Scope {

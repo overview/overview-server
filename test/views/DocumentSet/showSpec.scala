@@ -20,6 +20,8 @@ class showSpec extends Specification {
       val createdAt = null
       val documentCount = 15
       val errorCount = 0
+      
+      def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
     }
     
 

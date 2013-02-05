@@ -18,6 +18,8 @@ class _documentSetSpec extends Specification {
     val user = null
     val createdAt = null
     val documentCount = 15
+    
+    def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
   }
 
   class FakeDocumentSetCreationJob(val state: DocumentSetCreationJobState,

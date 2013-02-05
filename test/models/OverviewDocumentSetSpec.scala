@@ -146,6 +146,7 @@ class OverviewDocumentSetSpec extends Specification {
       override def setupWithDb = {
         val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
         val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
+        
         documentSet = OverviewDocumentSet(ormDocumentSet)
       }
     }
@@ -191,6 +192,7 @@ class OverviewDocumentSetSpec extends Specification {
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, DocumentCloudJob, state = Cancelled))
       }
     }
+    
 
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
@@ -285,6 +287,28 @@ class OverviewDocumentSetSpec extends Specification {
 
     "return error count" in new DocumentSetReferencedByOtherTables {
       documentSet.errorCount must be equalTo (1)
+    }
+    
+    "create a copy for cloning user" in new DocumentSetWithUserScope {
+      val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
+      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      
+      documentSetClone.user.id must be equalTo (cloner.id)
+      documentSetClone.query must be equalTo (documentSet.query)
+    } 
+    
+    inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
+      val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
+      
+      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      
+      val cloneWithUpload = OverviewDocumentSet.findById(documentSetClone.id).get
+      
+      cloneWithUpload match {
+        case d: OverviewDocumentSet.CsvImportDocumentSet => d.uploadedFile must beSome
+        case _ => failure("cloned document set is wrong type")
+      }
+
     }
   }
   step(stop)

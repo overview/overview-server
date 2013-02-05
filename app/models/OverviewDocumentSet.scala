@@ -3,6 +3,7 @@ package models
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob }
 import models.orm.DocumentSet
 import models.upload.OverviewUploadedFile
+import models.orm.User
 
 trait OverviewDocumentSet {
   /** database ID */
@@ -43,6 +44,12 @@ trait OverviewDocumentSet {
 
   /** FIXME: Only here because admin page expects it of all jobs */
   val query: String
+
+  /**
+   * @return a new OverviewDocumentSet owned by cloneOwner. Creates a OverviewDocumentSetCreationJob
+   * that will create a copy of the original, including nodes, tags, and documents.
+   */
+  def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
 }
 
 object OverviewDocumentSet {
@@ -59,17 +66,33 @@ object OverviewDocumentSet {
       OverviewUser.findById(ormDocumentSet.users.single.id).get
     }
     override lazy val query = ""
+
+    override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
+      val ormDocumentSetClone = cloneDocumentSet
+      User.findById(cloneOwnerId).map(u => ormDocumentSetClone.users.associate(u))
+
+      OverviewDocumentSet(ormDocumentSetClone)
+    }
+
+    protected def cloneDocumentSet: DocumentSet
   }
 
   case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
-    lazy val uploadedFile: Option[OverviewUploadedFile] =
+    lazy val uploadedFile: Option[OverviewUploadedFile] = 
       ormDocumentSet.uploadedFile.map(OverviewUploadedFile.apply)
+
+    override protected def cloneDocumentSet: DocumentSet = {
+      val uploadedFileClone = ormDocumentSet.withUploadedFile.uploadedFile.map(f => OverviewUploadedFile(f.copy()).save)
+      ormDocumentSet.copy(id = 0l, uploadedFileId = uploadedFileClone.map(_.id)).save
+    }
   }
 
   case class DocumentCloudDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
     private def throwOnNull = throw new Exception("DocumentCloudDocumentSet has NULL values it should not have")
 
     override lazy val query: String = ormDocumentSet.query.getOrElse(throwOnNull)
+
+    override protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0l).save
   }
 
   /** Factory method */
