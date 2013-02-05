@@ -51,20 +51,6 @@ describe 'views/document_list_view', ->
       cache = { document_store: document_store, tag_store: tag_store, on_demand_tree: on_demand_tree }
       new DocumentListView(div, cache, document_list, state, options)
 
-    fire_keydown = (letter, options) ->
-      int = if letter.charCodeAt?
-        letter.charCodeAt(0)
-      else
-        letter
-
-      event = $.Event('keydown', {
-        which: int,
-        shiftKey: options?.shiftKey || false,
-        metaKey: options?.metaKey || false
-      })
-
-      $(document).triggerHandler(event)
-
     beforeEach ->
       options = {}
       on_demand_tree = { nodes: {}, id_tree: { observe: -> undefined} }
@@ -360,11 +346,6 @@ describe 'views/document_list_view', ->
         view = create_view()
         expect(view.cursor_index).toEqual(0)
 
-      it 'should set cursor_index when moving around', ->
-        view = create_view()
-        fire_keydown('j')
-        expect(view.cursor_index).toEqual(1)
-
       describe 'starting with cursor index 2', ->
         view = undefined
         last_click_docid = undefined
@@ -375,7 +356,7 @@ describe 'views/document_list_view', ->
 
         beforeEach ->
           view = create_view()
-          view.cursor_index = 2
+          view.set_cursor_index(2)
           last_click_docid = undefined
           last_click_options = undefined
           view.observe('document-clicked', handler)
@@ -384,17 +365,9 @@ describe 'views/document_list_view', ->
           view.unobserve('document-clicked', handler)
 
         it 'should set the ".cursor" class on the item with the cursor', ->
-          fire_keydown('j')
-          expect($('li:eq(3)', view.div)[0].className).toMatch(/\bcursor\b/)
-
-        it 'should move the ".cursor" class when scrolling with the keyboard', ->
-          $('li:eq(2)', view.div).addClass('cursor')
-          fire_keydown('j')
+          view.set_cursor_index(3)
           expect($('li:eq(2)', view.div)[0].className).not.toMatch(/\bcursor\b/)
-
-        it 'should move the cursor_index when clicking', ->
-          $('li:eq(3) a', view.div).click()
-          expect(view.cursor_index).toEqual(3)
+          expect($('li:eq(3)', view.div)[0].className).toMatch(/\bcursor\b/)
 
         it 'should not move the cursor when the selection changes and the current index is included', ->
           state.selection.documents = [2, 3]
@@ -410,45 +383,6 @@ describe 'views/document_list_view', ->
           state.selection.documents = []
           state._notify('selection-changed', state.selection)
           expect(view.cursor_index).toEqual(0)
-
-        it 'should fire document-clicked on keypress "j"', ->
-          fire_keydown('j')
-          expect(last_click_docid).toEqual(4) # index=3, docid=4
-          expect(last_click_options).toEqual({ meta: false, shift: false })
-
-        it 'should not fire document-clicked when scrolling to an unloaded document', ->
-          view.cursor_index = 3
-          fire_keydown('j')
-          expect(last_click_docid).toBeUndefined()
-
-        it 'should fire document-clicked on keypress "k"', ->
-          fire_keydown('k')
-          expect(last_click_docid).toEqual(2) # index=1, docid=2
-          expect(last_click_options).toEqual({ meta: false, shift: false })
-
-        it 'should fire document-clicked on capitalized "J"', ->
-          fire_keydown('J')
-          expect(last_click_docid).toEqual(4) # index=3, docid=4
-          expect(last_click_options).toEqual({ meta: false, shift: false })
-
-        it 'should fire document-clicked on down-arrow', ->
-          fire_keydown(40)
-          expect(last_click_docid).toEqual(4) # index=3, docid=4
-          expect(last_click_options).toEqual({ meta: false, shift: false })
-
-        it 'should fire document-clicked on up-arrow', ->
-          fire_keydown(38)
-          expect(last_click_docid).toEqual(2) # index=1, docid=2
-          expect(last_click_options).toEqual({ meta: false, shift: false })
-
-        it 'should set "meta" and "shift" when firing document-clicked off keyboard events', ->
-          fire_keydown('J', { shiftKey: true, metaKey: true })
-          expect(last_click_options).toEqual({ meta: true, shift: true })
-
-        it 'should select undefined when hitting Ctrl-A, without a meta', ->
-          fire_keydown('A', { metaKey: true, shiftKey: false })
-          expect(last_click_docid).toBeUndefined()
-          expect(last_click_options).toEqual({ meta: false, shift: false })
 
     describe 'starting with just placeholder data', ->
       beforeEach ->
@@ -501,8 +435,7 @@ describe 'views/document_list_view', ->
 
       it 'should scroll down below the bottom of the cursor_index document', ->
         view = create_view()
-        view.cursor_index = 8
-        fire_keydown('j') # updates scrollTop with cursor_index=9
+        view.set_cursor_index(9)
         $ul = $('ul', view.div)
         top = $ul.scrollTop()
         bottom = top + $ul.height()
@@ -511,10 +444,10 @@ describe 'views/document_list_view', ->
 
       it 'should scroll up above the top of the cursor_index document', ->
         view = create_view()
-        view.cursor_index = 4
+        view.set_cursor_index(15)
         $ul = $('ul', view.div)
         $ul.scrollTop(1000)
-        fire_keydown('k') # updates scrollTop with cursor_index=3
+        view.set_cursor_index(3)
         top = $ul.scrollTop()
         document_height = $ul.find('li:first').height()
         expect(top).toBeLessThan(view.cursor_index * document_height)

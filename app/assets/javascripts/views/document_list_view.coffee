@@ -28,7 +28,6 @@ class DocumentListView
 
   _attach: () ->
     this._attach_click()
-    this._attach_keyboard()
     this._attach_selection()
     this._attach_document_list()
     this._attach_document_changed()
@@ -42,54 +41,9 @@ class DocumentListView
       e.preventDefault()
 
       $a = $(e.target).closest('a[data-docid]')
-
-      docid = undefined
-      index = undefined
-
-      if $a.length
-        docid = +$a.attr('data-docid')
-        index = $a.closest('li').prevAll().length
-
-      if index?
-        @cursor_index = index
-        this._refresh_cursor()
+      docid = $a.length && (+$a.attr('data-docid')) || undefined
 
       this._notify('document-clicked', docid, { meta: e.ctrlKey || e.metaKey || false, shift: e.shiftKey || false })
-
-  _attach_keyboard: () ->
-    maybe_click_document = (e, diff) =>
-      i = @cursor_index + diff
-      $a = $(@div).find("li:eq(#{i}) a[data-docid]")
-
-      if $a.length
-        docid = +$a.attr('data-docid')
-        @cursor_index = i
-        this._refresh_cursor()
-        this._notify('document-clicked', docid, { meta: e.ctrlKey || e.metaKey || false, shift: e.shiftKey || false })
-
-    deselect_all = () =>
-      # "meta" must be false: otherwise, it's treated as a ctrl-click on blank
-      # space, which means nothing changes.
-      this._notify('document-clicked', undefined, { meta: false, shift: false })
-
-    $(document).on 'keydown.document-list-view', (e) ->
-      return if $(e.target).is(':input')
-      diff = switch e.which
-        when 40 then +1 # down
-        when 'j'.charCodeAt(0) then +1
-        when 'J'.charCodeAt(0) then +1
-        when 38 then -1 # up
-        when 'k'.charCodeAt(0) then -1
-        when 'K'.charCodeAt(0) then -1
-        else 0
-
-      if diff
-        maybe_click_document(e, diff)
-        e.preventDefault()
-
-      if (e.ctrlKey || e.metaKey) && (e.which == 'a'.charCodeAt(0) || e.which == 'A'.charCodeAt(0))
-        deselect_all()
-        e.preventDefault()
 
   _get_document_height: () ->
     return @_document_height if @_document_height?
@@ -315,6 +269,9 @@ class DocumentListView
       new_top_index = @cursor_index - 2
       new_top_index = 0 if new_top_index < 0
       $ul.scrollTop(document_height * new_top_index)
+
+  set_cursor_index: (@cursor_index) ->
+    @_refresh_cursor()
 
   _refresh_cursor: () ->
     $div = $(@div)

@@ -4,6 +4,7 @@ PropertyInterpolator = require('models/property_interpolator').PropertyInterpola
 RemoteTagList = require('models/remote_tag_list').RemoteTagList
 World = require('models/world').World
 Selection = require('models/selection').Selection
+KeyboardController = require('controllers/keyboard_controller').KeyboardController
 
 world = new World()
 
@@ -39,6 +40,8 @@ jQuery ($) ->
   log_controller = require('controllers/log_controller').log_controller
   log_controller(log, world.cache.server)
 
+  keyboard_controller = new KeyboardController(document)
+
   interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
   animator = new Animator(interpolator)
   focus = new AnimatedFocus(animator)
@@ -54,9 +57,10 @@ jQuery ($) ->
     tree_controller(this, world.cache, focus, world.state)
   $('#document-list').each () ->
     document_list_controller = require('controllers/document_list_controller').document_list_controller
-    document_list_controller(this, world.cache, world.state)
+    controller = document_list_controller(this, world.cache, world.state)
     world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
     world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
+    keyboard_controller.add_controller('DocumentListController', controller)
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
     document_contents_controller(this, world.cache, world.state)

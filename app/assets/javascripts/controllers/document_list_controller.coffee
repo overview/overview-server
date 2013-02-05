@@ -73,12 +73,12 @@ document_list_controller = (div, cache, state) ->
     log('clicked edit tag', tag_to_short_string(tag))
     tag_form_controller(tag, cache, state)
 
-  view.observe 'document-clicked', (docid, options) ->
-    index = _(document_list.documents).pluck('id').indexOf(docid)
-    log('clicked document', "#{docid} meta:#{options.meta} shift: #{options.shift}")
-
+  select_index = (index, options) ->
     if index == -1
       selected_indices.unset() if !options.meta && !options.shift
+      index = 0
+    else if index >= document_list.documents.length
+      return # the document isn't loaded
     else
       # Update selection, taking modifier keys and platform into account
       if !options.meta && !options.shift
@@ -99,9 +99,41 @@ document_list_controller = (div, cache, state) ->
         else # (Ctrl only)
           selected_indices.add_or_remove_index(index)
 
-    selected_docids = selected_indices.get_indices().map((i) -> document_list.documents[i].id)
+    view.set_cursor_index(index)
 
+    selected_docids = selected_indices.get_indices().map((i) -> document_list.documents[i].id)
     state.set('selection', listed_selection.replace({ documents: selected_docids }))
+
+  click_docid = (docid, options) ->
+    log('clicked document', "#{docid} meta:#{options.meta} shift: #{options.shift}")
+    index = _(document_list.documents).pluck('id').indexOf(docid)
+    select_index(index, options)
+
+  go_up_or_down = (up_or_down, event) ->
+    options = {
+      meta: event.ctrlKey || event.metaKey || false
+      shift: event.shiftKey || false
+    }
+    diff = up_or_down == 'down' && 1 || -1
+    new_index = view.cursor_index + diff
+
+    docid = 0 <= new_index < document_list.documents.length && document_list.documents[new_index] || undefined
+
+    log("went #{up_or_down}", "docid:#{docid} index:#{new_index} meta:#{options.meta} shift: #{options.shift }")
+
+    select_index(new_index, options)
+
+  go_down = (event) -> go_up_or_down('down', event)
+  go_up = (event) -> go_up_or_down('up', event)
+  select_all = (event) -> select_index(-1, { meta: false, shift: false })
+
+  view.observe('document-clicked', click_docid)
+
+  {
+    go_up: go_up
+    go_down: go_down
+    select_all: select_all
+  }
 
 exports = require.make_export_object('controllers/document_list_controller')
 exports.document_list_controller = document_list_controller
