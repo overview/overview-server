@@ -371,8 +371,15 @@ class TreeView
     else
       undefined
 
+  # Returns the sibling (left or right) of the given node, or undefined if
+  # there is no sibling.
+  #
+  # Parameters:
+  # * nodeid: node ID to start at
+  # * index_diff: +1 for node to the right; -1 for node to the left
   _nodeid_sibling: (nodeid, index_diff) ->
     parent_nodeid = @tree.id_tree.parent[nodeid]
+    return undefined if !parent_nodeid?
     siblings = @tree.id_tree.children[parent_nodeid]
     node_index = siblings.indexOf(nodeid)
     sibling_index = node_index + index_diff
@@ -381,9 +388,45 @@ class TreeView
     else
       undefined
 
-  nodeid_left: (nodeid) -> @_nodeid_sibling(nodeid, -1)
+  # Returns the node to the left or right of the given node.
+  #
+  # If there is no sibling, this method will traverse the tree to find a node
+  # as nearby as possible and as close to the same level as possible.
+  _nearby_nodeid_at_nearest_level: (nodeid, index_diff) ->
+    # Make "nodeid" go up the tree until sibling_nodeid is found. Count the
+    # levels we climb.
+    levels_away = 0
+    sibling_nodeid = undefined
 
-  nodeid_right: (nodeid) -> @_nodeid_sibling(nodeid, 1)
+    while true
+      parent_nodeid = @tree.id_tree.parent[nodeid]
+      return undefined if !parent_nodeid?
+      sibling_nodeid = @_nodeid_sibling(nodeid, index_diff)
+      if !sibling_nodeid?
+        nodeid = parent_nodeid
+        levels_away += 1
+      else
+        break
+
+    # Descend the number of levels we've climbed. At the end, sibling_id will
+    # be the result we want. parent_nodeid will be one above, in case we can't
+    # descend all the way
+    parent_nodeid = undefined # never return the parent
+    while levels_away > 0 && sibling_nodeid?
+      parent_nodeid = sibling_nodeid
+      siblings = @tree.id_tree.children[parent_nodeid]
+      # sibling_index: rightmost or leftmost index
+      sibling_index = index_diff < 0 && (siblings.length - 1) || 0
+      sibling_nodeid = siblings[sibling_index]
+      # don't descend to nodes that can't be drawn
+      sibling_nodeid = undefined if !@tree.id_tree.children[sibling_nodeid]
+      levels_away -= 1
+
+    sibling_nodeid || parent_nodeid
+
+  nodeid_left: (nodeid) -> @_nearby_nodeid_at_nearest_level(nodeid, -1)
+
+  nodeid_right: (nodeid) -> @_nearby_nodeid_at_nearest_level(nodeid, 1)
 
   _attach: () ->
     @tree.id_tree.observe 'edit', =>
