@@ -270,19 +270,12 @@ class DrawOperation
     tagid = undefined
     tagcount = 0
 
-    # Use the most-recently-focused tag, if there's a count
+    # Use the first tagid for which there's a count
     for past_focused_tagid in @focus_tagids
       if node.tagcounts?[past_focused_tagid]
         tagid = past_focused_tagid
         tagcount = node.tagcounts[past_focused_tagid]
         break
-
-    # If no recently-focused tags work, use the most-used tag
-    if !tagcount
-      for id, count of (node.tagcounts || {})
-        if !tagid? || count > tagcount
-          tagid = id
-          tagcount = count
 
     if tagid? && tagcount
       color = @tag_id_to_color[tagid]
@@ -530,7 +523,8 @@ class TreeView
 
   _redraw: () ->
     # Add the focused tag to "focus tagids": stack of recently-viewed tags
-    @focus_tagids ||= []
+    # (initialized to all tags)
+    @focus_tagids ||= (t.id for t in @cache.tag_store.tags)
     tagid = @tree.state.focused_tag?.id
     if tagid
       index = @focus_tagids.indexOf(tagid)
@@ -548,7 +542,10 @@ class TreeView
       color = tag.color || color_table.get(tag.name)
       tag_id_to_color[id] = color
 
-    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, @focus_tagids, @focus.zoom, @focus.pan, @options)
+    shown_tagids = @tree.state.selection.tags
+    shown_tagids = @focus_tagids if !shown_tagids.length
+
+    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, shown_tagids, @focus.zoom, @focus.pan, @options)
     @last_draw.draw()
 
   update: () ->
