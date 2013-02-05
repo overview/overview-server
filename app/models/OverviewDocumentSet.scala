@@ -1,6 +1,7 @@
 package models
 
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob }
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import models.orm.DocumentSet
 import models.upload.OverviewUploadedFile
 import models.orm.User
@@ -68,9 +69,12 @@ object OverviewDocumentSet {
     override lazy val query = ""
 
     override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
+      import models.orm.Schema
       val ormDocumentSetClone = cloneDocumentSet
       User.findById(cloneOwnerId).map(u => ormDocumentSetClone.users.associate(u))
 
+      val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
+      Schema.documentSetCreationJobs.insert(cloneJob)
       OverviewDocumentSet(ormDocumentSetClone)
     }
 

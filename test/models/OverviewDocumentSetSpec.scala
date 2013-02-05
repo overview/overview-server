@@ -297,7 +297,7 @@ class OverviewDocumentSetSpec extends Specification {
       documentSetClone.query must be equalTo (documentSet.query)
     } 
     
-    inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
+   	inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       
       val documentSetClone = documentSet.cloneForUser(cloner.id)
@@ -308,8 +308,14 @@ class OverviewDocumentSetSpec extends Specification {
         case d: OverviewDocumentSet.CsvImportDocumentSet => d.uploadedFile must beSome
         case _ => failure("cloned document set is wrong type")
       }
-
     }
+   	
+   	"create clone job for clone" in new DocumentSetWithUserScope {
+      val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
+      val documentSetClone = documentSet.cloneForUser(cloner.id)
+   	  
+      documentSetClone.creationJob must beSome
+   	}
   }
   step(stop)
 }
