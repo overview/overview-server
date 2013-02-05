@@ -10,13 +10,18 @@ trait DocumentSetCloner {
   val cloneNodes: (Long, Long, DocumentIdMap) => NodeIdMap
   val cloneTags: (Long, Long) => TagIdMap
   
+  val cloneDocumentProcessingErrors: (Long, Long) => Unit
+  
   val cloneNodeDocuments: (DocumentIdMap, NodeIdMap) => Unit
-  val cloneDocumentTags: (DocumentIdMap, TagIdMap) => Unit  
+  val cloneDocumentTags: (DocumentIdMap, TagIdMap) => Unit 
+
     
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
     val documentIdMapping = cloneDocuments(sourceDocumentSetId, cloneDocumentSetId)
     val nodeIdMapping = cloneNodes(sourceDocumentSetId, cloneDocumentSetId, documentIdMapping)
     val tagIdMapping = cloneTags(sourceDocumentSetId, cloneDocumentSetId)
+    
+    cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     
     cloneNodeDocuments(documentIdMapping, nodeIdMapping)
     cloneDocumentTags(documentIdMapping, tagIdMapping)
@@ -32,6 +37,7 @@ object CloneDocumentSet {
       override val cloneNodes = NodeCloner.clone _
       override val cloneTags = TagCloner.clone _
       
+      override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
     }
