@@ -13,6 +13,7 @@ import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobResta
 import overview.util.Progress._
 import persistence._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
@@ -28,9 +29,6 @@ object JobHandler {
       Database.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
 
-      val documentSetId = j.documentSetId
-
-      val nodeWriter = new NodeWriter(documentSetId)
       def progFn(prog: Progress) = {
         j.fractionComplete = prog.fraction
         j.statusDescription = Some(prog.status.toString)
@@ -47,10 +45,10 @@ object JobHandler {
         DocumentSetLoader.load(j.documentSetId).get
       }
 
-      val indexer = new DocumentSetIndexer(nodeWriter, progFn)
-      val producer = DocumentProducerFactory.create(j, documentSet, indexer, progFn, asyncHttpRetriever)
-
-      producer.produce()
+      j.jobType.value match {
+        case CsvImportJob.value | DocumentCloudJob.value => handleCreationJob(j, documentSet, progFn)
+        case CloneJob.value => handleCloneJob
+      }
 
       Database.inTransaction { j.delete }
 
@@ -133,4 +131,19 @@ object JobHandler {
       }
     }
   }
+
+  private def handleCreationJob(job: PersistentDocumentSetCreationJob, documentSet: DocumentSet, progressFn: ProgressAbortFn) {
+    val nodeWriter = new NodeWriter(job.documentSetId)
+
+    val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
+    val producer = DocumentProducerFactory.create(job, documentSet, indexer, progressFn, asyncHttpRetriever)
+
+    producer.produce()
+
+  }
+
+  private def handleCloneJob() {
+
+  }
 }
+
