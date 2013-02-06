@@ -46,5 +46,7 @@ ALTER TABLE document_set_creation_job DROP CONSTRAINT document_set_creation_job_
 
 ALTER TABLE document_set_creation_job DROP COLUMN source_document_set_id;
 
+DELETE FROM document_set_creation_job WHERE type = 'CloneJob'::document_set_creation_job_type;
+
 ALTER TABLE document_set_creation_job DROP COLUMN type;
 DROP TYPE document_set_creation_job_type;
