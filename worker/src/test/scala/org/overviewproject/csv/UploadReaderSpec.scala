@@ -104,6 +104,18 @@ class UploadReaderSpec extends DbSpecification {
 
       buffer must be equalTo (replacement)
     }
+
+    "skip UTF-8 BOM" in new UploadContext {
+      def data = Array(0xEF.toByte, 0xBB.toByte, 0xBF.toByte) ++ "text".toCharArray.map(_.toByte)
+      def contentType = "text/csv; charset=UTF-8"
+      def uploadSize = data.size
+
+      val buffer = new Array[Char](5)
+      val nRead = reader.read(buffer)
+
+      nRead must be equalTo(4)
+      buffer.slice(0, 4) must be equalTo "text".toCharArray
+    }
   }
 
   step(shutdownDb)
