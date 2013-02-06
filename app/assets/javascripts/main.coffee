@@ -64,7 +64,8 @@ jQuery ($) ->
     keyboard_controller.add_controller('DocumentListController', controller)
   $('#document').each () ->
     document_contents_controller = require('controllers/document_contents_controller').document_contents_controller
-    document_contents_controller(this, world.cache, world.state)
+    controller = document_contents_controller(this, world.cache, world.state)
+    keyboard_controller.add_controller('DocumentContentsController', controller)
 
   $(window).resize(refresh_height)
   refresh_height()

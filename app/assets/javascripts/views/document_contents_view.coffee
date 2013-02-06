@@ -7,6 +7,9 @@ class DocumentContentsView
 
     this._refresh()
 
+  scroll_by_pages: (n) ->
+    @iframe?.contentWindow?.scroll_by_pages?(n)
+
   _get_docid: () ->
     if @state.selection.documents.length
       @state.selection.documents[0]

@@ -15,7 +15,7 @@ events = {
   'Down': 'TreeController.go_down_or_expand'
   'Left': 'TreeController.go_left'
   'PageDown': 'DocumentContentsController.page_down'
-  'PageUp': 'DocumentContentsController.page_up'
+  'PageUp': 'DocumentContentsController.page_up' # can't work for iframes
   'Right': 'TreeController.go_right'
   'Up': 'TreeController.go_up'
   'a': 'TreeController.go_left'
