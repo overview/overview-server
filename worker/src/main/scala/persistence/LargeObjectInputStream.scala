@@ -12,6 +12,7 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
   private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
 
   private val buffer = new Array[Byte](bufferSize)
+  private var markPosition: Int = 0
   private var largeObjectPosition: Int = 0
   private var bufferPosition: Int = bufferSize
   private var bufferEnd: Int = bufferSize
@@ -48,6 +49,20 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
 
       bytesRead + readBytes(outBuffer, offset + bytesRead, len - bytesRead)
     }
+  }
+
+  override def mark(readlimit: Int) {
+    // Mark the actual byte we're at, and reset
+    markPosition = largeObjectPosition - buffer.length + bufferPosition
+    bufferPosition = buffer.length
+    bufferEnd = buffer.length
+  }
+
+  override def reset() {
+    // Reset the buffer
+    largeObjectPosition = markPosition
+    bufferPosition = buffer.length
+    bufferEnd = buffer.length
   }
 
   override def close() { isOpen = false }

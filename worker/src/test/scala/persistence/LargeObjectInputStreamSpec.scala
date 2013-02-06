@@ -63,6 +63,19 @@ class LargeObjectInputStreamSpec extends DbSpecification {
       loInputStream.close()
       loInputStream.read must throwA[java.io.IOException]
     }
+
+    "mark and reset stream" in new LoContext {
+      val readData = new Array[Byte](40)
+
+      loInputStream.read(readData) // pos = 40
+      loInputStream.mark(40)       // pos = 40
+      loInputStream.read(readData) // pos = 80
+      loInputStream.reset()        // pos = 40
+      val nRead = loInputStream.read(readData)
+
+      nRead must be equalTo readData.length
+      readData(0) must be equalTo(40)
+    }
     
     "throw IOException on error" in new DbTestContext {
       val loInputStream = new LargeObjectInputStream(-1)
