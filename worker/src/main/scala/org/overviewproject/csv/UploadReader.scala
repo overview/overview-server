@@ -32,18 +32,18 @@ class UploadReader() {
 
   /** @return a reader for the given UploadedFile */
   def reader(contentsOid: Long, uploadedFile: EncodedUploadFile): Reader = {
-	val largeObjectInputStream = new LargeObjectInputStream(contentsOid)
+    val largeObjectInputStream = new LargeObjectInputStream(contentsOid)
     countingInputStream = new CountingInputStream(largeObjectInputStream)
 
     new BufferedReader(new InputStreamReader(countingInputStream, decoder(uploadedFile.encoding)))
   }
-  
+
   /** @return the number of bytes read from the uploaded file */
   def bytesRead: Long =
     if (countingInputStream != null) countingInputStream.bytesRead
     else 0l
 
-  
+
   /**
    * @return a CharsetDecoder defined by encoding, if present and valid.
    * If not, a UTF-8 CharsetDecoder is returned.
@@ -54,5 +54,5 @@ class UploadReader() {
     val decoder = charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
     decoder.onMalformedInput(CodingErrorAction.REPLACE)
   }
-  
+
 }
