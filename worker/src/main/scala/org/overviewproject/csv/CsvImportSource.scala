@@ -23,7 +23,6 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
   private val SuppliedIdColumn: String = "id"
   private val UrlColumn: String = "url"
   private val TitleColumn: String = "title"
-  private val ByteOrderMarkUTF_8: String = "\uFEFF"
 
   /**
    * An iterator that returns CsvImportDocuments, based on the header information
@@ -86,13 +85,8 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
     // Convert a row to a map of header -> columnIndex
     private def readHeaders: Map[String, Int] = {
-      val headerRow = skipByteOrderMark(readRow)
+      val headerRow = readRow
       headerRow.map(_.trim.toLowerCase).zipWithIndex.toMap
-    }
-    
-    // Ignore the UTF-8 ByteOrderMark if present
-    private def skipByteOrderMark(row: Array[String]): Array[String] = {
-      row.head.replace(ByteOrderMarkUTF_8, "") +: row.tail
     }
   }
 

@@ -73,11 +73,6 @@ class CsvImportSourceSpec extends Specification {
                      |
                      |,34,stuff""".stripMargin
     }
-    
-    trait WithByteOrderMark extends CsvImportContext {
-      def input = """|\uFEFFtext
-                     |line 0""".stripMargin
-    }
 
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
@@ -143,10 +138,6 @@ class CsvImportSourceSpec extends Specification {
       val expectedUrls: Seq[Option[String]] = Seq.tabulate(3)(n => Some("url" + n))
       val urls = csvImportSource.map(_.url)
       urls must be equalTo (expectedUrls)
-    }
-    
-    "skip UTF-8 Byte Order Mark" in new WithByteOrderMark {
-      csvImportSource.size must not(throwA[Exception])
     }
   }
 }
