@@ -83,7 +83,8 @@ object ApplicationBuild extends Build {
   val main = PlayProject(appName, appVersion, serverProjectDependencies, mainLang = SCALA).settings(
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
     resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",
-
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+    
     // remove Play's asset management--reset to default (see xsbt source code)
     // Left messy after gaining a fatalist view of sbt code
     resourceGenerators in Compile <<= ((definedSbtPlugins in Compile, resourceManaged in Compile) map Defaults.writePluginsDescriptor)(Seq(_)),
