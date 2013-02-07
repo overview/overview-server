@@ -152,7 +152,7 @@ class DocumentSetSpec extends Specification {
       documentSet.errorCount must be equalTo (0)
     }
 
-    inExample("provide count of errors when they exist") in new DocumentSetContext {
+    "provide count of errors when they exist" in new DocumentSetContext {
       val errorCount = 10
       val errors = Seq.tabulate(errorCount)(i => DocumentProcessingError(documentSet.id, "url", "message"))
       Schema.documentProcessingErrors.insert(errors)
@@ -160,7 +160,7 @@ class DocumentSetSpec extends Specification {
       documentSet.errorCount must be equalTo (errorCount)
     }
     
-    inExample("Be set to not public by default") in new DocumentSetContext {
+    "Be set to not public by default" in new DocumentSetContext {
       documentSet.isPublic must beFalse
     }
   }
