@@ -2,18 +2,19 @@ package controllers
 
 import java.sql.Connection
 import play.api.mvc.Controller
-import org.overviewproject.postgres.SquerylEntrypoint._ // TODO: remove this!
+import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
-
-import controllers.auth.{AuthorizedAction,Authorities}
-import models.orm.{DocumentSet,User} // TODO: remove this!
-import models.orm.DocumentSet.ImplicitHelper._ // TODO: remove this!
+import controllers.auth.{ AuthorizedAction, Authorities }
+import controllers.forms.DocumentSetForm
+import controllers.forms.DocumentSetForm.Credentials
+import models.orm.{ DocumentSet, User }
+import models.orm.DocumentSet.ImplicitHelper._
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
 
 trait DocumentSetController extends Controller {
   import Authorities._
 
-  private val form = controllers.forms.DocumentSetForm()
+  private val form = DocumentSetForm()
 
   def index() = AuthorizedAction(anyUser) { implicit request =>
     val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(request.user.id)
@@ -51,12 +52,12 @@ trait DocumentSetController extends Controller {
         val documentSet = tuple._1
         val credentials = tuple._2
 
-        val saved = documentSet.save
-        User.findById(request.user.id).map(ormUser => saved.users.associate(ormUser))
-        saved.createDocumentSetCreationJob(username=credentials.username, password=credentials.password)
+        val saved = saveDocumentSet(documentSet)
+        setDocumentSetOwner(saved, request.user.id)
+        createDocumentSetCreationJob(saved, credentials)
+        
         Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
-      }
-    )
+      })
   }
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
@@ -64,6 +65,18 @@ trait DocumentSetController extends Controller {
     OverviewDocumentSet.delete(id)
     Redirect(routes.DocumentSetController.index()).flashing("success" -> m("delete.success"))
   }
+  
+  protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long)
+  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
 }
 
-object DocumentSetController extends DocumentSetController
+object DocumentSetController extends DocumentSetController {
+  protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) =
+    User.findById(ownerId).map(ormUser => documentSet.users.associate(ormUser))
+    
+  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) = 
+    documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
+
+}

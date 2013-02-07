@@ -6,53 +6,61 @@
  */
 package controllers
 
-import org.specs2.mutable.Specification
-import play.api.mvc.{AnyContent, Controller}
-import play.api.test.{FakeApplication, FakeRequest}
-import play.api.test.Helpers._
 import play.api.Play.{start, stop}
-
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import play.api.test.{FakeApplication, FakeRequest}
+import play.api.test.Helpers.redirectLocation
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import controllers.auth.AuthorizedRequest
-import helpers.DbTestContext
-import models.orm.{DocumentSet, Schema, User}
+import controllers.forms.DocumentSetForm.Credentials
 import models.OverviewUser
+import models.orm.DocumentSet
 
-class DocumentSetControllerSpec extends Specification {
+class DocumentSetControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
   
-  class TestDocumentSetController extends DocumentSetController
+  class TestDocumentSetController extends DocumentSetController {
+    var savedDocumentSet: Option[DocumentSet] = None
+    var createdJobOwnerId: Option[Long] = None
+    
+    protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = {
+      savedDocumentSet = Some(documentSet.copy(id = 1l))
+      savedDocumentSet.get
+    }
+    protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) {}
+    protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) {
+      createdJobOwnerId = Some(documentSet.id)
+    }
+  }
   
-  trait AuthorizedSession extends DbTestContext {
+  trait AuthorizedSession extends Scope {
     val query = "documentSet query"
     val title = "documentSet title"
     val controller = new TestDocumentSetController
-    lazy val ormUser = Schema.users.where(u => u.email === "admin@overview-project.org").head
-    lazy val user = OverviewUser(ormUser).save
-    lazy val request = new AuthorizedRequest(
+    val user = mock[OverviewUser]
+    val request = new AuthorizedRequest(
       FakeRequest()
         .withSession("AUTH_USER_ID" -> user.id.toString)
         .withFormUrlEncodedBody("query" -> query, "title" -> title),
       user)
-    lazy val documentSet = from(Schema.documentSets)(ds => select(ds)).headOption
-    lazy val documentSetCreationJob = from(Schema.documentSetCreationJobs)(dscj => select(dscj)).headOption
+
   }
 
   "The DocumentSet Controller" should {
     
     "submit a DocumentSetCreationJob when a new query is received" in new AuthorizedSession {
       val result = controller.create()(request)
-      documentSet must beSome
-      documentSetCreationJob must beSome
-      documentSet.get.query must beSome
+      controller.savedDocumentSet must beSome
+      val documentSet = controller.savedDocumentSet.get
+      documentSet.query must beSome
+      documentSet.query.get must be equalTo(query) 
+      documentSet.title must be equalTo(title)
       
-      documentSet.get.query.get must be equalTo(query) 
-      documentSet.get.title must be equalTo(title)
-      documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
+      controller.createdJobOwnerId must beSome
+      controller.createdJobOwnerId.get must be equalTo(documentSet.id)
     }
-    
-      
+
     "redirect to documentsets view" in new AuthorizedSession {
       val result = controller.create()(request)
       redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
