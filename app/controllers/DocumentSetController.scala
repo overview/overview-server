@@ -65,6 +65,10 @@ trait DocumentSetController extends Controller {
     OverviewDocumentSet.delete(id)
     Redirect(routes.DocumentSetController.index()).flashing("success" -> m("delete.success"))
   }
+
+  def update(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    Ok
+  }
   
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long)
