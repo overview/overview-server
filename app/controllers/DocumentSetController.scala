@@ -5,7 +5,7 @@ import play.api.mvc.Controller
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.forms.DocumentSetForm
+import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
 import models.orm.DocumentSet.ImplicitHelper._
@@ -67,15 +67,27 @@ trait DocumentSetController extends Controller {
   }
 
   def update(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    Ok
+    val documentSet = loadDocumentSet(id)
+    documentSet.map { d =>
+      DocumentSetUpdateForm(d).bindFromRequest().fold(
+       f => BadRequest,
+       { updatedDocumentSet => 
+         saveDocumentSet(updatedDocumentSet)
+         Ok
+       }
+      )
+    }.getOrElse(NotFound)
+
   }
   
+  protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
 }
 
 object DocumentSetController extends DocumentSetController {
+  protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) =
     User.findById(ownerId).map(ormUser => documentSet.users.associate(ormUser))

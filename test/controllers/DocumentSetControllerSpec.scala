@@ -16,6 +16,7 @@ import controllers.auth.AuthorizedRequest
 import controllers.forms.DocumentSetForm.Credentials
 import models.OverviewUser
 import models.orm.DocumentSet
+import models.orm.DocumentSetType._
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
 import play.api.test.Helpers._
@@ -26,7 +27,12 @@ class DocumentSetControllerSpec extends Specification with Mockito {
   class TestDocumentSetController extends DocumentSetController {
     var savedDocumentSet: Option[DocumentSet] = None
     var createdJobOwnerId: Option[Long] = None
-
+    
+    private var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
+    
+    protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
+      documentSets.get(id)
+    }
     protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = {
       savedDocumentSet = Some(documentSet.copy(id = 1l))
       savedDocumentSet.get
@@ -56,7 +62,13 @@ class DocumentSetControllerSpec extends Specification with Mockito {
 
   trait UpdateRequest extends AuthorizedSession {
     val documentSetId: Long = 1l
-    override def sessionForm = Seq("public" -> "true")
+    val newTitle = "New Title"
+    override def sessionForm = Seq("public" -> "true", "title" -> newTitle)
+  }
+  
+  trait BadUpdateRequest extends AuthorizedSession {
+    val documentSetId: Long = 1l
+    override def sessionForm = Seq("public" -> "not a boolean")
   }
 
   "The DocumentSet Controller" should {
@@ -82,6 +94,21 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       val result = controller.update(documentSetId)(request)
       
       status(result) must be equalTo(OK)
+      controller.savedDocumentSet must beSome
+      val documentSet = controller.savedDocumentSet.get
+      
+      documentSet.isPublic must beTrue
+      documentSet.title must be equalTo(newTitle)
+    }
+    
+    "return NotFound if document set is bad" in new UpdateRequest {
+      val result = controller.update(-1l)(request)
+      status(result) must be equalTo(NOT_FOUND)
+    }
+    
+    "return BadRequest if form input is bad" in new BadUpdateRequest {
+      val result = controller.update(documentSetId)(request)
+      status(result) must be equalTo(BAD_REQUEST)
     }
   }
 
