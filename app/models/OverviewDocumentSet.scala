@@ -33,6 +33,9 @@ trait OverviewDocumentSet {
    * Number of documents that could not be processed because of errors. May change over time.
    */
   def errorCount: Int
+  
+  /** true if the document set is public */
+  val isPublic: Boolean
 
   /** Title of the document set. (Empty string is allowed.) */
   val title: String
@@ -61,6 +64,7 @@ object OverviewDocumentSet {
     override lazy val creationJob = OverviewDocumentSetCreationJob.findByDocumentSetId(id)
     override lazy val documentCount = ormDocumentSet.documentCount.toInt
     override lazy val errorCount = ormDocumentSet.errorCount.toInt
+    override val isPublic = ormDocumentSet.isPublic
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt
     override lazy val user = {

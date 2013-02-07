@@ -6,23 +6,12 @@ import org.specs2.specification.Scope
 import play.api.mvc.Flash
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
-
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser }
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
-import helpers.DbTestContext
+import helpers.{ DbTestContext, FakeOverviewDocumentSet }
 
 class indexSpec extends Specification {
-
-  case class FakeOverviewDocumentSet(id: Long, title: String, query: String) extends OverviewDocumentSet {
-    def creationJob = None
-    def documentCount = 10
-    def errorCount = 0
-    val createdAt = null
-    val user = null
-    
-    def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
-  }
 
   trait ViewContext extends Scope {
     implicit lazy val flash = new Flash()

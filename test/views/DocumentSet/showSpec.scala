@@ -7,23 +7,11 @@ import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import models.OverviewDocumentSet
 import models.OverviewDocumentSetCreationJob
+import helpers.FakeOverviewDocumentSet
 
 class showSpec extends Specification {
 
   "DocumentSet view generated Json" should {
-
-    case class FakeOverviewDocumentSet(creationJob: Option[OverviewDocumentSetCreationJob] = None) extends OverviewDocumentSet {
-      val id = 1l
-      val title = "a title"
-      val query = "a query"
-      val user = null
-      val createdAt = null
-      val documentCount = 15
-      val errorCount = 0
-      
-      def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
-    }
-    
 
     class FakeJob(jobState: DocumentSetCreationJobState, description: String) extends OverviewDocumentSetCreationJob {
       val id = 1l
@@ -40,7 +28,7 @@ class showSpec extends Specification {
 
     trait DocumentSetContext extends Scope {
       val job: Option[OverviewDocumentSetCreationJob]
-      lazy val documentSet: OverviewDocumentSet = FakeOverviewDocumentSet(job)
+      lazy val documentSet: OverviewDocumentSet = FakeOverviewDocumentSet(creationJob = job)
       lazy val documentSetJson = show(documentSet).toString
     }
 

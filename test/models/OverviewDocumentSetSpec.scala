@@ -1,15 +1,16 @@
 package models
 
+
 import java.sql.Timestamp
+import play.api.Play.{ start, stop }
+import play.api.test.FakeApplication
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.UploadedFile
 import org.specs2.specification.Scope
-import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
+import helpers.DbTestContext
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 import models.upload.OverviewUploadedFile
-import helpers.DbTestContext
 import models.orm.Schema
 import models.orm.DocumentSetUser
 
@@ -94,6 +95,10 @@ class OverviewDocumentSetSpec extends Specification {
         }
         case _ => throwWrongType
       }
+    }
+    
+    "have isPublic value" in new CsvImportDocumentSetScope {
+      documentSet.isPublic must beFalse
     }
   }
 

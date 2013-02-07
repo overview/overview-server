@@ -3,24 +3,13 @@ package views.html.DocumentSet
 import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import models.orm.DocumentSetType._
+import helpers.FakeOverviewDocumentSet
 
 class _documentSetSpec extends Specification {
-
-  case class FakeOverviewDocumentSet(creationJob: Option[OverviewDocumentSetCreationJob] = None, errorCount: Int = 0) extends OverviewDocumentSet {
-    val id = 1l
-    val title = "a title"
-    val query = "a query"
-    val user = null
-    val createdAt = null
-    val documentCount = 15
-    
-    def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
-  }
 
   class FakeDocumentSetCreationJob(val state: DocumentSetCreationJobState,
     val fractionComplete: Double = 0.0, override val jobsAheadInQueue: Int = 0) extends OverviewDocumentSetCreationJob {
@@ -48,7 +37,7 @@ class _documentSetSpec extends Specification {
 
   trait DocumentSetWithJobContext extends ViewContext {
     val job: OverviewDocumentSetCreationJob = new FakeDocumentSetCreationJob(InProgress, 0.2, 1)
-    val documentSet = FakeOverviewDocumentSet(Some(job))
+    val documentSet = FakeOverviewDocumentSet(creationJob = Some(job))
   }
   
   trait DocumentSetWithErrorsContext extends ViewContext {
