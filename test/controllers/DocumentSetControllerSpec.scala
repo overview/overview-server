@@ -41,17 +41,19 @@ class DocumentSetControllerSpec extends Specification {
 
   "The DocumentSet Controller" should {
     
-    inExample("submit a DocumentSetCreationJob when a new query is received") in new AuthorizedSession {
+    "submit a DocumentSetCreationJob when a new query is received" in new AuthorizedSession {
       val result = controller.create()(request)
       documentSet must beSome
       documentSetCreationJob must beSome
-      documentSet.get.query must beSome.like { case q => q must be equalTo(query) }
+      documentSet.get.query must beSome
+      
+      documentSet.get.query.get must be equalTo(query) 
       documentSet.get.title must be equalTo(title)
       documentSetCreationJob.get.documentSetId must be equalTo(documentSet.get.id)
     }
     
       
-    inExample("redirect to documentsets view") in new AuthorizedSession {
+    "redirect to documentsets view" in new AuthorizedSession {
       val result = controller.create()(request)
       redirectLocation(result).getOrElse("No redirect") must be equalTo("/documentsets")
     }
