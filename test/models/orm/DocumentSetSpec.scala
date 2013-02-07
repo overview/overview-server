@@ -159,6 +159,10 @@ class DocumentSetSpec extends Specification {
 
       documentSet.errorCount must be equalTo (errorCount)
     }
+    
+    inExample("Be set to not public by default") in new DocumentSetContext {
+      documentSet.isPublic must beFalse
+    }
   }
 
   step(stop)
