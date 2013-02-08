@@ -198,6 +198,17 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
     
+    trait PublicDocumentSet extends DbTestContext {
+      var documentSet: OverviewDocumentSet = _
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("public"), isPublic = true).save
+        
+        documentSet = OverviewDocumentSet(ormDocumentSet)
+      }
+    }
+    
     trait PublicAndPrivateDocumentSets extends DbTestContext {
       override def setupWithDb = {
         val privateDocumentSets = Seq.fill(5)(DocumentSet(DocumentCloudDocumentSet, query = Some("private")))
@@ -310,7 +321,15 @@ class OverviewDocumentSetSpec extends Specification {
       documentSetClone.user.id must be equalTo (cloner.id)
       documentSetClone.query must be equalTo (documentSet.query)
     } 
+
+    "set cloned DocumentSet to be private" in new PublicDocumentSet {
+      val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
+      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      
+      documentSetClone.isPublic must beFalse
+    }
     
+    // Need inExample to avoid compiler error
    	inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       

@@ -74,7 +74,8 @@ object OverviewDocumentSet {
 
     override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
       import models.orm.Schema
-      val ormDocumentSetClone = cloneDocumentSet
+      val ormDocumentSetClone = cloneDocumentSet.save
+
       User.findById(cloneOwnerId).map(u => ormDocumentSetClone.users.associate(u))
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
@@ -82,7 +83,7 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSetClone)
     }
 
-    protected def cloneDocumentSet: DocumentSet
+    protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false) 
   }
 
   case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
@@ -90,8 +91,9 @@ object OverviewDocumentSet {
       ormDocumentSet.uploadedFile.map(OverviewUploadedFile.apply)
 
     override protected def cloneDocumentSet: DocumentSet = {
+      val ormDocumentSetClone = super.cloneDocumentSet
       val uploadedFileClone = ormDocumentSet.withUploadedFile.uploadedFile.map(f => OverviewUploadedFile(f.copy()).save)
-      ormDocumentSet.copy(id = 0l, uploadedFileId = uploadedFileClone.map(_.id)).save
+      ormDocumentSetClone.copy(uploadedFileId = uploadedFileClone.map(_.id))
     }
   }
 
@@ -99,8 +101,6 @@ object OverviewDocumentSet {
     private def throwOnNull = throw new Exception("DocumentCloudDocumentSet has NULL values it should not have")
 
     override lazy val query: String = ormDocumentSet.query.getOrElse(throwOnNull)
-
-    override protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0l).save
   }
 
   /** Factory method */
