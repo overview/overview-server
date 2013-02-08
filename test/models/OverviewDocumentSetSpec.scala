@@ -147,9 +147,10 @@ class OverviewDocumentSetSpec extends Specification {
 
     trait DocumentSetWithCompletedUpload extends PgConnectionContext {
       var documentSet: OverviewDocumentSet = _
-
+      var uploadedFile: UploadedFile = _
+      
       override def setupWithDb = {
-        val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
+        uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
         val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
         
         documentSet = OverviewDocumentSet(ormDocumentSet)
@@ -338,7 +339,9 @@ class OverviewDocumentSetSpec extends Specification {
       val cloneWithUpload = OverviewDocumentSet.findById(documentSetClone.id).get
       
       cloneWithUpload match {
-        case d: OverviewDocumentSet.CsvImportDocumentSet => d.uploadedFile must beSome
+        case d: OverviewDocumentSet.CsvImportDocumentSet => 
+          d.uploadedFile must beSome
+          d.uploadedFile.get.id mustNotEqual(uploadedFile.id)
         case _ => failure("cloned document set is wrong type")
       }
     }

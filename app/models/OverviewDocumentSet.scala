@@ -92,7 +92,7 @@ object OverviewDocumentSet {
 
     override protected def cloneDocumentSet: DocumentSet = {
       val ormDocumentSetClone = super.cloneDocumentSet
-      val uploadedFileClone = ormDocumentSet.withUploadedFile.uploadedFile.map(f => OverviewUploadedFile(f.copy()).save)
+      val uploadedFileClone = ormDocumentSetClone.withUploadedFile.uploadedFile.map(f => OverviewUploadedFile(f.copy(id = 0)).save)
       ormDocumentSetClone.copy(uploadedFileId = uploadedFileClone.map(_.id))
     }
   }
