@@ -55,7 +55,7 @@ trait DocumentSetController extends Controller {
         val saved = saveDocumentSet(documentSet)
         setDocumentSetOwner(saved, request.user.id)
         createDocumentSetCreationJob(saved, credentials)
-        
+
         Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
       })
   }
@@ -70,16 +70,31 @@ trait DocumentSetController extends Controller {
     val documentSet = loadDocumentSet(id)
     documentSet.map { d =>
       DocumentSetUpdateForm(d).bindFromRequest().fold(
-       f => BadRequest,
-       { updatedDocumentSet => 
-         saveDocumentSet(updatedDocumentSet)
-         Ok
-       }
-      )
+        f => BadRequest, { updatedDocumentSet =>
+          saveDocumentSet(updatedDocumentSet)
+          Ok
+        })
     }.getOrElse(NotFound)
-
   }
-  
+
+  import play.api.data.Form
+  import play.api.data.Forms._
+
+  val createCloneForm = Form(
+    single("sourceDocumentSetId" -> number))
+
+  def createClone = AuthorizedAction(anyUser) { implicit request =>
+    createCloneForm.bindFromRequest().fold(
+      f => BadRequest, { id =>
+        val cloneStatus = loadDocumentSet(id).map { d =>
+          OverviewDocumentSet(d).cloneForUser(request.user.id)
+          ("success" -> "Clonification Requested. Please Stand By.")
+        }.getOrElse("error" -> "Clonization DENIED")
+        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus)        
+      }
+    )
+  }
+
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long)
@@ -91,8 +106,8 @@ object DocumentSetController extends DocumentSetController {
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) =
     User.findById(ownerId).map(ormUser => documentSet.users.associate(ormUser))
-    
-  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) = 
+
+  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
 
 }

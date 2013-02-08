@@ -33,6 +33,8 @@ GET    /documentsets/:id      controllers.DocumentSetController.show(id: Long)
 DELETE /documentsets/:id      controllers.DocumentSetController.delete(id: Long)
 PUT    /documentsets/:id      controllers.DocumentSetController.update(id: Long)
 
+POST   /documentsets/create/clone                controllers.DocumentSetController.createClone()
+
 GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 
 GET    /documentsets/:id/tree/nodes         controllers.NodeController.index(id: Long)
@@ -45,11 +47,14 @@ GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEnt
 POST   /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
-POST   /documentsets/:id/tags/:tagId/add           controllers.TagController.add(id: Long, tagId: Long)
-POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
+POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
+
 POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long, nodes: String ?= "")
 
 GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
+
+# Routes for public document sets
+GET    /public-document-sets                     controllers.PublicDocumentSetController.index() 
 
 # Routes for browsers that dont' support CORS
 # really GET, but with hidden password

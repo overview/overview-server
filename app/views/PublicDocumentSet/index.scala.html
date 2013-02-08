@@ -1,0 +1,15 @@
+@(publicDocumentSets: Seq[OverviewDocumentSet])(implicit lang: Lang)
+
+
+<ul class="unstyled public-document-sets">
+  @publicDocumentSets.map { d =>
+    <li>
+      <form method="post" action="@routes.DocumentSetController.createClone">
+        <input type="hidden" name="sourceDocumentSetId" value="@d.id" />
+        <button class="btn"><i class="icon-plus-sign"></i> Clone</button>
+      </form>
+      <h2>@d.title</h2>
+    </li>
+  }
+
+</ul>
