@@ -331,7 +331,7 @@ class OverviewDocumentSetSpec extends Specification {
       documentSetClone.creationJob must beSome
    	}
    	
-   	inExample("find all public document sets") in new PublicAndPrivateDocumentSets {
+   "find all public document sets" in new PublicAndPrivateDocumentSets {
    	  val publicDocumentSets = OverviewDocumentSet.findPublic
    	  
    	  publicDocumentSets must have size(5)
