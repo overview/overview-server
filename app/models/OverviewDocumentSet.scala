@@ -118,6 +118,14 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSet.withUploadedFile.withCreationJob)
     })
   }
+  
+  /** @return Seq of all document sets marked public at the time of the call */
+  def findPublic: Seq[OverviewDocumentSet] = {
+    import models.orm.Schema
+    import org.overviewproject.postgres.SquerylEntrypoint._
+
+    Schema.documentSets.where(d => d.isPublic === true).map(OverviewDocumentSet(_)).toSeq
+  }
 
   def delete(id: Long) {
     import models.orm.Schema._

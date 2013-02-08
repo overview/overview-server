@@ -198,7 +198,16 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
     
-
+    trait PublicAndPrivateDocumentSets extends DbTestContext {
+      override def setupWithDb = {
+        val privateDocumentSets = Seq.fill(5)(DocumentSet(DocumentCloudDocumentSet, query = Some("private")))
+        val publicDocumentSets = Seq.fill(5)(DocumentSet(DocumentCloudDocumentSet, query = Some("public"), isPublic = true))
+        
+        documentSets.insert(privateDocumentSets ++ publicDocumentSets)
+      }
+    }
+    
+    
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.user.id must be equalTo (1l)
@@ -320,6 +329,13 @@ class OverviewDocumentSetSpec extends Specification {
       val documentSetClone = documentSet.cloneForUser(cloner.id)
    	  
       documentSetClone.creationJob must beSome
+   	}
+   	
+   	inExample("find all public document sets") in new PublicAndPrivateDocumentSets {
+   	  val publicDocumentSets = OverviewDocumentSet.findPublic
+   	  
+   	  publicDocumentSets must have size(5)
+   	  publicDocumentSets.map(_.query).distinct must be equalTo(Seq("public"))
    	}
   }
   step(stop)
