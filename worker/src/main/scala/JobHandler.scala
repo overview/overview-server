@@ -143,10 +143,16 @@ object JobHandler {
   }
 
   private def handleCloneJob(job: PersistentDocumentSetCreationJob) {
+    import org.overviewproject.clone.{ JobProgressLogger, JobProgressReporter }
+    
+    val jobProgressReporter = new JobProgressReporter(job)
+    val progressObservers: Seq[Progress => Unit] = Seq(
+        jobProgressReporter.updateStatus _,
+        JobProgressLogger.apply _
+    )
+    
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
-      Database.inTransaction {
-        CloneDocumentSet(sourceDocumentSetId, job.documentSetId)
-      }
+      CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
     }
   }
 }
