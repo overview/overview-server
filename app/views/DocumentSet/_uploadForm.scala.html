@@ -1,11 +1,10 @@
 @()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
-  <form class="modal hide fade document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
-    <div class="modal-header">
-      <button type="reset" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+  <form class="document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
+    <div>
       <h3>@m("h3")</h3>
     </div>
-    <div class="modal-body">
+    <div>
       <p><label>@m("label.file") <input type="file" name="file" /></label></p>
       <p class="charset">
         <label>
@@ -41,7 +40,7 @@
         </table>
       </div>
     </div>
-    <div class="modal-footer">
+    <div>
       <button type="reset" class="btn">@m("cancel")</button>
       <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
       <progress max="100" value="0"><span class="status"></span>

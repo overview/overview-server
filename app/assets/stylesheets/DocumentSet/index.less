@@ -1,0 +1,65 @@
+body.document-set-index {
+  button.toggle-import {
+    position: relative;
+    z-index: 1;
+
+    &.collapsed .caret {
+      display: none;
+    }
+  }
+
+  ul.document-sets {
+    &>li {
+      .well;
+
+      &:not(:hover) {
+        border-color: white;
+        background-color: white;
+        position: relative;
+        -webkit-box-shadow: none;
+           -moz-box-shadow: none;
+                box-shadow: none;
+      }
+    }
+
+    p.status {
+      /* See #199. IE9 has a rendering bug in p.status, and really-dumb float:left is a workaround. */
+      label {
+        display: block;
+        float: left;
+        margin: 0 10px 0 0;
+      }
+
+      span.state-description {
+        display: block;
+        float: left;
+      }
+
+      .clearfix()
+    }
+
+    h3 {
+      .muted;
+      font-size: 1em;
+      font-weight: normal;
+      line-height: 1;
+    }
+
+    .state-description {
+      .muted;
+    }
+
+    form.delete {
+      margin-top: 10px;
+      float: right;
+      line-height: 40px; // from "h2"
+      vertical-align: middle;
+    }
+  }
+
+  #error-list-modal {
+    h2 {
+      font-size: 20px;
+    }
+  }
+}

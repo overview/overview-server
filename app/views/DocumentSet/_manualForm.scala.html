@@ -2,10 +2,12 @@
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._manualForm")) { m =>
-  <form method="post" action="@routes.DocumentSetController.create" class="form-horizontal" style="@(if(form.hasErrors) "" else "display:none;")">
+  <form method="post" action="@routes.DocumentSetController.create" class="form-horizontal">
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("title"), m)
     @helper.Form.translatedInput(form("query"), m)
-    @helper.Form.translatedSubmit(m)
+    <fieldset class="form-actions">
+      <button type="submit" class="btn@{if(form("query").value.getOrElse("").length > 0) "" else " disabled"}"><i class="icon-download"></i> @Html(m("submit_html", HtmlFormat.escape(form("query").value.getOrElse(""))))</button>
+    </fieldset>
   </form>
 }

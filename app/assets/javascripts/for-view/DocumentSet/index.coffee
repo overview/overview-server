@@ -23,16 +23,7 @@ show_hidden_characters = (s) ->
   ).replace(/\r/g, '\\r'
   ).replace(/[\x00-\x07\x0B\x0E-\x1F]/g, escape)
 
-make_toggle_link = (parent_selector) ->
-  $parent = $(parent_selector)
-  $parent.find('a:eq(0)').on 'click', (e) ->
-    e.preventDefault()
-    $parent.children().slice(1).toggle()
-  undefined
-
-make_csv_upload_form = (form_element) ->
-  $form = $(form_element)
-
+make_csv_upload_form = ($form) ->
   given_url = $form.attr('action')
   url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'
 
@@ -75,6 +66,8 @@ make_csv_upload_form = (form_element) ->
       csv_reader.read(preview_blob, charset)
 
       ready_to_submit = false
+
+    $form.find(':reset').attr('disabled', !file? && 'disabled' || false)
 
   refresh_from_csv_reader = () ->
     refresh_requirements()
@@ -291,7 +284,7 @@ make_csv_upload_form = (form_element) ->
   refresh_form_enabled = () ->
     $form.find(':submit').attr('disabled', (!ready_to_submit || upload?) && 'disabled' || false)
     $form.find(':file, select[name=charset]').attr('disabled', upload? && 'disabled' || false)
-    $form.find(':reset').attr('disabled', false)
+    $form.find(':reset').attr('disabled', !file? && 'disabled' || false)
 
   refresh_progress_visible = () ->
     $progress = $form.find('progress')
@@ -314,22 +307,18 @@ make_csv_upload_form = (form_element) ->
   cancel = () ->
     upload?.abort()
 
-    #file = undefined
-    #upload = undefined
-    #csv_reader = undefined
-    #ready_to_submit = false
+    file = undefined
+    upload = undefined
+    csv_reader = undefined
+    ready_to_submit = false
 
-    #refresh_from_csv_reader()
-    #refresh_charset()
-    #refresh_progress_visible()
+    refresh_from_csv_reader()
+    refresh_charset()
+    refresh_progress_visible()
 
   $form.on 'reset', (e) ->
     # don't preventDefault()
-    $form.modal('hide')
-
-  $form.on 'hidden', ->
     cancel()
-    $form.remove()
 
   if window.File? # util.net.Upload will use HTML5
     $form.find(':file').on 'change', (e) ->
@@ -382,20 +371,26 @@ make_csv_upload_form = (form_element) ->
   refresh_from_csv_reader()
 
 $ ->
-  window.dcimport.import_project_with_login($('#documentcloud-import .with-login')[0])
+  $('#document-set-import').one 'show', ->
+    dcimport_div = document.getElementById('import-from-documentcloud-account')
+    window.dcimport.import_project_with_login(dcimport_div)
+
+  $('a[data-toggle=tab][href="#import-from-upload"]').one 'show', () ->
+    $form = $('#import-from-upload').find('form')
+    make_csv_upload_form($form)
+
+  $dcquery_submit = $('#import-from-documentcloud-query button')
+  refresh_dcquery_submit = () ->
+    $form = $dcquery_submit.closest('form')
+    title = $form.find('input[name=title]').val() || ''
+    query = $form.find('input[name=query]').val() || ''
+    $button_span = $dcquery_submit.find('span.query')
+    $button_span.text(query)
+    if title && query
+      $dcquery_submit.removeClass('disabled')
+    else
+      $dcquery_submit.addClass('disabled')
+  $dcquery_submit.closest('form').on('change keyup cut paste blur', 'input', refresh_dcquery_submit)
+  refresh_dcquery_submit()
 
   $('#error-list-modal').on('hidden', (() -> $(this).removeData('modal')))
-
-  make_toggle_link('#documentcloud-import .manual')
-  make_toggle_link('#documentcloud-import .sample')
-
-  $upload_div = $('#documentcloud-import .upload')
-  $upload_modal = $upload_div.children('form').remove()
-
-  $upload_div.find('a:eq(0)').on 'click', (e) ->
-    e.preventDefault()
-    $modal_clone = $upload_modal.clone()
-    $('body').append($modal_clone)
-    make_csv_upload_form($modal_clone[0])
-    $modal_clone.modal('show')
-

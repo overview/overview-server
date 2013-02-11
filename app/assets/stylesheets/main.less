@@ -4,7 +4,7 @@
 //@import 'vendor/bootstrap/less/responsive.less';
 // Instead of all this:
 @import "vendor/bootstrap/less/reset.less";
-@import "vendor/bootstrap/less/variables.less"; // Modify this for custom colors, font-sizes, etc
+@import "variables.less"; // Modify this for custom colors, font-sizes, etc
 @import "vendor/bootstrap/less/mixins.less";
 @import "vendor/bootstrap/less/scaffolding.less";
 @import "vendor/bootstrap/less/grid.less";
@@ -338,98 +338,6 @@ body.document-set-show {
   }
 }
 
-body.document-set-index {
-  ul.document-sets {
-    &>li {
-      .well;
-
-      &:not(:hover) {
-        border-color: white;
-        background-color: white;
-        position: relative;
-        -webkit-box-shadow: none;
-           -moz-box-shadow: none;
-                box-shadow: none;
-      }
-    }
-
-    p.status {
-      /* See #199. IE9 has a rendering bug in p.status, and really-dumb float:left is a workaround. */
-      label {
-        display: block;
-        float: left;
-        margin: 0 10px 0 0;
-      }
-
-      span.state-description {
-        display: block;
-        float: left;
-      }
-
-      .clearfix()
-    }
-
-    h3 {
-      .muted;
-      font-size: 1em;
-      font-weight: normal;
-      line-height: 1;
-    }
-
-    .state-description {
-      .muted;
-    }
-
-    form.delete {
-      margin-top: 10px;
-      float: right;
-      line-height: 40px; // from "h2"
-      vertical-align: middle;
-    }
-  }
-
-  #documentcloud-import {
-    li {
-      vertical-align: middle;
-
-      h3, form, p {
-        display: inline-block;
-        line-height: 40px; // bootstrap's h3
-        height: 40px;
-        margin: 0;
-        vertical-align: baseline;
-      }
-
-      h3 {
-        font-size: 20px;
-        margin: 0 .5em;
-      }
-
-      form {
-        vertical-align: top;
-      }
-
-      span.document-count {
-        color: @grayLight;
-      }
-    }
-
-    .sample ul, .upload form {
-      display: none; // until toggled
-    }
-
-    .manual form {
-      margin-bottom: 0;
-    }
-  }
-
-  #error-list-modal {
-    h2 {
-      font-size: 20px;
-    }
-  }
-}
-
 .welcome-show {
   header {
     margin-top: 10px;
@@ -511,98 +419,5 @@ form.well.form-horizontal {
   float: right;
 }
 
-form.document-set-upload {
-  width: 80%;
-  margin-left: -40%;
-  margin-top: -325px;
-
-  .modal-body {
-    max-height: 550px; // TODO make it expand with the window
-  }
-
-  input[type=file] {
-    line-height: inherit;
-    height: auto;
-  }
-
-  select {
-    margin-bottom: 0;
-  }
-
-  .preview {
-    .error {
-      color: @red;
-      font-weight: bold;
-    }
-
-    pre {
-      font-size: .8em;
-      overflow: auto;
-
-      ol {
-        margin-left: 4em;
-        background: white;
-      }
-
-      li:hover {
-        background: @tableBackgroundHover;
-      }
-    }
-
-    table {
-      .table;
-      .table-condensed;
-      .table-bordered;
-      font-family: monospace;
-      white-space: pre;
-
-      table-layout: fixed;
-      width: 100%;
-
-      th, td {
-        font-size: .8em;
-        overflow: hidden;
-      }
-
-      div {
-        max-height: 10em;
-        width: auto;
-        overflow: auto;
-      }
-    }
-  }
-
-  progress {
-    box-sizing: border-box;
-    display: none;
-    margin-left: 5px;
-    width: 200px;
-  }
-  span.status {
-    display: none;
-  }
-
-  .requirements li {
-    list-style-position: inside;
-    list-style-type: disc;
-
-    &.ok {
-      list-style-type: none;
-      color: @green;
-
-      &:before {
-        content: "✔";
-      }
-    }
-
-    &.bad {
-      list-style-type: none;
-      color: @red;
-      font-weight: bold;
-
-      &:before {
-        content: "✘";
-      }
-    }
-  }
-}
+@import "DocumentSet/index.less";
+@import "DocumentSet/_import.less";
