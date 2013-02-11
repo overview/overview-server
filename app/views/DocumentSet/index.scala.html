@@ -27,18 +27,10 @@
   "views.DocumentSet._uploadForm.error.SyntaxError"
 )}
 
-@sampleForm(title: String, query: String, description: String) = {
-  <form method="post" action="@routes.DocumentSetController.create" class="form-inline">
-    <input type="hidden" name="title" value="@title"/>
-    <input type="hidden" name="query" value="@query"/>
-    <button class="btn"><i class="icon-download"></i> Import</button>
-  </form>
-  <h3>@title</h3>
-  <p class="status">@description</p>
-}
-
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    @views.html.DocumentSet._import(user, form)
+
     @if(documentSets) {
       <ul class="unstyled document-sets">
         @documentSets.map(d => _documentSet(d))
@@ -48,43 +40,5 @@
     } else {
       <p class="no-document-sets">@m("no_document_sets")</p>
     }
-
-    <div id="documentcloud-import" class="well">
-      <h2>@m("import_from_documentcloud")</h2>
-
-      <hr />
-
-      <div class="with-login">
-        <p><a href="#">@m("import_from_documentcloud_account")</a></p>
-      </div>
-
-      <hr />
-
-      <div class="sample">
-        <p><a href="#">@m("import_sample_document_set")</a></p>
-
-        <ul class="unstyled projects">
-          <li>@sampleForm("Whitehouse emails prior to BP oil spill", "projectid:5359", "About 600 documents")</li>
-          <li>@sampleForm("Homicides in DC", "group:homicide-watch", "Court documents: about 350 documents")</li>
-          <li>@sampleForm("WikiLeaks spy files", "projectid:6560", "Brochures from surveillance equipment manufacturers: about 300 documents")</li>
-        </ul>
-      </div>
-
-      <hr />
-
-      <div class="manual">
-        <p><a href="#">@m("import_from_documentcloud_manual")</a></p>
-
-        @views.html.DocumentSet._manualForm(form)
-      </div>
-
-      <hr />
-
-      <div class="upload">
-        <p><a href="#">@m("upload")</a></p>
-
-        @views.html.DocumentSet._uploadForm()
-      </div>
-    </div>
   }
 }

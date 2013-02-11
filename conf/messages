@@ -117,11 +117,11 @@ views.DocumentProcessingError.index.failed_because=Failed with error ''{0}''
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
-views.DocumentSet.index.import_from_documentcloud=Import a document set
-views.DocumentSet.index.import_from_documentcloud_account=Log in to DocumentCloud to import your project…
-views.DocumentSet.index.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)…
-views.DocumentSet.index.import_sample_document_set=Import a sample document set
-views.DocumentSet.index.upload=Upload a document set
+views.DocumentSet._import.import_from_documentcloud=Import a document set
+views.DocumentSet._import.import_from_documentcloud_account=Log in to DocumentCloud to import your project…
+views.DocumentSet._import.import_from_documentcloud_manual=Use a query on public DocumentCloud documents (advanced)…
+views.DocumentSet._import.import_sample_document_set=Import a sample document set
+views.DocumentSet._import.upload=Upload a document set
 
 views.DocumentSet._errorList.h3=Documents with errors
 views.DocumentSet._manualForm.label.title=Title
