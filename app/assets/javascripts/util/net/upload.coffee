@@ -209,7 +209,7 @@ class Upload
           this._set_state(states.UPLOADING)
       else
         # Failed! Retry
-        console.log("Error during upload. Retrying. jqxhr: ", jqxhr)
+        console?.log("Error during upload. Retrying. jqxhr: ", jqxhr)
         this._cancel_jqxhr('starting_jqxhr')
         this._waiting_to_starting()
 
