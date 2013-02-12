@@ -9,7 +9,7 @@ import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
 import models.orm.DocumentSet.ImplicitHelper._
-import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
+import models.{OverviewDocumentSet,OverviewDocumentSetCreationJob}
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -25,7 +25,9 @@ trait DocumentSetController extends Controller {
       .withUploadedFiles
       .map(OverviewDocumentSet.apply)
 
-    Ok(views.html.DocumentSet.index(request.user, documentSets, form))
+    val publicDocumentSets = OverviewDocumentSet.findPublic
+
+    Ok(views.html.DocumentSet.index(request.user, documentSets, form, publicDocumentSets))
   }
 
   def show(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

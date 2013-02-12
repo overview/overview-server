@@ -9,6 +9,13 @@
     <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
+    <form method="post" class="update form-inline" action="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
+      <label>
+        <input type="checkbox" name="public" value="true"@{if (documentSet.isPublic) Html(" checked=\"checked\"") else ""} />
+        <input type="hidden" name="public" value="false" />
+        @m("toggle_public")
+      </label>
+    </form>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
     <h3>
       @documentSet match {
@@ -27,12 +34,12 @@
           <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
         </label>
         <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
-    }.getOrElse {
-      <span class="document-count">@m("document_count", documentSet.documentCount)</span>
-    }
+      }.getOrElse {
+        <span class="document-count">@m("document_count", documentSet.documentCount)</span>
+      }
+      @if(documentSet.errorCount > 0) {
+        <a class="error-list" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">@m("error_count", documentSet.errorCount)</a>
+      }
     </p>
-    @if(documentSet.errorCount > 0) {
-      <a class="error-list" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">@m("error_count", documentSet.errorCount)</a>
-   }
   </li>
 }

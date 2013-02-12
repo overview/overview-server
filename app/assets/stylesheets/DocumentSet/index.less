@@ -25,6 +25,9 @@ body.document-set-index {
     }
 
     p.status {
+      margin-bottom: 0;
+      .clearfix()
+
       /* See #199. IE9 has a rendering bug in p.status, and really-dumb float:left is a workaround. */
       label {
         display: block;
@@ -36,8 +39,10 @@ body.document-set-index {
         display: block;
         float: left;
       }
+    }
 
-      .clearfix()
+    h2 {
+      margin-top: 0;
     }
 
     h3 {
@@ -51,11 +56,16 @@ body.document-set-index {
       .muted;
     }
 
-    form.delete {
-      margin-top: 10px;
+    form {
+      margin-left: 20px;
       float: right;
-      line-height: 40px; // from "h2"
-      vertical-align: middle;
+      // "h2" has line-height 40px
+      line-height: 30px;
+      padding: 5px 0;
+    }
+
+    input[type=checkbox] {
+      vertical-align: top;
     }
   }
 

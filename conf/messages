@@ -117,11 +117,19 @@ views.DocumentProcessingError.index.failed_because=Failed with error ''{0}''
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
 views.DocumentSet._import.from_documentcloud_query=A DocumentCloud query (advanced)
 views.DocumentSet._import.from_sample=A sample
 views.DocumentSet._import.from_upload=A file you upload
+views.DocumentSet._import.from_public=Someone else’s document set
+
+views.DocumentSet._importPublic.title=Public document sets
+views.DocumentSet._importPublic.preamble=The following document sets were marked public by Overview users.
+views.DocumentSet._importPublic.empty=No Overview user has marked a document set public.
+views.DocumentSet._importPublic.shared_by=Shared by {0}
+views.DocumentSet._importPublic.import=Clone
 
 views.DocumentSet._errorList.h3=Documents with errors
 views.DocumentSet._manualForm.label.title=Title
@@ -184,6 +192,7 @@ views.DocumentSet._documentSet.job_state_description.worker_error=Import failed 
 views.DocumentSet._documentSet.jobs_to_process=Waiting for {0} other jobs to complete before processing can begin
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
+views.DocumentSet._documentSet.toggle_public=Let other users clone this
 
 views.Node._form.h3=Edit node
 views.Node._form.labels.description=Description
