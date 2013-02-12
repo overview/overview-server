@@ -20,13 +20,14 @@ class PersistentDocumentListDataSaver extends PersistentDocumentListSelector {
 
   def removeTag(tagId: Long, documentSetId: Long,
     nodeIds: Seq[Long], tagIds: Seq[Long], documentIds: Seq[Long])(implicit c: Connection): Long = {
-    val whereClauses = SelectionWhere(0l, nodeIds, tagIds, documentIds) :+ whereTagIdMatches
+    val whereClauses = SelectionWhere(0l, nodeIds, tagIds, documentIds) 
     val whereSelected = combineWhereClauses(whereClauses)
 
     SQL("""
         DELETE FROM document_tag WHERE document_id IN
           (SELECT id FROM document """ +
-      whereSelected + ")").
+      whereSelected + """) 
+      AND tag_id = {tagId}""").
       on("documentSetId" -> documentSetId, "tagId" -> tagId).executeUpdate()
   }
 
