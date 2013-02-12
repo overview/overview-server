@@ -21,6 +21,7 @@ import persistence.EncodedUploadFile
  */
 class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer {
 
+  private val MaxDocuments = 10000
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader()
   private var bytesRead = 0l
@@ -38,11 +39,19 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
     val iterator = documentSource.iterator
 
+    var numberOfSkippedDocuments = 0
+    var numberOfParsedDocuments = 0
+
     while (!jobCancelled && iterator.hasNext) {
-      val doc = iterator.next
-      val documentId = writeAndCommitDocument(documentSetId, doc)
-      consumer.processDocument(documentId, doc.text)
-      reportProgress(uploadReader.bytesRead, uploadedFile.size)
+      if (numberOfParsedDocuments < MaxDocuments) {
+        val doc = iterator.next
+        val documentId = writeAndCommitDocument(documentSetId, doc)
+        consumer.processDocument(documentId, doc.text)
+        reportProgress(uploadReader.bytesRead, uploadedFile.size)
+      }
+      else numberOfSkippedDocuments += 1
+      
+      numberOfParsedDocuments += 1
     }
 
     consumer.productionComplete()
