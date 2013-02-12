@@ -84,13 +84,17 @@
           overflow: hidden;
         }
 
-        pre, iframe {
+        pre, iframe:not(.twitter-tweet) {
           box-sizing: border-box;
           margin: 0;
           padding: 0;
           border: none;
           width: 100%;
           height: 100%;
+        }
+
+        .twitter-tweet-container {
+          margin: 10px;
         }
 
         p.source + pre, p.source + iframe {

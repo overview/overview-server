@@ -24,8 +24,9 @@ class OverviewDocumentSpec extends DbSpecification {
       def ormDocumentId: Long = 1L
       def suppliedUrl: Option[String] = Some("http://example.org")
       def title: Option[String] = Some("title")
+      def text: String = "Text"
       
-      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl, title = title)
+      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl, title=title, text=Some(text))
       lazy val csvImportDocument = document.asInstanceOf[OverviewDocument.CsvImportDocument]
     }
 
@@ -78,29 +79,36 @@ class OverviewDocumentSpec extends DbSpecification {
       csvImportDocument.secureSuppliedUrl must beSome("https://example.org")
     }
 
-    "give no twitterUrl for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
+    "give no twitterTweet for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
       override def suppliedUrl = None
-      csvImportDocument.twitterUrl must beNone
+      csvImportDocument.twitterTweet must beNone
     }
 
-    "give no twitterUrl for a CsvImportDocument if the suppliedUrl is not a Twitter one" in new CsvImportDocumentScope {
+    "give no twitterTweet for a CsvImportDocument if the suppliedUrl is not a Twitter one" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("https://example.org")
-      csvImportDocument.twitterUrl must beNone
+      csvImportDocument.twitterTweet must beNone
     }
 
-    "give a twitterUrl for an http://twitter.com URL" in new CsvImportDocumentScope {
+    "give a twitterTweet for an http://twitter.com URL" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("http://twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
+      csvImportDocument.twitterTweet must beSome[TwitterTweet]
     }
 
-    "give a twitterUrl for an https://twitter.com URL" in new CsvImportDocumentScope {
+    "give a twitterTweet for an https://twitter.com URL" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("https://twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
+      csvImportDocument.twitterTweet must beSome[TwitterTweet]
     }
 
-    "give a twitterUrl for an http://www.twitter.com URL" in new CsvImportDocumentScope {
+    "give a twitterTweet for an http://www.twitter.com URL" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("http://www.twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterUrl must beEqualTo(suppliedUrl)
+      csvImportDocument.twitterTweet must beSome[TwitterTweet]
+    }
+
+    "initialize a twitterTweet with the correct url and text" in new CsvImportDocumentScope {
+      override def suppliedUrl = Some("https://twitter.com/adamhooper/status/1234")
+      val twitterTweet = csvImportDocument.twitterTweet.getOrElse(throw new Exception(".twitterTweet() is broken..."))
+      twitterTweet.url must beEqualTo(suppliedUrl.getOrElse(throw new Exception("Some() is broken...")))
+      twitterTweet.text must beEqualTo(csvImportDocument.text)
     }
 
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {

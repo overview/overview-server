@@ -7,8 +7,10 @@
         <p class="source"><span>{m("source")}</span><a href={url} target="_blank">{url}</a></p>
       })
 
-      @d.twitterUrl.map({ twitterUrl =>
-        <blockquote data-twitter-url={twitterUrl}>{d.text}</blockquote>
+      @d.twitterTweet.map({ twitterTweet =>
+        <div class="twitter-tweet-container">
+          <blockquote class="twitter-tweet"><p>{twitterTweet.text}</p>&mdash;{twitterTweet.username.getOrElse("")} <a href={twitterTweet.url}>...</a></blockquote>
+        </div>
       }).getOrElse({
         d.secureSuppliedUrl.map({ url =>
           <iframe src={url} width="100" height="100"></iframe>

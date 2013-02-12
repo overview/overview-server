@@ -25,6 +25,34 @@ scroll_element_by_pages = (el, n) ->
   ))
   el.scrollTop += n * page_height
 
+# Loads Twitter's "widgets.js", only if it hasn't been loaded already
+#
+# Use the load_twitter_script().done(YOUR CODE HERE) to do stuff only when
+# widgets.js is loaded.
+load_twitter_script = (() ->
+  script_task = undefined
+
+  () ->
+    if !script_task
+      script_task = $.getScript('//platform.twitter.com/widgets.js')
+      script_task.done(-> twitter_script_loaded = true)
+    script_task
+)()
+
+replace_twitter_blockquote = ($blockquote) ->
+  console.log("Requesting from blockquote", $blockquote)
+  load_twitter_script()
+    .done ->
+      console.log("Loaded widgets.js")
+      twttr.widgets.load($blockquote[0])
+
+# Applies Twitter's JS to all tweets on the page.
+#
+# A tweet is a blockquote[data-twitter-url]. Its contents will be replaced.
+refresh_tweets = () ->
+  $('blockquote.twitter-tweet').each ->
+    replace_twitter_blockquote($(this))
+
 $ ->
   $title = $('h3')
 
@@ -94,6 +122,7 @@ $ ->
 
   refresh_dc_sidebar_toggle()
   refresh_dc_iframe()
+  refresh_tweets()
 
   scroll_by_pages = {
     csv: (n) ->

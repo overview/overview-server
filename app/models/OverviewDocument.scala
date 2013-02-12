@@ -63,8 +63,8 @@ object OverviewDocument {
     /** User-provided URL, if it begins with https:// */
     lazy val secureSuppliedUrl : Option[String] = suppliedUrl.filter(_.startsWith("https://"))
 
-    /** User-provided URL, if it comes from Twitter */
-    lazy val twitterUrl : Option[String] = suppliedUrl.filter(_.matches(twitterRegex))
+    /** A TwitterTweet, if the user-provided URL points to a Twitter tweet */
+    lazy val twitterTweet : Option[TwitterTweet] = suppliedUrl.filter(_.matches(twitterRegex)).map(TwitterTweet(_, text))
   }
 
   case class DocumentCloudDocument(protected val ormDocument: Document) extends OverviewDocumentImpl {
