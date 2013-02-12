@@ -31,7 +31,7 @@ case class DCDocumentResources(text: String)
 case class DCDocument(id: String, title: String, access: String, canonical_url: String, resources: DCDocumentResources)
 case class DCSearchResult(total: Int, documents: Seq[DCDocument])
 
-class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
+class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: Int,
   val query: String,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
@@ -40,7 +40,6 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever,
 
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
-  private val maxDocuments = 10000 // cut off a document set if it's bigger than this
 
   // --- private ---
   private var numDocuments: Option[Int] = None

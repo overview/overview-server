@@ -38,14 +38,17 @@ trait DocumentConsumer {
  * or a CsvImportDocumentProducer is generated.
  */
 object DocumentProducerFactory {
+  /** The maximum number of documents processed for a document set */
+  private val MaxDocuments = 50000
+  
   /** Return a DocumentProducer based on the DocumentSet type */
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn, asyncHttpRetriever: AsyncHttpRetriever): DocumentProducer = documentSet.documentSetType match {
     case "DocumentCloudDocumentSet" =>
-      val dcSource = new DocumentCloudSource(asyncHttpRetriever,
+      val dcSource = new DocumentCloudSource(asyncHttpRetriever, MaxDocuments,
         documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
       new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, progAbort)
     case "CsvImportDocumentSet" =>
-      new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, progAbort)
+      new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
   }
 }
