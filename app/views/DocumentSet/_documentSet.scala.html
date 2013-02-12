@@ -30,8 +30,8 @@
     <p class="status">
       @documentSet.creationJob.map { job =>
         <label>
+          <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)"></progress><!-- IE9 needs start+end tags -->
           <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
-          <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)" />
         </label>
         <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
       }.getOrElse {
