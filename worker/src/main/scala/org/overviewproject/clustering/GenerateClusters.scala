@@ -176,9 +176,7 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
     }
   }
   
-  def BuildTree(progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-
-    val root = new DocTreeNode(Set(docVecs.keys.toSeq:_*))     // root is one node with all documents 
+  def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     splitNode(root, progAbort)
     
     root
@@ -230,9 +228,7 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
   }
   
   
-  def BuildTree(progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-
-    val root = new DocTreeNode(Set(docVecs.keys.toSeq:_*))     // root is one node with all documents
+  def BuildTree(root:DocTreeNode,progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     
     splitNode(root, progAbort)
     
@@ -246,6 +242,19 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
 // This is where all of the hard-coded algorithmic constants live
 object BuildDocTree {
 
+  // Create two nodes: one with all empty docs (no terms), one with all the rest
+  def gatherEmptyDocs(docVecs: DocumentSetVectors) : Pair[DocTreeNode, DocTreeNode] = {
+    val nonEmptyDocs = Set[DocumentID]()
+    val emptyDocs = Set[DocumentID]()
+    docVecs foreach { case (id,vector) =>   // yes, I could use partition, but I only need the keys, and docVecs is potentially huge
+      if (vector.length > 0)
+        nonEmptyDocs += id
+      else
+        emptyDocs += id
+    }
+    (new DocTreeNode(nonEmptyDocs), new DocTreeNode(emptyDocs))
+  }
+  
   def applyConnectedComponents(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: step down in roughly 0.1 increments
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
@@ -263,24 +272,37 @@ object BuildDocTree {
     tree
   }
   
-  def applyKMeans(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyKMeans(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     val arity = 5
     val builder = new KMeansDocTreeBuilder(docVecs, arity)
-    builder.BuildTree(progAbort) // actually build the tree!
+    builder.BuildTree(root, progAbort) // actually build the tree!
   }
 
-  def applyHybrid(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyHybrid(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     val builder = new HybridDocTreeBuilder(docVecs)    
-    builder.BuildTree(progAbort) // actually build the tree!
+    builder.BuildTree(root, progAbort) // actually build the tree!
   }
 
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    //val tree = applyHybrid(docVecs, progAbort)
-    val tree = applyKMeans(docVecs, progAbort)    
-    //val tree = applyConnectedComponents(docVecs, progAbort)
+    val (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
     
-    new TreeLabeler(docVecs).labelNode(tree)    // create a descriptive label for each node
-    ThresholdTreeCleaner(tree)                  // prune the tree
+    //applyHybrid(nonEmptyDocs, docVecs, progAbort)
+    applyKMeans(nonEmptyDocs, docVecs, progAbort)    
+    //applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
+        
+    new TreeLabeler(docVecs).labelNode(nonEmptyDocs)    // create a descriptive label for each node
+    ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
+    
+    // If there are any empty documents, create a new root with all documents
+    // Add children of nonEmptyDocs, plus node containing emptyDocs
+    var tree = nonEmptyDocs
+    if (emptyDocs.docs.size>0) {
+      tree = new DocTreeNode(Set(docVecs.keys.toSeq:_*))  // all docs
+      tree.children ++= nonEmptyDocs.children
+      emptyDocs.description = "(no meaningful words)"
+      tree.children += emptyDocs
+    }
+
     DocumentIdCacheGenerator.createCache(tree)
     
     tree
