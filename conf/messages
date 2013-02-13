@@ -192,7 +192,7 @@ views.DocumentSet._documentSet.job_state_description.worker_error=Import failed 
 views.DocumentSet._documentSet.jobs_to_process=Waiting for {0} other jobs to complete before processing can begin
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
-views.DocumentSet._documentSet.toggle_public=Let other users clone this
+views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
 views.Node._form.h3=Edit node
 views.Node._form.labels.description=Description
