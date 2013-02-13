@@ -94,7 +94,13 @@
         }
 
         .twitter-tweet-container {
-          margin: 10px;
+          margin: 10px auto;
+          width: 500px; /* Twitter default */
+        }
+
+        blockquote.twitter-tweet {
+          /* This should hide until either Twitter replaces it, or Twitter *fails* to replace it. */
+          display: none;
         }
 
         p.source + pre, p.source + iframe {

@@ -40,11 +40,17 @@ load_twitter_script = (() ->
 )()
 
 replace_twitter_blockquote = ($blockquote) ->
-  console.log("Requesting from blockquote", $blockquote)
   load_twitter_script()
     .done ->
-      console.log("Loaded widgets.js")
       twttr.widgets.load($blockquote[0])
+      # Show the block quote after a delay. This will only be noticeable when
+      # the blockquote is still in the DOM -- meaning Twitter isn't feeding us
+      # the tweet.
+      #
+      # From a 1hr search, it seems impossible to detect a failure from
+      # Twitter's JavaScript--and the iframe-insertion happens asynchronously.
+      # So there's nothing better than this.
+      window.setTimeout((-> $blockquote.show()), 1000)
 
 # Applies Twitter's JS to all tweets on the page.
 #
