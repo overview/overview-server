@@ -12,6 +12,7 @@ package org.overviewproject.clustering
 
 import overview.util.LoopedIterator
 import overview.util.CompactPairArray
+import overview.util.Logger
 import scala.collection.mutable.Set
 import scala.collection.mutable.ArrayBuffer
 
@@ -111,29 +112,35 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
    if (!elements.isEmpty) {
      var centroids = initialCentroids(elements, k)
      
-     // println("---- starting k-means with " + elements.size + " items ----")
-     // println("initial centroids: " +  centroids)
+//    println("---- starting k-means with " + elements.size + " items ----")
+//    println("initial centroids: " +  centroids)
+      
+     var logThis = elements.size > 10000
+     
      var iterCount = 0
      var stopNow = false
      
      while (!stopNow) {
-       clusters = assignClusters(elements, centroids)
-       
-       // Stop if we hit max iteration count
-       iterCount += 1
-       if (iterCount == maxIterations)
-         stopNow = true
-       
-       // stop if the split failed to generate more than one cluster
-       val clusterSizes = (0 until k).map(i => clusters.filter(_._2 == i).size)
-       if (clusterSizes.filter(_ != 0).length == 1) {
-         stopNow = true
+       Logger.logExecutionTime("K-means iteration " + iterCount + " on " + elements.size + " elements", logThis) {
+         clusters = assignClusters(elements, centroids)
+         
+         // Stop if we hit max iteration count
+         iterCount += 1
+         if (iterCount == maxIterations)
+           stopNow = true
+         
+         // stop if the split failed to generate more than one cluster
+         val clusterSizes = (0 until k).map(i => clusters.filter(_._2 == i).size)
+         if (clusterSizes.filter(_ != 0).length == 1) {
+           stopNow = true
+         }
+         
+         if (logThis)
+           Logger.info("cluster sizes: " + clusterSizes)
+         
+         if (!stopNow)
+           centroids = refineCentroids(clusters, centroids, k)
        }
-       
-       // println("cluster sizes: " + clusterSizes)
-       
-       if (!stopNow)
-         centroids = refineCentroids(clusters, centroids, k)
      }
    }
    
