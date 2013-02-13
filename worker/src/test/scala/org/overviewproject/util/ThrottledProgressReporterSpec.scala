@@ -3,6 +3,7 @@ package org.overviewproject.util
 import org.overviewproject.test.Specification
 import overview.util.Progress._
 import overview.util.DocumentSetCreationJobStateDescription._
+import org.specs2.specification.Scope
 
 class ThrottledProgressReporterSpec extends Specification {
 
@@ -14,32 +15,26 @@ class ThrottledProgressReporterSpec extends Specification {
 
   "ThrottledProgressReporter" should {
 
-    "update on state change" in {
+    trait UpdateContext extends Scope {
       val reporter = new ThrottledProgressReporter
+      val receiver = new ProgressReceiver
 
-      var notified = false
+      reporter.notifyOnStateChange(receiver.countNotifications)
+    }
 
-      def receiveNotification(progress: Progress) {
-        notified = true
-      }
-      reporter.notifyOnStateChange(receiveNotification)
-
+    "update on initial state change" in new UpdateContext {
       reporter.update(Progress(0.1, Clustering))
 
-      notified must beTrue
+      receiver.notifications must be equalTo (1)
     }
-  }
 
-  "only update if fraction complete changes in tenth's place" in {
-    val reporter = new ThrottledProgressReporter
-    val receiver = new ProgressReceiver
+    "only update if fraction complete changes in tenth's place" in new UpdateContext {
+      val progFractions = Seq(0.1, 0.15, 0.2)
+      
+      progFractions.foreach(f => reporter.update(Progress(f, Clustering)))
 
-    reporter.notifyOnStateChange(receiver.countNotifications)
-    reporter.update(Progress(0.1, Clustering))
-    reporter.update(Progress(0.15, Clustering))
-    reporter.update(Progress(0.2, Clustering))
-    
-    receiver.notifications must be equalTo(2)
+      receiver.notifications must be equalTo (2)
+    }
   }
 
 }
