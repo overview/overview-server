@@ -146,7 +146,14 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
     }
     
     if (node.children.size == 1)    // if all docs went into single node, make this a leaf, we are done
-      node.children.clear           // (probably indicates clustering alg problem, but let's not infinite loop)
+      node.children.clear           // (either "really" only one cluster, or clustering alg problem, but let's never infinite loop)
+  }
+  
+  def makeALeafForEachDoc(node:DocTreeNode) = {
+    if (node.docs.size > 1)
+      node.docs foreach { id => 
+        node.children += new DocTreeNode(Set(id))
+      }
   }
 }
 
@@ -165,14 +172,18 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
          
         splitNode(node)
         
-        // recurse, computing progress along the way
-        var i=0
-        var denom = node.children.size.toDouble
-        node.children foreach { node =>
-          splitNode(node, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
-          i+=1
+        if (node.children.isEmpty) {
+          // we couldn't split it, just put each doc in a leaf
+          makeALeafForEachDoc(node)
+        } else {
+          // recurse, computing progress along the way
+          var i=0
+          var denom = node.children.size.toDouble
+          node.children foreach { node =>
+            splitNode(node, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
+            i+=1
+          }
         }
-        
       } else {
         // smaller nodes, produce a leaf for each doc
         if (node.docs.size > 1) 
@@ -228,6 +239,8 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
   private def splitNode(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
     if (node.docs.size >= largeNodeSize) {
       splitKMeans(node, progAbort)
+      if (node.children.isEmpty)
+        splitCC(node, progAbort)    // fall back to splitting w/ connected components if k-means can't split it
     } else {
       //println("---- splitting CC with " +  node.docs.size + " items ----")
       splitCC(node, progAbort)
