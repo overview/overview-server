@@ -312,9 +312,9 @@ object BuildDocTree {
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     val (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
     
-    //applyKMeans(nonEmptyDocs, docVecs, progAbort)    
+    applyKMeans(nonEmptyDocs, docVecs, progAbort)    
     //applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
-    applyHybrid(nonEmptyDocs, docVecs, progAbort)
+    //applyHybrid(nonEmptyDocs, docVecs, progAbort)
         
     new TreeLabeler(docVecs).labelNode(nonEmptyDocs)    // create a descriptive label for each node
     ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
