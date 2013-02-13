@@ -77,7 +77,8 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     nextLeaves
   }
 
-  
+ // --- public ---
+    
   def buildNodeSubtree(root:DocTreeNode, threshSteps: Seq[Double], progAbort: ProgressAbortFn) : Unit = {
     val numSteps: Double = threshSteps.size
 
@@ -99,27 +100,33 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
       }
     }   
   }
-  
-  
+   
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
-  def BuildTree(threshSteps: Seq[Double], progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def BuildTree(root:DocTreeNode, threshSteps: Seq[Double], progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     require(threshSteps.head == 1.0)
     require(threshSteps.last == 0.0)
     require(threshSteps.forall(step => step >= 0 && step <= 1.0))
 
     // root thresh=1.0 is one node with all documents
     progAbort(Progress(0, ClusteringLevel(1)))
-    var topLevel = Set(docVecs.keys.toSeq:_*)
-    val root = new DocTreeNode(topLevel)
 
     buildNodeSubtree(root, threshSteps, progAbort)
     
     root
   }
 
+  // version which sets root = all docs
+  def BuildFullTree(threshSteps: Seq[Double], progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    val topLevel = Set(docVecs.keys.toSeq:_*)
+    val root = new DocTreeNode(topLevel)
+    BuildTree(root, threshSteps, progAbort)
+  }
+
+  
   def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
     sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
   }
+
 
 }
 
@@ -222,7 +229,7 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
     if (node.docs.size >= largeNodeSize) {
       splitKMeans(node, progAbort)
     } else {
-      println("---- splitting CC with " +  node.docs.size + " items ----")
+      //println("---- splitting CC with " +  node.docs.size + " items ----")
       splitCC(node, progAbort)
     }
   }
@@ -255,7 +262,7 @@ object BuildDocTree {
     (new DocTreeNode(nonEmptyDocs), new DocTreeNode(emptyDocs))
   }
   
-  def applyConnectedComponents(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: step down in roughly 0.1 increments
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
 
@@ -267,11 +274,17 @@ object BuildDocTree {
     val builder = new ConnectedComponentDocTreeBuilder(docVecs)
     if (docVecs.size > numDocsWhereSamplingHelpful)
       builder.sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
-    val tree = builder.BuildTree(threshSteps, progAbort) // actually build the tree!
+    val tree = builder.BuildTree(root, threshSteps, progAbort) // actually build the tree!
 
     tree
   }
-  
+
+  // Apply CC to all docs in docVecs
+  def applyFullConnectedComponents(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    val root = new DocTreeNode(Set(docVecs.keys.toSeq:_*))
+    applyConnectedComponents(root, docVecs, progAbort)
+  }
+
   def applyKMeans(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     val arity = 5
     val builder = new KMeansDocTreeBuilder(docVecs, arity)
@@ -286,9 +299,9 @@ object BuildDocTree {
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     val (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
     
-    //applyHybrid(nonEmptyDocs, docVecs, progAbort)
-    applyKMeans(nonEmptyDocs, docVecs, progAbort)    
+    //applyKMeans(nonEmptyDocs, docVecs, progAbort)    
     //applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
+    applyHybrid(nonEmptyDocs, docVecs, progAbort)
         
     new TreeLabeler(docVecs).labelNode(nonEmptyDocs)    // create a descriptive label for each node
     ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
@@ -298,6 +311,7 @@ object BuildDocTree {
     var tree = nonEmptyDocs
     if (emptyDocs.docs.size>0) {
       tree = new DocTreeNode(Set(docVecs.keys.toSeq:_*))  // all docs
+      tree.description = nonEmptyDocs.description
       tree.children ++= nonEmptyDocs.children
       emptyDocs.description = "(no meaningful words)"
       tree.children += emptyDocs

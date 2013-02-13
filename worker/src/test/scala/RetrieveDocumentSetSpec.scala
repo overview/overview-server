@@ -24,12 +24,12 @@ import overview.util.WorkerActorSystem
 class RetrieveDocumentSetSpec extends DbSpecification {
   
   step(setupDb)
-
+/*
   def findNodeDocuments(implicit c: Connection) : Seq[(Long, Long)] = {
     SQL("SELECT node_id, document_id FROM node_document").
      as(long("node_id") ~ long("document_id") map(flatten) *)
   }
-
+*/
   "DocumentSetIndexer" should {
 
     // turn every doc in the test directory into a file:// URL
@@ -66,7 +66,7 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       
       retrievalErrors.size must beEqualTo(0) // everything should be retrieved
 
-      val docTree = BuildDocTree.applyConnectedComponents(vectorGen.documentVectors()).toString      
+      val docTree = BuildDocTree.applyFullConnectedComponents(vectorGen.documentVectors()).toString      
       docTree must beEqualTo  ("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
     }
 
