@@ -1,6 +1,6 @@
 @(
   user: OverviewUser,
-  documentSets: Seq[OverviewDocumentSet],
+  documentSets: ResultPage[OverviewDocumentSet],
   form: controllers.forms.DocumentSetForm.FormType,
   publicDocumentSets: Seq[OverviewDocumentSet]
 )(implicit lang: Lang, flash: Flash)
@@ -36,8 +36,10 @@
       <ul class="unstyled document-sets">
         @documentSets.map(d => _documentSet(d))
       </ul>
+
+      @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+
    	  @views.html.DocumentSet._errorList()
-      
     } else {
       <p class="no-document-sets">@m("no_document_sets")</p>
     }

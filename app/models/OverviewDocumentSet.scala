@@ -1,6 +1,6 @@
 package models
 
-import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob }
+import org.overviewproject.tree.orm.{Document, DocumentSetCreationJob, UploadedFile}
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import models.orm.DocumentSet
 import models.upload.OverviewUploadedFile
@@ -117,6 +117,22 @@ object OverviewDocumentSet {
     DocumentSet.findById(id).map({ ormDocumentSet =>
       OverviewDocumentSet(ormDocumentSet.withUploadedFile.withCreationJob)
     })
+  }
+
+  /** @return ResultPage of all document sets the user can access */
+  def findByUserId(userId: Long, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
+    type WeirdTuple = (DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])
+    def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple) : DocumentSet
+      = weirdTuple._1.copy(
+        providedDocumentCount=Some(weirdTuple._2.getOrElse(0L)),
+        documentSetCreationJob=weirdTuple._3,
+        uploadedFile=weirdTuple._4
+      )
+    def weirdTupleToDocumentSet(weirdTuple: WeirdTuple) : OverviewDocumentSet
+      = apply(weirdTupleToOrmDocumentSet(weirdTuple))
+
+    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userId), pageSize, page)
+      .map(weirdTupleToDocumentSet(_))
   }
   
   /** @return Seq of all document sets marked public at the time of the call */

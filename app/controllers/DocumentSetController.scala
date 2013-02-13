@@ -9,21 +9,17 @@ import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
 import models.orm.DocumentSet.ImplicitHelper._
-import models.{OverviewDocumentSet,OverviewDocumentSetCreationJob}
+import models.{OverviewDocumentSet,ResultPage}
 
 trait DocumentSetController extends Controller {
   import Authorities._
 
   private val form = DocumentSetForm()
+  private val pageSize = 10
 
-  def index() = AuthorizedAction(anyUser) { implicit request =>
-    val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(request.user.id)
-      .page(0, 20)
-      .toSeq
-      .withDocumentCounts
-      .withCreationJobs
-      .withUploadedFiles
-      .map(OverviewDocumentSet.apply)
+  def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
+    val realPage = if (page <= 0) 1 else page
+    val documentSets = OverviewDocumentSet.findByUserId(request.user.id, pageSize, realPage)
 
     val publicDocumentSets = OverviewDocumentSet.findPublic
 
@@ -49,7 +45,7 @@ trait DocumentSetController extends Controller {
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
 
     form.bindFromRequest().fold(
-      f => index()(request),
+      f => index(1)(request),
       (tuple) => {
         val documentSet = tuple._1
         val credentials = tuple._2

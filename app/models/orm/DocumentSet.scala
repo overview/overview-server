@@ -99,6 +99,31 @@ case class DocumentSet(
 object DocumentSet {
   def findById(id: Long) = Schema.documentSets.lookup(id)
 
+  def findByUserIdWithCountJobUploadedFile(userId: Long) : Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
+    val idToCountQuery = from(Schema.documents)(d =>
+      groupBy(d.documentSetId)
+      compute(count())
+    )
+
+    val userDocumentSets : Query[DocumentSet] = from(Schema.documentSetUsers.thisTable, Schema.documentSets)((dsu, ds) =>
+      where(dsu.documentSetId === ds.id and dsu.userId === userId)
+      select(ds)
+    )
+
+    val joined = join(userDocumentSets, idToCountQuery.leftOuter, Schema.documentSetCreationJobs.leftOuter, Schema.uploadedFiles.leftOuter)((ds, ic, dscj, uf) =>
+      select((ds, ic.map(_.measures), dscj, uf))
+      on(
+        (ic.map(_.key) === ds.id),
+        (dscj.map(_.documentSetId) === ds.id),
+        (ds.uploadedFileId === uf.map(_.id))
+      )
+    )
+    from(joined)((j) =>
+      select(j)
+      orderBy(j._1.createdAt.desc)
+    )
+  }
+
   def findByUserIdOrderedByCreatedAt(userId: Long) : Query[DocumentSet] = {
     from(Schema.documentSetUsers.thisTable, Schema.documentSets)((dsu, ds) =>
       where(dsu.documentSetId === ds.id and dsu.userId === userId)

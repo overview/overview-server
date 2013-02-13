@@ -6,8 +6,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.Flash
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
-import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser }
-import models.orm.DocumentSet
+import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser, ResultPage }
 import models.orm.DocumentSetType._
 import helpers.{ DbTestContext, FakeOverviewDocumentSet }
 
@@ -18,8 +17,11 @@ class indexSpec extends Specification {
     lazy val ormUser = new models.orm.User()
     lazy val user = OverviewUser(ormUser)
 
-    var documentSets: Seq[OverviewDocumentSet] = Seq()
-    implicit lazy val j = jerry(index(user, documentSets, form).body)
+    val documentSets: Seq[OverviewDocumentSet] = Seq()
+    val publicDocumentSets: Seq[OverviewDocumentSet] = Seq()
+    implicit lazy val documentSetsPage = ResultPage(documentSets, 10, 1)
+
+    implicit lazy val j = jerry(index(user, documentSetsPage, form, publicDocumentSets).body)
     def $(selector: java.lang.String) = j.$(selector) 
   }
 
@@ -33,12 +35,12 @@ class indexSpec extends Specification {
     }
 
     "Show forms for adding new document sets" in new ViewContext {
-      $("form").length must equalTo(5)
-      $("input[name=query]").length must equalTo(4)
+      $("form").length must equalTo(2)
+      $("input[name=query]").length must equalTo(1)
     }
 
     "Show links to DocumentSets if there are some" in new ViewContext {
-      documentSets ++= Seq(
+      override val documentSets = Seq(
         FakeOverviewDocumentSet(1, "title1", "query1"),
         FakeOverviewDocumentSet(2, "title2", "query2"))
 
@@ -48,7 +50,7 @@ class indexSpec extends Specification {
     }
     
     "Define error-list popup if there are DocumentSets" in new ViewContext {
-      documentSets ++= Seq(
+      override val documentSets = Seq(
         FakeOverviewDocumentSet(1, "title1", "query1"),
         FakeOverviewDocumentSet(2, "title2", "query2"))
 

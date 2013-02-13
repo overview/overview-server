@@ -32,7 +32,7 @@ object AuthResults {
     * This is a Redirect to the page the user requested.
     */
   def loginSucceeded(request: RequestHeader, user: OverviewUser): PlainResult = {
-    val uri = request.session.get(RequestedUriKey).getOrElse(controllers.routes.DocumentSetController.index.url)
+    val uri = request.session.get(RequestedUriKey).getOrElse(controllers.routes.DocumentSetController.index().url)
     val newSession = request.session - RequestedUriKey + (UserIdKey -> user.id.toString)
     Results.Redirect(uri).withSession(newSession)
   }
