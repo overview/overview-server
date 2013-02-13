@@ -18,6 +18,7 @@ import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
 import org.overviewproject.clone.CloneDocumentSet
+import org.overviewproject.util.ThrottledProgressReporter
 
 object JobHandler {
 
@@ -30,16 +31,27 @@ object JobHandler {
       Database.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
 
-      def progFn(prog: Progress) = {
-        j.fractionComplete = prog.fraction
-        j.statusDescription = Some(prog.status.toString)
+      def checkCancellation(progress: Progress): Unit = Database.inTransaction(j.checkForCancellation)
+
+      def updateJobState(progress: Progress): Unit = {
+        j.fractionComplete = progress.fraction
+        j.statusDescription = Some(progress.status.toString)
         Database.inTransaction { j.update }
-        val cancelJob = j.state == Cancelled
-        val logLabel = if (cancelJob) "CANCELLED"
+      }
+      
+      def logProgress(progress: Progress): Unit = {
+        val logLabel = if (j.state == Cancelled) "CANCELLED"
         else "PROGRESS"
 
-        Logger.info(logLabel + ": " + prog.fraction * 100 + "% done. " + prog.status + ", " + (if (prog.hasError) "ERROR" else "OK"))
-        cancelJob
+        Logger.info(logLabel + ": " + progress.fraction * 100 + "% done. " + progress.status + ", " + (if (progress.hasError) "ERROR" else "OK"))
+      }
+      
+      val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
+      
+      
+      def progFn(progress: Progress): Boolean = {
+        progressReporter.update(progress)
+        j.state == Cancelled
       }
 
       j.jobType.value match {

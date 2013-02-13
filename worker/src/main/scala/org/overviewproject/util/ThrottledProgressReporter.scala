@@ -2,7 +2,7 @@ package org.overviewproject.util
 
 import overview.util.Progress._
 
-class ThrottledProgressReporter(val stateChangeReceivers: Seq[Progress => Unit], val intervalPassedReceivers: Seq[Progress => Unit], updateInterval: Long = 500l) {
+class ThrottledProgressReporter(val stateChange: Seq[Progress => Unit], val interval: Seq[Progress => Unit], updateInterval: Long = 500l) {
 
   type UpdateFn = Progress => Unit
   private val SignificantProgressChange: Double = 0.1
@@ -13,12 +13,12 @@ class ThrottledProgressReporter(val stateChangeReceivers: Seq[Progress => Unit],
   def update(progress: Progress) {
 
     if (significantChange(progress)) {
-      stateChangeReceivers.foreach(_(progress))
+      stateChange.foreach(_(progress))
       previouslyReportedProgress = Some(progress)
     }
 
     if (intervalPassed) {
-      intervalPassedReceivers.foreach(_(progress))
+      interval.foreach(_(progress))
       nextUpdateTime = now + updateInterval
     }
   }
