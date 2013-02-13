@@ -324,6 +324,7 @@ class TreeView
   constructor: (@div, @cache, @tree, @focus, options={}) ->
     options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
     @options = _.extend({}, DEFAULT_OPTIONS, options, { color: options_color })
+    @focus_tagids = (t.id for t in @cache.tag_store.tags)
 
     $div = $(@div)
     @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
@@ -436,6 +437,7 @@ class TreeView
     @cache.tag_store.observe('tag-changed', update)
     $(window).on('resize.tree-view', update)
 
+    @cache.tag_store.observe('tag-added', this._on_tag_added.bind(this))
     @cache.tag_store.observe('tag-removed', this._on_tag_removed.bind(this))
     @cache.tag_store.observe('tag-id-changed', this._on_tagid_changed.bind(this))
 
@@ -450,9 +452,12 @@ class TreeView
     this._handle_drag()
     this._handle_mousewheel()
 
+  _on_tag_added: (tag) ->
+    @focus_tagids.unshift(tag.id)
+    # No need to redraw: that will happen elsewhere if necessary.
+
   _on_tag_removed: (tag) ->
-    tagid = tag.id
-    index = @focus_tagids.indexOf(tagid)
+    index = @focus_tagids.indexOf(tag.id)
     if index != -1
       @focus_tagids.splice(index, 1)
     # No need to redraw: that will happen elsewhere if necessary.
@@ -524,12 +529,11 @@ class TreeView
   _redraw: () ->
     # Add the focused tag to "focus tagids": stack of recently-viewed tags
     # (initialized to all tags)
-    @focus_tagids ||= (t.id for t in @cache.tag_store.tags)
     tagid = @tree.state.focused_tag?.id
     if tagid
       index = @focus_tagids.indexOf(tagid)
       if index == -1
-        @focus_tagids.unshift(tagid)
+        throw "Invalid tag"
       else if index != 0
         @focus_tagids.splice(index, 1)
         @focus_tagids.unshift(tagid)
