@@ -13,13 +13,15 @@ import models.orm.DocumentSet
 import models.orm.Schema.nodes
 
 object NodeController extends Controller {
+  private val childLevels = 2 // When showing the root, show this many levels of children
+
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     implicit val connection = models.OverviewDatabase.currentConnection
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
     subTreeLoader.loadRootId match {
       case Some(rootId) => {
-        val nodes = subTreeLoader.load(rootId, 3)
+        val nodes = subTreeLoader.load(rootId, childLevels)
         val tags = subTreeLoader.loadTags(documentSetId)
         val documents = subTreeLoader.loadDocuments(nodes, tags)
         val json = views.json.Tree.show(nodes, documents, tags)
