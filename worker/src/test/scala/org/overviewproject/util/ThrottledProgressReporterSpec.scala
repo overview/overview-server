@@ -17,7 +17,19 @@ class ThrottledProgressReporterSpec extends Specification {
 
     trait UpdateContext extends Scope {
       val stateChange = new ProgressReceiver
-      val reporter = new ThrottledProgressReporter(Seq(stateChange.countNotifications))
+      val reporter = new ThrottledProgressReporter(Seq(stateChange.countNotifications), Seq())
+    }
+
+    trait FrequentUpdateContext extends Scope {
+      val ShortTime = 10l
+      val intervalPassed = new ProgressReceiver
+      val reporter = new ThrottledProgressReporter(Seq(), Seq(intervalPassed.countNotifications), updateInterval = ShortTime)
+    }
+
+    trait InfrequentUpdateContext extends Scope {
+      val LongTime = 10000l
+      val intervalPassed = new ProgressReceiver
+      val reporter = new ThrottledProgressReporter(Seq(), Seq(intervalPassed.countNotifications), updateInterval = LongTime)
     }
 
     "update on initial state change" in new UpdateContext {
@@ -37,8 +49,23 @@ class ThrottledProgressReporterSpec extends Specification {
     "update if state changes regardless of progress" in new UpdateContext {
       reporter.update(Progress(0.1, Clustering))
       reporter.update(Progress(0.1001, Saving))
-      
-      stateChange.notifications must be equalTo(2)
+
+      stateChange.notifications must be equalTo (2)
+    }
+
+    "update if sufficient time has passed" in new FrequentUpdateContext {
+      reporter.update(Progress(0.1, Clustering))
+      Thread.sleep(ShortTime * 2)
+      reporter.update(Progress(0.1001, Clustering))
+
+      intervalPassed.notifications must be equalTo (2)
+    }
+
+    "don't update if sufficient time has not passed" in new InfrequentUpdateContext {
+      reporter.update(Progress(0.1, Clustering))
+      reporter.update(Progress(0.1001, Clustering))
+
+      intervalPassed.notifications must be equalTo (1)
     }
   }
 
