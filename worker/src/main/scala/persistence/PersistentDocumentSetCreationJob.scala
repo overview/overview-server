@@ -22,17 +22,17 @@ trait PersistentDocumentSetCreationJob {
   val documentSetId: Long
 
   val jobType: DocumentSetCreationJobType
-  
+
   // Only some jobs require DocumentCloud credentials
   val documentCloudUsername: Option[String]
   val documentCloudPassword: Option[String]
 
   // Only CsvImportJobs require contentsOid
   val contentsOid: Option[Long]
-  
+
   // Only CloneJobs require sourceDocumentSetId
   val sourceDocumentSetId: Option[Long]
-  
+
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -45,8 +45,8 @@ trait PersistentDocumentSetCreationJob {
   def update
 
   /** refreshes the job state with value read from the database */
-  def refreshState
-  
+  def checkForCancellation
+
   /** delete the object from the database */
   def delete
 }
@@ -63,10 +63,10 @@ object PersistentDocumentSetCreationJob {
     val jobs = from(documentSetCreationJobs)(d => where(d.state === state) select (d))
     jobs.map(new PersistentDocumentSetCreationJobImpl(_)).toList
   }
-  
+
   /** Find first job, ordered by id, in the specified state */
   def findFirstJobWithState(state: DocumentSetCreationJobState): Option[PersistentDocumentSetCreationJob] = {
-    val job = from(documentSetCreationJobs)(d => where(d.state === state) select(d) orderBy(d.id)).page(0, 1).headOption
+    val job = from(documentSetCreationJobs)(d => where(d.state === state) select (d) orderBy (d.id)).page(0, 1).headOption
 
     job.map(new PersistentDocumentSetCreationJobImpl(_))
   }
@@ -79,7 +79,7 @@ object PersistentDocumentSetCreationJob {
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val contentsOid: Option[Long] = documentSetCreationJob.contentsOid
     val sourceDocumentSetId: Option[Long] = documentSetCreationJob.sourceDocumentSetId
-    
+
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
     var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)
@@ -95,25 +95,19 @@ object PersistentDocumentSetCreationJob {
      * @return 1 on success, 0 otherwise
      */
     def update {
-      val job = documentSetCreationJobs.lookup(documentSetCreationJob.id)
-
-      job.map { j =>
-        if (j.state == Cancelled) state = Cancelled
-          val updatedJob = org.overviewproject.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
-            where(d.id === documentSetCreationJob.id)
-              set (d.documentSetId := documentSetId,
-                d.state := state.inhibitWhen(d.state == Cancelled),
-                d.fractionComplete := fractionComplete,
-                d.statusDescription := statusDescription.getOrElse("")))
-      }
-
+      checkForCancellation
+      val updatedJob = org.overviewproject.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
+        where(d.id === documentSetCreationJob.id)
+          set (d.documentSetId := documentSetId,
+            d.state := state.inhibitWhen(d.state == Cancelled),
+            d.fractionComplete := fractionComplete,
+            d.statusDescription := statusDescription.getOrElse("")))
     }
 
-    def refreshState {
-      val job = documentSetCreationJobs.lookup(documentSetCreationJob.id)
-      job.map(j => state = j.state) 
+    def checkForCancellation {
+      for (j <- documentSetCreationJobs.lookup(documentSetCreationJob.id); if (j.state == Cancelled)) state = Cancelled
     }
-    
+
     /** @return 1 on successful deletion, 0 otherwise */
     def delete {
       val lockedJob = from(documentSetCreationJobs)(dscj =>

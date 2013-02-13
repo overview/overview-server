@@ -220,9 +220,9 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       csvImportJob.jobType.value must be equalTo(CsvImportJob.value)
     }
     
-    inExample("refresh job state") in new JobSetup {
+    "refresh job state" in new JobSetup {
        updateJobState(jobId, Cancelled)
-       notStartedJob.refreshState
+       notStartedJob.checkForCancellation
        
        notStartedJob.state must be equalTo(Cancelled)
     }
