@@ -75,6 +75,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
  
   def assignClusters(elements:Iterable[T], centroids:Seq[C]) : CompactPairArray[T, Int] = {
     val assignments = new CompactPairArray[T,Int]
+    assignments.sizeHint(elements.size)
     
     elements foreach { el => 
       var cItr = centroids.iterator
