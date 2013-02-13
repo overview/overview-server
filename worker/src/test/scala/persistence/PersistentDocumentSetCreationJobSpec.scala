@@ -43,6 +43,10 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   def insertJobsWithState(documentSetId: Long, states: Seq[DocumentSetCreationJobState]) {
     states.foreach(s => insertDocumentSetCreationJob(documentSetId, s))
   }
+  
+  def updateJobState(jobId: Long, state: DocumentSetCreationJobState) {
+    update(Schema.documentSetCreationJobs)(j => where(j.id === jobId) set(j.state := state))
+  }
 
   trait DocumentSetContext extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
@@ -214,6 +218,13 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     
     "have a type" in new CsvImportJobSetup {
       csvImportJob.jobType.value must be equalTo(CsvImportJob.value)
+    }
+    
+    inExample("refresh job state") in new JobSetup {
+       updateJobState(jobId, Cancelled)
+       notStartedJob.refreshState
+       
+       notStartedJob.state must be equalTo(Cancelled)
     }
   }
 

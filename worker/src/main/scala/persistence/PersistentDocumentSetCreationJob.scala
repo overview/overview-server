@@ -44,6 +44,9 @@ trait PersistentDocumentSetCreationJob {
    */
   def update
 
+  /** refreshes the job state with value read from the database */
+  def refreshState
+  
   /** delete the object from the database */
   def delete
 }
@@ -106,6 +109,11 @@ object PersistentDocumentSetCreationJob {
 
     }
 
+    def refreshState {
+      val job = documentSetCreationJobs.lookup(documentSetCreationJob.id)
+      job.map(j => state = j.state) 
+    }
+    
     /** @return 1 on successful deletion, 0 otherwise */
     def delete {
       val lockedJob = from(documentSetCreationJobs)(dscj =>
