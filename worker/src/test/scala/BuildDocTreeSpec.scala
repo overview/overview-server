@@ -18,9 +18,9 @@ class BuildDocTreeSpec extends Specification {
     "separate empty and non-empty nodes" in {
       val vectorGen = new DocumentVectorGenerator
       vectorGen.addDocument(1, Seq("word1","word2"))
-      vectorGen.addDocument(2, Seq("singular"))
+      vectorGen.addDocument(2, Seq("singular"))         // will be removed, N=1
       vectorGen.addDocument(3, Seq("word1","word2"))
-      vectorGen.addDocument(4, Seq("word1","word2"))    // need at least three non-empty docs as vector generator removes all words with N<3      
+      vectorGen.addDocument(4, Seq("word1","word2"))    // need at least three docs with same words as vector generator removes all words with N<3      
       val docVecs = vectorGen.documentVectors
             
       val (nonEmpty, empty) = BuildDocTree.gatherEmptyDocs(docVecs)
