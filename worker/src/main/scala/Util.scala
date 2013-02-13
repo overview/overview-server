@@ -69,8 +69,11 @@ class LoopedIterator[T](makeIter: => Iterator[T]) extends Iterator[T] {
  * the client. Description types can be defined to take a single argument, which is encoded
  * as "key:argument"
  */
-sealed abstract class DocumentSetCreationJobStateDescription(keys: String*) {
-  override def toString = keys.mkString(":")
+sealed abstract class DocumentSetCreationJobStateDescription(val stateName: String, keys: String*) {
+  
+  override def toString = (stateName +: keys) mkString(":")
+  
+  def sameStateAs(that: DocumentSetCreationJobStateDescription): Boolean = stateName == that.stateName
 }
 
 object DocumentSetCreationJobStateDescription {
@@ -78,12 +81,12 @@ object DocumentSetCreationJobStateDescription {
 
   case object OutOfMemory extends Description("out_of_memory")
   case object WorkerError extends Description("worker_error")
-  case class Retrieving(docNum: Int, total: Int) extends Description("retrieving_documents", docNum.toString, total.toString)
+  case class Retrieving(docNum: Int, total: Int) extends Description("retrieving_documents", docNum.toString, total.toString) 
   case object Clustering extends Description("clustering")
   case object Saving extends Description("saving_document_tree")
   case object Done extends Description("job_complete")
-  case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString)
-  case class Parsing(parsed: Long, total: Long) extends Description("parsing_data", parsed.toString, total.toString)
+  case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString) 
+  case class Parsing(parsed: Long, total: Long) extends Description("parsing_data", parsed.toString, total.toString) 
 }
 
 object Progress {
