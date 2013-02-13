@@ -16,16 +16,14 @@ class ThrottledProgressReporterSpec extends Specification {
   "ThrottledProgressReporter" should {
 
     trait UpdateContext extends Scope {
-      val reporter = new ThrottledProgressReporter
-      val receiver = new ProgressReceiver
-
-      reporter.notifyOnStateChange(receiver.countNotifications)
+      val stateChange = new ProgressReceiver
+      val reporter = new ThrottledProgressReporter(Seq(stateChange.countNotifications))
     }
 
     "update on initial state change" in new UpdateContext {
       reporter.update(Progress(0.1, Clustering))
 
-      receiver.notifications must be equalTo (1)
+      stateChange.notifications must be equalTo (1)
     }
 
     "only update if fraction complete changes in tenth's place" in new UpdateContext {
@@ -33,15 +31,14 @@ class ThrottledProgressReporterSpec extends Specification {
 
       progFractions.foreach(f => reporter.update(Progress(f, Clustering)))
 
-      receiver.notifications must be equalTo (2)
+      stateChange.notifications must be equalTo (2)
     }
 
     "update if state changes regardless of progress" in new UpdateContext {
       reporter.update(Progress(0.1, Clustering))
       reporter.update(Progress(0.1001, Saving))
       
-      receiver.notifications must be equalTo(2)
-
+      stateChange.notifications must be equalTo(2)
     }
   }
 
