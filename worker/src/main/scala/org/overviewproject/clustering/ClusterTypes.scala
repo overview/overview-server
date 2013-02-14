@@ -49,6 +49,12 @@ object ClusterTypes {
         case (id, weight) => update(id, getOrElse(id, 0f) + weight)
       }
     }
+    
+    def accumulate(v:DocumentVector) : Unit  = {
+      for (i <- 0 until v.length) {
+        update(v.terms(i), getOrElse(v.terms(i), 0f) + v.weights(i))
+      }
+    }
   }
 
   object DocumentVectorMap {

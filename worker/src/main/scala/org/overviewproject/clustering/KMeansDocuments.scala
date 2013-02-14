@@ -50,7 +50,7 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
   // result is not very sparse after we sum all those terms -- we get fill-in here
   def mean(elems: Iterable[DocumentID]) : DocumentVectorMap = {
     var m = DocumentVectorMap()
-    elems foreach { docId => m.accumulate(DocumentVectorMap(docVecs(docId))) }  // ...could save conversion time if we had accumulate(v:DocumentVector) 
+    elems foreach { docId => m.accumulate(docVecs(docId)) }   
 
     val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
     m.transform((k,v) => (v / len).toFloat) 
