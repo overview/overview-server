@@ -77,12 +77,12 @@ object TagController extends Controller {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
-        val tag = PersistentTag(t)
-
         selectionForm(documentSetId).bindFromRequest.fold(
           formWithErrors => BadRequest,
           documents => {
-            val tagUpdateCount = documents.removeTag(tag.id)
+            val tagUpdateCount = documents.removeTag(t.id)
+
+            val tag = PersistentTag(t)
             val taggedDocuments = tag.loadDocuments
 
             Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
