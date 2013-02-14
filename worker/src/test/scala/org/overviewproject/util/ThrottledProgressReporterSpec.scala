@@ -38,8 +38,8 @@ class ThrottledProgressReporterSpec extends Specification {
       stateChange.notifications must be equalTo (1)
     }
 
-    "only update if fraction complete changes in hundredth's place" in new UpdateContext {
-      val progFractions = Seq(0.1, 0.105, 0.12)
+    "only update if fraction completion changes by .1%" in new UpdateContext {
+      val progFractions = Seq(0.1, 0.1005, 0.1021)
 
       progFractions.foreach(f => reporter.update(Progress(f, Clustering)))
 

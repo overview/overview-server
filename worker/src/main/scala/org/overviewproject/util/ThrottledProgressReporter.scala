@@ -5,7 +5,7 @@ import overview.util.Progress._
 class ThrottledProgressReporter(val stateChange: Seq[Progress => Unit], val interval: Seq[Progress => Unit], updateInterval: Long = 500l) {
 
   type UpdateFn = Progress => Unit
-  private val SignificantProgressChange: Double = 0.01
+  private val SignificantProgressChange: Double = 0.001
 
   private var previouslyReportedProgress: Option[Progress] = None
   private var nextUpdateTime: Long = now
