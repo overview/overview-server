@@ -17,7 +17,7 @@ class KMeansSpec extends Specification {
   // Integer element type, Double centroid type -- tests case where types T != C
   class IntKMeans extends KMeans[Int,Double] {
     
-    def distance(a:Int, b:Double) : Double = math.abs(a-b)
+    def distance(a:Int, b:Double, minSoFar:Double) : Double = math.abs(a-b)
     def mean(elems: Iterable[Int]) : Double = {
       var sum = 0.0
       var len = 0

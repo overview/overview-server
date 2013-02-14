@@ -18,13 +18,29 @@ import ClusterTypes._
 class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[DocumentID,DocumentVectorMap] {
   
   // Custom cosine distance function: always index against a, as the centroid will have fill-in
-  def distance(aId:DocumentID, b:DocumentVectorMap) : Double = {    
+  def distance(aId:DocumentID, b:DocumentVectorMap, minSoFar:Double) : Double = {    
     val a = docVecs(aId)
     var dot = 0.0
+    var aSqLeft = 1.0
+    var bSqLeft = 1.0
+    
     for (i <- 0 until a.length) {
+      val aWeight = a.weights(i)
+      aSqLeft -= aWeight*aWeight
+      
       val weight = b.get(a.terms(i))
-      if (weight.isDefined)
-        dot += a.weights(i) * weight.get
+      if (weight.isDefined) {
+        val bWeight = weight.get
+        bSqLeft -= bWeight*bWeight
+        dot += aWeight * bWeight
+      }
+              
+      // The maximum value dot can now reach will occur if there is one intersecting term left with all remaining weight
+      // that is, it will have value sqrt(aSqLeft)*sqrt(bSqLeft) = sqrt(aSqLeft*bSqLeft)
+      // If this won't get us below minSoFar, abort
+      val maxPossibleDot = dot + math.sqrt(aSqLeft*bSqLeft)
+      if (1.0 - maxPossibleDot >  minSoFar)
+        return 1.0    // can't beat minSoFar
     }
     
     1.0 - dot

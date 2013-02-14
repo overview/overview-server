@@ -21,9 +21,9 @@ import scala.collection.mutable.ArrayBuffer
 abstract class KMeans[T : ClassManifest, C : ClassManifest] {
   
   // -- Abstract members -- 
-  def distance(a:T, b:C) : Double
+  def distance(a:T, b:C, minSoFar:Double=1.0) : Double    // allow early out, if distance will be > minSoFar 
   def mean(elems: Iterable[T]) : C
-  
+    
   // -- Algorithm parameters -- 
   // Public for now, for easy control
   
@@ -83,7 +83,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
       var closestIdx = 0
       var idx = 1
       cItr foreach { c =>
-        val cDst = distance(el, c)
+        val cDst = distance(el, c, closestDist)
         if (cDst < closestDist) {
           closestDist = cDst
           closestIdx = idx
