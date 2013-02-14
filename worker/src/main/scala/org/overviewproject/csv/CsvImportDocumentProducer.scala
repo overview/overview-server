@@ -42,14 +42,15 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     var numberOfParsedDocuments = 0
 
     while (!jobCancelled && iterator.hasNext) {
+      val doc = iterator.next
+
       if (numberOfParsedDocuments < maxDocuments) {
-        val doc = iterator.next
         val documentId = writeAndCommitDocument(documentSetId, doc)
         consumer.processDocument(documentId, doc.text)
-        reportProgress(uploadReader.bytesRead, uploadedFile.size)
-      }
-      else numberOfSkippedDocuments += 1
-      
+      } else numberOfSkippedDocuments += 1
+
+      reportProgress(uploadReader.bytesRead, uploadedFile.size)
+
       numberOfParsedDocuments += 1
     }
 
