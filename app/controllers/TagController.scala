@@ -57,12 +57,13 @@ object TagController extends Controller {
     OverviewTag.findById(documentSetId, tagId) match {
       case None => NotFound
       case Some(t) => {
-        val tag = PersistentTag(t)
 
         selectionForm(documentSetId).bindFromRequest.fold(
           formWithErrors => BadRequest,
           documents => {
-            val tagUpdateCount = documents.addTag(tag.id)
+            val tagUpdateCount = documents.addTag(t.id)
+            // Creation of PersistentTag has to happen after tags are added, or documents are not loaded properly.
+            val tag = PersistentTag(t)
             val taggedDocuments = tag.loadDocuments
 
             Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
