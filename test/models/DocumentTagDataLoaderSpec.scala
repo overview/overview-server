@@ -101,10 +101,10 @@ class DocumentTagDataLoaderSpec extends Specification {
       documentTagIds must haveTheSameElementsAs(expectedDocumentTags)
     }
 
-    "return tag ids for all documents if no document ids are specified" in new DocumentsTagged {
+    "return no tag ids if no document ids are specified" in new DocumentsTagged {
       val documentTagIds = loader.loadDocumentTags(Nil)
 
-      documentTagIds must haveTheSameElementsAs(expectedDocumentTags)
+      documentTagIds must be empty
     }
 
   }

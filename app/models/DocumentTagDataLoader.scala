@@ -20,7 +20,10 @@ class DocumentTagDataLoader {
    * @return a list of tuples: (documentId, tagId) for each documentId
    */
   def loadDocumentTags(documentIds: Seq[Long])(implicit c: Connection): List[DocumentTagData] = {
-    documentTagQuery(documentIds)
+    documentIds match {
+      case Nil => Nil
+      case _ => documentTagQuery(documentIds)
+    }
   }
 
   /**
