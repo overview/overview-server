@@ -23,8 +23,9 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
     var dot = 0.0
     var aSqLeft = 1.0
     var bSqLeft = 1.0
-    
-    for (i <- 0 until a.length) {
+    var i=0
+   
+    while (i < a.length) {
       val aWeight = a.weights(i)
       aSqLeft -= aWeight*aWeight
       
@@ -41,6 +42,8 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
       val maxPossibleDot = dot + math.sqrt(aSqLeft*bSqLeft)
       if (1.0 - maxPossibleDot >  minSoFar)
         return 1.0    // can't beat minSoFar
+        
+      i+=1
     }
     
     1.0 - dot
@@ -50,7 +53,7 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
   // result is not very sparse after we sum all those terms -- we get fill-in here
   def mean(elems: Iterable[DocumentID]) : DocumentVectorMap = {
     var m = DocumentVectorMap()
-    elems foreach { docId => m.accumulate(docVecs(docId)) }   
+    elems foreach { docId => m.accumulate(docVecs(docId)) }    
 
     val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
     m.transform((k,v) => (v / len).toFloat) 
