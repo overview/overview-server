@@ -8,8 +8,10 @@ controllers.admin.UserController.delete.failure=Document sets owned by {0} must 
 
 controllers.ConfirmationController.show.success=Welcome! You have confirmed your registration and logged in for the first time.
 
+controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
 controllers.DocumentSetController.create.success=You have created a new document set. Please bear with us as we load it up.
 controllers.DocumentSetController.delete.success=You have deleted your document set.
+
 
 controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.

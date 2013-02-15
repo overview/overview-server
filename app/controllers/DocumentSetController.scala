@@ -82,12 +82,13 @@ trait DocumentSetController extends Controller {
     single("sourceDocumentSetId" -> number))
 
   def createClone = AuthorizedAction(anyUser) { implicit request =>
+    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     createCloneForm.bindFromRequest().fold(
       f => BadRequest, { id =>
         val cloneStatus = loadDocumentSet(id).map { d =>
           OverviewDocumentSet(d).cloneForUser(request.user.id)
-          ("success" -> "Clonification Requested. Please Stand By.")
-        }.getOrElse("error" -> "Clonization DENIED")
+          ("success" -> m("create.success"))
+        }.getOrElse("error" -> m("clone.failure"))
         Redirect(routes.DocumentSetController.index()).flashing(cloneStatus)        
       }
     )
