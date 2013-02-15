@@ -3,13 +3,13 @@ package models
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import org.overviewproject.test.Specification
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import helpers.DbTestContext
 import models.orm.DocumentSetType._
 import models.orm.DocumentSet
-
-
 
 class OverviewDocumentSetCreationJobSpec extends Specification {
   step(start(FakeApplication()))
@@ -27,10 +27,10 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
         job = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).head
       }
     }
-    
+
     trait SavedJobContext extends DocumentSetContext {
       var savedJob: OverviewDocumentSetCreationJob = _
-      
+
       override def setupWithDb = {
         super.setupWithDb
         savedJob = job.save
@@ -49,18 +49,32 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
         jobs = OverviewDocumentSetCreationJob.all
       }
     }
-    
+
     trait UpdatedStateContext extends SavedJobContext {
       val fractionComplete = 0.55
       val description = "state description"
-        
+
       override def setupWithDb = {
         super.setupWithDb
         update(documentSetCreationJobs)(j =>
           where(j.id === savedJob.id)
-          set( j.fractionComplete := fractionComplete,
-               j.statusDescription := description)
-        )
+            set (j.fractionComplete := fractionComplete,
+              j.statusDescription := description))
+      }
+    }
+
+    trait CloneJobContext extends DbTestContext {
+      val sourceDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("clone"), isPublic = true)
+      val cloneDocumentSet = sourceDocumentSet.copy(isPublic = false)
+      var cloneJobId: Long = _
+
+      override def setupWithDb = {
+        sourceDocumentSet.save
+        cloneDocumentSet.save
+
+        val cloneJob = DocumentSetCreationJob(cloneDocumentSet.id, CloneJob, sourceDocumentSetId = Some(sourceDocumentSet.id))
+        documentSetCreationJobs.insert(cloneJob)
+        cloneJobId = cloneJob.id
       }
     }
 
@@ -80,19 +94,19 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
     "find job by document set id" in new SavedJobContext {
       OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id) must beSome
     }
-    
+
     "read state information" in new UpdatedStateContext {
       val updatedJob = OverviewDocumentSetCreationJob.findByDocumentSetId(documentSet.id).get
-      updatedJob.fractionComplete must be equalTo(fractionComplete)
-      updatedJob.stateDescription must be equalTo(description)
+      updatedJob.fractionComplete must be equalTo (fractionComplete)
+      updatedJob.stateDescription must be equalTo (description)
     }
-    
+
     "report position in queue" in new MultipleJobContext {
       val queuePosition = jobs.sortBy(_.id).map(_.jobsAheadInQueue)
-      
+
       queuePosition must be equalTo Seq.range(1, jobs.size + 1)
     }
-    
+
     "create a job with DocumentCloud credentials" in new DocumentSetContext {
       val username = "name"
       val password = "password"
@@ -108,26 +122,31 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       j.documentcloudUsername must beSome
       j.documentcloudPassword must beSome
     }
-    
+
     "update state" in new SavedJobContext {
       val cancelledJob = savedJob.withState(Cancelled)
-      cancelledJob.state must be equalTo(Cancelled)
+      cancelledJob.state must be equalTo (Cancelled)
 
       cancelledJob.save
       val jobs = OverviewDocumentSetCreationJob.all
-      
-      jobs must have size(1)
-      jobs.head.state must be equalTo(Cancelled)
+
+      jobs must have size (1)
+      jobs.head.state must be equalTo (Cancelled)
     }
-    
+
     "do not cancel NotStarted job" in new SavedJobContext {
       val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(documentSet.id)
-      
+
       cancelledJob must beNone
     }
-    
-    
-    
+
+    "find clone jobs with source id" in new CloneJobContext {
+      val foundCloneJobs: Seq[OverviewDocumentSetCreationJob] = OverviewDocumentSetCreationJob.findBySourceDocumentSetId(sourceDocumentSet.id)
+
+      foundCloneJobs must have size (1)
+      foundCloneJobs.head.id must be equalTo (cloneJobId)
+    }
+
   }
 
   step(stop)

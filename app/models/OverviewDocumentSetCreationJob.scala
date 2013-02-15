@@ -37,6 +37,14 @@ object OverviewDocumentSetCreationJob {
 
     documentSetCreationJob.map(OverviewDocumentSetCreationJobImpl)
   }
+  
+  def findBySourceDocumentSetId(sourceDocumentSetId: Long): Seq[OverviewDocumentSetCreationJob] = {
+    val cloneJobs = documentSetCreationJobs.where(dscj =>
+      dscj.sourceDocumentSetId === sourceDocumentSetId  
+    )
+    
+    cloneJobs.map(j => OverviewDocumentSetCreationJobImpl(j)).toSeq
+  }
 
   def cancelJobWithDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
     val cancellableJob = documentSetCreationJobs.where(dscj =>
