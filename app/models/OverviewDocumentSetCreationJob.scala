@@ -40,10 +40,10 @@ object OverviewDocumentSetCreationJob {
   
   def cancelJobsWithSourceDocumentSetId(sourceDocumentSetId: Long): Seq[OverviewDocumentSetCreationJob] = {
     val cloneJobs = documentSetCreationJobs.where(dscj =>
-      dscj.sourceDocumentSetId === sourceDocumentSetId  
+      dscj.sourceDocumentSetId === Some(sourceDocumentSetId)  
     ).forUpdate
-    
-    cloneJobs.map(j => OverviewDocumentSetCreationJobImpl(j.copy(state = Cancelled))).toSeq
+
+    cloneJobs.map(j => OverviewDocumentSetCreationJobImpl(j.copy(state = Cancelled)).save).toSeq
   }
 
   def cancelJobWithDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
