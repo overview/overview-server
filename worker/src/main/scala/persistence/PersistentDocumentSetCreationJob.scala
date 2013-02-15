@@ -105,7 +105,8 @@ object PersistentDocumentSetCreationJob {
     }
 
     def checkForCancellation {
-      for (j <- documentSetCreationJobs.lookup(documentSetCreationJob.id); if (j.state == Cancelled)) state = Cancelled
+      val job = documentSetCreationJobs.where(dscj => dscj.id === documentSetCreationJob.id).forUpdate.headOption
+      for (j <- job; if (j.state == Cancelled)) state = Cancelled
     }
 
     /** @return 1 on successful deletion, 0 otherwise */
