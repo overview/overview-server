@@ -140,11 +140,12 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       cancelledJob must beNone
     }
 
-    "find clone jobs with source id" in new CloneJobContext {
-      val foundCloneJobs: Seq[OverviewDocumentSetCreationJob] = OverviewDocumentSetCreationJob.findBySourceDocumentSetId(sourceDocumentSet.id)
+    "cancel clone jobs with source id" in new CloneJobContext {
+      val cancelledCloneJobs: Seq[OverviewDocumentSetCreationJob] = OverviewDocumentSetCreationJob.cancelJobsWithSourceDocumentSetId(sourceDocumentSet.id)
 
-      foundCloneJobs must have size (1)
-      foundCloneJobs.head.id must be equalTo (cloneJobId)
+      cancelledCloneJobs must have size (1)
+      cancelledCloneJobs.head.id must be equalTo (cloneJobId)
+      cancelledCloneJobs.head.state must be equalTo (Cancelled)
     }
 
   }
