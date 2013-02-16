@@ -148,6 +148,7 @@ object OverviewDocumentSet {
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
+    cancelCloneJobs(id)
     deleteClientGeneratedInformation(id)
     val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(id)
     if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
@@ -190,6 +191,10 @@ object OverviewDocumentSet {
     documentSets.delete(id)
 
     uploadedFileId.map { uid => uploadedFiles.deleteWhere(f => f.id === uid) }
-
+  }
+  
+  private def cancelCloneJobs(sourceId: Long): Unit = {
+    val cloneJobs = OverviewDocumentSetCreationJob.cancelJobsWithSourceDocumentSetId(sourceId)
+    cloneJobs.foreach(j => deleteClientGeneratedInformation(j.documentSetId))
   }
 }

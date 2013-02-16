@@ -1,6 +1,5 @@
 package models
 
-
 import java.sql.Timestamp
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
@@ -96,7 +95,7 @@ class OverviewDocumentSetSpec extends Specification {
         case _ => throwWrongType
       }
     }
-    
+
     "have isPublic value" in new CsvImportDocumentSetScope {
       documentSet.isPublic must beFalse
     }
@@ -148,11 +147,11 @@ class OverviewDocumentSetSpec extends Specification {
     trait DocumentSetWithCompletedUpload extends PgConnectionContext {
       var documentSet: OverviewDocumentSet = _
       var uploadedFile: UploadedFile = _
-      
+
       override def setupWithDb = {
         uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
         val ormDocumentSet = DocumentSet(CsvImportDocumentSet, title = "title", uploadedFileId = Some(uploadedFile.id)).save
-        
+
         documentSet = OverviewDocumentSet(ormDocumentSet)
       }
     }
@@ -198,28 +197,41 @@ class OverviewDocumentSetSpec extends Specification {
         documentSetCreationJobs.insertOrUpdate(DocumentSetCreationJob(documentSet.id, DocumentCloudJob, state = Cancelled))
       }
     }
-    
+
     trait PublicDocumentSet extends DbTestContext {
       var documentSet: OverviewDocumentSet = _
-      
+
       override def setupWithDb = {
         super.setupWithDb
         val ormDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("public"), isPublic = true).save
-        
+
         documentSet = OverviewDocumentSet(ormDocumentSet)
       }
     }
-    
+
     trait PublicAndPrivateDocumentSets extends DbTestContext {
       override def setupWithDb = {
         val privateDocumentSets = Seq.fill(5)(DocumentSet(DocumentCloudDocumentSet, query = Some("private")))
         val publicDocumentSets = Seq.fill(5)(DocumentSet(DocumentCloudDocumentSet, query = Some("public"), isPublic = true))
-        
+
         documentSets.insert(privateDocumentSets ++ publicDocumentSets)
       }
     }
-    
-    
+
+    trait PublicDocumentSetBeingCloned extends PublicDocumentSet {
+
+      var cloneDocumentSet: DocumentSet = _
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        val admin = User.findById(1l).getOrElse(throw new Exception("Missing admin user from db"))
+        cloneDocumentSet = admin.createDocumentSet("query").save
+
+        val cloneJob = DocumentSetCreationJob(cloneDocumentSet.id, CloneJob, sourceDocumentSetId = Some(documentSet.id))
+        documentSetCreationJobs.insert(cloneJob)
+      }
+    }
+
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.user.id must be equalTo (1l)
@@ -248,15 +260,15 @@ class OverviewDocumentSetSpec extends Specification {
     "delete Uploaded file and LargeObject" in new DocumentSetWithUpload {
       val job: DocumentSetCreationJob = ormDocumentSet.createDocumentSetCreationJob(contentsOid = Some(oid))
       documentSetCreationJobs.insertOrUpdate(job.copy(state = Error))
-      
+
       OverviewDocumentSet.delete(documentSet.id)
 
       uploadedFiles.allRows must have size (0)
       LO.withLargeObject(oid) { lo => } must throwA[Exception]
     }
-    
+
     "do not try to delete LargeObject if upload is complete" in new DocumentSetWithCompletedUpload {
-      OverviewDocumentSet.delete(documentSet.id) 
+      OverviewDocumentSet.delete(documentSet.id)
 
       uploadedFiles.allRows must have size (0)
     }
@@ -314,51 +326,58 @@ class OverviewDocumentSetSpec extends Specification {
     "return error count" in new DocumentSetReferencedByOtherTables {
       documentSet.errorCount must be equalTo (1)
     }
-    
+
     "create a copy for cloning user" in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
-      
+
       documentSetClone.user.id must be equalTo (cloner.id)
       documentSetClone.query must be equalTo (documentSet.query)
-    } 
+    }
 
     "set cloned DocumentSet to be private" in new PublicDocumentSet {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
-      
+
       documentSetClone.isPublic must beFalse
     }
-    
+
     // Need inExample to avoid compiler error
-   	inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
+    inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
-      
+
       val documentSetClone = documentSet.cloneForUser(cloner.id)
-      
+
       val cloneWithUpload = OverviewDocumentSet.findById(documentSetClone.id).get
-      
+
       cloneWithUpload match {
-        case d: OverviewDocumentSet.CsvImportDocumentSet => 
+        case d: OverviewDocumentSet.CsvImportDocumentSet =>
           d.uploadedFile must beSome
-          d.uploadedFile.get.id mustNotEqual(uploadedFile.id)
+          d.uploadedFile.get.id mustNotEqual (uploadedFile.id)
         case _ => failure("cloned document set is wrong type")
       }
     }
-   	
-   	"create clone job for clone" in new DocumentSetWithUserScope {
+
+    "create clone job for clone" in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
-   	  
+
       documentSetClone.creationJob must beSome
-   	}
-   	
-   "find all public document sets" in new PublicAndPrivateDocumentSets {
-   	  val publicDocumentSets = OverviewDocumentSet.findPublic
-   	  
-   	  publicDocumentSets must have size(5)
-   	  publicDocumentSets.map(_.query).distinct must be equalTo(Seq("public"))
-   	}
+    }
+
+    "find all public document sets" in new PublicAndPrivateDocumentSets {
+      val publicDocumentSets = OverviewDocumentSet.findPublic
+
+      publicDocumentSets must have size (5)
+      publicDocumentSets.map(_.query).distinct must be equalTo (Seq("public"))
+    }
+    
+    "cancel clone jobs when deleting source document set" in new PublicDocumentSetBeingCloned {
+      OverviewDocumentSet.delete(documentSet.id)
+      val cancelledCloneJob = OverviewDocumentSetCreationJob.findByDocumentSetId(cloneDocumentSet.id).get
+      cancelledCloneJob.state must be equalTo(Cancelled)
+      documentSetUsers.left(cloneDocumentSet).size must be equalTo(0)
+    }
   }
   step(stop)
 }
