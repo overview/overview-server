@@ -38,6 +38,7 @@ case class DocumentSet(
     val query: Option[String] = None,
     @Column("public") isPublic: Boolean = false,
     @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
+    importOverflowCount: Int = 0,
     @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
     @(Transient @field) val providedDocumentCount: Option[Long] = None,
     @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,

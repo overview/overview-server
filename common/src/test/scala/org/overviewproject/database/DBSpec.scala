@@ -18,13 +18,6 @@ class DBSpec extends DbSpecification {
 
   "DB object" should {
 
-    def insertDocumentSet(implicit connect: Connection) = {
-      SQL("""
-          INSERT INTO document_set (type, public, title, query, created_at) 
-          VALUES ('DocumentCloudDocumentSet'::document_set_type, 'false', 'title', 'query', '2012-10-22')
-          """).executeInsert()
-    }
-
     "provide scope with connection" in {
       DB.withConnection { implicit connection =>
         val success = SQL("SELECT * from document_set").execute
@@ -34,7 +27,7 @@ class DBSpec extends DbSpecification {
 
     "provide scope with transaction" in {
       DB.withTransaction { implicit connection =>
-        insertDocumentSet
+        insertDocumentSet("DBSpec")
         connection.rollback()
       }
 
@@ -49,7 +42,7 @@ class DBSpec extends DbSpecification {
 
       try {
         DB.withTransaction { implicit connection =>
-          insertDocumentSet
+          insertDocumentSet("DBSpec")
           throw new Exception(exceptionMessage)
         }
       } catch {
