@@ -9,9 +9,9 @@
 import com.jolbox.bonecp._
 import org.overviewproject.database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
+import org.overviewproject.persistence._
 import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
 import org.overviewproject.util.Progress._
-import persistence._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.clustering.DocumentSetIndexer
@@ -117,7 +117,7 @@ object JobHandler {
   def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
     import anorm._
     import anorm.SqlParser._
-    import persistence.Schema._
+    import org.overviewproject.persistence.Schema._
     import org.squeryl.PrimitiveTypeMode._
 
     Database.inTransaction {

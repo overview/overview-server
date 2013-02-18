@@ -1,4 +1,4 @@
-package persistence
+package org.overviewproject.persistence
 
 import anorm._
 import anorm.SqlParser

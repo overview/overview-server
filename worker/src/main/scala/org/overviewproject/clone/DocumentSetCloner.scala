@@ -1,11 +1,12 @@
 package org.overviewproject.clone
 
+import org.overviewproject.database.Database
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger }
 import org.overviewproject.util.Progress.Progress
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-import org.overviewproject.database.Database
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import persistence.PersistentDocumentSetCreationJob
+
 
 
 /**

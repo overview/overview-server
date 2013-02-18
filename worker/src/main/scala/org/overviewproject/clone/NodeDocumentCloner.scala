@@ -1,8 +1,7 @@
 package org.overviewproject.clone
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import persistence.Schema
-import persistence.NodeDocumentBatchInserter
+import org.overviewproject.persistence.{ NodeDocumentBatchInserter, Schema }
 
 object NodeDocumentCloner {
 

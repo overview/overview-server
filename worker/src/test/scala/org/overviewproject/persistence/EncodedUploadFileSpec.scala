@@ -1,4 +1,4 @@
-package persistence
+package org.overviewproject.persistence
 
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification

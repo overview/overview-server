@@ -1,4 +1,4 @@
-package persistence
+package org.overviewproject.persistence
 
 import scala.util.control.Exception._
 import java.io.InputStream

@@ -12,13 +12,14 @@ import akka.util.Timeout
 import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
+import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter}
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
-import persistence.DocumentWriter
-import persistence.DocRetrievalErrorWriter
+
+
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,

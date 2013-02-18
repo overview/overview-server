@@ -3,7 +3,7 @@ package org.overviewproject.util
 import java.sql.Connection
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 

@@ -5,15 +5,14 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType.{CsvImportDocument, DocumentCloudDocument}
+import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument, DocumentCloudDocument }
+import org.overviewproject.persistence.Schema.documents;
 import org.overviewproject.postgres.SquerylEntrypoint._
-
-import persistence.Schema.documents
 
 class DocumentWriterSpec extends DbSpecification {
 
@@ -30,8 +29,8 @@ class DocumentWriterSpec extends DbSpecification {
     }
 
     "update description of document" in new Setup {
-      import persistence.Schema.documents
-      
+      import org.overviewproject.persistence.Schema.documents
+
       val documentCloudId = Some("documentCloud-id")
       val description = "some,terms,together"
 
@@ -39,7 +38,7 @@ class DocumentWriterSpec extends DbSpecification {
       DocumentWriter.write(document)
       DocumentWriter.updateDescription(document.id, description)
 
-      val updatedDocument = documents.lookup(document.id) 
+      val updatedDocument = documents.lookup(document.id)
 
       updatedDocument must beSome
       updatedDocument.get.description must be equalTo description

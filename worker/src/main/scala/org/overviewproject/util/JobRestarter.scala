@@ -7,8 +7,8 @@
 package org.overviewproject.util
 
 import java.sql.Connection
-import persistence.DocumentSetCleaner
-import persistence.PersistentDocumentSetCreationJob
+import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
+
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 /**

@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import scala.collection.mutable.Seq
 
@@ -33,7 +33,7 @@ class NodeDocumentBatchInserter(threshold: Long) {
 
   /** execute the batch insert */
   def flush {
-    import persistence.Schema.nodeDocuments
+    import org.overviewproject.persistence.Schema.nodeDocuments
     nodeDocuments.insert(currentBatch)
 
     resetBatch

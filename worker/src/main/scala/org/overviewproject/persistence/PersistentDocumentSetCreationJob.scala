@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType
@@ -53,10 +53,10 @@ trait PersistentDocumentSetCreationJob {
 
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
+  import org.overviewproject.persistence.Schema.documentSetCreationJobs
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJob
-  import persistence.Schema.documentSetCreationJobs
-
+  
   /** Find all jobs in the specified state */
   def findJobsWithState(state: DocumentSetCreationJobState): List[PersistentDocumentSetCreationJob] = {
 

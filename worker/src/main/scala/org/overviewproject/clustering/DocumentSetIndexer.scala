@@ -13,13 +13,12 @@ package org.overviewproject.clustering
 import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
+import org.overviewproject.database.{ Database, DB }
+import org.overviewproject.persistence.{ DocumentWriter, NodeWriter }
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.database.Database
-import org.overviewproject.database.DB
 import org.overviewproject.util.{ DocumentConsumer, Logger }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
-import persistence.{ DocumentWriter, NodeWriter }
 
 
 

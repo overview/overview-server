@@ -5,14 +5,14 @@
  * Created by Jonas Karlsson, Oct 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
-import anorm._
-import anorm.SqlParser._
-import org.overviewproject.test.DbSpecification
 import java.sql.Connection
-import org.specs2.mutable.Specification
-import org.overviewproject.test.DbSetup._
+import anorm.{sqlToSimple, toParameterValue}
+import anorm.SQL
+import anorm.SqlParser.long
+import org.overviewproject.test.DbSetup.{insertDocument, insertDocumentSet, insertNode, insertNodeDocument}
+import org.overviewproject.test.DbSpecification
 
 class DocumentSetCleanerSpec extends DbSpecification {
   step(setupDb)

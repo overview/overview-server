@@ -4,7 +4,7 @@ import org.overviewproject.tree.orm.Node
 
 object NodeCloner {
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long, documentIdMapping: Map[Long, Long]): Map[Long, Long] = {
-    import persistence.Schema
+    import org.overviewproject.persistence.Schema
     import org.overviewproject.postgres.SquerylEntrypoint._
 
     def cloneSubTree(sourceParentNode: Node, nodes: Iterable[Node], nodeIds: Map[Long, Long]): Map[Long, Long] = {

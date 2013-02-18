@@ -1,11 +1,11 @@
 package org.overviewproject.clone
 
+import org.overviewproject.persistence.{ Schema, Tag }
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.{ Document, DocumentTag }
 import org.overviewproject.tree.orm.DocumentType._
-import persistence.{ Schema, Tag }
 import org.squeryl.KeyedEntity
 
 class DocumentTagClonerSpec extends DbSpecification {

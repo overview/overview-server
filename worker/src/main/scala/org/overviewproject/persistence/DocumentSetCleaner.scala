@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Oct 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import anorm._
 import java.sql.Connection

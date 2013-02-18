@@ -10,12 +10,10 @@ import java.io.{BufferedReader,InputStream,InputStreamReader,Reader}
 import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction}
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
-import org.overviewproject.database.DB
+import org.overviewproject.database.{ Database, DB }
+import org.overviewproject.persistence.{ EncodedUploadFile, LargeObjectInputStream }
 import org.overviewproject.postgres.LO
-import persistence.EncodedUploadFile
-import org.overviewproject.database.Database
-import persistence.LargeObjectInputStream
-import persistence.EncodedUploadFile
+
 
 /**
  * Provides a context for reading an uploaded file from the database. The

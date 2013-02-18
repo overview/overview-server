@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import scala.collection.mutable.Set
 import anorm.{ sqlToSimple, toParameterValue }

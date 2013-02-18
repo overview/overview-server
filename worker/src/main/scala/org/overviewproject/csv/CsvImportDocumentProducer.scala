@@ -7,15 +7,15 @@
 package org.overviewproject.csv
 
 
-import org.overviewproject.database.Database
-import org.overviewproject.database.DB
+import org.overviewproject.database.{ Database, DB }
+import org.overviewproject.persistence.{ DocumentWriter, EncodedUploadFile }
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
-import persistence.DocumentWriter
-import persistence.EncodedUploadFile
+
+
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId

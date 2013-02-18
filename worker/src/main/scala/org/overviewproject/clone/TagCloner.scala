@@ -3,7 +3,7 @@ package org.overviewproject.clone
 object TagCloner {
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Map[Long, Long] = {
-	import persistence.Schema
+	import org.overviewproject.persistence.Schema
 	import org.overviewproject.postgres.SquerylEntrypoint._
 	
     val sourceTags = Schema.tags.where(t => t.documentSetId === sourceDocumentSetId)

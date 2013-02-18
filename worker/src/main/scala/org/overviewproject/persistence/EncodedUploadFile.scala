@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package persistence
+package org.overviewproject.persistence
 
 import java.sql.Connection
 import org.overviewproject.tree.orm.UploadedFile

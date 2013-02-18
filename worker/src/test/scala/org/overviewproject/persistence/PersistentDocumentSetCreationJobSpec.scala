@@ -5,7 +5,7 @@
  * Created by Jonas Karlsson, Aug 2012
  */
 
-package persistence
+package org.overviewproject.persistence
 
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.SquerylEntrypoint._

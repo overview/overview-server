@@ -10,8 +10,8 @@ import org.overviewproject.clustering.DocumentCloudSource
 import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
 import org.overviewproject.util.Progress._
 import org.overviewproject.csv.CsvImportDocumentProducer
-import persistence.DocumentSet
-import persistence.PersistentDocumentSetCreationJob
+import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
+
 
 /** Common functionality for DocumentProducers */
 trait DocumentProducer {

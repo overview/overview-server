@@ -1,14 +1,13 @@
 package org.overviewproject.csv
 
-import org.overviewproject.test.DbSpecification
-import org.specs2.execute.PendingUntilFixed
-import org.overviewproject.postgres.LO
-import org.overviewproject.database.DB
-import org.overviewproject.test.DbSetup._
-import java.io.InputStreamReader
-import java.nio.charset.Charset
-import persistence.EncodedUploadFile
 import java.io.Reader
+import java.nio.charset.Charset
+import scala.Array.canBuildFrom
+import org.overviewproject.database.DB
+import org.overviewproject.persistence.EncodedUploadFile
+import org.overviewproject.postgres.LO
+import org.overviewproject.test.DbSetup.insertUploadedFile
+import org.overviewproject.test.DbSpecification
 
 class UploadReaderSpec extends DbSpecification {
 

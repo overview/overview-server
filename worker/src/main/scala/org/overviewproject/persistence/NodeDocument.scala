@@ -1,4 +1,4 @@
-package persistence
+package org.overviewproject.persistence
 
 import org.squeryl.annotations.Column
 

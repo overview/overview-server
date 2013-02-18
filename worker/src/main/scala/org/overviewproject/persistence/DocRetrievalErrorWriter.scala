@@ -1,4 +1,4 @@
-package persistence
+package org.overviewproject.persistence
 
 import org.overviewproject.http.DocRetrievalError
 import org.overviewproject.tree.orm.DocumentProcessingError

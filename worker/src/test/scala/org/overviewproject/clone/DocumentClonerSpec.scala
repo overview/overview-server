@@ -1,11 +1,11 @@
 package org.overviewproject.clone
 
+import org.overviewproject.persistence.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
-import persistence.Schema
 
 class DocumentClonerSpec extends DbSpecification {
   step(setupDb)
