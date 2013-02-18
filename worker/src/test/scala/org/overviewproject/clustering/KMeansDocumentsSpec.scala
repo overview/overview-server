@@ -9,7 +9,7 @@
 import java.io.File
 import org.overviewproject.clustering._
 import org.overviewproject.clustering.ClusterTypes._
-import overview.util.CompactPairArray
+import org.overviewproject.util.CompactPairArray
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
 

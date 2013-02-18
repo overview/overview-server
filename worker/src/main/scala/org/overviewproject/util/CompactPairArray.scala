@@ -10,11 +10,11 @@
  *
  */
 
-package overview.util
+package org.overviewproject.util
 
 
 import scala.collection.mutable.{IndexedSeq, IndexedSeqOptimized, Builder}
-import scala.collection.generic.{SeqFactory, CanBuildFrom}
+import scala.collection.generic.CanBuildFrom
 
 
 class CompactPairArray[A : ClassManifest,B : ClassManifest] 

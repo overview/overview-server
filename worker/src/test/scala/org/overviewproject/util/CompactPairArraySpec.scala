@@ -6,7 +6,8 @@
  * 
  */
 
-import overview.util.CompactPairArray
+package org.overviewproject.util
+
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 

@@ -8,7 +8,7 @@
 
 
 import org.overviewproject.clustering.KMeans
-import overview.util.CompactPairArray
+import org.overviewproject.util.CompactPairArray
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
 

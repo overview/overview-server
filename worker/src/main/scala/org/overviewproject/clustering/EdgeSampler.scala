@@ -16,9 +16,9 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.{HashMap, Map, PriorityQueue}
-import overview.util.CompactPairArray
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.Logger
+import org.overviewproject.clustering.ClusterTypes.{DocumentDistanceFn, DocumentID, DocumentSetVectors, TermID, TermWeight}
+import org.overviewproject.util.{CompactPairArray, Logger}
+
 //import scala.collection.mutable.AddingBuilder
 
 
