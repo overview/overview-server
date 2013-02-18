@@ -13,8 +13,8 @@ package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
 import scala.util.control.Breaks._
-import overview.util.DocumentSetCreationJobStateDescription.ClusteringLevel
-import overview.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
+import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import org.overviewproject.clustering.ClusterTypes._
 
 

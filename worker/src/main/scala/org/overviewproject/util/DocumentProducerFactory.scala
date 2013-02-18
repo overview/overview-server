@@ -4,11 +4,11 @@
  * Overview Project
  * Created by Jonas Karlsson, November 2012
  */
-package overview.util
+package org.overviewproject.util
 
 import org.overviewproject.clustering.DocumentCloudSource
 import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
-import overview.util.Progress._
+import org.overviewproject.util.Progress._
 import org.overviewproject.csv.CsvImportDocumentProducer
 import persistence.DocumentSet
 import persistence.PersistentDocumentSetCreationJob

@@ -1,8 +1,8 @@
 package org.overviewproject.util
 
 import org.overviewproject.test.Specification
-import overview.util.Progress._
-import overview.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.Progress.{ Progress => Prog }
 import org.specs2.specification.Scope
 
 class ThrottledProgressReporterSpec extends Specification {
@@ -10,7 +10,7 @@ class ThrottledProgressReporterSpec extends Specification {
   class ProgressReceiver {
     var notifications: Int = 0
 
-    def countNotifications(progress: Progress) { notifications += 1 }
+    def countNotifications(progress: Prog) { notifications += 1 }
   }
 
   "ThrottledProgressReporter" should {
@@ -33,7 +33,7 @@ class ThrottledProgressReporterSpec extends Specification {
     }
 
     "update on initial state change" in new UpdateContext {
-      reporter.update(Progress(0.1, Clustering))
+      reporter.update(Prog(0.1, Clustering))
 
       stateChange.notifications must be equalTo (1)
     }
@@ -41,36 +41,36 @@ class ThrottledProgressReporterSpec extends Specification {
     "only update if fraction completion changes by .1%" in new UpdateContext {
       val progFractions = Seq(0.1, 0.1005, 0.1021)
 
-      progFractions.foreach(f => reporter.update(Progress(f, Clustering)))
+      progFractions.foreach(f => reporter.update(Prog(f, Clustering)))
 
       stateChange.notifications must be equalTo (2)
     }
 
     "update if state changes regardless of progress" in new UpdateContext {
-      reporter.update(Progress(0.1, Clustering))
-      reporter.update(Progress(0.1001, Saving))
+      reporter.update(Prog(0.1, Clustering))
+      reporter.update(Prog(0.1001, Saving))
 
       stateChange.notifications must be equalTo (2)
     }
 
     "update if sufficient time has passed" in new FrequentUpdateContext {
-      reporter.update(Progress(0.1, Clustering))
+      reporter.update(Prog(0.1, Clustering))
       Thread.sleep(ShortTime * 2)
-      reporter.update(Progress(0.1001, Clustering))
+      reporter.update(Prog(0.1001, Clustering))
 
       intervalPassed.notifications must be equalTo (2)
     }
 
     "don't update if sufficient time has not passed" in new InfrequentUpdateContext {
-      reporter.update(Progress(0.1, Clustering))
-      reporter.update(Progress(0.1001, Clustering))
+      reporter.update(Prog(0.1, Clustering))
+      reporter.update(Prog(0.1001, Clustering))
 
       intervalPassed.notifications must be equalTo (1)
     }
     
     "treat states with parameters as the same state" in new UpdateContext {
-      reporter.update(Progress(0.1, Retrieving(100, 1000)))
-      reporter.update(Progress(0.1001, Retrieving(101, 1000)))
+      reporter.update(Prog(0.1, Retrieving(100, 1000)))
+      reporter.update(Prog(0.1001, Retrieving(101, 1000)))
       
       stateChange.notifications must be equalTo (1)
     }

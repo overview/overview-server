@@ -15,8 +15,8 @@ import akka.dispatch.{ ExecutionContext, Future, Promise }
 import com.ning.http.client._
 import com.ning.http.client.Realm.AuthScheme
 import com.ning.http.client.{ Response => AHCResponse }
-import overview.util.Logger
 import scala.io.Source._
+import org.overviewproject.util.Logger
 
 // Single object that interfaces to Ning's Async HTTP library
 class AsyncHttpRequest extends AsyncHttpRetriever {

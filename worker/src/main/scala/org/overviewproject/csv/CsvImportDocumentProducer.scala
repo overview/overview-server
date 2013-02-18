@@ -6,13 +6,14 @@
  */
 package org.overviewproject.csv
 
-import org.overviewproject.database.DB
-import overview.util.{ DocumentConsumer, DocumentProducer }
-import overview.util.DocumentSetCreationJobStateDescription._
-import overview.util.Progress._
+
 import org.overviewproject.database.Database
+import org.overviewproject.database.DB
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
+import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.Progress._
 import persistence.DocumentWriter
 import persistence.EncodedUploadFile
 

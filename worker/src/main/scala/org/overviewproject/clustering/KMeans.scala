@@ -10,12 +10,12 @@
 
 package org.overviewproject.clustering
 
-import overview.util.LoopedIterator
+import org.overviewproject.util.LoopedIterator
 import overview.util.CompactPairArray
-import overview.util.Logger
-import overview.util.Logger.logExecutionTime
 import scala.collection.mutable.Set
 import scala.collection.mutable.ArrayBuffer
+import org.overviewproject.util.Logger
+import org.overviewproject.util.Logger.logExecutionTime
 
 // T is element type, C is centroid type
 abstract class KMeans[T : ClassManifest, C : ClassManifest] {

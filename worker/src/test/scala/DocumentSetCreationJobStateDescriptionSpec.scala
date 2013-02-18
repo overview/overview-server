@@ -2,7 +2,7 @@
 package overview.util
 
 import org.specs2.mutable.Specification
-import overview.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 
 class DocumentSetCreationJobStateDescriptionSpec extends Specification {
 

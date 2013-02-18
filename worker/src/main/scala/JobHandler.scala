@@ -9,9 +9,8 @@
 import com.jolbox.bonecp._
 import org.overviewproject.database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
-import overview.util.{ DocumentProducerFactory, Logger }
-import org.overviewproject.util.{  ExceptionStatusMessage, JobRestarter }
-import overview.util.Progress._
+import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
+import org.overviewproject.util.Progress._
 import persistence._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
@@ -19,7 +18,7 @@ import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
 import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.util.ThrottledProgressReporter
+
 
 object JobHandler {
 

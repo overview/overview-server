@@ -16,8 +16,9 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.{HashMap, Map, PriorityQueue}
-import overview.util.{CompactPairArray, Logger}
+import overview.util.CompactPairArray
 import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.util.Logger
 //import scala.collection.mutable.AddingBuilder
 
 

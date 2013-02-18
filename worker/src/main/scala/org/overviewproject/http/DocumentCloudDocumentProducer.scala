@@ -12,11 +12,11 @@ import akka.util.Timeout
 import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
-import overview.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
-import overview.util.Progress._
-import overview.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
+import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.Progress._
 import persistence.DocumentWriter
 import persistence.DocRetrievalErrorWriter
 

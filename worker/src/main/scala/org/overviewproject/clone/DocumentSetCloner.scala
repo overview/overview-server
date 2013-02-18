@@ -1,10 +1,12 @@
 package org.overviewproject.clone
 
-import overview.util.Progress.Progress
-import overview.util.DocumentSetCreationJobStateDescription
-import overview.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger }
+import org.overviewproject.util.Progress.Progress
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.database.Database
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import persistence.PersistentDocumentSetCreationJob
+
 
 /**
  * The Procedure trait enables the specification of blocks of code
@@ -48,10 +50,6 @@ trait Procedure {
   protected def isCancelled: Boolean
 }
 
-// -------
-
-import persistence.PersistentDocumentSetCreationJob
-
 /**
  * DocumentSetCreationJobProcedure checks the state of the job
  * to determine cancellation state.
@@ -82,9 +80,6 @@ class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
     // Database.inTransaction(job.update)
   }
 }
-
-// -------
-import overview.util.Logger
 
 /** 
  * Observer that Logs the status. Having access to the Procedure would allow

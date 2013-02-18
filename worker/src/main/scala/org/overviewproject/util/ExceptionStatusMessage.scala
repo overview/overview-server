@@ -1,6 +1,6 @@
 package org.overviewproject.util
 
-import overview.util.DocumentSetCreationJobStateDescription._
+import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 
 object ExceptionStatusMessage {
 

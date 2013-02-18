@@ -10,7 +10,7 @@ import akka.actor.ActorRef
 import akka.dispatch.Promise
 import org.overviewproject.clustering.{ DCDocumentAtURL, PrivateDCDocumentAtURL }
 import com.ning.http.client.Response
-import overview.util.Logger
+import org.overviewproject.util.Logger
 
 /**
  * Manages a queue of http requests retrieving documents from DocumentCloud. If documents are private,

@@ -16,7 +16,7 @@ import akka.util.Timeout
 import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
 import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, NonRedirectingHttpRequest }
-import overview.util.Logger
+import org.overviewproject.util.Logger
 
 // The main DocumentCloudSource class produces a sequence of these...
 class DCDocumentAtURL(val title: String, val documentCloudId: String, textURL: String) extends DocumentAtURL(textURL)

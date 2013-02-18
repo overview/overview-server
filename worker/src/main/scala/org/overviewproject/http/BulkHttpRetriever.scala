@@ -10,7 +10,6 @@
 
 package org.overviewproject.http
 
-import overview.util.{ Logger, WorkerActorSystem }
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 import akka.dispatch.{ ExecutionContext, Future, Promise }
@@ -18,6 +17,7 @@ import akka.actor._
 import akka.util.Timeout
 import com.ning.http.client.Response
 import com.ning.http.client.FluentCaseInsensitiveStringsMap
+import org.overviewproject.util.{ Logger, WorkerActorSystem }
 
 // Input and output types...
 case class DocumentAtURL(val textURL: String)

@@ -16,9 +16,9 @@ import akka.util.Timeout
 import anorm.SQL
 import anorm.SqlParser.{flatten, long}
 import org.overviewproject.clustering.{BuildDocTree, DocumentVectorGenerator, Lexer}
-import org.overviewproject.test.DbSpecification
 import org.overviewproject.http.{ AsyncHttpRequest, BulkHttpRetriever, DocRetrievalError, DocumentAtURL }
-import overview.util.WorkerActorSystem
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.util.WorkerActorSystem
 
 
 class RetrieveDocumentSetSpec extends DbSpecification {

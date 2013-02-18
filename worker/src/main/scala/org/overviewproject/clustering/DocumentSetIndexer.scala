@@ -14,13 +14,14 @@ import java.sql.Connection
 import org.squeryl.PrimitiveTypeMode.using
 import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.database.DB
-import overview.util.DocumentConsumer
-import overview.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
-import overview.util.Logger
-import overview.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
-import persistence.{ DocumentWriter, NodeWriter }
 import org.overviewproject.database.Database
+import org.overviewproject.database.DB
+import org.overviewproject.util.{ DocumentConsumer, Logger }
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
+import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
+import persistence.{ DocumentWriter, NodeWriter }
+
+
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
 
