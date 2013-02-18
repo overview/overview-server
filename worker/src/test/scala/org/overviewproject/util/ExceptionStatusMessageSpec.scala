@@ -1,4 +1,4 @@
-package overview.util
+package org.overviewproject.util
 
 import org.specs2.mutable.Specification
 
