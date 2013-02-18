@@ -9,8 +9,7 @@ package org.overviewproject.http
 import akka.actor._
 import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
-import org.overviewproject.clustering.DCDocumentAtURL
-import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.clustering.{ DCDocumentAtURL, DocumentCloudSource, DocumentSetIndexer }
 import org.overviewproject.database.Database
 import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter}
 import org.overviewproject.tree.orm.Document
@@ -22,7 +21,7 @@ import org.overviewproject.util.Progress._
 
 
 /** Feeds the documents from sourceDocList to the consumer */
-class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversable[DCDocumentAtURL], consumer: DocumentConsumer,
+class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer {
 
   private val FetchingFraction = 0.9
@@ -46,6 +45,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     }
 
     consumer.productionComplete()
+    updateOverflowCount(scala.math.max(0, sourceDocList.totalDocumentsInQuery - sourceDocList.size))
   }
 
   private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
@@ -58,5 +58,16 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Traversa
     numDocs += 1
     !progAbort(
       Progress(numDocs * FetchingFraction / sourceDocList.size, Retrieving(numDocs, sourceDocList.size)))
+  }
+  
+  private def updateOverflowCount(overflowCount: Int): Unit = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    import org.overviewproject.persistence.orm.Schema.documentSets
+    
+    Database.inTransaction {
+      update(documentSets)(ds =>
+        where(ds.id === documentSetId)
+        set(ds.importOverflowCount := overflowCount))
+    }
   }
 }
