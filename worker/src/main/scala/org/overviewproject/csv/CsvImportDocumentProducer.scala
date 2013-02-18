@@ -56,6 +56,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     }
 
     consumer.productionComplete()
+    updateOverflowCount(numberOfSkippedDocuments)
   }
 
   private def reportProgress(n: Long, size: Long) {
@@ -78,6 +79,17 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
       document.id
+    }
+  }
+  
+  private def updateOverflowCount(overflowCount: Int): Unit = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    import org.overviewproject.persistence.orm.Schema.documentSets
+    
+    Database.inTransaction {
+      update(documentSets)(ds =>
+        where(ds.id === documentSetId)
+        set(ds.importOverflowCount := overflowCount))
     }
   }
 }

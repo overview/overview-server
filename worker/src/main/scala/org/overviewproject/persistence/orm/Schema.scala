@@ -16,4 +16,5 @@ object Schema extends org.squeryl.Schema {
   val uploadedFiles = table[UploadedFile]
   val tags = table[Tag]
   val documentTags = table[DocumentTag]
+  val documentSets = table[DocumentSet]
 }
