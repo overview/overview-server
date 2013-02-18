@@ -1,4 +1,4 @@
-package overview.util
+package org.overviewproject.util
 
 import java.sql.Connection
 import org.specs2.mock.Mockito

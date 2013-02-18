@@ -4,7 +4,7 @@
  * Overview Project
  * Created by Jonas Karlsson, Oct 2012
  */
-package overview.util
+package org.overviewproject.util
 
 import java.sql.Connection
 import persistence.DocumentSetCleaner

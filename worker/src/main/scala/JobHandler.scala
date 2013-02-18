@@ -9,7 +9,8 @@
 import com.jolbox.bonecp._
 import org.overviewproject.database.{ DatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
-import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger }
+import overview.util.{ DocumentProducerFactory, ExceptionStatusMessage, Logger }
+import org.overviewproject.util.JobRestarter
 import overview.util.Progress._
 import persistence._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
