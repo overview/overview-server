@@ -6,21 +6,19 @@
  */
 package org.overviewproject.csv
 
-
 import org.overviewproject.database.{ Database, DB }
-import org.overviewproject.persistence.{ DocumentWriter, EncodedUploadFile }
+import org.overviewproject.persistence.{ DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
 
-
-
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
  */
-class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, maxDocuments: Int, progAbort: ProgressAbortFn) extends DocumentProducer {
+class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, maxDocuments: Int, progAbort: ProgressAbortFn)
+  extends DocumentProducer with PersistentDocumentSet {
 
   private val FetchingFraction = 0.9
   private val uploadReader = new UploadReader()
@@ -56,7 +54,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     }
 
     consumer.productionComplete()
-    updateOverflowCount(numberOfSkippedDocuments)
+    updateOverflowCount(documentSetId, numberOfSkippedDocuments)
   }
 
   private def reportProgress(n: Long, size: Long) {
@@ -79,17 +77,6 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
       document.id
-    }
-  }
-  
-  private def updateOverflowCount(overflowCount: Int): Unit = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    import org.overviewproject.persistence.orm.Schema.documentSets
-    
-    Database.inTransaction {
-      update(documentSets)(ds =>
-        where(ds.id === documentSetId)
-        set(ds.importOverflowCount := overflowCount))
     }
   }
 }

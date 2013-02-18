@@ -11,7 +11,7 @@ import akka.dispatch.{ Future, Promise, Await }
 import akka.util.Timeout
 import org.overviewproject.clustering.{ DCDocumentAtURL, DocumentCloudSource, DocumentSetIndexer }
 import org.overviewproject.database.Database
-import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter}
+import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
@@ -22,7 +22,7 @@ import org.overviewproject.util.Progress._
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
-  progAbort: ProgressAbortFn) extends DocumentProducer {
+  progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
   private val FetchingFraction = 0.9
   private var numDocs = 0
@@ -45,7 +45,8 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
     }
 
     consumer.productionComplete()
-    updateOverflowCount(scala.math.max(0, sourceDocList.totalDocumentsInQuery - sourceDocList.size))
+    val overflowCount = scala.math.max(0, sourceDocList.totalDocumentsInQuery - sourceDocList.size)
+    updateOverflowCount(documentSetId, overflowCount)
   }
 
   private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
@@ -60,14 +61,5 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
       Progress(numDocs * FetchingFraction / sourceDocList.size, Retrieving(numDocs, sourceDocList.size)))
   }
   
-  private def updateOverflowCount(overflowCount: Int): Unit = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    import org.overviewproject.persistence.orm.Schema.documentSets
-    
-    Database.inTransaction {
-      update(documentSets)(ds =>
-        where(ds.id === documentSetId)
-        set(ds.importOverflowCount := overflowCount))
-    }
-  }
+ 
 }
