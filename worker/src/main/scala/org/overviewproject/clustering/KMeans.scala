@@ -15,14 +15,70 @@ import scala.collection.mutable.Set
 import org.overviewproject.util.{CompactPairArray, Logger, LoopedIterator }
 import org.overviewproject.util.Logger.logExecutionTime
 
-
+// Defines interface and most basic operations for k-means clustering variants
 // T is element type, C is centroid type
-abstract class KMeans[T : ClassManifest, C : ClassManifest] {
+abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
   
-  // -- Abstract members -- 
+  // -- Abstract members, to be over-ridden by children -- 
   def distance(a:T, b:C, minSoFar:Double=1.0) : Double    // allow early out, if distance will be > minSoFar 
   def mean(elems: Iterable[T]) : C
     
+  // -- Basic operations, every k-means variant will need these --
+  
+  // For each element, compute index of closest centroid
+  // Could do this in a more functional style with zipWithIndex, fold, etc. but this is really performance critical code
+  // (profiler backs me up here --jms 2013/3/18)
+  def assignClusters(elements:Iterable[T], centroids:Seq[C]) : CompactPairArray[T, Int] = {
+    val assignments = new CompactPairArray[T,Int]
+    assignments.sizeHint(elements.size)
+    
+    elements foreach { el => 
+      var cItr = centroids.iterator
+      var closestDist = distance(el, cItr.next)
+      var closestIdx = 0
+      var idx = 1
+      cItr foreach { c =>
+        val cDst = distance(el, c, closestDist)
+        if (cDst < closestDist) {
+          closestDist = cDst
+          closestIdx = idx
+       }
+       idx += 1
+      }
+      assignments += Pair(el,closestIdx)
+    }
+    
+    assignments
+  }
+
+  // Handle case where no elements assigned to a centroid. Returns new centroid to use
+  // Simplest implementation here: keep old centroid
+  def emptyCentroid(i:Int, clusters:CompactPairArray[T, Int], centroids:Seq[C]) : C = {
+    centroids(i)
+  }
+
+  // Given assignments of elements to clusters, compute new centroids as means of clusters
+  // In case of empty cluster 
+  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C], k:Int) : Seq[C] = {
+    Array.tabulate(k) { i =>
+      val clusterElems = clusters.view.filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
+      if (!clusterElems.isEmpty)
+        mean(clusterElems)
+      else
+        emptyCentroid(i, clusters, centroids)
+    }
+  } 
+}
+
+// Classic K-means algorithm 
+// T is element type, C is centroid type
+//  - runs one set of iterations with fixed K.
+//  - Centroid initializion by taking mean of quasi-randomly selected elements
+//  - Reset empty centroids by picking random element
+//  - subclasses must supply distance() and mean() for complete implementation
+abstract class KMeans[T : ClassManifest, C : ClassManifest] 
+  extends KMeansBase[T,C] {
+  
   // -- Algorithm parameters -- 
   // Public for now, for easy control
   
@@ -60,52 +116,14 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest] {
 
   // If a cluster ends up empty, create a new centroid. 
   // ATM just picks a quasi-random element; should probably pick element most distant from all centroids
-  protected def newCentroid(clusters:CompactPairArray[T, Int], centroids:Seq[C], i:Int) : C = {
+  override def emptyCentroid(i:Int, clusters:CompactPairArray[T, Int], centroids:Seq[C]) : C = {
 //    println("New centroid for cluster " + i)
     val skip = seedClusterSkip * (i+1)  // +1 to avoid picking an element originally part of seed set for cluster i
     val elem = clusters(skip % clusters.length)
     mean(List(elem._1))
   }
   
-  // For each element, compute index of closest centroid
-  // Plus, for each centroid, compute index of closest element, used if no element is closest to centroid
-  // Could do this in a more functional style with zipWithIndex + fold, but I don't think it would be shorter or clearer
-  // plus performance matters here (this is the main inner loop on big data) so not having to think about hidden temps is nice
- 
-  def assignClusters(elements:Iterable[T], centroids:Seq[C]) : CompactPairArray[T, Int] = {
-    val assignments = new CompactPairArray[T,Int]
-    assignments.sizeHint(elements.size)
-    
-    elements foreach { el => 
-      var cItr = centroids.iterator
-      var closestDist = distance(el, cItr.next)
-      var closestIdx = 0
-      var idx = 1
-      cItr foreach { c =>
-        val cDst = distance(el, c, closestDist)
-        if (cDst < closestDist) {
-          closestDist = cDst
-          closestIdx = idx
-       }
-       idx += 1
-      }
-      assignments += Pair(el,closestIdx)
-    }
-    
-    assignments
-  }
 
-  // Given assignments of elements to clusters, compute new centroids as means of clusters
-  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C], k:Int) : Seq[C] = {
-    Array.tabulate(k) { i =>
-      val clusterElems = clusters.view.filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
-      if (clusterElems.isEmpty) 
-        newCentroid(clusters, centroids, i) 
-      else 
-        mean(clusterElems)
-    }
-  }
-  
   // -- Main --
   def apply (elements:Iterable[T], k:Int) : CompactPairArray[T,Int] = {   
     var clusters = CompactPairArray[T, Int]()
