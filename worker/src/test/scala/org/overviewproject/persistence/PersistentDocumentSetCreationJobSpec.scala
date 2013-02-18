@@ -8,11 +8,12 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.database.DB
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, Schema }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
