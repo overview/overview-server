@@ -11,7 +11,7 @@ import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument, DocumentCloudDocument }
-import org.overviewproject.persistence.Schema.documents;
+import org.overviewproject.persistence.orm.Schema.documents;
 import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentWriterSpec extends DbSpecification {
@@ -29,7 +29,7 @@ class DocumentWriterSpec extends DbSpecification {
     }
 
     "update description of document" in new Setup {
-      import org.overviewproject.persistence.Schema.documents
+      import org.overviewproject.persistence.orm.Schema.documents
 
       val documentCloudId = Some("documentCloud-id")
       val description = "some,terms,together"

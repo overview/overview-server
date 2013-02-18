@@ -53,7 +53,7 @@ trait PersistentDocumentSetCreationJob {
 
 /** Factory for loading jobs from the database */
 object PersistentDocumentSetCreationJob {
-  import org.overviewproject.persistence.Schema.documentSetCreationJobs
+  import org.overviewproject.persistence.orm.Schema.documentSetCreationJobs
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJob
   

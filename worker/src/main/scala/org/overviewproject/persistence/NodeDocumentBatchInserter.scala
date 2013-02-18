@@ -8,6 +8,7 @@
 package org.overviewproject.persistence
 
 import scala.collection.mutable.Seq
+import org.overviewproject.persistence.orm.NodeDocument
 
 /**
  * Batches the insertion of nodeIds and documentIds into the node_document table.
@@ -33,7 +34,7 @@ class NodeDocumentBatchInserter(threshold: Long) {
 
   /** execute the batch insert */
   def flush {
-    import org.overviewproject.persistence.Schema.nodeDocuments
+    import org.overviewproject.persistence.orm.Schema.nodeDocuments
     nodeDocuments.insert(currentBatch)
 
     resetBatch

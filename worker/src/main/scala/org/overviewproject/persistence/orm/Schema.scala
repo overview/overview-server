@@ -1,4 +1,4 @@
-package org.overviewproject.persistence
+package org.overviewproject.persistence.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._

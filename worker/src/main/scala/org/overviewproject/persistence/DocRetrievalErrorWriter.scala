@@ -1,6 +1,7 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.http.DocRetrievalError
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.DocumentProcessingError
 
 

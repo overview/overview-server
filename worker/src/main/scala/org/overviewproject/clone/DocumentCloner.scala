@@ -3,7 +3,7 @@ package org.overviewproject.clone
 
 object DocumentCloner {
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Map[Long, Long] = {
-    import org.overviewproject.persistence.Schema
+    import org.overviewproject.persistence.orm.Schema
     import org.overviewproject.postgres.SquerylEntrypoint._
     
     val sourceDocuments = Schema.documents.where(d => d.documentSetId === sourceDocumentSetId)

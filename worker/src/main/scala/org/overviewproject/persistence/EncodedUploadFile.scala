@@ -7,6 +7,7 @@
 package org.overviewproject.persistence
 
 import java.sql.Connection
+import org.overviewproject.persistence.orm.Schema 
 import org.overviewproject.tree.orm.UploadedFile
 import org.overviewproject.database.DB
 import org.overviewproject.postgres.LO

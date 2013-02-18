@@ -1,6 +1,6 @@
 package org.overviewproject.clone
 
-import org.overviewproject.persistence.Schema
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentTag
 

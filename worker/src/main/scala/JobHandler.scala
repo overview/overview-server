@@ -117,7 +117,7 @@ object JobHandler {
   def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
     import anorm._
     import anorm.SqlParser._
-    import org.overviewproject.persistence.Schema._
+    import org.overviewproject.persistence.orm.Schema._
     import org.squeryl.PrimitiveTypeMode._
 
     Database.inTransaction {

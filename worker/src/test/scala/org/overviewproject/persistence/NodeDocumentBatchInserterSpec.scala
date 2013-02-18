@@ -25,7 +25,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
   }
 
   def findNodeDocumentIds: Seq[(Long, Long)] = {
-    import org.overviewproject.persistence.Schema.nodeDocuments
+    import org.overviewproject.persistence.orm.Schema.nodeDocuments
 
     from(nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
   }

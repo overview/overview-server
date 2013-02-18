@@ -1,7 +1,7 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.http.DocRetrievalError
-import org.overviewproject.persistence.Schema.documentProcessingErrors;
+import org.overviewproject.persistence.orm.Schema.documentProcessingErrors;
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification

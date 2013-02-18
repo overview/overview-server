@@ -7,10 +7,11 @@
 
 package org.overviewproject.persistence
 
-import anorm._
-import org.overviewproject.clustering.DocTreeNode
 import java.sql.Connection
+import org.overviewproject.clustering.DocTreeNode
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.Node
+
 
 /**
  * Writes out tree with the given root node to the database.

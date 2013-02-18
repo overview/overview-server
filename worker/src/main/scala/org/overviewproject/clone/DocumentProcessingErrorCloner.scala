@@ -1,7 +1,7 @@
 package org.overviewproject.clone
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.persistence.Schema
+import org.overviewproject.persistence.orm.Schema
 
 object DocumentProcessingErrorCloner {
 
