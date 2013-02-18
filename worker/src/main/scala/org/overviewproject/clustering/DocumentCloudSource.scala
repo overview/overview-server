@@ -42,6 +42,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
 
   // --- private ---
+  private var totalNumDocuments: Option[Int] = None
   private var numDocuments: Option[Int] = None
   private var numDocumentsReturned = 0
 
@@ -58,7 +59,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   // we use a promise to sync the main call with our async callbacks, and propagate errors
   private implicit val executionContext = asyncHttpRetriever.executionContext // needed to run the promise object
   private val done = Promise[Unit]()
-  
+
   // Parse a single page of results (from JSON to DCDearchResult), create DocumentAtURL objects, call f on them
   // Returns number of documents processed
   private def parseResults[U](pageNum: Int, pageText: String, f: DCDocumentAtURL => U): Int = {
@@ -67,6 +68,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
 
     // For each returned document, package up the result in a DocumentAtURL object, and call f on it
     val result = parse[DCSearchResult](pageText)
+    totalNumDocuments = Some(result.total)
     numDocuments = Some(scala.math.min(result.total, maxDocuments))
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
@@ -147,6 +149,14 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
       numDocuments = Some(scala.math.min(result.total, maxDocuments))
     }
     numDocuments.get
+  }
+
+  def totalDocumentsInQuery: Int = totalNumDocuments.getOrElse {
+    Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
+    val pageText = asyncHttpRetriever.blockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
+    val result = parse[DCSearchResult](pageText)
+    totalNumDocuments = Some(result.total)
+    totalNumDocuments.get
   }
 
 }
