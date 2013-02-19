@@ -42,10 +42,16 @@ _walk_ast = (ast, args) ->
 
   _walk_ast_node(ast, args)
 
+_isString = (obj) ->
+  toString.call(obj) == '[object String]'
+
+_isArray = (obj) ->
+  toString.call(obj) == '[object Array]'
+
 _walk_ast_node = (node, args) ->
-  if _.isString(node)
+  if _isString(node)
     node
-  else if _.isArray(node)
+  else if _isArray(node)
     (_walk_ast_node(subnode, args) for subnode in node).join('')
   else
     _ast_node_to_string(node, args)
