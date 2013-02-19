@@ -36,6 +36,24 @@ refresh_height = () ->
   w = Math.floor($document.width(), 10)
   $iframe.width(w)
 
+refocus_body_on_leave_window = () ->
+  # Ugly fix for https://github.com/overview/overview-server/issues/321
+  hidden = undefined
+
+  callback = (e) ->
+    window.focus() if !document[hidden]
+
+  if document[hidden]?
+    document.addEventListener("visibilitychange", callback)
+  else if document[hidden = "mozHidden"]?
+    document.addEventListener("mozvisibilitychange", callback)
+  else if document[hidden = "webkitHidden"]?
+    document.addEventListener("webkitvisibilitychange", callback)
+  else if document[hidden = "msHidden"]?
+    document.addEventListener("msvisibilitychange", callback)
+  else
+    hidden = undefined
+
 jQuery ($) ->
   log_controller = require('controllers/log_controller').log_controller
   log_controller(log, world.cache.server)
@@ -69,3 +87,5 @@ jQuery ($) ->
 
   $(window).resize(refresh_height)
   refresh_height()
+
+  refocus_body_on_leave_window()
