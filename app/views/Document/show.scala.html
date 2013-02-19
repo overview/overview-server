@@ -124,11 +124,10 @@
     </head>
     <body>
       <h3 data-m-loading="@m("loading")">
-        @{document.title match  {
-          case Some(t) => { t }
-          case None => { m("title.empty_title") }
+        @{document.titleOrDescription match  {
+          case "" => m("title.empty_title")
+          case title: String => title
         }}
-        
       </h3>
       <div class="document">
         @document match {

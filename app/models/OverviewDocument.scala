@@ -18,6 +18,9 @@ sealed trait OverviewDocument {
 
   /** Optional title of the document */
   val title: Option[String]
+
+  /** Title, or description if title is empty */
+  lazy val titleOrDescription: String = title.getOrElse(description)
   
   /** URL to view the document.
     *

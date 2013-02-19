@@ -83,7 +83,7 @@ $ ->
       $dc_iframe.attr('src', 'about:blank')
 
   set_title = (title) ->
-    $title.text(title)
+    $title.text(title || i18n("views.Document.show.title.empty_title"))
 
   load_documentcloud_document = (document) ->
     $csv.empty()
@@ -119,7 +119,7 @@ $ ->
     refresh_dc_iframe()
 
   window.load_document = (document) ->
-    set_title(document.title)
+    set_title(document.title || document.description)
 
     if document.documentcloud_id
       load_documentcloud_document(document)

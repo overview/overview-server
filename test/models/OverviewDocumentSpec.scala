@@ -23,10 +23,18 @@ class OverviewDocumentSpec extends DbSpecification {
     trait CsvImportDocumentScope extends Scope with OneDocument {
       def ormDocumentId: Long = 1L
       def suppliedUrl: Option[String] = Some("http://example.org")
+      def description: String = "description"
       def title: Option[String] = Some("title")
       def text: String = "Text"
       
-      override def ormDocument = Document(new DocumentType("CsvImportDocument"), id=ormDocumentId, url=suppliedUrl, title=title, text=Some(text))
+      override def ormDocument = Document(
+        new DocumentType("CsvImportDocument"),
+        id=ormDocumentId,
+        url=suppliedUrl,
+        description=description,
+        title=title,
+        text=Some(text)
+      )
       lazy val csvImportDocument = document.asInstanceOf[OverviewDocument.CsvImportDocument]
     }
 
@@ -67,6 +75,17 @@ class OverviewDocumentSpec extends DbSpecification {
     "give no secureSuppliedUrl for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
       override def suppliedUrl = None
       csvImportDocument.secureSuppliedUrl must beNone
+    }
+
+    "give a description when there is no title" in new CsvImportDocumentScope {
+      override def description = "description"
+      override def title = None
+      csvImportDocument.titleOrDescription must beEqualTo("description")
+    }
+
+    "give a title when there is one" in new CsvImportDocumentScope {
+      override def title = Some("title")
+      csvImportDocument.titleOrDescription must beEqualTo("title")
     }
 
     "give no secureSuppliedUrl for a CsvImportDocument if the suppliedUrl is not https" in new CsvImportDocumentScope {
