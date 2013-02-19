@@ -63,7 +63,9 @@ class KMeansSpec extends Specification {
     "identify closest centroid for each point" in {
       val km = new IntKMeans
       val centroids = List[Double](1, 12, 40)
-      km.assignClusters(threeClusters, centroids) should beEqualTo (threeClustersResult)
+      val assignments = km.initialAssignments(threeClusters)
+      km.assignClusters(assignments, threeClusters, centroids) 
+      assignments should beEqualTo (threeClustersResult)
     }
   }
   
@@ -72,7 +74,7 @@ class KMeansSpec extends Specification {
       val km = new IntKMeans
       val clusters = threeClustersResult
       val oldCentroids = List(0.0,0.0,0.0)
-      val centroids = km.refineCentroids(clusters, oldCentroids, 3)
+      val centroids = km.refineCentroids(clusters, oldCentroids)
       val tc = threeClusters
       centroids(0) should beCloseTo (tc.take(3).sum/3, 0.0001)
       centroids(1) should beCloseTo (tc.drop(3).take(3).sum/3, 0.0001)

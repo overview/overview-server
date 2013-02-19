@@ -17,6 +17,10 @@ import org.overviewproject.util.Logger.logExecutionTime
 
 // Defines interface and most basic operations for k-means clustering variants
 // T is element type, C is centroid type
+// Subclasses must provide quite a bit:
+//  - distance() and mean()
+//  - "driver" logic that initializes centroids and calls assignClusters, refineCentroids
+//  - optionally, override handling for emptyCentroid()
 abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
   
   // -- Abstract members, to be over-ridden by children -- 
@@ -25,12 +29,24 @@ abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
     
   // -- Basic operations, every k-means variant will need these --
   
+  // Generate first assignments, required for call to assignClusters -- all elements assigned to centroid 0
+  def initialAssignments(elements:Iterable[T]) : CompactPairArray[T,Int] = {
+    val assignments = CompactPairArray[T,Int]()
+    assignments.sizeHint(elements.size)
+    elements foreach { assignments += Pair(_, 0) }
+    assignments
+  }
+  
   // For each element, compute index of closest centroid
+  // Takes previously assigned clusters, and writes to it.
+  // Returns total distortion (sumsq of distances) for each cluster
   // Could do this in a more functional style with zipWithIndex, fold, etc. but this is really performance critical code
   // (profiler backs me up here --jms 2013/3/18)
-  def assignClusters(elements:Iterable[T], centroids:Seq[C]) : CompactPairArray[T, Int] = {
-    val assignments = new CompactPairArray[T,Int]
-    assignments.sizeHint(elements.size)
+  def assignClusters(assignments:CompactPairArray[T, Int], elements:Iterable[T], centroids:Seq[C]) : Array[Double] = {
+    require(assignments.size == elements.size)
+    
+    var fits = Array.fill(5)(0.0)
+    var i = 0
     
     elements foreach { el => 
       var cItr = centroids.iterator
@@ -45,10 +61,12 @@ abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
        }
        idx += 1
       }
-      assignments += Pair(el,closestIdx)
+      assignments(i) = Pair(el,closestIdx)
+      i += 1
+      fits(closestIdx) += closestDist*closestDist
     }
     
-    assignments
+    fits
   }
 
   // Handle case where no elements assigned to a centroid. Returns new centroid to use
@@ -59,7 +77,8 @@ abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
 
   // Given assignments of elements to clusters, compute new centroids as means of clusters
   // In case of empty cluster 
-  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C], k:Int) : Seq[C] = {
+  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C]) : Seq[C] = {
+    val k = centroids.size
     Array.tabulate(k) { i =>
       val clusterElems = clusters.view.filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
       if (!clusterElems.isEmpty)
@@ -126,8 +145,8 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest]
 
   // -- Main --
   def apply (elements:Iterable[T], k:Int) : CompactPairArray[T,Int] = {   
-    var clusters = CompactPairArray[T, Int]()
-
+    var clusters = initialAssignments(elements)
+    
     if (!elements.isEmpty) {
       var centroids = initialCentroids(elements, k)
      
@@ -142,7 +161,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest]
         while (!stopNow) {
   
           logExecutionTime("K-means assignClusters iteration " + iterCount + " on " + elements.size + " elements", logThis) {
-            clusters = assignClusters(elements, centroids)
+            assignClusters(clusters, elements, centroids)
           }  
          
           // Stop if we hit max iteration count
@@ -161,7 +180,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest]
            
           logExecutionTime("K-means refineCentroids iteration " + iterCount + " on " + elements.size + " elements", logThis) {
             if (!stopNow)
-              centroids = refineCentroids(clusters, centroids, k)
+              centroids = refineCentroids(clusters, centroids)
           }
         }
       }
