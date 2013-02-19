@@ -41,7 +41,9 @@ refocus_body_on_leave_window = () ->
   hidden = undefined
 
   callback = (e) ->
-    window.focus() if !document[hidden]
+    if !document[hidden]
+      if document.activeElement?.tagName? == 'IFRAME'
+        window.focus()
 
   if document[hidden]?
     document.addEventListener("visibilitychange", callback)
