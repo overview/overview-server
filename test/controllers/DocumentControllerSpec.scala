@@ -14,7 +14,7 @@ class DocumentControllerSpec extends Specification {
   step(start(FakeApplication()))
 
   class TestDocumentController(val document: OverviewDocument) extends DocumentController {
-    override def findDocumentById(documentId: Long) = Some(document).filter(_.id == documentId)
+    override def findDocumentById(documentId: Long) = { println("---> " + documentId); Some(document).filter(_.id == documentId) }
   }
 
   trait DocumentScope extends Scope with Mockito {
@@ -27,6 +27,7 @@ class DocumentControllerSpec extends Specification {
     document.id returns validDocumentId
     document.description returns description
     document.title returns None
+    document.titleOrDescription returns description
     document.url(anyString) returns url
 
     val user = mock[OverviewUser]
