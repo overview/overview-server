@@ -33,10 +33,10 @@ class KMeansDocumentsSpec extends Specification {
       km.seedClusterSkip = 3
       
       val clusters = km(docVecs.keys, 3)
-      val clusterSizes = (0 until 3).map(i => clusters.filter(_._2 == i).size)
+      val clusterSizes = (0 until 3).map(i => clusters.count(_._2 == i))
       //println("cluster sizes: " + clusterSizes)
       //println("clusters: " + clusters)
-      clusterSizes should beEqualTo (Seq(4,2,3))
+      clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
     }
   }
 }
