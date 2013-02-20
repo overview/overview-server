@@ -15,7 +15,7 @@ object IdList {
       Some(maybeLong.toLong)
     }
     catch {
-      case _ => None
+      case e : Throwable => None
     }
   }
 

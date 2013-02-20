@@ -21,7 +21,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
         case d =>
           d.documentSetType must be equalTo("DocumentCloudDocumentSet")
           d.title must be equalTo (title)
-          d.query must beSome.like { case q => q must be equalTo (query) }
+          d.query must beSome(query)
       }
     }
     
@@ -33,7 +33,7 @@ class DocumentSetLoaderSpec extends DbSpecification {
       documentSet must beSome.like { 
         case d =>
           d.documentSetType must be equalTo("CsvImportDocumentSet")
-          d.uploadedFileId must beSome.like { case u => u must be equalTo(uploadedFileId) }
+          d.uploadedFileId must beSome(uploadedFileId)
       }
     } 
   }

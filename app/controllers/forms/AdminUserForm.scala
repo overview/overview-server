@@ -10,7 +10,7 @@ object AdminUserForm {
     Form(
       Forms.mapping(
         "email" -> Forms.email,
-        "role" -> Forms.number.verifying("user.role.exists", { (roleId: Int) => UserRole.values.ids.contains(roleId) })
+        "role" -> Forms.number.verifying("user.role.exists", { (roleId: Int) => UserRole.values.map(_.id).contains(roleId) })
       )((email, role) => {
         val withEmail = user.withEmail(email)
         if (role == UserRole.Administrator.id) {

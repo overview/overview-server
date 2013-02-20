@@ -6,7 +6,7 @@
  */
 package org.overviewproject.http
 
-import akka.dispatch.ExecutionContext
+import scala.concurrent.ExecutionContext
 
 import com.ning.http.client._
 import com.ning.http.client.Response

@@ -2,6 +2,7 @@ package controllers
 
 import play.api.data.{Form,Forms}
 import play.api.mvc.{Controller,ResponseHeader,SimpleResult}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.ws.WS
 

@@ -50,7 +50,7 @@ class EncodedUploadFileSpec extends DbSpecification {
     "return specified encoding" in {
       val encoding = "someEncoding"
       val uploadedFile = TestUploadFile("application/octet-stream; charset=" + encoding)
-      uploadedFile.encoding must beSome.like { case c => c must be equalTo (encoding) }
+      uploadedFile.encoding must beSome(encoding)
     }
   }
 }

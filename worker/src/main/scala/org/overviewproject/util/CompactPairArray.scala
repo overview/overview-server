@@ -80,7 +80,7 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   }
   
   // --- Builder methods ---
-  def +=(elem : Pair[A,B])  = {
+  override def +=(elem : Pair[A,B]) = {
     ensureSize(numStoredElements + 1)
     aArray(numStoredElements) = elem._1
     bArray(numStoredElements) = elem._2
@@ -88,15 +88,14 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
     this
   }
   
-  def clear() = {
+  override def clear() : Unit = {
     aArray = new Array[A](0)
     bArray = new Array[B](0)
     numStoredElements = 0
-    this
   }
   
   // when someone calls result, we trim our storage
-  def result() = {
+  override def result() : CompactPairArray[A,B] = {
     resizeStorage(numStoredElements)
     this
   }

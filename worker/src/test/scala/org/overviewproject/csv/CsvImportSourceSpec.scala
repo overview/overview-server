@@ -121,7 +121,7 @@ class CsvImportSourceSpec extends Specification {
       val doc = csvImportSource.head
       doc.text must be equalTo ("""some text\"aa\"bb""")
 
-      doc.suppliedId must beSome.like { case s => s must be equalTo ("34") }
+      doc.suppliedId must beSome("34")
     }
 
     "create documents with empty text if no text is found" in new MissingText {

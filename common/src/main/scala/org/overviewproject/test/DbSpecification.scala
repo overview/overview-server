@@ -8,7 +8,7 @@
 package org.overviewproject.test
 
 import org.junit.runner.RunWith
-import org.specs2.execute.Result
+import org.specs2.execute.AsResult
 import org.specs2.mutable.Around
 import org.squeryl.Session
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
@@ -34,14 +34,14 @@ class DbSpecification extends Specification {
     /** setup method called after database connection is established */
     def setupWithDb {}
 
-    def around[T <% Result](test: => T) = {
+    def around[T : AsResult](test: => T) = {
       try {
         connection.setAutoCommit(false)
         val adapter = new SquerylPostgreSqlAdapter()
         val session = new Session(connection, adapter)
         using(session) { // sets thread-local variable
           setupWithDb
-          test
+          AsResult(test)
         }
       } finally {
         connection.rollback()

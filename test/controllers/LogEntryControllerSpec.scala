@@ -34,7 +34,7 @@ class LogEntryControllerSpec extends Specification {
       ))))
 
       def createRequest(json: JsValue) = {
-        val normalRequest = FakeRequest("GET", "/", FakeHeaders(Map("Content-Type" -> Seq("application/json"))), json)
+        val normalRequest = FakeRequest("GET", "/", FakeHeaders(Seq("Content-Type" -> Seq("application/json"))), json)
         new AuthorizedRequest(normalRequest, user)
       }
 
@@ -204,7 +204,7 @@ class LogEntryControllerSpec extends Specification {
     "show log entries in the HTML" in new AuthorizedIndexTrait {
       createLogEntry(documentSet1.id, "2012-07-04 13:20:46", "de't\"ails")
       val result = getValidResult()
-      contentAsString(result).must(contain("de't"))
+      contentAsString(result).must(contain("de&#x27;t"))
     }
   }
 

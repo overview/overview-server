@@ -119,14 +119,14 @@ class UploadControllerSpec extends Specification with Mockito {
     }
 
     "return OK with upload info in headers if upload is complete" in new HeadRequest with CompleteUpload {
-      header(CONTENT_RANGE, result) must beSome.like { case r => r must be equalTo ("0-999/1000") }
-      header(CONTENT_DISPOSITION, result) must beSome.like { case d => d must be equalTo (contentDisposition) }
+      header(CONTENT_RANGE, result) must beSome("0-999/1000")
+      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
 
       status(result) must be equalTo (OK)
     }
 
     "return PARTIAL_CONTENT if upload is not complete" in new HeadRequest with IncompleteUpload {
-      header(CONTENT_RANGE, result) must beSome.like { case r => r must be equalTo ("0-99/1000") }
+      header(CONTENT_RANGE, result) must beSome("0-99/1000")
 
       status(result) must be equalTo (PARTIAL_CONTENT)
     }

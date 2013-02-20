@@ -5,7 +5,7 @@ import anorm._
 import controllers.routes
 import org.overviewproject.test.DbSetup
 
-import cucumber.runtime.{EN, ScalaDsl, PendingException}
+import cucumber.api.scala.{EN, ScalaDsl}
 import org.specs2.matcher.MustMatchers
 
 class DocumentSetShowSteps extends ScalaDsl with EN with MustMatchers {

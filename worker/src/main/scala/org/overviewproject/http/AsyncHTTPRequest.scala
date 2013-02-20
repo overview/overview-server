@@ -11,7 +11,7 @@
 
 package org.overviewproject.http
 
-import akka.dispatch.{ ExecutionContext, Future, Promise }
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import com.ning.http.client._
 import com.ning.http.client.Realm.AuthScheme
 import com.ning.http.client.{ Response => AHCResponse }
@@ -149,7 +149,7 @@ class AsyncHttpRequest extends AsyncHttpRetriever {
 
     asyncHttpClient.prepareGet(resource.textURL).execute(responseHandler)
 
-    promise
+    promise.future
   }
 
   // You probably shouldn't ever call this :)

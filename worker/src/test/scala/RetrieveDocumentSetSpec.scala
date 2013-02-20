@@ -11,8 +11,8 @@
 import java.io.File
 import java.sql.Connection
 import scala.Array.canBuildFrom
-import akka.dispatch.Await
-import akka.util.Timeout
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import anorm.SQL
 import anorm.SqlParser.{flatten, long}
 import org.overviewproject.clustering.{BuildDocTree, DocumentVectorGenerator, Lexer}
@@ -48,13 +48,13 @@ class RetrieveDocumentSetSpec extends DbSpecification {
         true
       }      
 
-      val timeOut = Timeout(500)  // ms. We're reading from files here so 500ms should be plenty                                               
+      val timeOut = Duration("500ms")  // ms. We're reading from files here so 500ms should be plenty
       val bulkHttpRetriever = new BulkHttpRetriever[DocumentAtURL](new AsyncHttpRequest)
       
       WorkerActorSystem.withActorSystem { implicit context =>
         // Successful retrieval. Check the generated tree (will change if test file set changes)
         val retrievalDone = bulkHttpRetriever.retrieve(docURLs, (doc,text) => processDocument(doc, text)) 
-        result = Await.result(retrievalDone, timeOut.duration)
+        result = Await.result(retrievalDone.future, timeOut)
       }
       
       (vectorGen, result)
@@ -63,10 +63,10 @@ class RetrieveDocumentSetSpec extends DbSpecification {
     "retrieve a local document set and cluster with connected components" in {
       val docURLs = makeDocURLs
       val (vectorGen, retrievalErrors) = retrieveDocs(docURLs)
-      
+
       retrievalErrors.size must beEqualTo(0) // everything should be retrieved
 
-      val docTree = BuildDocTree.applyFullConnectedComponents(vectorGen.documentVectors()).toString      
+      val docTree = BuildDocTree.applyFullConnectedComponents(vectorGen.documentVectors()).toString
       docTree must beEqualTo  ("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
     }
 

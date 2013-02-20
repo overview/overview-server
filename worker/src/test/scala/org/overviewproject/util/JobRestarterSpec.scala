@@ -12,7 +12,7 @@ class JobRestarterSpec extends Specification with Mockito {
 
   class TestJob extends PersistentDocumentSetCreationJob {
     val jobType = CsvImportJob
-    val documentSetId = 1l
+    val documentSetId = 1L
     val documentCloudUsername: Option[String] = None
     val documentCloudPassword: Option[String] = None
     val contentsOid: Option[Long] = None
@@ -26,7 +26,6 @@ class JobRestarterSpec extends Specification with Mockito {
     
     def update = {
       updateCalled = true
-      1l
     }
 
     def checkForCancellation {}

@@ -7,7 +7,7 @@
 package org.overviewproject.http
 
 import akka.actor.ActorRef
-import akka.dispatch.Promise
+import scala.concurrent.Promise
 import org.overviewproject.clustering.{ DCDocumentAtURL, PrivateDCDocumentAtURL }
 import com.ning.http.client.Response
 import org.overviewproject.util.Logger

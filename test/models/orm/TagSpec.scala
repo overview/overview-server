@@ -28,9 +28,9 @@ class TagSpec extends Specification {
     
     trait DocumentsTagged extends SavedTag {
       override def setupWithDb = {
-	super.setupWithDb
-	val documentId = insertDocument(documentSetId, "title", "dcId")
-	tagDocuments(tag.id, Seq(documentId))
+        super.setupWithDb
+        val documentId = insertDocument(documentSetId, "title", "dcId")
+        tagDocuments(tag.id, Seq(documentId))
       }
     }
     
@@ -44,12 +44,12 @@ class TagSpec extends Specification {
 
       val tag = Tag.findById(documentSetId, tagId)
 
-      tag must beSome.like { case t: Tag =>
-	t.id must be equalTo(tagId)
-	t.documentSetId must be equalTo(documentSetId)
-	t.name must be equalTo(name)
-	t.color must beNone
-      }
+      tag must beSome(Tag(
+        tagId,
+        documentSetId,
+        name,
+        None
+      ))
     }
     
     "be findable by name" in new TagContext {
@@ -57,12 +57,12 @@ class TagSpec extends Specification {
       
       val tag = Tag.findByName(documentSetId, name)
 
-      tag must beSome.like { case t: Tag =>
-	t.id must be equalTo(tagId)
-	t.documentSetId must be equalTo(documentSetId)
-	t.name must be equalTo(name)
-	t.color must beNone
-      }
+      tag must beSome(Tag(
+        tagId,
+        documentSetId,
+        name,
+        None
+      ))
     }
 
     "be saveable" in new ExistingTag {
@@ -74,7 +74,7 @@ class TagSpec extends Specification {
       val updatedTag = tag.withUpdate(newName, newColor)
 
       updatedTag.name must be equalTo(newName)
-      updatedTag.color must beSome.like { case c => c must be equalTo(newColor) }
+      updatedTag.color must beSome(newColor)
     }
 
     "be saveable after update" in new TagForUpdate {
@@ -85,13 +85,12 @@ class TagSpec extends Specification {
 
       updatedTag.save
       val storedTag = Tag.findByName(documentSetId, newName)
-      storedTag must beSome.like { case t: Tag =>
-	t.id must be equalTo(tagId)
-	t.documentSetId must be equalTo(documentSetId)
-	t.name must be equalTo(newName)
-	t.color must beSome.like { case c => c must be equalTo(newColor) }
-      }
-      
+      storedTag must beSome(Tag(
+        tagId,
+        documentSetId,
+        newName,
+        Some(newColor)
+      ))
     }
 
     "be deleteable" in new ExistingTag {

@@ -36,7 +36,7 @@ class MailerSpec extends Specification {
       mailerText = "here is a url:\n\nhttps://example.org/long/url/12345678901234567890123456789012345678901234567890123456789012345678901234567890\n\nEnjoy!"
       mailer.wordWrappedText.must(beEqualTo(mailerText))
     }
-    
+
     "read from from config file" in new OurContext {
       mailer.from must contain("sender@example.org")
     }

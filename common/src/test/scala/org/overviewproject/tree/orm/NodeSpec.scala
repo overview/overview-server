@@ -18,10 +18,7 @@ class NodeSpec extends DbSpecification {
       node.id must not be equalTo(0)
       
       val foundNode = Schema.nodes.lookup(node.id)
-      foundNode must beSome.like { case n => 
-        n must be equalTo(node)
-        n.cachedDocumentIds must be equalTo node.cachedDocumentIds
-      }
+      foundNode must beSome(node)
     }
   }
   

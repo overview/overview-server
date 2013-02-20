@@ -6,8 +6,8 @@
  */
 package org.overviewproject.http
 
-import akka.dispatch.Await
-import akka.util.Timeout
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import org.overviewproject.clustering.DCDocumentAtURL
 import org.overviewproject.test.DbSpecification
 import org.specs2.specification.After
@@ -51,7 +51,7 @@ class BulkHttpRetrieverSpec extends DbSpecification {
 
     "retrieve and process documents" in new SuccessfulRequests {
       val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
-      val requestsWithErrors = Await.result(done, Timeout.never.duration)
+      val requestsWithErrors = Await.result(done.future, Duration.Inf)
 
       requestsWithErrors must beEmpty
       requestsProcessed must have size (urlsToRetrieve.size)
@@ -61,7 +61,7 @@ class BulkHttpRetrieverSpec extends DbSpecification {
       val done = bulkHttpRetriever.retrieve(urlsToRetrieve, processDocument)
       val expectedError = DocRetrievalError(urlsToRetrieve.head.textURL, "failed request")
 
-      val requestsWithErrors = Await.result(done, Timeout.never.duration)
+      val requestsWithErrors = Await.result(done.future, Duration.Inf)
 
       requestsWithErrors must have size urlsToRetrieve.size
 
@@ -74,12 +74,10 @@ class BulkHttpRetrieverSpec extends DbSpecification {
                             
       val expectedError = DocRetrievalError(urlsToRetrieve.head.textURL, "body", Some(status), Some(headers))
       
-      val requestsWithErrors = Await.result(done, Timeout.never.duration)
+      val requestsWithErrors = Await.result(done.future, Duration.Inf)
       
       requestsWithErrors must have size urlsToRetrieve.size
       requestsWithErrors.distinct must contain(expectedError).only
     }
-
   }
-
 }

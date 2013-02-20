@@ -12,7 +12,7 @@ package org.overviewproject.http
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-import akka.dispatch.{ ExecutionContext, Future, Promise }
+import scala.concurrent.{ ExecutionContext, Future, Promise }
 import akka.actor._
 import akka.util.Timeout
 import com.ning.http.client.Response
@@ -97,7 +97,7 @@ class BulkHttpRetriever[T <: DocumentAtURL](asyncHttpRetriever: AsyncHttpRetriev
         try {
           if (!writeDocument(doc.asInstanceOf[T], text)) cancelJob = true
         } catch {
-          case e => {
+          case e : Throwable => {
             Logger.error("Unable to process " + doc.textURL + ":" + e.getMessage)
             finished.failure(e)
             context.stop(self)

@@ -10,11 +10,12 @@
 
 package org.overviewproject.clustering
 
-import java.net.URLEncoder
-import akka.dispatch.{ Await, Future, Promise }
-import akka.util.Timeout
-import com.codahale.jerkson.Json.parse
 import com.ning.http.client.Response
+import java.net.URLEncoder
+import play.api.libs.json.Json
+import scala.concurrent.{ Await, Future, Promise }
+import scala.concurrent.duration.Duration
+
 import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, NonRedirectingHttpRequest }
 import org.overviewproject.util.Logger
 
@@ -35,6 +36,10 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   val query: String,
   documentCloudUserName: Option[String] = None,
   documentCloudPassword: Option[String] = None) extends Traversable[DCDocumentAtURL] {
+
+  implicit private val dcDocumentResourcesReads = Json.reads[DCDocumentResources]
+  implicit private val dcDocumentReads = Json.reads[DCDocument]
+  implicit private val dcSearchResultReads = Json.reads[DCSearchResult]
 
   private val redirectingHttpRetriever = new NonRedirectingHttpRequest // TODO: combine with asyncHttpRetriever
 
@@ -67,7 +72,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
     var numParsed = 0
 
     // For each returned document, package up the result in a DocumentAtURL object, and call f on it
-    val result = parse[DCSearchResult](pageText)
+    val result = Json.parse(pageText).as[DCSearchResult]
     totalNumDocuments = Some(result.total)
     numDocuments = Some(scala.math.min(result.total, maxDocuments))
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
@@ -98,7 +103,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
 
     // Wait for all our redirect calls to complete, then call f on each
     val urlsFuture = Future.sequence(redirects) // waits for all PrivateDocURL to complete, also rethrows exceptions
-    val urls = Await.result(urlsFuture, Timeout.never.duration)
+    val urls = Await.result(urlsFuture, Duration.Inf)
     urls.map(f)
 
     numParsed
@@ -136,7 +141,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   // --- public ---
   def foreach[U](f: DCDocumentAtURL => U): Unit = {
     getNextPage(1, f) // start at first page
-    Await.result(done, Timeout.never.duration) // wait here until all pages retrieved (will also rethrow any exceptions generated)
+    Await.result(done.future, Duration.Inf) // wait here until all pages retrieved (will also rethrow any exceptions generated)
   }
 
   // size is defined on Traversable, but we redefine here for efficiency (otherwise we must retrieve all results)
@@ -145,7 +150,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
     if (numDocuments.isEmpty) {
       Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
       val pageText = asyncHttpRetriever.blockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
-      val result = parse[DCSearchResult](pageText)
+      val result = Json.parse(pageText).as[DCSearchResult]
       numDocuments = Some(scala.math.min(result.total, maxDocuments))
     }
     numDocuments.get
@@ -154,7 +159,7 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   def totalDocumentsInQuery: Int = totalNumDocuments.getOrElse {
     Logger.debug("Extra document page retrieval caused by DocumentCloudSource.size invocation")
     val pageText = asyncHttpRetriever.blockingHttpRequest(pageQuery(1, 1).textURL) // grab one document from first page. blocks thread to do it.
-    val result = parse[DCSearchResult](pageText)
+    val result = Json.parse(pageText).as[DCSearchResult]
     totalNumDocuments = Some(result.total)
     totalNumDocuments.get
   }

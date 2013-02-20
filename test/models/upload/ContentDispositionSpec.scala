@@ -78,22 +78,19 @@ class ContentDispositionSpec extends Specification {
     }
 
     "find filename in simplest possible case" in new ContentDispositionContext with SimpleParameter {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "find filename among multiple parameters (RFC2183)" in new ContentDispositionContext with MultipleParameters {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "find quoted filename" in new ContentDispositionContext with FilenameInQuotes {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (unquotedName) }
+      ContentDisposition.filename(contentDisposition) must beSome(unquotedName)
     }
 
     "find filename with escaped quotes" in new ContentDispositionContext with FilenameWithEscapedQuote {
-      ContentDisposition.filename(contentDisposition) must beSome.like {
-        case n =>
-          n must be equalTo (unquotedName.replaceAllLiterally("""\""", ""))
-      }
+      ContentDisposition.filename(contentDisposition) must beSome(unquotedName.replaceAllLiterally("""\""", ""))
     }
 
     "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {
@@ -101,15 +98,15 @@ class ContentDispositionSpec extends Specification {
     }
 
     "find filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "find quoted filename parameter followed by garbage" in new ContentDispositionContext with QuotedFilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "Decoded encoded filename" in new ContentDispositionContext with UrlEncodedName {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo ("hello") }
+      ContentDisposition.filename(contentDisposition) must beSome("hello")
     }
 
     "Handle invalid encoding" in new ContentDispositionContext with InvalidEncoding {
@@ -117,15 +114,15 @@ class ContentDispositionSpec extends Specification {
     }
 
     "Handle mixed case - RFC2183" in new ContentDispositionContext with ValidMixedCase {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "Handle mixed case - Broken Unquoted" in new ContentDispositionContext with MixedCaseFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
 
     "Handle mixed case - Broken quoted" in new ContentDispositionContext with MixedCaseWithQuotedFilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome.like { case n => n must be equalTo (name) }
+      ContentDisposition.filename(contentDisposition) must beSome(name)
     }
   }
 

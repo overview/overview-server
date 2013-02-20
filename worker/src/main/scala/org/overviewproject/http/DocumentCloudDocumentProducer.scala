@@ -7,8 +7,9 @@
 package org.overviewproject.http
 
 import akka.actor._
-import akka.dispatch.{ Future, Promise, Await }
-import akka.util.Timeout
+import scala.concurrent.{ Future, Promise, Await }
+import scala.concurrent.duration.Duration
+
 import org.overviewproject.clustering.{ DCDocumentAtURL, DocumentCloudSource, DocumentSetIndexer }
 import org.overviewproject.database.Database
 import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter, PersistentDocumentSet }
@@ -17,8 +18,6 @@ import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
-
-
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
@@ -37,7 +36,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in
-      val docsNotFetched = Await.result(retrievalDone, Timeout.never.duration)
+      val docsNotFetched = Await.result(retrievalDone.future, Duration.Inf)
       Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
       Database.inTransaction {
         DocRetrievalErrorWriter.write(documentSetId, docsNotFetched)
@@ -60,6 +59,4 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
     !progAbort(
       Progress(numDocs * FetchingFraction / sourceDocList.size, Retrieving(numDocs, sourceDocList.size)))
   }
-  
- 
 }

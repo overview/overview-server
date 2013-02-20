@@ -59,7 +59,7 @@ object DB {
 
         result
       } catch {
-        case e => {
+        case e : Throwable => {
           connection.rollback()
           throw e
         }

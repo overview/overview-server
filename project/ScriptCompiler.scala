@@ -1,6 +1,5 @@
 package org.overviewproject.sbt.assetbundler
 
-import coffeescript.Vanilla
 import java.io.File
 import com.google.javascript.jscomp.{Compiler,CompilerOptions,JSSourceFile,CompilationLevel}
 
@@ -16,7 +15,7 @@ object ScriptCompiler {
     * @return JavaScript produced from the CoffeeScript input.
     */
   def compileCoffeeScript(contents: String, file: File) : String = {
-    Vanilla.compile(contents, false).fold(
+    CoffeeScriptCompiler.compile(contents, false).fold(
       { err: String => throw new CompilationException(Some(file), err, 0, 0) }, // TODO find line/column
       { js: String => js }
     )

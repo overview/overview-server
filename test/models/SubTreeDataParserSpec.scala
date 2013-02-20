@@ -19,7 +19,7 @@ class SubTreeDataParserSpec extends Specification {
       createdNodes.size must be equalTo (nodes.size)
       createdNodes.map { n =>
         val tagId = (n.id * 10).toString
-        n.tagCounts.get(tagId) must beSome.like { case c => c must be equalTo(5l) }
+        n.tagCounts.get(tagId) must beSome(5l)
       }
 
     }

@@ -1,15 +1,14 @@
 package org.overviewproject.http
 
-import org.specs2.mutable.Specification
-import org.specs2.mutable.After
 import akka.actor.ActorSystem
-import akka.dispatch.ExecutionContext
 import com.ning.http.client.Response
-import org.overviewproject.clustering.{ DCDocumentAtURL, PrivateDCDocumentAtURL }
-import akka.dispatch.Await
-import akka.util.Duration
 import java.util.concurrent.TimeoutException
+import org.specs2.mutable.After
+import org.specs2.mutable.Specification
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
+import org.overviewproject.clustering.{ DCDocumentAtURL, PrivateDCDocumentAtURL }
 
 class DocumentCloudBulkHttpRetrieverSpec extends Specification {
 
@@ -23,7 +22,8 @@ class DocumentCloudBulkHttpRetrieverSpec extends Specification {
 
         override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
           onFailure: Throwable => Unit) {
-    	  redirectsProcessed += 1
+
+          redirectsProcessed += 1
           val response = new TestResponse
           onSuccess(response)
         }
@@ -46,7 +46,7 @@ class DocumentCloudBulkHttpRetrieverSpec extends Specification {
       val bulkRetriever = new DocumentCloudBulkHttpRetriever(retriever, redirectingHttpRetriever)
       
       val failedDocs = bulkRetriever.retrieve(urlsToRetrieve, processDocument)
-      Await.result(failedDocs, Duration(500, "millis")) must not(throwA[TimeoutException])
+      Await.result(failedDocs.future, Duration("500ms")) must not(throwA[TimeoutException])
 
       documentsRetrieved must be equalTo 10
       redirectingHttpRetriever.redirectsProcessed must be equalTo 5

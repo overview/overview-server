@@ -7,7 +7,7 @@
 
 package helpers
 
-import org.specs2.execute.Result
+import org.specs2.execute.AsResult
 import org.specs2.mutable.Around
 import org.squeryl.Session
 import org.squeryl.PrimitiveTypeMode.using
@@ -28,11 +28,11 @@ trait DbTestContext extends Around {
 
   def setupWithDb = {}
   
-  def around[T <% Result](test: => T) = {
+  def around[T : AsResult](test: => T) = {
     OverviewDatabase.inTransaction {
       try {
         setupWithDb
-        test
+        AsResult(test)
       } finally {
         connection.rollback()
       }

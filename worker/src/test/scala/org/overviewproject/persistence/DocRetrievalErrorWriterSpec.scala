@@ -21,7 +21,7 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
     val foundErrors = documentProcessingErrors.where(dpe => dpe.documentSetId === documentSetId)
     
     foundErrors.size must be equalTo 10
-    foundErrors.head.headers must beSome.like { case h => h must be equalTo("header") }
+    foundErrors.head.headers must beSome("header")
   }
   
   step(shutdownDb)

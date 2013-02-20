@@ -42,13 +42,13 @@ trait PersistentDocumentSetCreationJob {
   /**
    * Updates state, fractionComplete, and statusDescription
    */
-  def update
+  def update: Unit
 
   /** refreshes the job state with value read from the database */
   def checkForCancellation
 
   /** delete the object from the database */
-  def delete
+  def delete: Unit
 }
 
 /** Factory for loading jobs from the database */

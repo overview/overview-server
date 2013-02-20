@@ -7,14 +7,8 @@
 
 package org.overviewproject.database
 
-import com.avaje.ebean.config.GlobalProperties
-
 import org.specs2.mutable.Specification
 import org.specs2.specification._
-
-
-
-
 
 class DatabaseConfigurationSpec extends Specification {
   

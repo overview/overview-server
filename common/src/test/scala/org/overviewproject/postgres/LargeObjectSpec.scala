@@ -1,9 +1,10 @@
 package org.overviewproject.postgres
 
-import org.overviewproject.test.DbSpecification
-import org.overviewproject.database.DB
 import org.postgresql.PGConnection
 import org.postgresql.util.PSQLException
+
+import org.overviewproject.test.DbSpecification
+import org.overviewproject.database.DB
 
 class LargeObjectSpec extends DbSpecification {
 

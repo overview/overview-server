@@ -1,10 +1,10 @@
 package org.overviewproject.http
 
+import akka.actor.ActorSystem
+import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response}
 import java.net.URI
 import scala.collection.JavaConversions._
-import akka.actor.ActorSystem
-import akka.dispatch.ExecutionContext
-import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response}
+import scala.concurrent.ExecutionContext
 
 /**
  * A dummy Response to a http request.

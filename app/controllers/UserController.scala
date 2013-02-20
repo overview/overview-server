@@ -66,7 +66,6 @@ trait UserController extends Controller {
            * pretend the database request went as planned, since from the
            * user's perspective, it did.
            */
-          userWithRequest // it won't have a database ID; that's okay
         } else {
           throw e
         }
