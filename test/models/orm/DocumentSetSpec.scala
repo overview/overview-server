@@ -168,13 +168,7 @@ class DocumentSetSpec extends Specification {
       documentSet.setUserRole(email, role)
       
       val documentSetUser = Schema.documentSetUsers.allRows.headOption
-      documentSetUser must beSome
-      val DocumentSetUser(documentSetId, userEmail, userRole) = documentSetUser.get
-      
-      documentSetId must be equalTo(documentSet.id)
-      userEmail must be equalTo(email)
-      userRole.value must be equalTo(role.value)
-          
+      documentSetUser.map(dsu => (dsu.documentSetId, dsu.userEmail, dsu.role.value)) must beSome(documentSet.id, email, role.value)
     }
   }
 
