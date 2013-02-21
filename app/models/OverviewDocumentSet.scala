@@ -2,9 +2,9 @@ package models
 
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
-import models.orm.{ DocumentSet, DocumentSetUser }
+import models.orm.{ DocumentSet, DocumentSetUser, User }
+import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
-import models.orm.User
 
 trait OverviewDocumentSet {
   /** database ID */
@@ -77,8 +77,7 @@ object OverviewDocumentSet {
       val ormDocumentSetClone = cloneDocumentSet.save
 
       User.findById(cloneOwnerId).map { u =>
-        val documentSetUser = DocumentSetUser(ormDocumentSetClone.id, u.email)
-        Schema.documentSetUsers.insert(documentSetUser)
+        ormDocumentSetClone.setUserRole(u.email, Owner)
       }
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
