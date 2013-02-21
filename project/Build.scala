@@ -109,8 +109,6 @@ object ApplicationBuild extends Build {
   ).settings(
     CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
   ).settings(
-    AssetBundlerPlugin.assetSettings: _*
-  ).settings(
     // remove Play's asset management--reset to default (see xsbt source code)
     // Left messy after gaining a fatalist view of sbt code
     resourceGenerators in Compile <<= ((definedSbtPlugins in Compile, resourceManaged in Compile) map Defaults.writePluginsDescriptor)(Seq(_)),
@@ -128,6 +126,8 @@ object ApplicationBuild extends Build {
     CucumberPlugin.cucumberFeaturesLocation := "test/features",
     CucumberPlugin.cucumberStepsBasePackage := "steps",
     (AssetBundlerPlugin.Keys.configFile in (Compile, AssetBundlerPlugin.Keys.assetBundler)) := file("conf/assets.conf")
+  ).settings( // Must appear after resourceGenerators settings
+    AssetBundlerPlugin.assetSettings: _* 
   ).dependsOn(common).aggregate(worker)
 
   val all = Project("all", file("all")).aggregate(main,worker)
