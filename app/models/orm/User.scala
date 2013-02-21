@@ -29,18 +29,18 @@ case class User(
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
-
-  lazy val documentSets: ManyToMany[DocumentSet, DocumentSetUser] =
-    Schema.documentSetUsers.right(this)
-
+  
   lazy val orderedDocumentSets: Query[DocumentSet] =
-    from(documentSets)(ds => select(ds).orderBy(ds.createdAt.desc))
+    from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) => 
+      where(dsu.userEmail === email and dsu.documentSetId === ds.id) 
+      select(ds)
+      orderBy(ds.createdAt.desc))
 
   def createDocumentSet(query: String): DocumentSet = {
     require(id != 0l)
 
     val documentSet = Schema.documentSets.insert(new DocumentSet(DocumentCloudDocumentSet, 0L, query=Some(query)))
-    documentSets.associate(documentSet)
+    Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email))
 
     documentSet
   }

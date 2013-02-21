@@ -14,7 +14,7 @@
               <button class="btn"><i class="icon-download"></i> @m("import")</button>
             </form>
             <h3>@documentSet.title</h3>
-            <p class="shared-by">@m("shared_by", documentSet.user.email)</p>
+            <p class="shared-by">@m("shared_by", documentSet.owner.email)</p>
           </li>
         }
       </ul>

@@ -260,12 +260,15 @@ object OverviewUser {
       new OverviewUserImpl(user.copy(role=UserRole.NormalUser))
     }
 
+        
     def isAllowedDocumentSet(id: Long) = {
-      user.documentSets.where((ds) => ds.id === id).nonEmpty
+      import models.orm.Schema
+      Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).nonEmpty
     }
 
     def isAllowedDocument(id: Long) = {
-      user.documentSets.where(ds => id in from(ds.documents)(d => select(d.id))).nonEmpty
+      import models.orm.Schema
+      Schema.documentSetUsers.where(dsu => id in from(Schema.documents)(d => where(d.documentSetId === dsu.documentSetId) select(d.id))).nonEmpty
     }
 
     def isAdministrator = user.role == UserRole.Administrator

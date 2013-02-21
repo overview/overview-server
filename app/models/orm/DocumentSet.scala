@@ -47,7 +47,7 @@ case class DocumentSet(
 
   def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
   
-  lazy val users = Schema.documentSetUsers.left(this)
+  lazy val users = from(Schema.documentSetUsers, Schema.users)((dsu, u) => where(dsu.documentSetId === id and dsu.userEmail === u.email) select(u))
 
   lazy val documents = Schema.documentSetDocuments.left(this)
 
@@ -100,14 +100,14 @@ case class DocumentSet(
 object DocumentSet {
   def findById(id: Long) = Schema.documentSets.lookup(id)
 
-  def findByUserIdWithCountJobUploadedFile(userId: Long) : Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
+  def findByUserIdWithCountJobUploadedFile(userId: Long, userEmail: String) : Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
     val idToCountQuery = from(Schema.documents)(d =>
       groupBy(d.documentSetId)
       compute(count())
     )
 
-    val userDocumentSets : Query[DocumentSet] = from(Schema.documentSetUsers.thisTable, Schema.documentSets)((dsu, ds) =>
-      where(dsu.documentSetId === ds.id and dsu.userId === userId)
+    val userDocumentSets : Query[DocumentSet] = from(Schema.documentSetUsers, Schema.documentSets)((dsu, ds) =>
+      where(dsu.documentSetId === ds.id and dsu.userEmail === userEmail)
       select(ds)
     )
 
@@ -125,9 +125,9 @@ object DocumentSet {
     )
   }
 
-  def findByUserIdOrderedByCreatedAt(userId: Long) : Query[DocumentSet] = {
-    from(Schema.documentSetUsers.thisTable, Schema.documentSets)((dsu, ds) =>
-      where(dsu.documentSetId === ds.id and dsu.userId === userId)
+  def findByUserIdOrderedByCreatedAt(userId: Long, userEmail: String) : Query[DocumentSet] = {
+    from(Schema.documentSetUsers, Schema.documentSets)((dsu, ds) =>
+      where(dsu.documentSetId === ds.id and dsu.userEmail === userEmail)
       select(ds)
       orderBy(ds.createdAt.desc)
     )

@@ -90,8 +90,8 @@ class DocumentSetSpec extends Specification {
       val documentSetCreationJob = documentSet.createDocumentSetCreationJob()
 
       SQL("""
-          INSERT INTO document_set_user (document_set_id, user_id)
-          VALUES ({documentSetId}, 1)
+          INSERT INTO document_set_user (document_set_id, user_email, role)
+          VALUES ({documentSetId}, 'user@host.com', 'Owner')
           """).on("documentSetId" -> id).executeInsert()
 
       SQL("""

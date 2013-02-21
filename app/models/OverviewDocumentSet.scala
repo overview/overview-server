@@ -1,8 +1,8 @@
 package models
 
-import org.overviewproject.tree.orm.{Document, DocumentSetCreationJob, UploadedFile}
+import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
-import models.orm.DocumentSet
+import models.orm.{ DocumentSet, DocumentSetUser }
 import models.upload.OverviewUploadedFile
 import models.orm.User
 
@@ -33,7 +33,7 @@ trait OverviewDocumentSet {
    * Number of documents that could not be processed because of errors. May change over time.
    */
   def errorCount: Int
-  
+
   /** true if the document set is public */
   val isPublic: Boolean
 
@@ -44,7 +44,7 @@ trait OverviewDocumentSet {
   val createdAt: java.util.Date
 
   /** The user owning the document set */
-  val user: OverviewUser
+  val owner: OverviewUser
 
   /** FIXME: Only here because admin page expects it of all jobs */
   val query: String
@@ -67,27 +67,39 @@ object OverviewDocumentSet {
     override val isPublic = ormDocumentSet.isPublic
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt
-    override lazy val user = {
-      OverviewUser.findById(ormDocumentSet.users.single.id).get
-    }
+    override lazy val owner = findOwner
+
     override lazy val query = ""
 
     override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
       import models.orm.Schema
+
       val ormDocumentSetClone = cloneDocumentSet.save
 
-      User.findById(cloneOwnerId).map(u => ormDocumentSetClone.users.associate(u))
+      User.findById(cloneOwnerId).map { u =>
+        val documentSetUser = DocumentSetUser(ormDocumentSetClone.id, u.email)
+        Schema.documentSetUsers.insert(documentSetUser)
+      }
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
       Schema.documentSetCreationJobs.insert(cloneJob)
       OverviewDocumentSet(ormDocumentSetClone)
     }
 
-    protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false) 
+    protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false)
+
+    private def findOwner: OverviewUser = {
+      import models.orm.Schema.documentSetUsers
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      val ownerEmail = from(documentSetUsers)(dsu => where(dsu.documentSetId === id) select (dsu.userEmail)).single
+
+      OverviewUser.findByEmail(ownerEmail).get
+    }
   }
 
   case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
-    lazy val uploadedFile: Option[OverviewUploadedFile] = 
+    lazy val uploadedFile: Option[OverviewUploadedFile] =
       ormDocumentSet.uploadedFile.map(OverviewUploadedFile.apply)
 
     override protected def cloneDocumentSet: DocumentSet = {
@@ -120,21 +132,18 @@ object OverviewDocumentSet {
   }
 
   /** @return ResultPage of all document sets the user can access */
-  def findByUserId(userId: Long, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
+  def findByUserId(userId: Long, email: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
     type WeirdTuple = (DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])
-    def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple) : DocumentSet
-      = weirdTuple._1.copy(
-        providedDocumentCount=Some(weirdTuple._2.getOrElse(0L)),
-        documentSetCreationJob=weirdTuple._3,
-        uploadedFile=weirdTuple._4
-      )
-    def weirdTupleToDocumentSet(weirdTuple: WeirdTuple) : OverviewDocumentSet
-      = apply(weirdTupleToOrmDocumentSet(weirdTuple))
+    def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple): DocumentSet = weirdTuple._1.copy(
+      providedDocumentCount = Some(weirdTuple._2.getOrElse(0L)),
+      documentSetCreationJob = weirdTuple._3,
+      uploadedFile = weirdTuple._4)
+    def weirdTupleToDocumentSet(weirdTuple: WeirdTuple): OverviewDocumentSet = apply(weirdTupleToOrmDocumentSet(weirdTuple))
 
-    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userId), pageSize, page)
+    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userId, email), pageSize, page)
       .map(weirdTupleToDocumentSet(_))
   }
-  
+
   /** @return Seq of all document sets marked public at the time of the call */
   def findPublic: Seq[OverviewDocumentSet] = {
     import models.orm.Schema
@@ -192,7 +201,7 @@ object OverviewDocumentSet {
 
     uploadedFileId.map { uid => uploadedFiles.deleteWhere(f => f.id === uid) }
   }
-  
+
   private def cancelCloneJobs(sourceId: Long): Unit = {
     val cloneJobs = OverviewDocumentSetCreationJob.cancelJobsWithSourceDocumentSetId(sourceId)
     cloneJobs.foreach(j => deleteClientGeneratedInformation(j.documentSetId))

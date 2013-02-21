@@ -19,7 +19,7 @@ trait DocumentSetController extends Controller {
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = OverviewDocumentSet.findByUserId(request.user.id, pageSize, realPage)
+    val documentSets = OverviewDocumentSet.findByUserId(request.user.id, request.user.email, pageSize, realPage)
 
     val publicDocumentSets = OverviewDocumentSet.findPublic
 
@@ -103,8 +103,11 @@ trait DocumentSetController extends Controller {
 object DocumentSetController extends DocumentSetController {
   protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) =
-    User.findById(ownerId).map(ormUser => documentSet.users.associate(ormUser))
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) = {
+    import models.orm.{ DocumentSetUser, Schema }
+    User.findById(ownerId).map(ormUser => Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, ormUser.email)))  
+  }
+  
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)

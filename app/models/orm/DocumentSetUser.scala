@@ -1,15 +1,15 @@
 package models.orm
 
-import org.squeryl.KeyedEntity
-import org.overviewproject.postgres.SquerylEntrypoint.compositeKey
-import org.squeryl.dsl.CompositeKey2
-import org.squeryl.annotations.Column
+import org.overviewproject.postgres.PostgresqlEnum
 
-class DocumentSetUser(
-    @Column("document_set_id")
-    val documentSetId: Long,
-    @Column("user_id")
-    val userId: Long
-    ) extends KeyedEntity[CompositeKey2[Long,Long]] {
-  override def id = compositeKey(documentSetId, userId)
+class DocumentSetUserRoleType(v: String) extends PostgresqlEnum(v, "document_set_user_role_type")
+
+object DocumentSetUserRoleType {
+  val Owner = new DocumentSetUserRoleType("Owner")
+  val Viewer = new DocumentSetUserRoleType("Viewer")
 }
+
+import DocumentSetUserRoleType._
+
+case class DocumentSetUser(documentSetId: Long, userEmail: String, role: DocumentSetUserRoleType = Owner) 
+

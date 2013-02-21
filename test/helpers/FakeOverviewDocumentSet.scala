@@ -8,7 +8,7 @@ case class FakeOverviewDocumentSet(
     query: String = "a query", 
     creationJob: Option[OverviewDocumentSetCreationJob] = None, errorCount: Int = 0) extends OverviewDocumentSet {
 
-  val user = null
+  val owner = null
   val createdAt = null
   val documentCount = 15
   val isPublic = false

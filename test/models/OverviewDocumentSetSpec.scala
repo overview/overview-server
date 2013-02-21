@@ -234,8 +234,8 @@ class OverviewDocumentSetSpec extends Specification {
 
     "user should be the user" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
-      d.user.id must be equalTo (1l)
-      d.user.email must be equalTo ("admin@overview-project.org")
+      d.owner.id must be equalTo (1l)
+      d.owner.email must be equalTo ("admin@overview-project.org")
     }
 
     "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
@@ -247,7 +247,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
+      documentSetUsers.allRows must have size(0)
       documents.allRows must have size (0)
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
@@ -278,7 +278,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
+      documentSetUsers.allRows must have size (0)
       documents.allRows must have size (0)
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
@@ -294,7 +294,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
+      documentSetUsers.allRows must have size (0)
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
@@ -311,7 +311,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.left(ormDocumentSet).size must be equalTo (0)
+      documentSetUsers.allRows must have size (0)
       documents.allRows must have size (1)
       nodes.allRows must have size (1)
       documentSetCreationJobs.allRows must have size (1)
@@ -331,7 +331,7 @@ class OverviewDocumentSetSpec extends Specification {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
 
-      documentSetClone.user.id must be equalTo (cloner.id)
+      documentSetClone.owner.id must be equalTo (cloner.id)
       documentSetClone.query must be equalTo (documentSet.query)
     }
 
@@ -376,7 +376,7 @@ class OverviewDocumentSetSpec extends Specification {
       OverviewDocumentSet.delete(documentSet.id)
       val cancelledCloneJob = OverviewDocumentSetCreationJob.findByDocumentSetId(cloneDocumentSet.id).get
       cancelledCloneJob.state must be equalTo(Cancelled)
-      documentSetUsers.left(cloneDocumentSet).size must be equalTo(0)
+      documentSetUsers.allRows must have size (0)
     }
   }
   step(stop)
