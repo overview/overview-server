@@ -9,6 +9,7 @@ import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
 import models.orm.DocumentSet.ImplicitHelper._
+import models.orm.DocumentSetUserRoleType._
 import models.{OverviewDocumentSet,ResultPage}
 
 trait DocumentSetController extends Controller {
@@ -103,11 +104,7 @@ trait DocumentSetController extends Controller {
 object DocumentSetController extends DocumentSetController {
   protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) = {
-    import models.orm.{ DocumentSetUser, Schema }
-    User.findById(ownerId).map(ormUser => Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, ormUser.email)))  
-  }
-  
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) = User.findById(ownerId).map(u => documentSet.setUserRole(u.email, Owner))
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
