@@ -15,9 +15,9 @@ package org.overviewproject.util
 
 import scala.collection.mutable.{IndexedSeq, IndexedSeqOptimized, Builder}
 import scala.collection.generic.CanBuildFrom
+import scala.reflect.ClassTag
 
-
-class CompactPairArray[A : ClassManifest,B : ClassManifest] 
+class CompactPairArray[A : ClassTag,B : ClassTag] 
     extends IndexedSeq[Pair[A,B]] 
     with IndexedSeqOptimized[Pair[A,B], CompactPairArray[A,B]] 
     with Builder[Pair[A,B], CompactPairArray[A,B]] 
@@ -27,7 +27,7 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   var bArray = new Array[B](0)
   var numStoredElements = 0
   
-  def aSeq : IndexedSeq[A] = aArray.view.take(numStoredElements)
+  def aSeq : IndexedSeq[A] = aArray.view.take(numStoredElements)  // can look at each array individually, but only numStoredElements
   def bSeq : IndexedSeq[B] = bArray.view.take(numStoredElements)
   
   def availableSize = aArray.size
@@ -64,10 +64,14 @@ class CompactPairArray[A : ClassManifest,B : ClassManifest]
   }
   
   def apply(idx:Int) : Pair[A,B] = {
+    if (idx >= numStoredElements)
+      throw new java.lang.ArrayIndexOutOfBoundsException
     Pair[A,B](aArray(idx), bArray(idx))
   }
   
   def update(idx: Int, elem: Pair[A,B]) : Unit = {
+    if (idx >= numStoredElements)
+      throw new java.lang.ArrayIndexOutOfBoundsException
     aArray(idx) = elem._1
     bArray(idx) = elem._2
   }
@@ -127,14 +131,14 @@ object CompactPairArray {
       // Nonetheless, implement by creating a CompactPairArray[Any,Any], which should work --jms 11/27/12
       def apply(): Builder[Pair[A,B], CompactPairArray[A,B]] = {
         new CompactPairArray[A,B]()(
-            Manifest.Any.asInstanceOf[ClassManifest[A]],
-            Manifest.Any.asInstanceOf[ClassManifest[B]])
+            ClassTag.Any.asInstanceOf[ClassTag[A]],
+            ClassTag.Any.asInstanceOf[ClassTag[B]])
       }          
   }
   
   // Construct from a sequence: var c = CompactPairArray((1,2.0), (3,4.0), ... ) 
   // Really, we need to figure out how to derive from SeqFactory and we'll get this and more (e.g. Fill, Tabulate)
-  def apply[A:ClassManifest,B:ClassManifest](v : Pair[A,B]*) = {
+  def apply[A:ClassTag,B:ClassTag](v : Pair[A,B]*) = {
     var cpa = new CompactPairArray[A,B]
     cpa.sizeHint(v.size)
     v.foreach(cpa += _)
