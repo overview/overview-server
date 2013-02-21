@@ -17,6 +17,7 @@ import play.api.mvc.AnyContent
 import org.overviewproject.postgres.LO
 import models.orm.{DocumentSet,User}
 import models.orm.DocumentSetType._
+import models.orm.DocumentSetUserRoleType._
 import models.{OverviewDatabase,OverviewUser}
 import models.upload.OverviewUpload
 import controllers.auth.{AuthorizedAction,Authority,UserFactory}
@@ -107,6 +108,7 @@ object UploadController extends UploadController with PgConnection {
       uploadedFileId = Some(upload.uploadedFile.id)).save
 
     User.findById(upload.userId).map { u => 
+      documentSet.setUserRole(u.email, Owner)
       import models.orm.{ DocumentSetUser, Schema }
       Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, u.email))
     }
