@@ -1,6 +1,6 @@
 /**
  * KMeansDocuments.scala
- * Extends KMeans class to operate on DocumentVectorMap
+ * Extends KMeans, IterativeKMeans classes to operate on DocumentSetVectors
  * 
  * Overview Project, created January 2013
  *
@@ -12,10 +12,11 @@ package org.overviewproject.clustering
 
 import ClusterTypes._
 
-// Use DocumentVectorMap as centroid type, but just document ID as element type. 
-// We reference into a set of vectors given in the ctor
+// Core document clustering operations: cosine distance, mean
+// Separated into a trait so that we can mix it in to different K-means bases (below)
+trait KMeansDocumentOps {
 
-class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[DocumentID,DocumentVectorMap] {
+  protected val docVecs : DocumentSetVectors  
   
   // Custom cosine distance function: always index against a, as the centroid will have fill-in
   def distance(aId:DocumentID, b:DocumentVectorMap, minSoFar:Double) : Double = {    
@@ -63,5 +64,14 @@ class KMeansDocuments(protected val docVecs:DocumentSetVectors) extends KMeans[D
     
     m
   }
+
+}
+
+// Use DocumentVectorMap as centroid type, but just document ID as element type. 
+// We reference into a set of vectors given in the ctor
+class KMeansDocuments(protected val docVecs:DocumentSetVectors) 
+  extends KMeans[DocumentID,DocumentVectorMap] 
+  with KMeansDocumentOps {
+  
 }
 

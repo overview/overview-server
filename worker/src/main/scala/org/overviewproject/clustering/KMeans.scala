@@ -14,6 +14,7 @@ import scala.Array.fallbackCanBuildFrom
 import scala.collection.mutable.Set
 import org.overviewproject.util.{CompactPairArray, Logger, LoopedIterator }
 import org.overviewproject.util.Logger.logExecutionTime
+import scala.reflect.ClassTag
 
 // Defines interface and most basic operations for k-means clustering variants
 // T is element type, C is centroid type
@@ -21,7 +22,7 @@ import org.overviewproject.util.Logger.logExecutionTime
 //  - distance() and mean()
 //  - "driver" logic that initializes centroids and calls assignClusters, refineCentroids
 //  - optionally, override handling for emptyCentroid()
-abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
+abstract class KMeansBase[T : ClassTag, C : ClassTag] {
   
   // -- Abstract members, to be over-ridden by children -- 
   def distance(a:T, b:C, minSoFar:Double=1.0) : Double    // allow early out, if distance will be > minSoFar 
@@ -45,7 +46,7 @@ abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
   def assignClusters(assignments:CompactPairArray[T, Int], elements:Iterable[T], centroids:Seq[C]) : Array[Double] = {
     require(assignments.size == elements.size)
     
-    var fits = Array.fill(5)(0.0)
+    var fits = Array.fill(centroids.size)(0.0)
     var i = 0
     
     elements foreach { el => 
@@ -95,7 +96,7 @@ abstract class KMeansBase[T : ClassManifest, C : ClassManifest] {
 //  - Centroid initializion by taking mean of quasi-randomly selected elements
 //  - Reset empty centroids by picking random element
 //  - subclasses must supply distance() and mean() for complete implementation
-abstract class KMeans[T : ClassManifest, C : ClassManifest] 
+abstract class KMeans[T : ClassTag, C : ClassTag] 
   extends KMeansBase[T,C] {
   
   // -- Algorithm parameters -- 
@@ -170,7 +171,7 @@ abstract class KMeans[T : ClassManifest, C : ClassManifest]
             stopNow = true
          
           // stop if the split failed to generate more than one cluster
-          val clusterSizes = (0 until k).map(i => clusters.filter(_._2 == i).size)
+          val clusterSizes = (0 until k).map(i => clusters.count(_._2 == i))
           if (clusterSizes.filter(_ != 0).length == 1) {
             stopNow = true
           }
