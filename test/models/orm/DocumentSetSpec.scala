@@ -60,7 +60,7 @@ class DocumentSetSpec extends Specification {
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
-    inExample("create a job with type CsvImportDocumentSet") in new PgConnectionContext {
+    "create a job with type CsvImportDocumentSet" in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
           saveUploadedFile(UploadedFile(contentDisposition = "", contentType = "", size = 0))
@@ -149,7 +149,7 @@ class DocumentSetSpec extends Specification {
       documentSet.errorCount must be equalTo (0)
     }
 
-    inExample("provide count of errors when they exist") in new DocumentSetContext {
+    "provide count of errors when they exist" in new DocumentSetContext {
       val errorCount = 10
       val errors = Seq.tabulate(errorCount)(i => DocumentProcessingError(documentSet.id, "url", "message"))
       Schema.documentProcessingErrors.insert(errors)
@@ -161,7 +161,7 @@ class DocumentSetSpec extends Specification {
       documentSet.isPublic must beFalse
     }
     
-    inExample("set a role for a user") in new DocumentSetContext {
+    "set a role for a user" in new DocumentSetContext {
       val email = "user@host.com"
       val role = Viewer
       
