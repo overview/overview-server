@@ -37,7 +37,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       savedDocumentSet = Some(documentSet.copy(id = 1l))
       savedDocumentSet.get
     }
-    protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) {}
+    protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) {}
     protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) {
       createdJobOwnerId = Some(documentSet.id)
     }

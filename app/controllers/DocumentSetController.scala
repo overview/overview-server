@@ -52,7 +52,7 @@ trait DocumentSetController extends Controller {
         val credentials = tuple._2
 
         val saved = saveDocumentSet(documentSet)
-        setDocumentSetOwner(saved, request.user.id)
+        setDocumentSetOwner(saved, request.user.email)
         createDocumentSetCreationJob(saved, credentials)
 
         Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
@@ -97,14 +97,14 @@ trait DocumentSetController extends Controller {
 
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long)
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
 }
 
 object DocumentSetController extends DocumentSetController {
   protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerId: Long) = User.findById(ownerId).map(u => documentSet.setUserRole(u.email, Owner))
+  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) = documentSet.setUserRole(ownerEmail, Owner)
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
