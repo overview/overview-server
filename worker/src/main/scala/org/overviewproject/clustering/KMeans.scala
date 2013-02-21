@@ -145,7 +145,7 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
   
 
   // -- Main --
-  def apply (elements:Iterable[T], k:Int) : CompactPairArray[T,Int] = {   
+  def apply (elements:Seq[T], k:Int) : CompactPairArray[T,Int] = {   
     var clusters = initialAssignments(elements)
     
     if (!elements.isEmpty) {

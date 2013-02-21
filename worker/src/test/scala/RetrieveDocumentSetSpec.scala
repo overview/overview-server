@@ -60,14 +60,11 @@ class RetrieveDocumentSetSpec extends DbSpecification {
       (vectorGen, result)
     }
 
-    "retrieve a local document set and cluster with connected components" in {
+    "retrieve a local document set" in {
       val docURLs = makeDocURLs
       val (vectorGen, retrievalErrors) = retrieveDocs(docURLs)
 
       retrievalErrors.size must beEqualTo(0) // everything should be retrieved
-
-      val docTree = BuildDocTree.applyFullConnectedComponents(vectorGen.documentVectors()).toString
-      docTree must beEqualTo  ("(0,1,2,3,4,5,6,7,8, (0,4,5, (0,4, (0), (4)), (5)), (3,7,8, (7,8, (7), (8)), (3)), (1), (2), (6))")
     }
 
     "return a list of documents that cannot be retrieved" in {
