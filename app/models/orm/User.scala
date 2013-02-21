@@ -9,6 +9,7 @@ import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 
 import models.orm.DocumentSetType.DocumentCloudDocumentSet
+import models.orm.DocumentSetUserRoleType.Owner
 
 case class User(
   val id: Long = 0L,
@@ -40,7 +41,7 @@ case class User(
     require(id != 0l)
 
     val documentSet = Schema.documentSets.insert(new DocumentSet(DocumentCloudDocumentSet, 0L, query=Some(query)))
-    Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email))
+    documentSet.setUserRole(email, Owner)
 
     documentSet
   }
