@@ -132,7 +132,7 @@ object OverviewDocumentSet {
   }
 
   /** @return ResultPage of all document sets the user can access */
-  def findByUserId(userId: Long, email: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
+  def findByUserId(userEmail: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
     type WeirdTuple = (DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])
     def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple): DocumentSet = weirdTuple._1.copy(
       providedDocumentCount = Some(weirdTuple._2.getOrElse(0L)),
@@ -140,7 +140,7 @@ object OverviewDocumentSet {
       uploadedFile = weirdTuple._4)
     def weirdTupleToDocumentSet(weirdTuple: WeirdTuple): OverviewDocumentSet = apply(weirdTupleToOrmDocumentSet(weirdTuple))
 
-    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userId, email), pageSize, page)
+    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userEmail), pageSize, page)
       .map(weirdTupleToDocumentSet(_))
   }
 

@@ -19,7 +19,7 @@ trait DocumentSetController extends Controller {
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = OverviewDocumentSet.findByUserId(request.user.id, request.user.email, pageSize, realPage)
+    val documentSets = OverviewDocumentSet.findByUserId(request.user.email, pageSize, realPage)
 
     val publicDocumentSets = OverviewDocumentSet.findPublic
 

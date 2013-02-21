@@ -32,7 +32,7 @@ object UserController extends Controller {
       if (otherUser.id == request.user.id) {
         BadRequest
       } else {
-        val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(otherUser.id, otherUser.email)
+        val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(otherUser.email)
         if (documentSets.headOption.isEmpty) {
           otherUser.delete
           Redirect(routes.UserController.index()).

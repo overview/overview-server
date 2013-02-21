@@ -1,28 +1,25 @@
 package models.orm
 
+import java.sql.Timestamp
 import java.util.Date
+import anorm.{sqlToSimple, toParameterValue}
+import anorm.SQL
+import anorm.SqlParser.{flatten, scalar}
+import play.api.Play.{start, stop}
+import play.api.test.FakeApplication
 import org.junit.runner.RunWith
+import org.overviewproject.postgres.LO
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.test.DbSetup._
+import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile}
+import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
-import org.overviewproject.postgres.SquerylEntrypoint._
-import anorm.SQL
-import anorm.SqlParser.flatten
-import anorm.SqlParser.scalar
-import anorm.sqlToSimple
-import anorm.toParameterValue
-import helpers.DbTestContext
-import play.api.Play.start
-import play.api.Play.stop
-import play.api.test.FakeApplication
-import org.overviewproject.test.DbSetup._
+import helpers.{DbTestContext, PgConnectionContext}
 import models.orm.DocumentSetType._
-import helpers.PgConnectionContext
-import org.postgresql.util.PSQLException
-import org.overviewproject.postgres.LO
-import java.sql.Timestamp
-import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile }
-import org.overviewproject.tree.orm.DocumentSetCreationJobType._
+import models.orm.DocumentSetUserRoleType._
+
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
@@ -63,7 +60,7 @@ class DocumentSetSpec extends Specification {
       documentSet.createdAt.getTime must beCloseTo((new Date().getTime), 1000)
     }
 
-    "create a job with type CsvImportDocumentSet" in new PgConnectionContext {
+    inExample("create a job with type CsvImportDocumentSet") in new PgConnectionContext {
       LO.withLargeObject { lo =>
         val uploadedFile =
           saveUploadedFile(UploadedFile(contentDisposition = "", contentType = "", size = 0))
@@ -152,7 +149,7 @@ class DocumentSetSpec extends Specification {
       documentSet.errorCount must be equalTo (0)
     }
 
-    "provide count of errors when they exist" in new DocumentSetContext {
+    inExample("provide count of errors when they exist") in new DocumentSetContext {
       val errorCount = 10
       val errors = Seq.tabulate(errorCount)(i => DocumentProcessingError(documentSet.id, "url", "message"))
       Schema.documentProcessingErrors.insert(errors)
@@ -162,6 +159,22 @@ class DocumentSetSpec extends Specification {
     
     "Be set to not public by default" in new DocumentSetContext {
       documentSet.isPublic must beFalse
+    }
+    
+    inExample("set a role for a user") in new DocumentSetContext {
+      val email = "user@host.com"
+      val role = Viewer
+      
+      documentSet.setUserRole(email, role)
+      
+      val documentSetUser = Schema.documentSetUsers.allRows.headOption
+      documentSetUser must beSome
+      val DocumentSetUser(documentSetId, userEmail, userRole) = documentSetUser.get
+      
+      documentSetId must be equalTo(documentSet.id)
+      userEmail must be equalTo(email)
+      userRole.value must be equalTo(role.value)
+          
     }
   }
 

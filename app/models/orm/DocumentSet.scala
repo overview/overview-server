@@ -91,6 +91,10 @@ case class DocumentSet(
 
   def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute(count)).single.measures
   
+  def setUserRole(userEmail: String, role: DocumentSetUserRoleType): Unit = {
+    Schema.documentSetUsers.insert(DocumentSetUser(id, userEmail, role))
+  }
+  
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
   override def isPersisted(): Boolean = (id > 0)
 
@@ -100,7 +104,7 @@ case class DocumentSet(
 object DocumentSet {
   def findById(id: Long) = Schema.documentSets.lookup(id)
 
-  def findByUserIdWithCountJobUploadedFile(userId: Long, userEmail: String) : Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
+  def findByUserIdWithCountJobUploadedFile(userEmail: String) : Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
     val idToCountQuery = from(Schema.documents)(d =>
       groupBy(d.documentSetId)
       compute(count())
@@ -125,7 +129,7 @@ object DocumentSet {
     )
   }
 
-  def findByUserIdOrderedByCreatedAt(userId: Long, userEmail: String) : Query[DocumentSet] = {
+  def findByUserIdOrderedByCreatedAt(userEmail: String) : Query[DocumentSet] = {
     from(Schema.documentSetUsers, Schema.documentSets)((dsu, ds) =>
       where(dsu.documentSetId === ds.id and dsu.userEmail === userEmail)
       select(ds)
