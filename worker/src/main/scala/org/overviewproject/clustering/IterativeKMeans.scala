@@ -41,14 +41,14 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   def maxIterationsKis2 = 15     // special case as we have rapid convergence here
   
   // Create clustering for k=1 by taking centroid of all elements, and naturally elements in this one cluster
-  def InitializeCentroid(elements:Iterable[T]) : Unit = {
+  def InitializeCentroid(elements:Seq[T]) : Unit = {
     centroids = Seq(mean(elements))
     bestCentroids = centroids
     // NB we don't store fits here, because fit statistic computation is always 1.0 for one cluster
   }
 
   // Reassign elements after a new centroid is created. This is classic k-means core loop
-  def iterateAssignments(elements:Iterable[T], maxIter:Int) : Unit = {
+  def iterateAssignments(elements:Seq[T], maxIter:Int) : Unit = {
     distortions = assignClusters(clusters, elements, centroids)
     var iter=1
     while (iter < maxIter) {
@@ -59,7 +59,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Split one cluster into two. Take a random element for initial new centroid
-  def SplitCentroid(elements:Iterable[T]) : Unit = {
+  def SplitCentroid(elements:Seq[T]) : Unit = {
     val newCentroid = mean(elements.take(1))  // ok, not a random element, first element, but shouldn't matter
     centroids = centroids :+ newCentroid
 
@@ -68,7 +68,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   
   // Generalized centroid addition, bumps K up one
   // Create a new centroid from the first element of the cluster with the worst fit (sum sq distance to all elems)
-  def AddCentroid(elements:Iterable[T], k:Int) : Unit = {
+  def AddCentroid(elements:Seq[T], k:Int) : Unit = {
     val splitIdx = distortions.indexOf(distortions.max)
     val splitElem = clusters.find(_._2 == splitIdx).get._1
     val newCentroid = mean(Seq(splitElem))
@@ -99,7 +99,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Add one cluster to the current clustering, up to K
-  def cluster(elements:Iterable[T], k:Int) : Unit = {
+  def cluster(elements:Seq[T], k:Int) : Unit = {
     k match {
       case 1 => InitializeCentroid(elements)
       case 2 => SplitCentroid(elements)
@@ -110,7 +110,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Not reentrant. Just sayin'
-  def apply(elements:Iterable[T], maxK:Int) : CompactPairArray[T, Int] = {    
+  def apply(elements:Seq[T], maxK:Int) : CompactPairArray[T, Int] = {    
     for (i <- 1 to maxK) {
       cluster(elements, i)
     }
