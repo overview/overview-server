@@ -1,5 +1,6 @@
 package models
 
+import scala.language.postfixOps
 import anorm.SQL
 import anorm.SqlParser._
 import java.sql.Connection
