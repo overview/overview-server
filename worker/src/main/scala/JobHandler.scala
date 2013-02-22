@@ -1,5 +1,5 @@
 /**
- * *
+ *
  * JobHandler.scala
  *
  * Overview Project,June 2012
@@ -115,6 +115,7 @@ object JobHandler {
   }
 
   def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
+    import scala.language.postfixOps
     import anorm._
     import anorm.SqlParser._
     import org.overviewproject.persistence.orm.Schema._
