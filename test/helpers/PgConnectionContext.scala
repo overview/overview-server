@@ -15,6 +15,8 @@ import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 // returned from DB.withConnection, which is an AutoCleanConnection wrapper
 // around bonecp.ConnectionHandle
 trait PgConnectionContext extends Around {
+  import scala.language.implicitConversions
+  
   implicit var pgConnection: PGConnection = _
   lazy implicit val connection = Session.currentSession.connection
   

@@ -1,5 +1,6 @@
 package steps
 
+import scala.language.implicitConversions
 import play.api.test.{TestBrowser,TestServer,FakeApplication}
 import play.api.Play
 import play.api.mvc.Call
