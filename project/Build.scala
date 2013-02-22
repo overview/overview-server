@@ -62,7 +62,8 @@ object ApplicationBuild extends Build {
   )
 
   val ourTestOptions = Seq(
-    Tests.Argument("xonly")
+    Tests.Argument("xonly"),
+    Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl))
   )
 
   val ourResolvers = Seq(
@@ -83,7 +84,6 @@ object ApplicationBuild extends Build {
   ).settings(
     testOptions in Test ++= ourTestOptions,
     scalacOptions ++= ourScalacOptions,
-    initialize ~= {_ => System.setProperty("datasource.default.url", testDatabaseUrl) },
     parallelExecution in Test := false
   )
 
@@ -96,8 +96,9 @@ object ApplicationBuild extends Build {
   ).settings(
     testOptions in Test ++= ourTestOptions,
     scalacOptions ++= ourScalacOptions,
-    initialize ~= {_ => System.setProperty("datasource.default.url", testDatabaseUrl) },
     parallelExecution in Test := false
+  ).settings(
+    initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }    
   ).dependsOn(common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
