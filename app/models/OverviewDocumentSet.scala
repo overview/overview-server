@@ -87,7 +87,7 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSetClone)
     }
 
-    protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false)
+    protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
 
     private def findOwner: OverviewUser = {
       import models.orm.Schema.documentSetUsers

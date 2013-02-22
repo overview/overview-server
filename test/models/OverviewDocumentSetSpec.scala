@@ -327,12 +327,13 @@ class OverviewDocumentSetSpec extends Specification {
       documentSet.errorCount must be equalTo (1)
     }
 
-    "create a copy for cloning user" in new DocumentSetWithUserScope {
+    inExample("create a copy for cloning user") in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
 
       documentSetClone.owner.id must be equalTo (cloner.id)
       documentSetClone.query must be equalTo (documentSet.query)
+      documentSetClone.createdAt must be greaterThan (documentSet.createdAt)
     }
 
     "set cloned DocumentSet to be private" in new PublicDocumentSet {
