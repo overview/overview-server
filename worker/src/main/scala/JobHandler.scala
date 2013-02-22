@@ -19,14 +19,12 @@ import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
 import org.overviewproject.clone.CloneDocumentSet
 
-
 object JobHandler {
 
   val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     try {
-      Logger.info("Handling job")
       j.state = InProgress
       Database.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
@@ -38,17 +36,16 @@ object JobHandler {
         j.statusDescription = Some(progress.status.toString)
         Database.inTransaction { j.update }
       }
-      
+
       def logProgress(progress: Progress): Unit = {
         val logLabel = if (j.state == Cancelled) "CANCELLED"
         else "PROGRESS"
 
         Logger.info(logLabel + ": " + progress.fraction * 100 + "% done. " + progress.status + ", " + (if (progress.hasError) "ERROR" else "OK"))
       }
-      
+
       val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
-      
-      
+
       def progFn(progress: Progress): Boolean = {
         progressReporter.update(progress)
         j.state == Cancelled
@@ -63,7 +60,7 @@ object JobHandler {
 
     } catch {
       case t: Throwable =>
-        Logger.error("Job failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
+        Logger.error("Job for DocumentSet id " + j.documentSetId + " failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
         j.state = Error
         j.statusDescription = Some(ExceptionStatusMessage(t))
         Database.inTransaction {
@@ -121,6 +118,7 @@ object JobHandler {
     import org.overviewproject.persistence.orm.Schema._
     import org.squeryl.PrimitiveTypeMode._
 
+    Logger.info(s"Deleting cancelled job for document set id: ${job.documentSetId}")
     Database.inTransaction {
       implicit val connection = Database.currentConnection
 
@@ -144,27 +142,38 @@ object JobHandler {
 
   private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn) {
     val documentSet = DB.withConnection { implicit connection =>
-      DocumentSetLoader.load(job.documentSetId).get
+      DocumentSetLoader.load(job.documentSetId)
     }
-    val nodeWriter = new NodeWriter(job.documentSetId)
 
-    val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
-    val producer = DocumentProducerFactory.create(job, documentSet, indexer, progressFn, asyncHttpRetriever)
+    def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
+      val query = ds.query.map(q => s"Query: $q").getOrElse("")
+      val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
+      s"Creating DocumentSet: ${job.documentSetId} Type: ${ds.documentSetType} Title: ${ds.title} $query $uploadId".trim
+    }.getOrElse(s"Creating DocumentSet: Could not load document set id: ${job.documentSetId}")
 
-    producer.produce()
+    Logger.info(documentSetInfo(documentSet))
+
+    documentSet.map { ds =>
+      val nodeWriter = new NodeWriter(job.documentSetId)
+
+      val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
+      val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn, asyncHttpRetriever)
+
+      producer.produce()
+    }
 
   }
 
   private def handleCloneJob(job: PersistentDocumentSetCreationJob) {
     import org.overviewproject.clone.{ JobProgressLogger, JobProgressReporter }
-    
+
     val jobProgressReporter = new JobProgressReporter(job)
     val progressObservers: Seq[Progress => Unit] = Seq(
-        jobProgressReporter.updateStatus _,
-        JobProgressLogger.apply _
-    )
-    
+      jobProgressReporter.updateStatus _,
+      JobProgressLogger.apply _)
+
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
+      Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
       CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
     }
   }
