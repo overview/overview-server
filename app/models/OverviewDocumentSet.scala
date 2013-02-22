@@ -57,6 +57,8 @@ trait OverviewDocumentSet {
 }
 
 object OverviewDocumentSet {
+  import scala.language.postfixOps
+  
   trait OverviewDocumentSetImpl extends OverviewDocumentSet {
     protected val ormDocumentSet: DocumentSet
 

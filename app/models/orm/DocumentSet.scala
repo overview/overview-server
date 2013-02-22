@@ -6,6 +6,7 @@
  */
 package models.orm
 
+import scala.language.postfixOps
 import anorm.SQL
 import anorm.SqlParser._
 import java.util.Date
