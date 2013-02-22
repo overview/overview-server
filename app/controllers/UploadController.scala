@@ -107,11 +107,7 @@ object UploadController extends UploadController with PgConnection {
       documentSetType = CsvImportDocumentSet,
       uploadedFileId = Some(upload.uploadedFile.id)).save
 
-    User.findById(upload.userId).map { u => 
-      documentSet.setUserRole(u.email, Owner)
-      import models.orm.{ DocumentSetUser, Schema }
-      Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, u.email))
-    }
+    User.findById(upload.userId).map { u => documentSet.setUserRole(u.email, Owner) }
     documentSet.createDocumentSetCreationJob(contentsOid = Some(upload.contentsOid))
   }
 }
