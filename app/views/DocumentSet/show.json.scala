@@ -11,6 +11,8 @@ import views.ScopedMessages
 import views.helper.DocumentSetHelper
 
 object show {
+  import scala.language.implicitConversions
+
   private val jobStateKeyToMessage = ScopedMessages("models.DocumentSetCreationJob.state")
 
   private def documentSetCreationJobProperties(job: OverviewDocumentSetCreationJob)(implicit lang: Lang) = {

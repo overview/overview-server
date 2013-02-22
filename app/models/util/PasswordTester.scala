@@ -3,6 +3,8 @@ package models.util
 import scala.util.matching.Regex
 
 class PasswordTester(val password: String) {
+  import scala.language.implicitConversions
+  
   // 2012's fast GPUs can probably manage 10k passwords per second. Let's make
   // passwords that will survive for 12 hours
   val NumGuessesForSafePassword = BigInt(100000L) * 12 * 3600

@@ -30,6 +30,8 @@ object LogEntry {
   def query = from(Schema.logEntries)(l => select(l))
 
   object ImplicitHelper {
+    import scala.language.implicitConversions
+    
     class LogEntrySeq(logEntries: Seq[LogEntry]) {
       private lazy val usersMap : Map[Long,User] = {
         from(Schema.users)(u =>
