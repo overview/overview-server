@@ -52,7 +52,7 @@ object OverviewDocumentSetCreationJob {
         (dscj.state === InProgress or dscj.state === Cancelled)).forUpdate.headOption
         
     cancellableJob.map { job =>
-      new OverviewDocumentSetCreationJobImpl(job.copy(state = Cancelled)) save
+      new OverviewDocumentSetCreationJobImpl(job.copy(state = Cancelled)).save
     }
   }
 
