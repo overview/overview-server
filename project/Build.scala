@@ -115,7 +115,7 @@ object ApplicationBuild extends Build {
     resourceGenerators in Compile <<= ((definedSbtPlugins in Compile, resourceManaged in Compile) map Defaults.writePluginsDescriptor)(Seq(_)),
     templatesImport += "views.Magic._",
     testOptions in Test ++= ourTestOptions,
-    scalacOptions in Test ++= ourScalacOptions,
+    scalacOptions ++= ourScalacOptions,
     javaOptions in Test ++= Seq(
       "-Dconfig.file=conf/application-test.conf",
       "-Dlogger.resource=logback-test.xml",
