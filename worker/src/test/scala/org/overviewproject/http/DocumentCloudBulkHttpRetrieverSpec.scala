@@ -17,8 +17,8 @@ class DocumentCloudBulkHttpRetrieverSpec extends Specification {
     trait HttpResponseContext extends SuccessfulRetriever with After {
       self: RetrieverProvider =>
 
-      val redirectingHttpRetriever = new TestHttpRetriever(actorSystem) {
-    	var redirectsProcessed: Int = 0
+      class CountingTestHttpRetriever(actorSystem: ActorSystem) extends TestHttpRetriever(actorSystem) {
+        var redirectsProcessed: Int = 0
 
         override def request(resource: DocumentAtURL, onSuccess: Response => Unit,
           onFailure: Throwable => Unit) {
@@ -28,23 +28,25 @@ class DocumentCloudBulkHttpRetrieverSpec extends Specification {
           onSuccess(response)
         }
       }
+
+      val redirectingHttpRetriever = new CountingTestHttpRetriever(actorSystem) 
       
       var documentsRetrieved: Int = 0
-      
+
       def processDocument(document: DCDocumentAtURL, result: String): Boolean = {
         documentsRetrieved += 1
-        true         
+        true
       }
-      
+
       def after = actorSystem.shutdown
     }
 
     "Request public documents directly" in new HttpResponseContext {
-      val urlsToRetrieve = Seq.fill(5)(new DCDocumentAtURL("title", "id", "url")) ++ 
-      Seq.fill(5)(new PrivateDCDocumentAtURL("title", "id", "url", "username", "password"))
-      
+      val urlsToRetrieve = Seq.fill(5)(new DCDocumentAtURL("title", "id", "url")) ++
+        Seq.fill(5)(new PrivateDCDocumentAtURL("title", "id", "url", "username", "password"))
+
       val bulkRetriever = new DocumentCloudBulkHttpRetriever(retriever, redirectingHttpRetriever)
-      
+
       val failedDocs = bulkRetriever.retrieve(urlsToRetrieve, processDocument)
       Await.result(failedDocs.future, Duration("500ms")) must not(throwA[TimeoutException])
 
