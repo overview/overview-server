@@ -137,7 +137,7 @@ views.DocumentSet._errorList.h3=Documents with errors
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=Title
 views.DocumentSet._manualForm.label.query=Query
-views.DocumentSet._manualForm.placeholder.query=frog
+views.DocumentSet._manualForm.placeholder.query=Cambodia
 views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
 views.DocumentSet._manualForm.submit_html=Import from DocumentCloud query for “<span class="query">{0}</span>”
 
