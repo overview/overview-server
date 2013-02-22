@@ -40,14 +40,12 @@ class DBSpec extends DbSpecification {
     "rollback transaction on exception" in {
       val exceptionMessage = "trigger rollback"
 
-      try {
-        DB.withTransaction { implicit connection =>
-          insertDocumentSet("DBSpec")
-          throw new Exception(exceptionMessage)
-        }
-      } catch {
-        case e => e.getMessage must be equalTo (exceptionMessage)
+      def throwInsideTransaction: Unit = DB.withTransaction { implicit connection =>
+        insertDocumentSet("DBSpec")
+        throw new Exception(exceptionMessage)
       }
+
+      throwInsideTransaction must throwA[Exception](message = exceptionMessage)
 
       DB.withConnection { implicit connection =>
         val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)
