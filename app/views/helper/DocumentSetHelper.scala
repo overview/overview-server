@@ -6,7 +6,7 @@ import models.OverviewDocumentSetCreationJob
 object DocumentSetHelper {
   /**
    * @param jobDescriptionKey A key, like "clustering_level:4"
-   * @returns A translated string, like "Clustering (4)"
+   * @return A translated string, like "Clustering (4)"
    */
   def jobDescriptionKeyToMessage(jobDescriptionKey: String)(implicit lang: Lang): String = {
     val keyAndArgs : Seq[String] = jobDescriptionKey.split(':')
@@ -21,7 +21,7 @@ object DocumentSetHelper {
 
   /**
    * @param job A DocumentSetCreationJob
-   * @returns A translated string, like "Clustering (4)"
+   * @return A translated string, like "Clustering (4)"
    */
   def jobDescriptionMessage(job: OverviewDocumentSetCreationJob)(implicit lang: Lang): String = {
     val n = job.jobsAheadInQueue

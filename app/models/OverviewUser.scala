@@ -33,7 +33,7 @@ trait OverviewUser {
   /** @return None if the user has no open confirmation request */
   def withConfirmationRequest: Option[OverviewUser with ConfirmationRequest]
 
-  /** @Return None if the user has not confirmed */
+  /** @return None if the user has not confirmed */
   def asConfirmed: Option[OverviewUser with Confirmation]
 
   /** @return The same user, with a new reset-password token. Save to commit. */

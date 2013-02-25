@@ -38,7 +38,7 @@ trait UserController extends Controller {
   /**
     * Adds the user to the database, with a confirmation token.
     *
-    * @throw SquerylSQLException with Cause SQLException with SQLState "23505"
+    * @throws SquerylSQLException with Cause SQLException with SQLState "23505"
     *        (unique key violation) if there's a race and the user has recently
     *        been saved.
     */
