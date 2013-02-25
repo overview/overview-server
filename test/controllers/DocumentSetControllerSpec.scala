@@ -20,6 +20,7 @@ import models.orm.DocumentSetType._
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
 import play.api.test.Helpers._
+import models.orm.DocumentSetUser
 
 class DocumentSetControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
@@ -27,19 +28,22 @@ class DocumentSetControllerSpec extends Specification with Mockito {
   class TestDocumentSetController extends DocumentSetController {
     var savedDocumentSet: Option[DocumentSet] = None
     var createdJobOwnerId: Option[Long] = None
+    var loadedViewers: Int = 0
     
     private var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
     
-    protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
+    override protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
       documentSets.get(id)
     }
-    protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = {
+    override protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = {
       savedDocumentSet = Some(documentSet.copy(id = 1l))
       savedDocumentSet.get
     }
-    protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) {}
-    protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) {
-      createdJobOwnerId = Some(documentSet.id)
+    override protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) {}
+    override protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials): Unit =  createdJobOwnerId = Some(documentSet.id)
+    override protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = {
+      loadedViewers += 1
+      Nil
     }
   }
 
@@ -109,6 +113,17 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     "return BadRequest if form input is bad" in new BadUpdateRequest {
       val result = controller.update(documentSetId)(request)
       status(result) must be equalTo(BAD_REQUEST)
+    }
+    
+    "return viewers" in {
+      val controller = new TestDocumentSetController
+      val user = mock[OverviewUser]
+      val request = new AuthorizedRequest(FakeRequest(), user)
+      
+      val result = controller.showUsers(1l)(request)
+      status(result) must be equalTo(OK)
+      
+      controller.loadedViewers must be equalTo(1)
     }
   }
 

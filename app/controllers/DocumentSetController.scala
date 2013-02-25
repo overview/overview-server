@@ -10,7 +10,8 @@ import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
 import models.orm.DocumentSet.ImplicitHelper._
 import models.orm.DocumentSetUserRoleType._
-import models.{OverviewDocumentSet,ResultPage}
+import models.{ OverviewDocumentSet, ResultPage }
+import models.orm.DocumentSetUser
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -90,15 +91,21 @@ trait DocumentSetController extends Controller {
           OverviewDocumentSet(d).cloneForUser(request.user.id)
           ("success" -> m("create.success"))
         }.getOrElse("error" -> m("clone.failure"))
-        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus)        
-      }
-    )
+        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus)
+      })
+  }
+
+  def showUsers(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    val viewers = loadDocumentSetViewers(id)
+
+    Ok(views.json.DocumentSetUser.showUsers(viewers))
   }
 
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
+  protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
 }
 
 object DocumentSetController extends DocumentSetController {
@@ -108,5 +115,7 @@ object DocumentSetController extends DocumentSetController {
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
+    
+  protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = OverviewDocumentSet.findViewers(id)
 
 }
