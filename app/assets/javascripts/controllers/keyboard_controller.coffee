@@ -12,7 +12,7 @@
 # This list must be sorted alphabetically. This helps us avoid duplicates.
 events = {
   'Control+a': 'DocumentListController.select_all'
-  'Down': 'TreeController.go_down_or_expand'
+  'Down': 'TreeController.go_down'
   'Left': 'TreeController.go_left'
   'PageDown': 'DocumentContentsController.page_down'
   'PageUp': 'DocumentContentsController.page_up' # can't work for iframes
@@ -22,7 +22,7 @@ events = {
   'd': 'TreeController.go_right'
   'j': 'DocumentListController.go_down'
   'k': 'DocumentListController.go_up'
-  's': 'TreeController.go_down_or_expand'
+  's': 'TreeController.go_down'
   'w': 'TreeController.go_up'
 }
 

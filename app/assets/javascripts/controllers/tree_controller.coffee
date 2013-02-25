@@ -2,6 +2,7 @@ TreeView = require('views/tree_view').TreeView
 AnimatedTree = require('models/animated_tree').AnimatedTree
 Animator = require('models/animator').Animator
 PropertyInterpolator = require('models/property_interpolator').PropertyInterpolator
+$ = jQuery
 
 log = require('globals').logger.for_component('tree')
 
@@ -106,25 +107,76 @@ tree_controller = (div, cache, focus, state) ->
       log("failed to move to #{finder}", "nodeid_before:#{nodeid}")
     new_nodeid
 
+  # Returns a jQuery Deferred which will resolve when the node is expanded.
+  #
+  # The Deferred will be returned resolved if the node is already expanded
+  # or is a leaf.
+  expand_deferred = (nodeid) ->
+    child_nodeid = view.nodeid_below(nodeid)
+    if !child_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
+      cache.on_demand_tree.demand_node(nodeid)
+    else
+      $.Deferred().resolve()
+
+  # Returns a jQuery Deferred which will resolve when the node is expanded.
+  #
+  # Side-effects: logs the action.
+  #
+  # The Deferred will be returned resolved if the node is already expanded
+  # or is a leaf.
+  expand_deferred_with_log = (nodeid) ->
+    deferred = expand_deferred(nodeid)
+    if deferred.state() == 'resolved'
+      log('attempt to expand already-expanded or leaf node', "#{nodeid}")
+    else
+      log('expand node', "#{nodeid}")
+    deferred
+
+  expand = (e) ->
+    nodeid = selected_nodeid()
+    expand_deferred_with_log(nodeid)
+
+  collapse = (e) ->
+    nodeid = selected_nodeid()
+    log('attempt to collapse', "#{nodeid}")
+
+  toggle_expand = (e) ->
+    nodeid = selected_nodeid()
+    child_nodeid = view.nodeid_below(nodeid)
+    if !child_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
+      log('toggling node to expanded', "#{nodeid}")
+      expand_deferred(nodeid)
+    else
+      log('toggling node to collapsed', "#{nodeid}")
+      # FIXME actually collapse
+
   go_up = (e) -> go('nodeid_above', e)
   go_left = (e) -> go('nodeid_left', e)
   go_right = (e) -> go('nodeid_right', e)
-  go_down = (e) -> go('nodeid_below', e)
 
-  go_down_or_expand = (e) ->
+  go_down = (e) ->
     nodeid = selected_nodeid()
-    new_nodeid = go_down()
-    if !new_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
-      # Children aren't loaded, but they exist
-      log('expanded node', "#{nodeid}")
-      cache.on_demand_tree.demand_node(nodeid)
+    deferred = expand_deferred(nodeid)
+    if deferred.state() == 'resolved'
+      go('nodeid_below', e)
+    else
+      deferred.done ->
+        # We can't query the view for a DrawableNode, because the view hasn't
+        # drawn yet. However, we know the view *will* draw the added children,
+        # so we can select one anyway.
+        child_nodeid = cache.on_demand_tree.id_tree.children[nodeid]?[0]
+        if child_nodeid
+          log('expanded and moved to nodeid_below', "nodeid_before:#{nodeid} nodeid_after:#{child_nodeid}")
+          select_nodeid(child_nodeid)
 
   {
     go_up: go_up
     go_down: go_down
     go_left: go_left
     go_right: go_right
-    go_down_or_expand: go_down_or_expand
+    expand: expand
+    collapse: collapse
+    toggle_expand: toggle_expand
   }
 
 exports = require.make_export_object('controllers/tree_controller')

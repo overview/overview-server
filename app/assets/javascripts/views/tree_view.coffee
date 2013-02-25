@@ -342,28 +342,9 @@ class TreeView
     @tree.id_tree.parent[nodeid]
 
   nodeid_below: (nodeid) ->
-    node = @last_draw?.drawn_nodes?[nodeid]
-    if node
-      best_distance = undefined
-      best_child_node = undefined
-      if node.children?
-        for child_node in node.children
-          distance = Math.abs(child_node.px.middle - node.px.middle)
-          if !best_distance?
-            best_distance = distance
-            best_child_node = child_node
-          else if distance < best_distance
-            best_distance = distance
-            best_child_node = child_node
-          else
-            # We're traversing from left to right. If something is further
-            # from the midpoint than the one before it, then we've passed
-            # the middle and all the next ones will be further still
-            break
-
-      best_child_node?.animated_node?.node?.id
-    else
-      undefined
+    drawable_node = @last_draw?.drawn_nodes?[nodeid]
+    # Select the leftmost child node
+    drawable_node?.children?[0]?.animated_node?.node.id
 
   # Returns the sibling (left or right) of the given node, or undefined if
   # there is no sibling.
