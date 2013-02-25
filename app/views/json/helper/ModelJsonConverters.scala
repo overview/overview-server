@@ -6,6 +6,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.{ JsValue, Writes }
 import play.api.libs.json.Json.toJson
 import org.overviewproject.tree.orm.DocumentProcessingError
+import models.orm.DocumentSetUser
 
 object ModelJsonConverters {
 
@@ -51,4 +52,8 @@ object ModelJsonConverters {
   private def maybeMap(key: String, maybeValue: Option[String], toValue: String => String = identity): Map[String, JsValue] =
     maybeValue.map(v => Map(key -> toJson(toValue(v)))).getOrElse(Map.empty)
 
+    
+ implicit object JsonDocumentSetUser extends Writes[DocumentSetUser] {
+    override def writes(documentSetUser: DocumentSetUser): JsValue =  toJson(Map("email" -> documentSetUser.userEmail))
+  }
 }

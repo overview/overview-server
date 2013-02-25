@@ -77,6 +77,21 @@ class ModelJsonConvertersSpec extends DbSpecification {
 
       tagJson must not / ("color")
     }
+  }
   
+  "JsonDocumentSetUser" should {
+    import models.orm.DocumentSetUser
+    import models.orm.DocumentSetUserRoleType._
+    import views.json.helper.ModelJsonConverters.JsonDocumentSetUser
+
+    "write user email" in {
+      val userEmail = "user@host.com"
+      val documentSetUser = DocumentSetUser(1l, userEmail, Viewer)
+      
+      val documentSetUserJson = toJson(documentSetUser).toString
+      
+      documentSetUserJson must /("email" -> userEmail)
+    }
+    
   }
 }
