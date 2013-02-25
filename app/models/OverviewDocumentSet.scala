@@ -54,6 +54,7 @@ trait OverviewDocumentSet {
    * that will create a copy of the original, including nodes, tags, and documents.
    */
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
+  
 }
 
 object OverviewDocumentSet {
@@ -164,6 +165,13 @@ object OverviewDocumentSet {
     if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
   }
 
+  def findViewers(id: Long): Iterable[DocumentSetUser] = {
+    import models.orm.Schema.documentSetUsers
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    
+    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role.value == Viewer.value) // 
+  } 
+  
   private def deleteClientGeneratedInformation(id: Long) {
     import models.orm.Schema._
     import org.overviewproject.postgres.SquerylEntrypoint._

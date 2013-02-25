@@ -9,6 +9,7 @@ import org.specs2.specification.Scope
 import helpers.DbTestContext
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
+import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
 import models.orm.Schema
 import models.orm.DocumentSetUser
@@ -378,6 +379,19 @@ class OverviewDocumentSetSpec extends Specification {
       val cancelledCloneJob = OverviewDocumentSetCreationJob.findByDocumentSetId(cloneDocumentSet.id).get
       cancelledCloneJob.state must be equalTo(Cancelled)
       documentSetUsers.allRows must have size (0)
+    }
+
+  	"list viewers" in new DocumentSetWithUserScope {
+      val users = Seq(
+        DocumentSetUser(documentSet.id, "owner", Owner),
+        DocumentSetUser(documentSet.id, "viewer-1", Viewer),
+        DocumentSetUser(documentSet.id, "viewer-2", Viewer))
+      
+      Schema.documentSetUsers.insert(users)
+      val viewers = OverviewDocumentSet.findViewers(documentSet.id)
+
+      viewers must haveTheSameElementsAs(users.tail, (a: DocumentSetUser, b: DocumentSetUser) => 
+        a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
     }
   }
   step(stop)
