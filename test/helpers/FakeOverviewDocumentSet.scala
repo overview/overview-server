@@ -14,4 +14,5 @@ case class FakeOverviewDocumentSet(
   val isPublic = false
 
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
+  def addViewer(email: String): Unit = {}
 }

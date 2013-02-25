@@ -54,12 +54,17 @@ trait OverviewDocumentSet {
    * that will create a copy of the original, including nodes, tags, and documents.
    */
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
-  
+
+  /**
+   * Add a viewer to the document set 
+   */
+  def addViewer(email: String): Unit
+
 }
 
 object OverviewDocumentSet {
   import scala.language.postfixOps
-  
+
   trait OverviewDocumentSetImpl extends OverviewDocumentSet {
     protected val ormDocumentSet: DocumentSet
 
@@ -86,6 +91,13 @@ object OverviewDocumentSet {
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
       Schema.documentSetCreationJobs.insert(cloneJob)
       OverviewDocumentSet(ormDocumentSetClone)
+    }
+
+    def addViewer(email: String): Unit = {
+      import models.orm.Schema.documentSetUsers
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
     }
 
     protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
@@ -154,6 +166,7 @@ object OverviewDocumentSet {
     Schema.documentSets.where(d => d.isPublic === true).map(OverviewDocumentSet(_)).toSeq
   }
 
+  /** Delete the document set */
   def delete(id: Long) {
     import models.orm.Schema._
     import org.overviewproject.postgres.SquerylEntrypoint._
@@ -165,13 +178,17 @@ object OverviewDocumentSet {
     if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
   }
 
+  /**
+   * @return all email addresses with the role `Viewer` for a document set
+   * @param id The id of the document set
+   */
   def findViewers(id: Long): Iterable[DocumentSetUser] = {
     import models.orm.Schema.documentSetUsers
     import org.overviewproject.postgres.SquerylEntrypoint._
-    
+
     documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role.value == Viewer.value) // 
-  } 
-  
+  }
+
   private def deleteClientGeneratedInformation(id: Long) {
     import models.orm.Schema._
     import org.overviewproject.postgres.SquerylEntrypoint._

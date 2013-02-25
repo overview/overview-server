@@ -222,7 +222,7 @@ class OverviewDocumentSetSpec extends Specification {
     trait PublicDocumentSetBeingCloned extends PublicDocumentSet {
 
       var cloneDocumentSet: DocumentSet = _
-      
+
       override def setupWithDb = {
         super.setupWithDb
         val admin = User.findById(1l).getOrElse(throw new Exception("Missing admin user from db"))
@@ -248,7 +248,7 @@ class OverviewDocumentSetSpec extends Specification {
       logEntries.allRows must have size (0)
       tags.allRows must have size (0)
       documentTags.allRows must have size (0)
-      documentSetUsers.allRows must have size(0)
+      documentSetUsers.allRows must have size (0)
       documents.allRows must have size (0)
       nodes.allRows must have size (0)
       documentSetCreationJobs.allRows must have size (0)
@@ -373,24 +373,34 @@ class OverviewDocumentSetSpec extends Specification {
       publicDocumentSets must have size (5)
       publicDocumentSets.map(_.query).distinct must be equalTo (Seq("public"))
     }
-    
+
     "cancel clone jobs when deleting source document set" in new PublicDocumentSetBeingCloned {
       OverviewDocumentSet.delete(documentSet.id)
       val cancelledCloneJob = OverviewDocumentSetCreationJob.findByDocumentSetId(cloneDocumentSet.id).get
-      cancelledCloneJob.state must be equalTo(Cancelled)
+      cancelledCloneJob.state must be equalTo (Cancelled)
       documentSetUsers.allRows must have size (0)
     }
 
-  	"list viewers" in new DocumentSetWithUserScope {
+    "list viewers" in new DocumentSetWithUserScope {
       val users = Seq(
         DocumentSetUser(documentSet.id, "owner", Owner),
         DocumentSetUser(documentSet.id, "viewer-1", Viewer),
         DocumentSetUser(documentSet.id, "viewer-2", Viewer))
-      
+
       Schema.documentSetUsers.insert(users)
       val viewers = OverviewDocumentSet.findViewers(documentSet.id)
 
-      viewers must haveTheSameElementsAs(users.tail, (a: DocumentSetUser, b: DocumentSetUser) => 
+      viewers must haveTheSameElementsAs(users.tail, (a: DocumentSetUser, b: DocumentSetUser) =>
+        a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
+    }
+
+    "add viewers" in new DocumentSetWithUserScope {
+      val viewer = "viewer@observer.net"
+      documentSet.addViewer(viewer)
+
+      val allViewers = Schema.documentSetUsers.allRows.filter(_.role.value == Viewer.value)
+
+      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewer, Viewer)), (a: DocumentSetUser, b: DocumentSetUser) =>
         a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
     }
   }
