@@ -53,30 +53,30 @@ class DocumentSetControllerSpec extends Specification with Mockito {
   }
 
   trait AuthorizedSession extends ControllerScope {
-    def request = new AuthorizedRequest(
+    val request = new AuthorizedRequest(
       FakeRequest()
         .withSession("AUTH_USER_ID" -> user.id.toString)
         .withFormUrlEncodedBody(sessionForm: _*), user)
 
-    def sessionForm: Seq[(String, String)]
+    val sessionForm: Seq[(String, String)]
   }
 
-  trait CreateRequest extends AuthorizedSession {
+  class CreateRequest extends {
     val query = "documentSet query"
     val title = "documentSet title"
-    override def sessionForm = Seq("query" -> query, "title" -> title)
-  }
+    override val sessionForm = Seq("query" -> query, "title" -> title)
+  } with AuthorizedSession 
 
-  trait UpdateRequest extends AuthorizedSession {
+  class UpdateRequest extends {
     val documentSetId: Long = 1l
     val newTitle = "New Title"
-    override def sessionForm = Seq("public" -> "true", "title" -> newTitle)
-  }
+    override val sessionForm = Seq("public" -> "true", "title" -> newTitle)
+  } with AuthorizedSession
 
-  trait BadUpdateRequest extends AuthorizedSession {
+  class BadUpdateRequest extends {
     val documentSetId: Long = 1l
-    override def sessionForm = Seq("public" -> "not a boolean")
-  }
+    override val sessionForm = Seq("public" -> "not a boolean")
+  } with AuthorizedSession 
   
   "The DocumentSet Controller" should {
 
