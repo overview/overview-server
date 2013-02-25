@@ -268,7 +268,13 @@ object OverviewUser {
 
     def isAllowedDocument(id: Long) = {
       import models.orm.Schema
-      Schema.documentSetUsers.where(dsu => id in from(Schema.documents)(d => where(d.documentSetId === dsu.documentSetId) select(d.id))).nonEmpty
+      val documentQuery = Schema.documents.where(d => d.id === id)
+      val rolesQuery = Schema.documentSetUsers.where(dsu => dsu.userEmail === email)
+      val joinQuery = from(rolesQuery, documentQuery)((dsu, d) =>
+        where(dsu.documentSetId === d.documentSetId)
+        select(dsu)
+      )
+      joinQuery.nonEmpty
     }
 
     def isAdministrator = user.role == UserRole.Administrator
