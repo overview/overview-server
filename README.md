@@ -4,8 +4,8 @@ overview-server
 The Overview Project is a visual doucment mining system designed for journalists.
 Important links:
 
-  - production server at overviewproject.org
-  - project blog at overview.ap.org
+  - production server at https://overviewproject.org
+  - project blog at http://overview.ap.org
   - user forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
   - developer forum at https://groups.google.com/forum/?fromgroups#!forum/overview-dev
 
