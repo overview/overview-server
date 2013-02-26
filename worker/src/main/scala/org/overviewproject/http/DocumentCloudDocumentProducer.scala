@@ -23,7 +23,7 @@ import org.overviewproject.util.Progress._
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
-  private val FetchingFraction = 0.9
+  private val FetchingFraction = 0.5
   private var numDocs = 0
 
   def produce() {
