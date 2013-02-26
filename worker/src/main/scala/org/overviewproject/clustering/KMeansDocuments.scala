@@ -67,11 +67,17 @@ trait KMeansDocumentOps {
 
 }
 
-// Use DocumentVectorMap as centroid type, but just document ID as element type. 
-// We reference into a set of vectors given in the ctor
+// Actually define the classes that can cluster documents, by combining the DocumentOps trait with various KMeans types
+
 class KMeansDocuments(protected val docVecs:DocumentSetVectors) 
-  extends KMeans[DocumentID,DocumentVectorMap] 
+  extends KMeans[DocumentID,DocumentVectorMap]                  // DocumentVectorMap as centroid type, document ID as element type. 
   with KMeansDocumentOps {
   
 }
 
+
+class IterativeKMeansDocuments(protected val docVecs:DocumentSetVectors) 
+  extends IterativeKMeans[DocumentID,DocumentVectorMap] 
+  with KMeansDocumentOps {
+  
+}

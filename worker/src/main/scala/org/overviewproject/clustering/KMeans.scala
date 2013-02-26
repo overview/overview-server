@@ -11,7 +11,7 @@
 package org.overviewproject.clustering
 
 import scala.Array.fallbackCanBuildFrom
-import scala.collection.mutable.Set
+import scala.collection.mutable.{Set, ArrayBuffer}
 import org.overviewproject.util.{CompactPairArray, Logger, LoopedIterator }
 import org.overviewproject.util.Logger.logExecutionTime
 import scala.reflect.ClassTag

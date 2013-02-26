@@ -7,7 +7,7 @@
  */
 
 
-import org.overviewproject.clustering.KMeans
+import org.overviewproject.clustering.{KMeans, IterativeKMeans}
 import org.overviewproject.util.CompactPairArray
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
@@ -15,7 +15,7 @@ import scala.collection.mutable.Set
 class KMeansSpec extends Specification {
 
   // Integer element type, Double centroid type -- tests case where types T != C
-  class IntKMeans extends KMeans[Int,Double] {
+  trait IntKMeansOps  {
     
     def distance(a:Int, b:Double, minSoFar:Double) : Double = math.abs(a-b)
     def mean(elems: Iterable[Int]) : Double = {
@@ -28,9 +28,14 @@ class KMeansSpec extends Specification {
       sum / len
     }
   }
- 
-  val threeClusters = List[Int](1,2,3,9,10,11,30,40,50)
+  
+ class IntKMeans extends KMeans[Int,Double] with IntKMeansOps
+ class IntIterativeKMeans extends IterativeKMeans[Int,Double] with IntKMeansOps
+  
+  // This test case is challenging because of variable spacing. Iterative finds a better result, in sum sq dist sense 
+  val threeClusters = Vector[Int](1,2,3,9,10,11,30,40,50)
   val threeClustersResult = CompactPairArray[Int,Int](threeClusters.zip(Seq(0,0,0,1,1,1,2,2,2)):_*)
+  val threeClustersIterativeResult = CompactPairArray[Int,Int](threeClusters.zip(Seq(1,1,1,1,1,1,2,0,0)):_*)
   val simpleSet = List[Int](1,2,3,4,5)
   
   "centroidSeedSets" should {
@@ -88,8 +93,16 @@ class KMeansSpec extends Specification {
       km.seedClusterSize = 1
       km.seedClusterSkip = 3
       val clusters = km(threeClusters, 3)
-      //println("clusters: " + clusters)
       clusters should beEqualTo (threeClustersResult)
     }
+
+    "find three better clusters using iterative algorithm" in {
+      val km = new IntIterativeKMeans
+      km.newCentroidN    = 1 
+      km.newCentroidSkip = 3
+      val clusters = km(threeClusters, 3)
+      clusters should beEqualTo (threeClustersIterativeResult)
+    }
+
   }
 }

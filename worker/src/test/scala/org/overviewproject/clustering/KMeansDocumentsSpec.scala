@@ -38,6 +38,17 @@ class KMeansDocumentsSpec extends Specification {
       //println("clusters: " + clusters)
       clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
     }
+  
+  /*  "find three clusters using iterative algorithm" in {
+      val docVecs = getSampleDocumentVectors
+      val km = new IterativeKMeansDocuments(docVecs)
+      
+      val clusters = km(docVecs.keys.toSeq, 3)
+      val clusterSizes = (0 until 3).map(i => clusters.count(_._2 == i))
+      //println("cluster sizes: " + clusterSizes)
+      //println("clusters: " + clusters)
+      clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
+    }*/
   }
 }
    

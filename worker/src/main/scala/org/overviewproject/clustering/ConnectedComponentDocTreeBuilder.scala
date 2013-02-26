@@ -128,38 +128,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
     sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
   }
-
-
 }
-
-// Take a node and create K children.
-// Encapsulates parameters of our our-means clustering
-class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected val k:Int) {
-  private val km = new KMeansDocuments(docVecs)
-  km.seedClusterSize = 1
-  km.maxIterations = 15
-  
-  def splitNode(node:DocTreeNode) : Unit = {  
-    val stableDocs = node.docs.toSeq.sorted   // sort documentIDs, to ensure consistent input to kmeans
-    val assignments = km(stableDocs, k)
-    for (i <- 0 until k) { 
-      val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced
-      if (docsInThisCluster.size > 0)
-        node.children += new DocTreeNode(Set(docsInThisCluster:_*))
-    }
-    
-    if (node.children.size == 1)    // if all docs went into single node, make this a leaf, we are done
-      node.children.clear           // (either "really" only one cluster, or clustering alg problem, but let's never infinite loop)
-  }
-  
-  def makeALeafForEachDoc(node:DocTreeNode) = {
-    if (node.docs.size > 1)
-      node.docs foreach { id => 
-        node.children += new DocTreeNode(Set(id))
-      }
-  }
-}
-
 
 // Use k-means until nodes get small enough, then switch to Connected Components down to leaves
 class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
