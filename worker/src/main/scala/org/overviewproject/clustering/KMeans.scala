@@ -69,6 +69,7 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
 
   // Lazily return elements in cluster
   def elementsInCluster(clusterIdx:Int, elements:IndexedSeq[T], clusters:Array[Int])  = {
+    require(elements.size == clusters.size)
     for (k <- (0 until elements.size).view
         if clusters(k) == clusterIdx)
       yield elements(k)

@@ -28,13 +28,12 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   private var clusters = Array[Int]()
   private var distortions  = Array[Double]()
 
-  private var bestCentroids = Seq[C]()
   private var bestClusters = Array[Int]()
   private var bestFit = Double.MaxValue 
   private var bestFitK = 0
     
   // track total distortion for each K tried
-  private var totalDistortionPerK = ArrayBuffer[Double](0.0)     // meaningless initial value for K=0
+  private var totalDistortionPerK = Array[Double](0.0)     // meaningless initial value for K=0
   
   def currentK = centroids.size
 
@@ -168,19 +167,21 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
 
   // Save best fit so far.
-  def saveBestFit(k:Int) : Unit = {
-    totalDistortionPerK += distortions.sum
+  def saveBestFit(k:Int, maxK:Int) : Unit = {
+    totalDistortionPerK(k) = distortions.sum
     val fit = goodnessOfFit(k)
     if (fit < bestFit) {
-      bestCentroids = centroids
-      bestClusters = clusters
+      if (k < maxK) 
+        bestClusters = clusters.clone()
+      else
+        bestClusters = clusters // suppress copy if this is the last iteration
       bestFit = fit
       bestFitK = k
     }    
   }
   
   // Add one cluster to the current clustering, up to K
-  def cluster(elements:IndexedSeq[T], k:Int) : Unit = {
+  def cluster(elements:IndexedSeq[T], k:Int, maxK:Int) : Unit = {
     
     if (debugInfo)
       Logger.debug("-- Adding centroid " + k)
@@ -191,29 +192,32 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       case _ => AddCentroid(elements, k) 
     }
 
-    val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
-    if (debugInfo)
+    if (debugInfo) {
+      val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
       Logger.debug("-- cluster sizes: " + clusterSizes)
+    }
 
-    saveBestFit(k)
+    saveBestFit(k, maxK)
   }
   
   // Not reentrant. Just sayin'
   def apply(elements:IndexedSeq[T], maxK:Int) : Array[Int] = {
+    // reset best fit trackers
+    totalDistortionPerK = Array.fill(maxK+1)(0.0)
+    bestFit = Double.MaxValue 
     
     //debugInfo = elements.size > 10000
-    
     if (debugInfo)
       Logger.info("---- Starting KMI with " + elements.size + " elements ----")
       
     for (i <- 1 to maxK) {
-      cluster(elements, i)
+      cluster(elements, i, maxK)
     }
-    //bestClusters
 
     if (debugInfo)
       Logger.info("---- Finished KMI, goodness of fits: " + (1 to maxK).map(goodnessOfFit).mkString(","))
     
-    clusters
+    require(bestClusters.size == elements.size)
+    bestClusters
   }
 }
