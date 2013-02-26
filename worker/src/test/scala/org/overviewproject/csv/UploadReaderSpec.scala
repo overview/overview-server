@@ -65,6 +65,12 @@ class UploadReaderSpec extends DbSpecification {
       def data: Array[Byte] = Array[Byte](255)
       def contentType = "application/octet-stream ; charset=utf-8"
     }
+    
+    trait UnmappableInput extends UploadContext {
+      def uploadSize = 1
+      def data: Array[Byte] = Array[Byte](144)
+      def contentType = "text/csv ; charset=windows-1252"
+    }
 
     "create reader from UploadedFile" in new LargeData {
       val buffer = new Array[Char](20480)
@@ -96,6 +102,15 @@ class UploadReaderSpec extends DbSpecification {
     }
 
     "insert replacement character for invalid input" in new InvalidInput {
+      val replacement = Charset.forName("UTF-8").newDecoder.replacement.toCharArray()
+
+      val buffer = new Array[Char](uploadSize)
+      reader.read(buffer)
+
+      buffer must be equalTo (replacement)
+    }
+    
+    "insert replacement character for unmappable input" in new UnmappableInput {
       val replacement = Charset.forName("UTF-8").newDecoder.replacement.toCharArray()
 
       val buffer = new Array[Char](uploadSize)

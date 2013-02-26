@@ -71,7 +71,8 @@ class UploadReader() {
     val charSet = encoding.flatMap { n => allCatch opt Charset.forName(n) }
 
     val decoder = charSet.getOrElse(Charset.forName(DefaultCharSet)).newDecoder()
-    decoder.onMalformedInput(CodingErrorAction.REPLACE)
+    decoder.onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE)
+    
   }
 
 }
