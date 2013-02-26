@@ -13,7 +13,7 @@ class UserRoleFormSpec extends Specification {
       val documentSetUser = form.get
       documentSetUser.documentSetId must be equalTo(1l)
       documentSetUser.userEmail must be equalTo("user@host.com")
-      documentSetUser.role.value must be equalTo(Viewer.value)
+      documentSetUser.role must be equalTo(Viewer)
     }
   }
 }
