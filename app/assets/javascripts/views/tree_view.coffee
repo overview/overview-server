@@ -3,8 +3,6 @@ DrawableNode = require('models/drawable_node').DrawableNode
 ColorTable = require('models/color_table').ColorTable
 
 DEFAULT_OPTIONS = {
-  node_vunits: 1,
-  node_vpadding: 0.7,
   color: {
     background: '#ffffff',
     line: '#888888',
@@ -21,7 +19,7 @@ DEFAULT_OPTIONS = {
 }
 
 class DrawOperation
-  constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @zoom, @pan, @options) ->
+  constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @focus_nodes, @focus, @options) ->
     $canvas = $(@canvas)
     @width = +Math.ceil($canvas.parent().width())
     @height = +Math.ceil($canvas.parent().height())
@@ -58,53 +56,68 @@ class DrawOperation
     @ctx.textBaseline = 'top'
     @ctx.shadowColor = 'white'
 
-    @drawn_nodes = {} # hash of nodeid -> DrawableNode
-
   clear: () ->
     @ctx.fillStyle = @options.color.background
     @ctx.fillRect(0, 0, @width, @height)
+
+  _auto_fit_pan: (drawable_node) ->
+    if @focus_nodes?.length
+      nodes = @focus_nodes
+
+      # left_bound, right_bound: absolute X coordinates which must be in view
+      left_bound = undefined
+      right_bound = undefined
+      @root.walk (dn) ->
+        if nodes.indexOf(dn.animated_node.node.id) != -1
+          # We want the outer bounds--that is, the bounds of the selected node
+          # and its children.
+          a = dn.absolute_position()
+          width = dn.outer_width()
+          node_left_bound = a.hmid - width * 0.5
+          node_right_bound = a.hmid + width * 0.5
+
+          left_bound = node_left_bound if !left_bound? || node_left_bound < left_bound
+          right_bound = node_right_bound if !right_bound? || node_right_bound > right_bound
+
+      if left_bound? && right_bound?
+        # left_pan, right_pan: same, but as "focus" coordinates (from -0.5 to 0.5)
+        tree_width = @root.outer_width()
+        left_pan = left_bound / tree_width - 0.5
+        right_pan = right_bound / tree_width - 0.5
+        @focus.auto_fit_pan(left_pan, right_pan)
 
   draw: () ->
     this.clear()
     return if !@tree.root?
 
-    @drawable_node = new DrawableNode(@tree.root, 1, 0)  # root node is fully open (fraction=1) and at level 0
-    depth = @drawable_node.height
- 
-    tree_left_bound =  Math.min(@drawable_node.left_contour...)
-    tree_right_bound =  Math.max(@drawable_node.right_contour...)
-    tree_width = tree_right_bound - tree_left_bound
-    @drawable_node.relative_x = @drawable_node.width/2 - (tree_left_bound + tree_right_bound)/2  # set center of root to center whole tree
+    @root = new DrawableNode(@tree.root)
+    @_auto_fit_pan()
 
-    @px_per_hunit = @width / tree_width / @zoom
-    @px_per_vunit = (@height - @options.node_line_width_selected) / ((depth > 1 && ((depth - 1) * @options.node_vpadding) || 0) + depth * @options.node_vunits)
-    @px_pan = @width * ((0.5 + @pan) / @zoom - 0.5)
+    px_per_hunit = @width / @root.outer_width() / @focus.zoom
+    px_per_vunit = @height / @root.outer_height() # zoom doesn't affect Y axis
+    pan_units = @root.outer_width() * (0.5 + @focus.pan - @focus.zoom * 0.5)
 
-    this._draw_drawable_node(@drawable_node, { middle: tree_width * 0.5 * @px_per_hunit - @px_pan })
+    # Set _px objects on all nodes
+    @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
 
-  _pixel_is_within_node: (x, y, drawable_node) ->
-    px = drawable_node.px
-    x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
-
-  _pixel_to_drawable_node_recursive: (x, y, drawable_node) ->
-    return drawable_node if this._pixel_is_within_node(x, y, drawable_node)
-
-    if drawable_node.children?
-      for child in drawable_node.children
-        drawable_child = this._pixel_to_drawable_node_recursive(x, y, child)
-        return drawable_child if drawable_child
-
-    return undefined
+    @root.walk(this._draw_single_node.bind(this))
 
   pixel_to_action: (x, y) ->
-    drawable_node = this._pixel_to_drawable_node_recursive(x, y, @drawable_node)
+    # Find drawable_node
+    drawable_node = undefined
+    @root.walk (dn) ->
+      return if drawable_node?
+      px = dn._px
+      if x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
+        drawable_node = dn
+
     animated_node = drawable_node?.animated_node
     return undefined if !animated_node?
 
-    px = drawable_node.px
+    px = drawable_node._px
 
-    event = if px.width > 20 && x > px.middle - 5 && x < px.middle + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
-      if drawable_node.children?.length
+    event = if px.width > 20 && x > px.hmid - 5 && x < px.hmid + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
+      if drawable_node.children()?.length
         'collapse'
       else if !animated_node.loaded
         'expand'
@@ -123,13 +136,13 @@ class DrawOperation
     b_red   = parseInt(b.substring(1,3),16)
     b_green = parseInt(b.substring(3,5),16)
     b_blue  = parseInt(b.substring(5,7),16)
-  	     	  	
+
     red   = Math.round(t*b_red + (1-t)*a_red)
     green = Math.round(t*b_green + (1-t)*a_green)
     blue  = Math.round(t*b_blue + (1-t)*a_blue)
-        
+
     "#" + ("0" + red.toString(16)).slice(-2) + ("0" + green.toString(16)).slice(-2) + ("0" + blue.toString(16)).slice(-2)
-  	  
+
   _animated_node_to_line_width: (animated_node) ->
     if animated_node.selected
       @options.node_line_width_selected
@@ -140,18 +153,19 @@ class DrawOperation
 
   # choose color to draw node outline. selected has its own color, leaf nodes are faded, 
   # and we also fade normal nodes when they get too narrow
-  _animated_node_to_line_color: (animated_node, drawable_node) ->
+  _drawable_node_to_line_color: (drawable_node) ->
+    animated_node = drawable_node.animated_node
     if animated_node.selected
       @options.color.line_selected
     else if animated_node.children?.length is 0 # leaf node
       @options.color.line_faded
     else
-      if drawable_node.px.width >= @options.start_fade_width
+      if drawable_node._px.width >= @options.start_fade_width
         @options.color.line_default
-      else if drawable_node.px.width <= @px_per_hunit  # leaf node width
+      else if drawable_node._px.width <= @px_per_hunit  # leaf node width
         @options.color.line_faded
       else
-        t = (@options.start_fade_width - drawable_node.px.width) / (@options.start_fade_width - @px_per_hunit)
+        t = (@options.start_fade_width - drawable_node._px.width) / (@options.start_fade_width - @px_per_hunit)
         this._lerp_hexcolor(@options.color.line_default, @options.color.line_faded, t)
 
   _draw_tagcount: (left, top, width, height, color, fraction) ->
@@ -180,7 +194,7 @@ class DrawOperation
     ctx.restore()
 
   _maybe_draw_description: (drawable_node) ->
-    px = drawable_node.px
+    px = drawable_node._px
     width = px.width - 6 # border+padding
     return if width < 15
 
@@ -217,12 +231,12 @@ class DrawOperation
     ctx.restore()
 
   _maybe_draw_collapse: (drawable_node) ->
-    if drawable_node.children?.length
-      px = drawable_node.px
+    if drawable_node.children()?.length
+      px = drawable_node._px
       if px.width > 20
         ctx = @ctx
         y = px.top + px.height - 8
-        x = px.middle
+        x = px.hmid
         ctx.lineWidth = 1
         ctx.strokeStyle = '#aaaaaa'
         ctx.beginPath()
@@ -233,11 +247,11 @@ class DrawOperation
 
   _maybe_draw_expand: (drawable_node) ->
     if !drawable_node.animated_node.loaded
-      px = drawable_node.px
+      px = drawable_node._px
       if px.width > 20
         ctx = @ctx
         y = px.top + px.height - 8
-        x = px.middle
+        x = px.hmid
         ctx.lineWidth = 1
         ctx.strokeStyle = '#aaaaaa'
         ctx.beginPath()
@@ -248,22 +262,8 @@ class DrawOperation
         ctx.lineTo(x, y - 3)
         ctx.stroke()
 
-  _measure_drawable_node: (drawable_node, parent_px) ->
-    vpadding = @options.node_vpadding
-    fraction = drawable_node.fraction
-    px_per_hunit = @px_per_hunit
-    vpx_of_fraction = fraction * @px_per_vunit
-
-    px = drawable_node.px = {
-      middle: parent_px.middle + drawable_node.relative_x * px_per_hunit,
-      width: drawable_node.width * px_per_hunit,
-      top: (parent_px.top? && (parent_px.top + parent_px.height + vpadding * vpx_of_fraction) || @options.node_line_width_selected * 0.5),
-      height: @options.node_vunits * vpx_of_fraction,
-    }
-    px.left = px.middle - px.width * 0.5
-
-  _draw_measured_drawable_node: (drawable_node) ->
-    px = drawable_node.px
+  _draw_single_node: (drawable_node) ->
+    px = drawable_node._px
     animated_node = drawable_node.animated_node
     node = animated_node.node
 
@@ -283,7 +283,7 @@ class DrawOperation
 
     ctx = @ctx
     ctx.lineWidth = this._animated_node_to_line_width(animated_node)
-    ctx.strokeStyle = this._animated_node_to_line_color(animated_node, drawable_node)
+    ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
 
     ctx.strokeRect(px.left, px.top, px.width, px.height)
 
@@ -291,12 +291,14 @@ class DrawOperation
     this._maybe_draw_expand(drawable_node)
     this._maybe_draw_description(drawable_node)
 
-    @drawn_nodes[node.id] = drawable_node
+    if drawable_node.parent?
+      parent_px = drawable_node.parent._px
+      @_draw_line_from_parent_to_child(parent_px, px)
 
   _draw_line_from_parent_to_child: (parent_px, child_px) ->
-    x1 = parent_px.middle
+    x1 = parent_px.hmid
     y1 = parent_px.top + parent_px.height
-    x2 = child_px.middle
+    x2 = child_px.hmid
     y2 = child_px.top
     mid_y = 0.5 * (y1 + y2)
 
@@ -306,15 +308,6 @@ class DrawOperation
     ctx.moveTo(x1, y1)
     ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
     ctx.stroke()
-
-  _draw_drawable_node: (drawable_node, parent_px) ->
-    this._measure_drawable_node(drawable_node, parent_px)
-    this._draw_measured_drawable_node(drawable_node)
-
-    if drawable_node.children?
-      for child_drawable_node in drawable_node.children
-        this._draw_drawable_node(child_drawable_node, drawable_node.px)
-        this._draw_line_from_parent_to_child(drawable_node.px, child_drawable_node.px)
 
     undefined
 
@@ -342,9 +335,11 @@ class TreeView
     @tree.id_tree.parent[nodeid]
 
   nodeid_below: (nodeid) ->
-    drawable_node = @last_draw?.drawn_nodes?[nodeid]
-    # Select the leftmost child node
-    drawable_node?.children?[0]?.animated_node?.node.id
+    try_nodeid = @tree.id_tree.children[nodeid]?[0]
+    if @tree.on_demand_tree.nodes[try_nodeid]?
+      try_nodeid
+    else
+      undefined
 
   # Returns the sibling (left or right) of the given node, or undefined if
   # there is no sibling.
@@ -454,6 +449,8 @@ class TreeView
       return if e.which != 1
       e.preventDefault()
 
+      @focus.block_auto_pan_zoom()
+
       start_x = e.pageX
       zoom = @focus.zoom
       start_pan = @focus.pan
@@ -470,7 +467,8 @@ class TreeView
         update_from_event(e)
         e.preventDefault()
 
-      $(document).on 'mouseup.tree-view', (e) ->
+      $(document).on 'mouseup.tree-view', (e) =>
+        @focus.unblock_auto_pan_zoom()
         update_from_event(e)
         $('#mousemove-handler').remove()
         $(document).off('.tree-view')
@@ -530,7 +528,7 @@ class TreeView
     shown_tagids = @tree.state.selection.tags
     shown_tagids = @focus_tagids if !shown_tagids.length
 
-    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, shown_tagids, @focus.zoom, @focus.pan, @options)
+    @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, shown_tagids, @tree.state.selection.nodes, @focus, @options)
     @last_draw.draw()
 
   update: () ->

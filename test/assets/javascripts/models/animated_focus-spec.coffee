@@ -155,3 +155,69 @@ describe 'models/animated_focus', ->
       focus.observe('needs-update', (() -> called = true))
       at(0, -> focus.animate_zoom(0.5))
       expect(called).toBe(true)
+
+    it 'should start with auto_pan_zoom_enabled', ->
+      expect(focus.auto_pan_zoom_enabled).toBe(true)
+
+    it 'should set auto_pan_zoom_enabled', ->
+      focus.set_auto_pan_zoom(false)
+      expect(focus.auto_pan_zoom_enabled).toBe(false)
+      focus.set_auto_pan_zoom(true)
+      expect(focus.auto_pan_zoom_enabled).toBe(true)
+
+    it 'should block_auto_pan_zoom() and unblock_auto_pan_zoom()', ->
+      focus.block_auto_pan_zoom()
+      expect(focus.auto_pan_zoom_enabled).toBe(false)
+      focus.unblock_auto_pan_zoom()
+      expect(focus.auto_pan_zoom_enabled).toBe(true)
+
+    it 'should allow nested block_auto_pan_zoom()', ->
+      focus.block_auto_pan_zoom()
+      focus.block_auto_pan_zoom()
+      focus.unblock_auto_pan_zoom()
+      expect(focus.auto_pan_zoom_enabled).toBe(false)
+      focus.unblock_auto_pan_zoom()
+      expect(focus.auto_pan_zoom_enabled).toBe(true)
+
+    it 'should postpone set_auto_pan_zoom() when blocked', ->
+      focus.set_auto_pan_zoom(false)
+      focus.block_auto_pan_zoom()
+      focus.set_auto_pan_zoom(true)
+      expect(focus.auto_pan_zoom_enabled).toBe(false)
+      focus.unblock_auto_pan_zoom()
+      expect(focus.auto_pan_zoom_enabled).toBe(true)
+
+    it 'should auto_fit_pan()', ->
+      focus.set_zoom_and_pan(0.1, 0.0)
+      focus.auto_fit_pan(-0.5, -0.4)
+      expect(focus.zoom).toEqual(0.1)
+      expect(focus.pan).toEqual(-0.45)
+
+    it 'should not auto_fit_pan() if auto_pan_zoom_enabled is false', ->
+      focus.set_zoom_and_pan(0.1, 0.0)
+      focus.block_auto_pan_zoom('test')
+      focus.auto_fit_pan(-0.5, -0.2)
+      expect(focus.zoom).toEqual(0.1)
+      expect(focus.pan).toEqual(0.0)
+
+    it 'should auto_fit_pan() and zoom out when necessary', ->
+      focus.set_zoom_and_pan(0.1, 0.0)
+      focus.auto_fit_pan(-0.2, 0.0)
+      expect(focus.zoom).toEqual(0.2)
+      expect(focus.pan).toEqual(-0.1)
+
+    it 'should do nothing in auto_fit_pan() when the pan fits', ->
+      focus.set_zoom_and_pan(0.1, 0.01)
+      focus.auto_fit_pan(-0.002, 0.01)
+      expect(focus.zoom).toEqual(0.1)
+      expect(focus.pan).toEqual(0.01)
+
+    it 'should pan right as little as possible in auto_fit_pan()', ->
+      focus.set_zoom_and_pan(0.1, 0.0)
+      focus.auto_fit_pan(0.2, 0.25)
+      expect(focus.pan).toEqual(0.2) # i.e., range is 0.15-0.25, on the edge
+
+    it 'should pan left as little as possible in auto_fit_pan()', ->
+      focus.set_zoom_and_pan(0.1, 0.0)
+      focus.auto_fit_pan(-0.25, -0.2)
+      expect(focus.pan).toEqual(-0.2) # i.e., range is -0.25--0.15, on the edge

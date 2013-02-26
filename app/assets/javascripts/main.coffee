@@ -87,6 +87,9 @@ jQuery ($) ->
     controller = document_contents_controller(this, world.cache, world.state)
     keyboard_controller.add_controller('DocumentContentsController', controller)
 
+  auto_focus_controller = require('controllers/auto_focus_controller').auto_focus_controller
+  auto_focus_controller(focus, world)
+
   $(window).resize(refresh_height)
   refresh_height()
 
