@@ -17,10 +17,12 @@ import controllers.forms.DocumentSetForm.Credentials
 import models.OverviewUser
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
+import models.orm.DocumentSetUserRoleType._
 import play.api.mvc.Request
 import play.api.mvc.AnyContent
 import play.api.test.Helpers._
 import models.orm.DocumentSetUser
+import models.orm.DocumentSetUserRoleType
 
 class DocumentSetControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
@@ -29,7 +31,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     var savedDocumentSet: Option[DocumentSet] = None
     var createdJobOwnerId: Option[Long] = None
     var loadedViewers: Int = 0
-
+    var userRoles: Map[String, DocumentSetUserRoleType] = Map()
     private var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
 
     override protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
@@ -39,7 +41,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       savedDocumentSet = Some(documentSet.copy(id = 1l))
       savedDocumentSet.get
     }
-    override protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) {}
+    override protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { userRoles += (email -> role) }
     override protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials): Unit = createdJobOwnerId = Some(documentSet.id)
     override protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = {
       loadedViewers += 1
@@ -77,6 +79,17 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     val documentSetId: Long = 1l
     override val sessionForm = Seq("public" -> "not a boolean")
   } with AuthorizedSession 
+  
+  class AddViewerRequest extends {
+    val documentSetId: Long = 1l
+    val email = "user@host.com"
+    override val sessionForm = Seq("email" -> email, "role" -> "Viewer")
+  } with AuthorizedSession
+  
+  class BadAddViewerRequest extends {
+    val badEmail = "bad email format"
+    override val sessionForm = Seq("email" -> badEmail, "role" -> "Viewer")
+  } with AuthorizedSession
   
   "The DocumentSet Controller" should {
 
@@ -125,6 +138,25 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       status(result) must be equalTo (OK)
 
       controller.loadedViewers must be equalTo (1)
+    }
+    
+    "add viewer with role" in new AddViewerRequest {
+      val result = controller.addUser(1l)(request)
+      
+      status(result) must be equalTo(OK)
+      controller.userRoles.get(email) must beSome(Viewer)
+    }
+    
+    "return BadRequest if form input is bad" in new BadAddViewerRequest {
+      val result = controller.addUser(1l)(request)
+      
+      status(result) must be equalTo(BAD_REQUEST)
+    }
+    
+    "return NotFound is document set is bad" in new AddViewerRequest {
+      val result = controller.addUser(-1l)(request)
+      
+      status(result) must be equalTo(NOT_FOUND)
     }
   }
 

@@ -12,6 +12,8 @@ import models.orm.DocumentSet.ImplicitHelper._
 import models.orm.DocumentSetUserRoleType._
 import models.{ OverviewDocumentSet, ResultPage }
 import models.orm.DocumentSetUser
+import models.orm.DocumentSetUserRoleType
+import controllers.forms.UserRoleForm
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -53,7 +55,7 @@ trait DocumentSetController extends Controller {
         val credentials = tuple._2
 
         val saved = saveDocumentSet(documentSet)
-        setDocumentSetOwner(saved, request.user.email)
+        setDocumentSetUserRole(saved, request.user.email, Owner)
         createDocumentSetCreationJob(saved, credentials)
 
         Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
@@ -100,10 +102,21 @@ trait DocumentSetController extends Controller {
 
     Ok(views.json.DocumentSetUser.showUsers(viewers))
   }
+  
+  def addUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    loadDocumentSet(id).map { ds =>
+      UserRoleForm(id).bindFromRequest().fold(
+        f => BadRequest, { dsu => 
+          setDocumentSetUserRole(ds, dsu.userEmail, dsu.role) 
+          Ok  
+        }
+      )
+    }.getOrElse(NotFound)  
+  }
 
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String)
+  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
   protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
 }
@@ -111,7 +124,7 @@ trait DocumentSetController extends Controller {
 object DocumentSetController extends DocumentSetController {
   protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
-  protected def setDocumentSetOwner(documentSet: DocumentSet, ownerEmail: String) = documentSet.setUserRole(ownerEmail, Owner)
+  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = documentSet.setUserRole(email, role)
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
