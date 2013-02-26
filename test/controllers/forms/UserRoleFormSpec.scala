@@ -29,5 +29,12 @@ class UserRoleFormSpec extends Specification {
       
       form.error("email") must beSome.like { case e => e.message must be equalTo ("error.email") }
     }
+    
+    
+   "reject invalid role strings" in new FormContext {
+     val form = bindForm("user@host.com", "Not a Role")
+     
+     form.error("role") must beSome.like { case e => e.message must be equalTo( "role.invalid_role") }
+   }
   }
 }
