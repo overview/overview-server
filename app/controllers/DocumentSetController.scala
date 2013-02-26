@@ -102,21 +102,31 @@ trait DocumentSetController extends Controller {
 
     Ok(views.json.DocumentSetUser.showUsers(viewers))
   }
-  
+
   def addUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     loadDocumentSet(id).map { ds =>
       UserRoleForm(id).bindFromRequest().fold(
-        f => BadRequest, { dsu => 
-          setDocumentSetUserRole(ds, dsu.userEmail, dsu.role) 
-          Ok  
-        }
-      )
-    }.getOrElse(NotFound)  
+        f => BadRequest, { dsu =>
+          setDocumentSetUserRole(ds, dsu.userEmail, dsu.role) // Currently only sets viewer role
+          Ok
+        })
+    }.getOrElse(NotFound)
+  }
+
+  def removeUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+    loadDocumentSet(id).map { ds =>
+      UserRoleForm(id).bindFromRequest().fold(
+        f => BadRequest, { dsu =>
+          removeDocumentSetUserRoled(ds, dsu.userEmail, dsu.role)
+          Ok
+        })
+    }.getOrElse(NotFound)
   }
 
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
+  protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
   protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
 }
@@ -124,11 +134,13 @@ trait DocumentSetController extends Controller {
 object DocumentSetController extends DocumentSetController {
   protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
-  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = documentSet.setUserRole(email, role)
+  // TODO: handle roles other than Viewer
+  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).addViewer(email)
+  protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).removeViewer(email)
 
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
-    
+
   protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = OverviewDocumentSet.findViewers(id)
 
 }

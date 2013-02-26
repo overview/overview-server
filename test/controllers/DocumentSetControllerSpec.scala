@@ -32,6 +32,8 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     var createdJobOwnerId: Option[Long] = None
     var loadedViewers: Int = 0
     var userRoles: Map[String, DocumentSetUserRoleType] = Map()
+    var removedUsers: Set[String] = Set()
+    
     private var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
 
     override protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
@@ -42,6 +44,8 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       savedDocumentSet.get
     }
     override protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { userRoles += (email -> role) }
+    override protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { removedUsers += email }
+    
     override protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials): Unit = createdJobOwnerId = Some(documentSet.id)
     override protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = {
       loadedViewers += 1
@@ -80,13 +84,14 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     override val sessionForm = Seq("public" -> "not a boolean")
   } with AuthorizedSession 
   
-  class AddViewerRequest extends {
+  class ViewerRequest extends {
     val documentSetId: Long = 1l
     val email = "user@host.com"
     override val sessionForm = Seq("email" -> email, "role" -> "Viewer")
-  } with AuthorizedSession
-  
-  class BadAddViewerRequest extends {
+  } with AuthorizedSession 
+    
+
+  class BadViewerRequest extends {
     val badEmail = "bad email format"
     override val sessionForm = Seq("email" -> badEmail, "role" -> "Viewer")
   } with AuthorizedSession
@@ -140,21 +145,40 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       controller.loadedViewers must be equalTo (1)
     }
     
-    "add viewer with role" in new AddViewerRequest {
+    "add user with role" in new ViewerRequest {
       val result = controller.addUser(1l)(request)
       
       status(result) must be equalTo(OK)
       controller.userRoles.get(email) must beSome(Viewer)
     }
     
-    "return BadRequest if form input is bad" in new BadAddViewerRequest {
+    "return BadRequest if form input is bad" in new BadViewerRequest {
       val result = controller.addUser(1l)(request)
       
       status(result) must be equalTo(BAD_REQUEST)
     }
     
-    "return NotFound is document set is bad" in new AddViewerRequest {
+    "return NotFound if document set is bad" in new ViewerRequest {
       val result = controller.addUser(-1l)(request)
+      
+      status(result) must be equalTo(NOT_FOUND)
+    }
+    
+    "remove user with role" in new ViewerRequest {
+      val result = controller.removeUser(1l)(request)
+      
+      status(result) must be equalTo(OK)
+      controller.removedUsers must haveTheSameElementsAs(Set(email))
+    }
+    
+    "retrun BadRequest if form input is bad" in new BadViewerRequest { 
+      val result = controller.addUser(1l)(request)
+      
+      status(result) must be equalTo(BAD_REQUEST)
+    }
+    
+    "return NotFound if document set is bad" in new ViewerRequest {
+      val result = controller.removeUser(-1l)(request)
       
       status(result) must be equalTo(NOT_FOUND)
     }
