@@ -15,4 +15,5 @@ case class FakeOverviewDocumentSet(
 
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
   def addViewer(email: String): Unit = {}
+  def removeViewer(email: String): Unit = {}
 }

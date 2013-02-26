@@ -56,17 +56,20 @@ trait OverviewDocumentSet {
    */
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
 
-  /**
-   * Add a viewer to the document set 
-   */
+  /** Add a viewer to the document set */
   def addViewer(email: String): Unit
 
+  /** Remove the viewer */
+  def removeViewer(email: String): Unit
 }
 
 object OverviewDocumentSet {
   import scala.language.postfixOps
 
   trait OverviewDocumentSetImpl extends OverviewDocumentSet {
+    import models.orm.Schema
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    
     protected val ormDocumentSet: DocumentSet
 
     override val id = ormDocumentSet.id
@@ -81,8 +84,6 @@ object OverviewDocumentSet {
     override lazy val query = ""
 
     override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
-      import models.orm.Schema
-
       val ormDocumentSetClone = cloneDocumentSet.save
 
       User.findById(cloneOwnerId).map { u =>
@@ -94,16 +95,17 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSetClone)
     }
 
-    def addViewer(email: String): Unit = {
-      import models.orm.Schema.documentSetUsers
-      import org.overviewproject.postgres.SquerylEntrypoint._
+    override def addViewer(email: String): Unit = {
 
-      val emailWithRole = documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
+      val emailWithRole = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
       emailWithRole match {
-        case Some(u) => documentSetUsers.update(u.copy(role = Viewer))
-        case _ => documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
+        case Some(u) => Schema.documentSetUsers.update(u.copy(role = Viewer))
+        case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
       }
     }
+
+    override def removeViewer(email: String): Unit =  Schema.documentSetUsers.deleteWhere(dsu => dsu.documentSetId === id and dsu.userEmail === email)
+    
 
     protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
 
@@ -191,7 +193,7 @@ object OverviewDocumentSet {
     import models.orm.Schema.documentSetUsers
     import org.overviewproject.postgres.SquerylEntrypoint._
 
-    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Viewer) 
+    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Viewer)
   }
 
   private def deleteClientGeneratedInformation(id: Long) {

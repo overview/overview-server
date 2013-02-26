@@ -391,7 +391,7 @@ class OverviewDocumentSetSpec extends Specification {
       val viewers = OverviewDocumentSet.findViewers(documentSet.id)
 
       viewers must haveTheSameElementsAs(users.tail)
-        
+
     }
 
     "add viewers" in new DocumentSetWithUserScope {
@@ -409,6 +409,23 @@ class OverviewDocumentSetSpec extends Specification {
       val allViewers = Schema.documentSetUsers.allRows
       allViewers must have size (1)
       allViewers.head.role must be equalTo (Viewer)
+    }
+
+    "remove viewers" in new DocumentSetWithUserScope {
+      val viewer = "viewer@observer.net"
+      documentSet.addViewer(viewer)
+      documentSet.removeViewer(viewer)
+
+      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
+      allViewers must beEmpty
+    }
+
+    "don't fail if viewer does not exist" in new DocumentSetWithUserScope {
+      val viewer = "viewer@observer.net"
+
+      documentSet.removeViewer(viewer) 
+      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
+      allViewers must beEmpty
     }
   }
   step(stop)
