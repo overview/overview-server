@@ -403,6 +403,14 @@ class OverviewDocumentSetSpec extends Specification {
       allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewer, Viewer)), (a: DocumentSetUser, b: DocumentSetUser) =>
         a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
     }
+
+    "only have one role per user" in new DocumentSetWithUserScope {
+      documentSet.addViewer(admin.email)
+
+      val allViewers = Schema.documentSetUsers.allRows
+      allViewers must have size (1)
+      allViewers.head.role.value must be equalTo (Viewer.value)
+    }
   }
   step(stop)
 }

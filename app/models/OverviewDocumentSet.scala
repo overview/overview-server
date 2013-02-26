@@ -97,7 +97,11 @@ object OverviewDocumentSet {
       import models.orm.Schema.documentSetUsers
       import org.overviewproject.postgres.SquerylEntrypoint._
 
-      documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
+      val emailWithRole = documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
+      emailWithRole match {
+        case Some(u) => documentSetUsers.update(u.copy(role = Viewer))
+        case _ => documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
+      }
     }
 
     protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
