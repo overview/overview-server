@@ -27,8 +27,8 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) ext
   // --- private ---
   val t0 = System.nanoTime()
   private var fractionFetched = 0
-  private val fetchingFraction = 0.9 // what percent done do we say when we're all done fetching docs?
-  private val savingFraction = 0.99
+  private val fetchingFraction = 0.5 // what percent done do we say when we're all done fetching docs?
+  private val savingFraction = 0.98
 
   private val vectorGen = new DocumentVectorGenerator
 

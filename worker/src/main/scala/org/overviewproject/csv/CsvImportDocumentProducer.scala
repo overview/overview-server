@@ -20,7 +20,7 @@ import org.overviewproject.util.Progress._
 class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, maxDocuments: Int, progAbort: ProgressAbortFn)
   extends DocumentProducer with PersistentDocumentSet {
 
-  private val FetchingFraction = 0.9
+  private val FetchingFraction = 0.5
   private val uploadReader = new UploadReader()
   private var bytesRead = 0l
   private var lastUpdateTime = 0l
