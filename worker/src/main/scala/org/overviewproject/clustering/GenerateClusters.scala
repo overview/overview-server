@@ -25,7 +25,7 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
     val stableDocs = node.docs.toArray.sorted   // sort documentIDs, to ensure consistent input to kmeans
     val assignments = km(stableDocs, k)
     for (i <- 0 until k) { 
-      val docsInThisCluster = assignments.view.filter(_._2 == i).map(_._1)  // document IDs assigned to cluster i, lazily produced
+      val docsInThisCluster = km.elementsInCluster(i, stableDocs, assignments)  // document IDs assigned to cluster i, lazily produced
       if (docsInThisCluster.size > 0)
         node.children += new DocTreeNode(Set(docsInThisCluster:_*))
     }

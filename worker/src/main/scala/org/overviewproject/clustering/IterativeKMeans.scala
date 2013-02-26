@@ -25,11 +25,11 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
 
   // Current centroids, cluster assignments, distortion per cluster. This state makes each instance non-reentrant
   private var centroids = Seq[C]() 
-  private var clusters = CompactPairArray[T, Int]()
+  private var clusters = Array[Int]()
   private var distortions  = Array[Double]()
 
   private var bestCentroids = Seq[C]()
-  private var bestClusters = CompactPairArray[T, Int]()
+  private var bestClusters = Array[Int]()
   private var bestFit = Double.MaxValue 
   private var bestFitK = 0
     
@@ -92,17 +92,18 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   
   // Reassign elements after a new centroid is created. This is classic k-means core loop
   def iterateAssignments(elements:IndexedSeq[T], maxIter:Int) : Unit = {
-    distortions = assignClusters(clusters, elements, centroids)
+    distortions = assignClusters(elements, clusters, centroids)
     var stopNow = false
     var iter=1
     while (iter < maxIter && !stopNow) {
-      val clusterSizes = (0 until totalDistortionPerK.size).map(i => clusters.count(_._2 == i))
 
-      if (debugInfo)
+      if (debugInfo) {
+        val clusterSizes = (0 until totalDistortionPerK.size).map(i => clusters.count(_ == i))
         Logger.debug("-- -- after iteration " + iter + " sizes: " + clusterSizes)
+      }
 
-      centroids = refineCentroids(clusters, centroids)
-      var distortions2 = assignClusters(clusters, elements, centroids)
+      centroids = refineCentroids(elements, clusters, centroids)
+      val distortions2 = assignClusters(elements, clusters, centroids)
       
       // If the distortions changed less then percentage threshold, break
       val dis = distortions.sum
@@ -124,13 +125,10 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // Must compute the initial distortion too, we do this as we create the initial assignments array
   def InitializeCentroid(elements:IndexedSeq[T]) : Unit = {
     centroids = Seq(mean(elements))
+    clusters = Array.fill(elements.size)(0)
     
-    clusters = CompactPairArray[T,Int]()
-    clusters.sizeHint(elements.size)
-    
-    var distortion = 0.0
+    var distortion = 0.0          // yeah, could do functional magic, but need performance here (lack of temps, function calls)
     elements.foreach { el =>
-      clusters += Pair(el, 0)
       val d = distance(el, centroids(0))
       distortion += d*d
     }
@@ -152,7 +150,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       Logger.debug("-- -- distortions: " + distortions.mkString(","))
       
     val splitIdx = distortions.indexOf(distortions.max)
-    val splitElem = clusters.view.filter(_._2 == splitIdx).map(_._1)
+    val splitElem = elementsInCluster(splitIdx, elements, clusters)
     val newCentroid = mean(subSampleSeq(splitElem, 0, newCentroidSkip, newCentroidN))
     centroids = centroids :+ newCentroid
 
@@ -193,7 +191,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       case _ => AddCentroid(elements, k) 
     }
 
-    val clusterSizes = (0 until k).map(i => clusters.count(_._2 == i))
+    val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
     if (debugInfo)
       Logger.debug("-- cluster sizes: " + clusterSizes)
 
@@ -201,7 +199,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Not reentrant. Just sayin'
-  def apply(elements:IndexedSeq[T], maxK:Int) : CompactPairArray[T, Int] = {
+  def apply(elements:IndexedSeq[T], maxK:Int) : Array[Int] = {
     
     //debugInfo = elements.size > 10000
     

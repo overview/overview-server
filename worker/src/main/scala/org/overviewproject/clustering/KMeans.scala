@@ -12,7 +12,7 @@ package org.overviewproject.clustering
 
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.mutable.{Set, ArrayBuffer}
-import org.overviewproject.util.{CompactPairArray, Logger, LoopedIterator }
+import org.overviewproject.util.{Logger, LoopedIterator }
 import org.overviewproject.util.Logger.logExecutionTime
 import scala.reflect.ClassTag
 
@@ -31,11 +31,8 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
   // -- Basic operations, every k-means variant will need these --
   
   // Generate first assignments, required for call to assignClusters -- all elements assigned to centroid 0
-  def initialAssignments(elements:Iterable[T]) : CompactPairArray[T,Int] = {
-    val assignments = CompactPairArray[T,Int]()
-    assignments.sizeHint(elements.size)
-    elements foreach { assignments += Pair(_, 0) }
-    assignments
+  def initialAssignments(elements:Iterable[T]) : Array[Int] = {
+    Array.fill(elements.size)(0)
   }
   
   // For each element, compute index of closest centroid
@@ -43,7 +40,7 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
   // Returns total distortion (sumsq of distances) for each cluster
   // Could do this in a more functional style with zipWithIndex, fold, etc. but this is really performance critical code
   // (profiler backs me up here --jms 2013/3/18)
-  def assignClusters(assignments:CompactPairArray[T, Int], elements:Iterable[T], centroids:Seq[C]) : Array[Double] = {
+  def assignClusters(elements:Iterable[T], assignments:Array[Int], centroids:Seq[C]) : Array[Double] = {
     require(assignments.size == elements.size)
     
     var fits = Array.fill(centroids.size)(0.0)
@@ -62,7 +59,7 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
        }
        idx += 1
       }
-      assignments(i) = Pair(el,closestIdx)
+      assignments(i) = closestIdx
       i += 1
       fits(closestIdx) += closestDist*closestDist
     }
@@ -70,22 +67,30 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
     fits
   }
 
+  // Lazily return elements in cluster
+  def elementsInCluster(clusterIdx:Int, elements:IndexedSeq[T], clusters:Array[Int])  = {
+    for (k <- (0 until elements.size).view
+        if clusters(k) == clusterIdx)
+      yield elements(k)
+  }
+
   // Handle case where no elements assigned to a centroid. Returns new centroid to use
   // Simplest implementation here: keep old centroid
-  def emptyCentroid(i:Int, clusters:CompactPairArray[T, Int], centroids:Seq[C]) : C = {
+  def emptyCentroid(i:Int, elements:IndexedSeq[T], clusters:Array[Int], centroids:Seq[C]) : C = {
     centroids(i)
   }
 
   // Given assignments of elements to clusters, compute new centroids as means of clusters
   // In case of empty cluster 
-  def refineCentroids(clusters:CompactPairArray[T, Int], centroids:Seq[C]) : Seq[C] = {
+  def refineCentroids(elements:IndexedSeq[T], clusters:Array[Int], centroids:Seq[C]) : Seq[C] = {
+        
     val k = centroids.size
     Array.tabulate(k) { i =>
-      val clusterElems = clusters.view.filter(_._2 == i).map(_._1)  // magic to lazily generate elements in cluster i
+      val clusterElems = elementsInCluster(i, elements, clusters)
       if (!clusterElems.isEmpty)
         mean(clusterElems)
       else
-        emptyCentroid(i, clusters, centroids)
+        emptyCentroid(i, elements, clusters, centroids)
     }
   } 
 }
@@ -136,16 +141,16 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
 
   // If a cluster ends up empty, create a new centroid. 
   // ATM just picks a quasi-random element; should probably pick element most distant from all centroids
-  override def emptyCentroid(i:Int, clusters:CompactPairArray[T, Int], centroids:Seq[C]) : C = {
+  override def emptyCentroid(i:Int, elements:IndexedSeq[T], clusters:Array[Int], centroids:Seq[C]) : C = {
 //    println("New centroid for cluster " + i)
     val skip = seedClusterSkip * (i+1)  // +1 to avoid picking an element originally part of seed set for cluster i
-    val elem = clusters(skip % clusters.length)
-    mean(List(elem._1))
+    val elem = elements(skip % clusters.length)
+    mean(List(elem))
   }
   
 
   // -- Main --
-  def apply (elements:Seq[T], k:Int) : CompactPairArray[T,Int] = {   
+  def apply (elements:IndexedSeq[T], k:Int) : Array[Int] = {   
     var clusters = initialAssignments(elements)
     
     if (!elements.isEmpty) {
@@ -162,7 +167,7 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
         while (!stopNow) {
   
           logExecutionTime("K-means assignClusters iteration " + iterCount + " on " + elements.size + " elements", logThis) {
-            assignClusters(clusters, elements, centroids)
+            assignClusters(elements, clusters, centroids)
           }  
          
           // Stop if we hit max iteration count
@@ -171,7 +176,7 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
             stopNow = true
          
           // stop if the split failed to generate more than one cluster
-          val clusterSizes = (0 until k).map(i => clusters.count(_._2 == i))
+          val clusterSizes = (0 until k).map(i => clusters.count(_ == i))
           if (clusterSizes.filter(_ != 0).length == 1) {
             stopNow = true
           }
@@ -181,7 +186,7 @@ abstract class KMeans[T : ClassTag, C : ClassTag]
            
           logExecutionTime("K-means refineCentroids iteration " + iterCount + " on " + elements.size + " elements", logThis) {
             if (!stopNow)
-              centroids = refineCentroids(clusters, centroids)
+              centroids = refineCentroids(elements, clusters, centroids)
           }
         }
       }

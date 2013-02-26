@@ -8,7 +8,6 @@
 
 
 import org.overviewproject.clustering.{KMeans, IterativeKMeans}
-import org.overviewproject.util.CompactPairArray
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
 
@@ -34,8 +33,8 @@ class KMeansSpec extends Specification {
   
   // This test case is challenging because of variable spacing. Iterative finds a better result, in sum sq dist sense 
   val threeClusters = Vector[Int](1,2,3,9,10,11,30,40,50)
-  val threeClustersResult = CompactPairArray[Int,Int](threeClusters.zip(Seq(0,0,0,1,1,1,2,2,2)):_*)
-  val threeClustersIterativeResult = CompactPairArray[Int,Int](threeClusters.zip(Seq(1,1,1,1,1,1,2,0,0)):_*)
+  val threeClustersResult = Array[Int](0,0,0,1,1,1,2,2,2)
+  val threeClustersIterativeResult = Array[Int](1,1,1,1,1,1,2,0,0)
   val simpleSet = List[Int](1,2,3,4,5)
   
   "centroidSeedSets" should {
@@ -69,7 +68,7 @@ class KMeansSpec extends Specification {
       val km = new IntKMeans
       val centroids = List[Double](1, 12, 40)
       val assignments = km.initialAssignments(threeClusters)
-      km.assignClusters(assignments, threeClusters, centroids) 
+      km.assignClusters(threeClusters, assignments, centroids) 
       assignments should beEqualTo (threeClustersResult)
     }
   }
@@ -79,7 +78,7 @@ class KMeansSpec extends Specification {
       val km = new IntKMeans
       val clusters = threeClustersResult
       val oldCentroids = List(0.0,0.0,0.0)
-      val centroids = km.refineCentroids(clusters, oldCentroids)
+      val centroids = km.refineCentroids(threeClusters, clusters, oldCentroids)
       val tc = threeClusters
       centroids(0) should beCloseTo (tc.take(3).sum/3, 0.0001)
       centroids(1) should beCloseTo (tc.drop(3).take(3).sum/3, 0.0001)
