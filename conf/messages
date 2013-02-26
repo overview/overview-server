@@ -28,7 +28,7 @@ forms.LoginForm.error.not_confirmed=Your email address and password are correct,
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
-mailers.User.create.signoff=Happy analyzing,
+mailers.User.create.signoff_html=If you have questions or need help, try the <a href="{0}">help page</a>, or the <a href="{1}">user forum</a>. Happy document mining,
 mailers.User.create.signature=The Overview Project developers
 
 mailers.User.createErrorUserAlreadyExists.subject=Overview Project re-registration attempt
