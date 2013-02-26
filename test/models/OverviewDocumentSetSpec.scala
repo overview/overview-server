@@ -390,18 +390,17 @@ class OverviewDocumentSetSpec extends Specification {
       Schema.documentSetUsers.insert(users)
       val viewers = OverviewDocumentSet.findViewers(documentSet.id)
 
-      viewers must haveTheSameElementsAs(users.tail, (a: DocumentSetUser, b: DocumentSetUser) =>
-        a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
+      viewers must haveTheSameElementsAs(users.tail)
+        
     }
 
     "add viewers" in new DocumentSetWithUserScope {
       val viewer = "viewer@observer.net"
       documentSet.addViewer(viewer)
 
-      val allViewers = Schema.documentSetUsers.allRows.filter(_.role.value == Viewer.value)
+      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
 
-      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewer, Viewer)), (a: DocumentSetUser, b: DocumentSetUser) =>
-        a.documentSetId == b.documentSetId && a.userEmail == b.userEmail && a.role.value == b.role.value)
+      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewer, Viewer)))
     }
 
     "only have one role per user" in new DocumentSetWithUserScope {
@@ -409,7 +408,7 @@ class OverviewDocumentSetSpec extends Specification {
 
       val allViewers = Schema.documentSetUsers.allRows
       allViewers must have size (1)
-      allViewers.head.role.value must be equalTo (Viewer.value)
+      allViewers.head.role must be equalTo (Viewer)
     }
   }
   step(stop)

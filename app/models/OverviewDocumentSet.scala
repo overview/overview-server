@@ -2,7 +2,8 @@ package models
 
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
-import models.orm.{ DocumentSet, DocumentSetUser, User }
+
+import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, User }
 import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
 
@@ -135,9 +136,9 @@ object OverviewDocumentSet {
 
   /** Factory method */
   def apply(ormDocumentSet: DocumentSet): OverviewDocumentSet = {
-    ormDocumentSet.documentSetType.value match {
-      case "CsvImportDocumentSet" => CsvImportDocumentSet(ormDocumentSet)
-      case "DocumentCloudDocumentSet" => DocumentCloudDocumentSet(ormDocumentSet)
+    ormDocumentSet.documentSetType match {
+      case DocumentSetType.CsvImportDocumentSet => CsvImportDocumentSet(ormDocumentSet)
+      case DocumentSetType.DocumentCloudDocumentSet => DocumentCloudDocumentSet(ormDocumentSet)
       case _ => throw new Exception("Impossible document-set type " + ormDocumentSet.documentSetType.value)
     }
   }
@@ -190,7 +191,7 @@ object OverviewDocumentSet {
     import models.orm.Schema.documentSetUsers
     import org.overviewproject.postgres.SquerylEntrypoint._
 
-    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role.value == Viewer.value) // 
+    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Viewer) 
   }
 
   private def deleteClientGeneratedInformation(id: Long) {
