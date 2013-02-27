@@ -4,32 +4,49 @@
 
 @main(optionalUser=optionalUser, title="Help", h1="Help", bodyClass="help-show") {
   <p>It takes just a few minutes to start exploring your documents in Overview. For quick start, see this video (you'll want to watch it full screen.)</p>
-  <figure><iframe src="//player.vimeo.com/video/52576763?title=0&amp;byline=0&amp;portrait=0" width="600" height="337" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe></figure>
-  <p>Or follow the instructions below. For more, see the FAQ <a href="http://overview.ap.org/faq/">Overview FAQ</a>. If you need additional help, try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> where developers and users are around to answer questions.</p>
-  <p><strong>0. Overview depends on DocumentCloud to store, OCR, and publish documents.</strong> So you will need a DocumentCloud account (<a href="https://www.documentcloud.org/contact">here&#8217;s how to get one.</a>)</p>
-  <p><strong>1. Batch upload your documents to a DocumentCloud project</strong><br />
-  Log in to your DocumentCloud account Create a project to store all of your files, using the &#8220;New Project&#8221; button. Then select &#8220;New Documents.&#8221; Now here&#8217;s the trick to batch uploads: when the file dialog box opens, you can select all of the documents in a folder simultaneously by clicking on the first, then shift-clicking on the last (or pressing Control-A on Windows, or Command-A on Mac). You can keep the documents private if you like.</p>
+  <figure style="width: 600px; margin-left: auto; margin-right: auto"><iframe src="//player.vimeo.com/video/52576763?title=0&amp;byline=0&amp;portrait=0" width="600" height="337" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe></figure>
+  <p>Or follow the instructions below. For more, see the FAQ <a href="http://overview.ap.org/faq/">Overview FAQ</a>, or try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> where developers and users are around to answer questions.</p>
+  <p><strong>There are two ways to get your documents into Overview: import a DocumentCloud project, or upload a CSV file.</strong></p>
+
+  <br /><p><strong>1. If you are a journalist, put your documents in a DocumentCloud project.</strong><br />
+
+  <a href="https://documentcloud.org">DocumentCloud</a> is a free tool for journalists to upload, OCR, search, store, and publish their documents. If you are a journalist and you don't already have a DocumentCloud account, <a href="https://www.documentcloud.org/contact">here&#8217;s how to get one</a>.</p>
+
+  <p>Log in to your DocumentCloud account and create a project to store all of your files, using the &#8220;New Project&#8221; button. Then select &#8220;New Documents.&#8221; Now here&#8217;s the trick to batch uploads: when the file dialog box opens, you can select all of the documents in a folder simultaneously by clicking on the first, then shift-clicking on the last (or pressing Control-A on Windows, or Command-A on Mac). You can keep the documents private if you like.</li>
+
   <figure><img src="@routes.Assets.at("images/Help/step1.png")" alt="" /></figure>
-  <p><strong>2. Log into Overview and import your project</strong><br />
-  Go to <strong><a href="@routes.WelcomeController.show()">overviewproject.org</a></strong> and log in, or create an account. Select &#8220;import your project from DocumentCloud&#8221; and enter your DocumentCloud username and password when prompted. Your DocumentCloud projects will appear. Select the project that you want to explore, and get a coffee while Overview imports and analyzes it.</p>
+
+  Then log into Overview and import your project. From the main screen, select &#8220;Import a new document set&#8221; and then &#8220;Your DocumentCloud account&#8221; and enter your DocumentCloud username and password when prompted. Your DocumentCloud projects will appear. Select the project that you want to explore, and get a coffee while Overview imports and analyzes it.</p>
+  
+  <br /><p><strong>2. You can also upload your documents as a CSV file.</strong><br />
+  This is the best option if you're not a journalist, or if you already have your documents in that format. The CSV file must have a column named "text" with the full text of each document, one document per row. You can also add a "URL" column to tell Overview how to display the document when you view it inside the application -- this works particularly well with tweets.</p> 
+
+  <p>To upload your CSV, log into Overview and select &#8220;Import a new document set&#8221; and then &#8220;a file you upload&#8221;. Choose the file, check the preview to make sure you have selected the correct character encoding, and go.</p>
+
   <figure><img src="@routes.Assets.at("images/Help/step2.png")" alt="" /></figure>
-  <p><strong>3. Explore the documents in the tree view</strong></p>
+
+  <p>Here's lots more on <a href="overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/">how to prepare a CSV file for Overview</a>.</p>
+
+  <br /><p><strong>3. Explore the documents in the tree view</strong></p>
   <p>Overview&#8217;s main screen is divided into four parts: the topic tree, the tag list, the document list, and the document viewer.</p>
   <figure><img src="@routes.Assets.at("images/Help/step3.png")" alt="" /></figure>
-  <p>The topic tree view displays your documents sorted into the topics and sub-topics that Overview has automatically created for your documents. The big node at the top contains all documents. It splits into several smaller nodes below, each of which contains  documents on similar topics. The nodes are different sizes, because sometimes Overview finds many documents on a similar topic, while in other cases a document is so unique that Overview puts it into a node all by itself.</p>
-  <p>You can pan the tree left and right by dragging with the mouse, or moving the scroll bar. You can zoom into the tree by using the mouse wheel, two fingers on the trackpad, or dragging one end of the scroll bar. Nodes which have a small ⊕ in the center can be expanded to show children, while ⊖ hides children.</p>
-  <p>Each node is labelled by the top keywords from the documents in that node. These words tell you the topic of the node. The children of a node contain, collectively, all of the documents in the parent, but broken down into more specialized topics.</p>
-  <p>When you select a node, the documents in it appear in the document list. Each document in the list is represented by a list of keywords specific to that document. Clicking on a document on the list loads it in the document viewer.</p>
-  <p><strong>4. Tag interesting documents</strong><br />
+  <p>The topic tree view displays your documents sorted into the topics and sub-topics that Overview has automatically created for your documents. The big node at the top contains all documents. It splits into several smaller nodes below, each of which contains documents on similar topics. The nodes are different sizes, because sometimes Overview finds many documents on a similar topic, while in other cases a document is so unique that Overview puts it into a node all by itself.</p>
+  <p>You can navigate through the nodes in the tree with the arrow keys, or by clicking. When you select a node, the documents in it appear in the document list. Each document in the list is represented by a list of keywords specific to that document. Clicking on a document on the list loads it in the document viewer.</p>
+  <p>You can pan the tree left and right by dragging with the mouse, or moving the scroll bar. You can zoom into the tree by using the mouse wheel, swiping two fingers on the trackpad, or dragging one end of the scroll bar. Nodes which have a small ⊕ in the center can be expanded to show children, while ⊖ hides children.</p>
+  <p>Each node is labelled by the top keywords from the documents in that node. These words tell you the topic of the node. The children of each node contain, collectively, all of the documents in the parent, broken down into more specialized topics.</p>
+  
+  <br /><p><strong>4. Tag interesting documents</strong><br />
   As you explore the topic tree, you&#8217;ll run across individual documents or entire nodes you want to remember. Enter a descriptive tag in the &#8220;new tag&#8221; field and press &#8220;tag.&#8221; The currently selected documents will be tagged, and a little tag color swatch will appear next to them in the document list.</p>
   <figure><img src="@routes.Assets.at("images/Help/step4.png")" alt="" /></figure>
+  <p>Tags and nodes have independent lives: each document can have any number of tags applied to it, and the same tag can be applied anywhere in the tree.<p>
   <p>Once you&#8217;ve created a tag, you can add the currently selected documents to it at any time by pressing the + button that appears when your mouse is over the tag name.  (To tag an entire node at once, select the node and then press the +/- button.) Or press &#8211; to remove the tag.</p>
   <p>Clicking on a tag name selects that tag,  highlighting the tagged documents in the tree and loading them into the document list.</p>
-  <p><strong>5. Work your way through the tree</strong><br />
+  
+  <br /><p><strong>5. Work your way through the tree</strong><br />
   When you have a lot of documents, it pays to be systematic. We recommend working your way through the nodes in the tree from left to right &#8212; biggest topics to smallest topics. Select a node, then view a few of the documents in it to see if you understand what they have in common. If there seems to be more than one important topic in the documents in that node, try opening up the child nodes instead, until you find a node where all of the documents are more or less the same. Then, tag that node with a descriptive label.</p>
   <p>As you proceed, you may find documents in the same topic in different nodes. Overview doesn&#8217;t know what story you are working on, so it can&#8217;t always guess how the documents should be arranged. You can apply a tag to any combination of nodes and documents to create a set that is meaningful to you.</p>
   <p>You may also  discover that the documents in a node are irrelevant to your story, in which case you can tag them with &#8220;read&#8221; and simply move on. Part of the power of Overview is being able to decide <em>not</em> to look at an entire topic.</p>
   <p>When you&#8217;re finished this process, you&#8217;ll have a neatly categorized tree, and a set of tags corresponding to all the interesting topics in your documents.</p>
-  <p><strong>6. Ask for help!</strong><br />
-  Questions? Bugs? Something you&#8217;d like to see in a future version! <a href="http://overview.ap.org/contact">Contact us!</a></p>
+  <br ><p><strong>6. Ask for help!</strong><br />
+  Questions? Bugs? Something you&#8217;d like to see in a future version! Try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="http://overview.ap.org/contact">contact us</a> directly!</p>
 }
