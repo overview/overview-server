@@ -102,17 +102,19 @@ class DrawOperation
 
     @root.walk(this._draw_single_node.bind(this))
 
-  pixel_to_action: (x, y) ->
-    # Find drawable_node
+  pixel_to_drawable_node: (x, y) ->
     drawable_node = undefined
     @root.walk (dn) ->
       return if drawable_node?
       px = dn._px
       if x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
         drawable_node = dn
+    drawable_node
 
-    animated_node = drawable_node?.animated_node
-    return undefined if !animated_node?
+  pixel_to_action: (x, y) ->
+    drawable_node = @pixel_to_drawable_node(x, y)
+    return undefined if !drawable_node?
+    animated_node = drawable_node.animated_node
 
     px = drawable_node._px
 
