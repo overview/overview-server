@@ -256,6 +256,6 @@ views.User.new.title=Register
 views.User.new.h1=Register
 
 views.Welcome.show.title=The Overview Project
-views.Welcome.show.h1=Browse lots of documents
-views.Welcome.show.p1=You''re a journalist who used to think you never found enough documents. Now you have too many.
-views.Welcome.show.p2=Overview will automatically file documents into folders for you. That way, you can focus on what''s important: the story.
+views.Welcome.show.h1=
+views.Welcome.show.p1=Overview automatically sorts thousands of documents into topics and sub-topics, by reading the full text of each one.
+views.Welcome.show.p2=<a href="/help">Learn how</a>.
