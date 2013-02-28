@@ -1,25 +1,7 @@
-@(
-  publicDocumentSets: Seq[OverviewDocumentSet]
-)(implicit lang: Lang)
+@()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._importPublic")) { m =>
-  <div id="import-public-document-sets">
-    <h2>@m("title")</h2>
-    @if(publicDocumentSets.length > 0) {
-      <p>@m("preamble")</p>
-      <ul class="unstyled public-document-sets">
-        @for(documentSet <- publicDocumentSets) {
-          <li>
-            <form method="POST" action="@routes.DocumentSetController.createClone" class="form-inline">
-              <input type="hidden" name="sourceDocumentSetId" value="@documentSet.id">
-              <button class="btn"><i class="icon-download"></i> @m("import")</button>
-            </form>
-            <h3>@documentSet.title</h3>
-            <p class="shared-by">@m("shared_by", documentSet.owner.email)</p>
-          </li>
-        }
-      </ul>
-    } else {
-      <p>@m("empty")</p>
-    }
+  <div id="import-public-document-sets" data-source-url="@routes.PublicDocumentSetController.index">
+    <h2>@m("loading")</h2>
+    <!-- This content will be replaced in JavaScript -->
   </div>
 }

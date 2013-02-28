@@ -127,11 +127,7 @@ views.DocumentSet._import.from_sample=A sample
 views.DocumentSet._import.from_upload=A file you upload
 views.DocumentSet._import.from_public=Someone else’s document set
 
-views.DocumentSet._importPublic.title=Public document sets
-views.DocumentSet._importPublic.preamble=The following document sets were marked public by Overview users.
-views.DocumentSet._importPublic.empty=No Overview user has marked a document set public.
-views.DocumentSet._importPublic.shared_by=Shared by {0}
-views.DocumentSet._importPublic.import=Clone
+views.DocumentSet._importPublic.loading=Loading document sets…
 
 views.DocumentSet._errorList.h3=Documents with errors
 views.DocumentSet._manualForm.label.title=Title
@@ -222,6 +218,13 @@ views.Password.editError.link_html=Please fill in the <a href="{0}">reset-passwo
 views.Password.new_.title=Reset your password
 views.Password.new_.h1=Reset your password
 views.Password.new_.p=We can help you reset your password. All you need to know is the email address you registered with.
+
+views.PublicDocumentSet.index.title=Public document sets
+views.PublicDocumentSet.index.preamble=The following document sets were marked public by Overview users.
+views.PublicDocumentSet.index.empty=No Overview user has marked a document set public.
+
+views.PublicDocumentSet._documentSet.shared_by=Shared by {0}
+views.PublicDocumentSet._documentSet.import=Clone
 
 views.Session._form.h3=Log in to your account
 views.Session._form.label.email=Email

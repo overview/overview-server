@@ -18,10 +18,9 @@ class indexSpec extends Specification {
     lazy val user = OverviewUser(ormUser)
 
     val documentSets: Seq[OverviewDocumentSet] = Seq()
-    val publicDocumentSets: Seq[OverviewDocumentSet] = Seq()
     implicit lazy val documentSetsPage = ResultPage(documentSets, 10, 1)
 
-    implicit lazy val j = jerry(index(user, documentSetsPage, form, publicDocumentSets).body)
+    implicit lazy val j = jerry(index(user, documentSetsPage, form).body)
     def $(selector: java.lang.String) = j.$(selector) 
   }
 

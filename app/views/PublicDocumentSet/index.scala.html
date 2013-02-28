@@ -1,15 +1,13 @@
 @(publicDocumentSets: Seq[OverviewDocumentSet])(implicit lang: Lang)
 
-
-<ul class="unstyled public-document-sets">
-  @publicDocumentSets.map { d =>
-    <li>
-      <form method="post" action="@routes.DocumentSetController.createClone">
-        <input type="hidden" name="sourceDocumentSetId" value="@d.id" />
-        <button class="btn"><i class="icon-plus-sign"></i> Clone</button>
-      </form>
-      <h2>@d.title</h2>
-    </li>
+@defining(scopedMessages("views.PublicDocumentSet.index")) { m =>
+  <h2>@m("title")</h2>
+  @if(publicDocumentSets.isEmpty) {
+    <p class="empty">@m("empty")</p>
+  } else {
+    <p class="preamble">@m("preamble")</p>
+    <ul class="unstyled public-document-sets">
+      @publicDocumentSets.map(views.html.PublicDocumentSet._documentSet(_))
+    </ul>
   }
-
-</ul>
+}

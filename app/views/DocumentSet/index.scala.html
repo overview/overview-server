@@ -1,8 +1,7 @@
 @(
   user: OverviewUser,
   documentSets: ResultPage[OverviewDocumentSet],
-  form: controllers.forms.DocumentSetForm.FormType,
-  publicDocumentSets: Seq[OverviewDocumentSet]
+  form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
 @javascripts = {
@@ -30,7 +29,7 @@
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @views.html.DocumentSet._import(user, form, publicDocumentSets)
+    @views.html.DocumentSet._import(user, form)
 
     @if(documentSets) {
       <ul class="unstyled document-sets">

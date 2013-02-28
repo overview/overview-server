@@ -25,9 +25,7 @@ trait DocumentSetController extends Controller {
     val realPage = if (page <= 0) 1 else page
     val documentSets = OverviewDocumentSet.findByUserId(request.user.email, pageSize, realPage)
 
-    val publicDocumentSets = OverviewDocumentSet.findPublic
-
-    Ok(views.html.DocumentSet.index(request.user, documentSets, form, publicDocumentSets))
+    Ok(views.html.DocumentSet.index(request.user, documentSets, form))
   }
 
   def show(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

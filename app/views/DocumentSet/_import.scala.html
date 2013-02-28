@@ -1,7 +1,6 @@
 @(
   user: OverviewUser,
-  form: controllers.forms.DocumentSetForm.FormType,
-  publicDocumentSets: Seq[OverviewDocumentSet]
+  form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.DocumentSet._import")) { m =>
@@ -27,7 +26,7 @@
       </div>
 
       <div class="tab-pane fade in" id="import-public">
-        @views.html.DocumentSet._importPublic(publicDocumentSets)
+        @views.html.DocumentSet._importPublic()
       </div>
     </div>
   </div>
