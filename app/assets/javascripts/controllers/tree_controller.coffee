@@ -99,6 +99,7 @@ tree_controller = (div, cache, focus, state) ->
   #
   # Returns the new nodeid, which may be undefined
   go = (finder, e) ->
+    view.set_hover_node(undefined)
     nodeid = selected_nodeid()
     new_nodeid = view[finder](nodeid)
     if new_nodeid?
