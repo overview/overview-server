@@ -1,0 +1,39 @@
+@import "_variables.less";
+
+#focus {
+  position: relative;
+  height: @focus_height + 2px;
+  margin: 0 5px;
+  border: 1px solid #ccc; // including border-top
+
+  .line {
+    top: 0;
+    height: @focus_height;
+    background: @wellBackground;
+  }
+
+  .handle {
+    top: 0;
+    height: @focus_height;
+    background: transparent;
+    border: none;
+    z-index: 1;
+
+    &.right {
+      cursor: e-resize;
+      border-left: none;
+    }
+    &.left {
+      cursor: w-resize;
+      border-right: none;
+    }
+  }
+
+  .middle {
+    top: 0;
+    height: @focus_height;
+    cursor: move;
+    background: #ddd;
+    border: 1px solid @grayLight;
+  }
+}

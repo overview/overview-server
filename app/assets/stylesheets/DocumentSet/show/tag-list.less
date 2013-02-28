@@ -1,0 +1,96 @@
+@import "_variables.less";
+
+#tag-list {
+  max-height: 15%;
+  overflow: auto;
+  margin-top: 5px;
+  margin-right: 5px;
+  margin-left: 1px;
+
+  ul {
+    margin: 0 5px 5px 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    vertical-align: middle;
+  }
+
+  form {
+    margin-bottom: 0;
+  }
+
+  .tag-name {
+    .border-radius(@inputBorderRadius);
+
+    #gradient > .vertical(fade(white, 70%), fade(white, 0%));
+    background-color: transparent;
+
+    min-width: 60px;
+    max-width: 30em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+
+  .btn-group {
+    .border-radius(@inputBorderRadius);
+    margin-left: 5px;
+    margin-top: 5px;
+
+    .btn {
+      padding: 4px 10px; // same padding as other elements on this page
+    }
+
+    & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
+
+    &.selected {
+      .tag-name {
+        outline: 2px solid black;
+      }
+
+      .btn {
+        .border-radius(0);
+      }
+    }
+
+    &.shown .tag-name {
+      color: black;
+    }
+
+    .tag-edit, .tag-add, .tag-remove {
+      position: absolute;
+      background-color: whiteSmoke;
+      border-color: transparent;
+      padding: 3px;
+      width: 12px;
+      top: 2px;
+      right: 2px;
+      overflow: hidden;
+      text-align: center;
+      border: none;
+      opacity: 0.01;
+      .transition(opacity 0.3s ease);
+    }
+
+    .tag-edit {
+      right: 40px;
+    }
+
+    .tag-add {
+      right: 21px;
+    }
+
+    .tag-remove {
+      .border-right-radius(3px);
+    }
+
+    &:hover {
+      .tag-edit, .tag-add, .tag-remove {
+        opacity: 1;
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+@import "_variables.less";
+
+// The preview-a-single-document view
+#document {
+  position: absolute;
+  right: 5px;
+  left: @left_width;
+  margin-left: 5px;
+  top: 42px; // navbar -- will be resized
+  margin-top: 5px;
+  bottom: 5px;
+  border: 1px solid #ccc;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+}

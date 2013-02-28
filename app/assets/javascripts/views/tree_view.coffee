@@ -18,6 +18,10 @@ DEFAULT_OPTIONS = {
   mousewheel_zoom_factor: 1.2,
 }
 
+HOVER_NODE_TEMPLATE = _.template("""
+  <div class="inner">(<%- node.doclist.n.toLocaleString() %>) <%- node.description %></div>
+""")
+
 class DrawOperation
   constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @focus_nodes, @focus, @options) ->
     $canvas = $(@canvas)
@@ -323,12 +327,9 @@ class TreeView
 
     $div = $(@div)
     @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
-
-    @_nodes = {}
-    @_zoom_document = { current: -1 }
-    @_zoom_factor = { current: 1 }
-
     $div.append(@canvas)
+    @$hover_node_description = $('<div class="hover-node-description" style="display:none;"></div>')
+    $div.append(@$hover_node_description) # FIXME find a better place for this
 
     this._attach()
     this.update()
@@ -401,12 +402,6 @@ class TreeView
   nodeid_right: (nodeid) -> @_nearby_nodeid_at_nearest_level(nodeid, 1)
 
   _attach: () ->
-    @tree.id_tree.observe 'edit', =>
-      if @_zoom_document.current == -1
-        root_id = @tree.id_tree.root
-        if root_id?
-          @_zoom_document.current = @tree.root.node.doclist.n / 2
-
     update = this._set_needs_update.bind(this)
     @tree.observe('needs-update', update)
     @focus.observe('needs-update', update)
@@ -420,13 +415,11 @@ class TreeView
     @cache.tag_store.observe('tag-id-changed', this._on_tagid_changed.bind(this))
 
     $(@canvas).on 'mousedown', (e) =>
-      offset = $(@canvas).offset()
-      $canvas = $(@canvas)
-      x = e.pageX - offset.left
-      y = e.pageY - offset.top
-      action = this._pixel_to_action(x, y)
+      action = this._event_to_action(e)
+      @set_hover_node(undefined) # on click, un-hover
       this._notify(action.event, action.id) if action
 
+    this._handle_hover()
     this._handle_drag()
     this._handle_mousewheel()
 
@@ -445,6 +438,16 @@ class TreeView
     if index != -1
       @focus_tagids[index] = tag.id
     # No need to redraw: it would produce the same result.
+
+  _handle_hover: () ->
+    $(@canvas).on 'mousemove', (e) =>
+      dn = @_event_to_drawable_node(e) # might be undefined
+      @set_hover_node(dn)
+      e.preventDefault()
+
+    $(@canvas).on 'mouseleave', (e) =>
+      @set_hover_node(undefined)
+      e.preventDefault()
 
   _handle_drag: () ->
     $(@canvas).on 'mousedown', (e) =>
@@ -467,6 +470,7 @@ class TreeView
       $('body').append('<div id="mousemove-handler"></div>')
       $(document).on 'mousemove.tree-view', (e) ->
         update_from_event(e)
+        e.stopImmediatePropagation() # prevent normal hover operation
         e.preventDefault()
 
       $(document).on 'mouseup.tree-view', (e) =>
@@ -502,8 +506,19 @@ class TreeView
 
       this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
-  _pixel_to_action: (x, y) ->
+  _event_to_drawable_node: (e) ->
+    offset = $(@canvas).offset()
+    x = e.pageX - offset.left
+    y = e.pageY - offset.top
+
+    @last_draw.pixel_to_drawable_node(x, y)
+
+  _event_to_action: (e) ->
     return undefined if !@tree.root?
+
+    offset = $(@canvas).offset()
+    x = e.pageX - offset.left
+    y = e.pageY - offset.top
 
     @last_draw.pixel_to_action(x, y)
 
@@ -546,6 +561,53 @@ class TreeView
     if !@_needs_update
       @_needs_update = true
       this._notify('needs-update')
+
+  # Sets the node being hovered.
+  #
+  # We'll adjust @$hover_node_description to match.
+  set_hover_node: (drawable_node) ->
+    px = drawable_node?._px
+    if !px?
+      @$hover_node_description.removeAttr('data-node-id')
+      @$hover_node_description.hide()
+      return
+
+    # If we're here, drawable_node is valid
+    node = drawable_node.animated_node.node
+    node_id_string = "#{node?.id}"
+
+    return if @$hover_node_description.attr('data-node-id') == node_id_string
+
+    # If we're here, we're hovering on a new node
+    @$hover_node_description.hide()
+    @$hover_node_description.empty()
+
+    html = HOVER_NODE_TEMPLATE({ node: node })
+    @$hover_node_description.append(html)
+    @$hover_node_description.attr('data-node-id', node_id_string)
+    @$hover_node_description.css({ opacity: 0.001 })
+    @$hover_node_description.show() # Show it, so we can calculate dims
+
+    h = @$hover_node_description.outerHeight(true)
+    w = @$hover_node_description.outerWidth(true)
+
+    $canvas = $(@canvas)
+    offset = $canvas.offset()
+    document_width = $(document).width()
+
+    top = px.top - h
+    left = px.hmid - w * 0.5
+
+    if left + offset.left < 0
+      left = 0
+    if left + offset.left + w > document_width
+      left = document_width - w - offset.left
+
+    @$hover_node_description.css({
+      left: left
+      top: top
+    })
+    @$hover_node_description.animate({ opacity: 0.9 }, 'fast')
 
 exports = require.make_export_object('views/tree_view')
 exports.TreeView = TreeView
