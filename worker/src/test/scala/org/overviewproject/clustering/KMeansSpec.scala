@@ -34,7 +34,7 @@ class KMeansSpec extends Specification {
   // This test case is challenging because of variable spacing. Iterative finds a better result, in sum sq dist sense 
   val threeClusters = Vector[Int](1,2,3,9,10,11,30,40,50)
   val threeClustersResult = Array[Int](0,0,0,1,1,1,2,2,2)
-  val threeClustersIterativeResult = Array[Int](1,1,1,1,1,1,2,0,0)
+  val threeClustersVariableKResult = Array[Int](1,1,1,1,1,1,0,0,0)
   val simpleSet = List[Int](1,2,3,4,5)
   
   "centroidSeedSets" should {
@@ -95,12 +95,12 @@ class KMeansSpec extends Specification {
       clusters should beEqualTo (threeClustersResult)
     }
 
-    "find three better clusters using iterative algorithm" in {
+    "find two clusters using variable k algorithm" in {
       val km = new IntIterativeKMeans
       km.newCentroidN    = 1 
       km.newCentroidSkip = 3
-      val clusters = km(threeClusters, 3)
-      clusters should beEqualTo (threeClustersIterativeResult)
+      val clusters = km(threeClusters, 3) // set maxK=3, but find only two clusters
+      clusters should beEqualTo (threeClustersVariableKResult)
     }
 
   }
