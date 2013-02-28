@@ -2,6 +2,8 @@
  * <progress> polyfill
  * Don't forget to also include progress-polyfill.css!
  * @author Lea Verou http://leaverou.me
+ *
+ * This is MIT-licensed. https://github.com/LeaVerou/HTML5-Progress-polyfill
  */
  
 (function(){
