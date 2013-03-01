@@ -122,8 +122,7 @@ views.DocumentSet.index.no_document_sets=You have no document sets ready for vie
 
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
-views.DocumentSet._import.from_documentcloud_query=A DocumentCloud query (advanced)
-views.DocumentSet._import.from_sample=A sample
+views.DocumentSet._import.from_documentcloud_query=A DocumentCloud query
 views.DocumentSet._import.from_upload=A file you upload
 views.DocumentSet._import.from_public=Someone else’s document set
 
