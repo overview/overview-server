@@ -46,15 +46,15 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       if (numberOfParsedDocuments < maxDocuments) {
         val documentId = writeAndCommitDocument(documentSetId, doc)
         consumer.processDocument(documentId, doc.text)
+        numberOfParsedDocuments += 1
       } else numberOfSkippedDocuments += 1
 
       reportProgress(uploadReader.bytesRead, uploadedFile.size)
 
-      numberOfParsedDocuments += 1
     }
 
     consumer.productionComplete()
-    updateOverflowCount(documentSetId, numberOfSkippedDocuments)
+    updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
   }
 
   private def reportProgress(n: Long, size: Long) {

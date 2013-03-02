@@ -5,7 +5,7 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.persistence.orm.Schema.documentSets
 
 trait PersistentDocumentSet {
-  def updateOverflowCount(documentSetId: Long, overflowCount: Int): Unit = {
+  def updateDocumentSetCounts(documentSetId: Long, documentCount: Int, overflowCount: Int): Unit = {
 
     Database.inTransaction {
       update(documentSets)(ds =>

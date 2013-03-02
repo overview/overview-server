@@ -45,7 +45,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
 
     consumer.productionComplete()
     val overflowCount = scala.math.max(0, sourceDocList.totalDocumentsInQuery - sourceDocList.size)
-    updateOverflowCount(documentSetId, overflowCount)
+    updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
 
   private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
