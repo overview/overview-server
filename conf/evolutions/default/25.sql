@@ -1,7 +1,11 @@
 # --- !Ups
 
-ALTER TABLE document_set ADD COLUMN document_count BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE document_set ALTER COLUMN document_count DROP DEFAULT;
+ALTER TABLE document_set ADD COLUMN document_count INT;
+UPDATE document_set SET document_count = 
+  (SELECT COUNT(*) FROM document
+     WHERE document.document_set_id = document_set.id);
+
+ALTER TABLE document_set ALTER COLUMN document_count SET NOT NULL;
 
 # --- !Downs
 

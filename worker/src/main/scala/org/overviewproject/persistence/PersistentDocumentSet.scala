@@ -10,7 +10,8 @@ trait PersistentDocumentSet {
     Database.inTransaction {
       update(documentSets)(ds =>
         where(ds.id === documentSetId)
-          set (ds.importOverflowCount := overflowCount))
+          set (ds.importOverflowCount := overflowCount,
+               ds.documentCount := documentCount))
     }
   }
 }
