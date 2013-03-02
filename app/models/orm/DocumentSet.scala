@@ -95,7 +95,7 @@ case class DocumentSet(
 object DocumentSet {
   def findById(id: Long) = Schema.documentSets.lookup(id)
 
-  def findByUserIdWithCountJobUploadedFile(userEmail: String): Query[(DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])] = {
+  def findByUserIdWithCountJobUploadedFile(userEmail: String): Query[(DocumentSet, Option[DocumentSetCreationJob], Option[UploadedFile])] = {
     val idToCountQuery = from(Schema.documents)(d =>
       groupBy(d.documentSetId)
         compute (count()))
@@ -104,12 +104,12 @@ object DocumentSet {
       where(dsu.documentSetId === ds.id and dsu.userEmail === userEmail)
         select (ds))
 
-    val joined = join(userDocumentSets, idToCountQuery.leftOuter, Schema.documentSetCreationJobs.leftOuter, Schema.uploadedFiles.leftOuter)((ds, ic, dscj, uf) =>
-      select((ds, ic.map(_.measures), dscj, uf))
+    val joined = join(userDocumentSets, Schema.documentSetCreationJobs.leftOuter, Schema.uploadedFiles.leftOuter)((ds, dscj, uf) =>
+      select((ds, dscj, uf))
         on (
-          (ic.map(_.key) === ds.id),
           (dscj.map(_.documentSetId) === ds.id),
           (ds.uploadedFileId === uf.map(_.id))))
+          
     from(joined)((j) =>
       select(j)
         orderBy (j._1.createdAt.desc))
