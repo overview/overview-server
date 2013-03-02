@@ -34,10 +34,11 @@ import DocumentSetType._
 case class DocumentSet(
   @Column("type") val documentSetType: DocumentSetType,
   override val id: Long = 0,
-  val title: String = "",
-  val query: Option[String] = None,
+  title: String = "",
+  query: Option[String] = None,
   @Column("public") isPublic: Boolean = false,
-  @Column("created_at") val createdAt: Timestamp = new Timestamp((new Date()).getTime),
+  createdAt: Timestamp = new Timestamp((new Date()).getTime),
+  documentCount: Long = 0,
   importOverflowCount: Int = 0,
   @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
   @(Transient @field) val providedDocumentCount: Option[Long] = None,
@@ -79,11 +80,6 @@ case class DocumentSet(
 
   def withUploadedFile = copy(uploadedFile =
     Schema.uploadedFileDocumentSets.right(this).headOption)
-
-  def documentCount: Long = {
-    providedDocumentCount.getOrElse(
-      from(Schema.documents)(d => where(d.documentSetId === this.id) compute (count)).single.measures)
-  }
 
   def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute (count)).single.measures
 

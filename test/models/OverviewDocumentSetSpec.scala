@@ -56,6 +56,7 @@ class OverviewDocumentSetSpec extends Specification {
         title = title,
         query = Some(query),
         createdAt = new java.sql.Timestamp(createdAt.getTime()),
+        documentCount = count,
         providedDocumentCount = Some(count))
     }
 

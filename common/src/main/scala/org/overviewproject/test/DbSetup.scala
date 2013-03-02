@@ -9,8 +9,8 @@ object DbSetup {
 
   def insertCsvImportDocumentSet(uploadedFileId: Long)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (type, public, title, uploaded_file_id, created_at, import_overflow_count)
-      VALUES ('CsvImportDocumentSet', 'false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 0)
+      INSERT INTO document_set (type, public, title, uploaded_file_id, created_at, document_count, import_overflow_count)
+      VALUES ('CsvImportDocumentSet', 'false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0)
       """).on(
       'title -> "Csv Import",
       'uploadedFileId -> uploadedFileId).executeInsert().getOrElse(failInsert)
@@ -18,8 +18,8 @@ object DbSetup {
 
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (type, public, title, query, created_at, import_overflow_count)
-      VALUES ('DocumentCloudDocumentSet'::document_set_type, 'false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 0)
+      INSERT INTO document_set (type, public, title, query, created_at, document_count, import_overflow_count)
+      VALUES ('DocumentCloudDocumentSet'::document_set_type, 'false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0)
       """).on(
       'title -> ("From query: " + query),
       'query -> query).executeInsert().getOrElse(failInsert)
