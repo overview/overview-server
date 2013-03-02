@@ -8,7 +8,6 @@ import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
 import models.orm.{ DocumentSet, User }
-import models.orm.DocumentSet.ImplicitHelper._
 import models.orm.DocumentSetUserRoleType._
 import models.{ OverviewDocumentSet, ResultPage }
 import models.orm.DocumentSetUser

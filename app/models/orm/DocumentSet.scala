@@ -174,12 +174,6 @@ object DocumentSet {
       where(uf.id in ids).select(uf)).map(uf => uf.id -> uf).toMap
   }
 
-  def addDocumentCounts(documentSets: Seq[DocumentSet]): Seq[DocumentSet] = {
-    val ids = documentSets.map(_.id)
-    val counts = findIdToDocumentCountMap(ids)
-    documentSets.map(ds => ds.copy(providedDocumentCount = counts.get(ds.id)))
-  }
-
   def addCreationJobs(documentSets: Seq[DocumentSet]): Seq[DocumentSet] = {
     val ids = documentSets.map(_.id)
     val creationJobs = findIdToDocumentSetCreationJobMap(ids)
@@ -195,17 +189,5 @@ object DocumentSet {
     } else {
       documentSets
     }
-  }
-
-  object ImplicitHelper {
-    import scala.language.implicitConversions
-    
-    class DocumentSetSeq(documentSets: Seq[DocumentSet]) {
-      def withDocumentCounts = DocumentSet.addDocumentCounts(documentSets)
-      def withCreationJobs = DocumentSet.addCreationJobs(documentSets)
-      def withUploadedFiles = DocumentSet.addUploadedFiles(documentSets)
-    }
-
-    implicit def seqDocumentSetToDocumentSetSeq(documentSets: Seq[DocumentSet]) = new DocumentSetSeq(documentSets)
   }
 }
