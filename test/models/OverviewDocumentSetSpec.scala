@@ -41,8 +41,7 @@ class OverviewDocumentSetSpec extends Specification {
         CsvImportDocumentSet,
         title = title,
         createdAt = new java.sql.Timestamp(createdAt.getTime()),
-        uploadedFile = Some(ormUploadedFile),
-        providedDocumentCount = Some(count))
+        uploadedFile = Some(ormUploadedFile))
     }
 
     trait DocumentCloudDocumentSetScope extends Scope with OneDocumentSet {
@@ -56,8 +55,7 @@ class OverviewDocumentSetSpec extends Specification {
         title = title,
         query = Some(query),
         createdAt = new java.sql.Timestamp(createdAt.getTime()),
-        documentCount = count,
-        providedDocumentCount = Some(count))
+        documentCount = count)
     }
 
     "apply() should generate a CsvImportDocumentSet" in new CsvImportDocumentSetScope {

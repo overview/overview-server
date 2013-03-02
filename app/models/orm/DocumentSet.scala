@@ -41,7 +41,6 @@ case class DocumentSet(
   documentCount: Int = 0,
   importOverflowCount: Int = 0,
   @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
-  @(Transient @field) val providedDocumentCount: Option[Long] = None,
   @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
   @(Transient @field) val uploadedFile: Option[UploadedFile] = None) extends KeyedEntity[Long] {
 

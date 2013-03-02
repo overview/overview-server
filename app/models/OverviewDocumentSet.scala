@@ -156,7 +156,6 @@ object OverviewDocumentSet {
   def findByUserId(userEmail: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
     type WeirdTuple = (DocumentSet, Option[Long], Option[DocumentSetCreationJob], Option[UploadedFile])
     def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple): DocumentSet = weirdTuple._1.copy(
-      providedDocumentCount = Some(weirdTuple._2.getOrElse(0L)),
       documentSetCreationJob = weirdTuple._3,
       uploadedFile = weirdTuple._4)
     def weirdTupleToDocumentSet(weirdTuple: WeirdTuple): OverviewDocumentSet = apply(weirdTupleToOrmDocumentSet(weirdTuple))
