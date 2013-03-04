@@ -269,6 +269,7 @@ make_csv_upload_form = ($form, $modal) ->
       upload.done -> window.location.reload()
       upload.fail -> console?.log('Upload failed', arguments)
       upload.start()
+      $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
       $modal.modal('show')
 
     refresh_form_enabled()
@@ -304,6 +305,7 @@ make_csv_upload_form = ($form, $modal) ->
     upload = undefined
     csv_reader = undefined
     ready_to_submit = false
+    $(window).off('beforeunload.document-set-index-upload')
 
     refresh_from_csv_reader()
     refresh_charset()

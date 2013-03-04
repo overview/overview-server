@@ -155,6 +155,7 @@ views.DocumentSet._uploadForm.progress.header=Uploading…
 views.DocumentSet._uploadForm.progress.description=The upload will stop if you leave this page.
 views.DocumentSet._uploadForm.progress.prompt=When your file is sent completely, this message will disappear.
 views.DocumentSet._uploadForm.progress.cancel=Cancel upload
+views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
 views.DocumentSet.show.document_list.loading=Loading documents…
 views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
