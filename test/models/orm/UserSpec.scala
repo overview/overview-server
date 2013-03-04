@@ -26,7 +26,8 @@ class UserSpec extends Specification {
 
       val documentSet = user.createDocumentSet(query)
 
-      documentSet.users.iterator.toSeq must haveTheSameElementsAs(Seq(user))
+      // FIXME remove reliance on Finder
+      models.orm.finders.UserFinder.byDocumentSet(documentSet).toSeq must haveTheSameElementsAs(Seq(user))
 
       val documentSetUserLink = Schema.documentSetUsers.where(dsu =>
         dsu.documentSetId === documentSet.id and dsu.userEmail === user.email).headOption

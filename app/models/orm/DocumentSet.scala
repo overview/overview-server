@@ -6,6 +6,7 @@
  */
 package models.orm
 
+import scala.language.implicitConversions
 import scala.language.postfixOps
 import anorm.SQL
 import anorm.SqlParser._
@@ -45,8 +46,6 @@ case class DocumentSet(
   @(Transient @field) val uploadedFile: Option[UploadedFile] = None) extends KeyedEntity[Long] {
 
   def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
-
-  lazy val users = from(Schema.documentSetUsers, Schema.users)((dsu, u) => where(dsu.documentSetId === id and dsu.userEmail === u.email) select (u))
 
   lazy val documents = Schema.documentSetDocuments.left(this)
 
@@ -93,6 +92,8 @@ case class DocumentSet(
 }
 
 object DocumentSet {
+  implicit def toLong(documentSet: DocumentSet) = documentSet.id
+
   def findById(id: Long) = Schema.documentSets.lookup(id)
 
   def findByUserIdWithCountJobUploadedFile(userEmail: String): Query[(DocumentSet, Option[DocumentSetCreationJob], Option[UploadedFile])] = {
