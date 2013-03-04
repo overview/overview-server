@@ -23,17 +23,9 @@ show_hidden_characters = (s) ->
   ).replace(/\r/g, '\\r'
   ).replace(/[\x00-\x07\x0B\x0E-\x1F]/g, escape)
 
-make_csv_upload_form = ($form) ->
+make_csv_upload_form = ($form, $modal) ->
   given_url = $form.attr('action')
   url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'
-
-  # Progress polyfill
-  if window.ProgressPolyfill
-    # progress was polyfilled when the page loaded. But then we cloned it.
-    # Remove the polyfill's breadcrumbs and polyfill anew.
-    $progress = $form.find('progress')
-    $progress.attr('role', false)
-    window.ProgressPolyfill.init($form.find('progress')[0])
 
   file = undefined
   upload = undefined
@@ -248,7 +240,7 @@ make_csv_upload_form = ($form) ->
         url_prefix,
         _.extend({ contentType: "text/csv; charset=#{charset}" }, upload_options))
 
-      progress_elem = $form.find('progress')[0]
+      progress_elem = $modal.find('progress')[0]
       bytes_uploaded = 0
       last_rendered_bytes_uploaded = bytes_uploaded
       bytes_total = 1
@@ -277,6 +269,7 @@ make_csv_upload_form = ($form) ->
       upload.done -> window.location.reload()
       upload.fail -> console?.log('Upload failed', arguments)
       upload.start()
+      $modal.modal('show')
 
     refresh_form_enabled()
     refresh_progress_visible()
@@ -319,6 +312,14 @@ make_csv_upload_form = ($form) ->
   $form.on 'reset', (e) ->
     # don't preventDefault()
     cancel()
+
+  $modal.on 'hidden', () ->
+    cancel()
+    $form[0].reset()
+
+  $modal.find('button[type=reset]').on 'click', (e) ->
+    e.preventDefault()
+    $modal.modal('hide')
 
   if window.File? # util.net.Upload will use HTML5
     $form.find(':file').on 'change', (e) ->
@@ -373,4 +374,5 @@ make_csv_upload_form = ($form) ->
 $ ->
   $('a[data-toggle=tab][href="#import-from-upload"]').one 'show', () ->
     $form = $('#import-from-upload').find('form')
-    make_csv_upload_form($form)
+    $modal = $('#document-set-upload-progress').modal({ show: false })
+    make_csv_upload_form($form, $modal)

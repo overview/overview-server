@@ -41,9 +41,22 @@
       </div>
     </div>
     <div>
-      <button type="reset" class="btn">@m("cancel")</button>
+      <button type="reset" class="btn">@m("reset")</button>
       <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
-      <progress max="100" value="0"></progress><span class="status"></span>
     </div>
   </form>
+  <div id="document-set-upload-progress" class="modal hide fade">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3>@m("progress.header")</h3>
+    </div>
+    <div class="modal-body">
+      <progress min="0" max="100" value="0"></progress>
+      <p class="description">@m("progress.description")</p>
+      <p class="prompt">@m("progress.prompt")</p>
+    </div>
+    <div class="modal-footer">
+      <button type="reset" class="btn btn-danger">@m("progress.cancel")</button>
+    </div>
+  </div>
 }
