@@ -97,6 +97,22 @@
   }
 
   #import-from-upload {
+    progress {
+      box-sizing: border-box;
+      width: 100%;
+      height: 30px;
+    }
+
+    .modal {
+      p {
+        margin-top: 10px;
+
+        &.prompt {
+          .muted;
+        }
+      }
+    }
+
     form {
       input[type=file] {
         line-height: inherit;
@@ -151,16 +167,6 @@
             overflow: auto;
           }
         }
-      }
-
-      progress {
-        box-sizing: border-box;
-        display: none;
-        margin-left: 5px;
-        width: 200px;
-      }
-      span.status {
-        display: none;
       }
 
       .requirements li {
