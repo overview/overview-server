@@ -266,7 +266,9 @@ make_csv_upload_form = ($form, $modal) ->
         bytes_uploaded = e.loaded || 0
         bytes_total = e.total || 1
       upload.always -> stopped = true
-      upload.done -> window.location.reload()
+      upload.done ->
+        $(window).off('beforeunload.document-set-index-upload')
+        window.location.reload()
       upload.fail -> console?.log('Upload failed', arguments)
       upload.start()
       $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
