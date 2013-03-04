@@ -47,8 +47,6 @@ case class DocumentSet(
 
   def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
 
-  lazy val documents = Schema.documentSetDocuments.left(this)
-
   lazy val nodes = Schema.documentSetNodes.left(this)
 
   lazy val logEntries = Schema.documentSetLogEntries.left(this)
