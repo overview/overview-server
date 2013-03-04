@@ -152,13 +152,6 @@ object DocumentSet {
     success
   }
 
-  private def findIdToDocumentCountMap(ids: Seq[Long]): Map[Long, Long] = {
-    from(Schema.documents)(d =>
-      where(d.documentSetId in ids)
-        groupBy (d.documentSetId)
-        compute (count)).map(g => g.key -> g.measures).toMap
-  }
-
   private def findIdToDocumentSetCreationJobMap(ids: Seq[Long]): Map[Long, DocumentSetCreationJob] = {
     from(Schema.documentSetCreationJobs)(j =>
       where(j.documentSetId in ids).select(j)).map(dscj => dscj.documentSetId -> dscj).toMap
