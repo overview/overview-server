@@ -64,23 +64,28 @@ class LoopedIterator[T](makeIter: => Iterator[T]) extends Iterator[T] {
   }  
 }
 
+// Trait that knows how to compose an error key 
+
 /**
- * Enumeration for encoding job state descriptions into keys that can be internationalized by
- * the client. Description types can be defined to take a single argument, which is encoded
- * as "key:argument"
+ * Encode state and error names into keys that can be internationalized by the client. 
+ * keyName must match a key on in conf/messages under views.DocumentSet._documentSet.job_state_description.
+ * Optional params are pasted together with ":" and can then referred to as {0}, {1} etc. in messages
  */
-sealed abstract class DocumentSetCreationJobStateDescription(val stateName: String, keys: String*) {
+trait TranslatableMessage {
+  val keyName:String
+  val params:Seq[String]
   
-  override def toString = (stateName +: keys) mkString(":")
-  
-  def sameStateAs(that: DocumentSetCreationJobStateDescription): Boolean = stateName == that.stateName
+  override def toString = (keyName +: params) mkString(":")
+}
+
+// Base class for objects that can be used for progress reporting
+sealed class DocumentSetCreationJobStateDescription(val keyName: String, val params: String*) extends TranslatableMessage {
+  def sameStateAs(that: DocumentSetCreationJobStateDescription): Boolean = keyName == that.keyName
 }
 
 object DocumentSetCreationJobStateDescription {
   private type Description = DocumentSetCreationJobStateDescription
-
-  case object OutOfMemory extends Description("out_of_memory")
-  case object WorkerError extends Description("worker_error")
+   
   case class Retrieving(docNum: Int, total: Int) extends Description("retrieving_documents", docNum.toString, total.toString) 
   case object Clustering extends Description("clustering")
   case object Saving extends Description("saving_document_tree")
@@ -88,6 +93,11 @@ object DocumentSetCreationJobStateDescription {
   case class ClusteringLevel(n: Int) extends Description("clustering_level", n.toString) 
   case class Parsing(parsed: Long, total: Long) extends Description("parsing_data", parsed.toString, total.toString) 
 }
+
+// Base class for errors that the worker can produce, each of which has a translatable message
+class DisplayedError(val keyName:String, val params:String*) extends Exception with TranslatableMessage  {
+}
+
 
 object Progress {
   import DocumentSetCreationJobStateDescription._
