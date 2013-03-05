@@ -190,6 +190,7 @@ views.DocumentSet._documentSet.job_state_description.parsing_data=Reading docume
 views.DocumentSet._documentSet.job_state_description.retrieving_documents=Retrieving document {0}/{1}
 views.DocumentSet._documentSet.job_state_description.saving_document_tree=Saving document tree
 views.DocumentSet._documentSet.job_state_description.worker_error=Import failed (system error)
+views.DocumentSet._documentSet.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
 views.DocumentSet._documentSet.jobs_to_process=Waiting for {0} other jobs to complete before processing can begin
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file

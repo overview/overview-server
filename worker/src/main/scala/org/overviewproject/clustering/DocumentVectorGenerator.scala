@@ -12,10 +12,17 @@
 package org.overviewproject.clustering
 
 import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.util.DisplayedError
+
+// Error object
+case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer) extends DisplayedError("not_enough_documents_error", numDocs.toString, docsNeeded.toString)  
 
 // Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once
 class DocumentVectorGenerator {
 
+  // --- Config ---
+  var minDocsToKeepTerm = 3                    // term must be in at least this many docs or we discard it from vocabulary
+  
   // --- Data ---
   var numDocs = 0
   private var termStrings = new StringTable
@@ -72,7 +79,7 @@ class DocumentVectorGenerator {
   def Idf(): DocumentVectorMap = {
     if (!computedIdf) {
       computedIdf = true
-      idf.retain((term, count) => (count > 2) && (count < numDocs))
+      idf.retain((term, count) => (count >= minDocsToKeepTerm) && (count < numDocs))
       idf.transform((term, count) => math.log10(numDocs / count).toFloat)
     }
     idf
@@ -82,6 +89,10 @@ class DocumentVectorGenerator {
   // Works in place to avoid completely duplicating the set of vectors (major memory hit otherwise)
   def documentVectors(): DocumentSetVectors = {
     if (!computedDocumentVectors) {
+      
+      if (numDocs < minDocsToKeepTerm)
+        throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
+      
       computedDocumentVectors = true
       Idf()  // force idf computation
       require(computedIdf == true)

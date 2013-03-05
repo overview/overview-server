@@ -10,8 +10,6 @@ class DocumentSetCreationJobStateDescriptionSpec extends Specification {
 
     "convert states with no arguments to key string" in {
 
-      OutOfMemory.toString must be equalTo("out_of_memory")
-      WorkerError.toString must be equalTo("worker_error")
       Clustering.toString must be equalTo("clustering")
       Saving.toString must be equalTo("saving_document_tree")
       Done.toString must be equalTo("job_complete")

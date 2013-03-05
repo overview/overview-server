@@ -13,7 +13,7 @@ import java.io.File
 import scala.Array.canBuildFrom
 import org.overviewproject.clustering.ClusterTypes.DocumentVectorMap
 import org.specs2.mutable.Specification
-import org.overviewproject.clustering.DocumentVectorGenerator
+import org.overviewproject.clustering.{DocumentVectorGenerator,NotEnoughDocumentsError}
 import org.overviewproject.clustering.Lexer
 
 class MakeDocumentTreeSpec extends Specification {
@@ -44,6 +44,17 @@ class MakeDocumentTreeSpec extends Specification {
   
   "DocumentVectorGenerator" should {
     
+    "fail if zero documents" in {
+      val vectorGen = new DocumentVectorGenerator()
+      vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
+    }
+    
+    "fail if one document" in {
+      val vectorGen = new DocumentVectorGenerator()
+      vectorGen.addDocument(1, Seq("foo"))
+      vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
+    }
+
     "index a trivial document set" in {
       // we need at least 4 docs to get non-empty result, 
       // because DocumentVectorGenerator throws out any word that does not appear in at least 3 docs, or appears in all docs
