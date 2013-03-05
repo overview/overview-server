@@ -47,13 +47,15 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
   extends KMeansNodeSplitter(_docVecs, _k) {
 
   val stopSize = 16   // keep breaking into clusters until <= 16 docs in a node
+  val maxDepth = 10   // ...or we reach depth limit
   
-  private def splitNode(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {  
+  private def splitNode(node:DocTreeNode, level:Integer, progAbort:ProgressAbortFn) : Unit = {
+    
     if (!progAbort(Progress(0, ClusteringLevel(1)))) { // if we haven't been cancelled...
   
       require(node.docs.size > 0)
       
-      if (node.docs.size > stopSize) {
+      if ((node.docs.size > stopSize) && (level < maxDepth)) {
          
         splitNode(node)
         
@@ -65,12 +67,12 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
           var i=0
           var denom = node.children.size.toDouble
           node.children foreach { node =>
-            splitNode(node, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
+            splitNode(node, level+1, makeNestedProgress(progAbort, i/denom, (i+1)/denom))
             i+=1
           }
         }
       } else {
-        // smaller nodes, produce a leaf for each doc
+        // smaller nodes, or max depth reached, produce a leaf for each doc
         if (node.docs.size > 1) 
           node.children = node.docs.map(item => new DocTreeNode(Set(item)))
       }
@@ -80,7 +82,7 @@ class KMeansDocTreeBuilder(_docVecs: DocumentSetVectors, _k:Int)
   }
   
   def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    splitNode(root, progAbort)
+    splitNode(root, 1, progAbort)   // root is level 0, so first split is level 1
     
     root
   }
