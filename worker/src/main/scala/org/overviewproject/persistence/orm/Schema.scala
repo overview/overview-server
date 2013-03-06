@@ -17,4 +17,6 @@ object Schema extends org.squeryl.Schema {
   val tags = table[Tag]
   val documentTags = table[DocumentTag]
   val documentSets = table[DocumentSet]
+  
+  on(documents)(d => declare(d.id is(primaryKey)))
 }
