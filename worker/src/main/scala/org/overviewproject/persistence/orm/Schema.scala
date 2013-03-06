@@ -19,4 +19,5 @@ object Schema extends org.squeryl.Schema {
   val documentSets = table[DocumentSet]
   
   on(documents)(d => declare(d.id is(primaryKey)))
+  on(nodes)(n => declare(n.id is(primaryKey)))
 }
