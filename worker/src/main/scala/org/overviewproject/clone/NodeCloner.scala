@@ -1,5 +1,6 @@
 package org.overviewproject.clone
 
+import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.tree.orm.Node
 
 object NodeCloner {
@@ -7,11 +8,13 @@ object NodeCloner {
     import org.overviewproject.persistence.orm.Schema
     import org.overviewproject.postgres.SquerylEntrypoint._
 
+    val ids = new DocumentSetIdGenerator(cloneDocumentSetId)
+    
     def cloneSubTree(sourceParentNode: Node, nodes: Iterable[Node], nodeIds: Map[Long, Long]): Map[Long, Long] = {
       val cloneParentId = sourceParentNode.parentId.flatMap(nodeIds.get(_))
 
       val cloneCachedDocumentIds = sourceParentNode.cachedDocumentIds.flatMap(d => documentIdMapping.get(d))
-      val cloneParentNode = sourceParentNode.copy(id = 0l, documentSetId = cloneDocumentSetId, parentId = cloneParentId,
+      val cloneParentNode = sourceParentNode.copy(id = ids.next, documentSetId = cloneDocumentSetId, parentId = cloneParentId,
         cachedDocumentIds = cloneCachedDocumentIds)
 
       Schema.nodes.insert(cloneParentNode)
