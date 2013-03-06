@@ -1,7 +1,7 @@
 /*
- * NodeWriter.scala
+ * nodewriter.scala
  *
- * Overview Project
+ * overview project
  * Created by Jonas Karlsson, Aug 2012
  */
 
@@ -20,7 +20,8 @@ import org.overviewproject.tree.orm.Node
  */
 class NodeWriter(documentSetId: Long) {
   val batchInserter = new NodeDocumentBatchInserter(500)
-
+  val ids = new DocumentSetIdGenerator(documentSetId)
+  
   def write(root: DocTreeNode)(implicit c: Connection) {
     writeSubTree(root, None)
     batchInserter.flush
@@ -28,7 +29,7 @@ class NodeWriter(documentSetId: Long) {
 
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val n = Node(documentSetId, parentId, node.description,
-      node.documentIdCache.numberOfDocuments, node.documentIdCache.documentIds)
+      node.documentIdCache.numberOfDocuments, node.documentIdCache.documentIds, ids.next)
 
     Schema.nodes.insert(n)
 

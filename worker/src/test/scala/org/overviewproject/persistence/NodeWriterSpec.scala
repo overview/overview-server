@@ -14,6 +14,7 @@ import anorm.SqlParser.{ flatten, get, long, str }
 import org.overviewproject.clustering.{ DocTreeNode, DocumentIdCache }
 import org.overviewproject.test.DbSetup.{ insertDocument, insertDocumentSet }
 import org.overviewproject.test.DbSpecification
+import org.specs2.execute.PendingUntilFixed
 
 class NodeWriterSpec extends DbSpecification {
 
@@ -37,15 +38,22 @@ class NodeWriterSpec extends DbSpecification {
     get[Option[Long]]("parent_id") ~ long("document_set_id")
 
   "NodeWriter" should {
+    
+    trait NodeWriterContext extends DbTestContext {
+      var documentSetId: Long = _
+      var writer: NodeWriter = _
+      
+      override def setupWithDb = {
+        documentSetId = insertDocumentSet("NodeWriterSpec")
+        writer = new NodeWriter(documentSetId)
+      }
+    }
 
-    "insert root node with description, document set, and no parent" in new DbTestContext {
-      val documentSetId = insertDocumentSet("NodeWriterSpec")
+    "insert root node with description, document set, and no parent" in new NodeWriterContext {
       val root = new DocTreeNode(Set())
       val description = "description"
       root.description = description
       addCache(root)
-
-      val writer = new NodeWriter(documentSetId)
 
       writer.write(root)
 
@@ -61,14 +69,12 @@ class NodeWriterSpec extends DbSpecification {
       rootDocumentSetId must be equalTo (documentSetId)
     }
 
-    "insert child nodes" in new DbTestContext {
-      val documentSetId = insertDocumentSet("NodeWriterSpec")
+    "insert child nodes" in new NodeWriterContext {
       val root = new DocTreeNode(Set())
       root.description = "root"
       addCache(root)
       val childNodes = addChildren(root, "child")
       val grandChildNodes = childNodes.map(n => (n, addChildren(n, "grandchild")))
-      val writer = new NodeWriter(documentSetId)
 
       writer.write(root)
 
@@ -99,15 +105,13 @@ class NodeWriterSpec extends DbSpecification {
       savedGrandChildren must have size (4)
     }
 
-    "insert document into node_document table" in new DbTestContext {
-      val documentSetId = insertDocumentSet("NodeWriterSpec")
+    "insert document into node_document table" in new NodeWriterContext {
       val documentIds = for (i <- 1 to 5) yield insertDocument(documentSetId, "title", "documentCloudId")
       val idSet = Set(documentIds: _*)
 
       val node = new DocTreeNode(idSet)
       node.description = "node"
       addCache(node)
-      val writer = new NodeWriter(documentSetId)
 
       writer.write(node)
 
@@ -125,6 +129,16 @@ class NodeWriterSpec extends DbSpecification {
       val expectedNodeDocuments = documentIds.map((nodeId, _))
 
       nodeDocuments must haveTheSameElementsAs(expectedNodeDocuments)
+    }
+    
+    "write nodes with ids generated from documentSetId" in new NodeWriterContext {
+      val node = new DocTreeNode(Set())
+      addCache(node)
+      writer.write(node)
+      val nodeId = SQL("SELECT id FROM node").as(long("id") singleOpt)
+      
+      nodeId must beSome
+      (nodeId.get >> 32) must be equalTo(documentSetId) 
     }
   }
 
