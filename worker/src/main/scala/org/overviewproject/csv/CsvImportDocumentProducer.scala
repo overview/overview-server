@@ -7,7 +7,7 @@
 package org.overviewproject.csv
 
 import org.overviewproject.database.{ Database, DB }
-import org.overviewproject.persistence.{ DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
+import org.overviewproject.persistence.{ DocumentSetIdGenerator, DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
@@ -26,7 +26,8 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private var lastUpdateTime = 0l
   private var jobCancelled: Boolean = false
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
-
+  private val ids = new DocumentSetIdGenerator(documentSetId)
+  
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
     val uploadedFile = Database.inTransaction {
@@ -73,7 +74,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
   private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
     Database.inTransaction {
-      val document = Document(CsvImportDocumentType, documentSetId, title = doc.title,
+      val document = Document(CsvImportDocumentType, documentSetId, id = ids.next, title = doc.title,
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
       document.id
