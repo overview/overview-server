@@ -12,12 +12,13 @@ import scala.concurrent.duration.Duration
 
 import org.overviewproject.clustering.{ DCDocumentAtURL, DocumentCloudSource, DocumentSetIndexer }
 import org.overviewproject.database.Database
-import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentWriter, PersistentDocumentSet }
+import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentSetIdGenerator, DocumentWriter, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
+
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
@@ -25,7 +26,8 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
 
   private val FetchingFraction = 0.5
   private var numDocs = 0
-
+  private val ids = new DocumentSetIdGenerator(documentSetId)
+  
   def produce() {
     val t0 = System.nanoTime()
 
@@ -50,10 +52,11 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
 
   private def notify(doc: DCDocumentAtURL, text: String): Boolean = {
     val id = Database.inTransaction {
-      val document = Document(DocumentCloudDocument, documentSetId, title = Some(doc.title), documentcloudId = Some(doc.documentCloudId))
+      val document = Document(DocumentCloudDocument, documentSetId, id = ids.next, title = Some(doc.title), documentcloudId = Some(doc.documentCloudId))
       DocumentWriter.write(document)
       document.id
     }
+
     consumer.processDocument(id, text)
     numDocs += 1
     !progAbort(
