@@ -7,6 +7,7 @@ import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, Node }
 import org.overviewproject.tree.orm.DocumentType._
 import org.squeryl.KeyedEntity
+import org.overviewproject.persistence.DocumentSetIdGenerator
 
 class NodeDocumentClonerSpec extends DbSpecification {
 
@@ -29,10 +30,15 @@ class NodeDocumentClonerSpec extends DbSpecification {
     "clone the node_document table" in new DbTestContext {
       val documentSetId = insertDocumentSet("NodeDocumentClonerSpec")
       val cloneDocumentSetId = insertDocumentSet("ClonedNodeDocumentClonerSpec")
-      val sourceNodes = Seq.tabulate(10)(i => Node(documentSetId, None, "node-" + i, 100, Array()))
-      val sourceDocuments = Seq.tabulate(10)(i => Document(CsvImportDocument, documentSetId, text = Some("text-" + i)))
-      val cloneNodes = sourceNodes.map(_.copy(documentSetId = cloneDocumentSetId))
-      val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId))
+      val nodeIds = new DocumentSetIdGenerator(documentSetId)
+      val cloneNodeIds = new DocumentSetIdGenerator(cloneDocumentSetId)
+      val documentIds = new DocumentSetIdGenerator(documentSetId)
+      val cloneDocumentIds = new DocumentSetIdGenerator(cloneDocumentSetId)
+      
+      val sourceNodes = Seq.tabulate(10)(i => Node(documentSetId, None, "node-" + i, 100, Array(), nodeIds.next))
+      val sourceDocuments = Seq.tabulate(10)(i => Document(CsvImportDocument, documentSetId, text = Some("text-" + i), id = documentIds.next))
+      val cloneNodes = sourceNodes.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneNodeIds.next))
+      val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneDocumentIds.next))
 
       val sourceNodeDocuments = createNodeDocuments(sourceNodes, sourceDocuments)
       val cloneNodeDocuments = createNodeDocuments(cloneNodes, cloneDocuments)
