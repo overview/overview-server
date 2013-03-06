@@ -22,9 +22,11 @@ class DocumentWriterSpec extends DbSpecification {
 
     trait Setup extends DbTestContext {
       var documentSetId: Long = _
-
+      var ids: DocumentSetIdGenerator = _
+      
       override def setupWithDb = {
         documentSetId = insertDocumentSet("DocumentWriterSpec")
+        ids = new DocumentSetIdGenerator(documentSetId)
       }
     }
 
@@ -34,7 +36,7 @@ class DocumentWriterSpec extends DbSpecification {
       val documentCloudId = Some("documentCloud-id")
       val description = "some,terms,together"
 
-      val document = Document(DocumentCloudDocument, documentSetId, documentcloudId = documentCloudId)
+      val document = Document(DocumentCloudDocument, documentSetId, documentcloudId = documentCloudId, id = ids.next)
       DocumentWriter.write(document)
       DocumentWriter.updateDescription(document.id, description)
 
@@ -46,14 +48,14 @@ class DocumentWriterSpec extends DbSpecification {
     }
 
     "write a document cloud document" in new Setup {
-      val document = Document(DocumentCloudDocument, documentSetId, documentcloudId = Some("dcId"))
+      val document = Document(DocumentCloudDocument, documentSetId, documentcloudId = Some("dcId"), id = ids.next)
       DocumentWriter.write(document)
 
       document.id must not be equalTo(0)
     }
 
     "write a csv import document" in new Setup {
-      val document = Document(CsvImportDocument, documentSetId, text = Some("text"), url = None)
+      val document = Document(CsvImportDocument, documentSetId, text = Some("text"), url = None, id = ids.next)
       DocumentWriter.write(document)
 
       document.id must not be equalTo(0)
