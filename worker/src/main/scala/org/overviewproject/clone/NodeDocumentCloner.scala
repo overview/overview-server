@@ -10,22 +10,6 @@ import org.overviewproject.database.Database
 object NodeDocumentCloner {
   private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
 
-  def clone(documentMapping: Map[Long, Long], nodeMapping: Map[Long, Long]) {
-    val batchInserter = new NodeDocumentBatchInserter(500)
-    val sourceNodes = nodeMapping.keys
-
-    val sourceNodeDocuments =
-      from(Schema.nodeDocuments)(nd => where(nd.nodeId in sourceNodes) select nd)
-
-    val cloneNodeDocuments = for {
-      nd <- sourceNodeDocuments
-      nodeId <- nodeMapping.get(nd.nodeId)
-      documentId <- documentMapping.get(nd.documentId)
-    } batchInserter.insert(nodeId, documentId)
-
-    batchInserter.flush
-  }
-
   def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
     implicit val c: Connection = Database.currentConnection
 
