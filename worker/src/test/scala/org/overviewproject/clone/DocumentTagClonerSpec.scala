@@ -63,6 +63,12 @@ class DocumentTagClonerSpec extends DbSpecification {
 
       documentTags must haveTheSameElementsAs(sourceDocumentTags ++ cloneDocumentTags)
     }
+    
+    "don't try to clone if there are no tags" in new DocumentTagContext {
+      DocumentTagCloner.dbClone(sourceDocumentSetId, cloneDocumentSetId, Map()) must not(throwA[Exception])
+      
+    }
+    
   }
   step(shutdownDb)
 }
