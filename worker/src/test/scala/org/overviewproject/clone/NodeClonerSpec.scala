@@ -55,7 +55,7 @@ class NodeClonerSpec extends DbSpecification {
 	  mappedIds must be equalTo(cloneNodes.sortBy(_.id).map(_.id))
 	}
 	
-	inExample("map document id cache") in new CloneContext {
+	"map document id cache" in new CloneContext {
 	  val cloneCache = documentIdMapping.values
 	  
 	  cloneNodes.head.cachedDocumentIds.toSeq must haveTheSameElementsAs(cloneCache)
