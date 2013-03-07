@@ -1,12 +1,11 @@
 package org.overviewproject.clone
 
 import java.sql.Connection
-
 import anorm.SQL
-
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.database.Database
 
 
 
@@ -30,7 +29,9 @@ object DocumentCloner {
   }
   
   
-  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long)(implicit c: Connection): Boolean = 
+  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
+    implicit val c: Connection = Database.currentConnection  
+
     SQL("""
           INSERT INTO document (id, document_set_id, description, documentcloud_id, type, text, url, supplied_id, title)
            SELECT 
@@ -41,4 +42,5 @@ object DocumentCloner {
         """).on("cloneDocumentSetId" -> cloneDocumentSetId,
             "sourceDocumentSetId" -> sourceDocumentSetId, 
             "documentSetIdMask" -> DocumentSetIdMask).execute
+  }
 }

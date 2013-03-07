@@ -4,6 +4,7 @@ import anorm._
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.tree.orm.Node
 import java.sql.Connection
+import org.overviewproject.database.Database
 
 object NodeCloner {
   private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
@@ -38,7 +39,9 @@ object NodeCloner {
     rootNode.headOption.map { cloneSubTree(_, subTreeNodes, Map()) }.getOrElse(Map.empty)
   }
 
-  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long)(implicit c: Connection): Boolean =
+  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
+    implicit val c: Connection = Database.currentConnection  
+  
     SQL("""
         WITH 
           cached_document_ids AS 
@@ -60,5 +63,6 @@ object NodeCloner {
         """).on("cloneDocumentSetId" -> cloneDocumentSetId,
             "sourceDocumentSetId" -> sourceDocumentSetId,
             "documentSetIdMask" -> DocumentSetIdMask).execute
+  }
 
 }
