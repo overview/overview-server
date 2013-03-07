@@ -36,7 +36,7 @@ class NodeClonerSpec extends DbSpecification {
 
       sourceNodes = createTree(documentSetId, None, 10)
 
-      NodeCloner.dbClone(documentSetId, documentSetCloneId)
+      NodeCloner.clone(documentSetId, documentSetCloneId)
       cloneNodes = Schema.nodes.where(n => n.documentSetId === documentSetCloneId).toSeq
     }
   }

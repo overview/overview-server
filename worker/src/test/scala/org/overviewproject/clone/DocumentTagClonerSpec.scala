@@ -57,7 +57,7 @@ class DocumentTagClonerSpec extends DbSpecification {
     }
 
     "clone DocumentTags" in new DocumentTagContext {
-      DocumentTagCloner.dbClone(sourceDocumentSetId, cloneDocumentSetId, tagMapping)
+      DocumentTagCloner.clone(sourceDocumentSetId, cloneDocumentSetId, tagMapping)
 
       val documentTags = Schema.documentTags.allRows.toSeq
 
@@ -65,7 +65,7 @@ class DocumentTagClonerSpec extends DbSpecification {
     }
     
     "don't try to clone if there are no tags" in new DocumentTagContext {
-      DocumentTagCloner.dbClone(sourceDocumentSetId, cloneDocumentSetId, Map()) must not(throwA[Exception])
+      DocumentTagCloner.clone(sourceDocumentSetId, cloneDocumentSetId, Map()) must not(throwA[Exception])
       
     }
     

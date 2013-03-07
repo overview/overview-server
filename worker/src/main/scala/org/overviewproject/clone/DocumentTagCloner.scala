@@ -7,7 +7,7 @@ import org.overviewproject.tree.orm.DocumentTag
 object DocumentTagCloner {
   private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
 
-  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long, tagMapping: Map[Long, Long]): Unit = {
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long, tagMapping: Map[Long, Long]): Unit = {
     val sourceTags = tagMapping.keys
 
     if (!sourceTags.isEmpty) {

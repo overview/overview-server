@@ -150,13 +150,13 @@ object CloneDocumentSet {
   def apply(sourceDocumentSetId: Long, cloneDocumentSetId: Long, cloneJob: PersistentDocumentSetCreationJob, progressObservers: Seq[Progress => Unit]) {
     val cloner = new DocumentSetCloner {
       override val job = cloneJob
-      override val cloneDocuments = DocumentCloner.dbClone _
-      override val cloneNodes = NodeCloner.dbClone _
+      override val cloneDocuments = DocumentCloner.clone _
+      override val cloneNodes = NodeCloner.clone _
       override val cloneTags = TagCloner.clone _
 
       override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
-      override val cloneNodeDocuments = NodeDocumentCloner.dbClone _
-      override val cloneDocumentTags = DocumentTagCloner.dbClone _
+      override val cloneNodeDocuments = NodeDocumentCloner.clone _
+      override val cloneDocumentTags = DocumentTagCloner.clone _
     }
     cloner.observeSteps(progressObservers)
     cloner.clone(sourceDocumentSetId, cloneDocumentSetId)

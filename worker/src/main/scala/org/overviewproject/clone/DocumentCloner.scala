@@ -13,7 +13,7 @@ import org.overviewproject.database.Database
 object DocumentCloner {
   private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
   
-  def dbClone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
+  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
     implicit val c: Connection = Database.currentConnection  
 
     SQL("""

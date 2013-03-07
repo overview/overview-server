@@ -41,7 +41,7 @@ class DocumentClonerSpec extends DbSpecification {
 
         expectedCloneData = sourceDocuments.map(d => (CsvImportDocument.value, documentSetCloneId, d.text.get))
 
-        DocumentCloner.dbClone(documentSetId, documentSetCloneId)
+        DocumentCloner.clone(documentSetId, documentSetCloneId)
         clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
 
       }
