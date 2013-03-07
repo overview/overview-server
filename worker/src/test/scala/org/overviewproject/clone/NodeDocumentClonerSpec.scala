@@ -45,11 +45,7 @@ class NodeDocumentClonerSpec extends DbSpecification {
       
       Schema.nodeDocuments.insert(sourceNodeDocuments)
       
-      val nodeMapping =  createMapping(sourceNodes, cloneNodes)
-      val documentMapping = createMapping(sourceDocuments, cloneDocuments)
-      
-      NodeDocumentCloner.clone(documentMapping, nodeMapping)
-      
+      NodeDocumentCloner.dbClone(documentSetId, cloneDocumentSetId)
       val allNodeDocuments = Schema.nodeDocuments.allRows.toSeq
       
       allNodeDocuments must haveTheSameElementsAs(sourceNodeDocuments ++ cloneNodeDocuments)
