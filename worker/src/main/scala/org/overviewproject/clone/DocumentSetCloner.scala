@@ -6,17 +6,16 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger }
 import org.overviewproject.util.Progress.Progress
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-
-
+import java.sql.Connection
 
 /**
  * The Procedure trait enables the specification of blocks of code
  * inside steps. A step verifies that the Procedure has not been cancelled
  * before executing the block, and notifies observers when the step is complete.
- * 
- * Each step has parameters specifying the amount of progress being made and end 
+ *
+ * Each step has parameters specifying the amount of progress being made and end
  * state.
- * 
+ *
  * Nested steps within the same class could be handled with DynamicVariable.
  * Some progress parameter needs to be passed if steps are performed in different classes.
  */
@@ -38,8 +37,9 @@ trait Procedure {
 
   def stepInTransaction[T](fraction: Double, state: DocumentSetCreationJobStateDescription)(block: => T): Either[T, Boolean] =
     Database.inTransaction(step(fraction, state)(block))
+    
 
-  /** 
+  /**
    * Set observers to be notified at the completion of each step.
    * We could also pass in the Procedure itself in the notification
    */
@@ -67,8 +67,8 @@ trait DocumentSetCreationJobProcedure extends Procedure {
 
 // -------
 
-/** 
- * Observer that updates the job state in the database after each 
+/**
+ * Observer that updates the job state in the database after each
  * step is complete.
  */
 class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
@@ -82,16 +82,15 @@ class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
   }
 }
 
-/** 
+/**
  * Observer that Logs the status. Having access to the Procedure would allow
- * it to report that a job has been cancelled. 
+ * it to report that a job has been cancelled.
  */
 object JobProgressLogger {
   def apply(progress: Progress) {
     Logger.info("PROGRESS: %f%% done. %s, OK".format(progress.fraction * 100, progress.status.toString))
   }
 }
-
 
 // --------
 
@@ -104,14 +103,14 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
   type NodeIdMap = Map[Long, Long]
   type TagIdMap = Map[Long, Long]
 
-  val cloneDocuments: (Long, Long) => DocumentIdMap
-  val cloneNodes: (Long, Long, DocumentIdMap) => NodeIdMap
+  val cloneDocuments: (Long, Long) => Boolean
+  val cloneNodes: (Long, Long) => Boolean
   val cloneTags: (Long, Long) => TagIdMap
 
   val cloneDocumentProcessingErrors: (Long, Long) => Unit
 
-  val cloneNodeDocuments: (DocumentIdMap, NodeIdMap) => Unit
-  val cloneDocumentTags: (DocumentIdMap, TagIdMap) => Unit
+  val cloneNodeDocuments: (Long, Long) => Boolean
+  val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
 
@@ -119,29 +118,28 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
     // Having to reference the 'left' explicitly is a bit ugly.
     // The alternative would be to not return values from a step, and instead 
     // nest the step scopes (which would be even uglier)
-    for {
-      documentIdMapping <- stepInTransaction(0.20, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId)).left
-      nodeIdMapping <- stepInTransaction(0.45, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId, documentIdMapping)).left
-      tagIdMapping <- stepInTransaction(0.55, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left
-    } {
-      stepInTransaction(0.65, Saving) {
-        cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
+
+    stepInTransaction(0.20, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
+    stepInTransaction(0.45, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId))
+
+    for (tagIdMapping <- stepInTransaction(0.55, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
+      stepInTransaction(0.65, Done) {
+        cloneDocumentTags(sourceDocumentSetId, cloneDocumentSetId, tagIdMapping)
       }
-      stepInTransaction(0.95, Saving) {
-        cloneNodeDocuments(documentIdMapping, nodeIdMapping)
-      }
-      stepInTransaction(1.00, Done) {
-        cloneDocumentTags(documentIdMapping, tagIdMapping)
-      }
+
+    stepInTransaction(0.95, Saving) {
+      cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
+    }
+    stepInTransaction(1.00, Saving) {
+      cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
     }
   }
 
 }
 
-
 // -------
 
-/** 
+/**
  * Implements specific cloning methods for each component
  * If we want to track progress within each step, then DocumentClone, NodeCloner, etc.
  * would also have to be Procedures that would be passed some parameter so progress
@@ -152,13 +150,13 @@ object CloneDocumentSet {
   def apply(sourceDocumentSetId: Long, cloneDocumentSetId: Long, cloneJob: PersistentDocumentSetCreationJob, progressObservers: Seq[Progress => Unit]) {
     val cloner = new DocumentSetCloner {
       override val job = cloneJob
-      override val cloneDocuments = DocumentCloner.clone _
-      override val cloneNodes = NodeCloner.clone _
+      override val cloneDocuments = DocumentCloner.dbClone _
+      override val cloneNodes = NodeCloner.dbClone _
       override val cloneTags = TagCloner.clone _
 
       override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
-      override val cloneNodeDocuments = NodeDocumentCloner.clone _
-      override val cloneDocumentTags = DocumentTagCloner.clone _
+      override val cloneNodeDocuments = NodeDocumentCloner.dbClone _
+      override val cloneDocumentTags = DocumentTagCloner.dbClone _
     }
     cloner.observeSteps(progressObservers)
     cloner.clone(sourceDocumentSetId, cloneDocumentSetId)
