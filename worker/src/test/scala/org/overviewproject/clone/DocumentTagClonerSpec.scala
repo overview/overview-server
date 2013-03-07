@@ -21,7 +21,6 @@ class DocumentTagClonerSpec extends DbSpecification {
       var sourceDocumentTags: Seq[DocumentTag] = _
       var cloneDocumentTags: Seq[DocumentTag] = _
       
-      var documentMapping: Map[Long, Long] = _
       var tagMapping: Map[Long, Long] = _
 
       def createDocumentTags(documents: Seq[Document], tags: Seq[Tag]): Seq[DocumentTag] = {
@@ -50,7 +49,6 @@ class DocumentTagClonerSpec extends DbSpecification {
         sourceDocumentTags = createDocumentTags(sourceDocuments, sourceTags)
         cloneDocumentTags = createDocumentTags(cloneDocuments, cloneTags)
 
-        documentMapping = createMapping(sourceDocuments, cloneDocuments)
         tagMapping = createMapping(sourceTags, cloneTags)
         
         Schema.documentTags.insert(sourceDocumentTags)
@@ -59,7 +57,7 @@ class DocumentTagClonerSpec extends DbSpecification {
     }
 
     "clone DocumentTags" in new DocumentTagContext {
-      DocumentTagCloner.clone(documentMapping, tagMapping)
+      DocumentTagCloner.dbClone(sourceDocumentSetId, cloneDocumentSetId, tagMapping)
 
       val documentTags = Schema.documentTags.allRows.toSeq
 
