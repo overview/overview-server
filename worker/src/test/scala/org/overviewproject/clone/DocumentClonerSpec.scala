@@ -28,33 +28,45 @@ class DocumentClonerSpec extends DbSpecification {
         insertCsvImportDocumentSet(uploadedFileId)
       }
 
+      def documents: Seq[Document] = Seq.tabulate(10)(i =>
+          Document(CsvImportDocument, documentSetId, text = Some("text-" + i), id = ids.next))
+
       override def setupWithDb = {
         documentSetId = createCsvImportDocumentSet
         documentSetCloneId = createCsvImportDocumentSet
         ids = new DocumentSetIdGenerator(documentSetId)
         
-        val documents = Seq.tabulate(10)(i =>
-          Document(CsvImportDocument, documentSetId, text = Some("text-" + i), id = ids.next))
         Schema.documents.insert(documents)
         sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
 
         expectedCloneData = sourceDocuments.map(d => (CsvImportDocument.value, documentSetCloneId, d.text.get))
 
-        documentIdMapping = DocumentCloner.clone(documentSetId, documentSetCloneId)
+        DocumentCloner.dbClone(documentSetId, documentSetCloneId)
         clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
 
       }
+    }
+    
+    trait DocumentsWithLargeIds extends CloneContext {
+      override def documents: Seq[Document] = Seq(Document(CsvImportDocument, documentSetId, text = Some("text"), id = ids.next + 0xFFFFFFFAl))
     }
 
     "Create document clones" in new CloneContext {
       val clonedData = clonedDocuments.map(d => (CsvImportDocument.value, d.documentSetId, d.text.get))
       clonedData must haveTheSameElementsAs(expectedCloneData)
     }
+    
+    "Create clones with ids matching source ids" in new CloneContext {
+      val sourceIndeces = sourceDocuments.map(d => (d.id << 32) >> 32)
+      val cloneIndeces = clonedDocuments.map(d => (d.id << 32) >> 32)
+      
+      sourceIndeces must haveTheSameElementsAs(cloneIndeces)
+    }
 
-    "Map source document ids to clone document ids" in new CloneContext {
-      val mappedIds = sourceDocuments.flatMap(d => documentIdMapping.get(d.id))
-
-      mappedIds must haveTheSameElementsAs(clonedDocuments.map(_.id))
+    "create clones with documentSetId encoded in id" in new DocumentsWithLargeIds {
+      val highOrderBits = clonedDocuments.map(_.id >> 32)
+      
+      highOrderBits.distinct must contain(documentSetCloneId).only
     }
   }
   step(shutdownDb)
