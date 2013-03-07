@@ -123,14 +123,14 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
     stepInTransaction(0.45, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId))
 
     for (tagIdMapping <- stepInTransaction(0.55, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
-      stepInTransaction(0.65, Done) {
+      stepInTransaction(0.65, Saving) {
         cloneDocumentTags(sourceDocumentSetId, cloneDocumentSetId, tagIdMapping)
       }
 
     stepInTransaction(0.95, Saving) {
       cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     }
-    stepInTransaction(1.00, Saving) {
+    stepInTransaction(1.00, Done) {
       cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
     }
   }
