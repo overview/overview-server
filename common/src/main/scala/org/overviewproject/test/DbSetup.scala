@@ -3,6 +3,8 @@ package org.overviewproject.test
 import anorm._
 import java.sql.Connection
 
+import org.overviewproject.test.IdGenerator._
+
 object DbSetup {
 
   private def failInsert = { throw new Exception("failed insert") }
@@ -24,33 +26,38 @@ object DbSetup {
       'title -> ("From query: " + query),
       'query -> query).executeInsert().getOrElse(failInsert)
   }
-  
+
   def insertUploadedFile(contentDisposition: String, contentType: String, size: Long)(implicit c: Connection): Long = {
     SQL("""
         INSERT INTO uploaded_file (content_disposition, content_type, uploaded_at, size)
         VALUES ({contentDisposition}, {contentType}, TIMESTAMP '1970-01-01 00:00:00', {size})
         """).on(
-            "contentDisposition" -> contentDisposition,
-            "contentType" -> contentType,
-            "size" -> size).executeInsert().getOrElse(failInsert)
+      "contentDisposition" -> contentDisposition,
+      "contentType" -> contentType,
+      "size" -> size).executeInsert().getOrElse(failInsert)
   }
 
   def insertNode(documentSetId: Long, parentId: Option[Long], description: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO node (document_set_id, parent_id, description)
-      VALUES ({document_set_id}, {parent_id}, {description})
+      INSERT INTO node (id, document_set_id, parent_id, description)
+      VALUES ({id}, {document_set_id}, {parent_id}, {description})
       """).on(
-      'document_set_id -> documentSetId,
-      'parent_id -> parentId,
-      'description -> description).executeInsert().getOrElse(failInsert)
+      "id" -> nextNodeId(documentSetId),
+      "document_set_id" -> documentSetId,
+      "parent_id" -> parentId,
+      "description" -> description).executeInsert().getOrElse(failInsert)
   }
 
   def insertDocument(documentSetId: Long, description: String, documentCloudId: String, title: Option[String] = None)(implicit connection: Connection): Long = {
     SQL("""
-        INSERT INTO document (type, document_set_id, description, documentcloud_id, title)
-        VALUES ('DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId}, {title})
-        """).on("documentSetId" -> documentSetId,
-      "description" -> description, "documentCloudId" -> documentCloudId, "title" -> title).
+        INSERT INTO document (id, type, document_set_id, description, documentcloud_id, title)
+        VALUES ({id}, 'DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId}, {title})
+        """).on(
+      "id" -> nextDocumentId(documentSetId),
+      "documentSetId" -> documentSetId,
+      "description" -> description,
+      "documentCloudId" -> documentCloudId,
+      "title" -> title).
       executeInsert().getOrElse(failInsert)
   }
 

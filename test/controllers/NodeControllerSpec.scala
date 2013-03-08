@@ -4,6 +4,7 @@ import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start,stop}
 
+import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.Node
 import org.overviewproject.postgres.SquerylEntrypoint._
@@ -21,10 +22,12 @@ class NodeControllerSpec extends Specification {
     // HACK: These are called within setupWithDb()
     lazy val user = OverviewUser(User())
     lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 0L, "title", Some("query")).save
-    lazy val node = nodes.insertOrUpdate(Node(documentSet.id, None, "description", 0, Array[Long]()))
+    var node: Node = _ 
 
     override def setupWithDb = {
       // TODO: don't rely on DB
+      node = Node(documentSet.id, None, "description", 0, Array[Long](), nextNodeId(documentSet.id))
+      nodes.insert(node)
       documentSet.nodes.associate(node)
     }
 

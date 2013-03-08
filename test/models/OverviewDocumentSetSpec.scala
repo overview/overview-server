@@ -1,11 +1,15 @@
 package models
 
 import java.sql.Timestamp
+
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+
+import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.UploadedFile
 import org.specs2.specification.Scope
+
 import helpers.DbTestContext
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
@@ -166,7 +170,8 @@ class OverviewDocumentSetSpec extends Specification {
           userId = 1l,
           date = new Timestamp(0),
           component = "test").save
-        val document = documents.insertOrUpdate(Document(CsvImportDocument, documentSet.id, text = Some("test doc")))
+        val document = documents.insert(Document(CsvImportDocument, documentSet.id, text = Some("test doc"), id = nextDocumentId(documentSet.id)))
+        
         val documentProcessingError = documentProcessingErrors.insertOrUpdate(DocumentProcessingError(documentSet.id, "url", "message"))
 
         val tag = Tag(documentSetId = documentSet.id, name = "tag").save

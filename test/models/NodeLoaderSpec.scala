@@ -2,10 +2,13 @@ package models
 
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
+
 import org.overviewproject.test.DbSetup._
+import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.{ Node => OrmNode }
 import org.overviewproject.postgres.SquerylEntrypoint._
+
 import helpers.DbTestContext
 import models.core.Node
 import models.core.DocumentIdList
@@ -29,7 +32,7 @@ class NodeLoaderSpec extends Specification {
       }
 
       protected def createNode(parentId: Option[Long], description: String, size: Int = 0): OrmNode =
-        nodes.insertOrUpdate(OrmNode(documentSetId, parentId, description, size, Array[Long]()))
+        nodes.insert(OrmNode(documentSetId, parentId, description, size, Array[Long](), nextNodeId(documentSetId)))
     }
 
     trait SmallTreeContext extends NodeContext {

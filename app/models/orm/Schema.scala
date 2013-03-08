@@ -23,6 +23,10 @@ object Schema extends org.squeryl.Schema {
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSetUsers = table[DocumentSetUser]
   
+
+  on(documents)(d => declare(d.id is(primaryKey)))
+  on(nodes)(n => declare(n.id is(primaryKey)))
+  
   val documentSetDocuments =
     oneToManyRelation(documentSets, documents).
       via((ds, d) => ds.id === d.documentSetId)
