@@ -1,17 +1,10 @@
 package org.overviewproject.clone
 
 import anorm._
-import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.tree.orm.Node
-import java.sql.Connection
-import org.overviewproject.database.Database
 
-object NodeCloner {
-  private val DocumentSetIdMask: Long = 0x00000000FFFFFFFFl
+object NodeCloner extends InDatabaseCloner {
 
-  def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long): Boolean = {
-    implicit val c: Connection = Database.currentConnection  
-  
+	override def cloneQuery: SqlQuery = 
     SQL("""
         WITH 
           cached_document_ids AS 
@@ -30,9 +23,6 @@ object NodeCloner {
             cloned_cache.cached_document_ids,
             cached_size
           FROM node, cloned_cache WHERE document_set_id = {sourceDocumentSetId} AND node.id = node_id
-        """).on("cloneDocumentSetId" -> cloneDocumentSetId,
-            "sourceDocumentSetId" -> sourceDocumentSetId,
-            "documentSetIdMask" -> DocumentSetIdMask).execute
-  }
+        """)
 
 }
