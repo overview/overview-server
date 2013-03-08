@@ -1,6 +1,7 @@
 DEFAULT_OPTIONS = {
   node_vpadding: 0.5, # fraction of a node's height
-  min_spacing_level: 5 # all levels >= this have minimum inter-subtree spacing
+  min_spacing_level: 8 # all levels >= this have minimum inter-subtree spacing
+  reference_spacing_docset_size : 1000 # fully zoomed out tree should have spacing between nodes that we get with docset of this size
 }
 
 # Extends the contour in-place using information from the new one.
@@ -169,8 +170,10 @@ class DrawableNode
 
   # Distance from the node to any sibling node.
   #
-  # Further down the tree, the nodes get tighter together, to a minimum of
-  # DEFAULT_OPTIONS.min_spacing_level.
+  # Further down the tree, the nodes get tighter together nonlinearly, reaches min at level 
+  # DEFAULT_OPTIONS.min_spacing_level. Multiplies by number of nodes in the root relative to
+  # EFAULT_OPTIONS.reference_spacing_docset_size, so that the nodes on level k have 
+  # same spacing when tree viewed fully zoomed out, regardless of document set size.
   _spacing: () ->
     return @__spacing if @__spacing?
 
@@ -179,8 +182,9 @@ class DrawableNode
     @fraction()
     @walk (dn) ->
       decreasing_level = Math.max(1 + DEFAULT_OPTIONS.min_spacing_level - dn._level, 1)
-      dn.__spacing = decreasing_level * decreasing_level * dn._fraction
-
+      size_factor = @root().animated_node.node.doclist.n / DEFAULT_OPTIONS.reference_spacing_docset_size
+      dn.__spacing = Math.pow(decreasing_level, 1.5) * dn._fraction * size_factor
+     
     @__spacing
 
   # Width of the node itself, with no padding.
@@ -212,7 +216,8 @@ class DrawableNode
 
   # Relative positions, with respect to parent.
   #
-  # This is inspired by http://emr.cs.iit.edu/~reingold/tidier-drawings.pdf.
+  # Algorithm variant of that in Reingold and Tilford, "Tidier Drawings of Trees", 1981 
+  # http://emr.cs.iit.edu/~reingold/tidier-drawings.pdf
   #
   # This method adds a @__relative_position_info object to each node. The
   # Object has the following properties:
