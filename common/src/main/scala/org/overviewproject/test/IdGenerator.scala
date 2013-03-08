@@ -1,5 +1,11 @@
 package org.overviewproject.test
 
+/**
+ * A simple way to provide ids for tables in the database
+ * that no longer depend on a SEQUENCE.
+ * Intended for tests only. In production, separate indeces for
+ * each document set are needed.
+ */
 object IdGenerator {
   private var nodeIndex = 0
   private var documentIndex = 0
