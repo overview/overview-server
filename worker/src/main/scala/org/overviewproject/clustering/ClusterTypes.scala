@@ -50,9 +50,17 @@ object ClusterTypes {
       }
     }
     
+    // Also accumulate DocumentVector (array pair representation) directly
     def accumulate(v:DocumentVector) : Unit  = {
       for (i <- 0 until v.length) {
         update(v.terms(i), getOrElse(v.terms(i), 0f) + v.weights(i))
+      }
+    }
+    
+    // Multiply by scalar and accumulate. Good for stuff. Like weighted averages.  
+    def multiplyAndAccumulate(factor:Float, v: DocumentVectorMap) : Unit = {
+      v foreach {
+        case (id, weight) => update(id, getOrElse(id, 0f) + factor*weight)
       }
     }
   }
