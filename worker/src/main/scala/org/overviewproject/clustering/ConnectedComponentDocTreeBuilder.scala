@@ -50,6 +50,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   }
 
   // --- public --- 
+  
   def buildNodeSubtree(root:DocTreeNode, threshSteps: Seq[Double], progAbort: ProgressAbortFn) : Unit = {
     val numSteps: Double = threshSteps.size
 
@@ -95,6 +96,24 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
   def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
     cc.sampleCloseEdges(numEdgesPerDoc)
+  }
+  
+  // --- Main ----
+  
+  // this entry encapsulates default parameters and usage
+  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    // By default: step down in roughly 0.1 increments
+    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
+
+    // Use edge sampling if docset is large enough, with hard-coded number of samples
+    // Random graph connectivity arguments suggest num samples does not need to scale with docset size
+    val numDocsWhereSamplingHelpful = 10000
+    val numSampledEdgesPerDoc = 200
+
+    if (docVecs.size > numDocsWhereSamplingHelpful)
+      sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
+    
+    BuildTree(root, threshSteps, progAbort) // actually build the tree!
   }
 }
 
@@ -143,7 +162,6 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
       splitCC(node, progAbort)
     }
   }
-  
   
   def BuildTree(root:DocTreeNode,progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {    
     splitNode(root, progAbort)
