@@ -37,69 +37,9 @@ class MakeDocumentTreeSpec extends Specification {
     }
   }    
 
-  // must match computation in DocumentVector generator exactly, including rounding issues
-  def computeIDF(numDocs:Int, occurences:Float) : Float = {
-    math.log10(numDocs/occurences).toFloat
-  }
   
   "DocumentVectorGenerator" should {
     
-    "fail if zero documents" in {
-      val vectorGen = new DocumentVectorGenerator()
-      vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
-    }
-    
-    "fail if one document" in {
-      val vectorGen = new DocumentVectorGenerator()
-      vectorGen.addDocument(1, Seq("foo"))
-      vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
-    }
-
-    "index a trivial document set" in {
-      // we need at least 4 docs to get non-empty result, 
-      // because DocumentVectorGenerator throws out any word that does not appear in at least 3 docs, or appears in all docs
-      val doc1 = "the cat sat sat on the mat".split(" ")
-      val doc2 = "the cat ate the rat".split(" ")
-      val doc3 = "the rat sat on the mat mat mat".split(" ")
-      val doc4 = "the rat doesn't really care about the cat cat".split(" ")
-      	
-      val vectorGen = new DocumentVectorGenerator()
-      vectorGen.addDocument(1, doc1)
-      vectorGen.addDocument(2, doc2)
-      vectorGen.addDocument(3, doc3)
-      vectorGen.addDocument(4, doc4)
-       
-      // Lookup the ID's of the words we're going to check
-      val catId = vectorGen.stringToId("cat")
-      val ratId = vectorGen.stringToId("rat")
-      
-      // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
-      val idf = vectorGen.Idf()
-      idf(catId) must beEqualTo(computeIDF(4,3)) 
-      idf(ratId) must beEqualTo(computeIDF(4,3))
-      idf.size must beEqualTo(2)      
-      
-      // Finally, check actual vectors. 
-      val vecs = vectorGen.documentVectors()
-       
-      // doc1: only cat remains
-      DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
-      
-      // doc2: cat and rat have same freq, vector normalized
-      val sqrhalf = math.sqrt(0.5).toFloat
-      DocumentVectorMap(vecs(2)) must_== Map(ratId->sqrhalf, catId->sqrhalf) 
-
-      // doc3: only rat remains
-      DocumentVectorMap(vecs(3)) must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
-      
-      // doc4: cat and rat remain, with different weights (which we recompute from scratch here)
-      val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * idf(ratId)
-      val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * idf(catId)
-      val len = math.sqrt(ratTfIdf*ratTfIdf + catTfIdf*catTfIdf).toFloat
-      DocumentVectorMap(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
-    }
- 
-
     "index a complex document set" in {
       // This does not check actual IDF values but tests certain constraints on the output
       val vectorGen = new DocumentVectorGenerator()

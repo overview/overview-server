@@ -21,13 +21,13 @@ case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer) 
 class DocumentVectorGenerator {
 
   // --- Config ---
-  var minDocsToKeepTerm = 3                    // term must be in at least this many docs or we discard it from vocabulary
-  
+  var minDocsToKeepTerm = 3                       // term must be in at least this many docs or we discard it from vocabulary
+  var termFreqOnly = false                        // compute TF instead of TF-IDF
   // --- Data ---
   var numDocs = 0
   private var termStrings = new StringTable
   
-  private var idf = DocumentVectorMap()                        // initially holds # docs for each term, converted in place to idf later
+  private var idf = DocumentVectorMap()               // initially holds # docs for each term, converted in place to idf later
   private var computedIdf = false
   
   private var tfidf = DocumentSetVectors(termStrings) // initially holds just tf, then multiplied in place by idf later
@@ -79,8 +79,15 @@ class DocumentVectorGenerator {
   def Idf(): DocumentVectorMap = {
     if (!computedIdf) {
       computedIdf = true
-      idf.retain((term, count) => (count >= minDocsToKeepTerm) && (count < numDocs))
-      idf.transform((term, count) => math.log10(numDocs / count).toFloat)
+      if (!termFreqOnly) {
+        // Apply classic IDF formula. Throw out terms that are too rare, or in every doc (where idf will be zero)
+        idf.retain((term, count) => (count >= minDocsToKeepTerm) && (count < numDocs))
+        idf.transform((term, count) => math.log10(numDocs / count).toFloat)
+      } else {
+        // Term frequency only. Still throw out terms that are too rare.
+        idf.retain((term, count) => (count >= minDocsToKeepTerm)) 
+        idf.transform((term, count) => 1.0f)                        // equal weight all terms
+      }
     }
     idf
   }

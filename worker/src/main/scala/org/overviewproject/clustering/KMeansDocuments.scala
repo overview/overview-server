@@ -58,11 +58,6 @@ trait KMeansDocumentOps {
 
     val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
     m.transform((k,v) => (v / len).toFloat) 
-    
-//    println("New centroid has " +  m.size + " terms.")
-//    println("Top terms: " + m.toSeq.sortWith(_._2 > _._2).take(20))
-    
-    m
   }
 
 }
