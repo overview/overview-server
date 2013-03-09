@@ -21,38 +21,8 @@ import org.overviewproject.clustering.ClusterTypes._
 import scala.util.control.Breaks._
 
 class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
-
-  private val distanceFn = (a:DocumentVector,b:DocumentVector) => DistanceFn.CosineDistance(a,b) // can't use CosineDistance because of method overloading :(
-  private var sampledEdges = new SampledEdges
-
-  // Produces all docs reachable from a given start doc, given thresh
-  // Unoptimized implementation, scans through all possible edges (N^2 total)
-  private def allReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
-    for (
-      otherDoc <- otherDocs;
-      if distanceFn(docVecs(thisDoc), docVecs(otherDoc)) <= thresh
-    ) yield otherDoc
-  }
-
-  // Same logic as above, but only looks through edges stored in sampledEdges
-  private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
-    val g = sampledEdges.get(thisDoc)
-    if (g.isDefined) {
-      for (
-        (otherDoc, distance) <- g.get if otherDocs.contains(otherDoc) if distance <= thresh
-      ) yield otherDoc
-    } else {
-      Nil
-    }
-  }
-
-  // Returns an edge walking function suitable for ConnectedComponents, using the sampled edge set if we have it
-  private def createEdgeEnumerator(thresh: Double) = {
-    if (!sampledEdges.isEmpty)
-      (doc: DocumentID, docSet: Set[DocumentID]) => sampledReachableDocs(thresh, doc, docSet)
-    else
-      (doc: DocumentID, docSet: Set[DocumentID]) => allReachableDocs(thresh, doc, docSet)
-  }
+  
+  private val cc = new ConnectedComponentsDocuments(docVecs)
 
   // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components
   // Returns new set of leaf nodes
@@ -61,7 +31,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
     for (node <- currentLeaves) {
 
-      val childComponents = ConnectedComponents.AllComponents[DocumentID](node.docs, createEdgeEnumerator(thresh))
+      val childComponents = cc.allComponents(node.docs, thresh)
 
       if (childComponents.size == 1) {
         // lower threshold did not split this component, pass unchanged to next level
@@ -79,8 +49,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     nextLeaves
   }
 
- // --- public ---
-    
+  // --- public --- 
   def buildNodeSubtree(root:DocTreeNode, threshSteps: Seq[Double], progAbort: ProgressAbortFn) : Unit = {
     val numSteps: Double = threshSteps.size
 
@@ -124,11 +93,11 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     BuildTree(root, threshSteps, progAbort)
   }
 
-  
   def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
-    sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
+    cc.sampleCloseEdges(numEdgesPerDoc)
   }
 }
+
 
 // Use k-means until nodes get small enough, then switch to Connected Components down to leaves
 class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
@@ -158,7 +127,6 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
     }
   }
   
-  
   // here we do not recurse as the connected component splitter always goes down to the leaves
   private def splitCC(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
     val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
@@ -177,10 +145,8 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
   }
   
   
-  def BuildTree(root:DocTreeNode,progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
-    
+  def BuildTree(root:DocTreeNode,progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {    
     splitNode(root, progAbort)
-    
     root
   } 
   
