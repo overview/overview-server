@@ -1,5 +1,6 @@
 /**
  * KMeansSpec.scala
+ * Tests both iterative (variable k) and non-iterative (fixed k) algorithms
  * 
  * Overview Project, created January 2013
  * @author Jonathan Stray

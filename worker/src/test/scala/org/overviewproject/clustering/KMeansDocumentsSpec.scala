@@ -1,5 +1,6 @@
 /**
  * KMeansDocumentsSpec.scala
+ * Tests both iterative (variable k) and non-iterative (fixed k) algorithms
  * 
  * Overview Project, created January 2013
  * @author Jonathan Stray
@@ -39,16 +40,14 @@ class KMeansDocumentsSpec extends Specification {
       clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
     }
   
-  /*  "find three clusters using iterative algorithm" in {
+    "find two clusters using iterative algorithm" in {
       val docVecs = getSampleDocumentVectors
       val km = new IterativeKMeansDocuments(docVecs)
       
-      val clusters = km(docVecs.keys.toSeq, 3)
-      val clusterSizes = (0 until 3).map(i => clusters.count(_._2 == i))
-      //println("cluster sizes: " + clusterSizes)
-      //println("clusters: " + clusters)
-      clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
-    }*/
+      val clusters = km(docVecs.keys.toArray, 3)
+      val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
+      clusterSizes should haveTheSameElementsAs (Seq(5,4,0))
+    }
   }
 }
    
