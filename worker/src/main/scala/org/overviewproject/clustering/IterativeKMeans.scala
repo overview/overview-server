@@ -48,8 +48,10 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // Debug info?
   var debugInfo = false
   
-  // How many samples should we take? Reduce newCentroidN when set is small, don't sample more than 10% or less than 1
-  def numSamples(elements:IndexedSeq[T]) = Ranges.clip(1.0, newCentroidN, elements.size/10.0).toInt
+  // How many samples should we take? Reduce newCentroidN when set is small, don't sample more than 25% or less than 1
+  //def numSamples(elements:IndexedSeq[T]) = Ranges.clip(1.0, newCentroidN, elements.size/4.0).toInt
+  def numSamples(elements:IndexedSeq[T]) = newCentroidN   // Not sure about that, seems to produce different results, inferior on MMS
+                                                          // keep old alg for now -- jms 2013/3/10
   
   // Select n samples from a seq, at regular intervals. Set skip to a prime to prevent repetition when we wrap past the end of input.
   def subSampleIndexed(elements:IndexedSeq[T], start:Int, skip:Int, n:Int) : Seq[T] = {

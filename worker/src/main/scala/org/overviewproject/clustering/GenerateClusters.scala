@@ -48,11 +48,11 @@ object BuildDocTree {
    
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
-    
-    applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
+
+    applyKMeans(nonEmptyDocs, docVecs, progAbort)             // experimental
+    //applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
         
     new TreeLabeler(docVecs).labelNode(nonEmptyDocs)    // create a descriptive label for each node
-    //ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
     
     // If there are any empty documents, create a new root with all documents
     // Add children of nonEmptyDocs, plus node containing emptyDocs
