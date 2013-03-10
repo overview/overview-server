@@ -153,7 +153,7 @@ views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program''s �
 views.DocumentSet._uploadForm.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
 views.DocumentSet._uploadForm.progress.header=Uploading…
 views.DocumentSet._uploadForm.progress.description=The upload will stop if you leave this page.
-views.DocumentSet._uploadForm.progress.prompt=When your file is sent completely, this message will disappear.
+views.DocumentSet._uploadForm.progress.prompt=Meanwhile, you can open Overview in another window and work on a different document set.
 views.DocumentSet._uploadForm.progress.cancel=Cancel upload
 views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
