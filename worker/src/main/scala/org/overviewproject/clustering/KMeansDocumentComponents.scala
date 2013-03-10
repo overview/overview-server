@@ -20,7 +20,7 @@ import ClusterTypes._
 // how to initialize these values, and whether or not to store the actual doc IDs in here too
 abstract class AbstractDocumentComponent {
   val centroid:DocumentVectorMap
-  val nDocs:Int
+  val nDocs:Int  
 }
 
 // Core document component clustering operations: distance, mean

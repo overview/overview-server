@@ -21,6 +21,8 @@ class DocTreeNode(val docs: Set[DocumentID]) {
   var children: Set[DocTreeNode] = Set[DocTreeNode]()
   var documentIdCache: DocumentIdCache = _
   
+  var components = Set[DocumentComponent]() // used during clustering by KMeansComponentDocTreeBuilder, cleared after
+  
   // return children in predictable order. Sort descending by size, then ascending by document IDs
   def orderedChildren: List[DocTreeNode] = {
     children.toList.sortWith((a, b) => (a.docs.size > b.docs.size) || (a.docs.size == b.docs.size && a.docs.min < b.docs.min))

@@ -38,14 +38,21 @@ object BuildDocTree {
     val builder = new KMeansDocTreeBuilder(docVecs, arity)
     builder.BuildTree(root, progAbort) // actually build the tree!
   }
-
+  
+  def applyKMeansComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    val arity = 5
+    val builder = new KMeansComponentsDocTreeBuilder(docVecs, arity)
+    builder.BuildTree(root, progAbort) // actually build the tree!
+  }
+  
+   
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
     
-    applyKMeans(nonEmptyDocs, docVecs, progAbort)    
+    applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
         
     new TreeLabeler(docVecs).labelNode(nonEmptyDocs)    // create a descriptive label for each node
-    ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
+    //ThresholdTreeCleaner(nonEmptyDocs)                  // combine nodes that are too small
     
     // If there are any empty documents, create a new root with all documents
     // Add children of nonEmptyDocs, plus node containing emptyDocs

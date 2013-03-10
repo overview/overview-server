@@ -37,7 +37,7 @@ class KMeansNodeSplitter(protected val docVecs: DocumentSetVectors, protected va
     if (node.docs.size > 1)
       node.docs foreach { id => 
         node.children += new DocTreeNode(Set(id))
-      }
+    }
   }
 }
 

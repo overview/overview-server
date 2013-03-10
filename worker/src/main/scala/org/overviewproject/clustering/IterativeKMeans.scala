@@ -13,8 +13,7 @@
 package org.overviewproject.clustering
 
 import org.overviewproject.util.CompactPairArray
-import org.overviewproject.util.Logger
-import org.overviewproject.util.LoopedIterator
+import org.overviewproject.util.{Logger, LoopedIterator, Ranges}
 import scala.collection.mutable.{Set, ArrayBuffer}
 import scala.reflect.ClassTag
 
@@ -49,18 +48,8 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // Debug info?
   var debugInfo = false
   
-/* Needed? Or will incremental alg avoid?
-  // If a cluster ends up empty, create a new centroid. 
-  // Counts how many new centroids we've created so we retry different elements if we keep coming up empty
-  var newCentroidCnt  = 0
-  override def emptyCentroid(i:Int, clusters:CompactPairArray[T, Int], centroids:Seq[C]) : C = {
-    println("New centroid for cluster " + i)
-    val skip = newCentroidSkip * (i + newCentroidCnt)
-    val elem = clusters(skip % clusters.length)
-    newCentroidCnt += 1
-    mean(Seq(elem._1))
-  }
-*/
+  // How many samples should we take? Reduce newCentroidN when set is small, don't sample more than 10% or less than 1
+  def numSamples(elements:IndexedSeq[T]) = Ranges.clip(1.0, newCentroidN, elements.size/10.0).toInt
   
   // Select n samples from a seq, at regular intervals. Set skip to a prime to prevent repetition when we wrap past the end of input.
   def subSampleIndexed(elements:IndexedSeq[T], start:Int, skip:Int, n:Int) : Seq[T] = {
@@ -136,7 +125,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   
   // Split one cluster into two. Take a random element for initial new centroid
   def SplitCentroid(elements:IndexedSeq[T]) : Unit = {
-    val newCentroid = mean(subSampleIndexed(elements, 0, newCentroidSkip, newCentroidN))  // ok, not a random element, but shouldn't matter
+    val newCentroid = mean(subSampleIndexed(elements, 0, newCentroidSkip, numSamples(elements)))  // ok, not a random element, but shouldn't matter
     centroids = centroids :+ newCentroid
 
     iterateAssignments(elements, maxIterationsKis2)
@@ -150,7 +139,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       
     val splitIdx = distortions.indexOf(distortions.max)
     val splitElem = elementsInCluster(splitIdx, elements, clusters)
-    val newCentroid = mean(subSampleSeq(splitElem, 0, newCentroidSkip, newCentroidN))
+    val newCentroid = mean(subSampleSeq(splitElem, 0, newCentroidSkip, numSamples(elements)))
     centroids = centroids :+ newCentroid
 
     iterateAssignments(elements, maxIterationsPerK)    
@@ -202,6 +191,16 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   
   // Not reentrant. Just sayin'
   def apply(elements:IndexedSeq[T], maxK:Int) : Array[Int] = {
+
+    // Boundary cases: no elements, one element, one cluster
+    require(elements.size > 0)
+    if (elements.size == 1) {
+      return new Array[Int](1)  // will assign the only element to cluster 0
+    }
+    if (maxK == 1) {
+      return new Array[Int](elements.size) // assign all elements ot cluster 0
+    }
+    
     // reset best fit trackers
     totalDistortionPerK = Array.fill(maxK+1)(0.0)
     bestFit = Double.MaxValue 

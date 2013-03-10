@@ -26,14 +26,14 @@ class TreeLabeler(docVecs:DocumentSetVectors) {
     if (node.docs.size == 1) {
       require(node.children.isEmpty)
       val vec = DocumentVectorMap(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
-      node.description = makeDescription(vec)
+      node.description += makeDescription(vec)
       vec
     } else {
       var vec = DocumentVectorMap()
       for (child <- node.children) {
         vec.accumulate(labelNode(child)) // sum the document vectors of all child nodes
       }
-      node.description = makeDescription(vec)
+      node.description += makeDescription(vec)
       vec
     }
   }
