@@ -16,7 +16,7 @@ import org.specs2.mutable.Specification
 import org.overviewproject.clustering.{DocumentVectorGenerator,NotEnoughDocumentsError}
 import org.overviewproject.clustering.Lexer
 
-class MakeDocumentTreeSpec extends Specification {
+class IndexDocumentsSpec extends Specification {
   
   "Lexer" should {
 
@@ -55,15 +55,15 @@ class MakeDocumentTreeSpec extends Specification {
       val idf = vectorGen.Idf()
  
       // idf words must be drawn from total document vocabulary         
-      val vocab = docterms.map(_._2).reduceLeft(_ ++ _).map(vectorGen.stringToId(_)).toSet
-      val idfVocab = idf.map(_._1).toSet
+      val vocab = docterms.map(_._2).reduceLeft(_ ++ _).toSet
+      val idfVocab = idf.keys.map(vectorGen.idToString(_)).toSet
       idfVocab.subsetOf(vocab) must beTrue       
 
       // all IDF terms must be in vocab
       // all IDF weights must be > 0, but <= than min number of docs to keep term (3) out of doc set size
       val maxIdf = math.log10(docterms.length / 3.0).toFloat
       for ((term,weight) <- idf) {
-             vocab must contain(term)
+             vocab must contain(vectorGen.idToString(term))
              weight must beGreaterThan(0f)      
              weight must beLessThanOrEqualTo(maxIdf)
       }
@@ -78,8 +78,8 @@ class MakeDocumentTreeSpec extends Specification {
         packedDocVec must not beNull
         val docvec = DocumentVectorMap(packedDocVec.get)
         
-        val docTerms = docvec.map(_._1).toSet
-        docTerms.subsetOf(terms.map( vectorGen.stringToId(_) ).toSet) must beTrue    // all terms in vector must be in doc
+        val docTerms = docvec.keys.map(vectorGen.idToString(_)).toSet
+        docTerms.subsetOf(terms.toSet) must beTrue    // all terms in vector must be in doc
         docTerms.subsetOf(idfVocab) must beTrue       // all terms in vector must be in IDF vocabulary
         
         val docWeights = docvec.map(_._2)

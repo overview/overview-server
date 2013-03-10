@@ -13,8 +13,8 @@ import org.specs2.mutable.Specification
 class DocumentVectorGeneratorSpec extends Specification {
 
   // must match computation in DocumentVector generator exactly, including rounding issues
-  def computeIDF(numDocs:Int, occurences:Float) : Float = {
-    math.log10(numDocs/occurences).toFloat
+  def computeIDF(numDocs:Int, occurences:Int) : Float = {
+    math.log10(numDocs/occurences.toFloat).toFloat
   }
   
   "DocumentVectorGenerator" should {
@@ -41,26 +41,20 @@ class DocumentVectorGeneratorSpec extends Specification {
       val id1 = vectorGen.stringToId("word1")
       val id2 = vectorGen.stringToId("word2")
       val id3 = vectorGen.stringToId("word3")
-
-      Seq(id1, id2, id3) should beSorted  // term ids should increase in order of first appearance 
       
-      val dv1 = docVecs(1)
+      val dv1 = DocumentVectorMap(docVecs(1))
       val rt2 = (1.0/Math.sqrt(2)).asInstanceOf[TermWeight]
-      dv1.length should beEqualTo(2)
-      dv1.terms(0) should beEqualTo(id1)  // this also checks that terms are sorted in DocumentVector        
-      dv1.weights(0) should beCloseTo(rt2, 1e-6f)
-      dv1.terms(1) should beEqualTo(id2)          
-      dv1.weights(1) should beCloseTo(rt2, 1e-6f)
+      dv1.size should beEqualTo(2)
+      dv1(id1) should beCloseTo(rt2, 1e-6f)
+      dv1(id2) should beCloseTo(rt2, 1e-6f)
 
-      val dv2 = docVecs(2)
+      val dv2 = DocumentVectorMap(docVecs(2))
       val rt6 = (1.0/Math.sqrt(6)).asInstanceOf[TermWeight]
-      dv2.length should beEqualTo(3)
-      dv2.terms(0) should beEqualTo(id1)          
-      dv2.weights(0) should beCloseTo(rt6, 1e-6f)
-      dv2.terms(1) should beEqualTo(id2)
-      dv2.weights(1) should beCloseTo(2*rt6, 1e-6f)
-      dv2.terms(2) should beEqualTo(id3)
-      dv2.weights(2) should beCloseTo(rt6, 1e-6f)
+      dv2.size should beEqualTo(3)
+      
+      dv2(id1) should beCloseTo(rt6, 1e-6f)
+      dv2(id2) should beCloseTo(2*rt6, 1e-6f)
+      dv2(id3) should beCloseTo(rt6, 1e-6f)
     }
   
   
@@ -83,8 +77,8 @@ class DocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(4, doc4)
        
       // Lookup the ID's of the words we're going to check
-      val catId = vectorGen.stringToId("cat")
-      val ratId = vectorGen.stringToId("rat")
+      var catId = vectorGen.stringToId("cat")
+      var ratId = vectorGen.stringToId("rat")
       
       // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
       val idf = vectorGen.Idf()
@@ -95,6 +89,10 @@ class DocumentVectorGeneratorSpec extends Specification {
       // Finally, check actual vectors. 
       val vecs = vectorGen.documentVectors()
        
+      // IDs change after documentVectors() call, because it strips removed terms
+      catId = vectorGen.stringToId("cat")
+      ratId = vectorGen.stringToId("rat")
+
       // doc1: only cat remains
       DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
       
@@ -106,8 +104,8 @@ class DocumentVectorGeneratorSpec extends Specification {
       DocumentVectorMap(vecs(3)) must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
       
       // doc4: cat and rat remain, with different weights (which we recompute from scratch here)
-      val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * idf(ratId)
-      val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * idf(catId)
+      val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * computeIDF(4,3)
+      val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * computeIDF(4,3)
       val len = math.sqrt(ratTfIdf*ratTfIdf + catTfIdf*catTfIdf).toFloat
       DocumentVectorMap(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
     }

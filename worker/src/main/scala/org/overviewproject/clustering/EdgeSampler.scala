@@ -100,7 +100,7 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
     termTable.transform({ case (key, value) => value.sortBy(-_._2).result } ) // sort each dim by decreasing weight. result call also resizes to save space
 
     Logger.logElapsedTime("generated term/dimension array.", t0)
-    Logger.info("StringTable size = " + docVecs.stringTable.numTerms)
+    Logger.info("StringTable size = " + docVecs.stringTable.size)
     Logger.info("Vocabulary size = " + termTable.size)
     Logger.info("Average terms per doc = " + totalTerms / docVecs.size)
     

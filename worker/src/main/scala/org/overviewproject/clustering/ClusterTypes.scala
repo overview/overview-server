@@ -33,7 +33,14 @@ object ClusterTypes {
       _idToString(id)
     }
     
-    def numTerms = _idToString.size
+    def size = _idToString.size
+    
+    // translate a string from this table to another. throws if not in target table
+    def translateIdTo(id: TermID, s:StringTable) : TermID = {
+      val term = idToString(id)
+      s._stringToId(term)         // access private map, to prevent string from being added
+    } 
+
   }
 
   // --- DocumentVectorMap ----

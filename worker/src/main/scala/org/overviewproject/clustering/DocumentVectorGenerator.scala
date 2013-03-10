@@ -12,7 +12,7 @@
 package org.overviewproject.clustering
 
 import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.DisplayedError
+import org.overviewproject.util.{Logger, DisplayedError}
 import scala.collection.mutable.Map
 
 // Error object
@@ -29,8 +29,9 @@ class DocumentVectorGenerator {
   var numDocs = 0
   protected var termStrings = new StringTable
   
-  case class TermRecord(var useCount:Float=0, var docCount:Float=0)
-  private var termCounts = Map[TermID, TermRecord]()
+  case class TermRecord(var useCount:Int=0, var docCount:Int=0)
+  protected var termCounts = Map[TermID, TermRecord]()
+  protected var totalTerms:Int = 0  // sum of all termCounts(_).useCount
   
   private var idf = Map[TermID, Float]()
   private var computedIdf = false
@@ -41,17 +42,97 @@ class DocumentVectorGenerator {
   // --- Override to change behaviour ---
 
   // Any pre-processing applied to terms goes here
-  def termIterator(terms:Seq[String]):Iterator[String] = terms.iterator
+  protected def termIterator(terms:Seq[String]):Iterator[String] = terms.iterator
   
    // Should we keep this particular term? This version drops all terms where count < minOccurencesEachTerm or count == N
-  def keepThisTerm(term:TermID, counts:TermRecord) = {
+  protected def keepThisTerm(term:TermID, counts:TermRecord) = {
     (counts.docCount >= minDocsToKeepTerm) &&
     (counts.docCount < numDocs) 
   }
   
-  // --- Public ---
+  // --- Private ---
   
-  // provide limited access to our string table, so if someone has one of our vectors they can look up the IDs
+ 
+  // Return inverse document frequency map: term -> idf
+  // Drops unneeded terms based on TermCounts, which is cleared (not needed after this)
+  protected def computeIdf():Unit = {
+    if (!termFreqOnly) {
+      // Classic IDF formula. For all terms we are keeping, compute log thingy
+      termCounts.retain((term, counts) => keepThisTerm(term, counts))
+      idf = termCounts map { case (term, counts) => (term, math.log10(numDocs / counts.docCount.toFloat).toFloat) }
+  
+    } else {
+      // Term frequency only. Still throw out terms that are too rare.
+      termCounts foreach { case (term,counts) =>
+      if (counts.docCount >= minDocsToKeepTerm)
+        idf += (term -> 1.0f)   // equal weight to all terms
+      }
+    }
+
+    // save some memory; this is way bigger than idf, especially we're processing bigrams, and no longer needed
+    termCounts.clear()  
+  }
+  
+  // Create a new string table with only the terms that have been kept
+  protected def reducedStringTable() : StringTable = {
+    val newStrings = new StringTable
+    idf.keys foreach { id =>
+      newStrings.stringToId(termStrings.idToString(id))   // stringToId adds this string to newStrings
+    }
+    newStrings
+  }
+  
+  // After all documents have been added, divide each term by idf value.
+  // Works in place to avoid completely duplicating the set of vectors (major memory hit otherwise)
+  // Hence, destroys term counts, so cannot addDocument after this
+  protected def computeDocumentVectors() : Unit = {
+      
+    if (numDocs < minDocsToKeepTerm)
+      throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
+    
+    computedDocumentVectors = true
+    Idf()  // force idf computation
+
+    // Make a new string table with only the terms we've kept. We'll translate vectors into this new table as we go.
+    val newStrings = reducedStringTable()
+   
+    // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
+    for ((docid, doctf) <- tfidf) { // for each doc
+
+      var docvec = DocumentVectorMap()
+      var vecLength = 0f
+
+      // Iteration over terms in PackedDocumentVector is a little awkward since it must be done by index...
+      for (i <- 0 until doctf.length) { 
+        val term = doctf.terms(i)
+        val termfreq = doctf.weights(i)
+        
+        // if term not eliminated... 
+        if (idf.contains(term)) {
+          val weight = termfreq * idf(term)                         // multiply tf*idf
+          val newTerm = termStrings.translateIdTo(term, newStrings) // reference new string table
+          docvec += (newTerm -> weight)
+          vecLength += weight * weight
+        }
+      }
+
+      vecLength = math.sqrt(vecLength).toFloat
+      docvec.transform((term, weight) => weight / vecLength)
+
+      tfidf += (docid -> DocumentVector(docvec))  // replaces existing tf vector with tfidf vector
+    }
+
+    Logger.info(s"Generated $tfidf.size() document vectors. Input vocabulary size $termStrings.size(), output vocabulary size $newStrings.size()")
+
+    // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
+    termStrings = newStrings
+    idf.clear()
+    
+  }
+
+  // --- Public ---
+
+   // provide limited access to our string table, so if someone has one of our vectors they can look up the IDs
   def idToString(id: TermID) = termStrings.idToString(id)
   def stringToId(s: String) = termStrings.stringToId(s)
 
@@ -83,9 +164,10 @@ class DocumentVectorGenerator {
         // for each unique term in this doc, update count of uses, count of docs containing term in 
         for ((term,count) <- termcounts) {
           val counts = termCounts.getOrElse(term, TermRecord(0,0))
-          counts.useCount += count
+          counts.useCount += count.toInt
           counts.docCount += 1
           termCounts += (term -> counts)
+          totalTerms += counts.useCount
         }
 
         numDocs += 1
@@ -93,85 +175,61 @@ class DocumentVectorGenerator {
     }
   }
   
-  
-  // Return inverse document frequency map: term -> idf
-  // Drops unneeded terms based on TermCounts, which is cleared (not needed after this)
+  // Compute IDF on demand
   def Idf() = {
     if (!computedIdf) {
+      computeIdf()
       computedIdf = true
-      if (!termFreqOnly) {
-        // Classic IDF formula. For all terms we are keeping, compute log thingy
-        termCounts.retain((term, counts) => keepThisTerm(term, counts))
-        idf = termCounts map { case (term, counts) => (term, math.log10(numDocs / counts.docCount).toFloat) }
-        
-      } else {
-        // Term frequency only. Still throw out terms that are too rare.
-        termCounts foreach { case (term,counts) =>
-          if (counts.docCount >= minDocsToKeepTerm)
-            idf += (term -> 1.0f)   // equal weight to all terms
-        }
-      }
     }
-    // save some memory; this is way bigger than idf, especially we're processing bigrams, and no longer needed
-    termCounts.clear()  
     idf
   }
-
-  // After all documents have been added, divide each term by idf value.
-  // Works in place to avoid completely duplicating the set of vectors (major memory hit otherwise)
+ 
+  // Return the final computed vectors for these documents
   def documentVectors(): DocumentSetVectors = {
     if (!computedDocumentVectors) {
-      
-      if (numDocs < minDocsToKeepTerm)
-        throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
-      
+      computeDocumentVectors()
       computedDocumentVectors = true
-      Idf()  // force idf computation
-      require(computedIdf == true)
-
-      // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
-      for ((docid, doctf) <- tfidf) { // for each doc
-  
-        var docvec = DocumentVectorMap()
-        var vecLength = 0f
-  
-        // Iteration over terms in PackedDocumentVector is a little awkward since it must be done by index...
-        for (i <- 0 until doctf.length) { 
-          val term = doctf.terms(i)
-          val termfreq = doctf.weights(i)
-          
-          if (idf.contains(term)) { // skip if term eliminated in previous step
-            val weight = termfreq * idf(term) // otherwise, multiply tf*idf
-            docvec += (term -> weight)
-            vecLength += weight * weight
-          }
-        }
-  
-        vecLength = math.sqrt(vecLength).toFloat
-        docvec.transform((term, weight) => weight / vecLength)
-  
-        tfidf += (docid -> DocumentVector(docvec))  // replaces existing tf vector with tfidf vector
-      }
     }
-
     tfidf
   }
+  
 }
 
-// Functions needed to index bigrams too 
+// This generator indexes bigrams. All bigrams are stored in vocabulary and and document vectors during intermediate processing, 
+// then we throw out bigrams that don't seem to be collocations, and trim doc vecs accordingly.
 class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
 
   // --- Config ---
   var doBigrams = false                       // generate bigram terms
   var minBigramOccurrences = 5                // throw out bigram if it has less than this many occurrences
   var minBigramLikelihood = 20                // ...or if not this many times more likely than chance to be a colocation
-
  
   // ---- Logic ----
   
-  // Is the bigram a,b common enough relative to a and b alone that we should identifiy it as a colocation?
+  // computes log(x**k * (1-x)**(n-k)), but rewrite this for better numerical stablilty 
+  // (quite necessary, x**k is often numerically 0 which incorrectly gives -Infinity)
+  def LogL(k:Double, n:Double, x:Double) : Double = {
+    if (x==0 || x==1)
+      -Math.log(0) // yeah, -Inf, so what?
+    else 
+      k*Math.log(x) + (n-k)*Math.log(1-x)
+  }
+
+  // How much more likely is it that this bigram is a true colocation than a random occurence?
+  // Takes counts of first and second words, count of bigram, and total sample size
+  def colocationLikelihood(count1:Int, count2:Int, count12:Int, termCount:Int) : Double = {
+    val p = count2/termCount.toDouble
+    val p1 = count12/count1.toDouble
+    val p2 = (count2-count12)/(termCount-count1).toDouble
+    LogL(count12, count1, p) + LogL(count2-count12, termCount-count1, p) - LogL(count12, count1, p1) - LogL(count2-count12, termCount-count1, p2)
+  }
+
+  // Is the bigram ab common enough relative to a and b alone that we should identifiy it as a colocation?
+  // See Foundations of Statistical Natural Language Processing, Manning and Schutze, Ch. 5
   def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
-    true // STUB
+    val abCount = termCounts(ab).useCount  
+    (abCount >= minBigramOccurrences) &&
+    (colocationLikelihood(termCounts(a).useCount, termCounts(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
   }
   
   // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
@@ -190,16 +248,18 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   // --- Overrides ---
   
   // Walk through term list as bigrams
-  override def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
+  protected override def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
     
   // Drops all terms where count < minOccurencesEachTerm or count == N, and take the log of document frequency in the usual IDF way
   // Drops all brigrams that don't appear often enough, or are not likely colocations
-  override def keepThisTerm(term:TermID, counts:TermRecord) = {
+  protected override def keepThisTerm(term:TermID, counts:TermRecord) = {
     (counts.docCount >= minDocsToKeepTerm) &&
     (counts.docCount < numDocs) &&
     keepBigram(term, counts)
   }
 
+
+  
 }
 
 
