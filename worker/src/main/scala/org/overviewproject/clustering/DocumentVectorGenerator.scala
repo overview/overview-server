@@ -24,13 +24,10 @@ class DocumentVectorGenerator {
   // --- Config ---
   var minDocsToKeepTerm = 3                   // term must be in at least this many docs or we discard it from vocabulary
   var termFreqOnly = false                    // compute TF instead of TF-IDF
-  var doBigrams = false                       // generate bigram terms
-  var minBigramOccurrences = 5                // throw out bigram if it has less than this many occurrences
-  var minBigramLikelihood = 20                // ...or if not this many times more likely than chance to be a colocation
 
   // --- Data ---
   var numDocs = 0
-  private var termStrings = new StringTable
+  protected var termStrings = new StringTable
   
   case class TermRecord(var useCount:Float=0, var docCount:Float=0)
   private var termCounts = Map[TermID, TermRecord]()
@@ -40,14 +37,24 @@ class DocumentVectorGenerator {
   
   private var tfidf = DocumentSetVectors(termStrings) // initially holds just tf, then multiplied in place by idf later
   private var computedDocumentVectors = false
+
+  // --- Override to change behaviour ---
+
+  // Any pre-processing applied to terms goes here
+  def termIterator(terms:Seq[String]):Iterator[String] = terms.iterator
   
-  // --- Methods ---
+   // Should we keep this particular term? This version drops all terms where count < minOccurencesEachTerm or count == N
+  def keepThisTerm(term:TermID, counts:TermRecord) = {
+    (counts.docCount >= minDocsToKeepTerm) &&
+    (counts.docCount < numDocs) 
+  }
+  
+  // --- Public ---
   
   // provide limited access to our string table, so if someone has one of our vectors they can look up the IDs
   def idToString(id: TermID) = termStrings.idToString(id)
   def stringToId(s: String) = termStrings.stringToId(s)
 
-  
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
   // Cannot be called after documentVectors(), which "freezes" the document set 
   def addDocument(docId: DocumentID, terms: Seq[String]) = {
@@ -57,7 +64,7 @@ class DocumentVectorGenerator {
     this.synchronized {
       if (terms.size > 0) {
 
-        val termIter = if (doBigrams) new BigramIterator(terms) else terms.iterator
+        val termIter = termIterator(terms)
         
         // count how many times each token appears in this doc (term frequency)
         var termcounts = DocumentVectorMap()
@@ -86,31 +93,6 @@ class DocumentVectorGenerator {
     }
   }
   
-  // Is the bigram a,b common enough relative to a and b alone that we should identifiy it as a colocation?
-  def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
-    true // STUB
-  }
-  
-  // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
-  def keepBigram(term:TermID, counts:TermRecord) : Boolean = {
-    val s = termStrings.idToString(term)
-    val i = s.indexOf(' ')
-    if (i != 0) {
-      val t1 = termStrings.stringToId(s.take(i))
-      val t2 = termStrings.stringToId(s.drop(i+1))
-      bigramIsLikelyEnough(i, t1, t2)
-    } else {
-      true  // not a bigram
-    }
-  }
-
-  // Drops all terms where count < minOccurencesEachTerm or count == N, and take the log of document frequency in the usual IDF way
-  // Drops all brigrams that don't appear often enough, or are not likely colocations
-  def keepThisTerm(term:TermID, counts:TermRecord) = {
-    (counts.docCount >= minDocsToKeepTerm) &&
-    (counts.docCount < numDocs) &&
-    (!doBigrams || keepBigram(term, counts))
-  }
   
   // Return inverse document frequency map: term -> idf
   // Drops unneeded terms based on TermCounts, which is cleared (not needed after this)
@@ -118,11 +100,8 @@ class DocumentVectorGenerator {
     if (!computedIdf) {
       computedIdf = true
       if (!termFreqOnly) {
-        // Classic IDF formula. 
-        // Throw out all terms that don't appear in enough docs, or all docs (were IDF will be zero), or arent a keepable bigram 
+        // Classic IDF formula. For all terms we are keeping, compute log thingy
         termCounts.retain((term, counts) => keepThisTerm(term, counts))
-        
-        // Apply the classic IDF formula
         idf = termCounts map { case (term, counts) => (term, math.log10(numDocs / counts.docCount).toFloat) }
         
       } else {
@@ -177,5 +156,50 @@ class DocumentVectorGenerator {
 
     tfidf
   }
+}
+
+// Functions needed to index bigrams too 
+class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
+
+  // --- Config ---
+  var doBigrams = false                       // generate bigram terms
+  var minBigramOccurrences = 5                // throw out bigram if it has less than this many occurrences
+  var minBigramLikelihood = 20                // ...or if not this many times more likely than chance to be a colocation
+
+ 
+  // ---- Logic ----
+  
+  // Is the bigram a,b common enough relative to a and b alone that we should identifiy it as a colocation?
+  def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
+    true // STUB
+  }
+  
+  // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
+  def keepBigram(term:TermID, counts:TermRecord) : Boolean = {
+    val s = termStrings.idToString(term)
+    val i = s.indexOf(' ')
+    if (i != 0) {
+      val t1 = termStrings.stringToId(s.take(i))
+      val t2 = termStrings.stringToId(s.drop(i+1))
+      bigramIsLikelyEnough(i, t1, t2)
+    } else {
+      true  // not a bigram
+    }
+  }
+
+  // --- Overrides ---
+  
+  // Walk through term list as bigrams
+  override def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
+    
+  // Drops all terms where count < minOccurencesEachTerm or count == N, and take the log of document frequency in the usual IDF way
+  // Drops all brigrams that don't appear often enough, or are not likely colocations
+  override def keepThisTerm(term:TermID, counts:TermRecord) = {
+    (counts.docCount >= minDocsToKeepTerm) &&
+    (counts.docCount < numDocs) &&
+    keepBigram(term, counts)
+  }
 
 }
+
+
