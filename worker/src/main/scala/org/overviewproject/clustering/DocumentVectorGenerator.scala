@@ -122,12 +122,11 @@ class DocumentVectorGenerator {
       tfidf += (docid -> DocumentVector(docvec))  // replaces existing tf vector with tfidf vector
     }
 
-    Logger.info(s"Generated $tfidf.size() document vectors. Input vocabulary size $termStrings.size(), output vocabulary size $newStrings.size()")
+    Logger.info(s"Input vocabulary size ${termStrings.size}, output vocabulary size ${newStrings.size}")
 
     // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
     termStrings = newStrings
     idf.clear()
-    
   }
 
   // --- Public ---
