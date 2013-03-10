@@ -93,7 +93,12 @@ class DocumentVectorGeneratorSpec extends Specification {
       catId = vectorGen.stringToId("cat")
       ratId = vectorGen.stringToId("rat")
 
+      // check consistency between vectorGen.stringToId and vecs.stringToId (actual bug happened)
+      catId should beEqualTo(vecs.stringTable.stringToId("cat"))
+      ratId should beEqualTo(vecs.stringTable.stringToId("rat"))
+      
       // doc1: only cat remains
+      vecs(1).terms(0) must beEqualTo(catId)
       DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
       
       // doc2: cat and rat have same freq, vector normalized

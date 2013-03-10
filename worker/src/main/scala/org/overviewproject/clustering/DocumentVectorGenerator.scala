@@ -29,16 +29,20 @@ class DocumentVectorGenerator {
   var numDocs = 0
   protected var termStrings = new StringTable
   
+  // As we read documents, we update vocab and docs
   case class TermRecord(var useCount:Int=0, var docCount:Int=0)
-  protected var termCounts = Map[TermID, TermRecord]()
-  protected var totalTerms:Int = 0  // sum of all termCounts(_).useCount
+  protected var vocab = Map[TermID, TermRecord]()
+  protected var totalTerms:Int = 0  // sum of all vocabCounts(_).useCount
   
+  private var docs = Map[DocumentID, DocumentVector]() 
+
+  // Then we compute idf, and finally, docVecs
   private var idf = Map[TermID, Float]()
   private var computedIdf = false
   
-  private var tfidf = DocumentSetVectors(termStrings) // initially holds just tf, then multiplied in place by idf later
-  private var computedDocumentVectors = false
-
+  private var computedDocVecs = false
+  private var docVecs:DocumentSetVectors = null
+  
   // --- Override to change behaviour ---
 
   // Any pre-processing applied to terms goes here
@@ -58,19 +62,19 @@ class DocumentVectorGenerator {
   protected def computeIdf():Unit = {
     if (!termFreqOnly) {
       // Classic IDF formula. For all terms we are keeping, compute log thingy
-      termCounts.retain((term, counts) => keepThisTerm(term, counts))
-      idf = termCounts map { case (term, counts) => (term, math.log10(numDocs / counts.docCount.toFloat).toFloat) }
+      vocab.retain((term, counts) => keepThisTerm(term, counts))
+      idf = vocab map { case (term, counts) => (term, math.log10(numDocs / counts.docCount.toFloat).toFloat) }
   
     } else {
       // Term frequency only. Still throw out terms that are too rare.
-      termCounts foreach { case (term,counts) =>
+      vocab foreach { case (term,counts) =>
       if (counts.docCount >= minDocsToKeepTerm)
         idf += (term -> 1.0f)   // equal weight to all terms
       }
     }
 
     // save some memory; this is way bigger than idf, especially we're processing bigrams, and no longer needed
-    termCounts.clear()  
+    vocab.clear()  
   }
   
   // Create a new string table with only the terms that have been kept
@@ -85,24 +89,26 @@ class DocumentVectorGenerator {
   // After all documents have been added, divide each term by idf value.
   // Works in place to avoid completely duplicating the set of vectors (major memory hit otherwise)
   // Hence, destroys term counts, so cannot addDocument after this
-  protected def computeDocumentVectors() : Unit = {
+  protected def computeDocVecs() : Unit = {
       
     if (numDocs < minDocsToKeepTerm)
       throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
     
-    computedDocumentVectors = true
     Idf()  // force idf computation
 
-    // Make a new string table with only the terms we've kept. We'll translate vectors into this new table as we go.
+    // Make a new string table with only the terms we've kept, and our final DocumentSetVectors using that table
     val newStrings = reducedStringTable()
+    docVecs = new DocumentSetVectors(newStrings)
    
     // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
-    for ((docid, doctf) <- tfidf) { // for each doc
+    while (docs.size > 0) {               // for each doc
+      val (docid, doctf) = docs.head      // pop docid and terms
+      docs.remove(docid)   
 
       var docvec = DocumentVectorMap()
       var vecLength = 0f
 
-      // Iteration over terms in PackedDocumentVector is a little awkward since it must be done by index...
+      // Iteration over terms in DocumentVector is a little awkward since it must be done by index...
       for (i <- 0 until doctf.length) { 
         val term = doctf.terms(i)
         val termfreq = doctf.weights(i)
@@ -119,14 +125,15 @@ class DocumentVectorGenerator {
       vecLength = math.sqrt(vecLength).toFloat
       docvec.transform((term, weight) => weight / vecLength)
 
-      tfidf += (docid -> DocumentVector(docvec))  // replaces existing tf vector with tfidf vector
+      docVecs += (docid -> DocumentVector(docvec))                     // convert final vector to packed format and save
     }
 
-    Logger.info(s"Input vocabulary size ${termStrings.size}, output vocabulary size ${newStrings.size}")
-
     // Replace our string table with the new, reduced table. NB: invalidates idf, so we clear it to prevent misunderstandings
+    Logger.info(s"Input vocabulary size ${termStrings.size}, output vocabulary size ${newStrings.size}")
     termStrings = newStrings
     idf.clear()
+    
+    computedDocVecs = true
   }
 
   // --- Public ---
@@ -138,7 +145,7 @@ class DocumentVectorGenerator {
   // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
   // Cannot be called after documentVectors(), which "freezes" the document set 
   def addDocument(docId: DocumentID, terms: Seq[String]) = {
-    require(computedDocumentVectors == false)
+    require(computedDocVecs == false)
     require(computedIdf == false)
     
     this.synchronized {
@@ -158,14 +165,14 @@ class DocumentVectorGenerator {
         termcounts.transform((key, count) => count / terms.size.toFloat)
         
         // store the document vector in compressed form, and add it to the set of all doc vectors
-        tfidf += (docId -> DocumentVector(termcounts))
+        docs += (docId -> DocumentVector(termcounts))
 
         // for each unique term in this doc, update count of uses, count of docs containing term in 
         for ((term,count) <- termcounts) {
-          val counts = termCounts.getOrElse(term, TermRecord(0,0))
+          val counts = vocab.getOrElse(term, TermRecord(0,0))
           counts.useCount += count.toInt
           counts.docCount += 1
-          termCounts += (term -> counts)
+          vocab += (term -> counts)
           totalTerms += counts.useCount
         }
 
@@ -185,11 +192,11 @@ class DocumentVectorGenerator {
  
   // Return the final computed vectors for these documents
   def documentVectors(): DocumentSetVectors = {
-    if (!computedDocumentVectors) {
-      computeDocumentVectors()
-      computedDocumentVectors = true
+    if (!computedDocVecs) {
+      computeDocVecs()
+      computedDocVecs = true
     }
-    tfidf
+    docVecs
   }
   
 }
@@ -226,9 +233,9 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   // Is the bigram ab common enough relative to a and b alone that we should identifiy it as a colocation?
   // See Foundations of Statistical Natural Language Processing, Manning and Schutze, Ch. 5
   def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
-    val abCount = termCounts(ab).useCount  
+    val abCount = vocab(ab).useCount  
     (abCount >= minBigramOccurrences) &&
-    (colocationLikelihood(termCounts(a).useCount, termCounts(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
+    (colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
   }
   
   // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
@@ -255,10 +262,7 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     (counts.docCount >= minDocsToKeepTerm) &&
     (counts.docCount < numDocs) &&
     keepBigram(term, counts)
-  }
-
-
-  
+  }  
 }
 
 
