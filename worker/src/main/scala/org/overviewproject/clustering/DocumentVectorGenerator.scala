@@ -34,14 +34,14 @@ class DocumentVectorGenerator {
   protected var vocab = Map[TermID, TermRecord]()
   protected var totalTerms:Int = 0  // sum of all vocabCounts(_).useCount
   
-  private var docs = Map[DocumentID, DocumentVector]() 
+  protected var docs = Map[DocumentID, DocumentVector]()  // stores count of terms in each doc
 
   // Then we compute idf, and finally, docVecs
   private var idf = Map[TermID, Float]()
   private var computedIdf = false
   
   private var computedDocVecs = false
-  private var docVecs:DocumentSetVectors = null
+  protected var docVecs:DocumentSetVectors = null
   
   // --- Override to change behaviour ---
 
@@ -170,9 +170,6 @@ class DocumentVectorGenerator {
           totalTerms += counts.useCount
         }
 
-        // divide out document length to go from term count to term frequency
-        termcounts.transform((key, count) => count / terms.size.toFloat)
-        
         // store the document vector in compressed form, and add it to the set of all doc vectors
         docs += (docId -> DocumentVector(termcounts))
         numDocs += 1
@@ -241,32 +238,88 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     (colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
   }
   
+  private def isBigram(s:String) : Boolean = {
+    s.indexOf("_") != -1
+  } 
+  
+  // Given a bigram string, return ids of constituent unigrams
+  private def bigramComponents(s:String) : Pair[TermID,TermID] = {
+    val i = s.indexOf("_")
+    require(i != -1) // must actually be a bigram
+    (termStrings.stringToId(s.take(i)), termStrings.stringToId(s.drop(i+1)))
+  }
+    
+  private def componentsIfBigram(s:String) : Option[Pair[TermID, TermID]] = {
+    val i = s.indexOf("_")
+    if (i == -1)
+      None
+    else
+      Some((termStrings.stringToId(s.take(i)), termStrings.stringToId(s.drop(i+1))))
+  }
+
   // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
   def keepBigram(term:TermID, counts:TermRecord) : Boolean = {
     val s = termStrings.idToString(term)
-    val i = s.indexOf('_')
-    if (i != -1) {
-      //println(s"Examining bigram '${s.take(i)}' and '${s.drop(i+1)}'")
-      val t1 = termStrings.stringToId(s.take(i))
-      val t2 = termStrings.stringToId(s.drop(i+1))
-      bigramIsLikelyEnough(term, t1, t2)
-    } else {
-      true  // not a bigram
+    componentsIfBigram(s) match {
+      case Some((t1, t2)) => bigramIsLikelyEnough(term, t1, t2)
+      case None => true  // not a bigram
     }
   }
+  
+  
+  // Remove the unigrams that make up each retained bigram.
+  // Critical side effect: update vocab counts
+  private def removeBigramUnigrams(v:DocumentVector) : DocumentVector = {
+    val m = DocumentVectorMap(v)
+    
+    // Act as if we had never seen count instances of term. May end up removing the term entirely, in which case we need to adjust vocab
+    def decrementTerm(term:TermID, count:Int) : Unit = {
+      val newCount = m(term) - count
+      require(newCount >= 0)          // if this fails, we did not properly count the unigrams in each bigram when adding documents
 
+      val v = vocab(term)
+      if (newCount == 0) {
+        v.docCount -= 1
+        m.remove(term)
+      } else {
+        m.update(term, newCount)
+      }
+      v.useCount -= count
+      totalTerms -= count
+    }
+
+    // Separate out bigrams (necessary to avoid removing items during foreach)
+    val b = m filter { case (term,count) => isBigram(idToString(term)) } 
+
+    // For each bigram retained, decrement corresponding unigrams in doc and vocab
+    m foreach { case (bigram,count) =>
+      if (vocab.contains(bigram)) {
+        val(u1, u2) = bigramComponents(idToString(bigram))
+        decrementTerm(u1, count.toInt)
+        decrementTerm(u2, count.toInt)        
+      } else {
+        m.remove(bigram)  // bigram not retained, can it
+      }
+    }
+    
+    DocumentVector(m)
+  }
+
+  
   // --- Overrides ---
   
   // Walk through term list as bigrams
-  protected override def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
-    
-  // Drops all terms where count < minOccurencesEachTerm or count == N, and take the log of document frequency in the usual IDF way
-  // Drops all brigrams that don't appear often enough, or are not likely colocations
-  protected override def keepThisTerm(term:TermID, counts:TermRecord) = {
-    (counts.docCount >= minDocsToKeepTerm) &&
-    (counts.docCount < numDocs) &&
-    keepBigram(term, counts)
-  }  
+  override protected def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
+  
+  // Before computing IDF, we "back out" all bigrams. This means
+  //  - decide which bigrams to keep -- sufficiently common ones that seem like colocations
+  //  - for kept bigrams, remove the unigram constituents, like we had parsed "a b" as a single term and not "a","b","a b"
+  override protected def computeIdf() : Unit = {
+    vocab.retain((term, counts) => keepBigram(term, counts))      // decide which bigrams to keep
+    docs.transform { case (id,v) => removeBigramUnigrams(v) }     // remove or re-parse each bigram
+    super.computeIdf()                                            // Now ready to do standard IDF processing
+  }
+  
 }
 
 
