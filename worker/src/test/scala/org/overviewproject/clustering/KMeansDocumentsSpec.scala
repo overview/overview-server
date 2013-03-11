@@ -40,15 +40,15 @@ class KMeansDocumentsSpec extends Specification {
       clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
     }
   
-    // Unfortunately iterative k-means seems very sensitive to document ordering and numerics, so changes in DocumentVectorGenerator can
-    // change the output. On current test docs we seem to get either (4,3,2) or (5,4,0) or (3,3,3)
+    // Unfortunately iterative k-means is sensitive to document ordering, so changes in DocumentVectorGenerator can
+    // change the output. On current test docs we seem to get either (4,3,2) or (5,4,0)
     "find clusters using iterative algorithm" in {
       val docVecs = getSampleDocumentVectors
       val km = new IterativeKMeansDocuments(docVecs)
       
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
-      clusterSizes should haveTheSameElementsAs (Seq(3,3,3))
+      clusterSizes should haveTheSameElementsAs (Seq(4,3,2))
     }
   }
 }
