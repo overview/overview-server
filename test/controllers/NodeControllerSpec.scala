@@ -1,47 +1,70 @@
 package controllers
 
+import org.specs2.specification.Scope
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start,stop}
 
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
-import org.overviewproject.tree.orm.Node
-import org.overviewproject.postgres.SquerylEntrypoint._
+
 import controllers.auth.AuthorizedRequest
-import helpers.DbTestContext
+import org.overviewproject.tree.orm.Node
 import models.OverviewUser
-import models.orm.{DocumentSet,User}
-import models.orm.DocumentSetType._
-import models.orm.Schema.nodes
+import models.orm.User
 
 class NodeControllerSpec extends Specification {
   step(start(FakeApplication()))
 
-  trait ValidUpdateProcess extends DbTestContext {
-    // HACK: These are called within setupWithDb()
-    lazy val user = OverviewUser(User())
-    lazy val documentSet = DocumentSet(DocumentCloudDocumentSet, 0L, "title", Some("query")).save
-    var node: Node = _ 
+  class TestNodeController(val node: Node) extends NodeController {
+    var savedNode : Option[Node] = None
 
-    override def setupWithDb = {
-      // TODO: don't rely on DB
-      node = Node(documentSet.id, None, "description", 0, Array[Long](), nextNodeId(documentSet.id))
-      nodes.insert(node)
-      documentSet.nodes.associate(node)
+    override def findNode(documentSetId: Long, id: Long) = {
+      if (documentSetId == node.documentSetId && id == node.id) {
+        Some(node)
+      } else {
+        None
+      }
     }
 
-    lazy val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
+    override def saveNode(node: Node) = {
+      savedNode = Some(node)
+      node
+    }
+  }
+
+  trait TestScope extends Scope {
+    lazy val node = Node(
+      id=1L,
+      documentSetId=1L,
+      parentId=None,
+      description="description",
+      cachedSize=0,
+      cachedDocumentIds=Array[Long]()
+    )
+    lazy val user = OverviewUser(User())
+    lazy val controller = new TestNodeController(node)
+    def getRequest = new AuthorizedRequest(FakeRequest(), user)
+    def postRequest = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
+
+    def index(documentSetId: Long) = controller.index(documentSetId)(getRequest)
+    def show(documentSetId: Long, nodeId: Long) = controller.show(documentSetId, nodeId)(getRequest)
+    def update(documentSetId: Long, nodeId: Long) = controller.update(documentSetId, nodeId)(postRequest)
   }
 
   "NodeController" should {
-    "edit a node" in new ValidUpdateProcess {
-      val result = NodeController.update(documentSet.id, node.id)(request)
+    "edit a node" in new TestScope {
+      val result = update(node.documentSetId, node.id)
       status(result) must beEqualTo(OK)
-
-      val node2 = documentSet.nodes.single
-      node2.description must beEqualTo("new description")
+      controller.savedNode.map(_.description).getOrElse("") must beEqualTo("new description")
     }
+
+    "return NotFound when a node isn't found" in new TestScope {
+      val result = update(node.documentSetId + 1, node.id) // invalid
+      status(result) must beEqualTo(NOT_FOUND)
+    }
+
+    // TODO test show() and index(). First, make them use Squeryl?
   }
 
   step(stop)

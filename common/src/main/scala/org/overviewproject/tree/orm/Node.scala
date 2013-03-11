@@ -14,5 +14,4 @@ case class Node(
   
   
   override def isPersisted(): Boolean = (id > 0)
-
 }

@@ -3,16 +3,16 @@ package controllers
 import java.sql.Connection
 import play.api.mvc.Controller
 import play.api.libs.json.JsValue
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.Node
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
+import org.overviewproject.tree.orm.Node
 import models.{ OverviewUser, SubTreeLoader }
 import models.orm.DocumentSet
-import models.orm.Schema.nodes
+import models.orm.finders.NodeFinder
+import models.orm.stores.NodeStore
 
-object NodeController extends Controller {
+trait NodeController extends Controller {
   private val childLevels = 2 // When showing the root, show this many levels of children
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
@@ -44,10 +44,7 @@ object NodeController extends Controller {
   }
 
   def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val optionalNode = DocumentSet.findById(documentSetId)
-      .flatMap(ds => ds.nodes.where(n => n.id === id).headOption)
-
-    optionalNode match {
+    findNode(documentSetId, id) match {
       case None => NotFound
       case Some(node) =>
         val form = forms.NodeForm(node)
@@ -55,9 +52,22 @@ object NodeController extends Controller {
         form.bindFromRequest().fold(
           f => BadRequest,
           node => {
-            val savedNode = nodes.insertOrUpdate(node)
+            val savedNode = saveNode(node)
             Ok(views.json.Node.show(savedNode))
           })
     }
+  }
+
+  protected def findNode(documentSetId: Long, id: Long) : Option[Node]
+  protected def saveNode(node: Node) : Node
+}
+
+object NodeController extends NodeController {
+  override protected def findNode(documentSetId: Long, id: Long) = {
+    NodeFinder.byDocumentSetAndId(documentSetId, id).headOption
+  }
+
+  override protected def saveNode(node: Node) = {
+    NodeStore.save(node)
   }
 }
