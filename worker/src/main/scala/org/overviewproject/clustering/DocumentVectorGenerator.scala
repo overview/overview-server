@@ -234,8 +234,8 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
     val abCount = vocab(ab).useCount  
     
-    var l = colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms)
-    println(s"Checking bigram '${idToString(ab)}' with ab=$abCount a=${vocab(a).useCount}, b=${vocab(b).useCount}, total=$totalTerms, likelihood $l")
+    //var l = colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms)
+    //println(s"Checking bigram '${idToString(ab)}' with ab=$abCount a=${vocab(a).useCount}, b=${vocab(b).useCount}, total=$totalTerms, likelihood $l")
  
     (abCount >= minBigramOccurrences) &&
     (colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
