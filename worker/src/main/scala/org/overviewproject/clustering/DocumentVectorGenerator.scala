@@ -161,12 +161,6 @@ class DocumentVectorGenerator {
           termcounts += (term -> (prev_count + 1))
         }
 
-        // divide out document length to go from term count to term frequency
-        termcounts.transform((key, count) => count / terms.size.toFloat)
-        
-        // store the document vector in compressed form, and add it to the set of all doc vectors
-        docs += (docId -> DocumentVector(termcounts))
-
         // for each unique term in this doc, update count of uses, count of docs containing term in 
         for ((term,count) <- termcounts) {
           val counts = vocab.getOrElse(term, TermRecord(0,0))
@@ -176,6 +170,11 @@ class DocumentVectorGenerator {
           totalTerms += counts.useCount
         }
 
+        // divide out document length to go from term count to term frequency
+        termcounts.transform((key, count) => count / terms.size.toFloat)
+        
+        // store the document vector in compressed form, and add it to the set of all doc vectors
+        docs += (docId -> DocumentVector(termcounts))
         numDocs += 1
       }
     }
@@ -208,7 +207,7 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   // --- Config ---
   var doBigrams = false                       // generate bigram terms
   var minBigramOccurrences = 5                // throw out bigram if it has less than this many occurrences
-  var minBigramLikelihood = 20                // ...or if not this many times more likely than chance to be a colocation
+  var minBigramLikelihood = 30                // ...or if not this many times more likely than chance to be a colocation
  
   // ---- Logic ----
   
@@ -227,13 +226,17 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     val p = count2/termCount.toDouble
     val p1 = count12/count1.toDouble
     val p2 = (count2-count12)/(termCount-count1).toDouble
-    LogL(count12, count1, p) + LogL(count2-count12, termCount-count1, p) - LogL(count12, count1, p1) - LogL(count2-count12, termCount-count1, p2)
+    -(LogL(count12, count1, p) + LogL(count2-count12, termCount-count1, p) - LogL(count12, count1, p1) - LogL(count2-count12, termCount-count1, p2))
   }
 
   // Is the bigram ab common enough relative to a and b alone that we should identifiy it as a colocation?
   // See Foundations of Statistical Natural Language Processing, Manning and Schutze, Ch. 5
   def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
     val abCount = vocab(ab).useCount  
+    
+    var l = colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms)
+    println(s"Checking bigram '${idToString(ab)}' with ab=$abCount a=${vocab(a).useCount}, b=${vocab(b).useCount}, total=$totalTerms, likelihood $l")
+ 
     (abCount >= minBigramOccurrences) &&
     (colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
   }
@@ -241,11 +244,12 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
   def keepBigram(term:TermID, counts:TermRecord) : Boolean = {
     val s = termStrings.idToString(term)
-    val i = s.indexOf(' ')
-    if (i != 0) {
+    val i = s.indexOf('_')
+    if (i != -1) {
+      //println(s"Examining bigram '${s.take(i)}' and '${s.drop(i+1)}'")
       val t1 = termStrings.stringToId(s.take(i))
       val t2 = termStrings.stringToId(s.drop(i+1))
-      bigramIsLikelyEnough(i, t1, t2)
+      bigramIsLikelyEnough(term, t1, t2)
     } else {
       true  // not a bigram
     }

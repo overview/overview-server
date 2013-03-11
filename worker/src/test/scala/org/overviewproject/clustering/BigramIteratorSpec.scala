@@ -25,12 +25,12 @@ class BigramIteratorSpec extends Specification {
     
     "emit two unigrams and one bigram for two word input" in {
       val b = new BigramIterator(Seq("a","b"))
-      b.toSeq should beEqualTo(Seq("a b","a","b"))
+      b.toSeq should beEqualTo(Seq("a_b","a","b"))
     }
     
     "handle multiple word input" in {
       val b = new BigramIterator(Seq("a","b","c","d"))
-      b.toSeq should beEqualTo(Seq("a b","a","b c","b","c d","c","d"))
+      b.toSeq should beEqualTo(Seq("a_b","a","b_c","b","c_d","c","d"))
     }
     
   }

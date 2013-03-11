@@ -30,7 +30,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) ext
   private val fetchingFraction = 0.5 // what percent done do we say when we're all done fetching docs?
   private val savingFraction = 0.98
 
-  private val vectorGen = new DocumentVectorGenerator
+  private val vectorGen = new DocumentVectorGeneratorWithBigrams
 
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
