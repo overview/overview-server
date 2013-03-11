@@ -9,7 +9,7 @@ import models.{OverviewUser, ConfirmationRequest, PotentialUser}
 
 trait UserController extends Controller {
   val loginForm : Form[OverviewUser] = controllers.forms.LoginForm()
-  val userForm : Form[PotentialUser] = controllers.forms.UserForm()
+  val userForm : Form[(PotentialUser, Boolean)] = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.UserController")
 
@@ -18,10 +18,10 @@ trait UserController extends Controller {
   def create = TransactionAction { implicit request =>
     userForm.bindFromRequest().fold(
       formWithErrors => BadRequest(views.html.Session.new_(loginForm, formWithErrors)),
-      user => {
-        user.withRegisteredEmail match {
+      registration => {
+        registration._1.withRegisteredEmail match {
           case Some(u) => handleExistingUser(u)
-          case None => handleNewUser(user)
+          case None => handleNewUser(registration._1)
         }
         Redirect(routes.ConfirmationController.show("")).
           flashing("success" -> m("create.success"))

@@ -1,6 +1,6 @@
 @(
   loginForm: Form[OverviewUser],
-  userForm: Form[PotentialUser]
+  userForm: Form[(PotentialUser, Boolean)]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Welcome.show")) { m =>

@@ -1,6 +1,6 @@
 @(
   loginForm: Form[OverviewUser],
-  registrationForm: Form[PotentialUser]
+  registrationForm: Form[(PotentialUser, Boolean)]
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.Session.new_")) { m =>
