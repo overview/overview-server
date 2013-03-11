@@ -14,19 +14,20 @@ import models.orm.DocumentSetUserRoleType.Owner
 case class User(
   val id: Long = 0L,
   val email: String = "user@example.org",
-  @Column("password_hash") var passwordHash: String = "",
+  var passwordHash: String = "",
   var role: UserRole.UserRole = UserRole.NormalUser,
-  @Column("confirmation_token") var confirmationToken: Option[String] = None,
-  @Column("confirmation_sent_at") var confirmationSentAt: Option[Timestamp] = None,
-  @Column("confirmed_at") var confirmedAt: Option[Timestamp] = None,
-  @Column("reset_password_token") var resetPasswordToken: Option[String] = None,
-  @Column("reset_password_sent_at") var resetPasswordSentAt: Option[Timestamp] = None,
-  @Column("current_sign_in_at") var currentSignInAt: Option[Timestamp] = None,
-  @Column("current_sign_in_ip") var currentSignInIp: Option[String] = None,
-  @Column("last_sign_in_at") var lastSignInAt: Option[Timestamp] = None,
-  @Column("last_sign_in_ip") var lastSignInIp: Option[String] = None,
-  @Column("last_activity_at") var lastActivityAt: Option[Timestamp] = None,
-  @Column("last_activity_ip") var lastActivityIp: Option[String] = None
+  var confirmationToken: Option[String] = None,
+  var confirmationSentAt: Option[Timestamp] = None,
+  var confirmedAt: Option[Timestamp] = None,
+  var resetPasswordToken: Option[String] = None,
+  var resetPasswordSentAt: Option[Timestamp] = None,
+  var currentSignInAt: Option[Timestamp] = None,
+  var currentSignInIp: Option[String] = None,
+  var lastSignInAt: Option[Timestamp] = None,
+  var lastSignInIp: Option[String] = None,
+  var lastActivityAt: Option[Timestamp] = None,
+  var lastActivityIp: Option[String] = None,
+  val emailSubscriber: Boolean = false
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
