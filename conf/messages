@@ -265,6 +265,8 @@ views.User._form.help.password2=Because if you don’t remember it now, you neve
 views.User._form.submit=Register and send confirmation email
 views.User._form.submit_feedback=Registering...
 views.User._form.error_password2_does_not_match=This password doesn’t match what you typed in above. Please correct it.
+views.User._form.label.subscribe=Email me news and announcements about Overview (we will never share your email with anyone else).
+
 
 views.User.new.title=Register
 views.User.new.h1=Register
