@@ -60,7 +60,7 @@ class UserControllerSpec extends Specification {
     lazy val potentialUser = PotentialUser(validEmail, validPassword, optionalOverviewUser)
 
     trait TestUserControllerWithUser extends TestUserController {
-      override val userForm = UserForm { (_: String, _: String) => potentialUser }
+      override val userForm = UserForm { (_: String, _: String, _: Boolean) => potentialUser }
     }
     object TestUserControllerWithUserImpl extends TestUserControllerWithUser
 
