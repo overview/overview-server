@@ -20,7 +20,8 @@ import models.orm.{User,UserRole}
 trait OverviewUser {
   val id: Long
   val email: String
-
+  val isSubscribedToEmail: Boolean
+  
   val currentSignInAt: Option[Date]
   val currentSignInIp: Option[String]
   val lastSignInAt: Option[Date]
@@ -48,6 +49,9 @@ trait OverviewUser {
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
 
+  /** @return The same user, with a new subscription state */
+  def withEmailSubscription(subscribe: Boolean): OverviewUser
+  
   /** @return The same user, as an administrator */
   def asAdministrator: OverviewUser
 
@@ -205,6 +209,7 @@ object OverviewUser {
   private case class OverviewUserImpl(user: User) extends OverviewUser {
     override val id = user.id
     override val email = user.email
+    override val isSubscribedToEmail = user.emailSubscriber
     override val currentSignInAt = user.currentSignInAt
     override val currentSignInIp = user.currentSignInIp
     override val lastSignInAt = user.lastSignInAt
@@ -252,6 +257,9 @@ object OverviewUser {
       new OverviewUserImpl(user.copy(email=email))
     }
 
+    def withEmailSubscription(subscribe: Boolean) = {
+      new OverviewUserImpl(user.copy(emailSubscriber = subscribe))
+    }
     def asAdministrator: OverviewUser = {
       new OverviewUserImpl(user.copy(role=UserRole.Administrator))
     }
