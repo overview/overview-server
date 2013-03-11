@@ -262,7 +262,7 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     val s = termStrings.idToString(term)
     componentsIfBigram(s) match {
       case Some((t1, t2)) => bigramIsLikelyEnough(term, t1, t2)
-      case None => true  // not a bigram, keep it
+      case None => true  // not a bigram
     }
   }
   
@@ -274,12 +274,6 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     
     // Act as if we had never seen count instances of term. May end up removing the term entirely, in which case we need to adjust vocab
     def decrementTerm(term:TermID, count:Int) : Unit = {
-      if (!m.contains(term)) {
-        println(s"Missing term $term, '${idToString(term)}'")
-        println(m)
-        println(m.map { case(term,count) => (idToString(term),count) })
-      }
-      
       val newCount = m(term) - count
       require(newCount >= 0)          // if this fails, we did not properly count the unigrams in each bigram when adding documents
 
@@ -298,9 +292,8 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
     val b = m filter { case (term,count) => isBigram(idToString(term)) } 
 
     // For each bigram retained, decrement corresponding unigrams in doc and vocab
-    b foreach { case (bigram,count) =>
+    m foreach { case (bigram,count) =>
       if (vocab.contains(bigram)) {
-        println(s"Removing bigram '${idToString(bigram)}'")
         val(u1, u2) = bigramComponents(idToString(bigram))
         decrementTerm(u1, count.toInt)
         decrementTerm(u2, count.toInt)        
