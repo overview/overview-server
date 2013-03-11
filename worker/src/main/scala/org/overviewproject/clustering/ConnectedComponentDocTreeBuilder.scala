@@ -94,8 +94,8 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     BuildTree(root, threshSteps, progAbort)
   }
 
-  def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
-    cc.sampleCloseEdges(numEdgesPerDoc)
+  def sampleCloseEdges(numEdgesPerDoc: Int, maxDist:Double): Unit = {
+    cc.sampleCloseEdges(numEdgesPerDoc, maxDist)
   }
   
   // --- Main ----
@@ -111,7 +111,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     val numSampledEdgesPerDoc = 200
 
     if (docVecs.size > numDocsWhereSamplingHelpful)
-      sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
+      sampleCloseEdges(numSampledEdgesPerDoc, 0.8) // use sampled edges if the docset is large
     
     BuildTree(root, threshSteps, progAbort) // actually build the tree!
   }

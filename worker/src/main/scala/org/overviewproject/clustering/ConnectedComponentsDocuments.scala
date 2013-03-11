@@ -19,6 +19,7 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
 
   private val distanceFn = (a:DocumentVector,b:DocumentVector) => DistanceFn.CosineDistance(a,b) // can't use CosineDistance because of method overloading :(
   private var sampledEdges:SampledEdges = null
+  private var sampledThresh = 0.0 
 
   // Produces all docs reachable from a given start doc, given thresh
   // Unoptimized implementation, scans through all possible edges (N^2 total)
@@ -29,12 +30,12 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
     ) yield otherDoc
   }
 
-  // Same logic as above, but only looks through edges stored in sampledEdges
-  private def sampledReachableDocs(thresh: Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
+  // Same logic as above, but only looks through edges stored in sampledEdges (which have all been generated shorted than initally passed threshold)
+  private def sampledReachableDocs(thresh:Double, thisDoc: DocumentID, otherDocs: Set[DocumentID]): Iterable[DocumentID] = {
     val g = sampledEdges.get(thisDoc)
     if (g.isDefined) {
       for (
-        (otherDoc, distance) <- g.get if otherDocs.contains(otherDoc) if distance <= thresh
+        (otherDoc, distance) <- g.get if (otherDocs.contains(otherDoc)) if (distance <= thresh)
       ) yield otherDoc
     } else {
       Nil
@@ -43,10 +44,12 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
 
   // Returns an edge walking function suitable for ConnectedComponents, using the sampled edge set if we have it
   private def createEdgeEnumerator(thresh: Double) = {
-    if (sampledEdges != null)
+    if (sampledEdges != null) {
+      require(thresh <= sampledThresh) // can't look for edges longer than those we picked up sampling
       (doc: DocumentID, docSet: Set[DocumentID]) => sampledReachableDocs(thresh, doc, docSet)
-    else
+    } else {
       (doc: DocumentID, docSet: Set[DocumentID]) => allReachableDocs(thresh, doc, docSet)
+    }
   }
 
   // ---- MAIN ----
@@ -62,8 +65,9 @@ class ConnectedComponentsDocuments(protected val docVecs: DocumentSetVectors) {
   }
   
   // Call this first if you want to use an edge sampler (lots of memory, and approximate, but O(N^2) -> ON(N) win)
-  def sampleCloseEdges(numEdgesPerDoc: Int): Unit = {
-    sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc)
+  def sampleCloseEdges(numEdgesPerDoc: Int, maxDist:Double): Unit = {
+    sampledEdges = new EdgeSampler(docVecs, distanceFn).edges(numEdgesPerDoc, maxDist)
+    sampledThresh = maxDist
   }
 }
 

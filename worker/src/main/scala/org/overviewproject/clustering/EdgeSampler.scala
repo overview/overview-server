@@ -1,7 +1,7 @@
 /**
  * EdgeSampler.scala
  *
- * Given a set of document vectors, try to generate the "close" edges, a fixed number for each document.
+ * Given a set of document vectors, try to generate the "close" edges, a fixed max number for each document.
  * This is possible by ordering the edge generation by the largest term in the dot product between the
  * current doc and any other doc. 
  * 
@@ -54,10 +54,16 @@ class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Flo
     val lengths = this.map( { case (k,v) => (k, v.size) } )   // keep original lengths around
     
     // for each edge (a,b,dist), if (b,a,dist) doesn't exist, add it
-    this foreach { case (a,v) => 
-      v foreach { case (b,dist) =>
-        if (!edgeArrayContains(get(b).get, lengths(b), a))    // pass lengths(b) so we only search edges that were there when we sorted
+    this foreach { case (a,aEdges) => 
+      aEdges foreach { case (b,dist) =>
+        if (!this.contains(b)) {
+          // we don't have any edges at all from b,  so add first edge and initialize length
+          addEdge(b, a, dist)                            
+          lengths.update(b, 0)                  
+        } else if (!edgeArrayContains(this(b), lengths(b), a)) {    // pass lengths(b) so we only search edges that were there when we sorted
+          // there were already edges from b, but not b->a
           addEdge(b, a, dist)
+        }
       }
     }
     
@@ -100,8 +106,6 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
     termTable.transform({ case (key, value) => value.sortBy(-_._2).result } ) // sort each dim by decreasing weight. result call also resizes to save space
 
     Logger.logElapsedTime("generated term/dimension array.", t0)
-    Logger.info("StringTable size = " + docVecs.stringTable.size)
-    Logger.info("Vocabulary size = " + termTable.size)
     Logger.info("Average terms per doc = " + totalTerms / docVecs.size)
     
     termTable
@@ -113,7 +117,7 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   // We generate an edge by pulling the first item from this queue and extracting the document index, then
   // replace the item with a new product with the highest term weight among remaining docs.
   // Effectively, this samples edges in order of the largest term in their dot-product.
-  private def createSampledEdges(termTable:Map[TermID, CompactPairArray[DocumentID, TermWeight]], numEdgesPerDoc:Int) : Unit = {
+  private def createSampledEdges(termTable:Map[TermID, CompactPairArray[DocumentID, TermWeight]], numEdgesPerDoc:Int, maxDist:Double) : Unit = {
     val t1 = System.nanoTime()
     
     docVecs.foreach { case (id,vec) =>
@@ -133,7 +137,8 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
         val termProduct = pq.dequeue
         val otherId = termTable(termProduct.term)(termProduct.docIdx)._1
         val distance = distanceFn(docVecs(id), docVecs(otherId)).toFloat
-        mySampledEdges.addEdge(id, otherId, distance)
+        if (distance <= maxDist) 
+          mySampledEdges.addEdge(id, otherId, distance)
                 
         // Put this term back in the queue, with a new product entry 
         // We multiply this term's weight by weight on the document with the next highest weight on this term
@@ -154,15 +159,16 @@ class EdgeSampler(val docVecs:DocumentSetVectors, val distanceFn:DocumentDistanc
   
   // Generate the numEdgesPerDoc shortest edges going out from each document (approximately)
   // Algorithm from http://www.cs.ubc.ca/nest/imager/tr/2012/modiscotag/
-  private def sampleCloseEdges(numEdgesPerDoc:Int) : Unit = {  
+  private def sampleCloseEdges(numEdgesPerDoc:Int, maxDist:Double) : Unit = {  
     val termTable = createTermTable()
-    createSampledEdges(termTable, numEdgesPerDoc)    
+    createSampledEdges(termTable, numEdgesPerDoc, maxDist)    
     mySampledEdges.symmetrize
   }
   
   // --- Main ---
-  def edges(numEdgesPerDoc:Int) = {
-    sampleCloseEdges(numEdgesPerDoc)
+  // Attempt to sample up numEdgesPerDoc edges, but do not generate edges longer than maxDist
+  def edges(numEdgesPerDoc:Int, maxDist:Double) = {
+    sampleCloseEdges(numEdgesPerDoc, maxDist:Double)
     mySampledEdges
   }
 

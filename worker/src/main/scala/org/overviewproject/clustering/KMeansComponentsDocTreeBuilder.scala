@@ -63,7 +63,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
       components foreach { component => 
         if (component.nDocs > minComponentFractionForOwnNode * node.docs.size) {
           val child = new DocTreeNode(Set(component.docs:_*))
-          child.description = "B "  // component split off by itself
+          // child.description = "B "  // component split off by itself
           node.children += child
           maxArity -= 1
         } else {
@@ -81,7 +81,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
             val componentsInNode = kmComponents.elementsInCluster(i, smallComponents, assignments)
             if (componentsInNode.size > 0) {
               val child = newNode(componentsInNode)
-              child.description = if (componentsInNode.size > 1) "M " else "C "   // "Merged component" vs "individual Component"
+              // child.description = if (componentsInNode.size > 1) "M " else "C "   // "Merged component" vs "individual Component"
               node.children += child
             }
           }
@@ -134,14 +134,14 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
   
   private def makeComponents(docs:Iterable[DocumentID]) : Set[DocumentComponent] = {
     val threshold = 0.5                       // docs more similar than this will be in same component
-    val numDocsWhereSamplingHelpful = 10000
-    val numSampledEdgesPerDoc = 200
+    val numDocsWhereSamplingHelpful = 5000
+    val numSampledEdgesPerDoc = 500
 
     val cc = new ConnectedComponentsDocuments(docVecs)
-/*    
+    
     if (docVecs.size > numDocsWhereSamplingHelpful)
-      cc.sampleCloseEdges(numSampledEdgesPerDoc) // use sampled edges if the docset is large
-*/      
+      cc.sampleCloseEdges(numSampledEdgesPerDoc, threshold) // use sampled edges if the docset is large
+      
     val components = Set[DocumentComponent]()
     cc.foreachComponent(docs, threshold) { 
       components += new DocumentComponent(_, docVecs)
@@ -156,10 +156,14 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
   def BuildTree(root:DocTreeNode, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     
     progAbort(Progress(0, ClusteringLevel(1)))
-    root.components = makeComponents(root.docs) 
+    Logger.logExecutionTime("Found connected components") {
+      root.components = makeComponents(root.docs)
+    }
     
     if (!progAbort(Progress(0.2, ClusteringLevel(2)))) { // if we haven't been cancelled...
-      splitNode(root, 1, makeNestedProgress(progAbort, 0.2, 1.0))   // root is level 0, so first split is level 1 
+      Logger.logExecutionTime("Clustered components") {
+        splitNode(root, 1, makeNestedProgress(progAbort, 0.2, 1.0))   // root is level 0, so first split is level 1
+      }
     }
     
     root
