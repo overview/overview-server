@@ -43,6 +43,11 @@ trait UserController extends Controller {
     */
   protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest
 
+  /**
+   * Subscribes the user to a mailing list for announcements and news
+   */
+  protected def subscribeUser(user: OverviewUser): OverviewUser 
+  
   private def handleNewUser(user: PotentialNewUser)(implicit request: RequestHeader) : Unit = {
     val sqlStateUniqueKeyViolation : String = "23505"
     val userWithRequest = user.requestConfirmation
@@ -50,6 +55,7 @@ trait UserController extends Controller {
     try {
       saveUser(userWithRequest)
       mailNewUser(userWithRequest)
+      if (userWithRequest.isSubscribedToEmail) subscribeUser(userWithRequest)
     } catch {
       case e: SquerylSQLException => {
         val sqlState = e.getCause.getSQLState()
@@ -89,4 +95,6 @@ object UserController extends UserController {
   override protected def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader) = {
     mailers.User.createErrorUserAlreadyExists(user).send  
   }
+  
+  override protected def subscribeUser(user: OverviewUser): OverviewUser = user 
 }

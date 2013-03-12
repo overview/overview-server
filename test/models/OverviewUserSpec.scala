@@ -110,11 +110,6 @@ class OverviewUserSpec  extends Specification {
       ormUser.resetPasswordSentAt must beNone
     }
     
-    "set subscription status" in new LoadedUserContext {
-      user.isSubscribedToEmail must beFalse
-      val user2 = user.withEmailSubscription(true)
-      user2.isSubscribedToEmail must beTrue
-    }
   }
 
   "OverviewUser with ConfirmationRequest" should {

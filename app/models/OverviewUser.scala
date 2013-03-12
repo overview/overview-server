@@ -49,9 +49,6 @@ trait OverviewUser {
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
 
-  /** @return The same user, with a new subscription state */
-  def withEmailSubscription(subscribe: Boolean): OverviewUser
-
   /** @return The same user, as an administrator */
   def asAdministrator: OverviewUser
 
@@ -152,7 +149,9 @@ object PotentialUser {
   }
 }
 
-
+/**
+ * Potential new users have the option to subscribe to email announcements.
+ */
 class PotentialNewUser(email: String, password: String, val emailSubscriber: Boolean, user: Option[OverviewUser]) extends PotentialUser(email, password, user) {
   /**
    * @return the OverviewUser with ConfirmationRequest. No matter what the state the user is in
@@ -160,7 +159,7 @@ class PotentialNewUser(email: String, password: String, val emailSubscriber: Boo
    * effect.
    */
   def requestConfirmation: OverviewUser with ConfirmationRequest =
-    OverviewUser.prepareNewRegistration(email, password)
+    OverviewUser.prepareNewRegistration(email, password, emailSubscriber)
 }
 
 object PotentialNewUser {
@@ -194,11 +193,12 @@ object OverviewUser {
     user.map(new UnconfirmedUser(_))
   }
 
-  def prepareNewRegistration(email: String, password: String): OverviewUser with ConfirmationRequest = {
+  def prepareNewRegistration(email: String, password: String, emailSubscriber: Boolean): OverviewUser with ConfirmationRequest = {
     val confirmationToken = generateToken
     val confirmationSentAt = generateTimestamp
 
     val user = User(email = email, passwordHash = password.bcrypt(BcryptRounds),
+      emailSubscriber = emailSubscriber,
       confirmationToken = Some(confirmationToken),
       confirmationSentAt = Some(confirmationSentAt))
     new UnconfirmedUser(user)
@@ -263,9 +263,6 @@ object OverviewUser {
       new OverviewUserImpl(user.copy(email = email))
     }
 
-    def withEmailSubscription(subscribe: Boolean) = {
-      new OverviewUserImpl(user.copy(emailSubscriber = subscribe))
-    }
     def asAdministrator: OverviewUser = {
       new OverviewUserImpl(user.copy(role = UserRole.Administrator))
     }

@@ -24,7 +24,8 @@ class UserControllerSpec extends Specification {
     // XXX remove vars
     var existingUserMailed = false
     var newUserMailed = false
-
+    var userSubscribed = false
+    
     trait TestUserController extends UserController {
       override def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader) = {
         existingUserMailed = true
@@ -35,6 +36,11 @@ class UserControllerSpec extends Specification {
       }
 
       override protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest = {
+        user
+      }
+      
+      override protected def subscribeUser(user: OverviewUser): OverviewUser = {
+        userSubscribed = true
         user
       }
     }
@@ -55,7 +61,9 @@ class UserControllerSpec extends Specification {
 
   trait OurScopeWithUser extends OurScope {
     val optionalOverviewUser : Option[OverviewUser]
-    lazy val potentialUser = new PotentialNewUser(validEmail, validPassword, false, optionalOverviewUser)
+    val subscribe: Boolean = false
+    
+    lazy val potentialUser = new PotentialNewUser(validEmail, validPassword, subscribe, optionalOverviewUser)
 
     trait TestUserControllerWithUser extends TestUserController {
       override val userForm = UserForm { (_: String, _: String, _: Boolean) => potentialUser }
@@ -77,6 +85,10 @@ class UserControllerSpec extends Specification {
 
   trait OurScopeWithNewUser extends OurScopeWithUser {
     override val optionalOverviewUser = None
+  }
+  
+  trait OurScopeWithNewSubscribingUser extends OurScopeWithNewUser {
+    override val subscribe: Boolean = true
   }
 
   trait OurScopeWithUniqueKeyViolation extends OurScopeWithNewUser {
@@ -118,7 +130,12 @@ class UserControllerSpec extends Specification {
       flash(result).get("success") must beSome
       status(result) must equalTo(SEE_OTHER)
     }
-
+    
+    "create() with an existing user should not subscribe the user to mailing list" in new OurScopeWithExistingUser {
+      run
+      userSubscribed must beFalse
+    }
+    
     "create() with a new user should email the user" in new OurScopeWithNewUser {
       existingUserMailed = false
       newUserMailed = false
@@ -126,7 +143,16 @@ class UserControllerSpec extends Specification {
       existingUserMailed must beFalse
       newUserMailed must beTrue
     }
+
+    "create() with a new user should not subscribe the user to mailing list if not requested" in new OurScopeWithNewUser {
+      run
+      userSubscribed must beFalse
+    }
     
+    "create() with a new user should subscribe the user to mailing list if requested" in new OurScopeWithNewSubscribingUser {
+      run
+      userSubscribed must beTrue
+    }
 
     "create() with a new user should redirect with 'success' flash" in new OurScopeWithNewUser {
       val result = run
