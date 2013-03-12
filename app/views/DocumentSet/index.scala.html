@@ -1,6 +1,7 @@
 @(
   user: OverviewUser,
   documentSets: ResultPage[OverviewDocumentSet],
+  jobsWithDocumentSets: ResultPage[(OverviewDocumentSetCreationJob,OverviewDocumentSet)],
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
@@ -13,9 +14,6 @@
 }
 
 @jsMessageKeys = @{Seq(
-  "views.DocumentSet._documentSet.jobs_to_process",
-  "views.DocumentSet._documentSet.action_import",
-  "views.DocumentSet._documentSet.document_count",
   "views.DocumentSet._dcimport.legend",
   "views.DocumentSet._dcimport.error",
   "views.DocumentSet._dcimport.labels.email",
@@ -32,16 +30,33 @@
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.DocumentSet._import(user, form)
 
-    @if(documentSets) {
-      <ul class="unstyled document-sets">
-        @documentSets.map(d => _documentSet(d))
-      </ul>
+    @if(jobsWithDocumentSets) {
+      <div class="document-set-creation-jobs" data-refresh-url="@routes.DocumentSetCreationJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
+        <h2>@m("subtitle_jobs")</h2>
+        <p class="description">@m("description_jobs")</p>
+        <ul class="unstyled">
+          @jobsWithDocumentSets.map { tuple: (OverviewDocumentSetCreationJob,OverviewDocumentSet) =>
+            @views.html.DocumentSetCreationJob._documentSetCreationJob(tuple._1, tuple._2)
+          }
+        </ul>
+      </div>
+    }
 
-      @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+    @if(documentSets || jobsWithDocumentSets) {
+      <div class="document-sets">
+        @if(documentSets) {
+          <ul class="unstyled">
+            @documentSets.map(d => _documentSet(d))
+          </ul>
+          @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+        } else {
+          <p class="no-document-sets">@m("no_document_sets")</p>
+        }
+      </div>
 
-   	  @views.html.DocumentSet._errorList()
-    } else {
-      <p class="no-document-sets">@m("no_document_sets")</p>
+      <div style="display:none;">
+        @views.html.DocumentSet._errorList()
+      </div>
     }
   }
 }

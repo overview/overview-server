@@ -66,38 +66,14 @@ class _documentSetSpec extends Specification {
       $("form.delete").length must be_>=(1)
     }
 
-    "should not have the \"unfinished\" class when finished" in new NormalDocumentSetContext {
-      $("li.unfinished").length must beEqualTo(0)
-    }
-    
-    "should have \"unfinished\" class when unfinished" in new DocumentSetWithJobContext {
-      $("li.unfinished").length must be_>=(1)
-    }
-
-    "should show a progress bar" in new DocumentSetWithJobContext {
-      $("progress").length must be_>=(1)
-    }
-
-    "should set the progress bar to the correct percentage" in new DocumentSetWithJobContext {
-      $("progress").attr("value") must beEqualTo("20")
-    }
-
-    "should show a label for IN_PROGRESS" in new DocumentSetWithJobContext {
-      $(".state").text() must endWith("IN_PROGRESS")
-    }
-
-    "should show a document count when complete" in new NormalDocumentSetContext {
+    "should show a document count" in new NormalDocumentSetContext {
       $("span.document-count").text() must endWith("document_count")
     }
 
-    "should show position in queue for NotStarted jobs" in new DocumentSetWithJobContext {
-      $(".state-description").text.trim must endWith("jobs_to_process")
-    }
-    
     "should not show error count if none exist" in new NormalDocumentSetContext {
       $(".error-list").length must be_==(0)
     }
-    
+
     "should show error count popup if there are errors" in new DocumentSetWithErrorsContext {
       $(".error-list").text.trim must endWith("error_count")
       $(".error-list").attr("href") must be equalTo("/documentsets/1/error-list")

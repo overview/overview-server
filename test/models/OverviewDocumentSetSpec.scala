@@ -17,6 +17,7 @@ import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
 import models.orm.Schema
 import models.orm.DocumentSetUser
+import models.orm.finders.DocumentSetCreationJobFinder
 
 class OverviewDocumentSetSpec extends Specification {
   step(start(FakeApplication()))
@@ -85,7 +86,7 @@ class OverviewDocumentSetSpec extends Specification {
     "CSV document sets must have an uploadedFile" in new CsvImportDocumentSetScope {
       documentSet match {
         case csvDs: OverviewDocumentSet.CsvImportDocumentSet => {
-          csvDs.uploadedFile must beAnInstanceOf[Some[OverviewUploadedFile]]
+          csvDs.uploadedFile must beSome
         }
         case _ => throwWrongType
       }
@@ -364,11 +365,11 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
 
-    "create clone job for clone" in new DocumentSetWithUserScope {
+    inExample("create clone job for clone") in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
       val documentSetClone = documentSet.cloneForUser(cloner.id)
 
-      documentSetClone.creationJob must beSome
+      DocumentSetCreationJobFinder.byDocumentSet(documentSetClone.id).headOption must beSome
     }
 
     "find all public document sets" in new PublicAndPrivateDocumentSets {

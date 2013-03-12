@@ -25,6 +25,8 @@ GET    /documents/:id controllers.DocumentController.show(id: Long)
 HEAD   /uploads/:uuid controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid controllers.UploadController.create(uuid: java.util.UUID)
 
+GET    /document-set-creation-jobs.json controllers.DocumentSetCreationJobController.index()
+
 # Routes that relate to a DocumentSet
 GET    /documentsets          controllers.DocumentSetController.index(page: Int ?= 1)
 POST   /documentsets          controllers.DocumentSetController.create()

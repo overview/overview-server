@@ -87,8 +87,8 @@ class OverviewDocumentSetCreationJobSpec extends Specification {
       savedJob.id must not be equalTo(0)
     }
 
-    "list all saved jobs ordered by ascending ids" in new MultipleJobContext {
-      OverviewDocumentSetCreationJob.all must be equalTo (jobs.sortBy(_.id))
+    "list all saved jobs ordered by descending ids" in new MultipleJobContext {
+      OverviewDocumentSetCreationJob.all.map(_.id) must be equalTo (jobs.map(_.id).sortBy(-_))
     }
 
     "find job by document set id" in new SavedJobContext {

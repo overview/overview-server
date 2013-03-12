@@ -14,7 +14,8 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import controllers.auth.AuthorizedRequest
 import controllers.forms.DocumentSetForm.Credentials
-import models.OverviewUser
+import models.{OverviewUser,OverviewDocumentSet}
+import models.ResultPage
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 import models.orm.DocumentSetUserRoleType._
@@ -33,8 +34,16 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     var loadedViewers: Int = 0
     var userRoles: Map[String, DocumentSetUserRoleType] = Map()
     var removedUsers: Set[String] = Set()
-    
-    private var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
+
+    var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
+
+    override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, pageNum: Int) = {
+      ResultPage(Seq(), 10, 1)
+    }
+
+    override protected def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) = {
+      ResultPage(Seq(documentSets(1L)), 10, 1).map(OverviewDocumentSet.apply(_: DocumentSet))
+    }
 
     override protected def loadDocumentSet(id: Long): Option[DocumentSet] = {
       documentSets.get(id)

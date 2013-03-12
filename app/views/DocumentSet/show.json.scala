@@ -7,40 +7,15 @@ import play.api.libs.json.Json.toJson
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
-import views.ScopedMessages
-import views.helper.DocumentSetHelper
 
 object show {
-  import scala.language.implicitConversions
+  private def documentSetToJson(documentSet: OverviewDocumentSet)(implicit lang: Lang): JsValue = {
+    val documentSetMap = Map(
+      "id" -> toJson(documentSet.id),
+      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString)
+    )
 
-  private val jobStateKeyToMessage = ScopedMessages("models.DocumentSetCreationJob.state")
-
-  private def documentSetCreationJobProperties(job: OverviewDocumentSetCreationJob)(implicit lang: Lang) = {
-    val notCompleteMap = Map(
-      "state" -> toJson(jobStateKeyToMessage(job.state.toString)),
-      "percent_complete" -> toJson(math.round(job.fractionComplete * 100)),
-      "state_description" -> toJson(DocumentSetHelper.jobDescriptionKeyToMessage(job.stateDescription)))
-    val notStartedMap = job.state match {
-      case NotStarted => Map("n_jobs_ahead_in_queue" -> toJson(job.jobsAheadInQueue))
-      case _ => Map()
-    }
-
-    notCompleteMap ++ notStartedMap
-  }
-
-  private[DocumentSet] def documentSetProperties(documentSet: OverviewDocumentSet)(implicit lang: Lang) = {
-    Map("html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString))
-  }
-
-  private[DocumentSet] implicit def documentSetToJson(documentSet: OverviewDocumentSet): JsValue = {
-    val documentSetMap = Map("id" -> toJson(documentSet.id))
-
-    val jobStatusMap = documentSet.creationJob match {
-      case Some(documentSetCreationJob) => documentSetCreationJobProperties(documentSetCreationJob)
-      case None => documentSetProperties(documentSet)
-    }
-
-    toJson(documentSetMap ++ jobStatusMap)
+    toJson(documentSetMap)
   }
 
   def apply(documentSet: OverviewDocumentSet): JsValue = {

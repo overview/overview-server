@@ -6,21 +6,11 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, User }
 import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
+import models.orm.finders.DocumentSetFinder
 
 trait OverviewDocumentSet {
   /** database ID */
   val id: Long
-
-  /*
-   * XXX we don't have a "list documents" method. To include one, we'd need
-   * an API for filtering and pagination--wrappers around Squeryl features.
-   */
-
-  /**
-   * Creation job, if this DocumentSet isn't complete yet.
-   * FIXME: should be models.OverviewDocumentSetCreationJob, but we don't have one
-   */
-  def creationJob: Option[OverviewDocumentSetCreationJob]
 
   /**
    * Number of documents.
@@ -73,8 +63,7 @@ object OverviewDocumentSet {
     protected val ormDocumentSet: DocumentSet
 
     override val id = ormDocumentSet.id
-    override lazy val creationJob = OverviewDocumentSetCreationJob.findByDocumentSetId(id)
-    override lazy val documentCount = ormDocumentSet.documentCount.toInt
+    override val documentCount = ormDocumentSet.documentCount.toInt
     override lazy val errorCount = ormDocumentSet.errorCount.toInt
     override val isPublic = ormDocumentSet.isPublic
     override val title = ormDocumentSet.title
@@ -119,9 +108,16 @@ object OverviewDocumentSet {
     }
   }
 
-  case class CsvImportDocumentSet(protected val ormDocumentSet: DocumentSet) extends OverviewDocumentSetImpl {
+  case class CsvImportDocumentSet(
+    protected val ormDocumentSet: DocumentSet,
+    // providedUploadedFile is None if not provided, Some(None) if empty, Some(something) if set
+    protected val providedUploadedFile: Option[Option[OverviewUploadedFile]])
+    extends OverviewDocumentSetImpl {
+
     lazy val uploadedFile: Option[OverviewUploadedFile] =
-      ormDocumentSet.uploadedFile.map(OverviewUploadedFile.apply)
+      providedUploadedFile.getOrElse(
+        ormDocumentSet.withUploadedFile.uploadedFile.map(OverviewUploadedFile.apply)
+      )
 
     override protected def cloneDocumentSet: DocumentSet = {
       val ormDocumentSetClone = super.cloneDocumentSet
@@ -139,7 +135,17 @@ object OverviewDocumentSet {
   /** Factory method */
   def apply(ormDocumentSet: DocumentSet): OverviewDocumentSet = {
     ormDocumentSet.documentSetType match {
-      case DocumentSetType.CsvImportDocumentSet => CsvImportDocumentSet(ormDocumentSet)
+      case DocumentSetType.CsvImportDocumentSet => CsvImportDocumentSet(ormDocumentSet, None)
+      case DocumentSetType.DocumentCloudDocumentSet => DocumentCloudDocumentSet(ormDocumentSet)
+      case _ => throw new Exception("Impossible document-set type " + ormDocumentSet.documentSetType.value)
+    }
+  }
+
+  /** Factory method, with uploadedFile set */
+  def apply(ormDocumentSet: DocumentSet, ormUploadedFile: Option[UploadedFile]): OverviewDocumentSet = {
+    ormDocumentSet.documentSetType match {
+      case DocumentSetType.CsvImportDocumentSet => CsvImportDocumentSet(
+        ormDocumentSet, Some(ormUploadedFile.map(OverviewUploadedFile.apply)))
       case DocumentSetType.DocumentCloudDocumentSet => DocumentCloudDocumentSet(ormDocumentSet)
       case _ => throw new Exception("Impossible document-set type " + ormDocumentSet.documentSetType.value)
     }
@@ -147,21 +153,13 @@ object OverviewDocumentSet {
 
   /** Database lookup */
   def findById(id: Long): Option[OverviewDocumentSet] = {
-    DocumentSet.findById(id).map({ ormDocumentSet =>
-      OverviewDocumentSet(ormDocumentSet.withUploadedFile.withCreationJob)
-    })
+    DocumentSetFinder.byDocumentSet(id).headOption.map(apply)
   }
 
   /** @return ResultPage of all document sets the user can access */
   def findByUserId(userEmail: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
-    type WeirdTuple = (DocumentSet, Option[DocumentSetCreationJob], Option[UploadedFile])
-    def weirdTupleToOrmDocumentSet(weirdTuple: WeirdTuple): DocumentSet = weirdTuple._1.copy(
-      documentSetCreationJob = weirdTuple._2,
-      uploadedFile = weirdTuple._3)
-    def weirdTupleToDocumentSet(weirdTuple: WeirdTuple): OverviewDocumentSet = apply(weirdTupleToOrmDocumentSet(weirdTuple))
-
-    ResultPage(DocumentSet.findByUserIdWithCountJobUploadedFile(userEmail), pageSize, page)
-      .map(weirdTupleToDocumentSet(_))
+    val documentSets = DocumentSetFinder.byUser(userEmail)
+    ResultPage(documentSets, pageSize, page).map { ds : DocumentSet => apply(ds, None) }
   }
 
   /** @return Seq of all document sets marked public at the time of the call */

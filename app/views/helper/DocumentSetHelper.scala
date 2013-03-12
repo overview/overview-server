@@ -14,7 +14,7 @@ object DocumentSetHelper {
     if (key == "") {
       ""
     } else {
-      val m = views.ScopedMessages("views.DocumentSet._documentSet.job_state_description")
+      val m = views.ScopedMessages("views.DocumentSetCreationJob._documentSetCreationJob.job_state_description")
       m(keyAndArgs.head, keyAndArgs.drop(1) : _*)
     }
   }
@@ -27,7 +27,7 @@ object DocumentSetHelper {
     val n = job.jobsAheadInQueue
 
     if (n > 0) {
-      views.Magic.t("views.DocumentSet._documentSet.jobs_to_process", n)
+      views.Magic.t("views.DocumentSetCreationJob._documentSetCreationJob.jobs_to_process", n)
     } else {
       jobDescriptionKeyToMessage(job.stateDescription)
     }

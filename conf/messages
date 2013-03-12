@@ -17,14 +17,14 @@ controllers.PasswordController.create.success=We have sent an email to {0} with 
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.
 
 controllers.SessionController.create.success=You have logged in. Welcome back.
-controllers.SessionController.delete.success=You have logged out. We hope you''ll log in again sometime.
+controllers.SessionController.delete.success=You have logged out. We hope you’ll log in again sometime.
 
-controllers.UserController.create.success=Thank you for registering. There''s one more step: please check your email and click the confirmation link.
+controllers.UserController.create.success=Thank you for registering. There’s one more step: please check your email and click the confirmation link.
 
 forms.Confirmation.token.not_found=We could not find a user with this confirmation token. Please try clicking the link in your confirmation email again.
 
 forms.LoginForm.error.invalid_credentials=Wrong email address or password
-forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can''t log in until you click the link in the confirmation email we sent you.
+forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can’t log in until you click the link in the confirmation email we sent you.
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
@@ -114,11 +114,13 @@ views.Document.show.sidebar.disable=Hide sidebar ⇢
 views.Document.show.title.empty_title=(document with no title)
 views.Document.show._csvImportDocument.source=Source: 
 
-views.DocumentProcessingError.index.failed_because=Failed with error ''{0}''
+views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+views.DocumentSet.index.subtitle_jobs=Imports in progress
+views.DocumentSet.index.description_jobs=We’re running calculations on your documents. Please wait, or leave this page and come back later to check on progress.
 
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
@@ -149,7 +151,7 @@ views.DocumentSet._uploadForm.requirements.text=The file must contain text (in a
 views.DocumentSet._uploadForm.requirements.csv=The text must be comma-separated values (using " to quote values).
 views.DocumentSet._uploadForm.requirements.header=The first line must be a header row, with a “text” heading (and optionally an “id” heading).
 views.DocumentSet._uploadForm.requirements.data=Each subsequent row must describe a single document, and there must be at least one.
-views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program''s “Export to CSV” option to create such a file.
+views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
 views.DocumentSet._uploadForm.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
 views.DocumentSet._uploadForm.progress.header=Uploading…
 views.DocumentSet._uploadForm.progress.description=The upload will stop if you leave this page.
@@ -181,20 +183,25 @@ views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanent
 views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet._documentSet.error_count={0,choice,0#no errors|1#One document could not be loaded|1<{0,number,integer} documents could not be loaded}
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
-views.DocumentSet._documentSet.job_state_description.clustering=Clustering
-views.DocumentSet._documentSet.job_state_description.clustering_level=Clustering
-views.DocumentSet._documentSet.job_state_description.job_complete=Import complete
-views.DocumentSet._documentSet.job_state_description.no_description= 
-views.DocumentSet._documentSet.job_state_description.out_of_memory=Import failed (document set too large)
-views.DocumentSet._documentSet.job_state_description.parsing_data=Reading documents from uploaded file…
-views.DocumentSet._documentSet.job_state_description.retrieving_documents=Retrieving document {0}/{1}
-views.DocumentSet._documentSet.job_state_description.saving_document_tree=Saving document tree
-views.DocumentSet._documentSet.job_state_description.worker_error=Import failed (system error)
-views.DocumentSet._documentSet.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
-views.DocumentSet._documentSet.jobs_to_process=Waiting for {0} other jobs to complete before processing can begin
 views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.toggle_public=Share with all Overview users
+
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering=Clustering
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.job_complete=Import complete
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.no_description= 
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.out_of_memory=Import failed (document set too large)
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.parsing_data=Reading documents from uploaded file…
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.retrieving_documents=Retrieving document {0}/{1}
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.saving_document_tree=Saving document tree
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.worker_error=Import failed (system error)
+views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
+views.DocumentSetCreationJob._documentSetCreationJob.jobs_to_process=Waiting for {0,choice,0#no jobs|1#one job|2#{0,number,integer} jobs} to complete before processing can begin
+views.DocumentSetCreationJob._documentSetCreationJob.action_cancel=Cancel Import
+views.DocumentSetCreationJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete this document set? You cannot undo this.
+views.DocumentSetCreationJob._documentSetCreationJob.subtitle.query=Query: {0}
+views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploaded file
 
 views.Node._form.h3=Edit node
 views.Node._form.labels.description=Description
@@ -203,7 +210,7 @@ views.Node._form.submit=Save node
 
 views.Password._editForm.label.password=New password
 views.Password._editForm.label.password2=New password (again)
-views.Password._editForm.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
+views.Password._editForm.error_password2_does_not_match=This password doesn’t match what you typed in above. Please correct it.
 views.Password._editForm.submit=Set new password and log in
 
 views.Password._newForm.label.email=Email
@@ -254,10 +261,10 @@ views.User._form.placeholder.email=user@example.org
 views.User._form.help.email=We will send a confirmation email to this address
 views.User._form.label.password=Password
 views.User._form.label.password2=Password (again)
-views.User._form.help.password2=Because if you don''t remember it now, you never will
+views.User._form.help.password2=Because if you don’t remember it now, you never will
 views.User._form.submit=Register and send confirmation email
 views.User._form.submit_feedback=Registering...
-views.User._form.error_password2_does_not_match=This password doesn''t match what you typed in above. Please correct it.
+views.User._form.error_password2_does_not_match=This password doesn’t match what you typed in above. Please correct it.
 
 views.User.new.title=Register
 views.User.new.h1=Register

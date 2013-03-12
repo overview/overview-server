@@ -2,7 +2,9 @@ package models
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,UploadedFile}
+import models.orm.DocumentSet
+import models.orm.finders.DocumentSetCreationJobFinder
 
 trait OverviewDocumentSetCreationJob {
   val id: Long
@@ -28,14 +30,23 @@ object OverviewDocumentSetCreationJob {
   import org.overviewproject.postgres.SquerylEntrypoint._
   import models.orm.Schema.{ documentSetCreationJobs, documentSetDocumentSetCreationJobs }
 
-  def all: Seq[OverviewDocumentSetCreationJob] = {
-    from(documentSetCreationJobs)(j => select(j).orderBy(j.id.asc)).toSeq.map(OverviewDocumentSetCreationJobImpl)
+  def all: Seq[OverviewDocumentSetCreationJob] = { // FIXME paginate (well, remove, really. But otherwise, paginate.)
+    DocumentSetCreationJobFinder.all.map(new OverviewDocumentSetCreationJobImpl(_)).toSeq
   }
 
   def findByDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
     val documentSetCreationJob = from(documentSetCreationJobs)(j => where(j.documentSetId === documentSetId) select (j)).headOption
 
-    documentSetCreationJob.map(OverviewDocumentSetCreationJobImpl)
+    documentSetCreationJob.map(new OverviewDocumentSetCreationJobImpl(_))
+  }
+
+  def findByUserWithDocumentSet(userEmail: String, pageSize: Int, page: Int)
+    : ResultPage[(OverviewDocumentSetCreationJob, OverviewDocumentSet)] = {
+
+    val tuples = DocumentSetCreationJobFinder.byUserWithDocumentSetsAndUploadedFiles(userEmail)
+    ResultPage(tuples, pageSize, page).map { tuple: (DocumentSetCreationJob, DocumentSet, Option[UploadedFile]) =>
+      (OverviewDocumentSetCreationJob(tuple._1), OverviewDocumentSet(tuple._2, tuple._3))
+    }
   }
   
   def cancelJobsWithSourceDocumentSetId(sourceDocumentSetId: Long): Seq[OverviewDocumentSetCreationJob] = {
@@ -43,7 +54,7 @@ object OverviewDocumentSetCreationJob {
       dscj.sourceDocumentSetId === Some(sourceDocumentSetId)  
     ).forUpdate
 
-    cloneJobs.map(j => OverviewDocumentSetCreationJobImpl(j.copy(state = Cancelled)).save).toSeq
+    cloneJobs.map(j => new OverviewDocumentSetCreationJobImpl(j.copy(state = Cancelled)).save).toSeq
   }
 
   def cancelJobWithDocumentSetId(documentSetId: Long): Option[OverviewDocumentSetCreationJob] = {
@@ -56,7 +67,18 @@ object OverviewDocumentSetCreationJob {
     }
   }
 
-  private case class OverviewDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob) extends OverviewDocumentSetCreationJob {
+  def apply(ormJob: DocumentSetCreationJob) : OverviewDocumentSetCreationJob = {
+    if (ormJob.documentSetCreationJobType == DocumentCloudJob
+      && ormJob.documentcloudUsername.isDefined
+      && ormJob.documentcloudPassword.isDefined) {
+
+      new JobWithDocumentCloudCredentials(ormJob)
+    } else {
+      new OverviewDocumentSetCreationJobImpl(ormJob)
+    }
+  }
+
+  private class OverviewDocumentSetCreationJobImpl(val documentSetCreationJob: DocumentSetCreationJob) extends OverviewDocumentSetCreationJob {
     val id: Long = documentSetCreationJob.id
     val documentSetId: Long = documentSetCreationJob.documentSetId
     val state: DocumentSetCreationJobState = documentSetCreationJob.state
@@ -71,7 +93,7 @@ object OverviewDocumentSetCreationJob {
     }
 
     def withState(newState: DocumentSetCreationJobState): OverviewDocumentSetCreationJob = {
-      OverviewDocumentSetCreationJobImpl(documentSetCreationJob.copy(state = newState))
+      new OverviewDocumentSetCreationJobImpl(documentSetCreationJob.copy(state = newState))
     }
 
     def withDocumentCloudCredentials(username: String, password: String): OverviewDocumentSetCreationJob with DocumentCloudCredentials = {
@@ -80,9 +102,9 @@ object OverviewDocumentSetCreationJob {
     }
 
     def save: OverviewDocumentSetCreationJob = {
-      documentSetCreationJobs.insertOrUpdate(documentSetCreationJob)
+      val ret = documentSetCreationJobs.insertOrUpdate(documentSetCreationJob)
 
-      copy(documentSetCreationJob)
+      new OverviewDocumentSetCreationJobImpl(ret)
     }
   }
 

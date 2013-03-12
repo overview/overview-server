@@ -5,7 +5,7 @@
 @import views.helper.DocumentSetHelper
 
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
-  <li id="document-set-@documentSet.id" class="@(documentSet.creationJob.map(j => "unfinished"))">
+  <li id="document-set-@documentSet.id">
     <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
@@ -28,15 +28,7 @@
       }
     </h3>
     <p class="status">
-      @documentSet.creationJob.map { job =>
-        <label>
-          <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)"></progress><!-- IE9 needs start+end tags -->
-          <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
-        </label>
-        <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
-      }.getOrElse {
-        <span class="document-count">@m("document_count", documentSet.documentCount)</span>
-      }
+      <span class="document-count">@m("document_count", documentSet.documentCount)</span>
       @if(documentSet.errorCount > 0) {
         <a class="error-list" href="@routes.DocumentProcessingErrorController.index(documentSet.id)" data-toggle="modal" data-target="#error-list-modal">@m("error_count", documentSet.errorCount)</a>
       }

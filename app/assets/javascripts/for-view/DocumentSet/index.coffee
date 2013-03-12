@@ -1,11 +1,11 @@
 $ ->
   $('#error-list-modal').on('hidden', (() -> $(this).removeData('modal')))
 
-  $('ul.document-sets').on 'change click', 'form.update input[type=checkbox]', (e) ->
+  $('.document-sets').on 'change click', 'form.update input[type=checkbox]', (e) ->
     $checkbox = $(e.currentTarget)
     $checkbox.closest('form').submit()
 
-  $('ul.document-sets').on 'submit', 'form.update', (e) ->
+  $('.document-sets').on 'submit', 'form.update', (e) ->
     $form = $(e.currentTarget)
     data = $form.serialize()
     old_data = $form.data('last-data')

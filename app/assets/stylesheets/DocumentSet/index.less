@@ -1,3 +1,5 @@
+@import "index/mixins.less";
+
 body.document-set-index {
   button.toggle-import {
     position: relative;
@@ -8,63 +10,32 @@ body.document-set-index {
     }
   }
 
-  ul.document-sets {
+  .document-set-creation-jobs {
     margin-top: 20px;
+  }
 
-    &>li {
-      .well;
+  .document-sets>ul, .document-set-creation-jobs>ul {
+    .document-set-list();
+  }
 
-      &:not(:hover) {
-        border-color: white;
-        background-color: white;
-        position: relative;
-        -webkit-box-shadow: none;
-           -moz-box-shadow: none;
-                box-shadow: none;
-      }
-    }
+  .document-set-creation-jobs {
+    margin: 20px;
+    padding: 19px;
+    border: 1px solid darken(@wellBackground, 7%);
+    .border-radius(@baseBorderRadius);
+    .box-shadow(inset 0 1px 1px rgba(0, 0, 0, .05));
 
-    p.status {
-      margin-bottom: 0;
-      .clearfix();
-
-      label {
-        display: inline-block;
-        white-space: nowrap;
-        margin: 0 10px 0 0;
-      }
-
-      span.state-description {
-        display: inline-block;
-      }
-    }
-
-    h2 {
+    &>h2 {
       margin-top: 0;
     }
 
-    h3 {
-      .muted;
-      font-size: 1em;
-      font-weight: normal;
-      line-height: 1;
+    &>h2, &>p {
+      margin-left: 20px; // margin of .well
     }
+  }
 
-    .state-description {
-      .muted;
-    }
-
-    form {
-      margin-left: 20px;
-      float: right;
-      // "h2" has line-height 40px
-      line-height: 30px;
-      padding: 5px 0;
-    }
-
-    input[type=checkbox] {
-      vertical-align: top;
-    }
+  .document-sets {
+    margin: 20px -20px; // escape the .well
   }
 
   #error-list-modal {

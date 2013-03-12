@@ -1,30 +1,32 @@
 package controllers
 
-import java.sql.Connection
 import play.api.mvc.Controller
+
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.DocumentSetForm.Credentials
-import models.orm.{ DocumentSet, User }
-import models.orm.DocumentSetUserRoleType._
-import models.{ OverviewDocumentSet, ResultPage }
-import models.orm.DocumentSetUser
-import models.orm.DocumentSetUserRoleType
+import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.UserRoleForm
+import models.orm.finders.DocumentSetFinder
+import models.orm.{ DocumentSet, User, DocumentSetUser }
+import models.orm.DocumentSetUserRoleType
+import models.orm.DocumentSetUserRoleType._
+import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, ResultPage }
 
 trait DocumentSetController extends Controller {
   import Authorities._
 
   private val form = DocumentSetForm()
   private val pageSize = 10
+  private val jobPageSize = 50 // show them "all", but don't crash if something's wrong
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = OverviewDocumentSet.findByUserId(request.user.email, pageSize, realPage)
+    val documentSets = loadDocumentSets(request.user.email, pageSize, realPage)
+    val jobs = loadDocumentSetCreationJobs(request.user.email, pageSize, 1)
 
-    Ok(views.html.DocumentSet.index(request.user, documentSets, form))
+    Ok(views.html.DocumentSet.index(request.user, documentSets, jobs, form))
   }
 
   def show(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
@@ -120,6 +122,9 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
+  protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
+    : ResultPage[(OverviewDocumentSetCreationJob, OverviewDocumentSet)]
+  protected def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet]
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
@@ -129,15 +134,20 @@ trait DocumentSetController extends Controller {
 }
 
 object DocumentSetController extends DocumentSetController {
-  protected def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSet.findById(id)
-  protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
+  override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
+    OverviewDocumentSetCreationJob.findByUserWithDocumentSet(userEmail, pageSize, page)
+  }
+  protected override def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet] =
+    OverviewDocumentSet.findByUserId(userEmail, pageSize, page)
+  protected override def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSetFinder.byDocumentSet(id).headOption
+  protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
   // TODO: handle roles other than Viewer
-  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).addViewer(email)
-  protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).removeViewer(email)
+  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).addViewer(email)
+  protected override def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).removeViewer(email)
 
-  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
+  protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
 
-  protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = OverviewDocumentSet.findViewers(id)
+  protected override def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = OverviewDocumentSet.findViewers(id)
 
 }

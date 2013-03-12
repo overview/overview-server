@@ -1,0 +1,30 @@
+@(
+  job: OverviewDocumentSetCreationJob,
+  documentSet: OverviewDocumentSet
+)(implicit lang: Lang)
+@import views.helper.DocumentSetHelper
+@defining(scopedMessages("views.DocumentSetCreationJob._documentSetCreationJob")) { m =>
+  <li data-document-set-id="@documentSet.id">
+    <form method="post" class="delete form-inline" data-confirm="@m("confirm_cancel")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
+      <input type="submit" class="btn btn-danger" value="@m("action_cancel")" />
+    </form>
+    <h2>@documentSet.title</h2>
+    <h3>
+      @documentSet match {
+        case ds: OverviewDocumentSet.DocumentCloudDocumentSet => {
+          @m("subtitle.query", ds.query)
+        }
+        case _ => {
+          @m("subtitle.other")
+        }
+      }
+    </h3>
+    <p class="status">
+      <label>
+        <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)"></progress><!-- IE9 needs start+end tags -->
+        <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
+      </label>
+      <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
+    </p>
+  </li>
+}

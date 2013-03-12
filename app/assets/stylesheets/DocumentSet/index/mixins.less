@@ -1,0 +1,55 @@
+.document-set-list() {
+  margin: 0;
+
+  &>li {
+    .well;
+    margin: 0;
+
+    &:not(:hover) {
+      border-color: transparent;
+      background-color: transparent;
+      position: relative;
+      .box-shadow(none);
+    }
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.3em;
+  }
+
+  h3 {
+    .muted;
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.6;
+    font-weight: normal;
+  }
+
+  .state-description {
+    .muted;
+  }
+
+  p.status {
+    .clearfix();
+    margin-bottom: 0;
+
+    label {
+      display: inline-block;
+      white-space: nowrap;
+      margin: 0 10px 0 0;
+    }
+
+    span.state-description {
+      display: inline-block;
+    }
+  }
+
+  form {
+    margin-left: 20px;
+    float: right;
+    // "h2" has line-height 40px
+    line-height: 30px;
+    padding: 5px 0;
+  }
+}

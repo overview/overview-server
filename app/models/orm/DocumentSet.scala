@@ -41,7 +41,7 @@ case class DocumentSet(
   createdAt: Timestamp = new Timestamp((new Date()).getTime),
   documentCount: Int = 0,
   importOverflowCount: Int = 0,
-  @Column("uploaded_file_id") val uploadedFileId: Option[Long] = None,
+  uploadedFileId: Option[Long] = None,
   @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
   @(Transient @field) val uploadedFile: Option[UploadedFile] = None) extends KeyedEntity[Long] {
 
@@ -69,11 +69,10 @@ case class DocumentSet(
     Schema.documentSetDocumentSetCreationJobs.left(this).associate(documentSetCreationJob)
   }
 
-  def withCreationJob = copy(documentSetCreationJob =
-    Schema.documentSetDocumentSetCreationJobs.left(this).headOption)
-
-  def withUploadedFile = copy(uploadedFile =
-    Schema.uploadedFileDocumentSets.right(this).headOption)
+  def withUploadedFile = uploadedFile match {
+    case None => copy(uploadedFile = uploadedFileId.flatMap(Schema.uploadedFiles.lookup(_)))
+    case Some(uploadedFile) => this
+  }
 
   def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute (count)).single.measures
 
@@ -91,26 +90,6 @@ object DocumentSet {
   implicit def toLong(documentSet: DocumentSet) = documentSet.id
 
   def findById(id: Long) = Schema.documentSets.lookup(id)
-
-  def findByUserIdWithCountJobUploadedFile(userEmail: String): Query[(DocumentSet, Option[DocumentSetCreationJob], Option[UploadedFile])] = {
-    val idToCountQuery = from(Schema.documents)(d =>
-      groupBy(d.documentSetId)
-        compute (count()))
-
-    val userDocumentSets: Query[DocumentSet] = from(Schema.documentSetUsers, Schema.documentSets)((dsu, ds) =>
-      where(dsu.documentSetId === ds.id and dsu.userEmail === userEmail)
-        select (ds))
-
-    val joined = join(userDocumentSets, Schema.documentSetCreationJobs.leftOuter, Schema.uploadedFiles.leftOuter)((ds, dscj, uf) =>
-      select((ds, dscj, uf))
-        on (
-          (dscj.map(_.documentSetId) === ds.id),
-          (ds.uploadedFileId === uf.map(_.id))))
-          
-    from(joined)((j) =>
-      select(j)
-        orderBy (j._1.createdAt.desc))
-  }
 
   def findByUserIdOrderedByCreatedAt(userEmail: String): Query[DocumentSet] = {
     from(Schema.documentSetUsers, Schema.documentSets)((dsu, ds) =>
@@ -147,32 +126,5 @@ object DocumentSet {
     }
 
     success
-  }
-
-  private def findIdToDocumentSetCreationJobMap(ids: Seq[Long]): Map[Long, DocumentSetCreationJob] = {
-    from(Schema.documentSetCreationJobs)(j =>
-      where(j.documentSetId in ids).select(j)).map(dscj => dscj.documentSetId -> dscj).toMap
-  }
-
-  private def findIdToUploadedFileMap(ids: Seq[Long]): Map[Long, UploadedFile] = {
-    from(Schema.uploadedFiles)(uf =>
-      where(uf.id in ids).select(uf)).map(uf => uf.id -> uf).toMap
-  }
-
-  def addCreationJobs(documentSets: Seq[DocumentSet]): Seq[DocumentSet] = {
-    val ids = documentSets.map(_.id)
-    val creationJobs = findIdToDocumentSetCreationJobMap(ids)
-    documentSets.map(ds => ds.copy(documentSetCreationJob = creationJobs.get(ds.id)))
-  }
-
-  def addUploadedFiles(documentSets: Seq[DocumentSet]): Seq[DocumentSet] = {
-    val optionalIds: Seq[Option[Long]] = documentSets.map(_.uploadedFileId)
-    val ids: Seq[Long] = optionalIds.flatten
-    if (ids.length > 0) {
-      val uploadedFiles = findIdToUploadedFileMap(ids)
-      documentSets.map(ds => ds.copy(uploadedFile = ds.uploadedFileId.flatMap(uploadedFiles.get)))
-    } else {
-      documentSets
-    }
   }
 }

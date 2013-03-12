@@ -45,14 +45,12 @@ class DocumentSetSpec extends Specification {
 
   "DocumentSet" should {
 
-    "create a DocumentSetCreationJob" in new DocumentSetContext {
+    inExample("create a DocumentSetCreationJob") in new DocumentSetContext {
       val job = documentSet.createDocumentSetCreationJob()
 
-      val returnedJob: Option[DocumentSetCreationJob] = Schema.documentSetCreationJobs.lookup(job.id)
-      returnedJob.get.documentSetCreationJobType.value must be equalTo(DocumentCloudJob.value)
-      
-      val returnedSet = Schema.documentSets.where(ds => ds.query === query).single
-      returnedSet.withCreationJob.documentSetCreationJob must beEqualTo(returnedJob)
+      val returnedJob: DocumentSetCreationJob = Schema.documentSetCreationJobs.lookup(job.id).get
+      returnedJob.documentSetCreationJobType.value must be equalTo(DocumentCloudJob.value)
+      returnedJob.documentSetId must beEqualTo(documentSet.id)
     }
 
     "set createdAt to the current date by default" in new Scope {
