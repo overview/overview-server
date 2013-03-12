@@ -57,8 +57,11 @@ class JobWatcher
       if json_id == dom_id
         # Update the DOM
         $new_li = $(json_html)
-        $li.replaceWith($new_li)
-        $li = $new_li
+        # Don't replace the entire element. That would replace the form; the
+        # user's "Cancel import" clicks would sparodically disappear.
+        #
+        # Instead, replace the p.status, which is all that will ever change.
+        $li.find('p.status').replaceWith($new_li.find('p.status'))
         # Advance
         $li = $li.next()
         json_index += 1
