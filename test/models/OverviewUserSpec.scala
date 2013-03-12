@@ -15,7 +15,7 @@ class OverviewUserSpec  extends Specification {
   trait NewRegistration extends DbTestContext {
     val email = "user@example.org"
     val password = "password"
-    lazy val user = PotentialUser(email, password).requestConfirmation
+    lazy val user = PotentialNewUser(email, password, false).requestConfirmation
   }
 
   trait ExistingUserContext extends DbTestContext {
@@ -56,7 +56,7 @@ class OverviewUserSpec  extends Specification {
     "find user by email insensitive to case of stored value" in new DbTestContext {
       val email = "MixedCase@UPPERCASE.NET"
       val password = "password"
-      val user = PotentialUser(email, password).requestConfirmation.confirm
+      val user = PotentialNewUser(email, password, false).requestConfirmation.confirm
       user.save
       
       OverviewUser.findByEmail(email) must beSome.like { case u =>

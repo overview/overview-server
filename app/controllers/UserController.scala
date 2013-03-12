@@ -4,12 +4,11 @@ import org.squeryl.SquerylSQLException
 import play.api.data.Form
 import play.api.mvc.{Controller, RequestHeader}
 import controllers.util.TransactionAction
-import models.{OverviewUser, ConfirmationRequest, PotentialUser}
-import models.UserRegistration
+import models.{OverviewUser, ConfirmationRequest, PotentialNewUser}
 
 trait UserController extends Controller {
   val loginForm : Form[OverviewUser] = controllers.forms.LoginForm()
-  val userForm : Form[UserRegistration] = controllers.forms.UserForm()
+  val userForm : Form[PotentialNewUser] = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.UserController")
 
@@ -19,9 +18,9 @@ trait UserController extends Controller {
     userForm.bindFromRequest().fold(
       formWithErrors => BadRequest(views.html.Session.new_(loginForm, formWithErrors)),
       registration => {
-        registration.user.withRegisteredEmail match {
+        registration.withRegisteredEmail match {
           case Some(u) => handleExistingUser(u)
-          case None => handleNewUser(registration.user)
+          case None => handleNewUser(registration)
         }
         Redirect(routes.ConfirmationController.show("")).
           flashing("success" -> m("create.success"))
@@ -44,7 +43,7 @@ trait UserController extends Controller {
     */
   protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest
 
-  private def handleNewUser(user: PotentialUser)(implicit request: RequestHeader) : Unit = {
+  private def handleNewUser(user: PotentialNewUser)(implicit request: RequestHeader) : Unit = {
     val sqlStateUniqueKeyViolation : String = "23505"
     val userWithRequest = user.requestConfirmation
 

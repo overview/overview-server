@@ -12,8 +12,7 @@ import play.api.test.Helpers.{BAD_REQUEST, SEE_OTHER, flash, status}
 import org.overviewproject.test.Specification
 import controllers.forms.UserForm
 import mailers.Mailer
-import models.{PotentialUser,OverviewUser,ConfirmationRequest}
-import models.UserRegistration
+import models.{PotentialNewUser, OverviewUser, ConfirmationRequest}
 
 class UserControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -56,10 +55,10 @@ class UserControllerSpec extends Specification {
 
   trait OurScopeWithUser extends OurScope {
     val optionalOverviewUser : Option[OverviewUser]
-    lazy val potentialUser = PotentialUser(validEmail, validPassword, optionalOverviewUser)
+    lazy val potentialUser = new PotentialNewUser(validEmail, validPassword, false, optionalOverviewUser)
 
     trait TestUserControllerWithUser extends TestUserController {
-      override val userForm = UserForm { (_: String, _: String, _: Boolean) => UserRegistration(potentialUser, false) }
+      override val userForm = UserForm { (_: String, _: String, _: Boolean) => potentialUser }
     }
     object TestUserControllerWithUserImpl extends TestUserControllerWithUser
 

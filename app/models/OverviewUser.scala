@@ -12,7 +12,7 @@ import java.util.Date
 import org.overviewproject.postgres.SquerylEntrypoint._
 import ua.t3hnar.bcrypt._
 
-import models.orm.{User,UserRole}
+import models.orm.{ User, UserRole }
 
 /**
  * A user that exists in the database
@@ -21,7 +21,7 @@ trait OverviewUser {
   val id: Long
   val email: String
   val isSubscribedToEmail: Boolean
-  
+
   val currentSignInAt: Option[Date]
   val currentSignInIp: Option[String]
   val lastSignInAt: Option[Date]
@@ -51,7 +51,7 @@ trait OverviewUser {
 
   /** @return The same user, with a new subscription state */
   def withEmailSubscription(subscribe: Boolean): OverviewUser
-  
+
   /** @return The same user, as an administrator */
   def asAdministrator: OverviewUser
 
@@ -143,6 +143,17 @@ case class PotentialUser(val email: String, val password: String, private val us
     }
   }
 
+}
+
+
+object PotentialUser {
+  def apply(email: String, password: String): PotentialUser = {
+    PotentialUser(email, password, OverviewUser.findByEmail(email))
+  }
+}
+
+
+class PotentialNewUser(email: String, password: String, val emailSubscriber: Boolean, user: Option[OverviewUser]) extends PotentialUser(email, password, user) {
   /**
    * @return the OverviewUser with ConfirmationRequest. No matter what the state the user is in
    * a new confirmation request can always be generated. User must be saved before change takes
@@ -150,13 +161,11 @@ case class PotentialUser(val email: String, val password: String, private val us
    */
   def requestConfirmation: OverviewUser with ConfirmationRequest =
     OverviewUser.prepareNewRegistration(email, password)
-
 }
 
-object PotentialUser {
-  def apply(email: String, password: String) : PotentialUser = {
-    PotentialUser(email, password, OverviewUser.findByEmail(email))
-  }
+object PotentialNewUser {
+  def apply(email: String, password: String, emailSubscriber: Boolean): PotentialNewUser =
+    new PotentialNewUser(email, password, emailSubscriber, OverviewUser.findByEmail(email))
 }
 
 /**
@@ -229,46 +238,42 @@ object OverviewUser {
     def withResetPasswordRequest: OverviewUser with ResetPasswordRequest = {
       new UserWithResetPasswordRequest(user.copy(
         resetPasswordToken = Some(generateToken),
-        resetPasswordSentAt = Some(generateTimestamp)
-      ))
+        resetPasswordSentAt = Some(generateTimestamp)))
     }
 
     def asConfirmed: Option[OverviewUser with Confirmation] = {
       user.confirmedAt.map(d => new ConfirmedUser(user, d))
     }
 
-    override def withLoginRecorded(ip: String, date: java.util.Date) : OverviewUser = {
+    override def withLoginRecorded(ip: String, date: java.util.Date): OverviewUser = {
       new OverviewUserImpl(user.copy(
         lastSignInAt = user.currentSignInAt,
         lastSignInIp = user.currentSignInIp,
         currentSignInAt = Some(new java.sql.Timestamp(date.getTime())),
-        currentSignInIp = Some(ip)
-      ))
+        currentSignInIp = Some(ip)))
     }
 
-    override def withActivityRecorded(ip: String, date: java.util.Date) : OverviewUser = {
+    override def withActivityRecorded(ip: String, date: java.util.Date): OverviewUser = {
       new OverviewUserImpl(user.copy(
         lastActivityAt = Some(new java.sql.Timestamp(date.getTime())),
-        lastActivityIp = Some(ip)
-      ))
+        lastActivityIp = Some(ip)))
     }
 
-    def withEmail(email: String) : OverviewUser = {
-      new OverviewUserImpl(user.copy(email=email))
+    def withEmail(email: String): OverviewUser = {
+      new OverviewUserImpl(user.copy(email = email))
     }
 
     def withEmailSubscription(subscribe: Boolean) = {
       new OverviewUserImpl(user.copy(emailSubscriber = subscribe))
     }
     def asAdministrator: OverviewUser = {
-      new OverviewUserImpl(user.copy(role=UserRole.Administrator))
+      new OverviewUserImpl(user.copy(role = UserRole.Administrator))
     }
 
     def asNormalUser: OverviewUser = {
-      new OverviewUserImpl(user.copy(role=UserRole.NormalUser))
+      new OverviewUserImpl(user.copy(role = UserRole.NormalUser))
     }
 
-        
     def isAllowedDocumentSet(id: Long) = {
       import models.orm.Schema
       Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).nonEmpty
@@ -280,8 +285,7 @@ object OverviewUser {
       val rolesQuery = Schema.documentSetUsers.where(dsu => dsu.userEmail === email)
       val joinQuery = from(rolesQuery, documentQuery)((dsu, d) =>
         where(dsu.documentSetId === d.documentSetId)
-        select(dsu)
-      )
+          select (dsu))
       joinQuery.nonEmpty
     }
 
@@ -317,12 +321,11 @@ object OverviewUser {
     override val resetPasswordToken = user.resetPasswordToken.getOrElse(throw new Exception("logic"))
     override val resetPasswordSentAt = user.resetPasswordSentAt.getOrElse(throw new Exception("logic"))
 
-    override def withNewPassword(password: String) : OverviewUser = {
+    override def withNewPassword(password: String): OverviewUser = {
       OverviewUserImpl(user.copy(
-        resetPasswordToken=None,
-        resetPasswordSentAt=None,
-        passwordHash=password.bcrypt(BcryptRounds)
-      ))
+        resetPasswordToken = None,
+        resetPasswordSentAt = None,
+        passwordHash = password.bcrypt(BcryptRounds)))
     }
   }
 }
