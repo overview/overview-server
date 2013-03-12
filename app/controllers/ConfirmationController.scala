@@ -4,10 +4,10 @@ import java.sql.Connection
 import play.api.data.Form
 import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.mvc.{Action,AnyContent, Controller, Request}
-
 import controllers.auth.AuthResults
 import controllers.util.TransactionAction
-import models.OverviewUser
+import models.{ MailChimp, OverviewUser }
+
 
 object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
@@ -27,6 +27,8 @@ object ConfirmationController extends Controller {
       },
       u => {
         u.confirm.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
+        if (u.requestedEmailSubscription) MailChimp.subscribe(u.email)
+        
         AuthResults.loginSucceeded(request, u).flashing("success" -> m("show.success"))
       }
     )
