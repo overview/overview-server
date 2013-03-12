@@ -9,12 +9,11 @@ import play.api.data.Form
 import play.api.mvc.{AnyContent,Request,RequestHeader}
 import play.api.test.{FakeApplication,FakeRequest}
 import play.api.test.Helpers.{BAD_REQUEST, SEE_OTHER, flash, status}
-
 import org.overviewproject.test.Specification
-
 import controllers.forms.UserForm
 import mailers.Mailer
 import models.{PotentialUser,OverviewUser,ConfirmationRequest}
+import models.UserRegistration
 
 class UserControllerSpec extends Specification {
   step(start(FakeApplication()))
@@ -60,7 +59,7 @@ class UserControllerSpec extends Specification {
     lazy val potentialUser = PotentialUser(validEmail, validPassword, optionalOverviewUser)
 
     trait TestUserControllerWithUser extends TestUserController {
-      override val userForm = UserForm { (_: String, _: String, _: Boolean) => (potentialUser, false) }
+      override val userForm = UserForm { (_: String, _: String, _: Boolean) => UserRegistration(potentialUser, false) }
     }
     object TestUserControllerWithUserImpl extends TestUserControllerWithUser
 
@@ -128,6 +127,7 @@ class UserControllerSpec extends Specification {
       existingUserMailed must beFalse
       newUserMailed must beTrue
     }
+    
 
     "create() with a new user should redirect with 'success' flash" in new OurScopeWithNewUser {
       val result = run
