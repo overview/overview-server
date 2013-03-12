@@ -12,15 +12,10 @@ package org.overviewproject.clustering
 
 import ClusterTypes._
 
-// Core document clustering operations: cosine distance, mean
-// Separated into a trait so that we can mix it in to different K-means bases (below)
-trait KMeansDocumentOps {
-
-  protected val docVecs : DocumentSetVectors  
-  
-  // Custom cosine distance function: always index against a, as the centroid will have fill-in
-  def distance(aId:DocumentID, b:DocumentVectorMap, minSoFar:Double) : Double = {    
-    val a = docVecs(aId)
+// Core implementation of DocVec / DocMap dot product, when we don't care if the dist is greater than some threshod
+// Used here, and in KMeansDocumentComponent
+object EarlyOutDocVecDistance {
+  def apply(a:DocumentVector, b:DocumentVectorMap, minSoFar:Double) : Double = {
     var dot = 0.0
     var aSqLeft = 1.0
     var bSqLeft = 1.0
@@ -48,6 +43,19 @@ trait KMeansDocumentOps {
     }
     
     1.0 - dot
+  }
+}
+
+// Core document clustering operations: cosine distance, mean
+// Separated into a trait so that we can mix it in to different K-means bases (below)
+trait KMeansDocumentOps {
+
+  protected val docVecs : DocumentSetVectors  
+  
+  // Custom cosine distance function: always index against a, as the centroid will have fill-in
+  def distance(aId:DocumentID, b:DocumentVectorMap, minSoFar:Double) : Double = {    
+    val a = docVecs(aId)
+    EarlyOutDocVecDistance(a, b, minSoFar)
   }
   
   // To compute mean, we accumulate in a DocumentVectorMap, much more suited to modification than DocumentVector

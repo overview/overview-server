@@ -42,7 +42,7 @@ class KMeansDocumentComponentsSpec extends Specification {
       val w1 = (1.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
       val w2 = (2.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
       val correctCentroid = DocumentVectorMap(id1->w1, id2->w2, id3->w2, id4->w1)
-      component.centroid should beEqualTo(correctCentroid)
+      DocumentVectorMap(component.centroid) should beEqualTo(correctCentroid)
     }
   }
 

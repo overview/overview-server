@@ -50,7 +50,7 @@ object ClusterTypes {
   // basically just map from term -> tf_idf
   class DocumentVectorMap extends mutable.HashMap[TermID, TermWeight] { 
     
-    // Sparse vector sum
+    // this += v, implemented on sparse vectors
     def accumulate(v: DocumentVectorMap): Unit = {
       v foreach {
         case (id, weight) => update(id, getOrElse(id, 0f) + weight)
@@ -70,6 +70,14 @@ object ClusterTypes {
         case (id, weight) => update(id, getOrElse(id, 0f) + factor*weight)
       }
     }
+
+    def multiplyAndAccumulate(factor:Float, v: DocumentVector) : Unit = {
+      for (i <- 0 until v.length) {
+        update(v.terms(i), getOrElse(v.terms(i), 0f) + factor*v.weights(i))
+      }
+    }
+    
+    
   }
 
   object DocumentVectorMap {

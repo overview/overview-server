@@ -19,7 +19,7 @@ import ClusterTypes._
 // Why not just the concrete DocumentComponent below? I want to let the caller decide 
 // how to initialize these values, and whether or not to store the actual doc IDs in here too
 abstract class AbstractDocumentComponent {
-  val centroid:DocumentVectorMap
+  val centroid:DocumentVector
   val nDocs:Int  
 }
 
@@ -30,35 +30,8 @@ trait KMeansDocumentComponentOps[Component <: AbstractDocumentComponent] {
   
   // Distance function. Iterates over terms in component centroid, as it is likely to have less fill-in than cluster centroid
   // Same logic as KMeansDocumentOps.distance, but operates over two DocumentVectorMaps
-  def distance(component:Component, b:DocumentVectorMap, minSoFar:Double) : Double = {    
-    val a = component.centroid
-    var dot = 0.0
-    var aSqLeft = 1.0
-    var bSqLeft = 1.0
-   
-    val  i = a.toIterator
-        
-    while (i.hasNext) {
-      val (term, aWeight) = i.next
-      
-      aSqLeft -= aWeight*aWeight
-      
-      val bWeightOpt = b.get(term)
-      if (bWeightOpt.isDefined) {         // could do this with Option.map, but I want to avoid creating a closure in this inner loop
-        val bWeight = bWeightOpt.get
-        bSqLeft -= bWeight*bWeight
-        dot += aWeight * bWeight
-      }
-              
-      // The maximum value dot can now reach will occur if there is one intersecting term left with all remaining weight
-      // that is, it will have value sqrt(aSqLeft)*sqrt(bSqLeft) = sqrt(aSqLeft*bSqLeft)
-      // If this won't get us below minSoFar, abort
-      val maxPossibleDot = dot + math.sqrt(aSqLeft*bSqLeft)
-      if (1.0 - maxPossibleDot >  minSoFar)
-        return 1.0    // can't beat minSoFar
-    }
-    
-    1.0 - dot
+  def distance(component:Component, b:DocumentVectorMap, minSoFar:Double) : Double = {
+    EarlyOutDocVecDistance(component.centroid, b, minSoFar)
   }
   
   // To compute a mean of components, we accumulate in a DocumentVectorMap, 
@@ -80,11 +53,16 @@ trait KMeansDocumentComponentOps[Component <: AbstractDocumentComponent] {
 //
 class DocumentComponent (_docs:Iterable[DocumentID], docVecs:DocumentSetVectors) extends AbstractDocumentComponent {
 
-  private def documentSetCentroid(elems: Iterable[DocumentID], docVecs:DocumentSetVectors) : DocumentVectorMap = {
-    var m = DocumentVectorMap()
-    elems foreach { docId => m.accumulate(docVecs(docId)) }    
-    val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
-    m.transform((k,v) => (v / len).toFloat) 
+  private def documentSetCentroid(elems: Iterable[DocumentID], docVecs:DocumentSetVectors) : DocumentVector = {
+    if (elems.size == 1) {
+      docVecs(elems.head)   // don't copy the vector if there is only one document in this component
+    } else {
+      val m = DocumentVectorMap()
+      elems foreach { docId => m.accumulate(docVecs(docId)) }    
+      val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
+      m.transform((k,v) => (v / len).toFloat)
+      DocumentVector(m)
+    }
   }
 
   // Save the document IDs contained in this component, in a compact read-only representation
