@@ -20,7 +20,7 @@ import models.orm.{ User, UserRole }
 trait OverviewUser {
   val id: Long
   val email: String
-  val isSubscribedToEmail: Boolean
+  val requestedEmailSubscription: Boolean
 
   val currentSignInAt: Option[Date]
   val currentSignInIp: Option[String]
@@ -218,7 +218,7 @@ object OverviewUser {
   private case class OverviewUserImpl(user: User) extends OverviewUser {
     override val id = user.id
     override val email = user.email
-    override val isSubscribedToEmail = user.emailSubscriber
+    override val requestedEmailSubscription = user.emailSubscriber
     override val currentSignInAt = user.currentSignInAt
     override val currentSignInIp = user.currentSignInIp
     override val lastSignInAt = user.lastSignInAt

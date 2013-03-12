@@ -55,7 +55,7 @@ trait UserController extends Controller {
     try {
       saveUser(userWithRequest)
       mailNewUser(userWithRequest)
-      if (userWithRequest.isSubscribedToEmail) subscribeUser(userWithRequest)
+      if (userWithRequest.requestedEmailSubscription) subscribeUser(userWithRequest)
     } catch {
       case e: SquerylSQLException => {
         val sqlState = e.getCause.getSQLState()
