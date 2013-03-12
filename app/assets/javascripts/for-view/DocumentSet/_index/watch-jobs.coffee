@@ -198,6 +198,7 @@ class JobWatcher
     @restart() if !@document_sets_to_receive
 
 $ ->
-  jobs_div = $('.document-set-creation-jobs')[0]
   document_sets = $('.document-sets>ul')[0]
-  new JobWatcher(jobs_div, document_sets)
+  $('.document-set-creation-jobs').each ->
+    jobs_div = this
+    new JobWatcher(jobs_div, document_sets)
