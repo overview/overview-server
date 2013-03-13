@@ -133,7 +133,7 @@ class DocumentSetSpec extends Specification {
       documentSetCreationJobEntries must be empty
 
       val documentSetEntries = allEntries("document_set")
-      documentSetEntries must be empty
+      DocumentSet.findById(documentSet.id) must be empty
     }
 
  	"delete uploadedFile for CsvImportDocumentsets" in new PgConnectionContext {

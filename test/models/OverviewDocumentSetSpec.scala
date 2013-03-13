@@ -162,16 +162,30 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     trait DocumentSetReferencedByOtherTables extends DocumentSetWithUserScope {
-
       var oid: Long = _
 
       override def setupWithDb = {
-        super.setupWithDb
-        LogEntry(documentSetId = documentSet.id,
+        val uploadedFile = uploadedFiles.insertOrUpdate(UploadedFile(contentDisposition = "disposition", contentType = "type", size = 0l))
+        ormDocumentSet = DocumentSet(
+          DocumentCloudDocumentSet,
+          title = "title",
+          query = Some("query"),
+          documentProcessingErrorCount=1
+        ).save
+
+        documentSet = OverviewDocumentSet(ormDocumentSet)
+        LogEntry(
+          documentSetId = documentSet.id,
           userId = 1l,
           date = new Timestamp(0),
-          component = "test").save
-        val document = documents.insert(Document(CsvImportDocument, documentSet.id, text = Some("test doc"), id = nextDocumentId(documentSet.id)))
+          component = "test"
+        ).save
+        val document = documents.insert(Document(
+          CsvImportDocument,
+          documentSet.id,
+          text = Some("test doc"),
+          id = nextDocumentId(documentSet.id)
+        ))
         
         val documentProcessingError = documentProcessingErrors.insertOrUpdate(DocumentProcessingError(documentSet.id, "url", "message"))
 
@@ -330,7 +344,7 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "return error count" in new DocumentSetReferencedByOtherTables {
-      documentSet.errorCount must be equalTo (1)
+      documentSet.documentProcessingErrorCount must be equalTo (1)
     }
 
     inExample("create a copy for cloning user") in new DocumentSetWithUserScope {

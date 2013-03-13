@@ -13,17 +13,15 @@ trait OverviewDocumentSet {
   val id: Long
 
   /**
-   * Number of documents.
-   *
-   * If the DocumentSet hasn't finished being generated, this number may be
-   * less than its final value.
-   */
-  def documentCount: Int
+    * Number of documents.
+    *
+    * If the DocumentSet hasn't finished being generated, this number may be
+    * less than its final value.
+    */
+  val documentCount: Int
 
-  /**
-   * Number of documents that could not be processed because of errors. May change over time.
-   */
-  def errorCount: Int
+  /** Number of documents we couldn't import. */
+  val documentProcessingErrorCount: Int
 
   /** true if the document set is public */
   val isPublic: Boolean
@@ -41,9 +39,9 @@ trait OverviewDocumentSet {
   val query: String
 
   /**
-   * @return a new OverviewDocumentSet owned by cloneOwner. Creates a OverviewDocumentSetCreationJob
-   * that will create a copy of the original, including nodes, tags, and documents.
-   */
+    * @return a new OverviewDocumentSet owned by cloneOwner. Creates a OverviewDocumentSetCreationJob
+    * that will create a copy of the original, including nodes, tags, and documents.
+    */
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
 
   /** Add a viewer to the document set */
@@ -64,7 +62,7 @@ object OverviewDocumentSet {
 
     override val id = ormDocumentSet.id
     override val documentCount = ormDocumentSet.documentCount.toInt
-    override lazy val errorCount = ormDocumentSet.errorCount.toInt
+    override val documentProcessingErrorCount = ormDocumentSet.documentProcessingErrorCount.toInt
     override val isPublic = ormDocumentSet.isPublic
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt

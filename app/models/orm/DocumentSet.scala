@@ -40,6 +40,7 @@ case class DocumentSet(
   @Column("public") isPublic: Boolean = false,
   createdAt: Timestamp = new Timestamp((new Date()).getTime),
   documentCount: Int = 0,
+  documentProcessingErrorCount: Int = 0,
   importOverflowCount: Int = 0,
   uploadedFileId: Option[Long] = None,
   @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
