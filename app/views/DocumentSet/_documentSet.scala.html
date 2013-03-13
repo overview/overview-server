@@ -1,5 +1,6 @@
 @(
-  documentSet: OverviewDocumentSet
+  documentSet: OverviewDocumentSet,
+  isViewerAdministrator: Boolean
 )(implicit lang: play.api.i18n.Lang)
 
 @import views.helper.DocumentSetHelper
@@ -10,11 +11,13 @@
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     <form method="post" class="update form-inline" action="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
-      <label>
-        <input type="checkbox" name="public" value="true"@{if (documentSet.isPublic) Html(" checked=\"checked\"") else ""} />
-        <input type="hidden" name="public" value="false" />
-        @m("toggle_public")
-      </label>
+      @if(isViewerAdministrator) {
+        <label>
+          <input type="checkbox" name="public" value="true"@{if (documentSet.isPublic) Html(" checked=\"checked\"") else ""} />
+          <input type="hidden" name="public" value="false" />
+          @m("toggle_public")
+        </label>
+      }
     </form>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
     <h3>

@@ -8,6 +8,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob }
 import models.orm.DocumentSetType._
 import helpers.FakeOverviewDocumentSet
+import org.specs2.mock.Mockito
 
 class _documentSetSpec extends Specification {
 
@@ -25,8 +26,8 @@ class _documentSetSpec extends Specification {
 
   trait ViewContext extends Scope {
     val documentSet: OverviewDocumentSet
-
-    lazy val body = _documentSet(documentSet).body
+    
+    lazy val body = _documentSet(documentSet, false).body
     lazy val j = jerry(body)
     def $(selector: java.lang.String) = j.$(selector)
   }

@@ -12,7 +12,7 @@ object show {
   private def documentSetToJson(documentSet: OverviewDocumentSet)(implicit lang: Lang): JsValue = {
     val documentSetMap = Map(
       "id" -> toJson(documentSet.id),
-      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet).toString)
+      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet, false).toString)
     )
 
     toJson(documentSetMap)
