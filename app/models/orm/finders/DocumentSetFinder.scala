@@ -23,6 +23,7 @@ object DocumentSetFinder {
         and (ds.id notIn documentSetIdsWithCreationJobs)
       )
       select(ds)
+      orderBy(ds.createdAt desc)
     )
   }
 
