@@ -19,7 +19,7 @@ class KMeansDocumentsSpec extends Specification {
   // load up some docs to play with
   def getSampleDocumentVectors : DocumentSetVectors = {
     val vectorGen = new DocumentVectorGenerator()
-    val filenames =  new File("worker/src/test/resources/docs").listFiles
+    val filenames =  new File("worker/src/test/resources/docs").listFiles.sorted
     filenames foreach { filename =>
       vectorGen.addDocument(filename.hashCode, Lexer.makeTerms(io.Source.fromFile(filename).mkString))
     }
