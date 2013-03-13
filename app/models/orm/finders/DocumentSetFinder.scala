@@ -17,6 +17,8 @@ object DocumentSetFinder {
    * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
    */
   def byUser(user: String) = {
+	import scala.language.postfixOps
+	
     from(Schema.documentSets)(ds =>
       where(
         ds.id in documentSetIdsForUser(user)
