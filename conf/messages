@@ -122,23 +122,27 @@ views.DocumentSet.index.no_document_sets=You have no document sets ready for vie
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or leave this page and come back later.
 
+views.DocumentSet._errorList.h3=Documents with errors
+
 views.DocumentSet._import.title=Import a new document set…
+views.DocumentSet._import.label=From…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
 views.DocumentSet._import.from_documentcloud_query=Public DocumentCloud query
-views.DocumentSet._import.from_upload=Upload a CSV file
 views.DocumentSet._import.from_public=Example document set
+views.DocumentSet._import.from_upload=CSV upload
 
 views.DocumentSet._importPublic.loading=Loading document sets…
 
-views.DocumentSet._errorList.h3=Documents with errors
+views.DocumentSet._manualForm.title=Import from DocumentCloud
 views.DocumentSet._manualForm.label.title=Title
-views.DocumentSet._manualForm.placeholder.title=Title
+views.DocumentSet._manualForm.placeholder.title=My document set
+views.DocumentSet._manualForm.help.title=Overview will use this name for your document set
 views.DocumentSet._manualForm.label.query=Query
 views.DocumentSet._manualForm.placeholder.query=Cambodia
 views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
 views.DocumentSet._manualForm.submit_html=Import from DocumentCloud query for “<span class="query">{0}</span>”
 
-views.DocumentSet._uploadForm.h3=Upload a document set
+views.DocumentSet._uploadForm.h2=Upload a document set
 views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
 views.DocumentSet._uploadForm.label.charset=Specify an encoding:
 views.DocumentSet._uploadForm.preview.h4=Preview
@@ -174,7 +178,7 @@ views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
 views.DocumentSet._dcimport.placeholders.email=user@example.org
 views.DocumentSet._dcimport.submit=Log in to DocumentCloud
-views.DocumentSet._dcimport.explanation=Your login will be sent (securely) to our server when you import a project, and will not be stored after importing your documents.
+views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to our servers when you import a project, and it will be purged when the import is finished.
 views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
 
 views.DocumentSet._documentSet.action_import=Import

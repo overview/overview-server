@@ -143,6 +143,13 @@ form.well.form-horizontal {
   }
 }
 
+form {
+  &.form-horizontal input + p.help-block { // specificity
+    .muted;
+    margin-top: 0;
+  }
+}
+
 .help-block.forgot-password {
   .muted; // override .help-inline
   float: right;

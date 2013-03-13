@@ -1,9 +1,9 @@
 @()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
+  <div>
+    <h2>@m("h2")</h2>
+  </div>
   <form class="document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
-    <div>
-      <h3>@m("h3")</h3>
-    </div>
     <div>
       <p><label>@m("label.file") <input type="file" name="file" /></label></p>
       <p class="charset">

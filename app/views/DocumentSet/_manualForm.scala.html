@@ -2,6 +2,7 @@
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._manualForm")) { m =>
+  <h2>@m("title")</h2>
   <form method="post" action="@routes.DocumentSetController.create" class="form-horizontal">
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("title"), m)

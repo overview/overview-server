@@ -2,8 +2,8 @@ window.dcimport ||= {}
 window.dcimport.templates ||= {}
 
 template = _.template("""
+  <h2><%- i18n('views.DocumentSet._dcimport.legend') %></h2>
   <form class="form-horizontal" method="get" action="#">
-    <legend><%- i18n('views.DocumentSet._dcimport.legend') %></legend>
     <% if (error) { %>
       <div class="control-group error">
         <div class="controls">
@@ -21,7 +21,7 @@ template = _.template("""
       <label class="control-label" for="dcimport-password"><%- i18n('views.DocumentSet._dcimport.labels.password') %></label>
       <div class="controls">
         <input type="password" name="dcimport_password" id="dcimport-password" required="required" />
-        <span class="help-inline"><%- i18n('views.DocumentSet._dcimport.explanation#{if $.support.cors then '' else '_no_cors'}') %></span>
+        <p class="help-block"><%- i18n('views.DocumentSet._dcimport.explanation#{if $.support.cors then '' else '_no_cors'}') %></p>
       </div>
     </fieldset>
     <fieldset class="control-group form-actions">
