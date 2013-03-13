@@ -96,6 +96,11 @@ object Form {
                { (<input id={ id } type={ inputType } name={ name }/>) % attributes.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next)) }
                { optionalLabel.getOrElse("") }
              </label>
+             {
+               optionalHelpText.map({ helpText =>
+                 <p class="help-block">{ helpText }</p>
+               }).getOrElse("")
+             }
            </div>
          </fieldset>.buildString(false))
   }
