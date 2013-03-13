@@ -41,7 +41,7 @@ object JobHandler {
         val logLabel = if (j.state == Cancelled) "CANCELLED"
         else "PROGRESS"
 
-        Logger.info(logLabel + ": " + progress.fraction * 100 + "% done. " + progress.status + ", " + (if (progress.hasError) "ERROR" else "OK"))
+        Logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
       }
 
       val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
@@ -118,7 +118,7 @@ object JobHandler {
     import org.overviewproject.persistence.orm.Schema._
     import org.squeryl.PrimitiveTypeMode._
 
-    Logger.info(s"Deleting cancelled job for document set id: ${job.documentSetId}")
+    Logger.info(s"[${job.documentSetId}] Deleting cancelled job")
     Database.inTransaction {
       implicit val connection = Database.currentConnection
 
@@ -170,7 +170,7 @@ object JobHandler {
     val jobProgressReporter = new JobProgressReporter(job)
     val progressObservers: Seq[Progress => Unit] = Seq(
       jobProgressReporter.updateStatus _,
-      JobProgressLogger.apply _)
+      JobProgressLogger.apply(job.documentSetId, _: Progress))
 
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
       Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")

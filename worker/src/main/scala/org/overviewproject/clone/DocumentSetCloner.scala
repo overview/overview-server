@@ -87,8 +87,8 @@ class JobProgressReporter(job: PersistentDocumentSetCreationJob) {
  * it to report that a job has been cancelled.
  */
 object JobProgressLogger {
-  def apply(progress: Progress) {
-    Logger.info("PROGRESS: %f%% done. %s, OK".format(progress.fraction * 100, progress.status.toString))
+  def apply(documentSetId: Long, progress: Progress) {
+    Logger.info("[%d] PROGRESS: %f%% done. %s, OK".format(documentSetId, progress.fraction * 100, progress.status.toString))
   }
 }
 
