@@ -6,7 +6,6 @@ run = ->
 
   trackEvent = (category, action, opt_label, opt_value, opt_noninteraction) ->
     gaq.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
-    console.log(gaq)
     undefined
 
   # Events based on the URL
