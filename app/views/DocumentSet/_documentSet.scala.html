@@ -1,6 +1,6 @@
 @(
   documentSet: OverviewDocumentSet,
-  isViewerAdministrator: Boolean
+  viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang)
 
 @import views.helper.DocumentSetHelper
@@ -11,7 +11,7 @@
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     <form method="post" class="update form-inline" action="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
-      @if(isViewerAdministrator) {
+      @if(viewer.isAdministrator) {
         <label>
           <input type="checkbox" name="public" value="true"@{if (documentSet.isPublic) Html(" checked=\"checked\"") else ""} />
           <input type="hidden" name="public" value="false" />

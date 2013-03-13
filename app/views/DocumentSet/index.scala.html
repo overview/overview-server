@@ -28,9 +28,9 @@
   "views.DocumentSet._documentSet.document_count"
 )}
 
-@**** Stupid function needed only because I can't pass 2 params in the map call ****@
+@**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
 @displayDocumentSet(documentSet: OverviewDocumentSet) = {
-  @views.html.DocumentSet._documentSet(documentSet, user.isAdministrator)
+  @views.html.DocumentSet._documentSet(documentSet, user)
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>

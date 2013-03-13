@@ -5,7 +5,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob }
+import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser }
 import models.orm.DocumentSetType._
 import helpers.FakeOverviewDocumentSet
 import org.specs2.mock.Mockito
@@ -24,10 +24,12 @@ class _documentSetSpec extends Specification {
     def save = this
   }
 
-  trait ViewContext extends Scope {
+  trait ViewContext extends Scope with Mockito {
     val documentSet: OverviewDocumentSet
+    val user = mock[OverviewUser]
+    user.isAdministrator returns false
     
-    lazy val body = _documentSet(documentSet, false).body
+    lazy val body = _documentSet(documentSet, user).body
     lazy val j = jerry(body)
     def $(selector: java.lang.String) = j.$(selector)
   }

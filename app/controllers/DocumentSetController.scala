@@ -39,7 +39,7 @@ trait DocumentSetController extends Controller {
 
   def showJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     OverviewDocumentSet.findById(id) match {
-      case Some(ds) => Ok(views.json.DocumentSet.show(ds))
+      case Some(ds) => Ok(views.json.DocumentSet.show(request.user, ds))
       case None => NotFound
     }
   }
