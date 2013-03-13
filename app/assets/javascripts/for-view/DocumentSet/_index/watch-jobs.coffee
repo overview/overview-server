@@ -192,6 +192,8 @@ class JobWatcher
       # 7. Restart if this was the last job removed
       .queue(done)
 
+    $(@document_sets_ul).next('p.no-document-sets').fadeOut(-> $(this).remove())
+
   receive_jobs: (json) ->
     @document_sets_to_receive = 0
     @_merge_json_into_dom(json) # might fire _receive_document_set(), decrementing @document_sets_to_receive and calling restart()

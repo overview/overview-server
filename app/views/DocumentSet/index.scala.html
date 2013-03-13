@@ -51,10 +51,10 @@
 
     @if(documentSets || jobsWithDocumentSets) {
       <div class="document-sets">
+        <ul class="unstyled">
+          @documentSets.map(displayDocumentSet(_))
+        </ul>
         @if(documentSets) {
-          <ul class="unstyled">
-            @documentSets.map(displayDocumentSet(_))
-          </ul>
           @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
         } else {
           <p class="no-document-sets">@m("no_document_sets")</p>

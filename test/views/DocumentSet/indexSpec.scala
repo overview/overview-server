@@ -64,8 +64,8 @@ class indexSpec extends Specification {
       $(".document-set-creation-jobs").length must beEqualTo(1)
     }
 
-    "Show DocumentSets if there are none, but there are Jobs" in new ViewContextWithJob {
-      $(".document-sets").length must equalTo(1)
+    "Show DocumentSets UL if there are none, but there are Jobs" in new ViewContextWithJob {
+      $(".document-sets ul").length must equalTo(1)
     }
 
     "Show forms for adding new document sets" in new ViewContext {
