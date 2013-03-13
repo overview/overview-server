@@ -1,11 +1,12 @@
 # Tracks certain events with Google Analytics
 run = ->
-  gaq = window._gaq || []
-
-  return if !gaq?
+  return if !window._gaq? # This shouldn't happen.
 
   trackEvent = (category, action, opt_label, opt_value, opt_noninteraction) ->
-    gaq.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
+    # We need to fetch window._gaq in here, not in the outer scope: when GA
+    # first loads (asynchronously) it resets window._gaq from a normal array
+    # to a funky object.
+    window._gaq.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
     undefined
 
   # Events based on the URL
@@ -13,9 +14,9 @@ run = ->
   # If the user visits a certain URL, we track an event.
   pathname = window.location.pathname
   switch pathname
-    when '', '/' then trackEvent('Navigation', 'Splash')
-    when '/documentsets' then trackEvent('Navigation', 'Document set index')
-    when '/help' then trackEvent('Navigation', 'Help')
+    when '', '/' then trackEvent('Navigation', 'Viewed splash')
+    when '/documentsets' then trackEvent('Navigation', 'Viewed document set index')
+    when '/help' then trackEvent('Navigation', 'Viewed help')
     else
       if /^\/documentsets\/\d+$/.test(pathname)
         trackEvent('Navigation', 'Document set')
@@ -30,9 +31,9 @@ run = ->
       event = div.getAttribute('data-value')
       switch event
         when 'confirmation-update' then trackEvent('Login', 'Confirmed account')
-        when 'document-set-create' then trackEvent('Document sets', 'Created')
-        when 'document-set-create-clone' then trackEvent('Document sets', 'Cloned')
-        when 'document-set-delete' then trackEvent('Document sets', 'Deleted')
+        when 'document-set-create' then trackEvent('Document sets', 'Created document set')
+        when 'document-set-create-clone' then trackEvent('Document sets', 'Cloned document set')
+        when 'document-set-delete' then trackEvent('Document sets', 'Deleted document set')
         when 'password-create' then trackEvent('Login', 'Requested password reset')
         when 'password-update' then trackEvent('Login', 'Reset password')
         when 'session-create' then trackEvent('Login', 'Logged in')
@@ -48,7 +49,7 @@ run = ->
   if tag_list
     for form in tag_list.getElementsByTagName('form')
       form.addEventListener('submit', ->
-        trackEvent('Document set', 'Create tag')
+        trackEvent('Document set', 'Created tag')
       , false)
 
   undefined
