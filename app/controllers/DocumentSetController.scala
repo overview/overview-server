@@ -45,8 +45,6 @@ trait DocumentSetController extends Controller {
   }
 
   def create() = AuthorizedAction(anyUser) { implicit request =>
-    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-
     form.bindFromRequest().fold(
       f => index(1)(request),
       (tuple) => {
@@ -58,7 +56,6 @@ trait DocumentSetController extends Controller {
         createDocumentSetCreationJob(saved, credentials)
 
         Redirect(routes.DocumentSetController.index()).flashing(
-          "success" -> m("create.success"),
           "event" -> "document-set-create"
         )
       })
@@ -98,7 +95,6 @@ trait DocumentSetController extends Controller {
         val cloneStatus = loadDocumentSet(id).map { d =>
           OverviewDocumentSet(d).cloneForUser(request.user.id)
           Seq(
-            "success" -> m("create.success"),
             "event" -> "document-set-create-clone"
           )
         }.getOrElse(
