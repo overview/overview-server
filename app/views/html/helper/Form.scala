@@ -50,7 +50,7 @@ object Form {
     Html(<fieldset class={ fieldsetClassName }>
            { optionalLabel.map(label => <label for={ id } class="control-label">{ label }</label>).getOrElse("") }
            <div class="controls">
-             { (<input id={ id } type={ inputType } name={ name }/>) % attributes.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next)) }
+             { (<input id={ id } type={ inputType } name={ name }/>) % attributes }
              {
                optionalHelpText.map({ helpText =>
                  <p class="help-block">{ helpText }</p>
@@ -65,19 +65,11 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
-    var map = Map[Symbol, String]()
+  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = 
+    input(field, options ++ descriptionOptions(field, m))
 
-    Seq('label -> "label", 'placeholder -> "placeholder", 'helpText -> "help").foreach({ kv =>
-      val sym = kv._1
-      val prefix = kv._2
-      m.optional(prefix + "." + field.name).map(map += sym -> _)
-    })
 
-    input(field, options ++ map)
-  }
-
-    def checkbox(field: Field, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
+  def checkbox(field: Field, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
     val fieldsetClassName = "control-group" + field.error.map({ (e: FormError) => " error" }).getOrElse("")
     val id = options.get('prefix).map(_.toString + "-").getOrElse("") + field.id
     val name = field.id
@@ -93,7 +85,7 @@ object Form {
     Html(<fieldset class={ fieldsetClassName }>
            <div class="controls">
              <label>
-               { (<input id={ id } type={ inputType } name={ name }/>) % attributes.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next)) }
+               { (<input id={ id } type={ inputType } name={ name }/>) % attributes }
                { optionalLabel.getOrElse("") }
              </label>
              {
@@ -105,19 +97,17 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
-    var map = Map[Symbol, String]()
+  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = 
+    checkbox(field, options ++ descriptionOptions(field, m))
+  
 
-    Seq('label -> "label", 'placeholder -> "placeholder", 'helpText -> "help").foreach({ kv =>
-      val sym = kv._1
-      val prefix = kv._2
-      m.optional(prefix + "." + field.name).map(map += sym -> _)
-    })
-
-    checkbox(field, options ++ map)
+  private def descriptionOptions(field: Field, m: views.ScopedMessages): Map[Symbol, String] = 
+     Map('label -> "label", 'placeholder -> "placeholder", 'helpText -> "help").flatMap { 
+      case (sym, prefix) =>  m.optional(prefix + "." + field.name).map(sym -> _) 
   }
-
-  private implicit def mapToAttributes(in: Map[Symbol, String]) = {
+    
+    
+  private implicit def mapToAttributes(in: Map[Symbol, String]): scala.xml.MetaData = {
     in.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next))
   }
 
