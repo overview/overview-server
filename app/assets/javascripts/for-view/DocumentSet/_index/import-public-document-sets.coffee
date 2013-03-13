@@ -9,7 +9,12 @@ $ ->
         href = $a.attr('href')
         load_url($div, href)
 
-  $('a[data-toggle=tab][href="#import-public"]').one 'show', ->
+  show = ->
     $div = $('#import-public-document-sets')
     url = $div.attr('data-source-url')
     load_url($div, url)
+
+  if $('#import-public').is('.active')
+    $('button.toggle-import').one('click', show)
+  else
+    $('a[data-toggle=tab][href="#import-public"]').one('show', show)
