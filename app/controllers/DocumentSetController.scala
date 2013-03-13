@@ -57,14 +57,20 @@ trait DocumentSetController extends Controller {
         setDocumentSetUserRole(saved, request.user.email, Owner)
         createDocumentSetCreationJob(saved, credentials)
 
-        Redirect(routes.DocumentSetController.index()).flashing("success" -> m("create.success"))
+        Redirect(routes.DocumentSetController.index()).flashing(
+          "success" -> m("create.success"),
+          "event" -> "document-set-create"
+        )
       })
   }
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     OverviewDocumentSet.delete(id)
-    Redirect(routes.DocumentSetController.index()).flashing("success" -> m("delete.success"))
+    Redirect(routes.DocumentSetController.index()).flashing(
+      "success" -> m("delete.success"),
+      "event" -> "document-set-delete"
+    )
   }
 
   def update(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
@@ -87,13 +93,22 @@ trait DocumentSetController extends Controller {
   def createClone = AuthorizedAction(anyUser) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     createCloneForm.bindFromRequest().fold(
-      f => BadRequest, { id =>
+      f => BadRequest,
+      { id =>
         val cloneStatus = loadDocumentSet(id).map { d =>
           OverviewDocumentSet(d).cloneForUser(request.user.id)
-          ("success" -> m("create.success"))
-        }.getOrElse("error" -> m("clone.failure"))
-        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus)
-      })
+          Seq(
+            "success" -> m("create.success"),
+            "event" -> "document-set-create-clone"
+          )
+        }.getOrElse(
+          Seq(
+            "error" -> m("clone.failure")
+          )
+        )
+        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus : _*)
+      }
+    )
   }
 
   def showUsers(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

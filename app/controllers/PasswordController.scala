@@ -60,7 +60,10 @@ trait PasswordController extends Controller {
         })
 
         // Fake success either way
-        doRedirect.flashing("success" -> m("create.success", email))
+        doRedirect.flashing(
+          "success" -> m("create.success", email),
+          "event" -> "password-create"
+        )
       }
     )
   }
@@ -74,7 +77,10 @@ trait PasswordController extends Controller {
             .withNewPassword(newPassword)
             .withLoginRecorded(request.remoteAddress, new java.util.Date())
             .save
-          AuthResults.loginSucceeded(request, userWithNewPassword).flashing("success" -> m("update.success"))
+          AuthResults.loginSucceeded(request, userWithNewPassword).flashing(
+            "success" -> m("update.success"),
+            "event" -> "password-update"
+          )
         }
       )
     }).getOrElse(showInvalidToken)

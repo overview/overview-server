@@ -15,6 +15,12 @@ object ConfirmationController extends Controller {
 
   private val form = forms.ConfirmationForm()
 
+  /** Prompts for or confirms a confirmation token.
+    *
+    * Normally, there would be a POST update for confirming. However, we want
+    * to confirm via email link, so it must be a GET, so both are handled in
+    * the same action.
+    */
   def show(token: String) = TransactionAction { implicit request =>
     form.bindFromRequest()(request).fold(
       formWithErrors => {
@@ -30,7 +36,10 @@ object ConfirmationController extends Controller {
         u.confirm.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
         if (u.requestedEmailSubscription) MailChimp.subscribe(u.email).getOrElse(Logger.info(s"Did not attempt requested subscription for ${u.email}"))
         
-        AuthResults.loginSucceeded(request, u).flashing("success" -> m("show.success"))
+        AuthResults.loginSucceeded(request, u).flashing(
+          "success" -> m("show.success"),
+          "event" -> "confirmation-update"
+        )
       }
     )
   }

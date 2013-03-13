@@ -26,12 +26,19 @@
       @if(h1 != "") {
         <div class="page-header"><h1>@h1</h1></div>
       }
-      @flash.get("success").map { notice =>
-        <div class="alert alert-success fade in"><button type="button" class="close" data-dismiss="alert">x</button>@notice</div>
+
+      @if(flash.data.nonEmpty) {
+        <div id="flash">
+          @for((key, value) <- flash.data) {
+            @if(Seq("success", "error").contains(key)) {
+              <div class="alert alert-@key fade in"><button type="button" class="close" data-dismiss="alert">×</button>@value</div>
+            } else {
+              <div class="event" data-key="@key" data-value="@value"></div>
+            }
+          }
+        </div>
       }
-      @flash.get("error").map { error =>
-        <div class="alert alert-error fade in"><button type="button" class="close" data-dismiss="alert">x</button>@error</div>
-      }
+
       @content
     </div>
 
@@ -58,18 +65,17 @@
     @defining(Play.application.configuration.getString("analytics.ga_tracking_id").getOrElse("")) { trackingId =>
       @if(trackingId.length > 0) {
         <script type="text/javascript">
-          if (/https:\/\/www.overviewproject.org/.test("" + window.location)) {
-            var _gaq = _gaq || [];
-            _gaq.push(['_setAccount', '@trackingId']);
-            _gaq.push(['_trackPageview']);
+          window._gaq = window._gaq || [];
+          _gaq.push(['_setAccount', '@trackingId']);
+          _gaq.push(['_trackPageview']);
 
-            (function() {
-             var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-             ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-             var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-           })();
-          }
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
         </script>
+        @bundleJavascript("tracking")
       }
     }
   </body>

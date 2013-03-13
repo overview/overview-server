@@ -22,7 +22,10 @@ object SessionController extends Controller {
   }
 
   def delete = TransactionAction { implicit request =>
-    AuthResults.logoutSucceeded(request).flashing("success" -> m("delete.success"))
+    AuthResults.logoutSucceeded(request).flashing(
+      "success" -> m("delete.success"),
+      "event" -> "session-delete"
+    )
   }
 
   def create = TransactionAction { implicit request =>
@@ -30,7 +33,10 @@ object SessionController extends Controller {
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
       user => {
         val recordedUser = user.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
-        AuthResults.loginSucceeded(request, user).flashing("success" -> m("create.success"))
+        AuthResults.loginSucceeded(request, user).flashing(
+          "success" -> m("create.success"),
+          "event" -> "session-create"
+        )
       }
     )
   }
