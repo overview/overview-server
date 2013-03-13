@@ -70,7 +70,7 @@ trait DocumentSetController extends Controller {
     )
   }
 
-  def update(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
     val documentSet = loadDocumentSet(id)
     documentSet.map { d =>
       DocumentSetUpdateForm(d).bindFromRequest().fold(
