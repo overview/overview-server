@@ -165,8 +165,8 @@ views.DocumentSet.show.document_list.loading=Loading documents…
 views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
 views.DocumentSet.show.document_list.title_html=<strong>{0}</strong> in {1}
 views.DocumentSet.show.document_list.title.edit=edit…
-views.DocumentSet.show.document_list.title.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one node and {1,choice,1#one tag|1<{1} tags}|1<{0} nodes{1,choice,0#|1# and one tag|1< and {1} tags}}
-views.DocumentSet.show.document_list.title.node=node “{0}”
+views.DocumentSet.show.document_list.title.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one folder and {1,choice,1#one tag|1<{1} tags}|1<{0} folders{1,choice,0#|1# and one tag|1< and {1} tags}}
+views.DocumentSet.show.document_list.title.node=topic “{0}”
 views.DocumentSet.show.document_list.title.tag=tag “{0}”
 views.DocumentSet.show.document_list.document.empty_description=(document with no text)
 
@@ -205,10 +205,10 @@ views.DocumentSetCreationJob._documentSetCreationJob.confirm_cancel=Are you sure
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploaded file
 
-views.Node._form.h3=Edit node
+views.Node._form.h3=Edit folder
 views.Node._form.labels.description=Description
 views.Node._form.close=Close without saving
-views.Node._form.submit=Save node
+views.Node._form.submit=Save folde
 
 views.Password._editForm.label.password=New password
 views.Password._editForm.label.password2=New password (again)
