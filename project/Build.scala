@@ -84,7 +84,8 @@ object ApplicationBuild extends Build {
   ).settings(
     testOptions in Test ++= ourTestOptions,
     scalacOptions ++= ourScalacOptions,
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    sources in doc in Compile := List()
   )
 
   val worker = Project("worker", file("worker"), settings =
@@ -96,7 +97,8 @@ object ApplicationBuild extends Build {
   ).settings(
     testOptions in Test ++= ourTestOptions,
     scalacOptions ++= ourScalacOptions,
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    sources in doc in Compile := List()
   ).settings(
     initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }    
   ).dependsOn(common)
@@ -121,6 +123,7 @@ object ApplicationBuild extends Build {
       "-Dlogger.resource=logback-test.xml",
       "-Ddb.default.url=" + testDatabaseUrl
     ),
+    sources in doc in Compile := List(),
     aggregate in Compile := true,
     Keys.fork in Test := true,
     aggregate in Test := false,
