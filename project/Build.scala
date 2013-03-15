@@ -134,5 +134,5 @@ object ApplicationBuild extends Build {
     AssetBundlerPlugin.assetSettings: _* 
   ).dependsOn(common).aggregate(worker)
 
-  val all = Project("all", file("all")).aggregate(main,worker)
+  val all = Project("all", file("all")).aggregate(main, worker, common)
 }
