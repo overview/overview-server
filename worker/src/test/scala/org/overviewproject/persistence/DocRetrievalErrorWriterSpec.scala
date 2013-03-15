@@ -11,8 +11,13 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
   step(setupDb)
 
   trait OurContext extends DbTestContext {
-    val documentSetId = insertDocumentSet("DocRetrievalErrorWriterSpec")
-    val errors = Seq.tabulate(10)(i => DocRetrievalError("url" + i, "error: " + i, Some(i), Some("header")))
+    var documentSetId: Long = _
+    var errors: Seq[DocRetrievalError] = _
+    
+    override def setupWithDb = {
+      documentSetId = insertDocumentSet("DocRetrievalErrorWriterSpec")
+      errors = Seq.tabulate(10)(i => DocRetrievalError("url" + i, "error: " + i, Some(i), Some("header")))
+    }
   }
   
   inExample("write out error data") in new OurContext {
