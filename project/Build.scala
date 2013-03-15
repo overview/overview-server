@@ -121,13 +121,15 @@ object ApplicationBuild extends Build {
       "-Dlogger.resource=logback-test.xml",
       "-Ddb.default.url=" + testDatabaseUrl
     ),
+    aggregate in Compile := true,
     Keys.fork in Test := true,
+    aggregate in Test := false,
     CucumberPlugin.cucumberFeaturesLocation := "test/features",
     CucumberPlugin.cucumberStepsBasePackage := "steps",
     (AssetBundlerPlugin.Keys.configFile in (Compile, AssetBundlerPlugin.Keys.assetBundler)) := file("conf/assets.conf")
   ).settings( // Must appear after resourceGenerators settings
     AssetBundlerPlugin.assetSettings: _* 
-  ).dependsOn(common)
+  ).dependsOn(common).aggregate(worker)
 
-  val all = Project("all", file("all")).aggregate(main,worker,common)
+  val all = Project("all", file("all")).aggregate(main,worker)
 }
