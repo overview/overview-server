@@ -232,13 +232,20 @@ class DocumentVectorGeneratorWithBigrams extends DocumentVectorGenerator {
   // Is the bigram ab common enough relative to a and b alone that we should identifiy it as a colocation?
   // See Foundations of Statistical Natural Language Processing, Manning and Schutze, Ch. 5
   def bigramIsLikelyEnough(ab:TermID, a:TermID, b:TermID) : Boolean = {
-    val abCount = vocab(ab).useCount  
-    
+    // Check that bigram occurs at least a minimum number of times first before computing liklihood.
+    val abCount = vocab(ab).useCount
+    if (abCount < minBigramOccurrences)
+      return false
+      
+    // Component unigrams may have already been removed from vocabulary, if they don't appear in enough docs
+    // In that case bigram does not appear in enough docs either
+    if (!vocab.contains(a) || !vocab.contains(b))
+      return false
+      
     //var l = colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms)
     //println(s"Checking bigram '${idToString(ab)}' with ab=$abCount a=${vocab(a).useCount}, b=${vocab(b).useCount}, total=$totalTerms, likelihood $l")
- 
-    (abCount >= minBigramOccurrences) &&
-    (colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood)
+
+    colocationLikelihood(vocab(a).useCount, vocab(b).useCount, abCount, totalTerms) >= minBigramLikelihood
   }
   
   // Is this bigram common enough, and likely enough to be a colocation, that we want to keep it as a feature?
