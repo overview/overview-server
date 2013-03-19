@@ -87,9 +87,4 @@ object Magic {
     val path = bundlePath("javascripts", bundleKey, ".js")
     Html(<script type="text/javascript" src={path}></script>.toString)
   }
-
-  def bundleStylesheet(bundleKey: String) : Html = {
-    val path = bundlePath("stylesheets", bundleKey, ".css")
-    Html(<link rel="stylesheet" href={path} />.toString)
-  }
 }
