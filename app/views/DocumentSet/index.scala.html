@@ -10,7 +10,7 @@
     @bundleJavascript("silverlight-upload-request")
   <![endif]-->
 
-  @bundleJavascript("document-set-index")
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/index").url)
 }
 
 @jsMessageKeys = @{Seq(
@@ -61,7 +61,7 @@
         }
       </div>
 
-        @views.html.DocumentSet._errorList()
+      @views.html.DocumentSet._errorList()
     }
   }
 }

@@ -4,8 +4,6 @@ import play.Project._
 import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
-import org.overviewproject.sbt.assetbundler.AssetBundlerPlugin
-
 object ApplicationBuild extends Build {
 
   override def settings = super.settings ++
@@ -112,10 +110,14 @@ object ApplicationBuild extends Build {
   ).settings(
     CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
   ).settings(
-    // remove Play's asset management--reset to default (see xsbt source code)
-    // Left messy after gaining a fatalist view of sbt code
-    resourceGenerators in Compile <<= ((definedSbtPlugins in Compile, resourceManaged in Compile) map Defaults.writePluginsDescriptor)(Seq(_)),
     templatesImport += "views.Magic._",
+    lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less"), // only compile .less files that aren't in subdirs
+    requireJs ++= Seq(
+      "bundle/DocumentSet/index.js",
+      "bundle/DocumentSet/show.js",
+      "bundle/Document/show.js"
+    ),
+    requireJsShim += "main.js",
     testOptions in Test ++= ourTestOptions,
     scalacOptions ++= ourScalacOptions,
     javaOptions in Test ++= Seq(
@@ -128,10 +130,7 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := true,
     aggregate in Test := false,
     CucumberPlugin.cucumberFeaturesLocation := "test/features",
-    CucumberPlugin.cucumberStepsBasePackage := "steps",
-    (AssetBundlerPlugin.Keys.configFile in (Compile, AssetBundlerPlugin.Keys.assetBundler)) := file("conf/assets.conf")
-  ).settings( // Must appear after resourceGenerators settings
-    AssetBundlerPlugin.assetSettings: _* 
+    CucumberPlugin.cucumberStepsBasePackage := "steps"
   ).dependsOn(common).aggregate(worker)
 
   val all = Project("all", file("all")).aggregate(main, worker, common)

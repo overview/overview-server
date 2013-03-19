@@ -1,9 +1,6 @@
 (function() {
-  Timecop.install();
-
-  require('globals').log = function() {};
-
-  require('globals').create_logger = function() {
-    return function() {};
+  Timecop.MockDate.now = function() {
+    return (new Date()).getTime(); // the mocked date
   };
+  Timecop.install();
 })();

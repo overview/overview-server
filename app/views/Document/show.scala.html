@@ -145,12 +145,10 @@
         }
       </div>
 
-      @bundleJavascript("i18n")
       <script type="text/javascript">
-        window.i18n = window.use_i18n_messages(@Html(views.JsMessages(jsMessageKeys)));
+        window.messages = @Html(views.JsMessages(jsMessageKeys));
       </script>
-
-      @bundleJavascript("document-show")
+      @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Document/show").url)
     </body>
   </html>
 }
