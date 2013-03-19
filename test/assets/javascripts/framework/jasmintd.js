@@ -269,7 +269,7 @@ var jasmintd = jasmintd || {};
                     {
                         // The message or name doesn't end up being formatted all that well by JSTD, especially if there's multiple.
                         // So we just let the stack do the work for us...
-                        message : '',
+                        message : item.message,
                         name    : '',
                         stack   : this.formatErrorStack(item.trace.stack)
                     }
@@ -332,11 +332,9 @@ var jasmintd = jasmintd || {};
             result = [];
         for(i = 0, ii = lines.length; i < ii; i++) {
             line = lines[i];
-            if(line.length > 0 && !line.match(reJasmine)) {
-                result.push(
-                    setColor(line.replace(reTestUrl, ''), Colors.RED)
-                );
-            }
+			result.push(
+				setColor(line.replace(reTestUrl, ''), Colors.RED)
+			);
         }
         return result.join('\n');
     };
