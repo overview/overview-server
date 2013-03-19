@@ -1,4 +1,4 @@
-define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'silverlight' ], ($, CsvReader, Upload, i18n, Silverlight) ->
+define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader, Upload, i18n) ->
   FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
   FILE_PREVIEW_SIZE = 20480 # 20kb
   TOLERATED_ENCODING_ERRORS = 0.01 # 1%: ratio of bad-chars : total-chars
@@ -326,7 +326,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'silverlight' ]
       $form.find(':file').on 'change', (e) ->
         select_file(e.target.files[0])
 
-    else if window.SilverlightFileUploadPlugin? # util.net.Upload will use IE9+Silverlight
+    else if window.Silverlight && window.SilverlightFileUploadPlugin? # util.net.Upload will use IE9+Silverlight
       file_upload_api = undefined
 
       on_silverlight_load = (obj, __, sender) ->
@@ -341,7 +341,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'silverlight' ]
         csv_reader_options.file_reader_factory = file_upload_api.createFileReader
 
       # Add the Silverlight HTML, which will call on_silverlight_load
-      silverlight_html = Silverlight.createObjectEx({
+      silverlight_html = window.Silverlight.createObjectEx({
         source: FILE_UPLOAD_XAP_URL
         parentElement: null # to return HTML
         properties: {

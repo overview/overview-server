@@ -36,7 +36,6 @@ requirejs.config({
       exports: -> 'jQuery.fn' # doesn't export anything
     }
     underscore: { exports: '_' }
-    silverlight: { exports: 'Silverlight' }
     spectrum: {
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.spectrum'
@@ -55,7 +54,6 @@ requirejs.config({
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'
-    silverlight: 'vendor/Silverlight.debug'
     spectrum: 'vendor/spectrum'
     underscore: 'vendor/underscore'
   }

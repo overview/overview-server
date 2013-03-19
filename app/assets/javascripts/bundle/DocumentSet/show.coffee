@@ -48,7 +48,6 @@ requirejs.config({
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'
-    silverlight: 'vendor/Silverlight.debug'
     spectrum: 'vendor/spectrum'
     underscore: 'vendor/underscore'
   }
