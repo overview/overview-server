@@ -109,19 +109,13 @@ trait DocumentSetController extends Controller {
 
   def showUsers(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val viewers = loadDocumentSetViewers(id)
-    println(views.json.DocumentSetUser.showUsers(viewers))
-    //Ok(views.json.DocumentSetUser.showUsers(viewers))
-    val r = s"""{"viewers": [ {"email": "buzz$id"}, {"email": "baz"}]}"""
-    println(r)
-    Ok(r)
+    Ok(views.json.DocumentSetUser.showUsers(viewers))
   }
 
   def addUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    println("--------->")
     loadDocumentSet(id).map { ds =>
       UserRoleForm(id).bindFromRequest().fold(
         f => BadRequest, { dsu =>
-          println(dsu.userEmail)
           setDocumentSetUserRole(ds, dsu.userEmail, dsu.role) // Currently only sets viewer role
           Ok
         })
