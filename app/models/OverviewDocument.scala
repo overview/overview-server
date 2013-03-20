@@ -30,7 +30,7 @@ sealed trait OverviewDocument {
 }
 
 object OverviewDocument {
-  trait OverviewDocumentImpl extends OverviewDocument {
+  abstract trait OverviewDocumentImpl extends OverviewDocument {
     import models.orm.Schema.documentSetDocuments
     
     protected val ormDocument: Document
@@ -80,6 +80,8 @@ object OverviewDocument {
     override def url(pattern: String) : String = {
       "https://www.documentcloud.org/documents/" + documentcloudId
     }
+
+    def url: String = url("")
   }
 
   /** Factory method */

@@ -2,6 +2,10 @@ requirejs.config({
   baseUrl: '/test/src-js'
 
   shim: {
+    'backbone': {
+      deps: [ 'jquery', 'underscore' ]
+      exports: 'Backbone'
+    }
     'bootstrap-modal': {
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.modal'
@@ -15,6 +19,7 @@ requirejs.config({
   }
 
   paths: {
+    'backbone': 'vendor/backbone'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'

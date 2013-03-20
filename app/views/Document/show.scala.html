@@ -1,6 +1,12 @@
 @(document: OverviewDocument)(implicit lang: Lang)
 
 @jsMessageKeys = @{Seq(
+  "views.Document.show.source",
+  "views.Document.show.heading.empty",
+  "views.Document.show.sidebar.enable",
+  "views.Document.show.sidebar.disable",
+  "views.Document.show.wrap.enable",
+  "views.Document.show.wrap.disable",
   "views.Document.show.title.empty_title"
 )}
 
@@ -113,6 +119,10 @@
           padding: 10px;
           border-top: 1px solid #ccc;
         }
+
+        pre.wrap {
+          white-space: pre-wrap;
+        }
       </style>
       <!--[if gte IE 9]>
         <style type="text/css">
@@ -123,32 +133,18 @@
       <![endif]-->
     </head>
     <body>
-      <h3 data-m-loading="@m("loading")">
-        @{document.titleOrDescription match  {
-          case "" => m("title.empty_title")
-          case title: String => title
-        }}
-      </h3>
-      <div class="document">
-        @document match {
-          case d: OverviewDocument.DocumentCloudDocument => {
-            @views.html.Document._documentCloudDocument(Some(d))
-            @views.html.Document._csvImportDocument(None)
-          }
-          case d: OverviewDocument.CsvImportDocument => {
-            @views.html.Document._documentCloudDocument(None)
-            @views.html.Document._csvImportDocument(Some(d))
-          }
-          case _ => {
-            throw new Exception("Unsupported document type")
-          }
-        }
-      </div>
-
-      <script type="text/javascript">
+      <script>
         window.messages = @Html(views.JsMessages(jsMessageKeys));
       </script>
       @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Document/show").url)
+      <script>
+        require(["show"], function(controller) {
+          controller.el.done(function(el) { document.body.appendChild(el); });
+          controller.setDocument(@Html(views.json.Document.show(document).toString));
+          window.setDocument = controller.setDocument;
+          window.scrollByPages = controller.scrollByPages;
+        });
+      </script>
     </body>
   </html>
 }

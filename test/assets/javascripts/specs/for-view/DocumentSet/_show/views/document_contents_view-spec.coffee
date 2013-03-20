@@ -70,22 +70,22 @@ require [
         it 'should show the iframe', ->
           expect($(view.div).find('iframe[src="/document_view/1"]').length).toEqual(1)
 
-        it 'should call the iframe load_document() on change', ->
+        it 'should call the iframe setDocument() on change', ->
           doc = undefined
           view.iframe = {
             contentWindow: {
-              load_document: (x) -> doc = x
+              setDocument: (x) -> doc = x
             }
           }
           state.selection.documents = [2]
           state._notify('selection-changed', state.selection)
           expect(doc?.id).toEqual(2)
 
-        it 'should call load_document() when the selection changes but the selected document does not', ->
+        it 'should not call setDocument() when the selection changes but the selected document does not', ->
           doc = undefined
           view.iframe = {
             contentWindow: {
-              load_document: (x) -> doc = x
+              setDocument: (x) -> doc = x
             }
           }
           state.selection.nodes = [4]
