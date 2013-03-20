@@ -9,23 +9,15 @@ run = ->
     window._gaq.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
     undefined
 
-  # Events based on the URL
-  #
-  # If the user visits a certain URL, we track an event.
-  pathname = window.location.pathname
-  switch pathname
-    when '', '/' then trackEvent('Navigation', 'Viewed splash')
-    when '/documentsets' then trackEvent('Navigation', 'Viewed document set index')
-    when '/help' then trackEvent('Navigation', 'Viewed help')
-    else
-      if /^\/documentsets\/\d+$/.test(pathname)
-        trackEvent('Navigation', 'Document set')
-
   # Events based on flash.
   #
   # If the controller injects a flash message into the page
   # (in Play, Redirect(...).flashing("event" -> "controller-action")),
   # we track an event.
+  #
+  # These come before the "Events based on the URL" because that follows web
+  # logic: 1) the user clicked something; 2) the controller set the flash and
+  # 3) the user was redirected here.
   if flash = document.getElementById('flash')
     for div in flash.childNodes when div.getAttribute?('data-key') == 'event'
       event = div.getAttribute('data-value')
@@ -39,6 +31,18 @@ run = ->
         when 'session-create' then trackEvent('Login', 'Logged in')
         when 'session-delete' then trackEvent('Login', 'Logged out')
         when 'user-create' then trackEvent('Login', 'Registered')
+
+  # Events based on the URL
+  #
+  # If the user visits a certain URL, we track an event.
+  pathname = window.location.pathname
+  switch pathname
+    when '', '/' then trackEvent('Navigation', 'Viewed splash')
+    when '/documentsets' then trackEvent('Navigation', 'Viewed document set index')
+    when '/help' then trackEvent('Navigation', 'Viewed help')
+    else
+      if /^\/documentsets\/\d+$/.test(pathname)
+        trackEvent('Navigation', 'Document set')
 
   # Events based on interaction
   #
