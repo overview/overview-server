@@ -19,6 +19,8 @@
         </label>
       }
     </form>
+    
+    <a href="@routes.DocumentSetController.showUsers(documentSet.id)" add-viewer-url="@routes.DocumentSetController.addUser(documentSet.id)" role="button" class="btn show-sharing-settings">Share</a>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
     <h3>
       @documentSet match {
