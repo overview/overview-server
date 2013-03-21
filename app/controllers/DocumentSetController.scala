@@ -122,13 +122,10 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  def removeUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def removeUser(id: Long, email: String) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     loadDocumentSet(id).map { ds =>
-      UserRoleForm(id).bindFromRequest().fold(
-        f => BadRequest, { dsu =>
-          removeDocumentSetUserRoled(ds, dsu.userEmail, dsu.role)
-          Ok
-        })
+      removeDocumentSetViewer(ds, email)
+      Ok
     }.getOrElse(NotFound)
   }
 
@@ -138,7 +135,7 @@ trait DocumentSetController extends Controller {
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
   protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
-  protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
+  protected def removeDocumentSetViewer(documentSet: DocumentSet, email: String)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
   protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
 }
@@ -153,7 +150,7 @@ object DocumentSetController extends DocumentSetController {
   protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
 
   protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = documentSet.setUserRole(email, role)
-  protected override def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).removeViewer(email)
+  protected override def removeDocumentSetViewer(documentSet: DocumentSet, email: String) = OverviewDocumentSet(documentSet).removeViewer(email)
 
   protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)

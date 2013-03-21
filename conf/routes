@@ -58,6 +58,7 @@ POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeC
 GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
 
 POST   /documentsets/:id/users					 controllers.DocumentSetController.addUser(id: Long)
+DELETE /documentsets/:id/users/:email			 controllers.DocumentSetController.removeUser(id: Long, email: String)
 
 # Routes for public document sets
 GET    /public-document-sets                     controllers.PublicDocumentSetController.index() 

@@ -53,7 +53,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       savedDocumentSet.get
     }
     override protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { userRoles += (email -> role) }
-    override protected def removeDocumentSetUserRoled(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { removedUsers += email }
+    override protected def removeDocumentSetViewer(documentSet: DocumentSet, email: String) { removedUsers += email }
     
     override protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials): Unit = createdJobOwnerId = Some(documentSet.id)
     override protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = {
@@ -174,7 +174,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     }
     
     "remove user with role" in new ViewerRequest {
-      val result = controller.removeUser(1l)(request)
+      val result = controller.removeUser(1l, "user@host.com")(request)
       
       status(result) must be equalTo(OK)
       controller.removedUsers must haveTheSameElementsAs(Set(email))
@@ -187,7 +187,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     }
     
     "return NotFound if document set is bad" in new ViewerRequest {
-      val result = controller.removeUser(-1l)(request)
+      val result = controller.removeUser(-1l, "user@host.com")(request)
       
       status(result) must be equalTo(NOT_FOUND)
     }
