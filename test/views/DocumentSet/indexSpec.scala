@@ -78,7 +78,7 @@ class indexSpec extends Specification {
         FakeOverviewDocumentSet(2, "title2", "query2"))
 
       $(".document-sets").length must equalTo(1)
-      $(".document-sets li#document-set-1 a").attr("href") must endWith("/1")
+      $(".document-sets li#document-set-1 h2 a").attr("href") must endWith("/1")
       $(".document-sets li#document-set-2").text must contain("title2")
     }
     
