@@ -3,7 +3,7 @@ package models
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
-import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, User }
+import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, DocumentSetUserRoleType, User }
 import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
 import models.orm.finders.DocumentSetFinder
@@ -45,7 +45,7 @@ trait OverviewDocumentSet {
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
 
   /** Add a viewer to the document set */
-  def addViewer(email: String): Unit
+  def setUserRole(email: String, role: DocumentSetUserRoleType): Unit
 
   /** Remove the viewer */
   def removeViewer(email: String): Unit
@@ -82,11 +82,12 @@ object OverviewDocumentSet {
       OverviewDocumentSet(ormDocumentSetClone)
     }
 
-    override def addViewer(email: String): Unit = {
+    override def setUserRole(email: String, role: DocumentSetUserRoleType): Unit = {
 
       val emailWithRole = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
       emailWithRole match {
-        case Some(u) => Schema.documentSetUsers.update(u.copy(role = Viewer))
+        case Some(u) if (u.role != Owner) => Schema.documentSetUsers.update(u.copy(role = role))
+        case Some(u) if (u.role == Owner) => // Owner can't change, for now.
         case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
       }
     }

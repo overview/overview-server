@@ -1,6 +1,7 @@
 package helpers
 
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob }
+import models.orm.DocumentSetUserRoleType
 
 case class FakeOverviewDocumentSet(
     override val id: Long = 1l, 
@@ -14,6 +15,6 @@ case class FakeOverviewDocumentSet(
   override val isPublic = false
 
   override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = this
-  override def addViewer(email: String): Unit = {}
+  override def setUserRole(email: String, role: DocumentSetUserRoleType): Unit = {}
   override def removeViewer(email: String): Unit = {}
 }

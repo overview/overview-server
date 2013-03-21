@@ -1,15 +1,12 @@
 package models
 
 import java.sql.Timestamp
-
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
-
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.UploadedFile
 import org.specs2.specification.Scope
-
 import helpers.DbTestContext
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
@@ -18,6 +15,7 @@ import models.upload.OverviewUploadedFile
 import models.orm.Schema
 import models.orm.DocumentSetUser
 import models.orm.finders.DocumentSetCreationJobFinder
+import models.orm.DocumentSetUser
 
 class OverviewDocumentSetSpec extends Specification {
   step(start(FakeApplication()))
@@ -257,8 +255,11 @@ class OverviewDocumentSetSpec extends Specification {
         
       override def setupWithDb = {
         super.setupWithDb
-        documentSet.addViewer(viewerEmail)
+        documentSet.setUserRole(viewerEmail, Viewer)
       }
+      
+      def allViewers: Iterable[DocumentSetUser] = Schema.documentSetUsers.allRows.filter(_.role == Viewer) 
+        
     }
     
     "user should be the owner" in new DocumentSetWithUserScope {
@@ -423,29 +424,26 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "add viewers" in new DocumentSetWithViewer{
-      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
-
       allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewerEmail, Viewer)))
     }
 
-    "only have one role per user" in new DocumentSetWithUserScope {
-      documentSet.addViewer(admin.email)
-
-      val allViewers = Schema.documentSetUsers.allRows
+    "only have one role per user" in new DocumentSetWithViewer {
+      documentSet.setUserRole(admin.email, Viewer)
       allViewers must have size (1)
-      allViewers.head.role must be equalTo (Viewer)
+    }
+    
+    "don't add viewer twice" in new DocumentSetWithViewer {
+      documentSet.setUserRole(viewerEmail, Viewer)
+      allViewers must have size(1)
     }
 
     "remove viewers" in new DocumentSetWithViewer {
       documentSet.removeViewer(viewerEmail)
-
-      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
       allViewers must beEmpty
     }
 
     "don't fail if viewer does not exist" in new DocumentSetWithViewer{
       documentSet.removeViewer(viewerEmail) 
-      val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
       allViewers must beEmpty
     }
     

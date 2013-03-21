@@ -149,7 +149,7 @@ object DocumentSetController extends DocumentSetController {
   protected override def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSetFinder.byDocumentSet(id).headOption
   protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
 
-  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = documentSet.setUserRole(email, role)
+  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).setUserRole(email, role)
   protected override def removeDocumentSetViewer(documentSet: DocumentSet, email: String) = OverviewDocumentSet(documentSet).removeViewer(email)
 
   protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
