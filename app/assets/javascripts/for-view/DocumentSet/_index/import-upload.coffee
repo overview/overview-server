@@ -137,11 +137,16 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader
       lower_header = header.map((s) -> s.toLowerCase())
 
       text_index = lower_header.indexOf('text')
+      alt_text_index1 = lower_header.indexOf('contents')
+      alt_text_index2 = lower_header.indexOf('snippet')
+      alt_text_index = Math.max(alt_text_index1, alt_text_index2)
 
-      if text_index < 0
-        -1
-      else
+      if text_index >= 0
         text_index + 1
+      else if alt_text_index >= 0
+        alt_text_index + 1
+      else
+        -1
 
     has_header = () ->
       #return false if !has_csv()
