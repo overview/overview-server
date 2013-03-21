@@ -252,7 +252,7 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
 
-    "user should be the user" in new DocumentSetWithUserScope {
+    "user should be the owner" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.owner.id must be equalTo (1l)
       d.owner.email must be equalTo ("admin@overview-project.org")
@@ -445,6 +445,14 @@ class OverviewDocumentSetSpec extends Specification {
       documentSet.removeViewer(viewer) 
       val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
       allViewers must beEmpty
+    }
+    
+    "find the owner if viewer has been added" in new DocumentSetWithUserScope {
+      val viewer = "viewer@observer.net"
+      documentSet.addViewer(viewer)
+      
+      val owner = documentSet.owner
+      owner.email must be equalTo(admin.email)
     }
   }
   step(stop)

@@ -100,8 +100,9 @@ object OverviewDocumentSet {
       import models.orm.Schema.documentSetUsers
       import org.overviewproject.postgres.SquerylEntrypoint._
 
-      val ownerEmail = from(documentSetUsers)(dsu => where(dsu.documentSetId === id) select (dsu.userEmail)).single
-
+      val documentUsers = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id)
+      val ownerEmail = documentUsers.filter(_.role == Owner).head.userEmail
+      
       OverviewUser.findByEmail(ownerEmail).get
     }
   }
