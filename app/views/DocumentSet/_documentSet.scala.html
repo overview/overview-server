@@ -22,7 +22,10 @@
     
     <a href="@routes.DocumentSetController.showUsers(documentSet.id)" role="button" class="btn show-sharing-settings" 
       data-create-url="@routes.DocumentSetController.addUser(documentSet.id)"
-      data-delete-url-pattern="/documentsets/@documentSet.id/users/{0}">Share</a>
+      data-delete-url-pattern="/documentsets/@documentSet.id/users/{0}"
+      admin="@viewer.isAdministrator"
+      is-public="@documentSet.isPublic"
+      data-update-url="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">Share</a>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
     <h3>
       @documentSet match {

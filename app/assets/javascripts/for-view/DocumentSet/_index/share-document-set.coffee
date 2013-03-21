@@ -13,20 +13,32 @@ sharing_dialog_template =  _.template("""
       <input type="email" class="input-small" placeholder="Email" name="email" />
       <input type="hidden" name="role" value="Viewer" />
       <input type="submit" value="Add Viewer" disabled="true"/>
-    </form>""")
+    </form>
+    <% if (admin == 'true') { %>    
+    <form method="post" class="update form-inline" action="<%- update_url %>">
+      <label>
+        <input type="checkbox" name="public" value="true" <% if (is_public == 'true') { %>
+          checked="checked"
+        <% } %> />
+        <input type="hidden" name="public" value="false" />
+        Set as Example Document Set
+      </label>
+    </form>
+    <% } %>
+        """)
 
 sort_by_email = (viewers) ->
   viewers.sort (a, b) ->
     return if (a.email >= b.email) then 1 else -1
   
 
-show_sharing_settings = (url, create_url, remove_url_pattern) ->
+show_sharing_settings = (url, create_url, remove_url_pattern, update_url, admin, is_public) ->
   $modal = $('#sharing-options-modal')
   $modal.modal('show')
   $modal.find('.modal-body').html(loading_template)
   $.getJSON(url)
     .success((emails) ->
-      $modal.find('.modal-body').html(sharing_dialog_template({ viewers: sort_by_email(emails.viewers), create_url: create_url, remove_url_pattern: remove_url_pattern })))
+      $modal.find('.modal-body').html(sharing_dialog_template({ viewers: sort_by_email(emails.viewers), create_url: create_url, remove_url_pattern: remove_url_pattern, update_url: update_url, admin: admin, is_public: is_public })))
     .error((a, b, c) ->
       console.log("error #{b}"))
 
@@ -96,15 +108,35 @@ $ ->
       else
         $add_viewer_button.removeAttr('disabled')
 
-      console.log('keyupssx')
+    $('#sharing-options-modal').on 'change click', 'form.update input[type=checkbox]', (e) ->
+      $checkbox = $(e.currentTarget)
+      $checkbox.closest('form').submit()
+
+    $('#sharing-options-modal').on 'submit', 'form.update', (e) ->
+      $form = $(e.currentTarget)
+      data = $form.serialize()
+      old_data = $form.data('last-data')
+      if data != old_data
+        $form.data('last-data', data)
+        $.ajax({
+          type: 'PUT'
+          url: $form.attr('action')
+          data: data
+        })
+      e.preventDefault()
+
 
            
   $('div.document-sets').on 'click', 'a.show-sharing-settings', (e) ->
     e.preventDefault()
-    url = $(e.currentTarget).attr('href')
-    create_url = $(e.currentTarget).attr('data-create-url')
-    remove_url_pattern = $(e.currentTarget).attr('data-delete-url-pattern')
-    show_sharing_settings(url, create_url, remove_url_pattern)
+    $share = $(e.currentTarget)
+    url = $share.attr('href')
+    create_url = $share.attr('data-create-url')
+    remove_url_pattern = $share.attr('data-delete-url-pattern')
+    admin = $share.attr('admin')
+    is_public = $share.attr('is-public')
+    update_url = $share.attr('data-update-url')
+    show_sharing_settings(url, create_url, remove_url_pattern, update_url, admin, is_public)
 
 
 
