@@ -106,6 +106,8 @@ views.Confirmation.index.placeholder.token=1234567890qwertyuiopASDFGHJKL
 views.Confirmation.index.submit=Finish registering and log in
 
 views.Document.show.heading.empty=(document without text)
+views.Document.show.iframe.enable=(offline view)
+views.Document.show.iframe.disable=(online view)
 views.Document.show.sidebar.enable=⇠ Show sidebar
 views.Document.show.sidebar.disable=Hide sidebar ⇢
 views.Document.show.wrap.enable=(no newlines added)

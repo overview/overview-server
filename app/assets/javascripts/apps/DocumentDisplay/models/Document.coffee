@@ -14,8 +14,6 @@ define [ 'backbone' ], (Backbone) ->
         'DocumentCloudDocument'
       else if @get('twitterTweet')
         'TwitterTweet'
-      else if @get('secureSuppliedUrl')
-        'SecureCsvImportDocument'
       else
         'CsvImportDocument'
 

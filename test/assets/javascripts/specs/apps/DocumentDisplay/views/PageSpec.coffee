@@ -17,6 +17,8 @@ require [
     beforeEach ->
       i18n.reset_messages({
         'views.Document.show.source': 'source'
+        'views.Document.show.iframe.enable': 'enable-iframe'
+        'views.Document.show.iframe.disable': 'disable-iframe'
         'views.Document.show.sidebar.enable': 'enable-sidebar'
         'views.Document.show.sidebar.disable': 'disable-sidebar'
         'views.Document.show.wrap.enable': 'enable-wrap'
@@ -142,14 +144,44 @@ require [
 
       beforeEach ->
         document = new Backbone.Model({
-          type: 'SecureCsvImportDocument'
+          type: 'CsvImportDocument'
           secureSuppliedUrl: 'https://example.org'
+          text: 'text'
         })
         state.set('document', document)
 
+      it 'should show an enable-iframe link', ->
+        preferences.setPreference('iframe', false)
+        expect(view.$('a.enable-iframe').length).toEqual(1)
+
+      it 'should show a disable-iframe link', ->
+        preferences.setPreference('iframe', true)
+        expect(view.$('a.disable-iframe').length).toEqual(1)
+
+      it 'should enable the iframe', ->
+        preferences.setPreference('iframe', false)
+        spyOn(preferences, 'setPreference')
+        view.$('a.enable-iframe').click()
+        expect(preferences.setPreference).toHaveBeenCalledWith('iframe', true)
+
+      it 'should disable the iframe', ->
+        preferences.setPreference('iframe', true)
+        spyOn(preferences, 'setPreference')
+        view.$('a.disable-iframe').click()
+        expect(preferences.setPreference).toHaveBeenCalledWith('iframe', false)
+
       it 'should render an iframe', ->
+        preferences.setPreference('iframe', true)
         $iframe = view.$('iframe')
         expect($iframe.length).toEqual(1)
+
+      it 'should not show the wrap option if showing an iframe', ->
+        preferences.setPreference('iframe', true)
+        expect(view.$('a.enable-wrap, a.disable-wrap').length).toEqual(0)
+
+      it 'should show the wrap option if not showing an iframe', ->
+        preferences.setPreference('iframe', false)
+        expect(view.$('a.enable-wrap, a.disable-wrap').length).toEqual(1)
 
     describe 'with a CSV-import document', ->
       document = undefined

@@ -1,6 +1,7 @@
 define [ 'backbone' ], (Backbone) ->
   PREFIX = 'apps/DocumentDisplay/models/Preferences/'
   PREFERENCES = {
+    'iframe': { type: 'boolean', default: false }
     'sidebar': { type: 'boolean', default: false }
     'wrap': { type: 'boolean', default: true }
   }

@@ -16,6 +16,8 @@ define [
     className: 'document'
 
     events:
+      'click a.enable-iframe': 'onClickEnableIframe'
+      'click a.disable-iframe': 'onClickDisableIframe'
       'click a.enable-sidebar': 'onClickEnableSidebar'
       'click a.disable-sidebar': 'onClickDisableSidebar'
       'click a.enable-wrap': 'onClickEnableWrap'
@@ -48,23 +50,22 @@ define [
         </div>
       """)
 
-      SecureCsvImportDocument: _.template("""
-        <div class="page type-SecureCsvImportDocument">
-          <p class="source">
-            <span class="label"><%- t('source') %></span>
-            <a href="<%- document.get('secureSuppliedUrl') %>" target="_blank"><%- document.get('secureSuppliedUrl') %></a>
-          </p>
-          <iframe src="<%- document.get('secureSuppliedUrl') %>" width="100" height="100"></iframe>
-        </div>
-      """)
-
       CsvImportDocument: _.template("""
         <div class="page type-CsvImportDocument">
           <ul class="actions">
-            <% if (preferences.getPreference('wrap')) { %>
-              <li><a href="#" class="disable-wrap"><%- t('wrap.disable') %></a></li>
-            <% } else { %>
-              <li><a href="#" class="enable-wrap"><%- t('wrap.enable') %></a></li>
+            <% if (document.get('secureSuppliedUrl')) { %>
+              <% if (preferences.getPreference('iframe')) { %>
+                <li><a href="#" class="disable-iframe"><%- t('iframe.disable') %></a></li>
+              <% } else { %>
+                <li><a href="#" class="enable-iframe"><%- t('iframe.enable') %></a></li>
+              <% } %>
+            <% } %>
+            <% if (!document.get('secureSuppliedUrl') || !preferences.getPreference('iframe')) { %>
+              <% if (preferences.getPreference('wrap')) { %>
+                <li><a href="#" class="disable-wrap"><%- t('wrap.disable') %></a></li>
+              <% } else { %>
+                <li><a href="#" class="enable-wrap"><%- t('wrap.enable') %></a></li>
+              <% } %>
             <% } %>
           </ul>
           <% if (document.get('suppliedUrl')) { %>
@@ -73,7 +74,11 @@ define [
               <a href="<%- document.get('suppliedUrl') %>" target="_blank"><%- document.get('suppliedUrl') %></a>
             </p>
           <% } %>
-          <pre<%= preferences.getPreference('wrap') && ' class="wrap"' || '' %>><%- document.get('text') %></pre>
+          <% if (!document.get('secureSuppliedUrl') || !preferences.getPreference('iframe')) { %>
+            <pre<%= preferences.getPreference('wrap') && ' class="wrap"' || '' %>><%- document.get('text') %></pre>
+          <% } else { %>
+            <iframe src="<%- document.get('secureSuppliedUrl') %>" width="100" height="100"></iframe>
+          <% } %>
         </div>
       """)
 
@@ -160,6 +165,8 @@ define [
       e.preventDefault()
       @preferences.setPreference(key, value)
 
+    onClickEnableIframe: (e) -> @_onClickSetPreference(e, 'iframe', true)
+    onClickDisableIframe: (e) -> @_onClickSetPreference(e, 'iframe', false)
     onClickEnableSidebar: (e) -> @_onClickSetPreference(e, 'sidebar', true)
     onClickDisableSidebar: (e) -> @_onClickSetPreference(e, 'sidebar', false)
     onClickEnableWrap: (e) -> @_onClickSetPreference(e, 'wrap', true)
