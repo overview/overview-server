@@ -252,6 +252,15 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
 
+    trait DocumentSetWithViewer extends DocumentSetWithUserScope {
+      val viewerEmail = "viewer@observer.org"
+        
+      override def setupWithDb = {
+        super.setupWithDb
+        documentSet.addViewer(viewerEmail)
+      }
+    }
+    
     "user should be the owner" in new DocumentSetWithUserScope {
       val d = OverviewDocumentSet.findById(documentSet.id).get
       d.owner.id must be equalTo (1l)
@@ -413,13 +422,10 @@ class OverviewDocumentSetSpec extends Specification {
 
     }
 
-    "add viewers" in new DocumentSetWithUserScope {
-      val viewer = "viewer@observer.net"
-      documentSet.addViewer(viewer)
-
+    "add viewers" in new DocumentSetWithViewer{
       val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
 
-      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewer, Viewer)))
+      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewerEmail, Viewer)))
     }
 
     "only have one role per user" in new DocumentSetWithUserScope {
@@ -430,27 +436,20 @@ class OverviewDocumentSetSpec extends Specification {
       allViewers.head.role must be equalTo (Viewer)
     }
 
-    "remove viewers" in new DocumentSetWithUserScope {
-      val viewer = "viewer@observer.net"
-      documentSet.addViewer(viewer)
-      documentSet.removeViewer(viewer)
+    "remove viewers" in new DocumentSetWithViewer {
+      documentSet.removeViewer(viewerEmail)
 
       val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
       allViewers must beEmpty
     }
 
-    "don't fail if viewer does not exist" in new DocumentSetWithUserScope {
-      val viewer = "viewer@observer.net"
-
-      documentSet.removeViewer(viewer) 
+    "don't fail if viewer does not exist" in new DocumentSetWithViewer{
+      documentSet.removeViewer(viewerEmail) 
       val allViewers = Schema.documentSetUsers.allRows.filter(_.role == Viewer)
       allViewers must beEmpty
     }
     
-    "find the owner if viewer has been added" in new DocumentSetWithUserScope {
-      val viewer = "viewer@observer.net"
-      documentSet.addViewer(viewer)
-      
+    "find the owner if viewer has been added" in new DocumentSetWithViewer {
       val owner = documentSet.owner
       owner.email must be equalTo(admin.email)
     }
