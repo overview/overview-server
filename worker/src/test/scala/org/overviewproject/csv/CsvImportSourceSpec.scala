@@ -81,6 +81,19 @@ class CsvImportSourceSpec extends Specification {
                      |this is line2, stuff2""".stripMargin
     }
 
+    trait ValidInputSnippetHeader extends CsvImportContext {
+      def input = """|snippet,stuff
+                     |this is line0, stuff0
+                     |this is line1, stuff1
+                     |this is line2, stuff2""".stripMargin
+    }
+
+    trait TextAndAlternativeHeader extends CsvImportContext {
+      def input = """|snippet,text
+                     |snip1, this is line0
+                     |snip2, this is line1
+                     |snip3, this is line2""".stripMargin
+    }
 
     "skip the first line of column headers" in new ValidInput {
       val numDocuments = csvImportSource.size
@@ -99,7 +112,19 @@ class CsvImportSourceSpec extends Specification {
       val text = csvImportSource.map(_.text.trim)
       text must be equalTo (expectedText)
     }
-    
+
+    "find the text column if labelled snippet" in new ValidInputSnippetHeader {
+      val expectedText: Seq[String] = Seq.tabulate(3) { "this is line" + _ }
+      val text = csvImportSource.map(_.text.trim)
+      text must be equalTo (expectedText)
+    }
+
+    "find the text column if alt text column also exists" in new TextAndAlternativeHeader {
+      val expectedText: Seq[String] = Seq.tabulate(3) { "this is line" + _ }
+      val text = csvImportSource.map(_.text.trim)
+      text must be equalTo (expectedText)
+    }
+
     "find id column" in new ValidInputWithId {
       val expectedIds: Seq[Option[String]] = Seq.tabulate(3)(n => Some(n.toString))
       val ids = csvImportSource.map(_.suppliedId)
