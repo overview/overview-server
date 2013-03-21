@@ -12,7 +12,7 @@ sharing_dialog_template =  _.template("""
     <form method="post" class="form-inline add-viewer" action="<%- create_url %>" >
       <input type="email" class="input-small" placeholder="Email" name="email" />
       <input type="hidden" name="role" value="Viewer" />
-      <input type="submit" value="Add Viewer" />
+      <input type="submit" value="Add Viewer" disabled="true"/>
     </form>""")
 
 sort_by_email = (viewers) ->
@@ -66,7 +66,7 @@ $ ->
       new_email = $email.val()
       $email.val("")
 
-      if (new_email not in emails)
+      if (new_email != '' and new_email not in emails)
         add_email_to_list(new_email, emails)
         $.ajax({
           url: url
@@ -85,6 +85,18 @@ $ ->
         url: url
         type: 'DELETE'
         })
+
+
+    $('#sharing-options-modal').keyup (e) ->
+      text = $('input[name=email]').val()
+      $add_viewer_button = $('input[type=submit]')
+
+      if (text == '')
+        $add_viewer_button.attr('disabled', 'true')
+      else
+        $add_viewer_button.removeAttr('disabled')
+
+      console.log('keyupssx')
 
            
   $('div.document-sets').on 'click', 'a.show-sharing-settings', (e) ->
