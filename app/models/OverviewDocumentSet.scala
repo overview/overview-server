@@ -72,14 +72,15 @@ object OverviewDocumentSet {
 
     override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
       val ormDocumentSetClone = cloneDocumentSet.save
-
+      val documentSetClone = OverviewDocumentSet(ormDocumentSetClone)
+      
       User.findById(cloneOwnerId).map { u =>
-        ormDocumentSetClone.setUserRole(u.email, Owner)
+        documentSetClone.setUserRole(u.email, Owner)
       }
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
       Schema.documentSetCreationJobs.insert(cloneJob)
-      OverviewDocumentSet(ormDocumentSetClone)
+      documentSetClone
     }
 
     override def setUserRole(email: String, role: DocumentSetUserRoleType): Unit = {
@@ -88,7 +89,7 @@ object OverviewDocumentSet {
       emailWithRole match {
         case Some(u) if (u.role != Owner) => Schema.documentSetUsers.update(u.copy(role = role))
         case Some(u) if (u.role == Owner) => // Owner can't change, for now.
-        case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, Viewer))
+        case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, role))
       }
     }
 
