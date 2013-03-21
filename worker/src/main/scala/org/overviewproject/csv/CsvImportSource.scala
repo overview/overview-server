@@ -38,7 +38,10 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
     // Column headers with index
     private val columns: Map[String, Int] = readHeaders
-
+    private def findTextColumn: Option[Int] = 
+      Seq(TextColumn, "contents", "snippet").flatMap(columns.get(_)).headOption
+      
+      
     def hasNext: Boolean = nextLine != null
 
     /**
@@ -47,7 +50,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
      *  a text column are ignored.
      */
     def next(): CsvImportDocument = {
-      require(columns.get(TextColumn).isDefined)
+      require(findTextColumn.isDefined)
 
       readRow match {
         case null => null
@@ -57,7 +60,8 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
     // Return text if the column exists, "" otherwise.
     private def text(row: Array[String]): String = {
-      if (row.length > columns(TextColumn)) row(columns(TextColumn))
+      val textIndex = findTextColumn.get
+      if (row.length > textIndex) row(textIndex)
       else ""
     }
 
