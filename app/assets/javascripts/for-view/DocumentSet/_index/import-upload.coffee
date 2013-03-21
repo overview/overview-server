@@ -137,9 +137,9 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader
       lower_header = header.map((s) -> s.toLowerCase())
 
       text_index = lower_header.indexOf('text')
-      alt_text_index1 = lower_header.indexOf('contents')
-      alt_text_index2 = lower_header.indexOf('snippet')
-      alt_text_index = Math.max(alt_text_index1, alt_text_index2)
+      contents_index = lower_header.indexOf('contents')
+      snippet_index = lower_header.indexOf('snippet')
+      alt_text_index = Math.max(contents_index, snippet_index)
 
       if text_index >= 0
         text_index + 1
