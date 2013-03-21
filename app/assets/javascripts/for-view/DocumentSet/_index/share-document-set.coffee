@@ -118,11 +118,16 @@ $ ->
       old_data = $form.data('last-data')
       if data != old_data
         $form.data('last-data', data)
-        $.ajax({
+        request = $.ajax({
           type: 'PUT'
           url: $form.attr('action')
           data: data
         })
+        request.done ->
+          $share_button = $('div.document-sets a.show-sharing-settings')
+          is_public = data != 'public=false'
+          $share_button.attr('is-public', is_public)
+
       e.preventDefault()
 
 
