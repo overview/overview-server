@@ -53,6 +53,7 @@ require [
   'for-view/DocumentSet/_index/import-dc-query',
   'for-view/DocumentSet/_index/import-public-document-sets',
   'for-view/DocumentSet/_index/import-upload',
+  'for-view/DocumentSet/_index/open-import-on-first-load', # Afterwards--it fires an event. Yay hack :)
   'for-view/DocumentSet/_index/watch-jobs',
   'for-view/DocumentSet/index',
   'elements/form-submit-with-feedback',

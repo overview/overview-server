@@ -1,9 +1,5 @@
 define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_with_login) ->
   $ ->
-    $('#document-set-import').one 'show', ->
-      dcimport_div = document.getElementById('import-from-documentcloud-account')
-      import_project_with_login(dcimport_div)
-
     $dcquery_submit = $('#import-from-documentcloud-query button')
     refresh_dcquery_submit = () ->
       $form = $dcquery_submit.closest('form')
@@ -18,3 +14,12 @@ define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_wi
 
     $dcquery_submit.closest('form').on('change keyup cut paste blur', 'input', refresh_dcquery_submit)
     refresh_dcquery_submit()
+
+    show = ->
+      dcimport_div = document.getElementById('import-from-documentcloud-account')
+      import_project_with_login(dcimport_div)
+
+    if $('#import-from-documentcloud-account').is('.active')
+      $('button.toggle-import').one('click', show)
+    else
+      $('a[data-toggle=tab][href="#import-from-documentcloud-account"]').one('show', show)
