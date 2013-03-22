@@ -30,7 +30,7 @@ sealed trait OverviewDocument {
 }
 
 object OverviewDocument {
-  abstract trait OverviewDocumentImpl extends OverviewDocument {
+  sealed abstract trait OverviewDocumentImpl extends OverviewDocument {
     import models.orm.Schema.documentSetDocuments
     
     protected val ormDocument: Document
