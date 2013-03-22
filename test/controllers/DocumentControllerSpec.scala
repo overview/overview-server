@@ -23,7 +23,7 @@ class DocumentControllerSpec extends Specification {
     val description = "Description"
     val url = "https://example.org/1"
 
-    val document = mock[OverviewDocument]
+    val document = mock[OverviewDocument.DocumentCloudDocument]
     document.id returns validDocumentId
     document.description returns description
     document.title returns None
