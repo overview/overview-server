@@ -13,6 +13,7 @@ package org.overviewproject.util
 import akka.actor._
 import org.slf4j.LoggerFactory
 import scala.language.implicitConversions  // for toMutableSet
+import scala.util.control.Exception._
 
 // Worker logging singleton object. Pass-through to LogBack
 object Logger {
@@ -45,8 +46,10 @@ object Logger {
 object WorkerActorSystem {
   def withActorSystem(f: ActorSystem => Unit) {
     val context = ActorSystem("WorkerActorSystem")
-    f(context)
-    context.shutdown
+    ultimately(context.shutdown) { 
+      f(context) 
+    }
+
   }
 }
 
