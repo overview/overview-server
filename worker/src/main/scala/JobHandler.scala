@@ -18,6 +18,7 @@ import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
 import org.overviewproject.clone.CloneDocumentSet
+import org.overviewproject.util.WorkerActorSystem
 
 object JobHandler {
 
@@ -59,16 +60,16 @@ object JobHandler {
       Database.inTransaction { j.delete }
 
     } catch {
-      case t: Throwable =>
-        Logger.error("Job for DocumentSet id " + j.documentSetId + " failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
-        j.state = Error
-        j.statusDescription = Some(ExceptionStatusMessage(t))
-        Database.inTransaction {
-          j.update
-          if (j.state == Cancelled) j.delete
-        }
+      case e: Exception => reportError(j, e)
+      case t: Throwable =>  { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
+        reportError(j, t)
+        DB.close()
+        throw(t)
+      }
     }
   }
+  
+
 
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
@@ -175,6 +176,16 @@ object JobHandler {
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
       Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
       CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
+    }
+  }
+  
+  private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
+    Logger.error("Job for DocumentSet id " + job.documentSetId + " failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
+    job.state = Error
+    job.statusDescription = Some(ExceptionStatusMessage(t))
+    Database.inTransaction {
+      job.update
+      if (job.state == Cancelled) job.delete
     }
   }
 }
