@@ -128,7 +128,6 @@ views.DocumentSet._errorList.h3=Documents with errors
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.label=From…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
-views.DocumentSet._import.from_documentcloud_query=Public DocumentCloud query
 views.DocumentSet._import.from_public=Example document set
 views.DocumentSet._import.from_upload=CSV upload
 
