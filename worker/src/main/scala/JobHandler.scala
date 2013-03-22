@@ -180,7 +180,7 @@ object JobHandler {
   }
   
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
-    Logger.error("Job for DocumentSet id " + job.documentSetId + " failed: " + t.toString + "\n" + t.getStackTrace.mkString("\n"))
+    Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
     job.state = Error
     job.statusDescription = Some(ExceptionStatusMessage(t))
     Database.inTransaction {
