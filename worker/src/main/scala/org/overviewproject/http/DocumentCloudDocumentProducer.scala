@@ -32,8 +32,9 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
 
     // Retrieve all that stuff!
 
+    val nonRedirectingHttpRetriever = new NonRedirectingHttpRequest
+
     WorkerActorSystem.withActorSystem { implicit context =>
-      val nonRedirectingHttpRetriever = new NonRedirectingHttpRequest
 
       val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(asyncHttpRetriever, nonRedirectingHttpRetriever)
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
@@ -48,6 +49,10 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
       } catch {
         case t: Throwable if (t.getCause() != null) => throw t.getCause()
         case t: Throwable => throw t
+      }
+      finally {
+        asyncHttpRetriever.shutdown()
+        nonRedirectingHttpRetriever.shutdown()
       }
     }
 
