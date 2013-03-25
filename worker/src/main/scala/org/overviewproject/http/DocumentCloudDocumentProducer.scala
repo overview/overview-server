@@ -37,10 +37,11 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
     WorkerActorSystem.withActorSystem { implicit context =>
 
       val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(asyncHttpRetriever, nonRedirectingHttpRetriever)
-      val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in
       try {
+        val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
+
         val docsNotFetched = Await.result(retrievalDone.future, Duration.Inf)
         Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
         Database.inTransaction {
