@@ -3,7 +3,7 @@ define [
   '../views/tag_list_view'
   './tag_form_controller'
   './logger'
-], (Selection, TagListView, TagFormController, Logger) ->
+], (Selection, TagListView, tag_form_controller, Logger) ->
   log = Logger.for_component('tag_list')
 
   tag_to_short_string = (tag) ->
