@@ -17,6 +17,7 @@ trait DocumentSetCreationJobController extends Controller {
     val tuples = loadDocumentSetCreationJobs(request.user.email, pageSize, 1)
 
     Ok(views.json.DocumentSetCreationJob.index(tuples))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
   protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
