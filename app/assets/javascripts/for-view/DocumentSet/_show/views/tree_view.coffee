@@ -67,6 +67,7 @@ define [
     clear: () ->
       @ctx.fillStyle = @options.color.background
       @ctx.fillRect(0, 0, @width, @height)
+      @root = undefined # will be overwritten if the tree isn't empty
 
     _auto_fit_pan: (drawable_node) ->
       if @focus_nodes?.length
@@ -112,7 +113,7 @@ define [
 
     pixel_to_drawable_node: (x, y) ->
       drawable_node = undefined
-      @root.walk (dn) ->
+      @root?.walk (dn) ->
         return if drawable_node?
         px = dn._px
         if x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
@@ -515,7 +516,7 @@ define [
       x = e.pageX - offset.left
       y = e.pageY - offset.top
 
-      @last_draw.pixel_to_drawable_node(x, y)
+      @last_draw?.pixel_to_drawable_node(x, y)
 
     _event_to_action: (e) ->
       return undefined if !@tree.root?
@@ -524,7 +525,7 @@ define [
       x = e.pageX - offset.left
       y = e.pageY - offset.top
 
-      @last_draw.pixel_to_action(x, y)
+      @last_draw?.pixel_to_action(x, y)
 
     _redraw: () ->
       # Add the focused tag to "focus tagids": stack of recently-viewed tags
