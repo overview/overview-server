@@ -3,8 +3,12 @@
   userForm: Form[PotentialNewUser]
 )(implicit lang: Lang, flash: Flash)
 
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Welcome/show").url)
+}
+
 @defining(scopedMessages("views.Welcome.show")) { m =>
-  @main(optionalUser=None, title=m("title"), bodyClass="welcome-show") {
+  @main(optionalUser=None, title=m("title"), bodyClass="welcome-show", javascripts=javascripts) {
     <header class="hero-unit">
       <img src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
       <p>@m("p1")</p>

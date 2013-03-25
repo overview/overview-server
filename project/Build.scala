@@ -115,7 +115,8 @@ object ApplicationBuild extends Build {
     requireJs ++= Seq(
       "bundle/DocumentSet/index.js",
       "bundle/DocumentSet/show.js",
-      "bundle/Document/show.js"
+      "bundle/Document/show.js",
+      "bundle/Welcome/show.js"
     ),
     requireJsShim += "main.js",
     testOptions in Test ++= ourTestOptions,
