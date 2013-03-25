@@ -76,8 +76,6 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
     numDocuments = Some(scala.math.min(result.total, maxDocuments))
     Logger.debug("Got DocumentCloud results page " + pageNum + " with " + result.documents.size + " docs.")
 
-    // For private documents, we have to resolve the redirect through DocumentCloud. Do this async
-    var redirects = Seq[Future[DCDocumentAtURL]]()
 
     for (doc <- result.documents) {
 
@@ -99,11 +97,6 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
         numParsed += 1
       }
     }
-
-    // Wait for all our redirect calls to complete, then call f on each
-    val urlsFuture = Future.sequence(redirects) // waits for all PrivateDocURL to complete, also rethrows exceptions
-    val urls = Await.result(urlsFuture, Duration.Inf)
-    urls.map(f)
 
     numParsed
   }
