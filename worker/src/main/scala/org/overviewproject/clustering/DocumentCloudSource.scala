@@ -16,7 +16,7 @@ import play.api.libs.json.Json
 import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL, NonRedirectingHttpRequest }
+import org.overviewproject.http.{ AsyncHttpRetriever, BasicAuth, DocumentAtURL, PrivateDocumentAtURL }
 import org.overviewproject.util.Logger
 
 // The main DocumentCloudSource class produces a sequence of these...
@@ -41,7 +41,6 @@ class DocumentCloudSource(asyncHttpRetriever: AsyncHttpRetriever, maxDocuments: 
   implicit private val dcDocumentReads = Json.reads[DCDocument]
   implicit private val dcSearchResultReads = Json.reads[DCSearchResult]
 
-  private val redirectingHttpRetriever = new NonRedirectingHttpRequest // TODO: combine with asyncHttpRetriever
 
   // --- configuration ---
   private val pageSize = 20 // number of docs to retreive on each page of DC search results
