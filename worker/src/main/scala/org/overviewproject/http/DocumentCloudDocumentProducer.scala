@@ -19,7 +19,6 @@ import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, Wo
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
 
-
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
@@ -27,7 +26,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
   private val FetchingFraction = 0.5
   private var numDocs = 0
   private val ids = new DocumentSetIdGenerator(documentSetId)
-  
+
   def produce() {
     val t0 = System.nanoTime()
 
@@ -38,10 +37,15 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in
-      val docsNotFetched = Await.result(retrievalDone.future, Duration.Inf)
-      Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
-      Database.inTransaction {
-        DocRetrievalErrorWriter.write(documentSetId, docsNotFetched)
+      try {
+        val docsNotFetched = Await.result(retrievalDone.future, Duration.Inf)
+        Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
+        Database.inTransaction {
+          DocRetrievalErrorWriter.write(documentSetId, docsNotFetched)
+        }
+      } catch {
+        case t: Throwable if (t.getCause() != null) => throw t.getCause()
+        case t: Throwable => throw t
       }
     }
 
@@ -56,7 +60,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
       DocumentWriter.write(document)
       document.id
     }
-
+    //throw (new java.lang.OutOfMemoryError("heap space"))
     consumer.processDocument(id, text)
     numDocs += 1
     !progAbort(
