@@ -70,4 +70,7 @@ class NonRedirectingHttpRequest extends AsyncHttpRetriever {
     f.get().getResponseBody()
   }
 
+  def shutdown(): Unit = {
+    asyncHttpClient.close()
+  }
 }

@@ -158,5 +158,9 @@ class AsyncHttpRequest extends AsyncHttpRetriever {
     val f = asyncHttpClient.prepareGet(url).execute()
     f.get().getResponseBody()
   }
+  
+  def shutdown(): Unit = {
+    asyncHttpClient.close()
+  }
 }
 
