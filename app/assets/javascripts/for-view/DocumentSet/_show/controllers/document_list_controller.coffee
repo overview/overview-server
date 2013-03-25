@@ -4,8 +4,9 @@ define [
   '../views/node_form_view'
   '../views/document_list_view'
   './node_form_controller'
+  './tag_form_controller'
   './logger'
-], (DocumentList, ListSelection, NodeFormView, DocumentListView, NodeFormController, Logger) ->
+], (DocumentList, ListSelection, NodeFormView, DocumentListView, node_form_controller, tag_form_controller, Logger) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
