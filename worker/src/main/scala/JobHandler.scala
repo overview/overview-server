@@ -16,13 +16,11 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
-import org.overviewproject.http.{ AsyncHttpRequest, DocumentCloudDocumentProducer }
+import org.overviewproject.http.DocumentCloudDocumentProducer 
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.util.WorkerActorSystem
 
 object JobHandler {
-
-  val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
   // Run a single job
   def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
     try {
@@ -158,7 +156,7 @@ object JobHandler {
       val nodeWriter = new NodeWriter(job.documentSetId)
 
       val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
-      val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn, asyncHttpRetriever)
+      val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
       producer.produce()
     }

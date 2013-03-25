@@ -11,6 +11,7 @@ import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProdu
 import org.overviewproject.util.Progress._
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
+import org.overviewproject.http.AsyncHttpRequest
 
 
 /** Common functionality for DocumentProducers */
@@ -43,8 +44,9 @@ object DocumentProducerFactory {
   
   /** Return a DocumentProducer based on the DocumentSet type */
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
-    progAbort: ProgressAbortFn, asyncHttpRetriever: AsyncHttpRetriever): DocumentProducer = documentSet.documentSetType match {
+    progAbort: ProgressAbortFn): DocumentProducer = documentSet.documentSetType match {
     case "DocumentCloudDocumentSet" =>
+      val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
       val dcSource = new DocumentCloudSource(asyncHttpRetriever, MaxDocuments,
         documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
       new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, progAbort)
