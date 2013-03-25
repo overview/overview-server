@@ -11,9 +11,10 @@ trait PublicDocumentSetController extends Controller {
     val publicDocumentSets = OverviewDocumentSet.findPublic
     
     Ok(views.html.PublicDocumentSet.index(publicDocumentSets))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
 }
 
 
-object PublicDocumentSetController extends PublicDocumentSetController 
+object PublicDocumentSetController extends PublicDocumentSetController
