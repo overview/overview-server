@@ -137,16 +137,9 @@
     <body>
       <script>
         window.messages = @Html(views.JsMessages(jsMessageKeys));
+        window.documentViewerStartDocument = @Html(views.json.Document.show(document).toString);
       </script>
       @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Document/show").url)
-      <script>
-        require(["show"], function(controller) {
-          controller.el.done(function(el) { document.body.appendChild(el); });
-          controller.setDocument(@Html(views.json.Document.show(document).toString));
-          window.setDocument = controller.setDocument;
-          window.scrollByPages = controller.scrollByPages;
-        });
-      </script>
     </body>
   </html>
 }
