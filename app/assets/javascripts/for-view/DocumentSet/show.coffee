@@ -48,14 +48,25 @@ define [
     w = Math.floor($document.width(), 10)
     $iframe.width(w)
 
-  refocus_body_on_leave_window = () ->
+  refocus = ->
+    # Pull focus out of the iframe.
+    #
+    # We can't listen for events on the document iframe; so if it's present,
+    # it breaks keyboard shortcuts. We need to re-grab focus whenever we can
+    # without disturbing the user.
+    #
+    # For instance, if the user is logging in to DocumentCloud in the iframe,
+    # we don't want to steal focus; so a timer is bad, and a mousemove handler
+    # is bad. But if we register a click, it's worth using that to steal focus.
+    window.focus() if document.activeElement?.tagName == 'IFRAME'
+
+  refocus_body_on_leave_window = ->
     # Ugly fix for https://github.com/overview/overview-server/issues/321
     hidden = undefined
 
     callback = (e) ->
       if !document[hidden]
-        if document.activeElement?.tagName? == 'IFRAME'
-          window.focus()
+        refocus()
 
     if document[hidden]?
       document.addEventListener("visibilitychange", callback)
@@ -67,6 +78,11 @@ define [
       document.addEventListener("msvisibilitychange", callback)
     else
       hidden = undefined
+
+  refocus_body_on_event = ->
+    # Ugly fix for https://github.com/overview/overview-server/issues/362
+    $('body').on 'click', (e) ->
+      refocus()
 
   $ ->
     keyboard_controller = new KeyboardController(document)
@@ -97,3 +113,4 @@ define [
     refresh_height()
 
     refocus_body_on_leave_window()
+    refocus_body_on_event()
