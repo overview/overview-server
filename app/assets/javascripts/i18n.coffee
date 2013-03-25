@@ -58,6 +58,8 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
 
     _walk_ast_node(ast, args)
 
+  toString = Object.prototype.toString
+
   _isString = (obj) ->
     toString.call(obj) == '[object String]'
 
