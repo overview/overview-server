@@ -21,7 +21,7 @@ import org.overviewproject.util.Logger
  * because it rejects the authentication.
  */
 class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
-  redirectingHttpRetriever: AsyncHttpRetriever) extends BulkHttpRetriever[DCDocumentAtURL](asyncHttpRetriever) {
+  nonRedirectingHttpRetriever: AsyncHttpRetriever) extends BulkHttpRetriever[DCDocumentAtURL](asyncHttpRetriever) {
 
   private case class RetrievePrivateDocUrl(pDoc: PrivateDCDocumentAtURL)
   private case class PrivateDocToRetrieve(doc: DCDocumentAtURL)
@@ -32,10 +32,10 @@ class DocumentCloudBulkHttpRetriever(asyncHttpRetriever: AsyncHttpRetriever,
   protected class DocumentCloudRetrieverActor(writeDocument: (DCDocumentAtURL, String) => Boolean,
     finished: Promise[Seq[DocRetrievalError]]) extends BulkHttpActor[DCDocumentAtURL](writeDocument, finished) {
 
-    /** Use the redirectingHttpRetrieved for private documents */
+    /** Use the nonRedirectingHttpRetriever for private documents */
     override protected def requestDocument(request: Request, startTime: Long) = request.doc match {
       case pd: PrivateDCDocumentAtURL =>
-        redirectingHttpRetriever.request(pd, request.handler(pd, startTime, _), requestFailed(pd, _))
+        nonRedirectingHttpRetriever.request(pd, request.handler(pd, startTime, _), requestFailed(pd, _))
       case _ => super.requestDocument(request, startTime)
     }
 
