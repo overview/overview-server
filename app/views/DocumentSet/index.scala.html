@@ -6,9 +6,10 @@
 )(implicit lang: Lang, flash: Flash)
 
 @javascripts = {
-  <!--[if IE 9]>
-    <script src="@routes.Assets.at("javascripts/vendor/Silverlight.debug").url"></script>
-    <script src="@routes.Assets.at("javascripts/ext/silverlight-upload-request").url"></script>
+  <!--[if lte IE 9]>
+    <script src="@routes.Assets.at("javascripts/vendor/progress-polyfill.js").url"></script>
+    <script src="@routes.Assets.at("javascripts/vendor/Silverlight.debug.js").url"></script>
+    <script src="@routes.Assets.at("javascripts/ext/silverlight-upload-request.js").url"></script>
   <![endif]-->
 
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/index").url)

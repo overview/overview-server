@@ -244,7 +244,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader
 
         progress_elem = $modal.find('progress')[0]
         bytes_uploaded = 0
-        last_rendered_bytes_uploaded = bytes_uploaded
+        last_rendered_bytes_uploaded = -1 # so refresh_progress runs
         bytes_total = 1
         stopped = false
 
@@ -277,26 +277,11 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader
         $modal.modal('show')
 
       refresh_form_enabled()
-      refresh_progress_visible()
 
     refresh_form_enabled = () ->
       $form.find(':submit').attr('disabled', (!ready_to_submit || upload?) && 'disabled' || false)
       $form.find(':file, select[name=charset]').attr('disabled', upload? && 'disabled' || false)
       $form.find(':reset').attr('disabled', !file? && 'disabled' || false)
-
-    refresh_progress_visible = () ->
-      $progress = $form.find('progress')
-      if upload?
-        if window.ProgressPolyfill
-          # We have so many if-statements it's hardly a polyfill any more...
-          # IE9 goes wonky when we animate.
-          $progress.css({ display: 'inline-block', width: 200, paddingRight: 200 })
-          window.ProgressPolyfill.redraw($progress[0])
-        else
-          $progress.css({ display: 'inline-block', width: 0 })
-          $progress.animate({ width: 200 })
-      else
-        $progress.hide()
 
     $form.on 'submit', (e) ->
       e.preventDefault()
@@ -313,7 +298,6 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader
 
       refresh_from_csv_reader()
       refresh_charset()
-      refresh_progress_visible()
 
     $form.on 'reset', (e) ->
       # don't preventDefault()
