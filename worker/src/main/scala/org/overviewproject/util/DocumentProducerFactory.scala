@@ -47,9 +47,10 @@ object DocumentProducerFactory {
     progAbort: ProgressAbortFn): DocumentProducer = documentSet.documentSetType match {
     case "DocumentCloudDocumentSet" =>
       val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
+      
       val dcSource = new DocumentCloudSource(asyncHttpRetriever, MaxDocuments,
         documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
-      new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, progAbort)
+      new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, asyncHttpRetriever, progAbort)
     case "CsvImportDocumentSet" =>
       new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
   }

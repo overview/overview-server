@@ -21,7 +21,7 @@ import org.overviewproject.util.Progress._
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: DocumentCloudSource, consumer: DocumentConsumer,
-  progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
+  asyncHttpRetriever: AsyncHttpRequest, progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
   private val FetchingFraction = 0.5
   private var numDocs = 0
@@ -33,7 +33,9 @@ class DocumentCloudDocumentProducer(documentSetId: Long, sourceDocList: Document
     // Retrieve all that stuff!
 
     WorkerActorSystem.withActorSystem { implicit context =>
-      val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(new AsyncHttpRequest, new NonRedirectingHttpRequest)
+      val nonRedirectingHttpRetriever = new NonRedirectingHttpRequest
+
+      val bulkHttpRetriever = new DocumentCloudBulkHttpRetriever(asyncHttpRetriever, nonRedirectingHttpRetriever)
       val retrievalDone = bulkHttpRetriever.retrieve(sourceDocList, notify)
 
       // Now, wait on this thread until all docs are in
