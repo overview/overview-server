@@ -210,7 +210,7 @@ views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploade
 views.Node._form.h3=Edit folder
 views.Node._form.labels.description=Description
 views.Node._form.close=Close without saving
-views.Node._form.submit=Save folde
+views.Node._form.submit=Rename
 
 views.Password._editForm.label.password=New password
 views.Password._editForm.label.password2=New password (again)
