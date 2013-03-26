@@ -9,12 +9,17 @@
     <ul class="nav nav-tabs">
       <li class="disabled"><a>@m("label")</a></li>
       <li class="active"><a data-toggle="tab" href="#import-public">@m("from_public")</a></li>
+      <li><a data-toggle="tab" href="#import-shared">@m("from_shared")</a></li>
       <li><a data-toggle="tab" href="#import-from-documentcloud-account">@m("from_documentcloud_account")</a></li>
       <li><a data-toggle="tab" href="#import-from-upload">@m("from_upload")</a></li>
     </ul>
     <div class="tab-content">
       <div class="tab-pane fade in active" id="import-public">
         @views.html.DocumentSet._importPublic()
+      </div>
+
+      <div class="tab-pane fade in" id="import-shared">
+        @views.html.DocumentSet._importShared()
       </div>
 
       <div class="tab-pane fade in" id="import-from-documentcloud-account"></div>

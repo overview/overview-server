@@ -1,0 +1,7 @@
+@()(implicit lang: Lang)
+@defining(scopedMessages("views.DocumentSet._importShared")) { m =>
+  <div id="import-shared-document-sets" data-source-url="@routes.PublicDocumentSetController.index">
+    <h2>@m("loading")</h2>
+    <!-- This content will be replaced in JavaScript -->
+  </div>
+}
