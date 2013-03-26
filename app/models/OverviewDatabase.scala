@@ -16,4 +16,4 @@ object OverviewDatabase extends TransactionProvider {
   
   protected def transactionBlock[A](block: Connection => A): A =
     DB.withTransaction(connection => block(connection))
-  }
+}
