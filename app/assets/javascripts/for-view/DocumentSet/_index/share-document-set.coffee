@@ -1,20 +1,20 @@
 define [ 'jquery', 'underscore' ], ($, _) ->
   loading_template = _.template("""<p>Loading sharing settings.""")
   sharing_dialog_template =  _.template("""
-    <div class="well" id="manage-user-roles">
+    <div id="manage-user-roles">
       <ul class="unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
         <% _.each(viewers, function(viewer) { %> <li class="email">
-          <%- viewer.email %>
-          <a class="remove-viewer" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>" email="<%- viewer.email %>">&times;</a>
+          <%- viewer.email %><a class="remove-viewer muted" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>" email="<%- viewer.email %>">&times;</a>
         </li> <% }); %>
       </ul>
     </div>
-    <form method="post" class="form-inline add-viewer" action="<%- create_url %>" >
-      <input type="email" class="input-small" placeholder="Email" name="email" />
+    <form method="post" class="input-append add-viewer" action="<%- create_url %>" >
       <input type="hidden" name="role" value="Viewer" />
-      <input type="submit" value="Add Viewer" disabled="true"/>
+      <input type="email" class="span2" placeholder="Email" name="email" />
+      <button type="submit" class="btn add-viewer-button" value="Add Viewer" disabled="true"><i class="icon-plus"/> Add Viewer</input>
     </form>
     <% if (admin == 'true') { %>    
+    <p>
     <form method="post" class="update form-inline" action="<%- update_url %>">
       <label>
         <input type="checkbox" name="public" value="true" <% if (is_public == 'true') { %>
@@ -58,6 +58,7 @@ define [ 'jquery', 'underscore' ], ($, _) ->
       $email_item = $('<li/>').addClass('email').text(email)
       $remove_button = $('<a/>')
         .addClass('remove-viewer')
+        .addClass('muted')
         .attr('href', remove_url)
         .attr('email', email)
         .text('\u00d7')
@@ -100,7 +101,7 @@ define [ 'jquery', 'underscore' ], ($, _) ->
   
       $('#sharing-options-modal').keyup (e) ->
         text = $('input[name=email]').val()
-        $add_viewer_button = $('input[type=submit]')
+        $add_viewer_button = $('.add-viewer-button')
   
         if (text == '')
           $add_viewer_button.attr('disabled', 'true')
