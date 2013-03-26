@@ -253,6 +253,12 @@ views.Session._form.forgot_password_html=Forgot your password? <a href="{0}">Res
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
+views.SharedDocumentSet.index.title=Document sets shared with you 
+views.SharedDocumentSet.index.empty=There are currently no document sets shared with you
+
+views.SharedDocumentSet._documentSet.shared_by=Shared by {0}
+views.SharedDocumentSet._documentSet.import=Clone
+
 views.Tag._form.h3=Edit tag
 views.Tag._form.labels.name=Name
 views.Tag._form.labels.color=Color

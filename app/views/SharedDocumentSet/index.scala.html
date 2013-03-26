@@ -1,0 +1,12 @@
+@(sharedDocumentSets: Iterable[OverviewDocumentSet])(implicit lang: Lang)
+
+@defining(scopedMessages("views.SharedDocumentSet.index")) { m =>
+  <h2>@m("title")</h2>
+  @if(sharedDocumentSets.isEmpty) {
+    <p class="empty">@m("empty")</p>
+  } else {
+    <ul class="unstyled shared-document-sets">
+      @sharedDocumentSets.map(views.html.SharedDocumentSet._documentSet(_))
+    </ul>
+  }
+}

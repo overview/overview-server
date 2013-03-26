@@ -1,6 +1,6 @@
 @(documentSet: OverviewDocumentSet)(implicit lang: Lang)
 
-@defining(scopedMessages("views.SharedDocumentSet._documentSet")) { m =>
+@defining(scopedMessages("views.PublicDocumentSet._documentSet")) { m =>
   <li>
     <form method="POST" action="@routes.DocumentSetController.createClone" class="form-inline">
       <input type="hidden" name="sourceDocumentSetId" value="@documentSet.id">

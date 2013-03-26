@@ -63,6 +63,9 @@ DELETE /documentsets/:id/users/:email			 controllers.DocumentSetController.remov
 # Routes for public document sets
 GET    /public-document-sets                     controllers.PublicDocumentSetController.index() 
 
+# Routes for shared document sets
+GET    /shared-document-sets                     controllers.SharedDocumentSetController.index() 
+
 # Routes for browsers that dont' support CORS
 # really GET, but with hidden password
 POST   /documentcloud-proxy/projects.json controllers.DocumentCloudProxyController.projects()
