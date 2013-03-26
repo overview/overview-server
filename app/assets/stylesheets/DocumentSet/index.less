@@ -49,13 +49,22 @@ body.document-set-index {
   }
 
   #sharing-options-modal {
- 
-    li.email {
-      .remove-viewer  {
-        float: right;
-      }
+
+    li {
+      line-height: 30px;
+    }
+    
+    li a {
+      opacity: 0;
+      .transition(opacity .35s ease);
+      margin-left: 0.5em;
     }
 
+    li:hover a {
+      opacity: 1;
+      text-decoration: none;
+      margin-left: 0.5em;
+    }
 
   }
 }
