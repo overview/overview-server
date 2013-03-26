@@ -137,8 +137,8 @@ define [ 'jquery', 'underscore' ], ($, _) ->
       url = $share.attr('href')
       create_url = $share.attr('data-create-url')
       remove_url_pattern = $share.attr('data-delete-url-pattern')
-      admin = $share.attr('admin')
-      is_public = $share.attr('is-public')
+      admin = $share.attr('data-is-admin')
+      is_public = $share.attr('data-is-public')
       update_url = $share.attr('data-update-url')
       show_sharing_settings(url, create_url, remove_url_pattern, update_url, admin, is_public)
   
