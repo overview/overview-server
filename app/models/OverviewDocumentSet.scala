@@ -193,6 +193,12 @@ object OverviewDocumentSet {
 
     documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Viewer)
   }
+  
+  /**
+   * @return all document sets that have been shared with the specified user
+   */
+  def findByViewer(email: String): Iterable[OverviewDocumentSet] = DocumentSetFinder.byViewer(email).map(OverviewDocumentSet(_))
+
 
   private def deleteClientGeneratedInformation(id: Long) {
     import models.orm.Schema._

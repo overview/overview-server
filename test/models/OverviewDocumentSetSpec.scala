@@ -451,6 +451,17 @@ class OverviewDocumentSetSpec extends Specification {
       val owner = documentSet.owner
       owner.email must be equalTo(admin.email)
     }
+    
+    "find no shared documents if there are none for user" in new DocumentSetWithViewer {
+      val sharedDocumentSets = OverviewDocumentSet.findByViewer(admin.email)
+      sharedDocumentSets must beEmpty
+    }
+    
+    "find documents shared with user" in new DocumentSetWithViewer {
+      val sharedDocumentSets = OverviewDocumentSet.findByViewer(viewerEmail)
+    
+      sharedDocumentSets.map(_.id) must contain(documentSet.id).only
+    }
   }
   step(stop)
 }

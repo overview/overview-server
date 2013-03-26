@@ -2,6 +2,7 @@ package models.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import models.orm.{DocumentSet,Schema}
+import models.orm.DocumentSetUserRoleType._
 
 object DocumentSetFinder {
   /** @return All completed `DocumentSet`s with the given ID. */
@@ -29,6 +30,20 @@ object DocumentSetFinder {
     )
   }
 
+  /**
+   * @return DocumentSets for which the specified user is a viewer
+   */
+  def byViewer(user: String) = {
+    val viewableDocumentSetsWithRole = from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) => 
+      where(
+        dsu.userEmail === user and
+        dsu.documentSetId === ds.id
+      )
+      select((ds, dsu.role))).filter(_._2 == Viewer)
+      
+    viewableDocumentSetsWithRole.map(_._1)
+        
+  }
   /** @return List of document set IDs, for use in an IN clause.
    *
    * Every ID returned will be owned by the given user.
