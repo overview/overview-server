@@ -196,7 +196,9 @@ views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 views.DocumentSet._share.button.label=Add user
 views.DocumentSet._share.h3=Sharing settings
 views.DocumentSet._share.list.explanation=You can share the document set with other users by adding their email address below. If they are Overview users, they can clone the document set under the Import section.
-views.DocumentSet._share.form.explanation=Add users: 
+views.DocumentSet._share.list.header={0,choice,0#Document set is not shared with any other users|0< Document set is shared with:}
+views.DocumentSet._share.form.explanation=Add users:
+ 
 
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
