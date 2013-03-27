@@ -259,7 +259,16 @@ class OverviewDocumentSetSpec extends Specification {
       }
       
       def allViewers: Iterable[DocumentSetUser] = Schema.documentSetUsers.allRows.filter(_.role == Viewer) 
-        
+    }
+    
+    trait OwnerIsViewer extends DocumentSetWithUserScope {
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        val otherDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("viewed"))
+        documentSets.insert(otherDocumentSet)
+        OverviewDocumentSet(otherDocumentSet).setUserRole(admin.email, Viewer)
+      }
     }
     
     "user should be the owner" in new DocumentSetWithUserScope {
@@ -461,6 +470,12 @@ class OverviewDocumentSetSpec extends Specification {
       val sharedDocumentSets = OverviewDocumentSet.findByViewer(viewerEmail)
     
       sharedDocumentSets.map(_.id) must contain(documentSet.id).only
+    }
+    
+    "only list document sets owned by user" in new OwnerIsViewer {
+      val documentSets = OverviewDocumentSet.findByUserId(admin.email, 10, 1)
+      
+      documentSets must have size(1)
     }
   }
   step(stop)

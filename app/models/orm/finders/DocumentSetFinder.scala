@@ -17,17 +17,21 @@ object DocumentSetFinder {
    *
    * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
    */
-  def byUser(user: String) = {
+  def byUser(user: String): Seq[DocumentSet] = {
 	import scala.language.postfixOps
 	
-    from(Schema.documentSets)(ds =>
+
+    val dsWithDsu = from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) =>
       where(
         ds.id in documentSetIdsForUser(user)
         and (ds.id notIn documentSetIdsWithCreationJobs)
+        and ds.id === dsu.documentSetId
       )
-      select(ds)
+      select((ds, dsu))
       orderBy(ds.createdAt desc)
-    )
+    ).filter(r => r._2.userEmail == user && r._2.role == Owner) 	// FIXME: Have to be able to use enum in query
+        
+    dsWithDsu.map(_._1).toSeq
   }
 
   /**
