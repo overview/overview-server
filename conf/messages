@@ -193,6 +193,11 @@ views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
+views.DocumentSet._share.button.label=Add user
+views.DocumentSet._share.h3=Sharing settings
+views.DocumentSet._share.list.explanation=You can share the document set with other users by adding their email address below. If they are Overview users, they can clone the document set under the Import section.
+views.DocumentSet._share.form.explanation=Add users: 
+
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.job_complete=Import complete

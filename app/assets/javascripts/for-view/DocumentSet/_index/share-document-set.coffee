@@ -1,20 +1,21 @@
-define [ 'jquery', 'underscore' ], ($, _) ->
+define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
   loading_template = _.template("""<p>Loading sharing settings.""")
   sharing_dialog_template =  _.template("""
     <div id="manage-user-roles">
+      <p class="list-explanation"><%- list_explanation %></p>
       <ul class="unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
         <% _.each(viewers, function(viewer) { %> <li class="email">
           <%- viewer.email %><a class="remove-viewer muted" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>" email="<%- viewer.email %>">&times;</a>
         </li> <% }); %>
       </ul>
     </div>
+    <p><%- form_explanation %></p>
     <form method="post" class="input-append add-viewer" action="<%- create_url %>" >
       <input type="hidden" name="role" value="Viewer" />
       <input type="email" class="span2" placeholder="Email" name="email" />
-      <button type="submit" class="btn add-viewer-button" value="Add Viewer" disabled="true"><i class="icon-plus"/> Add Viewer</input>
+      <button type="submit" class="btn add-viewer-button" value="Add Viewer" disabled="true"><i class="icon-plus"/> <%- button_label %></input>
     </form>
     <% if (admin == 'true') { %>    
-    <p>
     <form method="post" class="update form-inline" action="<%- update_url %>">
       <label>
         <input type="checkbox" name="public" value="true" <% if (is_public == 'true') { %>
@@ -37,7 +38,7 @@ define [ 'jquery', 'underscore' ], ($, _) ->
     $modal.find('.modal-body').html(loading_template)
     $.getJSON(url)
       .success((emails) ->
-        $modal.find('.modal-body').html(sharing_dialog_template({ viewers: sort_by_email(emails.viewers), create_url: create_url, remove_url_pattern: remove_url_pattern, update_url: update_url, admin: admin, is_public: is_public })))
+        $modal.find('.modal-body').html(sharing_dialog_template({ viewers: sort_by_email(emails.viewers), create_url: create_url, remove_url_pattern: remove_url_pattern, update_url: update_url, admin: admin, is_public: is_public, list_explanation: i18n('views.DocumentSet._share.list.explanation'), form_explanation: i18n('views.DocumentSet._share.form.explanation'), button_label: i18n('views.DocumentSet._share.button.label') })))
       .error((a, b, c) ->
         console.log("error #{b}"))
 
