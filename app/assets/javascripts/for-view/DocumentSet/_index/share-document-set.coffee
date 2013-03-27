@@ -3,7 +3,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
   sharing_dialog_template =  _.template("""
     <div id="manage-user-roles">
       <p><%- list_explanation %></p>
-      <p class="list-heading"><%- list_header %></p>
+      <p class="list-header"><%- list_header %></p>
         
       <ul class="unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
         <% _.each(viewers, function(viewer) { %> <li class="email">
@@ -53,6 +53,8 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
     refresh_email_list(remaining_emails)
 
   refresh_email_list = (emails) ->
+    $list_header = $('p.list-header')
+    $list_header.text(i18n('views.DocumentSet._share.list.header', emails.length))
     $collaborators = $('ul.collaborators')
     $collaborators.empty()
     remove_url_pattern = $collaborators.attr('remove_url_pattern')
@@ -67,6 +69,10 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
         .text('\u00d7')
       $email_item.append($remove_button)
       $collaborators.append($email_item)
+
+      
+
+
   
   $ ->
     $('#sharing-options-modal').one 'show', ->
