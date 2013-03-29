@@ -10,6 +10,10 @@ trait TransactionAction[A] extends Action[A] {
   def apply(request: Request[A]): Result = OverviewDatabase.inTransaction {
     block(request)
   }
+
+  override def toString = {
+    "TransactionAction(parser=" + parser + ")"
+  }
 }
 
 object TransactionAction {
@@ -17,15 +21,13 @@ object TransactionAction {
     *
     * aBlock is guaranteed to run within a transaction. If it does not throw
     * an exception, the transaction will subsequently be committed.
-    *
-    * The BodyParser will be wrapped by HttpsEnforcer.
     */
   def apply[A](bodyParser: BodyParser[A])(aBlock: Request[A] => Result): TransactionAction[A] = new TransactionAction[A] {
-    override def parser = HttpsEnforcer.HttpsBodyParser(bodyParser)
+    override def parser = bodyParser
     override val block = aBlock
   }
 
   def apply(block: Request[AnyContent] => Result): TransactionAction[AnyContent] = {
-    apply(HttpsEnforcer.HttpsBodyParser(BodyParsers.parse.anyContent))(block)
+    apply(BodyParsers.parse.anyContent)(block)
   }
 }

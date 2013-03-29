@@ -3,7 +3,6 @@ package controllers.auth
 import java.sql.Connection
 import play.api.mvc.{Action, AnyContent, BodyParser, BodyParsers, Request, Result}
 
-import controllers.util.HttpsEnforcer
 import models.{OverviewDatabase,OverviewUser}
 
 trait AuthorizedAction[A] extends Action[A] {
@@ -38,11 +37,11 @@ trait AuthorizedAction[A] extends Action[A] {
 object AuthorizedAction {
   /** Creates a new AuthorizedAction.
     *
-    * The BodyParser will be wrapped by HttpsEnforcer, and the block will only
-    * be called when a logged-in user passes the aAuthority check.
+    * The block will only be called when a logged-in user passes the
+    * aAuthority check.
     */
   def apply[A](bodyParser: BodyParser[A], aAuthority: Authority)(aBlock: AuthorizedRequest[A] => Result): AuthorizedAction[A] = new AuthorizedAction[A] {
-    override def parser = HttpsEnforcer.HttpsBodyParser(bodyParser)
+    override def parser = bodyParser
     override val authority = aAuthority
     override val block = aBlock
   }
