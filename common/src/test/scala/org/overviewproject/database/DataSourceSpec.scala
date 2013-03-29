@@ -18,7 +18,7 @@ class DataSourceSpec extends Specification {
     
     "provide connections until it is shutdown" in {
       
-      val config = new DatabaseConfiguration()
+      val config = new SystemPropertiesDatabaseConfiguration()
       val dataSource = new DataSource(config)
       
       implicit val connection = dataSource.getConnection()

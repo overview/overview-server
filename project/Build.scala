@@ -61,7 +61,8 @@ object ApplicationBuild extends Build {
 
   val ourTestOptions = Seq(
     Tests.Argument("xonly"),
-    Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl))
+    Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
+    Tests.Setup(loader => ClearTestDatabase(loader))
   )
 
   val ourResolvers = Seq(
@@ -134,5 +135,10 @@ object ApplicationBuild extends Build {
     CucumberPlugin.cucumberStepsBasePackage := "steps"
   ).dependsOn(common).aggregate(worker)
 
-  val all = Project("all", file("all")).aggregate(main, worker, common)
+  val testAll = TaskKey[Unit]("test-all", "Runs common, worker and server tests")
+  val all = Project("all", file("all"))
+    .aggregate(main, worker, common)
+    .settings(
+      testAll in Test <<= (test in Test in main) dependsOn (test in Test in worker) dependsOn (test in Test in common)
+    )
 }

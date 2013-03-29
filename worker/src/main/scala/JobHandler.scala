@@ -7,7 +7,7 @@
  */
 
 import com.jolbox.bonecp._
-import org.overviewproject.database.{ DatabaseConfiguration, DataSource, DB }
+import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
 import org.overviewproject.persistence._
 import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
@@ -95,7 +95,7 @@ object JobHandler {
 
     val pollingInterval = 500 //milliseconds
 
-    val config = new DatabaseConfiguration()
+    val config = new SystemPropertiesDatabaseConfiguration()
     val dataSource = new DataSource(config)
 
     DB.connect(dataSource)

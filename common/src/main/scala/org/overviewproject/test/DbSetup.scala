@@ -9,6 +9,14 @@ object DbSetup {
 
   private def failInsert = { throw new Exception("failed insert") }
 
+  def clearEntireDatabaseYesReally()(implicit c: Connection): Unit = {
+    SQL("SELECT lo_unlink(contents_oid) FROM upload").execute()
+    SQL("TRUNCATE TABLE upload CASCADE").execute()
+    SQL("TRUNCATE TABLE document_set CASCADE").execute()
+    SQL("TRUNCATE TABLE \"user\" CASCADE").execute()
+    SQL("INSERT INTO \"user\" (id, email, role, password_hash, confirmed_at, email_subscriber) VALUES (1, 'admin@overview-project.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE)").execute()
+  }
+
   def insertCsvImportDocumentSet(uploadedFileId: Long)(implicit c: Connection): Long = {
     SQL("""
       INSERT INTO document_set (type, public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count)

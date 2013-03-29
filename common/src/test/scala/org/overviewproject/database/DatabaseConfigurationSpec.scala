@@ -27,7 +27,7 @@ class DatabaseConfigurationSpec extends Specification {
       val defaultDriver = "org.postgresql.Driver"
       val expectedUrl = "jdbc:postgresql://"+host+"/"+database
       
-      val dbConfig = new DatabaseConfiguration()
+      val dbConfig = new SystemPropertiesDatabaseConfiguration()
 
       dbConfig.databaseUrl must beEqualTo(expectedUrl)
       dbConfig.username must beEqualTo(username)
@@ -47,7 +47,7 @@ class DatabaseConfigurationSpec extends Specification {
       sys.props += testDatabaseUrlProperty -> databaseUrl
       
       val dbConfig = 
-        new DatabaseConfiguration(defaultDatabaseUrlProperty = testDatabaseUrlProperty)
+        new SystemPropertiesDatabaseConfiguration(defaultDatabaseUrlProperty = testDatabaseUrlProperty)
       
       sys.props -= testDatabaseUrlProperty
       val expectedUrl = "jdbc:postgresql://"+host+"/"+database
