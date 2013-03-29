@@ -43,7 +43,6 @@ case class DocumentSet(
   documentProcessingErrorCount: Int = 0,
   importOverflowCount: Int = 0,
   uploadedFileId: Option[Long] = None,
-  @(Transient @field) val documentSetCreationJob: Option[DocumentSetCreationJob] = None,
   @(Transient @field) val uploadedFile: Option[UploadedFile] = None) extends KeyedEntity[Long] {
 
   def this() = this(documentSetType = DocumentCloudDocumentSet) // For Squeryl
