@@ -81,30 +81,19 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  import play.api.data.Form
-  import play.api.data.Forms._
-
-  val createCloneForm = Form(
-    single("sourceDocumentSetId" -> number))
-
-  def createClone = AuthorizedAction(anyUser) { implicit request =>
+  def createClone(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-    createCloneForm.bindFromRequest().fold(
-      f => BadRequest,
-      { id =>
-        val cloneStatus = loadDocumentSet(id).map { d =>
-          OverviewDocumentSet(d).cloneForUser(request.user.id)
-          Seq(
-            "event" -> "document-set-create-clone"
-          )
-        }.getOrElse(
-          Seq(
-            "error" -> m("clone.failure")
-          )
-        )
-        Redirect(routes.DocumentSetController.index()).flashing(cloneStatus : _*)
-      }
+    val cloneStatus = loadDocumentSet(id).map { d =>
+      OverviewDocumentSet(d).cloneForUser(request.user.id)
+      Seq(
+        "event" -> "document-set-create-clone"
+      )
+    }.getOrElse(
+      Seq(
+        "error" -> m("clone.failure")
+      )
     )
+    Redirect(routes.DocumentSetController.index()).flashing(cloneStatus : _*)
   }
 
   def showUsers(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>

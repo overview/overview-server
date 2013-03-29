@@ -2,8 +2,7 @@
 
 @defining(scopedMessages("views.SharedDocumentSet._documentSet")) { m =>
   <li>
-    <form method="POST" action="@routes.DocumentSetController.createClone" class="form-inline">
-      <input type="hidden" name="sourceDocumentSetId" value="@documentSet.id">
+    <form method="POST" action="@routes.DocumentSetController.createClone(documentSet.id)" class="form-inline">
       <button class="btn"><i class="icon-download"></i> @m("import")</button>
     </form>
     <h3>@documentSet.title</h3>
