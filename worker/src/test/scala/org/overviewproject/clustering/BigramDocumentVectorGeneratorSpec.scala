@@ -129,7 +129,7 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       
       // Set low thresholds so we keep all terms and find all bigrams that occur more than once
       vectorGen.minDocsToKeepTerm = 1
-      vectorGen.keepTermsWhichAppearinAllDocs = true  // retain "the"
+      vectorGen.keepTermsWhichAppearinAllDocs = true  // retain "the" and the many bigrams which contain it
       vectorGen.minBigramOccurrences = 2
       vectorGen.minBigramLikelihood = Double.NegativeInfinity                
       vectorGen.termFreqOnly should beFalse
