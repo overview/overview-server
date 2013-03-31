@@ -33,6 +33,10 @@ object ClusterTypes {
       _idToString(id)
     }
     
+    def stringToIdFailIfMissing(term: String) : TermID = {
+      _stringToId.getOrElse(term, throw new java.util.NoSuchElementException)
+    }
+    
     def size = _idToString.size
     
     // translate a string from this table to another. throws if not in target table

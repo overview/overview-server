@@ -32,7 +32,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) ext
 
   private val smallDocsetSize = 200   // when docset is smaller than this, reduce minimum count thresholds for keeping terms
 
-  private val vectorGen = new DocumentVectorGeneratorWithBigrams
+  private val vectorGen = new BigramDocumentVectorGenerator
   
   // When we get the document text back, we add the document to the database and feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
