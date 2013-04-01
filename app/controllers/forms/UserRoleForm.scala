@@ -2,8 +2,9 @@ package controllers.forms
 
 import play.api.data.Form
 import play.api.data.Forms._
+
+import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetUser
-import models.orm.DocumentSetUserRoleType
 
 object UserRoleForm {
   private val RoleFormat = "^(Owner|Viewer)$"
@@ -11,8 +12,9 @@ object UserRoleForm {
   def apply(documentSetId: Long): Form[DocumentSetUser] = Form(
     mapping(
       "email" -> email,
-      "role" -> nonEmptyText.verifying("role.invalid_role", { r =>  r matches(RoleFormat) }))
-      ((email, role) => DocumentSetUser(documentSetId, email, new DocumentSetUserRoleType(role)))
-      (dsu => Some(dsu.userEmail, dsu.role.value)))
-
+      "role" -> nonEmptyText.verifying("role.invalid_role", { r => Ownership.values.find(_.toString == r).isDefined }))
+      ((email, role) => DocumentSetUser(documentSetId, email, Ownership.withName(role)))
+      (dsu => Some(dsu.userEmail, dsu.role.toString)
+    )
+  )
 }

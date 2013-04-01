@@ -4,12 +4,12 @@ import java.sql.Timestamp
 import org.squeryl.annotations.{ Column, Transient }
 import org.squeryl.dsl.ManyToMany
 import org.squeryl.{KeyedEntity,Query}
-import org.overviewproject.postgres.SquerylEntrypoint._
 import scala.annotation.target.field
 import ua.t3hnar.bcrypt._
 
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetType.DocumentCloudDocumentSet
-import models.orm.DocumentSetUserRoleType.Owner
 
 case class User(
   val id: Long = 0L,
@@ -42,7 +42,7 @@ case class User(
     require(id != 0l)
 
     val documentSet = Schema.documentSets.insert(new DocumentSet(DocumentCloudDocumentSet, 0L, query=Some(query)))
-    documentSet.setUserRole(email, Owner)
+    documentSet.setUserRole(email, Ownership.Owner)
 
     documentSet
   }

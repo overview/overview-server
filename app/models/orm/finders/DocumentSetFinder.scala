@@ -1,8 +1,10 @@
 package models.orm.finders
 
+import scala.language.postfixOps
+
 import org.overviewproject.postgres.SquerylEntrypoint._
-import models.orm.{DocumentSet,Schema}
-import models.orm.DocumentSetUserRoleType._
+import org.overviewproject.tree.Ownership
+import models.orm.{ DocumentSet, Schema }
 
 object DocumentSetFinder {
   /** @return All completed `DocumentSet`s with the given ID. */
@@ -13,64 +15,72 @@ object DocumentSetFinder {
     )
   }
 
-  /** @return All completed `DocumentSet`s owned by the given user.
-   *
-   * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
-   */
-  def byUser(user: String): Seq[DocumentSet] = {
-	import scala.language.postfixOps
-	
-
-    val dsWithDsu = from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) =>
-      where(
-        ds.id in documentSetIdsForUser(user)
-        and (ds.id notIn documentSetIdsWithCreationJobs)
-        and ds.id === dsu.documentSetId
-      )
-      select((ds, dsu))
+  /** @return All `DocumentSet`s with the given isPublic valid. */
+  def byIsPublic(isPublic: Boolean) = {
+    from(Schema.documentSets)(ds =>
+      where(ds.isPublic === isPublic)
+      select(ds)
       orderBy(ds.createdAt desc)
-    ).filter(r => r._2.userEmail == user && r._2.role == Owner) 	// FIXME: Have to be able to use enum in query
-        
-    dsWithDsu.map(_._1).toSeq
+    )
   }
 
-  /**
-   * @return DocumentSets for which the specified user is a viewer
-   */
-  def byViewer(user: String) = {
-    val viewableDocumentSetsWithRole = from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) => 
+  /** @return All completed `DocumentSet`s for whith the given user has the given role.
+    *
+    * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
+    */
+  private def byUserWithRole(user: String, role: Ownership.Value) = {
+    from(Schema.documentSets)(ds =>
       where(
-        dsu.userEmail === user and
-        dsu.documentSetId === ds.id
+        ds.id in documentSetIdsForUser(user, role)
+        and (ds.id notIn documentSetIdsWithCreationJobs)
       )
-      select((ds, dsu.role))).filter(_._2 == Viewer)
-      
-    viewableDocumentSetsWithRole.map(_._1)
-        
+      select(ds)
+      orderBy(ds.createdAt desc)
+    )
   }
+
+  /** @return All completed `DocumentSet`s owned by the given user.
+    *
+    * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
+    */
+  def byOwner(user: String) = {
+    byUserWithRole(user, Ownership.Owner)
+  }
+
+  /** @return All completed `DocumentSet`s for which the specified user is a viewer
+    *
+    * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
+    */
+  def byViewer(user: String) = {
+    byUserWithRole(user, Ownership.Viewer)
+  }
+
   /** @return List of document set IDs, for use in an IN clause.
-   *
-   * Every ID returned will be owned by the given user.
-   *
-   * Example usage:
-   *
-   *   val ids = documentSetIdsForUser(user)
-   *   val documentSets = from(Schema.documentSets)(ds =>
-   *     where(ds.id in ids)
-   *     select(ds)
-   *   )
-   */
-  protected[finders] def documentSetIdsForUser(user: String) = {
+    *
+    * Every ID returned will have the exact ownership specified.
+    *
+    * Example usage:
+    *
+    *   val ids = documentSetIdsForUser(user, Ownership.Owner)
+    *   val documentSets = from(Schema.documentSets)(ds =>
+    *     where(ds.id in ids)
+    *     select(ds)
+    *   )
+    */
+  protected[finders] def documentSetIdsForUser(user: String, ownership: Ownership.Value) = {
     from(Schema.documentSetUsers)(dsu =>
-      where(dsu.userEmail === user)
+      where(
+        dsu.userEmail === user
+        and dsu.role === ownership
+      )
       select(dsu.documentSetId)
     )
   }
 
   /** @return List of document set IDs, for use in an IN clause.
-   *
-   * Every ID returned will have a DocumentSetCreationJob.
-   */
+    *
+    * Every ID returned will have a DocumentSetCreationJob.
+    */
   protected[finders] def documentSetIdsWithCreationJobs = {
     from(Schema.documentSetCreationJobs)(dscj =>
       select(dscj.documentSetId)

@@ -3,11 +3,12 @@ package models.orm
 import java.sql.Timestamp
 import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
-import org.overviewproject.postgres.SquerylEntrypoint._
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
 import ua.t3hnar.bcrypt._
 
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.Ownership
 import helpers.DbTestContext
 import models.orm.DocumentSetType._
 
@@ -44,8 +45,8 @@ class UserSpec extends Specification {
       val documentSet1 = DocumentSet(DocumentCloudDocumentSet, 0L, title = "earliest", query = Some("early"), createdAt = new Timestamp(1351519451289L)).save
       val documentSet2 = DocumentSet(DocumentCloudDocumentSet, 0L, title = "later", query = Some("late"), createdAt = new Timestamp(1351519465652L)).save
       Schema.documentSetUsers.insert(Seq(
-        DocumentSetUser(documentSet1.id, user2.email),
-        DocumentSetUser(documentSet2.id, user2.email)))
+        DocumentSetUser(documentSet1.id, user2.email, Ownership.Owner),
+        DocumentSetUser(documentSet2.id, user2.email, Ownership.Owner)))
 
       val user3 = User.findById(user2.id).get
 

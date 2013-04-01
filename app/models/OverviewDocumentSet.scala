@@ -3,8 +3,8 @@ package models
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 
-import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, DocumentSetUserRoleType, User }
-import models.orm.DocumentSetUserRoleType._
+import org.overviewproject.tree.Ownership
+import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, User }
 import models.upload.OverviewUploadedFile
 import models.orm.finders.DocumentSetFinder
 
@@ -45,7 +45,7 @@ trait OverviewDocumentSet {
   def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
 
   /** Add a viewer to the document set */
-  def setUserRole(email: String, role: DocumentSetUserRoleType): Unit
+  def setUserRole(email: String, role: Ownership.Value): Unit
 
   /** Remove the viewer */
   def removeViewer(email: String): Unit
@@ -75,7 +75,7 @@ object OverviewDocumentSet {
       val documentSetClone = OverviewDocumentSet(ormDocumentSetClone)
       
       User.findById(cloneOwnerId).map { u =>
-        documentSetClone.setUserRole(u.email, Owner)
+        documentSetClone.setUserRole(u.email, Ownership.Owner)
       }
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
@@ -83,18 +83,16 @@ object OverviewDocumentSet {
       documentSetClone
     }
 
-    override def setUserRole(email: String, role: DocumentSetUserRoleType): Unit = {
-
+    override def setUserRole(email: String, role: Ownership.Value): Unit = {
       val emailWithRole = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
       emailWithRole match {
-        case Some(u) if (u.role != Owner) => Schema.documentSetUsers.update(u.copy(role = role))
-        case Some(u) if (u.role == Owner) => // Owner can't change, for now.
+        case Some(u) if (u.role != Ownership.Owner) => Schema.documentSetUsers.update(u.copy(role = role))
+        case Some(u) if (u.role == Ownership.Owner) => // Owner can't change, for now.
         case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, role))
       }
     }
 
     override def removeViewer(email: String): Unit =  Schema.documentSetUsers.deleteWhere(dsu => dsu.documentSetId === id and dsu.userEmail === email)
-    
 
     protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
 
@@ -103,7 +101,7 @@ object OverviewDocumentSet {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
       val documentUsers = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id)
-      val ownerEmail = documentUsers.filter(_.role == Owner).head.userEmail
+      val ownerEmail = documentUsers.filter(_.role == Ownership.Owner).head.userEmail
       
       OverviewUser.findByEmail(ownerEmail).get
     }
@@ -157,48 +155,42 @@ object OverviewDocumentSet {
     DocumentSetFinder.byDocumentSet(id).headOption.map(apply)
   }
 
-  /** @return ResultPage of all document sets the user can access */
+  /** @return ResultPage of all document sets the user owns */
   def findByUserId(userEmail: String, pageSize: Int, page: Int): ResultPage[OverviewDocumentSet] = {
-    val documentSets = DocumentSetFinder.byUser(userEmail)
+    val documentSets = DocumentSetFinder.byOwner(userEmail)
     ResultPage(documentSets, pageSize, page).map { ds : DocumentSet => apply(ds, None) }
   }
 
-  /** @return Seq of all document sets marked public at the time of the call */
-  def findPublic: Seq[OverviewDocumentSet] = {
-    import models.orm.Schema
+  /** @return All document sets marked public */
+  def findPublic: Iterable[OverviewDocumentSet] = {
     import org.overviewproject.postgres.SquerylEntrypoint._
-
-    Schema.documentSets.where(d => d.isPublic === true).map(OverviewDocumentSet(_)).toSeq
+    DocumentSetFinder.byIsPublic(true).map(OverviewDocumentSet.apply)
   }
 
   /** Delete the document set */
   def delete(id: Long) {
-    import models.orm.Schema._
-    import org.overviewproject.postgres.SquerylEntrypoint._
-    import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-
     cancelCloneJobs(id)
     deleteClientGeneratedInformation(id)
     val cancelledJob = OverviewDocumentSetCreationJob.cancelJobWithDocumentSetId(id)
     if (!cancelledJob.isDefined) deleteClusteringGeneratedInformation(id)
   }
 
-  /**
-   * @return all email addresses with the role `Viewer` for a document set
-   * @param id The id of the document set
-   */
+  /** @return all email addresses with the role `Viewer` for a document set
+    * @param id The id of the document set
+    */
   def findViewers(id: Long): Iterable[DocumentSetUser] = {
     import models.orm.Schema.documentSetUsers
     import org.overviewproject.postgres.SquerylEntrypoint._
 
-    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Viewer)
+    documentSetUsers.where(dsu => dsu.documentSetId === id).filter(_.role == Ownership.Viewer)
   }
   
-  /**
-   * @return all document sets that have been shared with the specified user
-   */
-  def findByViewer(email: String): Iterable[OverviewDocumentSet] = DocumentSetFinder.byViewer(email).map(OverviewDocumentSet(_))
-
+  /** @return all document sets that have been shared with the specified user
+    */
+  def findByViewer(email: String): Iterable[OverviewDocumentSet] = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    DocumentSetFinder.byViewer(email).map(OverviewDocumentSet.apply)
+  }
 
   private def deleteClientGeneratedInformation(id: Long) {
     import models.orm.Schema._

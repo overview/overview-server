@@ -1,16 +1,17 @@
 package models
 
 import java.sql.Timestamp
+import org.specs2.specification.Scope
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.test.Specification
 import org.overviewproject.tree.orm.UploadedFile
-import org.specs2.specification.Scope
+import org.overviewproject.tree.Ownership
 import helpers.DbTestContext
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
-import models.orm.DocumentSetUserRoleType._
 import models.upload.OverviewUploadedFile
 import models.orm.Schema
 import models.orm.DocumentSetUser
@@ -258,10 +259,10 @@ class OverviewDocumentSetSpec extends Specification {
         
       override def setupWithDb = {
         super.setupWithDb
-        documentSet.setUserRole(viewerEmail, Viewer)
+        documentSet.setUserRole(viewerEmail, Ownership.Viewer)
       }
       
-      def allViewers: Iterable[DocumentSetUser] = Schema.documentSetUsers.allRows.filter(_.role == Viewer) 
+      def allViewers: Iterable[DocumentSetUser] = Schema.documentSetUsers.allRows.filter(_.role == Ownership.Viewer) 
     }
     
     trait OwnerIsViewer extends DocumentSetWithUserScope {
@@ -270,7 +271,7 @@ class OverviewDocumentSetSpec extends Specification {
         super.setupWithDb
         val otherDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("viewed"))
         documentSets.insert(otherDocumentSet)
-        OverviewDocumentSet(otherDocumentSet).setUserRole(admin.email, Viewer)
+        OverviewDocumentSet(otherDocumentSet).setUserRole(admin.email, Ownership.Viewer)
       }
     }
     
@@ -409,11 +410,11 @@ class OverviewDocumentSetSpec extends Specification {
       DocumentSetCreationJobFinder.byDocumentSet(documentSetClone.id).headOption must beSome
     }
 
-    "find all public document sets" in new PublicAndPrivateDocumentSets {
+    inExample("find all public document sets") in new PublicAndPrivateDocumentSets {
       val publicDocumentSets = OverviewDocumentSet.findPublic
 
       publicDocumentSets must have size (5)
-      publicDocumentSets.map(_.query).distinct must be equalTo (Seq("public"))
+      publicDocumentSets.map(_.query).toSeq.distinct must be equalTo (Seq("public"))
     }
 
     "cancel clone jobs when deleting source document set" in new PublicDocumentSetBeingCloned {
@@ -425,9 +426,9 @@ class OverviewDocumentSetSpec extends Specification {
 
     "list viewers" in new DocumentSetWithUserScope {
       val users = Seq(
-        DocumentSetUser(documentSet.id, "owner", Owner),
-        DocumentSetUser(documentSet.id, "viewer-1", Viewer),
-        DocumentSetUser(documentSet.id, "viewer-2", Viewer))
+        DocumentSetUser(documentSet.id, "owner", Ownership.Owner),
+        DocumentSetUser(documentSet.id, "viewer-1", Ownership.Viewer),
+        DocumentSetUser(documentSet.id, "viewer-2", Ownership.Viewer))
 
       Schema.documentSetUsers.insert(users)
       val viewers = OverviewDocumentSet.findViewers(documentSet.id)
@@ -437,16 +438,16 @@ class OverviewDocumentSetSpec extends Specification {
     }
 
     "add viewers" in new DocumentSetWithViewer{
-      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewerEmail, Viewer)))
+      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewerEmail, Ownership.Viewer)))
     }
 
     "only have one role per user" in new DocumentSetWithViewer {
-      documentSet.setUserRole(admin.email, Viewer)
+      documentSet.setUserRole(admin.email, Ownership.Viewer)
       allViewers must have size (1)
     }
     
     "don't add viewer twice" in new DocumentSetWithViewer {
-      documentSet.setUserRole(viewerEmail, Viewer)
+      documentSet.setUserRole(viewerEmail, Ownership.Viewer)
       allViewers must have size(1)
     }
 

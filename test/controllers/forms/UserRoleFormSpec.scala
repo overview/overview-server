@@ -1,9 +1,10 @@
 package controllers.forms
 
 import org.specs2.mutable.Specification
-import models.orm.DocumentSetUserRoleType._
 import org.specs2.specification.Scope
 import play.api.data.Form
+
+import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetUser
 
 class UserRoleFormSpec extends Specification {
@@ -21,7 +22,7 @@ class UserRoleFormSpec extends Specification {
       val documentSetUser = form.get
       documentSetUser.documentSetId must be equalTo(1l)
       documentSetUser.userEmail must be equalTo("user@host.com")
-      documentSetUser.role must be equalTo(Viewer)
+      documentSetUser.role must be equalTo(Ownership.Viewer)
     }
     
     "reject bad email format" in new FormContext {

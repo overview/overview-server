@@ -3,6 +3,7 @@ package models.orm.finders
 import org.overviewproject.postgres.SquerylEntrypoint._
 
 import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.Ownership
 import models.orm.Schema
 
 object DocumentSetCreationJobFinder {
@@ -36,7 +37,7 @@ object DocumentSetCreationJobFinder {
     */
   def byUserWithDocumentSetsAndUploadedFiles(user: String) = {
     from(documentSetCreationJobsWithDocumentSetsAndUploadedFiles)(tuple =>
-      where(tuple._1.documentSetId in DocumentSetFinder.documentSetIdsForUser(user))
+      where(tuple._1.documentSetId in DocumentSetFinder.documentSetIdsForUser(user, Ownership.Owner))
       select(tuple)
       orderBy(tuple._1.id desc)
     )

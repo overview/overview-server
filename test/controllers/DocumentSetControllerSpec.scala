@@ -6,24 +6,24 @@
  */
 package controllers
 
-import play.api.Play.{ start, stop }
-import play.api.test.{ FakeApplication, FakeRequest }
-import play.api.test.Helpers.redirectLocation
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.mvc.AnyContent
+import play.api.mvc.Request
+import play.api.Play.{ start, stop }
+import play.api.test.{ FakeApplication, FakeRequest }
+import play.api.test.Helpers._
+import play.api.test.Helpers.redirectLocation
+
+import org.overviewproject.tree.Ownership
 import controllers.auth.AuthorizedRequest
 import controllers.forms.DocumentSetForm.Credentials
-import models.{OverviewUser,OverviewDocumentSet}
-import models.ResultPage
 import models.orm.DocumentSet
 import models.orm.DocumentSetType._
-import models.orm.DocumentSetUserRoleType._
-import play.api.mvc.Request
-import play.api.mvc.AnyContent
-import play.api.test.Helpers._
 import models.orm.DocumentSetUser
-import models.orm.DocumentSetUserRoleType
+import models.{OverviewUser,OverviewDocumentSet}
+import models.ResultPage
 
 class DocumentSetControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
@@ -32,7 +32,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     var savedDocumentSet: Option[DocumentSet] = None
     var createdJobOwnerId: Option[Long] = None
     var loadedViewers: Int = 0
-    var userRoles: Map[String, DocumentSetUserRoleType] = Map()
+    var userRoles: Map[String, Ownership.Value] = Map()
     var removedUsers: Set[String] = Set()
 
     var documentSets: Map[Long, DocumentSet] = Map((1l, DocumentSet(DocumentCloudDocumentSet, 1l, "title", Some("query"))))
@@ -52,7 +52,7 @@ class DocumentSetControllerSpec extends Specification with Mockito {
       savedDocumentSet = Some(documentSet.copy(id = 1l))
       savedDocumentSet.get
     }
-    override protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) { userRoles += (email -> role) }
+    override protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: Ownership.Value) { userRoles += (email -> role) }
     override protected def removeDocumentSetViewer(documentSet: DocumentSet, email: String) { removedUsers += email }
     
     override protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials): Unit = createdJobOwnerId = Some(documentSet.id)
@@ -153,39 +153,39 @@ class DocumentSetControllerSpec extends Specification with Mockito {
 
       controller.loadedViewers must be equalTo (1)
     }
-    
+
     "add user with role" in new ViewerRequest {
       val result = controller.addUser(1l)(request)
-      
+
       status(result) must be equalTo(OK)
-      controller.userRoles.get(email) must beSome(Viewer)
+      controller.userRoles.get(email) must beSome(Ownership.Viewer)
     }
-    
+
     "return BadRequest if form input is bad" in new BadViewerRequest {
       val result = controller.addUser(1l)(request)
       
       status(result) must be equalTo(BAD_REQUEST)
     }
-    
+
     "return NotFound if document set is bad" in new ViewerRequest {
       val result = controller.addUser(-1l)(request)
       
       status(result) must be equalTo(NOT_FOUND)
     }
-    
+
     "remove user with role" in new ViewerRequest {
       val result = controller.removeUser(1l, "user@host.com")(request)
       
       status(result) must be equalTo(OK)
       controller.removedUsers must haveTheSameElementsAs(Set(email))
     }
-    
+
     "retrun BadRequest if form input is bad" in new BadViewerRequest { 
       val result = controller.addUser(1l)(request)
       
       status(result) must be equalTo(BAD_REQUEST)
     }
-    
+
     "return NotFound if document set is bad" in new ViewerRequest {
       val result = controller.removeUser(-1l, "user@host.com")(request)
       

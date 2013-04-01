@@ -19,6 +19,7 @@ import org.squeryl.annotations.{ Column, Transient }
 import scala.annotation.target.field
 
 import org.overviewproject.postgres.PostgresqlEnum
+import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobType, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import models.OverviewDatabase
@@ -76,7 +77,7 @@ case class DocumentSet(
 
   def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute (count)).single.measures
 
-  def setUserRole(userEmail: String, role: DocumentSetUserRoleType): Unit = {
+  def setUserRole(userEmail: String, role: Ownership.Value): Unit = {
     Schema.documentSetUsers.insert(DocumentSetUser(id, userEmail, role))
   }
 

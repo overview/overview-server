@@ -9,10 +9,13 @@ package models
 
 import java.sql.Timestamp
 import java.util.Date
-import org.overviewproject.postgres.SquerylEntrypoint._
 import ua.t3hnar.bcrypt._
 
-import models.orm.{ User, UserRole }
+import models.orm.User
+import models.orm.UserRole
+import models.orm.UserRole._
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.Ownership
 
 /**
  * A user that exists in the database
@@ -56,7 +59,10 @@ trait OverviewUser {
   def asNormalUser: OverviewUser
 
   /** @return True if the user has permission to read/write the DocumentSet */
-  def isAllowedDocumentSet(documentSetId: Long): Boolean
+  def ownsDocumentSet(documentSetId: Long): Boolean
+
+  /** @return True if the user has permission to read the DocumentSet */
+  def canViewDocumentSet(documentSetId: Long): Boolean
 
   /** @return True if the user has permission to read/write the Document */
   def isAllowedDocument(documentId: Long): Boolean
@@ -271,9 +277,22 @@ object OverviewUser {
       new OverviewUserImpl(user.copy(role = UserRole.NormalUser))
     }
 
-    def isAllowedDocumentSet(id: Long) = {
+    def canViewDocumentSet(id: Long) = {
       import models.orm.Schema
-      Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).nonEmpty
+      Schema.documentSetUsers.where(dsu =>
+        dsu.documentSetId === id
+        and dsu.userEmail === email
+      ).nonEmpty
+    }
+
+    def ownsDocumentSet(id: Long) = {
+      import models.orm.Schema
+
+      Schema.documentSetUsers.where(dsu =>
+        dsu.documentSetId === id
+        and dsu.userEmail === email
+        and dsu.role === Ownership.Owner
+      ).nonEmpty
     }
 
     def isAllowedDocument(id: Long) = {

@@ -1,25 +1,25 @@
 package models.orm
 
-import java.sql.Timestamp
-import java.util.Date
-import anorm.{sqlToSimple, toParameterValue}
 import anorm.SQL
 import anorm.SqlParser.{flatten, scalar}
+import anorm.{sqlToSimple, toParameterValue}
+import java.sql.Timestamp
+import java.util.Date
+import org.junit.runner.RunWith
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
-import org.junit.runner.RunWith
+
 import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSetup._
-import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile}
+import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile }
+import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import helpers.{DbTestContext, PgConnectionContext}
 import models.orm.DocumentSetType._
-import models.orm.DocumentSetUserRoleType._
-
 
 @RunWith(classOf[JUnitRunner])
 class DocumentSetSpec extends Specification {
@@ -86,7 +86,7 @@ class DocumentSetSpec extends Specification {
 
       SQL("""
           INSERT INTO document_set_user (document_set_id, user_email, role)
-          VALUES ({documentSetId}, 'user@host.com', 'Owner')
+          VALUES ({documentSetId}, 'user@host.com', 2)
           """).on("documentSetId" -> id).executeInsert()
 
       SQL("""
@@ -159,14 +159,14 @@ class DocumentSetSpec extends Specification {
       documentSet.isPublic must beFalse
     }
     
-    "set a role for a user" in new DocumentSetContext {
+    inExample("set a role for a user") in new DocumentSetContext {
       val email = "user@host.com"
-      val role = Viewer
+      val role = Ownership.Viewer
       
       documentSet.setUserRole(email, role)
       
       val documentSetUser = Schema.documentSetUsers.allRows.headOption
-      documentSetUser.map(dsu => (dsu.documentSetId, dsu.userEmail, dsu.role.value)) must beSome(documentSet.id, email, role.value)
+      documentSetUser.map(dsu => (dsu.documentSetId, dsu.userEmail, dsu.role)) must beSome(documentSet.id, email, role)
     }
   }
 

@@ -2,16 +2,13 @@ package controllers
 
 import play.api.mvc.Controller
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.DocumentSetCreationJobType.DocumentCloudJob
+import org.overviewproject.tree.Ownership
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.forms.UserRoleForm
 import models.orm.finders.DocumentSetFinder
 import models.orm.{ DocumentSet, User, DocumentSetUser }
-import models.orm.DocumentSetUserRoleType
-import models.orm.DocumentSetUserRoleType._
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, ResultPage }
 
 trait DocumentSetController extends Controller {
@@ -29,7 +26,7 @@ trait DocumentSetController extends Controller {
     Ok(views.html.DocumentSet.index(request.user, documentSets, jobs, form))
   }
 
-  def show(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     val documentSet = OverviewDocumentSet.findById(id)
     documentSet match {
       case Some(ds) => Ok(views.html.DocumentSet.show(request.user, ds))
@@ -37,7 +34,7 @@ trait DocumentSetController extends Controller {
     }
   }
 
-  def showJson(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     OverviewDocumentSet.findById(id) match {
       case Some(ds) => Ok(views.json.DocumentSet.show(request.user, ds))
       case None => NotFound
@@ -52,7 +49,7 @@ trait DocumentSetController extends Controller {
         val credentials = tuple._2
 
         val saved = saveDocumentSet(documentSet)
-        setDocumentSetUserRole(saved, request.user.email, Owner)
+        setDocumentSetUserRole(saved, request.user.email, Ownership.Owner)
         createDocumentSetCreationJob(saved, credentials)
 
         Redirect(routes.DocumentSetController.index()).flashing(
@@ -81,7 +78,7 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  def createClone(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
+  def createClone(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     val cloneStatus = loadDocumentSet(id).map { d =>
       OverviewDocumentSet(d).cloneForUser(request.user.id)
@@ -123,7 +120,7 @@ trait DocumentSetController extends Controller {
   protected def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet]
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
-  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType)
+  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: Ownership.Value)
   protected def removeDocumentSetViewer(documentSet: DocumentSet, email: String)
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
   protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
@@ -133,12 +130,13 @@ object DocumentSetController extends DocumentSetController {
   override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
     OverviewDocumentSetCreationJob.findByUserWithDocumentSet(userEmail, pageSize, page)
   }
-  protected override def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet] =
+  protected override def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet] = {
     OverviewDocumentSet.findByUserId(userEmail, pageSize, page)
+  }
   protected override def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSetFinder.byDocumentSet(id).headOption
   protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
 
-  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: DocumentSetUserRoleType) = OverviewDocumentSet(documentSet).setUserRole(email, role)
+  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: Ownership.Value) = OverviewDocumentSet(documentSet).setUserRole(email, role)
   protected override def removeDocumentSetViewer(documentSet: DocumentSet, email: String) = OverviewDocumentSet(documentSet).removeViewer(email)
 
   protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
