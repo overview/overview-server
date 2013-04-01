@@ -4,13 +4,13 @@ import models.orm.DocumentSetUser
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.JsValue
 
-
 object showUsers {
-  import views.json.helper.ModelJsonConverters.JsonDocumentSetUser
-  
   def apply(documentSetUsers: Iterable[DocumentSetUser]): JsValue = {
-        toJson(Map(
-        "viewers" -> toJson(documentSetUsers)
-        ))
+    val emails : Iterable[String] = documentSetUsers.map(_.userEmail)
+    val emailJsons = emails.map({ email: String => toJson(Map("email" -> email)) })
+
+    toJson(Map(
+      "viewers" -> toJson(emailJsons)
+    ))
   }
 }

@@ -1,11 +1,12 @@
 package views.json.helper
 
-import org.overviewproject.test.DbSpecification
-import models.PersistentTagInfo
-import models.core._
 import play.api.libs.json.Json.toJson
 import org.overviewproject.tree.orm.DocumentProcessingError
 import org.specs2.specification.Scope
+
+import org.overviewproject.test.DbSpecification
+import models.PersistentTagInfo
+import models.core._
 
 class ModelJsonConvertersSpec extends DbSpecification {
 
@@ -58,7 +59,7 @@ class ModelJsonConvertersSpec extends DbSpecification {
     "write tag attributes" in {
       val documentCount = 5l
       val tag: PersistentTagInfo =
-	TestTag(44l, "a tag", Some("e1e100"), DocumentIdList(Seq(10l), documentCount))
+        TestTag(44l, "a tag", Some("e1e100"), DocumentIdList(Seq(10l), documentCount))
 
       val colorForJs = "#" + tag.color.get
       
@@ -77,21 +78,5 @@ class ModelJsonConvertersSpec extends DbSpecification {
 
       tagJson must not / ("color")
     }
-  }
-  
-  "JsonDocumentSetUser" should {
-    import models.orm.DocumentSetUser
-    import models.orm.DocumentSetUserRoleType._
-    import views.json.helper.ModelJsonConverters.JsonDocumentSetUser
-
-    "write user email" in {
-      val userEmail = "user@host.com"
-      val documentSetUser = DocumentSetUser(1l, userEmail, Viewer)
-      
-      val documentSetUserJson = toJson(documentSetUser).toString
-      
-      documentSetUserJson must /("email" -> userEmail)
-    }
-    
   }
 }
