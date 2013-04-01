@@ -8,7 +8,7 @@ import models.OverviewDocumentSet
 trait PublicDocumentSetController extends Controller {
   
   def index = AuthorizedAction(anyUser) { implicit request =>
-    val publicDocumentSets = OverviewDocumentSet.findPublic
+    val publicDocumentSets = OverviewDocumentSet.findPublic.toSeq
     
     Ok(views.html.PublicDocumentSet.index(publicDocumentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
