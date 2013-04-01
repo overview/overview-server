@@ -20,7 +20,7 @@ class TempFile extends java.io.Writer {
   // Open the file for reading and then unreference, so OS will delete for sure when file closes -- at worst, when process exits
   private val _writer = new FileWriter(file)
   private val _reader = new FileReader(file)  
-  //file.delete()
+  file.delete()
 
   private var closed = false
   
