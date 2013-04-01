@@ -141,8 +141,8 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(1, doc1)
       vectorGen.addDocument(2, doc2)
       vectorGen.addDocument(3, doc3)
-      vectorGen.addDocument(4, doc4)
-       
+      vectorGen.addDocument(4L<<40, doc4)  // test 64 bit doc ID
+     
       vectorGen.documentVectors()  // force computation
       
       // these bigrams we must have ("mat_mat" because it appears twice in "mat mat mat")

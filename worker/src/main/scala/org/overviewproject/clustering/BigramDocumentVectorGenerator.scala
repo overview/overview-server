@@ -135,7 +135,7 @@ class BigramDocumentVectorGenerator extends DocumentVectorGeneratorBase {
       
       def hasNext = line != null
       def next = {
-        val id = line(0).toInt.asInstanceOf[DocumentID]
+        val id = line(0).toLong.asInstanceOf[DocumentID]
         val terms = line(1).split(spoolTermSepChar.toString)
         val docVec = DocumentVector(countBigramTerms(terms))
           
