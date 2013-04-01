@@ -154,4 +154,4 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
       admin = $share.attr('data-is-admin')
       is_public = $share.attr('data-is-public')
       update_url = $share.attr('data-update-url')
-      show_sharing_settings(url, create_url, remove_url_pattern, update_url, admin, is_public)
+      show_sharing_settings(url, create_url, remove_url_pattern, update_url, admin == 'true', is_public == 'true')
