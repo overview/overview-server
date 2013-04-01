@@ -3,9 +3,9 @@ define [ 'underscore' ], (_) ->
 
   # A Selection is an intersection of unions, describing Documents:
   #
-  # * A list of Node IDs
-  # * A list of Tag IDs
-  # * A list of Document IDs
+  # * @nodes: A list of Node IDs
+  # * @tags: A list of Tag IDs
+  # * @documents: A list of Document IDs
   #
   # A Selection is immutable.
   #
@@ -84,7 +84,7 @@ define [ 'underscore' ], (_) ->
       _.sortBy(documents, (d) -> d.description)
 
     to_string: () ->
-      JSON.stringify(this)
+      "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
 
     allows_correct_tagcount_adjustments: () ->
       !!(@nodes.length && !@tags.length && !@documents.length)
