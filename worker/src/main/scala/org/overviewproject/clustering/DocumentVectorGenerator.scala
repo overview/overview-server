@@ -16,10 +16,12 @@ import org.overviewproject.util.{Logger, DisplayedError}
 import scala.collection.mutable.Map
 
 // Error object
-case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer) extends DisplayedError("not_enough_documents_error", numDocs.toString, docsNeeded.toString)  
+case class NotEnoughDocumentsError(val numDocs:Integer, val docsNeeded:Integer) 
+  extends DisplayedError("not_enough_documents_error", numDocs.toString, docsNeeded.toString)  
 
-// Basic use: call AddDocument(docID, terms) until done, then DocumentVectors() once
-class DocumentVectorGenerator {
+// Base class object: provides basic structure, and vocabulary table.
+// Does not define how document vectors are processed during addDocument
+abstract class DocumentVectorGeneratorBase {
 
   // --- Config ---
   var minDocsToKeepTerm = 3                   // term must be in at least this many docs or we discard it from vocabulary
@@ -35,32 +37,31 @@ class DocumentVectorGenerator {
   protected var vocab = Map[TermID, TermRecord]()
   protected var totalTerms:Int = 0  // sum of all vocabCounts(_).useCount
   
-  private var docs = Map[DocumentID, DocumentVector]() 
-
+ 
   // Then we compute idf, and finally, docVecs
   private var idf = Map[TermID, Float]()
   private var computedIdf = false
   
   private var computedDocVecs = false
   private var docVecs:DocumentSetVectors = null
-  
-  // --- Override to change behaviour ---
-
-  // Any pre-processing applied to terms goes here
-  protected def termIterator(terms:Seq[String]):Iterator[String] = terms.iterator
-  
-   // Should we keep this particular term? This version drops all terms where count < minOccurencesEachTerm or count == N
-  protected def keepThisTerm(term:TermID, counts:TermRecord) = {
-    (counts.docCount >= minDocsToKeepTerm) &&
-    (keepTermsWhichAppearinAllDocs || (counts.docCount < numDocs)) 
-  }
-  
+    
   // --- Private ---
   
- 
+  // Given a vector of term counts, update the appropriate counts in the vocabulary table
+  private def updateVocab(termCounts:DocumentVectorMap):Unit = {
+    // for each unique term in this doc, update count of uses, count of docs containing term in 
+    for ((term,count) <- termCounts) {
+      val counts = vocab.getOrElse(term, TermRecord(0,0))
+      counts.useCount += count.toInt
+      counts.docCount += 1
+      vocab += (term -> counts)
+      totalTerms += counts.useCount
+    }
+  }
+
   // Return inverse document frequency map: term -> idf
   // Drops unneeded terms based on TermCounts, which is cleared (not needed after this)
-  protected def computeIdf():Unit = {
+  private def computeIdf():Unit = {
     if (!termFreqOnly) {
       // Classic IDF formula. For all terms we are keeping, compute log thingy
       vocab.retain((term, counts) => keepThisTerm(term, counts))
@@ -74,12 +75,12 @@ class DocumentVectorGenerator {
       }
     }
 
-    // save some memory; this is way bigger than idf, especially we're processing bigrams, and no longer needed
+    // save some memory; this is way bigger than idf, especially when we're processing bigrams, and no longer needed
     vocab.clear()  
   }
   
   // Create a new string table with only the terms that have been kept
-  protected def reducedStringTable() : StringTable = {
+  private def reducedStringTable() : StringTable = {
     val newStrings = new StringTable
     idf.keys foreach { id =>
       newStrings.stringToId(termStrings.idToString(id))   // stringToId adds this string to newStrings
@@ -90,7 +91,7 @@ class DocumentVectorGenerator {
   // After all documents have been added, divide each term by idf value.
   // Works in place to avoid completely duplicating the set of vectors (major memory hit otherwise)
   // Hence, destroys term counts, so cannot addDocument after this
-  protected def computeDocVecs() : Unit = {
+  private def computeDocVecs() = {
       
     if (numDocs < minDocsToKeepTerm)
       throw new NotEnoughDocumentsError(numDocs, minDocsToKeepTerm)
@@ -102,10 +103,10 @@ class DocumentVectorGenerator {
     docVecs = new DocumentSetVectors(newStrings)
    
     // run over the stored TF values one more time, multiplying them by the IDF values for each term, and normalizing
-    while (docs.size > 0) {               // for each doc
-      val (docid, doctf) = docs.head      // pop docid and terms
-      docs.remove(docid)   
+    val docIter = documentVectorIterator()
+    while (docIter.hasNext) {               // for each doc
 
+      val (docid, doctf) = docIter.next()
       var docvec = DocumentVectorMap()
       var vecLength = 0f
 
@@ -136,52 +137,54 @@ class DocumentVectorGenerator {
     
     computedDocVecs = true
   }
+ 
+  // --- Utilities for subclasses ---
+  
+  // Create a basic term count vector
+  // Side effects: updates string table
+  protected def countTerms(terms:Iterator[String]) : DocumentVectorMap = {  
+    // count how many times each token appears in this doc (term frequency)
+    var termCounts = DocumentVectorMap()
+    for (termString <- terms) {
+      val term = termStrings.stringToId(termString)
+      val prev_count = termCounts.getOrElse(term, 0f)
+      termCounts += (term -> (prev_count + 1))
+    }
+    termCounts
+  }    
 
+  // --- Abstract members that subclasses must define ---
+
+  // Create a vector of term counts for a single document... and store it somewhere
+  // No need to update the vocab table though, we'll do that
+  protected def createAndStoreDocumentVector(docId: DocumentID, terms: Seq[String]) : DocumentVectorMap
+  
+  // After all documents have been added, decide whether we should keep each particular term
+  protected def keepThisTerm(term:TermID, counts:TermRecord) : Boolean
+
+  // After all documents have been added, feed them one at a time into TF-IDF computation
+  protected def documentVectorIterator() : Iterator[(DocumentID, DocumentVector)]
+
+  
   // --- Public ---
-
+  
   // provide limited access to our string table, so if someone has one of our vectors they can look up the IDs
   // Note: do not create new strings if stringToId called on non-existent string, so caller can tell if it occurs
   def idToString(id: TermID) = termStrings.idToString(id)
   def stringToId(s: String) = termStrings.stringToIdFailIfMissing(s)
-
-  // Add one document. Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
-  // Cannot be called after documentVectors(), which "freezes" the document set 
-  def addDocument(docId: DocumentID, terms: Seq[String]) = {
-    require(computedDocVecs == false)
-    require(computedIdf == false)
-    
-    this.synchronized {
-      if (terms.size > 0) {
-
-        val termIter = termIterator(terms)
-        
-        // count how many times each token appears in this doc (term frequency)
-        var termcounts = DocumentVectorMap()
-        for (termString <- termIter) {
-          val term = termStrings.stringToId(termString)
-          val prev_count = termcounts.getOrElse(term, 0f)
-          termcounts += (term -> (prev_count + 1))
-        }
-
-        // for each unique term in this doc, update count of uses, count of docs containing term in 
-        for ((term,count) <- termcounts) {
-          val counts = vocab.getOrElse(term, TermRecord(0,0))
-          counts.useCount += count.toInt
-          counts.docCount += 1
-          vocab += (term -> counts)
-          totalTerms += counts.useCount
-        }
-
-        // divide out document length to go from term count to term frequency
-        termcounts.transform((key, count) => count / terms.size.toFloat)
-        
-        // store the document vector in compressed form, and add it to the set of all doc vectors
-        docs += (docId -> DocumentVector(termcounts))
-        numDocs += 1
-      }
-    }
-  }
   
+  // Add one document.
+  // Takes a list of terms, which are pre-lexed strings. Order of terms and docs does not matter.
+  // Cannot be called after documentVectors(), which "freezes" the document set
+  // Subclasses must define
+  def addDocument(docId: DocumentID, terms: Seq[String]) = {
+    if (terms.size > 0) {
+      val docVec = createAndStoreDocumentVector(docId, terms)
+      updateVocab(docVec)
+    }
+    numDocs += 1
+  }
+
   // Compute IDF on demand
   def Idf() = {
     if (!computedIdf) {
@@ -202,3 +205,45 @@ class DocumentVectorGenerator {
   
 }
 
+
+// "Classic" document vector generator -- all in memory, unigram parsing
+class DocumentVectorGenerator extends DocumentVectorGeneratorBase {
+
+  // --- Data ---
+  private var docs = Map[DocumentID, DocumentVector]() 
+
+  // --- Required methods ---
+    
+  // Create a vector of term counts for a single document... and store it somewhere
+  // No need to update the vocab table though, we'll do that
+  protected def createAndStoreDocumentVector(docId: DocumentID, terms: Seq[String]) : DocumentVectorMap = {
+    // Count frequency of each term, and update vocab table
+    val termCounts = countTerms(terms.iterator)
+    
+    // store the document vector in compressed form, and add it to the set of all doc vectors
+    docs += (docId -> DocumentVector(termCounts))   
+    
+    termCounts
+  }
+  
+  // Should we keep this particular term? This version drops all terms where count < minOccurencesEachTerm or count == N
+  protected def keepThisTerm(term:TermID, counts:TermRecord) = {
+    (counts.docCount >= minDocsToKeepTerm) &&
+    (keepTermsWhichAppearinAllDocs || (counts.docCount < numDocs)) 
+  }
+
+  // After all documents have been added, feed them one at a time into TF-IDF computation
+  protected def documentVectorIterator() : Iterator[(DocumentID, DocumentVector)] = {
+  
+    // anonymous iterator class that removes from "docs" map as it feeds vectors to computeDocVecs
+    // This saves a lot of memory, otherwise we end up with two copies of docvecs
+    new Iterator[(DocumentID, DocumentVector)] {
+      def hasNext = { docs.size > 0 }
+      def next = {
+        val (id, vec) = docs.head
+        docs.remove(id)
+        (id,vec)
+      }
+    }
+  }
+}

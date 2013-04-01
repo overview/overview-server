@@ -30,27 +30,28 @@ class TempFileSpec extends Specification {
     "write to and read from a file" in {  
       val tf = new TempFile
     
-      tf.write(data1)
-      
-      val reader = tf.getReader   
+      tf.write(data1)      
       tf.flush()
-      readToEnd(reader) must beEqualTo(data1)       // read what we've written so far
+      readToEnd(tf.reader) must beEqualTo(data1)       // read what we've written so far
 
       tf.write(data2)
       tf.flush()
-      readToEnd(reader) must beEqualTo(data2)       // read what we've written since last read
+      readToEnd(tf.reader) must beEqualTo(data2)       // read what we've written since last read
       
-      tf.getReader should beEqualTo(reader)         // theere is only one reader object
+      tf.reader should beEqualTo(tf.reader)            // there is only one reader object
     }
     
-    "fail to read or write after close" in {
+    "fail to write and read after close" in {
       val tf = new TempFile    
       tf.write(data1)
 
-      tf.close()
+      tf.close()      
+      tf.write(data2) should throwA[java.io.IOException]  // can't write after close
       
-      tf.write(data2) should throwA[java.io.IOException]      
-      tf.getReader.read() should throwA[java.io.IOException]
+      readToEnd(tf.reader) must beEqualTo(data1)          // but can still read...
+      
+      tf.reader.close
+      tf.reader.read() should throwA[java.io.IOException] // ...until we close the reader
     }
   }
 

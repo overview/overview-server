@@ -15,15 +15,24 @@
 package org.overviewproject.clustering
 
 import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.util.TempFile
+import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
 
 // This generator indexes bigrams. All bigrams are stored in vocabulary and and document vectors during intermediate processing, 
 // then we throw out bigrams that don't seem to be collocations, and trim doc vecs accordingly.
-class BigramDocumentVectorGenerator extends DocumentVectorGenerator {
+class BigramDocumentVectorGenerator extends DocumentVectorGeneratorBase {
 
   // --- Config ---
   var minBigramOccurrences:Int   = 5                // throw out bigram if it has less than this many occurrences
   var minBigramLikelihood:Double = 30               // ...or if not this many times more likely than chance to be a colocation
  
+  var spoolTermSepChar = ' '                        // terms cannot contain this character, we use it as a separator in the spool file
+  
+  // ---- state ----
+  private val docSpool = new TempFile
+  private val spoolWriter = new CSVWriter(docSpool)
+  spoolWriter.writeNext(Array("id","text"))             // write csv file header
+  
   // ---- Logic ----
   
   // computes log(x**k * (1-x)**(n-k)), but rewrite this for better numerical stablilty 
@@ -80,18 +89,64 @@ class BigramDocumentVectorGenerator extends DocumentVectorGenerator {
     }
   }
 
-  // --- Overrides ---
+  // Little util that converts a set of terms into a document vector, counting every bigram along with unigrams
+  def countBigramTerms(terms:Seq[String]) = {
+    val termIter =  new BigramIterator(terms)
+    countTerms(termIter)    
+  } 
   
-  // Walk through term list as bigrams
-  protected override def termIterator(terms:Seq[String]):Iterator[String] = new BigramIterator(terms)
-    
+  // --- Required Methods  ---
+      
   // Drops all terms where count < minOccurencesEachTerm or count == N, and take the log of document frequency in the usual IDF way
   // Drops all brigrams that don't appear often enough, or are not likely colocations
-  protected override def keepThisTerm(term:TermID, counts:TermRecord) = {
+  protected def keepThisTerm(term:TermID, counts:TermRecord) = {
     (counts.docCount >= minDocsToKeepTerm) &&
     (keepTermsWhichAppearinAllDocs || (counts.docCount < numDocs)) &&
     keepBigram(term, counts)
-  }  
+  }
+  
+  // AddDocument processes bigrams and spools to a temp file
+  def createAndStoreDocumentVector(docId: DocumentID, terms: Seq[String]) : DocumentVectorMap = {
+    
+    // Create a term count vector, including bigrams and use it to update the vocab 
+    val termCounts = countBigramTerms(terms)
+    
+    // Now discard the vector, and store the original terms to disk
+    require(terms.forall(_.forall(_ != spoolTermSepChar))) // terms can't have sep char in them (default: space)
+    
+    // write docid,text
+    val idStr = docId.toString
+    val termsStr = terms.mkString(spoolTermSepChar.toString)
+    spoolWriter.writeNext(Array(idStr, termsStr))
+    
+    termCounts
+  }
+
+  // When we're asked for document vectors, we read all of them back in
+  def documentVectorIterator() : Iterator[(DocumentID, DocumentVector)] = {
+        
+    // iterator to read the documents in one at a time from CSV, converting back to document vectors
+    new Iterator[(DocumentID, DocumentVector)] {
+      
+      spoolWriter.close()              // flushes, so we can read all we've written
+      val spoolReader = new CSVReader(docSpool.reader)
+      spoolReader.readNext()           // eat header
+      var line = spoolReader.readNext()
+      
+      def hasNext = line != null
+      def next = {
+        val id = line(0).toInt.asInstanceOf[DocumentID]
+        val terms = line(1).split(spoolTermSepChar.toString)
+        val docVec = DocumentVector(countBigramTerms(terms))
+          
+        line = spoolReader.readNext()
+        if (line == null)
+          spoolReader.close()           // frees the temp file
+          
+        (id, docVec)
+      }      
+    }
+  }
 }
 
 

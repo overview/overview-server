@@ -48,7 +48,7 @@ class KMeansDocumentsSpec extends Specification {
       
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
-      clusterSizes should haveTheSameElementsAs (Seq(4,3,2))
+      clusterSizes should haveTheSameElementsAs (Seq(3,3,3))
     }
   }
 }
