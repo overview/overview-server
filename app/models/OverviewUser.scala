@@ -282,6 +282,9 @@ object OverviewUser {
       Schema.documentSetUsers.where(dsu =>
         dsu.documentSetId === id
         and dsu.userEmail === email
+      ).nonEmpty || Schema.documentSets.where(d =>
+        d.id === id
+        and d.isPublic === true
       ).nonEmpty
     }
 
