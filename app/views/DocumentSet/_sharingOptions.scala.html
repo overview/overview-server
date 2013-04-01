@@ -1,16 +1,13 @@
 @()(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._share")) { m =>
-
   <div id="sharing-options-modal" class="modal hide fade">
     <div class="modal-header">
       <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
       <h3>@m("h3")</h3>
     </div>
-    <div class="modal-body">
-      
-    </div>
+    <div class="modal-body"><!-- JavaScript will fill this in --></div>
     <div class="modal-footer">
-  	  <a href="#" data-dismiss="modal" class="btn">Close</a>
+  	  <a href="#" data-dismiss="modal" class="btn">@m("close")</a>
     </div>
   </div>
 }

@@ -1,113 +1,119 @@
 define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
-  loading_template = _.template("""<p>Loading sharing settings.""")
+  t = (key, args...) -> i18n("views.DocumentSet._share.#{key}", args...)
+
+  loading_html = _.template('<p><%- message %></p>', { message: t('loading') })
+  error_html = _.template('<p class="errpr"><%- message %></p>', { message: t('error') })
+  viewer_li_template = _.template("""
+    <li data-email="<%- viewer.email %>">
+      <%- viewer.email %><a class="remove" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>"><%- t('remove') %></a>
+    </li>
+  """)
   sharing_dialog_template =  _.template("""
     <div id="manage-user-roles">
-      <p><%- list_explanation %></p>
-      <p class="list-header"><%- list_header %></p>
+      <p class="list-header"><%- t('list_header', viewers.length) %></p>
         
       <ul class="unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
-        <% _.each(viewers, function(viewer) { %> <li class="email">
-          <%- viewer.email %><a class="remove-viewer muted" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>" email="<%- viewer.email %>">&times;</a>
-        </li> <% }); %>
+        <% _.each(viewers, function(viewer) { %>
+          <%= viewer_li_template({ t: t, viewer: viewer, remove_url_pattern: remove_url_pattern }) %>
+        <% }) %>
       </ul>
     </div>
-    <p><%- form_explanation %></p>
-    <form method="post" class="input-append add-viewer" action="<%- create_url %>" >
+    <p><%- t('explanation') %></p>
+    <form method="post" class="input-append add-viewer" action="<%- create_url %>">
       <input type="hidden" name="role" value="Viewer" />
-      <input type="email" class="span2" placeholder="Email" name="email" />
-      <button type="submit" class="btn add-viewer-button" value="Add Viewer" disabled="true"><i class="icon-plus"/> <%- button_label %></input>
+      <input type="email" class="span2" placeholder="<%- t('email_placeholder') %>" name="email" />
+      <button type="submit" class="btn add-viewer-button" disabled="true"><i class="icon-plus"/> <%- t('add') %></button>
     </form>
-    <% if (admin == 'true') { %>    
-    <form method="post" class="update form-inline" action="<%- update_url %>">
-      <label>
-        <input type="checkbox" name="public" value="true" <% if (is_public == 'true') { %>
-          checked="checked"
-        <% } %> />
+    <% if (is_admin) { %>    
+      <form method="post" class="update form-inline" action="<%- update_url %>">
+        <input id="set-as-example-document-set" type="checkbox" name="public" value="true"<%= is_public && ' checked="checked"' || '' %> />
         <input type="hidden" name="public" value="false" />
-        Set as Example Document Set
-      </label>
-    </form>
+        <label for="set-as-example-document-set">
+          <%- t('example_document_set.checkbox_label') %>
+        </label>
+      </form>
     <% } %>
   """)
 
-  sort_by_email = (viewers) ->
-    viewers.sort (a, b) ->
-      return if (a.email >= b.email) then 1 else -1
+  # Sets the modal dialog's HTML to reflect the given viewers.
+  #
+  # Each viewer looks like: { email: 'user@example.org' }
+  set_viewers = (viewers) ->
 
-  show_sharing_settings = (url, create_url, remove_url_pattern, update_url, admin, is_public) ->
+  show_sharing_settings = (url, create_url, remove_url_pattern, update_url, is_admin, is_public) ->
     $modal = $('#sharing-options-modal')
     $modal.modal('show')
-    $modal.find('.modal-body').html(loading_template)
+
+    set_viewers = (viewers) ->
+      html = sharing_dialog_template({
+        viewers: _.sortBy(viewers, 'email')
+        viewer_li_template: viewer_li_template
+        create_url: create_url
+        remove_url_pattern: remove_url_pattern
+        update_url: update_url
+        is_admin: is_admin
+        is_public: is_public
+        t: t
+      })
+      $modal.find('.modal-body').html(html)
+      $modal.find('input[name=email]').focus()
+      undefined
+
     $.getJSON(url)
-      .success((emails) ->
-        $modal.find('.modal-body').html(sharing_dialog_template({ viewers: sort_by_email(emails.viewers), create_url: create_url, remove_url_pattern: remove_url_pattern, update_url: update_url, admin: admin, is_public: is_public, list_explanation: i18n('views.DocumentSet._share.list.explanation'), form_explanation: i18n('views.DocumentSet._share.form.explanation'), button_label: i18n('views.DocumentSet._share.button.label'), list_header: i18n('views.DocumentSet._share.list.header', emails.viewers.length) })))
-      .error((a, b, c) ->
-        console.log("error #{b}"))
+      .success((data) -> set_viewers(data.viewers))
+      .error(-> $modal.find('.modal-body').html(error_html))
+
+  get_email_list_from_dom = () ->
+    $('#sharing-options-modal li').map(-> this.getAttribute('data-email')).get()
 
   add_email_to_list = (new_email, emails) ->
     emails.push new_email
     refresh_email_list(emails)
-    
+
   remove_email_from_list = (email_to_remove, emails) ->
-    remaining_emails = emails.filter (email) -> email isnt email_to_remove
-    refresh_email_list(remaining_emails)
+    emails = emails.filter((email) -> email != email_to_remove)
+    refresh_email_list(emails)
 
   refresh_email_list = (emails) ->
-    $list_header = $('p.list-header')
-    $list_header.text(i18n('views.DocumentSet._share.list.header', emails.length))
-    $collaborators = $('ul.collaborators')
-    $collaborators.empty()
-    remove_url_pattern = $collaborators.attr('remove_url_pattern')
-    for email in emails.sort()
-      remove_url = remove_url_pattern.replace('{0}', encodeURIComponent(email))
-      $email_item = $('<li/>').addClass('email').text(email)
-      $remove_button = $('<a/>')
-        .addClass('remove-viewer')
-        .addClass('muted')
-        .attr('href', remove_url)
-        .attr('email', email)
-        .text('\u00d7')
-      $email_item.append($remove_button)
-      $collaborators.append($email_item)
+    viewers = _.map(emails, (email) -> { email: email })
+    set_viewers(viewers)
 
-      
-
-
-  
   $ ->
+    $('#sharing-options-modal').on 'shown', ->
+      $('input[name=email]', this).focus()
+
     $('#sharing-options-modal').one 'show', ->
       $('#sharing-options-modal').on 'submit', 'form.add-viewer', (e) ->
         e.preventDefault()
         data = $(e.currentTarget).serialize()
         url = $(e.currentTarget).attr('action')
-  
-        emails = $('li.email a').map(-> $(this).attr('email')).get()
-  
-        $email =  $('input[name=email]')
+
+        emails = get_email_list_from_dom()
+
+        $email =  $('#sharing-options-modal input[name=email]')
         new_email = $email.val()
         $email.val("")
-  
-        if (new_email != '' and new_email not in emails)
+
+        if (new_email && new_email not in emails)
           add_email_to_list(new_email, emails)
           $.ajax({
             url: url
             type: 'POST'
             data: data
-            })
-  
-      $('#sharing-options-modal').on 'click', 'div ul li a', (e) ->
+          })
+
+      $('#sharing-options-modal').on 'click', 'a.remove', (e) ->
         e.preventDefault()
         url = $(e.currentTarget).attr('href')
-        email = $(e.currentTarget).attr('email')
-        emails = $('li.email a').map(-> $(this).attr('email')).get()
+        email = $(e.currentTarget).closest('li').attr('data-email')
+        emails = get_email_list_from_dom()
         remove_email_from_list(email, emails)
-  
+
         $.ajax({
           url: url
           type: 'DELETE'
-          })
-  
-  
+        })
+
       $('#sharing-options-modal').keyup (e) ->
         text = $('input[name=email]').val()
         $add_viewer_button = $('.add-viewer-button')
@@ -116,11 +122,11 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
           $add_viewer_button.attr('disabled', 'true')
         else
           $add_viewer_button.removeAttr('disabled')
-  
+
       $('#sharing-options-modal').on 'change click', 'form.update input[type=checkbox]', (e) ->
         $checkbox = $(e.currentTarget)
         $checkbox.closest('form').submit()
-  
+
       $('#sharing-options-modal').on 'submit', 'form.update', (e) ->
         $form = $(e.currentTarget)
         data = $form.serialize()
@@ -138,9 +144,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
             $share_button.attr('is-public', is_public)
   
         e.preventDefault()
-  
-  
-             
+
     $('div.document-sets').on 'click', 'a.show-sharing-settings', (e) ->
       e.preventDefault()
       $share = $(e.currentTarget)
@@ -151,6 +155,3 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
       is_public = $share.attr('data-is-public')
       update_url = $share.attr('data-update-url')
       show_sharing_settings(url, create_url, remove_url_pattern, update_url, admin, is_public)
-  
-
-

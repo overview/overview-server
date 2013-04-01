@@ -193,12 +193,17 @@ views.DocumentSet._documentSet.subtitle.query=Query: {0}
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
 views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
-views.DocumentSet._share.button.label=Add user
 views.DocumentSet._share.h3=Sharing settings
-views.DocumentSet._share.list.explanation=You can share the document set with other users by adding their email address below. If they are Overview users, they can clone the document set under the Import section.
-views.DocumentSet._share.list.header={0,choice,0#Document set is not shared with any other users|0< Document set is shared with:}
-views.DocumentSet._share.form.explanation=Add users:
- 
+views.DocumentSet._share.close=Close
+views.DocumentSet._share.loading=Loading...
+views.DocumentSet._share.error=There was an error loading the sharing settings for this document set. Please refresh the page and try again.
+views.DocumentSet._share.explanation=Share this document set with other Overview users by entering their email addresses. They can clone the document set from the Import section.
+views.DocumentSet._share.list_header={0,choice,0#This document set is not shared with anybody|0< This document set is shared with:}
+views.DocumentSet._share.form.explanation=Add a user:
+views.DocumentSet._share.add=Add user
+views.DocumentSet._share.email_placeholder=user@example.org
+views.DocumentSet._share.remove=remove
+views.DocumentSet._share.example_document_set.checkbox_label=Set as example document set
 
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
