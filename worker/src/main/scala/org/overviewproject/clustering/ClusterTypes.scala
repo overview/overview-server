@@ -12,6 +12,7 @@ package org.overviewproject.clustering
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import org.overviewproject.util.StringTable
 
 object ClusterTypes {
 
@@ -19,33 +20,6 @@ object ClusterTypes {
   type TermWeight = Float
   type TermID = Int
 
-  // Simple little class that maintains a bidirectional map between term strings and term IDs
-  class StringTable {
-
-    private var _stringToId = mutable.Map[String, TermID]()
-    private var _idToString = ArrayBuffer[String]()
-
-    def stringToId(term: String): TermID = {
-      _stringToId.getOrElseUpdate(term, { _idToString.append(term); _idToString.size - 1 })
-    }
-
-    def idToString(id: TermID): String = {
-      _idToString(id)
-    }
-    
-    def stringToIdFailIfMissing(term: String) : TermID = {
-      _stringToId.getOrElse(term, throw new java.util.NoSuchElementException)
-    }
-    
-    def size = _idToString.size
-    
-    // translate a string from this table to another. throws if not in target table
-    def translateIdTo(id: TermID, s:StringTable) : TermID = {
-      val term = idToString(id)
-      s._stringToId(term)         // access private map, to prevent string from being added
-    } 
-
-  }
 
   // --- DocumentVectorMap ----
   // This class represents documents as a straightforward mutable map from terms (encoded as IDs) to weights

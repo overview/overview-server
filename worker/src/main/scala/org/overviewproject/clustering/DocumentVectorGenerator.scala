@@ -12,7 +12,7 @@
 package org.overviewproject.clustering
 
 import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.{Logger, DisplayedError}
+import org.overviewproject.util.{Logger, DisplayedError, StringTable}
 import scala.collection.mutable.Map
 
 // Error object

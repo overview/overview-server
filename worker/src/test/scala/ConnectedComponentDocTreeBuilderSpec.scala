@@ -9,6 +9,7 @@
 import scala.collection.mutable.{Map, Set}
 import org.overviewproject.clustering.ConnectedComponentDocTreeBuilder
 import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.util.StringTable
 import org.specs2.mutable.Specification
 
 class ConnectedComponentDocTreeBuilderSpec extends Specification {
