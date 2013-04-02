@@ -12,6 +12,7 @@ import java.util.Date
 import ua.t3hnar.bcrypt._
 
 import models.orm.User
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.UserRole
 import models.orm.UserRole._
 import org.overviewproject.postgres.SquerylEntrypoint._
@@ -278,24 +279,14 @@ object OverviewUser {
     }
 
     def canViewDocumentSet(id: Long) = {
-      import models.orm.Schema
-      Schema.documentSetUsers.where(dsu =>
-        dsu.documentSetId === id
-        and dsu.userEmail === email
-      ).nonEmpty || Schema.documentSets.where(d =>
-        d.id === id
-        and d.isPublic === true
-      ).nonEmpty
+      // lazy val so we don't run two queries when one will do
+      lazy val byUser = DocumentSetUserFinder.byDocumentSetAndUser(id, email).nonEmpty
+      lazy val byPublic = DocumentSetFinder.byDocumentSetAndIsPublic(id, true).nonEmpty
+      byUser || byPublic
     }
 
     def ownsDocumentSet(id: Long) = {
-      import models.orm.Schema
-
-      Schema.documentSetUsers.where(dsu =>
-        dsu.documentSetId === id
-        and dsu.userEmail === email
-        and dsu.role === Ownership.Owner
-      ).nonEmpty
+      DocumentSetUserFinder.byDocumentSetAndUserAndRole(id, email, Ownership.Owner).nonEmpty
     }
 
     def isAllowedDocument(id: Long) = {

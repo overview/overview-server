@@ -14,8 +14,7 @@ import models.orm.DocumentSet
 import models.orm.DocumentSetType._
 import models.upload.OverviewUploadedFile
 import models.orm.Schema
-import models.orm.DocumentSetUser
-import models.orm.finders.DocumentSetCreationJobFinder
+import models.orm.finders.{ DocumentSetUserFinder, DocumentSetCreationJobFinder }
 import models.orm.DocumentSetUser
 
 class OverviewDocumentSetSpec extends Specification {
@@ -254,33 +253,6 @@ class OverviewDocumentSetSpec extends Specification {
       }
     }
 
-    trait DocumentSetWithViewer extends DocumentSetWithUserScope {
-      val viewerEmail = "viewer@observer.org"
-        
-      override def setupWithDb = {
-        super.setupWithDb
-        documentSet.setUserRole(viewerEmail, Ownership.Viewer)
-      }
-      
-      def allViewers: Iterable[DocumentSetUser] = Schema.documentSetUsers.allRows.filter(_.role == Ownership.Viewer) 
-    }
-    
-    trait OwnerIsViewer extends DocumentSetWithUserScope {
-      
-      override def setupWithDb = {
-        super.setupWithDb
-        val otherDocumentSet = DocumentSet(DocumentCloudDocumentSet, query = Some("viewed"))
-        documentSets.insert(otherDocumentSet)
-        OverviewDocumentSet(otherDocumentSet).setUserRole(admin.email, Ownership.Viewer)
-      }
-    }
-    
-    "user should be the owner" in new DocumentSetWithUserScope {
-      val d = OverviewDocumentSet.findById(documentSet.id).get
-      d.owner.id must be equalTo (1l)
-      d.owner.email must be equalTo ("admin@overview-project.org")
-    }
-
     "delete document set and all associated information" in new DocumentSetReferencedByOtherTables {
       val job: DocumentSetCreationJob = ormDocumentSet.createDocumentSetCreationJob()
       documentSetCreationJobs.insertOrUpdate(job.copy(state = Error))
@@ -373,16 +345,16 @@ class OverviewDocumentSetSpec extends Specification {
 
     inExample("create a copy for cloning user") in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
-      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      val documentSetClone = documentSet.cloneForUser(cloner.email)
 
-      documentSetClone.owner.id must be equalTo (cloner.id)
+      DocumentSetUserFinder.byDocumentSet(documentSetClone.id).headOption.map(_.userEmail) must beSome(cloner.email)
       documentSetClone.query must be equalTo (documentSet.query)
       documentSetClone.createdAt must be greaterThan (documentSet.createdAt)
     }
 
     "set cloned DocumentSet to be private" in new PublicDocumentSet {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
-      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      val documentSetClone = documentSet.cloneForUser(cloner.email)
 
       documentSetClone.isPublic must beFalse
     }
@@ -391,7 +363,7 @@ class OverviewDocumentSetSpec extends Specification {
     inExample("copy uploaded_file when cloning CsvImportDocumentSet") in new DocumentSetWithCompletedUpload {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
 
-      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      val documentSetClone = documentSet.cloneForUser(cloner.email)
 
       val cloneWithUpload = OverviewDocumentSet.findById(documentSetClone.id).get
 
@@ -405,7 +377,7 @@ class OverviewDocumentSetSpec extends Specification {
 
     inExample("create clone job for clone") in new DocumentSetWithUserScope {
       val cloner = User(email = "cloner@clo.ne", passwordHash = "password").save
-      val documentSetClone = documentSet.cloneForUser(cloner.id)
+      val documentSetClone = documentSet.cloneForUser(cloner.email)
 
       DocumentSetCreationJobFinder.byDocumentSet(documentSetClone.id).headOption must beSome
     }
@@ -422,65 +394,6 @@ class OverviewDocumentSetSpec extends Specification {
       val cancelledCloneJob = OverviewDocumentSetCreationJob.findByDocumentSetId(cloneDocumentSet.id).get
       cancelledCloneJob.state must be equalTo (Cancelled)
       documentSetUsers.allRows must have size (0)
-    }
-
-    "list viewers" in new DocumentSetWithUserScope {
-      val users = Seq(
-        DocumentSetUser(documentSet.id, "owner", Ownership.Owner),
-        DocumentSetUser(documentSet.id, "viewer-1", Ownership.Viewer),
-        DocumentSetUser(documentSet.id, "viewer-2", Ownership.Viewer))
-
-      Schema.documentSetUsers.insert(users)
-      val viewers = OverviewDocumentSet.findViewers(documentSet.id)
-
-      viewers must haveTheSameElementsAs(users.tail)
-
-    }
-
-    "add viewers" in new DocumentSetWithViewer{
-      allViewers must haveTheSameElementsAs(Seq(DocumentSetUser(documentSet.id, viewerEmail, Ownership.Viewer)))
-    }
-
-    "only have one role per user" in new DocumentSetWithViewer {
-      documentSet.setUserRole(admin.email, Ownership.Viewer)
-      allViewers must have size (1)
-    }
-    
-    "don't add viewer twice" in new DocumentSetWithViewer {
-      documentSet.setUserRole(viewerEmail, Ownership.Viewer)
-      allViewers must have size(1)
-    }
-
-    "remove viewers" in new DocumentSetWithViewer {
-      documentSet.removeViewer(viewerEmail)
-      allViewers must beEmpty
-    }
-
-    "don't fail if viewer does not exist" in new DocumentSetWithViewer{
-      documentSet.removeViewer(viewerEmail) 
-      allViewers must beEmpty
-    }
-    
-    "find the owner if viewer has been added" in new DocumentSetWithViewer {
-      val owner = documentSet.owner
-      owner.email must be equalTo(admin.email)
-    }
-    
-    "find no shared documents if there are none for user" in new DocumentSetWithViewer {
-      val sharedDocumentSets = OverviewDocumentSet.findByViewer(admin.email)
-      sharedDocumentSets must beEmpty
-    }
-    
-    "find documents shared with user" in new DocumentSetWithViewer {
-      val sharedDocumentSets = OverviewDocumentSet.findByViewer(viewerEmail)
-    
-      sharedDocumentSets.map(_.id) must contain(documentSet.id).only
-    }
-    
-    "only list document sets owned by user" in new OwnerIsViewer {
-      val documentSets = OverviewDocumentSet.findByUserId(admin.email, 10, 1)
-      
-      documentSets must have size(1)
     }
   }
   step(stop)

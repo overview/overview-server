@@ -77,10 +77,6 @@ case class DocumentSet(
 
   def errorCount: Long = from(Schema.documentProcessingErrors)(dpe => where(dpe.documentSetId === this.id) compute (count)).single.measures
 
-  def setUserRole(userEmail: String, role: Ownership.Value): Unit = {
-    Schema.documentSetUsers.insert(DocumentSetUser(id, userEmail, role))
-  }
-
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
   override def isPersisted(): Boolean = (id > 0)
 

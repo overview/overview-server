@@ -37,10 +37,9 @@ DELETE /documentsets/:id              controllers.DocumentSetController.delete(i
 PUT    /documentsets/:id              controllers.DocumentSetController.update(id: Long)
 POST   /documentsets/:id/clone        controllers.DocumentSetController.createClone(id: Long)
 
-# FIXME should be DocumentSetUsersController
-GET    /documentsets/:id/show-users   controllers.DocumentSetController.showUsers(id: Long)
-POST   /documentsets/:id/users        controllers.DocumentSetController.addUser(id: Long)
-DELETE /documentsets/:id/users/:email controllers.DocumentSetController.removeUser(id: Long, email: String)
+GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.indexJson(id: Long)
+POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)
+DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
 
 GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", start: Int ?= 0, end: Int ?= 20)
 

@@ -10,6 +10,7 @@ import ua.t3hnar.bcrypt._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetType.DocumentCloudDocumentSet
+import models.orm.stores.DocumentSetUserStore
 
 case class User(
   val id: Long = 0L,
@@ -42,7 +43,7 @@ case class User(
     require(id != 0l)
 
     val documentSet = Schema.documentSets.insert(new DocumentSet(DocumentCloudDocumentSet, 0L, query=Some(query)))
-    documentSet.setUserRole(email, Ownership.Owner)
+    DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, email, Ownership.Owner))
 
     documentSet
   }

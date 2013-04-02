@@ -6,9 +6,7 @@ import play.api.data.Forms._
 import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetUser
 
-object UserRoleForm {
-  private val RoleFormat = "^(Owner|Viewer)$"
-    
+object DocumentSetUserForm {
   def apply(documentSetId: Long): Form[DocumentSetUser] = Form(
     mapping(
       "email" -> email,

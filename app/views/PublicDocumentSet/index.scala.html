@@ -1,13 +1,13 @@
-@(publicDocumentSets: Seq[OverviewDocumentSet])(implicit lang: Lang)
+@(documentSets: Seq[(OverviewDocumentSet,OverviewUser)])(implicit lang: Lang)
 
 @defining(scopedMessages("views.PublicDocumentSet.index")) { m =>
   <h2>@m("title")</h2>
-  @if(publicDocumentSets.isEmpty) {
+  @if(documentSets.isEmpty) {
     <p class="empty">@m("empty")</p>
   } else {
     <p class="preamble">@m("preamble")</p>
     <ul class="unstyled public-document-sets">
-      @publicDocumentSets.map(views.html.PublicDocumentSet._documentSet(_))
+      @documentSets.map{tuple: (OverviewDocumentSet,OverviewUser) => views.html.DocumentSet._smallDocumentSet(tuple._1, tuple._2)}
     </ul>
   }
 }

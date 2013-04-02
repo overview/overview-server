@@ -2,9 +2,9 @@ package models
 
 import org.overviewproject.tree.orm.{ Document, DocumentSetCreationJob, UploadedFile }
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
-
 import org.overviewproject.tree.Ownership
-import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser, User }
+import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser }
+import models.orm.stores.DocumentSetUserStore
 import models.upload.OverviewUploadedFile
 import models.orm.finders.DocumentSetFinder
 
@@ -32,23 +32,13 @@ trait OverviewDocumentSet {
   /** Creation date (without milliseconds) */
   val createdAt: java.util.Date
 
-  /** The user owning the document set */
-  val owner: OverviewUser
-
   /** FIXME: Only here because admin page expects it of all jobs */
   val query: String
 
-  /**
-    * @return a new OverviewDocumentSet owned by cloneOwner. Creates a OverviewDocumentSetCreationJob
+  /** @return a new OverviewDocumentSet owned by cloneOwner. Creates a OverviewDocumentSetCreationJob
     * that will create a copy of the original, including nodes, tags, and documents.
     */
-  def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet
-
-  /** Add a viewer to the document set */
-  def setUserRole(email: String, role: Ownership.Value): Unit
-
-  /** Remove the viewer */
-  def removeViewer(email: String): Unit
+  def cloneForUser(userEmail: String): OverviewDocumentSet
 }
 
 object OverviewDocumentSet {
@@ -56,7 +46,6 @@ object OverviewDocumentSet {
 
   trait OverviewDocumentSetImpl extends OverviewDocumentSet {
     import models.orm.Schema
-    import org.overviewproject.postgres.SquerylEntrypoint._
     
     protected val ormDocumentSet: DocumentSet
 
@@ -66,45 +55,22 @@ object OverviewDocumentSet {
     override val isPublic = ormDocumentSet.isPublic
     override val title = ormDocumentSet.title
     override val createdAt = ormDocumentSet.createdAt
-    override lazy val owner = findOwner
 
     override lazy val query = ""
 
-    override def cloneForUser(cloneOwnerId: Long): OverviewDocumentSet = {
+    override def cloneForUser(userEmail: String): OverviewDocumentSet = {
       val ormDocumentSetClone = cloneDocumentSet.save
       val documentSetClone = OverviewDocumentSet(ormDocumentSetClone)
-      
-      User.findById(cloneOwnerId).map { u =>
-        documentSetClone.setUserRole(u.email, Ownership.Owner)
-      }
+      DocumentSetUserStore.insertOrUpdate(
+        DocumentSetUser(documentSetClone.id, userEmail, Ownership.Owner)
+      )
 
       val cloneJob = DocumentSetCreationJob(documentSetCreationJobType = CloneJob, documentSetId = ormDocumentSetClone.id, sourceDocumentSetId = Some(ormDocumentSet.id))
       Schema.documentSetCreationJobs.insert(cloneJob)
       documentSetClone
     }
 
-    override def setUserRole(email: String, role: Ownership.Value): Unit = {
-      val emailWithRole = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id and dsu.userEmail === email).headOption
-      emailWithRole match {
-        case Some(u) if (u.role != Ownership.Owner) => Schema.documentSetUsers.update(u.copy(role = role))
-        case Some(u) if (u.role == Ownership.Owner) => // Owner can't change, for now.
-        case _ => Schema.documentSetUsers.insert(DocumentSetUser(id, email, role))
-      }
-    }
-
-    override def removeViewer(email: String): Unit =  Schema.documentSetUsers.deleteWhere(dsu => dsu.documentSetId === id and dsu.userEmail === email)
-
     protected def cloneDocumentSet: DocumentSet = ormDocumentSet.copy(id = 0, isPublic = false, createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime))
-
-    private def findOwner: OverviewUser = {
-      import models.orm.Schema.documentSetUsers
-      import org.overviewproject.postgres.SquerylEntrypoint._
-
-      val documentUsers = Schema.documentSetUsers.where(dsu => dsu.documentSetId === id)
-      val ownerEmail = documentUsers.filter(_.role == Ownership.Owner).head.userEmail
-      
-      OverviewUser.findByEmail(ownerEmail).get
-    }
   }
 
   case class CsvImportDocumentSet(
@@ -163,7 +129,6 @@ object OverviewDocumentSet {
 
   /** @return All document sets marked public */
   def findPublic: Iterable[OverviewDocumentSet] = {
-    import org.overviewproject.postgres.SquerylEntrypoint._
     DocumentSetFinder.byIsPublic(true).map(OverviewDocumentSet.apply)
   }
 

@@ -1,22 +1,47 @@
 package models.orm.finders
 
+import org.squeryl.Query
 import scala.language.postfixOps
+import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
-import models.orm.{ DocumentSet, Schema }
+import models.orm.{ DocumentSet, Schema, User }
 
-object DocumentSetFinder {
-  /** @return All completed `DocumentSet`s with the given ID. */
-  def byDocumentSet(documentSet: Long) = {
-    from(Schema.documentSets)(ds =>
-      where(ds.id === documentSet)
-      select(ds)
-    )
+object DocumentSetFinder extends Finder {
+  class DocumentSetResult(query: Query[DocumentSet]) extends FinderResult(query) {
+    def withOwners : FinderResult[(DocumentSet,User)] = {
+      join(toQuery, Schema.documentSetUsers, Schema.users)((ds, dsu, u) =>
+        select(ds, u)
+        on(
+          ds.id === dsu.documentSetId,
+          dsu.userEmail === u.email
+        )
+      )
+    }
+  }
+  object DocumentSetResult {
+    implicit def fromQuery(query: Query[DocumentSet]) = new DocumentSetResult(query)
+  }
+
+  /** @return All completed `DocumentSet`s with the given ID.
+    *
+    * This can have 0 or 1 row.
+    */
+  def byDocumentSet(documentSet: Long) : DocumentSetResult = {
+    Schema.documentSets.where(_.id === documentSet)
+  }
+
+  /** @return All completed `DocumentSet`s with the given ID and isPublic.
+    *
+    * This can have 0 or 1 row.
+    */
+  def byDocumentSetAndIsPublic(documentSet: Long, isPublic: Boolean) : DocumentSetResult = {
+    byDocumentSet(documentSet).where(_.isPublic === isPublic)
   }
 
   /** @return All `DocumentSet`s with the given isPublic valid. */
-  def byIsPublic(isPublic: Boolean) = {
+  def byIsPublic(isPublic: Boolean) : DocumentSetResult = {
     from(Schema.documentSets)(ds =>
       where(ds.isPublic === isPublic)
       select(ds)
@@ -28,7 +53,7 @@ object DocumentSetFinder {
     *
     * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
     */
-  private def byUserWithRole(user: String, role: Ownership.Value) = {
+  private def byUserWithRole(user: String, role: Ownership.Value) : DocumentSetResult = {
     from(Schema.documentSets)(ds =>
       where(
         ds.id in documentSetIdsForUser(user, role)
@@ -43,7 +68,7 @@ object DocumentSetFinder {
     *
     * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
     */
-  def byOwner(user: String) = {
+  def byOwner(user: String) : DocumentSetResult = {
     byUserWithRole(user, Ownership.Owner)
   }
 
@@ -51,7 +76,7 @@ object DocumentSetFinder {
     *
     * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
     */
-  def byViewer(user: String) = {
+  def byViewer(user: String) : DocumentSetResult = {
     byUserWithRole(user, Ownership.Viewer)
   }
 

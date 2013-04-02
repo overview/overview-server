@@ -7,13 +7,13 @@ import play.api.data.Form
 import org.overviewproject.tree.Ownership
 import models.orm.DocumentSetUser
 
-class UserRoleFormSpec extends Specification {
+class DocumentSetUserFormSpec extends Specification {
 
-  "UserRoleForm" should {
+  "DocumentSetUserForm" should {
     
     trait FormContext extends Scope {
       def bindForm(email: String, role: String): Form[DocumentSetUser] =
-        UserRoleForm(1l).bind(Map("email" -> email, "role" -> role))
+        DocumentSetUserForm(1l).bind(Map("email" -> email, "role" -> role))
     }
     
     "create a DocumentSetUser" in new FormContext {

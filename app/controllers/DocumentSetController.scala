@@ -6,8 +6,8 @@ import org.overviewproject.tree.Ownership
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
-import controllers.forms.UserRoleForm
-import models.orm.finders.DocumentSetFinder
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
+import models.orm.stores.DocumentSetUserStore
 import models.orm.{ DocumentSet, User, DocumentSetUser }
 import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, ResultPage }
 
@@ -49,7 +49,8 @@ trait DocumentSetController extends Controller {
         val credentials = tuple._2
 
         val saved = saveDocumentSet(documentSet)
-        setDocumentSetUserRole(saved, request.user.email, Ownership.Owner)
+        val dsu = DocumentSetUser(saved.id, request.user.email, Ownership.Owner)
+        insertOrUpdateDocumentSetUser(dsu)
         createDocumentSetCreationJob(saved, credentials)
 
         Redirect(routes.DocumentSetController.index()).flashing(
@@ -81,7 +82,7 @@ trait DocumentSetController extends Controller {
   def createClone(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     val cloneStatus = loadDocumentSet(id).map { d =>
-      OverviewDocumentSet(d).cloneForUser(request.user.id)
+      OverviewDocumentSet(d).cloneForUser(request.user.email)
       Seq(
         "event" -> "document-set-create-clone"
       )
@@ -93,37 +94,13 @@ trait DocumentSetController extends Controller {
     Redirect(routes.DocumentSetController.index()).flashing(cloneStatus : _*)
   }
 
-  def showUsers(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    val viewers = loadDocumentSetViewers(id)
-    Ok(views.json.DocumentSetUser.showUsers(viewers))
-  }
-
-  def addUser(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    loadDocumentSet(id).map { ds =>
-      UserRoleForm(id).bindFromRequest().fold(
-        f => BadRequest, { dsu =>
-          setDocumentSetUserRole(ds, dsu.userEmail, dsu.role) // Currently only sets viewer role
-          Ok
-        })
-    }.getOrElse(NotFound)
-  }
-
-  def removeUser(id: Long, email: String) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    loadDocumentSet(id).map { ds =>
-      removeDocumentSetViewer(ds, email)
-      Ok
-    }.getOrElse(NotFound)
-  }
-
   protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
     : ResultPage[(OverviewDocumentSetCreationJob, OverviewDocumentSet)]
   protected def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet]
   protected def loadDocumentSet(id: Long): Option[DocumentSet]
   protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
-  protected def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: Ownership.Value)
-  protected def removeDocumentSetViewer(documentSet: DocumentSet, email: String)
+  protected def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit
   protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
-  protected def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser]
 }
 
 object DocumentSetController extends DocumentSetController {
@@ -136,12 +113,10 @@ object DocumentSetController extends DocumentSetController {
   protected override def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSetFinder.byDocumentSet(id).headOption
   protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
 
-  protected override def setDocumentSetUserRole(documentSet: DocumentSet, email: String, role: Ownership.Value) = OverviewDocumentSet(documentSet).setUserRole(email, role)
-  protected override def removeDocumentSetViewer(documentSet: DocumentSet, email: String) = OverviewDocumentSet(documentSet).removeViewer(email)
+  protected override def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser) = {
+    DocumentSetUserStore.insertOrUpdate(documentSetUser)
+  }
 
   protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
     documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
-
-  protected override def loadDocumentSetViewers(id: Long): Iterable[DocumentSetUser] = OverviewDocumentSet.findViewers(id)
-
 }

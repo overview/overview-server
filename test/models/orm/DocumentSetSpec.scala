@@ -13,7 +13,6 @@ import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.{ DocumentProcessingError, DocumentSetCreationJob, UploadedFile }
-import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.DocumentSetCreationJobType._
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
@@ -157,16 +156,6 @@ class DocumentSetSpec extends Specification {
     
     "Be set to not public by default" in new DocumentSetContext {
       documentSet.isPublic must beFalse
-    }
-    
-    inExample("set a role for a user") in new DocumentSetContext {
-      val email = "user@host.com"
-      val role = Ownership.Viewer
-      
-      documentSet.setUserRole(email, role)
-      
-      val documentSetUser = Schema.documentSetUsers.allRows.headOption
-      documentSetUser.map(dsu => (dsu.documentSetId, dsu.userEmail, dsu.role)) must beSome(documentSet.id, email, role)
     }
   }
 

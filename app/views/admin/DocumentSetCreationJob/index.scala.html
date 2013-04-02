@@ -3,6 +3,9 @@
   jobs: Seq[models.OverviewDocumentSetCreationJob]
 )(implicit lang: Lang, flash: Flash)
 
+@import org.overviewproject.tree.Ownership
+@import models.orm.finders.DocumentSetUserFinder
+@import models.orm.DocumentSetUser
 @import views.html.helper.EnumToString
 
 @defining(scopedMessages("views.admin.DocumentSetCreationJob.index")) { m =>
@@ -30,7 +33,7 @@
             <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete"></progress>@((job.fractionComplete * 100).toInt)%</td>
             <td class="state-description">@job.stateDescription</td>
-            <td class="email">@documentSet.owner.email</td>
+            @DocumentSetUserFinder.byDocumentSetAndRole(documentSet.id, Ownership.Owner).map{ owner: DocumentSetUser => <td class="email">@owner.userEmail</td> }
             <td class="title">@documentSet.title</td>
             <td class="query">@documentSet.query</td>
           </tr>

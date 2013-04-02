@@ -16,7 +16,8 @@ import play.api.mvc.AnyContent
 
 import org.overviewproject.postgres.LO
 import org.overviewproject.tree.Ownership
-import models.orm.{DocumentSet,User}
+import models.orm.{DocumentSet,DocumentSetUser,User}
+import models.orm.stores.DocumentSetUserStore
 import models.orm.DocumentSetType._
 import models.{OverviewDatabase,OverviewUser}
 import models.upload.OverviewUpload
@@ -107,7 +108,9 @@ object UploadController extends UploadController with PgConnection {
       documentSetType = CsvImportDocumentSet,
       uploadedFileId = Some(upload.uploadedFile.id)).save
 
-    User.findById(upload.userId).map { u => documentSet.setUserRole(u.email, Ownership.Owner) }
+    User.findById(upload.userId).map { u: User =>
+      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
+    }
     documentSet.createDocumentSetCreationJob(contentsOid = Some(upload.contentsOid))
   }
 }

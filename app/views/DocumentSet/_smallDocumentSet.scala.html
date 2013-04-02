@@ -1,11 +1,14 @@
-@(documentSet: OverviewDocumentSet)(implicit lang: Lang)
+@(
+  documentSet: OverviewDocumentSet,
+  owner: OverviewUser
+)(implicit lang: Lang)
 
-@defining(scopedMessages("views.SharedDocumentSet._documentSet")) { m =>
+@defining(scopedMessages("views.SharedDocumentSet._smallDocumentSet")) { m =>
   <li>
     <form method="POST" action="@routes.DocumentSetController.createClone(documentSet.id)" class="form-inline">
       <button class="btn"><i class="icon-download"></i> @m("import")</button>
     </form>
     <h3>@documentSet.title</h3>
-    <p class="shared-by">@m("shared_by", documentSet.owner.email)</p>
+    <p class="shared-by">@m("shared_by", owner.email)</p>
   </li>
 }
