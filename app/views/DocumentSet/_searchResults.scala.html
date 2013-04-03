@@ -1,0 +1,18 @@
+@(
+  documentSets: Seq[(OverviewDocumentSet,OverviewUser)],
+  messageScope: String
+)(implicit lang: Lang)
+
+@defining(scopedMessages(messageScope)) { m =>
+  <h2>@m("title")</h2>
+  <p class="preamble">@m("preamble")</p>
+  @if(documentSets.isEmpty) {
+    <p class="empty">@m("empty")</p>
+  } else {
+    <ul class="unstyled shared-document-sets">
+      @documentSets.map{tuple: (OverviewDocumentSet,OverviewUser) =>
+        @views.html.DocumentSet._smallDocumentSet(tuple._1, tuple._2)
+      }
+    </ul>
+  }
+}

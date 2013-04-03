@@ -3,7 +3,7 @@
   owner: OverviewUser
 )(implicit lang: Lang)
 
-@defining(scopedMessages("views.SharedDocumentSet._smallDocumentSet")) { m =>
+@defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
   <li>
     <form method="POST" action="@routes.DocumentSetController.createClone(documentSet.id)" class="form-inline">
       <button class="btn"><i class="icon-download"></i> @m("import")</button>

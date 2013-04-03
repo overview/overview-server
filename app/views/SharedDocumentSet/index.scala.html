@@ -1,12 +1,2 @@
 @(documentSets: Seq[(OverviewDocumentSet,OverviewUser)])(implicit lang: Lang)
-
-@defining(scopedMessages("views.SharedDocumentSet.index")) { m =>
-  <h2>@m("title")</h2>
-  @if(documentSets.isEmpty) {
-    <p class="empty">@m("empty")</p>
-  } else {
-    <ul class="unstyled shared-document-sets">
-      @documentSets.map{tuple: (OverviewDocumentSet,OverviewUser) => views.html.DocumentSet._smallDocumentSet(tuple._1, tuple._2)}
-    </ul>
-  }
-}
+@views.html.DocumentSet._searchResults(documentSets, "views.SharedDocumentSet.index")
