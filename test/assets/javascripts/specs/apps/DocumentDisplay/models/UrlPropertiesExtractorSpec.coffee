@@ -32,6 +32,13 @@ require [
       )
 
       itShouldRecognize(
+        'a Twitter url with "/statuses/" as opposed to "/status/"',
+        'https://twitter.com/adamhooper/statuses/317041719847813120',
+          type: 'twitter'
+          url: '//twitter.com/adamhooper/status/317041719847813120'
+      )
+
+      itShouldRecognize(
         'a // Twitter url',
         '//twitter.com/adamhooper/status/317041719847813120',
           type: 'twitter'

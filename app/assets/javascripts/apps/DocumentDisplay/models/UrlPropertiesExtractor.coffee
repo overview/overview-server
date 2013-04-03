@@ -3,7 +3,7 @@ define [], ->
     {
       id: 'twitter'
       name: 'Twitter tweet'
-      regex: /// ^(?:https?:)?//(?:www\.)?twitter\.com/[\#!/]*([a-zA-Z0-9_]{1,15})/status/(\d+) ///
+      regex: /// ^(?:https?:)?//(?:www\.)?twitter\.com/[\#!/]*([a-zA-Z0-9_]{1,15})/status(?:es)?/(\d+) ///
       capture: [ 'username', 'id' ]
       url: (o) -> "//twitter.com/#{o.username}/status/#{o.id}"
     }

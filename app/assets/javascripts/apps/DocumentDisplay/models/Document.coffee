@@ -15,6 +15,8 @@ define [
     }
 
     initialize: ->
-      url = @get('url') || ''
+      @set('heading', @get('title') || @get('description'))
+
+      url = @get('url')
       @set('urlProperties', UrlPropertiesExtractor.urlToProperties(url))
   }
