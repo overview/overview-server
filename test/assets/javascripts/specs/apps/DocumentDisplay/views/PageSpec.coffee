@@ -47,7 +47,9 @@ require [
 
       beforeEach ->
         document = new Backbone.Model({
-          type: 'DocumentCloudDocument'
+          urlProperties:
+            type: 'documentCloud'
+            url: 'https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principal'
         })
         state.set('document', document)
 
@@ -56,25 +58,27 @@ require [
         expect($iframe.length).toEqual(1)
 
       it 'should have an enable-sidebar link', ->
-        $a = view.$('a.enable-sidebar')
+        $a = view.$('a.boolean-preference[data-preference=sidebar][data-enabled=false]')
         expect($a.length).toEqual(1)
 
       it 'should change pref when clicking the enable-sidebar link', ->
         spyOn(preferences, 'set')
-        view.$('a.enable-sidebar').click()
+        $a = view.$('a.boolean-preference[data-preference=sidebar][data-enabled=false]')
+        $a.click()
         expect(preferences.set).toHaveBeenCalledWith('sidebar', true)
 
       it 'should have a disable-sidebar link', ->
         preferences.set('sidebar', true)
         view.render()
-        $a = view.$('a.disable-sidebar')
+        $a = view.$('a.boolean-preference[data-preference=sidebar][data-enabled=true]')
         expect($a.length).toEqual(1)
 
       it 'should change pref when clicking the disable-sidebar link', ->
         preferences.set('sidebar', true)
         spyOn(preferences, 'set')
         view.render()
-        view.$('a.disable-sidebar').click()
+        $a = view.$('a.boolean-preference[data-preference=sidebar][data-enabled=true]')
+        $a.click()
         expect(preferences.set).toHaveBeenCalledWith('sidebar', false)
 
       it 'should have sidebar=true in the URL when the pref is true', ->
@@ -94,11 +98,12 @@ require [
       beforeEach ->
         window.twttr = undefined
         document = new Backbone.Model({
-          type: 'TwitterTweet'
-          twitterTweet:
-            text: 'text'
+          text: 'text'
+          urlProperties:
+            type: 'twitter'
             username: 'username'
-            url: 'url'
+            id: 124512312
+            url: '//twitter.com'
         })
         twttrDeferred = new $.Deferred()
         spyOn($, 'getScript').andReturn(twttrDeferred)
@@ -131,12 +136,14 @@ require [
         window.twttr = { widgets: { loaded: true, createTweetEmbed: -> } }
         spyOn(window.twttr.widgets, 'createTweetEmbed')
         twttrDeferred.resolve()
-        state.set 'document', new Backbone.Model
-          type: 'TwitterTweet'
-          twitterTweet:
-            text: 'text2'
-            username: 'username2'
-            url: 'url2'
+        state.set('document', new Backbone.Model({
+          text: 'text'
+          urlProperties:
+            type: 'twitter'
+            username: 'username'
+            id: 124512313
+            url: '//twitter.com'
+        }))
         expect(window.twttr.widgets.createTweetEmbed).toHaveBeenCalled()
 
     describe 'with a secure document', ->
@@ -144,31 +151,15 @@ require [
 
       beforeEach ->
         document = new Backbone.Model({
-          type: 'CsvImportDocument'
-          secureSuppliedUrl: 'https://example.org'
           text: 'text'
+          urlProperties:
+            type: 'secure'
+            url: 'https://example.org'
         })
         state.set('document', document)
 
       it 'should show an enable-iframe link', ->
-        preferences.setPreference('iframe', false)
-        expect(view.$('a.enable-iframe').length).toEqual(1)
-
-      it 'should show a disable-iframe link', ->
-        preferences.setPreference('iframe', true)
-        expect(view.$('a.disable-iframe').length).toEqual(1)
-
-      it 'should enable the iframe', ->
-        preferences.setPreference('iframe', false)
-        spyOn(preferences, 'setPreference')
-        view.$('a.enable-iframe').click()
-        expect(preferences.setPreference).toHaveBeenCalledWith('iframe', true)
-
-      it 'should disable the iframe', ->
-        preferences.setPreference('iframe', true)
-        spyOn(preferences, 'setPreference')
-        view.$('a.disable-iframe').click()
-        expect(preferences.setPreference).toHaveBeenCalledWith('iframe', false)
+        expect(view.$('a.boolean-preference[data-preference=iframe]').length).toEqual(1)
 
       it 'should render an iframe', ->
         preferences.setPreference('iframe', true)
@@ -177,72 +168,66 @@ require [
 
       it 'should not show the wrap option if showing an iframe', ->
         preferences.setPreference('iframe', true)
-        expect(view.$('a.enable-wrap, a.disable-wrap').length).toEqual(0)
+        expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(0)
 
       it 'should show the wrap option if not showing an iframe', ->
         preferences.setPreference('iframe', false)
-        expect(view.$('a.enable-wrap, a.disable-wrap').length).toEqual(1)
+        expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(1)
 
-    describe 'with a CSV-import document', ->
-      document = undefined
-
+    describe 'with an insecure document', ->
       beforeEach ->
         document = new Backbone.Model({
-          type: 'CsvImportDocument'
           text: 'text'
+          urlProperties:
+            type: 'insecure'
+            url: 'http://example.org'
         })
         state.set('document', document)
 
-      describe 'without a source URL', ->
-        it 'should render a <pre>', ->
-          $pre = view.$('pre')
-          expect($pre.length).toEqual(1)
+      it 'should link to the source', ->
+        $a = view.$('a[href="http://example.org"]')
+        expect($a.length).toEqual(1)
 
-        it 'should have an enable-wrap link', ->
-          preferences.set('wrap', false)
-          $a = view.$('a.enable-wrap')
-          expect($a.length).toEqual(1)
+      it 'should render a <pre>', ->
+        $pre = view.$('pre')
+        expect($pre.length).toEqual(1)
 
-        it 'should change pref when clicking the enable-wrap link', ->
-          preferences.set('wrap', false)
-          spyOn(preferences, 'set')
-          view.$('a.enable-wrap').click()
-          expect(preferences.set).toHaveBeenCalledWith('wrap', true)
+      it 'should have an enable-wrap link', ->
+        preferences.set('wrap', false)
+        expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(1)
 
-        it 'should have a disable-wrap link', ->
-          preferences.set('wrap', true)
-          view.render()
-          $a = view.$('a.disable-wrap')
-          expect($a.length).toEqual(1)
+    describe 'with an unknown URL', ->
+      beforeEach ->
+        document = new Backbone.Model({
+          text: 'text'
+          urlProperties:
+            type: 'unknown'
+            url: 'abc123'
+        })
+        state.set('document', document)
 
-        it 'should change pref when clicking the disable-wrap link', ->
-          preferences.set('wrap', true)
-          spyOn(preferences, 'set')
-          view.render()
-          view.$('a.disable-wrap').click()
-          expect(preferences.set).toHaveBeenCalledWith('wrap', false)
+      it 'should render a <pre>', ->
+        $pre = view.$('pre')
+        expect($pre.length).toEqual(1)
 
-        it 'should wrap when the pref is on', ->
-          preferences.setPreference('wrap', true)
-          $pre = view.$('pre')
-          expect($pre.hasClass('wrap')).toEqual(true)
+      it 'should have an enable-wrap link', ->
+        preferences.set('wrap', false)
+        expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(1)
 
-        it 'should not wrap when the pref is off', ->
-          preferences.setPreference('wrap', false)
-          $pre = view.$('pre')
-          expect($pre.hasClass('wrap')).toEqual(false)
+    describe 'with no URL', ->
+      beforeEach ->
+        document = new Backbone.Model({
+          text: 'text'
+          urlProperties:
+            type: 'none'
+            url: ''
+        })
+        state.set('document', document)
 
-      describe 'with a source URL', ->
-        beforeEach ->
-          document.set({
-            suppliedUrl: 'http://example.org'
-          })
-          view.render()
+      it 'should render a <pre>', ->
+        $pre = view.$('pre')
+        expect($pre.length).toEqual(1)
 
-        it 'should link to the source', ->
-          $a = view.$('a[href="http://example.org"]')
-          expect($a.length).toEqual(1)
-
-        it 'should render a <pre>', ->
-          $pre = view.$('pre')
-          expect($pre.length).toEqual(1)
+      it 'should have an enable-wrap link', ->
+        preferences.set('wrap', false)
+        expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(1)

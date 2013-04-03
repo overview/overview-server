@@ -16,74 +16,92 @@ define [
     className: 'document'
 
     events:
-      'click a.enable-iframe': 'onClickEnableIframe'
-      'click a.disable-iframe': 'onClickDisableIframe'
-      'click a.enable-sidebar': 'onClickEnableSidebar'
-      'click a.disable-sidebar': 'onClickDisableSidebar'
-      'click a.enable-wrap': 'onClickEnableWrap'
-      'click a.disable-wrap': 'onClickDisableWrap'
+      'click a.boolean-preference': 'onClickBooleanPreference'
 
     templates:
-      DocumentCloudDocument: _.template("""
-        <div class="page type-DocumentCloudDocument">
+      # Shows a preference.
+      #
+      # Parameters:
+      # * pref: preference name, e.g. "sidebar"
+      # * enabled: true if the pref is enabled; false otherwise
+      # * t: scoped i18n function. Will be called with, e.g., "sidebar.enable"
+      #
+      # Note that the t() call is "backward": for instance, when showing the
+      # sidebar pref and it's enabled, t("sidebar.disable") will be the link.
+      # That's because these links describe what will happen on click.
+      showBooleanPref: _.template("""
+        <a href="#" class="boolean-preference" data-preference="<%- pref %>" data-enabled="<%= enabled && 'true' || 'false' %>">
+          <%- t(pref + '.' + (enabled && 'disable' || 'enable')) %>
+        </a>
+      """)
+
+      documentCloud: _.template("""
+        <div class="page type-documentcloud">
           <ul class="actions">
-            <% if (preferences.getPreference('sidebar')) { %>
-              <li><a href="#" class="disable-sidebar"><%- t('sidebar.disable') %></a></li>
-            <% } else { %>
-              <li><a href="#" class="enable-sidebar"><%- t('sidebar.enable') %></a></li>
-            <% } %>
+            <li><%= showBooleanPref('sidebar') %></li>
           </ul>
-          <iframe src="<%- document.get('documentCloudUrl') + '?sidebar=' + (preferences.getPreference('sidebar') && 'true' || 'false') %>"></iframe>
+          <iframe src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') %>"></iframe>
         </div>
       """)
 
       # TODO Make a helper (the server?) find the tweet ID
-      TwitterTweet: _.template("""
-        <div class="page type-TwitterTweet">
+      twitter: _.template("""
+        <div class="page type-twitter">
           <div class="twitter-tweet-container">
-            <blockquote class="twitter-tweet" data-tweet-id="<%- _.last(document.get('twitterTweet').url.split('/')) %>">
-              <p><%- document.get('twitterTweet').text %></p>
-              &mdash;<%- document.get('twitterTweet').username %>
-              <a href="<%- document.get('twitterTweet').url %>">...</a>
+            <blockquote class="twitter-tweet" data-tweet-id="<%- url.id %>">
+              <p><%- document.text %></p>
+              &mdash;<%- url.username %>
+              <a href="<%- url.url %>">...</a>
             </blockquote>
           </div>
         </div>
       """)
 
-      CsvImportDocument: _.template("""
-        <div class="page type-CsvImportDocument">
+      secure: _.template("""
+        <div class="page type-secure">
           <ul class="actions">
-            <% if (document.get('secureSuppliedUrl')) { %>
-              <% if (preferences.getPreference('iframe')) { %>
-                <li><a href="#" class="disable-iframe"><%- t('iframe.disable') %></a></li>
-              <% } else { %>
-                <li><a href="#" class="enable-iframe"><%- t('iframe.enable') %></a></li>
-              <% } %>
+            <% if (!getPref('iframe')) { %>
+              <!-- show wrap before iframe, so iframe doesn't move when disabled -->
+              <li><%= showBooleanPref('wrap') %></li>
             <% } %>
-            <% if (!document.get('secureSuppliedUrl') || !preferences.getPreference('iframe')) { %>
-              <% if (preferences.getPreference('wrap')) { %>
-                <li><a href="#" class="disable-wrap"><%- t('wrap.disable') %></a></li>
-              <% } else { %>
-                <li><a href="#" class="enable-wrap"><%- t('wrap.enable') %></a></li>
-              <% } %>
-            <% } %>
+            <li><%= showBooleanPref('iframe') %></li>
           </ul>
-          <% if (document.get('suppliedUrl')) { %>
-            <p class="source">
-              <span class="label"><%- t('source') %></span>
-              <a href="<%- document.get('suppliedUrl') %>" target="_blank"><%- document.get('suppliedUrl') %></a>
-            </p>
-          <% } %>
-          <% if (!document.get('secureSuppliedUrl') || !preferences.getPreference('iframe')) { %>
-            <pre<%= preferences.getPreference('wrap') && ' class="wrap"' || '' %>><%- document.get('text') %></pre>
+          <p class="source">
+            <span class="label"><%- t('source') %></span>
+            <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
+          </p>
+          <% if (!getPref('iframe')) { %>
+            <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
           <% } else { %>
-            <iframe src="<%- document.get('secureSuppliedUrl') %>" width="100" height="100"></iframe>
+            <iframe src="<%- url.url %>" width="100" height="100"></iframe>
           <% } %>
         </div>
       """)
 
+      insecure: _.template("""
+        <div class="page type-insecure">
+          <ul class="actions">
+            <li><%= showBooleanPref('wrap') %></li>
+          </ul>
+          <p class="source">
+            <span class="label"><%- t('source') %></span>
+            <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
+          </p>
+          <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
+        </div>
+      """)
+
+      default: _.template("""
+        <div class="page type-default">
+          <ul class="actions">
+            <li><%= showBooleanPref('wrap') %></li>
+          </ul>
+          <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
+        </div>
+      """)
+
     postRender:
-      TwitterTweet: ->
+      twitter: ->
         # Twitter's API is undocumented. It goes like this:
         #
         # * On load, twttr.widgets.load() is called (and can't be stopped?).
@@ -133,20 +151,37 @@ define [
       @render()
 
     render: () ->
-      document = @model.get('document')
-      preferences = @model.get('preferences')
+      document = @model.get('document')?.attributes
 
-      type = document?.get('type')
-      template = @templates[type]
-      html = template?({
-        t: t
-        document: document
-        preferences: @preferences
-      })
+      type = undefined
+
+      html = if document?.urlProperties?
+        preferences = @model.get('preferences')
+        getPref = (pref) => preferences.getPreference(pref)
+        showBooleanPref = (pref) =>
+          @templates.showBooleanPref(
+            pref: pref
+            enabled: getPref(pref)
+            t: t
+          )
+
+        url = document.urlProperties
+        type = url.type
+        template = @templates[type] || @templates.default
+
+        html = template(
+          document: document
+          url: document.urlProperties
+          t: t
+          getPref: getPref
+          showBooleanPref: showBooleanPref
+        )
+      else
+        ''
 
       @$el.html(html)
 
-      @postRender[type]?.call(this)
+      @postRender[type]?.call(this) if type
 
     # Scroll the view by the specified number of pages.
     #
@@ -161,13 +196,9 @@ define [
         ))
         csv.scrollTop += n * page_height
 
-    _onClickSetPreference: (e, key, value) ->
+    onClickBooleanPreference: (e) ->
       e.preventDefault()
-      @preferences.setPreference(key, value)
-
-    onClickEnableIframe: (e) -> @_onClickSetPreference(e, 'iframe', true)
-    onClickDisableIframe: (e) -> @_onClickSetPreference(e, 'iframe', false)
-    onClickEnableSidebar: (e) -> @_onClickSetPreference(e, 'sidebar', true)
-    onClickDisableSidebar: (e) -> @_onClickSetPreference(e, 'sidebar', false)
-    onClickEnableWrap: (e) -> @_onClickSetPreference(e, 'wrap', true)
-    onClickDisableWrap: (e) -> @_onClickSetPreference(e, 'wrap', false)
+      a = e.currentTarget
+      key = a.getAttribute('data-preference')
+      wasEnabled = a.getAttribute('data-enabled') == 'true'
+      @preferences.setPreference(key, !wasEnabled)

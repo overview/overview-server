@@ -1,52 +1,20 @@
 package views.json.Document
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json._
 
-import models.{ OverviewDocument, TwitterTweet }
+import models.OverviewDocument
 
 object show {
-  private def baseProperties(d: OverviewDocument) = {
-    val title = d.title.getOrElse("")
-    val heading = if (title.length > 0) title else d.description
-
-    Json.obj(
-      "id" -> d.id,
-      "heading" -> heading
-    )
-  }
-
-  private def documentCloudProperties(d: OverviewDocument.DocumentCloudDocument) = {
-    Json.obj(
-      "documentCloudUrl" -> d.url
-    )
-  }
-
-  private def csvImportProperties(d: OverviewDocument.CsvImportDocument) = {
-    d.twitterTweet match {
-      case Some(t: TwitterTweet) => Json.obj(
-        "twitterTweet" -> Json.obj(
-          "text" -> t.text,
-          "url" -> t.url,
-          "username" -> t.username.getOrElse[String]("")
-        )
-      )
-      case _ => Json.obj(
-        "suppliedUrl" -> d.suppliedUrl.getOrElse[String](""),
-        "secureSuppliedUrl" -> d.secureSuppliedUrl.getOrElse[String](""),
-        "text" -> d.text
-      )
-    }
-  }
-
   def apply(document: OverviewDocument): JsValue = {
-    val subProperties = document match {
-      case d: OverviewDocument.DocumentCloudDocument => documentCloudProperties(d)
-      case d: OverviewDocument.CsvImportDocument => csvImportProperties(d)
-    }
+    val values = scala.collection.mutable.Buffer.empty[(String,JsValue)]
+    values += ("id" -> JsNumber(document.id))
+    values += ("description" -> JsString(document.description))
 
-    val properties = baseProperties(document) ++ subProperties
+    document.title.map(s => values += ("title" -> JsString(s)))
+    document.text.map(s => values += ("text" -> JsString(s)))
+    document.suppliedId.map(s => values += ("suppliedId" -> JsString(s)))
+    document.url.map(s => values += ("url" -> JsString(s)))
 
-    Json.toJson(properties)
+    JsObject(values)
   }
 }

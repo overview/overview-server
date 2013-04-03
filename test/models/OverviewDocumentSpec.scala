@@ -17,7 +17,7 @@ class OverviewDocumentSpec extends DbSpecification {
       def ormDocument: Document
       lazy val document = OverviewDocument(ormDocument)
 
-      lazy val urlWithSimplePattern = document.url("https://localhost/{0}")
+      lazy val urlWithSimplePattern = document.urlWithFallbackPattern("https://localhost/{0}")
     }
 
     trait CsvImportDocumentScope extends Scope with OneDocument {
@@ -35,104 +35,33 @@ class OverviewDocumentSpec extends DbSpecification {
         title=title,
         text=Some(text)
       )
-      lazy val csvImportDocument = document.asInstanceOf[OverviewDocument.CsvImportDocument]
+      override lazy val document = OverviewDocument(ormDocument)
     }
 
     trait DocumentCloudDocumentScope extends Scope with OneDocument {
       override def ormDocument = Document(new DocumentType("DocumentCloudDocument"))
-      lazy val documentCloudDocument = document.asInstanceOf[OverviewDocument.DocumentCloudDocument]
+      override lazy val document = OverviewDocument(ormDocument)
     }
 
-    "wrap a CsvImportDocument" in new CsvImportDocumentScope {
-      document must beAnInstanceOf[OverviewDocument.CsvImportDocument]
-    }
-
-    "wrap a DocumentCloudDocument" in new DocumentCloudDocumentScope {
-      document must beAnInstanceOf[OverviewDocument.DocumentCloudDocument]
-    }
-
-    "give the proper url for a CsvImportDocument with a url" in new CsvImportDocumentScope {
+    "give the proper url for a Document with a url" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("https://example.org/foo")
       urlWithSimplePattern must beEqualTo("https://example.org/foo")
     }
 
-    "give the proper url for a CsvImportDocument with no url" in new CsvImportDocumentScope {
+    "give the proper url for a Document with no url" in new CsvImportDocumentScope {
       override def suppliedUrl = None
       override def ormDocumentId = 4L
       urlWithSimplePattern must beEqualTo("https://localhost/4")
     }
 
-    "give no suppliedUrl for a CsvImportDocument that has none" in new CsvImportDocumentScope {
+    "give no url for a Document that has none" in new CsvImportDocumentScope {
       override def suppliedUrl = None
-      csvImportDocument.suppliedUrl must beNone
-    }
-
-    "give a suppliedUrl for a CsvImportDocument if there is one" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("http://example.org")
-      csvImportDocument.suppliedUrl must beSome("http://example.org")
-    }
-
-    "give no secureSuppliedUrl for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
-      override def suppliedUrl = None
-      csvImportDocument.secureSuppliedUrl must beNone
-    }
-
-    "give a description when there is no title" in new CsvImportDocumentScope {
-      override def description = "description"
-      override def title = None
-      csvImportDocument.titleOrDescription must beEqualTo("description")
-    }
-
-    "give a title when there is one" in new CsvImportDocumentScope {
-      override def title = Some("title")
-      csvImportDocument.titleOrDescription must beEqualTo("title")
-    }
-
-    "give no secureSuppliedUrl for a CsvImportDocument if the suppliedUrl is not https" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("http://example.org")
-      csvImportDocument.secureSuppliedUrl must beNone
-    }
-
-    "give a secureSuppliedUrl for a CsvImportDocument" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("https://example.org")
-      csvImportDocument.secureSuppliedUrl must beSome("https://example.org")
-    }
-
-    "give no twitterTweet for a CsvImportDocument if there is no suppliedUrl" in new CsvImportDocumentScope {
-      override def suppliedUrl = None
-      csvImportDocument.twitterTweet must beNone
-    }
-
-    "give no twitterTweet for a CsvImportDocument if the suppliedUrl is not a Twitter one" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("https://example.org")
-      csvImportDocument.twitterTweet must beNone
-    }
-
-    "give a twitterTweet for an http://twitter.com URL" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("http://twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterTweet must beSome[TwitterTweet]
-    }
-
-    "give a twitterTweet for an https://twitter.com URL" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("https://twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterTweet must beSome[TwitterTweet]
-    }
-
-    "give a twitterTweet for an http://www.twitter.com URL" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("http://www.twitter.com/adamhooper/status/1234")
-      csvImportDocument.twitterTweet must beSome[TwitterTweet]
-    }
-
-    "initialize a twitterTweet with the correct url and text" in new CsvImportDocumentScope {
-      override def suppliedUrl = Some("https://twitter.com/adamhooper/status/1234")
-      val twitterTweet = csvImportDocument.twitterTweet.getOrElse(throw new Exception(".twitterTweet() is broken..."))
-      twitterTweet.url must beEqualTo(suppliedUrl.getOrElse(throw new Exception("Some() is broken...")))
-      twitterTweet.text must beEqualTo(csvImportDocument.text)
+      document.url must beNone
     }
 
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {
       override def ormDocument = super.ormDocument.copy(documentcloudId=Some("foobar"))
-      urlWithSimplePattern must beEqualTo("https://www.documentcloud.org/documents/foobar")
+      document.url must beSome("https://www.documentcloud.org/documents/foobar")
     }
     
     "give a title for a Document if there is one" in new CsvImportDocumentScope {

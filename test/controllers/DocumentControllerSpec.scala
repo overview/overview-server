@@ -9,42 +9,39 @@ import play.api.test.Helpers._
 
 import controllers.auth.AuthorizedRequest
 import models.{OverviewDocument,OverviewUser}
+import org.overviewproject.tree.orm.Document
 
-class DocumentControllerSpec extends Specification {
+class DocumentControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
 
-  class TestDocumentController(val document: OverviewDocument) extends DocumentController {
-    override def findDocumentById(documentId: Long) = Some(document).filter(_.id == documentId)
-  }
+  trait DocumentScope extends Scope {
+    val mockStorage = mock[DocumentController.Storage]
 
-  trait DocumentScope extends Scope with Mockito {
-    val validDocumentId = 1L
-    val invalidDocumentId = 99L
-    val description = "Description"
-    val url = "https://example.org/1"
-
-    val document = mock[OverviewDocument.DocumentCloudDocument]
-    document.id returns validDocumentId
-    document.description returns description
-    document.title returns None
-    document.titleOrDescription returns description
-    document.url(anyString) returns url
+    val controller = new DocumentController {
+      override val storage = mockStorage
+    }
 
     val user = mock[OverviewUser]
     val request = new AuthorizedRequest(FakeRequest(), user)
-    val requestedDocumentId : Long
 
-    val controller = new TestDocumentController(document)
-
+    val requestedDocumentId = 1L
     lazy val result = controller.show(requestedDocumentId)(request)
   }
 
   trait ValidDocumentScope extends DocumentScope {
-    override val requestedDocumentId = validDocumentId
+    val document = mock[OverviewDocument]
+    document.id returns requestedDocumentId
+    document.description returns "description"
+    document.title returns None
+    document.text returns None
+    document.suppliedId returns None
+    document.url returns None
+
+    mockStorage.find(anyInt) returns Some(document)
   }
 
   trait InvalidDocumentScope extends DocumentScope {
-    override val requestedDocumentId = invalidDocumentId
+    mockStorage.find(anyInt) returns None
   }
 
   "DocumentController" should {

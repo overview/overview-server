@@ -1,21 +1,20 @@
-define [ 'backbone' ], (Backbone) ->
+define [
+  'backbone'
+  'apps/DocumentDisplay/models/UrlPropertiesExtractor'
+], (Backbone, UrlPropertiesExtractor) ->
+  urlToProperties = UrlPropertiesExtractor.urlToProperties
+
   Backbone.Model.extend {
     defaults: {
-      heading: '' # Text, chosen by our server
-      documentCloudUrl: undefined # URL on a DocumentCloud server
-      suppliedUrl: undefined # Source URL
-      secureSuppliedUrl: undefined # Source URL that we can display securely (https)
-      twitterTweet: undefined # Data from Twitter: { text, username, url }
+      id: 0 # ID from Overview
+      title: ''
+      description: ''
       text: '' # Text, if it's not a DocumentCloud document
+      url: '' # The server gives this URL, but we should not display it. Use
+              # urlProperties.url instead (it may be https rather than http)
     }
 
     initialize: ->
-      type = if @get('documentCloudUrl')
-        'DocumentCloudDocument'
-      else if @get('twitterTweet')
-        'TwitterTweet'
-      else
-        'CsvImportDocument'
-
-      @set('type', type)
+      url = @get('url') || ''
+      @set('urlProperties', UrlPropertiesExtractor.urlToProperties(url))
   }
