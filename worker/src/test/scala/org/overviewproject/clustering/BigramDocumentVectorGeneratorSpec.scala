@@ -39,13 +39,14 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(2, Seq("word1","word2", "word2", "word3"))
 
       val docVecs = vectorGen.documentVectors
+      val strs = docVecs.stringTable
 
-      val id1 = vectorGen.stringToId("word1")
-      val id2 = vectorGen.stringToId("word2")
-      val id12 = vectorGen.stringToId("word1_word2")
-      val id22 = vectorGen.stringToId("word2_word2")
-      val id3 = vectorGen.stringToId("word3")
-      val id23 = vectorGen.stringToId("word2_word3")
+      val id1 = strs.stringToId("word1")
+      val id2 = strs.stringToId("word2")
+      val id12 = strs.stringToId("word1_word2")
+      val id22 = strs.stringToId("word2_word2")
+      val id3 = strs.stringToId("word3")
+      val id23 = strs.stringToId("word2_word3")
       
       val dv1 = DocumentVectorMap(docVecs(1))
       val rt3 = (1.0/Math.sqrt(3)).asInstanceOf[TermWeight] // 1*1 word1 + 1*1 word2 + 1*1 word1_word2
@@ -84,27 +85,12 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(2, doc2)
       vectorGen.addDocument(3, doc3)
       vectorGen.addDocument(4, doc4)
-       
-      // Lookup the ID's of the words we're going to check
-      var catId = vectorGen.stringToId("cat")
-      var ratId = vectorGen.stringToId("rat")
-      
-      // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
-      val idf = vectorGen.Idf()
-      idf(catId) must beEqualTo(computeIDF(4,3)) 
-      idf(ratId) must beEqualTo(computeIDF(4,3))
-      idf.size must beEqualTo(2)      
-      
-      // Finally, check actual vectors. 
       val vecs = vectorGen.documentVectors()
        
-      // IDs change after documentVectors() call, because it strips removed terms
-      catId = vectorGen.stringToId("cat")
-      ratId = vectorGen.stringToId("rat")
-
-      // check consistency between vectorGen.stringToId and vecs.stringToId (actual bug happened)
-      catId should beEqualTo(vecs.stringTable.stringToId("cat"))
-      ratId should beEqualTo(vecs.stringTable.stringToId("rat"))
+      // Lookup the ID's of the words we're going to check
+      val strs = vecs.stringTable
+      var catId = strs.stringToId("cat")
+      var ratId = strs.stringToId("rat")
       
       // doc1: only cat remains
       vecs(1).terms(0) must beEqualTo(catId)
@@ -142,17 +128,20 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(2, doc2)
       vectorGen.addDocument(3, doc3)
       vectorGen.addDocument(4L<<40, doc4)  // test 64 bit doc ID
-     
-      vectorGen.documentVectors()  // force computation
+      
+      val vecs = vectorGen.documentVectors()
+      
+      // We check that the appropriate bigrams were kept by looking up their names in the string table
+      val strs = vecs.stringTable
       
       // these bigrams we must have ("mat_mat" because it appears twice in "mat mat mat")
       val bigrams = Seq("the_cat", "sat_on", "on_the", "the_mat", "the_rat", "mat_mat")
-      bigrams should haveAllElementsLike { case b => vectorGen.stringToId(b) should beGreaterThanOrEqualTo(0) }
+      bigrams should haveAllElementsLike { case b => strs.stringToIdFailIfMissing(b) should beGreaterThanOrEqualTo(0) }
       
       // these must not be detected as bigrams, because they occur only once
       val notBigrams = Seq("cat_sat", "sat_sat", "cat_ate", "ate_the", "rat_sat",  
                            "rat_doesn't", "doesn't_really", "really_care", "care_about", "about_the", "cat_cat")
-      notBigrams should haveAllElementsLike { case b => vectorGen.stringToId(b) should throwA[java.util.NoSuchElementException] } 
+      notBigrams should haveAllElementsLike { case b => strs.stringToIdFailIfMissing(b) should throwA[java.util.NoSuchElementException] } 
     }
   }
 

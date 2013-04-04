@@ -18,7 +18,7 @@ class KMeansDocumentsSpec extends Specification {
 
   // load up some docs to play with
   def getSampleDocumentVectors : DocumentSetVectors = {
-    val vectorGen = new DocumentVectorGenerator()
+    val vectorGen = new UnigramDocumentVectorGenerator()
     val filenames =  new File("worker/src/test/resources/docs").listFiles.sorted
     filenames foreach { filename =>
       vectorGen.addDocument(filename.hashCode, Lexer.makeTerms(io.Source.fromFile(filename).mkString))
@@ -48,7 +48,7 @@ class KMeansDocumentsSpec extends Specification {
       
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
-      clusterSizes should haveTheSameElementsAs (Seq(3,3,3))
+      clusterSizes should haveTheSameElementsAs (Seq(4,5,0))
     }
   }
 }

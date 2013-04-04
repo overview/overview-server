@@ -13,7 +13,7 @@ import java.io.File
 import scala.Array.canBuildFrom
 import org.overviewproject.clustering.ClusterTypes.DocumentVectorMap
 import org.specs2.mutable.Specification
-import org.overviewproject.clustering.{DocumentVectorGenerator,NotEnoughDocumentsError}
+import org.overviewproject.clustering.{UnigramDocumentVectorGenerator,NotEnoughDocumentsError}
 import org.overviewproject.clustering.Lexer
 
 class IndexDocumentsSpec extends Specification {
@@ -42,7 +42,7 @@ class IndexDocumentsSpec extends Specification {
     
     "index a complex document set" in {
       // This does not check actual IDF values but tests certain constraints on the output
-      val vectorGen = new DocumentVectorGenerator()
+      val vectorGen = new UnigramDocumentVectorGenerator()
       
       // load every doc in the test directory, generate terms and load into vector generator
       val filenames =  new File("worker/src/test/resources/docs").listFiles
@@ -53,24 +53,24 @@ class IndexDocumentsSpec extends Specification {
       
       // check IDF
       val idf = vectorGen.Idf()
- 
+
       // idf words must be drawn from total document vocabulary         
       val vocab = docterms.map(_._2).reduceLeft(_ ++ _).toSet
-      val idfVocab = idf.keys.map(vectorGen.idToString(_)).toSet
+      val idfVocab = idf.keys.map(vectorGen.idfIdToString(_)).toSet
       idfVocab.subsetOf(vocab) must beTrue       
 
       // all IDF terms must be in vocab
       // all IDF weights must be > 0, but <= than min number of docs to keep term (3) out of doc set size
       val maxIdf = math.log10(docterms.length / 3.0).toFloat
       for ((term,weight) <- idf) {
-             vocab must contain(vectorGen.idToString(term))
+             vocab must contain(vectorGen.idfIdToString(term))
              weight must beGreaterThan(0f)      
              weight must beLessThanOrEqualTo(maxIdf)
       }
       
-           // check document vectors
+      // check document vectors
       val vecs = vectorGen.documentVectors()
-      vecs.size must beEqualTo(docterms.size) // ?? can we drop documents if no terms? probably not
+      vecs.size must beEqualTo(docterms.size) // must not have dropped any documents 
       
       // each document vector must contain only terms in IDF and the source document, and be normalized
       for ((filename,terms) <- docterms) {
@@ -78,7 +78,7 @@ class IndexDocumentsSpec extends Specification {
         packedDocVec must not beNull
         val docvec = DocumentVectorMap(packedDocVec.get)
         
-        val docTerms = docvec.keys.map(vectorGen.idToString(_)).toSet
+        val docTerms = docvec.keys.map(vecs.stringTable.idToString(_)).toSet
         docTerms.subsetOf(terms.toSet) must beTrue    // all terms in vector must be in doc
         docTerms.subsetOf(idfVocab) must beTrue       // all terms in vector must be in IDF vocabulary
         

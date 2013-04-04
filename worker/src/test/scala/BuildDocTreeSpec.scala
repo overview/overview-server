@@ -8,7 +8,7 @@
  * 
  */
 
-import org.overviewproject.clustering.{BuildDocTree, DocumentVectorGenerator}
+import org.overviewproject.clustering.{BuildDocTree, UnigramDocumentVectorGenerator, DocTreeNode}
 import org.specs2.mutable.Specification
 
 class BuildDocTreeSpec extends Specification {
@@ -16,7 +16,7 @@ class BuildDocTreeSpec extends Specification {
   "BuildDocTree" should {
     
     "separate empty and non-empty nodes" in {
-      val vectorGen = new DocumentVectorGenerator
+      val vectorGen = new UnigramDocumentVectorGenerator
       vectorGen.addDocument(1, Seq("word1","word2"))
       vectorGen.addDocument(2, Seq("singular"))         // will be removed, N=1
       vectorGen.addDocument(3, Seq("word1","word2"))

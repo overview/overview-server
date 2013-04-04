@@ -17,30 +17,30 @@ class DocumentVectorGeneratorSpec extends Specification {
     math.log10(numDocs/occurences.toFloat).toFloat
   }
   
-  "DocumentVectorGenerator" should {
+  "UnigramDocumentVectorGenerator" should {
     
     "fail if zero documents" in {
-      val vectorGen = new DocumentVectorGenerator()
+      val vectorGen = new UnigramDocumentVectorGenerator()
       vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
     }
     
     "fail if one document" in {
-      val vectorGen = new DocumentVectorGenerator()
+      val vectorGen = new UnigramDocumentVectorGenerator()
       vectorGen.addDocument(1, Seq("foo"))
       vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
     }
     
     "count term frequency only" in {
-      val vectorGen = new DocumentVectorGenerator
+      val vectorGen = new UnigramDocumentVectorGenerator
       vectorGen.addDocument(1, Seq("word1","word2"))
       vectorGen.addDocument(2, Seq("word1","word2", "word2", "word3"))
       vectorGen.minDocsToKeepTerm = 1     // keep all terms
       vectorGen.termFreqOnly = true       // don't apply IDF weighting (but doc vecs still normalized)
       val docVecs = vectorGen.documentVectors
 
-      val id1 = vectorGen.stringToId("word1")
-      val id2 = vectorGen.stringToId("word2")
-      val id3 = vectorGen.stringToId("word3")
+      val id1 = docVecs.stringTable.stringToId("word1")
+      val id2 = docVecs.stringTable.stringToId("word2")
+      val id3 = docVecs.stringTable.stringToId("word3")
       
       val dv1 = DocumentVectorMap(docVecs(1))
       val rt2 = (1.0/Math.sqrt(2)).asInstanceOf[TermWeight]
@@ -59,7 +59,7 @@ class DocumentVectorGeneratorSpec extends Specification {
   
   
     "compute TF-IDF" in {    
-      val vectorGen = new DocumentVectorGenerator()
+      val vectorGen = new UnigramDocumentVectorGenerator()
       
       // Check defaults
       vectorGen.minDocsToKeepTerm should beEqualTo(3)
@@ -76,27 +76,21 @@ class DocumentVectorGeneratorSpec extends Specification {
       vectorGen.addDocument(3, doc3)
       vectorGen.addDocument(4, doc4)
        
-      // Lookup the ID's of the words we're going to check
-      var catId = vectorGen.stringToId("cat")
-      var ratId = vectorGen.stringToId("rat")
-      
-      // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
+      // Generate IDF table
       val idf = vectorGen.Idf()
+      var catId = vectorGen.idfStringToId("cat")
+      var ratId = vectorGen.idfStringToId("rat")
+
+      // Check intermediate inverse document frequency (idf) vals. In this case only terms which appear in 3 docs are preserved
       idf(catId) must beEqualTo(computeIDF(4,3)) 
       idf(ratId) must beEqualTo(computeIDF(4,3))
       idf.size must beEqualTo(2)      
-      
-      // Finally, check actual vectors. 
-      val vecs = vectorGen.documentVectors()
-       
-      // IDs change after documentVectors() call, because it strips removed terms
-      catId = vectorGen.stringToId("cat")
-      ratId = vectorGen.stringToId("rat")
 
-      // check consistency between vectorGen.stringToId and vecs.stringToId (actual bug happened)
-      catId should beEqualTo(vecs.stringTable.stringToId("cat"))
-      ratId should beEqualTo(vecs.stringTable.stringToId("rat"))
-      
+      // now produce final document vectors, and get new term ids (they'll change from the IDF table)
+      val vecs = vectorGen.documentVectors()
+      catId = vecs.stringTable.stringToId("cat")
+      ratId = vecs.stringTable.stringToId("rat")
+
       // doc1: only cat remains
       vecs(1).terms(0) must beEqualTo(catId)
       DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 

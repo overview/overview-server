@@ -15,7 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import anorm.SQL
 import anorm.SqlParser.{flatten, long}
-import org.overviewproject.clustering.{BuildDocTree, DocumentVectorGenerator, Lexer}
+import org.overviewproject.clustering.{BuildDocTree, UnigramDocumentVectorGenerator, Lexer}
 import org.overviewproject.http.{ AsyncHttpRequest, BulkHttpRetriever, DocRetrievalError, DocumentAtURL }
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.util.WorkerActorSystem
@@ -39,10 +39,10 @@ class RetrieveDocumentSetSpec extends DbSpecification {
     }
     
     // Retrieve a list of documents, returning the document vector generator and the list of retrieval errors
-    def retrieveDocs(docURLs:Seq[DocumentAtURL]) : Pair[DocumentVectorGenerator, Seq[DocRetrievalError]] = {
+    def retrieveDocs(docURLs:Seq[DocumentAtURL]) : Pair[UnigramDocumentVectorGenerator, Seq[DocRetrievalError]] = {
       var result = Seq[DocRetrievalError]() 
       
-      val vectorGen = new DocumentVectorGenerator      
+      val vectorGen = new UnigramDocumentVectorGenerator      
       def processDocument(doc: DocumentAtURL, text:String) : Boolean = {
         vectorGen.addDocument(docURLs.indexOf(doc), Lexer.makeTerms(text))
         true

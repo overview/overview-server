@@ -113,9 +113,9 @@ class StringTable {
   
   def size = _idToString.size
   
-  // translate a string from this table to another. throws if not in target table
+  // translate a string from this table to another. Adds if not in target table.
   def translateIdTo(id: TermID, s:StringTable) : TermID = {
     val term = idToString(id)
-    s._stringToId(term)         // access private map, to prevent string from being added
+    s.stringToId(term)
   } 
 }

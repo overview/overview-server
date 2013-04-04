@@ -13,13 +13,14 @@ import org.specs2.mutable.Specification
 class KMeansDocumentComponentsSpec extends Specification {
   
   // Document set we use for all tests
-  val vectorGen = new DocumentVectorGenerator
+  val vectorGen = new UnigramDocumentVectorGenerator
   vectorGen.addDocument(1, Seq("word1","word2"))
   vectorGen.addDocument(2, Seq("word2","word3"))
   vectorGen.addDocument(3, Seq("word3","word4"))
   vectorGen.termFreqOnly = true       // don't apply IDF weighting (make test values below much simpler)
   vectorGen.minDocsToKeepTerm = 1
   val docVecs = vectorGen.documentVectors
+  val strs = docVecs.stringTable
 
   "DocumentComponent" should {
     
@@ -35,10 +36,10 @@ class KMeansDocumentComponentsSpec extends Specification {
       docs should haveTheSameElementsAs(component.docs)
       
       // The centroid should be equal to (word1->1, word2->2, word3->2, word4->1) normalized, so divided by sqrt(10)
-      val id1 = vectorGen.stringToId("word1")
-      val id2 = vectorGen.stringToId("word2")
-      val id3 = vectorGen.stringToId("word3")
-      val id4 = vectorGen.stringToId("word4")
+      val id1 = strs.stringToId("word1")
+      val id2 = strs.stringToId("word2")
+      val id3 = strs.stringToId("word3")
+      val id4 = strs.stringToId("word4")
       val w1 = (1.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
       val w2 = (2.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
       val correctCentroid = DocumentVectorMap(id1->w1, id2->w2, id3->w2, id4->w1)
