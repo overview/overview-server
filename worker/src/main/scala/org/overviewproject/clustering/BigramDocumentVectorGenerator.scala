@@ -17,7 +17,7 @@ package org.overviewproject.clustering
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
 import org.overviewproject.clustering.ClusterTypes._
 import org.overviewproject.util.{StringTable, TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
-import scala.collection.mutable.{Map,IndexedSeq}
+import scala.collection.mutable.{Map,IndexedSeq, HashMap}
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {
   def isBigram = term2 != BigramKey.noTerm
@@ -26,10 +26,10 @@ object BigramKey {
     val noTerm = -1
 }
 
-/*
-class FlatBigrams {
+
+object FlatBigrams {
   // Basic flattener for Int->Long map
-  implicit object IntLongFlattener extends KeyValueFlattener[BigramKey,BigramRecord] {
+  implicit object BigramFlattener extends KeyValueFlattener[BigramKey,VocabRecord] {
     def flatSize = 4
     
     def flatten(kv:Entry, s:IndexedSeq[Int], i:Int) : Unit = {
@@ -42,23 +42,45 @@ class FlatBigrams {
       (BigramKey(s(i), s(i+1)), unFlattenValue(s,i))
     }  
   
-    def flattenValue(v:BigramRecord, s:IndexedSeq[Int], i:Int) : Unit = {
+    def flattenValue(v:VocabRecord, s:IndexedSeq[Int], i:Int) : Unit = {
       s(i+2) = v.useCount
       s(i+3) = v.docCount      
     }
     
-    def unFlattenValue(s:IndexedSeq[Int], i:Int) : BigramRecord = {
-      BigramRecord(s(i+2),s(i+3))
+    def unFlattenValue(s:IndexedSeq[Int], i:Int) : VocabRecord = {
+      VocabRecord(s(i+2),s(i+3))
     } 
   
     def keyHashCode(e:Entry) : Int = e._1.hashCode
   
-    def flatKeyHashCode(s:IndexedSeq[Int], i:Int) : Int = unFlattenValue(s,i).hashCode 
+    def flatKeyHashCode(s:IndexedSeq[Int], i:Int) : Int = {
+      BigramKey(s(i), s(i+1)).hashCode 
+    }
   
     def flatKeyEquals(k:BigramKey, s:IndexedSeq[Int], i:Int) : Boolean = { k.term1 == s(i) && k.term2 == s(i+1) }   
   }
+
+  
+  class FlatBigramVocabulary extends FlatteningHashMap[BigramKey,VocabRecord] {
+  
+    var totalFeatures = 0
+  
+    // Given a vector of feature counts, update the appropriate counts in the vocabulary table
+    // Parameterized on W, the weight type, because it could be Int, TermWeight, whatever.
+    def addDocument[W](featureCounts:Map[BigramKey, W])(implicit n:Numeric[W]) : Unit = {
+      // for each unique term in this doc, update count of uses, count of docs containing term in
+      for ((feature,count) <- featureCounts) {
+        val counts = this.getOrElse(feature, VocabRecord(0,0))
+        counts.useCount += n.toInt(count)
+        counts.docCount += 1
+        this += (feature -> counts)
+        totalFeatures += counts.useCount
+      }
+    }
+  }
+
 }
-*/
+
 
 // This generator indexes bigrams. All bigrams are stored in vocabulary and and document vectors during intermediate processing, 
 // then we throw out bigrams that don't seem to be collocations, and trim doc vecs accordingly.
@@ -78,7 +100,8 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // -- Vocabulary tables --
   
   protected var inStrings = new StringTable
-  protected var vocab = new Vocabulary[BigramKey]()
+  
+  protected var vocab = new FlatBigrams.FlatBigramVocabulary()
   
   // ---- Colocation detection ----
   
