@@ -12,6 +12,7 @@ object DocumentSetFinder extends Finder {
   class DocumentSetResult(query: Query[DocumentSet]) extends FinderResult(query) {
     def withOwners : FinderResult[(DocumentSet,User)] = {
       join(toQuery, Schema.documentSetUsers, Schema.users)((ds, dsu, u) =>
+        where(dsu.role === Ownership.Owner)
         select(ds, u)
         on(
           ds.id === dsu.documentSetId,
@@ -49,7 +50,7 @@ object DocumentSetFinder extends Finder {
     )
   }
 
-  /** @return All completed `DocumentSet`s for whith the given user has the given role.
+  /** @return All completed `DocumentSet`s for with the given user has the given role.
     *
     * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
     */
