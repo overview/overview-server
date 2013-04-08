@@ -92,7 +92,6 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       var catId = strs.stringToId("cat")
       var ratId = strs.stringToId("rat")
       
-      println("VECTORS:" +  vecs(1).toString)
       // doc1: only cat remains
       vecs(1).terms(0) must beEqualTo(catId)
       DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
