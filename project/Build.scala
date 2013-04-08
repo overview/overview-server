@@ -32,10 +32,12 @@ object ApplicationBuild extends Build {
     openCsvDep,
     postgresqlDep,
     squerylDep,
-    mockitoDep,
+    mockitoDep % "it,test",
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
+    "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
-    "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0"
+    "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
+    "org.seleniumhq.selenium" % "selenium-java" % "2.31.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
   )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
@@ -53,10 +55,10 @@ object ApplicationBuild extends Build {
     jdbc,
     openCsvDep,
     squerylDep,
-    mockitoDep % "it,test",
-    specs2Dep % "it,test",
+    mockitoDep % "test",
+    specs2Dep % "test",
     junitInterfaceDep, // FIXME add % "test"
-    junitDep % "it,test"
+    junitDep % "test"
   )
 
   val ourTestOptions = Seq(
@@ -105,11 +107,7 @@ object ApplicationBuild extends Build {
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
     resolvers ++= ourResolvers,
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
-    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",
-    libraryDependencies ++= Seq(
-      "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
-      "org.seleniumhq.selenium" % "selenium-java" % "2.31.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
-    )
+    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"
   ).settings(
     CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
   ).configs(
