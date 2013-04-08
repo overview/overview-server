@@ -51,6 +51,31 @@ require [
       )
 
       itShouldRecognize(
+        'an https Facebook url',
+        'https://facebook.com/adam.hooper/posts/10101122388042297',
+          type: 'facebook'
+          url: '//www.facebook.com/adam.hooper/posts/10101122388042297'
+      )
+
+      itShouldRecognize(
+        'an http Facebook url',
+        'http://facebook.com/adam.hooper/posts/10101122388042297',
+          type: 'facebook'
+      )
+
+      itShouldRecognize(
+        'a // Facebook url',
+        '//facebook.com/adam.hooper/posts/10101122388042297',
+          type: 'facebook'
+      )
+
+      itShouldRecognize(
+        'a www Facebook url',
+        'https://www.facebook.com/adam.hooper/posts/10101122388042297',
+          type: 'facebook'
+      )
+
+      itShouldRecognize(
         'an https DocumentCloud URL',
         'https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principal.html',
           type: 'documentCloud'

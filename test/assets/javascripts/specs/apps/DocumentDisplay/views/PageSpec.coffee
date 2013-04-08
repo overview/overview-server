@@ -174,6 +174,26 @@ require [
         preferences.setPreference('iframe', false)
         expect(view.$('a.boolean-preference[data-preference=wrap]').length).toEqual(1)
 
+    describe 'with a Facebook object', ->
+      beforeEach ->
+        document = new Backbone.Model({
+          text: 'text'
+          urlProperties:
+            type: 'facebook'
+            url: '//www.facebook.com/adam.hooper/posts/10101122388042297'
+        })
+        state.set('document', document)
+
+      it 'should link to the source', ->
+        $a = view.$('a[href="//www.facebook.com/adam.hooper/posts/10101122388042297"]')
+        expect($a.length).toEqual(1)
+
+      it 'should render a <pre> that wraps', ->
+        expect(view.$('pre.wrap').length).toEqual(1)
+
+      it 'should not have anny preferences', ->
+        expect(view.$('a.boolean-preference').length).toEqual(0)
+
     describe 'with an insecure document', ->
       beforeEach ->
         document = new Backbone.Model({

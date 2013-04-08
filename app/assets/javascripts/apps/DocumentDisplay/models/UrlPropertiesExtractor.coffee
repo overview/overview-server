@@ -8,6 +8,14 @@ define [], ->
       url: (o) -> "//twitter.com/#{o.username}/status/#{o.id}"
     }
     {
+      id: 'facebook'
+      name: 'Facebook object'
+      # These aren't just posts: they can be anything
+      regex: /// ^(?:https?:)?//(?:www\.)?facebook\.com/(.+) ///
+      capture: [ 'path' ]
+      url: (o) -> "//www.facebook.com/#{o.path}"
+    }
+    {
       id: 'documentCloud'
       name: 'DocumentCloud document'
       regex: /// ^(?:https?:)?//(?:www\.)?documentcloud\.org/documents/([-a-zA-Z0-9]+) ///
@@ -42,14 +50,6 @@ define [], ->
       capture: []
       url: (o) -> ''
     }
-    #{
-    #  id: 'facebook'
-    #  name: 'Facebook object'
-    #  # Not just posts: the digits that end the URL are always the Graph API ID
-    #  regex: /// ^https?://(?:www\.)?facebook.com/.*/(\d+?)\?? ///
-    #  capture: [ 'id' ]
-    #  url: (id) -> "https://facebook.com/#{id}"
-    #}
   ]
 
   # Returns some URL-derived properties, given a URL

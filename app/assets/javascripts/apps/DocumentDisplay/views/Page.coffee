@@ -44,7 +44,6 @@ define [
         </div>
       """)
 
-      # TODO Make a helper (the server?) find the tweet ID
       twitter: _.template("""
         <div class="page type-twitter">
           <div class="twitter-tweet-container">
@@ -54,6 +53,16 @@ define [
               <a href="<%- url.url %>">...</a>
             </blockquote>
           </div>
+        </div>
+      """)
+
+      facebook: _.template("""
+        <div class="page type-facebook">
+          <p class="source">
+            <span class="label"><%- t('source') %></span>
+            <a href="<%- url.url %>" target="_blank"><%- url.url %></a>
+          </p>
+          <pre class="wrap"><%- document.text %></pre>
         </div>
       """)
 
