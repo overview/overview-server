@@ -7,7 +7,6 @@ object ClearTestDatabase {
   val Password = "overview"
 
   private def SQL(sql: String)(implicit connection: Connection) = {
-    System.err.println(sql)
     connection.createStatement.execute(sql)
   }
 
@@ -28,7 +27,6 @@ object ClearTestDatabase {
   /** Clears all tables in the database and adds an admin user.
     */
   def apply(loader: ClassLoader) {
-    System.err.println("Time to empty the database!")
     implicit val connection : Connection = getConnection(loader)
     SQL("SELECT lo_unlink(contents_oid) FROM upload")
     SQL("TRUNCATE TABLE upload CASCADE")
