@@ -11,6 +11,14 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="INFO" />
   <logger name="com.jolbox.bonecp" level="WARN" /><!-- it writes lots -->
+  <logger name="com.gargoylesoftware.htmlunit.DefaultCssErrorHandler" level="ERROR" /><!-- CSS errors are built into Bootstrap for IE support -->
+  <logger name="com.gargoylesoftware.htmlunit.html.InputElementFactory" level="WARN" /><!-- It warns about <input type="email"> -->
+  <logger name="com.gargoylesoftware.htmlunit.IncorrectnessListenerImpl" level="ERROR" /><!-- It warns about vendor JavaScript quirks -->
+  <logger name="com.gargoylesoftware.htmlunit.javascript.StrictErrorReporter" level="OFF" /><!-- we can't control vendor-specific errors -->
+  <logger name="com.gargoylesoftware.htmlunit.javascript.host.ActiveXObject" level="ERROR" /><!-- Google Chrome Frame JavaScript... -->
+  <logger name="com.gargoylesoftware.htmlunit.javascript.host.html.HTMLDocument" level="ERROR" /><!-- getElementById(sizcache07695793345570076) did a getElementByName for Internet Explorer -->
+  <logger name="com.gargoylesoftware.htmlunit.javascript.background.JavaScriptExecutor" level="INFO" />
+  <logger name="akka.event.slf4j.Slf4jEventHandler" level="WARN" /><!-- Shows info on startup -->
   <logger name="net.sf.ehcache" level="INFO" />
   <logger name="jodd.lagarto" level="INFO" />
 

@@ -34,7 +34,7 @@ object ApplicationBuild extends Build {
     squerylDep,
     mockitoDep,
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
-    "org.jodd" % "jodd-wot" % "3.3.1" % "test",
+    "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
     "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0"
   )
 
@@ -53,10 +53,10 @@ object ApplicationBuild extends Build {
     jdbc,
     openCsvDep,
     squerylDep,
-    mockitoDep % "test",
-    specs2Dep % "test",
+    mockitoDep % "it,test",
+    specs2Dep % "it,test",
     junitInterfaceDep, // FIXME add % "test"
-    junitDep % "test"
+    junitDep % "it,test"
   )
 
   val ourTestOptions = Seq(
@@ -105,12 +105,19 @@ object ApplicationBuild extends Build {
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
     resolvers ++= ourResolvers,
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
-    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"
+    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/",
+    libraryDependencies ++= Seq(
+      "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
+      "org.seleniumhq.selenium" % "selenium-java" % "2.31.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
+    )
+  ).settings(
+    CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
   ).configs(
     IntegrationTest
   ).settings(
-    CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
+    Defaults.itSettings : _*
   ).settings(
+    scalacOptions ++= ourScalacOptions,
     templatesImport += "views.Magic._",
     lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less"), // only compile .less files that aren't in subdirs
     requireJs ++= Seq(
@@ -120,19 +127,24 @@ object ApplicationBuild extends Build {
       "bundle/Welcome/show.js"
     ),
     requireJsShim += "main.js",
-    testOptions in Test ++= ourTestOptions,
-    scalacOptions ++= ourScalacOptions,
+    sources in doc in Compile := List(),
+    aggregate in Compile := true,
+    parallelExecution in IntegrationTest := false,
     javaOptions in Test ++= Seq(
       "-Dconfig.file=conf/application-test.conf",
       "-Dlogger.resource=logback-test.xml",
       "-Ddb.default.url=" + testDatabaseUrl
     ),
-    sources in doc in Compile := List(),
-    aggregate in Compile := true,
+    javaOptions in IntegrationTest ++= Seq(
+      "-Dconfig.file=conf/application-test.conf",
+      "-Dlogger.resource=logback-test.xml",
+      "-Ddb.default.url=" + testDatabaseUrl
+    ),
+    testOptions in IntegrationTest += Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
     Keys.fork in Test := true,
     aggregate in Test := false,
-    CucumberPlugin.cucumberFeaturesLocation := "test/features",
-    CucumberPlugin.cucumberStepsBasePackage := "steps"
+    testOptions in Test ++= ourTestOptions,
+    Keys.fork in IntegrationTest := true
   ).dependsOn(common).aggregate(worker)
 
   val testAll = TaskKey[Unit]("test-all", "Runs common, worker and server tests")

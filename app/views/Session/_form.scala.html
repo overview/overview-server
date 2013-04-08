@@ -3,7 +3,7 @@
 )(implicit lang: Lang)
 
 @defining(scopedMessages("views.Session._form")) { m =>
-  <form method="post" action="@routes.SessionController.create()" class="well form-horizontal">
+  <form method="post" action="@routes.SessionController.create()" class="well session-form form-horizontal">
     <h3>@m("h3")</h3>
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
