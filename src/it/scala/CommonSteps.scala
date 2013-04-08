@@ -19,7 +19,7 @@ class CommonSteps extends BaseSteps {
   }
 
   Given("""^I am not logged in$"""){ () =>
-    // do nothing (yet)
+    // do nothing. By default, users aren't logged in.
   }
 
   When("""^I browse to the welcome page$"""){ () =>
@@ -44,6 +44,11 @@ object CommonSteps {
     browser.$(".session-form input[name=email]").text(email)
     browser.$(".session-form input[name=password]").text(password)
     browser.$(".session-form input[type=submit]").click()
+  }
+
+  def logOut = {
+    val url = Framework.routeToUrl(routes.SessionController.delete)
+    browser.goTo(url)
   }
 
   def createAndLogInAsUser(email: String, password: String) = {

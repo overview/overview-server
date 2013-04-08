@@ -5,8 +5,22 @@ class LoginSteps extends BaseSteps {
     CommonSteps.logIn(email, password)
   }
 
-  Then("""^I should be logged in as "([^"]*)"$"""){ (email: String) =>
+  When("""^I log out$""") { () =>
+    CommonSteps.logOut
+  }
+
+  Then("""^I should be logged in as "([^"]*)"$""") { (email: String) =>
     val html = Option(browser.findFirst(".logged-in strong")).map(_.getText).getOrElse("")
     html must contain(email)
+  }
+
+  Then("""^I should see an error in the login form$""") { () =>
+    val error = browser.find(".session-form .error")
+    error.size must be_>=(0)
+  }
+
+  Then("""^I should not be logged in$""") { () =>
+    val loggedIn = browser.find(".logged-in")
+    loggedIn.size must beEqualTo(0)
   }
 }
