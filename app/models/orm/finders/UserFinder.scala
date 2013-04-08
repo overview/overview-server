@@ -22,4 +22,12 @@ object UserFinder {
       on(dsu.userEmail === u.email)
     )
   }
+
+  /** @return All Users with the given email address.
+    *
+    * The result will have length 0 or 1.
+    */
+  def byEmail(email: String) = {
+    Schema.users.where(_.email === email)
+  }
 }

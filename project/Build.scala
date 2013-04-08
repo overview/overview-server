@@ -37,6 +37,7 @@ object ApplicationBuild extends Build {
     "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
     "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
+    "com.icegreen" % "greenmail" % "1.3.1b" % "it",
     "org.seleniumhq.selenium" % "selenium-java" % "2.31.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
   )
 
@@ -134,7 +135,7 @@ object ApplicationBuild extends Build {
       "-Ddb.default.url=" + testDatabaseUrl
     ),
     javaOptions in IntegrationTest ++= Seq(
-      "-Dconfig.file=conf/application-test.conf",
+      "-Dconfig.file=conf/application-it.conf",
       "-Dlogger.resource=logback-test.xml",
       "-Ddb.default.url=" + testDatabaseUrl
     ),

@@ -1,6 +1,7 @@
 package steps
 
 import anorm.SQL
+import com.icegreen.greenmail.util.{ GreenMail, ServerSetupTest }
 import java.sql.Connection
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.WebDriver
@@ -25,6 +26,7 @@ object Framework {
   private var connected = false
   private var testServer : Option[TestServer] = None
   private var testBrowser : Option[TestBrowser] = None
+  private var testMailServer : Option[GreenMail] = None
 
   /*
    * anorm looks to Play.current, which means we need to call Play.start() on
@@ -33,8 +35,33 @@ object Framework {
    */
   private var application : Option[FakeApplication] = None
 
-  def browser = {
+  /** Accesses the test web browser, through FluentLenium.
+    *
+    * Use it like this:
+    *
+    *   val browser = Framework.browser
+    *   browser.$("input[type=submit]").click()
+    *
+    * @see steps.BaseSteps.browser
+    */
+  def browser : TestBrowser = {
     testBrowser.getOrElse(throw new AssertionError("There is no loaded browser"))
+  }
+
+  /** Accesses the test SMTP server, through GreenMail.
+    *
+    * Use it like this:
+    *
+    *   val mailServer = Framework.mailServer
+    *   mailServer.waitForIncomingEmail(1) must beTrue
+    *   val message = mailServer.getReceivedMessages()(0)
+    *   val body = GreenMailUtil.getBody(message)
+    *   body mustContain("a certain string")
+    *
+    * @see steps.BaseSteps.mailServer
+    */
+  def mailServer : GreenMail = {
+    testMailServer.getOrElse(throw new AssertionError("There is no loaded SMTP server"))
   }
 
   def clearDatabase = {
@@ -51,7 +78,7 @@ object Framework {
     */
   private def setUpSessionDatabase = {
     if (!connected) {
-      System.setProperty("config.file", "conf/application-test.conf")
+      System.setProperty("config.file", "conf/application-it.conf")
       val dataSource = new DataSource(TestDatabaseConfiguration)
       DB.connect(dataSource)
       connected = true
@@ -62,9 +89,15 @@ object Framework {
 
   /** Starts a server on port 3333. */
   private def setUpTestServer = {
-    System.setProperty("config.file", "conf/application-test.conf")
+    System.setProperty("config.file", "conf/application-it.conf")
     testServer = Some(TestServer(3333))
     testServer.map(_.start)
+  }
+
+  /** Starts an SMTP server on port 3025. */
+  private def setUpSmtpServer = {
+    testMailServer = Some(new GreenMail(ServerSetupTest.SMTP))
+    testMailServer.map(_.start)
   }
 
   /** Initializes Framework.browser.
@@ -78,6 +111,7 @@ object Framework {
   def setUp = {
     //setUpSessionDatabase
     setUpTestServer
+    setUpSmtpServer
     clearDatabase
     setUpBrowser
   }
@@ -85,6 +119,8 @@ object Framework {
   def tearDown = {
     testServer.map(_.stop)
     testServer = None
+    testMailServer.map(_.stop)
+    testMailServer = None
     testBrowser.map(_.quit)
     testBrowser = None
     //application.map(_ => Play.stop)
