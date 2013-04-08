@@ -146,10 +146,10 @@ object ApplicationBuild extends Build {
     Keys.fork in IntegrationTest := true
   ).dependsOn(common).aggregate(worker)
 
-  val testAll = TaskKey[Unit]("test-all", "Runs common, worker and server tests")
   val all = Project("all", file("all"))
     .aggregate(main, worker, common)
     .settings(
-      testAll in Test <<= (test in Test in main) dependsOn (test in Test in worker) dependsOn (test in Test in common)
+      aggregate in Test := false,
+      test in Test <<= (test in Test in main) dependsOn (test in Test in worker) dependsOn (test in Test in common)
     )
 }
