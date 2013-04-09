@@ -22,6 +22,7 @@ class TestClient extends Client {
   }
   
   def requestsInFlight: Int = requests.size
+  def requestedUrls: Seq[String] = requests.map(_._1)
 }
 
 case class TestResponse2(status: Int, body: String, private val responseHeaders: Map[String, String] = Map()) extends Response2 {

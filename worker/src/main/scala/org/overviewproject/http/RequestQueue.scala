@@ -8,6 +8,7 @@ import com.ning.http.client.Response
 
 object RequestQueueProtocol {
   case class AddToEnd(url: String)
+  case class AddToFront(url: String)
   case class Result(response: Response2)
 }
 
@@ -34,6 +35,8 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   def receive = {
     case AddToEnd(url) if inFlightRequests < maxInFlightRequests => submitRequest(sender, url)
     case AddToEnd(url) => queueRequest(url)
+    case AddToFront(url) if inFlightRequests < maxInFlightRequests => submitRequest(sender, url)
+    case AddToFront(url) => queueRequestInFront(sender, url)
     case RequestCompleted() => handleNextRequest
   }
   
@@ -42,9 +45,9 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
     inFlightRequests += 1
   }
   
-  private def queueRequest(url: String): Unit = {
-    queuedRequests = queuedRequests :+ (sender, url)
-  }
+  private def queueRequest(url: String): Unit = queuedRequests = queuedRequests :+ (sender, url)
+  
+  private def queueRequestInFront(requestor: ActorRef, url: String): Unit = queuedRequests = (requestor, url) +: queuedRequests
   
   private def handleNextRequest: Unit = {
     inFlightRequests -= 1
