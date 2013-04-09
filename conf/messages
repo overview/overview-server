@@ -152,11 +152,11 @@ views.DocumentSet._uploadForm.submit=Upload
 views.DocumentSet._uploadForm.reset=Reset
 views.DocumentSet._uploadForm.charset.utf8=Unicode (UTF-8)
 views.DocumentSet._uploadForm.charset.windows1252=Western (Windows-1252, ISO-8859-1)
-views.DocumentSet._uploadForm.help.requirements=Your file must meet these requirements.
-views.DocumentSet._uploadForm.requirements.text=The file must contain text (in an encoding Overview supports).
-views.DocumentSet._uploadForm.requirements.csv=The text must be comma-separated values (using " to quote values).
-views.DocumentSet._uploadForm.requirements.header=The first line must be a header row, with a “text” heading (and optionally an “id” heading).
-views.DocumentSet._uploadForm.requirements.data=Each subsequent row must describe a single document, and there must be at least one.
+views.DocumentSet._uploadForm.help.requirements_html=Overview can load CSV files exported from Radian 6 and Sysomos. Or, your file must meet these requirements (<a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/">help and example files</a>)
+views.DocumentSet._uploadForm.requirements.text=The file must use the UTF-8, ISO-8859 or Windows 1252 character set.
+views.DocumentSet._uploadForm.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
+views.DocumentSet._uploadForm.requirements.header=The first line of the file must list the column names. The text must be in a column named text, snippet, or contents.
+views.DocumentSet._uploadForm.requirements.data=Each row must describe a single document, and there must be at least one.
 views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
 views.DocumentSet._uploadForm.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
 views.DocumentSet._uploadForm.progress.header=Uploading…
