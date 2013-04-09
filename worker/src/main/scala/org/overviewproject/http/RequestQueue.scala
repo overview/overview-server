@@ -22,7 +22,7 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   private case class RequestCompleted()
 
   private var inFlightRequests: Int = 0
-  private var queuedRequests: Seq[(ActorRef, String)] = Seq.empty
+  private var queuedRequests: Seq[(ActorRef, String)] = Seq.empty // FIXME: mutable seq will be more efficient with many requests
 
   class ResultHandler(requestor: ActorRef) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
@@ -32,18 +32,25 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   }
 
   def receive = {
-    case AddToEnd(url) if (inFlightRequests < maxInFlightRequests) => { 
-      client.submit(url, new ResultHandler(sender))
-      inFlightRequests += 1
-    }
-    case AddToEnd(url) => queuedRequests = queuedRequests :+ (sender, url)
-    case RequestCompleted() => {
-      inFlightRequests -= 1
-      queuedRequests.headOption.map { r =>
-        client.submit(r._2, new ResultHandler(r._1))
-        inFlightRequests += 1
-        queuedRequests = queuedRequests.tail
-      }
+    case AddToEnd(url) if inFlightRequests < maxInFlightRequests => submitRequest(sender, url)
+    case AddToEnd(url) => queueRequest(url)
+    case RequestCompleted() => handleNextRequest
+  }
+  
+  private def submitRequest(requestor: ActorRef, url: String): Unit = { 
+    client.submit(url, new ResultHandler(requestor))
+    inFlightRequests += 1
+  }
+  
+  private def queueRequest(url: String): Unit = {
+    queuedRequests = queuedRequests :+ (sender, url)
+  }
+  
+  private def handleNextRequest: Unit = {
+    inFlightRequests -= 1
+    queuedRequests.headOption.map { r =>
+      submitRequest(r._1, r._2)
+      queuedRequests = queuedRequests.tail
     }
   }
 }
