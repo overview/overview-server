@@ -55,14 +55,37 @@ class AllSomeTreeLabeler(docVecs:DocumentSetVectors) extends TreeLabelerBase {
   // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
   private def makeDescription(node:DocTreeNode, vec: TermMap): String = {
 
-    def termsToString(vec:List[(TermID,TermWeightAndCount)], count:Int) = vec.take(count).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
+    def isUnigramOfBigram(uni:String, bi:String) : Boolean = {
+      val s = bi.indexOf("_")
+      if (s == -1)
+        return false      // not a bigram
+        
+      val u = bi.indexOf(uni)
+      if (u == -1)
+        return false      // does not contain unigram
+        
+      (u==0 && s == uni.length) ||                // first word
+      (u==s+1 && bi.length == s+1 + uni.length)   // second word  
+    }
+    
+    def removeThisUnigram(str:String, strs:List[String]) : Boolean = {
+      strs.exists(isUnigramOfBigram(str, _))
+    } 
+    
+    // Take top count terms and turn them into a list of strings, removing unigrams that are part of bigrams also in the liat
+    def termsToString(vec:List[(TermID,TermWeightAndCount)], count:Int) = {
+     val termIds = vec.take(count).map(_._1)
+     val termStrings = termIds.map(docVecs.stringTable.idToString(_))
+     val stripped = termStrings.filter(!removeThisUnigram(_, termStrings))
+     stripped.mkString(", ") 
+    }
 
     val numTopTerms = 30   // only consider terms with weight down to this rank    
     val topTerms = vec.toList.sortWith(_._2.weight > _._2.weight).take(numTopTerms)
     
     if (node.docs.size == 1) {
-      val maxSingleDoc = 5
-      topTerms.take(maxSingleDoc).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
+      val maxSingleDoc = 7
+      termsToString(topTerms, maxSingleDoc)
       
     } else {
       // Take up to X docs in "all", Y docs in "most", Z docs in "some"
