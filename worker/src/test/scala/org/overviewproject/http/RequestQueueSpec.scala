@@ -39,19 +39,17 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
     }
 
     "only have N requests inflight at a time" in new ActorSystemContext {
-      val requestQueue = system.actorOf(Props(new RequestQueue(client, MaxInFlightRequests)))
+      val requestQueue = TestActorRef(new RequestQueue(client, MaxInFlightRequests))
       
       1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd("url") }
 
-      awaitCond(client.requestsInFlight == MaxInFlightRequests)
+      client.requestsInFlight must be equalTo(MaxInFlightRequests)
       
       client.completeNext(response)
-      expectMsgType[Result](1 second)
+      client.requestsInFlight must be equalTo(MaxInFlightRequests)
       
-      awaitCond(client.requestsInFlight == MaxInFlightRequests)
-
       client.completeAllRequests(response)
-      receiveN(MaxInFlightRequests)
+
       client.requestsInFlight must be equalTo(0)
     }
 
