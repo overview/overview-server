@@ -13,7 +13,7 @@ Feature: Login
   Scenario: Wrong password
     Given I am not logged in
       And there is a user "user@example.org" with password "OlReshtob7"
-      And I browse to the welcome page
+     When I browse to the welcome page
       And I log in with email "user@example.org" and password "OlReshtob71"
     Then I should not be logged in
      And I should see an error in the login form
