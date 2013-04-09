@@ -9,8 +9,18 @@ class TestClient extends Client {
     
   def submitWithAuthentication(url: String, credentials: Credentials, responseHandler: AsyncCompletionHandler[Unit]): Unit = submit(url, responseHandler) 
 
-  def completeAllRequests(response: Response): Unit = requests.map(_._2.onCompleted(response)) 
-  def completeRequest(n: Int, response: Response): Unit = requests(n)._2.onCompleted(response)
+  def completeAllRequests(response: Response): Unit = {
+    requests.map(_._2.onCompleted(response))
+    requests = Seq()
+  }
+  
+  def completeNext(response: Response): Unit = {
+    val completeRequest = requests.head
+    completeRequest._2.onCompleted(response)
+    
+    requests = requests.tail
+  }
+  
   def requestsInFlight: Int = requests.size
 }
 
