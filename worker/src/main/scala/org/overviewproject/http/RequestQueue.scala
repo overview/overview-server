@@ -17,14 +17,33 @@ class AsyncHttpClientResponse(response: Response) extends Response2 {
   override def headers(name: String): Seq[String] = response.getHeaders(name).asScala.toSeq
 }
 
-class RequestQueue(client: Client) extends Actor {
+class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   import RequestQueueProtocol._
+  private case class RequestCompleted()
+
+  private var inFlightRequests: Int = 0
+  private var queuedRequests: Seq[(ActorRef, String)] = Seq.empty
 
   class ResultHandler(requestor: ActorRef) extends AsyncCompletionHandler[Unit] {
-    override def onCompleted(response: Response): Unit = requestor ! Result(new AsyncHttpClientResponse(response))
+    override def onCompleted(response: Response): Unit = {
+      requestor ! Result(new AsyncHttpClientResponse(response))
+      self ! RequestCompleted()
+    }
   }
-  
+
   def receive = {
-    case AddToEnd(url) => client.submit(url, new ResultHandler(sender)) 
+    case AddToEnd(url) if (inFlightRequests < maxInFlightRequests) => { 
+      client.submit(url, new ResultHandler(sender))
+      inFlightRequests += 1
+    }
+    case AddToEnd(url) => queuedRequests = queuedRequests :+ (sender, url)
+    case RequestCompleted() => {
+      inFlightRequests -= 1
+      queuedRequests.headOption.map { r =>
+        client.submit(r._2, new ResultHandler(r._1))
+        inFlightRequests += 1
+        queuedRequests = queuedRequests.tail
+      }
+    }
   }
 }
