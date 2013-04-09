@@ -1,37 +1,59 @@
 package org.overviewproject.http
 
 import scala.concurrent.duration.DurationInt
-
-import org.overviewproject.http.RequestQueueProtocol.{AddToEnd, Result}
+import org.overviewproject.http.RequestQueueProtocol.{ AddToEnd, Result }
 import org.specs2.mock.Mockito
-import org.specs2.mutable.{After, Specification}
+import org.specs2.mutable.{ After, Specification }
 import org.specs2.time.NoTimeConversions
-
 import com.ning.http.client.Response
-
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
+import akka.actor.{ ActorSystem, Props }
+import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
+import org.specs2.specification.Scope
 
 class RequestQueueSpec extends Specification with Mockito with NoTimeConversions { // avoid conflicts with akka time conversion
+  sequential
 
-  abstract class ActorSystemContext extends TestKit(ActorSystem()) with ImplicitSender with After {
+  trait ClientContext extends Scope {
+    val MaxInFlightRequests = 5
+    val client = new TestClient
+    val response = mock[Response]
+
+    response.getStatusCode returns 200
+    response.getResponseBody returns "body"
+
+  }
+
+  abstract class ActorSystemContext extends TestKit(ActorSystem()) with ImplicitSender with ClientContext with After {
     def after = system.shutdown()
   }
+
   
   "RequestQueue" should {
-    
+
     "handle one request" in new ActorSystemContext {
-      val response = mock[Response]
-      response.getStatusCode returns 200
-      response.getResponseBody returns "body"
-      
-      val client = new TestClient
-      val requestQueue = TestActorRef(new RequestQueue(client)) // Single threaded testing
-      
-      requestQueue.tell(AddToEnd("url"), testActor)
-      
+      val requestQueue = TestActorRef(new RequestQueue(client, MaxInFlightRequests))
+      requestQueue ! AddToEnd("url")
+
       client.completeAllRequests(response)
       expectMsgType[Result](1 seconds)
     }
+
+    "only have N requests inflight at a time" in new ActorSystemContext {
+      val requestQueue = system.actorOf(Props(new RequestQueue(client, MaxInFlightRequests)))
+      
+      1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd("url") }
+
+      awaitCond(client.requestsInFlight == MaxInFlightRequests)
+      
+      client.completeNext(response)
+      expectMsgType[Result](1 second)
+      
+      awaitCond(client.requestsInFlight == MaxInFlightRequests)
+
+      client.completeAllRequests(response)
+      receiveN(MaxInFlightRequests)
+      client.requestsInFlight must be equalTo(0)
+    }
+
   }
 }
