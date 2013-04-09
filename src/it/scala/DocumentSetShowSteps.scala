@@ -49,10 +49,10 @@ class DocumentSetShowSteps extends BaseSteps {
 }
 
 object DocumentSetShowSteps {
-  def createBasicDocumentSet() : Long = {
+  def createBasicDocumentSet(title: String = "basic") : Long = {
     implicit val connection = OverviewDatabase.currentConnection
 
-    val documentSetId = DbSetup.insertDocumentSet("basic")
+    val documentSetId = DbSetup.insertDocumentSet(title)
     val nodeSql = SQL("INSERT INTO node (id, document_set_id, description, parent_id) VALUES ({id}, {document_set_id}, {description}, {parent_id})")
     val node1Id = nodeSql.on('id -> 1L, 'document_set_id -> documentSetId, 'description -> "node 1", 'parent_id -> None).executeInsert()
     val node2Id = nodeSql.on('id -> 2L, 'document_set_id -> documentSetId, 'description -> "node 2", 'parent_id -> node1Id).executeInsert()
