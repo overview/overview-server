@@ -55,7 +55,7 @@ define [
       undefined
 
     _create_form: () ->
-      $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="New tag" class="input-mini" /><input type="submit" value="Tag" class="btn" /></form')
+      $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="tag name" class="input-mini" /><input type="submit" value="Create new tag" class="btn" /></form')
       $form.on 'submit', (e) =>
         e.preventDefault()
         $input = $form.find('input[name=tag_name]')
