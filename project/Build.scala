@@ -56,6 +56,7 @@ object ApplicationBuild extends Build {
     jdbc,
     openCsvDep,
     squerylDep,
+    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0" % "test",
     mockitoDep % "test",
     specs2Dep % "test",
     junitInterfaceDep, // FIXME add % "test"
