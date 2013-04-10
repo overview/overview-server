@@ -21,6 +21,13 @@ class TestClient extends Client {
     requests = requests.tail
   }
   
+  def failNext(t: Throwable): Unit = {
+    val failedRequest = requests.head
+    failedRequest._2.onThrowable(t)
+    
+    requests = requests.tail
+  }
+  
   def requestsInFlight: Int = requests.size
   def requestedUrls: Seq[String] = requests.map(_._1)
 }
