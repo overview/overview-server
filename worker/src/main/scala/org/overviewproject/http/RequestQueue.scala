@@ -7,8 +7,8 @@ import com.ning.http.client.AsyncCompletionHandler
 import com.ning.http.client.Response
 
 object RequestQueueProtocol {
-  case class AddToEnd(url: Request)
-  case class AddToFront(url: Request)
+  case class AddToEnd(request: Request)
+  case class AddToFront(request: Request)
   case class Result(response: SimpleResponse)
 }
 
@@ -33,15 +33,15 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   }
 
   def receive = {
-    case AddToEnd(url) if inFlightRequests < maxInFlightRequests => submitRequest(sender, url)
-    case AddToEnd(url) => queueRequest(sender, url)
-    case AddToFront(url) if inFlightRequests < maxInFlightRequests => submitRequest(sender, url)
-    case AddToFront(url) => queueRequestInFront(sender, url)
+    case AddToEnd(request) if inFlightRequests < maxInFlightRequests => submitRequest(sender, request)
+    case AddToEnd(request) => queueRequest(sender, request)
+    case AddToFront(request) if inFlightRequests < maxInFlightRequests => submitRequest(sender, request)
+    case AddToFront(request) => queueRequestInFront(sender, request)
     case RequestCompleted() => handleNextRequest
   }
   
-  private def submitRequest(requestor: ActorRef, url: Request): Unit = { 
-    client.submit(url.url, new ResultHandler(requestor))
+  private def submitRequest(requestor: ActorRef, request: Request): Unit = { 
+    request.execute(client, new ResultHandler(requestor))
     inFlightRequests += 1
   }
   
