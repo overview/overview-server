@@ -12,6 +12,11 @@ trait Finder {
       SquerylEntrypoint.queryToIterable(query)
     }
     def headOption : Option[A] = query.headOption // avoid double implicit conversion
+    def count : Long = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+      val countQuery = from(query)(_ => compute(SquerylEntrypoint.count))
+      countQuery.headOption.getOrElse(throw new AssertionError("Count did not return anything")).measures
+    }
   }
   object FinderResult {
     implicit def finderResultToQuery[A](r: FinderResult[A]) = r.toQuery
