@@ -35,7 +35,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
 
     "handle one request" in new ActorSystemContext {
       val requestQueue = createRequestQueue()
-      requestQueue ! AddToEnd("url")
+      requestQueue ! AddToEnd(PublicRequest("url"))
 
       client.completeAllRequests(response)
       expectMsgType[Result](1 seconds)
@@ -44,7 +44,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
     "only have N requests in flight at a time" in new ActorSystemContext {
       val requestQueue = createRequestQueue()
       
-      1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd("url") }
+      1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd(PublicRequest("url")) }
 
       client.requestsInFlight must be equalTo(MaxInFlightRequests)
       
@@ -60,9 +60,9 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       val frontUrl = "front url"
       val requestQueue = createRequestQueue(maxInFlightRequests = 1)
       
-      1 to 5 foreach {_ => requestQueue ! AddToEnd("url") }
+      1 to 5 foreach {_ => requestQueue ! AddToEnd(PublicRequest("url")) }
       
-      requestQueue ! AddToFront(frontUrl)
+      requestQueue ! AddToFront(PublicRequest(frontUrl))
       
       client.completeNext(response)
       client.requestedUrls.headOption must beSome(frontUrl)
