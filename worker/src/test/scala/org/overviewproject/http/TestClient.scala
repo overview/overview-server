@@ -25,10 +25,3 @@ class TestClient extends Client {
   def requestedUrls: Seq[String] = requests.map(_._1)
 }
 
-case class TestResponse2(status: Int, body: String, private val responseHeaders: Map[String, String] = Map()) extends Response2 {
-  def headers(name: String): Seq[String] = responseHeaders.get(name) match {
-    case Some(s) => Seq(s)
-    case None => Seq.empty
-  }
-  
-}
