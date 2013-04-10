@@ -6,11 +6,12 @@ import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
 import org.overviewproject.http.SimpleResponse
 
+
 object QueryProcessorProtocol {
   case class Start()
 }
 
-class QueryProcessor(requestQueue: ActorRef, query: String) extends Actor {
+class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private val PageSize: Int = 20
@@ -36,6 +37,11 @@ class QueryProcessor(requestQueue: ActorRef, query: String) extends Actor {
     val result = ConvertSearchResult(response.body)
     
     if (morePagesAvailable(result)) requestPage(result.page + 1)
+    
+    result.documents.map {d =>
+      val retriever = context.actorOf(Props(retrieverGenerator)) 
+      retriever ! d
+    }
   }
   
   private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
