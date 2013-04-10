@@ -5,7 +5,6 @@ import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build {
-
   override def settings = super.settings ++
     Seq(EclipseKeys.skipParents in ThisBuild := false)
 
@@ -23,7 +22,7 @@ object ApplicationBuild extends Build {
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val junitDep = "junit" % "junit-dep" % "4.11"
-  
+
   // Project dependencies
   val serverProjectDependencies = Seq(
     jdbc,
@@ -102,7 +101,11 @@ object ApplicationBuild extends Build {
     parallelExecution in Test := false,
     sources in doc in Compile := List()
   ).settings(
-    initialize ~= {_ => System.setProperty("datasource.default.url", appDatabaseUrl) }    
+    initialize ~= { _ =>
+      if (System.getProperty("datasource.default.url") == null) {
+        System.setProperty("datasource.default.url", appDatabaseUrl)
+      }
+    }
   ).dependsOn(common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
@@ -137,9 +140,12 @@ object ApplicationBuild extends Build {
     javaOptions in IntegrationTest ++= Seq(
       "-Dconfig.file=conf/application-it.conf",
       "-Dlogger.resource=logback-test.xml",
-      "-Ddb.default.url=" + testDatabaseUrl
+      "-Ddb.default.url=" + testDatabaseUrl,
+      "-Dsbt.ivy.home=" + sys.props("sbt.ivy.home"),
+      "-Dsbt.boot.properties=" + sys.props("sbt.boot.properties"),
+      "-Dplay.home=" + sys.props("play.home"),
+      "-Ddatasource.default.url=" + testDatabaseUrl
     ),
-    testOptions in IntegrationTest += Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
     Keys.fork in Test := true,
     aggregate in Test := false,
     testOptions in Test ++= ourTestOptions,
