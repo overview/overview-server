@@ -3,6 +3,7 @@ package steps
 import anorm.SQL
 import com.icegreen.greenmail.util.{ GreenMail, ServerSetupTest }
 import java.sql.Connection
+import java.util.concurrent.TimeUnit
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import org.openqa.selenium.WebDriver
 import org.squeryl.{Session,SessionFactory}
@@ -27,6 +28,7 @@ object Framework {
   private var testServer : Option[TestServer] = None
   private var testBrowser : Option[TestBrowser] = None
   private var testMailServer : Option[GreenMail] = None
+  private var worker : Option[WorkerProcess] = None
 
   /*
    * anorm looks to Play.current, which means we need to call Play.start() on
@@ -70,6 +72,18 @@ object Framework {
     }
   }
 
+  /** Makes sure a worker is running for the duration of the scenario.
+    *
+    * This starts a separate sbt process. The only difference between this and
+    * `sbt worker/run` is that here we connect to the test database.
+    */
+  def ensureWorker = {
+    if (!worker.isDefined) {
+      worker = Some(new WorkerProcess)
+    }
+    worker.map(_.start)
+  }
+
   /** Makes OverviewDatabase.inTransaction() work.
     *
     * Tests will often want to write to the database or look for values in the
@@ -105,7 +119,9 @@ object Framework {
     * Tests use Framework.browser to interact with the test server.
     */
   private def setUpBrowser = {
-    testBrowser = Some(TestBrowser.firefox(Some("http://localhost:3333")))
+    val browser = TestBrowser.firefox(Some("http://localhost:3333"))
+    browser.manage.timeouts.setScriptTimeout(5, TimeUnit.SECONDS)
+    testBrowser = Some(browser)
   }
 
   def setUp = {
@@ -123,11 +139,11 @@ object Framework {
     testMailServer = None
     testBrowser.map(_.quit)
     testBrowser = None
+    worker.map(_.stop)
+    worker = None
     //application.map(_ => Play.stop)
     //application = None
   }
 
-  def routeToUrl(call: Call) = {
-    "http://localhost:3333" + call.url
-  }
+  def routeToUrl(call: Call) = call.url
 }

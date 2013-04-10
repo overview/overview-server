@@ -5,6 +5,10 @@ class Hooks extends BaseSteps {
     Framework.setUp
   }
 
+  Before("@worker") {
+    Framework.ensureWorker
+  }
+
   After {
     Framework.tearDown
   }
