@@ -50,6 +50,11 @@ object DocumentSetFinder extends Finder {
     )
   }
 
+  /** @return All `DocumentSet`s with the given title. */
+  def byTitle(title: String) : DocumentSetResult = {
+    Schema.documentSets.where(_.title === title)
+  }
+
   /** @return All completed `DocumentSet`s for with the given user has the given role.
     *
     * Any DocumentSet that has a DocumentSetCreationJob will _not_ be returned.
