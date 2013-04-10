@@ -10,22 +10,24 @@ class SearchResultSpec extends Specification {
     trait SearchContext extends Scope {
       val total = 29
       val document1: Document = Document("dc id", "title", "public", "http://canonical-url")
+      val pageNum = 1
     }
     
     "convert from json" in new SearchContext {
-      val result = ConvertSearchResult(jsonSearchResult(total, document1))
+      val result = ConvertSearchResult(jsonSearchResult(total, pageNum, document1))
     		 
-      result.total must be equalTo(29)
+      result.total must be equalTo(total)
+      result.page must be equalTo(pageNum)
       result.documents must haveSize(2)
       
       result.documents.head must be equalTo(document1)
     }
   }
 
-  def jsonSearchResult(total: Int, d: Document): String = s"""
+  def jsonSearchResult(total: Int, pageNum: Int, d: Document): String = s"""
 {
   "total": $total,
-  "page": 1,
+  "page": $pageNum,
   "per_page": 2,
   "q": "giraffe",
   "documents": [
