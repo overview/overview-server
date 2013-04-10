@@ -32,12 +32,6 @@ case class User(
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
-  
-  lazy val orderedDocumentSets: Query[DocumentSet] =
-    from(Schema.documentSets, Schema.documentSetUsers)((ds, dsu) => 
-      where(dsu.userEmail === email and dsu.documentSetId === ds.id) 
-      select(ds)
-      orderBy(ds.createdAt.desc))
 
   def createDocumentSet(query: String): DocumentSet = {
     require(id != 0l)

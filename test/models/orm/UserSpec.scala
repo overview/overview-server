@@ -40,21 +40,6 @@ class UserSpec extends Specification {
       user.createDocumentSet(query) must throwAn[IllegalArgumentException]
     }
 
-    "order document sets from oldest to newest" in new UserContext {
-      val user2 = Schema.users.insert(user)
-      val documentSet1 = DocumentSet(DocumentCloudDocumentSet, 0L, title = "earliest", query = Some("early"), createdAt = new Timestamp(1351519451289L)).save
-      val documentSet2 = DocumentSet(DocumentCloudDocumentSet, 0L, title = "later", query = Some("late"), createdAt = new Timestamp(1351519465652L)).save
-      Schema.documentSetUsers.insert(Seq(
-        DocumentSetUser(documentSet1.id, user2.email, Ownership.Owner),
-        DocumentSetUser(documentSet2.id, user2.email, Ownership.Owner)))
-
-      val user3 = User.findById(user2.id).get
-
-      val documentSets = user3.orderedDocumentSets
-      documentSets.size must be equalTo (2)
-      documentSets.head.title must be equalTo ("later")
-    }
-
     "throw an exception if confirmation token is not unique" in new UserContext {
       val token = Some("a token")
       val user1 = User(email = "user@example.org", confirmationToken = token)
