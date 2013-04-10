@@ -1,4 +1,4 @@
-define [ 'jquery', 'md5' ], ($, md5) ->
+define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
   extend = $.extend
   Deferred = $.Deferred
   ajax = $.ajax

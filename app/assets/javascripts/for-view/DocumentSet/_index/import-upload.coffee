@@ -1,4 +1,4 @@
-define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n' ], ($, CsvReader, Upload, i18n) ->
+define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/file' ], ($, CsvReader, Upload, i18n) ->
   FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
   FILE_PREVIEW_SIZE = 20480 # 20kb
   TOLERATED_ENCODING_ERRORS = 0.01 # 1%: ratio of bad-chars : total-chars
