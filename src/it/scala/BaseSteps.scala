@@ -4,6 +4,8 @@ import cucumber.api.scala.{EN, ScalaDsl}
 import org.specs2.matcher.JUnitMustMatchers
 
 trait BaseSteps extends ScalaDsl with EN with JUnitMustMatchers {
+  type PendingException = cucumber.runtime.PendingException // helps while developing
+
   /** Accesses the test web browser, through FluentLenium.
     *
     * Use it like this:
