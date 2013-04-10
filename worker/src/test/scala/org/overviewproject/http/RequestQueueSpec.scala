@@ -17,6 +17,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
   trait ClientContext extends Scope {
     val MaxInFlightRequests = 5
     val client = new TestClient
+    val request = PublicRequest("url")
     val response = mock[Response]
 
     response.getStatusCode returns 200
@@ -35,7 +36,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
 
     "handle one request" in new ActorSystemContext {
       val requestQueue = createRequestQueue()
-      requestQueue ! AddToEnd(PublicRequest("url"))
+      requestQueue ! AddToEnd(request)
 
       client.completeAllRequests(response)
       expectMsgType[Result](1 seconds)
@@ -44,7 +45,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
     "only have N requests in flight at a time" in new ActorSystemContext {
       val requestQueue = createRequestQueue()
       
-      1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd(PublicRequest("url")) }
+      1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd(request) }
 
       client.requestsInFlight must be equalTo(MaxInFlightRequests)
       
@@ -60,12 +61,26 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       val frontUrl = "front url"
       val requestQueue = createRequestQueue(maxInFlightRequests = 1)
       
-      1 to 5 foreach {_ => requestQueue ! AddToEnd(PublicRequest("url")) }
+      1 to 5 foreach {_ => requestQueue ! AddToEnd(request) }
       
       requestQueue ! AddToFront(PublicRequest(frontUrl))
       
       client.completeNext(response)
       client.requestedUrls.headOption must beSome(frontUrl)
+    }
+    
+    "treat failed requests as completed" in new ActorSystemContext {
+       val failure = new Exception("failed")
+       val requestQueue = createRequestQueue(maxInFlightRequests = 1)
+       
+       requestQueue ! AddToEnd(request)
+       requestQueue ! AddToEnd(request)
+       
+       client.failNext(failure)
+       
+       expectMsg(Failure(failure))
+       
+       client.requestsInFlight must be equalTo(1)
     }
   }
 }

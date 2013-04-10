@@ -10,6 +10,7 @@ object RequestQueueProtocol {
   case class AddToEnd(request: Request)
   case class AddToFront(request: Request)
   case class Result(response: SimpleResponse)
+  case class Failure(t: Throwable)
 }
 
 class AsyncHttpClientResponse(response: Response) extends SimpleResponse {
@@ -28,6 +29,11 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   class ResultHandler(requestor: ActorRef) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
       requestor ! Result(new AsyncHttpClientResponse(response))
+      self ! RequestCompleted()
+    }
+    
+    override def onThrowable(t: Throwable): Unit = {
+      requestor ! Failure(t)
       self ! RequestCompleted()
     }
   }
