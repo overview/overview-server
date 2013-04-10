@@ -2,15 +2,23 @@
 
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
 
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <!-- Added ":-" to avoid "application.home_IS_NOT_DEFINED" directory creation -->
+    <file>${application.home:-}/logs/test.log</file>
+    <encoder>
+      <pattern>[%level] %logger{15} - %message%n%xException</pattern>
+    </encoder>
+  </appender>
+
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>%coloredLevel %logger{15} - %message%n%xException{5}</pattern>
     </encoder>
   </appender>
 
-  <logger name="play" level="INFO" />
-  <logger name="application" level="INFO" />
-  <logger name="com.jolbox.bonecp" level="WARN" /><!-- it writes lots -->
+  <logger name="play" level="TRACE" />
+  <logger name="application" level="TRACE" />
+  <logger name="com.jolbox.bonecp" level="DEBUG" /><!-- Show connect/disconnect -->
   <logger name="com.gargoylesoftware.htmlunit.DefaultCssErrorHandler" level="ERROR" /><!-- CSS errors are built into Bootstrap for IE support -->
   <logger name="com.gargoylesoftware.htmlunit.html.InputElementFactory" level="WARN" /><!-- It warns about <input type="email"> -->
   <logger name="com.gargoylesoftware.htmlunit.IncorrectnessListenerImpl" level="ERROR" /><!-- It warns about vendor JavaScript quirks -->
@@ -22,8 +30,12 @@
   <logger name="net.sf.ehcache" level="INFO" />
   <logger name="jodd.lagarto" level="INFO" />
 
-  <root level="INFO">
+  <logger name="play" level="INFO" additivity="false">
     <appender-ref ref="STDOUT" />
+  </logger>
+
+  <root level="INFO">
+    <appender-ref ref="FILE" />
   </root>
 
 </configuration>
