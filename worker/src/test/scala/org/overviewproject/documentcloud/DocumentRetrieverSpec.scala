@@ -3,7 +3,7 @@ package org.overviewproject.documentcloud
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
 import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 

@@ -1,24 +1,18 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-import org.overviewproject.documentcloud.QueryProcessorProtocol._
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
+
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{Start => StartRetriever}
+import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
 import org.overviewproject.http.PublicRequest
 import org.overviewproject.http.RequestQueueProtocol._
-import org.specs2.mutable.{ After, Specification }
+import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
+import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
-import akka.actor.ActorSystem
-import akka.testkit._
-import org.overviewproject.http.SimpleResponse
-import akka.actor._
-import org.overviewproject.test.ActorSystemContext
 
-case class TestSimpleResponse(override val status: Int, override val body: String, simpleHeaders: Map[String, String] = Map()) extends SimpleResponse {
-  override def headers(name: String): Seq[String] = simpleHeaders.get(name) match {
-    case Some(value) => Seq(value)
-    case _ => Seq.empty
-  }
-}
+import akka.actor._
+import akka.testkit.TestActorRef
+
 
 
 class ReportingActor(d: Document, receiver: ActorRef) extends Actor {
@@ -65,6 +59,10 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       queryProcessor ! Result(TestSimpleResponse(200, result))
 
       receiveN(numberOfDocuments)
+    }
+    
+    "complete promise when all documents have been processed" in new ActorSystemContext {
+      
     }
   }
 
