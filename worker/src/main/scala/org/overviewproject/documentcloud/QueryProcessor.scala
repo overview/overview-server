@@ -1,6 +1,7 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
 import org.overviewproject.http.PublicRequest
 import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
@@ -11,7 +12,7 @@ object QueryProcessorProtocol {
   case class Start()
 }
 
-class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: => Actor) extends Actor {
+class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: Document => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private val PageSize: Int = 20
@@ -39,8 +40,8 @@ class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: 
     if (morePagesAvailable(result)) requestPage(result.page + 1)
     
     result.documents.map {d =>
-      val retriever = context.actorOf(Props(retrieverGenerator)) 
-      retriever ! d
+      val retriever = context.actorOf(Props(retrieverGenerator(d))) 
+      retriever ! StartRetriever()
     }
   }
   

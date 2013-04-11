@@ -2,6 +2,7 @@ package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
 import org.overviewproject.documentcloud.QueryProcessorProtocol._
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
 import org.overviewproject.http.PublicRequest
 import org.overviewproject.http.RequestQueueProtocol._
 import org.specs2.mutable.{ After, Specification }
@@ -20,13 +21,13 @@ case class TestSimpleResponse(override val status: Int, override val body: Strin
 }
 
 
-class ReportingActor(receiver: ActorRef) extends Actor {
+class ReportingActor(d: Document, receiver: ActorRef) extends Actor {
   def receive = {
-    case  d: Document => receiver ! "got message"
+    case  StartRetriever() => receiver ! "got message"
   }
 }
 
-class SilentActor extends Actor {
+class SilentActor(d: Document) extends Actor {
   def receive = { 
     case _ => 
   }
@@ -42,7 +43,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       val page1Result = jsonSearchResultPage(20, 1, 20)
       val page2Result = jsonSearchResultPage(20, 2, 10)
 
-      val queryProcessor = TestActorRef(new QueryProcessor(query, testActor, new SilentActor))
+      val queryProcessor = TestActorRef(new QueryProcessor(query, testActor, new SilentActor(_)))
 
       queryProcessor ! Start()
       expectMsg(AddToFront(PublicRequest(pageQuery(1, query))))
@@ -58,7 +59,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       val query = "query string"
       val numberOfDocuments = 10
       val result = jsonSearchResultPage(20, 1, numberOfDocuments)
-      val queryProcessor = system.actorOf(Props(new QueryProcessor(query, testActor, new ReportingActor(testActor))))
+      val queryProcessor = system.actorOf(Props(new QueryProcessor(query, testActor, new ReportingActor(_, testActor))))
 
       queryProcessor ! Start()
       queryProcessor ! Result(TestSimpleResponse(200, result))

@@ -5,7 +5,12 @@ import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
 import org.overviewproject.http.SimpleResponse
 
-class DocumentRetriever(requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
+object DocumentRetrieverProtocol {
+  case class Start()
+}
+
+class DocumentRetriever(document: Document, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
+  import DocumentRetrieverProtocol._
   
   private val PublicAccess: String = "public"
   private val LocationHeader: String = "Location"
@@ -14,19 +19,23 @@ class DocumentRetriever(requestQueue: ActorRef, credentials: Option[Credentials]
   private def DocumentQuery(d: Document): String = s"https://www.documentcloud.org/api/documents/${d.id}.txt"
   
   def receive = {
-    case d: Document if isPublic(d) => requestPublicDocument(d)
-    case d: Document => requestPrivateDocument(d)
+    case Start() => requestDocument
     case Result(r) if isRedirect(r) => redirectRequest(r) 
   }
 
+  def requestDocument: Unit = {
+    if (isPublic(document)) makePublicRequest(DocumentQuery(document))
+    else makePrivateRequest(DocumentQuery(document))
+  }
+  
   private def isPublic(d: Document): Boolean = d.access == PublicAccess
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
   
-  private def requestPublicDocument(d: Document): Unit = requestQueue ! AddToEnd(PublicRequest(DocumentQuery(d)))
+  private def requestPublicDocument(d: Document): Unit = makePublicRequest(DocumentQuery(d))
   private def requestPrivateDocument(d: Document): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(DocumentQuery(d), c)) }
   
-  private def redirectRequest(response: SimpleResponse): Unit = response.headers(LocationHeader).map { url =>
-    requestQueue ! AddToEnd(PublicRequest(url))
-  }
+  private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
+  private def makePrivateRequest(url: String): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(url, c)) }
   
+  private def redirectRequest(response: SimpleResponse): Unit = response.headers(LocationHeader).map { url => makePublicRequest(url) }
 }
