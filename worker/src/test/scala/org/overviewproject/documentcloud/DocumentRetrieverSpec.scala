@@ -7,6 +7,7 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
+import akka.actor.Terminated
 import akka.testkit.{TestActorRef, TestProbe}
 
 class DocumentRetrieverSpec extends Specification {
@@ -46,6 +47,19 @@ class DocumentRetrieverSpec extends Specification {
 
       retriever ! Result(successfulResponse)
       recipient.expectMsg(GetTextSucceeded(document, text))
+    }
+    
+    "die after successful retrieval" in new PublicRetrievalContext {
+      val text = "document text"
+      val successfulResponse = TestSimpleResponse(200, text)
+      val monitor = TestProbe()
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, None))
+      
+      monitor watch retriever
+      retriever ! Result(successfulResponse)
+      
+      monitor.expectMsgType[Terminated]
     }
 
     "put request for a private url in front of the queue" in new PrivateRetrievalContext {

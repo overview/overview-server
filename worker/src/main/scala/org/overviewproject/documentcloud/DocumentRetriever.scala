@@ -35,7 +35,11 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   
   private def requestPublicDocument(d: Document): Unit = makePublicRequest(DocumentQuery(d))
   private def requestPrivateDocument(d: Document): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(DocumentQuery(d), c)) }
-  private def forwardResult(text: String): Unit = recipient ! GetTextSucceeded(document, text)
+  
+  private def forwardResult(text: String): Unit = {
+    recipient ! GetTextSucceeded(document, text)
+    context.stop(self)
+  }
   
   private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
   private def makePrivateRequest(url: String): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(url, c)) }
