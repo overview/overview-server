@@ -6,6 +6,6 @@ import org.overviewproject.http.RequestQueueProtocol.AddToEnd
 
 class DocumentRetriever(requestQueue: ActorRef) extends Actor {
   def receive = {
-    case d: Document => requestQueue ! AddToEnd(PublicRequest("url"))
+    case d: Document => requestQueue ! AddToEnd(PublicRequest(s"https://www.documentcloud.org/api/documents/${d.id}.txt"))
   }
 }

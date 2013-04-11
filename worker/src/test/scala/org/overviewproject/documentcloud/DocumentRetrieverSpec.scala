@@ -12,11 +12,12 @@ class DocumentRetrieverSpec extends Specification {
     
     "queue a request for a public url" in new ActorSystemContext {
       val document = Document("id", "title", "public", "http://canonical-url")
+      val documentUrl = "https://www.documentcloud.org/api/documents/id.txt"
       val retriever = TestActorRef(new DocumentRetriever(testActor))
       
       retriever ! document
       
-      expectMsg(AddToEnd(PublicRequest("url")))
+      expectMsg(AddToEnd(PublicRequest(documentUrl)))
     }
   }
 }
