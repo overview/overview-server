@@ -17,6 +17,10 @@ class AsyncHttpClientResponse(response: Response) extends SimpleResponse {
   override def status: Int = response.getStatusCode
   override def body: String = response.getResponseBody
   override def headers(name: String): Seq[String] = response.getHeaders(name).asScala.toSeq
+  override def headersToString: String = 
+      response.getHeaders.iterator.asScala.map { h => s"${h.getKey}:${h.getValue.asScala.mkString(",")}" }.mkString("\r\n")
+
+
 }
 
 class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {

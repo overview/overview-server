@@ -6,8 +6,9 @@ case class Credentials(userName: String, password: String)
 
 trait SimpleResponse {
   def status: Int
-  def headers(name: String): Seq[String]
   def body: String
+  def headers(name: String): Seq[String]
+  def headersToString: String
 }
 
 
