@@ -10,6 +10,7 @@ import akka.actor.ActorSystem
 import akka.testkit._
 import org.overviewproject.http.SimpleResponse
 import akka.actor._
+import org.overviewproject.test.ActorSystemContext
 
 case class TestSimpleResponse(override val status: Int, override val body: String, simpleHeaders: Map[String, String] = Map()) extends SimpleResponse {
   override def headers(name: String): Seq[String] = simpleHeaders.get(name) match {
@@ -32,10 +33,6 @@ class SilentActor extends Actor {
 }
 
 class QueryProcessorSpec extends Specification with NoTimeConversions {
-
-  abstract class ActorSystemContext extends TestKit(ActorSystem()) with ImplicitSender with After {
-    def after = system.shutdown()
-  }
 
   "QueryProcessor" should {
 

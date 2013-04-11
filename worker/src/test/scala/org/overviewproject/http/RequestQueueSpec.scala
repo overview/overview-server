@@ -9,12 +9,13 @@ import com.ning.http.client.Response
 import akka.actor.{ ActorSystem, Props }
 import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
 import org.specs2.specification.Scope
+import org.overviewproject.test.ActorSystemContext
 
 
 class RequestQueueSpec extends Specification with Mockito with NoTimeConversions { // avoid conflicts with akka time conversion
   sequential
 
-  trait ClientContext extends Scope {
+  trait ClientSetup extends Scope {
     val MaxInFlightRequests = 5
     val client = new TestClient
     val request = PublicRequest("url")
@@ -24,17 +25,15 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
     response.getResponseBody returns "body"
 
   }
-
-  abstract class ActorSystemContext extends TestKit(ActorSystem()) with ImplicitSender with ClientContext with After {
-    def after = system.shutdown()
-    
+  
+  abstract class ClientContext extends ActorSystemContext with ClientSetup {
     def createRequestQueue(maxInFlightRequests: Int = MaxInFlightRequests): TestActorRef[RequestQueue] = TestActorRef(new RequestQueue(client, maxInFlightRequests))
   }
 
   
   "RequestQueue" should {
 
-    "handle one request" in new ActorSystemContext {
+    "handle one request" in new ClientContext {
       val requestQueue = createRequestQueue()
       requestQueue ! AddToEnd(request)
 
@@ -42,7 +41,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       expectMsgType[Result](1 seconds)
     }
 
-    "only have N requests in flight at a time" in new ActorSystemContext {
+    "only have N requests in flight at a time" in new ClientContext {
       val requestQueue = createRequestQueue()
       
       1 to (MaxInFlightRequests + 1) foreach {_ => requestQueue ! AddToEnd(request) }
@@ -57,7 +56,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       client.requestsInFlight must be equalTo(0)
     }
 
-    "add requests to the front of the queue" in new ActorSystemContext {
+    "add requests to the front of the queue" in new ClientContext {
       val frontUrl = "front url"
       val requestQueue = createRequestQueue(maxInFlightRequests = 1)
       
@@ -69,7 +68,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       client.requestedUrls.headOption must beSome(frontUrl)
     }
     
-    "treat failed requests as completed" in new ActorSystemContext {
+    "treat failed requests as completed" in new ClientContext {
        val failure = new Exception("failed")
        val requestQueue = createRequestQueue(maxInFlightRequests = 1)
        
