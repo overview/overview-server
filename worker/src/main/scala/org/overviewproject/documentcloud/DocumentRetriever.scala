@@ -7,9 +7,10 @@ import org.overviewproject.http.SimpleResponse
 
 object DocumentRetrieverProtocol {
   case class Start()
+  case class GetTextSucceeded(d: Document, text: String)
 }
 
-class DocumentRetriever(document: Document, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
+class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
   import DocumentRetrieverProtocol._
   
   private val PublicAccess: String = "public"
@@ -21,6 +22,7 @@ class DocumentRetriever(document: Document, requestQueue: ActorRef, credentials:
   def receive = {
     case Start() => requestDocument
     case Result(r) if isRedirect(r) => redirectRequest(r) 
+    case Result(r) => forwardResult(r.body)
   }
 
   def requestDocument: Unit = {
@@ -33,6 +35,7 @@ class DocumentRetriever(document: Document, requestQueue: ActorRef, credentials:
   
   private def requestPublicDocument(d: Document): Unit = makePublicRequest(DocumentQuery(d))
   private def requestPrivateDocument(d: Document): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(DocumentQuery(d), c)) }
+  private def forwardResult(text: String): Unit = recipient ! GetTextSucceeded(document, text)
   
   private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
   private def makePrivateRequest(url: String): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(url, c)) }

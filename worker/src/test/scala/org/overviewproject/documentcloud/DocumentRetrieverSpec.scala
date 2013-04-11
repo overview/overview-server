@@ -1,49 +1,71 @@
 package org.overviewproject.documentcloud
 
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Specification
-import akka.testkit.TestActorRef
-import org.overviewproject.http.PublicRequest
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.Start
+import org.specs2.specification.Scope
+
+import akka.testkit.{TestActorRef, TestProbe}
 
 class DocumentRetrieverSpec extends Specification {
 
   "DocumentRetriever" should {
-    
-    "queue a request for a public url" in new ActorSystemContext {
-      val document = Document("id", "title", "public", "http://canonical-url")
+
+    trait RetrievalSetup extends Scope {
       val documentUrl = "https://www.documentcloud.org/api/documents/id.txt"
-      val retriever = TestActorRef(new DocumentRetriever(document, testActor, None))
-      
+    }
+
+    trait PublicRetrievalSetup extends RetrievalSetup {
+      val document = Document("id", "title", "public", "http://canonical-url")
+    }
+
+    trait PrivateRetrievalSetup extends RetrievalSetup {
+      val document = Document("id", "title", "private", "http://canonical-url")
+      val credentials = Credentials("user@host", "dcpassword")
+    }
+
+    abstract class PublicRetrievalContext extends ActorSystemContext with PublicRetrievalSetup
+    abstract class PrivateRetrievalContext extends ActorSystemContext with PrivateRetrievalSetup
+
+    "queue a request for a public url" in new PublicRetrievalContext {
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, None))
+
       retriever ! Start()
-      
+
       expectMsg(AddToEnd(PublicRequest(documentUrl)))
     }
-    
-    "put request for a private url in front of the queue" in new ActorSystemContext {
-      val credentials = Credentials("user@host", "dcpassword")
-      val document = Document("id", "title", "private", "http://canonical-url")
-      val documentUrl = "https://www.documentcloud.org/api/documents/id.txt"
-      val retriever = TestActorRef(new DocumentRetriever(document, testActor, Some(credentials)))
-      
+
+    "send successful retrieval to recipient" in new PublicRetrievalContext {
+      val text = "document text"
+      val successfulResponse = TestSimpleResponse(200, text)
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, None))
+
+      retriever ! Result(successfulResponse)
+      recipient.expectMsg(GetTextSucceeded(document, text))
+    }
+
+    "put request for a private url in front of the queue" in new PrivateRetrievalContext {
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, Some(credentials)))
+
       retriever ! Start()
-      
+
       expectMsg(AddToFront(PrivateRequest(documentUrl, credentials)))
     }
-    
-    "handle redirect from a private document request" in new ActorSystemContext {
-      val credentials = Credentials("user@host", "dcpassword")
-      val document = Document("id", "title", "private", "http://canonical-url")
-      val documentUrl = "https://www.documentcloud.org/api/documents/id.txt"
+
+    "handle redirect from a private document request" in new PrivateRetrievalContext {
       val redirectUrl = "https://someting.s3.amazon.com/doc.txt"
       val response = TestSimpleResponse(302, "ignored body", Map(("Location" -> redirectUrl)))
-      val retriever = TestActorRef(new DocumentRetriever(document, testActor, Some(credentials)))
-      
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, Some(credentials)))
+
       retriever ! Start()
       expectMsg(AddToFront(PrivateRequest(documentUrl, credentials)))
-      retriever ! Result(response)      
+      retriever ! Result(response)
       expectMsg(AddToEnd(PublicRequest(redirectUrl)))
     }
   }
