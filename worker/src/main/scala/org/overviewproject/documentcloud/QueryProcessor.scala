@@ -8,7 +8,6 @@ import akka.actor._
 import org.overviewproject.http.SimpleResponse
 import scala.concurrent.Promise
 
-
 object QueryProcessorProtocol {
   case class Start()
 }
@@ -16,8 +15,13 @@ object QueryProcessorProtocol {
 class QueryProcessor(query: String, finished: Promise[Int], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import QueryProcessorProtocol._
 
+  private def createQueryUrlForPage(query: String, pageNum: Int): String = {
+    s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
+  }
+
   private val PageSize: Int = 20
   private val Encoding: String = "UTF-8"
+  private val ReceiverActorName = "receiver"
 
   def receive = {
     case Start() => {
@@ -32,26 +36,28 @@ class QueryProcessor(query: String, finished: Promise[Int], processDocument: (Do
 
     requestQueue ! AddToFront(PublicRequest(searchUrl))
   }
-  
-  private def createQueryUrlForPage(query: String, pageNum: Int): String = {
-    s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
-  }
-  
+
   private def processResponse(response: SimpleResponse): Unit = {
     val result = ConvertSearchResult(response.body)
-    
+
     if (morePagesAvailable(result)) requestPage(result.page + 1)
-    
-    val receiver = context.actorFor("receiver") match {
-      case ref if ref.isTerminated => 
-        context.actorOf(Props(new DocumentReceiver(processDocument, result.total, finished)), "receiver")
+
+    val receiver = findOrCreateDocumentReceiver(result.total)
+    spawnRetrievers(result.documents, receiver)
+  }
+
+  private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
+
+  private def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
+    context.actorFor(ReceiverActorName) match {
+      case ref if ref.isTerminated =>
+        context.actorOf(Props(new DocumentReceiver(processDocument, numberOfDocuments, finished)), ReceiverActorName)
       case existingReceiver => existingReceiver
     }
-    result.documents.map {d =>
-      val retriever = context.actorOf(Props(retrieverGenerator(d, receiver))) 
-      retriever ! StartRetriever()
-    }
   }
-  
-  private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
+
+  private def spawnRetrievers(documents: Seq[Document], receiver: ActorRef): Unit = documents.map { d =>
+    val retriever = context.actorOf(Props(retrieverGenerator(d, receiver)))
+    retriever ! StartRetriever()
+  }
 }
