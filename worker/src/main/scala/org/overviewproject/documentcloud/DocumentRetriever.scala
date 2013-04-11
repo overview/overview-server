@@ -4,10 +4,12 @@ import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
 import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
 import org.overviewproject.http.SimpleResponse
+import com.ning.http.client.FluentCaseInsensitiveStringsMap
 
 object DocumentRetrieverProtocol {
   case class Start()
   case class GetTextSucceeded(d: Document, text: String)
+  case class GetTextFailed(d: Document, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
 }
 
 class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
@@ -15,14 +17,16 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   
   private val PublicAccess: String = "public"
   private val LocationHeader: String = "Location"
+  private val OkStatus: Int = 200
   private val RedirectStatus: Int = 302
   
   private def DocumentQuery(d: Document): String = s"https://www.documentcloud.org/api/documents/${d.id}.txt"
   
   def receive = {
     case Start() => requestDocument
-    case Result(r) if isRedirect(r) => redirectRequest(r) 
-    case Result(r) => forwardResult(r.body)
+    case Result(r) if isOk(r) => forwardResult(r.body)
+    case Result(r) if isRedirect(r) => redirectRequest(r)
+    case Result(r) => failRequest(r)
   }
 
   def requestDocument: Unit = {
@@ -32,6 +36,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   
   private def isPublic(d: Document): Boolean = d.access == PublicAccess
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
+  private def isOk(r: SimpleResponse): Boolean = r.status == OkStatus
   
   private def requestPublicDocument(d: Document): Unit = makePublicRequest(DocumentQuery(d))
   private def requestPrivateDocument(d: Document): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(DocumentQuery(d), c)) }
@@ -39,6 +44,10 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def forwardResult(text: String): Unit = {
     recipient ! GetTextSucceeded(document, text)
     context.stop(self)
+  }
+  
+  private def failRequest(r: SimpleResponse): Unit = {
+    recipient ! GetTextFailed(document, r.body, Some(r.status), Some(r.headersToString))
   }
   
   private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))

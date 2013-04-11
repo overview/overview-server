@@ -1,14 +1,14 @@
 package org.overviewproject.documentcloud
 
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
-import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
+import org.overviewproject.http.{ Credentials, PrivateRequest, PublicRequest }
 import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
+import org.overviewproject.test.{ ActorSystemContext, TestSimpleResponse }
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
 import akka.actor.Terminated
-import akka.testkit.{TestActorRef, TestProbe}
+import akka.testkit.{ TestActorRef, TestProbe }
 
 class DocumentRetrieverSpec extends Specification {
 
@@ -48,17 +48,31 @@ class DocumentRetrieverSpec extends Specification {
       retriever ! Result(successfulResponse)
       recipient.expectMsg(GetTextSucceeded(document, text))
     }
-    
+
+    "send failed retrieval to recipient" in new PublicRetrievalContext {
+      val header = "some-header"
+      val value = "header-value"
+      val headersDisplay = s"$header:$value"  
+      val statusCode = 404
+      val text = "Not Found"
+      val failedResponse = TestSimpleResponse(statusCode, text, Map((header -> value)))
+      val recipient = TestProbe()
+      val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, None))
+      
+      retriever ! Result(failedResponse)
+      recipient.expectMsg(GetTextFailed(document, text, Some(statusCode), Some(headersDisplay)))
+    }
+
     "die after successful retrieval" in new PublicRetrievalContext {
       val text = "document text"
       val successfulResponse = TestSimpleResponse(200, text)
       val monitor = TestProbe()
       val recipient = TestProbe()
       val retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, None))
-      
+
       monitor watch retriever
       retriever ! Result(successfulResponse)
-      
+
       monitor.expectMsgType[Terminated]
     }
 
