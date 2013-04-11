@@ -6,20 +6,23 @@ import org.overviewproject.http.PublicRequest
 import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
 import org.overviewproject.http.SimpleResponse
+import scala.concurrent.Promise
 
 
 object QueryProcessorProtocol {
   case class Start()
 }
 
-class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: Document => Actor) extends Actor {
+class QueryProcessor(query: String, finished: Promise[Int], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private val PageSize: Int = 20
   private val Encoding: String = "UTF-8"
 
   def receive = {
-    case Start() => requestPage(1)
+    case Start() => {
+      requestPage(1)
+    }
     case Result(response) => processResponse(response)
   }
 
@@ -39,8 +42,13 @@ class QueryProcessor(query: String, requestQueue: ActorRef, retrieverGenerator: 
     
     if (morePagesAvailable(result)) requestPage(result.page + 1)
     
+    val receiver = context.actorFor("receiver") match {
+      case ref if ref.isTerminated => 
+        context.actorOf(Props(new DocumentReceiver(processDocument, result.total, finished)), "receiver")
+      case existingReceiver => existingReceiver
+    }
     result.documents.map {d =>
-      val retriever = context.actorOf(Props(retrieverGenerator(d))) 
+      val retriever = context.actorOf(Props(retrieverGenerator(d, receiver))) 
       retriever ! StartRetriever()
     }
   }

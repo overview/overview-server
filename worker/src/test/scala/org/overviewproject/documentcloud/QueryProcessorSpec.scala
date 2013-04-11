@@ -1,43 +1,66 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{Start => StartRetriever}
 import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
 import org.overviewproject.http.PublicRequest
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 import org.specs2.time.NoTimeConversions
-
-import akka.actor._
+import akka.actor.{ Actor, ActorRef, Props }
 import akka.testkit.TestActorRef
+import scala.concurrent.Promise
+import org.specs2.mutable.Before
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.GetTextSucceeded
 
 
 
-class ReportingActor(d: Document, receiver: ActorRef) extends Actor {
+class ReportingActor(d: Document, receiver: ActorRef, listener: ActorRef) extends Actor {
   def receive = {
-    case  StartRetriever() => receiver ! "got message"
+    case  StartRetriever() => listener ! "got message"
   }
 }
 
-class SilentActor(d: Document) extends Actor {
+class SilentActor(d: Document, receiver: ActorRef) extends Actor {
   def receive = { 
     case _ => 
+  }
+}
+
+class CompletingActor(d: Document, receiver: ActorRef) extends Actor {
+  def receive = {
+    case StartRetriever() => receiver ! GetTextSucceeded(d, "text")
   }
 }
 
 class QueryProcessorSpec extends Specification with NoTimeConversions {
 
   "QueryProcessor" should {
-
-    "request query result pages" in new ActorSystemContext {
-      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=20&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
+    
+    trait QuerySetup extends Scope {
       val query = "query string"
+    }
+    
+    abstract class QueryContext extends ActorSystemContext with QuerySetup with Before {
+      // TestKit freaks out if we try to define vals, so this rigmarole with before is needed
+      var finished: Promise[Int] = _
+      def before = { 
+        finished = Promise[Int]
+      }
+      
+      def emptyProcessDocument(d: Document, text: String): Unit = {}
+      def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor): Actor = 
+        new QueryProcessor(query, finished, emptyProcessDocument, testActor, receiverCreator)
+    }
+
+    "request query result pages" in new QueryContext {
+      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=20&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
       val page1Result = jsonSearchResultPage(20, 1, 20)
       val page2Result = jsonSearchResultPage(20, 2, 10)
 
-      val queryProcessor = TestActorRef(new QueryProcessor(query, testActor, new SilentActor(_)))
+      val queryProcessor = TestActorRef(createQueryProcessor(new SilentActor(_, _)))
 
       queryProcessor ! Start()
       expectMsg(AddToFront(PublicRequest(pageQuery(1, query))))
@@ -49,11 +72,10 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       expectNoMsg
     }
 
-    "spawn actors and send them query results" in new ActorSystemContext {
-      val query = "query string"
+    "spawn actors and send them query results" in new QueryContext {
       val numberOfDocuments = 10
       val result = jsonSearchResultPage(20, 1, numberOfDocuments)
-      val queryProcessor = system.actorOf(Props(new QueryProcessor(query, testActor, new ReportingActor(_, testActor))))
+      val queryProcessor = system.actorOf(Props(createQueryProcessor(new ReportingActor(_, _, testActor))))
 
       queryProcessor ! Start()
       queryProcessor ! Result(TestSimpleResponse(200, result))
@@ -61,8 +83,15 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       receiveN(numberOfDocuments)
     }
     
-    "complete promise when all documents have been processed" in new ActorSystemContext {
+    "complete promise when all documents have been processed" in new QueryContext {
+      val numberOfDocuments = 5
+      val result = jsonSearchResultPage(numberOfDocuments, 1, numberOfDocuments)
+      val queryProcessor = system.actorOf(Props(createQueryProcessor(new CompletingActor(_, _))))
       
+      queryProcessor ! Start()
+      queryProcessor ! Result(TestSimpleResponse(200, result)) 
+      
+      awaitCond(finished.isCompleted)
     }
   }
 
