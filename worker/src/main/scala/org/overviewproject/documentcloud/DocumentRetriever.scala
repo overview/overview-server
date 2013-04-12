@@ -48,6 +48,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   
   private def failRequest(r: SimpleResponse): Unit = {
     recipient ! GetTextFailed(document, r.body, Some(r.status), Some(r.headersToString))
+    context.stop(self)
   }
   
   private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
