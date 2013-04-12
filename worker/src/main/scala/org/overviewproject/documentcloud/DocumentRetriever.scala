@@ -9,7 +9,7 @@ import com.ning.http.client.FluentCaseInsensitiveStringsMap
 object DocumentRetrieverProtocol {
   case class Start()
   case class GetTextSucceeded(d: Document, text: String)
-  case class GetTextFailed(d: Document, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+  case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
 }
 
 class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
@@ -47,7 +47,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   }
   
   private def failRequest(r: SimpleResponse): Unit = {
-    recipient ! GetTextFailed(document, r.body, Some(r.status), Some(r.headersToString))
+    recipient ! GetTextFailed(DocumentQuery(document), r.body, Some(r.status), Some(r.headersToString))
     context.stop(self)
   }
   

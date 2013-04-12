@@ -72,7 +72,7 @@ class DocumentRetrieverSpec extends Specification {
     "send failed retrieval to recipient" in new PublicRetrievalContext with FailedResponse {
 
       retriever ! Result(failedResponse)
-      recipient.expectMsg(GetTextFailed(document, text, Some(statusCode), Some(headersDisplay)))
+      recipient.expectMsg(GetTextFailed("url", text, Some(statusCode), Some(headersDisplay)))
     }
 
     "die after successful retrieval" in new PublicRetrievalContext with SuccessfulResponse {

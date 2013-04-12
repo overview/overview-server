@@ -45,9 +45,9 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
     
     abstract class QueryContext extends ActorSystemContext with QuerySetup with Before {
       // TestKit freaks out if we try to define vals, so this rigmarole with before is needed
-      var finished: Promise[Int] = _
+      var finished: Promise[Seq[DocumentRetrievalError]] = _
       def before = { 
-        finished = Promise[Int]
+        finished = Promise[Seq[DocumentRetrievalError]]
       }
       
       def emptyProcessDocument(d: Document, text: String): Unit = {}

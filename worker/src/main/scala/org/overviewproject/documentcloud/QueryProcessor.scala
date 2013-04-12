@@ -12,7 +12,9 @@ object QueryProcessorProtocol {
   case class Start()
 }
 
-class QueryProcessor(query: String, finished: Promise[Int], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+
+class QueryProcessor(query: String, finished: Promise[Seq[DocumentRetrievalError]], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
