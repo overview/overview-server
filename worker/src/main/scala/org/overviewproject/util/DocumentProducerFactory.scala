@@ -12,6 +12,7 @@ import org.overviewproject.util.Progress._
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
 import org.overviewproject.http.AsyncHttpRequest
+import org.overviewproject.http.Credentials
 
 
 /** Common functionality for DocumentProducers */
@@ -46,11 +47,12 @@ object DocumentProducerFactory {
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn): DocumentProducer = documentSet.documentSetType match {
     case "DocumentCloudDocumentSet" =>
-      val asyncHttpRetriever: AsyncHttpRequest = new AsyncHttpRequest
+      val credentials = for {
+        username <- documentSetCreationJob.documentCloudUsername
+        password <- documentSetCreationJob.documentCloudPassword
+      } yield Credentials(username, password)
       
-      val dcSource = new DocumentCloudSource(asyncHttpRetriever, MaxDocuments,
-        documentSet.query.get, documentSetCreationJob.documentCloudUsername, documentSetCreationJob.documentCloudPassword)
-      new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, dcSource, consumer, asyncHttpRetriever, progAbort)
+      new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
     case "CsvImportDocumentSet" =>
       new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
   }
