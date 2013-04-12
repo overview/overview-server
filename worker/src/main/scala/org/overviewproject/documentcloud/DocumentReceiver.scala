@@ -13,13 +13,16 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
   def receive = {
     case GetTextSucceeded(document, text) => {
       processDocument(document, text)
-      receivedDocuments += 1
-      if (receivedDocuments == numberOfDocuments) finished.success(failedRetrievals)
+      update
     }
     case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
       failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
-      receivedDocuments += 1
-      if (receivedDocuments == numberOfDocuments) finished.success(failedRetrievals)      
+      update
     }
+  }
+  
+  private def update: Unit = {
+    receivedDocuments += 1
+    if (receivedDocuments == numberOfDocuments) finished.success(failedRetrievals)
   }
 }
