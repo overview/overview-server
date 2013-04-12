@@ -14,7 +14,12 @@ object QueryProcessorProtocol {
 
 case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
 
-class QueryProcessor(query: String, finished: Promise[Seq[DocumentRetrievalError]], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+class QueryInformation {
+  val documentsTotal = Promise[Int]
+  val errors = Promise[Seq[DocumentRetrievalError]]
+}
+
+class QueryProcessor(query: String, queryInformation: QueryInformation, processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
@@ -41,6 +46,7 @@ class QueryProcessor(query: String, finished: Promise[Seq[DocumentRetrievalError
 
   private def processResponse(response: SimpleResponse): Unit = {
     val result = ConvertSearchResult(response.body)
+    setDocumentsTotal(result.total)
 
     if (morePagesAvailable(result)) requestPage(result.page + 1)
 
@@ -48,12 +54,15 @@ class QueryProcessor(query: String, finished: Promise[Seq[DocumentRetrievalError
     spawnRetrievers(result.documents, receiver)
   }
 
+  private def setDocumentsTotal(n: Int) =
+    if (!queryInformation.documentsTotal.isCompleted) queryInformation.documentsTotal.success(n)
+
   private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
 
   private def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
       case ref if ref.isTerminated =>
-        context.actorOf(Props(new DocumentReceiver(processDocument, numberOfDocuments, finished)), ReceiverActorName)
+        context.actorOf(Props(new DocumentReceiver(processDocument, numberOfDocuments, queryInformation.errors)), ReceiverActorName)
       case existingReceiver => existingReceiver
     }
   }

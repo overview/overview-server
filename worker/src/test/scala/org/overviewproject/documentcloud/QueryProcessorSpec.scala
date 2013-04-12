@@ -14,6 +14,7 @@ import akka.testkit.TestActorRef
 import scala.concurrent.Promise
 import org.specs2.mutable.Before
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol.GetTextSucceeded
+import scala.util.Success
 
 
 
@@ -39,20 +40,17 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
 
   "QueryProcessor" should {
     
-    trait QuerySetup extends Scope {
+    abstract class QueryContext extends ActorSystemContext with Before {
       val query = "query string"
-    }
-    
-    abstract class QueryContext extends ActorSystemContext with QuerySetup with Before {
-      // TestKit freaks out if we try to define vals, so this rigmarole with before is needed
-      var finished: Promise[Seq[DocumentRetrievalError]] = _
-      def before = { 
-        finished = Promise[Seq[DocumentRetrievalError]]
+      var queryInformation: QueryInformation = _
+      
+      def before = {
+        queryInformation = new QueryInformation
       }
       
       def emptyProcessDocument(d: Document, text: String): Unit = {}
       def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor): Actor = 
-        new QueryProcessor(query, finished, emptyProcessDocument, testActor, receiverCreator)
+        new QueryProcessor(query, queryInformation, emptyProcessDocument, testActor, receiverCreator)
     }
 
     "request query result pages" in new QueryContext {
@@ -83,7 +81,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       receiveN(numberOfDocuments)
     }
     
-    "complete promise when all documents have been processed" in new QueryContext {
+    "complete errors promise when all documents have been processed" in new QueryContext {
       val numberOfDocuments = 5
       val result = jsonSearchResultPage(numberOfDocuments, 1, numberOfDocuments)
       val queryProcessor = system.actorOf(Props(createQueryProcessor(new CompletingActor(_, _))))
@@ -91,7 +89,22 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       queryProcessor ! Start()
       queryProcessor ! Result(TestSimpleResponse(200, result)) 
       
-      awaitCond(finished.isCompleted)
+      awaitCond(queryInformation.errors.isCompleted)
+    }
+    
+    "complete documentsTotal promise after first page of result has been received" in new QueryContext {
+      val numberOfDocuments = 5
+      val numberOfPages = 2
+      val result = jsonSearchResultPage(numberOfDocuments, numberOfPages, numberOfDocuments)
+      val queryProcessor = system.actorOf(Props(createQueryProcessor(new SilentActor(_, _))))
+      
+      queryProcessor ! Start()
+      queryProcessor ! Result(TestSimpleResponse(200, result))
+      
+      val totalFuture = queryInformation.documentsTotal.future 
+
+      awaitCond(totalFuture.isCompleted)
+      totalFuture.value must beSome(Success(numberOfDocuments))
     }
   }
 
