@@ -96,7 +96,7 @@ class DocumentRetrieverSpec extends Specification {
     "put request for a private url in front of the queue" in new PrivateRetrievalContext {
       retriever ! Start()
 
-      expectMsg(AddToFront(PrivateRequest(documentUrl, credentials.get)))
+      expectMsg(AddToFront(PrivateRequest(documentUrl, credentials.get, false)))
     }
 
     "handle redirect from a private document request" in new PrivateRetrievalContext {
@@ -104,7 +104,7 @@ class DocumentRetrieverSpec extends Specification {
       val response = TestSimpleResponse(302, "ignored body", Map(("Location" -> redirectUrl)))
 
       retriever ! Start()
-      expectMsg(AddToFront(PrivateRequest(documentUrl, credentials.get)))
+      expectMsg(AddToFront(PrivateRequest(documentUrl, credentials.get, false)))
       retriever ! Result(response)
       expectMsg(AddToEnd(PublicRequest(redirectUrl)))
     }

@@ -24,7 +24,7 @@ class AsyncHttpClientWrapper extends Client {
     client.prepareGet(url).execute(responseHandler)
   }
 
-  def submitWithAuthentication(url: String, credentials: Credentials, responseHandler: AsyncCompletionHandler[Unit]): Unit = {
+  def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): Unit = {
 
     val realm = new Realm.RealmBuilder()
       .setPrincipal(credentials.userName)
@@ -34,7 +34,7 @@ class AsyncHttpClientWrapper extends Client {
       .build
 
     client.prepareGet(url)
-      .setFollowRedirects(false)
+      .setFollowRedirects(followRedirects)
       .setRealm(realm)
       .execute(responseHandler)
   }

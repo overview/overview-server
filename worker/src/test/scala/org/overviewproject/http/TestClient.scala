@@ -7,7 +7,7 @@ class TestClient extends Client {
   
   def submit(url: String, responseHandler: AsyncCompletionHandler[Unit]): Unit = requests = requests :+ (url, responseHandler)
     
-  def submitWithAuthentication(url: String, credentials: Credentials, responseHandler: AsyncCompletionHandler[Unit]): Unit = submit(url, responseHandler) 
+  def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): Unit = submit(url, responseHandler) 
 
   def completeAllRequests(response: Response): Unit = {
     requests.map(_._2.onCompleted(response))
