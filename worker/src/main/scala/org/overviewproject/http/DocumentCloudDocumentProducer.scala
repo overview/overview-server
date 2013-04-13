@@ -43,7 +43,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
       val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, 4)))
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) = new DocumentRetriever(document, receiver, requestQueue, credentials)
 
-      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, notify, requestQueue, retrieverGenerator)))
+      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, notify, requestQueue, retrieverGenerator)))
 
       // Now, wait on this thread until all docs are in
 

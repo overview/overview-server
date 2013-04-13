@@ -7,6 +7,9 @@ import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
 import org.overviewproject.http.SimpleResponse
 import scala.concurrent.Promise
+import org.overviewproject.http.Credentials
+import org.overviewproject.http.Request
+import org.overviewproject.http.PrivateRequest
 
 object QueryProcessorProtocol {
   case class Start()
@@ -19,7 +22,7 @@ class QueryInformation {
   val errors = Promise[Seq[DocumentRetrievalError]]
 }
 
-class QueryProcessor(query: String, queryInformation: QueryInformation, processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+class QueryProcessor(query: String, queryInformation: QueryInformation, credentials: Option[Credentials], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import QueryProcessorProtocol._
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
@@ -40,9 +43,15 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, processD
   private def requestPage(pageNum: Int): Unit = {
     val encodedQuery = URLEncoder.encode(query, Encoding)
     val searchUrl = createQueryUrlForPage(encodedQuery, pageNum)
-
-    requestQueue ! AddToFront(PublicRequest(searchUrl))
+    
+    requestQueue ! AddToFront(createRequest(searchUrl))
   }
+  
+  private def createRequest(url: String): Request = credentials match {
+    case Some(c) => PrivateRequest(url, c)
+    case None => PublicRequest(url)
+  }    
+    
 
   private def processResponse(response: SimpleResponse): Unit = {
     val result = ConvertSearchResult(response.body)
