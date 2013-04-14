@@ -18,7 +18,7 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
   }
   
   "BigramDocumentVectorGenerator" should {
- /*   
+    
     "fail if zero documents" in {
       val vectorGen = new BigramDocumentVectorGenerator()
       vectorGen.documentVectors should throwA[NotEnoughDocumentsError]
@@ -65,7 +65,7 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       dv2(id22) should beCloseTo(rt9, 1e-6f)
       dv2(id23) should beCloseTo(rt9, 1e-6f)
     }
-  */
+  
     "compute TF-IDF if no bigrams" in {    
       val vectorGen = new BigramDocumentVectorGenerator()
       
@@ -109,7 +109,7 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       val len = math.sqrt(ratTfIdf*ratTfIdf + catTfIdf*catTfIdf).toFloat
       DocumentVectorMap(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
     }  
- /*   
+    
     "find trival bigrams" in {
       val vectorGen = new BigramDocumentVectorGenerator()
       
@@ -142,7 +142,7 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       val notBigrams = Seq("cat_sat", "sat_sat", "cat_ate", "ate_the", "rat_sat",  
                            "rat_doesn't", "doesn't_really", "really_care", "care_about", "about_the", "cat_cat")
       notBigrams should haveAllElementsLike { case b => strs.stringToIdFailIfMissing(b) should throwA[java.util.NoSuchElementException] } 
-    }*/
+    }
   }
 
 }

@@ -22,7 +22,8 @@ object ApplicationBuild extends Build {
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val junitDep = "junit" % "junit-dep" % "4.11"
-
+  val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
+  
   // Project dependencies
   val serverProjectDependencies = Seq(
     jdbc,
@@ -58,7 +59,8 @@ object ApplicationBuild extends Build {
     mockitoDep % "test",
     specs2Dep % "test",
     junitInterfaceDep, // FIXME add % "test"
-    junitDep % "test"
+    junitDep % "test",
+    saddleDep
   )
 
   val ourTestOptions = Seq(
