@@ -117,5 +117,7 @@ class StringTable {
   def translateIdTo(id: TermID, s:StringTable) : TermID = {
     val term = idToString(id)
     s.stringToId(term)
-  } 
+  }
+  
+  def mkString() = _idToString.toString
 }

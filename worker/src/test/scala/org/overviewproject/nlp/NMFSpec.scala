@@ -17,9 +17,9 @@ import org.saddle._
 class NMFSpec extends Specification {
       
   // Convert between document vector and matrix representations.
-  def docsToMatrix(nmf:NMF, vocabSize:Int) : Mat[Double] = {
+  def docsToMatrix(nmf:NMF) : Mat[Double] = {
     def numCols = nmf.docVecs.size
-    def numRows = vocabSize
+    def numRows = nmf.docVecs.stringTable.size
       
     def docsMatrixElement(row:Int, col:Int) = {
       val docId = nmf.docColToId(col)
@@ -36,8 +36,9 @@ class NMFSpec extends Specification {
       val doc = new DocumentVectorMap
       for (row <- 0 until m.numRows) {
         val weight = m.raw(row, col)
-        if (weight != 0.0)
-          doc += (row -> weight.asInstanceOf[TermWeight])
+        val termID = docVecs.stringTable.stringToId(row.toString)  // trivial vocabulary, just row names
+        if (weight != 0.0) 
+          doc += (termID -> weight.asInstanceOf[TermWeight])
       }
       docVecs += (col.asInstanceOf[DocumentID] -> DocumentVector(doc))
     }
@@ -102,7 +103,7 @@ class NMFSpec extends Specification {
       val prod = nmf.docsLeftMult(m)
 
       // Generate reference correct result by turning document set into a dense matrix 
-      val v = docsToMatrix(nmf, sampleVocabSize)
+      val v = docsToMatrix(nmf)
       
       val correct = v mult m
             
@@ -110,7 +111,36 @@ class NMFSpec extends Specification {
     }
     
     "trival topics" in {
-      success
+       // Simple test data: all terms used in only one doc, so NMF should easily recover topics
+       // Additional tests here:
+       //  - one and more than one term used in doc
+       //  - term never used
+       //  - term with weight > 1
+       val numDocs = 3
+       val vocabSize = 5
+       val docMat = Mat(vocabSize, numDocs, Array[Double]( 
+                   1, 0, 0, 
+                   0, 1, 0,   
+                   0, 1, 0,
+                   0, 0, 0, 
+                   0, 0, 2))
+       val docVecs = matrixToDocs(docMat)
+       
+       val nmf = new NMF(docVecs)
+       val (w,h) = nmf(3) // 3 topics
+       
+       //println(s"W matrix, terms x topics\n$w")
+       //println(s"H matrix, topics x docs\n$h")
+       
+       val approx = w mult h
+    
+       //println(s"W*H, document approximation\n$approx")
+       //println(s"document matrix:\n$docMat")
+       
+       // See if we've recovered a good approximation to the document matrix
+       for (col <- 0 until numDocs)
+         for (row <- 0 until vocabSize)
+           approx.raw(row, col) should beCloseTo(docMat.raw(row,col), 1E-3)
     }
   }
 }

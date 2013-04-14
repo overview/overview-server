@@ -21,7 +21,7 @@ class NMF(val docVecs:DocumentSetVectors) {
   type E = Double
   
   // Map column indices to document IDs in a consistent way
-  val docColToId = docVecs.keys.toArray
+  val docColToId = docVecs.keys.toArray.sorted
   def docIdToCol(id:DocumentID) = docColToId.indexOf(id)
   
   // This is a sparse dot product; also handles conversion between TermWeight and E
@@ -41,6 +41,10 @@ class NMF(val docVecs:DocumentSetVectors) {
   // Sadly, because saddle.Mat is immutable, dst has to be a raw array
   def accumulateRow(dst:Array[E], numCols:Int, dstRow:Int, src:Mat[E], srcRow:Int, weight:E) : Unit = {
     
+    require(numCols == src.numCols)
+    require(srcRow < src.numRows)
+    //println(s"accumulateRow: src size (${src.numRows},${src.numCols}), numCols $numCols, dstRow $dstRow, srcRow $srcRow")
+    
     var col = 0
     var dstIdx = dstRow*numCols
     while (col < numCols) {
@@ -55,12 +59,17 @@ class NMF(val docVecs:DocumentSetVectors) {
   // We need to go across terms to exploit sparseness, so we do this by accumulating weights*rows of m into out
   def docsLeftMult(m:Mat[E]) : Mat[E] = {
     val numDocs = docVecs.size
+    val numTerms = docVecs.stringTable.size
+    val numTopics = m.numCols
     require(m.numRows == numDocs)
+    require(m.numCols == numTopics)
 
-    val outRaw = new Array[E](m.numRows * m.numCols) // NB: starts zeroed
+    //println(s"docsLeftMult: numDocs $numDocs, numTerms $numTerms, numTopics $numTopics")
+    
+    val outRaw = new Array[E](numTerms * numTopics) // NB: starts zeroed
     
     // loop over document vectors exactly once, equivalent to looping over rows of m
-    // we add each row of m into the output rows corresponding to terms
+    // we add each row of a into the output rows corresponding to terms
     var inRow = 0
     while (inRow < numDocs) {
       val doc = docVecs(docColToId(inRow))
@@ -71,15 +80,15 @@ class NMF(val docVecs:DocumentSetVectors) {
       while (t < numTerms) {
         val outRow = doc.terms(t)
         val weight = doc.weights(t)
-        accumulateRow(outRaw, m.numCols, outRow, m, inRow, weight)
+        accumulateRow(outRaw, numTopics, outRow, m, inRow, weight)
         t += 1
       }
       inRow += 1
     }    
     
-    Mat(m.numRows, m.numCols, outRaw)
+    Mat(numTerms, numTopics, outRaw)
   }
-  
+ 
   // Takes a function from (row,column) to element, and constructs a new matrix
   def makeMatrix[E:ClassTag](rows:Int, cols:Int, f : (Int,Int) => E) : Mat[E] = {
     val sz = rows * cols
@@ -92,6 +101,44 @@ class NMF(val docVecs:DocumentSetVectors) {
     Mat(rows, cols, m)
   }
 
+/*
+  def mapMatrix[E:ClassTag](m: Mat[E], f: (Int,Int,E) => E) : Mat[E] = {
+    val rows = m.numRows
+    val cols =  m.numCols
+    val sz = rows*cols
+    val out = new Array[E](sz)
+    var idx = 0
+    while (idx < sz) {
+      val row = idx / cols
+      val col = idx % cols
+      out.update(idx, f(row, col, m.raw(row,col)))
+      idx += 1
+    }
+    Mat(rows, cols, out)
+  }
+*/
+
+  // computes m*num/denom, except where num==denom==0, leaves m unchanged
+  def carefulMultDiv(m:Mat[E], num:Mat[E], denom:Mat[E]) : Mat[E] = {
+    val rows = m.numRows
+    val cols =  m.numCols
+    val sz = rows * cols
+    val out = new Array[E](sz)
+    var idx = 0
+    while (idx < sz) {
+      val row = idx / cols
+      val col = idx % cols
+      val v = m.raw(row, col)
+      val n = num.raw(row, col)
+      val d = denom.raw(row, col)
+      if (n==0 && d==0)
+        out.update(idx, v)
+      else
+        out.update(idx, (v * n) / d)
+      idx += 1
+    }
+    Mat(rows, cols, out)    
+  }
   
   // In the methods below:
   //   V is the array of (sparse) document vectors, one document per column. We never build it explicitly, but reference docVecs
@@ -102,15 +149,17 @@ class NMF(val docVecs:DocumentSetVectors) {
   // where ' is transpose and * / are element-wise
   def IterateH(W:Mat[E], H:Mat[E]) : Mat[E] = {
 
-    val r = W.numCols
-    val n = W.numRows
+    val r = W.numCols   // number of topics
+    val n = W.numRows   // vocabulary size
+    val m = H.numCols   // number of documents
     require(W.numCols == H.numRows)
 
     val Wt = W.T
-    val num = makeMatrix(r, n, (row,col) => docRowDotProduct(col, Wt, row))
+    val num = makeMatrix(r, m, (row,col) => docRowDotProduct(col, Wt, row))
     val denom = (Wt mult W) mult H
-          
-    H * num / denom
+
+    // H * num / denom
+    carefulMultDiv(H, num, denom)
   }
 
   // W <- W * (VH') / (WHH')
@@ -121,23 +170,33 @@ class NMF(val docVecs:DocumentSetVectors) {
     val num = docsLeftMult(Ht)
     val denom = W mult (H mult Ht)
     
-    W * num / denom
+    //println(s"W num\n$num\nW denom\n$denom")
+    
+    // W * num / denom
+    carefulMultDiv(W, num, denom)
   }
 
-  def apply(r:Int) : Pair[Mat[E], Mat[E]] = {
-    val m = docVecs.size              // number of document vectors
-    val n = docVecs.stringTable.size  // dimension of each docvec (though it's sparse)
+  def apply(numTopics:Int) : Pair[Mat[E], Mat[E]] = {
+    val numDocs = docVecs.size
+    val numTerms = docVecs.stringTable.size  // dimension of each docvec (though it's sparse)
+    
+    //println(s"NMF: $numDocs documents, $numTerms vocabulary size, $numTopics topics")
     
     // Initialize topic and coordinate arrays to random strictly positive values
-    var W = mat.randp(n,r)
-    var H = mat.randp(r,m)
+    var W = mat.randp(numTerms,numTopics)
+    var H = mat.randp(numTopics,numDocs)
     
-    val maxIter = 10
+    val maxIter = 20
     var iter = 0
     while (iter < maxIter) {
+      //println(s"Starting iteration $iter")
+      //println(s"W matrix, terms x topics\n$W")
+      //println(s"H matrix, topics x docs\n$H")
+      
       H = IterateH(W,H)
       W = IterateW(W,H)
       iter += 1
+      
     }
     
     (W,H)
