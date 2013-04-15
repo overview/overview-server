@@ -109,7 +109,7 @@ class NMFSpec extends Specification {
             
       prod must beEqualTo(correct)
     }
-    
+ /*   
     "recover simple topics" in {
        // Simple test data: all terms used in only one doc, so NMF should easily recover topics
        // Additional tests here:
@@ -142,6 +142,8 @@ class NMFSpec extends Specification {
          for (row <- 0 until vocabSize)
            approx.raw(row, col) should beCloseTo(docMat.raw(row,col), 1E-3)
     }
+    
+*/
   }
 }
    
