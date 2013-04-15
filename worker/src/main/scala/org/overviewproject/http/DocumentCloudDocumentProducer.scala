@@ -27,6 +27,10 @@ import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
 class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
+  private val MaxInFlightRequests = 4
+  private val RequestQueueName = "requestqueue"
+  private val QueryProcessorName = "queryprocessor"
+
   private val FetchingFraction = 0.5
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
@@ -40,15 +44,16 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
 
       queryInformation = new QueryInformation
       val asyncHttpClient = new AsyncHttpClientWrapper
-      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, 4)))
+      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests)), RequestQueueName)
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) = new DocumentRetriever(document, receiver, requestQueue, credentials)
 
-      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, notify, requestQueue, retrieverGenerator)))
+      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, notify, requestQueue, retrieverGenerator)), QueryProcessorName)
 
+      println(s"Query --> ${queryProcessor.path}  Queue --> ${requestQueue.path}")
       // Now, wait on this thread until all docs are in
 
       try {
-       queryProcessor ! Start()
+        queryProcessor ! Start()
         val docsNotFetched = Await.result(queryInformation.errors.future, Duration.Inf)
         Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
         Database.inTransaction {
@@ -58,8 +63,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
         case t: Throwable if (t.getCause() != null) => throw t.getCause()
         case t: Throwable => throw t
       } finally {
-        context.stop(queryProcessor)
-        context.stop(requestQueue)
+        shutdownActors
       }
     }
 
@@ -68,7 +72,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
 
-  private def notify(doc: RetrievedDocument, text: String): Unit = {
+  private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
       val document = Document(DocumentCloudDocument, documentSetId, id = ids.next, title = Some(doc.title), documentcloudId = Some(doc.id))
       DocumentWriter.write(document)
@@ -77,13 +81,23 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
     //throw (new java.lang.OutOfMemoryError("heap space"))
     consumer.processDocument(id, text)
     numDocs += 1
-    progAbort(
-       Progress(numDocs * FetchingFraction / getTotalDocs, Retrieving(numDocs, getTotalDocs)))
+
+    val isCancelled = progAbort(Progress(numDocs * FetchingFraction / getTotalDocs, Retrieving(numDocs, getTotalDocs)))
+    if (isCancelled) shutdownActors
   }
 
   private def getTotalDocs: Int = totalDocs.getOrElse {
     totalDocs = Some(Await.result(queryInformation.documentsTotal.future, Duration.Inf))
     totalDocs.get
+  }
+
+  private def shutdownActors(implicit context: ActorSystem): Unit = {
+
+    val queryProcessorActor: ActorRef = context.actorFor(s"user/$QueryProcessorName")
+    val requestQueueActor: ActorRef = context.actorFor(s"user/$RequestQueueName")
+
+    context.stop(requestQueueActor)
+    context.stop(queryProcessorActor)
   }
 
 }
