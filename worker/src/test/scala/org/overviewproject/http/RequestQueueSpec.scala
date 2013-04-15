@@ -32,7 +32,7 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
 
   
   "RequestQueue" should {
-
+/*
     "handle one request" in new ClientContext {
       val requestQueue = createRequestQueue()
       requestQueue ! AddToEnd(request)
@@ -80,6 +80,15 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
        expectMsg(Failure(failure))
        
        client.requestsInFlight must be equalTo(1)
+    }
+*/    
+    "shutdown client when stopping" in new ClientContext {
+      val requestQueue = createRequestQueue()
+      
+      requestQueue.stop()
+      awaitCond(requestQueue.isTerminated)
+      
+      client.isShutdown must beTrue
     }
   }
 }

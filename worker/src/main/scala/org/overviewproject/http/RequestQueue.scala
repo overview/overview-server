@@ -50,6 +50,8 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
     case RequestCompleted() => handleNextRequest
   }
   
+  override def postStop = client.shutdown()
+  
   private def submitRequest(requestor: ActorRef, request: Request): Unit = { 
     request.execute(client, new ResultHandler(requestor))
     inFlightRequests += 1
@@ -59,7 +61,7 @@ class RequestQueue(client: Client, maxInFlightRequests: Int) extends Actor {
   
   private def queueRequestInFront(requestor: ActorRef, url: Request): Unit = queuedRequests = (requestor, url) +: queuedRequests
   
-  private def handleNextRequest: Unit = {
+  private def handleNextRequest: Unit = { 
     inFlightRequests -= 1
     queuedRequests.headOption.map { r =>
       submitRequest(r._1, r._2)
