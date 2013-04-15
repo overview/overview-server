@@ -47,10 +47,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
       val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests)), RequestQueueName)
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) = new DocumentRetriever(document, receiver, requestQueue, credentials)
 
-      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, notify, requestQueue, retrieverGenerator)), QueryProcessorName)
-
-      println(s"Query --> ${queryProcessor.path}  Queue --> ${requestQueue.path}")
-      // Now, wait on this thread until all docs are in
+      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, requestQueue, retrieverGenerator)), QueryProcessorName)
 
       try {
         queryProcessor ! Start()
@@ -82,7 +79,8 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
     consumer.processDocument(id, text)
     numDocs += 1
 
-    val isCancelled = progAbort(Progress(numDocs * FetchingFraction / getTotalDocs, Retrieving(numDocs, getTotalDocs)))
+    val documentsToRetrieve = scala.math.min(getTotalDocs, maxDocuments)
+    val isCancelled = progAbort(Progress(numDocs * FetchingFraction / documentsToRetrieve, Retrieving(numDocs, documentsToRetrieve)))
     if (isCancelled) shutdownActors
   }
 

@@ -17,6 +17,8 @@ import org.overviewproject.documentcloud.DocumentRetrieverProtocol.GetTextSuccee
 import scala.util.Success
 import org.overviewproject.http.Credentials
 import org.overviewproject.http.PrivateRequest
+import akka.testkit.TestActor
+import akka.testkit.TestProbe
 
 class ReportingActor(d: Document, receiver: ActorRef, listener: ActorRef) extends Actor {
   def receive = {
@@ -51,13 +53,13 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=20&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
 
       def emptyProcessDocument(d: Document, text: String): Unit = {}
-      def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor, credentials: Option[Credentials] = None): Actor =
-        new QueryProcessor(query, queryInformation, credentials, emptyProcessDocument, testActor, receiverCreator)
+      def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor, credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
+        new QueryProcessor(query, queryInformation, credentials, maxDocuments, emptyProcessDocument, testActor, receiverCreator)
     }
 
     "request query result pages" in new QueryContext {
-      val page1Result = jsonSearchResultPage(20, 1, 20)
-      val page2Result = jsonSearchResultPage(20, 2, 10)
+      val page1Result = jsonSearchResultPage(40, 1, 20)
+      val page2Result = jsonSearchResultPage(40, 2, 10)
 
       val queryProcessor = TestActorRef(createQueryProcessor(new SilentActor(_, _)))
 
@@ -73,7 +75,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
 
     "spawn actors and send them query results" in new QueryContext {
       val numberOfDocuments = 10
-      val result = jsonSearchResultPage(20, 1, numberOfDocuments)
+      val result = jsonSearchResultPage(numberOfDocuments, 1, numberOfDocuments)
       val queryProcessor = system.actorOf(Props(createQueryProcessor(new ReportingActor(_, _, testActor))))
 
       queryProcessor ! Start()
@@ -114,6 +116,28 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
 
       queryProcessor ! Start()
       expectMsg(AddToFront(PrivateRequest(pageQuery(1, query), credentials)))
+    }
+    
+    "don't retrieve more than specified maximum number of documents" in new QueryContext {
+      val totalDocuments = 600
+      val numberOfDocuments = 20
+      val page1Result = jsonSearchResultPage(totalDocuments, 1, numberOfDocuments)
+      val page2Result = jsonSearchResultPage(totalDocuments, 2, numberOfDocuments)
+
+      val maxDocuments = 30
+      
+      val retrieverCounter = TestProbe()
+      val queryProcessor = TestActorRef(createQueryProcessor(new ReportingActor(_, _, retrieverCounter.ref), maxDocuments = maxDocuments))
+      
+      queryProcessor ! Start()
+      receiveN(1)
+      queryProcessor ! Result(TestSimpleResponse(200, page1Result))
+      receiveN(1)
+      queryProcessor ! Result(TestSimpleResponse(200, page2Result))      
+      expectNoMsg()
+      
+      retrieverCounter.receiveN(30)
+      retrieverCounter.expectNoMsg()
     }
   }
 

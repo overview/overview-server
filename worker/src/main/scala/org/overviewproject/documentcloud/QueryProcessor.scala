@@ -23,8 +23,12 @@ class QueryInformation {
   val errors = Promise[Seq[DocumentRetrievalError]]
 }
 
-class QueryProcessor(query: String, queryInformation: QueryInformation, credentials: Option[Credentials], processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+class QueryProcessor(query: String, queryInformation: QueryInformation, credentials: Option[Credentials], maxDocuments: Int,
+  processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+
   import QueryProcessorProtocol._
+
+  var documentsToRetrieve: Option[Int] = None
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
     s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
@@ -41,33 +45,44 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     case Result(response) => processResponse(response)
   }
 
-  
   private def requestPage(pageNum: Int): Unit = {
     Logger.debug(s"Retrieving DocumentCloud results for query $query, page $pageNum")
     val encodedQuery = URLEncoder.encode(query, Encoding)
     val searchUrl = createQueryUrlForPage(encodedQuery, pageNum)
-    
+
     requestQueue ! AddToFront(createRequest(searchUrl))
   }
-  
+
   private def createRequest(url: String): Request = credentials match {
     case Some(c) => PrivateRequest(url, c)
     case None => PublicRequest(url)
-  }    
-    
+  }
 
   private def processResponse(response: SimpleResponse): Unit = {
     val result = ConvertSearchResult(response.body)
     setDocumentsTotal(result.total)
 
-    if (morePagesAvailable(result)) requestPage(result.page + 1)
+    documentsToRetrieve.map { t =>
+      val receiver = findOrCreateDocumentReceiver(t)
 
-    val receiver = findOrCreateDocumentReceiver(result.total)
-    spawnRetrievers(result.documents, receiver)
+      if (result.page * PageSize < t) {
+        requestPage(result.page + 1)
+        spawnRetrievers(result.documents, receiver)
+        println(s"Spawned 20 retrievers for page ${result.page}")
+      }
+      else {
+        val documentsInLastPage = t - (result.page - 1) * PageSize
+        spawnRetrievers(result.documents.take(documentsInLastPage), receiver)
+        println(s"Spawned $documentsInLastPage for page ${result.page}")
+      }
+    }
   }
 
   private def setDocumentsTotal(n: Int) =
-    if (!queryInformation.documentsTotal.isCompleted) queryInformation.documentsTotal.success(n)
+    if (!queryInformation.documentsTotal.isCompleted) {
+      documentsToRetrieve = Some(scala.math.min(maxDocuments, n))
+      queryInformation.documentsTotal.success(n)
+    }
 
   private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
 
