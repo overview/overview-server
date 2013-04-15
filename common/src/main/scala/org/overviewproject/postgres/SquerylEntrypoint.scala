@@ -8,5 +8,4 @@ import scala.language.implicitConversions
 
 import org.overviewproject.tree.{ Role, Ownership }
 
-object SquerylEntrypoint extends PrimitiveTypeMode {
-}
+object SquerylEntrypoint extends PrimitiveTypeMode with SquerylPostgresFunctions
