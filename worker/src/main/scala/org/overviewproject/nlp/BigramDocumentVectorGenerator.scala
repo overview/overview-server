@@ -12,12 +12,12 @@
  */
 
 
-package org.overviewproject.clustering
+package org.overviewproject.nlp
 
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.{StringTable, TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
-import scala.collection.mutable.{Map,IndexedSeq, HashMap}
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
+import scala.collection.mutable.{Map, IndexedSeq}
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {
   def isBigram = term2 != BigramKey.noTerm
@@ -308,7 +308,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     // Read all docs back from disk, generate new term vectors
     documentVectorIterator foreach { case (docid,doctf) =>              // for each doc
       
-      var docvec = DocumentVectorMap()
+      var docvec = DocumentVectorBuilder()
       var vecLength = 0f
 
       // Walk over each term in docvec, and if it's a term we're keeping, multiply by tfidf, translate to outTerms indices 

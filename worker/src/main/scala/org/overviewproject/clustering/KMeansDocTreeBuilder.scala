@@ -13,7 +13,8 @@ package org.overviewproject.clustering
 import scala.collection.mutable.Set
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.nlp.IterativeKMeansDocuments
 
 // Take a node and create K children.
 // Encapsulates parameters of our our-means clustering

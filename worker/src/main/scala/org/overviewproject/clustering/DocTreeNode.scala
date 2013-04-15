@@ -11,7 +11,7 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.clustering.ClusterTypes.DocumentID
+import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 
 class DocumentIdCache(val numberOfDocuments: Int, val documentIds: Array[DocumentID])
 

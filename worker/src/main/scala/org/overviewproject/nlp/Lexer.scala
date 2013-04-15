@@ -8,10 +8,9 @@
  * Created by Jonathan Stray, June 2012
  *
  */
-package org.overviewproject.clustering
+package org.overviewproject.nlp
 
 import scala.Array.canBuildFrom
-import scala.Array.fallbackCanBuildFrom
 
 object Lexer {
 

@@ -19,6 +19,8 @@ import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.util.{ DocumentConsumer, Logger }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Clustering, Done, Saving }
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
+import org.overviewproject.nlp.Lexer
+import org.overviewproject.nlp.BigramDocumentVectorGenerator
 
 
 

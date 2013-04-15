@@ -16,16 +16,20 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.{HashMap, Map, PriorityQueue}
-import org.overviewproject.clustering.ClusterTypes.{DocumentDistanceFn, DocumentID, DocumentSetVectors, TermID, TermWeight}
+import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{CompactPairArray, Logger}
 
-//import scala.collection.mutable.AddingBuilder
 
+// It's like a global typedef, but wordier :P
+object DocumentDistanceFn {
+  type DocumentDistanceFn = (DocumentVector, DocumentVector) => Double
+}
+import DocumentDistanceFn.DocumentDistanceFn 
 
 // A subset of edges from the complete graph. Optimized for adding many edges, small space.
 // Does not guarantee any particular order for edges attached to each node (in the CompactPairArray)
 class SampledEdges extends HashMap[ DocumentID, CompactPairArray[DocumentID, Float] ] {
-  
+      
   def addEdge(a:DocumentID, b:DocumentID, dist:Float) : Unit = {
     getOrElseUpdate(a, new CompactPairArray[DocumentID, Float]) += Pair(b,dist)
   }

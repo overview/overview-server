@@ -9,10 +9,10 @@
  *
  */
 
-package org.overviewproject.clustering
+package org.overviewproject.nlp
 
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.{Logger, DisplayedError, StringTable}
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.util.{Logger, DisplayedError}
 import scala.collection.mutable.{Map, HashMap}
 import scala.math.Numeric
 
@@ -107,9 +107,9 @@ class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   
   // Create a basic term count vector
   // Side effects: updates string table
-  protected def countTerms(terms:Iterator[String]) : DocumentVectorMap = {  
+  protected def countTerms(terms:Iterator[String]) : DocumentVectorBuilder = {  
     // count how many times each token appears in this doc (term frequency)
-    var termCounts = DocumentVectorMap()
+    var termCounts = DocumentVectorBuilder()
     for (termString <- terms) {
       val term = inStrings.stringToId(termString)
       val prev_count = termCounts.getOrElse(term, 0f)
@@ -120,7 +120,7 @@ class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   
   // Create a vector of term counts for a single document... and store it somewhere
   // No need to update the vocab table though, we'll do that
-  protected def createAndStoreDocumentVector(docId: DocumentID, terms: Seq[String]) : DocumentVectorMap = {
+  protected def createAndStoreDocumentVector(docId: DocumentID, terms: Seq[String]) : DocumentVectorBuilder = {
     // Count frequency of each term, and update vocab table
     val termCounts = countTerms(terms.iterator)
     
@@ -189,7 +189,7 @@ class UnigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     docVecs foreach { case (docid,doctf) =>              // for each doc
       docVecs -= docid                                   // remove this vector, we're about to replace it
       
-      var docvec = DocumentVectorMap()
+      var docvec = DocumentVectorBuilder()
       var vecLength = 0f
 
       // Iteration over terms in DocumentVector is a little awkward since it must be done by index...

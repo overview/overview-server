@@ -9,7 +9,7 @@
  */
 package org.overviewproject.clustering
 
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
 import scala.collection.mutable.{Map, HashMap}
 
 abstract class TreeLabelerBase {
@@ -19,22 +19,22 @@ abstract class TreeLabelerBase {
 class SimpleTreeLabeler(docVecs:DocumentSetVectors) extends TreeLabelerBase {
 
   // Turn a set of document vectors into a descriptive string. Takes top weighted terms, separates by commas
-  private def makeDescription(vec: DocumentVectorMap): String = {
+  private def makeDescription(vec: DocumentVectorBuilder): String = {
     val maxTerms = 15
     vec.toList.sortWith(_._2 > _._2).take(maxTerms).map(_._1).map(docVecs.stringTable.idToString(_)).mkString(", ")
   }
 
   // Create a descriptive string for each node, by taking the sum of all document vectors in that node.
   // Building all descriptions at once allows re-use of sub-sums -- quite important for running time.
-  def labelNode(node: DocTreeNode): DocumentVectorMap = {
+  def labelNode(node: DocTreeNode): DocumentVectorBuilder = {
 
     if (node.docs.size == 1) {
       require(node.children.isEmpty)
-      val vec = DocumentVectorMap(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
+      val vec = DocumentVectorBuilder(docVecs(node.docs.head)) // get document vector corresponding to our single document ID
       node.description += makeDescription(vec)
       vec
     } else {
-      var vec = DocumentVectorMap()
+      var vec = DocumentVectorBuilder()
       for (child <- node.children) {
         vec.accumulate(labelNode(child)) // sum the document vectors of all child nodes
       }

@@ -9,11 +9,10 @@
  */
 
 
-package org.overviewproject.util
+package org.overviewproject.nlp
 
+import org.overviewproject.nlp.DocumentVectorTypes._
 import scala.collection.mutable.{ArrayBuffer,HashTable,HashEntry,Map,MapLike}
-import scala.util.hashing.MurmurHash3
-import org.overviewproject.clustering.ClusterTypes.TermID
 
 // CompactStringIntMap Looks like a Map[String,Int]
 // But:

@@ -10,11 +10,9 @@
  *
  */
 
-package org.overviewproject.clustering
-
-import org.overviewproject.util.CompactPairArray
-import org.overviewproject.util.{Logger, LoopedIterator, Ranges}
-import scala.collection.mutable.{Set, ArrayBuffer}
+package org.overviewproject.nlp
+import org.overviewproject.util.{Logger, LoopedIterator}
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 

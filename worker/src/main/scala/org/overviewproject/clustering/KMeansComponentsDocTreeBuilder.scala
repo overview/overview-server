@@ -10,13 +10,13 @@
  */
 
 package org.overviewproject.clustering
-
-import scala.collection.mutable.{Set,ArrayBuffer}
+import scala.collection.mutable.{Set, ArrayBuffer}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
 import org.overviewproject.util.ToMutableSet._
 import org.overviewproject.util.Logger
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.nlp.IterativeKMeansDocuments
 
 
 class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) { 

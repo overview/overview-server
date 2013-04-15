@@ -8,10 +8,8 @@
  *
  */
 
-package org.overviewproject.clustering
-
-import scala.Array.fallbackCanBuildFrom
-import scala.collection.mutable.{Set, ArrayBuffer}
+package org.overviewproject.nlp
+import scala.collection.mutable.Set
 import org.overviewproject.util.{Logger, LoopedIterator }
 import org.overviewproject.util.Logger.logExecutionTime
 import scala.reflect.ClassTag

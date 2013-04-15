@@ -14,7 +14,7 @@
 package org.overviewproject.clustering
 
 import scala.collection.mutable.Set
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
 
 
 // Root tree cleaner class. Recurses over the tree, but does not recurse into bundled nodes

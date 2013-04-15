@@ -2,7 +2,7 @@ package org.overviewproject.clustering
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
-import org.overviewproject.clustering.ClusterTypes.DocumentID
+import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 
 object DocumentIdCacheGenerator {
 

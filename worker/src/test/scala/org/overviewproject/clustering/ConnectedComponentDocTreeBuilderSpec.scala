@@ -6,10 +6,10 @@
  * 
  */
 
-import scala.collection.mutable.{Map, Set}
-import org.overviewproject.clustering.ConnectedComponentDocTreeBuilder
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.StringTable
+package org.overviewproject.clustering
+
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.nlp.StringTable
 import org.specs2.mutable.Specification
 
 class ConnectedComponentDocTreeBuilderSpec extends Specification {
@@ -37,11 +37,11 @@ class ConnectedComponentDocTreeBuilderSpec extends Specification {
   val A=0; val B=1; val C=2; val D=4    // we won't actually use strings, just IDs
   
   val docSet = DocumentSetVectors(new StringTable)  
-  docSet +=  (1L -> DocumentVector(DocumentVectorMap(A -> dist01, B -> dist06)))
-  docSet +=  (2L -> DocumentVector(DocumentVectorMap(A -> dist01, B -> dist06)))
-  docSet +=  (3L -> DocumentVector(DocumentVectorMap(B -> dist06, C -> dist02)))
-  docSet +=  (4L -> DocumentVector(DocumentVectorMap(B -> dist06, C -> dist02, D -> dist04)))
-  docSet +=  (5L -> DocumentVector(DocumentVectorMap(D -> dist04)))
+  docSet +=  (1L -> DocumentVector(DocumentVectorBuilder(A -> dist01, B -> dist06)))
+  docSet +=  (2L -> DocumentVector(DocumentVectorBuilder(A -> dist01, B -> dist06)))
+  docSet +=  (3L -> DocumentVector(DocumentVectorBuilder(B -> dist06, C -> dist02)))
+  docSet +=  (4L -> DocumentVector(DocumentVectorBuilder(B -> dist06, C -> dist02, D -> dist04)))
+  docSet +=  (5L -> DocumentVector(DocumentVectorBuilder(D -> dist04)))
     
  "ConnectedComponentDocTreeBuilder" should {
    "build a small tree" in {

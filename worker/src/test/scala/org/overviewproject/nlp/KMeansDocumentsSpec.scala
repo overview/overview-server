@@ -7,12 +7,12 @@
  * 
  */
 
+package org.overviewproject.nlp
+
 import java.io.File
-import org.overviewproject.clustering._
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.CompactPairArray
 import org.specs2.mutable.Specification
-import scala.collection.mutable.Set
+import scala.Int.int2long
+import DocumentVectorTypes._
 
 class KMeansDocumentsSpec extends Specification {
 

@@ -6,8 +6,9 @@
  * 
  */
 
+package org.overviewproject.clustering
+
 import scala.collection.mutable.{Map, Set}
-import org.overviewproject.clustering.ConnectedComponents
 import org.specs2.mutable.Specification
 
 class ConnectedComponentsSepc extends Specification {

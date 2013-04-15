@@ -9,10 +9,10 @@
 
 package org.overviewproject.nlp
 
-import org.overviewproject.clustering.ClusterTypes._
-import org.overviewproject.util.StringTable
 import org.specs2.mutable.Specification
 import org.saddle._
+
+import DocumentVectorTypes._
 
 class NMFSpec extends Specification {
       
@@ -23,7 +23,7 @@ class NMFSpec extends Specification {
       
     def docsMatrixElement(row:Int, col:Int) = {
       val docId = nmf.docColToId(col)
-      DocumentVectorMap(nmf.docVecs(docId)).getOrElse(row, 0.0f)
+      DocumentVectorBuilder(nmf.docVecs(docId)).getOrElse(row, 0.0f)
     }
     
     nmf.makeMatrix(numRows, numCols, (row, col) => docsMatrixElement(row,col))
@@ -33,7 +33,7 @@ class NMFSpec extends Specification {
   def matrixToDocs(m:Mat[Double]) : DocumentSetVectors = {    
     val docVecs = new DocumentSetVectors(new StringTable)
     for (col <- 0 until m.numCols) {
-      val doc = new DocumentVectorMap
+      val doc = new DocumentVectorBuilder
       for (row <- 0 until m.numRows) {
         val weight = m.raw(row, col)
         val termID = docVecs.stringTable.stringToId(row.toString)  // trivial vocabulary, just row names
@@ -110,7 +110,7 @@ class NMFSpec extends Specification {
       prod must beEqualTo(correct)
     }
     
-    "trival topics" in {
+    "recover simple topics" in {
        // Simple test data: all terms used in only one doc, so NMF should easily recover topics
        // Additional tests here:
        //  - one and more than one term used in doc
@@ -129,13 +129,13 @@ class NMFSpec extends Specification {
        val nmf = new NMF(docVecs)
        val (w,h) = nmf(3) // 3 topics
        
-       //println(s"W matrix, terms x topics\n$w")
-       //println(s"H matrix, topics x docs\n$h")
+       println(s"W matrix, terms x topics\n$w")
+       println(s"H matrix, topics x docs\n$h")
        
        val approx = w mult h
     
-       //println(s"W*H, document approximation\n$approx")
-       //println(s"document matrix:\n$docMat")
+       println(s"W*H, document approximation\n$approx")
+       println(s"document matrix:\n$docMat")
        
        // See if we've recovered a good approximation to the document matrix
        for (col <- 0 until numDocs)

@@ -9,12 +9,15 @@
  */
 
 
+package org.overviewproject.clustering
+
 import java.io.File
 import scala.Array.canBuildFrom
-import org.overviewproject.clustering.ClusterTypes.DocumentVectorMap
+import org.overviewproject.nlp.DocumentVectorTypes.DocumentVectorBuilder
 import org.specs2.mutable.Specification
-import org.overviewproject.clustering.{UnigramDocumentVectorGenerator,NotEnoughDocumentsError}
-import org.overviewproject.clustering.Lexer
+import org.overviewproject.nlp.UnigramDocumentVectorGenerator
+import org.overviewproject.nlp.Lexer
+import scala.Int.int2long
 
 class IndexDocumentsSpec extends Specification {
   
@@ -76,7 +79,7 @@ class IndexDocumentsSpec extends Specification {
       for ((filename,terms) <- docterms) {
         val packedDocVec = vecs.get(filename.hashCode)
         packedDocVec must not beNull
-        val docvec = DocumentVectorMap(packedDocVec.get)
+        val docvec = DocumentVectorBuilder(packedDocVec.get)
         
         val docTerms = docvec.keys.map(vecs.stringTable.idToString(_)).toSet
         docTerms.subsetOf(terms.toSet) must beTrue    // all terms in vector must be in doc

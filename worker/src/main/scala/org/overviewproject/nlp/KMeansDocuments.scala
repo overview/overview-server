@@ -8,14 +8,14 @@
  *
  */
 
-package org.overviewproject.clustering
+package org.overviewproject.nlp
 
-import ClusterTypes._
+import DocumentVectorTypes._
 
 // Core implementation of DocVec / DocMap dot product, when we don't care if the dist is greater than some threshod
 // Used here, and in KMeansDocumentComponent
 object EarlyOutDocVecDistance {
-  def apply(a:DocumentVector, b:DocumentVectorMap, minSoFar:Double) : Double = {
+  def apply(a:DocumentVector, b:DocumentVectorBuilder, minSoFar:Double) : Double = {
     var dot = 0.0
     var aSqLeft = 1.0
     var bSqLeft = 1.0
@@ -53,15 +53,15 @@ trait KMeansDocumentOps {
   protected val docVecs : DocumentSetVectors  
   
   // Custom cosine distance function: always index against a, as the centroid will have fill-in
-  def distance(aId:DocumentID, b:DocumentVectorMap, minSoFar:Double) : Double = {    
+  def distance(aId:DocumentID, b:DocumentVectorBuilder, minSoFar:Double) : Double = {    
     val a = docVecs(aId)
     EarlyOutDocVecDistance(a, b, minSoFar)
   }
   
-  // To compute mean, we accumulate in a DocumentVectorMap, much more suited to modification than DocumentVector
+  // To compute mean, we accumulate in a DocumentVectorBuilder, much more suited to modification than DocumentVector
   // result is not very sparse after we sum all those terms -- we get fill-in here
-  def mean(elems: Iterable[DocumentID]) : DocumentVectorMap = {
-    var m = DocumentVectorMap()
+  def mean(elems: Iterable[DocumentID]) : DocumentVectorBuilder = {
+    var m = DocumentVectorBuilder()
     elems foreach { docId => m.accumulate(docVecs(docId)) }    
 
     val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
@@ -73,14 +73,14 @@ trait KMeansDocumentOps {
 // Actually define the classes that can cluster documents, by combining the DocumentOps trait with various KMeans types
 
 class KMeansDocuments(protected val docVecs:DocumentSetVectors) 
-  extends KMeans[DocumentID,DocumentVectorMap]                  // DocumentVectorMap as centroid type, document ID as element type. 
+  extends KMeans[DocumentID,DocumentVectorBuilder]                  // DocumentVectorBuilder as centroid type, document ID as element type. 
   with KMeansDocumentOps {
   
 }
 
 
 class IterativeKMeansDocuments(protected val docVecs:DocumentSetVectors) 
-  extends IterativeKMeans[DocumentID,DocumentVectorMap] 
+  extends IterativeKMeans[DocumentID,DocumentVectorBuilder] 
   with KMeansDocumentOps {
   
 }

@@ -12,7 +12,8 @@
 
 package org.overviewproject.clustering
 
-import ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.nlp.{EarlyOutDocVecDistance, IterativeKMeans}
 
 // Representation of a document connected component (tight cluster of documents)
 // For the purposes of clustering, this acts like nDocs identical docs at centroid
@@ -29,16 +30,16 @@ abstract class AbstractDocumentComponent {
 trait KMeansDocumentComponentOps[Component <: AbstractDocumentComponent] {
   
   // Distance function. Iterates over terms in component centroid, as it is likely to have less fill-in than cluster centroid
-  // Same logic as KMeansDocumentOps.distance, but operates over two DocumentVectorMaps
-  def distance(component:Component, b:DocumentVectorMap, minSoFar:Double) : Double = {
+  // Same logic as KMeansDocumentOps.distance, but operates over two DocumentVectorBuilders
+  def distance(component:Component, b:DocumentVectorBuilder, minSoFar:Double) : Double = {
     EarlyOutDocVecDistance(component.centroid, b, minSoFar)
   }
   
-  // To compute a mean of components, we accumulate in a DocumentVectorMap, 
+  // To compute a mean of components, we accumulate in a DocumentVectorBuilder, 
   // weighting each component by the number of docs it contains
   // Note we get much fill-in here; the mean is likely not sparse
-  def mean(elems: Iterable[Component]) : DocumentVectorMap = {
-    var m = DocumentVectorMap()
+  def mean(elems: Iterable[Component]) : DocumentVectorBuilder = {
+    var m = DocumentVectorBuilder()
     elems foreach { component => 
       m.multiplyAndAccumulate(component.nDocs.toFloat, component.centroid) }    
     
@@ -57,7 +58,7 @@ class DocumentComponent (_docs:Iterable[DocumentID], docVecs:DocumentSetVectors)
     if (elems.size == 1) {
       docVecs(elems.head)   // don't copy the vector if there is only one document in this component
     } else {
-      val m = DocumentVectorMap()
+      val m = DocumentVectorBuilder()
       elems foreach { docId => m.accumulate(docVecs(docId)) }    
       val len = math.sqrt(m.values.map(v=>v*v).sum) // normalize
       m.transform((k,v) => (v / len).toFloat)
@@ -77,7 +78,7 @@ class DocumentComponent (_docs:Iterable[DocumentID], docVecs:DocumentSetVectors)
 
 // Now mix the Ops class, parameterized on DocumentComponent, into the IterateKMeans class, to create a concrete clustering algorithm
 class IterativeKMeansDocumentComponents(protected val docVecs:DocumentSetVectors) 
-  extends IterativeKMeans[DocumentComponent,DocumentVectorMap] 
+  extends IterativeKMeans[DocumentComponent,DocumentVectorBuilder] 
   with KMeansDocumentComponentOps[DocumentComponent] {
   
 }

@@ -17,7 +17,7 @@ package org.overviewproject.clustering
 import scala.collection.mutable.Set
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.ClusteringLevel
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress, NoProgressReporting }
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
 import scala.util.control.Breaks._
 
 class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors) {

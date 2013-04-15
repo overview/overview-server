@@ -2,7 +2,7 @@ package org.overviewproject.clustering
 
 import scala.collection.mutable.{ ArrayBuffer, Set }
 import org.overviewproject.test.Specification
-import org.overviewproject.clustering.ClusterTypes.DocumentID
+import org.overviewproject.nlp.DocumentVectorTypes.DocumentID
 import org.specs2.specification.Scope
 
 class DocumentIdCacheGeneratorSpec extends Specification {

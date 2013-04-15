@@ -9,7 +9,7 @@
  */
 
 package org.overviewproject.nlp
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
 import org.saddle._
 import scala.reflect.ClassTag
 

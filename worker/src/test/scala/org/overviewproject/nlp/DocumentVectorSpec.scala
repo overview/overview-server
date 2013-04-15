@@ -8,16 +8,18 @@
  * 
  */
 
+package org.overviewproject.nlp
+
 import org.specs2.mutable.Specification
 import org.specs2.specification._
-import org.overviewproject.clustering.ClusterTypes._
+import org.overviewproject.nlp.DocumentVectorTypes._
 
 class DocumentVectorSpec extends Specification {
   
   "DocumentVectorSpec" should {
 
     "represent a document vector in sorted order" in {
-      val d = DocumentVectorMap(1->0.4f, 2->0.1f, 10->0.01f, 5->0.2f)
+      val d = DocumentVectorBuilder(1->0.4f, 2->0.1f, 10->0.01f, 5->0.2f)
       val p = DocumentVector(d)
       
       p.length must beEqualTo(d.size)
@@ -28,7 +30,7 @@ class DocumentVectorSpec extends Specification {
     "fail if given ctor arguments of differing length" in {
       val twoTerms = Array[TermID](1,2)
       val threeWeights = Array[TermWeight](0.1f, 0.2f, 0.3f)
-      new org.overviewproject.clustering.ClusterTypes.DocumentVector(twoTerms, threeWeights) must throwA[java.lang.IllegalArgumentException]
+      new DocumentVector(twoTerms, threeWeights) must throwA[java.lang.IllegalArgumentException]
     }
   }    
 

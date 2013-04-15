@@ -9,8 +9,8 @@
 import org.specs2.mutable.Specification
 import org.specs2.specification._
 
-import org.overviewproject.util.CompactStringToIntMap
-import org.overviewproject.util.StringTable
+import org.overviewproject.nlp.CompactStringToIntMap
+import org.overviewproject.nlp.StringTable
 
 class CompactStringToIntMapSpec extends Specification {
   "CompactStringToIntMap" should {

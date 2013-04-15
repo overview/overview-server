@@ -8,7 +8,8 @@
  */
 
 
-import org.overviewproject.clustering.{KMeans, IterativeKMeans}
+package org.overviewproject.nlp
+
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
 

@@ -9,7 +9,7 @@
  */
 
 package org.overviewproject.clustering
-import ClusterTypes.{DocumentVector,DocumentVectorMap,TermID,TermWeight}
+import org.overviewproject.nlp.DocumentVectorTypes._
 
 // Encapsulates document-document distance function. Returns in range 0 == identical to 1 == unrelated
 // ASSUMES document vectors are normalized (we don't check here as this is inner loop code)
@@ -47,8 +47,8 @@ object DistanceFn {
   }
   
   
-  // Same function for DocumentVectorMap. Conceptually identical, actually less efficient due to heavier data structures
-  private def SparseDotCore(a:DocumentVectorMap, b:DocumentVectorMap) : Double = {
+  // Same function for DocumentVectorBuilder. Conceptually identical, actually less efficient due to heavier data structures
+  private def SparseDotCore(a:DocumentVectorBuilder, b:DocumentVectorBuilder) : Double = {
     var dot = 0.0
     a foreach { case (termId, aWeight) => 
       val bWeight = b.get(termId)
@@ -59,14 +59,14 @@ object DistanceFn {
   }
 
   // Iterate over shorter document vector, for efficiency
-  private def SparseDot(a:DocumentVectorMap, b:DocumentVectorMap) : Double = {
+  private def SparseDot(a:DocumentVectorBuilder, b:DocumentVectorBuilder) : Double = {
     if (a.size < b.size)
       SparseDotCore(a,b)
     else
       SparseDotCore(b,a)
   }
   
-  def CosineDistance(a:DocumentVectorMap, b:DocumentVectorMap) : Double = {
+  def CosineDistance(a:DocumentVectorBuilder, b:DocumentVectorBuilder) : Double = {
      1.0 - SparseDot(a, b)
   }
 }

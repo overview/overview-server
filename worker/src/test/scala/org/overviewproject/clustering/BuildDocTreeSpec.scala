@@ -8,7 +8,9 @@
  * 
  */
 
-import org.overviewproject.clustering.{BuildDocTree, UnigramDocumentVectorGenerator, DocTreeNode}
+package org.overviewproject.clustering
+
+import org.overviewproject.nlp.UnigramDocumentVectorGenerator
 import org.specs2.mutable.Specification
 
 class BuildDocTreeSpec extends Specification {

@@ -6,8 +6,10 @@
  * 
  */
 
-import org.overviewproject.clustering._
-import org.overviewproject.clustering.ClusterTypes._
+package org.overviewproject.nlp
+
+import org.overviewproject.nlp._
+import org.overviewproject.nlp.DocumentVectorTypes._
 import org.specs2.mutable.Specification
 
 class BigramDocumentVectorGeneratorSpec extends Specification {
@@ -48,14 +50,14 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       val id3 = strs.stringToId("word3")
       val id23 = strs.stringToId("word2_word3")
       
-      val dv1 = DocumentVectorMap(docVecs(1))
+      val dv1 = DocumentVectorBuilder(docVecs(1))
       val rt3 = (1.0/Math.sqrt(3)).asInstanceOf[TermWeight] // 1*1 word1 + 1*1 word2 + 1*1 word1_word2
       dv1.size should beEqualTo(3)
       dv1(id1) should beCloseTo(rt3, 1e-6f)
       dv1(id2) should beCloseTo(rt3, 1e-6f)
       dv1(id12) should beCloseTo(rt3, 1e-6f)
 
-      val dv2 = DocumentVectorMap(docVecs(2))
+      val dv2 = DocumentVectorBuilder(docVecs(2))
       val rt9 = (1.0/Math.sqrt((9))).asInstanceOf[TermWeight] // 1*1 word1  + 2*2 word2 + 1*1 word3 + 1*1 word1_word2 + 1*1 word2_word2 + 1*1 word2_word3 
       dv2.size should beEqualTo(6)
       dv2(id1) should beCloseTo(rt9, 1e-6f)
@@ -94,20 +96,20 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       
       // doc1: only cat remains
       vecs(1).terms(0) must beEqualTo(catId)
-      DocumentVectorMap(vecs(1)) must beEqualTo(Map(catId->1.0)) 
+      DocumentVectorBuilder(vecs(1)) must beEqualTo(Map(catId->1.0)) 
       
       // doc2: cat and rat have same freq, vector normalized
       val sqrhalf = math.sqrt(0.5).toFloat
-      DocumentVectorMap(vecs(2)) must_== Map(ratId->sqrhalf, catId->sqrhalf) 
+      DocumentVectorBuilder(vecs(2)) must_== Map(ratId->sqrhalf, catId->sqrhalf) 
 
       // doc3: only rat remains
-      DocumentVectorMap(vecs(3)) must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
+      DocumentVectorBuilder(vecs(3)) must beEqualTo(Map(ratId->1.0))  // only rat appears in 3 docs
       
       // doc4: cat and rat remain, with different weights (which we recompute from scratch here)
       val ratTfIdf = doc4.count(_ == "rat").toFloat / doc4.length * computeIDF(4,3)
       val catTfIdf = doc4.count(_ == "cat").toFloat / doc4.length * computeIDF(4,3)
       val len = math.sqrt(ratTfIdf*ratTfIdf + catTfIdf*catTfIdf).toFloat
-      DocumentVectorMap(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
+      DocumentVectorBuilder(vecs(4)) must beEqualTo(Map(ratId->ratTfIdf/len, catId->catTfIdf/len))
     }  
     
     "find trival bigrams" in {

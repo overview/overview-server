@@ -8,18 +8,16 @@
  * 
  */
 
+package org.overviewproject.clustering
+
 import java.io.File
-import java.sql.Connection
-import scala.Array.canBuildFrom
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import anorm.SQL
-import anorm.SqlParser.{flatten, long}
-import org.overviewproject.clustering.{BuildDocTree, UnigramDocumentVectorGenerator, Lexer}
-import org.overviewproject.http.{ AsyncHttpRequest, BulkHttpRetriever, DocRetrievalError, DocumentAtURL }
+import org.overviewproject.nlp.DocumentVectorTypes._
+import org.overviewproject.nlp.{Lexer, UnigramDocumentVectorGenerator}
+import org.overviewproject.http._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.util.WorkerActorSystem
-
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class RetrieveDocumentSetSpec extends DbSpecification {
   

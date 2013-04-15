@@ -6,9 +6,11 @@
  * 
  */
 
-import org.overviewproject.clustering._
-import org.overviewproject.clustering.ClusterTypes._
+package org.overviewproject.nlp
+
+import org.overviewproject.nlp.DocumentVectorTypes._
 import org.specs2.mutable.Specification
+import org.overviewproject.clustering.DocumentComponent
 
 class KMeansDocumentComponentsSpec extends Specification {
   
@@ -42,8 +44,8 @@ class KMeansDocumentComponentsSpec extends Specification {
       val id4 = strs.stringToId("word4")
       val w1 = (1.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
       val w2 = (2.0 / Math.sqrt(10)).asInstanceOf[TermWeight]
-      val correctCentroid = DocumentVectorMap(id1->w1, id2->w2, id3->w2, id4->w1)
-      DocumentVectorMap(component.centroid) should beEqualTo(correctCentroid)
+      val correctCentroid = DocumentVectorBuilder(id1->w1, id2->w2, id3->w2, id4->w1)
+      DocumentVectorBuilder(component.centroid) should beEqualTo(correctCentroid)
     }
   }
 
