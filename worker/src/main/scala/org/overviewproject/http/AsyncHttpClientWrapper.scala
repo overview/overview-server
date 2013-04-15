@@ -38,4 +38,7 @@ class AsyncHttpClientWrapper extends Client {
       .setRealm(realm)
       .execute(responseHandler)
   }
+  
+  def shutdown(): Unit = client.close()
+  
 }

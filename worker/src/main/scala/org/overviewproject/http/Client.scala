@@ -16,5 +16,6 @@ trait SimpleResponse {
 trait Client {
   def submit(url: String, responseHandler: AsyncCompletionHandler[Unit]): Unit
   def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): Unit
+  def shutdown(): Unit
 }
 
