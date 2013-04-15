@@ -1,0 +1,11 @@
+@(documentSetId: Long)(implicit lang: Lang)
+
+@defining(scopedMessages("views.DocumentSetExport.index")) { m =>
+  <p class="preamble">@m("preamble")</p>
+  <ul class="formats">
+    <li>
+      @m("formats.documentsWithStringTags")
+      <a href="@routes.DocumentSetExportController.documentsWithStringTags(documentSetId)">@m("download")</a>
+    </li>
+  </ul>
+}

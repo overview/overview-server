@@ -23,6 +23,10 @@ trait DocumentSetExportController extends Controller {
     def documentsWithStringTags(documents: FinderResult[(Document,Option[String])]) : Export
   }
 
+  def index(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+    Ok(views.html.DocumentSetExport.index(documentSetId))
+  }
+
   def documentsWithStringTags(documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val promise : Future[(String,FileInputStream)] = Future {
       val documents = storage.loadDocumentsWithStringTags(documentSetId)
@@ -35,9 +39,9 @@ trait DocumentSetExportController extends Controller {
         Ok.feed(Enumerator.fromStream(inputStream))
           .withHeaders(
             CONTENT_TYPE -> contentTypeString,
-            CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API has no guarantee
+            CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API makes no guarantee
             CACHE_CONTROL -> "max-age=0",
-            CONTENT_DISPOSITION -> "inline"
+            CONTENT_DISPOSITION -> "attachment; filename=overview-export.csv"
           )
       })
     }

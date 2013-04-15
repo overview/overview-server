@@ -117,13 +117,31 @@ views.Document.show.source=Source: 
 
 views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
-views.DocumentSet.index.title=Your document sets
-views.DocumentSet.index.h1=Your document sets
-views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
-views.DocumentSet.index.subtitle_jobs=Imports in progress
-views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
+views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
+views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
+views.DocumentSet._dcimport.labels.email=Email
+views.DocumentSet._dcimport.labels.password=Password
+views.DocumentSet._dcimport.placeholders.email=user@example.org
+views.DocumentSet._dcimport.submit=Log in to DocumentCloud
+views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to our servers when you import a project, and it will be purged when the import is finished.
+views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
+
+views.DocumentSet._documentSet.action_delete=Delete
+views.DocumentSet._documentSet.action_import=Import
+views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
+views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentSet._documentSet.error_count={0,choice,0#no errors|1#One document could not be loaded|1<{0,number,integer} documents could not be loaded}
+views.DocumentSet._documentSet.export=Export
+views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
+views.DocumentSet._documentSet.share=Share
+views.DocumentSet._documentSet.subtitle.other=From uploaded file
+views.DocumentSet._documentSet.subtitle.query=Query: {0}
+views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
 views.DocumentSet._errorList.h3=Documents with errors
+
+views.DocumentSet._export.h3=Export your document set
+views.DocumentSet._export.close=Close
 
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.label=From…
@@ -143,6 +161,18 @@ views.DocumentSet._manualForm.label.query=Query
 views.DocumentSet._manualForm.placeholder.query=Cambodia
 views.DocumentSet._manualForm.help.query=This query must follow DocumentCloud syntax
 views.DocumentSet._manualForm.submit_html=Import from DocumentCloud query for “<span class="query">{0}</span>”
+
+views.DocumentSet._share.h3=Sharing settings
+views.DocumentSet._share.close=Close
+views.DocumentSet._share.loading=Loading...
+views.DocumentSet._share.error=There was an error loading the sharing settings for this document set. Please refresh the page and try again.
+views.DocumentSet._share.explanation=Share this document set with other Overview users by entering their email addresses. They can clone the document set from the Import section.
+views.DocumentSet._share.list_header={0,choice,0#This document set is not shared with anybody|0< This document set is shared with:}
+views.DocumentSet._share.form.explanation=Add a user:
+views.DocumentSet._share.add=Add user
+views.DocumentSet._share.email_placeholder=user@example.org
+views.DocumentSet._share.remove=remove
+views.DocumentSet._share.example_document_set.checkbox_label=Set as example document set
 
 views.DocumentSet._uploadForm.h2=Upload a document set
 views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
@@ -165,6 +195,15 @@ views.DocumentSet._uploadForm.progress.prompt=Meanwhile, you can open Overview i
 views.DocumentSet._uploadForm.progress.cancel=Cancel upload
 views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
+views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
+views.DocumentSet._smallDocumentSet.import=Clone
+
+views.DocumentSet.index.title=Your document sets
+views.DocumentSet.index.h1=Your document sets
+views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
+views.DocumentSet.index.subtitle_jobs=Imports in progress
+views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
+
 views.DocumentSet.show.document_list.loading=Loading documents…
 views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
 views.DocumentSet.show.document_list.title_html=<strong>{0}</strong> in {1}
@@ -173,40 +212,6 @@ views.DocumentSet.show.document_list.title.n_nodes_and_n_tags={0,choice,0#{1,cho
 views.DocumentSet.show.document_list.title.node=folder “{0}”
 views.DocumentSet.show.document_list.title.tag=tag “{0}”
 views.DocumentSet.show.document_list.document.empty_description=(document with no text)
-
-views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
-views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
-views.DocumentSet._dcimport.labels.email=Email
-views.DocumentSet._dcimport.labels.password=Password
-views.DocumentSet._dcimport.placeholders.email=user@example.org
-views.DocumentSet._dcimport.submit=Log in to DocumentCloud
-views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to our servers when you import a project, and it will be purged when the import is finished.
-views.DocumentSet._dcimport.explanation_no_cors=Your browser will momentarily share these credentials with Overview servers. Overview servers will only use the credentials to show you a list of all your Overview projects and to import your project. Overview servers will not store your credentials any longer than is absolutely necessary.
-
-views.DocumentSet._documentSet.action_import=Import
-views.DocumentSet._documentSet.action_delete=Delete
-views.DocumentSet._documentSet.confirm_delete=Are you sure you want to permanently delete this document set? You cannot undo this.
-views.DocumentSet._documentSet.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
-views.DocumentSet._documentSet.error_count={0,choice,0#no errors|1#One document could not be loaded|1<{0,number,integer} documents could not be loaded}
-views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
-views.DocumentSet._documentSet.subtitle.query=Query: {0}
-views.DocumentSet._documentSet.subtitle.other=From uploaded file
-views.DocumentSet._documentSet.toggle_public=Share with all Overview users
-
-views.DocumentSet._share.h3=Sharing settings
-views.DocumentSet._share.close=Close
-views.DocumentSet._share.loading=Loading...
-views.DocumentSet._share.error=There was an error loading the sharing settings for this document set. Please refresh the page and try again.
-views.DocumentSet._share.explanation=Share this document set with other Overview users by entering their email addresses. They can clone the document set from the Import section.
-views.DocumentSet._share.list_header={0,choice,0#This document set is not shared with anybody|0< This document set is shared with:}
-views.DocumentSet._share.form.explanation=Add a user:
-views.DocumentSet._share.add=Add user
-views.DocumentSet._share.email_placeholder=user@example.org
-views.DocumentSet._share.remove=remove
-views.DocumentSet._share.example_document_set.checkbox_label=Set as example document set
-
-views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
-views.DocumentSet._smallDocumentSet.import=Clone
 
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.DocumentSetCreationJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
@@ -223,6 +228,10 @@ views.DocumentSetCreationJob._documentSetCreationJob.action_cancel=Cancel Import
 views.DocumentSetCreationJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete this document set? You cannot undo this.
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploaded file
+
+views.DocumentSetExport.index.preamble=You have chosen to export your data to a file. Choose the file format you would like:
+views.DocumentSetExport.index.formats.documentsWithStringTags=Spreadsheet (.csv file with id; title; url; and comma-separated tags in one column)
+views.DocumentSetExport.index.download=Download
 
 views.Node._form.h3=Edit folder
 views.Node._form.labels.description=Description

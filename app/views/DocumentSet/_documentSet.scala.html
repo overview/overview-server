@@ -11,12 +11,23 @@
       <input type="submit" class="btn btn-danger" value="@m("action_delete")" />
     </form>
     
-    <a href="@routes.DocumentSetUserController.indexJson(documentSet.id)" role="button" class="btn show-sharing-settings" 
+    <a href="@routes.DocumentSetUserController.indexJson(documentSet.id)" class="btn show-sharing-settings" 
       data-create-url="@routes.DocumentSetUserController.create(documentSet.id)"
       data-delete-url-pattern="@routes.DocumentSetUserController.delete(documentSet.id, "{0}")"
       data-is-admin="@viewer.isAdministrator"
       data-is-public="@documentSet.isPublic"
-      data-update-url="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT"><i class="icon-share"></i> Share</a>
+      data-update-url="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
+      <i class="icon-share"></i>
+      @m("share")
+    </a>
+
+    <a class="btn"
+      data-remote="@routes.DocumentSetExportController.index(documentSet.id)"
+      data-toggle="modal"
+      data-target="#export-modal">
+      <i class="icon-download"></i>
+      @m("export")
+    </a>
     <h2><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h2>
     <h3>
       @documentSet match {
