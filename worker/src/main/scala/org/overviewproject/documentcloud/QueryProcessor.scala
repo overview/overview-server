@@ -10,6 +10,7 @@ import scala.concurrent.Promise
 import org.overviewproject.http.Credentials
 import org.overviewproject.http.Request
 import org.overviewproject.http.PrivateRequest
+import org.overviewproject.util.Logger
 
 object QueryProcessorProtocol {
   case class Start()
@@ -40,7 +41,9 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     case Result(response) => processResponse(response)
   }
 
+  
   private def requestPage(pageNum: Int): Unit = {
+    Logger.debug(s"Retrieving DocumentCloud results for query $query, page $pageNum")
     val encodedQuery = URLEncoder.encode(query, Encoding)
     val searchUrl = createQueryUrlForPage(encodedQuery, pageNum)
     
