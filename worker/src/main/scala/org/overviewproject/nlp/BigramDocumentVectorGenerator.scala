@@ -11,13 +11,14 @@
  *
  */
 
-
 package org.overviewproject.nlp
 
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
+import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
+import scala.collection.mutable.{Map, IndexedSeq}
+
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
-import scala.collection.mutable.{Map, IndexedSeq}
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {
   def isBigram = term2 != BigramKey.noTerm
@@ -94,7 +95,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   
   // ---- state ----
   private val docSpool = new TempFile
-  private val spoolWriter = new CSVWriter(docSpool)
+  private val spoolWriter = new CSVWriter(new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8")))
   spoolWriter.writeNext(Array("id","text"))             // write csv file header
  
   // -- Vocabulary tables --
@@ -234,7 +235,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
     new Iterator[(DocumentID, Map[BigramKey, Int])] {
       
       spoolWriter.close()              // flushes, so we can read all we've written
-      val spoolReader = new CSVReader(docSpool.reader)
+      val spoolReader = new CSVReader(new BufferedReader(new InputStreamReader(docSpool.inputStream, "utf-8")))
       spoolReader.readNext()           // eat header
       var line = spoolReader.readNext()
       
