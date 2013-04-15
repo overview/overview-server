@@ -21,6 +21,8 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
     }
   }
   
+  override def postStop = if (!finished.isCompleted) finished.success(failedRetrievals)
+  
   private def update: Unit = {
     receivedDocuments += 1
     if (receivedDocuments == numberOfDocuments) finished.success(failedRetrievals)
