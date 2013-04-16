@@ -3,7 +3,7 @@ package models.export
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ BufferedWriter, OutputStream, OutputStreamWriter }
 
-import models.OverviewDatabase
+import models.{ OverviewDatabase, OverviewDocument }
 import models.orm.finders.FinderResult
 import org.overviewproject.tree.orm.Document
 
@@ -15,7 +15,8 @@ class ExportDocumentsWithStringTags(documents: FinderResult[(Document,Option[Str
     val csvWriter = new CSVWriter(writer)
     csvWriter.writeNext(Array("id", "text", "url", "tags"))
     OverviewDatabase.inTransaction {
-      documents.foreach(Function.tupled { (document: Document, tags: Option[String]) =>
+      documents.foreach(Function.tupled { (ormDocument: Document, tags: Option[String]) =>
+        val document = OverviewDocument(ormDocument)
         csvWriter.writeNext(Array(
           document.suppliedId.getOrElse(""),
           document.text.getOrElse(""),

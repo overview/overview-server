@@ -3,7 +3,7 @@ package models.export
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ BufferedWriter, OutputStream, OutputStreamWriter }
 
-import models.OverviewDatabase
+import models.{ OverviewDatabase, OverviewDocument }
 import models.orm.Tag
 import models.orm.finders.FinderResult
 import org.overviewproject.tree.orm.Document
@@ -29,7 +29,7 @@ class ExportDocumentsWithColumnTags(
     writer.writeNext(scratch)
   }
 
-  private def writeDocument(document: Document, tagsString: Option[String], tagIds: Iterable[Long])(implicit writer: CSVWriter, scratch: Array[String]) : Unit = {
+  private def writeDocument(document: OverviewDocument, tagsString: Option[String], tagIds: Iterable[Long])(implicit writer: CSVWriter, scratch: Array[String]) : Unit = {
     val tags = tagsString.getOrElse("")
       .split(',')
       .collect {
@@ -63,7 +63,8 @@ class ExportDocumentsWithColumnTags(
 
       val tagIds = tags.map(_.id)
 
-      documents.foreach(Function.tupled { (document: Document, tagsString: Option[String]) =>
+      documents.foreach(Function.tupled { (ormDocument: Document, tagsString: Option[String]) =>
+        val document = OverviewDocument(ormDocument)
         writeDocument(document, tagsString, tagIds)
       })
     }

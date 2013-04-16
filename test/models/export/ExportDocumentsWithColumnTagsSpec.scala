@@ -91,6 +91,11 @@ class ExportDocumentsWithColumnTagsSpec extends Specification with Mockito {
       resultRows(1)(4) must beEqualTo("1")
     }
 
+    "export Some(String) documentcloudId as suppliedId" in new OneDocumentScope {
+      override def document = super.document.copy(documentcloudId=Some("documentcloud-id"))
+      resultRows(1)(0) must beEqualTo("documentcloud-id")
+    }
+
     "export Some(String) suppliedId" in new OneDocumentScope {
       override def document = super.document.copy(suppliedId=Some("supplied-id"))
       resultRows(1)(0) must beEqualTo("supplied-id")
@@ -104,6 +109,11 @@ class ExportDocumentsWithColumnTagsSpec extends Specification with Mockito {
     "export Some(String) url" in new OneDocumentScope {
       override def document = super.document.copy(url=Some("http://example.org"))
       resultRows(1)(2) must beEqualTo("http://example.org")
+    }
+
+    "export Some(String) url from a DocumentCloud ID" in new OneDocumentScope {
+      override def document = super.document.copy(documentcloudId=Some("documentcloud-id"))
+      resultRows(1)(2) must contain("documentcloud-id")
     }
   }
 
