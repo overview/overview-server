@@ -65,15 +65,13 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     documentsToRetrieve.map { t =>
       val receiver = findOrCreateDocumentReceiver(t)
 
-      if (result.page * PageSize < t) {
+      if (morePagesAvailable(result, t)) {
         requestPage(result.page + 1)
         spawnRetrievers(result.documents, receiver)
-        println(s"Spawned 20 retrievers for page ${result.page}")
       }
       else {
         val documentsInLastPage = t - (result.page - 1) * PageSize
         spawnRetrievers(result.documents.take(documentsInLastPage), receiver)
-        println(s"Spawned $documentsInLastPage for page ${result.page}")
       }
     }
   }
@@ -84,7 +82,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
       queryInformation.documentsTotal.success(n)
     }
 
-  private def morePagesAvailable(result: SearchResult): Boolean = result.documents.size == PageSize
+  private def morePagesAvailable(result: SearchResult, documentsToRetrieve: Int): Boolean = result.page * PageSize < documentsToRetrieve
 
   private def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
