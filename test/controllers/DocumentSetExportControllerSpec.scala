@@ -12,6 +12,7 @@ import play.api.test.Helpers._
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
 import models.orm.finders.FinderResult
+import models.orm.Tag
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.util.TempFile
 import models.export.Export
@@ -43,7 +44,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
   trait DocumentsWithStringTagsScope extends BaseScope {
     val documentSetId = 1L
     val finderResult = mock[FinderResult[(Document,Option[String])]]
-    mockStorage.loadDocumentsWithStringTags(_ : Long) returns finderResult
+    mockStorage.loadDocumentsWithStringTags(any[Long]) returns finderResult
 
     val export = mock[Export]
     val contents = "id,name\n1,foo".getBytes
@@ -52,6 +53,22 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     mockExporters.documentsWithStringTags(any[FinderResult[(Document,Option[String])]]) returns export
 
     lazy val result = controller.documentsWithStringTags(documentSetId)(request)
+  }
+
+  trait DocumentsWithColumnTagsScope extends BaseScope {
+    val documentSetId = 1L
+    val finderResult = mock[FinderResult[(Document,Option[String])]]
+    val tagFinderResult = mock[FinderResult[Tag]]
+    mockStorage.loadDocumentsWithTagIds(any[Long]) returns finderResult
+    mockStorage.loadTags(any[Long]) returns tagFinderResult
+
+    val export = mock[Export]
+    val contents = "id,name\n1,foo".getBytes
+    export.contentTypeHeader returns "text/csv; charset=\"utf-8\""
+    export.exportToInputStream returns makeFileInputStream(contents)
+    mockExporters.documentsWithColumnTags(any[FinderResult[(Document,Option[String])]], any[FinderResult[Tag]]) returns export
+
+    lazy val result = controller.documentsWithColumnTags(documentSetId)(request)
   }
 
   "DocumentSetExportController" should {
@@ -68,6 +85,22 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     }
 
     "not send as chunked in documentsWithStringTags" in new DocumentsWithStringTagsScope {
+      header(TRANSFER_ENCODING, result) must beNone
+    }
+
+    "set Content-Type header in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
+      header(CONTENT_TYPE, result) must beSome(export.contentTypeHeader)
+    }
+
+    "set Content-Length header in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
+      header(CONTENT_LENGTH, result) must beSome(contents.size.toString)
+    }
+
+    "set contents of documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
+      contentAsBytes(result) must beEqualTo(contents)
+    }
+
+    "not send as chunked in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
       header(TRANSFER_ENCODING, result) must beNone
     }
   }

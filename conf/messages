@@ -231,6 +231,7 @@ views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploade
 
 views.DocumentSetExport.index.preamble=You have chosen to export your data to a file. Choose the file format you would like:
 views.DocumentSetExport.index.formats.documentsWithStringTags=Spreadsheet (.csv file with id; title; url; and comma-separated tags in one column)
+views.DocumentSetExport.index.formats.documentsWithColumnTags=Spreadsheet (.csv file with id; title; url; and one column per tag)
 views.DocumentSetExport.index.download=Download
 
 views.Node._form.h3=Edit folder
