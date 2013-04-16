@@ -22,6 +22,18 @@ object DocumentFinder extends Finder {
         on(d.id === ts.map(_.key))
       )
     }
+
+    def withTagsAsLongStrings : FinderResult[(Document,Option[String])] = {
+      val tagLongStringsByDocumentId = from(Schema.documentTags)(dt =>
+        groupBy(dt.documentId)
+        compute(string_agg(format("%s", dt.tagId), ","))
+      )
+
+      join(query, tagLongStringsByDocumentId.leftOuter)((d, ts) =>
+        select(d, ts.flatMap(_.measures))
+        on(d.id === ts.map(_.key))
+      )
+    }
   }
   implicit private def queryToDocumentFinderResult(query: Query[Document]) = new DocumentFinderResult(query)
 
