@@ -10,12 +10,20 @@ import models.orm.stores.{ DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.tree.Ownership
 
 class DocumentSetSteps extends BaseSteps {
-  Given("""^there is a public document set "([^"]*)" owned by "([^"]*)"$""") { (title:String, ownerEmail:String) =>
-    DocumentSetSteps.createPublicDocumentSet(title, ownerEmail)
+  Given("""^there is a (public |)document set "([^"]*)" owned by "([^"]*)"$""") { (isPublic:String, title:String, ownerEmail:String) =>
+    DocumentSetSteps.createDocumentSet(title, ownerEmail, isPublic=isPublic.length > 0)
   }
 
   When("""^I browse to the document sets page$"""){ () =>
     browser.goTo(routes.DocumentSetController.index(0).url)
+  }
+
+  When("""^I open the share dialog for "([^"]*)"$"""){ (title:String) =>
+    val li = browser.findFirst(".document-sets li", withText.contains(title))
+    val a = li.findFirst("a.show-sharing-settings")
+    a.click()
+    CommonSteps.waitForAjaxToComplete
+    CommonSteps.waitForAnimationsToComplete
   }
 
   When("""^I clone the example document set "([^"]*)"$"""){ (title:String) =>
@@ -36,17 +44,24 @@ class DocumentSetSteps extends BaseSteps {
     val documentSet = OverviewDatabase.inTransaction { DocumentSetFinder.byTitle(title).headOption }.getOrElse(throw new AssertionError("Document set does not exist"))
     Option(browser.findFirst(".document-sets h2", withText(title))) must beSome
   }
+
+  Then("""^the document set "([^"]*)" should be public$"""){ (title:String) =>
+    val documentSet = OverviewDatabase.inTransaction {
+      DocumentSetFinder.byTitle(title).headOption.getOrElse(throw new AssertionError("Document set does not exist"))
+    }
+    documentSet.isPublic must beTrue
+  }
 }
 
 object DocumentSetSteps {
-  def createPublicDocumentSet(title: String, ownerEmail: String) = {
+  def createDocumentSet(title: String, ownerEmail: String, isPublic : Boolean = false) = {
     CommonSteps.ensureUser(ownerEmail)
     OverviewDatabase.inTransaction {
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         documentSetType=DocumentSetType.DocumentCloudDocumentSet,
         query=Some("query"),
         title=title,
-        isPublic=true
+        isPublic=isPublic
       ))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet, ownerEmail, Ownership.Owner))
     }

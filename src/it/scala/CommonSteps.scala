@@ -3,13 +3,14 @@ package steps
 import java.sql.Timestamp
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import org.fluentlenium.core.filter.FilterConstructor.withText
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.openqa.selenium.support.ui.ExpectedCondition
 import org.openqa.selenium.{ JavascriptExecutor, WebDriver }
 import ua.t3hnar.bcrypt._
 
 import models.OverviewDatabase
-import models.orm.User
+import models.orm.{User,UserRole}
 import models.orm.finders.{ DocumentSetCreationJobFinder, UserFinder }
 import models.orm.stores.UserStore
 import controllers.routes
@@ -44,6 +45,15 @@ class CommonSteps extends BaseSteps {
   When("""^I wait for all jobs to complete$"""){ () =>
     CommonSteps.waitForJobsToComplete
   }
+
+  When("""^I click the "([^"]*)" checkbox$"""){ (label:String) =>
+    CommonSteps.clickCheckbox(label)
+  }
+
+  Then("""^I should not see a "([^"]*)" checkbox$"""){ (label:String) =>
+    val elems = browser.$("label", withText.contains(label))
+    elems.size must beEqualTo(0)
+  }
 }
 
 object CommonSteps {
@@ -51,13 +61,18 @@ object CommonSteps {
 
   def createUser(email: String, password: String) : User = {
     val passwordHash = password.bcrypt(4) // least CPU possible
-    val user = User(email=email, passwordHash=passwordHash, confirmedAt=Some(new Timestamp(new Date().getTime())))
+    val user = User(
+      email=email,
+      passwordHash=passwordHash,
+      role=if (email.contains("admin")) UserRole.Administrator else UserRole.NormalUser,
+      confirmedAt=Some(new Timestamp(new Date().getTime()))
+    )
     OverviewDatabase.inTransaction { UserStore.insertOrUpdate(user) }
   }
 
-  def ensureUser(email: String): User = {
+  def ensureUser(email: String, password: Option[String] = None): User = {
     val existingUser = OverviewDatabase.inTransaction { UserFinder.byEmail(email).headOption }
-    existingUser.getOrElse(createUser(email, email))
+    existingUser.getOrElse{ createUser(email, password.getOrElse(email)) }
   }
 
   def logIn(email: String, password: String) = {
@@ -74,8 +89,13 @@ object CommonSteps {
   }
 
   def createAndLogInAsUser(email: String, password: String) = {
-    createUser(email, password)
+    ensureUser(email, Some(password))
     logIn(email, password)
+  }
+
+  def clickCheckbox(label: String) = {
+    val elem = browser.findFirst("label", withText.contains(label))
+    elem.click() // clicking a label clicks the checkbox
   }
 
   private def waitForBoolean(timeoutInSeconds: Int)(f: WebDriver => Boolean) = {
