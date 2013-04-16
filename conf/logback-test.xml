@@ -3,8 +3,8 @@
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <!-- Added ":-" to avoid "application.home_IS_NOT_DEFINED" directory creation -->
-    <file>${application.home:-}/logs/test.log</file>
+    <!-- Added ":-." to avoid "application.home_IS_UNDEFINED" directory creation -->
+    <file>${application.home:-.}/logs/test.log</file>
     <encoder>
       <pattern>[%level] %logger{15} - %message%n%xException</pattern>
     </encoder>
