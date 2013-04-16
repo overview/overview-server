@@ -1,5 +1,7 @@
 package org.overviewproject.documentcloud
 
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import org.overviewproject.http.{ Credentials, PrivateRequest, PublicRequest }
 import org.overviewproject.http.RequestQueueProtocol._
 import akka.actor._
@@ -10,15 +12,19 @@ object DocumentRetrieverProtocol {
   case class Start()
   case class GetTextSucceeded(d: Document, text: String)
   case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+  case class GetTextError(t: Throwable)
 }
 
 class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials]) extends Actor {
   import DocumentRetrieverProtocol._
+  
 
+  
   private val PublicAccess: String = "public"
   private val LocationHeader: String = "Location"
   private val OkStatus: Int = 200
   private val RedirectStatus: Int = 302
+
 
   private def DocumentQuery(d: Document): String = s"https://www.documentcloud.org/api/documents/${d.id}.txt"
 
@@ -27,9 +33,10 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     case Result(r) if isOk(r) => forwardResult(r.body)
     case Result(r) if isRedirect(r) => redirectRequest(r)
     case Result(r) => failRequest(r)
+    case Failure(t) => forwardError(t)
   }
 
-  def requestDocument: Unit = {
+  def requestDocument: Unit = { 
     if (isPublic(document)) makePublicRequest(DocumentQuery(document))
     else makePrivateRequest(DocumentQuery(document))
   }
@@ -38,7 +45,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
   private def isOk(r: SimpleResponse): Boolean = r.status == OkStatus
 
-  private def forwardResult(text: String): Unit = {
+  private def forwardResult(text: String): Unit = { 
     recipient ! GetTextSucceeded(document, text)
     context.stop(self)
   }
@@ -48,8 +55,14 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     context.stop(self)
   }
 
+  private def forwardError(t: Throwable): Unit = {
+    recipient ! GetTextError(t)
+    context.stop(self)
+  }
+  
   private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
   private def makePrivateRequest(url: String): Unit = credentials.map { c => requestQueue ! AddToFront(PrivateRequest(url, c, redirect = false)) }
 
-  private def redirectRequest(response: SimpleResponse): Unit = response.headers(LocationHeader).map { url => makePublicRequest(url) }
+  private def redirectRequest(response: SimpleResponse): Unit = 
+    response.headers(LocationHeader).headOption map { url => makePublicRequest(url) } 
 }

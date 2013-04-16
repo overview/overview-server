@@ -93,6 +93,15 @@ class DocumentRetrieverSpec extends Specification {
       monitor.expectMsgType[Terminated]
     }
     
+   "die after error" in new PublicRetrievalContext with FailedResponse {
+      val monitor = TestProbe()
+      
+      monitor watch retriever
+      retriever ! Failure(new Throwable("error"))
+      
+      monitor.expectMsgType[Terminated]
+    }
+
     "put request for a private url in front of the queue" in new PrivateRetrievalContext {
       retriever ! Start()
 
@@ -107,6 +116,14 @@ class DocumentRetrieverSpec extends Specification {
       expectMsg(AddToFront(PrivateRequest(documentUrl, credentials.get, false)))
       retriever ! Result(response)
       expectMsg(AddToEnd(PublicRequest(redirectUrl)))
+    }
+    
+    "forward error to receiver" in new PublicRetrievalContext {
+      val error = new Throwable("something bad")
+      
+      retriever ! Failure(error)
+      
+      recipient.expectMsg(GetTextError(error))
     }
   }
 }
