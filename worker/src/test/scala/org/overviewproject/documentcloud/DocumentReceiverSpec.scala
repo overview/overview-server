@@ -8,6 +8,7 @@ import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.{Await, Promise}
 import org.specs2.time.NoTimeConversions
 import org.specs2.mutable.Before
+import scala.util.Failure
 
 
 class DocumentReceiverSpec extends Specification with NoTimeConversions {
@@ -61,6 +62,15 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       retrievalDone.isCompleted must beTrue
       val retrievalErrors: Seq[DocumentRetrievalError] = Await.result(retrievalDone.future, 1 millis)
       retrievalErrors must haveTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
+    }
+    
+    "fail future in case of exceptions" in new ReceiverContext {
+      val error = new Exception("error")
+      
+      receiver ! GetTextError(error)
+      retrievalDone.isCompleted must beTrue
+      
+      retrievalDone.future.value must beSome(Failure(error))
     }
     
   }

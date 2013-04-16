@@ -19,6 +19,7 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
       failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
       update
     }
+    case GetTextError(error) => finished.failure(error)
   }
   
   override def postStop = if (!finished.isCompleted) finished.success(failedRetrievals)
