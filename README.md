@@ -1,7 +1,7 @@
 overview-server
 ===============
 
-The Overview Project is a visual doucment mining system designed for journalists.
+The Overview Project is a visual document mining system designed for journalists.
 Important links:
 
   - production server at https://overviewproject.org
