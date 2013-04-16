@@ -229,9 +229,9 @@ views.DocumentSetCreationJob._documentSetCreationJob.confirm_cancel=Are you sure
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.DocumentSetCreationJob._documentSetCreationJob.subtitle.other=From uploaded file
 
-views.DocumentSetExport.index.preamble=You have chosen to export your data to a file. Choose the file format you would like:
-views.DocumentSetExport.index.formats.documentsWithStringTags=Spreadsheet (.csv file with id; title; url; and comma-separated tags in one column)
-views.DocumentSetExport.index.formats.documentsWithColumnTags=Spreadsheet (.csv file with id; title; url; and one column per tag)
+views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet (CSV file). How would you like your tags?
+views.DocumentSetExport.index.formats.documentsWithStringTags=All tags in one column.
+views.DocumentSetExport.index.formats.documentsWithColumnTags=Each tag in its own column.
 views.DocumentSetExport.index.download=Download
 
 views.Node._form.h3=Edit folder
