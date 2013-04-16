@@ -6,18 +6,13 @@ import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint
 
-/** A query with useful conversions.
+/** An SQL query with useful conversions.
   *
   * A FinderResult is a query that has not yet been run. It may be created
-  * outside of a database transaction; however, one must open a database
-  * connection to iterate over it or count it. (That's when the query will
-  * be executed.)
+  * outside of a database transaction.
   *
-  * A FinderResult can be cast to an Iterable. The same rules apply to the
-  * Iterable. It can be clearer, in some APIs, to require a FinderResult
-  * instead of an Iterable, even if they would otherwise serve the same
-  * purpose. That signals to the caller that the callee will be fetching from
-  * a database.
+  * When a FinderResult is cast to an Iterable, the query is executed. At that
+  * time, a database connection must be open. The conversion may be implicit.
   */
 class FinderResult[A](val query: Query[A]) {
   def toQuery : Query[A] = query
