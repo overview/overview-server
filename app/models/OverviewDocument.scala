@@ -42,7 +42,7 @@ object OverviewDocument {
     override val id = ormDocument.id
     override val description = ormDocument.description
     override val title = ormDocument.title
-    override val suppliedId = ormDocument.suppliedId
+    override val suppliedId = ormDocument.suppliedId.orElse(ormDocument.documentcloudId)
     override val text = ormDocument.text
     override val url : Option[String] = ormDocument.url match {
       case Some(url) => Some(url)

@@ -22,6 +22,7 @@ class OverviewDocumentSpec extends DbSpecification {
 
     trait CsvImportDocumentScope extends Scope with OneDocument {
       def ormDocumentId: Long = 1L
+      def suppliedId: Option[String] = None
       def suppliedUrl: Option[String] = Some("http://example.org")
       def description: String = "description"
       def title: Option[String] = Some("title")
@@ -31,6 +32,7 @@ class OverviewDocumentSpec extends DbSpecification {
         new DocumentType("CsvImportDocument"),
         id=ormDocumentId,
         url=suppliedUrl,
+        suppliedId=suppliedId,
         description=description,
         title=title,
         text=Some(text)
@@ -39,7 +41,14 @@ class OverviewDocumentSpec extends DbSpecification {
     }
 
     trait DocumentCloudDocumentScope extends Scope with OneDocument {
-      override def ormDocument = Document(new DocumentType("DocumentCloudDocument"))
+      def ormDocumentId: Long = 1L
+      def documentcloudId: String = "123-documentcloud-id"
+
+      override def ormDocument = Document(
+        new DocumentType("DocumentCloudDocument"),
+        id=ormDocumentId,
+        documentcloudId=Some(documentcloudId)
+      )
       override lazy val document = OverviewDocument(ormDocument)
     }
 
@@ -57,6 +66,19 @@ class OverviewDocumentSpec extends DbSpecification {
     "give no url for a Document that has none" in new CsvImportDocumentScope {
       override def suppliedUrl = None
       document.url must beNone
+    }
+
+    "give no suppliedId for a CsvImport document that has none" in new CsvImportDocumentScope {
+      document.suppliedId must beNone
+    }
+
+    "give a suppliedId for a Document that has one" in new CsvImportDocumentScope {
+      override def suppliedId = Some("1")
+      document.suppliedId must beSome("1")
+    }
+
+    "give a suppliedId with the documentcloudId" in new DocumentCloudDocumentScope {
+      document.suppliedId must beSome(documentcloudId)
     }
 
     "give the proper url for a DocumentCloudDocument" in new DocumentCloudDocumentScope {
