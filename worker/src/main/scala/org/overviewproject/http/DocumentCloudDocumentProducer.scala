@@ -7,7 +7,8 @@
 package org.overviewproject.http
 
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, QueryInformation, QueryProcessor}
@@ -27,6 +28,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
   private val MaxInFlightRequests = 4
+  private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"
 
@@ -58,7 +60,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
 
       queryInformation = new QueryInformation
       val asyncHttpClient = new AsyncHttpClientWrapper
-      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests)), RequestQueueName)
+      val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) = new DocumentRetriever(document, receiver, requestQueue, credentials)
 
       val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, requestQueue, retrieverGenerator)), QueryProcessorName)

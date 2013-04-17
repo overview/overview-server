@@ -1,15 +1,17 @@
 package org.overviewproject.http
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration._
+
 import org.overviewproject.http.RequestQueueProtocol._
-import org.specs2.mock.Mockito
-import org.specs2.mutable.{ After, Specification }
-import org.specs2.time.NoTimeConversions
-import com.ning.http.client.Response
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ ImplicitSender, TestActorRef, TestKit }
-import org.specs2.specification.Scope
 import org.overviewproject.test.ActorSystemContext
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import org.specs2.time.NoTimeConversions
+
+import com.ning.http.client.Response
+
+import akka.testkit.TestActorRef
 
 
 class RequestQueueSpec extends Specification with Mockito with NoTimeConversions { // avoid conflicts with akka time conversion
@@ -20,14 +22,26 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
     val client = new TestClient
     val request = PublicRequest("url")
     val response = mock[Response]
-
+    val timeout = 5 seconds
+    
     response.getStatusCode returns 200
     response.getResponseBody returns "body"
 
   }
+
+
+  trait ShortTimeout extends ClientSetup {
+    override val timeout = 10 millis
+  }
   
   abstract class ClientContext extends ActorSystemContext with ClientSetup {
-    def createRequestQueue(maxInFlightRequests: Int = MaxInFlightRequests): TestActorRef[RequestQueue] = TestActorRef(new RequestQueue(client, maxInFlightRequests))
+    def createRequestQueue(maxInFlightRequests: Int = MaxInFlightRequests): TestActorRef[RequestQueue] = 
+      TestActorRef(new RequestQueue(client, maxInFlightRequests, timeout))
+  }
+
+  abstract class ShortTimeoutClientContext extends ActorSystemContext with ShortTimeout {
+    def createRequestQueue(maxInFlightRequests: Int = MaxInFlightRequests): TestActorRef[RequestQueue] = 
+      TestActorRef(new RequestQueue(client, maxInFlightRequests, timeout))
   }
 
   
@@ -89,6 +103,23 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       awaitCond(requestQueue.isTerminated)
       
       client.isShutdown must beTrue
+    }
+    
+    "do something if request super timeouts" in new ShortTimeoutClientContext {
+      val requestQueue = createRequestQueue()
+      
+      requestQueue ! AddToEnd(request)
+      
+      awaitCond(client.requestFuture.isCancelled)
+    }
+    
+    "do not try to cancel completed requesrs" in new ShortTimeoutClientContext {
+       val requestQueue = createRequestQueue()
+       
+       requestQueue ! AddToEnd(request)
+       client.completeNext(response)
+       Thread.sleep(100) // Is there a better way to check that isCancelled stays false?
+       client.requestFuture.isCancelled must beFalse
     }
   }
 }

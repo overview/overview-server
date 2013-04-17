@@ -1,5 +1,7 @@
 package org.overviewproject.http
 
+import java.util.concurrent.{ Future => JFuture }
+
 import com.ning.http.client.AsyncCompletionHandler
 
 /** Information needed for Basic Authentication **/
@@ -28,14 +30,14 @@ trait Client {
    * Submit a GET request for a public url
    * @param responseHandler is called when request is complete.
    */
-  def submit(url: String, responseHandler: AsyncCompletionHandler[Unit]): Unit
+  def submit(url: String, responseHandler: AsyncCompletionHandler[Unit]): JFuture[Unit]
   
   /**
    * Submit a GET request with Basic Authentication
    * @param followRedirects should be set to `false` if redirect responses should not be automatically followed.
    * @param responseHandler is called when request is complete.
    */
-  def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): Unit
+  def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): JFuture[Unit]
   
   /** 
    *  Close any connections and release all resources.
