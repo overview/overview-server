@@ -15,7 +15,6 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
 
   "DocumentReceiver" should {
 
-    
     abstract class ReceiverContext extends ActorSystemContext with Before {
       val ExpectedDocuments = 2
       val document = Document("id", "title", "public", "http://canonical-url")
@@ -33,6 +32,10 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       }
     }
     
+    abstract class CallbackError extends ReceiverContext {
+      val error = new Exception("error")
+      override def callback(d: Document, t: String): Unit = throw error
+    }
 
     
     "call callback when receiving documents" in new ReceiverContext {
@@ -73,5 +76,11 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       retrievalDone.future.value must beSome(Failure(error))
     }
     
+    "fail future if callback throws" in new CallbackError {
+      receiver ! GetTextSucceeded(document, text)
+      
+      retrievalDone.isCompleted must beTrue
+      retrievalDone.future.value must beSome(Failure(error))
+    }
   }
 }

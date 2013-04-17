@@ -3,7 +3,7 @@ package org.overviewproject.documentcloud
 import akka.actor.Actor
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.Promise
-
+import scala.util.control.Exception._
 
 /**
  * Actor that serializes the processing of documents retrieved from DocumentCloud.
@@ -26,7 +26,7 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
   
   def receive = {
     case GetTextSucceeded(document, text) => {
-      processDocument(document, text)
+      failOnError { processDocument(document, text) }
       update
     }
     case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
@@ -40,6 +40,9 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
    *  Ensure that finished is completed. If some external source stops the actor, the Promise still succeeds
    */
   override def postStop = if (!finished.isCompleted) finished.success(failedRetrievals)
+
+  /** Apply to methods that can throw, and complete `finished` with failure if they do */
+  private val failOnError = allCatch withApply { error => finished.failure(error) }
   
   private def update: Unit = {
     receivedDocuments += 1
