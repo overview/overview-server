@@ -3,7 +3,8 @@ package steps
 import java.sql.Timestamp
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import org.fluentlenium.core.filter.FilterConstructor.withText
+import org.fluentlenium.core.filter.FilterConstructor.{ withName, withText }
+import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.openqa.selenium.support.ui.ExpectedCondition
 import org.openqa.selenium.{ JavascriptExecutor, WebDriver }
@@ -46,8 +47,25 @@ class CommonSteps extends BaseSteps {
     CommonSteps.waitForJobsToComplete
   }
 
-  When("""^I click the "([^"]*)" checkbox$"""){ (label:String) =>
-    CommonSteps.clickCheckbox(label)
+  When("""^I click the "([^"]*)" (checkbox|link|button)$"""){ (label:String, elementType:String) =>
+    val elementName = elementType match {
+      case "link" => "a"
+      case "checkbox" => "label" // Clicking the label for a checkbox has the same effect
+      case s: String => s
+    }
+    CommonSteps.clickElement(elementName, label)
+  }
+
+  When("""^I enter an? (\w+) of "([^"]*)"$"""){ (name:String, text:String) =>
+    val elems = browser.$("input", withName(name))
+    elems.text(text)
+  }
+
+  When("""^I hover over the list item "([^"]*)"$"""){ (text:String) =>
+    val elem = browser.findFirst("li", withText.contains(text))
+    new Actions(browser.getDriver)
+      .moveToElement(elem.getElement)
+      .perform
   }
 
   Then("""^I should not see a "([^"]*)" checkbox$"""){ (label:String) =>
@@ -93,9 +111,16 @@ object CommonSteps {
     logIn(email, password)
   }
 
-  def clickCheckbox(label: String) = {
-    val elem = browser.findFirst("label", withText.contains(label))
-    elem.click() // clicking a label clicks the checkbox
+  /** Clicks an element with the given name and text.
+    *
+    * Example:
+    *
+    *   // clicks the first visible link that includes text "help"
+    *   clickElement("a", "help")
+    */
+  def clickElement(name: String, label: String) = {
+    val elem = browser.findFirst(name, withText.contains(label))
+    elem.click()
   }
 
   private def waitForBoolean(timeoutInSeconds: Int)(f: WebDriver => Boolean) = {

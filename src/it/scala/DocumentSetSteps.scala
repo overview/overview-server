@@ -5,13 +5,17 @@ import org.fluentlenium.core.filter.FilterConstructor.withText
 import controllers.routes
 import models.OverviewDatabase
 import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser }
-import models.orm.finders.DocumentSetFinder
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.tree.Ownership
 
 class DocumentSetSteps extends BaseSteps {
   Given("""^there is a (public |)document set "([^"]*)" owned by "([^"]*)"$""") { (isPublic:String, title:String, ownerEmail:String) =>
     DocumentSetSteps.createDocumentSet(title, ownerEmail, isPublic=isPublic.length > 0)
+  }
+
+  Given("""^"([^"]*)" is allowed to view the document set "([^"]*)"$"""){ (email:String, title:String) =>
+    DocumentSetSteps.ensureDocumentSetUser(email, title, Ownership.Viewer)
   }
 
   When("""^I browse to the document sets page$"""){ () =>
@@ -33,22 +37,41 @@ class DocumentSetSteps extends BaseSteps {
     browser.findFirst("#import-public-document-sets form button").click()
   }
 
-  Then("""^I should see a clone button for the example document set "([^"]*)"$"""){ (title:String) =>
-    val documentSet = OverviewDatabase.inTransaction { DocumentSetFinder.byTitle(title).headOption }.getOrElse(throw new AssertionError("Document set does not exist"))
-    val cloneUrl = routes.DocumentSetController.createClone(documentSet).url
-    val selector = "#import-public-document-sets form"
-    Option(browser.findFirst(selector)).map(_.getAttribute("action")) must beSome.which(_.contains(cloneUrl))
+  When("""^I clone the shared document set "([^"]*)"$"""){ (title:String) =>
+    browser.goTo(routes.DocumentSetController.index(0).url)
+    CommonSteps.waitForAnimationsToComplete // TODO there should be no animations here
+    CommonSteps.clickElement("a", "Document sets shared with you")
+    CommonSteps.waitForAjaxToComplete
+    CommonSteps.waitForAnimationsToComplete
+    browser.findFirst("#import-shared-document-sets form button").click()
+  }
+
+  Then("""^"([^"]*)" should (not |)be allowed to view the document set "([^"]*)"$"""){ (not: String, user:String, title:String) =>
+    val dsu = DocumentSetSteps.getDocumentSetUser(user, title)
+    if (not.length > 0) {
+      dsu must beNone
+    } else {
+      dsu must beSome((dsu: DocumentSetUser) => dsu.role must beEqualTo(Ownership.Viewer))
+    }
+  }
+
+  Then("""^I should see a clone button for the (example|shared) document set "([^"]*)"$"""){ (sharedOrExample:String, title:String) =>
+    val id = sharedOrExample match {
+      case "shared" => "import-shared-document-sets"
+      case "example" => "import-public-document-sets"
+    }
+    val li = browser.findFirst("#%s li".format(id), withText.contains(title))
+    val button = li.findFirst("button", withText.contains("Clone"))
+    Option(button) must beSome
   }
 
   Then("""^I should see a document set "([^"]*)"$""") { (title:String) =>
-    val documentSet = OverviewDatabase.inTransaction { DocumentSetFinder.byTitle(title).headOption }.getOrElse(throw new AssertionError("Document set does not exist"))
+    val documentSet = DocumentSetSteps.getDocumentSet(title)
     Option(browser.findFirst(".document-sets h2", withText(title))) must beSome
   }
 
   Then("""^the document set "([^"]*)" should be public$"""){ (title:String) =>
-    val documentSet = OverviewDatabase.inTransaction {
-      DocumentSetFinder.byTitle(title).headOption.getOrElse(throw new AssertionError("Document set does not exist"))
-    }
+    val documentSet = OverviewDatabase.inTransaction { DocumentSetFinder.byTitle(title).headOption }.getOrElse(throw new AssertionError("Document set does not exist"))
     documentSet.isPublic must beTrue
   }
 }
@@ -64,6 +87,32 @@ object DocumentSetSteps {
         isPublic=isPublic
       ))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet, ownerEmail, Ownership.Owner))
+    }
+  }
+
+  /** Returns a DocumentSet.
+    *
+    * @throws an AssertionError if the document set does not exist.
+    */
+  def getDocumentSet(title: String) = {
+    OverviewDatabase.inTransaction {
+      DocumentSetFinder.byTitle(title).headOption.getOrElse(throw new AssertionError("Document set does not exist"))
+    }
+  }
+
+  /** Returns an Option[DocumentSetUser] */
+  def getDocumentSetUser(email: String, documentSetTitle: String) = {
+    val documentSet = getDocumentSet(documentSetTitle)
+    OverviewDatabase.inTransaction {
+      DocumentSetUserFinder.byDocumentSetAndUser(documentSet, email).headOption
+    }
+  }
+
+  /** Ensures a DocumentSetUser exists */
+  def ensureDocumentSetUser(email: String, documentSetTitle: String, ownership: Ownership.Value) = {
+    val documentSet = getDocumentSet(documentSetTitle)
+    OverviewDatabase.inTransaction {
+      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet, email, ownership))
     }
   }
 }
