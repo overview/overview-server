@@ -6,22 +6,21 @@
  */
 package org.overviewproject.http
 
-import akka.actor._
-import scala.concurrent.{ Future, Promise, Await }
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import org.overviewproject.clustering.{ DCDocumentAtURL, DocumentCloudSource, DocumentSetIndexer }
+
 import org.overviewproject.database.Database
-import org.overviewproject.persistence.{ DocRetrievalErrorWriter, DocumentSetIdGenerator, DocumentWriter, PersistentDocumentSet }
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType._
-import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, Logger, WorkerActorSystem }
-import org.overviewproject.util.DocumentSetCreationJobStateDescription._
-import org.overviewproject.util.Progress._
-import org.overviewproject.documentcloud.{ Document => RetrievedDocument, QueryProcessor }
-import org.overviewproject.documentcloud.DocumentRetrievalError
-import org.overviewproject.documentcloud.DocumentRetriever
-import org.overviewproject.documentcloud.QueryInformation
+import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, QueryInformation, QueryProcessor}
 import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
+import org.overviewproject.persistence.{DocRetrievalErrorWriter, DocumentSetIdGenerator, DocumentWriter, PersistentDocumentSet}
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
+import org.overviewproject.util.{DocumentConsumer, DocumentProducer}
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
+import org.overviewproject.util.{ Logger, WorkerActorSystem }
+import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
+
+import akka.actor._
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
@@ -39,6 +38,21 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
 
   def produce() {
     val t0 = System.nanoTime()
+
+    // First step to partitioning work into actors.
+    // Next step is to create supervisor actor that manages the actors being created below.
+    // A separate actor could monitor cancellation status an then inform the supervisor actor
+    // which would shut down everything. For now, it's a bit messy.
+    
+    // The following actors and components are setup:
+    // queryProcessor - The main object that drives the query. Requests query result pages
+    //   and spawns DocumentRetrievers for each document. The retrieval results are sent
+    //   to a DocumentReceiver that processes each document with a callback function.
+    // requestQueue - an actor that manages the incoming requests
+    // asyncHttpClient - A wrapper around AsyncHttpClient
+    // retrieverGenerator - A factory for actors that will retrieve documents. One actor is 
+    //   responsible for one document only. DocumentRetrievers simply retrieve the document. 
+    //   A different retriever could be used to request the document text page-by-page.
 
     WorkerActorSystem.withActorSystem { implicit context =>
 
@@ -75,7 +89,6 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
       DocumentWriter.write(document)
       document.id
     }
-    //throw (new java.lang.OutOfMemoryError("heap space"))
     consumer.processDocument(id, text)
     numDocs += 1
 

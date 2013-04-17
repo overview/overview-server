@@ -1,12 +1,11 @@
 package org.overviewproject.http
 
-import com.ning.http.client.AsyncCompletionHandler
-import com.ning.http.client.AsyncHttpClientConfig
-import com.ning.http.client.AsyncHttpClient
-import com.ning.http.client.Realm
+import com.ning.http.client.{AsyncCompletionHandler, AsyncHttpClient, AsyncHttpClientConfig, Realm}
 import com.ning.http.client.Realm.AuthScheme
-import com.ning.http.client.RequestBuilder
 
+/**
+ * Uses AsyncHttpClient to implement Client interface.
+ */
 class AsyncHttpClientWrapper extends Client {
   private val Timeout = 5 * 60 * 1000 // 5 minutes, to allow for downloading large files 
 
@@ -24,10 +23,13 @@ class AsyncHttpClientWrapper extends Client {
     client.prepareGet(url).execute(responseHandler)
   }
 
+  /**
+   * @param followRedirects If `true`, AsyncHttpClient will pass along credentials when redirecting.
+   */
   def submitWithAuthentication(url: String, credentials: Credentials, followRedirects: Boolean, responseHandler: AsyncCompletionHandler[Unit]): Unit = {
 
     val realm = new Realm.RealmBuilder()
-      .setPrincipal(credentials.userName)
+      .setPrincipal(credentials.username)
       .setPassword(credentials.password)
       .setUsePreemptiveAuth(true)
       .setScheme(AuthScheme.BASIC)

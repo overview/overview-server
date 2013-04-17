@@ -1,33 +1,74 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
-import org.overviewproject.http.PublicRequest
-import org.overviewproject.http.RequestQueueProtocol._
-import akka.actor._
-import org.overviewproject.http.SimpleResponse
+
 import scala.concurrent.Promise
-import org.overviewproject.http.Credentials
-import org.overviewproject.http.Request
-import org.overviewproject.http.PrivateRequest
+
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
+import org.overviewproject.http._
+import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.util.Logger
 
+import akka.actor._
+
+/** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {
+  /** Start the query */
   case class Start()
 }
 
+/** Information about documents that could not be retrieved */
 case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
 
+/**
+ * Information about the query that will be provided as the query progresses.
+ */
 class QueryInformation {
+  /**
+   *  The total number of documents in the DocumentCloud query result.
+   *  The value reflects the number specified at the start of the query.
+   *  The Promise will be fulfilled after the QueryProcessor receives the first
+   *  page of query results.
+   */
   val documentsTotal = Promise[Int]
+
+  /**
+   * Information about all documents that could not be retrieved.
+   * The Promise will be fulfilled when the query processing is complete.
+   * The Promise will fail if the query processing was aborted because of errors.
+   */
   val errors = Promise[Seq[DocumentRetrievalError]]
 }
 
+/**
+ * Handles a DocumentCloud query.
+ * Requests query results in pages, then creates a retriever actor for each document in the result.
+ * A DocumentReceiver actor is created and specified as the ultimate recipient of the document text.
+ * The DocumentReceiver is responsible for completing the queryInformation.errors promise.
+ *
+ * Query result pages are added to the front of the queue to try to ensure that
+ * there are always document requests available.
+ *
+ * @param query A DocumentCloud query string that will be url encoded.
+ * @param queryInformation Contains the Promises of information from the query. queryInformation.errors will be fulfilled
+ * when the query is complete.
+ * @param credentials If provided, will be used to authenticate query and requests for private documents.
+ * @param maxDocuments The maximum number of documents to attempt to retrieve
+ * @param processDocument Callback that will be called when a document is retrieved.
+ * @param requestQueue The actor handling http requests
+ * @param retrieverGenerator A function for generating actors that will retrieve documents. Will be passed
+ * the document and a reference to the document receiver.
+ */
 class QueryProcessor(query: String, queryInformation: QueryInformation, credentials: Option[Credentials], maxDocuments: Int,
   processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
 
   import QueryProcessorProtocol._
 
+  /**
+   * The number of documents that we will attempt to retrieve.
+   * Set by the `total` value in the first page of the query search result.
+   * Will be at most `maxDocuments`.
+   */
   var documentsToRetrieve: Option[Int] = None
 
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
@@ -58,6 +99,11 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     case None => PublicRequest(url)
   }
 
+  /**
+   * When a query result page is received, request the next page if available and maxDocuments
+   * has not been reached. Spawn retrievers for each document.
+   * Fulfill the documentsTotal promise after the first page.
+   */
   private def processResponse(response: SimpleResponse): Unit = {
     val result = ConvertSearchResult(response.body)
     setDocumentsTotal(result.total)
@@ -68,14 +114,14 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
       if (morePagesAvailable(result, t)) {
         requestPage(result.page + 1)
         spawnRetrievers(result.documents, receiver)
-      }
-      else {
+      } else {
         val documentsInLastPage = t - (result.page - 1) * PageSize
         spawnRetrievers(result.documents.take(documentsInLastPage), receiver)
       }
     }
   }
 
+  /** Complete the documentsTotal promise. If already completed, the value is ignored.   */
   private def setDocumentsTotal(n: Int) =
     if (!queryInformation.documentsTotal.isCompleted) {
       documentsToRetrieve = Some(scala.math.min(maxDocuments, n))
@@ -84,7 +130,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
 
   private def morePagesAvailable(result: SearchResult, documentsToRetrieve: Int): Boolean = result.page * PageSize < documentsToRetrieve
 
-  private def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
+  def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
       case ref if ref.isTerminated =>
         context.actorOf(Props(new DocumentReceiver(processDocument, numberOfDocuments, queryInformation.errors)), ReceiverActorName)
