@@ -47,46 +47,48 @@ class AsyncHttpClientResponse(response: Response) extends SimpleResponse {
  */
 class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: FiniteDuration) extends Actor {
   import RequestQueueProtocol._
-  private case class RequestCompleted(url: String) // Message only used internally
-  private case class CancelRequest(url: String) // Cancel stuck request
+  private case class RequestCompleted(requestId: Long) // Message only used internally
+  private case class CancelRequest(requestId: Long) // Cancel stuck request
 
   private var inFlightRequestCount: Int = 0
   private var queuedRequests: Seq[(ActorRef, Request)] = Seq.empty // FIXME: mutable seq will be more efficient with many requests
-  private var inFlightRequests: scala.collection.mutable.Map[String, (Cancellable, Request)] = HashMap.empty
+  private var inFlightRequests: scala.collection.mutable.Map[Long, (Cancellable, Request)] = HashMap.empty
+  private var nextInFlightRequestId: Long = 0
 
   /**
    *  When requests complete, notify requester and process any queued requests
    */
-  private class ResultHandler(url: String, requester: ActorRef) extends AsyncCompletionHandler[Unit] {
+  private class ResultHandler(requestId: Long, requester: ActorRef) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
       requester ! Result(new AsyncHttpClientResponse(response))
-      self ! RequestCompleted(url)
+      self ! RequestCompleted(requestId)
     }
 
     override def onThrowable(t: Throwable): Unit = {
       requester ! Failure(t)
-      self ! RequestCompleted(url) // Try to continue, and let requester handle the error
+      self ! RequestCompleted(requestId) // Try to continue, and let requester handle the error
     }
   }
 
   def receive = {
-    case AddToEnd(request) if inFlightRequestCount < maxInFlightRequests => submitRequest(sender, request)
+    case AddToEnd(request) if inFlightRequests.size < maxInFlightRequests => submitRequest(sender, request)
     case AddToEnd(request) => queueRequest(sender, request)
-    case AddToFront(request) if inFlightRequestCount < maxInFlightRequests => submitRequest(sender, request)
+    case AddToFront(request) if inFlightRequests.size < maxInFlightRequests => submitRequest(sender, request)
     case AddToFront(request) => queueRequestInFront(sender, request)
-    case RequestCompleted(url) => handleNextRequest(url)
-    case CancelRequest(url) => cancelRequest(url)
+    case RequestCompleted(requestId) => handleNextRequest(requestId)
+    case CancelRequest(requestId) => cancelRequest(requestId)
   }
 
   override def postStop = client.shutdown()
 
   private def submitRequest(requestor: ActorRef, request: Request): Unit = {
-    request.execute(client, new ResultHandler(request.url, requestor))
+    request.execute(client, new ResultHandler(nextInFlightRequestId, requestor))
 
     import context.dispatcher
-    val superTimeoutEvent = context.system.scheduler.scheduleOnce(superTimeout, self, CancelRequest(request.url))
-    inFlightRequests += (request.url -> (superTimeoutEvent, request))
+    val superTimeoutEvent = context.system.scheduler.scheduleOnce(superTimeout, self, CancelRequest(nextInFlightRequestId))
+    inFlightRequests += (nextInFlightRequestId -> (superTimeoutEvent, request))
 
+    nextInFlightRequestId += 1
     inFlightRequestCount += 1
   }
 
@@ -94,9 +96,9 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
 
   private def queueRequestInFront(requestor: ActorRef, url: Request): Unit = queuedRequests = (requestor, url) +: queuedRequests
 
-  private def handleNextRequest(url: String): Unit = {
+  private def handleNextRequest(requestId: Long): Unit = {
     inFlightRequestCount -= 1
-    inFlightRequests.get(url).map { r => r._1.cancel }
+    inFlightRequests.get(requestId).map { r => r._1.cancel }
     
     queuedRequests.headOption.map { r =>
       submitRequest(r._1, r._2)
@@ -104,6 +106,6 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
     }
   }
 
-  private def cancelRequest(url: String): Unit = inFlightRequests.get(url).map { r => r._2.cancel }
+  private def cancelRequest(requestId: Long): Unit = inFlightRequests.get(requestId).map { r => r._2.cancel }
 
 }
