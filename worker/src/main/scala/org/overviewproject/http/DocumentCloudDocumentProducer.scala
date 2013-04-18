@@ -9,7 +9,6 @@ package org.overviewproject.http
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, QueryInformation, QueryProcessor}
 import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
@@ -20,8 +19,8 @@ import org.overviewproject.util.{DocumentConsumer, DocumentProducer}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.{ Logger, WorkerActorSystem }
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
-
 import akka.actor._
+import org.overviewproject.documentcloud.RequestRetryTimes
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
@@ -61,7 +60,8 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
       queryInformation = new QueryInformation
       val asyncHttpClient = new AsyncHttpClientWrapper
       val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
-      def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) = new DocumentRetriever(document, receiver, requestQueue, credentials)
+      def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) =
+        new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
 
       val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, requestQueue, retrieverGenerator)), QueryProcessorName)
 

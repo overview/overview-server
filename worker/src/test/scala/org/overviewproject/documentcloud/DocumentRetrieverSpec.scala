@@ -9,8 +9,10 @@ import org.specs2.specification.Scope
 import akka.actor.Terminated
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.specs2.mutable.Before
+import scala.concurrent.duration._
+import org.specs2.time.NoTimeConversions
 
-class DocumentRetrieverSpec extends Specification {
+class DocumentRetrieverSpec extends Specification with NoTimeConversions {
 
   "DocumentRetriever" should {
 
@@ -18,6 +20,9 @@ class DocumentRetrieverSpec extends Specification {
       val documentUrl = "https://www.documentcloud.org/api/documents/id.txt"
       val document: Document
       val credentials: Option[Credentials] = None
+      val retryTimes: RequestRetryTimes = new RequestRetryTimes {
+        override val times: Seq[FiniteDuration] = Seq()
+      }
     }
 
     trait PublicRetrievalSetup extends RetrievalSetup {
@@ -43,6 +48,12 @@ class DocumentRetrieverSpec extends Specification {
       override val credentials = Some(Credentials("user@host", "dcpassword"))
     }
 
+    trait ShortRetryTimes extends PublicRetrievalSetup {
+      override val retryTimes = new RequestRetryTimes {
+        override val times: Seq[FiniteDuration] = Seq(10 millis, 10 millis)
+      }
+    }
+    
     abstract class RetrievalContext extends ActorSystemContext with Before {
       this: RetrievalSetup =>
       var recipient: TestProbe = _
@@ -50,13 +61,14 @@ class DocumentRetrieverSpec extends Specification {
 
       def before = {
         recipient = TestProbe()
-        retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, credentials))
+        retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, credentials, retryTimes))
       }
     }
 
     abstract class PublicRetrievalContext extends RetrievalContext with PublicRetrievalSetup
     abstract class PrivateRetrievalContext extends RetrievalContext with PrivateRetrievalSetup
-
+    abstract class RetryContext extends RetrievalContext with ShortRetryTimes 
+    
     "queue a request for a public url" in new PublicRetrievalContext {
 
       retriever ! Start()
@@ -132,6 +144,23 @@ class DocumentRetrieverSpec extends Specification {
       retriever ! Failure(error)
       
       recipient.expectMsg(GetTextFailed(documentUrl, error.toString(), None, None))
+    }
+    
+    "retry if request completed but failed" in new RetryContext {
+      val failedResponse = TestSimpleResponse(404, "Not found")
+      val request = AddToEnd(PublicRequest(documentUrl))
+      
+      retriever ! Start()
+      expectMsg(request)
+      
+      retriever ! Result(failedResponse)
+      expectMsg(request)
+      
+      retriever ! Result(failedResponse)
+      expectMsg(request)
+      
+      retriever ! Result(failedResponse)
+      recipient.expectMsg(GetTextFailed(documentUrl, "Not found", Some(404), Some("")))
     }
   }
 }
