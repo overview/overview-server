@@ -50,6 +50,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     case Result(r) if isOk(r) => forwardResult(r.body)
     case Result(r) if isRedirect(r) => redirectRequest(r)
     case Result(r) => failRequest(r)
+    case Failure(t: Exception) => convertToFailure(t)
     case Failure(t) => forwardError(t)
   }
 
@@ -76,6 +77,15 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
 
   private def forwardError(t: Throwable): Unit = {
     recipient ! GetTextError(t)
+    context.stop(self)
+  }
+  
+  /**
+   * We hope that exceptions are specific to this particular request, so we
+   * convert it to a failure so the receiver will not abort.
+   */
+  private def convertToFailure(t: Exception): Unit = {
+    recipient ! GetTextFailed(DocumentQuery(document), t.toString)
     context.stop(self)
   }
   

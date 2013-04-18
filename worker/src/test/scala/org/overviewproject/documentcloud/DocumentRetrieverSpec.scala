@@ -119,11 +119,19 @@ class DocumentRetrieverSpec extends Specification {
     }
     
     "forward error to receiver" in new PublicRetrievalContext {
-      val error = new Throwable("something bad")
+      val error = new Error("something bad")
       
       retriever ! Failure(error)
       
       recipient.expectMsg(GetTextError(error))
+    }
+    
+    "convert exception to failed document and forward to receiver" in new PublicRetrievalContext {
+      val error = new Exception("document retrieveal exception")
+      
+      retriever ! Failure(error)
+      
+      recipient.expectMsg(GetTextFailed(documentUrl, error.toString(), None, None))
     }
   }
 }
