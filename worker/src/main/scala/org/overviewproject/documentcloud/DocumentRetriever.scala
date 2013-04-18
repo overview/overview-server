@@ -33,6 +33,7 @@ object DocumentRetrieverProtocol {
  * @param recipient is the final destination for the retrieved document text
  * @param requestQueue handles the retrieval requests
  * @param credentials will be used to authenticate the request, if present
+ * @param requestRetryTimes Determines retry behavior
  */
 class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: ActorRef, credentials: Option[Credentials], retryTimes: RequestRetryTimes) extends Actor {
   import DocumentRetrieverProtocol._
@@ -51,7 +52,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     case Result(r) if isOk(r) => forwardResult(r.body)
     case Result(r) if isRedirect(r) => redirectRequest(r)
     case Result(r) => retryOr(failRequest(r))
-    case Failure(t: Exception) => convertToFailure(t)
+    case Failure(t: Exception) => retryOr(convertToFailure(t))
     case Failure(t) => forwardError(t)
   }
 

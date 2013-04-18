@@ -162,5 +162,14 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
       retriever ! Result(failedResponse)
       recipient.expectMsg(GetTextFailed(documentUrl, "Not found", Some(404), Some("")))
     }
+    
+    "retry on exceptions" in new RetryContext {
+      val error = new Exception("probably recoverable")
+      val request = AddToEnd(PublicRequest(documentUrl))
+      
+      retriever ! Failure(error)
+      expectMsg(request)
+      
+    }
   }
 }
