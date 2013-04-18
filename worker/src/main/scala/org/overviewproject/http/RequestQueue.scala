@@ -50,7 +50,7 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
   private case class RequestCompleted(requestId: Long) // Message only used internally
   private case class CancelRequest(requestId: Long) // Cancel stuck request
 
-  private var inFlightRequestCount: Int = 0
+
   private var queuedRequests: Seq[(ActorRef, Request)] = Seq.empty // FIXME: mutable seq will be more efficient with many requests
   private var inFlightRequests: scala.collection.mutable.Map[Long, (Cancellable, Request)] = HashMap.empty
   private var nextInFlightRequestId: Long = 0
@@ -64,7 +64,7 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
       self ! RequestCompleted(requestId)
     }
 
-    override def onThrowable(t: Throwable): Unit = {
+    override def onThrowable(t: Throwable): Unit = { 
       requester ! Failure(t)
       self ! RequestCompleted(requestId) // Try to continue, and let requester handle the error
     }
@@ -89,7 +89,6 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
     inFlightRequests += (nextInFlightRequestId -> (superTimeoutEvent, request))
 
     nextInFlightRequestId += 1
-    inFlightRequestCount += 1
   }
 
   private def queueRequest(requestor: ActorRef, url: Request): Unit = queuedRequests = queuedRequests :+ (sender, url)
@@ -97,9 +96,9 @@ class RequestQueue(client: Client, maxInFlightRequests: Int, superTimeout: Finit
   private def queueRequestInFront(requestor: ActorRef, url: Request): Unit = queuedRequests = (requestor, url) +: queuedRequests
 
   private def handleNextRequest(requestId: Long): Unit = {
-    inFlightRequestCount -= 1
     inFlightRequests.get(requestId).map { r => r._1.cancel }
-    
+    inFlightRequests -= requestId
+
     queuedRequests.headOption.map { r =>
       submitRequest(r._1, r._2)
       queuedRequests = queuedRequests.tail

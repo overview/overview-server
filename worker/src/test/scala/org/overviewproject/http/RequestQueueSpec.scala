@@ -70,6 +70,17 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       client.requestsInFlight must be equalTo(0)
     }
 
+    "submit new requests no more requests are waiting" in new ClientContext {
+      val requestQueue = createRequestQueue()
+      
+      1 to MaxInFlightRequests foreach {_ => requestQueue ! AddToEnd(request) }
+      
+      client.completeNext(response)
+      requestQueue ! AddToEnd(request)
+      
+      client.requestsInFlight must be equalTo(MaxInFlightRequests)
+    }
+    
     "add requests to the front of the queue" in new ClientContext {
       val frontUrl = "front url"
       val requestQueue = createRequestQueue(maxInFlightRequests = 1)
