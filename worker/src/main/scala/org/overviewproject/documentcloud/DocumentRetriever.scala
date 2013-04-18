@@ -91,7 +91,9 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     context.stop(self)
   }
 
-  private def makePublicRequest(url: String): Unit = requestQueue ! AddToEnd(PublicRequest(url))
+  private def makePublicRequest(url: String): Unit = 
+    if (retryAttempt == 0) requestQueue ! AddToEnd(PublicRequest(url))
+    else requestQueue ! AddToFront(PublicRequest(url))
 
   /**
    * Private requests are added to the front of the queue because we expect a redirect response

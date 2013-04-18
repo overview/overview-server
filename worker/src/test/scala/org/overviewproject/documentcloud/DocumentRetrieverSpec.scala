@@ -148,16 +148,17 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
     
     "retry if request completed but failed" in new RetryContext {
       val failedResponse = TestSimpleResponse(404, "Not found")
-      val request = AddToEnd(PublicRequest(documentUrl))
+      val initialRequest = AddToEnd(PublicRequest(documentUrl))
+      val retryRequest = AddToFront(PublicRequest(documentUrl))
       
       retriever ! Start()
-      expectMsg(request)
+      expectMsg(initialRequest)
       
       retriever ! Result(failedResponse)
-      expectMsg(request)
+      expectMsg(retryRequest)
       
       retriever ! Result(failedResponse)
-      expectMsg(request)
+      expectMsg(retryRequest)
       
       retriever ! Result(failedResponse)
       recipient.expectMsg(GetTextFailed(documentUrl, "Not found", Some(404), Some("")))
@@ -165,7 +166,7 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
     
     "retry on exceptions" in new RetryContext {
       val error = new Exception("probably recoverable")
-      val request = AddToEnd(PublicRequest(documentUrl))
+      val request = AddToFront(PublicRequest(documentUrl))
       
       retriever ! Failure(error)
       expectMsg(request)
