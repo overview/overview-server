@@ -50,7 +50,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
         queryInformation = new QueryInformation
       }
 
-      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=20&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
+      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=50&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
 
       def emptyProcessDocument(d: Document, text: String): Unit = {}
       def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor, credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
@@ -58,8 +58,8 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
     }
 
     "request query result pages" in new QueryContext {
-      val page1Result = jsonSearchResultPage(40, 1, 20)
-      val page2Result = jsonSearchResultPage(40, 2, 10)
+      val page1Result = jsonSearchResultPage(100, 1, 50)
+      val page2Result = jsonSearchResultPage(100, 2, 50)
 
       val queryProcessor = TestActorRef(createQueryProcessor(new SilentActor(_, _)))
 
@@ -120,11 +120,11 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
     
     "don't retrieve more than specified maximum number of documents" in new QueryContext {
       val totalDocuments = 600
-      val numberOfDocuments = 20
+      val numberOfDocuments = 50
       val page1Result = jsonSearchResultPage(totalDocuments, 1, numberOfDocuments)
       val page2Result = jsonSearchResultPage(totalDocuments, 2, numberOfDocuments)
 
-      val maxDocuments = 30
+      val maxDocuments = 60
       
       val retrieverCounter = TestProbe()
       val queryProcessor = TestActorRef(createQueryProcessor(new ReportingActor(_, _, retrieverCounter.ref), maxDocuments = maxDocuments))
@@ -136,7 +136,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       queryProcessor ! Result(TestSimpleResponse(200, page2Result))      
       expectNoMsg()
       
-      retrieverCounter.receiveN(30)
+      retrieverCounter.receiveN(maxDocuments)
       retrieverCounter.expectNoMsg()
     }
   }
