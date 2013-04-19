@@ -6,13 +6,10 @@
  */
 package org.overviewproject.util
 
-import org.overviewproject.clustering.DocumentCloudSource
-import org.overviewproject.http.{ AsyncHttpRetriever, DocumentCloudDocumentProducer }
-import org.overviewproject.util.Progress._
 import org.overviewproject.csv.CsvImportDocumentProducer
-import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
-import org.overviewproject.http.AsyncHttpRequest
-import org.overviewproject.http.Credentials
+import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
+import org.overviewproject.persistence.{DocumentSet, PersistentDocumentSetCreationJob}
+import org.overviewproject.util.Progress.ProgressAbortFn
 
 
 /** Common functionality for DocumentProducers */

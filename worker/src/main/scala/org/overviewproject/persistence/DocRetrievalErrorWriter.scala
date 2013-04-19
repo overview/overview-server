@@ -1,10 +1,9 @@
 package org.overviewproject.persistence
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.http.DocRetrievalError
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.DocumentProcessingError
 import org.overviewproject.documentcloud.DocumentRetrievalError
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.DocumentProcessingError
 
 
 object DocRetrievalErrorWriter {
