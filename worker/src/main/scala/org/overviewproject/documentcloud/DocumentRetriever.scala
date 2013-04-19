@@ -3,8 +3,8 @@ package org.overviewproject.documentcloud
 import org.overviewproject.http.{ Credentials, PrivateRequest, PublicRequest }
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.http.SimpleResponse
-
 import akka.actor._
+import org.overviewproject.util.Logger
 
 object DocumentRetrieverProtocol {
   /** Start retrieving the document */
@@ -63,7 +63,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
     else makePrivateRequest(query)
   }
 
-  private def isPublic(d: Document): Boolean = d.access == PublicAccess
+  private def isPublic(d: Document): Boolean = (d.access == PublicAccess)
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
   private def isOk(r: SimpleResponse): Boolean = r.status == OkStatus
 
@@ -73,11 +73,13 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   }
 
   private def failRequest(r: SimpleResponse): Unit = {
+    Logger.warn(s"Unable to retrieve document from ${DocumentQuery(document)} ) access: ${document.access} status: ${r.status}\n${r.headersToString}\n${r.body}")
     recipient ! GetTextFailed(DocumentQuery(document), r.body, Some(r.status), Some(r.headersToString))
     context.stop(self)
   }
 
   private def forwardError(t: Throwable): Unit = {
+    Logger.error(s"Unable to process ${DocumentQuery(document)}: ${t.getMessage()}")
     recipient ! GetTextError(t)
     context.stop(self)
   }
@@ -107,6 +109,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def retryOr(giveUp: => Unit): Unit = {
     retryTimes(retryAttempt) match {
       case Some(delay) => {
+        Logger.warn(s"Scheduling retry attempt $retryAttempt for ${DocumentQuery(document)} access: ${document.access}")
         import context.dispatcher
         context.system.scheduler.scheduleOnce(delay, self, Start())
         retryAttempt += 1
