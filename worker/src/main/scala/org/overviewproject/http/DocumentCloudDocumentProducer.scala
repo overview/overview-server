@@ -21,12 +21,13 @@ import org.overviewproject.util.{ Logger, WorkerActorSystem }
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 import akka.actor._
 import org.overviewproject.documentcloud.RequestRetryTimes
+import org.overviewproject.util.Configuration
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
-  private val MaxInFlightRequests = 4
+  private val MaxInFlightRequests = Configuration.maxInFlightRequests
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"

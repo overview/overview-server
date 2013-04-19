@@ -15,5 +15,8 @@ class ConfigurationSpec extends Specification {
       Configuration.pageSize must be equalTo(50)
     }
     
+    "have maxInFlightRequests value" in {
+      Configuration.maxInFlightRequests must be equalTo(4)
+    }
   }
 }
