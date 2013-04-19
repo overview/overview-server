@@ -15,7 +15,7 @@ class RequestRetryTimesSpec extends Specification with NoTimeConversions {
     }
 
     "return default values" in new DefaultTimesContext {
-      val expectedTimes = Seq(1 second, 1 minute, 3 minutes)
+      val expectedTimes = Seq(1 second, 30 seconds, 1 minute)
       val times = Seq.tabulate(4)(n => defaultTimes(n)).flatten
       
       times must be equalTo(expectedTimes)

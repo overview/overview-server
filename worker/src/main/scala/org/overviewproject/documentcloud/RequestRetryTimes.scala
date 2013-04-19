@@ -14,8 +14,8 @@ trait RequestRetryTimes {
 object RequestRetryTimes {
   private val DefaultTimes: Seq[FiniteDuration] = Seq(
     1 second,
-    1 minute, 
-    3 minutes
+    30 seconds,
+    1 minute
   ) 
   
   def apply(): RequestRetryTimes = new RequestRetryTimes { 
