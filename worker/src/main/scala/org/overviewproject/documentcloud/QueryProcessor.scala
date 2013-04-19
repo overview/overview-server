@@ -75,7 +75,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
   }
 
-  private val PageSize: Int = 20
+  private val PageSize: Int = 50
   private val Encoding: String = "UTF-8"
   private val ReceiverActorName = "receiver"
 
