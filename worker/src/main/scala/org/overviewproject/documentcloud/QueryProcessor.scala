@@ -1,15 +1,13 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-
 import scala.concurrent.Promise
-
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
 import org.overviewproject.http._
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.util.Logger
-
 import akka.actor._
+import org.overviewproject.util.Configuration
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {
@@ -75,7 +73,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
   }
 
-  private val PageSize: Int = 50
+  private val PageSize: Int = Configuration.pageSize
   private val Encoding: String = "UTF-8"
   private val ReceiverActorName = "receiver"
 

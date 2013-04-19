@@ -11,6 +11,9 @@ class ConfigurationSpec extends Specification {
       Configuration.maxDocuments must be equalTo(20000)
     }
     
+    "have pageSize value" in {
+      Configuration.pageSize must be equalTo(50)
+    }
     
   }
 }

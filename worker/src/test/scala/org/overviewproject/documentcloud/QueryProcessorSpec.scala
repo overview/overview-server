@@ -19,6 +19,7 @@ import org.overviewproject.http.Credentials
 import org.overviewproject.http.PrivateRequest
 import akka.testkit.TestActor
 import akka.testkit.TestProbe
+import org.overviewproject.util.Configuration
 
 class ReportingActor(d: Document, receiver: ActorRef, listener: ActorRef) extends Actor {
   def receive = {
@@ -44,13 +45,15 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
 
     abstract class QueryContext extends ActorSystemContext with Before {
       val query = "query string"
+      val pageSize = Configuration.pageSize
+      
       var queryInformation: QueryInformation = _
 
       def before = {
         queryInformation = new QueryInformation
       }
 
-      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=50&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
+      def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=$pageSize&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
 
       def emptyProcessDocument(d: Document, text: String): Unit = {}
       def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor, credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
@@ -58,8 +61,8 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
     }
 
     "request query result pages" in new QueryContext {
-      val page1Result = jsonSearchResultPage(100, 1, 50)
-      val page2Result = jsonSearchResultPage(100, 2, 50)
+      val page1Result = jsonSearchResultPage(2 * pageSize, 1, pageSize)
+      val page2Result = jsonSearchResultPage(2 * pageSize, 2, pageSize)
 
       val queryProcessor = TestActorRef(createQueryProcessor(new SilentActor(_, _)))
 
@@ -120,12 +123,12 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
     
     "don't retrieve more than specified maximum number of documents" in new QueryContext {
       val totalDocuments = 600
-      val numberOfDocuments = 50
+      val numberOfDocuments = pageSize
       val page1Result = jsonSearchResultPage(totalDocuments, 1, numberOfDocuments)
       val page2Result = jsonSearchResultPage(totalDocuments, 2, numberOfDocuments)
 
-      val maxDocuments = 60
-      
+      val maxDocuments = pageSize + 10 
+        
       val retrieverCounter = TestProbe()
       val queryProcessor = TestActorRef(createQueryProcessor(new ReportingActor(_, _, retrieverCounter.ref), maxDocuments = maxDocuments))
       
@@ -163,7 +166,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       {
         "total": $total,
         "page": $page,
-        "per_page": 20,
+        "per_page": ${Configuration.pageSize},
         "q": "Query",
         "documents": $jsonDocumentArray 
       }"""
