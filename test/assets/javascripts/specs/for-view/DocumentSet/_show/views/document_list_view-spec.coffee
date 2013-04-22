@@ -139,6 +139,11 @@ require [
           expect($div.find('a[data-docid=1]').length).toEqual(1)
           expect($div.find('a[data-docid=2]').length).toEqual(1)
 
+        it 'should show a title for each document', ->
+          view = create_view()
+          title = $('a[data-docid=1]', view.div).attr('title')
+          expect(title).toEqual('doc1')
+
         it 'should add a tag with its specified color to each list item', ->
           view = create_view()
           $tags = $('a:eq(0) span.tags', view.div)

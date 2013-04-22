@@ -121,6 +121,7 @@ define [
       $a = $('<a href="#"></a>')
         .text(document.description || i18n('views.DocumentSet.show.document_list.document.empty_description'))
         .attr('data-docid', "#{document.id}")
+        .attr('title', document.title || document.description || i18n('views.DocumentSet.show.document_list.document.empty_description'))
 
       $tags = $('<span class="tags"/>')
       this._update_document_a_tagids($tags, document.tagids || [])
