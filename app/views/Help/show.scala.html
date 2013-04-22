@@ -3,9 +3,17 @@
 )(implicit lang: Lang, flash: Flash)
 
 @main(optionalUser=optionalUser, title="Help", h1="Help", bodyClass="help-show") {
+  <h2>Overview reads your documents and sorts them by topic</h2>
+  Whether you are a journalist starting with thousands of pages of government documents, or a social media analyst starting with 100,000 posts, Overview will organize your documents into topics and sub-topics, and then visualize them -- so you can decide what to read and, instantly count the number of documents on a particular topic, or tag entire topics for further work. It's like your own personal librarian.
+  <div style="text-align: center; height:100px"><a href="/documentsets" class="btn btn-primary" style="width: 200px; margin: auto; margin-top: 30px">Try it out on an example document set! </a></div>
+  <h2>How it works</h2>
   <p>It takes just a few minutes to start exploring your documents in Overview. For quick start, see this video (you'll want to watch it full screen.)</p>
   <figure style="width: 600px; margin-left: auto; margin-right: auto"><iframe src="//player.vimeo.com/video/52576763?title=0&amp;byline=0&amp;portrait=0" width="600" height="337" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe></figure>
-  <div style="text-align: center; height:100px"><a href="/documentsets" class="btn btn-primary" style="width: 200px; margin: auto">Try it out on an example document set! </a></div>
+
+  <br /><h2>Talk to us!</h2>
+  Are you wondering if Overview will work for your data? Other questions? Bugs? Something you&#8217;d like to see in a future version! Tweet us <a href="https://twitter.com/overviewproject">&#64;overviewproject</a>, try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="mailto:info&#64;overviewproject.org">contact us</a> directly!</p>
+
+  <br /><h2>Step-by-step instructions</h2>
   <p>Or follow the instructions below. For more, see the FAQ <a href="http://overview.ap.org/faq/">Overview FAQ</a>, or try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> where developers and users are around to answer questions.</p>
   <p><strong>There are two ways to get your documents into Overview: import a DocumentCloud project, or upload a CSV file.</strong></p>
 
@@ -47,6 +55,5 @@
   <p>As you proceed, you may find documents that talk about similar topics in different folders. Overview doesn&#8217;t know what story you are working on, so it can&#8217;t always guess how the documents should be arranged. You can apply a tag to any combination of folders and documents to create a set that is meaningful to you.</p>
   <p>You may also discover that the documents in a folder are irrelevant to your story, in which case you can tag them with &#8220;read&#8221; and simply move on. Part of the power of Overview is being able to decide <em>not</em> to look at an entire folder.</p>
   <p>When you&#8217;re finished this process, you&#8217;ll have a neatly categorized tree, and a set of tags corresponding to all the interesting topics in your documents.</p>
-  <br ><p><strong>6. Ask for help!</strong><br />
-  Questions? Bugs? Something you&#8217;d like to see in a future version! Try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="http://overview.ap.org/contact">contact us</a> directly!</p>
+  
 }
