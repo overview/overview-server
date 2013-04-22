@@ -3,6 +3,7 @@ package steps
 import java.sql.Timestamp
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import org.fluentlenium.core.filter.Filter
 import org.fluentlenium.core.filter.FilterConstructor.{ withName, withText }
 import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -39,6 +40,10 @@ class CommonSteps extends BaseSteps {
     CommonSteps.waitForAjaxToComplete
   }
 
+  When("""^I wait for all file operations to complete$""") { () =>
+    CommonSteps.waitForFileReadersToComplete
+  }
+
   When("""^I wait for all animations to complete$"""){ () =>
     CommonSteps.waitForAnimationsToComplete
   }
@@ -46,6 +51,11 @@ class CommonSteps extends BaseSteps {
   When("""^I wait for all jobs to complete$"""){ () =>
     CommonSteps.waitForJobsToComplete
   }
+
+  When("""^I choose the file "([^"]*)"$"""){ (filename:String) =>
+    CommonSteps.chooseFile(filename)
+  }
+      
 
   When("""^I click the "([^"]*)" (checkbox|link|button)$"""){ (label:String, elementType:String) =>
     val elementName = elementType match {
@@ -68,9 +78,42 @@ class CommonSteps extends BaseSteps {
       .perform
   }
 
-  Then("""^I should not see a "([^"]*)" checkbox$"""){ (label:String) =>
+  Then("""^I should (not |)see an? (enabled |)"([^"]*)" (button)$"""){ (notOrNothing:String, activeOrNothing:String, label:String, name:String) =>
+    val positive : Boolean = notOrNothing.length == 0
+    val elem = CommonSteps.findElement(name, label)
+    if (positive) {
+      Option(elem).isDefined must beTrue
+      if (activeOrNothing.length > 0) {
+        elem.isEnabled must beTrue
+      }
+    } else {
+      Option(elem).fold(false) { e =>
+        if (activeOrNothing.length > 0) e.isEnabled else false
+      } must beFalse
+    }
+  }
+
+  Then("""^I should not see an? "([^"]*)" checkbox$"""){ (label:String) =>
     val elems = browser.$("label", withText.contains(label))
     elems.size must beEqualTo(0)
+  }
+
+  Then("""^I should see a progress bar$"""){ () =>
+    var elem = browser.findFirst("progress")
+    Option(elem) must beSome
+  }
+
+  Then("""^the progress bar should finish$"""){ () =>
+    CommonSteps.waitForBoolean(10) { driver: WebDriver =>
+      val elem = browser.findFirst("progress")
+      val value = elem.getAttribute("value").toDouble
+      val max = elem.getAttribute("max").toDouble
+      value == max
+    }
+  }
+
+  Then("""^I should be redirected to the document set index$"""){ () =>
+    throw new PendingException()
   }
 }
 
@@ -111,6 +154,10 @@ object CommonSteps {
     logIn(email, password)
   }
 
+  def findElement(name: String, label: String) = {
+    browser.findFirst(name, withText.contains(label))
+  }
+
   /** Clicks an element with the given name and text.
     *
     * Example:
@@ -119,8 +166,18 @@ object CommonSteps {
     *   clickElement("a", "help")
     */
   def clickElement(name: String, label: String) = {
-    val elem = browser.findFirst(name, withText.contains(label))
-    elem.click()
+    findElement(name, label).click
+  }
+
+  /** Sets the first input[type=file] to the given file.
+    *
+    * Specify a file that is a resource. This function will copy the resource
+    * to the filesystem; when the scenario finishes, the file will be deleted.
+    */
+  def chooseFile(resourcePath: String) = {
+    val path = Framework.copyResourceToFileSomewhere(resourcePath).getAbsolutePath
+    val input = browser.findFirst("input", new Filter("type", "file"))
+    input.getElement.sendKeys(path)
   }
 
   private def waitForBoolean(timeoutInSeconds: Int)(f: WebDriver => Boolean) = {
@@ -137,7 +194,6 @@ object CommonSteps {
   }
 
   private def waitForJavascriptBoolean(script: String) = {
-    val timeout = 5 // seconds
     /*
      * Normally, we'd just check for, say, "jQuery.active == 0". However, we
      * sometimes create JavaScript requests on a delay--in a window.setTimeout
@@ -148,8 +204,9 @@ object CommonSteps {
      */
     var nSuccesses = 0
     val neededSuccesses = 2
+    val timeoutInSeconds = 15
 
-    waitForBoolean(5) { (driver: WebDriver) =>
+    waitForBoolean(timeoutInSeconds) { (driver: WebDriver) =>
       val executor = driver.asInstanceOf[JavascriptExecutor]
       val ret = executor.executeScript(script).asInstanceOf[java.lang.Boolean];
       if (ret) {
@@ -168,6 +225,11 @@ object CommonSteps {
     waitForJavascriptBoolean("return jQuery && jQuery.isReady;")
   }
 
+  def waitForFileReadersToComplete = {
+    // There's no way to automate this, but file readers are generally quick
+    Thread.sleep(500)
+  }
+
   def waitForAjaxToComplete = {
     waitForJQuery
     waitForJavascriptBoolean("return jQuery.active == 0;")
@@ -180,7 +242,7 @@ object CommonSteps {
   def waitForJobsToComplete = {
     val timeoutInSeconds = 60
 
-    waitForBoolean(60) { (_: WebDriver) =>
+    waitForBoolean(timeoutInSeconds) { (_: WebDriver) =>
       OverviewDatabase.inTransaction {
         DocumentSetCreationJobFinder.all.count == 0
       }

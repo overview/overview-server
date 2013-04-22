@@ -1,6 +1,7 @@
 package steps
 
 import anorm._
+import org.fluentlenium.core.filter.Filter
 
 import models.OverviewDatabase
 import models.orm.DocumentSetUser
@@ -32,6 +33,7 @@ class DocumentSetShowSteps extends BaseSteps {
   When("""^I browse to the document set$"""){ () =>
     val url = documentSetUrl()
     Framework.browser.goTo(url)
+    CommonSteps.waitForAjaxToComplete
   }
 
   Then("""^I should see the tree$"""){ () =>
@@ -46,9 +48,28 @@ class DocumentSetShowSteps extends BaseSteps {
     Framework.browser.$("#document-list").size() must equalTo(1)
   }
 
+  Then("""^I should see the (Facebook|Twitter|DocumentCloud|secure|insecure) document "([^"]*)"$"""){ (docType:String, title:String) =>
+    DocumentSetShowSteps.clickDocument(title)
+    CommonSteps.waitForAjaxToComplete
+    val iframe = browser.findFirst("#document iframe").getElement
+    browser.webDriver.switchTo.frame(iframe)
+    browser.findFirst("h3").getText must beEqualTo(title)
+    val divClass = docType match {
+      case "Facebook" => "type-facebook"
+      case "Twitter" => "type-twitter"
+      case "DocumentCloud" => "type-documentcloud"
+      case "secure" => "type-secure"
+      case "insecure" => "type-insecure"
+      case _ => throw new AssertionError("Unknown docType %s".format(docType))
+    }
+    Option(browser.findFirst("div.%s".format(divClass))) must beSome
+    browser.webDriver.switchTo.defaultContent
+  }
 }
 
 object DocumentSetShowSteps {
+  private def browser = Framework.browser
+
   def createBasicDocumentSet(title: String = "basic") : Long = {
     implicit val connection = OverviewDatabase.currentConnection
 
@@ -69,5 +90,10 @@ object DocumentSetShowSteps {
     tieNodeToDocumentSql.on('node_id -> node3Id, 'document_id -> document2Id).execute()
     tieNodeToDocumentSql.on('node_id -> node3Id, 'document_id -> document3Id).execute()
     documentSetId
+  }
+
+  def clickDocument(title: String) : Unit = {
+    val elem = browser.findFirst("#document-list a", new Filter("title", title))
+    elem.click()
   }
 }

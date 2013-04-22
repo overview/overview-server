@@ -22,6 +22,10 @@ class DocumentSetSteps extends BaseSteps {
     browser.goTo(routes.DocumentSetController.index(0).url)
   }
 
+  When("""^I browse to the "([^"]*)" document set$"""){ (arg0:String) =>
+    throw new PendingException()
+  }
+
   When("""^I open the share dialog for "([^"]*)"$"""){ (title:String) =>
     val li = browser.findFirst(".document-sets li", withText.contains(title))
     val a = li.findFirst("a.show-sharing-settings")

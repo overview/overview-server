@@ -2,9 +2,11 @@ package steps
 
 import anorm.SQL
 import com.icegreen.greenmail.util.{ GreenMail, ServerSetupTest }
+import java.io.{ File, FileOutputStream }
 import java.sql.Connection
 import java.util.concurrent.TimeUnit
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
+//import org.openqa.selenium.remote.{ LocalFileDetector, RemoteWebDriver }
 import org.openqa.selenium.WebDriver
 import org.squeryl.{Session,SessionFactory}
 import play.api.mvc.Call
@@ -29,6 +31,7 @@ object Framework {
   private var testBrowser : Option[TestBrowser] = None
   private var testMailServer : Option[GreenMail] = None
   private var worker : Option[WorkerProcess] = None
+  private var onDiskTmpDir : Option[File] = None
 
   /*
    * anorm looks to Play.current, which means we need to call Play.start() on
@@ -84,6 +87,8 @@ object Framework {
     worker.map(_.start)
   }
 
+  def tmpDir : File = onDiskTmpDir.getOrElse(buildTmpDir)
+
   /** Makes OverviewDatabase.inTransaction() work.
     *
     * Tests will often want to write to the database or look for values in the
@@ -114,6 +119,45 @@ object Framework {
     testMailServer.map(_.start)
   }
 
+  /** Creates a new temporary directory and returns it.
+    *
+    * The return value will be stored in onDiskTmpDir.
+    */
+  private def buildTmpDir : File = {
+    // TODO upgrade to JDK7 and use Files.createTempDirectory()
+    val dir = File.createTempFile("cucumber", ".tmp")
+    dir.delete()
+    dir.mkdir()
+    onDiskTmpDir = Some(dir)
+    dir
+  }
+
+  def copyResourceToFileSomewhere(resource: String) : File = {
+    val inStream = getClass.getResourceAsStream("/%s".format(resource))
+    if (Option(inStream).isEmpty) throw new Exception("Cannot find resource \"%s\"".format(resource))
+    val outFile = new File(tmpDir.toString + File.separator + resource)
+    outFile.delete() // if it exists already
+    val outStream = new FileOutputStream(outFile)
+    while (inStream.available > 0) {
+      val buffer = new Array[Byte](inStream.available)
+      val nRead = inStream.read(buffer)
+      outStream.write(buffer)
+    }
+    inStream.close
+    outStream.close
+    outFile
+  }
+
+  private def recursiveDelete(f: File) : Unit = {
+    // TODO upgrade to JDK7 and remove/cleanup this code
+    if (f.isDirectory) {
+      f.listFiles.toArray.map(recursiveDelete(_))
+    }
+
+    val success = f.delete()
+    if (!success) throw new Exception("failed to delete '%s'".format(f))
+  }
+
   /** Initializes Framework.browser.
     *
     * Tests use Framework.browser to interact with the test server.
@@ -121,6 +165,7 @@ object Framework {
   private def setUpBrowser = {
     val browser = TestBrowser.firefox(Some("http://localhost:3333"))
     browser.manage.timeouts.setScriptTimeout(5, TimeUnit.SECONDS)
+    //browser.webDriver.asInstanceOf[RemoteWebDriver].setFileDetector(new LocalFileDetector)
     testBrowser = Some(browser)
   }
 
@@ -141,6 +186,8 @@ object Framework {
     testBrowser = None
     worker.map(_.stop)
     worker = None
+    onDiskTmpDir.map(recursiveDelete(_))
+    onDiskTmpDir = None
     //application.map(_ => Play.stop)
     //application = None
   }
