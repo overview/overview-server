@@ -9,7 +9,7 @@ class SearchResultSpec extends Specification {
 
     trait SearchContext extends Scope {
       val total = 29
-      val document1: Document = Document("dc id", "title", "public", "http://canonical-url")
+      val document1: Document = Document("dc id", "title", "public", "http://document-p{page}")
       val pageNum = 1
     }
     
@@ -40,7 +40,7 @@ class SearchResultSpec extends Specification {
       "source": "Cleveland Metroparks Zoo",
       "created_at": "Fri, 15 Feb 2013 19:23:24 +0000",
       "updated_at": "Wed, 20 Feb 2013 01:00:03 +0000",
-      "canonical_url": "${d.canonical_url}",
+      "canonical_url": "http://documentcloud.org/",
       "resources": {
         "pdf": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/circleofwildlifefigureinven.pdf",
         "text": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/circleofwildlifefigureinven.txt",
@@ -48,7 +48,7 @@ class SearchResultSpec extends Specification {
         "search": "https://www.documentcloud.org/documents/604056/search.json?q={query}",
         "print_annotations": "https://www.documentcloud.org/notes/print?docs[]=604056",
         "page": {
-          "text": "https://www.documentcloud.org/documents/604056/pages/circleofwildlifefigureinven-p{page}.txt",
+          "text": "${d.pageUrlTemplate}",
           "image": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/pages/circleofwildlifefigureinven-p{page}-{size}.gif"
         }
       }
