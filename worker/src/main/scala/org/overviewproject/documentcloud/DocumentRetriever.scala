@@ -9,12 +9,14 @@ import org.overviewproject.util.Logger
 object DocumentRetrieverProtocol {
   /** Start retrieving the document */
   case class Start()
+  
+  trait CompletionMessage
   /** Retrieval request succeeded, with resulting text */
-  case class GetTextSucceeded(d: Document, text: String)
+  case class GetTextSucceeded(d: Document, text: String) extends CompletionMessage
   /** Retrieval request completed but failed with the specified message */
-  case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+  case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None) extends CompletionMessage
   /** An error occurred when trying to retrieve the document */
-  case class GetTextError(t: Throwable)
+  case class GetTextError(t: Throwable) extends CompletionMessage
 }
 
 /**
@@ -45,8 +47,6 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
 
   private var retryAttempt: Int = 0
 
-  private def DocumentQuery(d: Document): String = s"https://www.documentcloud.org/api/documents/${d.id}.txt"
-
   def receive = {
     case Start() => requestDocument
     case Result(r) if isOk(r) => forwardResult(r.body)
@@ -57,7 +57,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   }
 
   def requestDocument: Unit = {
-    val query = DocumentQuery(document)
+    val query = document.url
 
     if (isPublic(document)) makePublicRequest(query)
     else makePrivateRequest(query)
@@ -67,31 +67,31 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
   private def isOk(r: SimpleResponse): Boolean = r.status == OkStatus
 
-  private def forwardResult(text: String): Unit = {
-    recipient ! GetTextSucceeded(document, text)
-    context.stop(self)
-  }
+  private def forwardResult(text: String): Unit = completeRetrieval(GetTextSucceeded(document, text))
 
   private def failRequest(r: SimpleResponse): Unit = {
-    Logger.warn(s"Unable to retrieve document from ${DocumentQuery(document)} ) access: ${document.access} status: ${r.status}\n${r.headersToString}\n${r.body}")
-    recipient ! GetTextFailed(DocumentQuery(document), r.body, Some(r.status), Some(r.headersToString))
-    context.stop(self)
+    Logger.warn(s"Unable to retrieve document from ${document.url} ) access: ${document.access} status: ${r.status}\n${r.headersToString}\n${r.body}")
+    completeRetrieval(GetTextFailed(document.url, r.body, Some(r.status), Some(r.headersToString)))
   }
 
   private def forwardError(t: Throwable): Unit = {
-    Logger.error(s"Unable to process ${DocumentQuery(document)}: ${t.getMessage()}")
-    recipient ! GetTextError(t)
-    context.stop(self)
+    Logger.error(s"Unable to process ${document.url}: ${t.getMessage()}")
+    completeRetrieval(GetTextError(t))
   }
 
   /**
    * We hope that exceptions are specific to this particular request, so we
    * convert it to a failure so the receiver will not abort.
    */
-  private def convertToFailure(t: Exception): Unit = {
-    recipient ! GetTextFailed(DocumentQuery(document), t.toString)
+  private def convertToFailure(t: Exception): Unit = completeRetrieval(GetTextFailed(document.url, t.toString))
+
+  
+  
+  private def completeRetrieval(message: CompletionMessage): Unit = {
+    recipient ! message
     context.stop(self)
   }
+  
 
   private def makePublicRequest(url: String): Unit = 
     if (retryAttempt == 0) requestQueue ! AddToEnd(PublicRequest(url))
@@ -109,7 +109,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def retryOr(giveUp: => Unit): Unit = {
     retryTimes(retryAttempt) match {
       case Some(delay) => {
-        Logger.warn(s"Scheduling retry attempt $retryAttempt for ${DocumentQuery(document)} access: ${document.access}")
+        Logger.warn(s"Scheduling retry attempt $retryAttempt for ${document.url} access: ${document.access}")
         import context.dispatcher
         context.system.scheduler.scheduleOnce(delay, self, Start())
         retryAttempt += 1
