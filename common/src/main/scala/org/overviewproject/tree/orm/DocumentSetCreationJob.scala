@@ -36,6 +36,7 @@ case class DocumentSetCreationJob(
   @Column("type") documentSetCreationJobType: DocumentSetCreationJobType,
   documentcloudUsername: Option[String] = None,
   documentcloudPassword: Option[String] = None,
+  splitDocuments: Boolean = false,
   contentsOid: Option[Long] = None,
   sourceDocumentSetId: Option[Long] = None,
   state: DocumentSetCreationJobState = NotStarted,

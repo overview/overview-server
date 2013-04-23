@@ -15,6 +15,7 @@ class JobRestarterSpec extends Specification with Mockito {
     val documentSetId = 1L
     val documentCloudUsername: Option[String] = None
     val documentCloudPassword: Option[String] = None
+    val splitDocuments: Boolean = false
     val contentsOid: Option[Long] = None
     val sourceDocumentSetId: Option[Long] = None
     

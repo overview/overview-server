@@ -195,7 +195,10 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       dcJob.documentCloudUsername.get must be equalTo (dcUsername)
     }
 
-
+    "have splitDocuments set" in new DocumentCloudJobSetup {
+      dcJob.splitDocuments must beFalse
+    }
+    
     "have contentsOid if available" in new CsvImportJobSetup {
       csvImportJob.contentsOid must beSome
       csvImportJob.contentsOid.get must be equalTo (contentsOid)
