@@ -4,7 +4,10 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 /** Information about a document stored by DocumentCloud */
-case class Document(id: String, title: String, access: String, pageUrlTemplate: String)
+case class Document(id: String, title: String, access: String, pageUrlTemplate: String) {
+  val url: String = s"https://www.documentcloud.org/api/documents/$id.txt"
+}
+
 /** Information from a DocumentCloud Search Result */
 case class SearchResult(total: Int, page: Int, documents: Seq[Document])
 
