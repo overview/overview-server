@@ -9,7 +9,7 @@ class SearchResultSpec extends Specification {
 
     trait SearchContext extends Scope {
       val total = 29
-      val document1: Document = Document("dc id", "title", "public", "http://document-p{page}")
+      val document1: Document = Document("dc id", "title", 1, "public", "http://document-p{page}")
       val pageNum = 1
     }
     

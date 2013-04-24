@@ -4,7 +4,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 /** Information about a document stored by DocumentCloud */
-case class Document(id: String, title: String, access: String, pageUrlTemplate: String) {
+case class Document(id: String, title: String, pages: Int, access: String, pageUrlTemplate: String) {
   val url: String = s"https://www.documentcloud.org/api/documents/$id.txt"
 }
 
@@ -17,6 +17,7 @@ object ConvertSearchResult {
   implicit private val documentReads = (
     (__ \ "id").read[String] and
     (__ \ "title").read[String] and
+    (__ \ "pages").read[Int] and
     (__ \ "access").read[String] and
     (__ \ "resources" \ "page" \ "text").read[String])(Document)
 

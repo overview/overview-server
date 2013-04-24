@@ -26,7 +26,7 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
     }
 
     trait PublicRetrievalSetup extends RetrievalSetup {
-      override val document = Document("id", "title", "public", "http://canonical-url")
+      override val document = Document("id", "title", 1, "public", "http://canonical-url")
     }
 
     trait SuccessfulResponse {
@@ -44,7 +44,7 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
     }
     
     trait PrivateRetrievalSetup extends RetrievalSetup {
-      override val document = Document("id", "title", "private", "http://canonical-url")
+      override val document = Document("id", "title", 1, "private", "http://canonical-url")
       override val credentials = Some(Credentials("user@host", "dcpassword"))
     }
 

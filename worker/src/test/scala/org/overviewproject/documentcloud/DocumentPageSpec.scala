@@ -12,8 +12,8 @@ class DocumentPageSpec extends Specification {
       val id = "documentCloudId"
       val title = "title"
       val pageUrlPrefix = "pageUrlTemplate-p"
-      val document = Document(id, title, "access", s"$pageUrlPrefix{page}")
       val pageNum = 5
+      val document = Document(id, title, pageNum, "access", s"$pageUrlPrefix{page}")
       val pageTitle = s"$title p.$pageNum" 
       val documentPage = new DocumentPage(document, pageNum)
     }
