@@ -35,8 +35,20 @@ class NodeDocumentClonerSpec extends DbSpecification {
       val documentIds = new DocumentSetIdGenerator(documentSetId)
       val cloneDocumentIds = new DocumentSetIdGenerator(cloneDocumentSetId)
       
-      val sourceNodes = Seq.tabulate(10)(i => Node(documentSetId, None, "node-" + i, 100, Array(), nodeIds.next))
-      val sourceDocuments = Seq.tabulate(10)(i => Document(CsvImportDocument, documentSetId, text = Some("text-" + i), id = documentIds.next))
+      val sourceNodes = Seq.tabulate(10)(i => Node(
+        id=nodeIds.next,
+        documentSetId=documentSetId,
+        parentId=None,
+        description="node-" + i,
+        cachedSize=100,
+        cachedDocumentIds=Array()
+      ))
+      val sourceDocuments = Seq.tabulate(10)(i => Document(
+        id=documentIds.next,
+        documentType=CsvImportDocument,
+        documentSetId=documentSetId,
+        text=Some("text-" + i)
+      ))
       val cloneNodes = sourceNodes.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneNodeIds.next))
       val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneDocumentIds.next))
 

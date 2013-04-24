@@ -28,8 +28,14 @@ class NodeWriter(documentSetId: Long) {
   }
 
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
-    val n = Node(documentSetId, parentId, node.description,
-      node.documentIdCache.numberOfDocuments, node.documentIdCache.documentIds, ids.next)
+    val n = Node(
+      id=ids.next,
+      documentSetId=documentSetId,
+      parentId=parentId,
+      description=node.description,
+      cachedSize=node.documentIdCache.numberOfDocuments,
+      cachedDocumentIds=node.documentIdCache.documentIds
+    )
 
     Schema.nodes.insert(n)
 

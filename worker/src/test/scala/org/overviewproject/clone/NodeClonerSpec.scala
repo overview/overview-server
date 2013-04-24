@@ -16,7 +16,14 @@ class NodeClonerSpec extends DbSpecification {
     def createTree(documentSetId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
       if (depth == 0) Nil
       else {
-        val child = Node(documentSetId, parentId, "node height: " + depth, 100, documentCache, ids.next)
+        val child = Node(
+          id=ids.next,
+          documentSetId=documentSetId,
+          parentId=parentId,
+          description="node height: " + depth,
+          cachedSize=100,
+          cachedDocumentIds=documentCache
+        )
 
         Schema.nodes.insert(child)
         child +: createTree(documentSetId, Some(child.id), depth - 1)
