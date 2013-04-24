@@ -52,14 +52,14 @@ trait NodeController extends Controller {
         form.bindFromRequest().fold(
           f => BadRequest,
           node => {
-            val savedNode = saveNode(node)
+            val savedNode = updateNode(node)
             Ok(views.json.Node.show(savedNode))
           })
     }
   }
 
   protected def findNode(documentSetId: Long, id: Long) : Option[Node]
-  protected def saveNode(node: Node) : Node
+  protected def updateNode(node: Node) : Node
 }
 
 object NodeController extends NodeController {
@@ -67,7 +67,7 @@ object NodeController extends NodeController {
     NodeFinder.byDocumentSetAndId(documentSetId, id).headOption
   }
 
-  override protected def saveNode(node: Node) = {
-    NodeStore.save(node)
+  override protected def updateNode(node: Node) = {
+    NodeStore.update(node)
   }
 }

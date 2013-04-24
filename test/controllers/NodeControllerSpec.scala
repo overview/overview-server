@@ -27,7 +27,7 @@ class NodeControllerSpec extends Specification {
       }
     }
 
-    override def saveNode(node: Node) = {
+    override def updateNode(node: Node) = {
       savedNode = Some(node)
       node
     }

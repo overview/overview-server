@@ -4,11 +4,15 @@ import org.squeryl.{ KeyedEntity, KeyedEntityDef, Query, Table }
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 
-class BaseStore[A](private val table: Table[A]) {
-  implicit private val ked: KeyedEntityDef[A,_] = table.ked.getOrElse(throw new AssertionError("Need KeyedEntityDef"))
+class BaseStore[A](protected val table: Table[A]) {
+  implicit protected val ked: KeyedEntityDef[A,_] = table.ked.getOrElse(throw new AssertionError("Need KeyedEntityDef"))
 
   def insertOrUpdate(a: A): A = {
     table.insertOrUpdate(a)
+  }
+
+  def insertBatch(as: Iterable[A]) : Unit = {
+    table.insert(as)
   }
 
   def delete(query: Query[A]): Unit = {
