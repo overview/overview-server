@@ -31,8 +31,16 @@ class NodeLoaderSpec extends Specification {
         root = Node(r.id, r.description, Seq.empty, DocumentIdList(Seq.empty, 0), Map())
       }
 
-      protected def createNode(parentId: Option[Long], description: String, size: Int = 0): OrmNode =
-        nodes.insert(OrmNode(documentSetId, parentId, description, size, Array[Long](), nextNodeId(documentSetId)))
+      protected def createNode(parentId: Option[Long], description: String, size: Int = 0): OrmNode = {
+        nodes.insert(OrmNode(
+          id=nextNodeId(documentSetId),
+          documentSetId=documentSetId,
+          parentId=parentId,
+          description=description,
+          cachedSize=size,
+          cachedDocumentIds=Array[Long]()
+        ))
+      }
     }
 
     trait SmallTreeContext extends NodeContext {
