@@ -39,7 +39,7 @@ object ResultPageSet {
     override def page(n: Int) = {
       import org.overviewproject.postgres.SquerylEntrypoint._ // for implicit queryToIterable
 
-      val items = query.page(pageSize * (n - 1), pageSize)
+      val items = query.page(pageSize * (n - 1), pageSize).toIterable
       val details = ResultPageDetails(pageSize, n, totalLength)
 
       ResultPage(items, details)
