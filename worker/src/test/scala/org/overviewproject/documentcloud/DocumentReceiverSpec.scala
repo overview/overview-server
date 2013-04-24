@@ -30,7 +30,7 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       
       def before = {
     	retrievalDone = Promise[Seq[DocumentRetrievalError]]
-    	receiver = TestActorRef(new DocumentReceiver(callback, ExpectedDocuments, retrievalDone))
+    	receiver = TestActorRef(new DocumentReceiver(callback, retrievalDone))
       }
     }
     

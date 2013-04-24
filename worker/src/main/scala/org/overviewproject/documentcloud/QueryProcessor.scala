@@ -148,7 +148,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
   def findOrCreateDocumentReceiver(numberOfDocuments: Int): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
       case ref if ref.isTerminated =>
-        context.actorOf(Props(new DocumentReceiver(processDocument, numberOfDocuments, queryInformation.errors)), ReceiverActorName)
+        context.actorOf(Props(new DocumentReceiver(processDocument, queryInformation.errors)), ReceiverActorName)
       case existingReceiver => existingReceiver
     }
   }

@@ -26,7 +26,7 @@ object DocumentReceiverProtocol {
  * @param numberOfDocuments The number of documents to retrieved
  * @param finished Contains information about any failed document retrieval attempts
  */
-class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocuments: Int, finished: Promise[Seq[DocumentRetrievalError]]) extends Actor {
+class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Promise[Seq[DocumentRetrievalError]]) extends Actor {
   import DocumentReceiverProtocol._
   
   var receivedDocuments: Int = 0 
