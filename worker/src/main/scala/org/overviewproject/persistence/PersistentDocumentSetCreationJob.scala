@@ -8,7 +8,7 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJobType
+import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
 import org.overviewproject.database.Database
@@ -21,17 +21,17 @@ trait PersistentDocumentSetCreationJob {
 
   val documentSetId: Long
 
-  val jobType: DocumentSetCreationJobType
+  val jobType: DocumentSetCreationJobType.Value
   val splitDocuments: Boolean
 
   // Only some jobs require DocumentCloud credentials
   val documentCloudUsername: Option[String]
   val documentCloudPassword: Option[String]
-  
-  // Only CsvImportJobs require contentsOid
+
+  // Only CsvUpload jobs require contentsOid
   val contentsOid: Option[Long]
 
-  // Only CloneJobs require sourceDocumentSetId
+  // Only Clone jobs require sourceDocumentSetId
   val sourceDocumentSetId: Option[Long]
 
   var state: DocumentSetCreationJobState
@@ -75,7 +75,7 @@ object PersistentDocumentSetCreationJob {
   private class PersistentDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob)
     extends PersistentDocumentSetCreationJob {
     val documentSetId: Long = documentSetCreationJob.documentSetId
-    val jobType: DocumentSetCreationJobType = documentSetCreationJob.documentSetCreationJobType
+    val jobType: DocumentSetCreationJobType.Value = documentSetCreationJob.jobType
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val splitDocuments: Boolean = documentSetCreationJob.splitDocuments

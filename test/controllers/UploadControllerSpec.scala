@@ -37,7 +37,7 @@ class UploadControllerSpec extends Specification with Mockito {
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
     def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
-    def startDocumentSetCreationJob(upload: OverviewUpload) { jobStarted = true }
+    def createDocumentSetCreationJob(upload: OverviewUpload) { jobStarted = true }
   }
 
   trait UploadContext[A] extends Scope {

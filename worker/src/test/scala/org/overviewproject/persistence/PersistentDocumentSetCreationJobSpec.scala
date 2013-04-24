@@ -15,29 +15,48 @@ import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJobType._
+import org.overviewproject.tree.DocumentSetCreationJobType
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   step(setupDb)
 
   def insertDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState): Long = {
-    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state)
+    val job = DocumentSetCreationJob(
+      documentSetId = documentSetId,
+      jobType = DocumentSetCreationJobType.DocumentCloud,
+      state = state
+    )
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
   def insertDocumentCloudJob(documentSetId: Long, state: DocumentSetCreationJobState, dcUserName: String, dcPassword: String): Long = {
-    val job = DocumentSetCreationJob(documentSetId, DocumentCloudJob, state = state, documentcloudUsername = Some(dcUserName), documentcloudPassword = Some(dcPassword))
+    val job = DocumentSetCreationJob(
+      documentSetId = documentSetId,
+      jobType = DocumentSetCreationJobType.DocumentCloud,
+      state = state,
+      documentcloudUsername = Some(dcUserName),
+      documentcloudPassword = Some(dcPassword))
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
   def insertCsvImportJob(documentSetId: Long, state: DocumentSetCreationJobState, contentsOid: Long): Long = {
-    val job = DocumentSetCreationJob(documentSetId, CsvImportJob, state = state, contentsOid = Some(contentsOid))
+    val job = DocumentSetCreationJob(
+      documentSetId = documentSetId,
+      jobType = DocumentSetCreationJobType.CsvUpload,
+      state = state,
+      contentsOid = Some(contentsOid)
+    )
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
   def insertCloneJob(documentSetId: Long, state: DocumentSetCreationJobState, sourceDocumentSetId: Long): Long = {
-    val job = DocumentSetCreationJob(documentSetId, CloneJob, state = state, sourceDocumentSetId = Some(sourceDocumentSetId))
+    val job = DocumentSetCreationJob(
+      documentSetId = documentSetId,
+      jobType = DocumentSetCreationJobType.Clone,
+      state = state,
+      sourceDocumentSetId = Some(sourceDocumentSetId)
+    )
     Schema.documentSetCreationJobs.insertOrUpdate(job).id
   }
 
@@ -221,7 +240,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
     
     "have a type" in new CsvImportJobSetup {
-      csvImportJob.jobType.value must be equalTo(CsvImportJob.value)
+      csvImportJob.jobType must be equalTo(DocumentSetCreationJobType.CsvUpload)
     }
     
     "refresh job state" in new JobSetup {

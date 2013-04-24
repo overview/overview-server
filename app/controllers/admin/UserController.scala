@@ -5,7 +5,9 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.forms.AdminUserForm
 import models.OverviewUser
-import models.orm.DocumentSet
+import models.orm.User
+import models.orm.finders.{ UserFinder, DocumentSetFinder }
+import models.orm.stores.UserStore
 
 object UserController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
@@ -16,8 +18,8 @@ object UserController extends Controller {
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
-    OverviewUser.findById(id).map({ otherUser =>
-      AdminUserForm(otherUser).bindFromRequest().fold(
+    UserFinder.byId(id).headOption.map({ otherUser =>
+      AdminUserForm(OverviewUser(otherUser)).bindFromRequest().fold(
         formWithErrors => BadRequest,
         updatedUser => {
           updatedUser.save
@@ -28,18 +30,20 @@ object UserController extends Controller {
   }
 
   def delete(id: Long) = AuthorizedAction(adminUser) { implicit request =>
-    OverviewUser.findById(id).map({ otherUser =>
+    UserFinder.byId(id).headOption.map({ otherUser =>
       if (otherUser.id == request.user.id) {
         BadRequest
       } else {
-        val documentSets = DocumentSet.findByUserIdOrderedByCreatedAt(otherUser.email)
-        if (documentSets.headOption.isEmpty) {
-          otherUser.delete
-          Redirect(routes.UserController.index()).
-            flashing("success" -> m("delete.success", otherUser.email))
+        if (DocumentSetFinder.byOwner(otherUser.email).count == 0) {
+          import org.overviewproject.postgres.SquerylEntrypoint._
+          UserStore.delete(otherUser.id)
+          Redirect(routes.UserController.index())
+            .flashing("success" -> m("delete.success", otherUser.email))
         }
-        else Redirect(routes.UserController.index()).flashing("error" -> m("delete.failure", otherUser.email))
-        
+        else {
+          Redirect(routes.UserController.index())
+            .flashing("error" -> m("delete.failure", otherUser.email))
+        }
       }
     }).getOrElse(NotFound)
   }

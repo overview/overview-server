@@ -1,7 +1,7 @@
 @(
   user: OverviewUser,
-  documentSets: ResultPage[OverviewDocumentSet],
-  jobsWithDocumentSets: ResultPage[(OverviewDocumentSetCreationJob,OverviewDocumentSet)],
+  documentSets: ResultPage[models.orm.DocumentSet],
+  jobs: ResultPage[(org.overviewproject.tree.orm.DocumentSetCreationJob,models.orm.DocumentSet,Long)],
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash)
 
@@ -39,7 +39,7 @@
 )}
 
 @**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
-@displayDocumentSet(documentSet: OverviewDocumentSet) = {
+@displayDocumentSet(documentSet: models.orm.DocumentSet) = {
   @views.html.DocumentSet._documentSet(documentSet, user)
 }
 
@@ -47,19 +47,17 @@
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
     @views.html.DocumentSet._import(user, form)
 
-    @if(jobsWithDocumentSets) {
+    @if(jobs) {
       <div class="document-set-creation-jobs" data-refresh-url="@routes.DocumentSetCreationJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
         <h2>@m("subtitle_jobs")</h2>
         <p class="description">@m("description_jobs")</p>
         <ul class="unstyled">
-          @jobsWithDocumentSets.map { tuple: (OverviewDocumentSetCreationJob,OverviewDocumentSet) =>
-            @views.html.DocumentSetCreationJob._documentSetCreationJob(tuple._1, tuple._2)
-          }
+          @jobs.toIterable.map(Function.tupled(views.html.DocumentSetCreationJob._documentSetCreationJob.apply))
         </ul>
       </div>
     }
 
-    @if(documentSets || jobsWithDocumentSets) {
+    @if(documentSets || jobs) {
       <div class="document-sets">
         <ul class="unstyled">
           @documentSets.map(displayDocumentSet(_))

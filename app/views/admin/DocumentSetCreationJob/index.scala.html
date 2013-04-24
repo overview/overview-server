@@ -1,11 +1,10 @@
 @(
   user: OverviewUser,
-  jobs: Seq[models.OverviewDocumentSetCreationJob]
+  jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,models.orm.DocumentSet,models.orm.User)]
 )(implicit lang: Lang, flash: Flash)
 
 @import org.overviewproject.tree.Ownership
 @import models.orm.finders.DocumentSetUserFinder
-@import models.orm.DocumentSetUser
 @import views.html.helper.EnumToString
 
 @defining(scopedMessages("views.admin.DocumentSetCreationJob.index")) { m =>
@@ -25,19 +24,17 @@
         </tr>
       </thead>
       <tbody>
-        @jobs.map { job =>
-          @defining(OverviewDocumentSet.findById(job.documentSetId).get) { documentSet =>
+        @jobs.map { case (job, documentSet, owner) =>
           <tr>
             <td class="id">@job.id</td>
             <td class="date-started">@m("td.created_at", documentSet.createdAt)</td>
             <td class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString)</td>
             <td class="fraction-complete"><progress min="0" max="1" value="@job.fractionComplete"></progress>@((job.fractionComplete * 100).toInt)%</td>
-            <td class="state-description">@job.stateDescription</td>
-            @DocumentSetUserFinder.byDocumentSetAndRole(documentSet.id, Ownership.Owner).map{ owner: DocumentSetUser => <td class="email">@owner.userEmail</td> }
+            <td class="state-description">@job.statusDescription</td>
+            <td class="email">@owner.email</td>
             <td class="title">@documentSet.title</td>
-            <td class="query">@documentSet.query</td>
+            <td class="query">@documentSet.query.getOrElse("")</td>
           </tr>
-          }
         }
       </tbody>
     </table>

@@ -2,10 +2,12 @@ package org.overviewproject.util
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
+import org.specs2.mutable.Before
+
 import org.overviewproject.http.DocumentCloudDocumentProducer 
 import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
-import org.specs2.mutable.Before
 import org.overviewproject.csv.CsvImportDocumentProducer
+import org.overviewproject.tree.DocumentSetCreationJobType
 
 class DocumentProducerFactorySpec extends Specification with Mockito {
 
@@ -22,6 +24,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
     
     trait DocumentCloudJobContext extends DocumentSetCreationJobContext {
+      documentSetCreationJob.jobType returns DocumentSetCreationJobType.DocumentCloud
       override def before() = {
         documentSetCreationJob.contentsOid returns None
         super.before
@@ -29,6 +32,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
     
     trait CsvImportJobContext extends DocumentSetCreationJobContext {
+      documentSetCreationJob.jobType returns DocumentSetCreationJobType.CsvUpload
       override def before() = {
         documentSetCreationJob.contentsOid returns Some(0l)
         super.before
@@ -36,8 +40,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
 
     "create a DocumentCloudDocumentProducer" in new DocumentCloudJobContext {
-
-      val documentSet = DocumentSet("DocumentCloudDocumentSet", "title", Some("query"))
+      val documentSet = DocumentSet(title="title", query=Some("query"))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, { _ => true })
 
       producer match {
@@ -47,7 +50,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
 
     "create a CsvImportDocumentProducer" in new CsvImportJobContext {
-      val documentSet = DocumentSet("CsvImportDocumentSet", "title", uploadedFileId = Some(100l))
+      val documentSet = DocumentSet(title="title", uploadedFileId = Some(100l))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, {_ => true })
 
       producer match {

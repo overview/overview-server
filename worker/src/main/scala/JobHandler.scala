@@ -13,7 +13,7 @@ import org.overviewproject.persistence._
 import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
 import org.overviewproject.util.Progress._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJobType._
+import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
 import org.overviewproject.http.DocumentCloudDocumentProducer 
@@ -50,9 +50,9 @@ object JobHandler {
         j.state == Cancelled
       }
 
-      j.jobType.value match {
-        case CsvImportJob.value | DocumentCloudJob.value => handleCreationJob(j, progFn)
-        case CloneJob.value => handleCloneJob(j)
+      j.jobType match {
+        case DocumentSetCreationJobType.CsvUpload | DocumentSetCreationJobType.DocumentCloud => handleCreationJob(j, progFn)
+        case DocumentSetCreationJobType.Clone => handleCloneJob(j)
       }
 
       Database.inTransaction { j.delete }
@@ -154,7 +154,7 @@ object JobHandler {
     def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
       val query = ds.query.map(q => s"Query: $q").getOrElse("")
       val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
-      s"Creating DocumentSet: ${job.documentSetId} Type: ${ds.documentSetType} Title: ${ds.title} $query $uploadId".trim
+      s"Creating DocumentSet: ${job.documentSetId} Title: ${ds.title} $query $uploadId".trim
     }.getOrElse(s"Creating DocumentSet: Could not load document set id: ${job.documentSetId}")
 
     Logger.info(documentSetInfo(documentSet))

@@ -9,9 +9,10 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import helpers.FakeOverviewDocumentSet
-import models.orm.DocumentSetType._
-import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser, ResultPage }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.DocumentSetCreationJobType
+import models.orm.DocumentSet
+import models.{ OverviewUser, ResultPage }
 
 class indexSpec extends Specification {
 
@@ -20,10 +21,10 @@ class indexSpec extends Specification {
     lazy val ormUser = new models.orm.User()
     lazy val user = OverviewUser(ormUser)
 
-    val jobsWithDocumentSets : Seq[(OverviewDocumentSetCreationJob, OverviewDocumentSet)] = Seq()
-    implicit lazy val jobsPage = ResultPage(jobsWithDocumentSets, 10, 1)
+    val jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
+    implicit lazy val jobsPage = ResultPage(jobs, 10, 1)
 
-    val documentSets: Seq[OverviewDocumentSet] = Seq()
+    val documentSets: Seq[DocumentSet] = Seq()
     implicit lazy val documentSetsPage = ResultPage(documentSets, 10, 1)
 
     implicit lazy val j = jerry(index(user, documentSetsPage, jobsPage, form).body)
@@ -31,15 +32,15 @@ class indexSpec extends Specification {
   }
 
   trait ViewContextWithJob extends ViewContext {
-    val job = mock[OverviewDocumentSetCreationJob]
+    val job = mock[DocumentSetCreationJob]
     job.state returns InProgress
-    job.stateDescription returns "someKey"
-    val documentSet = mock[OverviewDocumentSet.DocumentCloudDocumentSet]
+    job.statusDescription returns "someKey"
+    val documentSet = mock[DocumentSet]
     documentSet.id returns 1L
     documentSet.title returns "Title"
-    documentSet.query returns "query"
+    documentSet.query returns Some("query")
 
-    override val jobsWithDocumentSets = Seq((job, documentSet))
+    override val jobs = Seq((job, documentSet, 0L))
   }
 
   val form = controllers.forms.DocumentSetForm()
@@ -52,7 +53,7 @@ class indexSpec extends Specification {
     }
 
     "Show DocumentSets if there are some" in new ViewContext {
-      override val documentSets = Seq(FakeOverviewDocumentSet())
+      override val documentSets = Seq(DocumentSet())
       $(".document-sets").length must beEqualTo(1)
     }
 
@@ -74,9 +75,9 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       override val documentSets = Seq(
-        FakeOverviewDocumentSet(1, "title1", "query1"),
-        FakeOverviewDocumentSet(2, "title2", "query2"))
-
+        DocumentSet(id=1, title="title1", query=Some("query1")),
+        DocumentSet(id=2, title="title2", query=Some("query2"))
+      )
       $(".document-sets").length must equalTo(1)
       $(".document-sets li#document-set-1 h2 a").attr("href") must endWith("/1")
       $(".document-sets li#document-set-2").text must contain("title2")
@@ -84,9 +85,9 @@ class indexSpec extends Specification {
     
     "Define error-list popup if there are DocumentSets" in new ViewContext {
       override val documentSets = Seq(
-        FakeOverviewDocumentSet(1, "title1", "query1"),
-        FakeOverviewDocumentSet(2, "title2", "query2"))
-
+        DocumentSet(id=1, title="title1", query=Some("query1")),
+        DocumentSet(id=2, title="title2", query=Some("query2"))
+      )
       $("#error-list-modal").length must beEqualTo(1)
     }
 

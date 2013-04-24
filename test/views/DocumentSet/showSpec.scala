@@ -5,14 +5,15 @@ import org.specs2.specification.Scope
 import play.api.libs.json.Json.toJson
 
 import org.overviewproject.test.Specification
-import models.{ OverviewDocumentSet, OverviewUser }
+import models.orm.DocumentSet
+import models.OverviewUser
 
 class showSpec extends Specification {
 
   "DocumentSet view generated Json" should {
     trait DocumentSetContext extends Scope with Mockito {
-      val documentSet = mock[OverviewDocumentSet]
-      val user = mock[OverviewUser]
+      val documentSet = DocumentSet()
+      val user = mock[OverviewUser].smart
       user.isAdministrator returns false
       
       lazy val documentSetJson = show(user, documentSet).toString

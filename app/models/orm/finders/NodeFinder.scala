@@ -1,11 +1,12 @@
 package models.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import models.orm.{ DocumentSet, Schema }
+import org.overviewproject.tree.orm.Node
+import models.orm.Schema
 
-object NodeFinder {
+object NodeFinder extends Finder {
   /** @return All Nodes in a DocumentSet. */
-  def byDocumentSet(documentSet: Long) = {
+  def byDocumentSet(documentSet: Long) : FinderResult[Node] = {
     from(Schema.nodes)(n =>
       where(n.documentSetId === documentSet)
       select(n)
@@ -17,7 +18,7 @@ object NodeFinder {
    * This returns an org.squeryl.Query. Call `single` on it to return the
    * result or throw an exception; call `.headOption` to make it an Option.
    */
-  def byDocumentSetAndId(documentSet: Long, id: Long) = {
+  def byDocumentSetAndId(documentSet: Long, id: Long) : FinderResult[Node] = {
     from(Schema.nodes)(n =>
       where(n.documentSetId === documentSet and n.id === id)
       select(n)

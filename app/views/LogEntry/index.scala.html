@@ -1,7 +1,7 @@
 @(
   user: OverviewUser,
   documentSet: models.orm.DocumentSet,
-  logEntries: Seq[models.orm.LogEntry]
+  logEntries: Iterable[(models.orm.LogEntry,models.orm.User)]
 )(implicit lang: Lang, flash: Flash)
 
 @main(optionalUser=Some(user), title="Log", h1="Log") {
@@ -18,9 +18,9 @@
       </tr>
     </thead>
     <tbody>
-      @logEntries.map { entry =>
+      @logEntries.map { case (entry, user) =>
         <tr>
-          <td class="email">@entry.user.email</td>
+          <td class="email">@user.email</td>
           <td class="date">@entry.date</td>
           <td class="component">@entry.component</td>
           <td class="action">@entry.action</td>

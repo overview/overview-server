@@ -1,6 +1,7 @@
 @(
-  job: OverviewDocumentSetCreationJob,
-  documentSet: OverviewDocumentSet
+  job: org.overviewproject.tree.orm.DocumentSetCreationJob,
+  documentSet: models.orm.DocumentSet,
+  nAheadInQueue: Long
 )(implicit lang: Lang)
 @import views.helper.DocumentSetHelper
 @defining(scopedMessages("views.DocumentSetCreationJob._documentSetCreationJob")) { m =>
@@ -10,21 +11,17 @@
     </form>
     <h2>@documentSet.title</h2>
     <h3>
-      @documentSet match {
-        case ds: OverviewDocumentSet.DocumentCloudDocumentSet => {
-          @m("subtitle.query", ds.query)
-        }
-        case _ => {
-          @m("subtitle.other")
-        }
-      }
+      @(documentSet.query match {
+        case Some(query) => m("subtitle.query", query)
+        case None => m("subtitle.other")
+      })
     </h3>
     <p class="status">
       <label>
         <progress min="0" max="100" value="@scala.math.round(job.fractionComplete * 100)"></progress><!-- IE9 needs start+end tags -->
         <span class="state">@t("models.DocumentSetCreationJob.state." + job.state.toString())</span>
       </label>
-      <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job)</span>
+      <span class="state-description">@DocumentSetHelper.jobDescriptionMessage(job, nAheadInQueue)</span>
     </p>
   </li>
 }

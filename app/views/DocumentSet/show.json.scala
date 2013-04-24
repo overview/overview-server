@@ -4,21 +4,14 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
-import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser }
+import models.orm.DocumentSet
+import models.OverviewUser
 
 object show {
-  private def documentSetToJson(user: OverviewUser, documentSet: OverviewDocumentSet)(implicit lang: Lang): JsValue = {
-    val documentSetMap = Map(
+  def apply(user: OverviewUser, documentSet: DocumentSet)(implicit lang: Lang): JsValue = {
+    toJson(Map(
       "id" -> toJson(documentSet.id),
       "html" -> toJson(views.html.DocumentSet._documentSet(documentSet, user).toString)
-    )
-
-    toJson(documentSetMap)
-  }
-
-  def apply(user: OverviewUser, documentSet: OverviewDocumentSet): JsValue = {
-    documentSetToJson(user, documentSet)
+    ))
   }
 }

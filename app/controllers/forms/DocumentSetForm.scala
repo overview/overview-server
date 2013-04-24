@@ -4,7 +4,6 @@ import play.api.data.Form
 import play.api.data.Forms
 
 import models.orm.DocumentSet
-import models.orm.DocumentSetType.DocumentCloudDocumentSet
 
 object DocumentSetForm {
   case class Credentials(val username: Option[String], val password: Option[String])
@@ -19,7 +18,7 @@ object DocumentSetForm {
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text)
       )
-      ((title, query, username, password) => (DocumentSet(DocumentCloudDocumentSet, 0L, title, Some(query)), Credentials(username, password)))
+      ((title, query, username, password) => (DocumentSet(title=title, query=Some(query)), Credentials(username, password)))
       ((tuple) => Some((tuple._1.title, tuple._1.query.getOrElse(""), tuple._2.username, tuple._2.password)))
     )
   }

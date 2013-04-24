@@ -4,7 +4,7 @@ import org.fluentlenium.core.filter.FilterConstructor.withText
 
 import controllers.routes
 import models.OverviewDatabase
-import models.orm.{ DocumentSet, DocumentSetType, DocumentSetUser }
+import models.orm.{ DocumentSet, DocumentSetUser }
 import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.tree.Ownership
@@ -85,7 +85,6 @@ object DocumentSetSteps {
     CommonSteps.ensureUser(ownerEmail)
     OverviewDatabase.inTransaction {
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
-        documentSetType=DocumentSetType.DocumentCloudDocumentSet,
         query=Some("query"),
         title=title,
         isPublic=isPublic

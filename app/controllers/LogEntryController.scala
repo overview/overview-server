@@ -15,44 +15,46 @@ import org.joda.time.format.ISODateTimeFormat
 
 import au.com.bytecode.opencsv.CSVWriter
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import models.{OverviewDatabase,OverviewUser}
-import models.orm.{DocumentSet,LogEntry}
-import models.orm.LogEntry.ImplicitHelper._
+import models.{OverviewDatabase,OverviewUser,ResultPage}
+import models.orm.{ DocumentSet, LogEntry, User }
+import models.orm.finders.{ DocumentSetFinder, LogEntryFinder }
+import models.orm.stores.LogEntryStore
 
 trait LogEntryController extends Controller {
-  def findOrmDocumentSetById(id: Long): Option[DocumentSet]
+  trait Storage {
+    def findDocumentSet(documentSetId: Long) : Option[DocumentSet]
+    def findLogEntries(documentSetId: Long, pageSize: Int, page: Int) : ResultPage[(LogEntry,User)]
+
+    def insertLogEntries(logEntries: Iterable[LogEntry]) : Unit
+  }
 
   def index(id: Long, extension: String) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
-    findOrmDocumentSetById(id).map({ documentSet =>
-      val logEntries = documentSet.orderedLogEntries.page(0, 5000).toSeq.withUsers
+    storage.findDocumentSet(id) match {
+      case Some(documentSet) =>
+        val logEntries = storage.findLogEntries(documentSet.id, 5000, 1)
 
-      extension match {
-        case ".csv" => logEntriesToCsv(logEntries)
-        case _ => Ok(views.html.LogEntry.index(request.user, documentSet, logEntries))
-      }
-    }).getOrElse(
-      NotFound("Invalid document set ID")
-    )
+        extension match {
+          case ".csv" => logEntriesToCsv(logEntries)
+          case _ => Ok(views.html.LogEntry.index(request.user, documentSet, logEntries))
+        }
+      case None => NotFound("Invalid document set ID")
+    }
   }
 
   def createMany(id: Long) = AuthorizedAction(BodyParsers.parse.tolerantJson, userOwningDocumentSet(id)) { implicit request =>
     request.body match {
       case jsArray: JsArray =>
-        var ok = true
+        val parsed : Iterable[Either[String,LogEntry]] = jsArray.as[List[JsValue]].map(parseLogEntry(id, request.user, _))
+        val (errorsAsEithers, entriesAsEithers) = parsed.partition(_.isLeft)
 
-        for (jsValue <- jsArray.as[List[JsValue]]) {
-          ok &&= verifyAndInsertLogEntry(id, request.user, jsValue)
-        }
-
-        if (ok) {
-          Ok("added log entries")
+        if (errorsAsEithers.isEmpty) {
+          val entries = entriesAsEithers.map(_.right.get)
+          storage.insertLogEntries(entries)
+          Ok("ok")
         } else {
-          OverviewDatabase.currentConnection.rollback()
-          BadRequest(createManyJsonInstructions)
+          BadRequest(errorsAsEithers.head.left.get)
         }
       case _ => BadRequest(createManyJsonInstructions)
     }
@@ -93,38 +95,48 @@ trait LogEntryController extends Controller {
     ((le: LogEntry) => Some(le.date, le.component, le.action, Some(le.details)))
   )
 
-  private def logEntriesToCsv(logEntries: Seq[LogEntry]) = {
+  private def logEntriesToCsv(logEntries: Iterable[(LogEntry,User)]) = {
     val stringWriter = new StringWriter()
     val csvWriter = new CSVWriter(stringWriter)
     csvWriter.writeNext(Array("date", "email", "component", "action", "details"))
-    logEntries.foreach({ e =>
-      csvWriter.writeNext(Array(isoDateTimeFormat.print(new DateTime(e.date)), e.user.email, e.component, e.action, e.details))
+    logEntries.foreach({ case (logEntry, user) =>
+      csvWriter.writeNext(Array(
+        isoDateTimeFormat.print(new DateTime(logEntry.date)),
+        user.email,
+        logEntry.component,
+        logEntry.action,
+        logEntry.details
+      ))
     })
     csvWriter.close()
     Ok(stringWriter.toString()).as("text/csv")
   }
 
-  private def verifyAndInsertLogEntry(documentSetId: Long, user: OverviewUser, jsValue: JsValue) : Boolean = {
-    jsValueToMap(jsValue).map(m =>
-      logEntryForm(documentSetId, user).bind(m).fold(
-        formWithErrors => false,
-        logEntry => { logEntry.save; true }
-      )
-    ).getOrElse(false)
+  private def parseLogEntry(documentSetId: Long, user: OverviewUser, jsValue: JsValue) : Either[String,LogEntry] = {
+    logEntryForm(documentSetId, user).bind(jsValue).fold(
+      formWithErrors => Left(formWithErrors.errors.toString),
+      logEntry => Right(logEntry)
+    )
   }
 
-  private def jsValueToMap(jsValue: JsValue) : Option[Map[String,String]] = {
-    jsValue match {
-      case jsObject: JsObject =>
-        Some(jsObject.fields.toMap.mapValues(_ match {
-          case s: JsString => s.value
-          case _ => ""
-        }))
-      case _ => None
-    }
-  }
+  protected val storage : LogEntryController.Storage
 }
 
 object LogEntryController extends LogEntryController {
-  def findOrmDocumentSetById(id: Long) = DocumentSet.findById(id)
+  object DatabaseStorage extends Storage {
+    override def findDocumentSet(documentSetId: Long) = {
+      DocumentSetFinder.byDocumentSet(documentSetId).headOption
+    }
+
+    override def findLogEntries(documentSetId: Long, pageSize: Int, page: Int) = {
+      val logEntries = LogEntryFinder.byDocumentSet(documentSetId).withUsers
+      ResultPage(logEntries, pageSize, page)
+    }
+
+    override def insertLogEntries(logEntries: Iterable[LogEntry]) = {
+      LogEntryStore.insertBatch(logEntries)
+    }
+  }
+
+  override val storage = DatabaseStorage
 }

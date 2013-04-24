@@ -2,17 +2,32 @@ package controllers
 
 import play.api.mvc.Controller
 
-import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
-import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
-import models.orm.stores.DocumentSetUserStore
-import models.orm.{ DocumentSet, User, DocumentSetUser }
-import models.{ OverviewDocumentSet, OverviewDocumentSetCreationJob, ResultPage }
+import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, DocumentSetUserFinder }
+import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import models.orm.{ DocumentSet, DocumentSetUser }
+import models.ResultPage
 
 trait DocumentSetController extends Controller {
   import Authorities._
+
+  trait Storage {
+    def findDocumentSet(id: Long): Option[DocumentSet]
+    def findDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[DocumentSet]
+    def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
+
+    def insertCloneOfDocumentSet(documentSet: DocumentSet): DocumentSet
+    def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
+    def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit
+    def insertOrUpdateDocumentSetCreationJob(job: DocumentSetCreationJob): Unit
+
+    def deleteDocumentSet(documentSet: DocumentSet): Unit
+  }
 
   private val form = DocumentSetForm()
   private val pageSize = 10
@@ -20,23 +35,22 @@ trait DocumentSetController extends Controller {
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = loadDocumentSets(request.user.email, pageSize, realPage)
-    val jobs = loadDocumentSetCreationJobs(request.user.email, pageSize, 1)
+    val documentSets = storage.findDocumentSets(request.user.email, pageSize, realPage)
+    val jobs = storage.findDocumentSetCreationJobs(request.user.email, jobPageSize, 1)
 
     Ok(views.html.DocumentSet.index(request.user, documentSets, jobs, form))
   }
 
   def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    val documentSet = OverviewDocumentSet.findById(id)
-    documentSet match {
-      case Some(ds) => Ok(views.html.DocumentSet.show(request.user, ds))
+    storage.findDocumentSet(id) match {
+      case Some(documentSet) => Ok(views.html.DocumentSet.show(request.user, documentSet))
       case None => NotFound
     }
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    OverviewDocumentSet.findById(id) match {
-      case Some(ds) => Ok(views.json.DocumentSet.show(request.user, ds))
+    storage.findDocumentSet(id) match {
+      case Some(documentSet) => Ok(views.json.DocumentSet.show(request.user, documentSet))
       case None => NotFound
     }
   }
@@ -44,24 +58,32 @@ trait DocumentSetController extends Controller {
   def create() = AuthorizedAction(anyUser) { implicit request =>
     form.bindFromRequest().fold(
       f => index(1)(request),
-      (tuple) => {
-        val documentSet = tuple._1
-        val credentials = tuple._2
-
-        val saved = saveDocumentSet(documentSet)
-        val dsu = DocumentSetUser(saved.id, request.user.email, Ownership.Owner)
-        insertOrUpdateDocumentSetUser(dsu)
-        createDocumentSetCreationJob(saved, credentials)
+      Function.tupled { (formDocumentSet: DocumentSet, credentials: Credentials) =>
+        val documentSet = storage.insertOrUpdateDocumentSet(formDocumentSet)
+        storage.insertOrUpdateDocumentSetUser(
+          DocumentSetUser(documentSet.id, request.user.email, Ownership.Owner)
+        )
+        storage.insertOrUpdateDocumentSetCreationJob(
+          DocumentSetCreationJob(
+            documentSetId=documentSet,
+            state = NotStarted,
+            jobType = DocumentSetCreationJobType.DocumentCloud,
+            // query = ... XXX "query" belongs here, not in DocumentSet
+            documentcloudUsername = credentials.username,
+            documentcloudPassword = credentials.password
+          )
+        )
 
         Redirect(routes.DocumentSetController.index()).flashing(
           "event" -> "document-set-create"
         )
-      })
+      }
+    )
   }
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-    OverviewDocumentSet.delete(id)
+    storage.findDocumentSet(id).map(storage.deleteDocumentSet) // ignore not-found
     Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m("delete.success"),
       "event" -> "document-set-delete"
@@ -69,11 +91,10 @@ trait DocumentSetController extends Controller {
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
-    val documentSet = loadDocumentSet(id)
-    documentSet.map { d =>
-      DocumentSetUpdateForm(d).bindFromRequest().fold(
+    storage.findDocumentSet(id).map { documentSet =>
+      DocumentSetUpdateForm(documentSet).bindFromRequest().fold(
         f => BadRequest, { updatedDocumentSet =>
-          saveDocumentSet(updatedDocumentSet)
+          storage.insertOrUpdateDocumentSet(updatedDocumentSet)
           Ok
         })
     }.getOrElse(NotFound)
@@ -81,8 +102,20 @@ trait DocumentSetController extends Controller {
 
   def createClone(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-    val cloneStatus = loadDocumentSet(id).map { d =>
-      OverviewDocumentSet(d).cloneForUser(request.user.email)
+    // TODO remove document-set load, after we remove DocumentSetCreationJob's dependence on DocumentSet
+    val flashing = storage.findDocumentSet(id).map { originalDocumentSet =>
+      val documentSet = storage.insertCloneOfDocumentSet(originalDocumentSet)
+      storage.insertOrUpdateDocumentSetUser(
+        DocumentSetUser(documentSet, request.user.email, Ownership.Owner)
+      )
+      storage.insertOrUpdateDocumentSetCreationJob(
+        DocumentSetCreationJob(
+          documentSetId=documentSet,
+          state = NotStarted,
+          jobType = DocumentSetCreationJobType.Clone,
+          sourceDocumentSetId = Some(originalDocumentSet.id)
+        )
+      )
       Seq(
         "event" -> "document-set-create-clone"
       )
@@ -91,32 +124,48 @@ trait DocumentSetController extends Controller {
         "error" -> m("clone.failure")
       )
     )
-    Redirect(routes.DocumentSetController.index()).flashing(cloneStatus : _*)
+    Redirect(routes.DocumentSetController.index()).flashing(flashing : _*)
   }
 
-  protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
-    : ResultPage[(OverviewDocumentSetCreationJob, OverviewDocumentSet)]
-  protected def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet]
-  protected def loadDocumentSet(id: Long): Option[DocumentSet]
-  protected def saveDocumentSet(documentSet: DocumentSet): DocumentSet
-  protected def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit
-  protected def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials)
+  val storage : DocumentSetController.Storage
 }
 
 object DocumentSetController extends DocumentSetController {
-  override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
-    OverviewDocumentSetCreationJob.findByUserWithDocumentSet(userEmail, pageSize, page)
-  }
-  protected override def loadDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[OverviewDocumentSet] = {
-    OverviewDocumentSet.findByUserId(userEmail, pageSize, page)
-  }
-  protected override def loadDocumentSet(id: Long): Option[DocumentSet] = DocumentSetFinder.byDocumentSet(id).headOption
-  protected override def saveDocumentSet(documentSet: DocumentSet): DocumentSet = documentSet.save
+  object DatabaseStorage extends Storage {
+    override def findDocumentSet(id: Long): Option[DocumentSet] = {
+      DocumentSetFinder.byDocumentSet(id).headOption
+    }
 
-  protected override def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser) = {
-    DocumentSetUserStore.insertOrUpdate(documentSetUser)
+    override def findDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[DocumentSet] = {
+      val query = DocumentSetFinder.byOwner(userEmail)
+      ResultPage(query, pageSize, page)
+    }
+
+    override def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)] = {
+      val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
+      ResultPage(query, pageSize, page)
+    }
+
+    override def insertCloneOfDocumentSet(documentSet: DocumentSet): DocumentSet = {
+      DocumentSetStore.insertCloneOf(documentSet)
+    }
+
+    override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
+      DocumentSetStore.insertOrUpdate(documentSet)
+    }
+
+    override def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit = {
+      DocumentSetUserStore.insertOrUpdate(documentSetUser)
+    }
+
+    override def insertOrUpdateDocumentSetCreationJob(job: DocumentSetCreationJob): Unit = {
+      DocumentSetCreationJobStore.insertOrUpdate(job)
+    }
+
+    override def deleteDocumentSet(documentSet: DocumentSet): Unit = {
+      DocumentSetStore.deleteOrCancelJob(documentSet)
+    }
   }
 
-  protected override def createDocumentSetCreationJob(documentSet: DocumentSet, credentials: Credentials) =
-    documentSet.createDocumentSetCreationJob(username = credentials.username, password = credentials.password)
+  override val storage = DatabaseStorage
 }

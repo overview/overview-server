@@ -5,16 +5,15 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import helpers.FakeOverviewDocumentSet
-import models.{ DocumentCloudCredentials, OverviewDocumentSet, OverviewDocumentSetCreationJob, OverviewUser }
-import models.orm.DocumentSetType._
+import models.OverviewUser
+import models.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class _documentSetSpec extends Specification {
 
   trait ViewContext extends Scope with Mockito {
-    val documentSet: OverviewDocumentSet
+    val documentSet: DocumentSet
     val user = mock[OverviewUser]
     user.isAdministrator returns false
     
@@ -24,12 +23,12 @@ class _documentSetSpec extends Specification {
   }
 
   trait NormalDocumentSetContext extends ViewContext {
-    val documentSet = FakeOverviewDocumentSet()
+    val documentSet = DocumentSet()
   }
   
   trait DocumentSetWithErrorsContext extends ViewContext {
     val numberOfErrors = 10
-    val documentSet = FakeOverviewDocumentSet(documentProcessingErrorCount = numberOfErrors)
+    val documentSet = DocumentSet(id=1L, documentProcessingErrorCount = numberOfErrors)
   }
 
   "DocumentSet._documentSet" should {

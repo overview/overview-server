@@ -6,6 +6,7 @@
  */
 package org.overviewproject.util
 
+import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
 import org.overviewproject.persistence.{DocumentSet, PersistentDocumentSetCreationJob}
@@ -42,15 +43,18 @@ object DocumentProducerFactory {
   
   /** Return a DocumentProducer based on the DocumentSet type */
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
-    progAbort: ProgressAbortFn): DocumentProducer = documentSet.documentSetType match {
-    case "DocumentCloudDocumentSet" =>
-      val credentials = for {
-        username <- documentSetCreationJob.documentCloudUsername
-        password <- documentSetCreationJob.documentCloudPassword
-      } yield Credentials(username, password)
-      
-      new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
-    case "CsvImportDocumentSet" =>
-      new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
+    progAbort: ProgressAbortFn): DocumentProducer = {
+
+    documentSetCreationJob.jobType match {
+      case DocumentSetCreationJobType.DocumentCloud =>
+        val credentials = for {
+          username <- documentSetCreationJob.documentCloudUsername
+          password <- documentSetCreationJob.documentCloudPassword
+        } yield Credentials(username, password)
+        
+        new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
+      case DocumentSetCreationJobType.CsvUpload =>
+        new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
+    }
   }
 }

@@ -2,8 +2,6 @@ package controllers
 
 import java.sql.Connection
 import java.util.UUID
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
-import org.overviewproject.tree.orm.DocumentSetCreationJobType.CsvImportJob
 import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.Session
 import play.api.Play.current
@@ -15,15 +13,17 @@ import play.api.mvc.{ BodyParser, BodyParsers, Controller, Request, RequestHeade
 import play.api.mvc.AnyContent
 
 import org.overviewproject.postgres.LO
-import org.overviewproject.tree.Ownership
-import models.orm.{DocumentSet,DocumentSetUser,User}
-import models.orm.stores.DocumentSetUserStore
-import models.orm.DocumentSetType._
-import models.{OverviewDatabase,OverviewUser}
-import models.upload.OverviewUpload
-import controllers.auth.{AuthorizedAction,Authority,UserFactory}
+import org.overviewproject.postgres.SquerylPostgreSqlAdapter
+import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
+import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
 import controllers.auth.Authorities.anyUser
+import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
+import models.orm.{ DocumentSet, DocumentSetUser, User }
+import models.orm.finders.UserFinder
+import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import models.{ OverviewDatabase, OverviewUser }
+import models.upload.OverviewUpload
 
 /**
  * Handles a file upload, storing the file in a LargeObject, updating the upload table,
@@ -49,7 +49,7 @@ trait UploadController extends Controller {
 
     val result = uploadResult(upload)
     if (result == Ok) {
-      startDocumentSetCreationJob(upload)
+      createDocumentSetCreationJob(upload)
       deleteUpload(upload)
     }
 
@@ -84,8 +84,8 @@ trait UploadController extends Controller {
 
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
-  protected def deleteUpload(upload: OverviewUpload)
-  protected def startDocumentSetCreationJob(upload: OverviewUpload)
+  protected def deleteUpload(upload: OverviewUpload) : Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload) : Unit
 }
 
 /**
@@ -102,16 +102,20 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-  def startDocumentSetCreationJob(upload: OverviewUpload) {
-    val documentSet = DocumentSet(
-      title = upload.uploadedFile.filename,
-      documentSetType = CsvImportDocumentSet,
-      uploadedFileId = Some(upload.uploadedFile.id)).save
-
-    User.findById(upload.userId).map { u: User =>
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload) {
+    UserFinder.byId(upload.userId).headOption.map { u: User =>
+      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
+        title = upload.uploadedFile.filename,
+        uploadedFileId = Some(upload.uploadedFile.id)
+      ))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
+      DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
+        documentSetId=documentSet.id,
+        state = DocumentSetCreationJobState.NotStarted,
+        jobType = DocumentSetCreationJobType.CsvUpload,
+        contentsOid = Some(upload.contentsOid)
+      ))
     }
-    documentSet.createDocumentSetCreationJob(contentsOid = Some(upload.contentsOid))
   }
 }
  

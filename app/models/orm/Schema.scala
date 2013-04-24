@@ -14,6 +14,7 @@ object Schema extends org.squeryl.Schema {
   val documentSets = table[DocumentSet]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val nodes = table[Node]
+  val nodeDocuments = table[NodeDocument]
   val logEntries = table[LogEntry]
   val users = table[User]
   val tags = table[Tag]
@@ -25,28 +26,4 @@ object Schema extends org.squeryl.Schema {
 
   on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))
-  
-  val documentSetDocuments =
-    oneToManyRelation(documentSets, documents).
-      via((ds, d) => ds.id === d.documentSetId)
-
-  val documentSetDocumentSetCreationJobs =
-    oneToManyRelation(documentSets, documentSetCreationJobs).
-      via((ds, dscj) => ds.id === dscj.documentSetId)
-
-  val documentSetLogEntries =
-    oneToManyRelation(documentSets, logEntries).
-      via((ds, le) => ds.id === le.documentSetId)
-
-  val documentSetNodes =
-    oneToManyRelation(documentSets, nodes).
-      via((ds, n) => ds.id === n.documentSetId)
-
-  val uploadedFileDocumentSets =
-    oneToManyRelation(uploadedFiles, documentSets).
-      via((uf, ds) => uf.id === ds.uploadedFileId)
-
-  val userLogEntries =
-    oneToManyRelation(users, logEntries).
-      via((u, le) => u.id === le.userId)
 }

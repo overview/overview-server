@@ -1,7 +1,8 @@
 package views.helper
 
 import play.api.i18n.Lang
-import models.OverviewDocumentSetCreationJob
+
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 object DocumentSetHelper {
   /**
@@ -21,15 +22,14 @@ object DocumentSetHelper {
 
   /**
    * @param job A DocumentSetCreationJob
+   * @param nAheadInQueue Number of jobs ahead of this one in the queue
    * @return A translated string, like "Clustering (4)"
    */
-  def jobDescriptionMessage(job: OverviewDocumentSetCreationJob)(implicit lang: Lang): String = {
-    val n = job.jobsAheadInQueue
-
-    if (n > 0) {
-      views.Magic.t("views.DocumentSetCreationJob._documentSetCreationJob.jobs_to_process", n)
+  def jobDescriptionMessage(job: DocumentSetCreationJob, nAheadInQueue: Long)(implicit lang: Lang): String = {
+    if (nAheadInQueue > 0) {
+      views.Magic.t("views.DocumentSetCreationJob._documentSetCreationJob.jobs_to_process", nAheadInQueue)
     } else {
-      jobDescriptionKeyToMessage(job.stateDescription)
+      jobDescriptionKeyToMessage(job.statusDescription)
     }
   }
 }

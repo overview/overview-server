@@ -2,11 +2,11 @@ package controllers
 
 import play.api.mvc.Controller
 
-import org.overviewproject.tree.orm.UploadedFile
-import models.ResultPage
-import models.{OverviewDocumentSet, OverviewDocumentSetCreationJob}
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 import controllers.auth.{AuthorizedAction,Authorities}
+import models.ResultPage
 import models.orm.finders.DocumentSetCreationJobFinder
+import models.orm.DocumentSet
 
 trait DocumentSetCreationJobController extends Controller {
   import Authorities._
@@ -21,11 +21,12 @@ trait DocumentSetCreationJobController extends Controller {
   }
 
   protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
-    : ResultPage[(OverviewDocumentSetCreationJob, OverviewDocumentSet)]
+    : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 }
 
 object DocumentSetCreationJobController extends DocumentSetCreationJobController {
   override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
-    OverviewDocumentSetCreationJob.findByUserWithDocumentSet(userEmail, pageSize, page)
+    val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
+    ResultPage(query, pageSize, page)
   }
 }
