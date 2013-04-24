@@ -27,6 +27,8 @@ class FinderResult[A](val query: Query[A]) {
   }
 }
 object FinderResult {
+  def apply[A](query: Query[A]) = new FinderResult(query)
+
   implicit def finderResultToQuery[A](r: FinderResult[A]) = r.toQuery
   implicit def finderResultToIterable[A](r: FinderResult[A]) = r.toIterable
 }
