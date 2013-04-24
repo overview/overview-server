@@ -50,11 +50,11 @@ run = ->
   #
   # We avoid jQuery, to remove a dependency.
   tag_list = document.getElementById('tag-list')
-  if tag_list
-    for form in tag_list.getElementsByTagName('form')
-      form.addEventListener('submit', ->
-        trackEvent('Document set', 'Created tag')
-      , false)
+  # Submit events bubble in everything but IE8-
+  # http://www.quirksmode.org/dom/events/submit.html
+  tag_list?.addEventListener('submit', ->
+    trackEvent('Document set', 'Created tag')
+  , false)
 
   undefined
 
