@@ -36,7 +36,10 @@ class SilentActor(d: Document, receiver: ActorRef) extends Actor {
 
 class CompletingActor(d: Document, receiver: ActorRef) extends Actor {
   def receive = {
-    case StartRetriever() => receiver ! GetTextSucceeded(d, "text")
+    case StartRetriever() => {
+      receiver ! GetTextSucceeded(d, "text")
+      context.parent ! JobComplete()
+    }
   }
 }
 

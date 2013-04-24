@@ -9,6 +9,7 @@ import org.overviewproject.util.Logger
 import akka.actor._
 import org.overviewproject.util.Configuration
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol.JobComplete
+import org.overviewproject.documentcloud.DocumentReceiverProtocol.Done
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {
@@ -106,7 +107,11 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
  
   private def updateProgress: Unit = {
     completedRetrievals += 1
-    documentsToRetrieve.map { t => reportProgress(completedRetrievals, t) }
+    documentsToRetrieve.map { t => 
+      reportProgress(completedRetrievals, t) 
+      val receiver = findOrCreateDocumentReceiver(t) 
+      if (completedRetrievals == t) receiver ! Done()
+    }
   }
   
   /**

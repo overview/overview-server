@@ -1,15 +1,17 @@
 package org.overviewproject.documentcloud
 
-import scala.concurrent.duration._
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestActorRef
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.{Await, Promise}
-import org.specs2.time.NoTimeConversions
-import org.specs2.mutable.Before
+import scala.concurrent.duration._
 import scala.util.Failure
 
+import org.overviewproject.documentcloud.DocumentReceiverProtocol.Done
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{GetTextError, GetTextFailed, GetTextSucceeded}
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mutable.{Before, Specification}
+import org.specs2.time.NoTimeConversions
+
+import akka.actor._
+import akka.testkit.TestActorRef
 
 class DocumentReceiverSpec extends Specification with NoTimeConversions {
 
@@ -50,18 +52,17 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       expectNoMsg
     }
 
-    "complete future when specified number of documents have been processed" in new ReceiverContext {
-      receiver ! GetTextSucceeded(document, text)
-      retrievalDone.isCompleted must beFalse
-
-      receiver ! GetTextSucceeded(document, text)
+    "complete future when Done message is received" in new ReceiverContext {
+      receiver ! Done()
       retrievalDone.isCompleted must beTrue
     }
     
+
     "return retrieval errors in future" in new ReceiverContext {
       receiver ! GetTextSucceeded(document, text)
       receiver ! GetTextFailed(url, text)
-
+      receiver ! Done()
+      
       retrievalDone.isCompleted must beTrue
       val retrievalErrors: Seq[DocumentRetrievalError] = Await.result(retrievalDone.future, 1 millis)
       retrievalErrors must haveTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))

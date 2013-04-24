@@ -1,9 +1,16 @@
 package org.overviewproject.documentcloud
 
 import akka.actor.Actor
+
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
 import scala.concurrent.Promise
 import scala.util.control.Exception._
+
+
+object DocumentReceiverProtocol {
+  /** No more documents will be processed */
+  case class Done()
+}
 
 /**
  * Actor that serializes the processing of documents retrieved from DocumentCloud.
@@ -20,20 +27,20 @@ import scala.util.control.Exception._
  * @param finished Contains information about any failed document retrieval attempts
  */
 class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocuments: Int, finished: Promise[Seq[DocumentRetrievalError]]) extends Actor {
-
+  import DocumentReceiverProtocol._
+  
   var receivedDocuments: Int = 0 
   var failedRetrievals: Seq[DocumentRetrievalError] = Seq.empty
   
   def receive = {
     case GetTextSucceeded(document, text) => {
       failOnError { processDocument(document, text) }
-      update
     }
     case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
       failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
-      update
     }
     case GetTextError(error) => finished.failure(error)
+    case Done() => finished.success(failedRetrievals)
   }
   
   /** 
@@ -44,8 +51,4 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, numberOfDocu
   /** Apply to methods that can throw, and complete `finished` with failure if they do */
   private val failOnError = allCatch withApply { error => finished.failure(error) }
   
-  private def update: Unit = {
-    receivedDocuments += 1
-    if (receivedDocuments == numberOfDocuments) finished.success(failedRetrievals)
-  }
 }
