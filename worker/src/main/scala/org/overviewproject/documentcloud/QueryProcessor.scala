@@ -8,6 +8,7 @@ import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.util.Logger
 import akka.actor._
 import org.overviewproject.util.Configuration
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.JobComplete
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {
@@ -53,6 +54,7 @@ class QueryInformation {
  * @param credentials If provided, will be used to authenticate query and requests for private documents.
  * @param maxDocuments The maximum number of documents to attempt to retrieve
  * @param processDocument Callback that will be called when a document is retrieved.
+ * @param reportProgress Callback for updating progress FIXME: this should be handled by separate actor
  * @param requestQueue The actor handling http requests
  * @param retrieverGenerator A function for generating actors that will retrieve documents. Will be passed
  * the document and a reference to the document receiver.
@@ -68,7 +70,10 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
    * Will be at most `maxDocuments`.
    */
   var documentsToRetrieve: Option[Int] = None
-
+  
+  /** The number of completed retrievals */
+  var completedRetrievals: Int = 0
+  
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
     s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
   }
@@ -82,6 +87,7 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
       requestPage(1)
     }
     case Result(response) => processResponse(response)
+    case JobComplete() => updateProgress
   }
 
   private def requestPage(pageNum: Int): Unit = {
@@ -97,6 +103,12 @@ class QueryProcessor(query: String, queryInformation: QueryInformation, credenti
     case None => PublicRequest(url)
   }
 
+ 
+  private def updateProgress: Unit = {
+    completedRetrievals += 1
+    documentsToRetrieve.map { t => reportProgress(completedRetrievals, t) }
+  }
+  
   /**
    * When a query result page is received, request the next page if available and maxDocuments
    * has not been reached. Spawn retrievers for each document.

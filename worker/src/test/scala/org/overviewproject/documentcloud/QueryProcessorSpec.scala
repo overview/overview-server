@@ -20,6 +20,7 @@ import org.overviewproject.http.PrivateRequest
 import akka.testkit.TestActor
 import akka.testkit.TestProbe
 import org.overviewproject.util.Configuration
+import org.overviewproject.documentcloud.DocumentRetrieverProtocol.JobComplete
 
 class ReportingActor(d: Document, receiver: ActorRef, listener: ActorRef) extends Actor {
   def receive = {
@@ -144,6 +145,21 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       
       retrieverCounter.receiveN(maxDocuments)
       retrieverCounter.expectNoMsg()
+    }
+    
+    "call reportProgress when a retrieval is complete" in new QueryContext {
+      val numberOfDocuments = 5
+      val numberOfPages = 1
+      val result = jsonSearchResultPage(numberOfDocuments, numberOfPages, numberOfDocuments)
+      val queryProcessor = TestActorRef(createQueryProcessor(new SilentActor(_, _)))
+      
+      queryProcessor ! Start()
+      receiveN(1)
+      queryProcessor ! Result(TestSimpleResponse(200, result))
+      
+      queryProcessor ! JobComplete()
+      
+      progressReportCount must be equalTo(1)
     }
   }
 
