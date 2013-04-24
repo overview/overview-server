@@ -1,5 +1,5 @@
 @(
-  documentSets: Seq[(OverviewDocumentSet,OverviewUser)],
+  documentSets: Iterable[(models.orm.DocumentSet,models.orm.User)],
   messageScope: String
 )(implicit lang: Lang)
 
@@ -10,9 +10,7 @@
     <p class="empty">@m("empty")</p>
   } else {
     <ul class="unstyled shared-document-sets">
-      @documentSets.map{tuple: (OverviewDocumentSet,OverviewUser) =>
-        @views.html.DocumentSet._smallDocumentSet(tuple._1, tuple._2)
-      }
+      @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
     </ul>
   }
 }

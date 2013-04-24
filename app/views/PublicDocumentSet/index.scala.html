@@ -1,2 +1,2 @@
-@(documentSets: Seq[(OverviewDocumentSet,OverviewUser)])(implicit lang: Lang)
+@(documentSets: Iterable[(models.orm.DocumentSet,models.orm.User)])(implicit lang: Lang)
 @views.html.DocumentSet._searchResults(documentSets, "views.PublicDocumentSet.index")

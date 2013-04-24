@@ -1,6 +1,6 @@
 @(
-  documentSet: OverviewDocumentSet,
-  owner: OverviewUser
+  documentSet: models.orm.DocumentSet,
+  owner: models.orm.User
 )(implicit lang: Lang)
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
