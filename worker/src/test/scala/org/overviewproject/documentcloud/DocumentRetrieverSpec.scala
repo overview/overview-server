@@ -6,7 +6,7 @@ import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.test.{ ActorSystemContext, TestSimpleResponse }
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import akka.actor.Terminated
+import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.specs2.mutable.Before
 import scala.concurrent.duration._
@@ -61,7 +61,7 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
 
       def before = {
         recipient = TestProbe()
-        retriever = TestActorRef(new DocumentRetriever(document, recipient.ref, testActor, credentials, retryTimes))
+        retriever = TestActorRef(Props(new DocumentRetriever(document, recipient.ref, testActor, credentials, retryTimes)), testActor, "retriever")
       }
     }
 
@@ -170,7 +170,12 @@ class DocumentRetrieverSpec extends Specification with NoTimeConversions {
       
       retriever ! Failure(error)
       expectMsg(request)
+    }
+    
+    "send JobComplete to parent" in new PublicRetrievalContext with SuccessfulResponse {
+      retriever ! Result(successfulResponse)
       
+      expectMsg(JobComplete())
     }
   }
 }

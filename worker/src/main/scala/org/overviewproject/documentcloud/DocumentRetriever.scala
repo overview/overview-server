@@ -17,6 +17,9 @@ object DocumentRetrieverProtocol {
   case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None) extends CompletionMessage
   /** An error occurred when trying to retrieve the document */
   case class GetTextError(t: Throwable) extends CompletionMessage
+  
+  /** Notify parent that job has completed */
+  case class JobComplete()
 }
 
 /**
@@ -89,6 +92,8 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   
   private def completeRetrieval(message: CompletionMessage): Unit = {
     recipient ! message
+    context.parent ! JobComplete()
+    
     context.stop(self)
   }
   
