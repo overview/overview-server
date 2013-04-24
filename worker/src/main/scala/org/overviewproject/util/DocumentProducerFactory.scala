@@ -49,7 +49,7 @@ object DocumentProducerFactory {
         password <- documentSetCreationJob.documentCloudPassword
       } yield Credentials(username, password)
       
-      new DocumentCloudDocumentProducer(documentSetCreationJob.documentSetId, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
+      new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
     case "CsvImportDocumentSet" =>
       new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
   }

@@ -58,7 +58,7 @@ class QueryInformation {
  * the document and a reference to the document receiver.
  */
 class QueryProcessor(query: String, queryInformation: QueryInformation, credentials: Option[Credentials], maxDocuments: Int,
-  processDocument: (Document, String) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
+  processDocument: (Document, String) => Unit, reportProgress: (Int, Int) => Unit, requestQueue: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
 
   import QueryProcessorProtocol._
 

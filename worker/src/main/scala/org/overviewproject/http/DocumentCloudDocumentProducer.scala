@@ -14,6 +14,7 @@ import org.overviewproject.documentcloud.{Document => RetrievedDocument, Documen
 import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
 import org.overviewproject.persistence.{DocRetrievalErrorWriter, DocumentSetIdGenerator, DocumentWriter, PersistentDocumentSet}
 import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
 import org.overviewproject.util.{DocumentConsumer, DocumentProducer}
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
@@ -22,9 +23,11 @@ import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 import akka.actor._
 import org.overviewproject.documentcloud.RequestRetryTimes
 import org.overviewproject.util.Configuration
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob
 
 /** Feeds the documents from sourceDocList to the consumer */
-class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
+class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
   private val MaxInFlightRequests = Configuration.maxInFlightRequests
@@ -33,6 +36,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
   private val QueryProcessorName = "queryprocessor"
 
   private val FetchingFraction = 0.5
+  private val documentSetId = job.documentSetId
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
   private var queryInformation: QueryInformation = _
@@ -64,7 +68,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) =
         new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
 
-      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, requestQueue, retrieverGenerator)), QueryProcessorName)
+      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, updateRetrievalProgress, requestQueue, retrieverGenerator)), QueryProcessorName)
 
       try {
         queryProcessor ! Start()
@@ -86,6 +90,10 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
 
+  private def updateRetrievalProgress(retrieved: Int, total: Int): Unit = 
+    progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
+  
+  
   private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
       val document = Document(DocumentCloudDocument, documentSetId, id = ids.next, title = Some(doc.title), documentcloudId = Some(doc.id))
@@ -95,9 +103,7 @@ class DocumentCloudDocumentProducer(documentSetId: Long, query: String, credenti
     consumer.processDocument(id, text)
     numDocs += 1
 
-    val documentsToRetrieve = scala.math.min(getTotalDocs, maxDocuments)
-    val isCancelled = progAbort(Progress(numDocs * FetchingFraction / documentsToRetrieve, Retrieving(numDocs, documentsToRetrieve)))
-    if (isCancelled) shutdownActors
+    if (job.state == Cancelled) shutdownActors
   }
 
   private def getTotalDocs: Int = totalDocs.getOrElse {

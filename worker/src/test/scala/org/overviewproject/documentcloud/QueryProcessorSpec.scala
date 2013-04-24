@@ -48,16 +48,19 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       val pageSize = Configuration.pageSize
       
       var queryInformation: QueryInformation = _
-
+      var progressReportCount: Int = 0
+      
       def before = {
         queryInformation = new QueryInformation
       }
+      
+      def reportProgress(part: Int, total: Int): Unit = progressReportCount += 1
 
       def pageQuery(pageNum: Int, query: String): String = s"https://www.documentcloud.org/api/search.json?per_page=$pageSize&page=$pageNum&q=${URLEncoder.encode(query, "UTF-8")}"
 
       def emptyProcessDocument(d: Document, text: String): Unit = {}
       def createQueryProcessor(receiverCreator: (Document, ActorRef) => Actor, credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
-        new QueryProcessor(query, queryInformation, credentials, maxDocuments, emptyProcessDocument, testActor, receiverCreator)
+        new QueryProcessor(query, queryInformation, credentials, maxDocuments, emptyProcessDocument, reportProgress, testActor, receiverCreator)
     }
 
     "request query result pages" in new QueryContext {
