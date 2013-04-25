@@ -23,3 +23,13 @@ define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_wi
       $('button.toggle-import').one('click', show)
     else
       $('a[data-toggle=tab][href="#import-from-documentcloud-account"]').one('show', show)
+
+    $('div #import-from-documentcloud-account').on 'change click', 'form.update input[type=checkbox]', (e) ->
+      $checkbox = $(e.currentTarget)
+      $splitDocumentInputs = $('input[type=hidden][name=split_documents]')
+      $splitDocumentInputs.each (i, input) ->
+        $input = $(input)
+        if ($checkbox.is(":checked"))
+          $input.val('true')
+        else
+          $input.val('false')
