@@ -59,7 +59,7 @@ trait DocumentSetController extends Controller {
     form.bindFromRequest().fold(
       f => index(1)(request),
 
-      Function.tupled { (formDocumentSet: DocumentSet, credentials: Credentials) =>
+      Function.tupled { (formDocumentSet: DocumentSet, credentials: Credentials, splitDocuments: Boolean) =>
         val documentSet = storage.insertOrUpdateDocumentSet(formDocumentSet)
         storage.insertOrUpdateDocumentSetUser(
           DocumentSetUser(documentSet.id, request.user.email, Ownership.Owner)

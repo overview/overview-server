@@ -19,8 +19,8 @@ object DocumentSetForm {
         "documentcloud_password" -> Forms.optional(Forms.text),
         "split_documents" -> Forms.boolean
       )
-      ((title, query, username, password) => (DocumentSet(title=title, query=Some(query)), Credentials(username, password)))
-      ((tuple) => Some((tuple._1.title, tuple._1.query.getOrElse(""), tuple._2.username, tuple._2.password)))
+      ((title, query, username, password, splitDocuments) => (DocumentSet(title=title, query=Some(query)), Credentials(username, password), splitDocuments))
+      ((tuple) => Some((tuple._1.title, tuple._1.query.getOrElse(""), tuple._2.username, tuple._2.password, tuple._3)))
     )
   }
 }
