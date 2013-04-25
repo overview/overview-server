@@ -6,25 +6,26 @@
  */
 package org.overviewproject.http
 
+import scala.language.postfixOps
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.language.postfixOps
+
 import org.overviewproject.database.Database
-import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, QueryInformation, QueryProcessor}
+import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, DocumentSplitter, QueryInformation, QueryProcessor}
 import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
-import org.overviewproject.persistence.{DocRetrievalErrorWriter, DocumentSetIdGenerator, DocumentWriter, PersistentDocumentSet}
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
-import org.overviewproject.util.{DocumentConsumer, DocumentProducer}
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
-import org.overviewproject.util.{ Logger, WorkerActorSystem }
-import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
-import akka.actor._
 import org.overviewproject.documentcloud.RequestRetryTimes
-import org.overviewproject.util.Configuration
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.persistence.PersistentDocumentSetCreationJob
+import org.overviewproject.persistence._
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
+import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
+import org.overviewproject.util.{Configuration, DocumentConsumer, DocumentProducer}
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
+import org.overviewproject.util.Logger
+import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
+import org.overviewproject.util.WorkerActorSystem
+
+import akka.actor._
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
@@ -49,7 +50,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     // Next step is to create supervisor actor that manages the actors being created below.
     // A separate actor could monitor cancellation status an then inform the supervisor actor
     // which would shut down everything. For now, it's a bit messy.
-    
+
     // The following actors and components are setup:
     // queryProcessor - The main object that drives the query. Requests query result pages
     //   and spawns DocumentRetrievers for each document. The retrieval results are sent
@@ -68,7 +69,16 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) =
         new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
 
-      val queryProcessor = context.actorOf(Props(new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, updateRetrievalProgress, requestQueue, retrieverGenerator)), QueryProcessorName)
+      def splitterGenerator(document: RetrievedDocument, receiver: ActorRef) =
+        new DocumentSplitter(document, receiver, retrieverGenerator)
+
+      val documentRetrieverGenerator =
+        if (job.splitDocuments) splitterGenerator _
+        else retrieverGenerator _
+      val queryProcessor =
+        context.actorOf(Props(
+          new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, updateRetrievalProgress,
+              requestQueue, documentRetrieverGenerator)), QueryProcessorName) // too many parameters!!
 
       try {
         queryProcessor ! Start()
@@ -90,10 +100,9 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
 
-  private def updateRetrievalProgress(retrieved: Int, total: Int): Unit = 
+  private def updateRetrievalProgress(retrieved: Int, total: Int): Unit =
     progAbort(Progress(retrieved * FetchingFraction / total, Retrieving(retrieved, total)))
-  
-  
+
   private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
       val document = Document(DocumentCloudDocument, documentSetId, id = ids.next, title = Some(doc.title), documentcloudId = Some(doc.id))
