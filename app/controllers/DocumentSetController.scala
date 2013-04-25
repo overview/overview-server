@@ -58,6 +58,7 @@ trait DocumentSetController extends Controller {
   def create() = AuthorizedAction(anyUser) { implicit request =>
     form.bindFromRequest().fold(
       f => index(1)(request),
+
       Function.tupled { (formDocumentSet: DocumentSet, credentials: Credentials) =>
         val documentSet = storage.insertOrUpdateDocumentSet(formDocumentSet)
         storage.insertOrUpdateDocumentSetUser(
