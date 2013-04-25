@@ -40,7 +40,7 @@ define [
           <ul class="actions">
             <li><%= showBooleanPref('sidebar') %></li>
           </ul>
-          <iframe src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') %>"></iframe>
+          <iframe src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') + (url.page || '') %>"></iframe>
         </div>
       """)
 
