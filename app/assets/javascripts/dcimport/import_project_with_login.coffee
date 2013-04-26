@@ -17,8 +17,9 @@ define [
       if !data?.projects?.length
         $div.append(empty_html)
       else
-        $checkbox_form = $('<form method="post" class="update form-inline" action="#split-document"><input id="set-split-documents" type="checkbox" name="split-documents" value="false" /><label for="set-split-documents">Split Documents by Page. Clear?</label></form>')
-        $div.append($checkbox_form)
+# Uncomment when server is working
+#        $checkbox_form = $('<form method="post" class="update form-inline" action="#split-document"><input id="set-split-documents" type="checkbox" name="split-documents" value="false" /><label for="set-split-documents">Split Documents by Page. Clear?</label></form>')
+#        $div.append($checkbox_form)
         credentials = CredentialStore.get()
         $ul = $('<ul class="unstyled projects"></ul>')
         for project in data.projects
