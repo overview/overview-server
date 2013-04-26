@@ -71,7 +71,8 @@ trait DocumentSetController extends Controller {
             jobType = DocumentSetCreationJobType.DocumentCloud,
             // query = ... XXX "query" belongs here, not in DocumentSet
             documentcloudUsername = credentials.username,
-            documentcloudPassword = credentials.password
+            documentcloudPassword = credentials.password,
+            splitDocuments = splitDocuments
           )
         )
 
