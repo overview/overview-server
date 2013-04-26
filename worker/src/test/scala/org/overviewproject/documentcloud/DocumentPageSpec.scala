@@ -14,7 +14,6 @@ class DocumentPageSpec extends Specification {
       val pageUrlPrefix = "pageUrlTemplate-p"
       val pageNum = 5
       val document = Document(id, title, pageNum, "access", s"$pageUrlPrefix{page}")
-      val pageTitle = s"$title p.$pageNum" 
       val documentPage = new DocumentPage(document, pageNum)
     }
     
@@ -27,8 +26,8 @@ class DocumentPageSpec extends Specification {
       documentPage.id must be equalTo(s"$id#p$pageNum")
     }
     
-    "return title with page number" in new DocumentPageContext {
-      documentPage.title must be equalTo(pageTitle)
+    "return title unchanged" in new DocumentPageContext {
+      documentPage.title must be equalTo(title)
     }
     
     

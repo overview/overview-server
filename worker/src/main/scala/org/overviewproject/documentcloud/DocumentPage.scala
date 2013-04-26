@@ -3,7 +3,7 @@ package org.overviewproject.documentcloud
 class DocumentPage(document: Document, pageNum: Int) extends 
 Document(
     s"${document.id}#p$pageNum", 
-    s"${document.title} p.$pageNum", 
+    document.title, 
     1,
     document.access, document.pageUrlTemplate) {
   
