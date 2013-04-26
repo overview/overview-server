@@ -11,4 +11,5 @@ package org.overviewproject.csv
 class CsvImportDocument(val text: String,
   val suppliedId: Option[String] = None,
   val url: Option[String] = None,
-  val title: Option[String] = None)
+  val title: Option[String] = None,
+  val tags: Iterable[String] = Seq())

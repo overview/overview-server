@@ -54,7 +54,7 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
       readRow match {
         case null => null
-        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c))
+        case c => new CsvImportDocument(text(c), suppliedId(c), url(c), title(c), tags(c))
       }
     }
 
@@ -73,6 +73,15 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
 
     // return the title if title column exists
     private def title(row: Array[String]): Option[String] = getOptColumn(row, TitleColumn)
+    
+    // return a list of tag names
+    private def tags(row: Array[String]): Iterable[String] =  getOptColumn(row, "tags") match {
+      case Some(tags) => tags.split(",")
+      case None => Array.empty[String]
+    }
+    
+    
+      
     
     // if the columnName was defined in the header row, @return the value in the column, else None
     private def getOptColumn(row: Array[String], columnName: String): Option[String] =

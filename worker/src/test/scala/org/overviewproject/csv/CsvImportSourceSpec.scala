@@ -73,8 +73,8 @@ class CsvImportSourceSpec extends Specification {
                      |
                      |,34,stuff""".stripMargin
     }
-    
-   trait ValidInputContentsHeader extends CsvImportContext {
+
+    trait ValidInputContentsHeader extends CsvImportContext {
       def input = """|contents,stuff
                      |this is line0, stuff0
                      |this is line1, stuff1
@@ -93,6 +93,18 @@ class CsvImportSourceSpec extends Specification {
                      |snip1, this is line0
                      |snip2, this is line1
                      |snip3, this is line2""".stripMargin
+    }
+
+    trait ValidInputWithTags extends CsvImportContext {
+      def tags: Map[String, Seq[String]] = Map(
+        ("no tags" -> Seq()),
+        ("one tag" -> Seq("tag1")),
+        ("multiple tags" -> Seq("tag1", "tag2", "tag3")))
+
+      def input: String = {
+        val rows = for ((txt, t) <- tags) yield s"""$txt,"${t.mkString(",")}""""
+        rows.mkString("text,tags\n", "\n", "")
+      }
     }
 
     "skip the first line of column headers" in new ValidInput {
@@ -177,6 +189,10 @@ class CsvImportSourceSpec extends Specification {
       val expectedUrls: Seq[Option[String]] = Seq.tabulate(3)(n => Some("url" + n))
       val urls = csvImportSource.map(_.url)
       urls must be equalTo (expectedUrls)
+    }
+
+    "add tags to Documents" in new ValidInputWithTags {
+      csvImportSource.map(d => (d.text, d.tags.toList)) must haveTheSameElementsAs(tags)
     }
   }
 }
