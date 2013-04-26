@@ -9,7 +9,7 @@ class SearchResultSpec extends Specification {
 
     trait SearchContext extends Scope {
       val total = 29
-      val document1: Document = Document("dc id", "title", 1, "public", "http://document-p{page}")
+      val document1: Document = Document("dc id", "title", 1, "public", "text-url", "http://document-p{page}")
       val pageNum = 1
     }
     
@@ -43,7 +43,7 @@ class SearchResultSpec extends Specification {
       "canonical_url": "http://documentcloud.org/",
       "resources": {
         "pdf": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/circleofwildlifefigureinven.pdf",
-        "text": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/circleofwildlifefigureinven.txt",
+        "text": "${d.textUrl}",
         "thumbnail": "https://s3.amazonaws.com/s3.documentcloud.org/documents/604056/pages/circleofwildlifefigureinven-p1-thumbnail.gif",
         "search": "https://www.documentcloud.org/documents/604056/search.json?q={query}",
         "print_annotations": "https://www.documentcloud.org/notes/print?docs[]=604056",

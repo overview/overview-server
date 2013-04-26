@@ -13,7 +13,7 @@ class DocumentPageSpec extends Specification {
       val title = "title"
       val pageUrlPrefix = "pageUrlTemplate-p"
       val pageNum = 5
-      val document = Document(id, title, pageNum, "access", s"$pageUrlPrefix{page}")
+      val document = Document(id, title, pageNum, "access", "textUrl", s"$pageUrlPrefix{page}")
       val documentPage = new DocumentPage(document, pageNum)
     }
     

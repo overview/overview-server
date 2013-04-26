@@ -19,7 +19,7 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
 
     abstract class ReceiverContext extends ActorSystemContext with Before {
       val ExpectedDocuments = 2
-      val document = Document("id", "title", 1, "public", "http://canonical-url")
+      val document = Document("id", "title", 1, "public", "http://texturl", "http://pageurl")
       val text = "document text"
       val url = "url"      
       

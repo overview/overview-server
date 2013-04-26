@@ -4,8 +4,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 /** Information about a document stored by DocumentCloud */
-case class Document(id: String, title: String, pages: Int, access: String, pageUrlTemplate: String) {
-  val url: String = s"https://www.documentcloud.org/api/documents/$id.txt"
+case class Document(id: String, title: String, pages: Int, access: String, textUrl: String, pageUrlTemplate: String) {
+  val url: String = textUrl
 }
 
 /** Information from a DocumentCloud Search Result */
@@ -19,6 +19,7 @@ object ConvertSearchResult {
     (__ \ "title").read[String] and
     (__ \ "pages").read[Int] and
     (__ \ "access").read[String] and
+    (__ \ "resources" \ "text").read[String] and
     (__ \ "resources" \ "page" \ "text").read[String])(Document)
 
   implicit private val searchResultReads = Json.reads[SearchResult]

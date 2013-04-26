@@ -5,7 +5,7 @@ Document(
     s"${document.id}#p$pageNum", 
     document.title, 
     1,
-    document.access, document.pageUrlTemplate) {
+    document.access, document.textUrl, document.pageUrlTemplate) {
   
   private val PagePattern = "{page}"
     

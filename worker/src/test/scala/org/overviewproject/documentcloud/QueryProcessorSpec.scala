@@ -178,6 +178,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
         "pages": 1,
         "canonical_url": "http://url-$id",
         "resources": {
+          "text": "http://url-$id.txt",
           "page": {
             "text": "http://url-$id-p{page}"
           }

@@ -27,7 +27,7 @@ class DocumentSplitterSpec extends Specification with NoTimeConversions {
         new SilentActor
       }
       
-      val document = Document("id", "title", 2, "public", "page-{page}")
+      val document = Document("id", "title", 2, "public", "texturl", "page-{page}")
       val pages: Seq[Document] = Seq.tabulate(2)(n => new DocumentPage(document, n + 1))
       
       var documentSplitter: TestActorRef[DocumentSplitter] = _

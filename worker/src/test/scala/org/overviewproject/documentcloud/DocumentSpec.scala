@@ -10,12 +10,13 @@ class DocumentSpec extends Specification {
     trait DocumentContext extends Scope {
       val id = "documentCloudId"
       val title = "title"
+      val textUrl = "textUrl"
       val pageUrlPrefix = "pageUrlTemplate-p"
-      val document = Document(id, title, 1, "access", s"$pageUrlPrefix{page}")
+      val document = Document(id, title, 1, "access", textUrl, s"$pageUrlPrefix{page}")
     }
 
     "return the document text url for CompleteDocuments" in new DocumentContext {
-      document.url must be equalTo(s"https://www.documentcloud.org/api/documents/$id.txt")
+      document.url must be equalTo(textUrl)
     }
 
   }
