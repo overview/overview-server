@@ -13,6 +13,9 @@ import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImpor
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
+import org.overviewproject.persistence.DocumentTagWriter
+import org.overviewproject.persistence.orm.Tag
+import org.overviewproject.persistence.PersistentTag
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -27,6 +30,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private var jobCancelled: Boolean = false
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
   private val ids = new DocumentSetIdGenerator(documentSetId)
+  private val documentTagWriter = new DocumentTagWriter(documentSetId)
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
@@ -77,7 +81,14 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       val document = Document(CsvImportDocumentType, documentSetId, id = ids.next, title = doc.title,
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
+      writeTags(document, doc.tags)
       document.id
     }
+  }
+  
+  private def writeTags(document: Document, tagNames: Iterable[String]): Unit = {
+    val tags = tagNames.map(PersistentTag.findOrCreate(documentSetId, _))
+    
+    documentTagWriter.write(document, tags)
   }
 }
