@@ -9,11 +9,12 @@ package org.overviewproject.persistence
 
 import anorm._
 import anorm.SqlParser._
-
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.persistence.orm.NodeDocument
+import org.overviewproject.persistence.orm.Schema
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 
@@ -22,6 +23,11 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
   trait DocumentsSetup extends DbTestContext {
     lazy val documentSetId = insertDocumentSet("NodeDocumentBatchInserterSpec")
     lazy val nodeId = insertNode(documentSetId, None, "description")
+    val threshold = 5
+    val inserter = new BatchInserter[NodeDocument](threshold, Schema.nodeDocuments)
+
+    def insertDocumentIds(documentIds: Iterable[Long]): Unit = 
+      documentIds.foreach(docId => inserter.insert(NodeDocument(nodeId, docId)))
   }
 
   def findNodeDocumentIds: Seq[(Long, Long)] = {
@@ -34,15 +40,13 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
 
     "insert data after threshold is reached" in new DocumentsSetup {
       val documentIds = insertDocuments(documentSetId, 5)
-      val threshold = 5
-      val inserter = new NodeDocumentBatchInserter(threshold)
 
-      documentIds.take(threshold - 1).foreach(inserter.insert(nodeId, _))
+      insertDocumentIds(documentIds.take(threshold - 1))
 
       val beforeThresholdReached = findNodeDocumentIds
       beforeThresholdReached must be empty
 
-      documentIds.slice(threshold - 1, threshold).foreach(inserter.insert(nodeId, _))
+      insertDocumentIds(documentIds.slice(threshold - 1, threshold))
 
       val afterThreshold = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((nodeId, _))
@@ -54,16 +58,14 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       val documentIds = insertDocuments(documentSetId, 10)
       val firstBatch = documentIds.take(5)
       val secondBatch = documentIds.drop(5)
-      val threshold = 5
-      val inserter = new NodeDocumentBatchInserter(threshold)
 
-      firstBatch.foreach(inserter.insert(nodeId, _))
-      secondBatch.take(2).foreach(inserter.insert(nodeId, _))
+      insertDocumentIds(firstBatch)
+      insertDocumentIds(secondBatch.take(2))
 
       val firstBatchInserted = findNodeDocumentIds
       firstBatchInserted must have size (threshold)
 
-      secondBatch.drop(2).foreach(inserter.insert(nodeId, _))
+      insertDocumentIds(secondBatch.drop(2))
 
       val allInserted = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((nodeId, _))
@@ -74,10 +76,8 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
 
     "flush remaining data when instructed to" in new DocumentsSetup {
       val documentIds = insertDocuments(documentSetId, 4)
-      val threshold = 5
-      val inserter = new NodeDocumentBatchInserter(threshold)
 
-      documentIds.foreach(inserter.insert(nodeId, _))
+      insertDocumentIds(documentIds)
       inserter.flush
 
       val flushedDocuments = findNodeDocumentIds
@@ -87,8 +87,6 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
     }
 
     "flush with no queued inserts doesn't fail" in new DocumentsSetup {
-      val threshold = 5
-      val inserter = new NodeDocumentBatchInserter(threshold)
 
       inserter.flush
       "did not crash" must be equalTo ("did not crash")

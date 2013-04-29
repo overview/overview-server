@@ -1,29 +1,24 @@
-/*
- * NodeDocumentBatchInserter.scala
- *
- * Overview Project
- * Created by Jonas Karlsson, Aug 2012
- */
-
 package org.overviewproject.persistence
 
 import scala.collection.mutable.Seq
-import org.overviewproject.persistence.orm.NodeDocument
+import org.squeryl.Table
+
+
 
 /**
  * Batches the insertion of nodeIds and documentIds into the node_document table.
  * Once the number of insertions reaches the threshold, the batch insert is executed.
  * flush() must be called to ensure that all inserts get executed.
  */
-class NodeDocumentBatchInserter(threshold: Long) {
+class BatchInserter[T](threshold: Long, table: Table[T]) {
   var insertCount: Long = _
-  var currentBatch: Seq[NodeDocument] = Seq()
+  var currentBatch: Seq[T] = Seq()
 
   resetBatch
 
-  /** queue up nodeId and documentId for insertion in the node_document table */
-  def insert(nodeId: Long, documentId: Long){
-    currentBatch +:= NodeDocument(nodeId, documentId)
+  /** queue up item for insertion in the node_document table */
+  def insert(item: T){
+    currentBatch +:= item
     
     insertCount += 1
 
@@ -34,9 +29,7 @@ class NodeDocumentBatchInserter(threshold: Long) {
 
   /** execute the batch insert */
   def flush {
-    import org.overviewproject.persistence.orm.Schema.nodeDocuments
-    nodeDocuments.insert(currentBatch)
-
+    table.insert(currentBatch)
     resetBatch
   }
 
