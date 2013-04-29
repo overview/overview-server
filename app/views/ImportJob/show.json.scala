@@ -1,4 +1,4 @@
-package views.json.DocumentSetCreationJob
+package views.json.ImportJob
 
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
@@ -11,7 +11,7 @@ object show {
   def apply(job: DocumentSetCreationJob, documentSet: DocumentSet, nAheadInQueue: Long)(implicit lang: Lang) : JsValue = {
     toJson(Map(
       "id" -> toJson(documentSet.id),
-      "html" -> toJson(views.html.DocumentSetCreationJob._documentSetCreationJob(job, documentSet, nAheadInQueue).toString)
+      "html" -> toJson(views.html.ImportJob._documentSetCreationJob(job, documentSet, nAheadInQueue).toString)
     ))
   }
 }

@@ -26,7 +26,7 @@ GET    /documents/:id      controllers.DocumentController.show(id: Long)
 HEAD   /uploads/:uuid controllers.UploadController.show(uuid: java.util.UUID)
 POST   /uploads/:uuid controllers.UploadController.create(uuid: java.util.UUID)
 
-GET    /document-set-creation-jobs.json controllers.DocumentSetCreationJobController.index()
+GET    /imports.json controllers.ImportJobController.index()
 
 # Routes that relate to a DocumentSet
 GET    /documentsets                  controllers.DocumentSetController.index(page: Int ?= 1)
@@ -78,7 +78,7 @@ GET    /admin/users     controllers.admin.UserController.index()
 POST   /admin/users/:id controllers.admin.UserController.update(id: Long)
 DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
 
-GET    /admin/jobs controllers.admin.DocumentSetCreationJobController.index()
+GET    /admin/imports controllers.admin.ImportJobController.index()
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /assets/*file controllers.Assets.at(path="/public", file)

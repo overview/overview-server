@@ -8,7 +8,7 @@ import models.ResultPage
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.DocumentSet
 
-trait DocumentSetCreationJobController extends Controller {
+trait ImportJobController extends Controller {
   import Authorities._
 
   private val pageSize = 50 // we'll only show page 1, so pageSize is a guard against DoS
@@ -16,7 +16,7 @@ trait DocumentSetCreationJobController extends Controller {
   def index() = AuthorizedAction(anyUser) { implicit request =>
     val tuples = loadDocumentSetCreationJobs(request.user.email, pageSize, 1)
 
-    Ok(views.json.DocumentSetCreationJob.index(tuples))
+    Ok(views.json.ImportJob.index(tuples))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
@@ -24,7 +24,7 @@ trait DocumentSetCreationJobController extends Controller {
     : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 }
 
-object DocumentSetCreationJobController extends DocumentSetCreationJobController {
+object ImportJobController extends ImportJobController {
   override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
     val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
     ResultPage(query, pageSize, page)

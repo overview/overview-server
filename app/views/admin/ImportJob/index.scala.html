@@ -7,7 +7,7 @@
 @import models.orm.finders.DocumentSetUserFinder
 @import views.html.helper.EnumToString
 
-@defining(scopedMessages("views.admin.DocumentSetCreationJob.index")) { m =>
+@defining(scopedMessages("views.admin.ImportJob.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index") {
     <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
     <table class="table table-hover">

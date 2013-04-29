@@ -1,4 +1,4 @@
-package views.json.DocumentSetCreationJob
+package views.json.ImportJob
 
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
