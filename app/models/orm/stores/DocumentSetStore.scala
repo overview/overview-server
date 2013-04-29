@@ -16,29 +16,6 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
     throw new AssertionError("Use DocumentSet.deleteOrCancelJob(), not delete()")
   }
 
-  /** Creates a clone DocumentSet, without a DocumentSetCreationJob.
-    *
-    * The caller must create a DocumentSetCreationJob in the same transaction.
-    *
-    * TODO: make it so that only the worker creates DocumentSets, then remove
-    * this method.
-    */
-  def insertCloneOf(original: DocumentSet) : DocumentSet = {
-    val originalUploadedFile = original.uploadedFileId.flatMap(id =>
-      UploadedFileFinder.byUploadedFile(id).headOption
-    )
-    val cloneFile = originalUploadedFile.map { (uf: UploadedFile) =>
-      UploadedFileStore.insertOrUpdate(uf.copy(id=0L))
-    }
-
-    DocumentSetStore.insertOrUpdate(original.copy(
-      id = 0L,
-      isPublic = false,
-      createdAt = new java.sql.Timestamp(scala.compat.Platform.currentTime),
-      uploadedFileId = cloneFile.map(_.id)
-    ))
-  }
-
   def deleteOrCancelJob(query: Query[DocumentSet]) : Unit = {
     FinderResult(query).foreach(deleteOrCancelJob(_))
   }

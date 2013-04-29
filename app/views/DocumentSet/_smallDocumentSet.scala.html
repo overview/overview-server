@@ -5,7 +5,7 @@
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
   <li>
-    <form method="POST" action="@routes.DocumentSetController.createClone(documentSet.id)" class="form-inline">
+    <form method="POST" action="@routes.CloneImportJobController.create(documentSet.id)" class="form-inline">
       <button class="btn"><i class="icon-download"></i> @m("import")</button>
     </form>
     <h3>@documentSet.title</h3>

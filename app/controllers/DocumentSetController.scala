@@ -21,10 +21,7 @@ trait DocumentSetController extends Controller {
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[DocumentSet]
     def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 
-    def insertCloneOfDocumentSet(documentSet: DocumentSet): DocumentSet
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
-    def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit
-    def insertOrUpdateDocumentSetCreationJob(job: DocumentSetCreationJob): Unit
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
   }
@@ -74,33 +71,6 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  def createClone(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    val m = views.Magic.scopedMessages("controllers.DocumentSetController")
-    // TODO remove document-set load, after we remove DocumentSetCreationJob's dependence on DocumentSet
-    val flashing = storage.findDocumentSet(id).map { originalDocumentSet =>
-      val documentSet = storage.insertCloneOfDocumentSet(originalDocumentSet)
-      storage.insertOrUpdateDocumentSetUser(
-        DocumentSetUser(documentSet, request.user.email, Ownership.Owner)
-      )
-      storage.insertOrUpdateDocumentSetCreationJob(
-        DocumentSetCreationJob(
-          documentSetId=documentSet,
-          state = NotStarted,
-          jobType = DocumentSetCreationJobType.Clone,
-          sourceDocumentSetId = Some(originalDocumentSet.id)
-        )
-      )
-      Seq(
-        "event" -> "document-set-create-clone"
-      )
-    }.getOrElse(
-      Seq(
-        "error" -> m("clone.failure")
-      )
-    )
-    Redirect(routes.DocumentSetController.index()).flashing(flashing : _*)
-  }
-
   val storage : DocumentSetController.Storage
 }
 
@@ -120,20 +90,8 @@ object DocumentSetController extends DocumentSetController {
       ResultPage(query, pageSize, page)
     }
 
-    override def insertCloneOfDocumentSet(documentSet: DocumentSet): DocumentSet = {
-      DocumentSetStore.insertCloneOf(documentSet)
-    }
-
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
       DocumentSetStore.insertOrUpdate(documentSet)
-    }
-
-    override def insertOrUpdateDocumentSetUser(documentSetUser: DocumentSetUser): Unit = {
-      DocumentSetUserStore.insertOrUpdate(documentSetUser)
-    }
-
-    override def insertOrUpdateDocumentSetCreationJob(job: DocumentSetCreationJob): Unit = {
-      DocumentSetCreationJobStore.insertOrUpdate(job)
     }
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {

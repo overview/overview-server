@@ -1,13 +1,9 @@
 package models.orm.stores
 
-import anorm.SQL
-import anorm.SqlParser.{flatten, scalar}
-import anorm.{sqlToSimple, toParameterValue}
 import java.sql.Timestamp
 import java.util.Date
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
-import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
@@ -19,7 +15,6 @@ import helpers.{DbTestContext, PgConnectionContext}
 import models.orm._
 import models.orm.finders._
 
-//@RunWith(classOf[JUnitRunner])
 class DocumentSetStoreSpec extends Specification {
 
   trait DocumentSetContext extends PgConnectionContext {
@@ -102,27 +97,6 @@ class DocumentSetStoreSpec extends Specification {
 
     "set isPublic to false by default" in new DocumentSetContext {
       DocumentSet().isPublic must beFalse
-    }
-
-    "set clone isPublic to false" in new DocumentSetContext {
-      val documentSet = DocumentSetStore.insertCloneOf(DocumentSet(isPublic=true))
-      documentSet.isPublic must beEqualTo(false)
-    }
-
-    "set clone createdAt to the current date" in new DocumentSetContext {
-      val documentSet = DocumentSetStore.insertCloneOf(DocumentSet(createdAt=new Timestamp(1L)))
-      documentSet.createdAt.getTime must beCloseTo(scala.compat.Platform.currentTime, 1000)
-    }
-
-    "clone the uploadedFile" in new DocumentSetContext {
-      val (uploadedFile, firstDocumentSet) = insertUploadedFileAndDocumentSet
-      val cloneDocumentSet = DocumentSetStore.insertCloneOf(firstDocumentSet)
-
-      cloneDocumentSet.uploadedFileId must not beSome(uploadedFile.id)
-      cloneDocumentSet.uploadedFileId must not beNone
-      // The following newline prevents a compiler error...
-
-      UploadedFileFinder.byDocumentSet(cloneDocumentSet).count must beEqualTo(1)
     }
 
     "delete document_set_user entries" in new DocumentSetContext {
@@ -234,7 +208,7 @@ class DocumentSetStoreSpec extends Specification {
 
     "cancel in-progress clone jobs when deleting a document set" in new DocumentSetContext {
       val documentSet = insertDocumentSet
-      val cloneDocumentSet = DocumentSetStore.insertCloneOf(documentSet)
+      val cloneDocumentSet = CloneImportJobStore.insertCloneOf(documentSet)
       val cloneJob = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId=cloneDocumentSet.id,
         jobType=DocumentSetCreationJobType.Clone,
