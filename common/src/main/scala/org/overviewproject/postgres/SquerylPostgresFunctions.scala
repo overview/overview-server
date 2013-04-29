@@ -22,4 +22,15 @@ trait SquerylPostgresFunctions {
 
     f.convert(new FunctionNode("format", Seq(format, e)))
   }
+
+  /** Calls lo_unlink().
+    *
+    * You <em>must</em> select &amp;(lo_unlink(table.oidColumn)), and
+    * <em>not</em> just lo_unlink(table.oidColumn). We don't know why.
+    */
+  def lo_unlink(e: TypedExpression[Option[Long],TOptionLong]
+    )(implicit f: TypedExpressionFactory[Option[Int],TOptionInt]) = {
+
+    f.convert(new FunctionNode("lo_unlink", Seq(e)))
+  }
 }

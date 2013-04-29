@@ -21,11 +21,13 @@ object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentS
   private[stores] def deletePending(job: DocumentSetCreationJob) : Unit = {
     require(job.state == DocumentSetCreationJobState.NotStarted || job.state == DocumentSetCreationJobState.Error)
 
-    val connection = OverviewDatabase.currentConnection
-    val pgConnection = DB.pgConnection(connection)
-    job.contentsOid.map(oid => LO.delete(oid)(pgConnection))
-
     import org.overviewproject.postgres.SquerylEntrypoint._
+
+    from(Schema.documentSetCreationJobs)(dscj =>
+      where(dscj.id === job.id)
+      select(&(lo_unlink(dscj.contentsOid)))
+    ).toIterable // toIterable() executes it
+
     Schema.documentSetCreationJobs.delete(job.id)
   }
 
