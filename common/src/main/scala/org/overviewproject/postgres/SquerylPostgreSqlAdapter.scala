@@ -2,7 +2,7 @@ package org.overviewproject.postgres
 
 import org.squeryl.adapters.PostgreSqlAdapter
 import org.squeryl.dsl.ast.QueryExpressionElements
-import org.squeryl.internals.{DBType,FieldMetaData,StatementWriter,Utils}
+import org.squeryl.internals.{DBType,FieldMetaData,FieldStatementParam,StatementWriter,Utils}
 import org.squeryl.Schema
 
 class SquerylPostgreSqlAdapter extends PostgreSqlAdapter {
@@ -18,9 +18,9 @@ class SquerylPostgreSqlAdapter extends PostgreSqlAdapter {
     if (sw.isForDisplay) {
       super.writeValue(o, fmd, sw)
     } else {
-      val v = fmd.getNativeJdbcValue(o)
-      sw.addParam(convertToJdbcValue(v))
+      sw.addParam(FieldStatementParam(o, fmd))
 
+      val v = fmd.getNativeJdbcValue(o)
       if (fmd.isCustomType && v.isInstanceOf[PostgresqlEnum]) {
         // FIXME remove PostgresqlEnum (and this branch) in favor of Enumeration
         "? ::" + v.asInstanceOf[PostgresqlEnum].typeName
