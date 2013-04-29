@@ -55,7 +55,7 @@ object DocumentSetCreationJobFinder extends Finder {
         on(
           dscj.documentSetId === ds.id,
           ds.id === dsu.documentSetId and dsu.role === Ownership.Owner,
-          dsu.documentSetId === u.id
+          dsu.userEmail === u.email
         )
       )
     }
