@@ -6,7 +6,7 @@ define [
   'dcimport/templates/project',
   'dcimport/templates/split_documents'
 ], ($, i18n, CredentialStore, request_json_with_login, project_template, split_documents_template) ->
-  PROJECT_URL = '/documentsets' # where to POST
+  PROJECT_URL = '/imports/documentcloud' # where to POST
 
   empty_html = '<p>You have no projects to import.</p>' # FIXME i18n
 

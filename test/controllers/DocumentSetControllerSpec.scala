@@ -40,13 +40,6 @@ class DocumentSetControllerSpec extends Specification with Mockito {
     def sessionForm: Seq[(String, String)]
   }
 
-  class CreateRequest extends AuthorizedSession {
-    val query = "documentSet query"
-    val title = "documentSet title"
-    mockStorage.insertOrUpdateDocumentSet(any[DocumentSet]) returns DocumentSet(id=1L)
-    override def sessionForm = Seq("query" -> query, "title" -> title)
-  }
-
   class UpdateRequest extends AuthorizedSession {
     val documentSetId: Long = 1l
     val newTitle = "New Title"
@@ -60,16 +53,6 @@ class DocumentSetControllerSpec extends Specification with Mockito {
   }
 
   "The DocumentSet Controller" should {
-    "submit a DocumentSetCreationJob when a new query is received" in new CreateRequest {
-      val result = controller.create()(request)
-      there was one(mockStorage).insertOrUpdateDocumentSetCreationJob(any)
-    }
-
-    "redirect to documentsets view" in new CreateRequest {
-      val result = controller.create()(request)
-      redirectLocation(result).getOrElse("No redirect") must be equalTo ("/documentsets")
-    }
-
     "update the DocumentSet" in new UpdateRequest {
       mockStorage.findDocumentSet(anyLong) returns Some(DocumentSet(id=1L))
       val result = controller.update(documentSetId)(request)

@@ -55,34 +55,6 @@ trait DocumentSetController extends Controller {
     }
   }
 
-  def create() = AuthorizedAction(anyUser) { implicit request =>
-    form.bindFromRequest().fold(
-      f => index(1)(request),
-
-      Function.tupled { (formDocumentSet: DocumentSet, credentials: Credentials, splitDocuments: Boolean) =>
-        val documentSet = storage.insertOrUpdateDocumentSet(formDocumentSet)
-        storage.insertOrUpdateDocumentSetUser(
-          DocumentSetUser(documentSet.id, request.user.email, Ownership.Owner)
-        )
-        storage.insertOrUpdateDocumentSetCreationJob(
-          DocumentSetCreationJob(
-            documentSetId=documentSet,
-            state = NotStarted,
-            jobType = DocumentSetCreationJobType.DocumentCloud,
-            // query = ... XXX "query" belongs here, not in DocumentSet
-            documentcloudUsername = credentials.username,
-            documentcloudPassword = credentials.password,
-            splitDocuments = splitDocuments
-          )
-        )
-
-        Redirect(routes.DocumentSetController.index()).flashing(
-          "event" -> "document-set-create"
-        )
-      }
-    )
-  }
-
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     storage.findDocumentSet(id).map(storage.deleteDocumentSet) // ignore not-found

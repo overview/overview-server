@@ -28,9 +28,10 @@ POST   /uploads/:uuid controllers.UploadController.create(uuid: java.util.UUID)
 
 GET    /imports.json controllers.ImportJobController.index()
 
+POST   /imports/documentcloud controllers.DocumentCloudImportJobController.create()
+
 # Routes that relate to a DocumentSet
 GET    /documentsets                  controllers.DocumentSetController.index(page: Int ?= 1)
-POST   /documentsets                  controllers.DocumentSetController.create()
 GET    /documentsets/:id.json         controllers.DocumentSetController.showJson(id: Long)
 GET    /documentsets/:id              controllers.DocumentSetController.show(id: Long)
 DELETE /documentsets/:id              controllers.DocumentSetController.delete(id: Long)
