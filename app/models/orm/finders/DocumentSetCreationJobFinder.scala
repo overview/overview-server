@@ -42,6 +42,7 @@ object DocumentSetCreationJobFinder extends Finder {
         
       join(toQuery, Schema.documentSets, queuePositions)((dscj, ds, qp) =>
         select(dscj, ds, qp.measures)
+        orderBy(dscj.id desc)
         on(
           dscj.documentSetId === ds.id,
           qp.key === dscj.id
