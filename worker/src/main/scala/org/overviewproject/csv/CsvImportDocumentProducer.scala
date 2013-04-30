@@ -57,7 +57,8 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       reportProgress(uploadReader.bytesRead, uploadedFile.size)
 
     }
-
+    
+    Database.inTransaction{ documentTagWriter.flush() }
     consumer.productionComplete()
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
   }
