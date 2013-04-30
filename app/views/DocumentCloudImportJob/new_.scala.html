@@ -1,0 +1,32 @@
+@(
+  user: OverviewUser,
+  documentcloudId: Long
+)(implicit lang: Lang, flash: Flash)
+
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentCloudImportJob/new").url)
+}
+
+@jsMessageKeys = @{Seq(
+  "views.DocumentCloudImportJob.new.email.label",
+  "views.DocumentCloudImportJob.new.email.placeholder",
+  "views.DocumentCloudImportJob.new.password.label",
+  "views.DocumentCloudImportJob.new.credentials_preamble",
+  "views.DocumentCloudImportJob.new.fetching",
+  "views.DocumentCloudImportJob.new.fetched_public.preamble",
+  "views.DocumentCloudImportJob.new.fetched_private.preamble",
+  "views.DocumentCloudImportJob.new.form_preamble",
+  "views.DocumentCloudImportJob.new.project.document_count",
+  "views.DocumentCloudImportJob.new.split_documents.label",
+  "views.DocumentCloudImportJob.new.submit_credentials.label",
+  "views.DocumentCloudImportJob.new.submit.label",
+  "views.DocumentCloudImportJob.new.title.label",
+  "views.DocumentCloudImportJob.new.title.placeholder",
+  "views.DocumentCloudImportJob.new.title.value"
+)}
+
+@defining(scopedMessages("views.DocumentCloudImportJob.new")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-cloud-import-job-new", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <div id="document-cloud-import-job" data-document-cloud-project-id="@documentcloudId" data-submit-url="@routes.DocumentCloudImportJobController.create()">
+  }
+}

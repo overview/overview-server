@@ -115,6 +115,24 @@ views.Document.show.wrap.disable=(newlines added)
 views.Document.show.title.empty_title=(document with no title)
 views.Document.show.source=Source: 
 
+views.DocumentCloudImportJob.new.title=Import project from DocumentCloud
+views.DocumentCloudImportJob.new.h1=Import project from DocumentCloud
+views.DocumentCloudImportJob.new.email.label=DocumentCloud email
+views.DocumentCloudImportJob.new.email.placeholder=user@example.org
+views.DocumentCloudImportJob.new.password.label=DocumentCloud password
+views.DocumentCloudImportJob.new.credentials_preamble=You’re trying to import a private DocumentCloud project. Please enter your DocumentCloud email password.
+views.DocumentCloudImportJob.new.fetched_public.preamble=This is a public DocumentCloud project.
+views.DocumentCloudImportJob.new.fetched_private.preamble=This is a private DocumentCloud project. We will delete your DocumentCloud username and password from our servers as soon as the import completes or is cancelled.
+views.DocumentCloudImportJob.new.fetching=Loading project information from DocumentCloud…
+views.DocumentCloudImportJob.new.form_preamble=Choose how this project should look in Overview
+views.DocumentCloudImportJob.new.project.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentCloudImportJob.new.split_documents.label=Split each page into its own document in Overview
+views.DocumentCloudImportJob.new.title.label=Title in Overview
+views.DocumentCloudImportJob.new.title.placeholder=Title
+views.DocumentCloudImportJob.new.title.value={0} (from DocumentCloud)
+views.DocumentCloudImportJob.new.submit.label=Import into Overview
+views.DocumentCloudImportJob.new.submit_credentials.label=Load project information from DocumentCloud
+
 views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
 views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password

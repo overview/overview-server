@@ -21,4 +21,9 @@ define [ 'backbone', 'base64' ], (Backbone, Base64) ->
         { email: email, password: password }
       else
         undefined
+
+    isComplete: ->
+      email = @get('email')
+      password = @get('password')
+      !!(email && password)
   })

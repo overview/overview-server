@@ -29,3 +29,12 @@ require [
         expect(onlyEmailCredentials.toPostData()).toBeUndefined()
         expect(onlyPasswordCredentials.toPostData()).toBeUndefined()
         expect(emptyCredentials.toPostData()).toBeUndefined()
+
+    describe 'isComplete', ->
+      it 'should return true when email and password are set', ->
+        expect(validCredentials.isComplete()).toBe(true)
+
+      it 'should return false when email or password is not set', ->
+        expect(onlyEmailCredentials.isComplete()).toBe(false)
+        expect(onlyPasswordCredentials.isComplete()).toBe(false)
+        expect(emptyCredentials.isComplete()).toBe(false)

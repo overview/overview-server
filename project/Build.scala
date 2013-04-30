@@ -126,6 +126,7 @@ object ApplicationBuild extends Build {
     templatesImport += "views.Magic._",
     lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less"), // only compile .less files that aren't in subdirs
     requireJs ++= Seq(
+      "bundle/DocumentCloudImportJob/new.js",
       "bundle/DocumentSet/index.js",
       "bundle/DocumentSet/show.js",
       "bundle/Document/show.js",
