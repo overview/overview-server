@@ -60,6 +60,34 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
 
   toString = Object.prototype.toString
 
+  # Adds commas to the string so they're grouped by three at the right. For
+  # instance, "00000000" becomes "00,000,000".
+  addCommas = (s) ->
+    ret = ""
+    while m = /(.*)(\w)(\w{3})\b/.exec(s)
+      s = m[1] + m[2]
+      ret = if ret.length
+        "#{m[3]},#{ret}"
+      else
+        m[3]
+    if ret.length
+      "#{s},#{ret}"
+    else
+      s
+
+  # intToString(1234.234) => "1,234"
+  intToString = (i) ->
+    s = "#{parseInt("#{i}", 10)}"
+    addCommas(s)
+
+  # floatToString(112412.1241234, 2) => "112,412.12"
+  floatToString = (f, decimalDigits) ->
+    s = parseFloat(f).toFixed(decimalDigits)
+    parts = s.split('.')
+    whole = parts[0]
+    decimal = parts[1] && ".#{parts[1]}" || ""
+    addCommas(whole) + decimal
+
   _isString = (obj) ->
     toString.call(obj) == '[object String]'
 
@@ -79,11 +107,11 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
     if node.format_type == 'number'
       node.format_style ||= 'integer'
       if node.format_style == 'integer'
-        "#{parseInt(value, 10)}"
+        intToString(parseInt(value, 10))
       else
         # Doesn't handle currency or percent
         digits = node.format_style.split('.')[1].length
-        parseFloat(value).toFixed(digits) # Doesn't handle number format
+        floatToString(parseFloat(value), digits) # doesn't handle number format
     else if node.format_type == 'choice'
       _choice_to_string(node.format_style, parseFloat(value), args)
     else
