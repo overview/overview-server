@@ -29,19 +29,13 @@ Feature: Upload a CSV
   @worker
   Scenario: Creating a CsvImport DocumentSet
     Given I am logged in as "user@example.org"
-    When I perform a CSV upload with the file "CsvUpload.csv"
-     And I wait for all jobs to complete
-     And I wait for all AJAX requests to complete
-     And I wait for all animations to complete
+    When I wait for a CSV upload with the file "CsvUpload.csv" to complete
     Then I should see the document set "CsvUpload.csv"
 
   @worker
   Scenario: Viewing a CsvImport DocumentSet
     Given I am logged in as "user@example.org"
-    When I perform a CSV upload with the file "CsvUpload.csv"
-     And I wait for all jobs to complete
-     And I wait for all AJAX requests to complete
-     And I wait for all animations to complete
+    When I wait for a CSV upload with the file "CsvUpload.csv" to complete
      And I click the "CsvUpload.csv" link
      And I wait for all AJAX requests to complete
     Then I should see the Facebook document "facebook1"
@@ -49,3 +43,14 @@ Feature: Upload a CSV
      And I should see the DocumentCloud document "documentcloud1"
      And I should see the secure document "secure1"
      And I should see the insecure document "insecure1"
+
+  @worker
+  @wip
+  Scenario: Importing tags
+    Given I am logged in as "user@example.org"
+    When I wait for a CSV upload with the file "CsvUploadWithTags.csv" to complete
+     And I click the "CsvUploadWithTags.csv" link
+     And I wait for all AJAX requests to complete
+    Then I should see the tag "tag1"
+     And I should see the tag "tag2"
+
