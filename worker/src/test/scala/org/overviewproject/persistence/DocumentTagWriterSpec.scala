@@ -15,7 +15,7 @@ class DocumentTagWriterSpec extends DbSpecification {
   
   "DocumentTagWriter" should {
     
-    inExample("write DocumentTags") in new DbTestContext {
+    inExample("write DocumentTags in batches") in new DbTestContext {
       val documentSetId = insertDocumentSet("DocumentTagWriterSpec")
       val document = Document(CsvImportDocument, documentSetId, "title", text = Some("text"))
       Schema.documents.insert(document)
@@ -29,8 +29,13 @@ class DocumentTagWriterSpec extends DbSpecification {
       
       documentTagWriter.write(document, tags)
       
-      val savedTagIds  = from(Schema.documentTags)(dt => where(dt.documentId === document.id) select(dt.tagId))
+      val tagsBeforeBatchFilled = from(Schema.documentTags)(dt => where(dt.documentId === document.id) select(dt.tagId))
       
+      tagsBeforeBatchFilled.toSeq must beEmpty
+      
+      documentTagWriter.flush()
+      
+      val savedTagIds = from(Schema.documentTags)(dt => where(dt.documentId === document.id) select(dt.tagId))
       savedTagIds.toSeq must haveTheSameElementsAs(tagIds)
     }
 
