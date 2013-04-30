@@ -2,20 +2,20 @@ requirejs.config({
   baseUrl: '/test/src-js'
 
   shim: {
-    'backbone': {
+    jquery: { exports: '$' }
+    'backbone':
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
-    }
-    'bootstrap-modal': {
+    'base64':
+      exports: 'Base64'
+    'bootstrap-modal':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.modal'
-    }
     underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
-    spectrum: {
+    spectrum:
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.spectrum'
-    }
   }
 
   paths: {
