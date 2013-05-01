@@ -1,17 +1,9 @@
 package steps
 
-import scala.collection.JavaConverters._
-
-import anorm._
 import org.fluentlenium.core.filter.Filter
 import org.fluentlenium.core.filter.FilterConstructor.withText
 
-import models.OverviewDatabase
-import models.orm.DocumentSetUser
-import models.orm.stores.DocumentSetUserStore
-import controllers.routes
-import org.overviewproject.tree.Ownership
-import org.overviewproject.test.DbSetup
+import cucumber.runtime.scala.Transform.{t2Int, t2String}
 
 class DocumentSetShowSteps extends BaseSteps {
   Then("""^I should see the tree$""") { () =>
@@ -46,6 +38,13 @@ class DocumentSetShowSteps extends BaseSteps {
 
   Then("""^I should see the tag "([^"]*)"$""") { (tagName: String) =>
     Framework.browser.find(".tag-name", withText(tagName)).size() must equalTo(1)
+  }
+
+  Then("""^tag "([^"]*)" should have (\d+) documents$""") { (tagName: String, count: Int) =>
+    browser.find(".tag-name", withText(tagName)).click()
+    CommonSteps.waitForAjaxToComplete
+    val t = browser.find("#document-list h4").getText()
+    t must startWith(s"$count documents")
   }
 
 }

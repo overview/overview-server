@@ -45,7 +45,6 @@ Feature: Upload a CSV
      And I should see the insecure document "insecure1"
 
   @worker
-  @wip
   Scenario: Importing tags
     Given I am logged in as "user@example.org"
     When I wait for a CSV upload with the file "CsvUploadWithTags.csv" to complete
@@ -53,4 +52,7 @@ Feature: Upload a CSV
      And I wait for all AJAX requests to complete
     Then I should see the tag "tag1"
      And I should see the tag "tag2"
+     And tag "tag1" should have 4 documents
+     And tag "tag2" should have 3 documents
+
 
