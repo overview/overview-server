@@ -38,8 +38,7 @@ trait DocumentSetExportController extends Controller {
             CONTENT_TYPE -> contentTypeString,
             CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API makes no guarantee
             CACHE_CONTROL -> "max-age=0",
-            //CONTENT_DISPOSITION -> "attachment; filename=overview-export.csv"
-            CONTENT_DISPOSITION -> "inline"
+            CONTENT_DISPOSITION -> "attachment; filename=overview-export.csv"
           )
       })
     }
