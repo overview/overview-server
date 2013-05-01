@@ -5,11 +5,14 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     className: 'documentcloud-project'
 
     template: _.template("""
-      <div class="title"><%- project.title %></div>
-      <% if (project.description) { %>
-        <div class="description"><%- project.description %></div>
-      <% } %>
-      <div class="document-count"><%- t('project.document_count', project.document_ids.length) %></div>
+      <p class="preamble"><%- t("project.preamble") %></p>
+      <div class="details">
+        <h3><%- project.title %></h3>
+        <% if (project.description) { %>
+          <p class="description"><%- project.description %></p>
+        <% } %>
+        <p class="document-count"><%- t('project.document_count', project.document_ids.length) %></p>
+      </div>
     """)
 
     initialize: ->

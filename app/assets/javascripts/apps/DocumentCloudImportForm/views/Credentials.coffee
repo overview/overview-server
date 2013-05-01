@@ -19,6 +19,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           <div class="control-group">
             <div class="controls">
               <button type="submit" class="btn"><%- t("submit_credentials.label") %></button>
+              <p class="help-block"><%- t("submit_credentials.preamble." + ($.support.cors ? "cors" : "no_cors")) %></p>
             </div>
           </div>
         </div>
@@ -26,17 +27,13 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     """)
 
     fetched: _.template("""
-      <% if (credentials && credentials.isComplete()) { %>
-        <p class="fetched fetched-public"><%- t("fetched_private.preamble") %></p>
-        <input type="hidden" name="documentcloud_username" value="<%- credentials.get('email') %>" />
-        <input type="hidden" name="documentcloud_password" value="<%- credentials.get('password') %>" />
-      <% } else { %>
-        <p class="fetched fetched-private"><%- t("fetched_public.preamble") %></p>
-      <% } %>
+      <p class="fetched"><%- t("fetched") %></p>
+      <input type="hidden" name="documentcloud_username" value="<%- credentials.get('email') %>" />
+      <input type="hidden" name="documentcloud_password" value="<%- credentials.get('password') %>" />
     """)
 
     fetching: _.template("""
-      <div class="loading"><%- t("fetching") %></div>
+      <div class="loading"><progress></progress><%- t("fetching") %></div>
     """)
   }
 

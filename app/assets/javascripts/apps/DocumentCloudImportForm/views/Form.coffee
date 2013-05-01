@@ -6,7 +6,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     template: _.template("""
       <p class="preamble"><%- t("form_preamble") %></p>
-      <div class="prompt form-horizontal">
+      <div class="prompt">
         <div class="control-group">
           <label class="control-label" for="documentcloud-title"><%- t("title.label") %></label>
           <div class="controls">
@@ -20,7 +20,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         <div class="control-group">
           <div class="controls">
             <label>
-              <input type="checkbox" name="split_documents" />
+              <input type="checkbox" name="split_documents" value="true" /><!-- unchecked by default -->
               <%- t("split_documents.label") %>
             </label>
           </div>
@@ -28,6 +28,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         <div class="control-group">
           <div class="controls">
             <button type="submit" class="btn"><%- t("submit.label") %></button>
+            <p class="help-block"><%- t("submit.preamble") %></p>
           </div>
         </div>
       </div>

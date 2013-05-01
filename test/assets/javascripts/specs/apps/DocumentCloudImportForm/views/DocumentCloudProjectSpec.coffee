@@ -19,6 +19,7 @@ require [
         status: 'unknown'
       })
       i18n.reset_messages({
+        'views.DocumentCloudImportJob.new.project.preamble': 'preamble'
         'views.DocumentCloudImportJob.new.project.document_count': 'document_count,{0}'
       })
       view = new ProjectView({ model: model })
@@ -34,7 +35,7 @@ require [
     it 'should render the title', ->
       model.get('project').set('title', 'title')
       model.set('status', 'fetched')
-      expect(view.$('.title').text()).toEqual('title')
+      expect(view.$('h3').text()).toEqual('title')
 
     it 'should render the description', ->
       model.get('project').set('description', 'description')

@@ -1,0 +1,91 @@
+body.document-cloud-import-job-new {
+  p.help-block {
+    .muted;
+    max-width: 400px;
+  }
+
+  .credentials {
+    .documentcloud-login-failed {
+      .well;
+      margin: 0;
+      background-color: lighten(@yellow, 35%);
+
+      .preamble {
+        margin: 0 0 20px;
+      }
+
+      .control-group:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .loading {
+      .well;
+      margin: 0;
+      text-align: center;
+
+      progress {
+        margin: 0 auto 1em;
+        width: 50%;
+        height: 50px;
+        display: block;
+      }
+    }
+
+    .fetched {
+      .well;
+      margin: 0;
+      background-color: lighten(@green, 35%);
+    }
+  }
+
+  .documentcloud-project {
+    .preamble {
+      margin: 20px 0;
+    }
+
+    .details {
+      .well;
+      margin: 0;
+      min-height: 51px; // height of DocumentCloud logo
+      @wellPadding: 19px;
+      background-image: url(/assets/images/documentcloud-logo.png);
+      background-position: @wellPadding center;
+      background-repeat: no-repeat;
+      padding-left: @wellPadding + 282px + 20px; // 282px is width of DocumentCloud logo
+      background-color: white;
+
+      h3 {
+        margin-top: 0;
+        line-height: 32px; // At 32px, the h3 and p.document-count add up to 51px, like the height of the logo
+      }
+
+      p.document-count {
+        .muted;
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .import-form {
+    .preamble {
+      margin: 20px 0;
+    }
+
+    .prompt {
+      .well;
+      .form-horizontal;
+      margin: 0;
+
+      .control-group:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    label, input[type=checkbox] {
+      line-height: inherit;
+      vertical-align: inherit;
+      margin: 0;
+    }
+  }
+}

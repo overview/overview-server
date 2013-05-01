@@ -13,7 +13,6 @@ require [
           id: 123
           title: 'title'
           description: null
-          document_ids: []
         }),
         credentials: undefined
         status: 'fetched'
@@ -25,6 +24,7 @@ require [
         'views.DocumentCloudImportJob.new.title.value': 'title.value,{0}'
         'views.DocumentCloudImportJob.new.split_documents.label': 'split_documents.label'
         'views.DocumentCloudImportJob.new.submit.label': 'submit.label'
+        'views.DocumentCloudImportJob.new.submit.preamble': 'submit.preamble'
       })
       view = new FormView({ model: model })
 

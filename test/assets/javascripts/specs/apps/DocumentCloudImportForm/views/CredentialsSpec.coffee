@@ -30,10 +30,11 @@ require [
         'views.DocumentCloudImportJob.new.email.placeholder': 'email.placeholder'
         'views.DocumentCloudImportJob.new.password.label': 'password.label'
         'views.DocumentCloudImportJob.new.submit_credentials.label': 'password.label'
+        'views.DocumentCloudImportJob.new.submit_credentials.preamble.cors': 'preamble.cors'
+        'views.DocumentCloudImportJob.new.submit_credentials.preamble.no_cors': 'preamble.no_cors'
         'views.DocumentCloudImportJob.new.credentials_preamble': 'credentials_preamble'
         'views.DocumentCloudImportJob.new.fetching': 'fetching'
-        'views.DocumentCloudImportJob.new.fetched_public.preamble': 'fetched_public.preamble'
-        'views.DocumentCloudImportJob.new.fetched_private.preamble': 'fetched_private.preamble'
+        'views.DocumentCloudImportJob.new.fetched': 'fetched'
       })
       view = new CredentialsView({ model: model })
 
@@ -50,23 +51,12 @@ require [
       expect(view.$('input[type=password]').length).toEqual(1)
       expect(view.$(':submit').length).toEqual(1)
 
-    it 'should show success for public projects when credentials=undefined', ->
-      model.set('status', 'fetched')
-      expect(view.$('p.fetched').text()).toMatch(/public/)
-
-    it 'should show success for public projects when !credentials.isComplete()', ->
-      model.set({
-        credentials: { isComplete: (-> false), get: -> 'user@example.org' }
-        status: 'fetched'
-      })
-      expect(view.$('p.fetched').text()).toMatch(/public/)
-
-    it 'should show success for private projects', ->
+    it 'should show success', ->
       model.set({
         credentials: { isComplete: (-> true), get: -> 'user@example.org' }
         status: 'fetched'
       })
-      expect(view.$('p.fetched').text()).toMatch(/private/)
+      expect(view.$('p.fetched').text()).toEqual('fetched')
 
     it 'should show hidden fields when project is loaded', ->
       credentials = new Backbone.Model({
