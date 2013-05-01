@@ -1,13 +1,14 @@
 package controllers.forms
 
 import play.api.data.{ Form, Forms }
+import play.api.data.validation.Constraints
 
 import models.{ DocumentCloudCredentials, DocumentCloudImportJob }
 
 object DocumentCloudImportJobForm {
   private def buildJob(ownerEmail: String)(
     title: String,
-    projectId: Long,
+    projectId: String,
     username: Option[String],
     password: Option[String],
     splitDocuments: Option[Boolean]
@@ -29,7 +30,7 @@ object DocumentCloudImportJobForm {
     Form(
       Forms.mapping(
         "title" -> Forms.nonEmptyText,
-        "project_id" -> Forms.longNumber,
+        "project_id" -> Forms.nonEmptyText.verifying(Constraints.pattern("""^[-a-z0-9]+$""".r)),
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text),
         "split_documents" -> Forms.optional(Forms.boolean)

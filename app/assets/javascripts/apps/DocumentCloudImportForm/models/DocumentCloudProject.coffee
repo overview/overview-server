@@ -22,7 +22,7 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
     # When that bug is resolved, remove this method (or make it return
     # response.project, depending on how DocumentCloud does things).
     parse: (response, options) ->
-      _.find(response.projects || [], (p) => "#{p.id}" == "#{@id}")
+      _.find(response.projects || [], (p) => parseInt("#{p.id}", 10) == parseInt("#{@id}", 10))
 
     # Fetches the project from DocumentCloud.
     #

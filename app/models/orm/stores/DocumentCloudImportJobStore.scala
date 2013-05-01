@@ -14,7 +14,7 @@ object DocumentCloudImportJobStore {
   def insert(job: DocumentCloudImportJob) : DocumentSetCreationJob = {
     val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
       title=job.title,
-      query=Some("projectid:%d".format(job.projectId))
+      query=Some("projectid:%s".format(job.projectId))
     ))
     DocumentSetUserStore.insertOrUpdate(DocumentSetUser(
       documentSetId=documentSet.id,

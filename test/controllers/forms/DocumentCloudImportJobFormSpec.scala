@@ -15,30 +15,30 @@ class DocumentCloudImportJobFormSpec extends Specification {
       def baseJob = DocumentCloudImportJob(
         ownerEmail=ownerEmail,
         title="",
-        projectId=0,
+        projectId="1-project",
         credentials=None,
         splitDocuments=false
       )
     }
 
     trait BasicFormScope extends FormScope {
-      override def data = Map("title" -> "title", "project_id" -> "1")
-      override def baseJob = super.baseJob.copy(title="title", projectId=1)
+      override def data = Map("title" -> "title", "project_id" -> "1-project")
+      override def baseJob = super.baseJob.copy(title="title", projectId="1-project")
     }
 
     "accept a title and project_id" in new FormScope {
       override def data = Map(
         "title" -> "title",
-        "project_id" -> "1"
+        "project_id" -> "1-project"
       )
       form.bind(data).value must beEqualTo(Some(baseJob.copy(
         title="title",
-        projectId=1
+        projectId="1-project"
       )))
     }
 
     "fail if there is no title" in new FormScope {
-      override def data = Map("project_id" -> "1")
+      override def data = Map("project_id" -> "1-project")
       form.bind(data).error("title") must beSome
     }
 

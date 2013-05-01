@@ -3,7 +3,7 @@ package models
 case class DocumentCloudImportJob(
   ownerEmail: String,
   title: String,
-  projectId: Long,
+  projectId: String,
   credentials: Option[DocumentCloudCredentials],
   splitDocuments: Boolean
 )
