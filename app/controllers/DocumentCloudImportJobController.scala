@@ -14,8 +14,8 @@ trait DocumentCloudImportJobController extends Controller {
     def insertJob(job: DocumentCloudImportJob) : Unit
   }
 
-  def new_(dcId: String) = AuthorizedAction(anyUser) { implicit request =>
-    Ok(views.html.DocumentCloudImportJob.new_(request.user, dcId))
+  def new_(query: String) = AuthorizedAction(anyUser) { implicit request =>
+    Ok(views.html.DocumentCloudImportJob.new_(request.user, query))
   }
 
   def create() = AuthorizedAction(anyUser) { implicit request =>

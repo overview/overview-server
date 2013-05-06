@@ -1,6 +1,6 @@
 @(
   user: OverviewUser,
-  documentcloudId: String
+  query: String
 )(implicit lang: Lang, flash: Flash)
 
 @javascripts = {
@@ -15,8 +15,8 @@
   "views.DocumentCloudImportJob.new.fetching",
   "views.DocumentCloudImportJob.new.fetched",
   "views.DocumentCloudImportJob.new.form_preamble",
-  "views.DocumentCloudImportJob.new.project.document_count",
-  "views.DocumentCloudImportJob.new.project.preamble",
+  "views.DocumentCloudImportJob.new.query.document_count",
+  "views.DocumentCloudImportJob.new.query.preamble",
   "views.DocumentCloudImportJob.new.split_documents.label",
   "views.DocumentCloudImportJob.new.submit_credentials.label",
   "views.DocumentCloudImportJob.new.submit_credentials.preamble.cors",
@@ -30,6 +30,6 @@
 
 @defining(scopedMessages("views.DocumentCloudImportJob.new")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-cloud-import-job-new", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <div id="document-cloud-import-job" data-document-cloud-project-id="@documentcloudId" data-submit-url="@routes.DocumentCloudImportJobController.create()">
+    <div id="document-cloud-import-job" data-query="@query" data-submit-url="@routes.DocumentCloudImportJobController.create()">
   }
 }

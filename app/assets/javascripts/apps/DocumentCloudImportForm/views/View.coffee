@@ -2,9 +2,9 @@ define [
   'backbone'
   'apps/DocumentCloudImportForm/models/Credentials'
   'apps/DocumentCloudImportForm/views/Credentials'
-  'apps/DocumentCloudImportForm/views/DocumentCloudProject'
+  'apps/DocumentCloudImportForm/views/DocumentCloudQuery'
   'apps/DocumentCloudImportForm/views/Form'
-], (Backbone, Credentials, CredentialsView, ProjectView, FormView) ->
+], (Backbone, Credentials, CredentialsView, QueryView, FormView) ->
   Backbone.View.extend({
     tagName: 'form'
 
@@ -19,13 +19,13 @@ define [
       @el.setAttribute('method', 'POST')
 
       credentialsView = new CredentialsView({ model: @model })
-      projectView = new ProjectView({ model: @model })
+      queryView = new QueryView({ model: @model })
       formView = new FormView({ model: @model })
 
-      @$el.append("<input type=\"hidden\" name=\"project_id\" value=\"#{@model.get('project').id}\" />")
+      @$el.append("<input type=\"hidden\" name=\"query\" value=\"#{@model.get('query').id}\" />")
 
       @el.appendChild(credentialsView.el)
-      @el.appendChild(projectView.el)
+      @el.appendChild(queryView.el)
       @el.appendChild(formView.el)
 
     onSubmit: (e) ->

@@ -8,7 +8,7 @@ import models.{ DocumentCloudCredentials, DocumentCloudImportJob }
 object DocumentCloudImportJobForm {
   private def buildJob(ownerEmail: String)(
     title: String,
-    projectId: String,
+    query: String,
     username: Option[String],
     password: Option[String],
     splitDocuments: Option[Boolean]
@@ -20,7 +20,7 @@ object DocumentCloudImportJobForm {
     DocumentCloudImportJob(
       ownerEmail=ownerEmail,
       title=title,
-      projectId=projectId,
+      query=query,
       credentials=credentials,
       splitDocuments=splitDocuments.getOrElse(false)
     )
@@ -30,13 +30,13 @@ object DocumentCloudImportJobForm {
     Form(
       Forms.mapping(
         "title" -> Forms.nonEmptyText,
-        "project_id" -> Forms.nonEmptyText.verifying(Constraints.pattern("""^[-a-z0-9]+$""".r)),
+        "query" -> Forms.nonEmptyText,
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text),
         "split_documents" -> Forms.optional(Forms.boolean)
       )
       (buildJob(ownerEmail))
-      ((job) => Some(job.title, job.projectId, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments)))
+      ((job) => Some(job.title, job.query, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments)))
     )
   }
 }

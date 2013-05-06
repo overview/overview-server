@@ -42,10 +42,10 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     render: ->
       if @model.get('status') == 'fetched'
-        project = @model.get('project')
+        query = @model.get('query')
         @$('input[name=title]')
           .attr('placeholder', t("title.placeholder"))
-          .val(t('title.value', project.get('title')))
+          .val(t('title.value', query.get('title')))
         @$el.show()
       else
         @$el.hide()

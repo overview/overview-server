@@ -9,7 +9,7 @@ require [
 
     beforeEach ->
       model = new Backbone.Model({
-        project: new Backbone.Model({
+        query: new Backbone.Model({
           id: 123
           title: 'title'
           description: null
@@ -41,6 +41,6 @@ require [
 
     it 'should change the title when the status changes to fetched', ->
       model.set('status', 'fetching')
-      model.get('project').set('title', 'title2')
+      model.get('query').set('title', 'title2')
       model.set('status', 'fetched')
       expect(view.$('input[name=title]').val()).toEqual("title.value,title2")

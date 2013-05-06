@@ -15,25 +15,25 @@ class DocumentCloudImportJobFormSpec extends Specification {
       def baseJob = DocumentCloudImportJob(
         ownerEmail=ownerEmail,
         title="",
-        projectId="1-project",
+        query="projectid:1-project",
         credentials=None,
         splitDocuments=false
       )
     }
 
     trait BasicFormScope extends FormScope {
-      override def data = Map("title" -> "title", "project_id" -> "1-project")
-      override def baseJob = super.baseJob.copy(title="title", projectId="1-project")
+      override def data = Map("title" -> "title", "query" -> "projectid:1-project")
+      override def baseJob = super.baseJob.copy(title="title", query="projectid:1-project")
     }
 
-    "accept a title and project_id" in new FormScope {
+    "accept a title and query" in new FormScope {
       override def data = Map(
         "title" -> "title",
-        "project_id" -> "1-project"
+        "query" -> "1-query"
       )
       form.bind(data).value must beEqualTo(Some(baseJob.copy(
         title="title",
-        projectId="1-project"
+        query="projectid:1-project"
       )))
     }
 
@@ -42,9 +42,14 @@ class DocumentCloudImportJobFormSpec extends Specification {
       form.bind(data).error("title") must beSome
     }
 
-    "fail if there is no project_id" in new FormScope {
+    "fail if there is no query" in new FormScope {
       override def data = Map("title" -> "title")
-      form.bind(data).error("project_id") must beSome
+      form.bind(data).error("query") must beSome
+    }
+
+    "fail if query is only whitespace" in new FormScope {
+      override def data = Map("title" -> "title", "query" -> "   ")
+      form.bind(data).error("query") must beSome
     }
 
     "add ownerEmail to the return value" in new BasicFormScope {

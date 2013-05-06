@@ -2,16 +2,16 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
   t = (key, args...) -> i18n("views.DocumentCloudImportJob.new.#{key}", args...)
 
   Backbone.View.extend({
-    className: 'documentcloud-project'
+    className: 'documentcloud-query'
 
     template: _.template("""
-      <p class="preamble"><%- t("project.preamble") %></p>
+      <p class="preamble"><%- t("query.preamble") %></p>
       <div class="details">
-        <h3><%- project.title %></h3>
-        <% if (project.description) { %>
-          <p class="description"><%- project.description %></p>
+        <h3><%- query.title %></h3>
+        <% if (query.description) { %>
+          <p class="description"><%- query.description %></p>
         <% } %>
-        <p class="document-count"><%- t('project.document_count', project.document_ids.length) %></p>
+        <p class="document-count"><%- t('query.document_count', query.document_count) %></p>
       </div>
     """)
 
@@ -26,10 +26,10 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
       data = _.extend(
         { isPrivate: !!(@model.get('credentials')?.isComplete()) },
-        @model.get('project').attributes
+        @model.get('query').attributes
       )
 
-      html = @template({ t: t, project: data })
+      html = @template({ t: t, query: data })
       @$el.html(html)
 
       this

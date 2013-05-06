@@ -29,7 +29,7 @@ POST   /uploads/:uuid controllers.UploadController.create(uuid: java.util.UUID)
 GET    /imports.json controllers.ImportJobController.index()
 
 POST   /imports/documentcloud              controllers.DocumentCloudImportJobController.create()
-GET    /imports/documentcloud/new/:dcId    controllers.DocumentCloudImportJobController.new_(dcId: String)
+GET    /imports/documentcloud/new/:query    controllers.DocumentCloudImportJobController.new_(query: String)
 POST   /imports/clone/:sourceDocumentSetId controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
 
 # Routes that relate to a DocumentSet
