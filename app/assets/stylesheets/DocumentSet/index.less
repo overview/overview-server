@@ -10,7 +10,9 @@ body.document-set-index {
     z-index: 1;
 
     &.collapsed .caret {
-      display: none;
+      margin-top: 6px; // not the default 8px
+      border: 4px solid transparent;
+      border-left-color: @white;
     }
   }
 

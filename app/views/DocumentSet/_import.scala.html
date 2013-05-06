@@ -4,7 +4,7 @@
 )(implicit lang: Lang, flash: Flash)
 
 @defining(scopedMessages("views.DocumentSet._import")) { m =>
-  <button type="button" class="btn btn-primary collapsed toggle-import" data-toggle="collapse" data-target="#document-set-import"><i class="icon-upload icon-white"></i> @m("title") <span class="caret"></span></button>
+  <button type="button" class="btn btn-primary collapsed toggle-import" data-toggle="collapse" data-target="#document-set-import">@m("title") <span class="caret"></span></button>
   <div id="document-set-import" class="collapse">
     <ul class="nav nav-tabs">
       <li class="disabled"><a>@m("label")</a></li>
