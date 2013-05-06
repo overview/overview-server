@@ -10,5 +10,6 @@ requirejs.config
 
 require [
   'elements/confirm-password'
+  'elements/minlength-password'
   'elements/form-submit-with-feedback'
 ], () ->

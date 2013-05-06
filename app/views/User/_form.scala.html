@@ -7,7 +7,7 @@
     <h3>@m("h3")</h3>
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
-    @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
+    @helper.Form.translatedInput(form("password"), m, Map('type -> "password", 'class -> "minlength-password", 'required -> "required", scala.Symbol("data-minlength-password-error-too-short") -> Messages("password.secure"), scala.Symbol("data-minlength-password-min-length") -> "7"))
     @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
     @helper.Form.translatedCheckbox(form("subscribe"), m, Map('type -> "checkbox", 'class -> "checkbox", 'value -> "true", 'checked -> "checked"))
     @helper.Form.translatedSubmit(m, Map(Symbol("data-feedback") -> m("submit_feedback")))

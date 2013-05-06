@@ -10,9 +10,10 @@ object Form {
   
   private case class RichField(field: Field) {
     private val ConstraintRequiredKey = "constraint.required"
+    private val EmailKey = "constraint.email"
 
     def isRequired: Boolean = {
-      field.constraints.find({ _._1 == ConstraintRequiredKey }).isDefined
+      field.constraints.find({ case (key, args) => key == ConstraintRequiredKey || key == EmailKey }).isDefined
     }
   }
   private implicit def fieldToRichField(field: Field) = RichField(field)
@@ -38,8 +39,8 @@ object Form {
     val fieldsetClassName = "control-group" + field.error.map({ (e: FormError) => " error" }).getOrElse("")
     val id = options.get('prefix).map(_.toString + "-").getOrElse("") + field.id
     val name = field.id
-    val required: Boolean = options.get('required).map(_ != "false").getOrElse(field.isRequired)
     val inputType = options.get('type).getOrElse("text")
+    val required: Boolean = options.get('required).map(_ != "false").getOrElse(field.isRequired)
     val optionalHelpText: Option[String] = options.get('helpText)
     val optionalLabel: Option[String] = options.get('label)
 

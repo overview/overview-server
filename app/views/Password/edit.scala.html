@@ -3,8 +3,12 @@
   form: Form[String]
 )(implicit lang: Lang, flash: Flash)
 
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Welcome/show").url)
+}
+
 @defining(scopedMessages("views.Password.edit")) { m =>
-  @main(optionalUser=None, title=m("title"), bodyClass="password-edit", h1=m("h1")) {
+  @main(optionalUser=None, title=m("title"), bodyClass="password-edit", h1=m("h1"), javascripts=javascripts) {
     <p>@m("p", userWithResetToken.email)</p>
 
     @views.html.Password._editForm(userWithResetToken.resetPasswordToken, form)

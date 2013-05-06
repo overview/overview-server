@@ -2,17 +2,15 @@ package controllers.forms
 
 import play.api.data.Form
 import play.api.data.Forms
-import models.PotentialUser
-import models.util.PasswordTester
-import models.PotentialNewUser
 
+import models.PotentialNewUser
 
 object UserForm {
   def apply(factory: (String, String, Boolean) => PotentialNewUser) : Form[PotentialNewUser] = {
     Form(
       Forms.mapping(
         "email" -> Forms.email,
-        "password" -> Forms.nonEmptyText.verifying("password.secure", { (s: String) => (new PasswordTester(s)).isSecure }),
+        "password" -> Forms.text.verifying(validation.minLengthPassword(7)),
         "subscribe" -> Forms.boolean
       )(factory
       )(u => Some((u.email, u.password, u.emailSubscriber)))
