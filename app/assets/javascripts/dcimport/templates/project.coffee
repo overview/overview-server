@@ -7,7 +7,7 @@ define [ 'underscore' ], (_) ->
     <li>
       <form method="post" class="form-inline" action="<%- url %>">
         <input type="hidden" name="title" value="<%- project.title %>" />
-        <input type="hidden" name="project_id" value="<%- project.id %>" />
+        <input type="hidden" name="query" value="projectid:<%- project.id %>" />
         <input type="hidden" name="documentcloud_username" value="<%- credentials.email %>" />
         <input type="hidden" name="documentcloud_password" value="<%- credentials.password %>" />
         <input type="hidden" name="split_documents" value="false">
