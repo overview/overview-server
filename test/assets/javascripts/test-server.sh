@@ -9,12 +9,13 @@ echo 'Cleaning up old files...'
 rm -rf "$DIR/src-js" "$DIR/test-js"
 
 echo 'Copying plain JavaScript files...'
-mkdir -p "$DIR/src-js" "$DIR/test-js" "$DIR/src-js/framework"
+mkdir -p "$DIR/src-js" "$DIR/test-js" "$DIR/framework-js"
 cp -av "$SOURCE_DIR/vendor" "$DIR/src-js/vendor"
 cp -av "$SOURCE_DIR/parsers" "$DIR/src-js/parsers"
+cp -av "$DIR/framework/*.js" "$DIR/framework-js"
 
 echo 'Watching CoffeeScript sources and tests and compiling as they change...'
-coffee -c -o "$DIR/src-js/framework" "$DIR/framework/requirejs_config.coffee"
+coffee -c -o "$DIR/framework-js" "$DIR/framework/requirejs_config.coffee"
 coffee -c -o "$DIR/src"-js -w "$SOURCE_DIR" &
 COFFEE_PID1=$!
 coffee -c -o "$DIR/test-js" -w "$DIR" &
