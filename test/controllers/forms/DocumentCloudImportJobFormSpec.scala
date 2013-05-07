@@ -33,12 +33,12 @@ class DocumentCloudImportJobFormSpec extends Specification {
       )
       form.bind(data).value must beEqualTo(Some(baseJob.copy(
         title="title",
-        query="projectid:1-project"
+        query="1-query"
       )))
     }
 
     "fail if there is no title" in new FormScope {
-      override def data = Map("project_id" -> "1-project")
+      override def data = Map("query" -> "projectid:1-project")
       form.bind(data).error("title") must beSome
     }
 
@@ -49,8 +49,8 @@ class DocumentCloudImportJobFormSpec extends Specification {
 
     "fail if query is only whitespace" in new FormScope {
       override def data = Map("title" -> "title", "query" -> "   ")
-      form.bind(data).error("query") must beSome
-    }
+      form.bind(data).error("query") must(beSome)
+    }.pendingUntilFixed("This will work in Play 2.1.2. See https://github.com/playframework/Play20/pull/910")
 
     "add ownerEmail to the return value" in new BasicFormScope {
       form.bind(data).value.map(_.ownerEmail) must beSome(ownerEmail)
