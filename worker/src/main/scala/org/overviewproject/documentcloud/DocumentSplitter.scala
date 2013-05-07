@@ -1,8 +1,6 @@
 package org.overviewproject.documentcloud
 
-import akka.actor.Actor
-import akka.actor.ActorRef
-import akka.actor.Props
+import akka.actor._
 
 class DocumentSplitter(document: Document, receiver: ActorRef, retrieverGenerator: (Document, ActorRef) => Actor) extends Actor {
   import DocumentRetrieverProtocol._

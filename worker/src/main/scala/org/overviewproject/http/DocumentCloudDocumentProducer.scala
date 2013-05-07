@@ -7,23 +7,19 @@
 package org.overviewproject.http
 
 import scala.language.postfixOps
-
-import scala.concurrent.Await
+import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
 
 import org.overviewproject.database.Database
-import org.overviewproject.documentcloud.{Document => RetrievedDocument, DocumentRetriever, DocumentSplitter, QueryInformation, QueryProcessor}
-import org.overviewproject.documentcloud.QueryProcessorProtocol.Start
-import org.overviewproject.documentcloud.RequestRetryTimes
+import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
+import org.overviewproject.documentcloud.ImporterProtocol._
 import org.overviewproject.persistence._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
 import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
-import org.overviewproject.util.{Configuration, DocumentConsumer, DocumentProducer}
+import org.overviewproject.util._
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
-import org.overviewproject.util.Logger
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
-import org.overviewproject.util.WorkerActorSystem
 
 import akka.actor._
 
@@ -35,12 +31,12 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"
+  private val ImporterName = "importer"
 
   private val FetchingFraction = 0.5
   private val documentSetId = job.documentSetId
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
-  private var queryInformation: QueryInformation = _
   private var totalDocs: Option[Int] = None
 
   def produce() {
@@ -61,31 +57,46 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     //   responsible for one document only. DocumentRetrievers simply retrieve the document. 
     //   A different retriever could be used to request the document text page-by-page.
 
+    var result: RetrievalResult = null
+    
     WorkerActorSystem.withActorSystem { implicit context =>
 
-      queryInformation = new QueryInformation
+      val importResult = Promise[RetrievalResult]
       val asyncHttpClient = new AsyncHttpClientWrapper
       val requestQueue = context.actorOf(Props(new RequestQueue(asyncHttpClient, MaxInFlightRequests, SuperTimeout)), RequestQueueName)
-      def retrieverGenerator(document: RetrievedDocument, receiver: ActorRef) =
+      def retrieverCreator(document: RetrievedDocument, receiver: ActorRef) =
         new DocumentRetriever(document, receiver, requestQueue, credentials, RequestRetryTimes())
 
-      def splitterGenerator(document: RetrievedDocument, receiver: ActorRef) =
-        new DocumentSplitter(document, receiver, retrieverGenerator)
+      def splitterCreator(document: RetrievedDocument, receiver: ActorRef) =
+        new DocumentSplitter(document, receiver, retrieverCreator)
 
-      val documentRetrieverGenerator =
-        if (job.splitDocuments) splitterGenerator _
-        else retrieverGenerator _
-      val queryProcessor =
-        context.actorOf(Props(
-          new QueryProcessor(query, queryInformation, credentials, maxDocuments, notify, updateRetrievalProgress,
-              requestQueue, documentRetrieverGenerator)), QueryProcessorName) // too many parameters!!
+      val retrieverGenerator = if (job.splitDocuments) {
+        val retrieverFactory = new RetrieverFactory {
+          def produce(document: RetrievedDocument, receiver: ActorRef): Actor = splitterCreator(document, receiver)
+        }
+
+        new DocumentPageRetrieverGenerator(retrieverFactory, maxDocuments)
+      }
+      else {
+        val retrieverFactory = new RetrieverFactory {
+          def produce(document: RetrievedDocument, receiver: ActorRef): Actor = retrieverCreator(document, receiver)
+        }
+        
+        new DocumentRetrieverGenerator(retrieverFactory, maxDocuments)
+      }
+
+      val importer = context.actorOf(Props(
+        new Importer(query, credentials,
+          retrieverGenerator, notify, maxDocuments,
+          updateRetrievalProgress,
+          importResult)), ImporterName)
 
       try {
-        queryProcessor ! Start()
-        val docsNotFetched = Await.result(queryInformation.errors.future, Duration.Inf)
-        Logger.info("Failed to retrieve " + docsNotFetched.length + " documents")
+        importer ! StartImport()
+        result = Await.result(importResult.future, Duration.Inf)
+        Logger.info("Failed to retrieve " + result.failedRetrievals.length + " documents")
         Database.inTransaction {
-          DocRetrievalErrorWriter.write(documentSetId, docsNotFetched)
+          DocRetrievalErrorWriter.write(documentSetId, result.failedRetrievals)
         }
       } catch {
         case t: Throwable if (t.getCause() != null) => throw t.getCause()
@@ -96,7 +107,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     }
 
     consumer.productionComplete()
-    val overflowCount = scala.math.max(0, getTotalDocs - maxDocuments)
+    val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
 
@@ -115,18 +126,10 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     if (job.state == Cancelled) shutdownActors
   }
 
-  private def getTotalDocs: Int = totalDocs.getOrElse {
-    totalDocs = Some(Await.result(queryInformation.documentsTotal.future, Duration.Inf))
-    totalDocs.get
-  }
-
   private def shutdownActors(implicit context: ActorSystem): Unit = {
+    val importerActor: ActorRef = context.actorFor(s"user/$ImporterName")
 
-    val queryProcessorActor: ActorRef = context.actorFor(s"user/$QueryProcessorName")
-    val requestQueueActor: ActorRef = context.actorFor(s"user/$RequestQueueName")
-
-    context.stop(requestQueueActor)
-    context.stop(queryProcessorActor)
+    context.stop(importerActor)
   }
 
 }

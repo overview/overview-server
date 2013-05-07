@@ -23,13 +23,13 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       val text = "document text"
       val url = "url"      
       
-      var retrievalDone: Promise[Seq[DocumentRetrievalError]] = _
+      var retrievalDone: Promise[RetrievalResult] = _
       var receiver: TestActorRef[DocumentReceiver] = _
   
       def  callback(d: Document, t: String): Unit = testActor ! t
       
       def before = {
-    	retrievalDone = Promise[Seq[DocumentRetrievalError]]
+    	retrievalDone = Promise[RetrievalResult]
     	receiver = TestActorRef(new DocumentReceiver(callback, retrievalDone))
       }
     }
@@ -53,19 +53,24 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
     }
 
     "complete future when Done message is received" in new ReceiverContext {
-      receiver ! Done()
+      receiver ! Done(5, 5)
       retrievalDone.isCompleted must beTrue
     }
     
 
-    "return retrieval errors in future" in new ReceiverContext {
+    "return retrieval results in future" in new ReceiverContext {
+      val r = 5
+      val t = 20
+      
       receiver ! GetTextSucceeded(document, text)
       receiver ! GetTextFailed(url, text)
-      receiver ! Done()
+      receiver ! Done(r, t)
       
       retrievalDone.isCompleted must beTrue
-      val retrievalErrors: Seq[DocumentRetrievalError] = Await.result(retrievalDone.future, 1 millis)
-      retrievalErrors must haveTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
+      val retrievalResult: RetrievalResult = Await.result(retrievalDone.future, 1 millis)
+      retrievalResult.failedRetrievals must haveTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
+      retrievalResult.numberOfDocumentsRetrieved must be equalTo(r)
+      retrievalResult.totalDocumentsInQuery must be equalTo(t)
     }
     
     "fail future in case of exceptions" in new ReceiverContext {

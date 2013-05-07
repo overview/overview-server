@@ -9,8 +9,13 @@ import scala.util.control.Exception._
 
 object DocumentReceiverProtocol {
   /** No more documents will be processed */
-  case class Done()
+  case class Done(documentsRetrieved: Int, totalDocumentsInQuery: Int)
 }
+
+/** Information about documents that could not be retrieved */
+case class DocumentRetrievalError(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None)
+
+
 
 /**
  * Actor that serializes the processing of documents retrieved from DocumentCloud.
@@ -23,14 +28,15 @@ object DocumentReceiverProtocol {
  * @todo Handle exceptions in callback
  * 
  * @param processDocument The callback function that does the actual processing of the documents.
- * @param numberOfDocuments The number of documents to retrieved
- * @param finished Contains information about any failed document retrieval attempts
+ * @param finished To be completed with information about the document retrievals
  */
-class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Promise[Seq[DocumentRetrievalError]]) extends Actor {
+class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Promise[RetrievalResult]) extends Actor {
   import DocumentReceiverProtocol._
   
   var receivedDocuments: Int = 0 
   var failedRetrievals: Seq[DocumentRetrievalError] = Seq.empty
+  
+  private case class Result(failedRetrievals: Seq[DocumentRetrievalError], numberOfDocumentsRetrieved: Int, totalDocumentsInQuery: Int) extends RetrievalResult
   
   def receive = {
     case GetTextSucceeded(document, text) => {
@@ -40,13 +46,13 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Pr
       failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)
     }
     case GetTextError(error) => finished.failure(error)
-    case Done() => finished.success(failedRetrievals)
+    case Done(documentsRetrieved, totalDocumentsInQuery) => finished.success(Result(failedRetrievals, documentsRetrieved, totalDocumentsInQuery))
   }
   
   /** 
    *  Ensure that finished is completed. If some external source stops the actor, the Promise still succeeds
    */
-  override def postStop = if (!finished.isCompleted) finished.success(failedRetrievals)
+  override def postStop = if (!finished.isCompleted) finished.success(Result(failedRetrievals, 0, 0))
 
   /** Apply to methods that can throw, and complete `finished` with failure if they do */
   private val failOnError = allCatch withApply { error => finished.failure(error) }
