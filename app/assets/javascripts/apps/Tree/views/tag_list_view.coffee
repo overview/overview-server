@@ -45,10 +45,6 @@ define [
         e.preventDefault()
         notify('remove-clicked', element_to_tag(this))
 
-      $ul.on 'click', 'a.tag-edit', (e) ->
-        e.preventDefault()
-        notify('edit-clicked', element_to_tag(this))
-
       $li = $('<li class="btn-group"><a class="btn organize" href="#">organize tags…</a></li>')
       $li.on 'click', (e) =>
         e.preventDefault()
@@ -82,7 +78,7 @@ define [
         this._notify('create-submitted', { name: name })
 
     _add_tag: (tag) ->
-      $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-edit" alt="edit tag" title="edit tag"><i class="icon-edit"></i></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
+      $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
       $li.attr("data-#{TAG_ID_KEY}", tag.id)
       $li.find('.tag-name').text(tag.name)
       $li.css('background-color', tag.color || @color_table.get(tag.name))

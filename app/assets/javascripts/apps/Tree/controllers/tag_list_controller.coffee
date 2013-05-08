@@ -13,10 +13,6 @@ define [
   tag_list_controller = (div, remote_tag_list, state) ->
     view = new TagListView(div, remote_tag_list, state)
 
-    view.observe 'edit-clicked', (tag) ->
-      log('clicked edit tag', "#{tag.id}")
-      tag_form_controller(tag, remote_tag_list.cache, state)
-
     view.observe 'add-clicked', (tag) ->
       log('added tag', "#{tag_to_short_string(tag)} to #{state.selection.to_string()}")
       remote_tag_list.add_tag_to_selection(tag, state.selection)

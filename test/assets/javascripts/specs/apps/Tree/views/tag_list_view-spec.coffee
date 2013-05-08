@@ -110,12 +110,6 @@ require [
           $(div).find('a.tag-remove:eq(0)').click()
           expect(val).toBe(tag1)
 
-        it 'should notify :edit-clicked', ->
-          val = undefined
-          view.observe('edit-clicked', (v) -> val = v)
-          $(div).find('a.tag-edit:eq(0)').click()
-          expect(val).toBe(tag1)
-
         it 'should notify :add-clicked when trying to create an existing tag', ->
           $form = $('form', div)
           $form.find('input[type=text]').val('AA')
