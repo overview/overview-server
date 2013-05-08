@@ -83,12 +83,14 @@ define [
 
           undefined
 
-    create_tag: (tag) ->
+    create_tag: (tag, options) ->
       @transaction_queue.queue =>
         deferred = @server.post('tag_create', tag)
         deferred.done (tag_from_server) =>
           tag_from_server.color = tag.color      # maybe server should return color
+          options?.beforeChange?()
           @tag_store.change(tag, tag_from_server)
+          options?.callback?()
 
     add_tag: (name) ->
       @tag_store.create_tag(name)
