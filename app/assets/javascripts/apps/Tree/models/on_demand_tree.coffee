@@ -197,6 +197,10 @@ define [ './id_tree', './lru_paging_strategy' ], (IdTree, LruPagingStrategy) ->
     get_loaded_node_children: (node) ->
       _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
 
+    get_root: ->
+      id = @id_tree.root
+      id? && @nodes[id] || undefined
+
     get_node_parent: (node) ->
       parent_id = @id_tree.parent[node.id]
       if parent_id? then @nodes[parent_id] else undefined
