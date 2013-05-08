@@ -4,6 +4,10 @@ requirejs.config({
   #enforceDefine: true
 
   shim: {
+    'backbone': {
+      deps: [ 'jquery', 'underscore' ]
+      exports: 'Backbone'
+    }
     'base64': { exports: 'Base64' }
     'bootstrap-alert': {
       deps: [ 'jquery' ]
@@ -38,6 +42,7 @@ requirejs.config({
   }
 
   paths: {
+    'backbone': 'vendor/backbone'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
