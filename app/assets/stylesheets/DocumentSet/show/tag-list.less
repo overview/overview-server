@@ -23,6 +23,18 @@
     margin-bottom: 0;
   }
 
+  a.organize {
+    background-color: transparent;
+    border-color: transparent;
+    color: @linkColor;
+    .box-shadow(none);
+    #gradient > .vertical(@bodyBackground, @bodyBackground);
+
+    &:hover {
+      color: @linkColorHover;
+    }
+  }
+
   .tag-name {
     .border-radius(@inputBorderRadius);
 

@@ -2,8 +2,9 @@ define [
   '../models/selection'
   '../views/tag_list_view'
   './tag_form_controller'
+  './TagDialogController'
   './logger'
-], (Selection, TagListView, tag_form_controller, Logger) ->
+], (Selection, TagListView, tag_form_controller, TagDialogController, Logger) ->
   log = Logger.for_component('tag_list')
 
   tag_to_short_string = (tag) ->
@@ -36,3 +37,6 @@ define [
       tag = remote_tag_list.create_tag(tag.name)
       remote_tag_list.add_tag_to_selection(tag, state.selection)
       state.set('focused_tag', tag)
+
+    view.observe 'organize-clicked', ->
+      TagDialogController(remote_tag_list.tag_store, remote_tag_list.cache)

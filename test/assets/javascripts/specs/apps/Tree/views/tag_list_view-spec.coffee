@@ -65,7 +65,7 @@ require [
 
         it 'should show tags', ->
           $lis = $('li', div)
-          expect($lis.length).toEqual(3)
+          expect($lis.length).toEqual(4)
           expect($($lis[0]).text()).toMatch(/^AA/)
           expect($($lis[1]).text()).toMatch(/^BB/)
 
@@ -73,7 +73,7 @@ require [
           tag_list.tags.shift()
           tag_list._notify('tag-removed', tag1)
           $lis = $('li', div)
-          expect($lis.length).toEqual(2)
+          expect($lis.length).toEqual(3)
           expect($($lis[0]).text()).toMatch(/^BB/)
 
         it 'should notify :create-submitted', ->
@@ -129,6 +129,12 @@ require [
           view.observe('tag-clicked', (v) -> val = v)
           $('a.tag-name:eq(0)', div).click()
           expect(val).toBe(tag1)
+
+        it 'should notify :organize-clicked when clicking the organize link', ->
+          notified = false
+          view.observe('organize-clicked', -> notified = true)
+          $('a.organize', div).click()
+          expect(notified).toBe(true)
 
         it 'should set "shown" on shown tag', ->
           state.focused_tag = tag1

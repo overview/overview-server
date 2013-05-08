@@ -227,13 +227,21 @@ views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
 
 views.DocumentSet.show.document_list.loading=Loading documents…
-views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0} documents}
+views.DocumentSet.show.document_list.title.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.document_list.title_html=<strong>{0}</strong> in {1}
 views.DocumentSet.show.document_list.title.edit=edit…
 views.DocumentSet.show.document_list.title.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one folder and {1,choice,1#one tag|1<{1} tags}|1<{0} folders{1,choice,0#|1# and one tag|1< and {1} tags}}
 views.DocumentSet.show.document_list.title.node=folder “{0}”
 views.DocumentSet.show.document_list.title.tag=tag “{0}”
 views.DocumentSet.show.document_list.document.empty_description=(document with no text)
+views.DocumentSet.show.tag_list.header=Tags
+views.DocumentSet.show.tag_list.n_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
+views.DocumentSet.show.tag_list.preamble=These are all the tags you have created in this document set.
+views.DocumentSet.show.tag_list.export=Export this list as a spreadsheet
+views.DocumentSet.show.tag_list.tag_name.placeholder=New tag
+views.DocumentSet.show.tag_list.submit=Create new tag
+views.DocumentSet.show.tag_list.remove=Delete
+views.DocumentSet.show.tag_list.remove.confirm=The tag “{0}” has been applied to {1,choice,0#no documents|1#one document|1<{1,number,integer} documents}. Are you sure you want to delete it?
 
 views.ImportJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.clustering_level=Clustering

@@ -49,13 +49,19 @@ define [
         e.preventDefault()
         notify('edit-clicked', element_to_tag(this))
 
+      $li = $('<li class="btn-group"><a class="btn organize" href="#">organize tags…</a></li>')
+      $li.on 'click', (e) =>
+        e.preventDefault()
+        notify('organize-clicked')
+      $ul.append($li)
+
       this._refresh_shown_tag()
       this._refresh_selected_tags()
 
       undefined
 
     _create_form: () ->
-      $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="tag name" class="input-mini" /><input type="submit" value="Create new tag" class="btn" /></form')
+      $form = $('<form method="post" action="#" class="input-append"><input type="text" name="tag_name" placeholder="tag name" class="input-mini" /><input type="submit" value="Create new tag" class="btn" /></form>')
       $form.on 'submit', (e) =>
         e.preventDefault()
         $input = $form.find('input[name=tag_name]')

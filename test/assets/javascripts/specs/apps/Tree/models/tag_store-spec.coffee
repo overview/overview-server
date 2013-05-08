@@ -13,7 +13,7 @@ require [
         tag_store = undefined
 
       dummy_tag = (id, name) ->
-        { id: id, name: name, count: 1 }
+        { id: id, name: name }
 
       describe 'beginning at empty', ->
         newTagName = 'foo'
@@ -24,7 +24,7 @@ require [
 
         it 'should create a tag', ->
           tag = tag_store.create_tag(newTagName)
-          expect(tag).toEqual({ id: -1, name: newTagName, count: 0, position: 0, color: color_table.get(newTagName) })
+          expect(tag).toEqual({ id: -1, name: newTagName, position: 0, color: color_table.get(newTagName) })
 
         it 'should add a tag', ->
           tag1 = dummy_tag(1, 'Tag')

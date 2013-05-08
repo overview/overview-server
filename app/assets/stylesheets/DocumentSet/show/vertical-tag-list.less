@@ -1,0 +1,72 @@
+@import "../../vendor/bootstrap/less/variables.less";
+@import "../../vendor/bootstrap/less/mixins.less";
+@import "_variables.less";
+
+.vertical-tag-list {
+  input[type=color] {
+    // height is 30px: by default, 20px high, 4px padding, 1px border
+    padding: 2px;
+    height: 24px;
+    width: 24px;
+  }
+
+  li.existing {
+    &:hover {
+      background-color: @tableBackgroundHover;
+    }
+
+    form.form-horizontal {
+      margin-bottom: 5px;
+    }
+
+    input {
+      background-color: transparent;
+      border-color: transparent;
+      .box-shadow(none);
+
+      // That was fun, but now to get the right stuff to happen on hover/focus
+      // we need to copy/paste from bootstrap
+      &:hover {
+        background-color: @inputBackground;
+        border-color: @inputBorder;
+        .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+      }
+
+      &:focus {
+        background-color: @inputBackground;
+        border-color: @inputBorder;
+        border-color: rgba(82,168,236,.8);
+        .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
+      }
+    }
+  }
+
+  li {
+    position: relative;
+  }
+
+  li.new {
+    margin-top: 10px;
+  }
+
+  .count, a.remove {
+    display: block;
+    position: absolute;
+    top: 0;
+    padding: 5px; // mimic inputs
+  }
+
+  .count {
+    .muted;
+    right: 5em;
+  }
+
+  a.remove {
+    right: 0;
+    opacity: .1;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
