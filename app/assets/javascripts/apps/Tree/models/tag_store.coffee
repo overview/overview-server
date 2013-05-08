@@ -1,4 +1,4 @@
-define [ './observable', './color_table' ], (observable, ColorTable) ->
+define [ 'underscore', './observable', './color_table' ], (_, observable, ColorTable) ->
   class TagStore
     observable(this)
 
@@ -8,8 +8,19 @@ define [ './observable', './color_table' ], (observable, ColorTable) ->
       @_last_unsaved_id = 0
 
     create_tag: (name) ->
+      if _.isString(name)
+        attrs = { name: name }
+      else
+        attrs = name
+
       id = @_last_unsaved_id -= 1
-      this.add({ id: id, name: name, count: 0, color: @color_table.get(name) })
+
+      # Beware sure to handle when we're given { name: 'blah', color: undefined }
+      tag = _.extend({ id: id }, attrs)
+      if !tag.color?
+        tag.color = @color_table.get(tag.name)
+
+      this.add(tag)
 
     _calculate_positions: () ->
       @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
