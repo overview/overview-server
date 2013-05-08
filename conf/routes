@@ -58,6 +58,7 @@ GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEnt
 
 POST   /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
+GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
