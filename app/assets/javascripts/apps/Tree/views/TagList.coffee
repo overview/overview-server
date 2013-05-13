@@ -1,5 +1,16 @@
-define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
+define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbone, i18n) ->
   t = (key, args...) -> i18n("views.DocumentSet.show.tag_list.#{key}", args...)
+
+  addSpectrum = ($els) ->
+    $els.filter(':not(.spectrum)').each ->
+      $input = $(this)
+      $input
+        .addClass('spectrum')
+        .spectrum({
+          preferredFormat: 'hex6'
+          showButtons: false
+          move: (color) -> $input.spectrum('set', color.toHexString()) # Issue #168
+        })
 
   # Represents a list of tags
   #
@@ -72,6 +83,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         renderTag: (tag) => @tagTemplate({ tag: tag, tagCount: @options.tagToCount, t: t })
       })
       @$el.html(html)
+      addSpectrum(@$('input[type=color]'))
       this
 
     _$liForTag: (tag) ->
@@ -86,6 +98,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
       index = @collection.indexOf(tag)
       @$("ul>li:eq(#{index})").before(html)
+      addSpectrum(@$('input[type=color]'))
 
     _removeTag: (tag) ->
       @_$liForTag(tag).remove()
