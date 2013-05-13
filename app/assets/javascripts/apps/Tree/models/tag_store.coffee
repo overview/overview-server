@@ -28,6 +28,8 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       undefined
 
     add: (tag) ->
+      if !tag.color?
+        tag.color = @color_table.get(tag.name)
       @tags.push(tag)
       this._calculate_positions()
 
