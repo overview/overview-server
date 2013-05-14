@@ -21,7 +21,7 @@ import org.overviewproject.util.DocumentSetCreationJobStateDescription.{ Cluster
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn, makeNestedProgress }
 import org.overviewproject.nlp.Lexer
 import org.overviewproject.nlp.BigramDocumentVectorGenerator
-
+import org.overviewproject.nlp.DocumentVectorTypes._
 
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) extends DocumentConsumer {
@@ -36,16 +36,17 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) ext
 
   private val vectorGen = new BigramDocumentVectorGenerator
   
-  // When we get the document text back, we add the document to the database and feed the text to the vector generator
+  // When we get the document text back, we feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
     vectorGen.addDocument(documentId, Lexer.makeTerms(text))
   }
 
-  private def addDocumentDescriptions(docTree: DocTreeNode)(implicit c: Connection) {
-    if (docTree.docs.size == 1 && docTree.description != "") Database.inTransaction {
-      DocumentWriter.updateDescription(docTree.docs.head, docTree.description)
+  private def addDocumentDescriptions(docVecs: DocumentSetVectors)(implicit c: Connection) {
+    Database.inTransaction {
+      for ((docId, vec) <- docVecs) {
+        DocumentWriter.updateDescription(docId, SuggestedTags.suggestedTagsForDocument(vec, docVecs))
+      }
     }
-    else docTree.children.foreach(addDocumentDescriptions)
   }
 
   def productionComplete() {
@@ -69,7 +70,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, progAbort: ProgressAbortFn) ext
       if (!progAbort(Progress(savingFraction, Saving))) {
         val t2 = System.nanoTime()
         
-        DB.withConnection { implicit connection => addDocumentDescriptions(docTree) }
+        DB.withConnection { implicit connection => addDocumentDescriptions(docVecs) }
         Database.inTransaction {
           implicit val connection = Database.currentConnection
           nodeWriter.write(docTree)

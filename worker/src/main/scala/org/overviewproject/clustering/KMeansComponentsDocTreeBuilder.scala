@@ -97,6 +97,8 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
     if (node.docs.size > 1)
       node.docs foreach { id => 
         node.children += new DocTreeNode(Set(id))
+    println("Opps, Leafed!")
+
     }
   }  
   
@@ -109,10 +111,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
          
         splitNode(node)
         
-        if (node.children.isEmpty) {
-          // we couldn't split it, just put each doc in a leaf
-          makeALeafForEachDoc(node)
-        } else {
+        if (!node.children.isEmpty) {
           // recurse, computing progress along the way
           var i=0
           var denom = node.children.size.toDouble
@@ -121,11 +120,7 @@ class KMeansComponentsDocTreeBuilder(docVecs: DocumentSetVectors, k:Int) {
             i+=1
           }
         }
-      } else {
-        // smaller nodes, or max depth reached, produce a leaf for each doc
-        if (node.docs.size > 1) 
-          node.children = node.docs.map(item => new DocTreeNode(Set(item)))
-      }
+      } 
       
       node.components.clear     // we are done with those components, if any, so empty that list
       progAbort(Progress(1, ClusteringLevel(2)))

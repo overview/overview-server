@@ -52,7 +52,7 @@ object BuildDocTree {
     //applyKMeans(nonEmptyDocs, docVecs, progAbort)             // experimental
     applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
         
-    new AllSomeTreeLabeler(docVecs).apply(nonEmptyDocs)    // create a descriptive label for each node
+    SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node
     
     // If there are any empty documents, create a new root with all documents
     // Add children of nonEmptyDocs, plus node containing emptyDocs
