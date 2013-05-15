@@ -74,12 +74,16 @@ object ApplicationBuild extends Build {
      mockitoDep % "test"
   )
   
+  val ourTestWithNoDbOptions = Seq(
+    Tests.Argument("xonly")    
+  )
     
-  val ourTestOptions = Seq(
-    Tests.Argument("xonly"),
+  val ourTestOptions = ourTestWithNoDbOptions ++ Seq(
     Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
     Tests.Setup(loader => ClearTestDatabase(loader))
   )
+  
+  
 
   val ourResolvers = Seq(
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
@@ -89,45 +93,34 @@ object ApplicationBuild extends Build {
   val ourScalaVersion = "2.10.0"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature")
 
+  // Create a subProject with our common settings
+  object OverviewProject {
+    def apply(name: String, dependencies: Seq[ModuleID], 
+      theTestOptions: Seq[TestOption] = ourTestOptions) = {
+      Project(name, file(name), settings = 
+        Defaults.defaultSettings ++ Seq(        
+          scalaVersion := ourScalaVersion,
+          resolvers ++= ourResolvers,
+          libraryDependencies ++= dependencies,
+          testOptions in Test ++= theTestOptions,
+          scalacOptions ++= ourScalacOptions,
+          parallelExecution in Test := false,
+          sources in doc in Compile := List()
+        )
+      )
+    }
+    
+    // don't clean the database if it isn't being used in tests
+    def withNoDbTests(name: String, dependencies: Seq[ModuleID], 
+      theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, theTestOptions)
+  }
+  
   // Project definitions
-  val common = Project("common", file("common"), settings =
-    Defaults.defaultSettings ++ Seq(
-      scalaVersion := ourScalaVersion,
-      resolvers ++= ourResolvers,
-      libraryDependencies ++= commonProjectDependencies
-    )
-  ).settings(
-    testOptions in Test ++= ourTestOptions,
-    scalacOptions ++= ourScalacOptions,
-    parallelExecution in Test := false,
-    sources in doc in Compile := List()
-  )
+  val common = OverviewProject("common", commonProjectDependencies)
   
-  val workerCommon = Project("worker-common", file("worker-common"), settings = 
-    Defaults.defaultSettings ++ Seq(
-      scalaVersion := ourScalaVersion,
-      resolvers ++= ourResolvers,
-      libraryDependencies ++= workerCommonProjectDependencies 
-    )
-  ).settings(
-    testOptions in Test += Tests.Argument("xonly"),
-    scalacOptions ++= ourScalacOptions,
-    parallelExecution in Test := false,
-    sources in doc in Compile := List()
-  )
+  val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies)
   
-  val worker = Project("worker", file("worker"), settings =
-    Defaults.defaultSettings ++ Seq(
-      scalaVersion := ourScalaVersion,
-      resolvers ++= ourResolvers,
-      libraryDependencies ++= workerProjectDependencies
-    )
-  ).settings(
-    testOptions in Test ++= ourTestOptions,
-    scalacOptions ++= ourScalacOptions,
-    parallelExecution in Test := false,
-    sources in doc in Compile := List()
-  ).settings(
+  val worker = OverviewProject("worker", workerProjectDependencies).settings(
     initialize ~= { _ =>
       if (System.getProperty("datasource.default.url") == null) {
         System.setProperty("datasource.default.url", appDatabaseUrl)
