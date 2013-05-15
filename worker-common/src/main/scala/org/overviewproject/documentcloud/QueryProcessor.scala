@@ -1,15 +1,11 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-import scala.concurrent.Promise
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{ Start => StartRetriever }
 import org.overviewproject.http._
 import org.overviewproject.http.RequestQueueProtocol._
 import org.overviewproject.util.Logger
 import akka.actor._
 import org.overviewproject.util.Configuration
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.JobComplete
-import org.overviewproject.documentcloud.DocumentReceiverProtocol.Done
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {

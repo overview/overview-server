@@ -74,6 +74,12 @@ object ApplicationBuild extends Build {
      mockitoDep % "test"
   )
   
+  val documentSetWorkerProjectDependencies = Seq(
+    jdbc,
+    "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0",
+    "org.fusesource.stompjms" % "stompjms-client" % "1.15"
+  )
+  
   val ourTestWithNoDbOptions = Seq(
     Tests.Argument("xonly")    
   )
@@ -119,6 +125,10 @@ object ApplicationBuild extends Build {
   val common = OverviewProject("common", commonProjectDependencies)
   
   val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies)
+  
+  val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
+    .dependsOn(workerCommon)
+  
   
   val worker = OverviewProject("worker", workerProjectDependencies).settings(
     initialize ~= { _ =>

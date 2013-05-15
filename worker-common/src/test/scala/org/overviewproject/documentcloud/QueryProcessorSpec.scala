@@ -1,7 +1,6 @@
 package org.overviewproject.documentcloud
 
 import java.net.URLEncoder
-import org.overviewproject.documentcloud.DocumentRetrieverProtocol.{GetTextSucceeded, JobComplete, Start => StartRetriever}
 import org.overviewproject.documentcloud.QueryProcessorProtocol.GetPage
 import org.overviewproject.http.{Credentials, PrivateRequest, PublicRequest}
 import org.overviewproject.http.RequestQueueProtocol.{AddToFront, Result}
