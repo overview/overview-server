@@ -64,6 +64,18 @@ object ApplicationBuild extends Build {
     saddleDep
   )
 
+  val workerCommonProjectDependencies = Seq(
+    jdbc, //  this brings out Play components used in worker
+    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0" % "test",
+    mockitoDep % "test",
+    specs2Dep % "test",
+    "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0",
+    "org.fusesource.stompjms" % "stompjms-client" % "1.15",
+    specs2Dep,
+    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0"
+  )
+  
+    
   val ourTestOptions = Seq(
     Tests.Argument("xonly"),
     Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
@@ -91,7 +103,20 @@ object ApplicationBuild extends Build {
     parallelExecution in Test := false,
     sources in doc in Compile := List()
   )
-
+  
+  val workerCommon = Project("worker-common", file("worker-common"), settings = 
+    Defaults.defaultSettings ++ Seq(
+      scalaVersion := ourScalaVersion,
+      resolvers ++= ourResolvers,
+      libraryDependencies ++= workerCommonProjectDependencies 
+    )
+  ).settings(
+    testOptions in Test += Tests.Argument("xonly"),
+    scalacOptions ++= ourScalacOptions,
+    parallelExecution in Test := false,
+    sources in doc in Compile := List()
+  )
+  
   val worker = Project("worker", file("worker"), settings =
     Defaults.defaultSettings ++ Seq(
       scalaVersion := ourScalaVersion,
@@ -109,7 +134,7 @@ object ApplicationBuild extends Build {
         System.setProperty("datasource.default.url", appDatabaseUrl)
       }
     }
-  ).dependsOn(common)
+  ).dependsOn(workerCommon, common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
     resolvers ++= ourResolvers,
@@ -157,9 +182,12 @@ object ApplicationBuild extends Build {
   ).dependsOn(common).aggregate(worker)
 
   val all = Project("all", file("all"))
-    .aggregate(main, worker, common)
+    .aggregate(main, worker, workerCommon, common)
     .settings(
       aggregate in Test := false,
-      test in Test <<= (test in Test in main) dependsOn (test in Test in worker) dependsOn (test in Test in common)
+      test in Test <<= (test in Test in main) 
+        dependsOn (test in Test in worker)
+        dependsOn (test in Test in workerCommon)
+        dependsOn (test in Test in common)
     )
 }
