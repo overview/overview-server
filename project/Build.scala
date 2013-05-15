@@ -23,6 +23,7 @@ object ApplicationBuild extends Build {
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val junitDep = "junit" % "junit-dep" % "4.11"
   val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
+  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.1.0"
   
   // Project dependencies
   val serverProjectDependencies = Seq(
@@ -56,7 +57,7 @@ object ApplicationBuild extends Build {
     jdbc,
     openCsvDep,
     squerylDep,
-    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0" % "test",
+    akkaTestkit % "test",
     mockitoDep % "test",
     specs2Dep % "test",
     junitInterfaceDep, // FIXME add % "test"
@@ -65,14 +66,12 @@ object ApplicationBuild extends Build {
   )
 
   val workerCommonProjectDependencies = Seq(
-    jdbc, //  this brings out Play components used in worker
-    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0" % "test",
-    mockitoDep % "test",
-    specs2Dep % "test",
+    jdbc, //  this brings out Play components used in worker: asynchttpclient and json parsing
+    akkaTestkit,
+    specs2Dep,    
     "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0",
     "org.fusesource.stompjms" % "stompjms-client" % "1.15",
-    specs2Dep,
-    "com.typesafe.akka" %% "akka-testkit"  % "2.1.0"
+     mockitoDep % "test"
   )
   
     
