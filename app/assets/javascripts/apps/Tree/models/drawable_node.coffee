@@ -182,9 +182,10 @@ define ->
       @level()
       @fraction()
       @walk (dn) ->
-        decreasing_level = Math.max(1 + DEFAULT_OPTIONS.min_spacing_level - dn._level, 1)
-        size_factor = @root().animated_node.node.doclist.n / DEFAULT_OPTIONS.reference_spacing_docset_size
-        dn.__spacing = Math.pow(decreasing_level, 1.5) * dn._fraction * size_factor
+        #decreasing_level = Math.max(1 + DEFAULT_OPTIONS.min_spacing_level - dn._level, 1)
+        #size_factor = @root().animated_node.node.doclist.n / DEFAULT_OPTIONS.reference_spacing_docset_size
+        #dn.__spacing = Math.pow(decreasing_level, 1.5) * dn._fraction * size_factor
+        dn.__spacing = dn._fraction * 5
        
       @__spacing
 

@@ -90,6 +90,10 @@ define [
       focus.set_zoom(obj.zoom)
       focus.set_pan(obj.pan)
 
+    state.observe 'selection-changed', ->
+      if nodeid = selected_nodeid()
+        expand(nodeid)
+        
     select_nodeid = (nodeid) ->
       new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
       state.set('selection', new_selection)
