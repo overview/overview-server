@@ -77,7 +77,10 @@ object ApplicationBuild extends Build {
   val documentSetWorkerProjectDependencies = Seq(
     jdbc,
     "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0",
-    "org.fusesource.stompjms" % "stompjms-client" % "1.15"
+    "org.fusesource.stompjms" % "stompjms-client" % "1.15",
+    akkaTestkit % "test",
+    specs2Dep % "test",
+    mockitoDep % "test"
   )
   
   val ourTestWithNoDbOptions = Seq(
