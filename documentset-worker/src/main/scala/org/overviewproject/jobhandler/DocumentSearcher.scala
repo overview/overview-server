@@ -24,7 +24,16 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
   def receive = {
     case SearchResult(total, page, documents) => {
-      searchSaver ! Save(documents)
+      val lastPage: Int = scala.math.ceil(maxDocuments.toDouble / pageSize.toDouble).toInt
+
+      if (page == lastPage) {
+        val documentsFromLastPage = scala.math.min(pageSize,  maxDocuments - (page - 1) * pageSize)
+        searchSaver ! Save(documents.take(documentsFromLastPage))
+      }
+      else {
+        searchSaver ! Save(documents)  
+      }
+      
       if (page == 1) requestRemainingPages(total)
     }
   }

@@ -34,11 +34,15 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
     trait NotAllPagesNeeded extends TestConfig {
       val pagesNeeded: Int = 2
       override val pageSize: Int = 5
-      override val maxDocuments: Int = pageSize * pagesNeeded
+      override val maxDocuments: Int = pageSize * pagesNeeded  
 
       val totalDocuments = 10 * maxDocuments
     }
 
+    trait NotAllDocumentsInLastPageNeeded extends NotAllPagesNeeded {
+      override val maxDocuments: Int = pageSize + 1
+    }
+    
     class ForwardingActor(target: ActorRef) extends Actor {
       def receive = {
         case m => target forward m
@@ -62,11 +66,12 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
 
       class TestDocumentSearcher(documentSetId: Long, queryTerms: String, queueProbe: ActorRef,
         queryProcessorProbe: ActorRef, searchSaverProbe: ActorRef) extends {
+        
         val queryProcessorTarget: ActorRef = queryProcessorProbe
         val searchSaverTarget: ActorRef = searchSaverProbe
         var queryString: Option[String] = None
 
-      } with DocumentSearcher(documentSetId, queryTerms, queueProbe) with TestComponents
+      } with DocumentSearcher(documentSetId, queryTerms, queueProbe, pageSize, maxDocuments) with TestComponents
 
       def createDocumentSearcher(documentSetId: Long, queryTerms: String, queueProbe: ActorRef,
           queryProcessorProbe: ActorRef, searchSaverProbe: ActorRef): TestActorRef[TestDocumentSearcher] =
@@ -124,6 +129,21 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
 
       documentSearcher ! SearchResult(100, 1, documents)
       searchSaver.expectMsg(Save(documents))
+    }
+    
+    "only send search saver maxDocuments documents" in new SearcherContext with NotAllDocumentsInLastPageNeeded {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+
+      val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
+        queryProcessor.ref, searchSaver.ref)
+      
+      documentSearcher ! SearchResult(100, 1, documents)
+      searchSaver.expectMsg(Save(documents))
+
+      documentSearcher ! SearchResult(100, 2, documents)
+      searchSaver.expectMsg(Save(documents.take(1)))
+
     }
   }
 }
