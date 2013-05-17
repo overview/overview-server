@@ -5,23 +5,28 @@ import org.overviewproject.documentcloud.QueryProcessor
 import org.overviewproject.documentcloud.SearchResult
 import org.overviewproject.util.Configuration
 
-trait QueryProcessorFactory {
-  def produce(query: String, requestQueue: ActorRef): Actor
+trait DocumentSearcherComponents {
+  def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor
+  def produceSearchSaver: Actor
 }
 
 class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef,
-  val pageSize: Int = Configuration.pageSize, val maxDocuments: Int = Configuration.maxDocuments) extends Actor {
-  this: QueryProcessorFactory =>
+  pageSize: Int = Configuration.pageSize, maxDocuments: Int = Configuration.maxDocuments) extends Actor {
+  this: DocumentSearcherComponents =>
 
   import org.overviewproject.documentcloud.QueryProcessorProtocol._
-
+  import org.overviewproject.jobhandler.SearchSaverProtocol._
   
-  private val queryProcessor = context.actorOf(Props(produce(createQuery, requestQueue)))
-
+  private val queryProcessor = context.actorOf(Props(produceQueryProcessor(createQuery, requestQueue)))
+  private val searchSaver = context.actorOf(Props(produceSearchSaver))
+  
   queryProcessor ! GetPage(1)
 
   def receive = {
-    case SearchResult(total, page, documents) => if (page == 1) requestRemainingPages(total)
+    case SearchResult(total, page, documents) => {
+      searchSaver ! Save(documents)
+      if (page == 1) requestRemainingPages(total)
+    }
   }
 
   private def createQuery: String = s"projectid:$documentSetId $query"
@@ -33,8 +38,9 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   }
 }
 
-trait ActualQueryProcessorFactory extends QueryProcessorFactory {
-  override def produce(query: String, requestQueue: ActorRef): Actor = new QueryProcessor(query, None, requestQueue)
+trait ActualQueryProcessorFactory extends DocumentSearcherComponents {
+  override def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor = new QueryProcessor(query, None, requestQueue)
+  override def produceSearchSaver: Actor = new SearchSaver()
 }
 
 class ActualDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef) extends DocumentSearcher(documentSetId, query, requestQueue) with ActualQueryProcessorFactory

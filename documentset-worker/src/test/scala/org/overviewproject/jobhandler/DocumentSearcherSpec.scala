@@ -14,90 +14,116 @@ import org.specs2.mutable.Before
 import org.specs2.specification.Scope
 import org.overviewproject.documentcloud.QueryProcessor
 import org.overviewproject.util.Configuration
+import org.overviewproject.jobhandler.SearchSaverProtocol._
 
 class DocumentSearcherSpec extends Specification with NoTimeConversions with Mockito {
 
   "DocumentSearcher" should {
 
-    
     trait TestConfig {
       val maxDocuments: Int = Configuration.maxDocuments
       val pageSize: Int = Configuration.pageSize
-    }
-    
-    trait NotAllPagesNeeded extends TestConfig {
-      val pagesNeeded: Int = 2
-      override val pageSize: Int = 5
-      override val maxDocuments: Int = pageSize * pagesNeeded 
-      
-      val totalDocuments = 10 * maxDocuments 
-    }
-    
-    abstract class SearcherContext extends ActorSystemContext with Before {
-      this: TestConfig  => 
-        
       val documentSetId = 6
       val queryTerms = "query terms"
       val expectedQuery = s"projectid:$documentSetId $queryTerms"
       
-      
-      var queryProcessor: TestProbe = _
-      var documentSearcher: TestActorRef[TestDocumentSearcher] = _
-      
-      case class QueryProcessorMessage(query: String, msg: Any)
-
-      trait TestQueryProcessorFactory extends QueryProcessorFactory {
-        var query: Option[String] = None
-        
-        override def produce(queryString: String, requestQueue: ActorRef): Actor = {
-          query = Some(queryString)  
-        
-          new Actor {
-            def receive = {
-              case msg => queryProcessor.ref forward msg
-            }
-          }
-        }
-      }
-      
-      type TestDocumentSearcher = DocumentSearcher with TestQueryProcessorFactory
-      
-      override def before = {
-        queryProcessor = TestProbe()
-        documentSearcher = 
-          TestActorRef(new DocumentSearcher(documentSetId, queryTerms, testActor, pageSize, maxDocuments) with TestQueryProcessorFactory)
-      }
-
+      val document: Document = mock[Document]
+      val documents: Seq[Document] = Seq.fill(10)(document)
     }
-     abstract class SearcherSetup extends SearcherContext with TestConfig
+
+    trait NotAllPagesNeeded extends TestConfig {
+      val pagesNeeded: Int = 2
+      override val pageSize: Int = 5
+      override val maxDocuments: Int = pageSize * pagesNeeded
+
+      val totalDocuments = 10 * maxDocuments
+    }
+
+    class ForwardingActor(target: ActorRef) extends Actor {
+      def receive = {
+        case m => target forward m
+      }
+    }
+
+    abstract class SearcherContext extends ActorSystemContext {
+      this: TestConfig =>
+
+      trait TestComponents extends DocumentSearcherComponents {
+        val queryProcessorTarget: ActorRef
+        val searchSaverTarget: ActorRef
+        var queryString: Option[String]
+
+        def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor = {
+          queryString = Some(query)
+          new ForwardingActor(queryProcessorTarget)
+        }
+        def produceSearchSaver: Actor = new ForwardingActor(searchSaverTarget)
+      }
+
+      class TestDocumentSearcher(documentSetId: Long, queryTerms: String, queueProbe: ActorRef,
+        queryProcessorProbe: ActorRef, searchSaverProbe: ActorRef) extends {
+        val queryProcessorTarget: ActorRef = queryProcessorProbe
+        val searchSaverTarget: ActorRef = searchSaverProbe
+        var queryString: Option[String] = None
+
+      } with DocumentSearcher(documentSetId, queryTerms, queueProbe) with TestComponents
+
+      def createDocumentSearcher(documentSetId: Long, queryTerms: String, queueProbe: ActorRef,
+          queryProcessorProbe: ActorRef, searchSaverProbe: ActorRef): TestActorRef[TestDocumentSearcher] =
+          TestActorRef(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
+            queryProcessorProbe, searchSaverProbe))
+    }
+
+    abstract class SearcherSetup extends SearcherContext with TestConfig
 
     "send a query request" in new SearcherSetup {
-      documentSearcher.underlyingActor.query must beSome(expectedQuery)
+
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+
+      val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor, 
+        queryProcessor.ref, searchSaver.ref)
+
+      documentSearcher.underlyingActor.queryString must beSome(expectedQuery)
       queryProcessor.expectMsg(GetPage(1))
     }
 
     "request all remaining pages after first page is received" in new SearcherSetup {
-      val document: Document = mock[Document]
-      val documents: Seq[Document] = Seq.fill(10)(document)
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+
+      val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
+        queryProcessor.ref, searchSaver.ref)
 
       documentSearcher ! SearchResult(150, 1, documents)
-      
+
       val messages = Seq.tabulate(3)(p => GetPage(p + 1))
       val receivedMessages = queryProcessor.receiveN(3)
       receivedMessages must haveTheSameElementsAs(messages)
     }
-    
+
     "only request pages needed to get maxDocuments results" in new SearcherContext with NotAllPagesNeeded {
-      
-      val document: Document = mock[Document]
-      val documents: Seq[Document] = Seq.fill(10)(document)
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+
+      val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
+        queryProcessor.ref, searchSaver.ref)
 
       documentSearcher ! SearchResult(totalDocuments, 1, documents)
-      
+
       queryProcessor.receiveN(pagesNeeded)
       queryProcessor.expectNoMsg(100 millis)
+    }
+    
+    "tell search saver to save documents in result" in new SearcherSetup {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
 
-      
+      val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
+        queryProcessor.ref, searchSaver.ref)
+
+      documentSearcher ! SearchResult(100, 1, documents)
+      searchSaver.expectMsg(Save(documents))
     }
   }
 }
