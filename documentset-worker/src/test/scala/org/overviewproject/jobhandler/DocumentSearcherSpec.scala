@@ -28,7 +28,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val expectedQuery = s"projectid:$documentSetId $queryTerms"
       
       val document: Document = mock[Document]
-      val documents: Seq[Document] = Seq.fill(10)(document)
+      val documents: Seq[Document] = Seq.fill(5)(document)
     }
 
     trait NotAllPagesNeeded extends TestConfig {
