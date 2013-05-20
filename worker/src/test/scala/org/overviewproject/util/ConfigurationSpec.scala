@@ -8,7 +8,7 @@ class ConfigurationSpec extends Specification {
   "Configuration" should {
     
     "have MaxDocuments value" in {
-      Configuration.maxDocuments must be equalTo(20000)
+      Configuration.maxDocuments must be equalTo(50000)
     }
     
     "have pageSize value" in {
