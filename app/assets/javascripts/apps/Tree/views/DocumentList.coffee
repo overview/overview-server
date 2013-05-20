@@ -68,7 +68,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     id: 'document-list'
 
     attributes:
-      'style': 'position:relative;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
+      'style': 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
 
     events:
       'mousedown': '_onMousedownCancelSelect'

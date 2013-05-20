@@ -48,9 +48,16 @@
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
   <div id="main">
-    <div id="tree"></div>
-    <div id="focus"></div>
+    <div class="flex-row">
+      <div class="flex-column">
+        <div class="tree-and-focus">
+          <div id="tree"></div>
+          <div id="focus"></div>
+        </div>
+        <div id="document-list-container"></div>
+      </div>
+      <aside id="document"></div>
+    </div>
     <div id="tag-list"></div>
   </div>
-  <aside id="document"></div>
 }

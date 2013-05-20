@@ -27,7 +27,8 @@ define [
       throw 'need options.documentListEl' if !options.documentListEl
       throw 'need options.documentEl' if !options.documentEl
       throw 'need options.navEl' if !options.navEl
-      throw 'need options.fullSizeEls' if !options.fullSizeEls
+      throw 'need options.fullSizeEl' if !options.fullSizeEl
+      throw 'need options.innerFullSizeEl' if !options.innerFullSizeEl
 
       world = new World()
 
@@ -42,16 +43,11 @@ define [
 
         # Make the main div go below the (variable-height) navbar
         h = $(options.navEl).height()
-        $(options.fullSizeEls).css({ top: h })
+        $(options.fullSizeEl).css({ top: h })
 
-        # Shrink the document list to available space
-        $document_list = $('#document-list')
-        $prev = $document_list.prev()
-        prev_bottom = $prev.position().top + $prev.outerHeight()
-        top_margin = parseFloat($document_list.prevAll(':eq(0)').css('margin-top'))
-        bottom_margin = parseFloat($document_list.css('margin-bottom')) # it's the last one
-        parent_height = $document_list.parent().height()
-        $document_list.height(parent_height - prev_bottom - top_margin - bottom_margin - 2) # 2px is the border
+        # Give room to the tags at the bottom
+        h = $(options.tagListEl).height()
+        $(options.innerFullSizeEl).css({ bottom: h })
 
         # Round the iframe's parent's width, because it needs an integer number of px
         $document = $('#document')

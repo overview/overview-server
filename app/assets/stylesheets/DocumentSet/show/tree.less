@@ -1,16 +1,15 @@
 @import "_variables.less";
 
 #tree {
-  height: @tree_height;
-  padding-bottom: 10px;
-  box-sizing: border-box;
-  margin: 5px 5px 0;
-  padding: 5px;
+  position: absolute;
+  top: 0;
+  bottom: @focus_height + 2px;
+  left: 0;
+  right: 0;
   border: 1px solid #ccc;
   border-bottom: none;
 
   // Hover descriptions that pop out of #tree should appear above later nodes in the page (i.e., the document-preview iframe)
-  position: relative;
   z-index: 1;
 
   .hover-node-description {

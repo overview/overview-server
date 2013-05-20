@@ -3,14 +3,25 @@
 @import "../../vendor/bootstrap/less/wells.less";
 @import "_variables.less";
 
+#document-list-container {
+  position: absolute;
+  top: @tree_height;
+  border: 5px solid transparent;
+  border-top-width: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
 #document-list {
-  .box-sizing(border-box);
-  margin-top: 0;
-  margin: 5px;
-  margin-top: 0;
-  padding: 0;
   border: 1px solid #ccc;
-  position: relative;
+  position: absolute;
+  top: 1.8em;
+  margin-top: 1px; // border-top of document-list-title
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
 
   ul.documents {
     margin: 0;

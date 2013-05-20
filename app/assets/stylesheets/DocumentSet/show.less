@@ -10,10 +10,32 @@ body.document-set-show {
   #main {
     position: absolute;
     left: 0;
-    width: @left_width;
+    width: 100%;
     top: 42px; // navbar -- will be altered in JS
     bottom: 0;
-    box-sizing: border-box;
+
+    .flex-row {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      bottom: 40px; // will be altered in JS
+    }
+
+    .flex-column {
+      position: absolute;
+      left: 0;
+      width: @left_width;
+      top: 0;
+      height: 100%;
+    }
+  }
+
+  .tree-and-focus {
+    position: relative;
+    .box-sizing(border-box);
+    height: @tree_height;
+    border: 5px solid transparent;
   }
 
   @import "show/document.less";
