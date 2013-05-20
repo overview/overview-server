@@ -2,15 +2,6 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
   t = (key, args...) -> i18n("views.DocumentSet.show.DocumentList.#{key}", args...)
 
   templates =
-    tag: _.template("""
-      <li class="tag">
-        <div class="tag" data-cid="<%- model.cid %>" style="background-color: <%= attrs.color %>;">
-          <span class="name"><%- attrs.name %></span>
-          <a class="remove" href="#" title="<%- t('tag.remove.title') %>"><%- t('tag.remove') %></a>
-        </div>
-      </li>
-    """)
-
     # We put < and > at the exact beginning and end of screen so we can iterate
     # over DOM children without bothering with text nodes
     model: _.template("""<li <%= liAttributes %>
@@ -18,7 +9,14 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         <h3><%- attrs.title ? t('title', attrs.title) : t('title.empty') %></h3>
         <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
         <ul class="tags">
-          <%= _.map(attrs.tagids, renderTagId).join('') %>
+          <% _.each(tags, function(tag) { %>
+            <li class="tag" data-cid="<%- tag.cid %>">
+              <div class="tag" style="background-color: <%= tag.get('color') %>;">
+                <span class="name"><%- tag.get('name') %></span>
+                <a class="remove" href="#" title="<%- t('tag.remove.title') %>"><%- t('tag.remove') %></a>
+              </div>
+            </li>
+          <% }); %>
         </ul>
       </li
     >""")
@@ -106,14 +104,6 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       @_listenToCollection(@collection)
       @render()
 
-    _renderTagIdHtml: (id) ->
-      model = @tagIdToModel(id)
-      templates.tag({
-        model: model
-        attrs: model.attributes
-        t: t
-      })
-
     _renderModelHtml: (model, index) ->
       template = if !model.id?
         if index == @options.collection.length - 1
@@ -123,11 +113,16 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       else
         templates.model
 
+      # Sort tagids
+      tagidSet = {}
+      tagidSet[id] = true for id in model.attributes.tagids || []
+      tags = @options.tags.filter((tag) -> tag.id of tagidSet)
+
       template({
         model: model
         attrs: model.attributes
+        tags: tags
         t: t
-        renderTagId: (id) => @_renderTagIdHtml(id)
         liAttributes: @options.liAttributes || ''
       })
 
@@ -195,7 +190,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       @$("li.document[data-cid=#{model.cid}]").replaceWith(html)
 
     _renderTag: (tag) ->
-      $tags = @$(".tag[data-cid=#{tag.cid}]")
+      $tags = @$(".tag[data-cid=#{tag.cid}]>div")
       $tags.find('.name').text(tag.get('name'))
       $tags.css('background-color', tag.get('color'))
 

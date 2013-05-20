@@ -168,6 +168,15 @@ require [
         expect($tagEl.find('.name').text()).toEqual('Tag 111111')
         expect(tinycolor($tagEl.css('background-color')).toHex()).toEqual('111111')
 
+      it 'should sort tags in documents', ->
+        tags.comparator = (a, b) -> b.id - a.id
+        tags.sort()
+        documents.at(0).set({ tagids: [ 0, 1, 2 ] })
+        $tags = view.$('ul.documents>li:eq(0) li.tag')
+        expect($tags.eq(0).attr('data-cid')).toEqual(tags.get(2).cid)
+        expect($tags.eq(1).attr('data-cid')).toEqual(tags.get(1).cid)
+        expect($tags.eq(2).attr('data-cid')).toEqual(tags.get(0).cid)
+
       it 'should update documents as they change', ->
         documents.get(0).set({ title: 'new title', tagids: [1] })
         $documentEl = view.$('ul.documents>li:eq(0)')
