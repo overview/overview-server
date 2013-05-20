@@ -340,7 +340,7 @@ define ->
           dn.parent._absolute_position.hmid + dn.__relative_position_info.relative_x
 
         top = if !dn.parent?
-          DEFAULT_OPTIONS.node_vpadding # root
+          0 # root
         else
           parent_position = dn.parent._absolute_position
           parent_position.top +  parent_position.height + (DEFAULT_OPTIONS.node_vpadding * dn._fraction)
@@ -368,7 +368,7 @@ define ->
         bottom = absolute_position.top + absolute_position.height
         max_bottom = bottom if bottom > max_bottom
 
-      @_outer_height = max_bottom - @_absolute_position.top + DEFAULT_OPTIONS.node_vpadding * 2
+      @_outer_height = max_bottom - @_absolute_position.top
 
     # Width of the node, including all children and padding.
     #
