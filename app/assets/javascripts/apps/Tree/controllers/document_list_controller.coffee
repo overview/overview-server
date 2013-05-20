@@ -243,7 +243,7 @@ define [
 
     go_down = (event) -> go_up_or_down('down', event)
     go_up = (event) -> go_up_or_down('up', event)
-    select_all = (event) -> listSelection.onSelectAll()
+    select_all = (event) -> controller.get('listSelection').onSelectAll()
 
     {
       go_up: go_up
