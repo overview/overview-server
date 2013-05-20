@@ -11,7 +11,7 @@ trait DocumentSearcherComponents {
 }
 
 object DocumentSearcherProtocol {
-  case class StartSearch()
+  case class StartSearch(searchResultId: Long)
 }
 
 object DocumentSearcherFSM {
@@ -22,7 +22,8 @@ object DocumentSearcherFSM {
 
   sealed trait Data
   case object Uninitialized extends Data
-  case class SearchInfo(total: Int, pagesRetrieved: Int) extends Data
+  case class SearchResultId(id: Long) extends Data
+  case class SearchInfo(searchResultId: Long, total: Int, pagesRetrieved: Int) extends Data
 }
 
 import DocumentSearcherFSM._
@@ -42,27 +43,27 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   startWith(Idle, Uninitialized)
 
   when(Idle) {
-    case Event(StartSearch(), Uninitialized) =>
+    case Event(StartSearch(id), Uninitialized) =>
       queryProcessor ! GetPage(1)
-      goto(WaitingForSearchInfo) using Uninitialized
+      goto(WaitingForSearchInfo) using SearchResultId(id)
   }
 
   when(WaitingForSearchInfo) {
-    case Event(SearchResult(total, page, documents), Uninitialized) => {
+    case Event(SearchResult(total, page, documents), SearchResultId(id)) => {
       requestRemainingPages(total)
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
-      searchSaver ! Save(documents.take(documentsFromPage))
+      searchSaver ! Save(id, documents.take(documentsFromPage))
 
-      goto(RetrievingSearchResults) using SearchInfo(total, 1)
+      goto(RetrievingSearchResults) using SearchInfo(id, total, 1)
     }
   }
 
   when(RetrievingSearchResults) {
-    case Event(SearchResult(_, page, documents), SearchInfo(total, pagesRetrieved)) => {
+    case Event(SearchResult(_, page, documents), SearchInfo(id, total, pagesRetrieved)) => {
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
-      searchSaver ! Save(documents.take(documentsFromPage))
+      searchSaver ! Save(id, documents.take(documentsFromPage))
 
-      stay using SearchInfo(total, pagesRetrieved + 1)
+      stay using SearchInfo(id, total, pagesRetrieved + 1)
     }
   }
 
@@ -80,7 +81,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
 trait ActualQueryProcessorFactory extends DocumentSearcherComponents {
   override def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor = new QueryProcessor(query, None, requestQueue)
-  override def produceSearchSaver: Actor = new SearchSaver()
+  override def produceSearchSaver: Actor = new SearchSaver with ActualSearchSaverComponents
 }
 
 class ActualDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef) extends DocumentSearcher(documentSetId, query, requestQueue) with ActualQueryProcessorFactory

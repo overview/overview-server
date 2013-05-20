@@ -19,6 +19,7 @@ class SearchHandlerSpec extends Specification with Mockito {
     class TestSearchHandler(searchExists: Boolean, documentSearcherProbe: ActorRef) extends SearchHandler with SearchHandlerComponents {
       val storage = mock[Storage]
       storage.searchExists(anyLong, anyString) returns searchExists
+      storage.createSearchResult(anyLong, anyString) returns 1l
 
       val actorCreator = new ActorCreator { // can't mock creation of actors
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
@@ -62,16 +63,17 @@ class SearchHandlerSpec extends Specification with Mockito {
       expectMsg(Done)
     }
 
-    "send StartSearch to a new DocumentSearcher" in new ActorSystemContext with SearchHandlerSetup {
+    "create a new SearchResult and start DocumentSearcher if SearchResult doesn't exist" in new ActorSystemContext with SearchHandlerSetup {
       val documentSearcherProbe = TestProbe()
 
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
 
       parent ! Search(documentSetId, query, testActor)
 
-      documentSearcherProbe.expectMsg(StartSearch())
-
+      documentSearcherProbe.expectMsg(StartSearch(1l))
     }
+    
+    
 
   }
 

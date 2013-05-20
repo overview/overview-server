@@ -24,6 +24,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
     trait TestConfig {
       val maxDocuments: Int = Configuration.maxDocuments
       val pageSize: Int = Configuration.pageSize
+      val searchId = 1l
       val documentSetId = 6
       val queryTerms = "query terms"
       val expectedQuery = s"projectid:$documentSetId $queryTerms"
@@ -90,7 +91,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor, 
         queryProcessor.ref, searchSaver.ref)
 
-      documentSearcher ! StartSearch()
+      documentSearcher ! StartSearch(searchId)
       documentSearcher.underlyingActor.queryString must beSome(expectedQuery)
       queryProcessor.expectMsg(GetPage(1))
     }
@@ -102,7 +103,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
-      documentSearcher ! StartSearch()
+      documentSearcher ! StartSearch(searchId)
       documentSearcher ! SearchResult(150, 1, documents)
 
       val messages = Seq.tabulate(3)(p => GetPage(p + 1))
@@ -117,7 +118,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
-      documentSearcher ! StartSearch()
+      documentSearcher ! StartSearch(searchId)
       documentSearcher ! SearchResult(totalDocuments, 1, documents)
 
       queryProcessor.receiveN(pagesNeeded)
@@ -131,9 +132,9 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
-      documentSearcher ! StartSearch()
+      documentSearcher ! StartSearch(searchId)
       documentSearcher ! SearchResult(100, 1, documents)
-      searchSaver.expectMsg(Save(documents))
+      searchSaver.expectMsg(Save(searchId, documents))
     }
     
     "only send search saver maxDocuments documents" in new SearcherContext with NotAllDocumentsInLastPageNeeded {
@@ -143,12 +144,12 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
       
-      documentSearcher ! StartSearch()
+      documentSearcher ! StartSearch(1l)
       documentSearcher ! SearchResult(100, 1, documents)
-      searchSaver.expectMsg(Save(documents))
+      searchSaver.expectMsg(Save(1l, documents))
 
       documentSearcher ! SearchResult(100, 2, documents)
-      searchSaver.expectMsg(Save(documents.take(1)))
+      searchSaver.expectMsg(Save(1l, documents.take(1)))
 
     }
   }
