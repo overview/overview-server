@@ -10,19 +10,24 @@ trait DocumentSearcherComponents {
   def produceSearchSaver: Actor
 }
 
+object DocumentSearcherProtocol {
+  case class StartSearch()
+}
+
+
 class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef,
   pageSize: Int = Configuration.pageSize, maxDocuments: Int = Configuration.maxDocuments) extends Actor {
   this: DocumentSearcherComponents =>
 
+  import DocumentSearcherProtocol._
   import org.overviewproject.documentcloud.QueryProcessorProtocol._
   import org.overviewproject.jobhandler.SearchSaverProtocol._
   
   private val queryProcessor = context.actorOf(Props(produceQueryProcessor(createQuery, requestQueue)))
   private val searchSaver = context.actorOf(Props(produceSearchSaver))
   
-  queryProcessor ! GetPage(1)
-
   def receive = {
+    case StartSearch() => queryProcessor ! GetPage(1)
     case SearchResult(total, page, documents) => {
       val documentsFromPage = scala.math.min(pageSize,  maxDocuments - (page - 1) * pageSize)
       searchSaver ! Save(documents.take(documentsFromPage))

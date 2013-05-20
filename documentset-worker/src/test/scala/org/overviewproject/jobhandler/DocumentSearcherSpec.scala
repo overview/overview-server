@@ -15,6 +15,7 @@ import org.specs2.specification.Scope
 import org.overviewproject.documentcloud.QueryProcessor
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.SearchSaverProtocol._
+import org.overviewproject.jobhandler.DocumentSearcherProtocol.StartSearch
 
 class DocumentSearcherSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -89,6 +90,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor, 
         queryProcessor.ref, searchSaver.ref)
 
+      documentSearcher ! StartSearch()
       documentSearcher.underlyingActor.queryString must beSome(expectedQuery)
       queryProcessor.expectMsg(GetPage(1))
     }
@@ -100,6 +102,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
+      documentSearcher ! StartSearch()
       documentSearcher ! SearchResult(150, 1, documents)
 
       val messages = Seq.tabulate(3)(p => GetPage(p + 1))
@@ -114,6 +117,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
+      documentSearcher ! StartSearch()
       documentSearcher ! SearchResult(totalDocuments, 1, documents)
 
       queryProcessor.receiveN(pagesNeeded)
