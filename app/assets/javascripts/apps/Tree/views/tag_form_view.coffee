@@ -38,6 +38,7 @@ define [
       $form.find('input[type=text]').focus()
 
       $form.on 'hidden', () =>
+        $color.spectrum('destroy')
         $form.remove()
         this._notify('closed')
 

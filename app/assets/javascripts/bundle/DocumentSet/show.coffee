@@ -34,10 +34,11 @@ requirejs.config({
       exports: -> 'jQuery.fn' # doesn't export anything
     }
     spectrum: {
-      deps: [ 'jquery' ]
+      deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
     }
     underscore: { exports: '_' }
+    tinycolor: { exports: 'tinycolor' }
     md5: { exports: 'CryptoJS.MD5' }
   }
 
@@ -54,6 +55,7 @@ requirejs.config({
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
+    tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
   }
 })

@@ -14,8 +14,9 @@ requirejs.config({
     underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
     spectrum:
-      deps: [ 'jquery' ]
+      deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
+    tinycolor: { exports: 'tinycolor' }
   }
 
   paths: {
@@ -32,6 +33,7 @@ requirejs.config({
     md5: 'vendor/md5'
     silverlight: 'vendor/Silverlight.debug'
     spectrum: 'vendor/spectrum'
+    tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
   }
 })
