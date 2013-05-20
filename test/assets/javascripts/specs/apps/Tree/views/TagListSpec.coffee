@@ -1,9 +1,10 @@
 require [
+  'jquery'
   'underscore'
   'backbone'
   'apps/Tree/views/TagList'
   'i18n'
-], (_, Backbone, TagList, i18n) ->
+], ($, _, Backbone, TagList, i18n) ->
   makeModel = (name="name", color="#abcdef", options={}) ->
     new Backbone.Model(_.extend({}, { name: name, color: color }, options))
 
@@ -25,44 +26,55 @@ require [
         'views.DocumentSet.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
         'views.DocumentSet.show.tag_list.n_documents': 'n_documents,{0}'
       })
-      collection = new Backbone.Collection([])
-      view = new TagList({
-        collection: collection
-        tagToCount: tagToCount
-      })
 
     afterEach ->
       view?.remove()
+      view?.off()
 
-    it 'should render an empty list', ->
-      expect(view.$('ul').children().length).toEqual(1)
+    describe 'starting with no tags', ->
+      beforeEach ->
+        collection = new Backbone.Collection([])
+        view = new TagList({
+          collection: collection
+          tagToCount: tagToCount
+        })
 
-    it 'should render a "new" form', ->
-      expect(view.$('li.new form').length).toEqual(1)
+      it 'should render an empty list', ->
+        expect(view.$('ul').children().length).toEqual(1)
 
-    it 'should render list items on reset', ->
-      collection.reset([ makeModel() ])
-      expect(view.$('ul').children().length).toEqual(2)
+      it 'should render a "new" form', ->
+        expect(view.$('li.new form').length).toEqual(1)
 
-    it 'should trigger add', ->
-      val = undefined
-      view.once('add', (v) -> val = v)
-      $form = view.$('form')
-      $form.find('input[name=name]').val('new tag')
-      $form.submit()
-      expect(val).toEqual({ name: 'new tag' })
+      it 'should render list items on reset', ->
+        collection.reset([ makeModel() ])
+        expect(view.$('ul').children().length).toEqual(2)
 
-    it 'should not show an export link', ->
-      view = new TagList({
-        collection: collection
-        tagToCount: tagToCount
-        exportUrl: 'https://example.org'
-      })
-      expect(view.$('a.export').length).toEqual(0)
+      it 'should trigger add', ->
+        val = undefined
+        view.once('add', (v) -> val = v)
+        $form = view.$('form')
+        $form.find('input[name=name]').val('new tag')
+        $form.submit()
+        expect(val).toEqual({ name: 'new tag' })
+
+      it 'should not show an export link', ->
+        view?.remove()
+        view?.off()
+        view = new TagList({
+          collection: collection
+          tagToCount: tagToCount
+          exportUrl: 'https://example.org'
+        })
+        expect(view.$('a.export').length).toEqual(0)
 
     describe 'starting with two tags', ->
       beforeEach ->
-        collection.reset([ makeModel('tag10'), makeModel('tag20') ])
+        collection = new Backbone.Collection([ makeModel('tag10'), makeModel('tag20') ])
+        view = new TagList({
+          collection: collection
+          tagToCount: tagToCount
+          exportUrl: 'https://example.org'
+        })
 
       it 'should add a tag to the end of the list', ->
         collection.add(makeModel('tag30'))
@@ -79,6 +91,19 @@ require [
       it 'should remove a tag', ->
         collection.remove(collection.first())
         expect(view.$('ul>li:eq(0)').html()).toContain('tag20')
+
+      it 'should remove Spectrum when deleting a tag', ->
+        # This will be 0 if we remove Spectrum; remove this test if that happens
+        expect($('.sp-container').length).toEqual(2)
+        collection.remove(collection.first())
+        expect($('.sp-container').length).toEqual(1)
+
+      it 'should remove Spectrum in remove()', ->
+        view.remove()
+        view.off()
+        view.$el.remove()
+        view = undefined
+        expect($('.sp-container').length).toEqual(0)
 
       it 'should change a tag', ->
         collection.first().set({
@@ -107,6 +132,8 @@ require [
         expect(view.$('li:eq(0) input[name=id]').val()).toEqual('3')
 
       it 'should show an export link', ->
+        view?.remove()
+        view?.off()
         view = new TagList({
           collection: collection
           tagToCount: tagToCount

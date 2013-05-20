@@ -12,6 +12,13 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
           move: (color) -> $input.spectrum('set', color.toHexString()) # Issue #168
         })
 
+  removeSpectrum = ($els) ->
+    $els.filter('.spectrum').spectrum('destroy')
+
+  updateSpectrum = ($els) ->
+    $els.filter('.spectrum').each ->
+      $(this).spectrum('set', $(this).val())
+
   # Represents a list of tags
   #
   # Usage:
@@ -76,6 +83,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       @render()
 
     render: ->
+      removeSpectrum(@$('input[type=color]'))
       html = @template({
         t: t
         tags: @collection
@@ -85,6 +93,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       @$el.html(html)
       addSpectrum(@$('input[type=color]'))
       this
+
+    remove: ->
+      removeSpectrum(@$('input[type=color]'))
+      Backbone.View.prototype.remove.call(this)
 
     _$liForTag: (tag) ->
       @$("[data-cid=#{tag.cid}]")
@@ -101,7 +113,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       addSpectrum(@$('input[type=color]'))
 
     _removeTag: (tag) ->
-      @_$liForTag(tag).remove()
+      $li = @_$liForTag(tag)
+      removeSpectrum($li.find('input[type=color]'))
+      $li.remove()
 
     _changeTag: (tag, options) ->
       $li = @_$liForTag(tag)
@@ -109,7 +123,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
 
       if !options? || !options.interacting
         $li.find('input[name=name]').val(tag.get('name'))
-        $li.find('input[name=color]').val(tag.get('color'))
+        $color = $li.find('input[name=color]')
+        $color.val(tag.get('color'))
+        updateSpectrum($color)
 
     _onClickRemove: (e) ->
       e.preventDefault()
