@@ -1,8 +1,8 @@
-define ->
+define [ 'underscore' ], (_) ->
   DEFAULT_OPTIONS = {
     node_vpadding: 0.5, # fraction of a node's height
-    min_spacing_level: 8 # all levels >= this have minimum inter-subtree spacing
-    reference_spacing_docset_size : 1000 # fully zoomed out tree should have spacing between nodes that we get with docset of this size
+    root_node_spacing: 0.08 # fraction of the root node's width we should add as spacing
+    child_spacing_ratio: 1.5 # fraction of a parent's padding to divide among its children
   }
 
   # Extends the contour in-place using information from the new one.
@@ -169,24 +169,35 @@ define ->
 
       @_level
 
-    # Distance from the node to any sibling node.
+    # Distance from this node to the deepest child, plus one.
     #
-    # Further down the tree, the nodes get tighter together nonlinearly, reaches min at level 
-    # DEFAULT_OPTIONS.min_spacing_level. Multiplies by number of nodes in the root relative to
-    # EFAULT_OPTIONS.reference_spacing_docset_size, so that the nodes on level k have 
-    # same spacing when tree viewed fully zoomed out, regardless of document set size.
+    # A leaf node has depth 1.
+    depth: () ->
+      return @_depth if @_depth?
+
+      # After calling this method, @_depth will be set on all nodes.
+      @root().walk_postorder (dn) ->
+        max = 0
+        if dn._children
+          for c in dn._children
+            max = c._depth if max < c._depth
+        dn._depth = max + 1
+
+      console.log(@_depth)
+      @_depth
+
+    # Distance from the node to any sibling node.
     _spacing: () ->
       return @__spacing if @__spacing?
 
       # After calling this method, @__spacing will be set on all nodes.
-      @level()
-      @fraction()
-      @walk (dn) ->
-        #decreasing_level = Math.max(1 + DEFAULT_OPTIONS.min_spacing_level - dn._level, 1)
-        #size_factor = @root().animated_node.node.doclist.n / DEFAULT_OPTIONS.reference_spacing_docset_size
-        #dn.__spacing = Math.pow(decreasing_level, 1.5) * dn._fraction * size_factor
-        dn.__spacing = dn._fraction * 5
-       
+      @_inner_width()
+      @root().walk_preorder (dn) ->
+        dn.__spacing = if dn.parent?
+          dn.parent.__spacing * DEFAULT_OPTIONS.child_spacing_ratio / dn.parent._children.length
+        else
+          dn.__inner_width * DEFAULT_OPTIONS.root_node_spacing
+
       @__spacing
 
     # Width of the node itself, with no padding.
