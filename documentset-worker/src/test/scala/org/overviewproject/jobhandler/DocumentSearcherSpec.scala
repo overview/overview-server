@@ -131,6 +131,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
 
+      documentSearcher ! StartSearch()
       documentSearcher ! SearchResult(100, 1, documents)
       searchSaver.expectMsg(Save(documents))
     }
@@ -142,6 +143,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val documentSearcher = createDocumentSearcher(documentSetId, queryTerms, testActor,
         queryProcessor.ref, searchSaver.ref)
       
+      documentSearcher ! StartSearch()
       documentSearcher ! SearchResult(100, 1, documents)
       searchSaver.expectMsg(Save(documents))
 
