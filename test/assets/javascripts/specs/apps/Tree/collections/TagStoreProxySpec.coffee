@@ -39,6 +39,13 @@ require [
         tag = proxy.map({ id: 20, name: 'tag20', color: '#202020', position: 0 })
         expect(tag).toBe(collection.last())
 
+      it 'should find a tag by ID', ->
+        tag = proxy.map(20)
+        expect(tag).toBe(collection.last())
+
+      it 'should throw exception on not-found tag', ->
+        expect(-> tag = proxy.map(19)).toThrow()
+
       it 'should find a plain-old-data object', ->
         obj = proxy.unmap(collection.last())
         expect(obj).toBe(tagStore.tags[1])

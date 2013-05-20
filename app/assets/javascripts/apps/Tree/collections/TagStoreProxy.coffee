@@ -12,13 +12,14 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
   #
   # Usage:
   #
-  #   collection = TagStoreProxy(tagStore)
+  #   proxy = new TagStoreProxy(tagStore)
+  #   collection = proxy.collection
   #   tagStore.create_tag(...)
   #   tagStore.add(...)
   #   tagStore.remove(...)
   #   tagStore.change(...)
   #   ...
-  #   collection.destroy() # stops listening
+  #   proxy.destroy() # stops listening
   #
   # A Backbone.Collection is more convenient than TagStore, because it fires
   # lots of events. It is also slower, because it fires lots of events.
@@ -86,11 +87,13 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
 
     setChangeOptions: (@changeOptions) ->
 
-    # Converts from tag to model
+    # Converts from tag ID or tag object to model
     #
     # The model must already be part of the collection.
     map: (tag) ->
-      @_idToModel[tag.id]
+      id = tag.id? && tag.id || tag
+      throw 'Tag not found' if id not of @_idToModel
+      @_idToModel[id]
 
     # Converts from model to tag
     #
