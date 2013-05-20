@@ -1,14 +1,17 @@
+@import "../../vendor/bootstrap/less/variables.less";
+@import "../../vendor/bootstrap/less/mixins.less";
 @import "_variables.less";
 
 // The preview-a-single-document view
 #document {
+  .box-sizing(border-box);
+
   position: absolute;
-  right: 5px;
   left: @left_width;
-  margin-left: 5px;
   top: 42px; // navbar -- will be resized
-  margin-top: 5px;
-  bottom: 5px;
+  right: 0;
+  bottom: 0;
+  margin: 5px;
   border: 1px solid #ccc;
 
   iframe {

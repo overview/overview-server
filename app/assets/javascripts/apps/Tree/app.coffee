@@ -45,11 +45,13 @@ define [
         $(options.fullSizeEls).css({ top: h })
 
         # Shrink the document list to available space
-        $tag_list = $('#tag-list')
         $document_list = $('#document-list')
+        $prev = $document_list.prev()
+        prev_bottom = $prev.position().top + $prev.outerHeight()
+        top_margin = parseFloat($document_list.prevAll(':eq(0)').css('margin-top'))
+        bottom_margin = parseFloat($document_list.css('margin-bottom')) # it's the last one
         parent_height = $document_list.parent().height()
-        tag_list_bottom = $tag_list.position().top + $tag_list.outerHeight()
-        $document_list.height(parent_height - tag_list_bottom - MARGIN * 3) # dunno why 3
+        $document_list.height(parent_height - prev_bottom - top_margin - bottom_margin - 2) # 2px is the border
 
         # Round the iframe's parent's width, because it needs an integer number of px
         $document = $('#document')
@@ -107,8 +109,6 @@ define [
       keyboard_controller.add_controller('TreeController', controller)
 
       controller = document_list_controller(options.documentListEl, world.cache, world.state)
-      world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
-      world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
       keyboard_controller.add_controller('DocumentListController', controller)
 
       controller = document_contents_controller(options.documentEl, world.cache, world.state)
@@ -116,6 +116,8 @@ define [
 
       auto_focus_controller(focus, world)
 
+      world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
+      world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
       $(window).resize(refresh_height)
       refresh_height()
 

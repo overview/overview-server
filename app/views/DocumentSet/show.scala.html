@@ -9,14 +9,23 @@
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/show").url)
 }
 @jsMessageKeys = @{Seq(
-  "views.DocumentSet.show.document_list.loading",
-  "views.DocumentSet.show.document_list.title_html",
-  "views.DocumentSet.show.document_list.title.num_documents",
-  "views.DocumentSet.show.document_list.title.edit",
-  "views.DocumentSet.show.document_list.title.node",
-  "views.DocumentSet.show.document_list.title.tag",
-  "views.DocumentSet.show.document_list.title.n_nodes_and_n_tags",
-  "views.DocumentSet.show.document_list.document.empty_description",
+  "views.DocumentSet.show.DocumentList.loading",
+  "views.DocumentSet.show.DocumentList.placeholder",
+  "views.DocumentSet.show.DocumentList.tag.remove",
+  "views.DocumentSet.show.DocumentList.tag.remove.title",
+  "views.DocumentSet.show.DocumentList.title",
+  "views.DocumentSet.show.DocumentList.title.empty",
+  "views.DocumentSet.show.DocumentList.description",
+  "views.DocumentSet.show.DocumentList.description.empty",
+  "views.DocumentSet.show.DocumentListTitle.num_documents",
+  "views.DocumentSet.show.DocumentListTitle.loading",
+  "views.DocumentSet.show.DocumentListTitle.tag.title_html",
+  "views.DocumentSet.show.DocumentListTitle.tag.edit",
+  "views.DocumentSet.show.DocumentListTitle.node.title_html",
+  "views.DocumentSet.show.DocumentListTitle.node.edit",
+  "views.DocumentSet.show.DocumentListTitle.multiple.title_html",
+  "views.DocumentSet.show.DocumentListTitle.multiple.num_nodes",
+  "views.DocumentSet.show.DocumentListTitle.multiple.num_tags",
   "views.DocumentSet.show.tag_list.header",
   "views.DocumentSet.show.tag_list.preamble",
   "views.DocumentSet.show.tag_list.export",
@@ -42,7 +51,6 @@
     <div id="tree"></div>
     <div id="focus"></div>
     <div id="tag-list"></div>
-    <div id="document-list"></div>
   </div>
   <aside id="document"></div>
 }

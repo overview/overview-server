@@ -4,93 +4,81 @@
 @import "_variables.less";
 
 #document-list {
-  box-sizing: border-box;
+  .box-sizing(border-box);
+  margin-top: 0;
   margin: 5px;
+  margin-top: 0;
   padding: 0;
   border: 1px solid #ccc;
   position: relative;
 
-  h4 {
+  ul.documents {
     margin: 0;
-    padding: 0 10px;
-    height: 1.8em;
-    line-height: 1.8;
-    white-space: nowrap;
-    font-weight: normal;
-    font-size: 1em;
-    border-bottom: 1px solid #ccc;
-    background: @wellBackground;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    a {
-      display: none;
-      float: right;
-      color: @linkColor;
-      height: 1.8em;
-      line-height: 1.8em;
-    }
-  }
-
-  h4:hover a {
-    display: block;
-    position: relative; // otherwise users can't click, in Chrome 22
-    background: @wellBackground; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
-  }
-
-  ul {
-    overflow: auto;
-    position: absolute;
-    top: 1.8em;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: 1px 0 0; // from border-bottom on .num-documents
-    padding: 5px 0;
+    padding: 0;
     list-style: none;
   }
 
-  li {
+  li.document {
     margin: 0;
-    padding: 0;
-    white-space: nowrap;
+    padding: 5px 10px;
     line-height: 1.5;
 
-    &.placeholder {
+    &.placeholder, &.loading {
       color: @gray;
     }
-  }
-
-  a {
-    display: block;
-    padding: 0 10px;
-    color: inherit;
-    text-decoration: inherit;
-    overflow: hidden;
-    text-overflow: ellipsis;
 
     &:hover {
       background: @wellBackground;
     }
-
-    &.selected {
-      color: @black;
-      font-weight: bold;
-    }
   }
 
-  &.all-selected a {
+  li.document.cursor {
+    font-weight: bold;
+  }
+
+  li.document.selected, ul.documents.all-selected li.document {
     color: @black;
     font-weight: bold;
   }
 
-  span.tags {
-    span {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      margin: 0 5px 0 0;
-      border: 1px solid @gray;
-    }
+  h3 {
+    margin: 0;
+    padding: 0;
+    font: inherit;
+  }
+
+  p.description {
+    margin: 0;
+    padding: 0;
+    .text-overflow();
+    .muted;
+  }
+
+  ul.tags {
+    display: block;
+    margin: 0 -.5em;
+    padding: 0;
+    list-style: none;
+  }
+
+  li.tag {
+    display: inline-block;
+    .ie7-inline-block();
+    margin: .5em;
+  }
+
+  div.tag {
+    font-weight: normal;
+    font-size: .8em;
+    padding: 0 .5em;
+    .border-radius(.5em);
+
+    a { display: none; } // this button doesn't work yet
+
+    @shadow: rgba(255, 255, 255, .5);
+    text-shadow:
+      -1px -1px 1px @shadow, -1px 0 1px @shadow, -1px 1px 1px @shadow,
+      0 -1px 1px @shadow, 0 1px 1px @shadow,
+      1px -1px 1px @shadow, 1px 0 1px @shadow, 1px 1px 1px @shadow;
   }
 }
