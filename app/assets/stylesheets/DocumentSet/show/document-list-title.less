@@ -1,0 +1,39 @@
+@import "../../vendor/bootstrap/less/variables.less";
+@import "../../vendor/bootstrap/less/mixins.less";
+
+#document-list-title {
+  .box-sizing(border-box);
+  margin: 5px;
+  margin-bottom: 0;
+  border: 1px solid #ccc;
+  border-bottom: none;
+
+  h4 {
+    margin: 0;
+    padding: 0 10px;
+    height: 1.8em;
+    line-height: 1.8;
+    white-space: nowrap;
+    font-weight: normal;
+    font-size: 1em;
+    background: @wellBackground;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  a {
+    position: relative; // otherwise users can't click, in Chrome 22
+    cursor: pointer; // dunno why this doesn't happen
+    display: none;
+    float: right;
+    color: @linkColor;
+    height: 1.8em;
+    padding: 0 .5em;
+    line-height: 1.8em;
+  }
+
+  &:hover a {
+    display: block;
+    background: @wellBackground; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
+  }
+}
