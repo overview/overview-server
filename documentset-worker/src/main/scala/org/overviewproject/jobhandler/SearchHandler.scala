@@ -15,11 +15,13 @@ trait SearchHandlerComponents {
   val actorCreator: ActorCreator
   
   class Storage {
-    def searchExists(documentSetId: Long, query: String): Boolean = ???
+    def searchExists(documentSetId: Long, query: String): Boolean = 
+      SearchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption.isDefined
   }
   
   class ActorCreator {
-    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor = ???
+    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor = 
+      new DocumentSearcher(documentSetId, query, requestQueue) with ActualQueryProcessorFactory
   }
 }
 
