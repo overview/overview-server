@@ -12,6 +12,7 @@ define [
       documentListEl: el('document-list-container')
       documentEl: el('document')
       navEl: document.getElementsByTagName('nav')[0]
+      mainEl: el('main')
       fullSizeEl: el('main')
       innerFullSizeEl: $('#main>.flex-row')[0]
     })

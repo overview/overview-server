@@ -14,10 +14,12 @@ define [
   './controllers/document_list_controller'
   './controllers/document_contents_controller'
   './controllers/auto_focus_controller'
+  './views/Mode'
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, RemoteTagList, World, Selection, \
     KeyboardController, Logger, \
-    tag_list_controller, focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller) ->
+    tag_list_controller, focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
+    ModeView) ->
 
   class App
     constructor: (options) ->
@@ -27,6 +29,7 @@ define [
       throw 'need options.documentListEl' if !options.documentListEl
       throw 'need options.documentEl' if !options.documentEl
       throw 'need options.navEl' if !options.navEl
+      throw 'need options.mainEl' if !options.mainEl
       throw 'need options.fullSizeEl' if !options.fullSizeEl
       throw 'need options.innerFullSizeEl' if !options.innerFullSizeEl
 
@@ -109,6 +112,8 @@ define [
 
       controller = document_contents_controller(options.documentEl, world.cache, world.state)
       keyboard_controller.add_controller('DocumentContentsController', controller)
+
+      new ModeView({ el: main, state: world.state })
 
       auto_focus_controller(focus, world)
 
