@@ -5,21 +5,22 @@
 // The preview-a-single-document view
 #document {
   position: absolute;
-  left: @left_width;
+  .box-sizing(border-box);
+  border: 5px solid transparent;
+  border-left-width: 0;
   top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
-  margin: 5px;
-  margin-left: 0;
-  border: 1px solid #ccc;
 
   iframe {
+    .box-sizing(border-box);
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    border: none;
+    border: 1px solid #ccc;
     padding: 0;
     margin: 0;
   }
