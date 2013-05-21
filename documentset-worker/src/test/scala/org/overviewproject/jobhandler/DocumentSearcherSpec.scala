@@ -15,7 +15,7 @@ import org.specs2.specification.Scope
 import org.overviewproject.documentcloud.QueryProcessor
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.SearchSaverProtocol._
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.StartSearch
+import org.overviewproject.jobhandler.DocumentSearcherProtocol._
 
 class DocumentSearcherSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -49,7 +49,21 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       def receive = {
         case m => target forward m
       }
+      
+      override def postStop = target ! PoisonPill
     }
+    
+    class ParentActor(parentProbe: ActorRef, childProps: Props) extends Actor {
+      val child = context.actorOf(childProps)
+
+      def receive = {
+        case msg if sender == child => parentProbe forward msg
+        case msg => child forward msg
+      }
+
+    }
+
+
 
     abstract class SearcherContext extends ActorSystemContext {
       this: TestConfig =>
@@ -150,7 +164,28 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
 
       documentSearcher ! SearchResult(100, 2, documents)
       searchSaver.expectMsg(Save(searchId, documentSetId, documents.take(1)))
+    }
+    
+    "terminate search saver after all pages have been received" in new SearcherContext with NotAllPagesNeeded {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+      val searchSaverWatcher = TestProbe()
+      val parentProbe = TestProbe()
+      
+      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
+            queryProcessor.ref, searchSaver.ref)))))
+              
+      searchSaverWatcher watch searchSaver.ref
+      
+      parent ! StartSearch(searchId)
+      parent ! SearchResult(totalDocuments, 1, documents)
+      parent ! SearchResult(totalDocuments, 2, documents)
 
+      searchSaver.receiveN(2)
+      searchSaverWatcher.expectMsgType[Terminated]
+      
+      parentProbe.expectMsg(Done)
     }
   }
-}
+} 

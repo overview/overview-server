@@ -40,7 +40,6 @@ trait SearchHandler extends Actor {
   this: SearchHandlerComponents =>
 
   import SearchHandlerProtocol._
-  import JobHandlerProtocol._
   import DocumentSearcherProtocol._
 
   def receive = {

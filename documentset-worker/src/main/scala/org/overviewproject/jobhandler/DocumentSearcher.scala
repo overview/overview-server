@@ -12,6 +12,7 @@ trait DocumentSearcherComponents {
 
 object DocumentSearcherProtocol {
   case class StartSearch(searchResultId: Long)
+  case object Done
 }
 
 object DocumentSearcherFSM {
@@ -19,6 +20,7 @@ object DocumentSearcherFSM {
   case object Idle extends State
   case object WaitingForSearchInfo extends State
   case object RetrievingSearchResults extends State
+  case object WaitingForSearchSaverEnd extends State
 
   sealed trait Data
   case object Uninitialized extends Data
@@ -50,33 +52,48 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
   when(WaitingForSearchInfo) {
     case Event(SearchResult(total, page, documents), SearchResultId(id)) => {
-      requestRemainingPages(total)
+      val totalPages: Int = scala.math.min(total, maxDocuments) / pageSize
+      
+      requestRemainingPages(totalPages)
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
       searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
-      goto(RetrievingSearchResults) using SearchInfo(id, total, 1)
+      goto(RetrievingSearchResults) using SearchInfo(id, totalPages, 1)
     }
   }
 
   when(RetrievingSearchResults) {
-    case Event(SearchResult(_, page, documents), SearchInfo(id, total, pagesRetrieved)) => {
+    case Event(SearchResult(_, page, documents), SearchInfo(id, totalPages, pagesRetrieved)) => {
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
       searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
-      stay using SearchInfo(id, total, pagesRetrieved + 1)
+      val currentPagesRetrieved = pagesRetrieved + 1
+      
+      if (currentPagesRetrieved == totalPages) { 
+        context.watch(searchSaver)
+        searchSaver ! PoisonPill  
+        goto(WaitingForSearchSaverEnd) using SearchInfo(id, totalPages, currentPagesRetrieved)
+      }
+      else stay using SearchInfo(id, totalPages, currentPagesRetrieved)
     }
   }
-
+  
+  when(WaitingForSearchSaverEnd) {
+    case Event(Terminated(a), SearchInfo(id, t, p)) => { 
+      context.parent ! Done
+      goto(Idle) using Uninitialized
+    }
+        
+  }
 
   initialize
 
   private def createQuery: String = s"projectid:$documentSetId $query"
 
-  private def requestRemainingPages(total: Int): Unit = {
-    val totalPages: Int = scala.math.min(total, maxDocuments) / pageSize
+  private def requestRemainingPages(totalPages: Int): Unit = 
     for (p <- 2 to totalPages)
       queryProcessor ! GetPage(p)
-  }
+
 }
 
 trait ActualQueryProcessorFactory extends DocumentSearcherComponents {
