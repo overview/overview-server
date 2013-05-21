@@ -3,42 +3,13 @@
 @import "../../vendor/bootstrap/less/wells.less";
 @import "_variables.less";
 
-.document-list-column {
-  .help {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 2.5em;
-    overflow: hidden;
-  }
-
-  .help-top { top: 0; }
-  .help-bottom { bottom: 0; }
-
-  a {
-    display: block;
-    text-align: center;
-    padding: .25em;
-    line-height: 2;
-    cursor: pointer;
-    text-decoration: none;
-
-    &.show-tree { display: none; }
-    &.show-document { display: block; }
-  }
-}
-
-#main.document-selected .document-list-column .help a {
-  &.show-tree { display: block; }
-  &.show-document { display: none; }
-}
-
 #document-list-container {
   position: absolute;
-  top: 2.5em;
+  top: 0;
   left: 0;
   right: 0;
-  bottom: 2.5em;
+  top: 0;
+  bottom: 0;
   border: 5px solid transparent;
 }
 

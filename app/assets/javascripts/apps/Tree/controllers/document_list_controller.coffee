@@ -245,14 +245,6 @@ define [
     go_up = (event) -> go_up_or_down('up', event)
     select_all = (event) -> controller.get('listSelection').onSelectAll()
 
-    # HACK testing usability fun
-    $('.document-list-column .help a.show-document').on 'click', (e) ->
-      e.preventDefault()
-      controller.get('listSelection').onDown()
-    $('.document-list-column .help a.show-tree').on 'click', (e) ->
-      e.preventDefault()
-      controller.get('listSelection').onSelectAll()
-
     {
       go_up: go_up
       go_down: go_down
