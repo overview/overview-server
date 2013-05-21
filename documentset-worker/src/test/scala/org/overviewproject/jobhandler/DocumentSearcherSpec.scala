@@ -166,7 +166,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       searchSaver.expectMsg(Save(searchId, documentSetId, documents.take(1)))
     }
     
-    "terminate search saver after all pages have been received" in new SearcherContext with NotAllPagesNeeded {
+    "terminate search after all pages have been received" in new SearcherContext with NotAllPagesNeeded {
       val queryProcessor = TestProbe()
       val searchSaver = TestProbe()
       val searchSaverWatcher = TestProbe()
@@ -186,6 +186,23 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       searchSaverWatcher.expectMsgType[Terminated]
       
       parentProbe.expectMsg(Done)
+    }
+    
+    "terminate search if all results are in first page" in new SearcherSetup {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+      val parentProbe = TestProbe()
+      
+      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
+            queryProcessor.ref, searchSaver.ref)))))
+              
+
+      parent ! StartSearch(searchId)
+      parent ! SearchResult(documents.size, 1, documents)
+      
+      parentProbe.expectMsg(Done)
+      
     }
   }
 } 

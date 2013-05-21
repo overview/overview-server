@@ -52,13 +52,19 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
   when(WaitingForSearchInfo) {
     case Event(SearchResult(total, page, documents), SearchResultId(id)) => {
-      val totalPages: Int = scala.math.min(total, maxDocuments) / pageSize
+      val totalDocuments = scala.math.min(total, maxDocuments)
+      val totalPages: Int = scala.math.ceil(totalDocuments.toFloat / pageSize).toInt
       
       requestRemainingPages(totalPages)
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
       searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
-      goto(RetrievingSearchResults) using SearchInfo(id, totalPages, 1)
+      if (totalPages == 1) {
+        context.watch(searchSaver)
+        searchSaver ! PoisonPill
+        goto(WaitingForSearchSaverEnd) using SearchInfo(id, totalPages, 1)
+      }
+      else goto(RetrievingSearchResults) using SearchInfo(id, totalPages, 1)
     }
   }
 
