@@ -52,7 +52,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
     case Event(SearchResult(total, page, documents), SearchResultId(id)) => {
       requestRemainingPages(total)
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
-      searchSaver ! Save(id, documents.take(documentsFromPage))
+      searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
       goto(RetrievingSearchResults) using SearchInfo(id, total, 1)
     }
@@ -61,7 +61,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   when(RetrievingSearchResults) {
     case Event(SearchResult(_, page, documents), SearchInfo(id, total, pagesRetrieved)) => {
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
-      searchSaver ! Save(id, documents.take(documentsFromPage))
+      searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
       stay using SearchInfo(id, total, pagesRetrieved + 1)
     }
