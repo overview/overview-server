@@ -27,7 +27,6 @@ define [
       throw 'need options.focusEl' if !options.focusEl
       throw 'need options.treeEl' if !options.treeEl
       throw 'need options.documentListEl' if !options.documentListEl
-      throw 'need options.documentEl' if !options.documentEl
       throw 'need options.navEl' if !options.navEl
       throw 'need options.mainEl' if !options.mainEl
       throw 'need options.fullSizeEl' if !options.fullSizeEl
@@ -110,8 +109,9 @@ define [
       controller = document_list_controller(options.documentListEl, world.cache, world.state)
       keyboard_controller.add_controller('DocumentListController', controller)
 
-      controller = document_contents_controller(options.documentEl, world.cache, world.state)
+      controller = document_contents_controller(world.cache, world.state)
       keyboard_controller.add_controller('DocumentContentsController', controller)
+      $(options.documentListEl).append(controller.el)
 
       new ModeView({ el: main, state: world.state })
 

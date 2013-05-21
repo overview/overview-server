@@ -10,7 +10,6 @@ define [
       focusEl: el('focus')
       treeEl: el('tree')
       documentListEl: el('document-list-container')
-      documentEl: el('document')
       navEl: document.getElementsByTagName('nav')[0]
       mainEl: el('main')
       fullSizeEl: el('main')

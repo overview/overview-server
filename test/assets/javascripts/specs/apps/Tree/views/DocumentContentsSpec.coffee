@@ -1,7 +1,7 @@
 require [
-  'apps/Tree/views/document_contents_view'
+  'apps/Tree/views/DocumentContents'
   'apps/Tree/models/observable'
-], (DocumentContentsView, observable) ->
+], (DocumentContents, observable) ->
   class MockState
     observable(this)
 
@@ -20,55 +20,47 @@ require [
         }
       }
 
-
   describe 'views/document_contents_view', ->
-    describe 'DocumentContentsView', ->
+    describe 'DocumentContents', ->
       cache = undefined
       state = undefined
-      div = undefined
       view = undefined
 
-      create_view = () -> new DocumentContentsView(div, cache, state)
-      
       beforeEach ->
-        div = $('<div></div>')[0]
-        $('body').append(div)
         cache = new MockCache()
         state = new MockState()
 
       afterEach ->
-        $(div).remove() # Removes all callbacks
-        div = undefined
+        view?.stopListening()
         cache = undefined
         state = undefined
-        view = undefined
 
       describe 'beginning empty', ->
         beforeEach ->
-          view = create_view()
+          view = new DocumentContents({ cache: cache, state: state })
 
         it 'should be empty when there are no documents in the selection', ->
-          expect($(view.div).children().length).toEqual(0)
+          expect(view.$el.html()).toEqual('')
 
         it 'should build an iframe when there is a selected document', ->
           state.selection.documents = [1]
           state._notify('selection-changed', state.selection)
-          expect(view.iframe.getAttribute('src')).toEqual('/document_view/1')
+          expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
 
         it 'should build an iframe when there is a selection that resolves to a document', ->
           state.selection.documents_from_cache = () -> [ { id: 1 } ]
           spyOn(state.selection, 'documents_from_cache').andReturn([{ id: 1 }])
           state._notify('selection-changed', state.selection)
-          expect(view.iframe.getAttribute('src')).toEqual('/document_view/1')
+          expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
           expect(state.selection.documents_from_cache).toHaveBeenCalledWith(cache)
 
       describe 'beginning on a document', ->
         beforeEach ->
           state.selection.documents = [1]
-          view = create_view()
+          view = new DocumentContents({ cache: cache, state: state })
 
         it 'should show the iframe', ->
-          expect($(view.div).find('iframe[src="/document_view/1"]').length).toEqual(1)
+          expect(view.$('iframe[src="/document_view/1"]').length).toEqual(1)
 
         it 'should call the iframe setDocument() on change', ->
           doc = undefined
