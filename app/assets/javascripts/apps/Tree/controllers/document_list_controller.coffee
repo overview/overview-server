@@ -244,6 +244,7 @@ define [
       scrollTopInterval = undefined
 
       refresh = ->
+        console.log('refresh')
         if scrollTopInterval?
           window.clearInterval(scrollTopInterval)
           scrollTopInterval = undefined
@@ -278,7 +279,12 @@ define [
           listView.$el.css({ bottom: '' })
 
       listSelection.on('change:selectedIndices', refresh)
-      collection.on('change', refresh)
+
+      @listenTo(collection, 'change', refresh)
+      @on 'change:documentCollection', (model, newCollection) =>
+        @stopListening(collection)
+        collection = newCollection
+        @listenTo(collection, 'change', refresh)
 
       @on 'change:selection', (model, selection) ->
 
