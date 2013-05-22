@@ -1,10 +1,9 @@
-define [ 'underscore', 'backbone' ], (_, Backbone) ->
+define [
+  'backbone'
+  '../../DocumentDisplay/app'
+], (Backbone, DocumentDisplayApp) ->
   Backbone.View.extend
     id: 'document'
-
-    template: _.template("""
-      <iframe frameborder="0" width="1" height="1" src="<%= url %>"></iframe>
-    """)
 
     initialize: ->
       throw 'must set options.cache, a Cache' if !@options.cache
@@ -12,6 +11,8 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
 
       @state = @options.state
       @cache = @options.cache
+
+      @app = new DocumentDisplayApp({ el: @el })
 
       @_onStateSelectionChanged = => @render()
       @state.observe('selection-changed', @_onStateSelectionChanged)
@@ -22,47 +23,24 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
       @state.unobserve('selection-changed', @_onStateSelectionChanged)
       Backbone.View.prototype.stopListening.call(this)
 
-    _getDocid: ->
-      if @state.selection.documents.length
-        @state.selection.documents[0]
-      else
-        @state.selection.documents_from_cache(@cache)[0]?.id
+    # Returns a JSON POD document object, or undefined.
+    #
+    # The value will only be defined if
+    #
+    # * There is one selected document; and
+    # * The document is in the cache.
+    _getDocument: ->
+      docids = @state.selection?.documents
+      return undefined if docids.length != 1
+      docid = docids[0]
+      @cache.document_store.documents[docid]
 
     scroll_by_pages: (n) ->
-      @iframe.contentWindow.scrollByPages?(n)
-
-    _getIframeUrl: () ->
-      docid = @_getDocid()
-      docid && @cache.server.router.route_to_path('document_view', docid)
-
-    _createIframe: ->
-      url = this._getIframeUrl()
-      if url
-        @$el.html(@template({ url: url }))
-        $iframe = @$('iframe')
-        $iframe.width(Math.floor(@$el.width() || 100))
-        @iframe = $iframe[0]
-
-    _withContentWindowSetDocument: (callback) ->
-      func = @iframe?.contentWindow?.setDocument
-      if func?
-        callback.call(this, func) # Be sync, so the test passes
-        #setTimeout((=> callback.call(this, func)), 0) # Be consistent: always async
-      else
-        setTimeout((=> @_withContentWindowSetDocument(callback)), 50) # Wait for page to load
-      undefined
+      @app.scrollByPages(n)
 
     render: ->
-      docid = this._getDocid()
-      return if docid == @_lastDocid
-      @_lastDocid = docid
+      document = @_getDocument()
 
-      # We can start with no document, but we can never unset it after
-      if docid?
-        if @iframe?
-          @_withContentWindowSetDocument (setDocument) ->
-            setDocument(docid? && { id: docid } || undefined)
-        else
-          @iframe = @_createIframe()
+      @app.setDocument(document) if document
 
       this

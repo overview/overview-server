@@ -20,7 +20,7 @@ require [
         }
       }
 
-  describe 'views/document_contents_view', ->
+  xdescribe 'views/document_contents_view', ->
     describe 'DocumentContents', ->
       cache = undefined
       state = undefined
