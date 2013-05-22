@@ -106,12 +106,14 @@ define [
       controller = tree_controller(options.treeEl, world.cache, focus, world.state)
       keyboard_controller.add_controller('TreeController', controller)
 
-      controller = document_list_controller(options.documentListEl, world.cache, world.state)
-      keyboard_controller.add_controller('DocumentListController', controller)
-
       controller = document_contents_controller(world.cache, world.state)
       keyboard_controller.add_controller('DocumentContentsController', controller)
-      $(options.documentListEl).append(controller.el)
+      documentViewEl = controller.el
+
+      controller = document_list_controller(options.documentListEl, documentViewEl, world.cache, world.state)
+      keyboard_controller.add_controller('DocumentListController', controller)
+
+      $(options.documentListEl).append(documentViewEl)
 
       new ModeView({ el: main, state: world.state })
 

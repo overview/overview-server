@@ -1,4 +1,5 @@
 define [
+  'jquery',
   'backbone',
   '../models/document_list'
   '../models/list_selection'
@@ -11,9 +12,24 @@ define [
   './node_form_controller'
   './tag_form_controller'
   './logger'
-], (Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
+], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
+
+  doUntilWithSetInterval = (func, test, period) ->
+    interval = undefined
+
+    loopFunc = ->
+      func()
+      if test()
+        window.clearInterval(interval)
+      # no race: this function is atomic, because JS is single-threaded.
+
+    func()
+    if !test()
+      interval = setInterval(loopFunc, period)
+    else
+      interval = undefined
 
   VIEW_OPTIONS = {
     buffer_documents: 5,
@@ -36,6 +52,7 @@ define [
 
   Controller = Backbone.Model.extend
     # Only set on initialize (properties may change):
+    # * documentViewEl (an HTMLElement)
     # * tagStore (a TagStore)
     # * documentStore (a DocumentStore)
     # * cache (a Cache)
@@ -67,6 +84,7 @@ define [
       documentCollection: undefined
 
     initialize: (attrs, options) ->
+      throw 'Must specify documentViewEl, an HTMLElement' if !attrs.documentViewEl
       throw 'Must specify tagStore, a TagStore' if !attrs.tagStore
       throw 'Must specify documentStore, a DocumentStore' if !attrs.documentStore
       throw 'Must specify state, a State' if !attrs.state
@@ -80,6 +98,7 @@ define [
       @_addDocumentCollection()
       @_addTitleView()
       @_addListView()
+      @_addDocumentView()
 
     _addSelection: ->
       state = @get('state')
@@ -215,10 +234,60 @@ define [
 
       @set('listView', view)
 
-  document_list_controller = (div, cache, state) ->
+    _addDocumentView: ->
+      listView = @get('listView')
+      $documentViewEl = $(@get('documentViewEl'))
+      listSelection = @get('listSelection')
+      collection = @get('documentCollection')
+
+      # window.setInterval() value that tries to set listView.$el.scrollTop()
+      scrollTopInterval = undefined
+
+      refresh = ->
+        if scrollTopInterval?
+          window.clearInterval(scrollTopInterval)
+          scrollTopInterval = undefined
+
+        selectedIndices = listSelection.get('selectedIndices')
+        if selectedIndices.length == 1
+          # Scroll selection to the right position
+          $li = listView.$("li.document:eq(#{selectedIndices[0]})")
+          $ul = $li.parent()
+          scrollTop = $li.offset().top - $ul.offset().top
+          # We'd like to set scrollTop directly, but that won't work when the
+          # list is too short to have a scrollbar (but long enough that we need
+          # to change the scrollTop -- 5 items, for instance).
+          tries = 20
+          scrollTopInterval = doUntilWithSetInterval(
+            -> listView.$el.scrollTop(scrollTop),
+            -> (listView.$el.scrollTop() == scrollTop) || (tries -= 1) <= 0,
+            50
+          )
+          #
+          # We'll animate, which will set it lots of times. Ensure the
+          # duration of the animation is >= the duration of CSS transitions.
+          #listView.$el.scrollTop(scrollTop)
+          listView.$el.animate({ scrollTop: scrollTop })
+
+          # Bring in #document
+          $container = listView.$el.parent()
+          documentHeight = Math.floor($container.height() - listView.$el.position().top - $li.outerHeight())
+          $documentViewEl.height(documentHeight)
+          listView.$el.css({ bottom: "#{documentHeight}px" })
+        else
+          listView.$el.css({ bottom: '' })
+
+      listSelection.on('change:selectedIndices', refresh)
+      collection.on('change', refresh)
+
+      @on 'change:selection', (model, selection) ->
+
+
+  document_list_controller = (div, documentDiv, cache, state) ->
     controller = new Controller({
       tagStore: cache.tag_store
       documentStore: cache.document_store
+      documentViewEl: documentDiv
       state: state
       cache: cache
     })

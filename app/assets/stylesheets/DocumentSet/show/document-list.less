@@ -21,7 +21,12 @@
   left: 0;
   right: 0;
   bottom: 0;
+  .transition(bottom .35s ease-out);
   overflow: auto;
+
+  &.document-selected {
+    bottom: @defaultDocumentHeight;
+  }
 
   ul.documents {
     margin: 0;

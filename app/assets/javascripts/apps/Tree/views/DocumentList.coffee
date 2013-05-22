@@ -201,6 +201,11 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         for index in selectedIndices
           $lis.eq(index).addClass('selected')
 
+      if selectedIndices?.length == 1
+        @$el.addClass('document-selected')
+      else
+        @$el.removeClass('document-selected')
+
     _renderCursorIndex: (index) ->
       @$('ul.documents>li.cursor').removeClass('cursor')
       if index?

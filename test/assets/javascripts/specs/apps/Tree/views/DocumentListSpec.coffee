@@ -139,6 +139,18 @@ require [
         expect($lis.eq(1).hasClass('selected')).toBe(false)
         expect($lis.eq(2).hasClass('selected')).toBe(true)
 
+      it 'should render document-selected class if one document is selected', ->
+        selection.set('selectedIndices', [0])
+        expect(view.$el.hasClass('document-selected')).toBe(true)
+
+      it 'should not render document-selected class if no document is selected', ->
+        selection.set('selectedIndices', [])
+        expect(view.$el.hasClass('document-selected')).toBe(false)
+
+      it 'should not render document-selected class if multiple documents are selected', ->
+        selection.set('selectedIndices', [0, 2])
+        expect(view.$el.hasClass('document-selected')).toBe(false)
+
       it 'should render the cursor', ->
         selection.set('cursorIndex', 1)
         expect(view.$('ul.documents>li:eq(1)').hasClass('cursor')).toBe(true)
