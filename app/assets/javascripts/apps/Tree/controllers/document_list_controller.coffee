@@ -244,7 +244,6 @@ define [
       scrollTopInterval = undefined
 
       refresh = ->
-        console.log('refresh')
         if scrollTopInterval?
           window.clearInterval(scrollTopInterval)
           scrollTopInterval = undefined
@@ -287,7 +286,7 @@ define [
         @listenTo(collection, 'change', refresh)
 
       @on 'change:selection', (model, selection) ->
-
+      $(window).on('resize', refresh)
 
   document_list_controller = (div, documentDiv, cache, state) ->
     controller = new Controller({
