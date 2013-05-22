@@ -5,7 +5,7 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
-import org.overviewproject.jobhandler.JobHandlerProtocol.Done
+import org.overviewproject.jobhandler.DocumentSearcherProtocol.Done
 import akka.actor._
 import akka.testkit.TestActor
 import akka.testkit.TestProbe
@@ -73,6 +73,15 @@ class SearchHandlerSpec extends Specification with Mockito {
       documentSearcherProbe.expectMsg(StartSearch(1l))
     }
     
+    "send Done to parent when receiving Done from DocumentSearcher" in new ActorSystemContext with SearchHandlerSetup {
+      val documentSearcherProbe = TestProbe()
+      
+      val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
+      
+      parent ! Done
+      
+      expectMsg(Done)
+    }
     
 
   }

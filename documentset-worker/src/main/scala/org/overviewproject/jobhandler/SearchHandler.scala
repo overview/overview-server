@@ -44,6 +44,7 @@ trait SearchHandler extends Actor {
 
   def receive = {
     case Search(documentSetId, query, requestQueue) => search(documentSetId, query, requestQueue)
+    case Done => context.parent ! Done
   }
 
   private def search(documentSetId: Long, query: String, requestQueue: ActorRef): Unit = {
