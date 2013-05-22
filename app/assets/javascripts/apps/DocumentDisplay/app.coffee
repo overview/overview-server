@@ -43,3 +43,4 @@ define [
     #
     # 1 means scroll forward; 0 means scroll backward.
     scrollByPages: (n) ->
+      # FIXME not implemented
