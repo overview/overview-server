@@ -15,7 +15,8 @@ define [
     }
 
     initialize: ->
-      @set('heading', @get('title') || @get('description'))
+      if !@get('heading')
+        @set('heading', @get('title') || @get('description'))
 
       url = @get('url')
       @set('urlProperties', UrlPropertiesExtractor.urlToProperties(url))

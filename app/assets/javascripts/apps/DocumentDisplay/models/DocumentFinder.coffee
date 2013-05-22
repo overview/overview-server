@@ -17,7 +17,7 @@ define [
       else if json.documentcloud_id
         $.Deferred().resolve(new Document({
           heading: json.title || json.description
-          documentCloudUrl: @documentCloudUrl(json.documentcloud_id)
+          url: @documentCloudUrl(json.documentcloud_id)
         }))
       else
         $.getJSON("#{json.id}.json").pipe((data) -> new Document(data))
