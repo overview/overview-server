@@ -95,7 +95,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     _listenToCollection: (collection) ->
       @listenTo(collection, 'reset', => @render())
-      @listenTo(collection, 'change', (model) => @_renderModel(model))
+      @listenTo(collection, 'change', (model) => @_changeModel(model))
       @listenTo(collection, 'add', (model, collection, options) => @_addModel(model, options))
 
     setCollection: (collection) ->
@@ -185,9 +185,13 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         else
           $lis.eq(index).before(html)
 
-    _renderModel: (model) ->
+    _changeModel: (model) ->
       html = @_renderModelHtml(model)
-      @$("li.document[data-cid=#{model.cid}]").replaceWith(html)
+      $li = @$("li.document[data-cid=#{model.cid}]")
+      className = $li[0].className # selected/cursor
+      $newLi = $(html)
+      $newLi[0].className = className
+      $li.replaceWith($newLi)
 
     _renderTag: (tag) ->
       $tags = @$(".tag[data-cid=#{tag.cid}]>div")

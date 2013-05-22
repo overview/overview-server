@@ -195,6 +195,16 @@ require [
         expect($documentEl.find('h3').text()).toEqual('title,new title')
         expect($documentEl.find('.tag .name').text()).toEqual('Tag 1')
 
+      it 'should keep the cursor class on a document as it changes', ->
+        selection.set('cursorIndex', 0)
+        documents.get(0).set({ title: 'new title' })
+        expect(view.$('ul.documents>li:eq(0)').hasClass('cursor')).toBe(true)
+
+      it 'should keep the selected class on a document as it changes', ->
+        selection.set('selectedIndices', [0])
+        documents.get(0).set({ title: 'new title' })
+        expect(view.$('ul.documents>li:eq(0)').hasClass('selected')).toBe(true)
+
       it 'should fire remove-tag', ->
         args = undefined
         view.on('remove-tag', -> args = _.toArray(arguments))
