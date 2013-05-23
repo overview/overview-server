@@ -6,6 +6,7 @@ import akka.actor.Actor
 import akka.actor.Props
 import akka.actor.ActorRef
 import org.overviewproject.database.orm.stores.SearchResultStore
+import org.overviewproject.database.Database
 
 object SearchHandlerProtocol {
   case class Search(documentSetId: Long, query: String, requestQueue: ActorRef)
@@ -18,10 +19,11 @@ trait SearchHandlerComponents {
   class Storage {
     import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
 
-    def searchExists(documentSetId: Long, query: String): Boolean =
+    def searchExists(documentSetId: Long, query: String): Boolean = Database.inTransaction {
       SearchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption.isDefined
+    }
 
-    def createSearchResult(documentSetId: Long, query: String): Long = {
+    def createSearchResult(documentSetId: Long, query: String): Long = Database.inTransaction {
       val searchResult = SearchResultStore.insertOrUpdate(
         SearchResult(SearchResultState.InProgress, documentSetId, query))
 
