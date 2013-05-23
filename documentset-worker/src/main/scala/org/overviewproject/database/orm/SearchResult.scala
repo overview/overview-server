@@ -1,6 +1,7 @@
 package org.overviewproject.database.orm
 
 import org.squeryl.KeyedEntity
+import org.overviewproject.postgres.PostgresqlEnum
 
 object SearchResultState extends Enumeration {
   type SearchResultState = Value
@@ -18,4 +19,6 @@ case class SearchResult (
   override val id: Long = 0
 ) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)
+  
+  def this() = this(state = SearchResultState.Error, documentSetId = 0l, query = "")
 }
