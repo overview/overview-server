@@ -7,14 +7,16 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-
 import akka.actor._
 import akka.testkit.TestProbe
+import akka.testkit.TestActorRef
+
 
 class SearchHandlerSpec extends Specification with Mockito {
 
   "SearchHandler" should {
 
+    
     class TestSearchHandler(searchExists: Boolean, documentSearcherProbe: ActorRef) extends SearchHandler with SearchHandlerComponents {
       val storage = mock[Storage]
       storage.searchExists(anyLong, anyString) returns searchExists
@@ -24,9 +26,8 @@ class SearchHandlerSpec extends Specification with Mockito {
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
           new ForwardingActor(documentSearcherProbe)
       }
-
     }
-
+    
     class ForwardingActor(target: ActorRef) extends Actor {
       def receive = {
         case msg => target forward msg
@@ -77,11 +78,23 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
       
+      parent ! Search(documentSetId, query, testActor)
       parent ! DocumentSearcherDone
       
       expectMsg(JobDone)
     }
     
+    "set SearchResult state to Complete when receiving Done from Document Searcher" in new ActorSystemContext with SearchHandlerSetup {
+      
+      val searchHandler = TestActorRef(new TestSearchHandler(searchExists = false, testActor))
+      
+      searchHandler ! Search(documentSetId, query, testActor)
+      searchHandler ! DocumentSearcherDone
+
+      val storage = searchHandler.underlyingActor.storage
+      
+      there was one(storage).completeSearch(1l, documentSetId, query)
+    }
 
   }
 

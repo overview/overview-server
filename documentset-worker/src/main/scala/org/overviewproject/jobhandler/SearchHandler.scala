@@ -21,7 +21,7 @@ trait SearchHandlerComponents {
   trait Storage {
     def searchExists(documentSetId: Long, query: String): Boolean 
     def createSearchResult(documentSetId: Long, query: String): Long 
-    def completeSearch(searchId: Long): Unit 
+    def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
   }
   
   trait ActorCreator {
@@ -29,24 +29,51 @@ trait SearchHandlerComponents {
   }
 }
 
-trait SearchHandler extends Actor {
+object SearchHandlerFSM {
+  sealed trait State 
+  case object Idle extends State
+  case object Searching extends State
+  
+  sealed trait Data
+  case object Uninitialized extends Data
+  case class SearchInfo(searchResultId: Long, documentSetId: Long, query: String) extends Data
+}
+
+import SearchHandlerFSM._
+
+trait SearchHandler extends Actor with FSM[State, Data] {
   this: SearchHandlerComponents =>
 
   import SearchHandlerProtocol._
   import DocumentSearcherProtocol._
 
-  def receive = {
-    case Search(documentSetId, query, requestQueue) => search(documentSetId, query, requestQueue)
-    case DocumentSearcherDone => context.parent ! JobDone
+  startWith(Idle, Uninitialized)
+  
+  when(Idle) {
+    case Event(Search(documentSetId, query, requestQueue), _) =>
+      if (storage.searchExists(documentSetId, query)) {
+        context.parent ! JobDone
+        goto(Idle) using Uninitialized
+      }
+      else {
+        val searchId = storage.createSearchResult(documentSetId, query)
+        startSearch(documentSetId, query, requestQueue, searchId)
+        goto(Searching) using SearchInfo(searchId, documentSetId, query)
+      }
   }
-
-  private def search(documentSetId: Long, query: String, requestQueue: ActorRef): Unit = {
-    if (storage.searchExists(documentSetId, query)) context.parent ! JobDone
-    else startSearch(documentSetId, query: String, requestQueue)
+  
+  when(Searching) {
+    case Event(DocumentSearcherDone, SearchInfo(searchId, documentSetId, query)) =>
+      context.parent ! JobDone
+      storage.completeSearch(searchId, documentSetId, query)
+      goto(Idle) using Uninitialized
   }
+    
+  initialize
 
-  private def startSearch(documentSetId: Long, query: String, requestQueue: ActorRef): Unit = {
-    val searchId = storage.createSearchResult(documentSetId, query)
+  
+  private def startSearch(documentSetId: Long, query: String, requestQueue: ActorRef, searchId: Long): Unit = {
+
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
 
@@ -73,7 +100,9 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
       searchResult.id
     }
     
-    override def completeSearch(searchId: Long): Unit = ???
+    override def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit =  Database.inTransaction {
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, searchId))
+    }
   }
 
   class ActorCreatorImpl extends ActorCreator {
