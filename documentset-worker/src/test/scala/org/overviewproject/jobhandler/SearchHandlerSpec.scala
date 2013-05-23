@@ -1,17 +1,15 @@
 package org.overviewproject.jobhandler
 
-import org.specs2.mutable.Specification
+import org.overviewproject.jobhandler.DocumentSearcherProtocol.{DocumentSearcherDone, StartSearch}
+import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
-import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
-import akka.actor._
-import akka.testkit.TestActor
-import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.StartSearch
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
+
+import akka.actor._
+import akka.testkit.TestProbe
 
 class SearchHandlerSpec extends Specification with Mockito {
 
@@ -21,7 +19,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       val storage = mock[Storage]
       storage.searchExists(anyLong, anyString) returns searchExists
       storage.createSearchResult(anyLong, anyString) returns 1l
-
+      
       val actorCreator = new ActorCreator { // can't mock creation of actors
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
           new ForwardingActor(documentSearcherProbe)

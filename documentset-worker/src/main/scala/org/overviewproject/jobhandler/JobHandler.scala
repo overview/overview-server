@@ -1,28 +1,25 @@
 package org.overviewproject.jobhandler
 
-import org.fusesource.stomp.jms.{StompJmsConnectionFactory, StompJmsDestination}
+import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
 
 import akka.actor._
 import javax.jms._
 
-
-
 /**
- * Messages the JobHandler can process 
+ * Messages the JobHandler can process
  */
 object JobHandlerProtocol {
   /** Start listening to the connection on the message queue */
   case object StartListening
   case object JobDone
-  
+
   // Internal messages that should really be private, but are 
   // public for easier testing. 
   case class CommandMessage(message: TextMessage)
   case class SearchCommand(documentSetId: Long, query: String)
 }
-
 
 /**
  * `JobHandler` goes through the following state transitions:
@@ -36,15 +33,13 @@ object JobHandlerFSM {
   case object Idle extends State
   case object Listening extends State
   case object WaitingForCompletion extends State
-  
+
   sealed trait Data
   case object NoMessageReceived extends Data
   /** Keep track of the message received so it can be ACK/NACKed */
   case class MessageReceived(message: Message) extends Data
-  
+
 }
-
-
 
 /**
  * A component that listens for and responds to incoming messages.
@@ -54,24 +49,23 @@ trait MessageServiceComponent {
   val messageService: MessageService
 
   trait MessageService {
-    /** 
+    /**
      *  Only call `startListening` once. To stop listening, stop the Actor, which should
      *  disconnect the connection.
      */
     def startListening(messageHandler: MessageListener): Unit
-    
+
     /** Call to indicate successful handling of the message */
     def complete(message: Message): Unit
   }
 }
-
 
 /**
  * Component for creating a SearchHandler actor
  */
 trait SearchComponent {
   val actorCreator: ActorCreator
-  
+
   trait ActorCreator {
     def produceSearchHandler: Actor
   }
@@ -86,53 +80,52 @@ import JobHandlerFSM._
  * To handle new types of command, expand `ConvertMessage` to generate new message type,
  * and add a new case to the `Listening` state to handle the new type.
  */
-class JobHandler(requestQueue: ActorRef) extends Actor  with FSM[State, Data] {
+class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   this: MessageServiceComponent with SearchComponent =>
 
   import JobHandlerProtocol._
 
   private val messageHandler = new MessageHandler
-  
+
   startWith(Idle, NoMessageReceived)
-  
+
   when(Idle) {
-    case Event(StartListening, NoMessageReceived) => 
+    case Event(StartListening, NoMessageReceived) =>
       messageService.startListening(messageHandler)
       goto(Listening) using NoMessageReceived
   }
-  
-  when (Listening) {
-    case Event(CommandMessage(message), NoMessageReceived) => 
+
+  when(Listening) {
+    case Event(CommandMessage(message), NoMessageReceived) =>
       self ! ConvertMessage(message.getText)
-      stay using(MessageReceived(message))
+      stay using (MessageReceived(message))
     case Event(SearchCommand(documentSetId, query), MessageReceived(message)) =>
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! Search(documentSetId, query, requestQueue)
       goto(WaitingForCompletion) using MessageReceived(message)
   }
-  
-  when (WaitingForCompletion) {
+
+  when(WaitingForCompletion) {
     case Event(JobDone, MessageReceived(message)) =>
       messageService.complete(message)
       goto(Listening) using NoMessageReceived
   }
 
   initialize
-  
+
   class MessageHandler extends MessageListener {
-    def onMessage(message: Message): Unit =  self ! CommandMessage(message.asInstanceOf[TextMessage])
+    def onMessage(message: Message): Unit = self ! CommandMessage(message.asInstanceOf[TextMessage])
   }
 
 }
-
 
 /**
  * Implementation of connecting to the message queue and receiving and responding to
  * messages.
  */
 trait MessageServiceComponentImpl extends MessageServiceComponent {
-  class MessageServiceImpl extends MessageService  {
-    
+  class MessageServiceImpl extends MessageService {
+
     private val connection: Connection = createConnection
     private val consumer: MessageConsumer = createConsumer
 
@@ -140,7 +133,7 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
       consumer.setMessageListener(messageHandler)
       connection.start()
     }
-    
+
     override def complete(message: Message): Unit = {
       message.acknowledge()
     }
@@ -160,24 +153,23 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
   }
 }
 
-
 /** Create a SearchHandler */
 trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
-    override def produceSearchHandler: Actor = new SearchHandler with SearchHandlerComponents {
-      override val storage: Storage = new Storage
-      override val actorCreator: ActorCreator = new ActorCreator()
+    override def produceSearchHandler: Actor = new SearchHandler with SearchHandlerComponentsImpl {
+      override val storage: Storage = new StorageImpl
+      override val actorCreator: ActorCreator = new ActorCreatorImpl
     }
   }
 }
 
 object JobHandler {
-  class JobHandlerImpl(requestQueue: ActorRef) extends JobHandler(requestQueue) 
+  class JobHandlerImpl(requestQueue: ActorRef) extends JobHandler(requestQueue)
     with MessageServiceComponentImpl with SearchComponentImpl {
-    
+
     override val messageService = new MessageServiceImpl
     override val actorCreator = new ActorCreatorImpl
   }
-  
+
   def apply(requestQueue: ActorRef): Props = Props(new JobHandlerImpl(requestQueue))
 }
