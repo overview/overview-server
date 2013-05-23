@@ -9,7 +9,6 @@ import akka.testkit.TestProbe
 import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.Done
 import javax.jms.TextMessage
 
 
@@ -91,7 +90,7 @@ class JobHandlerSpec extends Specification with Mockito {
       jobHandler ! StartListening
         
       jobHandler ! CommandMessage(message)
-      jobHandler ! Done
+      jobHandler ! JobDone
       
       val messageService = jobHandler.underlyingActor.messageService
       

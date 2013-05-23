@@ -185,7 +185,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       searchSaver.receiveN(2)
       searchSaverWatcher.expectMsgType[Terminated]
       
-      parentProbe.expectMsg(Done)
+      parentProbe.expectMsg(DocumentSearcherDone)
     }
     
     "terminate search if all results are in first page" in new SearcherSetup {
@@ -201,7 +201,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       parent ! StartSearch(searchId)
       parent ! SearchResult(documents.size, 1, documents)
       
-      parentProbe.expectMsg(Done)
+      parentProbe.expectMsg(DocumentSearcherDone)
       
     }
   }

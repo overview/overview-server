@@ -7,6 +7,8 @@ import akka.actor.Props
 import akka.actor.ActorRef
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.database.Database
+import org.overviewproject.jobhandler.JobHandlerProtocol._
+
 
 object SearchHandlerProtocol {
   case class Search(documentSetId: Long, query: String, requestQueue: ActorRef)
@@ -46,11 +48,11 @@ trait SearchHandler extends Actor {
 
   def receive = {
     case Search(documentSetId, query, requestQueue) => search(documentSetId, query, requestQueue)
-    case Done => context.parent ! Done
+    case DocumentSearcherDone => context.parent ! JobDone
   }
 
   private def search(documentSetId: Long, query: String, requestQueue: ActorRef): Unit = {
-    if (storage.searchExists(documentSetId, query)) context.parent ! Done
+    if (storage.searchExists(documentSetId, query)) context.parent ! JobDone
     else startSearch(documentSetId, query: String, requestQueue)
   }
 

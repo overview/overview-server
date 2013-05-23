@@ -12,7 +12,7 @@ trait DocumentSearcherComponents {
 
 object DocumentSearcherProtocol {
   case class StartSearch(searchResultId: Long)
-  case object Done
+  case object DocumentSearcherDone
 }
 
 object DocumentSearcherFSM {
@@ -86,7 +86,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   
   when(WaitingForSearchSaverEnd) {
     case Event(Terminated(a), SearchInfo(id, t, p)) => { 
-      context.parent ! Done
+      context.parent ! DocumentSearcherDone
       goto(Idle) using Uninitialized
     }
         

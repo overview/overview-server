@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler
 
 import org.fusesource.stomp.jms.{StompJmsConnectionFactory, StompJmsDestination}
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.Done
+import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
 
 import akka.actor._
@@ -13,8 +13,9 @@ import javax.jms._
  * Messages the JobHandler can process 
  */
 object JobHandlerProtocol {
-  /** Starts listening to the connection on the message queue */
+  /** Start listening to the connection on the message queue */
   case object StartListening
+  case object JobDone
   
   // Internal messages that should really be private, but are 
   // public for easier testing. 
@@ -111,7 +112,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor  with FSM[State, Data] {
   }
   
   when (WaitingForCompletion) {
-    case Event(Done, MessageReceived(message)) =>
+    case Event(JobDone, MessageReceived(message)) =>
       messageService.complete(message)
       goto(Listening) using NoMessageReceived
   }
