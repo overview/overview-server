@@ -1,34 +1,25 @@
 package org.overviewproject.jobhandler
 
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.{SearchResult, SearchResultState}
+import org.overviewproject.database.orm.SearchResult
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 
-import DocumentSearcherProtocol._
 import akka.actor._
 
-
+/** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
   case class Search(documentSetId: Long, query: String, requestQueue: ActorRef)
 }
 
-trait SearchHandlerComponents {
-  val storage: Storage
-  val actorCreator: ActorCreator
-
-  trait Storage {
-    def searchExists(documentSetId: Long, query: String): Boolean 
-    def createSearchResult(documentSetId: Long, query: String): Long 
-    def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
-  }
-  
-  trait ActorCreator {
-    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor     
-  }
-}
-
+/**
+ * The SearchHandler goes through the following state transitions:
+ * Idle -> Searching: when receiving a search message for a new search
+ * Idle -> Idle: when receiving a search message for an existing search
+ * Searching -> Idle: when DocumentSearcherDone is received
+ * 
+ */
 object SearchHandlerFSM {
   sealed trait State 
   case object Idle extends State
@@ -39,8 +30,37 @@ object SearchHandlerFSM {
   case class SearchInfo(searchResultId: Long, documentSetId: Long, query: String) extends Data
 }
 
+/**
+ * The `SearchHandler` interacts with the database through the `storage` component
+ * and uses `actorCreator` to create child actors.
+ */
+trait SearchHandlerComponents {
+  val storage: Storage
+  val actorCreator: ActorCreator
+  
+  trait Storage {
+    /** @return true if a 'SearchResult' exists with the given parameters */
+    def searchExists(documentSetId: Long, query: String): Boolean 
+    
+    /** create a new `SearchResult` with state `InProgress` */
+    def createSearchResult(documentSetId: Long, query: String): Long 
+    
+    /** mark the `SearchResult` as `Complete` */
+    def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
+  }
+  
+  trait ActorCreator {
+    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor     
+  }
+}
+
 import SearchHandlerFSM._
 
+/**
+ * Manages a `SearchResult`. When a search request arrives, check whether a `SearchResult` entry
+ * already exists for the document set with the same query. If not, 
+ * starts a new search, marking the `SearchResult` as `Complete` when all results have been retrieved.
+ */
 trait SearchHandler extends Actor with FSM[State, Data] {
   this: SearchHandlerComponents =>
 
