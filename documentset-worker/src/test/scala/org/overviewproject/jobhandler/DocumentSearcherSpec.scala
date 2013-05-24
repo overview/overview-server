@@ -16,6 +16,7 @@ import org.overviewproject.documentcloud.QueryProcessor
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.SearchSaverProtocol._
 import org.overviewproject.jobhandler.DocumentSearcherProtocol._
+import org.overviewproject.http.RequestQueueProtocol.Failure
 
 class DocumentSearcherSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -219,6 +220,24 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       parent ! SearchResult(0, 1, Seq.empty)
       
       parentProbe.expectMsg(DocumentSearcherDone)
+    }
+    
+    "forward failure to parent" in new SearcherSetup {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+      val parentProbe = TestProbe()
+      
+      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
+            queryProcessor.ref, searchSaver.ref)))))
+              
+
+      val error = new Exception("error generated from requestQueue")
+      parent ! StartSearch(searchId)
+      parent ! Failure(error)
+      
+      parentProbe.expectMsg(Failure(error))
+      
     }
   }
 } 

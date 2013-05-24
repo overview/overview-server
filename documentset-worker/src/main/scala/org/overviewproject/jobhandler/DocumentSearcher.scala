@@ -4,6 +4,9 @@ import akka.actor._
 import org.overviewproject.documentcloud.{ QueryProcessor, SearchResult }
 import org.overviewproject.util.Configuration
 
+import DocumentSearcherFSM._
+import org.overviewproject.http.RequestQueueProtocol.Failure
+
 
 /** Messages for interacting with DocumentSearcher */
 object DocumentSearcherProtocol {
@@ -46,8 +49,6 @@ trait DocumentSearcherComponents {
   def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor
   def produceSearchSaver: Actor
 }
-
-import DocumentSearcherFSM._
 
 /**
  * Queries documentCloud using the public search api, and sends the results to a `SearchSaver` actor
@@ -95,6 +96,10 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
       }
       else goto(RetrievingSearchResults) using SearchInfo(id, totalPages, 1)
     }
+    case Event(Failure(e), _) => {
+      context.parent ! Failure(e)
+      goto(Idle) using Uninitialized
+    }
   }
 
   when(RetrievingSearchResults) {
@@ -111,6 +116,23 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
       }
       else stay using SearchInfo(id, totalPages, currentPagesRetrieved)
     }
+    // If one of the page queries fails, we will notify the parent
+    // but still wait for the remainder of the queries to come in
+    // Better to just stop the actor (or to handle exception through
+    // supervisor)
+    case Event(Failure(e), SearchInfo(id, totalPages, pagesRetrieved)) => {
+      context.parent ! Failure(e)
+      
+      val currentPagesRetrieved = pagesRetrieved + 1
+      
+      if (currentPagesRetrieved == totalPages) { 
+        context.watch(searchSaver)
+        searchSaver ! PoisonPill  
+        goto(Idle) using Uninitialized // don't want to tell parent we finish twice.
+      }
+      else stay using SearchInfo(id, totalPages, currentPagesRetrieved)
+    }
+
   }
   
   when(WaitingForSearchSaverEnd) {
