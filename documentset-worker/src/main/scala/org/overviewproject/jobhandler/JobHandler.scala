@@ -101,7 +101,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
 
 
   when(WaitingForCompletion) {
-    case Event(JobDone, MessageReceived(message)) =>println("completing message")
+    case Event(JobDone, MessageReceived(message)) =>
       messageService.complete(message)
       self ! StartListening      
       goto(Idle) using NoMessageReceived
