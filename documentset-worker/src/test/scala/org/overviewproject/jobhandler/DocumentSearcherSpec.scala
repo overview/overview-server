@@ -172,21 +172,24 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val searchSaver = TestProbe()
       val searchSaverWatcher = TestProbe()
       val parentProbe = TestProbe()
+      val documentSearcherWatcher = TestProbe()
       
-      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
-          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
-            queryProcessor.ref, searchSaver.ref)))))
-              
+      val documentSearcher = TestActorRef(
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor, queryProcessor.ref, searchSaver.ref)),
+          parentProbe.ref, "DocumentSearcher")
+          
       searchSaverWatcher watch searchSaver.ref
+      documentSearcherWatcher watch documentSearcher
       
-      parent ! StartSearch(searchId)
-      parent ! SearchResult(totalDocuments, 1, documents)
-      parent ! SearchResult(totalDocuments, 2, documents)
-
+      documentSearcher ! StartSearch(searchId)
+      documentSearcher ! SearchResult(totalDocuments, 1, documents)
+      documentSearcher ! SearchResult(totalDocuments, 2, documents)
+      
       searchSaver.receiveN(2)
       searchSaverWatcher.expectMsgType[Terminated]
       
       parentProbe.expectMsg(DocumentSearcherDone)
+      documentSearcherWatcher.expectMsgType[Terminated]
     }
     
     "terminate search if all results are in first page" in new SearcherSetup {
@@ -222,22 +225,24 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       parentProbe.expectMsg(DocumentSearcherDone)
     }
     
-    "forward failure to parent" in new SearcherSetup {
+    "forward failure to parent and stop" in new SearcherSetup {
       val queryProcessor = TestProbe()
       val searchSaver = TestProbe()
       val parentProbe = TestProbe()
+      val documentSearcherWatcher = TestProbe()
       
-      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
-          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
-            queryProcessor.ref, searchSaver.ref)))))
-              
-
+      val documentSearcher = TestActorRef(
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor, queryProcessor.ref, searchSaver.ref)),
+          parentProbe.ref, "DocumentSearcher")
+          
+      documentSearcherWatcher watch documentSearcher
+      
       val error = new Exception("error generated from requestQueue")
-      parent ! StartSearch(searchId)
-      parent ! Failure(error)
+      documentSearcher ! StartSearch(searchId)
+      documentSearcher ! Failure(error)
       
       parentProbe.expectMsg(Failure(error))
-      
+      documentSearcherWatcher.expectMsgType[Terminated]
     }
   }
 } 

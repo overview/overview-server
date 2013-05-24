@@ -25,7 +25,7 @@ object DocumentSearcherProtocol {
  *                                                   there are no more pages to be retrieved.
  * RetrievingSearchResults -> RetrievingSearchResults: when search result pages arrive
  * RetrievingSearchResults -> WaitingForSearchSaverEnd: when all search result pages have been received      
- * WaitingForSearchSaverEnd -> Idle: when the SearchSaver has finished saving all received search results.                                                                                             
+ * WaitingForSearchSaverEnd -> Stop: when the SearchSaver has finished saving all received search results.                                                                                             
  */
 object DocumentSearcherFSM {
   sealed trait State
@@ -98,7 +98,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
     }
     case Event(Failure(e), _) => {
       context.parent ! Failure(e)
-      goto(Idle) using Uninitialized
+      stop()
     }
   }
 
@@ -116,21 +116,9 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
       }
       else stay using SearchInfo(id, totalPages, currentPagesRetrieved)
     }
-    // If one of the page queries fails, we will notify the parent
-    // but still wait for the remainder of the queries to come in
-    // Better to just stop the actor (or to handle exception through
-    // supervisor)
     case Event(Failure(e), SearchInfo(id, totalPages, pagesRetrieved)) => {
       context.parent ! Failure(e)
-      
-      val currentPagesRetrieved = pagesRetrieved + 1
-      
-      if (currentPagesRetrieved == totalPages) { 
-        context.watch(searchSaver)
-        searchSaver ! PoisonPill  
-        goto(Idle) using Uninitialized // don't want to tell parent we finish twice.
-      }
-      else stay using SearchInfo(id, totalPages, currentPagesRetrieved)
+      stop()
     }
 
   }
@@ -138,7 +126,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   when(WaitingForSearchSaverEnd) {
     case Event(Terminated(a), SearchInfo(id, t, p)) => { 
       context.parent ! DocumentSearcherDone
-      goto(Idle) using Uninitialized
+      stop()
     }
         
   }
