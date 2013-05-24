@@ -19,7 +19,7 @@ object SearchHandlerProtocol {
  * The SearchHandler goes through the following state transitions:
  * Idle -> Searching: when receiving a search message for a new search
  * Idle -> Idle: when receiving a search message for an existing search
- * Searching -> Idle: when DocumentSearcherDone is received
+ * Searching -> stop: when DocumentSearcherDone or Failure is received
  * 
  */
 object SearchHandlerFSM {
@@ -89,11 +89,11 @@ trait SearchHandler extends Actor with FSM[State, Data] {
     case Event(DocumentSearcherDone, SearchInfo(searchId, documentSetId, query)) =>
       context.parent ! JobDone
       storage.completeSearch(searchId, documentSetId, query)
-      goto(Idle) using Uninitialized
+      stop()
     case Event(Failure(e), SearchInfo(searchId, documentSetId, query)) =>
       context.parent ! JobDone
       storage.failSearch(searchId, documentSetId, query)
-      goto(Idle) using Uninitialized
+      stop()
   }
     
   initialize
