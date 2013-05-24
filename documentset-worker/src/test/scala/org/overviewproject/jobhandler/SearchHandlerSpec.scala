@@ -10,6 +10,7 @@ import org.specs2.specification.Scope
 import akka.actor._
 import akka.testkit.TestProbe
 import akka.testkit.TestActorRef
+import org.overviewproject.http.RequestQueueProtocol.Failure
 
 
 class SearchHandlerSpec extends Specification with Mockito {
@@ -95,7 +96,19 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       there was one(storage).completeSearch(1l, documentSetId, query)
     }
-
+    
+    "set SearchResultState to Error when receiving Failure from Document Searcher" in new ActorSystemContext with SearchHandlerSetup {
+      val searchHandler = TestActorRef(new TestSearchHandler(searchExists = false, testActor))
+      
+      val error = new Exception("exception from RequestQueue")
+      
+      searchHandler ! Search(documentSetId, query, testActor)
+      searchHandler ! Failure(error)
+      
+      val storage = searchHandler.underlyingActor.storage
+      
+      there was one(storage).failSearch(1l, documentSetId, query)
+    }
   }
 
 }

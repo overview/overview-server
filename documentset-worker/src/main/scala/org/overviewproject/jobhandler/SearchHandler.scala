@@ -5,8 +5,10 @@ import org.overviewproject.database.orm.SearchResult
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
-
 import akka.actor._
+
+import SearchHandlerFSM._
+import org.overviewproject.http.RequestQueueProtocol.Failure
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
@@ -47,14 +49,15 @@ trait SearchHandlerComponents {
     
     /** mark the `SearchResult` as `Complete` */
     def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
+    
+    /** set the `SearchResult` state to `Error` */
+    def failSearch(searchId: Long, documentSetId: Long, query: String): Unit
   }
   
   trait ActorCreator {
     def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor     
   }
 }
-
-import SearchHandlerFSM._
 
 /**
  * Manages a `SearchResult`. When a search request arrives, check whether a `SearchResult` entry
@@ -86,6 +89,10 @@ trait SearchHandler extends Actor with FSM[State, Data] {
     case Event(DocumentSearcherDone, SearchInfo(searchId, documentSetId, query)) =>
       context.parent ! JobDone
       storage.completeSearch(searchId, documentSetId, query)
+      goto(Idle) using Uninitialized
+    case Event(Failure(e), SearchInfo(searchId, documentSetId, query)) =>
+      context.parent ! JobDone
+      storage.failSearch(searchId, documentSetId, query)
       goto(Idle) using Uninitialized
   }
     
@@ -122,6 +129,10 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
     
     override def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit =  Database.inTransaction {
       SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, searchId))
+    }
+    
+    override def failSearch(searchId: Long, documentSetId: Long, query: String): Unit = Database.inTransaction {
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, searchId))
     }
   }
 
