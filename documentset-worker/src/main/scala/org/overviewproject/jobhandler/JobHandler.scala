@@ -23,15 +23,12 @@ object JobHandlerProtocol {
 
 /**
  * `JobHandler` goes through the following state transitions:
- * Idle -> Listening: after startup and having received the StartListening message
- * Listening -> WaitingForCompletion: after a message has been received from the queue
- *   and a handler has been dispatched to deal with the command
- * WaitingForCompletion -> Listening: when the command handler is done
+ * Ready -> WaitingForCompletion: when a message has been received and sent of to a handler
+ * WaitingForCompletion -> Ready: when the command handler is done
  */
 object JobHandlerFSM {
   sealed trait State
-  case object Idle extends State
-  case object Listening extends State
+  case object Ready extends State
   case object WaitingForCompletion extends State
 
   sealed trait Data
@@ -49,11 +46,11 @@ trait MessageServiceComponent {
   val messageService: MessageService
 
   trait MessageService {
-    /**
-     *  Only call `startListening` once. To stop listening, stop the Actor, which should
-     *  disconnect the connection.
+    /** 
+     *  wait for the next message to arrive from the queue. Blocks
+     *  until a message is received.
      */
-    def startListening: TextMessage
+    def waitForMessage: TextMessage
 
     /** Call to indicate successful handling of the message */
     def complete(message: Message): Unit
@@ -86,11 +83,11 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   import JobHandlerProtocol._
 
 
-  startWith(Idle, NoMessageReceived)
+  startWith(Ready, NoMessageReceived)
 
-  when(Idle) {
+  when(Ready) {
     case Event(StartListening, NoMessageReceived) =>
-      val message = messageService.startListening
+      val message = messageService.waitForMessage
       self ! ConvertMessage(message.getText)
       stay using MessageReceived(message)
     case Event(SearchCommand(documentSetId, query), MessageReceived(message)) =>
@@ -104,7 +101,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
     case Event(JobDone, MessageReceived(message)) =>
       messageService.complete(message)
       self ! StartListening      
-      goto(Idle) using NoMessageReceived
+      goto(Ready) using NoMessageReceived
   }
 
   initialize
@@ -121,12 +118,9 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private val connection: Connection = createConnection
     private val consumer: MessageConsumer = createConsumer
 
-    override def startListening: TextMessage =  consumer.receive().asInstanceOf[TextMessage]
+    override def waitForMessage: TextMessage =  consumer.receive().asInstanceOf[TextMessage]
 
-
-    override def complete(message: Message): Unit = {
-      message.acknowledge()
-    }
+    override def complete(message: Message): Unit = message.acknowledge()
 
     private def createConnection: Connection = {
       val factory = new StompJmsConnectionFactory()

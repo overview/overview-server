@@ -23,7 +23,7 @@ class JobHandlerSpec extends Specification with Mockito {
       val message = mock[TextMessage]
       message.getText returns messageText
       
-      messageService.startListening returns message
+      messageService.waitForMessage returns message
       
       val actorCreator = new ActorCreator {
         override def produceSearchHandler: Actor = new ForwardingActor(searchProbe)
@@ -60,7 +60,7 @@ class JobHandlerSpec extends Specification with Mockito {
       
       val messageService = jobHandler.underlyingActor.messageService
       
-      there was one(messageService).startListening
+      there was one(messageService).waitForMessage
     }
     
     
@@ -99,7 +99,7 @@ class JobHandlerSpec extends Specification with Mockito {
       jobHandler ! StartListening
       jobHandler ! JobDone
       
-      there were two(messageService).startListening
+      there were two(messageService).waitForMessage
 
     }
 }
