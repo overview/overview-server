@@ -59,7 +59,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
       val documentsFromPage = scala.math.min(pageSize, maxDocuments - (page - 1) * pageSize)
       searchSaver ! Save(id, documentSetId, documents.take(documentsFromPage))
 
-      if (totalPages == 1) {
+      if (totalPages <= 1) {
         context.watch(searchSaver)
         searchSaver ! PoisonPill
         goto(WaitingForSearchSaverEnd) using SearchInfo(id, totalPages, 1)

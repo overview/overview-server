@@ -204,5 +204,21 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       parentProbe.expectMsg(DocumentSearcherDone)
       
     }
+    
+    "terminate search if there are no results" in new SearcherSetup {
+      val queryProcessor = TestProbe()
+      val searchSaver = TestProbe()
+      val parentProbe = TestProbe()
+      
+      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, 
+          Props(new TestDocumentSearcher(documentSetId, queryTerms, testActor,
+            queryProcessor.ref, searchSaver.ref)))))
+              
+
+      parent ! StartSearch(searchId)
+      parent ! SearchResult(0, 1, Seq.empty)
+      
+      parentProbe.expectMsg(DocumentSearcherDone)
+    }
   }
 } 
