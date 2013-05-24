@@ -11,6 +11,7 @@ import org.specs2.time.NoTimeConversions
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import akka.testkit.{TestActorRef, TestProbe}
 import org.specs2.mutable.Before
+import org.overviewproject.http.RequestQueueProtocol.Failure
 
 
 class QueryProcessorSpec extends Specification with NoTimeConversions {
@@ -66,6 +67,16 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       r.page must be equalTo(1)
       r.documents must haveSize(numberOfDocuments)
       
+    }
+    
+    "send query failure to parent" in new QueryContext {
+      val parent = TestProbe()
+      val queryProcessor = TestActorRef(Props(createQueryProcessor()), parent.ref, "QueryProcess")
+
+      val error = new Exception("Exception from RequestQueue")
+      queryProcessor ! Failure(error)
+      
+      parent.expectMsg(Failure(error))
     }
   }
 

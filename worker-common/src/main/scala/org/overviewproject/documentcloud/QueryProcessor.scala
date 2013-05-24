@@ -36,6 +36,8 @@ class QueryProcessor(query: String, credentials: Option[Credentials], requestQue
   def receive = {
     case GetPage(pageNum) => requestPage(pageNum)
     case Result(response) => processResponse(response)
+    // FIXME: Better to handle errors in supervisors
+    case Failure(error) => context.parent ! Failure(error)
   }
 
   private def requestPage(pageNum: Int): Unit = {
