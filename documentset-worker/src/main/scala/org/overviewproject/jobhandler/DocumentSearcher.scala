@@ -125,15 +125,19 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
   private def createQuery: String = s"projectid:$documentSetId $query"
 
+  // We can request all remaining pages at the same time.
+  // the request queue will throttle requests, and we don't 
+  // care about the order in which results are returned.
   private def requestRemainingPages(totalPages: Int): Unit = 
     for (p <- 2 to totalPages)
       queryProcessor ! GetPage(p)
 
 }
 
-trait ActualQueryProcessorFactory extends DocumentSearcherComponents {
+
+/** Create the actual actors */
+trait DocumentSearcherComponentsImpl extends DocumentSearcherComponents {
   override def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor = new QueryProcessor(query, None, requestQueue)
   override def produceSearchSaver: Actor = new SearchSaver with ActualSearchSaverComponents
 }
 
-class ActualDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef) extends DocumentSearcher(documentSetId, query, requestQueue) with ActualQueryProcessorFactory
