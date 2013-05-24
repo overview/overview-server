@@ -13,7 +13,7 @@ object Configuration {
   private val configuration: Config = ConfigFactory.load()
 
   private val defaultInts: Map[String, Int] = Map(
-    (MaxDocuments -> 20000),
+    (MaxDocuments -> 50000),
     (PageSize -> 50),
     (MaxInFlightRequests -> 4))
 
