@@ -1,20 +1,29 @@
 package org.overviewproject.jobhandler
 
 import akka.actor._
-import org.overviewproject.documentcloud.QueryProcessor
-import org.overviewproject.documentcloud.SearchResult
+import org.overviewproject.documentcloud.{ QueryProcessor, SearchResult }
 import org.overviewproject.util.Configuration
 
-trait DocumentSearcherComponents {
-  def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor
-  def produceSearchSaver: Actor
-}
 
+/** Messages for interacting with DocumentSearcher */
 object DocumentSearcherProtocol {
   case class StartSearch(searchResultId: Long)
   case object DocumentSearcherDone
 }
 
+
+/**
+ * `DocumentSearcher` goes through the following state transitions:
+ * Idle -> WaitingForSearchInfo: when a search request has been received, and the first
+ *                               page of results has been requested from documentcloud.
+ * WaitingForSearchInfo -> RetrievingSearchResults: when the first page of results has been received, and
+ *                                                  the remaining pages have been requested.
+ * WaitingForSearchInfo -> WaitingForSearchSaverEnd: when the first page of results has been received and
+ *                                                   there are no more pages to be retrieved.
+ * RetrievingSearchResults -> RetrievingSearchResults: when search result pages arrive
+ * RetrievingSearchResults -> WaitingForSearchSaverEnd: when all search result pages have been received      
+ * WaitingForSearchSaverEnd -> Idle: when the SearchSaver has finished saving all received search results.                                                                                             
+ */
 object DocumentSearcherFSM {
   sealed trait State
   case object Idle extends State
@@ -28,8 +37,28 @@ object DocumentSearcherFSM {
   case class SearchInfo(searchResultId: Long, total: Int, pagesRetrieved: Int) extends Data
 }
 
+
+
+// I'm straying a bit from the usual pattern of having an actorCreator component.
+// Because actor creation can't be mocked we need to simply override the methods
+// in our tests, so a component variable doesn't help much.
+trait DocumentSearcherComponents {
+  def produceQueryProcessor(query: String, requestQueue: ActorRef): Actor
+  def produceSearchSaver: Actor
+}
+
 import DocumentSearcherFSM._
 
+/**
+ * Queries documentCloud using the public search api, and sends the results to a `SearchSaver` actor
+ * to be stored in the database. Requests the first page, then uses the information to requests any
+ * remaining pages.
+ * As results arrive, they are sent to the `SearchSaver`. When the last page of results is received,
+ * those results are also sent to the `SearchSaver` followed by a `PoisonPill`. The `SearchSaver` will
+ * therefore terminate, after having processed all previous results. 
+ * When the 'DocumentSearcher' is notified that the `SearchSaver` is terminated, it notifies the parent
+ * actor that the search is complete.
+ */
 class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef,
   pageSize: Int = Configuration.pageSize, maxDocuments: Int = Configuration.maxDocuments) extends Actor
   with FSM[State, Data] {
@@ -52,7 +81,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
 
   when(WaitingForSearchInfo) {
     case Event(SearchResult(total, page, documents), SearchResultId(id)) => {
-      val totalDocuments = scala.math.min(total, maxDocuments)
+      val totalDocuments = scala.math.min(total, maxDocuments) // don't retrieve more than maxDocuments results
       val totalPages: Int = scala.math.ceil(totalDocuments.toFloat / pageSize).toInt
       
       requestRemainingPages(totalPages)
