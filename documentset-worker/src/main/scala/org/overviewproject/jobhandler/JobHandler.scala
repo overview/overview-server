@@ -53,7 +53,7 @@ trait MessageServiceComponent {
      *  Only call `startListening` once. To stop listening, stop the Actor, which should
      *  disconnect the connection.
      */
-    def startListening(messageHandler: MessageListener): Unit
+    def startListening: TextMessage
 
     /** Call to indicate successful handling of the message */
     def complete(message: Message): Unit
@@ -85,37 +85,29 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
 
   import JobHandlerProtocol._
 
-  private val messageHandler = new MessageHandler
 
   startWith(Idle, NoMessageReceived)
 
   when(Idle) {
     case Event(StartListening, NoMessageReceived) =>
-      messageService.startListening(messageHandler)
-      goto(Listening) using NoMessageReceived
-  }
-
-  when(Listening) {
-    case Event(CommandMessage(message), NoMessageReceived) =>
+      val message = messageService.startListening
       self ! ConvertMessage(message.getText)
-      stay using (MessageReceived(message))
+      stay using MessageReceived(message)
     case Event(SearchCommand(documentSetId, query), MessageReceived(message)) =>
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! Search(documentSetId, query, requestQueue)
       goto(WaitingForCompletion) using MessageReceived(message)
   }
 
+
   when(WaitingForCompletion) {
-    case Event(JobDone, MessageReceived(message)) =>
+    case Event(JobDone, MessageReceived(message)) =>println("completing message")
       messageService.complete(message)
-      goto(Listening) using NoMessageReceived
+      self ! StartListening      
+      goto(Idle) using NoMessageReceived
   }
 
   initialize
-
-  class MessageHandler extends MessageListener {
-    def onMessage(message: Message): Unit = self ! CommandMessage(message.asInstanceOf[TextMessage])
-  }
 
 }
 
@@ -129,10 +121,8 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private val connection: Connection = createConnection
     private val consumer: MessageConsumer = createConsumer
 
-    override def startListening(messageHandler: MessageListener): Unit = {
-      consumer.setMessageListener(messageHandler)
-      connection.start()
-    }
+    override def startListening: TextMessage =  consumer.receive().asInstanceOf[TextMessage]
+
 
     override def complete(message: Message): Unit = {
       message.acknowledge()
@@ -141,11 +131,13 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private def createConnection: Connection = {
       val factory = new StompJmsConnectionFactory()
       factory.setBrokerURI("tcp://localhost:61613")
-      factory.createConnection("admin", "password")
+      val connection = factory.createConnection("admin", "password")
+      connection.start()
+      connection
     }
 
     private def createConsumer: MessageConsumer = {
-      val session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)
+      val session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
       val destination = new StompJmsDestination("/queue/myqueue")
 
       session.createConsumer(destination)

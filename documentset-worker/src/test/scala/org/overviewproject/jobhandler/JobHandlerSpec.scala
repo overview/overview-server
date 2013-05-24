@@ -10,14 +10,20 @@ import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
 import javax.jms.TextMessage
+import org.specs2.specification.Scope
 
 
 class JobHandlerSpec extends Specification with Mockito {
 
   "JobHandler" should {
     
-    class TestSearchHandler(searchProbe: ActorRef, requestQueue: ActorRef) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
+    class TestSearchHandler(searchProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
       override val messageService = mock[MessageService]
+     
+      val message = mock[TextMessage]
+      message.getText returns messageText
+      
+      messageService.startListening returns message
       
       val actorCreator = new ActorCreator {
         override def produceSearchHandler: Actor = new ForwardingActor(searchProbe)
@@ -29,24 +35,8 @@ class JobHandlerSpec extends Specification with Mockito {
         case msg => target forward msg
       }
     }
-
-    "start listening for messages" in new ActorSystemContext {
-      val searchHandler = TestProbe()
-      
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor))
-      
-      jobHandler ! StartListening
-      
-      val messageService = jobHandler.underlyingActor.messageService
-      
-      there was one(messageService).startListening(any)
-    }
     
-    
-    "start search handler on incoming search command" in new ActorSystemContext {
-      val searchHandler = TestProbe()
-      
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor))
+    trait MessageSetup extends Scope {
       val documentSetId = 5l
       val query = "projectid:333 search terms"
       
@@ -58,43 +48,59 @@ class JobHandlerSpec extends Specification with Mockito {
           "query" : "$query"
         }
       }"""
-      val message = mock[TextMessage]
-      message.getText() returns commandMessage
+    }
+
+        
+    "start listening for messages" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+      
+      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
+      
+      jobHandler ! StartListening
+      
+      val messageService = jobHandler.underlyingActor.messageService
+      
+      there was one(messageService).startListening
+    }
+    
+    
+    "start search handler on incoming search command" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+      
+      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
       
       jobHandler ! StartListening
         
-      jobHandler ! CommandMessage(message)
       
       searchHandler.expectMsg(Search(documentSetId, query, testActor))
     }
     
-    "complete message when Done is received" in new ActorSystemContext {
+    "complete message when Done is received" in new ActorSystemContext with MessageSetup {
       val searchHandler = TestProbe()
       
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor))
-      
-      val documentSetId = 5l
-      val query = "projectid:333 search terms"
-      
-      val commandMessage = s"""
-      {
-        "cmd" : "search",
-        "args" : {
-          "documentSetId" : $documentSetId,
-          "query" : "$query"
-        }
-      }"""
-      val message = mock[TextMessage]
-      message.getText() returns commandMessage
+      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
       
       jobHandler ! StartListening
-        
-      jobHandler ! CommandMessage(message)
       jobHandler ! JobDone
       
       val messageService = jobHandler.underlyingActor.messageService
+      val message = jobHandler.underlyingActor.message
       
       there was one(messageService).complete(message)
     }
-  }
+
+      "start listening after Done is received" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+      
+      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
+      
+      val messageService = jobHandler.underlyingActor.messageService
+      
+      jobHandler ! StartListening
+      jobHandler ! JobDone
+      
+      there were two(messageService).startListening
+
+    }
+}
 }
