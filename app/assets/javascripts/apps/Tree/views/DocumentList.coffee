@@ -111,7 +111,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         templates.model
 
       tags = (@tagIdToModel(tagid) for tagid in model.get('tagids') || [])
-      tags.sort((a, b) -> (a.attributes.position || 0) - (b.attributes.position || 0))
+      tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
 
       template({
         model: model
