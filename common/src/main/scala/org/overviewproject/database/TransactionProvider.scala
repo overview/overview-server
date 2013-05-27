@@ -1,8 +1,8 @@
 package org.overviewproject.database
 
 import java.sql.Connection
-import org.squeryl.Session
-import org.overviewproject.postgres.{ SquerylEntrypoint, SquerylPostgreSqlAdapter }
+import org.squeryl.{AbstractSession,Session}
+import org.overviewproject.postgres.{SquerylEntrypoint,SquerylPostgreSqlAdapter}
 
 /**
  * Manages database connections.
@@ -32,7 +32,7 @@ abstract class TransactionProvider {
     } else {
       transactionBlock { implicit connection =>
         val adapter = new SquerylPostgreSqlAdapter()
-        val session = new Session(connection, adapter)
+        val session = Session.create(connection, adapter)
         SquerylEntrypoint.using(session) { // sets thread-local variable
           block
         }
@@ -46,11 +46,11 @@ abstract class TransactionProvider {
   def isInTransaction: Boolean = Session.hasCurrentSession
 
   /**
-   * Returns the thread-local Session, or throws an exception if there is none.
+   * Returns the thread-local AbstractSession, or throws an exception if there is none.
    *
    * A session is always set within an inTransaction block.
    */
-  def currentSession: Session = Session.currentSession
+  def currentSession: AbstractSession = Session.currentSession
 
   /**
    * Returns the thread-local Connection, or throws an exception if there is none.
