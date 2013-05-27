@@ -189,9 +189,17 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       $li.replaceWith($newLi)
 
     _renderTag: (tag) ->
-      $tags = @$(".tag[data-cid=#{tag.cid}]>div")
-      $tags.find('.name').text(tag.get('name'))
-      $tags.css('background-color', tag.get('color'))
+      if 'name' of tag.changed
+        # Tags might be reordered. Rewrite all models.
+        $documents = @$(".tag[data-cid=#{tag.cid}]").closest('li.document')
+        for documentEl in $documents
+          documentCid = documentEl.getAttribute('data-cid')
+          document = @collection.get(documentCid)
+          @_changeModel(document)
+      else
+        $tags = @$(".tag[data-cid=#{tag.cid}]>div")
+        $tags.find('.name').text(tag.get('name'))
+        $tags.css('background-color', tag.get('color'))
 
     _renderSelectedIndices: (selectedIndices) ->
       @$('ul.documents>li.selected').removeClass('selected')

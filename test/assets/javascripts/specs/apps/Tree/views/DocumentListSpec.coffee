@@ -183,19 +183,24 @@ require [
         expect(tinycolor($tagEl.css('background-color')).toHex()).toEqual('111111')
 
       it 'should sort tags in documents', ->
-        tags.comparator = (a, b) -> b.id - a.id
-        tags.sort()
-        documents.at(0).set({ tagids: [ 0, 1, 2 ] })
+        documents.at(0).set({ tagids: [ 2, 1, 0 ] })
         $tags = view.$('ul.documents>li:eq(0) li.tag')
-        expect($tags.eq(0).attr('data-cid')).toEqual(tags.get(2).cid)
+        expect($tags.eq(0).attr('data-cid')).toEqual(tags.get(0).cid)
         expect($tags.eq(1).attr('data-cid')).toEqual(tags.get(1).cid)
-        expect($tags.eq(2).attr('data-cid')).toEqual(tags.get(0).cid)
+        expect($tags.eq(2).attr('data-cid')).toEqual(tags.get(2).cid)
 
       it 'should update documents as they change', ->
         documents.get(0).set({ title: 'new title', tagids: [1] })
         $documentEl = view.$('ul.documents>li:eq(0)')
         expect($documentEl.find('h3').text()).toEqual('title,new title')
         expect($documentEl.find('.tag .name').text()).toEqual('Tag 1')
+
+      it 'should reorder a renamed tag', ->
+        documents.at(0).set({ tagids: [ 0, 1 ] })
+        tags.get(0).set({ name: 'Tag 3' })
+        $tags = view.$('ul.documents>li:eq(0) li.tag')
+        expect($tags.eq(0).attr('data-cid')).toEqual(tags.get(1).cid)
+        expect($tags.eq(1).attr('data-cid')).toEqual(tags.get(0).cid)
 
       it 'should keep the cursor class on a document as it changes', ->
         selection.set('cursorIndex', 0)
