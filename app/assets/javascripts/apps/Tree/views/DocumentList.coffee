@@ -110,10 +110,8 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       else
         templates.model
 
-      # Sort tagids
-      tagidSet = {}
-      tagidSet[id] = true for id in model.attributes.tagids || []
-      tags = @options.tags.filter((tag) -> tag.id of tagidSet)
+      tags = (@tagIdToModel(tagid) for tagid in model.get('tagids') || [])
+      tags.sort((a, b) -> a.attributes.position || 0 - b.attributes.position || 0)
 
       template({
         model: model
