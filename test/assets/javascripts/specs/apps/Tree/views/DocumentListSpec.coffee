@@ -74,6 +74,8 @@ require [
       tags = new TagCollection(t)
       view = new DocumentList({
         el: document.getElementById('views-DocumentListSpec')
+        attributes:
+          'style': 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
         liAttributes: """style="height:#{LI_HEIGHT}px;display:block;margin:0;padding:0;overflow:hidden;" """
         ulAttributes: """style="height:100%;display:block;margin:0;padding:0;list-style:none;" """
         selection: selection

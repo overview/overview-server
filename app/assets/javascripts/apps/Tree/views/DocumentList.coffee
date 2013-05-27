@@ -67,9 +67,6 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
   Backbone.View.extend
     id: 'document-list'
 
-    attributes:
-      'style': 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
-
     events:
       'mousedown': '_onMousedownCancelSelect'
       'click .tag a.remove': '_onClickTagRemove'
