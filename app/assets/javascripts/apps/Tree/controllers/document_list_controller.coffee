@@ -285,6 +285,7 @@ define [
           # We'll animate, which will set it lots of times. Ensure the
           # duration of the animation is >= the duration of CSS transitions.
           #listView.$el.scrollTop(scrollTop)
+          listView.$el.stop(true, true)
           listView.$el.animate({ scrollTop: scrollTop })
 
           # Bring in #document
