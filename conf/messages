@@ -234,6 +234,12 @@ views.DocumentSet.show.DocumentList.loading=…
 views.DocumentSet.show.DocumentList.placeholder=…
 views.DocumentSet.show.DocumentList.tag.remove=×
 views.DocumentSet.show.DocumentList.tag.remove.title=Remove tag
+
+views.DocumentSet.show.DocumentListCursor.title=Document {0,number,integer} of {1,number,integer}
+views.DocumentSet.show.DocumentListCursor.next=Next
+views.DocumentSet.show.DocumentListCursor.previous=Previous
+views.DocumentSet.show.DocumentListCursor.list=Back to list
+
 views.DocumentSet.show.DocumentListTitle.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.DocumentListTitle.loading=Loading documents…
 views.DocumentSet.show.DocumentListTitle.node.title_html=<strong>{0}</strong> in folder “{1}”
@@ -244,8 +250,7 @@ views.DocumentSet.show.DocumentListTitle.multiple.title_html=<strong>{0}</strong
 views.DocumentSet.show.DocumentListTitle.multiple.num_nodes={0,choice,0#no folders|1#one folder|1<{0,number,integer} folders}
 views.DocumentSet.show.DocumentListTitle.multiple.num_tags={0,choice,0#no tags|1#one tag|1<{0,number,integer} tags}
 views.DocumentSet.show.DocumentListTitle.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one folder and {1,choice,1#one tag|1<{1} tags}|1<{0} folders{1,choice,0#|1# and one tag|1< and {1} tags}}
-views.DocumentSet.show.DocumentList.title.node=folder “{0}”
-views.DocumentSet.show.DocumentList.title.tag=tag “{0}”
+
 views.DocumentSet.show.tag_list.header=Tags
 views.DocumentSet.show.tag_list.n_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.tag_list.preamble=These are all the tags you have created in this document set.

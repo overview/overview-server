@@ -1,0 +1,58 @@
+@import "../../vendor/bootstrap/less/variables.less";
+@import "../../vendor/bootstrap/less/mixins.less";
+
+#document-list-cursor {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: -1px; // border-bottom of #document-list
+  border: 1px solid #ccc;
+  border-top: none;
+  background: @bodyBackground;
+  z-index: 1;
+  .transition(height .35s ease-out);
+
+  h4 {
+    .muted;
+    display: inline-block;
+    margin: 0;
+    font: inherit;
+    padding: .5em 10px;
+  }
+
+  ul {
+    display: inline;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: inline-block;
+  }
+
+  i { // icon
+    margin-right: 5px;
+  }
+
+  .disabled {
+    .muted;
+    cursor: default;
+  }
+
+  a {
+    display: block;
+    padding: .5em 10px;
+  }
+
+  &:hover {
+    background: @wellBackground;
+
+    & ~ #document-list.document-selected {
+      background: @wellBackground;
+    }
+  }
+}
+
+#document-list.document-selected:hover ~ #document-list-cursor {
+  background: @wellBackground;
+}

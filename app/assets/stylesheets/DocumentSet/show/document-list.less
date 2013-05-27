@@ -26,6 +26,7 @@
 
   &.document-selected {
     bottom: @defaultDocumentHeight;
+    overflow: hidden;
   }
 
   ul.documents {
@@ -98,4 +99,8 @@
       0 -1px 1px @shadow, 0 1px 1px @shadow,
       1px -1px 1px @shadow, 1px 0 1px @shadow, 1px 1px 1px @shadow;
   }
+}
+
+#document-list.hover li.cursor {
+  background: @wellBackground;
 }

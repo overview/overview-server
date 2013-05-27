@@ -6,7 +6,7 @@
 #document {
   position: absolute;
   background: @bodyBackground;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   left: 0;
   right: 0;
   bottom: -100%;
@@ -27,18 +27,7 @@
   }
 
   h3 {
-    position: absolute;
-    box-sizing: border-box;
-    top: 0;
-    left: 0;
-    height: 40px;
-    width: 100%;
-    overflow: hidden;
-    font-size: 20px;
-    line-height: 20px;
-    padding: 10px;
-    margin: 0;
-    white-space: nowrap;
+    display: none;
   }
 
   div.document {
@@ -126,6 +115,6 @@
   }
 }
 
-#document-list.document-selected + #document {
+#document-list.document-selected ~ #document {
   bottom: 0;
 }

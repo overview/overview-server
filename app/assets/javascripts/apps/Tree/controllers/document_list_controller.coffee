@@ -8,11 +8,12 @@ define [
   '../views/node_form_view'
   '../views/DocumentList'
   '../views/DocumentListTitle'
+  '../views/DocumentListCursor'
   './ListSelectionController'
   './node_form_controller'
   './tag_form_controller'
   './logger'
-], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
+], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
@@ -62,6 +63,7 @@ define [
     # * selection (a Selection)
     # * selectionModuloDocuments (a Selection with no documents)
     # * documentList (a DocumentList, may be undefined)
+    # * documentListProxy (a DocumentListProxy, may be undefined)
     # * documentCollection (a Backbone.Collection, always defined)
     #
     # Read-only, only properties may change:
@@ -69,6 +71,7 @@ define [
     # * tagCollection (a Backbone.Collection)
     # * titleView
     # * listView
+    # * cursorView
     defaults:
       documentStore: undefined
       tagStore: undefined
@@ -98,6 +101,7 @@ define [
       @_addDocumentCollection()
       @_addTitleView()
       @_addListView()
+      @_addCursorView()
       @_addDocumentView()
 
     _addSelection: ->
@@ -133,13 +137,14 @@ define [
       documentStore = @get('documentStore')
 
       refresh = =>
-        @documentListProxy?.destroy()
+        @get('documentListProxy')?.destroy()
         documentList = @get('documentList')
         if documentList
-          @documentListProxy = new DocumentListProxy(documentList, documentStore)
-          @set('documentCollection', @documentListProxy.model.documents)
+          documentListProxy = new DocumentListProxy(documentList, documentStore)
+          @set('documentListProxy', documentListProxy)
+          @set('documentCollection', documentListProxy.model.documents)
         else
-          @documentListProxy = undefined
+          @set('documentListProxy', undefined)
           @set('documentCollection', new Backbone.Collection([]))
 
       @on('change:documentList', refresh)
@@ -234,9 +239,22 @@ define [
 
       @set('listView', view)
 
+    _addCursorView: ->
+      view = new DocumentListCursorView({
+        selection: @get('listSelection')
+        documentList: @get('documentListProxy')?.model
+      })
+
+      @on 'change:documentListProxy', (model, documentListProxy) ->
+        view.setDocumentList(documentListProxy?.model)
+
+      @set('cursorView', view)
+
     _addDocumentView: ->
       listView = @get('listView')
       $documentViewEl = $(@get('documentViewEl'))
+      $cursorViewEl = @get('cursorView').$el
+      $titleViewEl = @get('titleView').$el
       listSelection = @get('listSelection')
       collection = @get('documentCollection')
 
@@ -273,8 +291,10 @@ define [
           $container = listView.$el.parent()
           documentHeight = Math.floor($container.height() - listView.$el.position().top - $li.outerHeight())
           $documentViewEl.height(documentHeight)
+          $cursorViewEl.css({ top: "#{$ul.parent().position().top + $li.outerHeight()}px" })
           listView.$el.css({ bottom: "#{documentHeight}px" })
         else
+          $cursorViewEl.css({ top: '100%' })
           listView.$el.css({ bottom: '' })
 
       listSelection.on('change:selectedIndices', refresh)
@@ -299,6 +319,7 @@ define [
 
     $(div).append(controller.get('titleView').el)
     $(div).append(controller.get('listView').el)
+    $(div).append(controller.get('cursorView').el)
 
     go_up_or_down = (up_or_down, event) ->
       listSelection = controller.get('listSelection')
@@ -318,6 +339,19 @@ define [
     go_down = (event) -> go_up_or_down('down', event)
     go_up = (event) -> go_up_or_down('up', event)
     select_all = (event) -> controller.get('listSelection').onSelectAll()
+
+    (->
+      view = controller.get('cursorView')
+      view.on('next-clicked', -> go_down({}))
+      view.on('previous-clicked', -> go_up({}))
+      view.on('list-clicked', -> select_all({}))
+
+      # With content <a></a><b></b>, CSS can match "a:hover ~ b", but
+      # there's no way to do the reverse "b:hover ~ a".
+      $listView = controller.get('listView').$el
+      view.$el.on('mouseenter', -> $listView.addClass('hover'))
+      view.$el.on('mouseleave', -> $listView.removeClass('hover'))
+    )()
 
     {
       go_up: go_up
