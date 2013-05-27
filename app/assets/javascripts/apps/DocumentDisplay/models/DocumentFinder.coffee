@@ -3,6 +3,7 @@ define [
   'backbone'
   './Document'
 ], ($, Backbone, Document) ->
+  URL_BASE = "/documents"
   DOCUMENTCLOUD_BASE = "//www.documentcloud.org/documents"
 
   Backbone.Model.extend
@@ -20,4 +21,4 @@ define [
           url: @documentCloudUrl(json.documentcloud_id)
         }))
       else
-        $.getJSON("#{json.id}.json").pipe((data) -> new Document(data))
+        $.getJSON("#{URL_BASE}/#{json.id}.json").pipe((data) -> new Document(data))
