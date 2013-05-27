@@ -10,7 +10,7 @@ define [ 'backbone' ], (Backbone) ->
   #
   # Usage:
   #
-  #   proxy = new DocumentListProxy(documentList, documentStore)
+  #   proxy = new DocumentListProxy(documentList, documentStore, tagStore)
   #   model = proxy.model
   #   documentList.slice(0, 10) # returns a Deferred and sends a request
   #   model.documents.slice(0, 10) # does neither; it's a Backbone.Collection
@@ -25,7 +25,9 @@ define [ 'backbone' ], (Backbone) ->
   # Not much can change on the Model:
   #
   # * change:id when the Model becomes defined
-  # * change:tagids when the Model's tag IDs change
+  # * change:tagids when the Model's tag IDs change (this will NOT be fired
+  #                 when a tag's ID changes, but the underlying array will
+  #                 be edited in-place)
   #
   # There's more to listen to, on the Model's `.documents`:
   #
@@ -34,15 +36,17 @@ define [ 'backbone' ], (Backbone) ->
   #
   # You may use a TagStoreProxy to map from tag ids to tag Models.
   class DocumentListProxy
-    constructor: (@documentList, @documentStore) ->
+    constructor: (@documentList, @documentStore, @tagStore) ->
       @model = new Model()
       @model.documents = new Collection([])
 
       @_documentListCallback = => @_updateFromDocumentList()
       @_documentStoreCallback = (document) => @_updateFromDocument(document)
+      @_tagStoreCallback = (tagid, tag) => @_updateFromTagId(tagid, tag)
 
       @documentList.observe(@_documentListCallback)
       @documentStore.observe('document-changed', @_documentStoreCallback)
+      @tagStore.observe('tag-id-changed', @_tagStoreCallback)
       @_updateFromDocumentList()
 
     _updateFromDocumentList: ->
@@ -74,6 +78,13 @@ define [ 'backbone' ], (Backbone) ->
 
       @model.set('n', @documentList.n)
 
+    _updateFromTagId: (tagid, tag) ->
+      @model.documents.each (document) ->
+        tagids = document.get('tagids')
+        index = _.indexOf(tagids, tagid)
+        if index != -1
+          tagids.splice(index, 1, tag.id)
+
     _updateFromDocument: (document) ->
       # A document will never change ID. Either it's present in the collection
       # or it isn't.
@@ -86,3 +97,4 @@ define [ 'backbone' ], (Backbone) ->
     destroy: ->
       @documentList.unobserve(@_callback)
       @documentStore.unobserve('document-changed', @_documentStoreCallback)
+      @tagStore.unobserve('tag-id-changed', @_tagStoreCallback)

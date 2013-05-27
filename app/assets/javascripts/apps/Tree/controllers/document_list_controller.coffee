@@ -135,12 +135,13 @@ define [
 
     _addDocumentCollection: ->
       documentStore = @get('documentStore')
+      tagStore = @get('tagStore')
 
       refresh = =>
         @get('documentListProxy')?.destroy()
         documentList = @get('documentList')
         if documentList
-          documentListProxy = new DocumentListProxy(documentList, documentStore)
+          documentListProxy = new DocumentListProxy(documentList, documentStore, tagStore)
           @set('documentListProxy', documentListProxy)
           @set('documentCollection', documentListProxy.model.documents)
         else

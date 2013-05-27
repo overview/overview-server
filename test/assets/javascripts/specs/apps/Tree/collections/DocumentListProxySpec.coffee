@@ -10,6 +10,9 @@ require [
   class DocumentStore
     observable(this)
 
+  class TagStore
+    observable(this)
+
   makeDocument = (id) ->
     {
       id: id
@@ -22,6 +25,7 @@ require [
   describe 'apps/Tree/collections/DocumentListProxy', ->
     documentList = undefined
     documentStore = undefined
+    tagStore = undefined
     proxy = undefined
     model = undefined
 
@@ -47,7 +51,8 @@ require [
       beforeEach ->
         documentList = new DocumentList([], 0)
         documentStore = new DocumentStore()
-        proxy = new DocumentListProxy(documentList, documentStore)
+        tagStore = new TagStore()
+        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
         model = proxy.model
 
       it 'should be empty', ->
@@ -63,7 +68,8 @@ require [
       beforeEach ->
         documentList = new DocumentList([], 10)
         documentStore = new DocumentStore()
-        proxy = new DocumentListProxy(documentList, documentStore)
+        tagStore = new TagStore()
+        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
         model = proxy.model
 
       it 'should have a dummy item with no ID', ->
@@ -94,13 +100,24 @@ require [
       beforeEach ->
         documentList = new DocumentList([], 10)
         documentStore = new DocumentStore()
-        proxy = new DocumentListProxy(documentList, documentStore)
+        tagStore = new TagStore()
+        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
         model = proxy.model
         addDummyDocumentsAndNotify(0, 5)
 
       it 'should change a model on DocumentStore:document-changed', ->
         documentStore._notify('document-changed', { id: 3, title: 'new title' })
         expect(model.documents.at(3).get('title')).toEqual('new title')
+
+      it 'should change model tag IDs on TagStore:tag-id-changed', ->
+        tagStore._notify('tag-id-changed', 1, { id: 10 })
+        expect(model.documents.at(1).get('tagids')).toEqual([ 10, 2000 ])
+
+      it 'should not trigger document change when tags change', ->
+        spy = jasmine.createSpy()
+        model.documents.at(1).on('change', spy)
+        tagStore._notify('tag-id-changed', 1, { id: 10, title: 'new title' })
+        expect(spy).not.toHaveBeenCalled()
 
       it 'should not change an absent model on DocumentStore:document-changed', ->
         documentStore._notify('document-changed', { id: 7, title: 'new title' })
