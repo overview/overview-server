@@ -1,12 +1,15 @@
 define [
+  'underscore'
   'jquery'
   '../models/animated_tree'
   '../models/animator'
   '../models/property_interpolator'
   '../views/tree_view'
   './logger'
-], ($, AnimatedTree, Animator, PropertyInterpolator, TreeView, Logger) ->
+], (_, $, AnimatedTree, Animator, PropertyInterpolator, TreeView, Logger) ->
   log = Logger.for_component('tree')
+
+  log_pan_zoom = _.throttle(((args...) -> log('zoomed/panned', args...)), 500)
 
   update_selection_to_parent_of_nodeid_if_necessary = (selection, nodeid, on_demand_tree) ->
     to_remove = []
@@ -85,7 +88,7 @@ define [
       cache.on_demand_tree.unload_node_children(nodeid)
 
     view.observe 'zoom-pan', (obj) ->
-      log('zoomed/panned', "zoom #{obj.zoom}, pan #{obj.pan}")
+      log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
       focus.set_auto_pan_zoom(false)
       focus.set_zoom(obj.zoom)
       focus.set_pan(obj.pan)
