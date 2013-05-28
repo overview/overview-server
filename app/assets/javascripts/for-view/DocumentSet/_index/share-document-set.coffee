@@ -1,6 +1,8 @@
 define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
   t = (key, args...) -> i18n("views.DocumentSet._share.#{key}", args...)
 
+  EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ # http://www.w3.org/TR/html-markup/datatypes.html#form.data.emailaddress
+
   loading_html = _.template('<p><%- message %></p>', { message: t('loading') })
   error_html = _.template('<p class="errpr"><%- message %></p>', { message: t('error') })
   viewer_li_template = _.template("""
@@ -114,14 +116,14 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
           type: 'DELETE'
         })
 
-      $('#sharing-options-modal').keyup (e) ->
+      $('#sharing-options-modal').on 'input', (e) ->
         text = $('input[name=email]').val()
         $add_viewer_button = $('.add-viewer-button')
   
-        if (text == '')
-          $add_viewer_button.attr('disabled', 'true')
-        else
+        if EMAIL_REGEX.test(text)
           $add_viewer_button.removeAttr('disabled')
+        else
+          $add_viewer_button.attr('disabled', 'true')
 
       $('#sharing-options-modal').on 'change click', 'form.update input[type=checkbox]', (e) ->
         $checkbox = $(e.currentTarget)
