@@ -43,45 +43,70 @@ define [ 'underscore' ], (_) ->
       (obj[k] = this[k]) for k in keys
       new Selection(obj)
 
-    _node_ids_to_document_ids: (cache, node_ids) ->
-      arrays = []
-      for nodeid in node_ids
-        array = []
-        for id, document of cache.document_store.documents
-          if document.nodeids.indexOf(nodeid) != -1
-            array.push(document.id) # not plain id, which is a String
-        arrays.push(array)
-      _.uniq(_.union.apply({}, arrays))
+    _docidsFromNodes: (cache) ->
+      ret = {}
 
-    _tag_ids_to_document_ids: (cache, tag_ids) ->
-      arrays = []
-      for tagid in tag_ids
-        array = []
-        for id, document of cache.document_store.documents
-          if document.tagids.indexOf(tagid) != -1
-            array.push(document.id) # not plain id, which is a String
-        arrays.push(array)
-      _.uniq(_.union.apply({}, arrays))
+      nodes = {}
+      nodes["#{nodeid}"] = null for nodeid in @nodes
+
+      for id, document of cache.document_store.documents
+        for nodeid of document.nodeids
+          if "#{nodeid}" of nodes
+            ret["#{document.id}"] = null
+            break
+
+      ret
+
+    _tagidsFromNodes: (cache) ->
+      ret = {}
+
+      tags = {}
+      tags["#{tagid}"] = null for tagid in @tags
+
+      for id, document of cache.document_store.documents
+        for tagid of document.tagids
+          if "#{tagid}" of tags
+            ret["#{document.id}"] = null
+            break
+
+      ret
 
     documents_from_cache: (cache) ->
-      arrays = []
+      nodeids = {}
+      nodeids["#{nodeid}"] = null for nodeid in @nodes
+      tagids = {}
+      tagids["#{tagid}"] = null for tagid in @tags
+      docids = {}
+      docids["#{docid}"] = null for docid in @documents || []
 
-      if @nodes.length
-        arrays.push(this._node_ids_to_document_ids(cache, @nodes))
+      checkNodeIds = !_.isEmpty(nodeids)
+      checkTagIds = !_.isEmpty(tagids)
+      checkDocumentId = !_.isEmpty(docids)
 
-      if @tags.length
-        arrays.push(this._tag_ids_to_document_ids(cache, @tags))
+      ret = []
+      for docid, document of cache.document_store.documents
+        if checkDocumentId
+          continue if docid not of docids
 
-      if @documents.length
-        arrays.push(@documents)
+        if checkNodeIds
+          found = false
+          for nodeid in document.nodeids
+            if "#{nodeid}" of nodeids
+              found = true
+              break
+          continue if not found
 
-      documents = if arrays.length >= 1
-        docids = _.intersection.apply(null, arrays)
-        cache.document_store.documents[docid] for docid in docids
-      else
-        _.values(cache.document_store.documents)
+        if checkTagIds
+          found = false
+          for tagid in document.tagids
+            if "#{tagid}" of tagids
+              found = true
+              break
+          continue if not found
 
-      _.sortBy(documents, (d) -> d.description)
+        ret.push(document)
+
+      ret.sort((a, b) -> (a.description || '').localeCompare(b.description || ''))
 
     to_string: () ->
       "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
