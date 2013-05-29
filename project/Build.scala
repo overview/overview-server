@@ -114,6 +114,7 @@ object ApplicationBuild extends Build {
           libraryDependencies ++= dependencies,
           testOptions in Test ++= theTestOptions,
           scalacOptions ++= ourScalacOptions,
+          unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
           parallelExecution in Test := false,
           sources in doc in Compile := List()
         )
