@@ -7,6 +7,10 @@ class ConfigurationSpec extends Specification {
   
   "Configuration" should {
     
+    "have BrokerUri value" in {
+      Configuration.messageQueue.brokerUri must be equalTo("tcp://localhost:61613")
+    }
+    
     "have MaxDocuments value" in {
       Configuration.maxDocuments must be equalTo(50000)
     }
