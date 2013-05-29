@@ -3,9 +3,11 @@ package org.overviewproject.jobhandler
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
-
 import akka.actor._
 import javax.jms._
+
+import JobHandlerFSM._
+import org.overviewproject.util.Configuration
 
 /**
  * Messages the JobHandler can process
@@ -46,7 +48,7 @@ trait MessageServiceComponent {
   val messageService: MessageService
 
   trait MessageService {
-    /** 
+    /**
      *  wait for the next message to arrive from the queue. Blocks
      *  until a message is received.
      */
@@ -68,8 +70,6 @@ trait SearchComponent {
   }
 }
 
-import JobHandlerFSM._
-
 /**
  * The `JobHandler` listens for messages on the queue, and then spawns an appropriate
  * handler for the incoming command. When the command handler sends a Done message,
@@ -81,7 +81,6 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   this: MessageServiceComponent with SearchComponent =>
 
   import JobHandlerProtocol._
-
 
   startWith(Ready, NoMessageReceived)
 
@@ -96,11 +95,10 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
       goto(WaitingForCompletion) using MessageReceived(message)
   }
 
-
   when(WaitingForCompletion) {
     case Event(JobDone, MessageReceived(message)) =>
       messageService.complete(message)
-      self ! StartListening      
+      self ! StartListening
       goto(Ready) using NoMessageReceived
   }
 
@@ -114,25 +112,29 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
  */
 trait MessageServiceComponentImpl extends MessageServiceComponent {
   class MessageServiceImpl extends MessageService {
+    private val BrokerUri: String = Configuration.messageQueue.brokerUri
+    private val Username: String = Configuration.messageQueue.username
+    private val Password: String = Configuration.messageQueue.password
+    private val QueueName: String = Configuration.messageQueue.queueName
 
     private val connection: Connection = createConnection
     private val consumer: MessageConsumer = createConsumer
 
-    override def waitForMessage: TextMessage =  consumer.receive().asInstanceOf[TextMessage]
+    override def waitForMessage: TextMessage = consumer.receive().asInstanceOf[TextMessage]
 
     override def complete(message: Message): Unit = message.acknowledge()
 
     private def createConnection: Connection = {
       val factory = new StompJmsConnectionFactory()
-      factory.setBrokerURI("tcp://localhost:61613")
-      val connection = factory.createConnection("admin", "password")
+      factory.setBrokerURI(BrokerUri)
+      val connection = factory.createConnection(Username, Password)
       connection.start()
       connection
     }
 
     private def createConsumer: MessageConsumer = {
       val session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
-      val destination = new StompJmsDestination("/queue/myqueue")
+      val destination = new StompJmsDestination(QueueName)
 
       session.createConsumer(destination)
     }
@@ -151,7 +153,7 @@ trait SearchComponentImpl extends SearchComponent {
 
 object JobHandler {
   class JobHandlerImpl(requestQueue: ActorRef) extends JobHandler(requestQueue)
-    with MessageServiceComponentImpl with SearchComponentImpl {
+      with MessageServiceComponentImpl with SearchComponentImpl {
 
     override val messageService = new MessageServiceImpl
     override val actorCreator = new ActorCreatorImpl
