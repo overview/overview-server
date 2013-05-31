@@ -1,0 +1,7 @@
+# Add to this file the IP address which you want to prohibit
+# from connecting to this server.  Sorry address ranges
+# by netmask are not supported yet.
+#
+
+4.4.4.4
+4.4.4.3

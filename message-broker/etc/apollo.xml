@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements. See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version
+  2.0 (the "License"); you may not use this file except in compliance
+  with the License. You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0 Unless required by
+  applicable law or agreed to in writing, software distributed under
+  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+  OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+  For more information on how configure this file please
+  reference:
+
+  http://activemq.apache.org/apollo/versions/1.6/website/documentation/user-manual.html
+  -->
+<broker xmlns="http://activemq.apache.org/schema/activemq/apollo">
+
+  <notes>
+    Minimal config for Overview development
+  </notes>
+
+  <log_category console="console" security="security" connection="connection" audit="audit"/>
+
+  
+  <authentication domain="apollo"/>
+  <!-- Give admins full access -->
+  <access_rule allow="admins" action="*"/>
+  <access_rule allow="*" action="connect" kind="connector"/>
+  
+
+  <virtual_host id="broker">
+    <!--
+      You should add all the host names that this virtual host is known as
+      to properly support the STOMP 1.1 virtual host feature.
+      -->
+    <host_name>localhost</host_name>
+
+    <!-- Uncomment to disable security for the virtual host -->
+    <!-- <authentication enabled="false"/> -->
+
+    <!-- Uncomment to disable security for the virtual host -->
+    <!-- <authentication enabled="false"/> -->
+    <access_rule allow="users" action="connect create destroy send receive consume"/>
+    
+
+    <!-- You can delete this element if you want to disable persistence for this virtual host -->
+    <leveldb_store directory="${apollo.base}/data"/>
+    
+    <queue id="document-set-commands" auto_delete_after="0"/>
+ 
+  </virtual_host>
+
+
+
+  <web_admin bind="http://127.0.0.1:61680"/>
+ 
+  <connector id="tcp" bind="tcp://0.0.0.0:61613" connection_limit="2000"/>
+ 
+
+</broker>
