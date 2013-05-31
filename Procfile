@@ -1,3 +1,7 @@
-web: target/start ${JAVA_OPTS} -Dconfig.resource=production.conf -Dhttp.port=${PORT} -DapplyEvolutions.default=true -Ddb.default.url=${DATABASE_URL} -Ddb.default.driver=org.postgresql.Driver -Dsmtp.mock=false -Dlogger.resource=productionlog.xml
-worker: java -cp "target/staged/*" ${JAVA_OPTS} -Ddatasource.default.url=${DATABASE_URL} -Ddatasource.default.driver=org.postgresql.Driver -Dlogback.configurationFile=workerprodlog.xml JobHandler
+worker: worker/target/start
+documentSetWorker: documentset-worker/target/start 
+queue: java -Dapollo.base=message-broker -Dapollo.home=lib -classpath lib/apollo-boot-1.6.jar org.apache.activemq.apollo.boot.Apollo lib org.apache.activemq.apollo.cli.Apollo run
+
+
+
 
