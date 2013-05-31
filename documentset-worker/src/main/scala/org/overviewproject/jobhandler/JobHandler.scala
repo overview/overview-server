@@ -5,9 +5,10 @@ import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherD
 import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
 import akka.actor._
 import javax.jms._
-
 import JobHandlerFSM._
 import org.overviewproject.util.Configuration
+import scala.util.{ Failure, Success, Try }
+import scala.annotation.tailrec
 
 /**
  * Messages the JobHandler can process
@@ -112,6 +113,9 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
  */
 trait MessageServiceComponentImpl extends MessageServiceComponent {
   class MessageServiceImpl extends MessageService {
+    private val ConnectionRetryPause = 2000
+    private val MaxConnectionAttempts = 5
+    
     private val BrokerUri: String = Configuration.messageQueue.brokerUri
     private val Username: String = Configuration.messageQueue.username
     private val Password: String = Configuration.messageQueue.password
@@ -127,11 +131,22 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private def createConnection: Connection = {
       val factory = new StompJmsConnectionFactory()
       factory.setBrokerURI(BrokerUri)
-      val connection = factory.createConnection(Username, Password)
-      connection.start()
-      connection
+      tryStartingConnection(factory)
     }
 
+    @tailrec
+    private def tryStartingConnection(factory: StompJmsConnectionFactory, attemptsLeft: Int = MaxConnectionAttempts): Connection = {
+      val connection = factory.createConnection(Username, Password)
+      Try { connection.start } match {
+        case Success(_) => connection
+        case _ if (attemptsLeft > 1) => { 
+          Thread.sleep(ConnectionRetryPause)
+          tryStartingConnection(factory, attemptsLeft - 1)
+        }
+        case Failure(e) => throw e
+      }
+    }
+    
     private def createConsumer: MessageConsumer = {
       val session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
       val destination = new StompJmsDestination(QueueName)
