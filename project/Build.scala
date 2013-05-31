@@ -3,9 +3,10 @@ import Keys._
 import play.Project._
 import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
+import com.typesafe.sbt.SbtStartScript
 
 object ApplicationBuild extends Build {
-  override def settings = super.settings ++
+  override def settings = super.settings ++ 
     Seq(EclipseKeys.skipParents in ThisBuild := false)
 
   val appName     = "overview-server"
@@ -108,7 +109,7 @@ object ApplicationBuild extends Build {
     def apply(name: String, dependencies: Seq[ModuleID], 
       theTestOptions: Seq[TestOption] = ourTestOptions) = {
       Project(name, file(name), settings = 
-        Defaults.defaultSettings ++ Seq(        
+        Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(        
           scalaVersion := ourScalaVersion,
           resolvers ++= ourResolvers,
           libraryDependencies ++= dependencies,
@@ -125,6 +126,27 @@ object ApplicationBuild extends Build {
     def withNoDbTests(name: String, dependencies: Seq[ModuleID], 
       theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, theTestOptions)
   }
+  
+  val copyDependenciesTask = TaskKey[Unit]("copy-dependencies")
+
+  val copyDependencies = copyDependenciesTask <<= (update, baseDirectory, scalaVersion) map {
+    (updateReport, out, scalaVer) =>
+    updateReport.allFiles foreach { srcPath =>
+      val destPath = out / "../lib" / srcPath.getName
+      IO.copyFile(srcPath, destPath, preserveLastModified=true)
+    }
+  }
+
+  val messageBroker = Project("message-broker", file("message-broker"), settings = 
+    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(     
+      scalaVersion := ourScalaVersion,        
+      resolvers ++= ourResolvers,
+      libraryDependencies +=  "org.apache.activemq" % "apache-apollo" % "1.6",
+      copyDependencies,
+      sources in doc in Compile := List()))
+  
+  
+
   
   // Project definitions
   val common = OverviewProject("common", commonProjectDependencies)
@@ -185,9 +207,12 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := true,
     aggregate in Test := false,
     testOptions in Test ++= ourTestOptions,
-    Keys.fork in IntegrationTest := true
+    Keys.fork in IntegrationTest := true,
+    dist <<= dist dependsOn (copyDependenciesTask in messageBroker)
   ).dependsOn(common).aggregate(worker)
 
+  val workers = Project("workers", file("all")).aggregate(worker, documentSetWorker)
+  
   val all = Project("all", file("all"))
     .aggregate(main, worker, workerCommon, common)
     .settings(
@@ -197,4 +222,6 @@ object ApplicationBuild extends Build {
         dependsOn (test in Test in workerCommon)
         dependsOn (test in Test in common)
     )
+          
+
 }
