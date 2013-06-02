@@ -182,7 +182,7 @@ define [
     _draw_tagcount: (left, top, width, height, color, fraction) ->
       return if fraction == 0
 
-      slant_offset = height / 2
+      slant_offset = 0 # disable slant drawing, for greater legibility of fraction of folder tagged
       tagwidth = 1.0 * (width + slant_offset) * fraction
 
       ctx = @ctx
