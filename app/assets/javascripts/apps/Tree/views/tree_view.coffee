@@ -184,6 +184,9 @@ define [
 
       slant_offset = 0 # disable slant drawing, for greater legibility of fraction of folder tagged
       tagwidth = 1.0 * (width + slant_offset) * fraction
+      if (width != 0)
+        if (tagwidth < 2) 
+          tagwidth = 2 # always make the non-empty tag at least this wide on display, so visible
 
       ctx = @ctx
 
