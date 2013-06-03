@@ -129,27 +129,7 @@ object ApplicationBuild extends Build {
       theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, theTestOptions)
   }
   
-  val copyDependenciesTask = TaskKey[Unit]("copy-dependencies")
 
-  val copyDependencies = copyDependenciesTask <<= (update, baseDirectory, scalaVersion) map {
-    (updateReport, out, scalaVer) =>
-    updateReport.allFiles foreach { srcPath =>
-      val destPath = out / "../lib" / srcPath.getName
-      IO.copyFile(srcPath, destPath, preserveLastModified=true)
-    }
-  }
-
-  val messageBroker = Project("message-broker", file("message-broker"), settings = 
-    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(     
-      scalaVersion := ourScalaVersion,        
-      resolvers ++= ourResolvers,
-      libraryDependencies +=  "org.apache.activemq" % "apache-apollo" % "1.6",
-      copyDependencies,
-      sources in doc in Compile := List()))
-  
-  
-
-  
   // Project definitions
   val common = OverviewProject("common", commonProjectDependencies)
   
@@ -209,8 +189,7 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := true,
     aggregate in Test := false,
     testOptions in Test ++= ourTestOptions,
-    Keys.fork in IntegrationTest := true,
-    dist <<= dist dependsOn (copyDependenciesTask in messageBroker)
+    Keys.fork in IntegrationTest := true
   ).dependsOn(common).aggregate(worker)
 
   val workers = Project("workers", file("all")).aggregate(worker, documentSetWorker)
