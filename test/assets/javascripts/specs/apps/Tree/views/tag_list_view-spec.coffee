@@ -146,13 +146,6 @@ require [
           $li = $('li:eq(0)', div)
           expect($li.css('background-color')).toEqual('rgb(18, 52, 86)')
 
-        it 'should find a default tag color when none is specified', ->
-          $li = $('li:eq(1)', div)
-          # We actually test the exact color. Now that we've chosen an algorithm,
-          # we should think twice before changing it, as that would change every
-          # user's tags
-          expect($li.css('background-color')).toEqual('rgb(115, 120, 255)')
-
         it 'should change a tag color', ->
           tag1.color = '#654321'
           tag_list._notify('changed', tag1)

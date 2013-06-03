@@ -1,15 +1,13 @@
 define [
   'jquery'
   '../models/observable'
-  '../models/color_table'
-], ($, observable, ColorTable) ->
+], ($, observable) ->
   TAG_ID_KEY = 'overview-tag-id'
 
   class TagListView
     observable(this)
 
     constructor: (@div, @tag_list, @state) ->
-      @color_table = new ColorTable()
       this._init_html()
       this._observe_tag_add()
       this._observe_tag_remove()
@@ -81,7 +79,7 @@ define [
       $li = $('<li class="btn-group"><a class="btn tag-name"></a><a class="btn tag-add" alt="add tag to selection" title="add tag to selection"><i class="icon-plus"></i></a><a class="btn tag-remove" alt="remove tag from selection" title="remove tag from selection"><i class="icon-minus"></i></a></li>')
       $li.attr("data-#{TAG_ID_KEY}", tag.id)
       $li.find('.tag-name').text(tag.name)
-      $li.css('background-color', tag.color || @color_table.get(tag.name))
+      $li.css('background-color', tag.color)
 
       $ul = $('ul', @div)
       $li.insertBefore($ul.children()[tag.position])
@@ -104,7 +102,7 @@ define [
 
     _change_tag: (tag) ->
       $li = $("li[data-#{TAG_ID_KEY}=#{tag.id}]", @div)
-      $li.css('background-color', tag.color || @color_table.get(tag.name))
+      $li.css('background-color', tag.color)
       $li.find('.tag-name').text(tag.name)
 
       $ul = $li.parent()
