@@ -11,7 +11,7 @@ define [
     "#{tag.id} (#{tag.name})"
 
   tag_list_controller = (div, remote_tag_list, state) ->
-    view = new TagListView(div, remote_tag_list, state)
+    view = new TagListView(div, remote_tag_list.cache.tag_store, state)
 
     view.observe 'add-clicked', (tag) ->
       log('added tag', "#{tag_to_short_string(tag)} to #{state.selection.to_string()}")

@@ -1,16 +1,9 @@
-define [ './observable' ], (observable) ->
+define [], ->
   class RemoteTagList
-    observable(this)
-
     constructor: (@cache) ->
       @tag_store = @cache.tag_store
       @document_store = @cache.document_store
       @tags = @tag_store.tags
-
-      @tag_store.observe('added', (v) => this._notify('added', v))
-      @tag_store.observe('removed', (v) => this._notify('removed', v))
-      @tag_store.observe('id-changed', (old_tagid, tag) => this._notify('id-changed', old_tagid, tag))
-      @tag_store.observe('changed', (v) => this._notify('changed', v))
 
     add_tag_to_selection: (tag, selection) ->
       documents = this._selection_to_documents(selection)
@@ -93,9 +86,3 @@ define [ './observable' ], (observable) ->
       if index >= 0
         tagids.splice(index, 1)
         @document_store.change(document)
-
-    find_by_name: (name) ->
-      @tag_store.find_by_name(name)
-
-    find_by_id: (id) ->
-      @tag_store.find_by_id(id)

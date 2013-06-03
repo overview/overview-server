@@ -3,7 +3,7 @@ require [
   'apps/Tree/models/observable'
   'apps/Tree/views/tag_list_view'
 ], ($, observable, TagListView) ->
-  class MockTagList
+  class MockTagStore
     observable(this)
 
     constructor: () ->
@@ -30,15 +30,15 @@ require [
     describe 'TagListView', ->
       div = undefined
       view = undefined
-      tag_list = undefined
+      tag_store = undefined
       state = undefined
 
       beforeEach ->
         div = $('<div></div>')[0]
         $('body').append(div)
-        tag_list = new MockTagList()
+        tag_store = new MockTagStore()
         state = new MockState()
-        view = new TagListView(div, tag_list, state)
+        view = new TagListView(div, tag_store, state)
 
       afterEach ->
         $(div).remove() # removes event handlers
@@ -58,10 +58,10 @@ require [
         beforeEach ->
           tag1 = { position: 0, id: 1, name: 'AA', color: '#123456', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
           tag2 = { position: 1, id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
-          tag_list.tags.push(tag1)
-          tag_list._notify('added', tag1)
-          tag_list.tags.push(tag2)
-          tag_list._notify('added', tag2)
+          tag_store.tags.push(tag1)
+          tag_store._notify('added', tag1)
+          tag_store.tags.push(tag2)
+          tag_store._notify('added', tag2)
 
         it 'should show tags', ->
           $lis = $('li', div)
@@ -70,8 +70,8 @@ require [
           expect($($lis[1]).text()).toMatch(/^BB/)
 
         it 'should remove tags', ->
-          tag_list.tags.shift()
-          tag_list._notify('removed', tag1)
+          tag_store.tags.shift()
+          tag_store._notify('removed', tag1)
           $lis = $('li', div)
           expect($lis.length).toEqual(3)
           expect($($lis[0]).text()).toMatch(/^BB/)
@@ -148,19 +148,19 @@ require [
 
         it 'should change a tag color', ->
           tag1.color = '#654321'
-          tag_list._notify('changed', tag1)
+          tag_store._notify('changed', tag1)
           $li = $('li:eq(0)', div)
           expect($li.css('background-color')).toEqual('rgb(101, 67, 33)')
 
         it 'should change a tag name', ->
           tag1.name = 'AA2'
-          tag_list._notify('changed', tag1)
+          tag_store._notify('changed', tag1)
           $li = $('li:eq(0)', div)
           expect($li.text()).toMatch(/^AA2/)
 
         it 'should reorder a tag when the position changes', ->
           tag1.name = 'CCC'
           tag1.position = 2
-          tag_list._notify('changed', tag1)
+          tag_store._notify('changed', tag1)
           $li = $('li:eq(0)', div)
           expect($li.text()).toMatch(/^BB/)

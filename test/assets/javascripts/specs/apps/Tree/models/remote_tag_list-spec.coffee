@@ -147,36 +147,6 @@ require [
           }
           remote_tag_list = new RemoteTagList(cache)
 
-        it 'should pass through :added from the TagStore', ->
-          expected = { position: 1, tag: dummy_tag(3, 'CC') }
-          actual = undefined
-          remote_tag_list.observe('added', (v) -> actual = v)
-          tag_store._notify('added', expected)
-          expect(actual).toBe(expected)
-
-        it 'should pass through :removed from the TagStore', ->
-          expected = { position: 1, tag: tag_store.tags[1] }
-          actual = undefined
-          remote_tag_list.observe('removed', (v) -> actual = v)
-          tag_store._notify('removed', expected)
-          expect(actual).toBe(expected)
-
-        it 'should pass through :changed from the TagStore', ->
-          expected = tag_store.tags[1]
-          actual = undefined
-          remote_tag_list.observe('changed', (v) -> actual = v)
-          tag_store._notify('changed', expected)
-          expect(actual).toBe(expected)
-
-        it 'should pass through find_by_name() to the TagStore', ->
-          expected = tag_store.tags[1]
-          tag = remote_tag_list.find_by_name('BB')
-          expect(tag).toBe(expected)
-
-        it 'should mirror TagStore.tags', ->
-          tag_store.tags.splice(1, 1)
-          expect(remote_tag_list.tags).toBe(tag_store.tags)
-
         describe 'with a partial tree and documents', ->
           beforeEach ->
             on_demand_tree.id_tree.root = 1
