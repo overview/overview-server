@@ -39,6 +39,7 @@ class DocumentRetrieverManager(
   private var requestsCompleted: Int = 0
 
   def receive = {
+    case Retrieve(searchResult) if (searchResult.total == 0) => endRetrieval
     case Retrieve(searchResult) => processSearchResult(searchResult)
     case JobComplete() => updateProgress
   }
@@ -47,7 +48,6 @@ class DocumentRetrieverManager(
     retrieverGenerator.createRetrievers(result, findOrCreateDocumentReceiver())
     if (retrieverGenerator.morePagesAvailable) context.parent ! GetSearchResultPage(result.page + 1)
   }
-
 
   private def findOrCreateDocumentReceiver(): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
@@ -62,6 +62,11 @@ class DocumentRetrieverManager(
     val r = retrieverGenerator.documentsToRetrieve
 
     context.parent ! DocumentRetrieved(requestsCompleted, r)
-    if (requestsCompleted == r) findOrCreateDocumentReceiver() ! Done(requestsCompleted, retrieverGenerator.totalDocuments)
+    if (requestsCompleted == r) endRetrieval
   }
+  
+  private def endRetrieval: Unit = findOrCreateDocumentReceiver() ! Done(requestsCompleted, retrieverGenerator.totalDocuments)
+  
+
+  
 }
