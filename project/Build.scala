@@ -99,7 +99,8 @@ object ApplicationBuild extends Build {
   val ourResolvers = Seq(
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-    "Oracle Released Java Packages" at "http://download.oracle.com/maven"
+    "Oracle Released Java Packages" at "http://download.oracle.com/maven",
+    "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public"
   )
 
   val ourScalaVersion = "2.10.0"
