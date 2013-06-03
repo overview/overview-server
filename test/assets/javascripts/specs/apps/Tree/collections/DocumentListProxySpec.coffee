@@ -109,14 +109,14 @@ require [
         documentStore._notify('document-changed', { id: 3, title: 'new title' })
         expect(model.documents.at(3).get('title')).toEqual('new title')
 
-      it 'should change model tag IDs on TagStore:tag-id-changed', ->
-        tagStore._notify('tag-id-changed', 1, { id: 10 })
+      it 'should change model tag IDs on TagStore:id-changed', ->
+        tagStore._notify('id-changed', 1, { id: 10 })
         expect(model.documents.at(1).get('tagids')).toEqual([ 10, 2000 ])
 
       it 'should not trigger document change when tags change', ->
         spy = jasmine.createSpy()
         model.documents.at(1).on('change', spy)
-        tagStore._notify('tag-id-changed', 1, { id: 10, title: 'new title' })
+        tagStore._notify('id-changed', 1, { id: 10, title: 'new title' })
         expect(spy).not.toHaveBeenCalled()
 
       it 'should not change an absent model on DocumentStore:document-changed', ->

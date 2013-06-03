@@ -38,10 +38,10 @@ require [
           tag_store.add(tag2)
           expect(tag2.position).toEqual(1)
 
-        it 'should notify :tag-added when a tag is added', ->
+        it 'should notify :added when a tag is added', ->
           tag1 = dummy_tag(1, 'Tag')
           val = undefined
-          tag_store.observe('tag-added', (v) -> val = v)
+          tag_store.observe('added', (v) -> val = v)
           tag_store.add(tag1)
           expect(val).toEqual(tag1)
 
@@ -52,27 +52,27 @@ require [
           tag_store.add(tag1)
           expect(tag_store.tags).toEqual([ tag1, tag2 ])
 
-        it 'should reset positions before :tag-added', ->
+        it 'should reset positions before :added', ->
           tag1 = dummy_tag(1, 'A')
           tag2 = dummy_tag(2, 'B')
           tag3 = dummy_tag(3, 'C')
           tag_store.add(tag1)
           tag_store.add(tag3)
 
-          tag_store.observe 'tag-added', ->
+          tag_store.observe 'added', ->
             expect(tag1.position).toEqual(0)
             expect(tag2.position).toEqual(1)
             expect(tag3.position).toEqual(2)
 
           tag_store.add(tag2)
 
-        it 'should reset positions before :tag-changed', ->
+        it 'should reset positions before :changed', ->
           tag1 = dummy_tag(1, 'A')
           tag2 = dummy_tag(2, 'B')
           tag_store.add(tag1)
           tag_store.add(tag2)
 
-          tag_store.observe 'tag-changed', (tag) ->
+          tag_store.observe 'changed', (tag) ->
             expect(tag.id).toEqual(1)
             expect(tag1.position).toEqual(1)
             expect(tag2.position).toEqual(0)
@@ -101,20 +101,20 @@ require [
           tag_store.remove(tag2)
           expect(tag_store.tags).toEqual([ tag1, tag3 ])
 
-        it 'should notify the position removed in :tag-removed', ->
+        it 'should notify the position removed in :removed', ->
           val = undefined
-          tag_store.observe('tag-removed', (v) -> val = v)
+          tag_store.observe('removed', (v) -> val = v)
           tag_store.remove(tag2)
           expect(val).toEqual(tag2)
 
-        it 'should notify :tag-id-changed', ->
+        it 'should notify :id-changed', ->
           v = undefined
-          tag_store.observe('tag-id-changed', (old_id, tag) -> v = [ old_id, tag ])
+          tag_store.observe('id-changed', (old_id, tag) -> v = [ old_id, tag ])
           tag_store.change(tag2, { id: 10 })
           expect(v).toEqual([ 2, tag2 ])
 
-        it 'should reposition tags in :tag-removed', ->
-          tag_store.observe 'tag-removed', () ->
+        it 'should reposition tags in :removed', ->
+          tag_store.observe 'removed', () ->
             expect(tag1.position).toEqual(0)
             expect(tag2.position).toEqual(1)
             expect(tag3.position).toEqual(1)
@@ -137,9 +137,9 @@ require [
           tag_store.change(tag2, { color: undefined })
           expect(tag_store.tags[1].color).toBeUndefined()
 
-        it 'should notify :tag-changed', ->
+        it 'should notify :changed', ->
           val = undefined
-          tag_store.observe('tag-changed', (v) -> val = v)
+          tag_store.observe('changed', (v) -> val = v)
           tag_store.change(tag2, { doclist: { n: 1, docids: [ 1 ] } })
           expect(val).toBe(tag2)
 

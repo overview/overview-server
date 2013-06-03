@@ -76,17 +76,17 @@ require [
         view.$('a.tag-edit').click()
         expect(args).toEqual([ 1 ])
 
-      it 'should trigger edit-tag correctly after tag-id-changed', ->
+      it 'should trigger edit-tag correctly after id-changed', ->
         args = []
         view.on('edit-tag', -> args = _.toArray(arguments))
-        cache.tag_store._notify('tag-id-changed', 1, { id: 2, name: 'Tag 1' })
+        cache.tag_store._notify('id-changed', 1, { id: 2, name: 'Tag 1' })
         view.$('a.tag-edit').click()
         expect(args).toEqual([ 2 ])
 
-      it 'should adjust title after tag-changed', ->
+      it 'should adjust title after changed', ->
         # Hack-ish test setup
         cache.tag_store.find_tag_by_id = (id) -> { id: id, name: "Tag 2" }
-        cache.tag_store._notify('tag-changed', { id: 1, name: 'Tag 2' })
+        cache.tag_store._notify('changed', { id: 1, name: 'Tag 2' })
         # But this line is nice
         expect(view.$('h4').text()).toEqual('tag.title_html,num_documents,4,Tag 2')
 

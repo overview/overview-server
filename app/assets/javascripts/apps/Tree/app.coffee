@@ -119,8 +119,8 @@ define [
 
       auto_focus_controller(focus, world)
 
-      world.cache.tag_store.observe('tag-added', -> _.defer(refresh_height))
-      world.cache.tag_store.observe('tag-removed', -> _.defer(refresh_height))
+      world.cache.tag_store.observe('added', -> _.defer(refresh_height))
+      world.cache.tag_store.observe('removed', -> _.defer(refresh_height))
       $(window).resize(refresh_height)
       refresh_height()
 

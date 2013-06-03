@@ -33,7 +33,7 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       @tags.push(tag)
       this._calculate_positions()
 
-      this._notify('tag-added', tag)
+      this._notify('added', tag)
       tag
 
     remove: (tag) ->
@@ -43,7 +43,7 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       @tags.splice(position, 1)
       t.position = i for t, i in @tags
 
-      this._notify('tag-removed', tag)
+      this._notify('removed', tag)
       tag
 
     change: (tag, map) ->
@@ -57,8 +57,8 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
 
       this._calculate_positions()
 
-      this._notify('tag-id-changed', old_tagid, tag) if old_tagid != tag.id
-      this._notify('tag-changed', tag)
+      this._notify('id-changed', old_tagid, tag) if old_tagid != tag.id
+      this._notify('changed', tag)
       tag
 
     find_tag_by_name: (name) ->

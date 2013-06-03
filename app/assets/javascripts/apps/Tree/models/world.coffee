@@ -7,7 +7,7 @@ define [ './cache', './state' ], (Cache, State) ->
       this._handle_tag_id_change()
 
     _handle_tag_id_change: () ->
-      @cache.tag_store.observe('tag-id-changed', this.rewrite_tag_id.bind(this))
+      @cache.tag_store.observe('id-changed', this.rewrite_tag_id.bind(this))
       
     rewrite_tag_id: (old_tagid, tag) =>
       @cache.document_store.rewrite_tag_id(old_tagid, tag.id)

@@ -67,7 +67,7 @@ define [
         $input.val('')
 
     _observe_tag_add: () ->
-      @tag_list.observe 'tag-added', (obj) =>
+      @tag_list.observe 'added', (obj) =>
         this._add_tag(obj)
 
     _create_or_add_tag: (name) ->
@@ -87,15 +87,15 @@ define [
       $li.insertBefore($ul.children()[tag.position])
 
     _observe_tag_remove: () ->
-      @tag_list.observe 'tag-removed', (tag) =>
+      @tag_list.observe 'removed', (tag) =>
         this._remove_tag(tag)
 
     _observe_tag_id_change: () ->
-      @tag_list.observe 'tag-id-changed', (old_tagid, tag) =>
+      @tag_list.observe 'id-changed', (old_tagid, tag) =>
         $("li[data-#{TAG_ID_KEY}=#{old_tagid}]", @div).attr("data-#{TAG_ID_KEY}", tag.id)
 
     _observe_tag_change: () ->
-      @tag_list.observe 'tag-changed', (tag) =>
+      @tag_list.observe 'changed', (tag) =>
         this._change_tag(tag)
 
     _remove_tag: (tag) ->

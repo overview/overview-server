@@ -77,15 +77,15 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @_onDocumentListChanged = => @render()
 
       @documentList?.observe(@_onDocumentListChanged)
-      @tagStore.observe('tag-id-changed', @_onTagIdChanged)
-      @tagStore.observe('tag-changed', @_onTagChanged)
+      @tagStore.observe('id-changed', @_onTagIdChanged)
+      @tagStore.observe('changed', @_onTagChanged)
 
       @render()
 
     remove: ->
       @documentList?.unobserve(@_onDocumentListChanged)
-      @tagStore.unobserve('tag-id-changed', @_onTagIdChanged)
-      @tagStore.unobserve('tag-changed', @_onTagChanged)
+      @tagStore.unobserve('id-changed', @_onTagIdChanged)
+      @tagStore.unobserve('changed', @_onTagChanged)
       Backbone.View.prototype.remove.call(this)
 
     render: ->

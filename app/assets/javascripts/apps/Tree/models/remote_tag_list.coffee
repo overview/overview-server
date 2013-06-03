@@ -7,10 +7,10 @@ define [ './observable' ], (observable) ->
       @document_store = @cache.document_store
       @tags = @tag_store.tags
 
-      @tag_store.observe('tag-added', (v) => this._notify('tag-added', v))
-      @tag_store.observe('tag-removed', (v) => this._notify('tag-removed', v))
-      @tag_store.observe('tag-id-changed', (old_tagid, tag) => this._notify('tag-id-changed', old_tagid, tag))
-      @tag_store.observe('tag-changed', (v) => this._notify('tag-changed', v))
+      @tag_store.observe('added', (v) => this._notify('added', v))
+      @tag_store.observe('removed', (v) => this._notify('removed', v))
+      @tag_store.observe('id-changed', (old_tagid, tag) => this._notify('id-changed', old_tagid, tag))
+      @tag_store.observe('changed', (v) => this._notify('changed', v))
 
     # FIXME remove these
     create_tag: (name) ->

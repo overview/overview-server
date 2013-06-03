@@ -46,7 +46,7 @@ define [ 'backbone' ], (Backbone) ->
 
       @documentList.observe(@_documentListCallback)
       @documentStore.observe('document-changed', @_documentStoreCallback)
-      @tagStore.observe('tag-id-changed', @_tagStoreCallback)
+      @tagStore.observe('id-changed', @_tagStoreCallback)
       @_updateFromDocumentList()
 
     _updateFromDocumentList: ->
@@ -97,4 +97,4 @@ define [ 'backbone' ], (Backbone) ->
     destroy: ->
       @documentList.unobserve(@_callback)
       @documentStore.unobserve('document-changed', @_documentStoreCallback)
-      @tagStore.unobserve('tag-id-changed', @_tagStoreCallback)
+      @tagStore.unobserve('id-changed', @_tagStoreCallback)

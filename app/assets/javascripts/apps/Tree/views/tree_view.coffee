@@ -415,12 +415,12 @@ define [
       @focus.observe('needs-update', update)
       @focus.observe('zoom', update)
       @focus.observe('pan', update)
-      @cache.tag_store.observe('tag-changed', update)
+      @cache.tag_store.observe('changed', update)
       $(window).on('resize.tree-view', update)
 
-      @cache.tag_store.observe('tag-added', this._on_tag_added.bind(this))
-      @cache.tag_store.observe('tag-removed', this._on_tag_removed.bind(this))
-      @cache.tag_store.observe('tag-id-changed', this._on_tagid_changed.bind(this))
+      @cache.tag_store.observe('added', this._on_tag_added.bind(this))
+      @cache.tag_store.observe('removed', this._on_tag_removed.bind(this))
+      @cache.tag_store.observe('id-changed', this._on_tagid_changed.bind(this))
 
       $(@canvas).on 'mousedown', (e) =>
         action = this._event_to_action(e)

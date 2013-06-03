@@ -69,10 +69,10 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
       collection = @collection = new Collection(models)
 
       @callbacks = {
-        'tag-added': (tag) -> collection.add(createModel(tag), { at: tag.position })
-        'tag-removed': (tag) -> collection.remove(removeModel(tag))
-        'tag-changed': (tag) => changeTag(tag)
-        'tag-id-changed': (oldTagId, tag) -> changeTagId(oldTagId, tag)
+        'added': (tag) -> collection.add(createModel(tag), { at: tag.position })
+        'removed': (tag) -> collection.remove(removeModel(tag))
+        'changed': (tag) => changeTag(tag)
+        'id-changed': (oldTagId, tag) -> changeTagId(oldTagId, tag)
       }
 
       @_bind()

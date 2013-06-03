@@ -150,25 +150,25 @@ require [
           }
           remote_tag_list = new RemoteTagList(cache)
 
-        it 'should pass through :tag-added from the TagStore', ->
+        it 'should pass through :added from the TagStore', ->
           expected = { position: 1, tag: dummy_tag(3, 'CC') }
           actual = undefined
-          remote_tag_list.observe('tag-added', (v) -> actual = v)
-          tag_store._notify('tag-added', expected)
+          remote_tag_list.observe('added', (v) -> actual = v)
+          tag_store._notify('added', expected)
           expect(actual).toBe(expected)
 
-        it 'should pass through :tag-removed from the TagStore', ->
+        it 'should pass through :removed from the TagStore', ->
           expected = { position: 1, tag: tag_store.tags[1] }
           actual = undefined
-          remote_tag_list.observe('tag-removed', (v) -> actual = v)
-          tag_store._notify('tag-removed', expected)
+          remote_tag_list.observe('removed', (v) -> actual = v)
+          tag_store._notify('removed', expected)
           expect(actual).toBe(expected)
 
-        it 'should pass through :tag-changed from the TagStore', ->
+        it 'should pass through :changed from the TagStore', ->
           expected = tag_store.tags[1]
           actual = undefined
-          remote_tag_list.observe('tag-changed', (v) -> actual = v)
-          tag_store._notify('tag-changed', expected)
+          remote_tag_list.observe('changed', (v) -> actual = v)
+          tag_store._notify('changed', expected)
           expect(actual).toBe(expected)
 
         it 'should pass through find_tag_by_name() to the TagStore', ->
