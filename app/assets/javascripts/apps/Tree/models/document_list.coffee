@@ -25,6 +25,8 @@ define [ 'jquery', './observable' ], ($, observable) ->
       @selection.documents_from_cache(@cache)
 
     # Returns a Deferred which, when resolved, will be a slice of this.documents
+    #
+    # It expects you to use a constant page size: start / (end-start)
     slice: (start, end) ->
       deferred_key = "#{start}..#{end}"
 
@@ -34,7 +36,12 @@ define [ 'jquery', './observable' ], ($, observable) ->
       deferred = if end < @documents.length
         new $.Deferred().resolve(@documents.slice(start, end))
       else
-        @cache.resolve_deferred('selection_documents_slice', { selection: @selection, start: start, end: end }).done((ret) =>
+        pageSize = end - start
+        throw 'cannot have page size <= 0' if pageSize <= 0
+        page = Math.round(start / pageSize) + 1
+        throw 'not starting at the start of a page' if Math.round(pageSize * page) != start + pageSize
+
+        @cache.resolve_deferred('selection_documents_slice', { selection: @selection, pageSize: pageSize, page: page }).done((ret) =>
           document_store_input = {
             doclist: { docids: [] },
             documents: {},

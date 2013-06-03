@@ -1,12 +1,14 @@
 package models.orm.finders
 
 import org.squeryl.Query
+import org.squeryl.dsl.GroupWithMeasures
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.Document
 import models.orm.Schema
+import models.Selection
 
 object DocumentFinder extends Finder {
   class DocumentFinderResult(query: Query[Document]) extends FinderResult(query) {
@@ -34,8 +36,44 @@ object DocumentFinder extends Finder {
         on(d.id === ts.map(_.key))
       )
     }
+
+    /** Returns just the IDs.
+      *
+      * The IDs will be for documents ordered by title, description and ID.
+      */
+    def toIdsOrdered : FinderResult[Long] = {
+      from(query)(d =>
+        select(d.id)
+        orderBy(d.title, d.description, d.id)
+      )
+    }
+
+    /** Returns (Document,nodeIdsString,tagIdsString) tuples.
+      *
+      * Squeryl does not work with Option[Array] at this time, so we use
+      * string_agg instead of array_agg.
+      */
+    def withNodeIdsAndTagIdsAsLongStrings : FinderResult[(Document,Option[String],Option[String])] = {
+      val nodeIdStrings : Query[GroupWithMeasures[Long,Option[String]]] = join(query, Schema.nodeDocuments)((q, nd) =>
+        groupBy(nd.documentId)
+        compute(string_agg(cast(nd.nodeId, "varchar"), ","))
+        on(nd.documentId === q.id)
+      )
+
+      val tagIdStrings : Query[GroupWithMeasures[Long,Option[String]]] = join(query, Schema.documentTags)((q, dt) =>
+        groupBy(dt.documentId)
+        compute(string_agg(cast(dt.tagId, "varchar"), ","))
+        on(dt.documentId === q.id)
+      )
+
+      join(query, nodeIdStrings.leftOuter, tagIdStrings.leftOuter)((d, n, t) =>
+        select(d, n.flatMap(_.measures), t.flatMap(_.measures))
+        orderBy(d.title, d.description, d.id)
+        on(d.id === n.map(_.key), d.id === t.map(_.key))
+      )
+    }
   }
-  implicit private def queryToDocumentFinderResult(query: Query[Document]) = new DocumentFinderResult(query)
+  implicit private def queryToDocumentFinderResult(query: Query[Document]) : DocumentFinderResult = new DocumentFinderResult(query)
 
   /** @return All `Document`s with the given ID.
     *
@@ -45,8 +83,48 @@ object DocumentFinder extends Finder {
     Schema.documents.where(_.id === id)
   }
 
+  /** @return All `Document`s with any of the given IDs. */
+  def byIds(ids: Traversable[Long]) : DocumentFinderResult = {
+    Schema.documents.where(_.id in ids)
+  }
+
   /** @return All `Document`s with the given DocumentSet. */
   def byDocumentSet(documentSet: Long) : DocumentFinderResult = {
     Schema.documents.where(_.documentSetId === documentSet)
+  }
+
+  /** @return All `Document`s in the given Selection. */
+  def bySelection(selection: Selection) : DocumentFinderResult = {
+    var query = Schema.documents.where(_.documentSetId === selection.documentSetId)
+
+    if (selection.nodeIds.nonEmpty) {
+      val idsFromNodes = from(Schema.nodeDocuments)(nd =>
+        where(nd.nodeId in selection.nodeIds)
+        select(nd.documentId)
+      )
+      query = query.where(_.id in idsFromNodes)
+    }
+
+    if (selection.tagIds.nonEmpty) {
+      val idsFromTags = from(Schema.documentTags)(dt =>
+        where(dt.tagId in selection.tagIds)
+        select(dt.documentId)
+      )
+      query = query.where(_.id in idsFromTags)
+    }
+
+    if (selection.searchResultIds.nonEmpty) {
+      val idsFromSearchResults = from(Schema.documentSearchResults)(dsr =>
+        where(dsr.searchResultId in selection.searchResultIds)
+        select(dsr.documentId)
+      )
+      query = query.where(_.id in idsFromSearchResults)
+    }
+
+    if (selection.documentIds.nonEmpty) {
+      query = query.where(_.id in selection.documentIds)
+    }
+
+    query
   }
 }

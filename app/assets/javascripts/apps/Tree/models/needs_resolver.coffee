@@ -32,8 +32,8 @@ define [ './server' ], (Server) ->
       (item.id? && item.id || item for item in list).join(',')
 
     params = {
-      start: obj.start,
-      end: obj.end,
+      pageSize: obj.pageSize,
+      page: obj.page,
     }
     for key in [ 'nodes', 'tags', 'documents' ]
       list = obj.selection[key]

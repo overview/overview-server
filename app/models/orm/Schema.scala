@@ -10,19 +10,21 @@ object Schema extends org.squeryl.Schema {
   override def tableNameFromClassName(className: String) =
     NamingConventionTransforms.snakify(className)
 
-  val documents = table[Document]
-  val documentSets = table[DocumentSet]
-  val documentSetCreationJobs = table[DocumentSetCreationJob]
-  val nodes = table[Node]
-  val nodeDocuments = table[NodeDocument]
-  val logEntries = table[LogEntry]
-  val users = table[User]
-  val tags = table[Tag]
-  val documentTags = table[DocumentTag]
-  val uploads = table[Upload]
-  val uploadedFiles = table[UploadedFile]
   val documentProcessingErrors = table[DocumentProcessingError]
+  val documentSearchResults = table[DocumentSearchResult]
+  val documentSetCreationJobs = table[DocumentSetCreationJob]
+  val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
+  val documents = table[Document]
+  val documentTags = table[DocumentTag]
+  val logEntries = table[LogEntry]
+  val nodeDocuments = table[NodeDocument]
+  val nodes = table[Node]
+  val searchResults = table[SearchResult]
+  val tags = table[Tag]
+  val uploadedFiles = table[UploadedFile]
+  val uploads = table[Upload]
+  val users = table[User]
 
   on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))
