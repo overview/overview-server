@@ -11,9 +11,6 @@ require [
     constructor: () ->
       @tags = []
 
-    create_tag: (name) ->
-      this.add({ id: -1, name: name, count: 0 })
-
     add: (tag) ->
       @tags.push(tag)
       tag
@@ -179,18 +176,6 @@ require [
         it 'should mirror TagStore.tags', ->
           tag_store.tags.splice(1, 1)
           expect(remote_tag_list.tags).toBe(tag_store.tags)
-
-        it 'should create_tag() and return a tag', ->
-          spyOn(remote_tag_list.cache, 'add_tag').andReturn({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
-          spyOn(remote_tag_list.cache, 'create_tag').andCallThrough()
-          
-          tag = remote_tag_list.create_tag('foo')
-          expect(tag).toEqual({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
-          expect(remote_tag_list.cache.create_tag).toHaveBeenCalledWith({ id: -1, name: 'foo', count: 0, color: 'abcdef' })
-          
-        it 'should send nothing to the server in create_tag()', ->
-          tag = remote_tag_list.create_tag('foo')
-          expect(transaction_queue.callbacks.length).toEqual(0)
 
         describe 'with a partial tree and documents', ->
           beforeEach ->

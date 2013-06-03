@@ -22,14 +22,15 @@ require [
         it 'should start empty', ->
           expect(tag_store.tags).toEqual([])
 
-        it 'should create a tag', ->
-          tag = tag_store.create_tag(newTagName)
-          expect(tag).toEqual({ id: -1, name: newTagName, position: 0, color: color_table.get(newTagName) })
-
         it 'should add a tag', ->
           tag1 = dummy_tag(1, 'Tag')
-          tag_store.add(tag1)
+          tag = tag_store.add(tag1)
           expect(tag_store.tags).toEqual([tag1])
+
+        it 'should add a negative id to a tag', ->
+          tag1 = { name: 'name' }
+          tag_store.add(tag1)
+          expect(tag1.id).toBeLessThan(0)
 
         it 'should add a position to a tag', ->
           tag1 = dummy_tag(1, 'Tag')

@@ -12,15 +12,6 @@ define [ './observable' ], (observable) ->
       @tag_store.observe('id-changed', (old_tagid, tag) => this._notify('id-changed', old_tagid, tag))
       @tag_store.observe('changed', (v) => this._notify('changed', v))
 
-    # FIXME remove these
-    create_tag: (name) ->
-      new_tag = @cache.add_tag(name)
-      @cache.create_tag(new_tag)
-      new_tag
-
-    edit_tag: (tag, new_tag) -> @cache.update_tag(tag, new_tag)
-    delete_tag: (tag) -> @cache.delete_tag(tag)
-
     add_tag_to_selection: (tag, selection) ->
       documents = this._selection_to_documents(selection)
       return if !documents?

@@ -7,27 +7,22 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       @tags = []
       @_last_unsaved_id = 0
 
-    create_tag: (name) ->
-      if _.isString(name)
-        attrs = { name: name }
-      else
-        attrs = name
-
-      id = @_last_unsaved_id -= 1
-
-      tag = _.extend({ id: id }, attrs)
-
-      this.add(tag)
-
     _calculate_positions: () ->
       @tags.sort((a, b) -> a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()))
       t.position = i for t, i in @tags
       undefined
 
     add: (tag) ->
+      tag = { name: tag } if _.isString(tag)
+
+      if !tag.id?
+        id = @_last_unsaved_id -= 1
+        tag.id = id
+
       # Beware sure to handle when we're given { name: 'blah', color: undefined }
       if !tag.color?
         tag.color = @color_table.get(tag.name)
+
       @tags.push(tag)
       this._calculate_positions()
 

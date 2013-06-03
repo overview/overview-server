@@ -92,8 +92,8 @@ define [
           @tag_store.change(tag, tag_from_server)
           options?.callback?()
 
-    add_tag: (name) ->
-      @tag_store.create_tag(name)
+    add_tag: (attributes) ->
+      @tag_store.add(attributes)
 
     edit_tag: (tag, new_tag) ->
       @tag_store.change(tag, new_tag)

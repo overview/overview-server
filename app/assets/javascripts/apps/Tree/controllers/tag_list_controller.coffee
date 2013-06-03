@@ -30,7 +30,8 @@ define [
 
     view.observe 'create-submitted', (tag) ->
       log('created tag', "#{tag_to_short_string(tag)} on #{state.selection.to_string()}")
-      tag = remote_tag_list.create_tag(tag.name)
+      tag = remote_tag_list.cache.add_tag(tag)
+      remote_tag_list.cache.create_tag(tag)
       remote_tag_list.add_tag_to_selection(tag, state.selection)
       state.set('focused_tag', tag)
 
