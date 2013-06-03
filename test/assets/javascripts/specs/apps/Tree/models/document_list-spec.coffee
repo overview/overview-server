@@ -73,7 +73,7 @@ require [
           dl = new DocumentList(cache, selection)
           spyOn(cache, 'resolve_deferred').andCallThrough()
           deferred = dl.slice(0, 2)
-          expect(cache.resolve_deferred).toHaveBeenCalledWith('selection_documents_slice', { selection: selection, start: 0, end: 2 })
+          expect(cache.resolve_deferred).toHaveBeenCalledWith('selection_documents_slice', { selection: selection, pageSize: 2, page: 1 })
 
         it 'should give the return value of get_selection_documents_slice', ->
           dl = new DocumentList(cache, new MockSelection())
