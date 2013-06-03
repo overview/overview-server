@@ -99,7 +99,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
           if nTags == 1 && nNodes == 0
             tagId = selection.tags[0]
-            tag = @tagStore.find_tag_by_id(tagId)
+            tag = @tagStore.find_by_id(tagId)
             templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
           else if nNodes == 1 && nTags == 0
             nodeId = selection.nodes[0]

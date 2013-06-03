@@ -103,8 +103,8 @@ define [ './observable' ], (observable) ->
         tagids.splice(index, 1)
         @document_store.change(document)
 
-    find_tag_by_name: (name) ->
-      @tag_store.find_tag_by_name(name)
+    find_by_name: (name) ->
+      @tag_store.find_by_name(name)
 
-    find_tag_by_id: (id) ->
-      @tag_store.find_tag_by_id(id)
+    find_by_id: (id) ->
+      @tag_store.find_by_id(id)

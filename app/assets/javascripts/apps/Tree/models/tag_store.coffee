@@ -15,10 +15,7 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
 
       id = @_last_unsaved_id -= 1
 
-      # Beware sure to handle when we're given { name: 'blah', color: undefined }
       tag = _.extend({ id: id }, attrs)
-      if !tag.color?
-        tag.color = @color_table.get(tag.name)
 
       this.add(tag)
 
@@ -28,6 +25,7 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       undefined
 
     add: (tag) ->
+      # Beware sure to handle when we're given { name: 'blah', color: undefined }
       if !tag.color?
         tag.color = @color_table.get(tag.name)
       @tags.push(tag)
@@ -61,10 +59,10 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
       this._notify('changed', tag)
       tag
 
-    find_tag_by_name: (name) ->
+    find_by_name: (name) ->
       _.find(@tags, (v) -> v.name == name)
 
-    find_tag_by_id: (id) ->
+    find_by_id: (id) ->
       ret = _.find(@tags, (v) -> v.id == id)
       throw 'tagNotFound' if !ret
       ret

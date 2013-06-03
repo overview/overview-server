@@ -7,7 +7,7 @@ require [
   class TagStore
     observable(this)
 
-    find_tag_by_id: (id) -> { id: id, name: "Tag #{id}" }
+    find_by_id: (id) -> { id: id, name: "Tag #{id}" }
 
   class OnDemandTree
     constructor: ->
@@ -85,7 +85,7 @@ require [
 
       it 'should adjust title after changed', ->
         # Hack-ish test setup
-        cache.tag_store.find_tag_by_id = (id) -> { id: id, name: "Tag 2" }
+        cache.tag_store.find_by_id = (id) -> { id: id, name: "Tag 2" }
         cache.tag_store._notify('changed', { id: 1, name: 'Tag 2' })
         # But this line is nice
         expect(view.$('h4').text()).toEqual('tag.title_html,num_documents,4,Tag 2')

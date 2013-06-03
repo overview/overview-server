@@ -26,7 +26,7 @@ require [
       tag[k] = v for k, v of map
       undefined
 
-    find_tag_by_name: (name) ->
+    find_by_name: (name) ->
       _.find(@tags, (o) -> o.name == name)
 
   class MockDocumentStore
@@ -171,9 +171,9 @@ require [
           tag_store._notify('changed', expected)
           expect(actual).toBe(expected)
 
-        it 'should pass through find_tag_by_name() to the TagStore', ->
+        it 'should pass through find_by_name() to the TagStore', ->
           expected = tag_store.tags[1]
-          tag = remote_tag_list.find_tag_by_name('BB')
+          tag = remote_tag_list.find_by_name('BB')
           expect(tag).toBe(expected)
 
         it 'should mirror TagStore.tags', ->

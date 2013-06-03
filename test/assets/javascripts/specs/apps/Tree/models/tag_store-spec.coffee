@@ -146,18 +146,18 @@ require [
         it 'should throw an exception when removing if the tag is not present', ->
           expect(-> tag_store.remove(dummy_tag(4, 'other'))).toThrow('tagNotFound')
 
-        it 'should find_tag_by_name() for an existing tag', ->
-          tag = tag_store.find_tag_by_name('AA')
+        it 'should find_by_name() for an existing tag', ->
+          tag = tag_store.find_by_name('AA')
           expect(tag).toBe(tag1)
 
-        it 'should find_tag_by_id(0 for an existing tag', ->
-          tag = tag_store.find_tag_by_id(1)
+        it 'should find_by_id(0) for an existing tag', ->
+          tag = tag_store.find_by_id(1)
           expect(tag).toBe(tag1)
 
-        it 'should return undefined when find_tag_by_name() does not find a tag', ->
-          tag = tag_store.find_tag_by_name('A')
+        it 'should return undefined when find_by_name() does not find a tag', ->
+          tag = tag_store.find_by_name('A')
           expect(tag).toBeUndefined()
 
-        it 'should throw an exception when find_tag_by_id() does not find a tag', ->
-          expect(-> tag = tag_store.find_tag_by_id(63)).toThrow('tagNotFound')
+        it 'should throw an exception when find_by_id() does not find a tag', ->
+          expect(-> tag = tag_store.find_by_id(63)).toThrow('tagNotFound')
 

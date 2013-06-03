@@ -26,7 +26,7 @@ require [
       tag[k] = v for k, v of map
       undefined
 
-    find_tag_by_name: (name) ->
+    find_by_name: (name) ->
       _.find(@tags, (o) -> o.name == name)
 
   class MockDocumentStore

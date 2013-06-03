@@ -203,7 +203,7 @@ define [
         node_form_controller(node, cache, state)
 
       view.on 'edit-tag', (tagid) ->
-        tag = cache.tag_store.find_tag_by_id(tagid)
+        tag = cache.tag_store.find_by_id(tagid)
         log('clicked edit tag', tag_to_short_string(tag))
         tag_form_controller(tag, cache, state)
 

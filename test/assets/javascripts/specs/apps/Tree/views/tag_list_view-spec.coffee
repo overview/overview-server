@@ -9,10 +9,10 @@ require [
     constructor: () ->
       @tags = []
 
-    find_tag_by_name: (name) ->
+    find_by_name: (name) ->
       _.find(@tags, (o) -> o.name == name)
 
-    find_tag_by_id: (id) ->
+    find_by_id: (id) ->
       _.find(@tags, (o) -> o.id == id)
 
   class MockSelection

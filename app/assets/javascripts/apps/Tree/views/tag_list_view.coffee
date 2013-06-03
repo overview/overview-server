@@ -31,7 +31,7 @@ define [
       element_to_tag = (elem) =>
         $li = $(elem).closest('li')
         tagid = +$li.attr("data-#{TAG_ID_KEY}")
-        tag = @tag_list.find_tag_by_id(tagid)
+        tag = @tag_list.find_by_id(tagid)
 
       $ul.on 'click', 'a.tag-name', (e) ->
         e.preventDefault()
@@ -71,7 +71,7 @@ define [
         this._add_tag(obj)
 
     _create_or_add_tag: (name) ->
-      tag = @tag_list.find_tag_by_name(name)
+      tag = @tag_list.find_by_name(name)
       if tag?
         this._notify('add-clicked', tag)
       else
