@@ -12,6 +12,9 @@ require [
     proxy = undefined
     collection = undefined
 
+    afterEach ->
+      proxy?.destroy()
+
     describe 'with an empty TagLikeStore', ->
       beforeEach ->
         store = new TagLikeStore([])
