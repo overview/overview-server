@@ -8,6 +8,7 @@ require [
         expect(selection.nodes).toEqual([])
         expect(selection.documents).toEqual([])
         expect(selection.tags).toEqual([])
+        expect(selection.searchResults).toEqual([])
 
       it 'should set objects to passed values', ->
         obj = { nodes: [1, 2, 3], tags: [4, 5, 6], documents: [7, 8, 9] }
@@ -69,6 +70,25 @@ require [
         expect(selection2.nodes).toEqual([1])
         expect(selection2.tags).toEqual([2])
         expect(selection2.documents).toEqual([])
+
+      testNonEmpty = (msg, attrs, expectedValue) ->
+        it "should have nonEmpty=#{expectedValue} if #{msg}", ->
+          selection = new Selection(attrs)
+          expect(selection.nonEmpty()).toBe(expectedValue)
+
+      testNonEmpty('there is a node', { nodes: [1] }, true)
+      testNonEmpty('there is a document', { documents: [1] }, true)
+      testNonEmpty('there is a tag', { tags: [1] }, true)
+      testNonEmpty('there is a searchResult', { searchResults: [1] }, true)
+      testNonEmpty('the selection is emtpy', {}, false)
+
+      it 'should return isEmpty=true', ->
+        selection = new Selection({})
+        expect(selection.isEmpty()).toBe(true)
+
+      it 'should return isEmpty=false', ->
+        selection = new Selection({ nodes: [1] })
+        expect(selection.isEmpty()).toBe(false)
 
       describe 'allows_correct_tagcount_adjustments', ->
         it 'should return true for a node-only selection', ->

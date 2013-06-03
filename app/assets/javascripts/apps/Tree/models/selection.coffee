@@ -1,11 +1,12 @@
 define [ 'underscore' ], (_) ->
-  KEYS = [ 'nodes', 'tags', 'documents' ]
+  KEYS = [ 'nodes', 'tags', 'documents', 'searchResults' ]
 
   # A Selection is an intersection of unions, describing Documents:
   #
   # * @nodes: A list of Node IDs
   # * @tags: A list of Tag IDs
   # * @documents: A list of Document IDs
+  # * @searchResults: a list of SearchResult IDs
   #
   # A Selection is immutable.
   #
@@ -37,6 +38,13 @@ define [ 'underscore' ], (_) ->
 
     equals: (rhs) ->
       _.isEqual(this, rhs)
+
+    isEmpty: ->
+      !@nonEmpty()
+
+    nonEmpty: ->
+      return true for k in KEYS when this[k].length
+      false
 
     pick: (keys...) ->
       obj = {}
@@ -76,11 +84,14 @@ define [ 'underscore' ], (_) ->
       nodeids["#{nodeid}"] = null for nodeid in @nodes
       tagids = {}
       tagids["#{tagid}"] = null for tagid in @tags
+      searchids = {}
+      searchids["#{searchid}"] = null for searchid in @searchResults
       docids = {}
       docids["#{docid}"] = null for docid in @documents || []
 
       checkNodeIds = !_.isEmpty(nodeids)
       checkTagIds = !_.isEmpty(tagids)
+      checkSearchResultIds = !_.isEmpty(searchids)
       checkDocumentId = !_.isEmpty(docids)
 
       ret = []
@@ -104,9 +115,20 @@ define [ 'underscore' ], (_) ->
               break
           continue if not found
 
+        if checkSearchResultIds
+          found = false
+          for searchid in document.searchResultIds
+            if "#{searchid}" of searchids
+              found = true
+              break
+          continue if not found
+
         ret.push(document)
 
-      ret.sort((a, b) -> (a.description || '').localeCompare(b.description || ''))
+      ret.sort (a, b) ->
+        (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase()) ||
+          (a.description || '').toLowerCase().localeCompare((b.description || '').toLowerCase()) ||
+          a.id - b.id
 
     to_string: () ->
       "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
