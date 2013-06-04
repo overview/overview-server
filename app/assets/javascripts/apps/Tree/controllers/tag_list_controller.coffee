@@ -11,12 +11,11 @@ define [
   tag_to_short_string = (tag) ->
     "#{tag.id} (#{tag.name})"
 
-  tag_list_controller = (div, remote_tag_list, state) ->
+  tag_list_controller = (remote_tag_list, state) ->
     proxy = new TagStoreProxy(remote_tag_list.tag_store)
     collection = proxy.collection
     view = new InlineTagListView({
-      el: div,
-      collection: proxy.collection,
+      collection: proxy.collection
       tagIdToModel: (id) -> proxy.map(id)
       state: state
     })
@@ -49,3 +48,5 @@ define [
 
     view.on 'organize-clicked', ->
       TagDialogController(remote_tag_list.tag_store, remote_tag_list.cache)
+
+    { view: view }

@@ -26,6 +26,7 @@ object show {
       Map(
         "nodes" -> toJson(nodes),
         "documents" -> toJson(documents),
+        "searchResults" -> toJson(Seq[Long]()),
         "tags" -> toJson(tags)
       )
     )

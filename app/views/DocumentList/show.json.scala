@@ -1,6 +1,6 @@
 package views.json.DocumentList
 
-import play.api.libs.json.{JsValue, Writes}
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
 import org.overviewproject.tree.orm.Document

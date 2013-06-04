@@ -13,6 +13,8 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
   #   collection (otherwise add-clicked will be triggered in its stead), and
   #   the name will always be trimmed of whitespace.
   Backbone.View.extend
+    id: 'tag-list'
+
     events:
       'click a.tag-name': '_onClickName'
       'click a.tag-add': '_onClickAdd'
@@ -21,6 +23,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       'submit form': '_onSubmit'
 
     template: _.template("""
+      <div class="label">Tags</div>
       <ul class="btn-toolbar">
         <% collection.each(function(tag) { %>
           <li
@@ -34,7 +37,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
         <% }); %>
         <li class="btn-group">
           <form method="post" action="#" class="input-append">
-            <input type="text" name="tag_name" placeholder="tag name" class="input-mini" />
+            <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
             <input type="submit" value="Create new tag" class="btn" />
           </form>
         </li>

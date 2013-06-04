@@ -2,22 +2,11 @@
 @import "../../vendor/bootstrap/less/mixins.less";
 @import "_variables.less";
 
-#tag-list {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  max-height: 15%;
-  overflow: auto;
-
+#tag-list, #search-result-list {
   ul {
     margin: 0;
     padding: 0;
     list-style: none;
-  }
-
-  li {
-    vertical-align: middle;
   }
 
   form {
@@ -50,10 +39,18 @@
     text-align: left;
   }
 
+  .label {
+    display: inline-block;
+    margin: 5px;
+    padding: 5px 0; // mimic .btn
+    float: left;
+    .muted;
+  }
+
   .btn-group {
     .border-radius(@inputBorderRadius);
-    margin-left: 5px;
-    margin-bottom: 5px;
+    margin: 5px;
+    vertical-align: middle;
 
     .btn {
       padding: 4px 10px; // same padding as other elements on this page

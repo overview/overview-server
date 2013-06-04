@@ -89,17 +89,10 @@ require [
   class MockServer
     constructor: () ->
       @posts = []
-      @deletes = []
       @deferreds = []
 
     post: () ->
       @posts.push(Array.prototype.slice.call(arguments, 0))
-      deferred = new Deferred()
-      @deferreds.push(deferred)
-      deferred
-
-    delete: () ->
-      @deletes.push(Array.prototype.slice.call(arguments, 0))
       deferred = new Deferred()
       @deferreds.push(deferred)
       deferred
@@ -256,86 +249,6 @@ require [
             expect(tag.name).toEqual('foo')
             expect(tag.color).toEqual('#654321')
 
-
-        describe 'create_tag', ->
-          newTag = { id: -1, name: 'foo', count: 0, color: '#fabcde' }
-          tagFromServer = { id: 1, name: newTag.name }
-              
-          beforeEach ->
-            cache.create_tag(newTag)
-
-          it 'should queue a server call', ->
-            expect(cache.transaction_queue.callbacks.length).toEqual(1)
-
-          describe 'after making the server call', ->
-            post = undefined
-          
-            beforeEach ->
-              spyOn(cache.tag_store, 'change')
-              cache.transaction_queue.next()
-              post = cache.server.posts[0]
-
-            afterEach ->
-              post = undefined
-
-            it 'should have POSTed', ->
-              expect(post).toBeDefined()
-
-            it 'should post to tag_create with new tag', ->
-              expect(post[0]).toEqual('tag_create')
-              expect(post[1].name).toEqual(newTag.name)
-              expect(post[1].color).toEqual(newTag.color)
-
-            it 'should change the tag in the tag store', ->
-              cache.server.deferreds[0].resolve(tagFromServer)
-              expect(cache.tag_store.change).toHaveBeenCalledWith(newTag, tagFromServer)
-
-          describe 'when updating before id returned from server', ->
-            post = undefined
-
-            beforeEach ->
-              cache.update_tag(newTag, { name: 'bar', color: '#edcbaf' })
-              cache.transaction_queue.next()
-              cache.server.deferreds[0].resolve(tagFromServer)                
-              cache.transaction_queue.next()
-              post = cache.server.posts[1]
-                  
-            it 'should send the update with the new id', ->
-              expect(post[2].path_argument).toEqual(tagFromServer.id)
-                     
-        describe 'update_tag', ->
-          beforeEach ->
-            spyOn(cache, 'edit_tag').andCallThrough()
-            cache.update_tag(tag, { id: tag.id, name: 'foo', color: '#654321' })
-
-          it 'should call edit_tag', ->
-            expect(cache.edit_tag).toHaveBeenCalledWith(tag, { id: tag.id, name: 'foo', color: '#654321' })
-
-          it 'should queue a server call', ->
-            expect(cache.transaction_queue.callbacks.length).toEqual(1)
-
-          describe 'after making the server call', ->
-            post = undefined
-
-            beforeEach ->
-              cache.transaction_queue.next()
-              post = cache.server.posts[0]
-
-            afterEach ->
-              post = undefined
-
-            it 'should have POSTed', ->
-              expect(post).toBeDefined()
-
-            it 'should post to tag_edit with the old tag id', ->
-              expect(post[0]).toEqual('tag_edit')
-              expect(post[2].path_argument).toEqual(1)
-
-            it 'should post the new name and color', ->
-              expect(post[1].name).toEqual(tag.name)
-              expect(post[1].color).toEqual(tag.color)
-
-
         describe 'remove_tag', ->
           it 'should remove_tag from the tag_store', ->
             spyOn(cache.tag_store, 'remove')
@@ -356,31 +269,3 @@ require [
             expect(tree.nodes["1"].tagcounts).toEqual({})
             expect(tree.nodes["2"].tagcounts).toEqual({})
             expect(tree.nodes["3"].tagcounts).toEqual({})
-
-        describe 'delete_tag', ->
-          beforeEach ->
-            spyOn(cache, 'remove_tag').andCallThrough()
-            cache.delete_tag(tag)
-
-          it 'should remove_tag', ->
-            expect(cache.remove_tag).toHaveBeenCalledWith(tag)
-
-          it 'should queue a server call', ->
-            expect(cache.transaction_queue.callbacks.length).toEqual(1)
-
-          describe 'after making the server call', ->
-            post = undefined # "post", not "delete", because "delete" is a keyword
-
-            beforeEach ->
-              cache.transaction_queue.next()
-              post = cache.server.deletes[0]
-
-            afterEach ->
-              post = undefined
-
-            it 'should have DELETEd', ->
-              expect(post).toBeDefined()
-
-            it 'should DELETE to tag_delete with the tag id', ->
-              expect(post[0]).toEqual('tag_delete')
-              expect(post[2].path_argument).toEqual(1)

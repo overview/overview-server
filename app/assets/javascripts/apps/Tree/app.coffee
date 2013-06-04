@@ -9,6 +9,7 @@ define [
   './controllers/keyboard_controller'
   './controllers/logger'
   './controllers/tag_list_controller'
+  './controllers/search_result_list_controller'
   './controllers/focus_controller'
   './controllers/tree_controller'
   './controllers/document_list_controller'
@@ -18,12 +19,12 @@ define [
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, RemoteTagList, World, Selection, \
     KeyboardController, Logger, \
-    tag_list_controller, focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
+    tag_list_controller, search_result_list_controller, \
+    focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
     ModeView) ->
 
   class App
     constructor: (options) ->
-      throw 'need options.tagListEl' if !options.tagListEl
       throw 'need options.focusEl' if !options.focusEl
       throw 'need options.treeEl' if !options.treeEl
       throw 'need options.documentListEl' if !options.documentListEl
@@ -41,14 +42,12 @@ define [
         Logger.set_server(world.cache.server)
 
       refresh_height = () ->
-        MARGIN = 5 #px
-
         # Make the main div go below the (variable-height) navbar
         h = $(options.navEl).height()
         $(options.fullSizeEl).css({ top: h })
 
-        # Give room to the tags at the bottom
-        h = $(options.tagListEl).height()
+        # Give room to the tags and search results at the bottom
+        h = $(options.innerFullSizeEl).next().outerHeight()
         $(options.innerFullSizeEl).css({ bottom: h })
 
         # Round the iframe's parent's width, because it needs an integer number of px
@@ -99,8 +98,6 @@ define [
       interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
       animator = new Animator(interpolator)
       focus = new AnimatedFocus(animator)
-
-      tag_list_controller(options.tagListEl, remote_tag_list, world.state)
       focus_controller(options.focusEl, focus)
 
       controller = tree_controller(options.treeEl, world.cache, focus, world.state)
@@ -119,9 +116,20 @@ define [
 
       auto_focus_controller(focus, world)
 
-      world.cache.tag_store.observe('added', -> _.defer(refresh_height))
-      world.cache.tag_store.observe('removed', -> _.defer(refresh_height))
-      $(window).resize(refresh_height)
+      $bottom = $('<div id="bottom"></div>').appendTo(options.mainEl)
+
+      controller = tag_list_controller(remote_tag_list, world.state)
+      $bottom.append(controller.view.el)
+
+      controller = search_result_list_controller(world.cache, world.state)
+      $bottom.append(controller.view.el)
+
+      for store in [ world.cache.tag_store, world.cache.search_result_store ]
+        for event in [ 'added', 'removed', 'changed' ]
+          store.observe(event, refresh_height)
+
+      throttled_refresh_height = _.throttle(refresh_height, 100)
+      $(window).resize(throttled_refresh_height)
       refresh_height()
 
       refocus_body_on_leave_window()
