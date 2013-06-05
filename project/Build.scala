@@ -212,14 +212,14 @@ object ApplicationBuild extends Build {
     aggregate in printClasspathTask := false
   ).dependsOn(common).aggregate(worker)
 
-  val workers = Project("workers", file("all")).aggregate(worker, documentSetWorker)
   
   val all = Project("all", file("all"))
-    .aggregate(main, worker, workerCommon, common)
+    .aggregate(main, worker, documentSetWorker, workerCommon, common)
     .settings(
       aggregate in Test := false,
       test in Test <<= (test in Test in main) 
         dependsOn (test in Test in worker)
+        dependsOn (test in Test in documentSetWorker)
         dependsOn (test in Test in workerCommon)
         dependsOn (test in Test in common)
     )
