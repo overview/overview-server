@@ -26,7 +26,7 @@ class MessageQueueConfiguration(val configuration: Config) extends DefaultConfig
   val prefix: String = "message_queue"
   private val BrokerUri = "broker_uri"
   private val QueueName = "queue_name"
-  private val Username: String = "admin"
+  private val Username: String = "username"
   private val Password: String = "password"
    
   val defaultValues: Map[String, Any] = Map(
