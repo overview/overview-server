@@ -106,20 +106,37 @@ object ApplicationBuild extends Build {
   val ourScalaVersion = "2.10.0"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature")
 
+  val printClasspathTask = TaskKey[Unit]("print-classpath")
+  val printClasspath = printClasspathTask <<= (fullClasspath in Runtime) map { classpath => 
+    println(classpath.map(_.data).mkString(":"))
+  }
+  
+  val messageBroker = Project("message-broker", file("message-broker"), settings = 
+    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(     
+      scalaVersion := ourScalaVersion,        
+      resolvers ++= ourResolvers,
+      libraryDependencies +=  "org.apache.activemq" % "apache-apollo" % "1.6",
+      printClasspath,
+      sources in doc in Compile := List()))
+  
+  
+  
   // Create a subProject with our common settings
   object OverviewProject {
     def apply(name: String, dependencies: Seq[ModuleID], 
       theTestOptions: Seq[TestOption] = ourTestOptions) = {
       Project(name, file(name), settings = 
-        Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(        
+        Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(printClasspath) ++ Seq(        
           scalaVersion := ourScalaVersion,
           resolvers ++= ourResolvers,
           libraryDependencies ++= dependencies,
           testOptions in Test ++= theTestOptions,
           scalacOptions ++= ourScalacOptions,
           unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
+          logBuffered := false,
           parallelExecution in Test := false,
-          sources in doc in Compile := List()
+          sources in doc in Compile := List(),
+          printClasspath
         )
       )
     }
@@ -129,7 +146,7 @@ object ApplicationBuild extends Build {
       theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, theTestOptions)
   }
   
-
+  
   // Project definitions
   val common = OverviewProject("common", commonProjectDependencies)
   
@@ -189,7 +206,10 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := true,
     aggregate in Test := false,
     testOptions in Test ++= ourTestOptions,
-    Keys.fork in IntegrationTest := true
+    logBuffered := false,
+    Keys.fork in IntegrationTest := true,
+    printClasspath,
+    aggregate in printClasspathTask := false
   ).dependsOn(common).aggregate(worker)
 
   val workers = Project("workers", file("all")).aggregate(worker, documentSetWorker)
