@@ -6,8 +6,11 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 import com.typesafe.sbt.SbtStartScript
 
 object ApplicationBuild extends Build with ProjectSettings {
-  override def settings = super.settings ++ 
-    Seq(EclipseKeys.skipParents in ThisBuild := false)
+  override def settings = super.settings ++ Seq(
+    EclipseKeys.skipParents in ThisBuild := false,
+    scalaVersion := ourScalaVersion,
+    resolvers ++= ourResolvers
+  )
 
   
   val ourTestWithNoDbOptions = Seq(
@@ -27,11 +30,9 @@ object ApplicationBuild extends Build with ProjectSettings {
   
   val messageBroker = Project("message-broker", file("message-broker"), settings = 
     Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(     
-      scalaVersion := ourScalaVersion,        
-      resolvers ++= ourResolvers,
       libraryDependencies ++=  messageBrokerDependencies,
-      printClasspath,
-      sources in doc in Compile := List()))
+      printClasspath))
+
   
   
   
@@ -41,8 +42,6 @@ object ApplicationBuild extends Build with ProjectSettings {
       theTestOptions: Seq[TestOption] = ourTestOptions) = {
       Project(name, file(name), settings = 
         Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(printClasspath) ++ Seq(        
-          scalaVersion := ourScalaVersion,
-          resolvers ++= ourResolvers,
           libraryDependencies ++= dependencies,
           testOptions in Test ++= theTestOptions,
           scalacOptions ++= ourScalacOptions,
@@ -79,7 +78,6 @@ object ApplicationBuild extends Build with ProjectSettings {
   ).dependsOn(workerCommon, common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
-    resolvers ++= ourResolvers,
     resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
     resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"
   ).settings(
@@ -100,7 +98,6 @@ object ApplicationBuild extends Build with ProjectSettings {
       "bundle/Welcome/show.js"
     ),
     requireJsShim += "main.js",
-    sources in doc in Compile := List(),
     aggregate in Compile := true,
     parallelExecution in IntegrationTest := false,
     javaOptions in Test ++= Seq(
@@ -122,6 +119,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     testOptions in Test ++= ourTestOptions,
     logBuffered := false,
     Keys.fork in IntegrationTest := true,
+    sources in doc in Compile := List(),
     printClasspath,
     aggregate in printClasspathTask := false
   ).dependsOn(common).aggregate(worker)
