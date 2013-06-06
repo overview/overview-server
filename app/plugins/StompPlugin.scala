@@ -42,8 +42,8 @@ class MessageQueueConnection extends MessageQueueConfiguration {
 class StompPlugin(application: Application) extends Plugin {
   lazy val queueConnection: MessageQueueConnection = new MessageQueueConnection
   
-  override def onStart(): Unit =  queueConnection
+  override def onStart(): Unit = { }// inactive for now queueConnection
   
   
-  override def onStop(): Unit = queueConnection.close
+  override def onStop(): Unit = { }// inactive for now queueConnection.close
 }
