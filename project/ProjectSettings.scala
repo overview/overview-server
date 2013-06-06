@@ -17,7 +17,8 @@ trait ProjectSettings {
     "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
-    "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public"
+    "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
+    "More FuseSource" at "http://repo.fusesource.com/maven2/"
   )
     
   // shared dependencies
