@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler
 
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
-import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
+import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import akka.actor._
 import javax.jms._
 import JobHandlerFSM._
@@ -92,7 +92,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
       stay using MessageReceived(message)
     case Event(SearchCommand(documentSetId, query), MessageReceived(message)) =>
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
-      searchHandler ! Search(documentSetId, query, requestQueue)
+      searchHandler ! SearchDocumentSet(documentSetId, query, requestQueue)
       goto(WaitingForCompletion) using MessageReceived(message)
   }
 

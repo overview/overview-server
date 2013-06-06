@@ -46,6 +46,7 @@ trait ProjectSettings {
     squerylDep,
     stompDep,
     mockitoDep % "it,test",
+    "com.typesafe" %% "play-plugins-util" % "2.1.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
     "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",

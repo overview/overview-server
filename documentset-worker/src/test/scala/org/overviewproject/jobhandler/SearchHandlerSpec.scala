@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler
 
 import org.overviewproject.jobhandler.DocumentSearcherProtocol.{DocumentSearcherDone, StartSearch}
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
-import org.overviewproject.jobhandler.SearchHandlerProtocol.Search
+import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -11,6 +11,7 @@ import akka.actor._
 import akka.testkit.TestProbe
 import akka.testkit.TestActorRef
 import org.overviewproject.http.RequestQueueProtocol.Failure
+import org.overviewproject.jobs.models.Search
 
 
 class SearchHandlerSpec extends Specification with Mockito {
@@ -20,8 +21,9 @@ class SearchHandlerSpec extends Specification with Mockito {
     
     class TestSearchHandler(searchExists: Boolean, documentSearcherProbe: ActorRef) extends SearchHandler with SearchHandlerComponents {
       val storage = mock[Storage]
-      storage.searchExists(anyLong, anyString) returns searchExists
-      storage.createSearchResult(anyLong, anyString) returns 1l
+      storage.queryForProject(anyLong, anyString) returns Search(1l, "projectid: 1234 search terms")
+      storage.searchExists(any) returns searchExists
+      storage.createSearchResult(any) returns 1l
       
       val actorCreator = new ActorCreator { // can't mock creation of actors
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
@@ -47,7 +49,8 @@ class SearchHandlerSpec extends Specification with Mockito {
 
     trait SearchHandlerSetup extends Scope {
       val documentSetId = 5l
-      val query = "projectid:123 search terms"
+      val searchTerms = "search terms"
+      val query = s"projectid: 1234 $searchTerms"
       
       def createSearchHandlerParent(searchExists: Boolean, parentProbe: ActorRef, documentSearcherProbe: ActorRef)
         (implicit system: ActorSystem): ActorRef = 
@@ -61,7 +64,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       val documentSearcherProbe = TestProbe()
       val parent = createSearchHandlerParent(searchExists = true, testActor, documentSearcherProbe.ref)
       
-      parent ! Search(documentSetId, query, testActor)
+      parent ! SearchDocumentSet(documentSetId, searchTerms, testActor)
 
       expectMsg(JobDone)
     }
@@ -71,7 +74,7 @@ class SearchHandlerSpec extends Specification with Mockito {
 
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
 
-      parent ! Search(documentSetId, query, testActor)
+      parent ! SearchDocumentSet(documentSetId, searchTerms, testActor)
 
       documentSearcherProbe.expectMsg(StartSearch(1l))
     }
@@ -81,7 +84,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
       
-      parent ! Search(documentSetId, query, testActor)
+      parent ! SearchDocumentSet(documentSetId, searchTerms, testActor)
       parent ! DocumentSearcherDone
       
       expectMsg(JobDone)
@@ -94,7 +97,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       searchHandlerWatcher watch searchHandler
       
-      searchHandler ! Search(documentSetId, query, testActor)
+      searchHandler ! SearchDocumentSet(documentSetId, searchTerms, testActor)
       searchHandler ! DocumentSearcherDone
 
       val storage = searchHandler.underlyingActor.storage
@@ -111,7 +114,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       val error = new Exception("exception from RequestQueue")
       
-      searchHandler ! Search(documentSetId, query, testActor)
+      searchHandler ! SearchDocumentSet(documentSetId, searchTerms, testActor)
       searchHandler ! Failure(error)
       
       val storage = searchHandler.underlyingActor.storage
