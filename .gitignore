@@ -12,7 +12,6 @@ dist
 .settings/
 *~
 *.swp
-.env
 .cache
 .target
 .DS_Store
