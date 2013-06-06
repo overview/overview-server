@@ -21,9 +21,9 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       <ul class="btn-toolbar">
         <% collection.each(function(searchResult) { %>
           <li
-              class="<%- (selectedSearchResult && searchResult.cid == selectedSearchResult.cid) ? 'selected' : '' %>"
+              class="btn-group <%- (selectedSearchResult && searchResult.cid == selectedSearchResult.cid) ? 'selected' : '' %>"
               data-cid="<%- searchResult.cid %>">
-            <button type="button" class="btn">
+            <button type="button" class="btn state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>" <%= searchResult.get('state') == 'Complete' ? '' : 'disabled="disabled"' %>>
               <span class="message"><%- searchResult.get('query') %></span>
             </button>
           </li>
