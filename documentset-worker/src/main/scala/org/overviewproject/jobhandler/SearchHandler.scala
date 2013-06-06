@@ -123,7 +123,7 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
     import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
 
     override def queryForProject(documentSetId: Long, searchTerms: String): Search = Database.inTransaction {
-      val documentSetQuery = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).getOrElse("")
+      val documentSetQuery: String = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
       Search(documentSetId, s"$documentSetQuery $searchTerms")
     }
     override def searchExists(search: Search): Boolean = Database.inTransaction {
