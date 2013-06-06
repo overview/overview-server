@@ -1,7 +1,6 @@
 package plugins
 
 import org.fusesource.stomp.jms.{StompJmsConnectionFactory, StompJmsDestination}
-
 import javax.jms.{DeliveryMode, Session}
 import play.api.{Application, Play, Plugin}
 
@@ -19,7 +18,12 @@ trait MessageQueueConfiguration {
     .getOrElse(throw new Exception(s"Unable to read message_queue configuration for $key"))
 }
 
-class MessageQueueConnection extends MessageQueueConfiguration {
+trait MessageQueueConnection {
+  def send(messageText: String): Unit
+  def close: Unit
+}
+
+class StompJmsMessageQueueConnection extends MessageQueueConnection with MessageQueueConfiguration {
   private val factory = new StompJmsConnectionFactory()
   factory.setBrokerURI(BrokerUri)
   private val connection = factory.createConnection(Username, Password)
@@ -30,20 +34,28 @@ class MessageQueueConnection extends MessageQueueConfiguration {
   producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT)
 
   
-  def send(messageText: String): Unit = {
+  override def send(messageText: String): Unit = {
     val message = session.createTextMessage(messageText)
     producer.send(message)
   }
   
-  def close: Unit = session.close
+  override def close: Unit = session.close
   
 }
 
+class MockMessageQueueConnection extends MessageQueueConnection {
+  override def send(messageText: String): Unit = {}
+  override def close: Unit = {}
+}
+
 class StompPlugin(application: Application) extends Plugin {
-  lazy val queueConnection: MessageQueueConnection = new MessageQueueConnection
+  lazy val queueConnection: MessageQueueConnection = 
+    if (useMock) new MockMessageQueueConnection
+    else new StompJmsMessageQueueConnection
   
-  override def onStart(): Unit = { }// inactive for now queueConnection
+  override def onStart(): Unit = queueConnection
   
+  override def onStop(): Unit = queueConnection.close
   
-  override def onStop(): Unit = { }// inactive for now queueConnection.close
+  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
 }
