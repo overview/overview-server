@@ -1,17 +1,10 @@
 @import "../../vendor/bootstrap/less/variables.less";
 @import "../../vendor/bootstrap/less/mixins.less";
 @import "_variables.less";
+@import "tag-like-list.less";
 
-#tag-list, #search-result-list {
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  form {
-    margin-bottom: 0;
-  }
+#tag-list {
+  .tag-like-list();
 
   a.organize {
     background-color: transparent;
@@ -39,35 +32,7 @@
     text-align: left;
   }
 
-  .label {
-    display: inline-block;
-    margin: 5px;
-    padding: 5px 0; // mimic .btn
-    float: left;
-    .muted;
-  }
-
   .btn-group {
-    .border-radius(@inputBorderRadius);
-    margin: 5px;
-    vertical-align: middle;
-
-    .btn {
-      padding: 4px 10px; // same padding as other elements on this page
-    }
-
-    & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
-
-    &.selected {
-      .tag-name {
-        outline: 2px solid black;
-      }
-
-      .btn {
-        .border-radius(0);
-      }
-    }
-
     .tag-edit, .tag-add, .tag-remove {
       position: absolute;
       background-color: whiteSmoke;
