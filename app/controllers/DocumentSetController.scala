@@ -3,14 +3,14 @@ package controllers
 import play.api.mvc.Controller
 
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.orm.{ DocumentSet, DocumentSetUser }
+import models.orm.DocumentSetUser 
 import models.ResultPage
 
 trait DocumentSetController extends Controller {

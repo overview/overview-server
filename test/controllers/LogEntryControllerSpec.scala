@@ -14,8 +14,9 @@ import play.api.Play.{ start, stop }
 import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
 import play.api.test.Helpers._
 
+import org.overviewproject.tree.orm.DocumentSet
 import controllers.auth.AuthorizedRequest
-import models.orm.{DocumentSet,LogEntry,User}
+import models.orm.{ LogEntry, User }
 import models.{ OverviewUser, ResultPage }
 
 class LogEntryControllerSpec extends Specification with Mockito {

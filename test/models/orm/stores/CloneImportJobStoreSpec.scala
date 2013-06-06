@@ -6,9 +6,8 @@ import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
-import org.overviewproject.tree.orm.UploadedFile
+import org.overviewproject.tree.orm.{ DocumentSet, UploadedFile }
 import helpers.DbTestContext
-import models.orm.DocumentSet
 import models.orm.finders.{ UploadedFileFinder }
 
 /** FIXME: move all this logic to the worker. The server should not deal with

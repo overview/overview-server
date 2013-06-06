@@ -1,14 +1,14 @@
 package views.html.DocumentSet
 
-import jodd.lagarto.dom.jerry.Jerry.jerry
+import scala.Array.canBuildFrom
+
+import org.overviewproject.tree.orm.DocumentSet
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
+import jodd.lagarto.dom.jerry.Jerry.jerry
 import models.OverviewUser
-import models.orm.DocumentSet
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class _documentSetSpec extends Specification {
 

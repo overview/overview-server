@@ -2,10 +2,10 @@ package models.orm.stores
 
 import org.squeryl.{ KeyedEntityDef, Query }
 
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState, UploadedFile }
+import org.overviewproject.tree.orm._
 import models.orm.finders._
 import models.orm.stores._
-import models.orm.{ DocumentSet, Schema }
+import models.orm.Schema 
 
 object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
   override def delete(query: Query[DocumentSet]) : Int = {

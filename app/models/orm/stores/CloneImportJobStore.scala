@@ -2,9 +2,9 @@ package models.orm.stores
 
 import java.sql.Timestamp
 
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState, UploadedFile }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, UploadedFile }
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import models.orm.{ DocumentSet, DocumentSetUser }
+import models.orm.DocumentSetUser
 import models.orm.finders.{ DocumentSetFinder, UploadedFileFinder }
 import models.CloneImportJob
 

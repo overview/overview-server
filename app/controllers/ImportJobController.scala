@@ -2,11 +2,10 @@ package controllers
 
 import play.api.mvc.Controller
 
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.ResultPage
 import models.orm.finders.DocumentSetCreationJobFinder
-import models.orm.DocumentSet
 
 trait ImportJobController extends Controller {
   import Authorities._

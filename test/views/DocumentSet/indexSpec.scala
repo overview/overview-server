@@ -9,9 +9,9 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 import org.overviewproject.tree.DocumentSetCreationJobType
-import models.orm.DocumentSet
+
 import models.{ OverviewUser, ResultPage }
 
 class indexSpec extends Specification {

@@ -6,9 +6,9 @@ import play.api.libs.json.JsValue
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import org.overviewproject.tree.orm.{Document,Node,SearchResult}
+import org.overviewproject.tree.orm.{Document,DocumentSet,Node,SearchResult}
 import models.{IdList,SubTreeLoader}
-import models.orm.{DocumentSet,Tag}
+import models.orm.{Tag}
 import models.orm.finders.{DocumentFinder,NodeFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
 

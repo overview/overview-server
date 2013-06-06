@@ -6,7 +6,8 @@ import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
-import models.orm.{ DocumentSet, Schema, User }
+import org.overviewproject.tree.orm.DocumentSet
+import models.orm.{ Schema, User }
 
 object DocumentSetFinder extends Finder {
   class DocumentSetResult(query: Query[DocumentSet]) extends FinderResult(query) {

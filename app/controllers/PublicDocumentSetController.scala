@@ -2,10 +2,11 @@ package controllers
 
 import play.api.mvc.Controller
 
+import org.overviewproject.tree.orm.DocumentSet
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
 import models.orm.finders.DocumentSetFinder
-import models.orm.{DocumentSet,User}
+import models.orm.User
 
 trait PublicDocumentSetController extends Controller {
   trait Storage {
