@@ -9,7 +9,7 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import org.overviewproject.tree.orm.Node
 import models.{ OverviewUser, SubTreeLoader }
 import models.orm.DocumentSet
-import models.orm.finders.NodeFinder
+import models.orm.finders.{NodeFinder,SearchResultFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
@@ -24,7 +24,8 @@ trait NodeController extends Controller {
         val nodes = subTreeLoader.load(rootId, childLevels)
         val tags = subTreeLoader.loadTags(documentSetId)
         val documents = subTreeLoader.loadDocuments(nodes, tags)
-        val json = views.json.Tree.show(nodes, documents, tags)
+        val searchResults = SearchResultFinder.byDocumentSet(documentSetId)
+        val json = views.json.Tree.show(nodes, documents, tags, searchResults)
 
         Ok(json)
       }
@@ -39,7 +40,7 @@ trait NodeController extends Controller {
     val nodes = subTreeLoader.load(id, 1)
     val documents = subTreeLoader.loadDocuments(nodes, Seq())
 
-    val json = views.json.Tree.show(nodes, documents, Seq())
+    val json = views.json.Tree.show(nodes, documents, Seq(), Seq())
     Ok(json)
   }
 

@@ -18,7 +18,10 @@ define [ './server' ], (Server) ->
 
       search_result_store = needs_resolver.search_result_store
       for search_result in obj.searchResults
-        search_result_store.add(search_result)
+        if search_result.state == 'InProgress'
+          search_result_store.addAndPoll(search_result)
+        else
+          search_result_store.add(search_result)
 
       documents_hash = list_to_hash(obj.documents)
       document_store = needs_resolver.document_store
@@ -53,7 +56,7 @@ define [ './server' ], (Server) ->
   }
 
   class NeedsResolver
-    constructor: (@document_store, @tag_store, server=undefined) ->
+    constructor: (@document_store, @tag_store, @search_result_store, server=undefined) ->
       @server = server || new Server()
 
       @needs = {}

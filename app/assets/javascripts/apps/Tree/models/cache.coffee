@@ -31,7 +31,7 @@ define [
       @document_store = new DocumentStore()
       @tag_store = new TagStore()
       @search_result_store = new SearchResultStore("#{window.location.pathname}/search-results")
-      @needs_resolver = new NeedsResolver(@document_store, @tag_store)
+      @needs_resolver = new NeedsResolver(@document_store, @tag_store, @search_result_store)
       @transaction_queue = new TransactionQueue()
       @server = @needs_resolver.server
       @tag_api = new TagLikeApi(@tag_store, @transaction_queue, "#{window.location.pathname}/tags")

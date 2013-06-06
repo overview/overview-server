@@ -5,7 +5,7 @@ import models.core.{Document, DocumentIdList, Node}
 import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 import views.json.helper.ModelJsonConverters._
-
+import org.overviewproject.tree.orm.SearchResult
 
 object show {
   
@@ -21,12 +21,12 @@ object show {
     }
   }
 
-  def apply(nodes: Seq[Node], documents: Seq[Document], tags: Seq[PersistentTagInfo]) : JsValue = {
+  def apply(nodes: Seq[Node], documents: Seq[Document], tags: Seq[PersistentTagInfo], searchResults: Iterable[SearchResult]) : JsValue = {
     toJson(
       Map(
         "nodes" -> toJson(nodes),
         "documents" -> toJson(documents),
-        "searchResults" -> toJson(Seq[Long]()),
+        "searchResults" -> toJson(searchResults.map(views.json.SearchResult.show(_))),
         "tags" -> toJson(tags)
       )
     )
