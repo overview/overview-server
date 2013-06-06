@@ -38,7 +38,7 @@ define [
     view.on 'create-submitted', (query) ->
       searchResult = { query: query }
       log('created search', "#{search_result_to_short_string(searchResult)}")
-      searchResult = cache.search_result_store.add(searchResult)
+      searchResult = cache.search_result_store.addAndPoll(searchResult)
       cache.search_result_api.create(searchResult)
 
     { view: view }

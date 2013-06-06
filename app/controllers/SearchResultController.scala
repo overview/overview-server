@@ -16,7 +16,9 @@ trait SearchResultController extends Controller {
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val searchResults = storage.findSearchResults(documentSetId)
+
     Ok(views.json.SearchResult.index(searchResults))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 }
 

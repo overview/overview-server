@@ -30,7 +30,7 @@ define [
     constructor: () ->
       @document_store = new DocumentStore()
       @tag_store = new TagStore()
-      @search_result_store = new SearchResultStore()
+      @search_result_store = new SearchResultStore("#{window.location.pathname}/search-results")
       @needs_resolver = new NeedsResolver(@document_store, @tag_store)
       @transaction_queue = new TransactionQueue()
       @server = @needs_resolver.server
