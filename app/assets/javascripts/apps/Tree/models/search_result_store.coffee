@@ -62,7 +62,7 @@ define [ 'jquery', 'underscore', './TagLikeStore' ], ($, _, TagLikeStore) ->
         else
           @add(serverSearchResult)
 
-        if object.state == 'Complete'
+        if object.state == 'Complete' || object.state == 'Error'
           delete @_pollForKeys[key]
 
       # Delete from our store anything that's no longer on the server
