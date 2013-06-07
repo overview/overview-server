@@ -21,9 +21,9 @@ class SearchHandlerSpec extends Specification with Mockito {
     
     class TestSearchHandler(searchExists: Boolean, documentSearcherProbe: ActorRef) extends SearchHandler with SearchHandlerComponents {
       val storage = mock[Storage]
-      storage.queryForProject(anyLong, anyString) returns Search(1l, "projectid: 1234 search terms")
-      storage.searchExists(any) returns searchExists
-      storage.createSearchResult(any) returns 1l
+
+      storage.searchExists(anyLong, anyString) returns searchExists
+      storage.createSearchResult(anyLong, anyString) returns 1l
       
       val actorCreator = new ActorCreator { // can't mock creation of actors
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
@@ -102,7 +102,7 @@ class SearchHandlerSpec extends Specification with Mockito {
 
       val storage = searchHandler.underlyingActor.storage
       
-      there was one(storage).completeSearch(1l, documentSetId, query)
+      there was one(storage).completeSearch(1l, documentSetId, searchTerms)
       searchHandlerWatcher.expectMsgType[Terminated]
     }
     
@@ -119,7 +119,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       val storage = searchHandler.underlyingActor.storage
       
-      there was one(storage).failSearch(1l, documentSetId, query)
+      there was one(storage).failSearch(1l, documentSetId, searchTerms)
       searchHandlerWatcher.expectMsgType[Terminated]
     }
   }

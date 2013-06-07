@@ -43,14 +43,14 @@ trait SearchHandlerComponents {
   val actorCreator: ActorCreator
   
   trait Storage {
-    /** @return a `Search` with a query combining the original document set query with the search terms */
-    def queryForProject(documentSetId: Long, searchTerms: String): Search
+    /** @return a query combining the original document set query with the search terms */
+    def queryForProject(documentSetId: Long, searchTerms: String): String
     
     /** @return true if a 'SearchResult' exists with the given parameters */
-    def searchExists(search: Search): Boolean 
+    def searchExists(documentSetId: Long, searchTerms: String): Boolean 
     
     /** create a new `SearchResult` with state `InProgress` */
-    def createSearchResult(search: Search): Long 
+    def createSearchResult(documentSetId: Long, searchTerms: String): Long 
     
     /** mark the `SearchResult` as `Complete` */
     def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
@@ -79,15 +79,14 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   
   when(Idle) {
     case Event(SearchDocumentSet(documentSetId, query, requestQueue), _) =>
-      val search = storage.queryForProject(documentSetId, query)
-      if (storage.searchExists(search)) {
+      if (storage.searchExists(documentSetId, query)) {
         context.parent ! JobDone
         goto(Idle) using Uninitialized
       }
       else {
-        val searchId = storage.createSearchResult(search)
-        startSearch(documentSetId, search.query, requestQueue, searchId)
-        goto(Searching) using SearchInfo(searchId, documentSetId, search.query)
+        val searchId = storage.createSearchResult(documentSetId, query)
+        startSearch(documentSetId, query, requestQueue, searchId)
+        goto(Searching) using SearchInfo(searchId, documentSetId, query)
       }
   }
   
@@ -105,8 +104,10 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   initialize
 
   
-  private def startSearch(documentSetId: Long, query: String, requestQueue: ActorRef, searchId: Long): Unit = {
+  private def startSearch(documentSetId: Long, searchTerms: String, requestQueue: ActorRef, searchId: Long): Unit = {
 
+    val query = storage.queryForProject(documentSetId, searchTerms)
+    
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
 
@@ -122,17 +123,17 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
   class StorageImpl extends Storage {
     import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
 
-    override def queryForProject(documentSetId: Long, searchTerms: String): Search = Database.inTransaction {
-      val documentSetQuery: String = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
-      Search(documentSetId, s"$documentSetQuery $searchTerms")
+    override def queryForProject(documentSetId: Long, searchTerms: String): String = Database.inTransaction {
+      DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
     }
-    override def searchExists(search: Search): Boolean = Database.inTransaction {
-      SearchResultFinder.byDocumentSetAndQuery(search.documentSetId, search.query).headOption.isDefined
+    
+    override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
+      SearchResultFinder.byDocumentSetAndQuery(documentSetId, searchTerms).headOption.isDefined
     }
 
-    override def createSearchResult(search: Search): Long = Database.inTransaction {
+    override def createSearchResult(documentSetId: Long, searchTerms: String): Long = Database.inTransaction {
       val searchResult = SearchResultStore.insertOrUpdate(
-        SearchResult(SearchResultState.InProgress, search.documentSetId, search.query))
+        SearchResult(SearchResultState.InProgress, documentSetId, searchTerms))
 
       searchResult.id
     }
