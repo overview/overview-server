@@ -1,7 +1,7 @@
 package org.overviewproject.database.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.{ Document, DocumentSet }
+import org.overviewproject.tree.orm.{ Document, DocumentSearchResult, DocumentSet }
 
 
 object Schema extends org.squeryl.Schema {
