@@ -4,10 +4,10 @@ import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
 import models.PersistentTagInfo
-import models.core.{Document, DocumentIdList, Node}
+import models.core.Node
 import models.orm.Tag
 import views.json.helper.ModelJsonConverters._
-import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.tree.orm.{Document,SearchResult}
 
 object show {
   
@@ -23,6 +23,16 @@ object show {
     }
   }
 
+  private[Tree] def writeDocumentAndNodeIdsAndTagIds(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {
+    toJson(Map(
+      "id" -> toJson(document.id),
+      "description" -> toJson(document.description),
+      "title" -> toJson(document.title),
+      "nodeids" -> toJson(nodeIds),
+      "tagids" -> toJson(tagIds)
+    ))
+  }
+
   private[Tree] def writeTagAndCount(tag: Tag, count: Long) : JsValue = {
     toJson(Map(
       "id" -> toJson(tag.id),
@@ -32,11 +42,17 @@ object show {
     ))
   }
 
-  def apply(nodes: Seq[Node], documents: Seq[Document], tags: Iterable[(Tag,Long)], searchResults: Iterable[SearchResult]) : JsValue = {
+  def apply(
+    nodes: Seq[Node],
+    documents: Iterable[(Document,Seq[Long],Seq[Long])],
+    tags: Iterable[(Tag,Long)],
+    searchResults: Iterable[SearchResult])
+    : JsValue = {
+
     toJson(
       Map(
         "nodes" -> toJson(nodes),
-        "documents" -> toJson(documents),
+        "documents" -> toJson(documents.map(Function.tupled(writeDocumentAndNodeIdsAndTagIds))),
         "searchResults" -> toJson(searchResults.map(views.json.SearchResult.show(_))),
         "tags" -> toJson(tags.map(Function.tupled(writeTagAndCount)))
       )

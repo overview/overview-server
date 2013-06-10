@@ -1,9 +1,10 @@
 package views.json.Tree
 
-import models.core._
+import play.api.libs.json.Json.toJson
 import org.specs2.mutable.Specification
 
-import play.api.libs.json.Json.toJson
+import org.overviewproject.tree.orm.{Document,DocumentType}
+import models.core.{DocumentIdList,Node}
 import models.orm.Tag
 
 class showSpec extends Specification {
@@ -27,14 +28,14 @@ class showSpec extends Specification {
     }
     
     "contain all documents" in {
-      val dummyNodes = List[Node]()
-      val documents = List(
-    	Document(10l, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l)),
-    	Document(20l, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l)),
-    	Document(30l, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l))
+      val dummyNodes = Seq[Node]()
+      val documentsWithNodeIdsAndTagIds = Seq(
+        (Document(id=10l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L)),
+        (Document(id=20l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L)),
+        (Document(id=30l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L))
       )
 
-      val treeJson = show(dummyNodes, documents, Seq(), Seq()).toString
+      val treeJson = show(dummyNodes, documentsWithNodeIdsAndTagIds, Seq(), Seq()).toString
       
       treeJson must /("documents") */("id" -> 10l)
       treeJson must /("documents") */("id" -> 20l)
@@ -42,8 +43,8 @@ class showSpec extends Specification {
     }
     
     "contain tags" in {
-      val dummyNodes = List[Node]()
-      val dummyDocuments = List[Document]()
+      val dummyNodes = Seq[Node]()
+      val dummyDocuments = Seq[(Document,Seq[Long],Seq[Long])]()
 
       val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color=Some("ffffff"))
 

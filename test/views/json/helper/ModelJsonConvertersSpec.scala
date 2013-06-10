@@ -25,33 +25,6 @@ class ModelJsonConvertersSpec extends DbSpecification {
     }
   }
 
-  "JsonDocument" should {
-    import views.json.helper.ModelJsonConverters.JsonDocument
-
-    "write document attributes" in {
-      val id = 39l
-      val description = "description"
-      val title = "title"
-      val document = Document(id, description, Some(title), Some("unused by Tree"), Seq(1, 2, 3), Seq(22l, 11l, 33l))
-
-      val documentJson = toJson(document).toString
-
-      documentJson must /("id" -> id)
-      documentJson must /("description" -> description)
-      documentJson must /("title" -> title)
-      documentJson must contain(""""tagids":[1,2,3]""")
-      documentJson must contain(""""nodeids":[22,11,33]""")
-    }
-    
-    "provide empty_title message if no title is provided" in {
-    	val document = Document(1l, "description", None, None, Seq(1, 2, 3), Seq(22l, 11l, 33l))
-    	
-    	val documentJson = toJson(document).toString
-    	
-    	documentJson must /("title" -> "views.Document.show.title.empty_title")
-    }
-  }
-
   "JsonPersistentTag" should {
     import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
     import helpers.TestTag

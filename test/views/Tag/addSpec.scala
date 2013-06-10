@@ -10,7 +10,7 @@ class addSpec extends Specification {
   
   "Json for tag add result" should {
 
-    "contain tagid, added count, and total count" in {
+    "contain tagid and added count" in {
       val tagId = 44l
       val tag: PersistentTagInfo = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val addedCount = 20l
@@ -21,7 +21,6 @@ class addSpec extends Specification {
       
       resultJson must /("num_added" -> addedCount)
       resultJson must /("tag") */("id" ->  tagId)
-      resultJson must /("documents") */("id" -> documentId)
     }
   }
 

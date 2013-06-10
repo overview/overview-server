@@ -11,7 +11,7 @@ class removeSpec extends Specification {
  
   "Json for tag remove result" should {
 
-    "contain tagid, removed count, and total count" in {
+    "contain tagid and removed count" in {
       val tagId = 44l
       val tag = TestTag(tagId, "name", None, DocumentIdList(Nil, 0) )
       val removedCount = 20l
@@ -22,7 +22,6 @@ class removeSpec extends Specification {
       
       resultJson must /("num_removed" -> removedCount)
       resultJson must /("tag") */("id" ->  tagId)
-      resultJson must /("documents") */("id" -> documentId)
     }
   }
 

@@ -12,9 +12,9 @@ define [], ->
       this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
       @cache.on_demand_tree.id_tree.edit =>
-        if tag.doclist?
-          @document_store.remove_doclist(tag.doclist)
-          @tag_store.change(tag, { doclist: undefined })
+        #if tag.doclist?
+        #  @document_store.remove_doclist(tag.doclist)
+        #  @tag_store.change(tag, { doclist: undefined })
 
         if selection.allows_correct_tagcount_adjustments()
           @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
@@ -34,9 +34,9 @@ define [], ->
       this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
       @cache.on_demand_tree.id_tree.edit =>
-        if tag.doclist?
-          @document_store.remove_doclist(tag.doclist)
-          @tag_store.change(tag, { doclist: undefined })
+        #if tag.doclist?
+        #  @document_store.remove_doclist(tag.doclist)
+        #  @tag_store.change(tag, { doclist: undefined })
 
         if selection.allows_correct_tagcount_adjustments()
           @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
@@ -50,11 +50,11 @@ define [], ->
         deferred
 
     _after_tag_add_or_remove: (tag, obj) ->
-      if obj.tag?.doclist? && obj.documents?
-        documents = {}
-        documents[doc.id] = doc for doc in obj.documents
-        @document_store.add_doclist(obj.tag.doclist, documents)
-      @tag_store.change(tag, obj.tag)
+      #if obj.tag?.doclist? && obj.documents?
+      #  documents = {}
+      #  documents[doc.id] = doc for doc in obj.documents
+      #  @document_store.add_doclist(obj.tag.doclist, documents)
+      #@tag_store.change(tag, obj.tag)
 
     _selection_to_post_data: (selection) ->
       {

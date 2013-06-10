@@ -4,7 +4,7 @@ import models.PersistentTagInfo
 import models.core.Document
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
-import views.json.helper.ModelJsonConverters.{JsonDocument, JsonPersistentTagInfo}
+import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
 
 object add {
 
@@ -12,7 +12,7 @@ object add {
     toJson(Map(
         "num_added" -> toJson(addedCount),
         "tag" -> toJson(tag),
-        "documents" -> toJson(documents)
+        "documents" -> toJson(Seq[String]()) // ends up at the same JSON. Screw types, we want to remove this.
         ))
   }
 }

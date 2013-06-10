@@ -5,7 +5,6 @@ import play.api.libs.json.Json.toJson
 
 import org.overviewproject.tree.orm.Document
 import models.ResultPage
-import views.json.helper.ModelJsonConverters.JsonDocument
 
 object show {
   private[DocumentList] def documentToJson(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {

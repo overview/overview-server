@@ -6,10 +6,10 @@ import play.api.libs.json.JsValue
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import org.overviewproject.tree.orm.{Node,SearchResult}
-import models.{ OverviewUser, SubTreeLoader }
+import org.overviewproject.tree.orm.{Document,Node,SearchResult}
+import models.{IdList,SubTreeLoader}
 import models.orm.{DocumentSet,Tag}
-import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder}
+import models.orm.finders.{DocumentFinder,NodeFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
@@ -22,7 +22,12 @@ trait NodeController extends Controller {
     subTreeLoader.loadRootId match {
       case Some(rootId) => {
         val nodes = subTreeLoader.load(rootId, childLevels)
-        val documents = subTreeLoader.loadDocuments(nodes)
+        val documentIds = nodes.flatMap(_.documentIds.firstIds).distinct
+        val documents : Iterable[(Document,Seq[Long],Seq[Long])] = DocumentFinder.byIds(documentIds)
+          .withNodeIdsAndTagIdsAsLongStrings
+          .map((tuple: (Document, Option[String], Option[String])) =>
+            // copy() is because Squeryl frees Strings too early
+            (tuple._1.copy(), IdList.longs(tuple._2.getOrElse("")).ids, IdList.longs(tuple._3.getOrElse("")).ids))
         val tags : Iterable[(Tag,Long)] = TagFinder.byDocumentSet(documentSetId).withCounts
         val searchResults : Iterable[SearchResult] = SearchResultFinder.byDocumentSet(documentSetId)
         val json = views.json.Tree.show(nodes, documents, tags, searchResults)
@@ -38,7 +43,12 @@ trait NodeController extends Controller {
     val subTreeLoader = new SubTreeLoader(documentSetId)
 
     val nodes = subTreeLoader.load(id, 1)
-    val documents = subTreeLoader.loadDocuments(nodes)
+    val documentIds = nodes.flatMap(_.documentIds.firstIds).distinct
+    val documents : Iterable[(Document,Seq[Long],Seq[Long])] = DocumentFinder.byIds(documentIds)
+      .withNodeIdsAndTagIdsAsLongStrings
+      .map((tuple: (Document, Option[String], Option[String])) =>
+        // copy() is because Squeryl frees Strings too early
+        (tuple._1.copy(), IdList.longs(tuple._2.getOrElse("")).ids, IdList.longs(tuple._3.getOrElse("")).ids))
 
     val json = views.json.Tree.show(nodes, documents, Seq(), Seq())
     Ok(json)
