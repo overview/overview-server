@@ -107,7 +107,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   private def startSearch(documentSetId: Long, searchTerms: String, requestQueue: ActorRef, searchId: Long): Unit = {
 
     val query = storage.queryForProject(documentSetId, searchTerms)
-    
+
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
 
@@ -124,7 +124,9 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
     import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
 
     override def queryForProject(documentSetId: Long, searchTerms: String): String = Database.inTransaction {
-      DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
+      val projectQuery = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
+      
+      s"$projectQuery $searchTerms"
     }
     
     override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
