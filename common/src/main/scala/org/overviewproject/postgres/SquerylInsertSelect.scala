@@ -1,5 +1,7 @@
 package org.overviewproject.postgres
 
+import scala.language.implicitConversions
+
 import org.squeryl.{Query,Session,Table}
 import org.squeryl.internals.{DatabaseAdapter,StatementWriter}
 import org.squeryl.dsl.ast.QueryExpressionNode
