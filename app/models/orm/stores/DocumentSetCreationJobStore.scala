@@ -47,7 +47,7 @@ object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentS
     insertOrUpdate(job.copy(state = DocumentSetCreationJobState.Cancelled))
   }
 
-  override def delete(query: Query[DocumentSetCreationJob]) : Unit = {
+  override def delete(query: Query[DocumentSetCreationJob]) : Int = {
     throw new AssertionError("Do not delete() a DocumentSetCreationJob; cancel() or deletePending() it.")
   }
 

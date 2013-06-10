@@ -35,4 +35,9 @@ object TagFinder extends Finder {
       orderBy(t.name)
     )
   }
+
+  /** @return All `Tag`s with the given DocumentSet and ID. */
+  def byDocumentSetAndId(documentSet: Long, id: Long) : TagResult = {
+    Schema.tags.where((t) => t.documentSetId === documentSet and t.id === id)
+  }
 }

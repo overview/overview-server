@@ -7,12 +7,7 @@ import play.api.libs.json.Json.toJson
 import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
 
 object remove {
-
-  def apply(tag: PersistentTagInfo, removedCount: Long, documents: Seq[Document]) : JsValue = {
-    toJson(Map(
-    		"num_removed" -> toJson(removedCount),
-    		"tag" -> toJson(tag),
-        "documents" -> toJson(Seq[String]()) // ends up at the same JSON. Screw types, we want to remove this.
-    ))
+  def apply(removedCount: Long) : JsValue = {
+    toJson(Map("removed" -> toJson(removedCount)))
   }
 }

@@ -8,7 +8,7 @@ import models.orm.stores._
 import models.orm.{ DocumentSet, Schema }
 
 object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
-  override def delete(query: Query[DocumentSet]) : Unit = {
+  override def delete(query: Query[DocumentSet]) : Int = {
     throw new AssertionError("Use DocumentSet.deleteOrCancelJob(), not delete()")
   }
 

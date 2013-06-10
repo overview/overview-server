@@ -1,6 +1,7 @@
 package models.orm.stores
 
 import org.squeryl.{ KeyedEntity, KeyedEntityDef, Query, Table }
+import org.squeryl.dsl.QueryDsl
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 
@@ -15,7 +16,12 @@ class BaseStore[A](protected val table: Table[A]) {
     table.insert(as)
   }
 
-  def delete(query: Query[A]): Unit = {
+  /** FIXME this is not type-safe. Be sure T relates to A properly. */
+  def insertSelect[T](q: Query[T]) : Int = {
+    table.insertSelect(q)
+  }
+
+  def delete(query: Query[A]): Int = {
     table.delete(query)
   }
 
