@@ -49,9 +49,4 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
 
     loadDocumentList(documentIds.distinct.sorted)
   }
-
-  def loadTags(documentSetId: Long)(implicit connection: Connection): Seq[PersistentTagInfo] = {
-    val tagData = loader.loadTags(documentSetId)
-    parser.createTags(tagData)
-  }
 }
