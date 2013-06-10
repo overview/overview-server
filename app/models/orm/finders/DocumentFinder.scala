@@ -37,6 +37,11 @@ object DocumentFinder extends Finder {
       )
     }
 
+    /** Returns just the IDs. */
+    def toIds : FinderResult[Long] = {
+      from(query)(d => select(d.id))
+    }
+
     /** Returns just the IDs.
       *
       * The IDs will be for documents ordered by title, description and ID.
