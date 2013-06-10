@@ -113,14 +113,14 @@ define [
 
     _addSelectionModuloDocuments: ->
       updateFromSelection = =>
-        @set('selectionModuloDocuments', @get('selection').pick('nodes', 'tags'))
+        @set('selectionModuloDocuments', @get('selection').pick('nodes', 'tags', 'searchResults'))
       updateFromSelection()
       @on('change:selection', updateFromSelection)
 
     _addDocumentList: ->
       refresh = =>
         selection = @get('selectionModuloDocuments')
-        documentList = if selection?.nodes?.length || selection?.tags?.length
+        documentList = if selection?.nodes?.length || selection?.tags?.length || selection?.searchResults?.length
           new DocumentList(@get('cache'), selection)
         else
           undefined

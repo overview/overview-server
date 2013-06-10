@@ -13,7 +13,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
     id: 'search-result-list'
 
     events:
-      'click a.search-result': '_onClickSearchResult'
+      'click li.search-result': '_onClickSearchResult'
       'submit form': '_onSubmit'
 
     template: _.template("""
@@ -21,7 +21,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       <ul class="btn-toolbar">
         <% collection.each(function(searchResult) { %>
           <li
-              class="btn-group <%- (selectedSearchResult && searchResult.cid == selectedSearchResult.cid) ? 'selected' : '' %>"
+              class="btn-group search-result <%- (selectedSearchResult && searchResult.cid == selectedSearchResult.cid) ? 'selected' : '' %>"
               data-cid="<%- searchResult.cid %>">
             <button type="button" class="btn state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>" <%= searchResult.get('state') == 'Complete' ? '' : 'disabled="disabled"' %>>
               <span class="message"><%- searchResult.get('query') %></span>

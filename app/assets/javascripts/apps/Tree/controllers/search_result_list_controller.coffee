@@ -31,7 +31,7 @@ define [
     view.on 'search-result-clicked', (searchResult) ->
       searchResult = proxy.unmap(searchResult)
       if searchResult.id
-        log('selected search result', "#{search_result_to_short_string(searchResult)}")
+        state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
       else
         log('clicked unfinished search result', "#{search_result_to_short_string(searchResult)}")
 
