@@ -12,6 +12,7 @@ object TagFinder extends Finder {
   class TagResult(query: Query[Tag]) extends FinderResult(query) {
     def withCounts : FinderResult[(Tag,Long)] = {
       val tagCounts : Query[GroupWithMeasures[Long,Long]] = from(Schema.documentTags)(t =>
+        where(t.tagId in from(query)(t => select(t.id)))
         groupBy(t.tagId)
         compute(org.overviewproject.postgres.SquerylEntrypoint.count) // NOT FinderResult.count
       )

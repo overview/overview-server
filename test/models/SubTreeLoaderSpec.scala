@@ -70,42 +70,37 @@ class SubTreeLoaderSpec extends Specification with Mockito {
     // test loadDocuments() gets passed correct documentIds 
     trait DocumentsInNodesAndTags extends MockComponents {
       val nodeDocumentIds: List[Long]
-      val tagDocumentIds: Seq[Long]
 
       def dummyNodes = createTwoDummyNodes(nodeDocumentIds)
-      def dummyTags: Seq[PersistentTagInfo] = Seq(TestTag(1l, "tag1", None, core.DocumentIdList(tagDocumentIds, 12l)))
-      def allDocumentIds = nodeDocumentIds ++ tagDocumentIds
+      def allDocumentIds = nodeDocumentIds
     }
 
     trait DistinctDocumentsInNodesAndTags extends DocumentsInNodesAndTags {
       override val nodeDocumentIds = List(10l, 20l, 30l, 40l, 50l)
-      override val tagDocumentIds = Seq(100l, 200l, 300l)
     }
 
     trait DuplicateDocuments extends DocumentsInNodesAndTags {
       override val nodeDocumentIds = List(10l, 20l, 30l, 10l, 20l)
-      override val tagDocumentIds = List(100l, 200l, 20l, 30l)
     }
 
     trait UnsortedDocuments extends DocumentsInNodesAndTags {
       override val nodeDocumentIds = List(30l, 20l, 40l, 10l, 60l)
-      override val tagDocumentIds = List(25l, 15l, 5l)
     }
 
     "load documents in nodes and tags" in new DistinctDocumentsInNodesAndTags {
-      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
+      val documents = subTreeLoader.loadDocuments(dummyNodes)
 
       there was one(loader).loadDocuments(allDocumentIds)
     }
 
     "only create one document for each unique included document id" in new DuplicateDocuments {
-      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
+      val documents = subTreeLoader.loadDocuments(dummyNodes)
 
       there was one(loader).loadDocuments(allDocumentIds.distinct)
     }
 
     "create documents in sorted order" in new UnsortedDocuments {
-      val documents = subTreeLoader.loadDocuments(dummyNodes, dummyTags)
+      val documents = subTreeLoader.loadDocuments(dummyNodes)
 
       there was one(loader).loadDocuments(allDocumentIds.sorted)
     }

@@ -1,11 +1,10 @@
 package views.json.Tree
 
-
-import helpers.TestTag
 import models.core._
 import org.specs2.mutable.Specification
 
 import play.api.libs.json.Json.toJson
+import models.orm.Tag
 
 class showSpec extends Specification {
   
@@ -20,10 +19,7 @@ class showSpec extends Specification {
           Node(3l, "description", List(7), documentIds, Map()) 
       )
       
-      val dummyDocuments = List[Document]()
-      val dummyTags = List[TestTag]()
-      
-      val treeJson = show(nodes, dummyDocuments, dummyTags).toString
+      val treeJson = show(nodes, Seq(), Seq(), Seq()).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -37,9 +33,8 @@ class showSpec extends Specification {
     	Document(20l, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l)),
     	Document(30l, "description", Some("title"), Some("documentCloudId"), Seq(), Seq(22l))
       )
-      val dummyTags = List[TestTag]()
-      
-      val treeJson = show(dummyNodes, documents, dummyTags).toString
+
+      val treeJson = show(dummyNodes, documents, Seq(), Seq()).toString
       
       treeJson must /("documents") */("id" -> 10l)
       treeJson must /("documents") */("id" -> 20l)
@@ -49,14 +44,18 @@ class showSpec extends Specification {
     "contain tags" in {
       val dummyNodes = List[Node]()
       val dummyDocuments = List[Document]()
-      val tags = List(
-        TestTag(5l, "tag1", None, DocumentIdList(Seq(), 0)),
-        TestTag(15l, "tag2", None, DocumentIdList(Seq(), 0))
+
+      val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color=Some("ffffff"))
+
+      val tags = List[(Tag,Long)](
+        (baseTag.copy(id=5L, name="tag1"), 5L),
+        (baseTag.copy(id=15L, name="tag2"), 10L)
       )
-      val treeJson = show(dummyNodes, dummyDocuments, tags).toString
+      val treeJson = show(dummyNodes, dummyDocuments, tags, Seq()).toString
       
-      treeJson must /("tags") */("id" -> 5l)
-      treeJson must /("tags") */("id" -> 15l)
+      treeJson must /("tags") */("id" -> 5L)
+      treeJson must /("tags") */("name" -> "tag1")
+      treeJson must /("tags") */("id" -> 15L)
     }
   }
   
