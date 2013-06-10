@@ -9,26 +9,26 @@ import controllers.util.JobQueueSender
 
 trait SearchController extends Controller {
   trait JobQueue {
-    def createSearch(search: Search): Unit
+    def createSearch(search: Search): Either[Unit, Unit]
   }
 
-  val jobQueue : SearchController.JobQueue
+  val jobQueue: SearchController.JobQueue
   val form = SearchForm
 
   def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     form(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
       search => {
-        jobQueue.createSearch(search)
-        Accepted
-      }
-    )
+        jobQueue.createSearch(search).fold(
+          _ => InternalServerError,
+          _ => Accepted)
+      })
   }
 }
 
 object SearchController extends SearchController {
   override val jobQueue = new JobQueue {
-    def createSearch(search: Search) = {
+    def createSearch(search: Search): Either[Unit, Unit] = {
       JobQueueSender.send(search)
     }
   }

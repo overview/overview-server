@@ -14,7 +14,7 @@ object JobQueueSender {
     (__ \ "query").write[String]
   )(unlift(Search.unapply))
   
-  def send(search: Search): Unit = {
+  def send(search: Search): Either[Unit, Unit] = {
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("search"),
       "args" -> toJson(search)
