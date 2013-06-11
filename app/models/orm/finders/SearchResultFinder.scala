@@ -9,4 +9,9 @@ object SearchResultFinder extends Finder {
   def byDocumentSet(documentSet: Long) : FinderResult[SearchResult] = {
     Schema.searchResults.where(_.documentSetId === documentSet)
   }
+
+  /** @return Zero or one `SearchResult`. */
+  def byDocumentSetAndId(documentSet: Long, id: Long) : FinderResult[SearchResult] = {
+    Schema.searchResults.where((sr) => sr.documentSetId === documentSet and sr.id === id)
+  }
 }
