@@ -54,7 +54,7 @@ define [
         {
           main: options.mainEl
           tree: el('tree-app-tree')
-          slider: el('tree-app-slider')
+          zoomSlider: el('tree-app-zoom-slider')
           tags: el('tree-app-tags')
           search: el('tree-app-search')
           documentList: el('tree-app-document-list')
@@ -129,7 +129,7 @@ define [
       interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
       animator = new Animator(interpolator)
       focus = new AnimatedFocus(animator)
-      focus_controller(options.focusEl, focus)
+      focus_controller(els.zoomSlider, focus)
 
       controller = tree_controller(els.tree, world.cache, focus, world.state)
       keyboard_controller.add_controller('TreeController', controller)
