@@ -14,7 +14,8 @@ define [
       line_default: '#333333',
       line_faded: '#999999',
     },
-    connector_line_width: 1, # px
+    connector_line_width: 2.5, # px
+    node_corner_radius: 5, # px
     node_line_width: 2, # px
     node_line_width_selected: 4, # px
     node_line_width_leaf: 1, # px
@@ -25,6 +26,34 @@ define [
   HOVER_NODE_TEMPLATE = _.template("""
     <div class="inner">(<%- node.doclist.n.toLocaleString() %>) <%- node.description %></div>
   """)
+
+  # In given canvas 2d context, draws a rectangle with corner radius r
+  drawRoundedRect = (ctx, x, y, w, h, r) ->
+    ctx.beginPath()
+    r = Math.min(r, w * 0.5, h * 0.5)
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y + r)
+    ctx.quadraticCurveTo(x, y, x + r, y)
+    ctx.closePath()
+
+  # Draws a rectangle with corner radius r on the bottom two corners
+  drawBottomRoundedRect = (ctx, x, y, w, h, r) ->
+    ctx.beginPath()
+    r = Math.min(r, w * 0.5, h * 0.5)
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + w, y)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y)
+    ctx.closePath()
 
   class DrawOperation
     constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @focus_nodes, @focus, @options) ->
@@ -191,25 +220,14 @@ define [
       ctx = @ctx
 
       ctx.save()
-
-      ctx.beginPath()
-      ctx.rect(left, top, width, height)
-      ctx.clip()
-
       ctx.fillStyle = color
-
-      ctx.beginPath()
-      ctx.moveTo(left, top)
-      ctx.lineTo(left + tagwidth + slant_offset, top)
-      ctx.lineTo(left + tagwidth - slant_offset, top + height)
-      ctx.lineTo(left, top + height)
+      drawBottomRoundedRect(ctx, left, top + height * 0.75, width, height * 0.25, @options.node_corner_radius)
       ctx.fill()
-
       ctx.restore()
 
     _maybe_draw_description: (drawable_node) ->
       px = drawable_node._px
-      width = px.width - 6 # border+padding
+      width = px.width - 12 # border+padding
       return if width < 15
 
       node = drawable_node.animated_node.node
@@ -219,27 +237,14 @@ define [
 
       ctx = @ctx
 
-      left = px.left + 3
+      left = px.left + 6
       right = left + width
-
-      whiteGradient = ctx.createLinearGradient(left, 0, right, 0)
-      whiteGradient.addColorStop((width-10)/width, 'rgba(255, 255, 255, 0.85)')
-      whiteGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
 
       gradient = ctx.createLinearGradient(left, 0, right, 0)
       gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 1)')
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
 
       ctx.save()
-      ctx.beginPath()
-      ctx.rect(left, px.top, width, px.height)
-      ctx.clip()
-      ctx.shadowBlur = 3 # ctx.shadowColor is white
-      # Build a white background for the text
-      ctx.fillStyle = whiteGradient
-      ctx.fillText(description, left, px.top + 3)
-      ctx.fillText(description, left, px.top + 3) # for stronger shadow
-      # And draw black on it
       ctx.fillStyle = gradient
       ctx.fillText(description, left, px.top + 3)
       ctx.restore()
@@ -296,10 +301,19 @@ define [
         this._draw_tagcount(px.left, px.top, px.width, px.height, color, tagcount / node.doclist.n)
 
       ctx = @ctx
-      ctx.lineWidth = this._animated_node_to_line_width(animated_node)
+      ctx.save()
+
+      # To avoid going out of bounds, we multiply lineWidth by 2 and clip to
+      # the actual rect. The effect is similar to CSS's box-sizing: border-box:
+      # the border grows in, never out
+      ctx.lineWidth = this._animated_node_to_line_width(animated_node) * 2
       ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
 
-      ctx.strokeRect(px.left, px.top, px.width, px.height)
+      drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.node_corner_radius)
+      ctx.clip()
+      ctx.stroke()
+
+      ctx.restore()
 
       this._maybe_draw_collapse(drawable_node)
       this._maybe_draw_expand(drawable_node)
@@ -317,11 +331,14 @@ define [
       mid_y = 0.5 * (y1 + y2)
 
       ctx = @ctx
+      ctx.save()
       ctx.lineWidth = @options.connector_line_width
+      ctx.setLineDash?([ @options.connector_line_width, @options.connector_line_width ])
       ctx.beginPath()
       ctx.moveTo(x1, y1)
       ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
       ctx.stroke()
+      ctx.restore()
 
       undefined
 
