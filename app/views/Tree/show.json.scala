@@ -1,60 +1,58 @@
 package views.json.Tree
 
-import play.api.libs.json.{JsValue, Writes}
-import play.api.libs.json.Json.toJson
+import play.api.libs.json.{JsValue, JsString}
+import play.api.libs.json.Json
 
-import models.core.Node
 import models.orm.Tag
-import views.json.helper.ModelJsonConverters._
-import org.overviewproject.tree.orm.{Document,SearchResult}
+import org.overviewproject.tree.orm.{Node,Document,SearchResult}
 
 object show {
-  
-  private[Tree] implicit object JsonNode extends Writes[Node] {
-    override def writes(node: Node) : JsValue = {
-      toJson(Map(
-          "id" -> toJson(node.id),
-          "description" -> toJson(node.description),
-          "children" -> toJson(node.childNodeIds),
-          "doclist" -> toJson(node.documentIds),
-          "tagcounts" -> toJson(node.tagCounts)
-      ))
-    }
+  private[Tree] def writeNodeAndChildNodeIdsAndTagCounts(node: Node, childNodeIds: Iterable[Long], tagCounts: Iterable[(Long,Long)]) : JsValue = {
+    val jsonTagCounts = tagCounts.map({ x: (Long,Long) => (x._1.toString, x._2) }).toMap
+
+    Json.obj(
+      "id" -> node.id,
+      "description" -> node.description,
+      "children" -> childNodeIds.toSeq,
+      "doclist" -> Json.obj(
+        "n" -> node.cachedSize,
+        "docids" -> node.cachedDocumentIds
+      ),
+      "tagcounts" -> jsonTagCounts
+    )
   }
 
-  private[Tree] def writeDocumentAndNodeIdsAndTagIds(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {
-    toJson(Map(
-      "id" -> toJson(document.id),
-      "description" -> toJson(document.description),
-      "title" -> toJson(document.title),
-      "nodeids" -> toJson(nodeIds),
-      "tagids" -> toJson(tagIds)
-    ))
+  private[Tree] def writeDocumentAndNodeIdsAndTagIds(document: Document, nodeIds: Iterable[Long], tagIds: Iterable[Long]) : JsValue = {
+    Json.obj(
+      "id" -> document.id,
+      "description" -> document.description,
+      "title" -> document.title,
+      "nodeids" -> nodeIds,
+      "tagids" -> tagIds
+    )
   }
 
   private[Tree] def writeTagAndCount(tag: Tag, count: Long) : JsValue = {
-    toJson(Map(
-      "id" -> toJson(tag.id),
-      "name" -> toJson(tag.name),
-      "color" -> toJson(tag.color.map("#" + _).getOrElse("#666666")),
-      "doclist" -> toJson(Map("n" -> toJson(count), "docids" -> toJson(Seq[Long]())))
-    ))
+    Json.obj(
+      "id" -> tag.id,
+      "name" -> tag.name,
+      "color" -> JsString(tag.color.map("#" + _).getOrElse("#666666")),
+      "doclist" -> Json.obj("n" -> count, "docids" -> Seq[Long]())
+    )
   }
 
   def apply(
-    nodes: Seq[Node],
-    documents: Iterable[(Document,Seq[Long],Seq[Long])],
+    nodes: Iterable[(Node,Iterable[Long],Iterable[(Long,Long)])],
+    documents: Iterable[(Document,Iterable[Long],Iterable[Long])],
     tags: Iterable[(Tag,Long)],
     searchResults: Iterable[SearchResult])
     : JsValue = {
 
-    toJson(
-      Map(
-        "nodes" -> toJson(nodes),
-        "documents" -> toJson(documents.map(Function.tupled(writeDocumentAndNodeIdsAndTagIds))),
-        "searchResults" -> toJson(searchResults.map(views.json.SearchResult.show(_))),
-        "tags" -> toJson(tags.map(Function.tupled(writeTagAndCount)))
-      )
+    Json.obj(
+      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIdsAndTagCounts)),
+      "documents" -> documents.map(Function.tupled(writeDocumentAndNodeIdsAndTagIds)),
+      "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
+      "tags" -> tags.map(Function.tupled(writeTagAndCount))
     )
   }
 }

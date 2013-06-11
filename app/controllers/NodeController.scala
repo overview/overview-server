@@ -1,57 +1,99 @@
 package controllers
 
-import java.sql.Connection
 import play.api.mvc.Controller
 import play.api.libs.json.JsValue
+import scala.collection.mutable.Buffer
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import org.overviewproject.tree.orm.{Document,DocumentSet,Node,SearchResult}
 import models.{IdList,SubTreeLoader}
 import models.orm.{Tag}
-import models.orm.finders.{DocumentFinder,NodeFinder,SearchResultFinder,TagFinder}
+import models.orm.finders.{DocumentFinder,NodeFinder,NodeDocumentFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
-  private val childLevels = 2 // When showing the root, show this many levels of children
+  private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    val subTreeLoader = new SubTreeLoader(documentSetId)
+  private def nodesToJson(documentSetId: Long, nodes: Iterable[Node]) = {
+    // FIXME move this to "models" and test it
 
-    subTreeLoader.loadRootId match {
-      case Some(rootId) => {
-        val nodes = subTreeLoader.load(rootId, childLevels)
-        val documentIds = nodes.flatMap(_.documentIds.firstIds).distinct
-        val documents : Iterable[(Document,Seq[Long],Seq[Long])] = DocumentFinder.byIds(documentIds)
-          .withNodeIdsAndTagIdsAsLongStrings
-          .map((tuple: (Document, Option[String], Option[String])) =>
-            // copy() is because Squeryl frees Strings too early
-            (tuple._1.copy(), IdList.longs(tuple._2.getOrElse("")).ids, IdList.longs(tuple._3.getOrElse("")).ids))
-        val tags : Iterable[(Tag,Long)] = TagFinder.byDocumentSet(documentSetId).withCounts
-        val searchResults : Iterable[SearchResult] = SearchResultFinder.byDocumentSet(documentSetId)
-        val json = views.json.Tree.show(nodes, documents, tags, searchResults)
+    val nodeIds = nodes.map(_.id)
 
-        Ok(json)
-      }
-      case None => NotFound
-    }
-  }
+    val nodeTagCounts : Map[Long,Iterable[(Long,Long)]] = NodeDocumentFinder
+      .byNodeIds(nodeIds)
+      .allTagCountsByNodeId
+      .groupBy(_._1)
+      .mapValues((x: Iterable[(Long,Long,Long)]) => x.map({ y: (Long,Long,Long) => (y._2, y._3) }))
 
-  def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    val subTreeLoader = new SubTreeLoader(documentSetId)
+    val nodeChildIds : Map[Option[Long],Iterable[Long]] = NodeFinder
+      .byParentIds(nodeIds)
+      .toParentIdAndId
+      .groupBy(_._1)
+      .mapValues((x: Iterable[(Option[Long],Long)]) => x.map(_._2))
 
-    val nodes = subTreeLoader.load(id, 1)
-    val documentIds = nodes.flatMap(_.documentIds.firstIds).distinct
+    val nodesWithChildIdsAndTagCounts : Iterable[(Node,Iterable[Long],Iterable[(Long,Long)])] = nodes
+      .map({ node: Node => (
+        node,
+        nodeChildIds.getOrElse(Some(node.id), Seq()),
+        nodeTagCounts.getOrElse(node.id, Seq())
+      )})
+
+    val documentIds = nodes.flatMap(_.cachedDocumentIds).toSeq.distinct
+
     val documents : Iterable[(Document,Seq[Long],Seq[Long])] = DocumentFinder.byIds(documentIds)
       .withNodeIdsAndTagIdsAsLongStrings
       .map((tuple: (Document, Option[String], Option[String])) =>
         // copy() is because Squeryl frees Strings too early
         (tuple._1.copy(), IdList.longs(tuple._2.getOrElse("")).ids, IdList.longs(tuple._3.getOrElse("")).ids))
+    val tags : Iterable[(Tag,Long)] = TagFinder.byDocumentSet(documentSetId).withCounts
+    val searchResults : Iterable[SearchResult] = SearchResultFinder.byDocumentSet(documentSetId)
 
-    val json = views.json.Tree.show(nodes, documents, Seq(), Seq())
-    Ok(json)
+    views.json.Tree.show(nodesWithChildIdsAndTagCounts, documents, tags, searchResults)
+  }
+
+  private def showNodesStartingAt(documentSetId: Long, node: Node, childLevels: Int) = {
+    // FIXME move this to "models" and test it
+
+    var nodes : Buffer[Node] = Buffer(node)
+
+    var thisLevel : Iterable[Node] = nodes.toSeq
+    for (i <- 0 to childLevels - 1) {
+      val nodeIds = thisLevel.map(_.id)
+      if (nodeIds.nonEmpty) {
+        thisLevel = NodeFinder
+          .byParentIds(nodeIds)
+          .map(_.copy())
+
+        nodes ++= thisLevel
+      }
+    }
+
+    nodesToJson(documentSetId, nodes.toSeq)
+  }
+
+  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    val root : Iterable[Node] = NodeFinder
+      .byDocumentSetAndParent(documentSetId, None)
+      .map(_.copy()) // avoid Squeryl bug
+
+    if (root.isEmpty) {
+      NotFound
+    } else {
+      Ok(showNodesStartingAt(documentSetId, root.head, rootChildLevels))
+    }
+  }
+
+  def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    val root : Iterable[Node] = NodeFinder
+      .byDocumentSetAndId(documentSetId, id)
+      .map(_.copy()) // avoid Squeryl bug
+
+    if (root.isEmpty) {
+      NotFound
+    } else {
+      Ok(showNodesStartingAt(documentSetId, root.head, 1))
+    }
   }
 
   def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
