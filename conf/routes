@@ -56,13 +56,14 @@ POST   /documentsets/:id/tree/nodes/:nodeId controllers.NodeController.update(id
 POST   /documentsets/:id/log-entries/create-many              controllers.LogEntryController.createMany(id: Long)
 GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
 
-POST   /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
+PUT    /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
-POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long, nodes: String ?= "")
+# We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
+POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long)
 
 POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
 

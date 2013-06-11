@@ -1,22 +1,21 @@
 package views.json.Tag
 
 import org.specs2.mutable.Specification
-import play.api.libs.json.Json.toJson
+
+import models.orm.Tag
 
 class createSpec extends Specification {
-
   "Json for create tag result" should {
-
     "contain tag id and name" in {
       val tagId = 43l
       val tagName = "tagname"
+
+      val tag = Tag(id=tagId, documentSetId=1L, name=tagName, color=Some("abcdef"))
       
-      val resultJson = toJson(views.json.Tag.create(tagId, tagName)).toString
+      val tagJson = views.json.Tag.create(tag).toString
 
-      resultJson must /("id" -> tagId)
-      resultJson must /("name" -> tagName)
-
+      tagJson must /("id" -> tagId)
+      tagJson must /("name" -> tagName)
     }
-
   }
 }

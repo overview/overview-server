@@ -43,6 +43,8 @@ trait SquerylPostgresFunctions {
     }
   }
 
+  def castAsInt(e: ExpressionNode) = new CastNode[Int,TInt](e, "int")
+
   /** Calls lo_unlink().
     *
     * You <em>must</em> select &amp;(lo_unlink(table.oidColumn)), and

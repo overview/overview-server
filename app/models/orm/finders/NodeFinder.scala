@@ -50,11 +50,7 @@ object NodeFinder extends Finder {
     Schema.nodes.where(_.parentId in parentIds)
   }
 
-  /** @return All Nodes with the given ID in the given documentSet.
-   *
-   * This returns an org.squeryl.Query. Call `single` on it to return the
-   * result or throw an exception; call `.headOption` to make it an Option.
-   */
+  /** @return All Nodes with the given ID in the given DocumentSet. */
   def byDocumentSetAndId(documentSet: Long, id: Long) : FinderResult[Node] = {
     from(Schema.nodes)(n =>
       where(n.documentSetId === documentSet and n.id === id)

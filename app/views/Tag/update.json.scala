@@ -1,12 +1,9 @@
 package views.json.Tag
 
-import models.PersistentTagInfo
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json.toJson
-import views.json.helper.ModelJsonConverters.JsonPersistentTagInfo
+
+import models.orm.Tag
 
 object update {
-
-  def apply(tag: PersistentTagInfo): JsValue = toJson(tag)
-
+  def apply(tag: Tag): JsValue = create(tag)
 }

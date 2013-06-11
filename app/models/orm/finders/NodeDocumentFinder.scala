@@ -1,10 +1,29 @@
 package models.orm.finders
 
+import org.squeryl.Query
+import org.squeryl.dsl.GroupWithMeasures
+import scala.language.implicitConversions
+
 import org.overviewproject.postgres.SquerylEntrypoint._
-import models.orm.{ NodeDocument, Schema }
+import models.orm.{NodeDocument,Schema}
 
 object NodeDocumentFinder extends Finder {
-  def byDocumentSet(documentSet: Long) : FinderResult[NodeDocument] = {
+  class NodeDocumentFinderResult(query: Query[NodeDocument]) extends FinderResult(query) {
+    /** @return (nodeId, count) pairs. */
+    def tagCountsByNodeId(tag: Long) : FinderResult[(Long,Long)] = {
+      val main : Query[GroupWithMeasures[Long,Long]] = join(query, Schema.documentTags)((nd, dt) =>
+        where(dt.tagId === tag)
+        groupBy(nd.nodeId)
+        compute(org.overviewproject.postgres.SquerylEntrypoint.count)
+        on(nd.documentId === dt.documentId)
+      )
+
+      from(main)(row => select(row.key, row.measures))
+    }
+  }
+  implicit private def queryToNodeDocumentFinderResult(query: Query[NodeDocument]) : NodeDocumentFinderResult = new NodeDocumentFinderResult(query)
+
+  def byDocumentSet(documentSet: Long) : NodeDocumentFinderResult = {
     // join through documents, not nodes: there are fewer documents than nodes
     // Select as WHERE with a subquery, to circumvent Squeryl delete() missing the join
     val documentIds = from(Schema.documents)(d =>
@@ -16,5 +35,10 @@ object NodeDocumentFinder extends Finder {
       where(nd.documentId in documentIds)
       select(nd)
     )
+  }
+
+  /** @return All NodeDocuments with the given Node IDs in the given DocumentSet. */
+  def byNodeIds(nodeIds: Traversable[Long]) : NodeDocumentFinderResult = {
+    Schema.nodeDocuments.where(_.nodeId in nodeIds)
   }
 }

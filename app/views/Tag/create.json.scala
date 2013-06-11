@@ -3,13 +3,15 @@ package views.json.Tag
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-object create {
+import models.orm.Tag
 
-  def apply(id: Long, name: String): JsValue = {
+object create {
+  def apply(tag: Tag): JsValue = {
     toJson(Map(
-      "id" -> toJson(id),
-      "name" -> toJson(name)
-      ))
+      "id" -> toJson(tag.id),
+      "name" -> toJson(tag.name),
+      "color" -> toJson("#" + tag.color.getOrElse("7f7f7f"))
+    ))
   }
 }
 
