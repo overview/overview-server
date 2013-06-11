@@ -139,6 +139,7 @@ define [
       @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
 
       @root.walk(this._draw_single_node.bind(this))
+      this._draw_expand_and_collapse_for_tree()
 
     pixel_to_drawable_node: (x, y) ->
       drawable_node = undefined
@@ -254,14 +255,13 @@ define [
         px = drawable_node._px
         if px.width > 20
           ctx = @ctx
-          y = px.top + px.height - 8
+          y = px.top + px.height - @options.node_line_width * 0.5
           x = px.hmid
-          ctx.lineWidth = 1
-          ctx.strokeStyle = '#aaaaaa'
           ctx.beginPath()
-          ctx.arc(x, y, 5, 0, Math.PI*2, true)
-          ctx.moveTo(x - 3, y)
-          ctx.lineTo(x + 3, y)
+          ctx.arc(x, y, 6, 0, Math.PI*2, true)
+          ctx.fill()
+          ctx.moveTo(x - 4, y)
+          ctx.lineTo(x + 4, y)
           ctx.stroke()
 
     _maybe_draw_expand: (drawable_node) ->
@@ -269,16 +269,15 @@ define [
         px = drawable_node._px
         if px.width > 20
           ctx = @ctx
-          y = px.top + px.height - 8
+          y = px.top + px.height - @options.node_line_width * 0.5
           x = px.hmid
-          ctx.lineWidth = 1
-          ctx.strokeStyle = '#aaaaaa'
           ctx.beginPath()
-          ctx.arc(x, y, 5, 0, Math.PI*2, true)
-          ctx.moveTo(x - 3, y)
-          ctx.lineTo(x + 3, y)
-          ctx.moveTo(x, y + 3)
-          ctx.lineTo(x, y - 3)
+          ctx.arc(x, y, 6, 0, Math.PI*2, true)
+          ctx.fill()
+          ctx.moveTo(x - 4, y)
+          ctx.lineTo(x + 4, y)
+          ctx.moveTo(x, y + 4)
+          ctx.lineTo(x, y - 4)
           ctx.stroke()
 
     _draw_single_node: (drawable_node) ->
@@ -315,13 +314,25 @@ define [
 
       ctx.restore()
 
-      this._maybe_draw_collapse(drawable_node)
-      this._maybe_draw_expand(drawable_node)
       this._maybe_draw_description(drawable_node)
 
       if drawable_node.parent?
         parent_px = drawable_node.parent._px
         @_draw_line_from_parent_to_child(parent_px, px)
+
+    _draw_expand_and_collapse_for_tree: ->
+      ctx = @ctx
+      ctx.save()
+
+      ctx.lineWidth = 1.5
+      ctx.strokeStyle = '#666666'
+      ctx.fillStyle = '#ffffff'
+
+      @root.walk (drawable_node) =>
+        this._maybe_draw_collapse(drawable_node)
+        this._maybe_draw_expand(drawable_node)
+
+      ctx.restore()
 
     _draw_line_from_parent_to_child: (parent_px, child_px) ->
       x1 = parent_px.hmid
