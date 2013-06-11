@@ -1,24 +1,19 @@
 @import "../../vendor/bootstrap/less/variables.less";
 @import "../../vendor/bootstrap/less/mixins.less";
-@import "_variables.less";
 
-#focus {
-  position: absolute;
-  right: 0;
-  left: 0;
-  bottom: 0;
-  height: @focus_height;
-  border: 1px solid #ccc; // including border-top
+#tree-app-zoom-slider {
+  * {
+    .box-sizing(border-box);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+  }
 
   .line {
-    top: 0;
-    height: @focus_height;
     background: @wellBackground;
   }
 
   .handle {
-    top: 0;
-    height: @focus_height;
     background: transparent;
     border: none;
     z-index: 1;
@@ -34,9 +29,6 @@
   }
 
   .middle {
-    top: 0;
-    .box-sizing(border-box);
-    height: @focus_height;
     cursor: move;
     background: #ddd;
     border: 1px solid @grayLight;

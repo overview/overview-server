@@ -291,6 +291,7 @@ define [
 
           # Bring in #document
           $container = listView.$el.parent()
+          console.log($container)
           documentHeight = Math.floor($container.height() - listView.$el.position().top - $li.outerHeight())
           $documentViewEl.height(documentHeight)
           $cursorViewEl.css({ top: "#{$ul.parent().position().top + $li.outerHeight()}px" })

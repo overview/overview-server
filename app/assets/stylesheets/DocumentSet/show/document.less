@@ -3,16 +3,8 @@
 @import "_variables.less";
 
 // The preview-a-single-document view
-#document {
-  position: absolute;
+#tree-app-document {
   background: @bodyBackground;
-  border: 1px solid #ccc;
-  left: 0;
-  right: 0;
-  bottom: -100%;
-  height: @defaultDocumentHeight;
-  .transition(bottom .35s ease-out);
-  overflow: hidden;
 
   iframe {
     position: absolute;
@@ -115,6 +107,6 @@
   }
 }
 
-#document-list.document-selected ~ #document {
+#main.document-selected #tree-app-document {
   bottom: 0;
 }

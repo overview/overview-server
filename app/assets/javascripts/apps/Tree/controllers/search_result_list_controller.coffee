@@ -15,17 +15,23 @@ define [
   #
   # * cache: a Cache (for creating search results, and for its search_result_store)
   # * state: a State (for reading and manipulating the selection)
+  # * el: an HTMLElement (optional)
   #
   # Returned properties:
   #
   # * view: a Backbone.View
-  (cache, state) ->
+  (options) ->
+    cache = options.cache
+    state = options.state
+    el = options.el
+
     proxy = new SearchResultStoreProxy(cache.search_result_store)
     collection = proxy.collection
     view = new InlineSearchResultListView({
       collection: proxy.collection
       searchResultIdToModel: (id) -> proxy.map(id)
       state: state
+      el: el
     })
 
     view.on 'search-result-clicked', (searchResult) ->

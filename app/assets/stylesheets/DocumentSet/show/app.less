@@ -1,0 +1,94 @@
+@import "../../vendor/bootstrap/less/mixins.less";
+@import "show/_variables.less";
+
+@layoutBorderColor: #ddd;
+
+// We put all major layout stuff in one file, to match the one HTML template
+
+#tree-app-left {
+  .box-sizing(border-box);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  border: 5px solid transparent;
+}
+
+#tree-app-right {
+  .box-sizing(border-box);
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  bottom: 0;
+  border: 5px solid transparent;
+  border-left-width: 0;
+}
+
+#tree-app-left-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  // bottom will change
+}
+
+#tree-app-left-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  height: auto;
+  // top is automatic, JS will modify #tree-app-left-top's bottom
+}
+
+#tree-app-tree {
+  position: absolute;
+  top: 0;
+  bottom: @focus_height;
+  left: 0;
+  right: 0;
+  .box-sizing(border-box);
+  border: 1px solid @layoutBorderColor;
+  border-bottom-width: 0;
+}
+
+#tree-app-zoom-slider {
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  .box-sizing(border-box);
+  border: 1px solid @layoutBorderColor;
+  height: @focus_height;
+}
+
+#tree-app-tags {
+  // NOT absolute
+  margin: 0 -5px -5px;
+}
+
+#tree-app-search {
+  // NOT absolute
+  margin: 0 -5px -5px;
+}
+
+#tree-app-document-list {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+#tree-app-document {
+  position: absolute;
+  border: 1px solid @layoutBorderColor;
+  left: 0;
+  right: 0;
+  bottom: -100%;
+  height: @defaultDocumentHeight;
+  .transition(bottom .35s ease-out);
+  overflow: hidden;
+}
