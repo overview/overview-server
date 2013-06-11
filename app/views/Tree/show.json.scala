@@ -3,7 +3,6 @@ package views.json.Tree
 import play.api.libs.json.{JsValue, Writes}
 import play.api.libs.json.Json.toJson
 
-import models.PersistentTagInfo
 import models.core.Node
 import models.orm.Tag
 import views.json.helper.ModelJsonConverters._

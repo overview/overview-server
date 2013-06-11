@@ -1,6 +1,5 @@
 package models
 
-import helpers.TestTag
 import org.specs2.mock._
 import org.specs2.specification.Scope
 import org.overviewproject.test.Specification
