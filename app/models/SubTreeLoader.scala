@@ -20,7 +20,7 @@ import models.core.Node
  */
 class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTreeDataLoader(),
   nodeLoader: NodeLoader = new NodeLoader(),
-  parser: SubTreeDataParser = new SubTreeDataParser()) extends DocumentListLoader(loader, parser) {
+  parser: SubTreeDataParser = new SubTreeDataParser()) {
 
   def load(nodeId: Long, depth: Int)(implicit connection: Connection): Seq[core.Node] = {
     val nodes = nodeLoader.loadTree(documentSetId, nodeId, depth)
@@ -36,17 +36,5 @@ class SubTreeLoader(documentSetId: Long, loader: SubTreeDataLoader = new SubTree
    */
   def loadRootId()(implicit connection: Connection): Option[Long] = {
     nodeLoader.loadRootId(documentSetId)
-  }
-  
-  /**
-   * @return a list of Documents whose ids are referenced by the passed in nodes and tags.
-   * The list is sorted by document IDs and all the elements are distinct, even if documentIds
-   * referenced multiple times.
-   */
-  def loadDocuments(nodes: Seq[core.Node])(implicit connection: Connection): Seq[core.Document] = {
-    val nodeDocumentIds = nodes.flatMap(_.documentIds.firstIds)
-    val documentIds = nodeDocumentIds
-
-    loadDocumentList(documentIds.distinct.sorted)
   }
 }

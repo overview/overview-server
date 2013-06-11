@@ -66,44 +66,6 @@ class SubTreeLoaderSpec extends Specification with Mockito {
       nodes must have size(3)
     }
 
-    // test loadDocuments() gets passed correct documentIds 
-    trait DocumentsInNodesAndTags extends MockComponents {
-      val nodeDocumentIds: List[Long]
-
-      def dummyNodes = createTwoDummyNodes(nodeDocumentIds)
-      def allDocumentIds = nodeDocumentIds
-    }
-
-    trait DistinctDocumentsInNodesAndTags extends DocumentsInNodesAndTags {
-      override val nodeDocumentIds = List(10l, 20l, 30l, 40l, 50l)
-    }
-
-    trait DuplicateDocuments extends DocumentsInNodesAndTags {
-      override val nodeDocumentIds = List(10l, 20l, 30l, 10l, 20l)
-    }
-
-    trait UnsortedDocuments extends DocumentsInNodesAndTags {
-      override val nodeDocumentIds = List(30l, 20l, 40l, 10l, 60l)
-    }
-
-    "load documents in nodes and tags" in new DistinctDocumentsInNodesAndTags {
-      val documents = subTreeLoader.loadDocuments(dummyNodes)
-
-      there was one(loader).loadDocuments(allDocumentIds)
-    }
-
-    "only create one document for each unique included document id" in new DuplicateDocuments {
-      val documents = subTreeLoader.loadDocuments(dummyNodes)
-
-      there was one(loader).loadDocuments(allDocumentIds.distinct)
-    }
-
-    "create documents in sorted order" in new UnsortedDocuments {
-      val documents = subTreeLoader.loadDocuments(dummyNodes)
-
-      there was one(loader).loadDocuments(allDocumentIds.sorted)
-    }
-
     // test loadRootId()
     "loads root node from loader" in new TreeContext {
       val dummyRootNodeId = Some(1l)
