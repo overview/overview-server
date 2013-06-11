@@ -29,7 +29,10 @@ object NodeFinder extends Finder {
 
     /** @return (Option[Long],Long) pairs of (parentId,id). */
     def toParentIdAndId : FinderResult[(Option[Long],Long)] = {
-      from(query)(q => select(q.parentId, q.id))
+      from(query)(q =>
+        select(q.parentId, q.id)
+        orderBy(q.cachedSize.desc)
+      )
     }
   }
   implicit private def queryToNodeFinderResult(query: Query[Node]) : NodeFinderResult = new NodeFinderResult(query)
