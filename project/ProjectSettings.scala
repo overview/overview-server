@@ -38,7 +38,6 @@ trait ProjectSettings {
   // Project dependencies
   val serverProjectDependencies = Seq(
     jdbc,
-    anorm,
     filters,
     geronimoJmsDep,
     openCsvDep,
