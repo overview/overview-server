@@ -42,7 +42,7 @@ define [], ->
         deferred
 
     _after_tag_add_or_remove: (tag, response) ->
-      newN = tag.doclist.n
+      newN = tag.doclist?.n || 0
       if 'added' of response
         newN += response.added
       if 'removed' of response
