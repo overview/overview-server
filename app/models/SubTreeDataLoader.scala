@@ -20,10 +20,12 @@ import DatabaseStructure._
  * Utility class form SubTreeLoader that performs database queries and returns results as
  * a list of tuples.
  */
-class SubTreeDataLoader extends DocumentTagDataLoader {
+class SubTreeDataLoader {
   def loadNodeTagCounts(nodeIds: Seq[Long])(implicit c: Connection): List[NodeTagCountData] = {
     nodeTagCountQuery(nodeIds)
   }
+
+  private def idList(ids: Seq[Long]): String = "(" + ids.mkString(", ") + ")"
 
   private def nodeTagCountQuery(nodeIds: Seq[Long])(implicit c: Connection): List[NodeTagCountData] = {
     val whereNodeIsSelected = nodeIds match {
