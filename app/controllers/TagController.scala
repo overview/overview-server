@@ -16,8 +16,7 @@ import play.api.mvc.Controller
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.forms.{SelectionForm,TagForm}
-import models.{ OverviewTag, PotentialTag, PersistentDocumentList, PersistentTag, PersistentTagLoader }
-import org.overviewproject.tree.orm.Document
+import models.{ OverviewTag, PotentialTag, PersistentTag }
 import models.orm.finders.{DocumentFinder,DocumentTagFinder,TagFinder,FinderResult}
 import models.orm.stores.{DocumentTagStore}
 import models.{IdList,Selection}
