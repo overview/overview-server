@@ -13,7 +13,7 @@ import org.overviewproject.tree.orm.Node
 /**
  * Utility class for SubTreeLoader that parses the results from the database queries
  */
-class SubTreeDataParser extends DocumentListParser {
+class SubTreeDataParser {
 
   def addTagDataToNodes(nodes: Seq[core.Node], nodeTagCountData: Seq[NodeTagCountData]): Seq[core.Node] = {
     val tagCounts = mapNodesToTagCounts(nodeTagCountData)
