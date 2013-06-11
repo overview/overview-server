@@ -13,6 +13,25 @@ import play.api.Plugin
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
+/**
+ * Plugin that manages a connection to the Message Broker.
+ * Set `message_queue.mock=true` in application.conf to mock out
+ * the connection.
+ */
+class StompPlugin(application: Application) extends Plugin {
+  lazy val queueConnection: MessageQueueConnection =
+    if (useMock) new MockMessageQueueConnection
+    else new StompJmsMessageQueueConnection
+
+  override def onStart(): Unit = queueConnection
+
+  override def onStop(): Unit = queueConnection.close
+
+  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
+}
+
+
+/** Message queue config values set in application.conf */
 trait MessageQueueConfiguration {
   private val QueuePrefix = "message_queue"
 
@@ -26,8 +45,19 @@ trait MessageQueueConfiguration {
       .getOrElse(throw new Exception(s"Unable to read message_queue configuration for $key"))
 }
 
+
+/** Operations on the message queue */
 trait MessageQueueConnection {
+  /**
+   * Send a message. @return a `Left[Unit]` if the connection
+   * is down, `Right[Unit]` otherwise
+   */
   def send(messageText: String): Either[Unit, Unit]
+  
+  /** 
+   *  Close the connection. Should only be called when application
+   *  is shutting down, since there is no way to reconnect.
+   */
   def close: Unit
 }
 
@@ -43,7 +73,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
 
     private var session: Option[Session] = None
     private var producer: Option[MessageProducer] = None
-
+    
     createSession
 
     override def onException(exception: JMSException): Unit = {
@@ -114,16 +144,4 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
 class MockMessageQueueConnection extends MessageQueueConnection {
   override def send(messageText: String): Either[Unit, Unit] = Right()
   override def close: Unit = {}
-}
-
-class StompPlugin(application: Application) extends Plugin {
-  lazy val queueConnection: MessageQueueConnection =
-    if (useMock) new MockMessageQueueConnection
-    else new StompJmsMessageQueueConnection
-
-  override def onStart(): Unit = queueConnection
-
-  override def onStop(): Unit = queueConnection.close
-
-  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
 }
