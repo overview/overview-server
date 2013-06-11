@@ -43,6 +43,17 @@ object NodeDocumentFinder extends Finder {
 
       from(main)(row => select(row.key, row.measures))
     }
+
+    /** @return (nodeId, tagId, count) tuples. */
+    def allSearchResultCountsByNodeId: FinderResult[(Long,Long,Long)] = {
+      val main : Query[GroupWithMeasures[Product2[Long,Long],Long]] = join(query, Schema.documentSearchResults)((nd, ds) =>
+        groupBy(nd.nodeId, ds.searchResultId)
+        compute(org.overviewproject.postgres.SquerylEntrypoint.count)
+        on(nd.documentId === ds.documentId)
+      )
+
+      from(main)(row => select(row.key._1, row.key._2, row.measures))
+    }
   }
   implicit private def queryToNodeDocumentFinderResult(query: Query[NodeDocument]) : NodeDocumentFinderResult = new NodeDocumentFinderResult(query)
 

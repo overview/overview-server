@@ -67,7 +67,8 @@ POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeC
 
 POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
 
-GET    /documentsets/:id/search-results controllers.SearchResultController.index(id: Long)
+GET    /documentsets/:id/search-results                             controllers.SearchResultController.index(id: Long)
+POST   /documentsets/:id/search-results/:searchResultId/node-counts controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
 
 GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
 

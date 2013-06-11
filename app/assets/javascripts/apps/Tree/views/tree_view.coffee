@@ -56,7 +56,7 @@ define [
     ctx.closePath()
 
   class DrawOperation
-    constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @focus_nodes, @focus, @options) ->
+    constructor: (@canvas, @tree, @colorLogic, @focus_nodes, @focus, @options) ->
       $canvas = $(@canvas)
       @width = +Math.ceil($canvas.parent().width())
       @height = +Math.ceil($canvas.parent().height())
@@ -222,7 +222,7 @@ define [
 
       ctx.save()
       ctx.fillStyle = color
-      drawBottomRoundedRect(ctx, left, top + height * 0.75, width, height * 0.25, @options.node_corner_radius)
+      drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.node_corner_radius)
       ctx.fill()
       ctx.restore()
 
@@ -285,19 +285,24 @@ define [
       animated_node = drawable_node.animated_node
       node = animated_node.node
 
-      tagid = undefined
-      tagcount = 0
-
       # Use the first tagid for which there's a count
-      for past_focused_tagid in @focus_tagids
-        if node.tagcounts?[past_focused_tagid]
-          tagid = past_focused_tagid
-          tagcount = node.tagcounts[past_focused_tagid]
-          break
+      count = 0
+      color = undefined
+      if @colorLogic.searchResultIds?
+        for id in @colorLogic.searchResultIds
+          count = node.searchResultCounts?[id]
+          if count
+            color = @colorLogic.color(id)
+            break
+      if @colorLogic.tagIds?
+        for id in @colorLogic.tagIds
+          count = node.tagcounts?[id]
+          if count
+            color = @colorLogic.color(id)
+            break
 
-      if tagid? && tagcount
-        color = @tag_id_to_color[tagid]
-        this._draw_tagcount(px.left, px.top, px.width, px.height, color, tagcount / node.doclist.n)
+      if color
+        this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.doclist.n)
 
       ctx = @ctx
       ctx.save()
@@ -578,10 +583,27 @@ define [
         color = tag.color || color_table.get(tag.name)
         tag_id_to_color[id] = color
 
+      selection = @tree.state.selection
+      colorLogic = if selection.searchResults.length
+        {
+          searchResultIds: "#{id}" for id in selection.searchResults
+          color: -> '#50ade5'
+        }
+      else if selection.tags.length
+        {
+          tagIds: "#{id}" for id in selection.tags
+          color: (id) -> tag_id_to_color[id]
+        }
+      else
+        {
+          tagIds: "#{id}" for id in @focus_tagids
+          color: (id) -> tag_id_to_color[id]
+        }
+
       shown_tagids = @tree.state.selection.tags
       shown_tagids = @focus_tagids if !shown_tagids.length
 
-      @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, shown_tagids, @tree.state.selection.nodes, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, @tree.state.selection.nodes, @focus, @options)
       @last_draw.draw()
 
     update: () ->

@@ -91,6 +91,33 @@ define [
 
           undefined
 
+    refreshSearchResultCounts: (searchResult) ->
+      nodes = @on_demand_tree.nodes
+      node_ids = (k for k, __ of nodes)
+      node_ids_string = node_ids.join(',')
+      deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResult.id })
+      deferred.done (data) =>
+        @on_demand_tree.id_tree.edit ->
+          searchResultId = searchResult.id
+          responseCounts = {}
+
+          i = 0
+          while i < data.length
+            nodeid = data[i++]
+            count = data[i++]
+            responseCounts[nodeid] = count
+
+          for nodeid in node_ids
+            counts = nodes[nodeid]?.searchResultCounts
+            continue if !counts
+            responseCount = responseCounts[nodeid]
+            if responseCount
+              counts[searchResultId] = responseCount
+            else
+              delete counts[searchResultId]
+
+          undefined
+
     create_tag: (tag, options) ->
       @tag_api.create(tag, options)
 

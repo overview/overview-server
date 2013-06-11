@@ -17,6 +17,7 @@ define ->
         when 'tag_add' then this._tag_add_path(id)
         when 'tag_remove' then this._tag_remove_path(id)
         when 'tag_node_counts' then this._tag_node_counts_path(id)
+        when 'search_result_node_counts' then this._search_result_node_counts_path(id)
 
     _document_view_path: (id) ->
       "/documents/#{id}"
@@ -41,3 +42,6 @@ define ->
 
     _tag_node_counts_path: (id) ->
       "/documentsets/#{@document_set_id}/tags/#{id}/node-counts"
+
+    _search_result_node_counts_path: (id) ->
+      "/documentsets/#{@document_set_id}/search-results/#{id}/node-counts"

@@ -26,17 +26,24 @@ trait NodeController extends Controller {
       .groupBy(_._1)
       .mapValues((x: Iterable[(Long,Long,Long)]) => x.map({ y: (Long,Long,Long) => (y._2, y._3) }))
 
+    val nodeSearchResultCounts : Map[Long,Iterable[(Long,Long)]] = NodeDocumentFinder
+      .byNodeIds(nodeIds)
+      .allSearchResultCountsByNodeId
+      .groupBy(_._1)
+      .mapValues((x: Iterable[(Long,Long,Long)]) => x.map({ y: (Long,Long,Long) => (y._2, y._3) }))
+
     val nodeChildIds : Map[Option[Long],Iterable[Long]] = NodeFinder
       .byParentIds(nodeIds)
       .toParentIdAndId
       .groupBy(_._1)
       .mapValues((x: Iterable[(Option[Long],Long)]) => x.map(_._2))
 
-    val nodesWithChildIdsAndTagCounts : Iterable[(Node,Iterable[Long],Iterable[(Long,Long)])] = nodes
+    val nodesWithChildIdsAndCounts : Iterable[(Node,Iterable[Long],Iterable[(Long,Long)],Iterable[(Long,Long)])] = nodes
       .map({ node: Node => (
         node,
         nodeChildIds.getOrElse(Some(node.id), Seq()),
-        nodeTagCounts.getOrElse(node.id, Seq())
+        nodeTagCounts.getOrElse(node.id, Seq()),
+        nodeSearchResultCounts.getOrElse(node.id, Seq())
       )})
 
     val documentIds = nodes.flatMap(_.cachedDocumentIds).toSeq.distinct
@@ -49,7 +56,7 @@ trait NodeController extends Controller {
     val tags : Iterable[(Tag,Long)] = TagFinder.byDocumentSet(documentSetId).withCounts
     val searchResults : Iterable[SearchResult] = SearchResultFinder.byDocumentSet(documentSetId)
 
-    views.json.Tree.show(nodesWithChildIdsAndTagCounts, documents, tags, searchResults)
+    views.json.Tree.show(nodesWithChildIdsAndCounts, documents, tags, searchResults)
   }
 
   private def showNodesStartingAt(documentSetId: Long, node: Node, childLevels: Int) = {

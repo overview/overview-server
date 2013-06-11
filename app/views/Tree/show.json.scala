@@ -7,8 +7,14 @@ import models.orm.Tag
 import org.overviewproject.tree.orm.{Node,Document,SearchResult}
 
 object show {
-  private[Tree] def writeNodeAndChildNodeIdsAndTagCounts(node: Node, childNodeIds: Iterable[Long], tagCounts: Iterable[(Long,Long)]) : JsValue = {
+  private[Tree] def writeNodeAndChildNodeIdsAndCounts(
+    node: Node,
+    childNodeIds: Iterable[Long],
+    tagCounts: Iterable[(Long,Long)],
+    searchResultCounts: Iterable[(Long,Long)]) : JsValue = {
+
     val jsonTagCounts = tagCounts.map({ x: (Long,Long) => (x._1.toString, x._2) }).toMap
+    val jsonSearchResultCounts = searchResultCounts.map({ x: (Long,Long) => (x._1.toString, x._2) }).toMap
 
     Json.obj(
       "id" -> node.id,
@@ -18,7 +24,8 @@ object show {
         "n" -> node.cachedSize,
         "docids" -> node.cachedDocumentIds
       ),
-      "tagcounts" -> jsonTagCounts
+      "tagcounts" -> jsonTagCounts,
+      "searchResultCounts" -> jsonSearchResultCounts
     )
   }
 
@@ -42,14 +49,13 @@ object show {
   }
 
   def apply(
-    nodes: Iterable[(Node,Iterable[Long],Iterable[(Long,Long)])],
+    nodes: Iterable[(Node,Iterable[Long],Iterable[(Long,Long)],Iterable[(Long,Long)])],
     documents: Iterable[(Document,Iterable[Long],Iterable[Long])],
     tags: Iterable[(Tag,Long)],
-    searchResults: Iterable[SearchResult])
-    : JsValue = {
+    searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
-      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIdsAndTagCounts)),
+      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIdsAndCounts)),
       "documents" -> documents.map(Function.tupled(writeDocumentAndNodeIdsAndTagIds)),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(Function.tupled(writeTagAndCount))

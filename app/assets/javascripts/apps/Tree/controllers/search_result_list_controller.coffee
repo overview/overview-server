@@ -34,6 +34,11 @@ define [
       el: el
     })
 
+    collection.on 'change:state', (searchResult) =>
+      if searchResult.get('state') == 'Complete'
+        searchResult = proxy.unmap(searchResult)
+        cache.refreshSearchResultCounts(searchResult)
+
     view.on 'search-result-clicked', (searchResult) ->
       searchResult = proxy.unmap(searchResult)
       if searchResult.id
