@@ -1,4 +1,4 @@
-package org.overviewproject.database.orm.stores
+package org.overviewproject.tree.orm.stores
 
 import org.squeryl.{ KeyedEntity, KeyedEntityDef, Query, Table }
 

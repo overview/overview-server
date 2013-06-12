@@ -1,4 +1,4 @@
-package org.overviewproject.database.orm.stores
+package org.overviewproject.tree.orm.stores
 
 trait NoInsertOrUpdate[A] {
   self: BaseStore[A] =>
