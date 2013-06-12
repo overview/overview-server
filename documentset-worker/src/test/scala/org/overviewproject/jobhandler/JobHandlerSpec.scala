@@ -14,6 +14,7 @@ import org.specs2.specification.Scope
 import scala.util.Try
 import scala.concurrent.Future
 import scala.util.Success
+import scala.util.Failure
 
 class JobHandlerSpec extends Specification with Mockito {
 
@@ -47,7 +48,8 @@ class JobHandlerSpec extends Specification with Mockito {
     trait MessageSetup extends Scope {
       val documentSetId = 5l
       val query = "projectid:333 search terms"
-
+      val connectionException = new Exception("connection failed")
+      
       val commandMessage = s"""
       {
         "cmd" : "search",
@@ -121,9 +123,25 @@ class JobHandlerSpec extends Specification with Mockito {
 
       val testJobHandler = jobHandler.underlyingActor
       val completion = testJobHandler.messageCallback.map(f => f(commandMessage))
-      testJobHandler.failureCallback.map(f => f(new Exception("connection failed")))
+      testJobHandler.failureCallback.map(f => f(connectionException))
           
       testJobHandler.connectionCreationCount must be equalTo(2)      
     }
+    
+    "fail jobCompletion future if connection fails" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
+
+      jobHandler ! StartListening
+
+      val testJobHandler = jobHandler.underlyingActor
+      val completion = testJobHandler.messageCallback.map(f => f(commandMessage))
+      testJobHandler.failureCallback.map(f => f(connectionException))
+          
+      
+      completion.flatMap(_.value) must beSome(Failure(connectionException))
+    }
+    
   }
 }
