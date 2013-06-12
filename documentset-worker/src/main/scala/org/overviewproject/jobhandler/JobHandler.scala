@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler
 
+import scala.language.postfixOps
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
@@ -9,6 +10,11 @@ import JobHandlerFSM._
 import org.overviewproject.util.Configuration
 import scala.util.{ Failure, Success, Try }
 import scala.annotation.tailrec
+import scala.concurrent.Promise
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import org.overviewproject.util.Logger
 
 /**
  * Messages the JobHandler can process
@@ -17,11 +23,12 @@ object JobHandlerProtocol {
   /** Start listening to the connection on the message queue */
   case object StartListening
   case object JobDone
-
+  
   // Internal messages that should really be private, but are 
   // public for easier testing. 
   case class CommandMessage(message: TextMessage)
   case class SearchCommand(documentSetId: Long, query: String)
+  case class ConnectionFailure(e: Exception)
 }
 
 /**
@@ -31,13 +38,15 @@ object JobHandlerProtocol {
  */
 object JobHandlerFSM {
   sealed trait State
+  case object NotConnected extends State
   case object Ready extends State
   case object WaitingForCompletion extends State
-
+  
   sealed trait Data
   case object NoMessageReceived extends Data
   /** Keep track of the message received so it can be ACK/NACKed */
   case class MessageReceived(message: Message) extends Data
+  case class CompletionPromise(promise: Promise[Unit]) extends Data
 
 }
 
@@ -49,11 +58,8 @@ trait MessageServiceComponent {
   val messageService: MessageService
 
   trait MessageService {
-    /**
-     *  wait for the next message to arrive from the queue. Blocks
-     *  until a message is received.
-     */
-    def waitForMessage: TextMessage
+   
+    def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit]
 
     /** Call to indicate successful handling of the message */
     def complete(message: Message): Unit
@@ -83,28 +89,62 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
 
   import JobHandlerProtocol._
 
+  private var currentJobCompletion: Option[Promise[Unit]] = None
+  
   startWith(Ready, NoMessageReceived)
 
+  when (NotConnected) {
+    case Event(StartListening, NoMessageReceived) => {
+      Logger.debug("Attempting to connect")
+      val connectionStatus = messageService.createConnection(deliverMessage, handleConnectionFailure)
+      connectionStatus match {
+        case Success(_) => goto(Ready)
+        case Failure(e) => {
+          import context.dispatcher
+          context.system.scheduler.scheduleOnce(1 seconds, self, StartListening)
+          stay
+        }
+      }
+    }
+      
+  }
+  
   when(Ready) {
-    case Event(StartListening, NoMessageReceived) =>
-      val message = messageService.waitForMessage
-      self ! ConvertMessage(message.getText)
-      stay using MessageReceived(message)
-    case Event(SearchCommand(documentSetId, query), MessageReceived(message)) =>
+    case Event(StartListening, NoMessageReceived) => {
+      messageService.createConnection(deliverMessage, handleConnectionFailure)
+      stay using NoMessageReceived 
+    }
+    case Event(SearchCommand(documentSetId, query), NoMessageReceived) => {
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! SearchDocumentSet(documentSetId, query, requestQueue)
-      goto(WaitingForCompletion) using MessageReceived(message)
+      goto(WaitingForCompletion) using NoMessageReceived
+    }
+    case Event(ConnectionFailure(e), NoMessageReceived) => {
+      self ! StartListening
+      goto(NotConnected) using NoMessageReceived
+    }
+      
   }
 
   when(WaitingForCompletion) {
-    case Event(JobDone, MessageReceived(message)) =>
-      messageService.complete(message)
-      self ! StartListening
+    case Event(JobDone, NoMessageReceived) =>
+      currentJobCompletion.map(_.success())
       goto(Ready) using NoMessageReceived
   }
 
   initialize
 
+  private def deliverMessage(message: String): Future[Unit] = {
+    currentJobCompletion = Some(Promise[Unit])
+    self ! ConvertMessage(message)
+    currentJobCompletion.get.future
+  }
+  
+  private def handleConnectionFailure(e: Exception): Unit = {
+    Logger.error(s"Connection Failure: ${e.getMessage}")
+    self ! ConnectionFailure(e)
+  }
+  
 }
 
 /**
@@ -121,30 +161,32 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
     private val Password: String = Configuration.messageQueue.password
     private val QueueName: String = Configuration.messageQueue.queueName
 
-    private val connection: Connection = createConnection
-    private val consumer: MessageConsumer = createConsumer
+    private var connection: Connection = _
+    private var consumer: MessageConsumer = _
 
-    override def waitForMessage: TextMessage = consumer.receive().asInstanceOf[TextMessage]
-
-    override def complete(message: Message): Unit = message.acknowledge()
-
-    private def createConnection: Connection = {
+    override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = Try {
       val factory = new StompJmsConnectionFactory()
       factory.setBrokerURI(BrokerUri)
-      tryStartingConnection(factory)
+      connection = factory.createConnection(Username, Password)
+      connection.setExceptionListener(new FailureHandler(failureHandler))
+      val messageHandler = new MessageHandler(messageDelivery)
+      consumer = createConsumer
+      consumer.setMessageListener(messageHandler)
+      connection.start
     }
+    
+    override def complete(message: Message): Unit = message.acknowledge()
 
-    @tailrec
-    private def tryStartingConnection(factory: StompJmsConnectionFactory, attemptsLeft: Int = MaxConnectionAttempts): Connection = {
-      val connection = factory.createConnection(Username, Password)
-      Try { connection.start } match {
-        case Success(_) => connection
-        case _ if (attemptsLeft > 1) => { 
-          Thread.sleep(ConnectionRetryPause)
-          tryStartingConnection(factory, attemptsLeft - 1)
-        }
-        case Failure(e) => throw e
+    private class MessageHandler(messageDelivery: String => Future[Unit]) extends MessageListener {
+      override def onMessage(message: Message): Unit = {
+        val jobComplete = messageDelivery(message.asInstanceOf[TextMessage].getText)
+        Await.result(jobComplete, Duration.Inf)
+        message.acknowledge
       }
+    }
+    
+    private class FailureHandler(handleFailure: Exception => Unit) extends ExceptionListener {
+      override def onException(e: JMSException): Unit = handleFailure(e)
     }
     
     private def createConsumer: MessageConsumer = {
