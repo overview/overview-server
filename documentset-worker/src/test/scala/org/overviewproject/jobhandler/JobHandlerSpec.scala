@@ -11,16 +11,27 @@ import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import javax.jms.TextMessage
 import org.specs2.specification.Scope
+import scala.util.Try
+import scala.concurrent.Future
+import scala.util.Success
 
 class JobHandlerSpec extends Specification with Mockito {
 
   "JobHandler" should {
 
-    class TestSearchHandler(searchProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
-      override val messageService = mock[MessageService]
-
-      val message = mock[TextMessage]
-      message.getText returns messageText
+    class TestJobHandler(searchProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
+      var messageCallback: Option[String => Future[Unit]] = None
+      var failureCallback: Option[Exception => Unit] = None
+      var connectionCreationCount: Int = 0
+      
+      override val messageService = new MessageService {
+        override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = { 
+          connectionCreationCount += 1
+          messageCallback = Some(messageDelivery)
+          failureCallback = Some(failureHandler)
+          Success()
+        }
+      }
 
       val actorCreator = new ActorCreator {
         override def produceSearchHandler: Actor = new ForwardingActor(searchProbe)
@@ -50,39 +61,69 @@ class JobHandlerSpec extends Specification with Mockito {
     "start listening for messages" in new ActorSystemContext with MessageSetup {
       val searchHandler = TestProbe()
 
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
-
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
+      
+      
       jobHandler ! StartListening
 
-      val messageService = jobHandler.underlyingActor.messageService
-
-      there was one(messageService).createConnection(any, any)
+      val testJobHandler = jobHandler.underlyingActor
+      testJobHandler.messageCallback must beSome
+      testJobHandler.failureCallback must beSome
+      testJobHandler.connectionCreationCount must be equalTo(1)
     }
 
     "start search handler on incoming search command" in new ActorSystemContext with MessageSetup {
       val searchHandler = TestProbe()
 
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
-
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
+      
+       
       jobHandler ! StartListening
-      jobHandler ! SearchCommand(documentSetId, query)
-
+      val completion = jobHandler.underlyingActor.messageCallback.map(f => f(commandMessage))
+      
       searchHandler.expectMsg(SearchDocumentSet(documentSetId, query, testActor))
+      
+
+      completion must beSome.which(f => !f.isCompleted)
     }
 
-    "handle next search command when done with previous" in new ActorSystemContext with MessageSetup {
-      val query2 = s"$query more search terms"
+    "complete jobCompletion future when JobDone is received" in new ActorSystemContext with MessageSetup {
       val searchHandler = TestProbe()
 
-      val jobHandler = TestActorRef(new TestSearchHandler(searchHandler.ref, testActor, commandMessage))
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
 
       jobHandler ! StartListening
-      jobHandler ! SearchCommand(documentSetId, query)
+      val completion = jobHandler.underlyingActor.messageCallback.map(f => f(commandMessage))
       jobHandler ! JobDone
-      jobHandler ! SearchCommand(documentSetId, query2)
-      searchHandler.expectMsg(SearchDocumentSet(documentSetId, query, testActor))
-      searchHandler.expectMsg(SearchDocumentSet(documentSetId, query2, testActor))
 
+       completion must beSome.which(f => f.isCompleted)
+    }
+    
+    "restart connection if connection fails" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
+
+      jobHandler ! StartListening
+
+      val testJobHandler = jobHandler.underlyingActor
+      testJobHandler.failureCallback.map(f => f(new Exception("connection failed")))
+      
+      testJobHandler.connectionCreationCount must be equalTo(2)
+    }
+    
+    "restart connection if connection fails before job is done" in new ActorSystemContext with MessageSetup {
+      val searchHandler = TestProbe()
+
+      val jobHandler = TestActorRef(new TestJobHandler(searchHandler.ref, testActor, commandMessage))
+
+      jobHandler ! StartListening
+
+      val testJobHandler = jobHandler.underlyingActor
+      val completion = testJobHandler.messageCallback.map(f => f(commandMessage))
+      testJobHandler.failureCallback.map(f => f(new Exception("connection failed")))
+          
+      testJobHandler.connectionCreationCount must be equalTo(2)      
     }
   }
 }

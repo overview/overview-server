@@ -43,11 +43,7 @@ object JobHandlerFSM {
   case object WaitingForCompletion extends State
   
   sealed trait Data
-  case object NoMessageReceived extends Data
-  /** Keep track of the message received so it can be ACK/NACKed */
-  case class MessageReceived(message: Message) extends Data
-  case class CompletionPromise(promise: Promise[Unit]) extends Data
-
+  case object NoData extends Data
 }
 
 /**
@@ -58,11 +54,7 @@ trait MessageServiceComponent {
   val messageService: MessageService
 
   trait MessageService {
-   
     def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit]
-
-    /** Call to indicate successful handling of the message */
-    def complete(message: Message): Unit
   }
 }
 
@@ -91,10 +83,10 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
 
   private var currentJobCompletion: Option[Promise[Unit]] = None
   
-  startWith(Ready, NoMessageReceived)
+  startWith(NotConnected, NoData)
 
   when (NotConnected) {
-    case Event(StartListening, NoMessageReceived) => {
+    case Event(StartListening, _) => {
       Logger.debug("Attempting to connect")
       val connectionStatus = messageService.createConnection(deliverMessage, handleConnectionFailure)
       connectionStatus match {
@@ -106,30 +98,30 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
         }
       }
     }
-      
   }
   
   when(Ready) {
-    case Event(StartListening, NoMessageReceived) => {
-      messageService.createConnection(deliverMessage, handleConnectionFailure)
-      stay using NoMessageReceived 
-    }
-    case Event(SearchCommand(documentSetId, query), NoMessageReceived) => {
+    case Event(SearchCommand(documentSetId, query), _) => {
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! SearchDocumentSet(documentSetId, query, requestQueue)
-      goto(WaitingForCompletion) using NoMessageReceived
+      goto(WaitingForCompletion) 
     }
-    case Event(ConnectionFailure(e), NoMessageReceived) => {
+    case Event(ConnectionFailure(e), _) => {
       self ! StartListening
-      goto(NotConnected) using NoMessageReceived
+      goto(NotConnected)
     }
-      
   }
 
   when(WaitingForCompletion) {
-    case Event(JobDone, NoMessageReceived) =>
+    case Event(JobDone, _) => {
       currentJobCompletion.map(_.success())
-      goto(Ready) using NoMessageReceived
+      goto(Ready) 
+    }
+    case Event(ConnectionFailure(e), _) => {
+      self ! StartListening
+      goto(NotConnected)
+    }
+    
   }
 
   initialize
@@ -175,8 +167,6 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
       connection.start
     }
     
-    override def complete(message: Message): Unit = message.acknowledge()
-
     private class MessageHandler(messageDelivery: String => Future[Unit]) extends MessageListener {
       override def onMessage(message: Message): Unit = {
         val jobComplete = messageDelivery(message.asInstanceOf[TextMessage].getText)
