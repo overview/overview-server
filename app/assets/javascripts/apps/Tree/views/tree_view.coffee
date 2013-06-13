@@ -294,10 +294,15 @@ define [
 
       ctx.fillStyle = '#333333'
 
+      maxX = @width
+
       for dn in @allDrawableNodes
         px = dn._px
         width = px.width - 12 # border + padding
         continue if width < 15
+
+        continue if px.right < 0
+        continue if px.left > maxX
 
         node = dn.animated_node.node
         description = node.description
@@ -325,13 +330,20 @@ define [
 
       ctx.beginPath()
 
+      minX = -@options.connector_line_width
+      maxX = @width + @options.connector_line_width
+
       for dn in @allDrawableNodes when dn.parent?
         child_px = dn._px
         parent_px = dn.parent._px
 
         x1 = parent_px.hmid
-        y1 = parent_px.top + parent_px.height
         x2 = child_px.hmid
+
+        continue if x1 < minX && x2 < minX
+        continue if x1 > maxX && x2 > maxX
+
+        y1 = parent_px.top + parent_px.height
         y2 = child_px.top
         mid_y = 0.5 * (y1 + y2)
 
