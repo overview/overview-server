@@ -67,7 +67,7 @@ define [
     view.observe 'click', (nodeid) ->
       return if !nodeid?
       log('clicked node', "#{nodeid}")
-      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
+      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
 
       node = cache.on_demand_tree.nodes[nodeid]
       if node?.doclist?.n == 1
@@ -98,7 +98,7 @@ define [
         expand(nodeid)
         
     select_nodeid = (nodeid) ->
-      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [] })
+      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
       state.set('selection', new_selection)
 
     selected_nodeid = () ->
