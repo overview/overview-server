@@ -143,6 +143,7 @@ define [
       @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
 
       @root.walk(this._draw_single_node.bind(this))
+      this._draw_labels()
       this._draw_lines_from_parents_to_children()
       this._draw_expand_and_collapse_for_tree()
 
@@ -245,30 +246,6 @@ define [
       ctx.fill()
       ctx.restore()
 
-    _maybe_draw_description: (drawable_node) ->
-      px = drawable_node._px
-      width = px.width - 12 # border+padding
-      return if width < 15
-
-      node = drawable_node.animated_node.node
-      description = node.description
-
-      return if !description
-
-      ctx = @ctx
-
-      left = px.left + 6
-      right = left + width
-
-      gradient = ctx.createLinearGradient(left, 0, right, 0)
-      gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 1)')
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-
-      ctx.save()
-      ctx.fillStyle = gradient
-      ctx.fillText(description, left, px.top + 3)
-      ctx.restore()
-
     _draw_single_node: (drawable_node) ->
       px = drawable_node._px
       animated_node = drawable_node.animated_node
@@ -308,9 +285,34 @@ define [
 
       ctx.restore()
 
-      this._maybe_draw_description(drawable_node)
-
       undefined
+
+    _draw_labels: ->
+      ctx = @ctx
+
+      ctx.save()
+
+      ctx.fillStyle = '#333333'
+
+      for dn in @allDrawableNodes
+        px = dn._px
+        width = px.width - 12 # border + padding
+        continue if width < 15
+
+        node = dn.animated_node.node
+        description = node.description
+        continue if !description
+
+        left = px.left + 6
+        right = left + width
+
+        ctx.save()
+        ctx.rect(left, px.top + 3, width, 15)
+        ctx.clip()
+        ctx.fillText(description, left, px.top + 3)
+        ctx.restore()
+
+      ctx.restore()
 
     _draw_lines_from_parents_to_children: ->
       ctx = @ctx
