@@ -8,10 +8,12 @@ import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
 import play.api.test.FakeApplication
 
+import org.overviewproject.tree.orm.SearchResultState._
 import org.overviewproject.postgres.LO
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import helpers.{DbTestContext, PgConnectionContext}
+import models.Selection
 import models.orm._
 import models.orm.finders._
 
@@ -87,11 +89,17 @@ class DocumentSetStoreSpec extends Specification {
       ))
     }
     
-//    def insertSearchResult(documentSet: DocumentSet) = {
-//      SearchResultStore.insertOrUpdate(SearchResult(
-//          
-//      ))
-//    }
+    def insertSearchResult(documentSet: DocumentSet) = 
+      SearchResultStore.insertOrUpdate(SearchResult(
+          state = InProgress,
+          documentSetId = documentSet.id,
+          query = "query"
+      ))
+    
+    
+    def insertDocumentSearchResult(document: Document, searchResult: SearchResult) = 
+      DocumentSearchResultStore.insertOrUpdate(DocumentSearchResult(document.id, searchResult.id))
+    
   }
 
   step(start(FakeApplication()))
@@ -210,6 +218,18 @@ class DocumentSetStoreSpec extends Specification {
       DocumentSetStore.deleteOrCancelJob(documentSet.id)
 
       LO.withLargeObject(oid) { lo => } must throwA[java.sql.SQLException]
+    }
+    
+    "delete SearchResults and DocumentSearchResults" in new DocumentSetContext {
+      val documentSet = insertDocumentSet
+      val document = insertDocument(documentSet)
+      val searchResult = insertSearchResult(documentSet)
+      insertDocumentSearchResult(document, searchResult)
+      
+      DocumentSetStore.deleteOrCancelJob(documentSet.id)
+      val searchResultSelection = Selection(documentSet.id, Nil, Nil, Seq(searchResult.id), Nil)
+      DocumentFinder.bySelection(searchResultSelection).count must be equalTo(0)
+      SearchResultFinder.byDocumentSet(documentSet.id).count must be equalTo(0)
     }
 
     "cancel in-progress clone jobs when deleting a document set" in new DocumentSetContext {
