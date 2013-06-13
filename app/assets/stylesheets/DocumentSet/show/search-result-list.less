@@ -13,12 +13,21 @@
     margin-bottom: 0;
   }
 
-  .state-inprogress {
-  }
-
-  .state-error {
-  }
-
-  .state-complete {
+  input[type=text] {
+    &.state-inprogress {
+      color: white;
+      text-shadow: 0 0 .1em @grayDark;
+      background-color: @in-progress-color;
+    }
+    &.state-error {
+      color: white;
+      text-shadow: 0 0 .1em @grayDark;
+      background-color: @error-color;
+    }
+    &.state-complete {
+      color: white;
+      text-shadow: 0 0 .1em @grayDark;
+      background-color: @complete-color;
+    }
   }
 }

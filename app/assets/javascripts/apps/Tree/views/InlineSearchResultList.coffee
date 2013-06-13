@@ -15,11 +15,20 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
     events:
       'click li.search-result': '_onClickSearchResult'
       'click .dropdown-toggle': '_onClickDropdownToggle'
+      'input input[type=text]': '_onInput'
       'submit form': '_onSubmit'
 
     template: _.template("""
       <form method="post" action="#" class="input-append">
-        <input type="text" name="query" placeholder="Search all documents" />
+        <input
+          type="text"
+          name="query"
+          placeholder="Search all documents"
+          <% if (selectedSearchResult) { %>
+            class="state-<%- (selectedSearchResult.get('state') || 'InProgress').toLowerCase() %>"
+          <% } %>
+          value="<%- selectedSearchResult ? selectedSearchResult.get('query') : '' %>"
+          />
         <div class="btn-group dropup">
           <input type="submit" value="Search" class="btn" />
           <% if (collection.length) { %>
@@ -93,6 +102,9 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
     _onClickDropdownToggle: (e) ->
       e.preventDefault() # don't submit the form
 
+    _onInput: (e) ->
+      e.currentTarget.className = 'editing'
+
     _onSubmit: (e) ->
       e.preventDefault()
 
@@ -101,7 +113,9 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
 
       existing = @collection.findWhere({ query: query })
 
-      if !existing?
+      if existing?
+        @trigger('search-result-clicked', existing)
+      else
         @trigger('create-submitted', query)
 
       $input.val('')
