@@ -1,4 +1,4 @@
-define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
+define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Backbone) ->
   # FIXME i18n
 
   # A list of inline search results
@@ -14,27 +14,30 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
 
     events:
       'click li.search-result': '_onClickSearchResult'
+      'click .dropdown-toggle': '_onClickDropdownToggle'
       'submit form': '_onSubmit'
 
     template: _.template("""
-      <div class="label">Search results</div>
-      <ul class="btn-toolbar">
-        <% collection.each(function(searchResult) { %>
-          <li
-              class="btn-group search-result <%- (selectedSearchResult && searchResult.cid == selectedSearchResult.cid) ? 'selected' : '' %>"
-              data-cid="<%- searchResult.cid %>">
-            <button type="button" class="btn state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>" <%= searchResult.get('state') == 'Complete' ? '' : 'disabled="disabled"' %>>
-              <span class="message"><%- searchResult.get('query') %></span>
+      <form method="post" action="#" class="input-append">
+        <input type="text" name="query" placeholder="Search all documents" />
+        <div class="btn-group dropup">
+          <input type="submit" value="Search" class="btn" />
+          <% if (collection.length) { %>
+            <button class="btn dropdown-toggle" data-toggle="dropdown">
+              <span class="caret"></span>
             </button>
-          </li>
-        <% }); %>
-        <li class="btn-group">
-          <form method="post" action="#" class="input-append">
-            <input type="text" name="query" placeholder="Search terms" class="input-small" />
-            <input type="submit" value="Search all documents" class="btn" />
-          </form>
-        </li>
-      </ul>
+            <ul class="dropdown-menu">
+              <% collection.each(function(searchResult) { %>
+                <li
+                    class="search-result state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>"
+                    data-cid="<%- searchResult.cid %>">
+                  <a href="#"><%- searchResult.get('query') %></a>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </form>
     """)
 
     initialize: ->
@@ -81,6 +84,9 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       e.preventDefault()
       model = @_eventToModel(e)
       @trigger('search-result-clicked', model)
+
+    _onClickDropdownToggle: (e) ->
+      e.preventDefault() # don't submit the form
 
     _onSubmit: (e) ->
       e.preventDefault()

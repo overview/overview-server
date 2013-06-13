@@ -5,16 +5,20 @@
 @import "tag-like-list.less";
 
 #tree-app-search {
-  .tag-like-list();
+  clear: both;
+  border: 5px solid transparent;
+  border-top: 0;
+
+  form {
+    margin-bottom: 0;
+  }
 
   .state-inprogress {
   }
 
   .state-error {
-    .btn-danger;
   }
 
   .state-complete {
-    .btn-success;
   }
 }
