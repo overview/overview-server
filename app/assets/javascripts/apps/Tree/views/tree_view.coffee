@@ -321,6 +321,8 @@ define [
       ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
       ctx.strokeStyle = @options.color.line_faded
 
+      ctx.beginPath()
+
       for dn in @allDrawableNodes when dn.parent?
         child_px = dn._px
         parent_px = dn.parent._px
@@ -335,6 +337,7 @@ define [
         ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
 
       ctx.stroke()
+
       ctx.restore()
 
       undefined
@@ -356,37 +359,38 @@ define [
         else
           undefined
 
-      draw_circle = (xy) ->
-        ctx.beginPath()
-        ctx.arc(xy.x, xy.y, 6, 0, Math.PI*2, true)
-        ctx.fill()
+      expandCircles = @expand_circles = []
+      collapseCircles = @collapse_circles = []
 
-      draw_collapse = (xy) ->
-        draw_circle(xy)
-        ctx.moveTo(xy.x - 4, xy.y)
-        ctx.lineTo(xy.x + 4, xy.y)
+      for drawable_node in @allDrawableNodes
+        xy = node_to_useful_xy(drawable_node)
+        if xy?
+          if drawable_node.children()?.length
+            collapseCircles.push([ xy, drawable_node ])
+          else if !drawable_node.animated_node.loaded
+            expandCircles.push([ xy, drawable_node ])
+
+      # Draw circles
+      for circle in expandCircles.concat(collapseCircles)
+        xy = circle[0]
+        ctx.beginPath()
+        ctx.arc(xy.x, xy.y, 6, 0, Math.PI * 2, true)
+        ctx.fill()
         ctx.stroke()
 
-      draw_expand = (xy) ->
-        draw_circle(xy)
+      # Draw + and -'s
+      ctx.beginPath()
+      for circle in collapseCircles
+        xy = circle[0]
+        ctx.moveTo(xy.x - 4, xy.y)
+        ctx.lineTo(xy.x + 4, xy.y)
+      for circle in expandCircles
+        xy = circle[0]
         ctx.moveTo(xy.x - 4, xy.y)
         ctx.lineTo(xy.x + 4, xy.y)
         ctx.moveTo(xy.x, xy.y + 4)
         ctx.lineTo(xy.x, xy.y - 4)
-        ctx.stroke()
-
-      @expand_circles = []
-      @collapse_circles = []
-
-      @root.walk (drawable_node) =>
-        xy = node_to_useful_xy(drawable_node)
-        if xy?
-          if drawable_node.children()?.length
-            draw_collapse(xy)
-            @collapse_circles.push([ xy, drawable_node ])
-          else if !drawable_node.animated_node.loaded
-            draw_expand(xy)
-            @expand_circles.push([ xy, drawable_node ])
+      ctx.stroke()
 
       ctx.restore()
 
