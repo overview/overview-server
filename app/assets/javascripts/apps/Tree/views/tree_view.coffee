@@ -131,6 +131,8 @@ define [
       return if !@tree.root?
 
       @root = new DrawableNode(@tree.root)
+      allNodes = @allDrawableNodes = []
+      @root.walk((dn) -> allNodes.push(dn))
       @_auto_fit_pan()
 
       px_per_hunit = @width / @root.outer_width() / @focus.zoom
@@ -315,26 +317,24 @@ define [
 
       ctx.save()
 
-      ctx.lineWidth = @options.connector_line_width
+      lineWidth = ctx.lineWidth = @options.connector_line_width
       ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
+      ctx.strokeStyle = @options.color.line_faded
 
-      doDraw = (drawable_node) =>
-        child_px = drawable_node._px
-        parent_px = drawable_node.parent._px
+      for dn in @allDrawableNodes when dn.parent?
+        child_px = dn._px
+        parent_px = dn.parent._px
 
-        ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
         x1 = parent_px.hmid
         y1 = parent_px.top + parent_px.height
         x2 = child_px.hmid
         y2 = child_px.top
         mid_y = 0.5 * (y1 + y2)
+
         ctx.moveTo(x1, y1)
         ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
-        ctx.stroke()
 
-      @root.walk (dn) ->
-        doDraw(dn) if dn.parent?
-
+      ctx.stroke()
       ctx.restore()
 
       undefined
