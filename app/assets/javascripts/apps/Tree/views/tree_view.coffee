@@ -141,6 +141,7 @@ define [
       @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
 
       @root.walk(this._draw_single_node.bind(this))
+      this._draw_lines_from_parents_to_children()
       this._draw_expand_and_collapse_for_tree()
 
     pixel_to_drawable_node: (x, y) ->
@@ -307,9 +308,36 @@ define [
 
       this._maybe_draw_description(drawable_node)
 
-      if drawable_node.parent?
+      undefined
+
+    _draw_lines_from_parents_to_children: ->
+      ctx = @ctx
+
+      ctx.save()
+
+      ctx.lineWidth = @options.connector_line_width
+      ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
+
+      doDraw = (drawable_node) =>
+        child_px = drawable_node._px
         parent_px = drawable_node.parent._px
-        @_draw_line_from_parent_to_child(parent_px, px)
+
+        ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
+        x1 = parent_px.hmid
+        y1 = parent_px.top + parent_px.height
+        x2 = child_px.hmid
+        y2 = child_px.top
+        mid_y = 0.5 * (y1 + y2)
+        ctx.moveTo(x1, y1)
+        ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
+        ctx.stroke()
+
+      @root.walk (dn) ->
+        doDraw(dn) if dn.parent?
+
+      ctx.restore()
+
+      undefined
 
     _draw_expand_and_collapse_for_tree: ->
       ctx = @ctx
@@ -361,25 +389,6 @@ define [
             @expand_circles.push([ xy, drawable_node ])
 
       ctx.restore()
-
-    _draw_line_from_parent_to_child: (parent_px, child_px) ->
-      x1 = parent_px.hmid
-      y1 = parent_px.top + parent_px.height
-      x2 = child_px.hmid
-      y2 = child_px.top
-      mid_y = 0.5 * (y1 + y2)
-
-      ctx = @ctx
-      ctx.save()
-      ctx.lineWidth = @options.connector_line_width
-      ctx.setLineDash?([ @options.connector_line_width, @options.connector_line_width ])
-      ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
-      ctx.stroke()
-      ctx.restore()
-
-      undefined
 
   class TreeView
     observable(this)
