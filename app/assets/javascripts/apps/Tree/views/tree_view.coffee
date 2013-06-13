@@ -17,6 +17,7 @@ define [
     connector_line_width: 2.5, # px
     node_corner_radius: 5, # px
     node_line_width: 2, # px
+    node_expand_width: 1.5, # px
     node_line_width_selected: 4, # px
     node_line_width_leaf: 1, # px
     start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
@@ -250,36 +251,6 @@ define [
       ctx.fillText(description, left, px.top + 3)
       ctx.restore()
 
-    _maybe_draw_collapse: (drawable_node) ->
-      if drawable_node.children()?.length
-        px = drawable_node._px
-        if px.width > 20
-          ctx = @ctx
-          y = px.top + px.height - @options.node_line_width * 0.5
-          x = px.hmid
-          ctx.beginPath()
-          ctx.arc(x, y, 6, 0, Math.PI*2, true)
-          ctx.fill()
-          ctx.moveTo(x - 4, y)
-          ctx.lineTo(x + 4, y)
-          ctx.stroke()
-
-    _maybe_draw_expand: (drawable_node) ->
-      if !drawable_node.animated_node.loaded
-        px = drawable_node._px
-        if px.width > 20
-          ctx = @ctx
-          y = px.top + px.height - @options.node_line_width * 0.5
-          x = px.hmid
-          ctx.beginPath()
-          ctx.arc(x, y, 6, 0, Math.PI*2, true)
-          ctx.fill()
-          ctx.moveTo(x - 4, y)
-          ctx.lineTo(x + 4, y)
-          ctx.moveTo(x, y + 4)
-          ctx.lineTo(x, y - 4)
-          ctx.stroke()
-
     _draw_single_node: (drawable_node) ->
       px = drawable_node._px
       animated_node = drawable_node.animated_node
@@ -329,13 +300,45 @@ define [
       ctx = @ctx
       ctx.save()
 
-      ctx.lineWidth = 1.5
+      lineWidth = ctx.lineWidth = @options.node_expand_width
       ctx.strokeStyle = '#666666'
       ctx.fillStyle = '#ffffff'
+      halfLineWidth = lineWidth * 0.5
 
-      @root.walk (drawable_node) =>
-        this._maybe_draw_collapse(drawable_node)
-        this._maybe_draw_expand(drawable_node)
+      node_to_useful_xy = (drawable_node) ->
+        px = drawable_node._px
+        if px.width > 20
+          x: px.hmid
+          y: px.top + px.height - halfLineWidth
+        else
+          undefined
+
+      draw_circle = (xy) ->
+        ctx.beginPath()
+        ctx.arc(xy.x, xy.y, 6, 0, Math.PI*2, true)
+        ctx.fill()
+
+      draw_collapse = (xy) ->
+        draw_circle(xy)
+        ctx.moveTo(xy.x - 4, xy.y)
+        ctx.lineTo(xy.x + 4, xy.y)
+        ctx.stroke()
+
+      draw_expand = (xy) ->
+        draw_circle(xy)
+        ctx.moveTo(xy.x - 4, xy.y)
+        ctx.lineTo(xy.x + 4, xy.y)
+        ctx.moveTo(xy.x, xy.y + 4)
+        ctx.lineTo(xy.x, xy.y - 4)
+        ctx.stroke()
+
+      @root.walk (drawable_node) ->
+        xy = node_to_useful_xy(drawable_node)
+        if xy?
+          if drawable_node.children()?.length
+            draw_collapse(xy)
+          else if !drawable_node.animated_node.loaded
+            draw_expand(xy)
 
       ctx.restore()
 
