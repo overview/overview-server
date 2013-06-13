@@ -18,6 +18,7 @@ define [
     node_corner_radius: 5, # px
     node_line_width: 2, # px
     node_expand_width: 1.5, # px
+    node_expand_click_radius: 8 # px
     node_line_width_selected: 4, # px
     node_line_width_leaf: 1, # px
     start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
@@ -151,24 +152,38 @@ define [
           drawable_node = dn
       drawable_node
 
+    _pixel_to_expand_or_collapse_node: (x, y, list_of_circles) ->
+      maxR2 = @options.node_expand_click_radius * @options.node_expand_click_radius
+      for entry in (list_of_circles || []) # [ xy, drawable_node ] pairs
+        xy = entry[0]
+        dx = xy.x - x
+        dy = xy.y - y
+        r2 = dx * dx + dy * dy
+        return entry[1] if r2 < maxR2
+      return undefined
+
+    pixel_to_expand_node: (x, y) ->
+      @_pixel_to_expand_or_collapse_node(x, y, @expand_circles || [])
+
+    pixel_to_collapse_node: (x, y) ->
+      @_pixel_to_expand_or_collapse_node(x, y, @collapse_circles || [])
+
     pixel_to_action: (x, y) ->
-      drawable_node = @pixel_to_drawable_node(x, y)
-      return undefined if !drawable_node?
-      animated_node = drawable_node.animated_node
+      event = (key, drawable_node) ->
+        { event: key, id: drawable_node.animated_node.node.id }
 
-      px = drawable_node._px
-
-      event = if px.width > 20 && x > px.hmid - 5 && x < px.hmid + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
-        if drawable_node.children()?.length
-          'collapse'
-        else if !animated_node.loaded
-          'expand'
-        else
-          'click'
+      if drawable_node = @pixel_to_expand_node(x, y)
+        event('expand', drawable_node)
+      else if drawable_node = @pixel_to_collapse_node(x, y)
+        event('collapse', drawable_node)
+      else if drawable_node = @pixel_to_drawable_node(x, y)
+        event('click', drawable_node)
+        #if !drawable_node.animated_node.loaded
+        #  event('expand', drawable_node)
+        #else
+        #  event('click', drawable_node)
       else
-        'click'
-
-      return { event: event, id: drawable_node.animated_node.node.id }
+        undefined
 
     # simple RGB space color interpolator. Returns a when t=0, b when t=1
     _lerp_hexcolor: (a, b, t) ->
@@ -332,13 +347,18 @@ define [
         ctx.lineTo(xy.x, xy.y - 4)
         ctx.stroke()
 
-      @root.walk (drawable_node) ->
+      @expand_circles = []
+      @collapse_circles = []
+
+      @root.walk (drawable_node) =>
         xy = node_to_useful_xy(drawable_node)
         if xy?
           if drawable_node.children()?.length
             draw_collapse(xy)
+            @collapse_circles.push([ xy, drawable_node ])
           else if !drawable_node.animated_node.loaded
             draw_expand(xy)
+            @expand_circles.push([ xy, drawable_node ])
 
       ctx.restore()
 
