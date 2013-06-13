@@ -4,10 +4,11 @@ import org.fluentlenium.core.filter.FilterConstructor.withText
 
 import controllers.routes
 import models.OverviewDatabase
-import models.orm.{ DocumentSet, DocumentSetUser }
+import models.orm.DocumentSetUser
 import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.DocumentSet
 
 class DocumentSetSteps extends BaseSteps {
   Given("""^there is a (public |)document set "([^"]*)" owned by "([^"]*)"$""") { (isPublic:String, title:String, ownerEmail:String) =>
