@@ -18,7 +18,7 @@ define [
     node_corner_radius: 5, # px
     node_line_width: 2, # px
     node_expand_width: 1.5, # px
-    node_expand_click_radius: 8 # px
+    node_expand_click_radius: 12 # px
     node_line_width_selected: 4, # px
     node_line_width_leaf: 1, # px
     start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
@@ -135,14 +135,15 @@ define [
       @root.walk((dn) -> allNodes.push(dn))
       @_auto_fit_pan()
 
-      px_per_hunit = @width / @root.outer_width() / @focus.zoom
-      px_per_vunit = @height / @root.outer_height() # zoom doesn't affect Y axis
+      px_per_hunit = (@width - @options.node_line_width_selected) / @root.outer_width() / @focus.zoom
+      px_per_vunit = (@height - 0.5 * @options.node_line_width_selected - 0.5 * @options.node_expand_click_radius) / @root.outer_height() # zoom doesn't affect Y axis
       pan_units = @root.outer_width() * (0.5 + @focus.pan - @focus.zoom * 0.5)
 
       # Set _px objects on all nodes
-      @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
+      @root.px(px_per_hunit, px_per_vunit, -0.5 * @options.node_line_width_selected / px_per_hunit + pan_units, 0.5 * @options.node_line_width_selected / px_per_vunit)
 
-      @root.walk(this._draw_single_node.bind(this))
+      for drawable_node in @allDrawableNodes
+        this._draw_single_node(drawable_node)
       this._draw_labels()
       this._draw_lines_from_parents_to_children()
       this._draw_expand_and_collapse_for_tree()
@@ -273,14 +274,10 @@ define [
       ctx = @ctx
       ctx.save()
 
-      # To avoid going out of bounds, we multiply lineWidth by 2 and clip to
-      # the actual rect. The effect is similar to CSS's box-sizing: border-box:
-      # the border grows in, never out
-      ctx.lineWidth = this._animated_node_to_line_width(animated_node) * 2
+      ctx.lineWidth = this._animated_node_to_line_width(animated_node)
       ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
 
       drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.node_corner_radius)
-      ctx.clip()
       ctx.stroke()
 
       ctx.restore()
