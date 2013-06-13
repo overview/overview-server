@@ -31,7 +31,6 @@ define [
 
   # In given canvas 2d context, draws a rectangle with corner radius r
   drawRoundedRect = (ctx, x, y, w, h, r) ->
-    ctx.beginPath()
     r = Math.min(r, w * 0.5, h * 0.5)
     ctx.moveTo(x + r, y)
     ctx.lineTo(x + w - r, y)
@@ -46,7 +45,6 @@ define [
 
   # Draws a rectangle with corner radius r on the bottom two corners
   drawBottomRoundedRect = (ctx, x, y, w, h, r) ->
-    ctx.beginPath()
     r = Math.min(r, w * 0.5, h * 0.5)
     ctx.moveTo(x, y)
     ctx.lineTo(x + w, y)
@@ -144,6 +142,7 @@ define [
 
       for drawable_node in @allDrawableNodes
         this._draw_single_node(drawable_node)
+      this._draw_nodes()
       this._draw_labels()
       this._draw_lines_from_parents_to_children()
       this._draw_expand_and_collapse_for_tree()
@@ -190,46 +189,6 @@ define [
       else
         undefined
 
-    # simple RGB space color interpolator. Returns a when t=0, b when t=1
-    _lerp_hexcolor: (a, b, t) ->
-      a_red   = parseInt(a.substring(1,3),16)
-      a_green = parseInt(a.substring(3,5),16)
-      a_blue  = parseInt(a.substring(5,7),16)
-      b_red   = parseInt(b.substring(1,3),16)
-      b_green = parseInt(b.substring(3,5),16)
-      b_blue  = parseInt(b.substring(5,7),16)
-
-      red   = Math.round(t*b_red + (1-t)*a_red)
-      green = Math.round(t*b_green + (1-t)*a_green)
-      blue  = Math.round(t*b_blue + (1-t)*a_blue)
-
-      "#" + ("0" + red.toString(16)).slice(-2) + ("0" + green.toString(16)).slice(-2) + ("0" + blue.toString(16)).slice(-2)
-
-    _animated_node_to_line_width: (animated_node) ->
-      if animated_node.selected
-        @options.node_line_width_selected
-      else if animated_node.children?.length is 0 # leaf node
-        @options.node_line_width_leaf
-      else
-        @options.node_line_width
-
-    # choose color to draw node outline. selected has its own color, leaf nodes are faded, 
-    # and we also fade normal nodes when they get too narrow
-    _drawable_node_to_line_color: (drawable_node) ->
-      animated_node = drawable_node.animated_node
-      if animated_node.selected
-        @options.color.line_selected
-      else if animated_node.children?.length is 0 # leaf node
-        @options.color.line_faded
-      else
-        if drawable_node._px.width >= @options.start_fade_width
-          @options.color.line_default
-        else if drawable_node._px.width <= @px_per_hunit  # leaf node width
-          @options.color.line_faded
-        else
-          t = (@options.start_fade_width - drawable_node._px.width) / (@options.start_fade_width - @px_per_hunit)
-          this._lerp_hexcolor(@options.color.line_default, @options.color.line_faded, t)
-
     _draw_tagcount: (left, top, width, height, color, fraction) ->
       return if fraction == 0
 
@@ -243,6 +202,7 @@ define [
 
       ctx.save()
       ctx.fillStyle = color
+      ctx.beginPath()
       drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.node_corner_radius)
       ctx.fill()
       ctx.restore()
@@ -271,13 +231,53 @@ define [
       if color
         this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.doclist.n)
 
+      undefined
+
+    _draw_nodes: ->
       ctx = @ctx
+
       ctx.save()
 
-      ctx.lineWidth = this._animated_node_to_line_width(animated_node)
-      ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
+      normalPxs = []
+      selectedPxs = []
+      leafPxs = []
 
-      drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.node_corner_radius)
+      for dn in @allDrawableNodes
+        animated_node = dn.animated_node
+        px = dn._px
+        if animated_node.selected
+          selectedPxs.push(px)
+        else if animated_node.children?.length is 0
+          leafPxs.push(px)
+        else
+          normalPxs.push(px)
+
+      minX = 0
+      maxX = @width
+      radius = @options.node_corner_radius
+      drawPxs = (pxs) ->
+        ctx.beginPath()
+        for px in pxs
+          continue if px.right < minX
+          continue if px.left > maxX
+          drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
+
+      ctx.lineWidth = @options.node_line_width_selected
+      ctx.strokeStyle = @options.color.line_selected
+      ctx.beginPath()
+      drawPxs(selectedPxs)
+      ctx.stroke()
+
+      ctx.lineWidth = @options.node_line_width_leaf
+      ctx.strokeStyle = @options.color.line_faded
+      ctx.beginPath()
+      drawPxs(leafPxs)
+      ctx.stroke()
+
+      ctx.lineWidth = @options.node_line_width
+      ctx.strokeStyle = @options.color.line_default
+      ctx.beginPath()
+      drawPxs(normalPxs)
       ctx.stroke()
 
       ctx.restore()
@@ -290,6 +290,7 @@ define [
       ctx.save()
 
       ctx.fillStyle = '#333333'
+      ctx.beginPath()
 
       maxX = @width
 
