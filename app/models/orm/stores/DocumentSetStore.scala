@@ -3,6 +3,7 @@ package models.orm.stores
 import org.squeryl.{ KeyedEntityDef, Query }
 
 import org.overviewproject.tree.orm._
+import org.overviewproject.tree.orm.stores.BaseStore
 import models.orm.finders._
 import models.orm.stores._
 import models.orm.Schema 

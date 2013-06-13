@@ -86,6 +86,12 @@ class DocumentSetStoreSpec extends Specification {
         statusCode=Some(500)
       ))
     }
+    
+//    def insertSearchResult(documentSet: DocumentSet) = {
+//      SearchResultStore.insertOrUpdate(SearchResult(
+//          
+//      ))
+//    }
   }
 
   step(start(FakeApplication()))
