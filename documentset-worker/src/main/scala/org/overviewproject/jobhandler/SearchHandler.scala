@@ -1,7 +1,6 @@
 package org.overviewproject.jobhandler
 
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.SearchResult
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
@@ -121,7 +120,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
 trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
   
   class StorageImpl extends Storage {
-    import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
+    import org.overviewproject.tree.orm.{ SearchResult, SearchResultState }
 
     override def queryForProject(documentSetId: Long, searchTerms: String): String = Database.inTransaction {
       val projectQuery = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
@@ -141,11 +140,11 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
     }
     
     override def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit =  Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, searchId))
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, id = searchId))
     }
     
     override def failSearch(searchId: Long, documentSetId: Long, query: String): Unit = Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, searchId))
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, id = searchId))
     }
   }
 

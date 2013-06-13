@@ -1,7 +1,7 @@
 package org.overviewproject.database.orm.finders
 
-import org.overviewproject.database.orm.SearchResult
-import org.overviewproject.database.orm.SearchResultState.InProgress
+import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.tree.orm.SearchResultState.InProgress
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification

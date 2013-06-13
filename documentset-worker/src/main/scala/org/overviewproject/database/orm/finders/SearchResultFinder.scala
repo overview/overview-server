@@ -1,8 +1,9 @@
 package org.overviewproject.database.orm.finders
 
 
-import org.overviewproject.database.orm.{ SearchResult, Schema }
+import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.SearchResult
 
 object SearchResultFinder extends Finder {
 
