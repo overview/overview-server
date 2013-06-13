@@ -1,7 +1,7 @@
 define [ './TagLikeStore', './color_table' ], (TagLikeStore, ColorTable) ->
   class TagStore extends TagLikeStore
     constructor: () ->
-      super('name')
+      super('name', 'name')
       @_color_table = new ColorTable()
       @tags = @objects
 

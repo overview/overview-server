@@ -17,7 +17,7 @@ define [ 'jquery', 'underscore', './TagLikeStore' ], ($, _, TagLikeStore) ->
   # The SearchResultStore polls for all SearchResults at once.
   class SearchResultStore extends TagLikeStore
     constructor: (@pollUrl) ->
-      super('query')
+      super('query', 'createdAt')
       @search_results = @objects
       @_pollForKeys = {}
 

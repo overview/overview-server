@@ -36,7 +36,7 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
               <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-              <% collection.each(function(searchResult) { %>
+              <% _.each(collection.models.slice(-15), function(searchResult) { %>
                 <li
                     class="search-result state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>"
                     data-cid="<%- searchResult.cid %>">
