@@ -69,6 +69,11 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
       selectedSearchResultId = @state.selection.searchResults[0]
       selectedSearchResult = selectedSearchResultId && @searchResultIdToModel(selectedSearchResultId)
 
+      # If the currently-selected search result ID is changing, the selection
+      # might have an ID that isn't in the collection. In that case, don't
+      # render: another event is about to come and cause a render anyway
+      return if selectedSearchResultId? && !selectedSearchResult
+
       html = @template({
         collection: @collection
         selectedSearchResult: selectedSearchResult

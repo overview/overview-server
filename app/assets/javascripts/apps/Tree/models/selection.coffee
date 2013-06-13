@@ -51,34 +51,6 @@ define [ 'underscore' ], (_) ->
       (obj[k] = this[k]) for k in keys
       new Selection(obj)
 
-    _docidsFromNodes: (cache) ->
-      ret = {}
-
-      nodes = {}
-      nodes["#{nodeid}"] = null for nodeid in @nodes
-
-      for id, document of cache.document_store.documents
-        for nodeid of document.nodeids
-          if "#{nodeid}" of nodes
-            ret["#{document.id}"] = null
-            break
-
-      ret
-
-    _tagidsFromNodes: (cache) ->
-      ret = {}
-
-      tags = {}
-      tags["#{tagid}"] = null for tagid in @tags
-
-      for id, document of cache.document_store.documents
-        for tagid of document.tagids
-          if "#{tagid}" of tags
-            ret["#{document.id}"] = null
-            break
-
-      ret
-
     documents_from_cache: (cache) ->
       nodeids = {}
       nodeids["#{nodeid}"] = null for nodeid in @nodes
@@ -134,4 +106,4 @@ define [ 'underscore' ], (_) ->
       "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
 
     allows_correct_tagcount_adjustments: () ->
-      !!(@nodes.length && !@tags.length && !@documents.length)
+      !!(@nodes.length && !@tags.length && !@documents.length && !@searchResults.length)

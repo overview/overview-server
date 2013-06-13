@@ -29,7 +29,7 @@ define [
     collection = proxy.collection
     view = new InlineSearchResultListView({
       collection: proxy.collection
-      searchResultIdToModel: (id) -> proxy.map(id)
+      searchResultIdToModel: (id) -> if proxy.canMap(id) then proxy.map(id) else undefined
       state: state
       el: el
     })
@@ -41,15 +41,14 @@ define [
 
     view.on 'search-result-clicked', (searchResult) ->
       searchResult = proxy.unmap(searchResult)
-      if searchResult.id
-        state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
-      else
-        log('clicked unfinished search result', "#{search_result_to_short_string(searchResult)}")
+      log('clicked search result', "#{search_result_to_short_string(searchResult)}")
+      state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
 
     view.on 'create-submitted', (query) ->
       searchResult = { query: query }
       log('created search', "#{search_result_to_short_string(searchResult)}")
       searchResult = cache.search_result_store.addAndPoll(searchResult)
       cache.search_result_api.create(searchResult)
+      state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
 
     { view: view }

@@ -5,6 +5,7 @@ define [
   '../models/list_selection'
   '../collections/DocumentListProxy'
   '../collections/TagStoreProxy'
+  '../collections/SearchResultStoreProxy'
   '../views/node_form_view'
   '../views/DocumentList'
   '../views/DocumentListTitle'
@@ -13,7 +14,7 @@ define [
   './node_form_controller'
   './tag_form_controller'
   './logger'
-], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
+], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, SearchResultStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
@@ -89,6 +90,7 @@ define [
     initialize: (attrs, options) ->
       throw 'Must specify documentViewEl, an HTMLElement' if !attrs.documentViewEl
       throw 'Must specify tagStore, a TagStore' if !attrs.tagStore
+      throw 'Must specify searchResultStore, a SearchResultStore' if !attrs.searchResultStore
       throw 'Must specify documentStore, a DocumentStore' if !attrs.documentStore
       throw 'Must specify state, a State' if !attrs.state
       throw 'Must specify cache, a Cache' if !attrs.cache
@@ -98,6 +100,7 @@ define [
       @_addDocumentList()
       @_addListSelection()
       @_addTagCollection()
+      @_addSearchResultCollection()
       @_addDocumentCollection()
       @_addTitleView()
       @_addListView()
@@ -117,21 +120,29 @@ define [
       updateFromSelection()
       @on('change:selection', updateFromSelection)
 
-    _addDocumentList: ->
-      refresh = =>
-        selection = @get('selectionModuloDocuments')
-        documentList = if selection?.nodes?.length || selection?.tags?.length || selection?.searchResults?.length
-          new DocumentList(@get('cache'), selection)
-        else
-          undefined
-        @set('documentList', documentList)
+    _refreshDocumentList: ->
+      selection = @get('selectionModuloDocuments')
+      documentList = if selection?.nodes?.length || selection?.tags?.length || selection?.searchResults?.length
+        new DocumentList(@get('cache'), selection)
+      else
+        undefined
+      @set('documentList', documentList)
 
-      @on('change:selectionModuloDocuments', refresh)
-      refresh()
+    _addDocumentList: ->
+      @on('change:selectionModuloDocuments', => @_refreshDocumentList())
+      @_refreshDocumentList()
 
     _addTagCollection: ->
       @tagStoreProxy = new TagStoreProxy(@get('tagStore'))
       @set('tagCollection', @tagStoreProxy.collection)
+
+    _addSearchResultCollection: ->
+      @searchResultStoreProxy = new SearchResultStoreProxy(@get('searchResultStore'))
+      @set('searchResultCollection', @searchResultStoreProxy.collection)
+
+      @get('searchResultCollection').on 'change', (model) =>
+        if model.id in @get('selection').searchResults
+          @_refreshDocumentList()
 
     _addDocumentCollection: ->
       documentStore = @get('documentStore')
@@ -314,6 +325,7 @@ define [
   document_list_controller = (div, documentDiv, cache, state) ->
     controller = new Controller({
       tagStore: cache.tag_store
+      searchResultStore: cache.search_result_store
       documentStore: cache.document_store
       documentViewEl: documentDiv
       state: state
