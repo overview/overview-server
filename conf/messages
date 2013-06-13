@@ -246,10 +246,9 @@ views.DocumentSet.show.DocumentListTitle.node.title_html=<strong>{0}</strong> in
 views.DocumentSet.show.DocumentListTitle.node.edit=edit folder…
 views.DocumentSet.show.DocumentListTitle.tag.title_html=<strong>{0}</strong> with tag “{1}”
 views.DocumentSet.show.DocumentListTitle.tag.edit=edit tag…
-views.DocumentSet.show.DocumentListTitle.multiple.title_html=<strong>{0}</strong> with {1} in {2}
-views.DocumentSet.show.DocumentListTitle.multiple.num_nodes={0,choice,0#no folders|1#one folder|1<{0,number,integer} folders}
-views.DocumentSet.show.DocumentListTitle.multiple.num_tags={0,choice,0#no tags|1#one tag|1<{0,number,integer} tags}
-views.DocumentSet.show.DocumentListTitle.n_nodes_and_n_tags={0,choice,0#{1,choice,0#document set|1<{1} tags}|1#one folder and {1,choice,1#one tag|1<{1} tags}|1<{0} folders{1,choice,0#|1# and one tag|1< and {1} tags}}
+views.DocumentSet.show.DocumentListTitle.searchResult.title_html=<strong>{0}</strong> in search “{1}”
+views.DocumentSet.show.DocumentListTitle.searchResult.edit=edit tag…
+views.DocumentSet.show.DocumentListTitle.multiple.title_html=<strong>{0}</strong> in selection
 
 views.DocumentSet.show.tag_list.header=Tags
 views.DocumentSet.show.tag_list.n_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}

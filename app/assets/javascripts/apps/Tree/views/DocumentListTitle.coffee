@@ -27,11 +27,19 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       </div>
     """)
 
-    # <strong>4 documents</strong> in 1 tag and 2 nodes
+    # <strong>4 documents</strong> in search "Search"
+    # Params: t, nDocuments, searchResult
+    searchResult: _.template("""
+      <div class="search-result" data-id="<%- searchResult.id %>">
+        <h4><%= t('searchResult.title_html', t('num_documents', nDocuments), searchResult.query) %></h4>
+      </div>
+    """)
+
+    # <strong>4 documents</strong> in selection
     # Params: t, nDocuments, nTags, nNodes
     multiple: _.template("""
       <div class="tags-nodes">
-        <h4><%= t('multiple.title_html', t('num_documents', nDocuments), t('multiple.num_tags', nTags), t('multiple.num_nodes', nNodes)) %></h4>
+        <h4><%= t('multiple.title_html', t('num_documents', nDocuments)) %></h4>
       </div>
     """)
 
@@ -65,6 +73,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
       @documentList = @options.documentList
       @tagStore = @options.cache.tag_store
+      @searchResultStore = @options.cache.search_result_store
       @onDemandTree = @options.cache.on_demand_tree
 
       @_onTagIdChanged = (oldId, tag) =>
@@ -96,17 +105,23 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
           selection = @documentList.selection
           nNodes = selection.nodes.length
           nTags = selection.tags.length
+          nSearchResults = selection.searchResults.length
 
-          if nTags == 1 && nNodes == 0
-            tagId = selection.tags[0]
-            tag = @tagStore.find_by_id(tagId)
-            templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
-          else if nNodes == 1 && nTags == 0
-            nodeId = selection.nodes[0]
-            node = @onDemandTree.nodes[nodeId]
-            templates.node({ t: t, nDocuments: nDocuments, node: node })
+          if nTags + nNodes + nSearchResults == 1
+            if nTags
+              tagId = selection.tags[0]
+              tag = @tagStore.find_by_id(tagId)
+              templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
+            else if nNodes
+              nodeId = selection.nodes[0]
+              node = @onDemandTree.nodes[nodeId]
+              templates.node({ t: t, nDocuments: nDocuments, node: node })
+            else # nSearchResults
+              searchResultId = selection.searchResults[0]
+              searchResult = @searchResultStore.find_by_id(searchResultId)
+              templates.searchResult({ t: t, nDocuments: nDocuments, searchResult: searchResult })
           else
-            templates.multiple({ t: t, nDocuments: nDocuments, nTags: nTags, nNodes: nNodes })
+            templates.multiple({ t: t, nDocuments: nDocuments })
         else
           templates.loading({ t: t })
       else
