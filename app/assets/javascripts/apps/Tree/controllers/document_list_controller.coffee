@@ -231,6 +231,7 @@ define [
 
       @on 'change:documentList', =>
         @get('documentList')?.slice(0, pageSize)
+          .done(=> @get('listSelection').onClick(0))
         firstMissingIndex = pageSize
 
       view.on 'change:maxViewedIndex', (model, value) =>
