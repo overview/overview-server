@@ -28,6 +28,9 @@ define [
       throw 'need options.mainEl' if !options.mainEl
       throw 'need options.navEl' if !options.navEl
 
+      # TODO remove searchDisabled entirely
+      searchDisabled = $(options.mainEl).attr('data-is-searchable') == 'false'
+
       els = (->
         html = """
           <div id="tree-app-left">
@@ -50,7 +53,10 @@ define [
 
         $(options.mainEl).html(html)
 
+        $('#tree-app-search').remove() if searchDisabled
+
         el = (id) -> document.getElementById(id)
+
         {
           main: options.mainEl
           tree: el('tree-app-tree')
@@ -148,17 +154,18 @@ define [
 
       auto_focus_controller(focus, world)
 
-      controller = tag_list_controller({
+      tag_list_controller({
         remote_tag_list: remote_tag_list
         state: world.state
         el: els.tags
       })
 
-      controller = search_result_list_controller({
-        cache: world.cache
-        state: world.state
-        el: els.search
-      })
+      if !searchDisabled
+        search_result_list_controller({
+          cache: world.cache
+          state: world.state
+          el: els.search
+        })
 
       for store in [ world.cache.tag_store, world.cache.search_result_store ]
         for event in [ 'added', 'removed', 'changed' ]

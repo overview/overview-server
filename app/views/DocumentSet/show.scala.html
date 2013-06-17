@@ -1,6 +1,7 @@
 @(
   user: OverviewUser,
-  documentSet: org.overviewproject.tree.orm.DocumentSet
+  documentSet: org.overviewproject.tree.orm.DocumentSet,
+  isSearchable: Boolean /* HACK: remove once all docsets are searchable */
 )(
   implicit lang: Lang,
   flash: Flash
@@ -60,5 +61,5 @@
   "views.Document.show.title.empty_title"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-  <div id="main" class=""></div>
+  <div id="main" data-is-searchable="@isSearchable" class=""></div>
 }

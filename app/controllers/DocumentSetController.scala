@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
-import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, DocumentSetUserFinder }
+import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentFinder, DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.DocumentSetUser 
 import models.ResultPage
@@ -22,6 +22,13 @@ trait DocumentSetController extends Controller {
     def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
+
+    /** Returns true iff we can search the document set.
+      *
+      * This is a '''hack'''. All document sets ''should'' be searchable, but
+      * at the moment they are not. Once they are, remove this method.
+      */
+    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
   }
@@ -40,7 +47,12 @@ trait DocumentSetController extends Controller {
 
   def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
-      case Some(documentSet) => Ok(views.html.DocumentSet.show(request.user, documentSet))
+      case Some(documentSet) =>
+        Ok(views.html.DocumentSet.show(
+          request.user,
+          documentSet,
+          storage.isDocumentSetSearchable(documentSet)
+        ))
       case None => NotFound
     }
   }
@@ -92,6 +104,17 @@ object DocumentSetController extends DocumentSetController {
 
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
       DocumentSetStore.insertOrUpdate(documentSet)
+    }
+
+    override def isDocumentSetSearchable(documentSet: DocumentSet): Boolean = {
+      // Only DocumentCloud docsets that aren't split by pages are searchable
+      val maybeDoc = DocumentFinder.byDocumentSet(documentSet).headOption
+      val maybeDocumentCloudId = maybeDoc.flatMap(_.documentcloudId)
+
+      maybeDocumentCloudId match {
+        case Some(documentCloudId) => !documentCloudId.contains("#")
+        case None => false
+      }
     }
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {
