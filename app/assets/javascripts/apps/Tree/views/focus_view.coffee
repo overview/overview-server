@@ -1,6 +1,7 @@
 define [ 'jquery', '../models/observable' ], ($, observable) ->
   DEFAULT_OPTIONS = {
     handle_width: 11 #px
+    border_width: 0 # px
   }
 
   class FocusView
@@ -125,7 +126,7 @@ define [ 'jquery', '../models/observable' ], ($, observable) ->
       zoom = @focus.zoom
       pan = @focus.pan
 
-      width = $(@div).width()
+      width = @div.clientWidth
 
       ret = {
         middle: {
@@ -160,6 +161,9 @@ define [ 'jquery', '../models/observable' ], ($, observable) ->
         diff = @options.handle_width - space_between
         ret.left.left -= diff * 0.5
         ret.right.left += diff * 0.5
+
+      ret.middle.left -= @options.border_width
+      ret.middle.width += 2 * @options.border_width
 
       ret
 

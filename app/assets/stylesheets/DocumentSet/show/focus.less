@@ -2,6 +2,9 @@
 @import "../../vendor/bootstrap/less/mixins.less";
 
 #tree-app-zoom-slider {
+  overflow: hidden;
+  .border-bottom-radius(5px);
+
   * {
     .box-sizing(border-box);
     position: absolute;
@@ -10,7 +13,7 @@
   }
 
   .line {
-    background: @wellBackground;
+    background: @darkBodyBackground;
   }
 
   .handle {
@@ -30,7 +33,6 @@
 
   .middle {
     cursor: move;
-    background: #ddd;
-    border: 1px solid @grayLight;
+    background: @mutedHighlightColor;
   }
 }

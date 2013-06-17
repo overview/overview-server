@@ -1,7 +1,6 @@
 @import "../../vendor/bootstrap/less/mixins.less";
 @import "./_variables.less";
-
-@layoutBorderColor: #ddd;
+@import "../../mixins.less";
 
 // We put all major layout stuff in one file, to match the one HTML template
 
@@ -20,10 +19,11 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 50%;
+  left: 50%;
   bottom: 0;
-  border: 5px solid transparent;
-  border-left-width: 0;
+  margin: 5px;
+  .overview-toplevel-box();
+  overflow: hidden; // make border-radius nice
 }
 
 #tree-app-left-top {
@@ -32,6 +32,7 @@
   left: 0;
   width: 100%;
   // bottom will change
+  .overview-toplevel-box();
 }
 
 #tree-app-left-bottom {
@@ -49,9 +50,6 @@
   bottom: @focus_height;
   left: 0;
   right: 0;
-  .box-sizing(border-box);
-  border: 1px solid @layoutBorderColor;
-  border-bottom-width: 0;
 }
 
 #tree-app-zoom-slider {
@@ -59,8 +57,6 @@
   right: 0;
   left: 0;
   bottom: 0;
-  .box-sizing(border-box);
-  border: 1px solid @layoutBorderColor;
   height: @focus_height;
 }
 
@@ -84,7 +80,6 @@
 
 #tree-app-document {
   position: absolute;
-  border: 1px solid @layoutBorderColor;
   left: 0;
   right: 0;
   bottom: -100%;

@@ -4,10 +4,9 @@
 @import "_variables.less";
 
 #document-list {
-  border: 1px solid #ccc;
+  border-top: 1px solid @mutedShadeColor;
   position: absolute;
   top: 1.8em;
-  margin-top: 1px; // border-top of document-list-title
   left: 0;
   right: 0;
   bottom: 0;
@@ -29,7 +28,7 @@
     margin: 0;
     padding: 5px 10px;
     line-height: 1.5;
-    border-bottom: 1px solid @grayLighter;
+    border-bottom: 1px dotted @mutedShadeColor;
 
     &.placeholder, &.loading {
       color: @gray;

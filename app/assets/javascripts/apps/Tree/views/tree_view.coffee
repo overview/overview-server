@@ -56,12 +56,8 @@ define [
 
   class DrawOperation
     constructor: (@canvas, @tree, @colorLogic, @focus_nodes, @focus, @options) ->
-      $canvas = $(@canvas)
-      @width = +Math.ceil($canvas.parent().width())
-      @height = +Math.ceil($canvas.parent().height())
-
-      @canvas.width = @width
-      @canvas.height = @height
+      @canvas.width = @width = Math.floor(parseFloat(@canvas.parentNode.clientWidth))
+      @canvas.height = @height = Math.floor(parseFloat(@canvas.parentNode.clientHeight))
 
       @ctx = @canvas.getContext('2d')
 
