@@ -8,7 +8,6 @@ define [
 ], ($, _, observable, DrawableNode, ColorTable) ->
   DEFAULT_OPTIONS = {
     color: {
-      background: '#ffffff',
       line: '#888888',
       line_selected: '#000000',
       line_default: '#333333',
@@ -94,8 +93,7 @@ define [
       @ctx.shadowColor = 'white'
 
     clear: () ->
-      @ctx.fillStyle = @options.color.background
-      @ctx.fillRect(0, 0, @width, @height)
+      @ctx.clearRect(0, 0, @width, @height)
       @root = undefined # will be overwritten if the tree isn't empty
 
     _auto_fit_pan: (drawable_node) ->

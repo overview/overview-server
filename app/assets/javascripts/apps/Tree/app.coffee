@@ -81,8 +81,8 @@ define [
 
       refreshHeight = () ->
         # Make the main div go below the (variable-height) navbar
-        h = $(options.navEl).height()
-        $(options.fullSizeEl).css({ top: h })
+        h = $(options.navEl).outerHeight()
+        $(els.main).css({ top: h })
 
         # Give room to the tags and search results at the bottom
         h = $(els.leftBottom).outerHeight()

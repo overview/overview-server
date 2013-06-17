@@ -4,34 +4,32 @@
   implicit lang: Lang
 )
 @defining(scopedMessages("views.components.navbar")) { m =>
-  <nav class="navbar navbar-static-top">
-    <div class="navbar-inner">
-      <div class="container">
-        <a class="brand" href="@routes.WelcomeController.show()">@t("brand.name")</a>
-        <ul class="nav">
-          <li><a href="http://overview.ap.org/">@m("link_blog")</a></li>
-          <li><a href="@routes.HelpController.show()">@m("link_help")</a></li>
-          <li><a href="http://overview.ap.org/contact/">@m("link_contact")</a></li>
-        </ul>
-        @optionalUser.map { user =>
-          <div class="logged-in pull-right">
-            <p class="navbar-text pull-left">@(Html(HtmlFormat.escape(m("logged_in", "EMAIL")).toString.replace("EMAIL", "<strong>" + HtmlFormat.escape(user.email).toString + "</strong>")))</p>
-            <ul class="nav">
-              @if(user.isAdministrator) {
-                <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
-                  <ul class="dropdown-menu" role="menu">
-                    <li><a href="@controllers.admin.routes.UserController.index()">@m("link_admin_users")</a></li>
-                    <li><a href="@controllers.admin.routes.ImportJobController.index()">@m("link_admin_jobs")</a></li>
-                  </ul>
-                </li>
-              }
-              <li><a href="@routes.DocumentSetController.index()">@m("link_document_sets")</a></li>
-              <li><a href="@routes.SessionController.delete()">@m("link_logout")</a></li>
-            </ul>
-          </div>
-        }
-      </div>
+  <nav>
+    <header><a href="@routes.WelcomeController.show()">@t("brand.name")</a></header>
+    <div class="all">
+      <ul>
+        <li><a href="http://overview.ap.org/">@m("link_blog")</a></li>
+        <li><a href="@routes.HelpController.show()">@m("link_help")</a></li>
+        <li><a href="http://overview.ap.org/contact/">@m("link_contact")</a></li>
+      </ul>
     </div>
+    @optionalUser.map { user =>
+      <div class="logged-in">
+        <div class="navbar-text">@(Html(HtmlFormat.escape(m("logged_in", "EMAIL")).toString.replace("EMAIL", "<strong>" + HtmlFormat.escape(user.email).toString + "</strong>")))</div>
+        <ul>
+          @if(user.isAdministrator) {
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin <b class="caret"></b></a>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="@controllers.admin.routes.UserController.index()">@m("link_admin_users")</a></li>
+                <li><a href="@controllers.admin.routes.ImportJobController.index()">@m("link_admin_jobs")</a></li>
+              </ul>
+            </li>
+          }
+          <li><a href="@routes.DocumentSetController.index()">@m("link_document_sets")</a></li>
+          <li><a href="@routes.SessionController.delete()">@m("link_logout")</a></li>
+        </ul>
+      </div>
+    }
   </nav>
 }
