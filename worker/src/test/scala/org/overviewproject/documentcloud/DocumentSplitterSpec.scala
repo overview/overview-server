@@ -20,14 +20,19 @@ class DocumentSplitterSpec extends Specification with NoTimeConversions {
   
   "DocumentSplitter" should {
     
-    abstract class DocumentSplitterContext extends ActorSystemContext with Before {
+    trait DocumentSetup {
+      val numberOfPages: Int = 2
+    }
+    
+    
+    abstract class DocumentSplitterContext extends ActorSystemContext with DocumentSetup with Before {
 
       def retrieverGenerator(documentRecorder: ActorRef, document: Document, receiver: ActorRef): Actor = {
         documentRecorder ! document
         new SilentActor
       }
       
-      val document = Document("id", "title", 2, "public", "texturl", "page-{page}")
+      val document = Document("id", "title", numberOfPages, "public", "texturl", "page-{page}")
       val pages: Seq[Document] = Seq.tabulate(2)(n => new DocumentPage(document, n + 1))
       
       var documentSplitter: TestActorRef[DocumentSplitter] = _
@@ -43,6 +48,9 @@ class DocumentSplitterSpec extends Specification with NoTimeConversions {
       
     }
 
+    trait DocumentWithNoPages extends DocumentSetup {
+      override val numberOfPages = 0
+    }
 
     "create retriever actors for each page in the document" in new DocumentSplitterContext {
       documentSplitter ! Start()
@@ -68,6 +76,12 @@ class DocumentSplitterSpec extends Specification with NoTimeConversions {
       documentSplitter ! JobComplete()
 
       monitor.expectMsgType[Terminated]
+    }
+    
+    "send JobComplete to parent if document has no pages" in new DocumentSplitterContext with DocumentWithNoPages {
+      documentSplitter ! Start()
+      
+      expectMsg(JobComplete())
     }
   }
 }

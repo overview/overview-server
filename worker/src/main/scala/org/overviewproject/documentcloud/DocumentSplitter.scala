@@ -8,7 +8,8 @@ class DocumentSplitter(document: Document, receiver: ActorRef, retrieverGenerato
   private var completedPages: Int = 0
 
   def receive = {
-    case Start() => splitDocument
+    case Start() if (document.pages > 0) => splitDocument
+    case Start() => finish
     case JobComplete() => trackCompletions
   }
 
@@ -17,13 +18,15 @@ class DocumentSplitter(document: Document, receiver: ActorRef, retrieverGenerato
     documentPage = new DocumentPage(document, pageNumber)
     pageRetriever = context.actorOf(Props(retrieverGenerator(documentPage, receiver)))
   } pageRetriever ! Start()
-  
+
   private def trackCompletions: Unit = {
     completedPages += 1
-    
-    if (completedPages == document.pages) {
-      context.parent ! JobComplete()
-      context.stop(self)
-    } 
+
+    if (completedPages == document.pages) finish
+  }
+
+  private def finish: Unit = {
+    context.parent ! JobComplete()
+    context.stop(self)
   }
 }
