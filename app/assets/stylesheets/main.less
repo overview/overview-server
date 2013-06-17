@@ -1,3 +1,5 @@
+@import "fonts.less"; // first, because it refers to new downloads
+
 @import "vendor/bootstrap/less/reset.less";
 @import "variables.less"; // Modify this for custom colors, font-sizes, etc
 @import "vendor/bootstrap/less/mixins.less";
@@ -16,8 +18,6 @@
 @import "vendor/bootstrap/less/buttons.less";
 @import "vendor/bootstrap/less/button-groups.less";
 @import "vendor/bootstrap/less/alerts.less"; // Note: alerts share common CSS with buttons and thus have styles in buttons.less
-@import "vendor/bootstrap/less/navs.less";
-@import "vendor/bootstrap/less/navbar.less";
 @import "vendor/bootstrap/less/pagination.less";
 @import "vendor/bootstrap/less/modals.less";
 @import "vendor/bootstrap/less/hero-unit.less";
@@ -26,7 +26,6 @@
 @import "vendor/bootstrap/less/responsive-1200px-min.less";
 @import "vendor/bootstrap/less/responsive-768px-979px.less";
 @import "vendor/bootstrap/less/responsive-767px-max.less";
-@import "vendor/bootstrap/less/responsive-navbar.less";
 
 // Okay, on with the code
 
@@ -140,6 +139,7 @@ form {
   float: right;
 }
 
+@import "common/nav.less";
 @import "DocumentSet/index.less";
 @import "DocumentSet/_import.less";
 @import "DocumentSet/show.less";

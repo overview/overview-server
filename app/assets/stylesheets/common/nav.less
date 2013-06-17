@@ -1,0 +1,87 @@
+@import "../variables.less"; // Modify this for custom colors, font-sizes, etc
+@import "vendor/bootstrap/less/mixins.less";
+
+nav {
+  @maxFontSize: @baseLineHeight * 1.75;
+  @lineHeight: @baseLineHeight * 2;
+
+  .styled-a() {
+    display: block;
+    color: @invertedTextColor;
+    text-decoration: none;
+    height: @lineHeight;
+    line-height: @lineHeight;
+    padding: 0 .5em;
+
+    &:hover {
+      color: @invertedTextColor;
+      text-decoration: underline;
+    }
+  }
+
+  background: @invertedBackground;
+  color: @invertedTextColor;
+  margin: 0;
+  padding: .5em 2em;
+  line-height: @lineHeight;
+  .clearfix;
+
+  & > div > ul {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    & > li {
+      margin: 0;
+      padding: 0;
+      display: inline-block;
+      height: @lineHeight;
+
+      & > a {
+        .styled-a();
+      }
+    }
+  }
+
+  & > a {
+    .styled-a();
+  }
+
+  header {
+    float: left;
+    font-family: Montserrat, Verdana, Helvetica, Arial, sans-serif;
+    font-size: @maxFontSize;
+    font-weight: bold;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+
+    a {
+      .styled-a();
+    }
+  }
+
+  .all {
+    float: left;
+  }
+
+  .logged-in {
+    float: right;
+
+    ul {
+      float: left;
+    }
+  }
+
+  .navbar-text {
+    float: left;
+    margin: 0 2em;
+  }
+
+  .caret {
+    position: relative;
+    top: .75em;
+    border-top-color: @bodyBackground;
+    border-bottom-color: @bodyBackground;
+  }
+}

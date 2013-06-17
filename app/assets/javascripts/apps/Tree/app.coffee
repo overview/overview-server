@@ -41,10 +41,8 @@ define [
         Logger.set_server(world.cache.server)
 
       refresh_height = () ->
-        MARGIN = 5 #px
-
         # Make the main div go below the (variable-height) navbar
-        h = $(options.navEl).height()
+        h = $(options.navEl).outerHeight()
         $(options.fullSizeEl).css({ top: h })
 
         # Give room to the tags at the bottom
