@@ -40,7 +40,7 @@ define [
           <ul class="actions">
             <li><%= showBooleanPref('sidebar') %></li>
           </ul>
-          <iframe src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') + (url.page || '') %>"></iframe>
+          <iframe class="document" src="<%- url.url + '?sidebar=' + (getPref('sidebar') && 'true' || 'false') + (url.page || '') %>"></iframe>
         </div>
       """)
 
@@ -82,7 +82,7 @@ define [
           <% if (!getPref('iframe')) { %>
             <pre class="<%- getPref('wrap') && 'wrap' || 'nowrap' %>"><%- document.text %></pre>
           <% } else { %>
-            <iframe src="<%- url.url %>" width="100" height="100"></iframe>
+            <iframe class="document"  src="<%- url.url %>" width="100" height="100"></iframe>
           <% } %>
         </div>
       """)
