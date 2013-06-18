@@ -165,3 +165,33 @@ define [
 
       @transaction_queue.queue =>
         @server.post('node_update', new_node, { path_argument: id })
+
+    # Given a Selection, returns:
+    #
+    # * [ 'tag', 'Tag name' ] if it's a one-tag selection (ignoring documents)
+    # * [ 'node', 'Node description' ] if it's a one-node selection (ignoring
+    #   documents)
+    # * [ 'searchResult', 'Search query' ] if it's a one-search-result
+    #   selection (ignoring documents)
+    # * [ 'other' ] if it's something else (or undefined)
+    describeSelectionWithoutDocuments: (selection) ->
+      nodeCount = selection?.nodes?.length
+      tagCount = selection?.tags?.length
+      searchCount = selection?.searchResults?.length
+
+      if nodeCount + tagCount + searchCount == 1
+        switch
+          when nodeCount
+            id = selection.nodes[0]
+            description = @on_demand_tree.nodes[id]?.description
+            [ 'node', description ]
+          when tagCount
+            id = selection.tags[0]
+            name = @tag_store.find_by_id(id)?.name
+            [ 'tag', name ]
+          else
+            id = selection.searchResults[0]
+            query = @search_result_store.find_by_id(id)?.query
+            [ 'searchResult', query ]
+      else
+        [ 'other' ]
