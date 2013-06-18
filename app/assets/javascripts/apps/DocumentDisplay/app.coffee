@@ -35,9 +35,12 @@ define [
     # * A JSON object with an id property (in our database)
     # * undefined
     setDocument: (json) ->
-      @finder.findDocumentFromJson(json)
-        .done((document) => @state.set('document', document))
-        .fail(=> @state.set('document', undefined))
+      if json?
+        @finder.findDocumentFromJson(json)
+          .done((document) => @state.set('document', document))
+          .fail(=> @state.set('document', undefined))
+      else
+        @state.set('document', undefined)
 
     # Scroll the view by the specified number of pages.
     #
