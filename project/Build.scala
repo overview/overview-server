@@ -95,7 +95,6 @@ object ApplicationBuild extends Build with ProjectSettings {
   ).settings(
     scalacOptions ++= ourScalacOptions,
     templatesImport += "views.Magic._",
-    lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less"), // only compile .less files that aren't in subdirs
     requireJs ++= Seq(
       "bundle/DocumentCloudImportJob/new.js",
       "bundle/DocumentSet/index.js",
@@ -128,6 +127,11 @@ object ApplicationBuild extends Build with ProjectSettings {
     sources in doc in Compile := List(),
     printClasspath,
     aggregate in printClasspathTask := false
+  ).settings(
+    if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false")
+      lessEntryPoints := Nil
+    else
+      lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
   ).dependsOn(common)
 
 
