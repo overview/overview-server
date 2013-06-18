@@ -14,7 +14,8 @@ define [
   './node_form_controller'
   './tag_form_controller'
   './logger'
-], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, SearchResultStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
+  'apps/DocumentDisplay/app'
+], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, SearchResultStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger, DocumentDisplayApp) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
@@ -54,11 +55,12 @@ define [
 
   Controller = Backbone.Model.extend
     # Only set on initialize (properties may change):
-    # * documentViewEl (an HTMLElement)
     # * tagStore (a TagStore)
     # * documentStore (a DocumentStore)
     # * cache (a Cache)
     # * state (a State)
+    # * listEl (an HTMLElement)
+    # * cursorEl (an HTMLElement)
     #
     # Read-only, may change or be set to something new:
     # * selection (a Selection)
@@ -70,7 +72,6 @@ define [
     # Read-only, only properties may change:
     # * listSelection (a ListSelectionController)
     # * tagCollection (a Backbone.Collection)
-    # * titleView
     # * listView
     # * cursorView
     defaults:
@@ -88,7 +89,6 @@ define [
       documentCollection: undefined
 
     initialize: (attrs, options) ->
-      throw 'Must specify documentViewEl, an HTMLElement' if !attrs.documentViewEl
       throw 'Must specify tagStore, a TagStore' if !attrs.tagStore
       throw 'Must specify searchResultStore, a SearchResultStore' if !attrs.searchResultStore
       throw 'Must specify documentStore, a DocumentStore' if !attrs.documentStore
@@ -105,7 +105,6 @@ define [
       @_addTitleView()
       @_addListView()
       @_addCursorView()
-      @_addDocumentView()
 
     _addSelection: ->
       state = @get('state')
@@ -152,7 +151,7 @@ define [
         @get('documentListProxy')?.destroy()
         documentList = @get('documentList')
         if documentList
-          documentListProxy = new DocumentListProxy(documentList, documentStore, tagStore)
+          documentListProxy = new DocumentListProxy(documentList)
           @set('documentListProxy', documentListProxy)
           @set('documentCollection', documentListProxy.model.documents)
         else
@@ -219,6 +218,7 @@ define [
         tag_form_controller(tag, cache, state)
 
       @set('titleView', view)
+      view.$el.appendTo(@get('listEl'))
 
     _addListView: ->
       view = new DocumentListView({
@@ -251,11 +251,14 @@ define [
           firstMissingIndex += pageSize
 
       @set('listView', view)
+      view.$el.appendTo(@get('listEl'))
 
     _addCursorView: ->
       view = new DocumentListCursorView({
         selection: @get('listSelection')
         documentList: @get('documentListProxy')?.model
+        documentDisplayApp: DocumentDisplayApp
+        el: @get('cursorEl')
       })
 
       @on 'change:documentListProxy', (model, documentListProxy) ->
@@ -263,79 +266,16 @@ define [
 
       @set('cursorView', view)
 
-    _addDocumentView: ->
-      listView = @get('listView')
-      $documentViewEl = $(@get('documentViewEl'))
-      $cursorViewEl = @get('cursorView').$el
-      $titleViewEl = @get('titleView').$el
-      listSelection = @get('listSelection')
-      collection = @get('documentCollection')
-
-      # window.setInterval() value that tries to set listView.$el.scrollTop()
-      scrollTopInterval = undefined
-
-      refresh = ->
-        if scrollTopInterval?
-          window.clearInterval(scrollTopInterval)
-          scrollTopInterval = undefined
-
-        selectedIndices = listSelection.get('selectedIndices')
-        if selectedIndices.length == 1
-          # Scroll selection to the right position
-          $li = listView.$("li.document:eq(#{selectedIndices[0]})")
-          $ul = $li.parent()
-          scrollTop = $li.offset().top - $ul.offset().top
-          # We'd like to set scrollTop directly, but that won't work when the
-          # list is too short to have a scrollbar (but long enough that we need
-          # to change the scrollTop -- 5 items, for instance).
-          tries = 20
-          scrollTopInterval = doUntilWithSetInterval(
-            -> listView.$el.scrollTop(scrollTop),
-            -> (listView.$el.scrollTop() == scrollTop) || (tries -= 1) <= 0,
-            50
-          )
-          #
-          # We'll animate, which will set it lots of times. Ensure the
-          # duration of the animation is >= the duration of CSS transitions.
-          #listView.$el.scrollTop(scrollTop)
-          listView.$el.stop(true, true)
-          listView.$el.animate({ scrollTop: scrollTop })
-
-          # Bring in #document
-          $container = listView.$el.parent()
-          console.log($container)
-          documentHeight = Math.floor($container.height() - listView.$el.position().top - $li.outerHeight())
-          $documentViewEl.height(documentHeight)
-          $cursorViewEl.css({ top: "#{$ul.parent().position().top + $li.outerHeight()}px" })
-          listView.$el.css({ bottom: "#{documentHeight}px" })
-        else
-          $cursorViewEl.css({ top: '100%' })
-          listView.$el.css({ bottom: '' })
-
-      listSelection.on('change:selectedIndices', refresh)
-
-      @listenTo(collection, 'change', refresh)
-      @on 'change:documentCollection', (model, newCollection) =>
-        @stopListening(collection)
-        collection = newCollection
-        @listenTo(collection, 'change', refresh)
-
-      @on 'change:selection', (model, selection) ->
-      $(window).on('resize', refresh)
-
-  document_list_controller = (div, documentDiv, cache, state) ->
+  document_list_controller = (listDiv, cursorDiv, cache, state) ->
     controller = new Controller({
       tagStore: cache.tag_store
       searchResultStore: cache.search_result_store
       documentStore: cache.document_store
-      documentViewEl: documentDiv
       state: state
       cache: cache
+      listEl: listDiv
+      cursorEl: cursorDiv
     })
-
-    $(div).append(controller.get('titleView').el)
-    $(div).append(controller.get('listView').el)
-    $(div).append(controller.get('cursorView').el)
 
     go_up_or_down = (up_or_down, event) ->
       listSelection = controller.get('listSelection')

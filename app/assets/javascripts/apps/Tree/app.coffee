@@ -47,7 +47,7 @@ define [
           </div>
           <div id="tree-app-right">
             <div id="tree-app-document-list"></div>
-            <div id="tree-app-document"></div>
+            <div id="tree-app-document-cursor"></div>
           </div>
         """
 
@@ -64,6 +64,7 @@ define [
           tags: el('tree-app-tags')
           search: el('tree-app-search')
           documentList: el('tree-app-document-list')
+          documentCursor: el('tree-app-document-cursor')
           document: el('tree-app-document')
           left: el('tree-app-left')
           leftTop: el('tree-app-left-top')
@@ -147,7 +148,7 @@ define [
       })
       keyboard_controller.add_controller('DocumentContentsController', controller)
 
-      controller = document_list_controller(els.documentList, els.document, world.cache, world.state)
+      controller = document_list_controller(els.documentList, els.documentCursor, world.cache, world.state)
       keyboard_controller.add_controller('DocumentListController', controller)
 
       new ModeView({ el: options.mainEl, state: world.state })

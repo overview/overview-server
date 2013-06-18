@@ -1,45 +1,119 @@
-define [ 'backbone', 'i18n' ], (Backbone, i18n) ->
+define [
+  'backbone'
+  'i18n'
+], (Backbone, i18n) ->
   t = (key, args...) -> i18n("views.DocumentSet.show.DocumentListCursor.#{key}", args...)
 
+  # Shows the Document corresponding to the user's cursor.
+  #
+  # There are three states (HTML class names) this view can be in:
+  #
+  # * showing-document: the cursor points at a document
+  # * showing-unloaded-document: the cursor points at a document that is in the
+  #   DocumentList's range but is not in the DocumentList's collection -- that
+  #   is, a document that presumably we're fetching from the server.
+  # * not-showing-document: the cursor does not point at a document
+  #
+  # The following options must be passed:
+  #
+  # * documentList: a Backbone.Model with an "n" attribute and
+  #   describeSelection() method. (See
+  #   Cache.describeSelectionWithoutDocuments().) documentList.documents must be
+  #   a Backbone.Collection of Backbone.Model instances, with attributes
+  #   such as would be passed to DocumentDisplay/App.setDocument()
+  # * selection: A Backbone.Model with "cursorIndex" (maybe undefined integer)
+  #   and "selectedIndices" (maybe-empty Array of integers). 0 is the first
+  #   index.
+  # * documentDisplayApp: a DocumentDisplay/App constructor, such that
+  #   "new options.documentDisplayApp({ el: HTMLElement }) will create an
+  #   object with a setDocument() method.
   Backbone.View.extend
-    id: 'document-list-cursor'
-
     events:
       'click a.next': '_onClickNext'
       'click a.previous': '_onClickPrevious'
       'click a.list': '_onClickList'
 
-    template: _.template("""
-      <h4><%- t('title', cursorIndex + 1, nDocuments) %></h4>
-      <ul class="actions">
-        <li><a href="#" class="list"><i class="icon-th-list"></i><%- t('list') %></a></li>
-        <li><a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="icon-arrow-down"></i><%- t('next') %></a></li>
-        <li><a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-arrow-up"></i><%- t('previous') %></a></li>
-      </ul>
-    """)
+    templates:
+      root: _.template("""
+        <a href="#" class="list"><i class="icon-th-list"></i><%- t('list') %></a>
+        <div class="box">
+          <header></header>
+          <article></article>
+        </div>
+        """)
+      header: _.template("""
+        <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-arrow-left"></i><span><%- t('previous') %></span></a>
+        <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="icon-arrow-right"></i><span><%- t('next') %></span></a>
+        <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
+        <div class="selection"><%= selectionHtml %></div>
+        <h2><%- document ? document.get('title') : '' %></h2>
+        <h3><%- document ? document.get('description') : '' %></h3>
+      """)
 
     initialize: ->
       throw 'Must pass options.selection, a Backbone.Model with a "cursorIndex" property' if !@options.selection
-      throw 'Must pass options.documentList, undefined or a Backbone.Model with a "n" property' if 'documentList' not of @options
+      throw 'Must pass options.documentList, undefined or a Backbone.Model with a "n" property and "selection" property' if 'documentList' not of @options
+      throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if 'documentDisplayApp' not of @options
 
       @selection = @options.selection
       @documentList = @options.documentList
 
+      @initialRender()
+      @documentDisplayApp = new @options.documentDisplayApp({ el: @documentEl })
+
       @listenTo(@selection, 'change:cursorIndex', => @render())
       @setDocumentList(@options.documentList)
 
-    render: ->
+    initialRender: ->
+      html = @templates.root({ t: t })
+      @$el.html(html)
+      @$headerEl = @$('header')
+      @$documentEl = @$('article')
+      @headerEl = @$headerEl[0]
+      @documentEl = @$documentEl[0]
+
+      this
+
+    _renderHeader: (maybeDocument) ->
       cursorIndex = @selection.get('cursorIndex')
       nDocuments = @documentList?.get('n') || 0
+
+      selectionI18n = @documentList?.describeSelection() || [ 'other' ]
+      selectionI18n[0] = "selection.#{selectionI18n[0]}_html"
+      if selectionI18n[1]
+        selectionI18n[1] = _.escape(selectionI18n[1])
+      selectionHtml = t.apply({}, selectionI18n)
 
       html = if !nDocuments || !cursorIndex? || cursorIndex >= nDocuments
         ''
       else
-        @template({ nDocuments: nDocuments, cursorIndex: cursorIndex, t: t })
+        @templates.header({
+          nDocuments: nDocuments
+          cursorIndex: cursorIndex
+          t: t
+          document: maybeDocument
+          selectionHtml: selectionHtml
+        })
 
-      @$el.html(html)
+      @$headerEl.html(html)
 
-      this
+    _renderDocument: (maybeDocument) ->
+      @documentDisplayApp.setDocument(maybeDocument?.attributes)
+
+    render: ->
+      cursorIndex = @selection.get('cursorIndex')
+      maybeDocument = cursorIndex? && @documentList?.documents?.at(cursorIndex)
+
+      @_renderHeader(maybeDocument)
+      @_renderDocument(maybeDocument)
+
+      @el.className = if cursorIndex?
+        if maybeDocument?
+          'showing-document'
+        else
+          'showing-unloaded-document'
+      else
+        'not-showing-document'
 
     _handleNextOrPrevious: (e, nextOrPrevious) ->
       e.preventDefault()
@@ -55,7 +129,18 @@ define [ 'backbone', 'i18n' ], (Backbone, i18n) ->
       @trigger('list-clicked')
 
     setDocumentList: (documentList) ->
-      @stopListening(@documentList) if @documentList?
+      if @documentList?
+        @stopListening(@documentList)
+        if @documentList.documents?
+          @stopListening(@documentList.documents)
+
       @documentList = documentList
-      @listenTo(@documentList, 'change:n', => @render()) if @documentList?
+
+      if @documentList?
+        @listenTo(@documentList, 'change:n', => @render())
+        if @documentList.documents
+          @listenTo(@documentList.documents, 'change', => @render())
+          @listenTo(@documentList.documents, 'add', => @render())
+          @listenTo(@documentList.documents, 'remove', => @render())
+          @listenTo(@documentList.documents, 'reset', => @render())
       @render()

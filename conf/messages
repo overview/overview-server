@@ -235,10 +235,14 @@ views.DocumentSet.show.DocumentList.placeholder=…
 views.DocumentSet.show.DocumentList.tag.remove=×
 views.DocumentSet.show.DocumentList.tag.remove.title=Remove tag
 
-views.DocumentSet.show.DocumentListCursor.title=Document {0,number,integer} of {1,number,integer}
+views.DocumentSet.show.DocumentListCursor.position_html=Document <strong>{0,number,integer}</strong> of <strong>{1,number,integer}</strong>
 views.DocumentSet.show.DocumentListCursor.next=Next
 views.DocumentSet.show.DocumentListCursor.previous=Previous
 views.DocumentSet.show.DocumentListCursor.list=Back to list
+views.DocumentSet.show.DocumentListCursor.selection.node_html=in folder <strong>{0}</strong>
+views.DocumentSet.show.DocumentListCursor.selection.tag_html=with tag <strong>{0}</strong>
+views.DocumentSet.show.DocumentListCursor.selection.searchResult_html=for search <strong>{0}</strong>
+views.DocumentSet.show.DocumentListCursor.selection.other_html=in selection
 
 views.DocumentSet.show.DocumentListTitle.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.DocumentListTitle.loading=Loading documents…
