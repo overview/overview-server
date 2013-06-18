@@ -126,7 +126,7 @@ define [ 'jquery', '../models/observable' ], ($, observable) ->
       zoom = @focus.zoom
       pan = @focus.pan
 
-      width = @div.clientWidth
+      width = @div.clientWidth || $(@div).width() # first is subpixel-perfect; the second is for tests
 
       ret = {
         middle: {
