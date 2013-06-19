@@ -92,7 +92,7 @@ trait TagController extends Controller {
     val csvWriter = new CSVWriter(stringWriter)
     csvWriter.writeNext(Array("id", "name", "count", "color"))
     tagsWithCounts.foreach({ case (tag, count) =>
-      csvWriter.writeNext(Array(tag.id.toString, tag.name, count.toString, tag.color.getOrElse("")))
+      csvWriter.writeNext(Array(tag.id.toString, tag.name, count.toString, tag.color))
     })
     csvWriter.close()
     Ok(stringWriter.toString())

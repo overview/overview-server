@@ -53,7 +53,7 @@ class showSpec extends Specification {
       val nodes = Seq[(Node,Iterable[Long],Iterable[(Long,Long)], Iterable[(Long, Long)])]()
       val dummyDocuments = Seq[(Document,Seq[Long],Seq[Long])]()
 
-      val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color=Some("ffffff"))
+      val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
 
       val tags = List[(Tag,Long)](
         (baseTag.copy(id=5L, name="tag1"), 5L),

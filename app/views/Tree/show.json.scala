@@ -43,8 +43,11 @@ object show {
     Json.obj(
       "id" -> tag.id,
       "name" -> tag.name,
-      "color" -> JsString(tag.color.map("#" + _).getOrElse("#666666")),
-      "doclist" -> Json.obj("n" -> count, "docids" -> Seq[Long]())
+      "color" -> ("#" + tag.color),
+      "doclist" -> Json.obj(
+        "n" -> count,
+        "docids" -> Seq[Long]()
+      )
     )
   }
 

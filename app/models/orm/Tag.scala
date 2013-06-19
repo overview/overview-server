@@ -8,7 +8,7 @@ case class Tag(
   val id: Long = 0L,
   @Column("document_set_id") val documentSetId: Long,
   val name: String,
-  val color: Option[String] = None) extends KeyedEntity[Long] {
+  val color: String) extends KeyedEntity[Long] {
 
   override def isPersisted(): Boolean = id != 0L
 }

@@ -41,7 +41,7 @@ class DocumentSetStoreSpec extends Specification {
     }
 
     def insertTag(documentSet : DocumentSet) = {
-      TagStore.insertOrUpdate(Tag(documentSetId=documentSet.id, name="name"))
+      TagStore.insertOrUpdate(Tag(documentSetId=documentSet.id, name="name", color="000000"))
     }
 
     def insertViewer(documentSet: DocumentSet, userEmail: String) = {

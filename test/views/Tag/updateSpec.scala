@@ -12,7 +12,7 @@ class updateSpec extends Specification {
       val color = "aabbcc"
       val colorForJs = '#' + color
 
-      val tag = Tag(id=id, documentSetId=1L, name=name, color=Some(color))
+      val tag = Tag(id=id, documentSetId=1L, name=name, color=color)
 
       val tagJson = views.json.Tag.update(tag).toString
 
