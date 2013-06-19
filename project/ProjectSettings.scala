@@ -33,7 +33,7 @@ trait ProjectSettings {
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.1.0"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
-
+  val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
     
   // Project dependencies
   val serverProjectDependencies = Seq(
@@ -67,6 +67,7 @@ trait ProjectSettings {
 
   val workerProjectDependencies = Seq(
     jdbc,
+    logbackDep,
     openCsvDep,
     squerylDep,
     akkaTestkit % "test",
