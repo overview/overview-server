@@ -84,7 +84,7 @@ define [
         @ctx.scale(ratio, ratio)
 
       @ctx.lineStyle = @options.color.line
-      @ctx.font = "12px Helvetica, Arial, sans-serif"
+      @ctx.font = '12px "Open Sans", Helvetica, Arial, sans-serif'
       @ctx.textBaseline = 'top'
       @ctx.shadowColor = 'white'
 
