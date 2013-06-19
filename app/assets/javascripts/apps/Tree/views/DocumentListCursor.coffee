@@ -46,8 +46,8 @@ define [
         <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="icon-arrow-right"></i><span><%- t('next') %></span></a>
         <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
         <div class="selection"><%= selectionHtml %></div>
-        <h2><%- document ? document.get('title') : '' %></h2>
-        <h3><%- document ? document.get('description') : '' %></h3>
+        <h2><%- (document && document.get('title')) ? t('title', document.get('title')) : t('title.empty') %></h2>
+        <h3><%- (document && document.get('description')) ? t('description', document.get('description')) : t('description.empty') %></h3>
       """)
 
     initialize: ->

@@ -243,6 +243,10 @@ views.DocumentSet.show.DocumentListCursor.selection.node_html=in folder <strong>
 views.DocumentSet.show.DocumentListCursor.selection.tag_html=with tag <strong>{0}</strong>
 views.DocumentSet.show.DocumentListCursor.selection.searchResult_html=for search <strong>{0}</strong>
 views.DocumentSet.show.DocumentListCursor.selection.other_html=in selection
+views.DocumentSet.show.DocumentListCursor.title={0}
+views.DocumentSet.show.DocumentListCursor.title.empty=(no title)
+views.DocumentSet.show.DocumentListCursor.description.empty=(no key words)
+views.DocumentSet.show.DocumentListCursor.description=Key words: {0}
 
 views.DocumentSet.show.DocumentListTitle.num_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.DocumentListTitle.loading=Loading documents…

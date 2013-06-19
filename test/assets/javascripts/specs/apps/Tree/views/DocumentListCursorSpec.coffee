@@ -42,6 +42,10 @@ require [
         'views.DocumentSet.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.other_html': 'selection.other_html'
+        'views.DocumentSet.show.DocumentListCursor.title': 'title,{0}'
+        'views.DocumentSet.show.DocumentListCursor.title.empty': 'title.empty'
+        'views.DocumentSet.show.DocumentListCursor.description': 'description,{0}'
+        'views.DocumentSet.show.DocumentListCursor.description.empty': 'description.empty'
 
     describe 'starting with a full list at no index', ->
       beforeEach ->
