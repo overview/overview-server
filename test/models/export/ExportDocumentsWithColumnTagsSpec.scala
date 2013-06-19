@@ -19,8 +19,8 @@ class ExportDocumentsWithColumnTagsSpec extends Specification with Mockito {
   trait BaseScope extends Scope {
     val tagFinderResult = mock[FinderResult[Tag]]
     tagFinderResult.toIterable returns Seq(
-      Tag(id=1L, documentSetId=0L, name="tag1"),
-      Tag(id=2L, documentSetId=0L, name="tag2")
+      Tag(id=1L, documentSetId=0L, name="tag1", color="000000"),
+      Tag(id=2L, documentSetId=0L, name="tag2", color="000000")
     )
 
     val finderResult = mock[FinderResult[(Document,Option[String])]]

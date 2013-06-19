@@ -3,10 +3,9 @@ package views.json.DocumentSet
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.libs.json.Json.toJson
-
 import org.overviewproject.test.Specification
-import models.orm.DocumentSet
 import models.OverviewUser
+import org.overviewproject.tree.orm.DocumentSet
 
 class showSpec extends Specification {
 

@@ -16,6 +16,10 @@ object Selection {
   implicit def stringToSeqLongParam(s: String) = new SeqLongParam(IdList.longs(s).ids)
   implicit def idsLongToSeqLongParam(ids: Seq[Long]) = new SeqLongParam(ids)
 
+  def apply(documentSetId: Long) : Selection = {
+    apply(documentSetId, Seq[Long](), Seq[Long](), Seq[Long](), Seq[Long]())
+  }
+
   def apply(documentSetId: Long, nodeIds: SeqLongParam, tagIds: SeqLongParam, searchResultIds: SeqLongParam, documentIds: SeqLongParam) : Selection = {
     apply(documentSetId, nodeIds.ids, tagIds.ids, searchResultIds.ids, documentIds.ids)
   }

@@ -3,7 +3,7 @@ package controllers.forms
 import play.api.data.Form
 import play.api.data.Forms
 
-import models.orm.DocumentSet
+import org.overviewproject.tree.orm.DocumentSet
 
 object DocumentSetForm {
   case class Credentials(val username: Option[String], val password: Option[String])

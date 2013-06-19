@@ -2,7 +2,7 @@ package controllers.forms
 
 import play.api.data._
 import play.api.data.Forms._
-import models.orm.DocumentSet
+import org.overviewproject.tree.orm.DocumentSet
 
 object DocumentSetUpdateForm {
 

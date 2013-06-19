@@ -1,9 +1,6 @@
 define [ '../views/DocumentContents' ], (DocumentContentsView) ->
-  document_contents_controller = (cache, state) ->
-    view = new DocumentContentsView({
-      cache: cache
-      state: state
-    })
+  document_contents_controller = (options) ->
+    view = new DocumentContentsView(options)
 
     {
       el: view.el

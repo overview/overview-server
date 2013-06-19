@@ -3,9 +3,11 @@ define [
   './document_store'
   './on_demand_tree'
   './tag_store'
+  './TagLikeApi'
+  './search_result_store'
   './needs_resolver'
   './transaction_queue'
-], ($, DocumentStore, OnDemandTree, TagStore, NeedsResolver, TransactionQueue) ->
+], ($, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue) ->
   Deferred = $.Deferred
 
   # A Cache stores documents, nodes and tags, plus a transaction queue.
@@ -21,13 +23,19 @@ define [
   #   removing a tag means all documents must be modified.)
   # * create_*, update_*, delete_*: Update the cache, *and* queue a transaction to
   #   modify the server's data.
+  #
+  # Lots of these methods are inconsistent and ugly. This whole class needs
+  # rethinking and splitting-up.
   class Cache
     constructor: () ->
       @document_store = new DocumentStore()
       @tag_store = new TagStore()
-      @needs_resolver = new NeedsResolver(@document_store, @tag_store)
+      @search_result_store = new SearchResultStore("#{window.location.pathname}/search-results")
+      @needs_resolver = new NeedsResolver(@document_store, @tag_store, @search_result_store)
       @transaction_queue = new TransactionQueue()
       @server = @needs_resolver.server
+      @tag_api = new TagLikeApi(@tag_store, @transaction_queue, "#{window.location.pathname}/tags")
+      @search_result_api = new TagLikeApi(@search_result_store, @transaction_queue, "#{window.location.pathname}/searches")
       @on_demand_tree = new OnDemandTree(this) # FIXME this is ugly
 
     load_root: () ->
@@ -83,14 +91,35 @@ define [
 
           undefined
 
+    refreshSearchResultCounts: (searchResult) ->
+      nodes = @on_demand_tree.nodes
+      node_ids = (k for k, __ of nodes)
+      node_ids_string = node_ids.join(',')
+      deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResult.id })
+      deferred.done (data) =>
+        @on_demand_tree.id_tree.edit ->
+          searchResultId = searchResult.id
+          responseCounts = {}
+
+          i = 0
+          while i < data.length
+            nodeid = data[i++]
+            count = data[i++]
+            responseCounts[nodeid] = count
+
+          for nodeid in node_ids
+            counts = nodes[nodeid]?.searchResultCounts
+            continue if !counts
+            responseCount = responseCounts[nodeid]
+            if responseCount
+              counts[searchResultId] = responseCount
+            else
+              delete counts[searchResultId]
+
+          undefined
+
     create_tag: (tag, options) ->
-      @transaction_queue.queue =>
-        deferred = @server.post('tag_create', tag)
-        deferred.done (tag_from_server) =>
-          tag_from_server.color = tag.color      # maybe server should return color
-          options?.beforeChange?()
-          @tag_store.change(tag, tag_from_server)
-          options?.callback?()
+      @tag_api.create(tag, options)
 
     add_tag: (attributes) ->
       @tag_store.add(attributes)
@@ -100,9 +129,7 @@ define [
 
     update_tag: (tag, new_tag) ->
       this.edit_tag(tag, new_tag)
-
-      @transaction_queue.queue =>
-        @server.post('tag_edit', new_tag, { path_argument: tag.id })
+      @tag_api.update(tag, new_tag)
 
     remove_tag: (tag) ->
       @document_store.remove_tag_id(tag.id)
@@ -120,12 +147,8 @@ define [
       @tag_store.remove(tag)
 
     delete_tag: (tag) ->
-      old_id = tag.id
-
-      this.remove_tag(tag)
-
-      @transaction_queue.queue =>
-        @server.delete('tag_delete', {}, { path_argument: old_id })
+      @remove_tag(tag)
+      @tag_api.destroy(tag)
 
     edit_node: (node, new_node) ->
       @on_demand_tree.id_tree.edit ->
@@ -142,3 +165,33 @@ define [
 
       @transaction_queue.queue =>
         @server.post('node_update', new_node, { path_argument: id })
+
+    # Given a Selection, returns:
+    #
+    # * [ 'tag', 'Tag name' ] if it's a one-tag selection (ignoring documents)
+    # * [ 'node', 'Node description' ] if it's a one-node selection (ignoring
+    #   documents)
+    # * [ 'searchResult', 'Search query' ] if it's a one-search-result
+    #   selection (ignoring documents)
+    # * [ 'other' ] if it's something else (or undefined)
+    describeSelectionWithoutDocuments: (selection) ->
+      nodeCount = selection?.nodes?.length
+      tagCount = selection?.tags?.length
+      searchCount = selection?.searchResults?.length
+
+      if nodeCount + tagCount + searchCount == 1
+        switch
+          when nodeCount
+            id = selection.nodes[0]
+            description = @on_demand_tree.nodes[id]?.description
+            [ 'node', description ]
+          when tagCount
+            id = selection.tags[0]
+            name = @tag_store.find_by_id(id)?.name
+            [ 'tag', name ]
+          else
+            id = selection.searchResults[0]
+            query = @search_result_store.find_by_id(id)?.query
+            [ 'searchResult', query ]
+      else
+        [ 'other' ]

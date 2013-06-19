@@ -12,6 +12,7 @@ object TagFinder extends Finder {
   class TagResult(query: Query[Tag]) extends FinderResult(query) {
     def withCounts : FinderResult[(Tag,Long)] = {
       val tagCounts : Query[GroupWithMeasures[Long,Long]] = from(Schema.documentTags)(t =>
+        where(t.tagId in from(query)(t => select(t.id)))
         groupBy(t.tagId)
         compute(org.overviewproject.postgres.SquerylEntrypoint.count) // NOT FinderResult.count
       )
@@ -33,5 +34,10 @@ object TagFinder extends Finder {
       select(t)
       orderBy(t.name)
     )
+  }
+
+  /** @return All `Tag`s with the given DocumentSet and ID. */
+  def byDocumentSetAndId(documentSet: Long, id: Long) : TagResult = {
+    Schema.tags.where((t) => t.documentSetId === documentSet and t.id === id)
   }
 }

@@ -10,57 +10,89 @@ package controllers
 
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.StringWriter
-import play.api.data.{ Form, FormError }
 import play.api.mvc.Controller
 
-import models.orm.finders.TagFinder
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import controllers.forms.TagForm
-import controllers.util.IdList
-import models.{ OverviewTag, PotentialTag, PersistentDocumentList, PersistentTag, PersistentTagLoader }
+import controllers.forms.{SelectionForm,TagForm,NodeIdsForm}
+import models.orm.Tag
+import models.orm.finders.{DocumentFinder,DocumentTagFinder,NodeDocumentFinder,TagFinder,FinderResult}
+import models.orm.stores.{DocumentTagStore,TagStore}
+import models.Selection
 
-object TagController extends Controller {
-  private val idListFormat = new play.api.data.format.Formatter[Seq[Long]] {
-    def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Seq[Long]] = {
-      val idList = data.get(key).map(s => IdList(s)).getOrElse(Seq())
-      Right(idList)
-    }
+trait TagController extends Controller {
+  trait Storage {
+    def insertOrUpdate(tag: Tag) : Tag
 
-    def unbind(key: String, value: Seq[Long]) = Map(key -> value.mkString(","))
+    /** Adds a tag to a Selection.
+      *
+      * Security considerations: the caller must ensure the user has access to
+      * the given tagId and Selection. (In the case of the Selection, this is
+      * accomplished by checking the documentSetId.)
+      *
+      * Documents in the Selection that are already tagged will be skipped.
+      *
+      * @return number of documents tagged.
+      */
+    def addTagToSelection(tagId: Long, selection: Selection) : Int
+
+    /** Removes a tag from a Selection.
+      *
+      * Security considerations: the caller must ensure the user has access to
+      * the given tagId and Selection. (In the case of the Selection, this is
+      * accomplished by checking the documentSetId.)
+      *
+      * Documents in the Selection that are not tagged will be skipped.
+      *
+      * @return number of documents untagged.
+      */
+    def removeTagFromSelection(tagId: Long, selection: Selection) : Int
+
+    /** @return a Tag if it exists */
+    def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
+
+    /** @return (Tag, count) pairs. */
+    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Int)]
+
+    /** Returns an Iterable of (nodeId, count) pairs.
+      *
+      * Security considerations: for speed, we do not verify that the user has
+      * access to the given nodeIds. Therefore this method should return every
+      * nodeId provided--as 0 if there are no node+tag connections. Furthermore,
+      * the node IDs should be returned in the order they are provided, so users
+      * can't glean any information about their existence from their ordering.
+      *
+      * The caller must verify that the user has access to the given tagId. That
+      * is enough to ensure the user can't gain information about other users'
+      * nodes.
+      *
+      * @return Iterable of (nodeId, count) pairs
+      */
+    def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)]
+
+    /** Deletes the tag. */
+    def delete(tag: Tag) : Unit
   }
-  private val idList = play.api.data.Forms.of(idListFormat)
-
-  def selectionForm(documentSetId: Long) = Form(
-    play.api.data.Forms.mapping(
-      "documents" -> idList,
-      "nodes" -> idList,
-      "tags" -> idList)({ (documents, nodes, tags) =>
-        new PersistentDocumentList(documentSetId, nodes, tags, documents)
-      })((documents: PersistentDocumentList) =>
-        // FIXME should be: Some((documents.documentIds, documents.nodeIds, documents.tagIds))
-        Some((Seq(), Seq(), Seq()))))
+  val storage : TagController.Storage
 
   def create(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    val newTag = PotentialTag("_new_tag").create(documentSetId)
-    TagForm(newTag).bindFromRequest.fold(
+    TagForm(documentSetId).bindFromRequest.fold(
       formWithErrors => BadRequest,
-      updatedTag => {
-        updatedTag.save
-        val tag = PersistentTag(updatedTag)
-        Ok(views.json.Tag.create(tag.id, tag.name))
-      })
+      unsavedTag => {
+        val tag = storage.insertOrUpdate(unsavedTag)
+        Ok(views.json.Tag.create(tag))
+      }
+    )
   }
 
   def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val tags = TagFinder.byDocumentSet(documentSetId).withCounts
+    val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
 
     val stringWriter = new StringWriter()
     val csvWriter = new CSVWriter(stringWriter)
     csvWriter.writeNext(Array("id", "name", "count", "color"))
-    tags.foreach({ case (tag, count) =>
-      csvWriter.writeNext(Array(tag.id.toString, tag.name, count.toString, tag.color.getOrElse("")))
+    tagsWithCounts.foreach({ case (tag, count) =>
+      csvWriter.writeNext(Array(tag.id.toString, tag.name, count.toString, tag.color))
     })
     csvWriter.close()
     Ok(stringWriter.toString())
@@ -72,84 +104,113 @@ object TagController extends Controller {
   }
 
   def add(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    OverviewTag.findById(documentSetId, tagId) match {
-      case None => NotFound
-      case Some(t) => {
-
-        selectionForm(documentSetId).bindFromRequest.fold(
-          formWithErrors => BadRequest,
-          documents => {
-            val tagUpdateCount = documents.addTag(t.id)
-            // Creation of PersistentTag has to happen after tags are added, or documents are not loaded properly.
-            val tag = PersistentTag(t)
-            val taggedDocuments = tag.loadDocuments
-
-            Ok(views.json.Tag.add(tag, tagUpdateCount, taggedDocuments))
-          })
+    SelectionForm(documentSetId).bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      selection => {
+        storage.findTag(documentSetId, tagId) match {
+          case None => NotFound
+          case Some(tag) => {
+            val count = storage.addTagToSelection(tagId, selection)
+            Ok(views.json.Tag.add(count))
+          }
+        }
       }
-    }
+    )
   }
 
   def remove(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    OverviewTag.findById(documentSetId, tagId) match {
-      case None => NotFound
-      case Some(t) => {
-        selectionForm(documentSetId).bindFromRequest.fold(
-          formWithErrors => BadRequest,
-          documents => {
-            val tagUpdateCount = documents.removeTag(t.id)
-
-            val tag = PersistentTag(t)
-            val taggedDocuments = tag.loadDocuments
-
-            Ok(views.json.Tag.remove(tag, tagUpdateCount, taggedDocuments))
-          })
+    SelectionForm(documentSetId).bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      selection => {
+        storage.findTag(documentSetId, tagId) match {
+          case None => NotFound
+          case Some(tag) => {
+            val count = storage.removeTagFromSelection(tagId, selection)
+            Ok(views.json.Tag.remove(count))
+          }
+        }
       }
-    }
+    )
   }
 
   def delete(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    OverviewTag.findById(documentSetId, tagId) match {
+    storage.findTag(documentSetId, tagId) match {
       case None => NotFound
       case Some(tag) => {
-        tag.delete
-        Ok(views.json.Tag.delete(tag.id, tag.name))
+        storage.removeTagFromSelection(tagId, Selection(documentSetId))
+        storage.delete(tag)
+        Ok
       }
     }
   }
 
   def update(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    OverviewTag.findById(documentSetId, tagId) match {
+    storage.findTag(documentSetId, tagId) match {
       case None => NotFound
-      case Some(t) => {
-        TagForm(t).bindFromRequest.fold(
+      case Some(tag) => {
+        TagForm(tag).bindFromRequest.fold(
           formWithErrors => BadRequest,
-          updatedTag => {
-            updatedTag.save
-            val tag = PersistentTag(updatedTag)
-
-            Ok(views.json.Tag.update(tag))
-          })
+          unsavedTag => {
+            val savedTag = storage.insertOrUpdate(unsavedTag)
+            Ok(views.json.Tag.update(savedTag))
+          }
+        )
       }
     }
   }
 
-  def nodeCounts(documentSetId: Long, tagId: Long, nodeIds: String) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    implicit val connection = models.OverviewDatabase.currentConnection
-    OverviewTag.findById(documentSetId, tagId) match {
-      case None => NotFound
-      case Some(t) => {
-        val tag = PersistentTag(t)
-        val nodeCounts = tag.countsPerNode(IdList(nodeIds))
-
-        Ok(views.json.Tag.nodeCounts(nodeCounts))
+  def nodeCounts(documentSetId: Long, tagId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    NodeIdsForm().bindFromRequest.fold(
+      formWithErrors => BadRequest,
+      nodeIds => {
+        storage.findTag(documentSetId, tagId) match {
+          case None => NotFound
+          case Some(tag) => {
+            val counts = storage.tagCountsByNodeId(tagId, nodeIds)
+            Ok(views.json.Tag.nodeCounts(counts))
+          }
+        }
       }
-    }
+    )
   }
-
 }
 
+object TagController extends TagController {
+  val storage = new Storage {
+    override def insertOrUpdate(tag: Tag) : Tag = {
+      TagStore.insertOrUpdate(tag)
+    }
+
+    override def addTagToSelection(tagId: Long, selection: Selection) : Int = {
+      val foundDocuments = DocumentFinder.bySelection(selection)
+      DocumentTagStore.insertForTagAndDocuments(tagId, foundDocuments)
+    }
+
+    override def removeTagFromSelection(tagId: Long, selection: Selection) : Int = {
+      val documentTags = DocumentTagFinder.byTagAndSelection(tagId, selection)
+      DocumentTagStore.delete(documentTags.query)
+    }
+
+    override def findTag(documentSetId: Long, tagId: Long) : Option[Tag] = {
+      TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption
+    }
+
+    override def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Int)] = {
+      TagFinder
+        .byDocumentSet(documentSetId)
+        .withCounts
+        .map(Function.tupled((tag: Tag, count: Long) => (tag, count.toInt)))
+    }
+
+    override def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)] = {
+      val counts = NodeDocumentFinder.byNodeIds(nodeIds).tagCountsByNodeId(tagId).toMap
+      nodeIds.map(nodeId => (nodeId -> counts.getOrElse(nodeId, 0L).toInt))
+    }
+
+    override def delete(tag: Tag) : Unit = {
+      // FIXME remove next line
+      import org.overviewproject.postgres.SquerylEntrypoint._
+      TagStore.delete(tag.id)
+    }
+  }
+}

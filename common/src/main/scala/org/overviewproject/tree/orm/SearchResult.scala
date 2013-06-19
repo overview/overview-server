@@ -1,6 +1,7 @@
 package org.overviewproject.tree.orm
 
 import org.squeryl.KeyedEntity
+import java.sql.Timestamp
 
 object SearchResultState extends Enumeration {
   type SearchResultState = Value
@@ -15,6 +16,7 @@ case class SearchResult (
   state: SearchResultState.Value,
   documentSetId: Long,
   query: String,
+  createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
   override val id: Long = 0
 ) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)

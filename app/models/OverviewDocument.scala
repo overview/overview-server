@@ -1,7 +1,7 @@
 package models
 
-import org.overviewproject.tree.orm.Document
-import models.orm.{ DocumentSet, Schema }
+import org.overviewproject.tree.orm.{ Document, DocumentSet }
+import models.orm.Schema
 
 /** A document in the database */
 sealed trait OverviewDocument {

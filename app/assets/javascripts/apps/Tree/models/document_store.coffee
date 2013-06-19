@@ -1,4 +1,4 @@
-define [ './observable' ], (observable) ->
+define [ 'underscore', './observable' ], (_, observable) ->
   # Canonical store of all loaded documents
   #
   # A document is a play JS object that looks like this:
@@ -11,24 +11,28 @@ define [ './observable' ], (observable) ->
       @_counts = {}
 
     add: (document) ->
-      documentid = document.id
-      if @_counts[documentid]?
-        @_counts[documentid] += 1
+      id = "#{document.id}"
+      if id of @_counts
+        @_counts[id] += 1
+        existing = @documents[id]
+        if !_.isEqual(existing, document)
+          existing[k] = v for k, v of document
       else
-        @documents[document.id] = document
-        @_counts[documentid] = 1
-      this._notify('document-added', document)
+        @documents[id] = document
+        @_counts[id] = 1
+        this._notify('document-added', document)
+      @documents[id]
 
     change: (document) ->
       this._notify('document-changed', document)
 
     remove: (document) ->
-      documentid = document.id
+      id = "#{document.id}"
 
-      @_counts[documentid]--
-      if @_counts[documentid] == 0
-        delete @_counts[documentid]
-        delete @documents[documentid]
+      @_counts[id]--
+      if @_counts[id] == 0
+        delete @_counts[id]
+        delete @documents[id]
       this._notify('document-removed', document)
 
     add_doclist: (doclist, documents) ->

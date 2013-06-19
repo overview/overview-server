@@ -10,10 +10,11 @@ define [ 'backbone' ], (Backbone) ->
   #
   # Usage:
   #
-  #   proxy = new DocumentListProxy(documentList, documentStore, tagStore)
+  #   proxy = new DocumentListProxy(documentList)
   #   model = proxy.model
   #   documentList.slice(0, 10) # returns a Deferred and sends a request
   #   model.documents.slice(0, 10) # does neither; it's a Backbone.Collection
+  #   model.describeSelection() # returns [ 'node', 'foo' ], for instance
   #   model.get('n') # returns number of documents, or undefined
   #   proxy.destroy() # frees up resources
   #
@@ -36,8 +37,14 @@ define [ 'backbone' ], (Backbone) ->
   #
   # You may use a TagStoreProxy to map from tag ids to tag Models.
   class DocumentListProxy
-    constructor: (@documentList, @documentStore, @tagStore) ->
+    constructor: (@documentList) ->
+      @cache = @documentList.cache
+      @tagStore = @cache.tag_store
+      @documentStore = @cache.document_store
+
       @model = new Model()
+      @model.describeSelection = =>
+        @cache.describeSelectionWithoutDocuments(@documentList.selection)
       @model.documents = new Collection([])
 
       @_documentListCallback = => @_updateFromDocumentList()

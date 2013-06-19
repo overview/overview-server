@@ -1,28 +1,10 @@
 @import "../../vendor/bootstrap/less/variables.less";
 @import "../../vendor/bootstrap/less/mixins.less";
 @import "_variables.less";
+@import "tag-like-list.less";
 
-#tag-list {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  max-height: 15%;
-  overflow: auto;
-
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li {
-    vertical-align: middle;
-  }
-
-  form {
-    margin-bottom: 0;
-  }
+#tree-app-tags {
+  .tag-like-list();
 
   a.organize {
     background-color: transparent;
@@ -51,26 +33,6 @@
   }
 
   .btn-group {
-    .border-radius(@inputBorderRadius);
-    margin-left: 5px;
-    margin-bottom: 5px;
-
-    .btn {
-      padding: 4px 10px; // same padding as other elements on this page
-    }
-
-    & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
-
-    &.selected {
-      .tag-name {
-        outline: 2px solid black;
-      }
-
-      .btn {
-        .border-radius(0);
-      }
-    }
-
     .tag-edit, .tag-add, .tag-remove {
       position: absolute;
       background-color: whiteSmoke;

@@ -33,12 +33,12 @@ trait ProjectSettings {
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.1.0"
   val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
-
-    
+  val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
+  val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
+  
   // Project dependencies
   val serverProjectDependencies = Seq(
     jdbc,
-    anorm,
     filters,
     geronimoJmsDep,
     openCsvDep,
@@ -46,6 +46,7 @@ trait ProjectSettings {
     squerylDep,
     stompDep,
     mockitoDep % "it,test",
+    "com.typesafe" %% "play-plugins-util" % "2.1.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
     "ua.t3hnar.bcrypt" %% "scala-bcrypt" % "2.0",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
@@ -66,6 +67,7 @@ trait ProjectSettings {
   )
 
   val workerProjectDependencies = Seq(
+    javaxMailDep, 
     jdbc,
     openCsvDep,
     squerylDep,

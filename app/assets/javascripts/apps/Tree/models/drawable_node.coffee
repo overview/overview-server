@@ -419,7 +419,7 @@ define [ 'underscore' ], (_) ->
       w = (abs_w) -> abs_w * px_per_hunit
       h = (abs_h) -> abs_h * px_per_vunit
       x = (abs_x) -> w(abs_x) - left_px
-      y = (abs_y) -> h(abs_y) - top_px
+      y = (abs_y) -> h(abs_y) + top_px
 
       @root().absolute_position()
       @root().walk (dn) ->

@@ -1,6 +1,7 @@
 @(
   user: OverviewUser,
-  documentSet: models.orm.DocumentSet
+  documentSet: org.overviewproject.tree.orm.DocumentSet,
+  isSearchable: Boolean /* HACK: remove once all docsets are searchable */
 )(
   implicit lang: Lang,
   flash: Flash
@@ -17,19 +18,27 @@
   "views.DocumentSet.show.DocumentList.title.empty",
   "views.DocumentSet.show.DocumentList.description",
   "views.DocumentSet.show.DocumentList.description.empty",
-  "views.DocumentSet.show.DocumentListCursor.title",
+  "views.DocumentSet.show.DocumentListCursor.position_html",
   "views.DocumentSet.show.DocumentListCursor.next",
   "views.DocumentSet.show.DocumentListCursor.previous",
   "views.DocumentSet.show.DocumentListCursor.list",
+  "views.DocumentSet.show.DocumentListCursor.selection.node_html",
+  "views.DocumentSet.show.DocumentListCursor.selection.tag_html",
+  "views.DocumentSet.show.DocumentListCursor.selection.searchResult_html",
+  "views.DocumentSet.show.DocumentListCursor.selection.other_html",
+  "views.DocumentSet.show.DocumentListCursor.title",
+  "views.DocumentSet.show.DocumentListCursor.title.empty",
+  "views.DocumentSet.show.DocumentListCursor.description",
+  "views.DocumentSet.show.DocumentListCursor.description.empty",
   "views.DocumentSet.show.DocumentListTitle.num_documents",
   "views.DocumentSet.show.DocumentListTitle.loading",
   "views.DocumentSet.show.DocumentListTitle.tag.title_html",
   "views.DocumentSet.show.DocumentListTitle.tag.edit",
   "views.DocumentSet.show.DocumentListTitle.node.title_html",
   "views.DocumentSet.show.DocumentListTitle.node.edit",
+  "views.DocumentSet.show.DocumentListTitle.searchResult.title_html",
+  "views.DocumentSet.show.DocumentListTitle.searchResult.edit",
   "views.DocumentSet.show.DocumentListTitle.multiple.title_html",
-  "views.DocumentSet.show.DocumentListTitle.multiple.num_nodes",
-  "views.DocumentSet.show.DocumentListTitle.multiple.num_tags",
   "views.DocumentSet.show.tag_list.header",
   "views.DocumentSet.show.tag_list.preamble",
   "views.DocumentSet.show.tag_list.export",
@@ -60,18 +69,5 @@
   "views.Document.show.title.empty_title"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-  <div id="main" class="">
-    <div class="flex-row">
-      <div class="flex-column">
-        <div class="tree-and-focus">
-          <div id="tree"></div>
-          <div id="focus"></div>
-        </div>
-      </div>
-      <div class="flex-column">
-        <div id="document-list-container"></div>
-      </div>
-    </div>
-    <div id="tag-list"></div>
-  </div>
+  <div id="main" data-is-searchable="@isSearchable" class=""></div>
 }

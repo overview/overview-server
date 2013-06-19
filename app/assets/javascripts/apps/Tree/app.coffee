@@ -9,6 +9,7 @@ define [
   './controllers/keyboard_controller'
   './controllers/logger'
   './controllers/tag_list_controller'
+  './controllers/search_result_list_controller'
   './controllers/focus_controller'
   './controllers/tree_controller'
   './controllers/document_list_controller'
@@ -18,19 +19,58 @@ define [
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, RemoteTagList, World, Selection, \
     KeyboardController, Logger, \
-    tag_list_controller, focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
+    tag_list_controller, search_result_list_controller, \
+    focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
     ModeView) ->
 
   class App
     constructor: (options) ->
-      throw 'need options.tagListEl' if !options.tagListEl
-      throw 'need options.focusEl' if !options.focusEl
-      throw 'need options.treeEl' if !options.treeEl
-      throw 'need options.documentListEl' if !options.documentListEl
-      throw 'need options.navEl' if !options.navEl
       throw 'need options.mainEl' if !options.mainEl
-      throw 'need options.fullSizeEl' if !options.fullSizeEl
-      throw 'need options.innerFullSizeEl' if !options.innerFullSizeEl
+      throw 'need options.navEl' if !options.navEl
+
+      # TODO remove searchDisabled entirely
+      searchDisabled = $(options.mainEl).attr('data-is-searchable') == 'false'
+
+      els = (->
+        html = """
+          <div id="tree-app-left">
+            <div id="tree-app-tree-container">
+              <div id="tree-app-left-top">
+                <div id="tree-app-tree"></div>
+                <div id="tree-app-zoom-slider"></div>
+              </div>
+              <div id="tree-app-left-bottom">
+                <div id="tree-app-tags"></div>
+                <div id="tree-app-search"></div>
+              </div>
+            </div>
+          </div>
+          <div id="tree-app-right">
+            <div id="tree-app-document-list"></div>
+            <div id="tree-app-document-cursor"></div>
+          </div>
+        """
+
+        $(options.mainEl).html(html)
+
+        $('#tree-app-search').remove() if searchDisabled
+
+        el = (id) -> document.getElementById(id)
+
+        {
+          main: options.mainEl
+          tree: el('tree-app-tree')
+          zoomSlider: el('tree-app-zoom-slider')
+          tags: el('tree-app-tags')
+          search: el('tree-app-search')
+          documentList: el('tree-app-document-list')
+          documentCursor: el('tree-app-document-cursor')
+          document: el('tree-app-document')
+          left: el('tree-app-left')
+          leftTop: el('tree-app-left-top')
+          leftBottom: el('tree-app-left-bottom')
+        }
+      )()
 
       world = new World()
 
@@ -40,21 +80,20 @@ define [
         world.state.set('selection', new Selection({ nodes: [world.cache.on_demand_tree.id_tree.root] }))
         Logger.set_server(world.cache.server)
 
-      refresh_height = () ->
+      refreshHeight = () ->
         # Make the main div go below the (variable-height) navbar
         h = $(options.navEl).outerHeight()
-        $(options.fullSizeEl).css({ top: h })
+        $(els.main).css({ top: h })
 
-        # Give room to the tags at the bottom
-        h = $(options.tagListEl).height()
-        $(options.innerFullSizeEl).css({ bottom: h })
+        # Give room to the tags and search results at the bottom
+        h = $(els.leftBottom).outerHeight()
+        $(els.leftTop).css({ bottom: h })
 
         # Round the iframe's parent's width, because it needs an integer number of px
-        $document = $('#document')
-        $iframe = $document.find('iframe')
-        $iframe.width(1)
-        w = Math.floor($document.width(), 10)
-        $iframe.width(w)
+        $document = $(els.document)
+        $document.find('iframe')
+          .width(1)
+          .width($document.width())
 
       refocus = ->
         # Pull focus out of the iframe.
@@ -97,30 +136,45 @@ define [
       interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
       animator = new Animator(interpolator)
       focus = new AnimatedFocus(animator)
+      focus_controller(els.zoomSlider, focus)
 
-      tag_list_controller(options.tagListEl, remote_tag_list, world.state)
-      focus_controller(options.focusEl, focus)
-
-      controller = tree_controller(options.treeEl, world.cache, focus, world.state)
+      controller = tree_controller(els.tree, world.cache, focus, world.state)
       keyboard_controller.add_controller('TreeController', controller)
 
-      controller = document_contents_controller(world.cache, world.state)
+      controller = document_contents_controller({
+        cache: world.cache
+        state: world.state
+        el: els.document
+      })
       keyboard_controller.add_controller('DocumentContentsController', controller)
-      documentViewEl = controller.el
 
-      controller = document_list_controller(options.documentListEl, documentViewEl, world.cache, world.state)
+      controller = document_list_controller(els.documentList, els.documentCursor, world.cache, world.state)
       keyboard_controller.add_controller('DocumentListController', controller)
 
-      $(options.documentListEl).append(documentViewEl)
-
-      new ModeView({ el: main, state: world.state })
+      new ModeView({ el: options.mainEl, state: world.state })
 
       auto_focus_controller(focus, world)
 
-      world.cache.tag_store.observe('added', -> _.defer(refresh_height))
-      world.cache.tag_store.observe('removed', -> _.defer(refresh_height))
-      $(window).resize(refresh_height)
-      refresh_height()
+      tag_list_controller({
+        remote_tag_list: remote_tag_list
+        state: world.state
+        el: els.tags
+      })
+
+      if !searchDisabled
+        search_result_list_controller({
+          cache: world.cache
+          state: world.state
+          el: els.search
+        })
+
+      for store in [ world.cache.tag_store, world.cache.search_result_store ]
+        for event in [ 'added', 'removed', 'changed' ]
+          store.observe(event, refreshHeight)
+
+      throttledRefreshHeight = _.throttle(refreshHeight, 100)
+      $(window).resize(throttledRefreshHeight)
+      refreshHeight()
 
       refocus_body_on_leave_window()
       refocus_body_on_event()

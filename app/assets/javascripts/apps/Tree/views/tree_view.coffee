@@ -13,8 +13,11 @@ define [
       line_default: '#333333',
       line_faded: '#999999',
     },
-    connector_line_width: 1, # px
+    connector_line_width: 2.5, # px
+    node_corner_radius: 5, # px
     node_line_width: 2, # px
+    node_expand_width: 1.5, # px
+    node_expand_click_radius: 12 # px
     node_line_width_selected: 4, # px
     node_line_width_leaf: 1, # px
     start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
@@ -25,14 +28,36 @@ define [
     <div class="inner">(<%- node.doclist.n.toLocaleString() %>) <%- node.description %></div>
   """)
 
-  class DrawOperation
-    constructor: (@canvas, @tree, @tag_id_to_color, @focus_tagids, @focus_nodes, @focus, @options) ->
-      $canvas = $(@canvas)
-      @width = +Math.ceil($canvas.parent().width())
-      @height = +Math.ceil($canvas.parent().height())
+  # In given canvas 2d context, draws a rectangle with corner radius r
+  drawRoundedRect = (ctx, x, y, w, h, r) ->
+    r = Math.min(r, w * 0.5, h * 0.5)
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y + r)
+    ctx.quadraticCurveTo(x, y, x + r, y)
+    ctx.closePath()
 
-      @canvas.width = @width
-      @canvas.height = @height
+  # Draws a rectangle with corner radius r on the bottom two corners
+  drawBottomRoundedRect = (ctx, x, y, w, h, r) ->
+    r = Math.min(r, w * 0.5, h * 0.5)
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + w, y)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y)
+    ctx.closePath()
+
+  class DrawOperation
+    constructor: (@canvas, @tree, @colorLogic, @focus_nodes, @focus, @options) ->
+      @canvas.width = @width = Math.floor(parseFloat(@canvas.parentNode.clientWidth))
+      @canvas.height = @height = Math.floor(parseFloat(@canvas.parentNode.clientHeight))
 
       @ctx = @canvas.getContext('2d')
 
@@ -59,7 +84,7 @@ define [
         @ctx.scale(ratio, ratio)
 
       @ctx.lineStyle = @options.color.line
-      @ctx.font = "12px Helvetica, Arial, sans-serif"
+      @ctx.font = '12px "Open Sans", Helvetica, Arial, sans-serif'
       @ctx.textBaseline = 'top'
       @ctx.shadowColor = 'white'
 
@@ -98,16 +123,23 @@ define [
       return if !@tree.root?
 
       @root = new DrawableNode(@tree.root)
+      allNodes = @allDrawableNodes = []
+      @root.walk((dn) -> allNodes.push(dn))
       @_auto_fit_pan()
 
-      px_per_hunit = @width / @root.outer_width() / @focus.zoom
-      px_per_vunit = @height / @root.outer_height() # zoom doesn't affect Y axis
+      px_per_hunit = (@width - @options.node_line_width_selected) / @root.outer_width() / @focus.zoom
+      px_per_vunit = (@height - 0.5 * @options.node_line_width_selected - 0.5 * @options.node_expand_click_radius) / @root.outer_height() # zoom doesn't affect Y axis
       pan_units = @root.outer_width() * (0.5 + @focus.pan - @focus.zoom * 0.5)
 
       # Set _px objects on all nodes
-      @root.px(px_per_hunit, px_per_vunit, pan_units, 0)
+      @root.px(px_per_hunit, px_per_vunit, -0.5 * @options.node_line_width_selected / px_per_hunit + pan_units, 0.5 * @options.node_line_width_selected / px_per_vunit)
 
-      @root.walk(this._draw_single_node.bind(this))
+      for drawable_node in @allDrawableNodes
+        this._draw_single_node(drawable_node)
+      this._draw_nodes()
+      this._draw_labels()
+      this._draw_lines_from_parents_to_children()
+      this._draw_expand_and_collapse_for_tree()
 
     pixel_to_drawable_node: (x, y) ->
       drawable_node = undefined
@@ -118,64 +150,38 @@ define [
           drawable_node = dn
       drawable_node
 
+    _pixel_to_expand_or_collapse_node: (x, y, list_of_circles) ->
+      maxR2 = @options.node_expand_click_radius * @options.node_expand_click_radius
+      for entry in (list_of_circles || []) # [ xy, drawable_node ] pairs
+        xy = entry[0]
+        dx = xy.x - x
+        dy = xy.y - y
+        r2 = dx * dx + dy * dy
+        return entry[1] if r2 < maxR2
+      return undefined
+
+    pixel_to_expand_node: (x, y) ->
+      @_pixel_to_expand_or_collapse_node(x, y, @expand_circles || [])
+
+    pixel_to_collapse_node: (x, y) ->
+      @_pixel_to_expand_or_collapse_node(x, y, @collapse_circles || [])
+
     pixel_to_action: (x, y) ->
-      drawable_node = @pixel_to_drawable_node(x, y)
-      return undefined if !drawable_node?
-      animated_node = drawable_node.animated_node
+      event = (key, drawable_node) ->
+        { event: key, id: drawable_node.animated_node.node.id }
 
-      px = drawable_node._px
-
-      event = if px.width > 20 && x > px.hmid - 5 && x < px.hmid + 5 && y > px.top + px.height - 12 && y < px.top + px.height - 2
-        if drawable_node.children()?.length
-          'collapse'
-        else if !animated_node.loaded
-          'expand'
-        else
-          'click'
+      if drawable_node = @pixel_to_expand_node(x, y)
+        event('expand', drawable_node)
+      else if drawable_node = @pixel_to_collapse_node(x, y)
+        event('collapse', drawable_node)
+      else if drawable_node = @pixel_to_drawable_node(x, y)
+        event('click', drawable_node)
+        #if !drawable_node.animated_node.loaded
+        #  event('expand', drawable_node)
+        #else
+        #  event('click', drawable_node)
       else
-        'click'
-
-      return { event: event, id: drawable_node.animated_node.node.id }
-
-    # simple RGB space color interpolator. Returns a when t=0, b when t=1
-    _lerp_hexcolor: (a, b, t) ->
-      a_red   = parseInt(a.substring(1,3),16)
-      a_green = parseInt(a.substring(3,5),16)
-      a_blue  = parseInt(a.substring(5,7),16)
-      b_red   = parseInt(b.substring(1,3),16)
-      b_green = parseInt(b.substring(3,5),16)
-      b_blue  = parseInt(b.substring(5,7),16)
-
-      red   = Math.round(t*b_red + (1-t)*a_red)
-      green = Math.round(t*b_green + (1-t)*a_green)
-      blue  = Math.round(t*b_blue + (1-t)*a_blue)
-
-      "#" + ("0" + red.toString(16)).slice(-2) + ("0" + green.toString(16)).slice(-2) + ("0" + blue.toString(16)).slice(-2)
-
-    _animated_node_to_line_width: (animated_node) ->
-      if animated_node.selected
-        @options.node_line_width_selected
-      else if animated_node.children?.length is 0 # leaf node
-        @options.node_line_width_leaf
-      else
-        @options.node_line_width
-
-    # choose color to draw node outline. selected has its own color, leaf nodes are faded, 
-    # and we also fade normal nodes when they get too narrow
-    _drawable_node_to_line_color: (drawable_node) ->
-      animated_node = drawable_node.animated_node
-      if animated_node.selected
-        @options.color.line_selected
-      else if animated_node.children?.length is 0 # leaf node
-        @options.color.line_faded
-      else
-        if drawable_node._px.width >= @options.start_fade_width
-          @options.color.line_default
-        else if drawable_node._px.width <= @px_per_hunit  # leaf node width
-          @options.color.line_faded
-        else
-          t = (@options.start_fade_width - drawable_node._px.width) / (@options.start_fade_width - @px_per_hunit)
-          this._lerp_hexcolor(@options.color.line_default, @options.color.line_faded, t)
+        undefined
 
     _draw_tagcount: (left, top, width, height, color, fraction) ->
       return if fraction == 0
@@ -189,139 +195,210 @@ define [
       ctx = @ctx
 
       ctx.save()
-
-      ctx.beginPath()
-      ctx.rect(left, top, width, height)
-      ctx.clip()
-
       ctx.fillStyle = color
-
       ctx.beginPath()
-      ctx.moveTo(left, top)
-      ctx.lineTo(left + tagwidth + slant_offset, top)
-      ctx.lineTo(left + tagwidth - slant_offset, top + height)
-      ctx.lineTo(left, top + height)
+      drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.node_corner_radius)
       ctx.fill()
-
       ctx.restore()
-
-    _maybe_draw_description: (drawable_node) ->
-      px = drawable_node._px
-      width = px.width - 6 # border+padding
-      return if width < 15
-
-      node = drawable_node.animated_node.node
-      description = node.description
-
-      return if !description
-
-      ctx = @ctx
-
-      left = px.left + 3
-      right = left + width
-
-      whiteGradient = ctx.createLinearGradient(left, 0, right, 0)
-      whiteGradient.addColorStop((width-10)/width, 'rgba(255, 255, 255, 0.85)')
-      whiteGradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
-
-      gradient = ctx.createLinearGradient(left, 0, right, 0)
-      gradient.addColorStop((width-10)/width, 'rgba(0, 0, 0, 1)')
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(left, px.top, width, px.height)
-      ctx.clip()
-      ctx.shadowBlur = 3 # ctx.shadowColor is white
-      # Build a white background for the text
-      ctx.fillStyle = whiteGradient
-      ctx.fillText(description, left, px.top + 3)
-      ctx.fillText(description, left, px.top + 3) # for stronger shadow
-      # And draw black on it
-      ctx.fillStyle = gradient
-      ctx.fillText(description, left, px.top + 3)
-      ctx.restore()
-
-    _maybe_draw_collapse: (drawable_node) ->
-      if drawable_node.children()?.length
-        px = drawable_node._px
-        if px.width > 20
-          ctx = @ctx
-          y = px.top + px.height - 8
-          x = px.hmid
-          ctx.lineWidth = 1
-          ctx.strokeStyle = '#aaaaaa'
-          ctx.beginPath()
-          ctx.arc(x, y, 5, 0, Math.PI*2, true)
-          ctx.moveTo(x - 3, y)
-          ctx.lineTo(x + 3, y)
-          ctx.stroke()
-
-    _maybe_draw_expand: (drawable_node) ->
-      if !drawable_node.animated_node.loaded
-        px = drawable_node._px
-        if px.width > 20
-          ctx = @ctx
-          y = px.top + px.height - 8
-          x = px.hmid
-          ctx.lineWidth = 1
-          ctx.strokeStyle = '#aaaaaa'
-          ctx.beginPath()
-          ctx.arc(x, y, 5, 0, Math.PI*2, true)
-          ctx.moveTo(x - 3, y)
-          ctx.lineTo(x + 3, y)
-          ctx.moveTo(x, y + 3)
-          ctx.lineTo(x, y - 3)
-          ctx.stroke()
 
     _draw_single_node: (drawable_node) ->
       px = drawable_node._px
       animated_node = drawable_node.animated_node
       node = animated_node.node
 
-      tagid = undefined
-      tagcount = 0
-
       # Use the first tagid for which there's a count
-      for past_focused_tagid in @focus_tagids
-        if node.tagcounts?[past_focused_tagid]
-          tagid = past_focused_tagid
-          tagcount = node.tagcounts[past_focused_tagid]
-          break
+      count = 0
+      color = undefined
+      if @colorLogic.searchResultIds?
+        for id in @colorLogic.searchResultIds
+          count = node.searchResultCounts?[id]
+          if count
+            color = @colorLogic.color(id)
+            break
+      if @colorLogic.tagIds?
+        for id in @colorLogic.tagIds
+          count = node.tagcounts?[id]
+          if count
+            color = @colorLogic.color(id)
+            break
 
-      if tagid? && tagcount
-        color = @tag_id_to_color[tagid]
-        this._draw_tagcount(px.left, px.top, px.width, px.height, color, tagcount / node.doclist.n)
-
-      ctx = @ctx
-      ctx.lineWidth = this._animated_node_to_line_width(animated_node)
-      ctx.strokeStyle = this._drawable_node_to_line_color(drawable_node)
-
-      ctx.strokeRect(px.left, px.top, px.width, px.height)
-
-      this._maybe_draw_collapse(drawable_node)
-      this._maybe_draw_expand(drawable_node)
-      this._maybe_draw_description(drawable_node)
-
-      if drawable_node.parent?
-        parent_px = drawable_node.parent._px
-        @_draw_line_from_parent_to_child(parent_px, px)
-
-    _draw_line_from_parent_to_child: (parent_px, child_px) ->
-      x1 = parent_px.hmid
-      y1 = parent_px.top + parent_px.height
-      x2 = child_px.hmid
-      y2 = child_px.top
-      mid_y = 0.5 * (y1 + y2)
-
-      ctx = @ctx
-      ctx.lineWidth = @options.connector_line_width
-      ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
-      ctx.stroke()
+      if color
+        this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.doclist.n)
 
       undefined
+
+    _draw_nodes: ->
+      ctx = @ctx
+
+      ctx.save()
+
+      normalPxs = []
+      selectedPxs = []
+      leafPxs = []
+
+      for dn in @allDrawableNodes
+        animated_node = dn.animated_node
+        px = dn._px
+        if animated_node.selected
+          selectedPxs.push(px)
+        else if animated_node.children?.length is 0
+          leafPxs.push(px)
+        else
+          normalPxs.push(px)
+
+      minX = 0
+      maxX = @width
+      radius = @options.node_corner_radius
+      drawPxs = (pxs) ->
+        ctx.beginPath()
+        for px in pxs
+          continue if px.right < minX
+          continue if px.left > maxX
+          drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
+
+      ctx.lineWidth = @options.node_line_width_selected
+      ctx.strokeStyle = @options.color.line_selected
+      ctx.beginPath()
+      drawPxs(selectedPxs)
+      ctx.stroke()
+
+      ctx.lineWidth = @options.node_line_width_leaf
+      ctx.strokeStyle = @options.color.line_faded
+      ctx.beginPath()
+      drawPxs(leafPxs)
+      ctx.stroke()
+
+      ctx.lineWidth = @options.node_line_width
+      ctx.strokeStyle = @options.color.line_default
+      ctx.beginPath()
+      drawPxs(normalPxs)
+      ctx.stroke()
+
+      ctx.restore()
+
+      undefined
+
+    _draw_labels: ->
+      ctx = @ctx
+
+      ctx.save()
+
+      ctx.fillStyle = '#333333'
+      ctx.beginPath()
+
+      maxX = @width
+
+      for dn in @allDrawableNodes
+        px = dn._px
+        width = px.width - 12 # border + padding
+        continue if width < 15
+
+        continue if px.right < 0
+        continue if px.left > maxX
+
+        node = dn.animated_node.node
+        description = node.description
+        continue if !description
+
+        left = px.left + 6
+        right = left + width
+
+        ctx.save()
+        ctx.rect(left, px.top + 3, width, 15)
+        ctx.clip()
+        ctx.fillText(description, left, px.top + 3)
+        ctx.restore()
+
+      ctx.restore()
+
+    _draw_lines_from_parents_to_children: ->
+      ctx = @ctx
+
+      ctx.save()
+
+      lineWidth = ctx.lineWidth = @options.connector_line_width
+      ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
+      ctx.strokeStyle = @options.color.line_faded
+
+      ctx.beginPath()
+
+      minX = -@options.connector_line_width
+      maxX = @width + @options.connector_line_width
+
+      for dn in @allDrawableNodes when dn.parent?
+        child_px = dn._px
+        parent_px = dn.parent._px
+
+        x1 = parent_px.hmid
+        x2 = child_px.hmid
+
+        continue if x1 < minX && x2 < minX
+        continue if x1 > maxX && x2 > maxX
+
+        y1 = parent_px.top + parent_px.height
+        y2 = child_px.top
+        mid_y = 0.5 * (y1 + y2)
+
+        ctx.moveTo(x1, y1)
+        ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
+
+      ctx.stroke()
+
+      ctx.restore()
+
+      undefined
+
+    _draw_expand_and_collapse_for_tree: ->
+      ctx = @ctx
+      ctx.save()
+
+      lineWidth = ctx.lineWidth = @options.node_expand_width
+      ctx.strokeStyle = '#666666'
+      ctx.fillStyle = '#ffffff'
+      halfLineWidth = lineWidth * 0.5
+
+      node_to_useful_xy = (drawable_node) ->
+        px = drawable_node._px
+        if px.width > 20
+          x: px.hmid
+          y: px.top + px.height - halfLineWidth
+        else
+          undefined
+
+      expandCircles = @expand_circles = []
+      collapseCircles = @collapse_circles = []
+
+      for drawable_node in @allDrawableNodes
+        xy = node_to_useful_xy(drawable_node)
+        if xy?
+          if drawable_node.children()?.length
+            collapseCircles.push([ xy, drawable_node ])
+          else if !drawable_node.animated_node.loaded
+            expandCircles.push([ xy, drawable_node ])
+
+      # Draw circles
+      for circle in expandCircles.concat(collapseCircles)
+        xy = circle[0]
+        ctx.beginPath()
+        ctx.arc(xy.x, xy.y, 6, 0, Math.PI * 2, true)
+        ctx.fill()
+        ctx.stroke()
+
+      # Draw + and -'s
+      ctx.beginPath()
+      for circle in collapseCircles
+        xy = circle[0]
+        ctx.moveTo(xy.x - 4, xy.y)
+        ctx.lineTo(xy.x + 4, xy.y)
+      for circle in expandCircles
+        xy = circle[0]
+        ctx.moveTo(xy.x - 4, xy.y)
+        ctx.lineTo(xy.x + 4, xy.y)
+        ctx.moveTo(xy.x, xy.y + 4)
+        ctx.lineTo(xy.x, xy.y - 4)
+      ctx.stroke()
+
+      ctx.restore()
 
   class TreeView
     observable(this)
@@ -548,10 +625,27 @@ define [
         color = tag.color || color_table.get(tag.name)
         tag_id_to_color[id] = color
 
+      selection = @tree.state.selection
+      colorLogic = if selection.searchResults.length
+        {
+          searchResultIds: "#{id}" for id in selection.searchResults
+          color: -> '#50ade5'
+        }
+      else if selection.tags.length
+        {
+          tagIds: "#{id}" for id in selection.tags
+          color: (id) -> tag_id_to_color[id]
+        }
+      else
+        {
+          tagIds: "#{id}" for id in @focus_tagids
+          color: (id) -> tag_id_to_color[id]
+        }
+
       shown_tagids = @tree.state.selection.tags
       shown_tagids = @focus_tagids if !shown_tagids.length
 
-      @last_draw = new DrawOperation(@canvas, @tree, tag_id_to_color, shown_tagids, @tree.state.selection.nodes, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, @tree.state.selection.nodes, @focus, @options)
       @last_draw.draw()
 
     update: () ->

@@ -2,51 +2,36 @@
 @import "../../vendor/bootstrap/less/mixins.less";
 @import "../../vendor/bootstrap/less/wells.less";
 @import "_variables.less";
-
-#document-list-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  border: 5px solid transparent;
-}
+@import "../../mixins.less";
 
 #document-list {
-  border: 1px solid #ccc;
   position: absolute;
-  top: 1.8em;
-  margin-top: 1px; // border-top of document-list-title
+  top: 2.75em;
   left: 0;
   right: 0;
   bottom: 0;
-  .transition(bottom .35s ease-out);
   overflow: auto;
-
-  &.document-selected {
-    bottom: @defaultDocumentHeight;
-    overflow: hidden;
-  }
 
   ul.documents {
     margin: 0;
+    margin-top: -.5em; // bring up the first li.document
     padding: 0;
     list-style: none;
   }
 
   li.document {
-    margin: 0;
-    padding: 5px 10px;
+    cursor: pointer;
+    margin: .75em .1em;
+    .overview-toplevel-box;
+    padding: .5em 1em;
     line-height: 1.5;
-    border-bottom: 1px solid @grayLighter;
 
     &.placeholder, &.loading {
       color: @gray;
     }
 
     &:hover {
-      background: @wellBackground;
+      background: @darkBodyBackground;
     }
   }
 

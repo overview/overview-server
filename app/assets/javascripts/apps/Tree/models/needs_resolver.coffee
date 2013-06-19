@@ -16,6 +16,13 @@ define [ './server' ], (Server) ->
       for tag in obj.tags
         tag_store.add(tag)
 
+      search_result_store = needs_resolver.search_result_store
+      for search_result in obj.searchResults
+        if search_result.state == 'InProgress'
+          search_result_store.addAndPoll(search_result)
+        else
+          search_result_store.add(search_result)
+
       documents_hash = list_to_hash(obj.documents)
       document_store = needs_resolver.document_store
       for tag in obj.tags
@@ -35,7 +42,7 @@ define [ './server' ], (Server) ->
       pageSize: obj.pageSize,
       page: obj.page,
     }
-    for key in [ 'nodes', 'tags', 'documents' ]
+    for key in [ 'nodes', 'tags', 'documents', 'searchResults' ]
       list = obj.selection[key]
       if list?.length
         params[key] = list_to_param(obj.selection[key])
@@ -49,7 +56,7 @@ define [ './server' ], (Server) ->
   }
 
   class NeedsResolver
-    constructor: (@document_store, @tag_store, server=undefined) ->
+    constructor: (@document_store, @tag_store, @search_result_store, server=undefined) ->
       @server = server || new Server()
 
       @needs = {}

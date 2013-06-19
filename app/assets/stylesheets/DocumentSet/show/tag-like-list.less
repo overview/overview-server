@@ -1,0 +1,45 @@
+@import "../../vendor/bootstrap/less/variables.less";
+@import "../../vendor/bootstrap/less/mixins.less";
+@import "_variables.less";
+
+.tag-like-list() {
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  form {
+    margin-bottom: 0;
+  }
+
+  .label {
+    display: inline-block;
+    margin: 5px;
+    padding: 5px 0; // mimic .btn
+    float: left;
+    .muted;
+  }
+
+  .btn-group {
+    .border-radius(@inputBorderRadius);
+    margin: 5px;
+    vertical-align: middle;
+
+    .btn {
+      padding: 4px 10px; // same padding as other elements on this page
+    }
+
+    & > .btn { z-index: 2; } // fixes :hover disappearing when z-index changes
+
+    &.selected {
+      .tag-name {
+        outline: 2px solid black;
+      }
+
+      .btn {
+        .border-radius(0);
+      }
+    }
+  }
+}

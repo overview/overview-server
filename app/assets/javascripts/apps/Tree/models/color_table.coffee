@@ -1,3 +1,4 @@
+# Note: this list is duplicated in Scala.
 define ->
   colors = [
     "#ff0009",
@@ -37,9 +38,7 @@ define ->
 
   string_to_colors_index = (s) ->
     h = string_to_hash_integer(s)
-    i = h % colors.length
-    i += colors.length if i < 0
-    i
+    ((h % colors.length) + colors.length) % colors.length
 
   class ColorTable
     get: (s) ->

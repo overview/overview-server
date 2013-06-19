@@ -41,6 +41,11 @@ define [ 'jquery', './observable' ], ($, observable) ->
         page = Math.round(start / pageSize) + 1
         throw 'not starting at the start of a page' if Math.round(pageSize * page) != start + pageSize
 
+        searchResultIds = if !@selection.nodes.length && !@selection.tags.length && @selection.searchResults.length == 1
+          [ @selection.searchResults[0] ]
+        else
+          []
+
         @cache.resolve_deferred('selection_documents_slice', { selection: @selection, pageSize: pageSize, page: page }).done((ret) =>
           document_store_input = {
             doclist: { docids: [] },
@@ -48,6 +53,7 @@ define [ 'jquery', './observable' ], ($, observable) ->
           }
 
           for document, i in ret.documents
+            document.searchResultIds = searchResultIds # so when we tag a search result, the change appears
             document_store_input.doclist.docids.push(document.id)
             document_store_input.documents[document.id] = document
           @n = ret.total_items

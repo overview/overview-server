@@ -1,18 +1,19 @@
 package org.overviewproject.jobhandler
 
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.SearchResult
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import akka.actor._
-
 import SearchHandlerFSM._
 import org.overviewproject.http.RequestQueueProtocol.Failure
+import org.overviewproject.jobs.models.Search
+import org.overviewproject.database.orm.finders.DocumentSetFinder
+
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
-  case class Search(documentSetId: Long, query: String, requestQueue: ActorRef)
+  case class SearchDocumentSet(documentSetId: Long, query: String, requestQueue: ActorRef)
 }
 
 /**
@@ -41,11 +42,14 @@ trait SearchHandlerComponents {
   val actorCreator: ActorCreator
   
   trait Storage {
+    /** @return a query combining the original document set query with the search terms */
+    def queryForProject(documentSetId: Long, searchTerms: String): String
+    
     /** @return true if a 'SearchResult' exists with the given parameters */
-    def searchExists(documentSetId: Long, query: String): Boolean 
+    def searchExists(documentSetId: Long, searchTerms: String): Boolean 
     
     /** create a new `SearchResult` with state `InProgress` */
-    def createSearchResult(documentSetId: Long, query: String): Long 
+    def createSearchResult(documentSetId: Long, searchTerms: String): Long 
     
     /** mark the `SearchResult` as `Complete` */
     def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit 
@@ -73,7 +77,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   startWith(Idle, Uninitialized)
   
   when(Idle) {
-    case Event(Search(documentSetId, query, requestQueue), _) =>
+    case Event(SearchDocumentSet(documentSetId, query, requestQueue), _) =>
       if (storage.searchExists(documentSetId, query)) {
         context.parent ! JobDone
         goto(Idle) using Uninitialized
@@ -99,7 +103,9 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   initialize
 
   
-  private def startSearch(documentSetId: Long, query: String, requestQueue: ActorRef, searchId: Long): Unit = {
+  private def startSearch(documentSetId: Long, searchTerms: String, requestQueue: ActorRef, searchId: Long): Unit = {
+
+    val query = storage.queryForProject(documentSetId, searchTerms)
 
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
@@ -114,25 +120,31 @@ trait SearchHandler extends Actor with FSM[State, Data] {
 trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
   
   class StorageImpl extends Storage {
-    import org.overviewproject.database.orm.{ SearchResult, SearchResultState }
+    import org.overviewproject.tree.orm.{ SearchResult, SearchResultState }
 
-    override def searchExists(documentSetId: Long, query: String): Boolean = Database.inTransaction {
-      SearchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption.isDefined
+    override def queryForProject(documentSetId: Long, searchTerms: String): String = Database.inTransaction {
+      val projectQuery = DocumentSetFinder.byDocumentSet(documentSetId).headOption.map(_.query).flatten.getOrElse("")
+      
+      s"$projectQuery $searchTerms"
+    }
+    
+    override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
+      SearchResultFinder.byDocumentSetAndQuery(documentSetId, searchTerms).headOption.isDefined
     }
 
-    override def createSearchResult(documentSetId: Long, query: String): Long = Database.inTransaction {
+    override def createSearchResult(documentSetId: Long, searchTerms: String): Long = Database.inTransaction {
       val searchResult = SearchResultStore.insertOrUpdate(
-        SearchResult(SearchResultState.InProgress, documentSetId, query))
+        SearchResult(SearchResultState.InProgress, documentSetId, searchTerms))
 
       searchResult.id
     }
     
     override def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit =  Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, searchId))
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, id = searchId))
     }
     
     override def failSearch(searchId: Long, documentSetId: Long, query: String): Unit = Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, searchId))
+      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, id = searchId))
     }
   }
 

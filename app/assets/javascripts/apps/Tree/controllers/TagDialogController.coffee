@@ -41,9 +41,9 @@ define [
       tag = cache.add_tag(attrs)
 
       cache.create_tag(tag, {
-        beforeChange: tagStoreProxy.setChangeOptions({ interacting: true })
-        callback: tagStoreProxy.setChangeOptions({})
-      })
+        beforeReceive: tagStoreProxy.setChangeOptions({ interacting: true })
+      }).done ->
+        tagStoreProxy.setChangeOptions({})
 
     view.on 'update', (model, attrs) ->
       tag = tagStoreProxy.unmap(model)

@@ -14,47 +14,17 @@ body.document-set-show {
     width: 100%;
     top: 42px; // navbar -- will be altered in JS
     bottom: 0;
-    overflow: hidden;
-
-    .flex-row {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      bottom: 40px; // will be altered in JS
-    }
-
-    .flex-column {
-      .box-sizing(border-box);
-      position: absolute;
-      top: 0;
-      height: 100%;
-      width: 50%;
-
-      &:nth-child(1) {
-        left: 0;
-      }
-      &:nth-child(2) {
-        left: 50%;
-      }
-    }
+    overflow: visible; // never show scrollbar
   }
 
-  .tree-and-focus {
-    position: relative;
-    .box-sizing(border-box);
-    border: 5px solid transparent;
-    border-right-width: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  @import "show/document.less";
+  @import "show/app.less";
   @import "show/tree.less";
   @import "show/focus.less";
   @import "show/tag-list.less";
+  @import "show/search-result-list.less";
   @import "show/document-list-cursor.less";
   @import "show/document-list-title.less";
   @import "show/document-list.less";
+  @import "show/document.less";
   @import "show/vertical-tag-list.less";
 }

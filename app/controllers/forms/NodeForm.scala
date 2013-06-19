@@ -1,9 +1,8 @@
 package controllers.forms
 
 import play.api.data.{Form,Forms}
-import org.overviewproject.tree.orm.Node
 
-import models.orm.DocumentSet
+import org.overviewproject.tree.orm.Node
 
 object NodeForm {
   def apply(node: Node) : Form[Node] = {

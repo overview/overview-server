@@ -2,9 +2,9 @@ package controllers.forms
 
 import org.overviewproject.test.Specification
 import org.specs2.specification.Scope
-import models.orm.DocumentSet
 import play.api.data.Form
 import org.specs2.execute.Result
+import org.overviewproject.tree.orm.DocumentSet
 
 class DocumentSetUpdateFormSpec extends Specification {
 

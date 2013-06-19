@@ -5,13 +5,14 @@ require [
   class DocumentList
     observable(this)
 
-    constructor: (@documents, @n) ->
+    constructor: (@documents, @n, @cache, @selection) ->
 
   class DocumentStore
     observable(this)
 
   class TagStore
     observable(this)
+    find_by_id: ->
 
   makeDocument = (id) ->
     {
@@ -23,11 +24,23 @@ require [
     }
 
   describe 'apps/Tree/collections/DocumentListProxy', ->
+    cache = undefined
     documentList = undefined
     documentStore = undefined
     tagStore = undefined
     proxy = undefined
     model = undefined
+
+    init = (docs, nDocs, selection) ->
+      documentStore = new DocumentStore()
+      tagStore = new TagStore()
+      cache =
+        document_store: documentStore
+        tag_store: tagStore
+        describeSelectionWithoutDocuments: ->
+      documentList = new DocumentList(docs, nDocs, cache, selection)
+      proxy = new DocumentListProxy(documentList)
+      model = proxy.model
 
     # Adds documents up to but not including index2
     addDummyDocuments = (index1, index2) ->
@@ -49,11 +62,7 @@ require [
 
     describe 'with an empty DocumentList', ->
       beforeEach ->
-        documentList = new DocumentList([], 0)
-        documentStore = new DocumentStore()
-        tagStore = new TagStore()
-        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
-        model = proxy.model
+        init([], 0, {})
 
       it 'should be empty', ->
         expect(model.get('n')).toEqual(0)
@@ -66,11 +75,7 @@ require [
 
     describe 'with an empty DocumentList that has items pending', ->
       beforeEach ->
-        documentList = new DocumentList([], 10)
-        documentStore = new DocumentStore()
-        tagStore = new TagStore()
-        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
-        model = proxy.model
+        init([], 10, {})
 
       it 'should have a dummy item with no ID', ->
         expect(model.documents.length).toEqual(1)
@@ -98,11 +103,7 @@ require [
 
     describe 'with a non-empty DocumentList', ->
       beforeEach ->
-        documentList = new DocumentList([], 10)
-        documentStore = new DocumentStore()
-        tagStore = new TagStore()
-        proxy = new DocumentListProxy(documentList, documentStore, tagStore)
-        model = proxy.model
+        init([], 10)
         addDummyDocumentsAndNotify(0, 5)
 
       it 'should change a model on DocumentStore:document-changed', ->
@@ -136,3 +137,12 @@ require [
         documentStore._notify('document-changed', document)
 
         expect(callback).toHaveBeenCalled()
+
+      describe 'with a tag DocumentList', ->
+        beforeEach ->
+          init([], 10, { tags: [ 1 ] })
+          spyOn(cache, 'describeSelectionWithoutDocuments').andReturn([ 'tag', 'name' ])
+
+        it 'should describe the tag', ->
+          expect(model.describeSelection()).toEqual([ 'tag', 'name' ])
+          expect(cache.describeSelectionWithoutDocuments).toHaveBeenCalledWith({ tags: [ 1 ] })

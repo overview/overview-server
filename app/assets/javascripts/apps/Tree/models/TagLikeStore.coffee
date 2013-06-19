@@ -3,9 +3,10 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
   #
   # Each store has a @_key field, set in the constructor, which is a unique
   # String each object has. For a Tag, that's "name"; for a SearchResult,
-  # it's "query". Objects will be sorted by this field, using case-insensitive
-  # String.localeCompare(). Objects will also have a transient "position"
-  # property set by this class, indicating their position in the Array.
+  # it's "query". Objects will be sorted by @_sortKey, using case-insensitive
+  # String.localeCompare() or integer sort, as appropriate. Objects will also
+  # have a transient "position" property set by this class, indicating their
+  # position in the @objects Array.
   #
   # Each store has an @objects Array; each Object in that Array is a tag-like.
   #
@@ -35,13 +36,31 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
   class TagLikeStore
     observable(this)
 
-    constructor: (@_key) ->
+    constructor: (@_key, @_sortKey) ->
       @objects = []
       @_last_unsaved_id = 0
 
     _sort: ->
-      key = @_key
-      @objects.sort((a, b) -> a[key].toLocaleLowerCase().localeCompare(b[key].toLocaleLowerCase()))
+      key = @_sortKey
+      sortFunction = if _.isString(@objects[0]?[key])
+        # If sortKey does not exist, that's probably because this is a new
+        # object -- meaning it should appear last.
+        (a, b) ->
+          v1 = a[key]
+          v2 = b[key]
+          return 0 if !v1? && !v2?
+          return -1 if v1? && !v2?
+          return 1 if v2? && !v1?
+          return v1.toLocaleLowerCase().localeCompare(v2.toLocaleLowerCase())
+      else
+        (a, b) ->
+          v1 = a[key]
+          v2 = b[key]
+          return 0 if !v1? && !v2?
+          return -1 if v1? && !v2?
+          return 1 if v2? && !v1?
+          return v1 - v2
+      @objects.sort(sortFunction)
       tl.position = i for tl, i in @objects
       undefined
 

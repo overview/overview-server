@@ -2,18 +2,22 @@
 @import "../../vendor/bootstrap/less/mixins.less";
 
 #document-list-title {
-  border: 1px solid #ccc;
-  border-bottom: none;
+  padding: .25em 10px;
+
+  // overlap #document-list
+  position: relative;
+  z-index: 1;
+  background: inherit;
 
   h4 {
     margin: 0;
-    padding: 0 10px;
-    height: 1.8em;
-    line-height: 1.8;
+    height: 1.5em;
+    line-height: 1.5;
     white-space: nowrap;
+    font-family: @sansFontFamily;
     font-weight: normal;
-    font-size: 1em;
-    background: @wellBackground;
+    font-size: 1.5em;
+    color: @highlightColor;
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -24,13 +28,13 @@
     display: none;
     float: right;
     color: @linkColor;
-    height: 1.8em;
+    height: 2.25em;
     padding: 0 .5em;
-    line-height: 1.8em;
+    line-height: 2.25em;
   }
 
   &:hover a {
     display: block;
-    background: @wellBackground; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
+    background: inherit; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
   }
 }

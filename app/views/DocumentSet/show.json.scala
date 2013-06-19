@@ -3,9 +3,8 @@ package views.json.DocumentSet
 import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
-
-import models.orm.DocumentSet
 import models.OverviewUser
+import org.overviewproject.tree.orm.DocumentSet
 
 object show {
   def apply(user: OverviewUser, documentSet: DocumentSet)(implicit lang: Lang): JsValue = {

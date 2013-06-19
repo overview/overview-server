@@ -4,8 +4,8 @@ import play.api.i18n.Lang
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import models.orm.DocumentSet
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
+
 
 object index {
   def apply(tuples: Iterable[(DocumentSetCreationJob, DocumentSet, Long)])(implicit lang: Lang) : JsValue = {

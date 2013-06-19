@@ -8,8 +8,8 @@
 #
 # Usage:
 #
-# 1. In project/Build.scala, set `lessEntryPoints := Nil` instead of what it normally was
-# 2. Run auto/compile-less-on-linux.sh
+# 1. `COMPILE_LESS=false play run`
+# 2. `auto/compile-less-on-linux.sh1
 # 3. Edit stylesheets as you normally would
 #
 # What happens:

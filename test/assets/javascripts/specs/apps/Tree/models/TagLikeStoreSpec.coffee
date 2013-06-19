@@ -6,14 +6,14 @@ require [
       store = undefined
 
       beforeEach ->
-        store = new TagLikeStore('name')
+        store = new TagLikeStore('name', 'sortName')
         store.parse = _.identity
 
       afterEach ->
         store = undefined
 
       dummy_tag = (id, name) ->
-        { id: id, name: name }
+        { id: id, name: name, sortName: name }
 
       describe 'beginning empty', ->
         it 'should start empty', ->
@@ -50,6 +50,14 @@ require [
           store.add(tag1)
           expect(store.objects).toEqual([ tag1, tag2 ])
 
+        it 'should sort tags that are missing their sort keys to the end of the list', ->
+          tag1 = dummy_tag(1, 'A')
+          tag2 = dummy_tag(2, 'B')
+          delete tag1.sortName
+          store.add(tag1)
+          store.add(tag2)
+          expect(store.objects).toEqual([ tag2, tag1 ])
+
         it 'should reset positions before :added', ->
           tag1 = dummy_tag(1, 'A')
           tag2 = dummy_tag(2, 'B')
@@ -75,7 +83,7 @@ require [
             expect(tag1.position).toEqual(1)
             expect(tag2.position).toEqual(0)
 
-          store.change(tag1, { name: 'C' })
+          store.change(tag1, { sortName: 'C' })
 
       describe 'beginning full', ->
         tag1 = undefined

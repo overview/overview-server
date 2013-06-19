@@ -15,11 +15,11 @@ import play.api.mvc.AnyContent
 import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobState }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
-import models.orm.{ DocumentSet, DocumentSetUser, User }
+import models.orm.{ DocumentSetUser, User }
 import models.orm.finders.UserFinder
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.{ OverviewDatabase, OverviewUser }

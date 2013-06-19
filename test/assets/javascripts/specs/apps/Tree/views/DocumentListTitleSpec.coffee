@@ -9,6 +9,11 @@ require [
 
     find_by_id: (id) -> { id: id, name: "Tag #{id}" }
 
+  class SearchResultStore
+    observable(this)
+
+    find_by_id: (id) -> { id: id, query: "Search #{id}" }
+
   class OnDemandTree
     constructor: ->
       @nodes =
@@ -18,6 +23,7 @@ require [
   cache =
     tag_store: new TagStore()
     on_demand_tree: new OnDemandTree()
+    search_result_store: new SearchResultStore()
 
   class DocumentList
     observable(this)
@@ -37,9 +43,9 @@ require [
         'views.DocumentSet.show.DocumentListTitle.tag.edit': 'tag.edit'
         'views.DocumentSet.show.DocumentListTitle.node.title_html': 'node.title_html,{0},{1}'
         'views.DocumentSet.show.DocumentListTitle.node.edit': 'node.edit'
-        'views.DocumentSet.show.DocumentListTitle.multiple.title_html': 'multiple.title_html,{0},{1},{2}'
-        'views.DocumentSet.show.DocumentListTitle.multiple.num_nodes': 'multiple.num_nodes,{0}'
-        'views.DocumentSet.show.DocumentListTitle.multiple.num_tags': 'multiple.num_tags,{0}'
+        'views.DocumentSet.show.DocumentListTitle.searchResult.title_html': 'searchResult.title_html,{0},{1}'
+        'views.DocumentSet.show.DocumentListTitle.searchResult.edit': 'searchResult.edit'
+        'views.DocumentSet.show.DocumentListTitle.multiple.title_html': 'multiple.title_html,{0}'
       })
 
     afterEach ->
@@ -56,7 +62,7 @@ require [
 
     describe 'with an unloaded documentList', ->
       beforeEach ->
-        documentList = new DocumentList({ nodes: [], tags: [1] }, undefined)
+        documentList = new DocumentList({ nodes: [], tags: [1], searchResults: [] }, undefined)
         view = new DocumentListTitle({ documentList: documentList, cache: cache })
 
       it 'should render loading message', ->
@@ -64,7 +70,7 @@ require [
 
     describe 'with a Tag', ->
       beforeEach ->
-        documentList = new DocumentList({ nodes: [], tags: [1] }, 4)
+        documentList = new DocumentList({ nodes: [], tags: [1], searchResults: [] }, 4)
         view = new DocumentListTitle({ documentList: documentList, cache: cache })
 
       it 'should render the title', ->
@@ -91,13 +97,13 @@ require [
         expect(view.$('h4').text()).toEqual('tag.title_html,num_documents,4,Tag 2')
 
       it 'should render when calling setDocumentList()', ->
-        documentList2 = new DocumentList({ nodes: [], tags: [2] }, 8)
+        documentList2 = new DocumentList({ nodes: [], tags: [2], searchResults: [] }, 8)
         view.setDocumentList(documentList2)
         expect(view.$('h4').text()).toEqual('tag.title_html,num_documents,8,Tag 2')
 
     describe 'with a Node', ->
       beforeEach ->
-        documentList = new DocumentList({ nodes: [1], tags: [] }, 4)
+        documentList = new DocumentList({ nodes: [1], tags: [], searchResults: [] }, 4)
         view = new DocumentListTitle({ documentList: documentList, cache: cache })
 
       it 'should render the title', ->
@@ -109,10 +115,18 @@ require [
         view.$('a.node-edit').click()
         expect(args).toEqual([ 1 ])
 
-    describe 'with Tags and/or Nodes', ->
+    describe 'with a SearchResult', ->
       beforeEach ->
-        documentList = new DocumentList({ nodes: [1], tags: [1] }, 4)
+        documentList = new DocumentList({ nodes: [], tags: [], searchResults: [1] }, 4)
         view = new DocumentListTitle({ documentList: documentList, cache: cache })
 
       it 'should render the title', ->
-        expect(view.$('h4').text()).toEqual('multiple.title_html,num_documents,4,multiple.num_tags,1,multiple.num_nodes,1')
+        expect(view.$('h4').text()).toEqual('searchResult.title_html,num_documents,4,Search 1')
+
+    describe 'with Tags and/or Nodes', ->
+      beforeEach ->
+        documentList = new DocumentList({ nodes: [1], tags: [1], searchResults: [] }, 4)
+        view = new DocumentListTitle({ documentList: documentList, cache: cache })
+
+      it 'should render the title', ->
+        expect(view.$('h4').text()).toEqual('multiple.title_html,num_documents,4')

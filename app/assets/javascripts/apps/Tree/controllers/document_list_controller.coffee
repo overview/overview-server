@@ -5,6 +5,7 @@ define [
   '../models/list_selection'
   '../collections/DocumentListProxy'
   '../collections/TagStoreProxy'
+  '../collections/SearchResultStoreProxy'
   '../views/node_form_view'
   '../views/DocumentList'
   '../views/DocumentListTitle'
@@ -13,7 +14,8 @@ define [
   './node_form_controller'
   './tag_form_controller'
   './logger'
-], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger) ->
+  'apps/DocumentDisplay/app'
+], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, SearchResultStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger, DocumentDisplayApp) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
 
@@ -53,11 +55,12 @@ define [
 
   Controller = Backbone.Model.extend
     # Only set on initialize (properties may change):
-    # * documentViewEl (an HTMLElement)
     # * tagStore (a TagStore)
     # * documentStore (a DocumentStore)
     # * cache (a Cache)
     # * state (a State)
+    # * listEl (an HTMLElement)
+    # * cursorEl (an HTMLElement)
     #
     # Read-only, may change or be set to something new:
     # * selection (a Selection)
@@ -69,7 +72,6 @@ define [
     # Read-only, only properties may change:
     # * listSelection (a ListSelectionController)
     # * tagCollection (a Backbone.Collection)
-    # * titleView
     # * listView
     # * cursorView
     defaults:
@@ -87,8 +89,8 @@ define [
       documentCollection: undefined
 
     initialize: (attrs, options) ->
-      throw 'Must specify documentViewEl, an HTMLElement' if !attrs.documentViewEl
       throw 'Must specify tagStore, a TagStore' if !attrs.tagStore
+      throw 'Must specify searchResultStore, a SearchResultStore' if !attrs.searchResultStore
       throw 'Must specify documentStore, a DocumentStore' if !attrs.documentStore
       throw 'Must specify state, a State' if !attrs.state
       throw 'Must specify cache, a Cache' if !attrs.cache
@@ -98,11 +100,11 @@ define [
       @_addDocumentList()
       @_addListSelection()
       @_addTagCollection()
+      @_addSearchResultCollection()
       @_addDocumentCollection()
       @_addTitleView()
       @_addListView()
       @_addCursorView()
-      @_addDocumentView()
 
     _addSelection: ->
       state = @get('state')
@@ -113,25 +115,33 @@ define [
 
     _addSelectionModuloDocuments: ->
       updateFromSelection = =>
-        @set('selectionModuloDocuments', @get('selection').pick('nodes', 'tags'))
+        @set('selectionModuloDocuments', @get('selection').pick('nodes', 'tags', 'searchResults'))
       updateFromSelection()
       @on('change:selection', updateFromSelection)
 
-    _addDocumentList: ->
-      refresh = =>
-        selection = @get('selectionModuloDocuments')
-        documentList = if selection?.nodes?.length || selection?.tags?.length
-          new DocumentList(@get('cache'), selection)
-        else
-          undefined
-        @set('documentList', documentList)
+    _refreshDocumentList: ->
+      selection = @get('selectionModuloDocuments')
+      documentList = if selection?.nodes?.length || selection?.tags?.length || selection?.searchResults?.length
+        new DocumentList(@get('cache'), selection)
+      else
+        undefined
+      @set('documentList', documentList)
 
-      @on('change:selectionModuloDocuments', refresh)
-      refresh()
+    _addDocumentList: ->
+      @on('change:selectionModuloDocuments', => @_refreshDocumentList())
+      @_refreshDocumentList()
 
     _addTagCollection: ->
       @tagStoreProxy = new TagStoreProxy(@get('tagStore'))
       @set('tagCollection', @tagStoreProxy.collection)
+
+    _addSearchResultCollection: ->
+      @searchResultStoreProxy = new SearchResultStoreProxy(@get('searchResultStore'))
+      @set('searchResultCollection', @searchResultStoreProxy.collection)
+
+      @get('searchResultCollection').on 'change', (model) =>
+        if model.id in @get('selection').searchResults
+          @_refreshDocumentList()
 
     _addDocumentCollection: ->
       documentStore = @get('documentStore')
@@ -141,7 +151,7 @@ define [
         @get('documentListProxy')?.destroy()
         documentList = @get('documentList')
         if documentList
-          documentListProxy = new DocumentListProxy(documentList, documentStore, tagStore)
+          documentListProxy = new DocumentListProxy(documentList)
           @set('documentListProxy', documentListProxy)
           @set('documentCollection', documentListProxy.model.documents)
         else
@@ -160,10 +170,7 @@ define [
         platform: /Mac/.test(navigator.platform) && 'mac' || 'anything-but-mac'
       }))
 
-      resetListSelection = => @get('listSelection').onSelectAll()
-      @on('change:documentCollection', resetListSelection)
-
-      # Update the state's selection when the user clicks around.
+      # Update the state's selection when the user clicks around or docs load.
       #
       # You'd think there would be an infinite loop,
       # listSelection.change:selectedIndices to this.change:selection to
@@ -176,8 +183,9 @@ define [
       # ListSelection and the State. Ideally we'd let the State changes
       # propagate to the ListSelection, but we can't because only the
       # ListSelection has a cursorIndex.
-      @get('listSelection').on 'change:selectedIndices', (model, selectedIndices) =>
+      refreshStateSelection = =>
         collection = @get('documentCollection')
+        selectedIndices = @get('listSelection').get('selectedIndices')
         docids = []
         for index in selectedIndices || []
           docid = collection.at(index)?.id
@@ -185,6 +193,25 @@ define [
 
         selection = @get('selection').replace({ documents: docids })
         @get('state').set('selection', selection)
+
+      resetListSelection = =>
+        # If we're navigating individual documents and we change selection, go
+        # to the top of the new document list.
+        #
+        # The new doclist won't have loaded, so really, state.selection will
+        # have documents:[]. We catch that by watching for add() on
+        # documentCollection.
+        listSelection = @get('listSelection')
+        if listSelection.get('cursorIndex')?
+          listSelection.set
+            cursorIndex: 0
+            selectedIndices: [0]
+
+      @get('listSelection').on('change:selectedIndices', refreshStateSelection)
+      @on 'change:documentCollection', ->
+        resetListSelection() # calls refreshStateSelection
+        @get('documentCollection').once('add', refreshStateSelection)
+
 
     _addTitleView: ->
       cache = @get('cache')
@@ -208,6 +235,7 @@ define [
         tag_form_controller(tag, cache, state)
 
       @set('titleView', view)
+      view.$el.appendTo(@get('listEl'))
 
     _addListView: ->
       view = new DocumentListView({
@@ -229,22 +257,25 @@ define [
       pageSize = 20 # number of documents we request at once
       pageSizeBuffer = 5 # how far from the end we begin a request for more
 
-      @on 'change:documentList', =>
-        @get('documentList')?.slice(0, pageSize)
-          .done(=> @get('listSelection').onClick(0))
-        firstMissingIndex = pageSize
-
-      view.on 'change:maxViewedIndex', (model, value) =>
-        while firstMissingIndex < value + pageSizeBuffer
+      fetchMissingDocuments = (needed) =>
+        while firstMissingIndex < needed + pageSizeBuffer
           @get('documentList')?.slice(firstMissingIndex, firstMissingIndex + pageSize)
           firstMissingIndex += pageSize
 
+      @on 'change:documentList', =>
+        firstMissingIndex = 0
+        fetchMissingDocuments(1)
+      view.on('change:maxViewedIndex', (model, value) => fetchMissingDocuments(value))
+
       @set('listView', view)
+      view.$el.appendTo(@get('listEl'))
 
     _addCursorView: ->
       view = new DocumentListCursorView({
         selection: @get('listSelection')
         documentList: @get('documentListProxy')?.model
+        documentDisplayApp: DocumentDisplayApp
+        el: @get('cursorEl')
       })
 
       @on 'change:documentListProxy', (model, documentListProxy) ->
@@ -252,77 +283,16 @@ define [
 
       @set('cursorView', view)
 
-    _addDocumentView: ->
-      listView = @get('listView')
-      $documentViewEl = $(@get('documentViewEl'))
-      $cursorViewEl = @get('cursorView').$el
-      $titleViewEl = @get('titleView').$el
-      listSelection = @get('listSelection')
-      collection = @get('documentCollection')
-
-      # window.setInterval() value that tries to set listView.$el.scrollTop()
-      scrollTopInterval = undefined
-
-      refresh = ->
-        if scrollTopInterval?
-          window.clearInterval(scrollTopInterval)
-          scrollTopInterval = undefined
-
-        selectedIndices = listSelection.get('selectedIndices')
-        if selectedIndices.length == 1
-          # Scroll selection to the right position
-          $li = listView.$("li.document:eq(#{selectedIndices[0]})")
-          $ul = $li.parent()
-          scrollTop = $li.offset().top - $ul.offset().top
-          # We'd like to set scrollTop directly, but that won't work when the
-          # list is too short to have a scrollbar (but long enough that we need
-          # to change the scrollTop -- 5 items, for instance).
-          tries = 20
-          scrollTopInterval = doUntilWithSetInterval(
-            -> listView.$el.scrollTop(scrollTop),
-            -> (listView.$el.scrollTop() == scrollTop) || (tries -= 1) <= 0,
-            50
-          )
-          #
-          # We'll animate, which will set it lots of times. Ensure the
-          # duration of the animation is >= the duration of CSS transitions.
-          #listView.$el.scrollTop(scrollTop)
-          listView.$el.stop(true, true)
-          listView.$el.animate({ scrollTop: scrollTop })
-
-          # Bring in #document
-          $container = listView.$el.parent()
-          documentHeight = Math.floor($container.height() - listView.$el.position().top - $li.outerHeight())
-          $documentViewEl.height(documentHeight)
-          $cursorViewEl.css({ top: "#{$ul.parent().position().top + $li.outerHeight()}px" })
-          listView.$el.css({ bottom: "#{documentHeight}px" })
-        else
-          $cursorViewEl.css({ top: '100%' })
-          listView.$el.css({ bottom: '' })
-
-      listSelection.on('change:selectedIndices', refresh)
-
-      @listenTo(collection, 'change', refresh)
-      @on 'change:documentCollection', (model, newCollection) =>
-        @stopListening(collection)
-        collection = newCollection
-        @listenTo(collection, 'change', refresh)
-
-      @on 'change:selection', (model, selection) ->
-      $(window).on('resize', refresh)
-
-  document_list_controller = (div, documentDiv, cache, state) ->
+  document_list_controller = (listDiv, cursorDiv, cache, state) ->
     controller = new Controller({
       tagStore: cache.tag_store
+      searchResultStore: cache.search_result_store
       documentStore: cache.document_store
-      documentViewEl: documentDiv
       state: state
       cache: cache
+      listEl: listDiv
+      cursorEl: cursorDiv
     })
-
-    $(div).append(controller.get('titleView').el)
-    $(div).append(controller.get('listView').el)
-    $(div).append(controller.get('cursorView').el)
 
     go_up_or_down = (up_or_down, event) ->
       listSelection = controller.get('listSelection')

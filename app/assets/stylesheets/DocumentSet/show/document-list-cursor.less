@@ -1,58 +1,127 @@
-@import "../../vendor/bootstrap/less/variables.less";
+@import "../../variables.less";
+@import "../../mixins.less";
 @import "../../vendor/bootstrap/less/mixins.less";
 
-#document-list-cursor {
+#tree-app-document-cursor {
+  @navWidth: 15%;
+
   position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: -1px; // border-bottom of #document-list
-  border: 1px solid #ccc;
-  border-top: none;
-  background: @bodyBackground;
   z-index: 1;
-  .transition(top .35s ease-out);
+  left: 110%;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  .transition(left .35s ease-out);
 
-  h4 {
-    .muted;
-    display: inline-block;
-    margin: 0;
-    font: inherit;
-    padding: .5em 10px;
+  &.showing-document, &.showing-unloaded-document {
+    left: 0;
   }
 
-  ul {
-    display: inline;
-    margin: 0;
+  a.list {
+    display: block;
+    font-size: 1.5em;
+    height: 2em;
+    line-height: 2em;
+    background: @bodyBackground;
     padding: 0;
+    vertical-align: middle;
+
+    i {
+      margin-right: .5em;
+    }
   }
 
-  li {
-    display: inline-block;
+  .box {
+    position: absolute;
+    .overview-toplevel-box();
+    overflow: hidden;
+    top: 3em;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: @darkBodyBackground;
+
+    i {
+      display: block;
+      font-size: 1.5em;
+      line-height: 1em;
+    }
   }
 
-  i { // icon
-    margin-right: 5px;
+  a.previous, a.next {
+    height: 3em;
+  }
+
+  a.previous, a.next {
+    line-height: 1.5em;
+    width: @navWidth;
+    display: block;
+    overflow: hidden;
+    .box-sizing(border-box);
+  }
+
+  a.previous {
+    float: left;
+    text-align: left;
+    padding-right: 1em;
+  }
+
+  a.next {
+    float: right;
+    text-align: right;
+    padding-left: 1em;
+
+    i {
+      margin: 0 0 0 auto;
+    }
   }
 
   .disabled {
     .muted;
     cursor: default;
+    text-decoration: none;
   }
 
-  a {
-    display: block;
-    padding: .5em 10px;
+  header {
+    padding: 1em;
   }
 
-  &:hover {
-    background: @wellBackground;
-
-    & ~ #document-list.document-selected {
-      background: @wellBackground;
-    }
+  div.position, div.selection {
+    margin: 0 @navWidth;
+    height: 1.5em;
+    line-height: 1.5em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-}
 
-#document-list.document-selected:hover ~ #document-list-cursor {
-  background: @wellBackground;
+  div.selection {
+    color: @highlightColor;
+  }
+
+  h2 {
+    clear: both;
+    font-family: inherit;
+    font-weight: normal;
+    font-size: 1.25em;
+    line-height: 1.2em;
+    margin: .8em 0 0 0;
+  }
+
+  h3 {
+    font-family: inherit;
+    font-weight: normal;
+    font-size: 1em;
+    line-height: 1.5em;
+    margin: .5em 0;
+    .muted;
+  }
+
+  article {
+    position: absolute;
+    top: 6.5em;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 }

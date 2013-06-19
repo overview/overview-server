@@ -5,6 +5,7 @@ import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 import com.typesafe.sbt.SbtStartScript
 
+
 object ApplicationBuild extends Build with ProjectSettings {
   override def settings = super.settings ++ Seq(
     EclipseKeys.skipParents in ThisBuild := false,
@@ -29,19 +30,24 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
   
   val messageBroker = Project("message-broker", file("message-broker"), settings = 
-    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(     
-      libraryDependencies ++=  messageBrokerDependencies,
-      printClasspath))
+    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings ++
+      Seq(     
+        libraryDependencies ++=  messageBrokerDependencies,
+        printClasspath))
 
   
   
   
   // Create a subProject with our common settings
-  object OverviewProject {
+  object OverviewProject extends OverviewCommands with OverviewKeys {
     def apply(name: String, dependencies: Seq[ModuleID], 
       theTestOptions: Seq[TestOption] = ourTestOptions) = {
       Project(name, file(name), settings = 
-        Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(printClasspath) ++ Seq(        
+        Defaults.defaultSettings ++
+        defaultSettings ++
+	SbtStartScript.startScriptForClassesSettings ++
+	Seq(printClasspath) ++
+	Seq(        
           libraryDependencies ++= dependencies,
           testOptions in Test ++= theTestOptions,
           scalacOptions ++= ourScalacOptions,
@@ -89,7 +95,6 @@ object ApplicationBuild extends Build with ProjectSettings {
   ).settings(
     scalacOptions ++= ourScalacOptions,
     templatesImport += "views.Magic._",
-    lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less"), // only compile .less files that aren't in subdirs
     requireJs ++= Seq(
       "bundle/DocumentCloudImportJob/new.js",
       "bundle/DocumentSet/index.js",
@@ -122,13 +127,18 @@ object ApplicationBuild extends Build with ProjectSettings {
     sources in doc in Compile := List(),
     printClasspath,
     aggregate in printClasspathTask := false
-  ).dependsOn(common).aggregate(worker)
+  ).settings(
+    if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false")
+      lessEntryPoints := Nil
+    else
+      lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
+  ).dependsOn(common)
 
-  
+
   val all = Project("all", file("all"))
     .aggregate(main, worker, documentSetWorker, workerCommon, common)
     .settings(
-      aggregate in Test := false,
+        aggregate in Test := false,
       test in Test <<= (test in Test in main) 
         dependsOn (test in Test in worker)
         dependsOn (test in Test in documentSetWorker)

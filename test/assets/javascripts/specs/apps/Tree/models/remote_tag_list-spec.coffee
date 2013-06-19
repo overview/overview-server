@@ -62,12 +62,16 @@ require [
       @nodes = []
       @documents = []
       @tags = []
+      @searchResults = []
 
     documents_from_cache: (cache) ->
       []
 
     allows_correct_tagcount_adjustments: () ->
       !!(@nodes.length && !@documents.length && !@tags.length)
+
+    isEmpty: ->
+      !(@nodes.length || @documents.length || @tags.length || @searchResults.length)
 
   class MockOnDemandTree
     observable(this)
@@ -215,12 +219,6 @@ require [
             it 'should not duplicate a tag on a document', ->
               expect(document_store.documents[1].tagids).toEqual([1])
 
-            it 'should unset the tag\'s doclist', ->
-              expect(tag_store.tags[0].doclist).toBeUndefined()
-
-            it 'should remove the doclist from the DocumentStore', ->
-              expect(document_store.removed_doclists[0]).toEqual({ n: 6, docids: [ 1, 3, 5, 7, 9, 14 ] })
-
             it 'should queue a server call', ->
               expect(transaction_queue.callbacks.length).toEqual(1)
 
@@ -242,42 +240,20 @@ require [
                 expect(post[2].path_argument).toEqual(1)
 
               it 'should post the proper selection', ->
-                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })
+                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
               describe 'and receiving success', ->
-                new_doclist = { n: 14, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] }
-                new_documents = {
-                  1: { id: 1, title: "doc1", tagids: [ 1 ] },
-                  2: { id: 2, title: "doc2", tagids: [ 1, 2 ] },
-                  3: { id: 3, title: "doc3", tagids: [ 1 ] },
-                  4: { id: 4, title: "doc4", tagids: [ 1, 2 ] },
-                  5: { id: 5, title: "doc5", tagids: [ 1 ] },
-                  6: { id: 6, title: "doc6", tagids: [ 1 ] },
-                  7: { id: 7, title: "doc7", tagids: [ 1, 2 ] },
-                  8: { id: 8, title: "doc8", tagids: [ 1, 2 ] },
-                  9: { id: 9, title: "doc9", tagids: [ 1 ] },
-                  10: { id: 10, title: "doc10", tagids: [ 1, 2 ] },
-                }
-                new_documents_array = (new_documents[i] for i in [1..10])
-
                 beforeEach ->
-                  server.deferreds[0].resolve({
-                    num_added: 8,
-                    tag: { id: 1, doclist: new_doclist },
-                    documents: new_documents_array,
-                  })
+                  server.deferreds[0].resolve({ added: 8, })
 
                 it 'should set the new tag count', ->
                   expect(remote_tag_list.tags[0].doclist.n).toEqual(14)
-
-                it 'should add the new doclist', ->
-                  expect(document_store.added_doclists[0]).toEqual([new_doclist, new_documents])
 
             it 'should make the server call with the selection given at call time even if it has changed since', ->
               selection.tags.push(1)
 
               transaction_queue.next()
-              expect(server.posts[0][1]).toEqual({ nodes: '2', tags: '', documents: '' })
+              expect(server.posts[0][1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
             it 'should call with the old id even if the name changed since', ->
               remote_tag_list.tags[0].name = 'AA-changed'
@@ -307,12 +283,6 @@ require [
             it 'should not remove the tag from other documents', ->
               expect(document_store.documents[15].tagids).toContain(2)
 
-            it 'should remove the tag\'s doclist from the DocumentStore', ->
-              expect(document_store.removed_doclists[0]).toEqual({ n: 7, docids: [ 2, 4, 7, 8, 10, 13, 15 ] })
-
-            it 'should unset the tag\'s doclist', ->
-              expect(tag_store.tags[1].doclist).toBeUndefined()
-
             it 'should remove the tagcount from the node', ->
               expect(on_demand_tree.remove_tag_from_node).toHaveBeenCalledWith(2, tag_store.tags[1])
 
@@ -337,23 +307,11 @@ require [
                 expect(post[2].path_argument).toEqual(2)
 
               it 'should post the proper selection', ->
-                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })
+                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
               describe 'and receiving success', ->
-                new_doclist = { n: 1, docids: [ 15 ] }
-                new_documents = {
-                  15: { id: 15, title: "doc15", tagids: [ 1, 2 ] },
-                }
-
                 beforeEach ->
-                  server.deferreds[0].resolve({
-                    num_removed: 6,
-                    tag: { id: 2, doclist: new_doclist },
-                    documents: [new_documents[15]],
-                  })
+                  server.deferreds[0].resolve({ removed: 6 })
 
                 it 'should set the new tag count', ->
                   expect(remote_tag_list.tags[1].doclist.n).toEqual(1)
-
-                it 'should add the new doclist', ->
-                  expect(document_store.added_doclists[0]).toEqual([ new_doclist, new_documents ])

@@ -46,6 +46,12 @@ require [
         tag = proxy.map(20)
         expect(tag).toBe(collection.last())
 
+      it 'should say when it can map an ID', ->
+        expect(proxy.canMap(20)).toBe(true)
+
+      it 'should say when it cannot map an ID', ->
+        expect(proxy.canMap(21)).toBe(false)
+
       it 'should throw exception on not-found tag', ->
         expect(-> tag = proxy.map(19)).toThrow()
 
@@ -111,3 +117,21 @@ require [
         proxy.setChangeOptions({ interacting: true })
         store._notify('id-changed', -1, tag)
         expect(tag.set.mostRecentCall.args[1]).toEqual({ interacting: true })
+
+      it 'should find the tagLike in a callback by either ID', ->
+        found = {
+          byOldId: undefined
+          byNewId: undefined
+        }
+        collection.on 'change:id', (model) ->
+          found.byOldId = proxy.map(-1)
+          found.byNewId = proxy.map(99)
+        store.objects[0].id = 99
+        store._notify('id-changed', -1, store.objects[0])
+        expect(found.byOldId).not.toBeUndefined()
+        expect(found.byOldId).toBe(found.byNewId)
+
+      it 'should not find the tagLike by the old ID after callbacks have fired', ->
+        store.objects[0].id = 99
+        store._notify('id-changed', -1, store.objects[0])
+        expect(-> proxy.map(-1)).toThrow()

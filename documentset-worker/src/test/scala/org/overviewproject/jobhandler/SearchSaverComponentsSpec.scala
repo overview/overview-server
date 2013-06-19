@@ -4,11 +4,11 @@ import org.specs2.mutable.Specification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.database.orm.stores.SearchResultStore
-import org.overviewproject.database.orm.SearchResult
-import org.overviewproject.database.orm.SearchResultState._
 import org.overviewproject.documentcloud.Document
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.tree.orm.SearchResultState._
 
 class SearchSaverComponentsSpec extends DbSpecification {
   step(setupDb)

@@ -54,9 +54,12 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
 
       changeTagLikeId = (oldId, tagLike) =>
         model = idToModel[oldId]
-        delete idToModel[oldId]
         idToModel[tagLike.id] = model
         model.set({ id: tagLike.id }, @changeOptions)
+        # During the tagLike's ID change, several callbacks are fired in an
+        # unknown order. Some callbacks still have the old ID; others have the
+        # new one. Delete the old one *after* listeners are done.
+        delete idToModel[oldId]
 
       removeModel = (tagLike) ->
         model = idToModel[tagLike.id]
@@ -87,12 +90,17 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
 
     setChangeOptions: (@changeOptions) ->
 
+    # Returns whether map() will succeed.
+    canMap: (tagLike) ->
+      id = tagLike.id? && tagLike.id || tagLike
+      "#{id}" of @_idToModel
+
     # Converts from tagLike ID or tagLike object to model
     #
     # The model must already be part of the collection.
     map: (tagLike) ->
+      throw 'TagLike not found' if !@canMap(tagLike)
       id = tagLike.id? && tagLike.id || tagLike
-      throw 'TagLike not found' if id not of @_idToModel
       @_idToModel[id]
 
     # Converts from model to tagLike
