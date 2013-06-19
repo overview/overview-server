@@ -30,7 +30,7 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
       if slug?
         "https://www.documentcloud.org/api/projects/#{slug}.json?include_document_ids=false"
       else
-        "https://www.documentcloud.org/api/search?q=#{encodeURIComponent(@id)}&per_page=0"
+        "https://www.documentcloud.org/api/search.json?q=#{encodeURIComponent(@id)}&per_page=0"
 
     parse: (response, options) ->
       # BUG in DocumentCloud returns all projects instead of the one we want.
