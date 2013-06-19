@@ -62,12 +62,16 @@ require [
       @nodes = []
       @documents = []
       @tags = []
+      @searchResults = []
 
     documents_from_cache: (cache) ->
       []
 
     allows_correct_tagcount_adjustments: () ->
       !!(@nodes.length && !@documents.length && !@tags.length)
+
+    isEmpty: ->
+      !(@nodes.length || @documents.length || @tags.length || @searchResults.length)
 
   class MockOnDemandTree
     observable(this)
@@ -236,7 +240,7 @@ require [
                 expect(post[2].path_argument).toEqual(1)
 
               it 'should post the proper selection', ->
-                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })
+                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
               describe 'and receiving success', ->
                 beforeEach ->
@@ -249,7 +253,7 @@ require [
               selection.tags.push(1)
 
               transaction_queue.next()
-              expect(server.posts[0][1]).toEqual({ nodes: '2', tags: '', documents: '' })
+              expect(server.posts[0][1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
             it 'should call with the old id even if the name changed since', ->
               remote_tag_list.tags[0].name = 'AA-changed'
@@ -303,7 +307,7 @@ require [
                 expect(post[2].path_argument).toEqual(2)
 
               it 'should post the proper selection', ->
-                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '' })
+                expect(post[1]).toEqual({ nodes: '2', tags: '', documents: '', searchResults: '' })
 
               describe 'and receiving success', ->
                 beforeEach ->

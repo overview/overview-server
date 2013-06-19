@@ -51,11 +51,10 @@ define [], ->
       @tag_store.change(tag, newTag)
 
     _selection_to_post_data: (selection) ->
-      {
-        nodes: selection.nodes.join(','),
-        documents: selection.documents.join(','),
-        tags: selection.tags.join(','),
-      }
+      nodes: selection.nodes.join(',')
+      documents: selection.documents.join(',')
+      tags: selection.tags.join(',')
+      searchResults: selection.searchResults.join(',')
 
     # Returns loaded docids from selection.
     #
@@ -63,8 +62,7 @@ define [], ->
     # the empty-Array return value, which only means we don't have any loaded
     # docids that match the selection.
     _selection_to_documents: (selection) ->
-      if !selection.nodes.length && !selection.tags.length && !selection.documents.length
-        return undefined
+      return undefined if selection.isEmpty()
 
       selection.documents_from_cache(@cache)
 

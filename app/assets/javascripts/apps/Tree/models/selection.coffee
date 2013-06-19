@@ -89,7 +89,7 @@ define [ 'underscore' ], (_) ->
 
         if checkSearchResultIds
           found = false
-          for searchid in document.searchResultIds
+          for searchid in document.searchResultIds || []
             if "#{searchid}" of searchids
               found = true
               break
