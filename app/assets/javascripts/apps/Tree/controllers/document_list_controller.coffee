@@ -170,10 +170,7 @@ define [
         platform: /Mac/.test(navigator.platform) && 'mac' || 'anything-but-mac'
       }))
 
-      resetListSelection = => @get('listSelection').onSelectAll()
-      @on('change:documentCollection', resetListSelection)
-
-      # Update the state's selection when the user clicks around.
+      # Update the state's selection when the user clicks around or docs load.
       #
       # You'd think there would be an infinite loop,
       # listSelection.change:selectedIndices to this.change:selection to
@@ -186,8 +183,9 @@ define [
       # ListSelection and the State. Ideally we'd let the State changes
       # propagate to the ListSelection, but we can't because only the
       # ListSelection has a cursorIndex.
-      @get('listSelection').on 'change:selectedIndices', (model, selectedIndices) =>
+      refreshStateSelection = =>
         collection = @get('documentCollection')
+        selectedIndices = @get('listSelection').get('selectedIndices')
         docids = []
         for index in selectedIndices || []
           docid = collection.at(index)?.id
@@ -195,6 +193,25 @@ define [
 
         selection = @get('selection').replace({ documents: docids })
         @get('state').set('selection', selection)
+
+      resetListSelection = =>
+        # If we're navigating individual documents and we change selection, go
+        # to the top of the new document list.
+        #
+        # The new doclist won't have loaded, so really, state.selection will
+        # have documents:[]. We catch that by watching for add() on
+        # documentCollection.
+        listSelection = @get('listSelection')
+        if listSelection.get('cursorIndex')?
+          listSelection.set
+            cursorIndex: 0
+            selectedIndices: [0]
+
+      @get('listSelection').on('change:selectedIndices', refreshStateSelection)
+      @on 'change:documentCollection', ->
+        resetListSelection() # calls refreshStateSelection
+        @get('documentCollection').once('add', refreshStateSelection)
+
 
     _addTitleView: ->
       cache = @get('cache')
@@ -240,15 +257,15 @@ define [
       pageSize = 20 # number of documents we request at once
       pageSizeBuffer = 5 # how far from the end we begin a request for more
 
-      @on 'change:documentList', =>
-        @get('documentList')?.slice(0, pageSize)
-          .done(=> @get('listSelection').onClick(0))
-        firstMissingIndex = pageSize
-
-      view.on 'change:maxViewedIndex', (model, value) =>
-        while firstMissingIndex < value + pageSizeBuffer
+      fetchMissingDocuments = (needed) =>
+        while firstMissingIndex < needed + pageSizeBuffer
           @get('documentList')?.slice(firstMissingIndex, firstMissingIndex + pageSize)
           firstMissingIndex += pageSize
+
+      @on 'change:documentList', =>
+        firstMissingIndex = 0
+        fetchMissingDocuments(1)
+      view.on('change:maxViewedIndex', (model, value) => fetchMissingDocuments(value))
 
       @set('listView', view)
       view.$el.appendTo(@get('listEl'))
