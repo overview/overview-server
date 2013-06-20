@@ -58,31 +58,7 @@
   }
 
   ul.tags {
-    display: block;
-    margin: 0 -.5em 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li.tag {
-    display: inline-block;
-    .ie7-inline-block();
-    margin: .3em .5em .3em 0;
-  }
-
-  div.tag {
-    font-weight: normal;
-    font-size: .8em;
-    padding: 0 .5em;
-    .border-radius(.5em);
-
-    a { display: none; } // this button doesn't work yet
-
-    @shadow: rgba(255, 255, 255, .5);
-    text-shadow:
-      -1px -1px 1px @shadow, -1px 0 1px @shadow, -1px 1px 1px @shadow,
-      0 -1px 1px @shadow, 0 1px 1px @shadow,
-      1px -1px 1px @shadow, 1px 0 1px @shadow, 1px 1px 1px @shadow;
+    .tag-list-2d();
   }
 }
 

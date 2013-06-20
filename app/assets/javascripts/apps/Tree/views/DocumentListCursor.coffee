@@ -47,6 +47,15 @@ define [
         <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
         <div class="selection"><%= selectionHtml %></div>
         <h2><%- (document && document.get('title')) ? t('title', document.get('title')) : t('title.empty') %></h2>
+        <ul class="tags">
+          <% _.each(tags, function(tag) { %>
+            <li class="tag" data-cid="<%- tag.cid %>">
+              <div class="tag" style="background-color: <%= tag.get('color') %>;">
+                <span class="name"><%- tag.get('name') %></span>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
         <h3><%- (document && document.get('description')) ? t('description', document.get('description')) : t('description.empty') %></h3>
       """)
 
@@ -54,13 +63,18 @@ define [
       throw 'Must pass options.selection, a Backbone.Model with a "cursorIndex" property' if !@options.selection
       throw 'Must pass options.documentList, undefined or a Backbone.Model with a "n" property and "selection" property' if 'documentList' not of @options
       throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if 'documentDisplayApp' not of @options
+      throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
+      throw 'Must pass options.tagIdToModel, a function mapping id to Backbone.Model' if !@options.tagIdToModel
 
+      @tagIdToModel = @options.tagIdToModel
       @selection = @options.selection
       @documentList = @options.documentList
 
       @initialRender()
+
       @documentDisplayApp = new @options.documentDisplayApp({ el: @documentEl })
 
+      @listenTo(@options.tags, 'change', => @renderHeader()) # even an ID change
       @listenTo(@selection, 'change:cursorIndex', => @render())
       @setDocumentList(@options.documentList)
 
@@ -78,6 +92,9 @@ define [
       cursorIndex = @selection.get('cursorIndex')
       nDocuments = @documentList?.get('n') || 0
 
+      tags = (@tagIdToModel(tagid) for tagid in maybeDocument?.get('tagids') || [])
+      tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
+
       selectionI18n = @documentList?.describeSelection() || [ 'other' ]
       selectionI18n[0] = "selection.#{selectionI18n[0]}_html"
       if selectionI18n[1]
@@ -91,22 +108,36 @@ define [
           nDocuments: nDocuments
           cursorIndex: cursorIndex
           t: t
+          tags: tags
           document: maybeDocument
           selectionHtml: selectionHtml
         })
 
       @$headerEl.html(html)
 
+      @$documentEl.css({ top: @$headerEl.outerHeight() })
+
+    _getDocument: ->
+      cursorIndex = @selection.get('cursorIndex')
+      cursorIndex? && @documentList?.documents?.at(cursorIndex) || undefined
+
     _renderDocument: (maybeDocument) ->
       @documentDisplayApp.setDocument(maybeDocument?.attributes)
 
+    renderHeader: ->
+      maybeDocument = @_getDocument()
+      @_renderHeader(maybeDocument)
+
     render: ->
-      cursorIndex = @selection.get('cursorIndex')
-      maybeDocument = cursorIndex? && @documentList?.documents?.at(cursorIndex)
+      maybeDocument = @_getDocument()
 
       @_renderHeader(maybeDocument)
+
+      return if maybeDocument?.id == @_lastRenderedDocument?.id
+
       @_renderDocument(maybeDocument)
 
+      cursorIndex = @selection.get('cursorIndex')
       @el.className = if cursorIndex?
         if maybeDocument?
           'showing-document'
@@ -114,6 +145,8 @@ define [
           'showing-unloaded-document'
       else
         'not-showing-document'
+
+      @_lastRenderedDocument = maybeDocument
 
     _handleNextOrPrevious: (e, nextOrPrevious) ->
       e.preventDefault()
@@ -143,4 +176,5 @@ define [
           @listenTo(@documentList.documents, 'add', => @render())
           @listenTo(@documentList.documents, 'remove', => @render())
           @listenTo(@documentList.documents, 'reset', => @render())
+
       @render()

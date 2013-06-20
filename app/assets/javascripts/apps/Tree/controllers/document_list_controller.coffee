@@ -275,6 +275,8 @@ define [
         selection: @get('listSelection')
         documentList: @get('documentListProxy')?.model
         documentDisplayApp: DocumentDisplayApp
+        tags: @get('tagCollection')
+        tagIdToModel: (id) => @tagStoreProxy.map(id)
         el: @get('cursorEl')
       })
 
