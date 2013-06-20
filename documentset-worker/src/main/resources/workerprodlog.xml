@@ -1,0 +1,36 @@
+<!--
+ Send lots of messages to stdout, errors to SMTP.
+ (Java doesn't like /dev/log, and UDP logging seems like too much configuration)
+ -->
+<configuration>
+  <turboFilter class="ch.qos.logback.classic.turbo.DuplicateMessageFilter">
+    <AllowedRepetitions>3</AllowedRepetitions>
+  </turboFilter>
+
+  <appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+    <!-- Rely on environment variables for SMTP settings -->
+    <smtpHost>${SMTP_HOST}</smtpHost>
+    <username>${SMTP_USERNAME}</username>
+    <password>${SMTP_PASSWORD}</password>
+    <smtpPort>${SMTP_PORT}</smtpPort>
+    <STARTTLS>${SMTP_SSL}</STARTTLS>
+    <from>${LOGGER_SMTP_FROM}</from>
+    <to>${LOGGER_SMTP_TO}</to>
+    <subject>${LOGGER_SMTP_SUBJECT_PREFIX} [worker] : %logger{20} - %m</subject>
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS z,GMT} %-5level %logger{36} - %message%n</pattern>
+    </layout>
+  </appender>
+
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%-5level %logger{36} - %message%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="EMAIL" />
+  </root>
+</configuration>
