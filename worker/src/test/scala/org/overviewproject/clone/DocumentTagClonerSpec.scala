@@ -42,7 +42,7 @@ class DocumentTagClonerSpec extends DbSpecification {
         val cloneIds = new DocumentSetIdGenerator(cloneDocumentSetId)
         
         val sourceDocuments = Seq.tabulate(10)(i => Document(CsvImportDocument, sourceDocumentSetId, text = Some("text-" + i), id = sourceIds.next))
-        val sourceTags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-i"))
+        val sourceTags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-i", "#000000"))
         val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneIds.next))
         val cloneTags = sourceTags.map(_.copy(documentSetId = cloneDocumentSetId))
 
