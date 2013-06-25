@@ -133,10 +133,6 @@ define [
 
       @_renderHeader(maybeDocument)
 
-      return if maybeDocument?.id == @_lastRenderedDocument?.id
-
-      @_renderDocument(maybeDocument)
-
       cursorIndex = @selection.get('cursorIndex')
       @el.className = if cursorIndex?
         if maybeDocument?
@@ -146,7 +142,9 @@ define [
       else
         'not-showing-document'
 
-      @_lastRenderedDocument = maybeDocument
+      if maybeDocument?.id != @_lastRenderedDocument?.id
+        @_renderDocument(maybeDocument)
+        @_lastRenderedDocument = maybeDocument
 
     _handleNextOrPrevious: (e, nextOrPrevious) ->
       e.preventDefault()

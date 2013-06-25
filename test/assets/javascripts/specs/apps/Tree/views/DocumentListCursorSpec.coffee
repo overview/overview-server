@@ -20,6 +20,8 @@ require [
       view = new View({
         selection: selection
         documentList: documentList
+        tags: new Backbone.Collection([])
+        tagIdToModel: -> undefined
         documentDisplayApp: (options) ->
           @options = options
           @setDocument = jasmine.createSpy()
@@ -51,11 +53,11 @@ require [
       beforeEach ->
         initAt(undefined, 10)
         documentList.documents.reset([
-          new Backbone.Model()
-          new Backbone.Model()
-          new Backbone.Model()
-          new Backbone.Model()
-          new Backbone.Model()
+          new Backbone.Model({ id: 1 })
+          new Backbone.Model({ id: 2 })
+          new Backbone.Model({ id: 3 })
+          new Backbone.Model({ id: 4 })
+          new Backbone.Model({ id: 5 })
         ])
 
       it 'should have className not-showing-document when there is no index', ->
@@ -73,8 +75,8 @@ require [
       it 'should have className showing-document when the document list is populated', ->
         documentList.documents.reset([])
         selection.set({ cursorIndex: 1 })
-        documentList.documents.add(new Backbone.Model([]))
-        documentList.documents.add(new Backbone.Model([]))
+        documentList.documents.add(new Backbone.Model({ id: 6 }))
+        documentList.documents.add(new Backbone.Model({ id: 7 }))
         expect(view.el.className).toEqual('showing-document')
 
       it 'should call documentDisplayApp.setDocument with a document', ->
@@ -82,7 +84,8 @@ require [
         expect(displayApp.setDocument).toHaveBeenCalledWith(documentList.documents.at(2).attributes)
 
       it 'should call documentDisplayApp.setDocument with undefined', ->
-        selection.set({ cursorIndex: 7 })
+        selection.set({ cursorIndex: 2 }) # defined
+        selection.set({ cursorIndex: 7 }) # undefined
         expect(displayApp.setDocument).toHaveBeenCalledWith(undefined)
 
     it 'should recognize document 0/10 as "1 of 10"', ->
