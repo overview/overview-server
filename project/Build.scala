@@ -40,18 +40,19 @@ object ApplicationBuild extends Build with ProjectSettings {
   
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {
-    def apply(name: String, dependencies: Seq[ModuleID], 
+    def apply(name: String, dependencies: Seq[ModuleID],
+      useSharedConfig: Boolean = true,
       theTestOptions: Seq[TestOption] = ourTestOptions) = {
       Project(name, file(name), settings = 
         Defaults.defaultSettings ++
         defaultSettings ++
 	SbtStartScript.startScriptForClassesSettings ++
 	Seq(printClasspath) ++
+	addUnmanagedResourceDirectory(useSharedConfig) ++
 	Seq(        
           libraryDependencies ++= dependencies,
           testOptions in Test ++= theTestOptions,
           scalacOptions ++= ourScalacOptions,
-          unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" },
           logBuffered := false,
           parallelExecution in Test := false,
           sources in doc in Compile := List(),
@@ -61,15 +62,19 @@ object ApplicationBuild extends Build with ProjectSettings {
     }
     
     // don't clean the database if it isn't being used in tests
-    def withNoDbTests(name: String, dependencies: Seq[ModuleID], 
-      theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies, theTestOptions)
+    def withNoDbTests(name: String, dependencies: Seq[ModuleID], useSharedConfig: Boolean = true,
+      theTestOptions: Seq[TestOption] = ourTestWithNoDbOptions) = apply(name, dependencies,  useSharedConfig, theTestOptions)
+      
+    private def addUnmanagedResourceDirectory(useSharedConfig: Boolean) = 
+      if (useSharedConfig) Seq(unmanagedResourceDirectories in Compile <+= baseDirectory { _ / "../worker-conf" })
+      else Seq()
   }
   
   
   // Project definitions
-  val common = OverviewProject("common", commonProjectDependencies)
+  val common = OverviewProject("common", commonProjectDependencies, useSharedConfig = false)
   
-  val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies)
+  val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies, useSharedConfig = false)
   
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
     .dependsOn(common, workerCommon)
