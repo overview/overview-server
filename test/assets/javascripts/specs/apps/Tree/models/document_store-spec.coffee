@@ -60,14 +60,14 @@ require [
         store.add(document1)
         expect(v).toBe(document1)
 
-      it 'should notify :document-added even when the same document is re-added', ->
+      it 'should not notify :document-added when the same document is re-added', ->
         document1 = { id: 1, title: 'foo' }
         store.add(document1)
-        v = undefined
-        store.observe('document-added', (o) -> v = o)
+        spy = jasmine.createSpy()
+        store.observe('document-added', spy)
         document1.title = 'bar'
         store.add(document1)
-        expect(v).toBe(document1)
+        expect(spy).not.toHaveBeenCalled()
 
       it 'should notify :document-changed', ->
         document1 = { id: 1, title: 'foo' }
