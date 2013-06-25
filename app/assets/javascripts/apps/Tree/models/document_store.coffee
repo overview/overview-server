@@ -57,4 +57,5 @@ define [ 'underscore', './observable' ], (_, observable) ->
         index = tagids?.indexOf(tagid)
         if index? && index != -1
           tagids.splice(index, 1)
+          @change(document)
       undefined
