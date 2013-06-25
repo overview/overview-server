@@ -136,15 +136,16 @@ require [
 
         it 'should POST to the tag\'s /node-counts', ->
           cache.refresh_tagcounts({ id: 1, name: 'foo' })
+          cache.transaction_queue.next()
           expect(cache.server.posts[0]).toEqual([ 'tag_node_counts', { nodes: '1,2,3' }, { path_argument: 1 } ])
 
         describe 'When receiving a response', ->
           tag = undefined
-          ret = undefined
 
           beforeEach ->
             tag = { id: 1, name: 'foo' }
-            ret = cache.refresh_tagcounts(tag)
+            cache.refresh_tagcounts(tag)
+            cache.transaction_queue.next()
 
           it 'should update node counts', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
@@ -153,10 +154,6 @@ require [
           it 'should delete node counts that are 0', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
             expect(tree.nodes[3].tagcounts).toEqual({})
-
-          it 'should return the deferred', ->
-            cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
-            expect(ret).toBe(cache.server.deferreds[0])
 
           it 'should not crash when receiving an unloaded node', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])

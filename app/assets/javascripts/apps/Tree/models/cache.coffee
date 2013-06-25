@@ -71,35 +71,42 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
-      tagid = tag.id || tag
+      deferred = new Deferred()
+
       nodes = @on_demand_tree.nodes
-      node_ids = if onlyNodeIds?
-        onlyNodeIds
-      else
-        _(nodes).keys()
-      node_ids_string = node_ids.join(',')
-      deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
-      deferred.done (data) =>
-        @on_demand_tree.id_tree.edit ->
-          tagid = tagid
-          server_tagcounts = {}
 
-          i = 0
-          while i < data.length
-            nodeid = data[i++]
-            count = data[i++]
+      @transaction_queue.queue =>
+        tagid = tag.id || tag
+        node_ids = if onlyNodeIds?
+          onlyNodeIds
+        else
+          _(nodes).keys()
+        node_ids_string = node_ids.join(',')
+        @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
+          .done (data) =>
+            @on_demand_tree.id_tree.edit ->
+              tagid = tagid
+              server_tagcounts = {}
 
-            node = nodes[nodeid]
+              i = 0
+              while i < data.length
+                nodeid = data[i++]
+                count = data[i++]
 
-            if node?
-              tagcounts = (node.tagcounts ||= {})
+                node = nodes[nodeid]
 
-              if count
-                tagcounts[tagid] = count
-              else
-                delete tagcounts[tagid]
+                if node?
+                  tagcounts = (node.tagcounts ||= {})
 
-          undefined
+                  if count
+                    tagcounts[tagid] = count
+                  else
+                    delete tagcounts[tagid]
+
+            deferred.resolve()
+          .fail -> deferred.reject()
+
+      deferred
 
     refreshSearchResultCounts: (searchResult) ->
       nodes = @on_demand_tree.nodes
