@@ -9,8 +9,7 @@ import scala.concurrent.Future
 import controllers.auth.{ AuthorizedAction, Authorities }
 import models.export._
 import models.orm.finders.{ DocumentFinder, FinderResult, TagFinder }
-import models.orm.Tag
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.{Document,Tag}
 
 trait DocumentSetExportController extends Controller {
   import Authorities._

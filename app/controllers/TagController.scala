@@ -15,7 +15,7 @@ import play.api.mvc.Controller
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.forms.{SelectionForm,TagForm,NodeIdsForm}
-import models.orm.Tag
+import org.overviewproject.tree.orm.Tag
 import models.orm.finders.{DocumentFinder,DocumentTagFinder,NodeDocumentFinder,TagFinder,FinderResult}
 import models.orm.stores.{DocumentTagStore,TagStore}
 import models.Selection

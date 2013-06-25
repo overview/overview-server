@@ -5,8 +5,9 @@ import org.squeryl.dsl.GroupWithMeasures
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
+import org.overviewproject.tree.orm.Tag
 import org.overviewproject.postgres.SquerylEntrypoint._
-import models.orm.{ Schema, Tag }
+import models.orm.Schema
 
 object TagFinder extends Finder {
   class TagResult(query: Query[Tag]) extends FinderResult(query) {

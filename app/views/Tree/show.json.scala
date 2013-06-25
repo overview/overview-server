@@ -3,8 +3,7 @@ package views.json.Tree
 import play.api.libs.json.{JsValue, JsString}
 import play.api.libs.json.Json
 
-import models.orm.Tag
-import org.overviewproject.tree.orm.{Node,Document,SearchResult}
+import org.overviewproject.tree.orm.{Node,Document,SearchResult,Tag}
 
 object show {
   private[Tree] def writeNodeAndChildNodeIdsAndCounts(

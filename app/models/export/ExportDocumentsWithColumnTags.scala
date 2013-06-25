@@ -4,9 +4,8 @@ import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ BufferedWriter, OutputStream, OutputStreamWriter }
 
 import models.{ OverviewDatabase, OverviewDocument }
-import models.orm.Tag
 import models.orm.finders.FinderResult
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.{Document,Tag}
 
 class ExportDocumentsWithColumnTags(
   documents: FinderResult[(Document,Option[String])],

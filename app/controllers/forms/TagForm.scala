@@ -3,7 +3,7 @@ package controllers.forms
 import play.api.data.Form
 import play.api.data.Forms._
 
-import models.orm.Tag
+import org.overviewproject.tree.orm.Tag
 
 object TagForm {
   private val colorFormat = "^#[0-9a-fA-F]{6}$"

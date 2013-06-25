@@ -3,7 +3,7 @@ package views.json.Tag
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
-import models.orm.Tag
+import org.overviewproject.tree.orm.Tag
 
 object create {
   def apply(tag: Tag): JsValue = {

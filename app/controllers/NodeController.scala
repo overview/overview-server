@@ -6,9 +6,8 @@ import scala.collection.mutable.Buffer
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import org.overviewproject.tree.orm.{Document,DocumentSet,Node,SearchResult}
+import org.overviewproject.tree.orm.{Document,DocumentSet,Node,SearchResult,Tag}
 import models.IdList
-import models.orm.{Tag}
 import models.orm.finders.{DocumentFinder,NodeFinder,NodeDocumentFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
 
