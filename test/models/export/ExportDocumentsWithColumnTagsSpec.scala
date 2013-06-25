@@ -9,8 +9,7 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
 import org.overviewproject.util.TempFile
-import org.overviewproject.tree.orm.{ Document, DocumentType }
-import models.orm.Tag
+import org.overviewproject.tree.orm.{Document,DocumentType,Tag}
 import models.orm.finders.FinderResult
 
 class ExportDocumentsWithColumnTagsSpec extends Specification with Mockito {

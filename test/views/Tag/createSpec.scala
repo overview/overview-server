@@ -2,7 +2,7 @@ package views.json.Tag
 
 import org.specs2.mutable.Specification
 
-import models.orm.Tag
+import org.overviewproject.tree.orm.Tag
 
 class createSpec extends Specification {
   "Json for create tag result" should {

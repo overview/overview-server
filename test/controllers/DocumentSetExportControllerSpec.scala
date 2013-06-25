@@ -12,8 +12,7 @@ import play.api.test.Helpers._
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
 import models.orm.finders.FinderResult
-import models.orm.Tag
-import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.{Document,Tag}
 import org.overviewproject.util.TempFile
 import models.export.Export
 
