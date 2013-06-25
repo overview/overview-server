@@ -11,16 +11,11 @@ define [], ->
 
       this._maybe_add_tagid_to_document(tag.id, document) for document in documents
 
-      @cache.on_demand_tree.id_tree.edit =>
-        if selection.allows_correct_tagcount_adjustments()
-          @cache.on_demand_tree.add_tag_to_node(nodeid, tag) for nodeid in selection.nodes
-
       selection_post_data = this._selection_to_post_data(selection)
       @cache.transaction_queue.queue =>
         deferred = @cache.server.post('tag_add', selection_post_data, { path_argument: tag.id })
-        deferred.done(this._after_tag_add_or_remove.bind(this, tag))
-        if !selection.allows_correct_tagcount_adjustments()
-          deferred.done(=> @cache.refresh_tagcounts(tag))
+          .done(this._after_tag_add_or_remove.bind(this, tag))
+          .done(=> @cache.refresh_tagcounts(tag))
         deferred
 
     remove_tag_from_selection: (tag, selection) ->
@@ -29,25 +24,20 @@ define [], ->
 
       this._maybe_remove_tagid_from_document(tag.id, document) for document in documents
 
-      @cache.on_demand_tree.id_tree.edit =>
-        if selection.allows_correct_tagcount_adjustments()
-          @cache.on_demand_tree.remove_tag_from_node(nodeid, tag) for nodeid in selection.nodes
-
       selection_post_data = this._selection_to_post_data(selection)
       @cache.transaction_queue.queue =>
         deferred = @cache.server.post('tag_remove', selection_post_data, { path_argument: tag.id })
-        deferred.done(this._after_tag_add_or_remove.bind(this, tag))
-        if !selection.allows_correct_tagcount_adjustments()
-          deferred.done(=> @cache.refresh_tagcounts(tag))
+          .done(this._after_tag_add_or_remove.bind(this, tag))
+          .done(=> @cache.refresh_tagcounts(tag))
         deferred
 
     _after_tag_add_or_remove: (tag, response) ->
-      newN = tag.doclist?.n || 0
+      newSize = tag.size || 0
       if 'added' of response
-        newN += response.added
+        newSize += response.added
       if 'removed' of response
-        newN -= response.removed
-      newTag = { doclist: { documents: [], n: newN } }
+        newSize -= response.removed
+      newTag = { size: newSize }
       @tag_store.change(tag, newTag)
 
     _selection_to_post_data: (selection) ->

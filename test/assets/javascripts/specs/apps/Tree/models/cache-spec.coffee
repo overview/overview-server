@@ -154,10 +154,6 @@ require [
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
             expect(tree.nodes[3].tagcounts).toEqual({})
 
-          it 'should zero node counts when the server does not give them', ->
-            cache.server.deferreds[0].resolve([ 1, 20 ])
-            expect(tree.nodes[2].tagcounts).toEqual({})
-
           it 'should return the deferred', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
             expect(ret).toBe(cache.server.deferreds[0])

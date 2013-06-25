@@ -21,36 +21,20 @@ class showSpec extends Specification {
     
     "contain all nodes" in {
       val nodes = List(
-        (buildNode(1, None, 2, Array(1L, 2L)), Seq(1L, 2L), Seq[(Long,Long)](), Seq[(Long,Long)]()),
-        (buildNode(2, Some(1L), 1, Array(1L)), Seq[Long](), Seq[(Long,Long)](), Seq[(Long,Long)]()),
-        (buildNode(3, Some(1L), 1, Array(2L)), Seq[Long](), Seq[(Long,Long)](), Seq[(Long,Long)]())
+        (buildNode(1, None, 2, Array(1L, 2L)), Seq(1L, 2L)),
+        (buildNode(2, Some(1L), 1, Array(1L)), Seq[Long]()),
+        (buildNode(3, Some(1L), 1, Array(2L)), Seq[Long]())
       )
 
-      val treeJson = show(nodes, Seq(), Seq(), Seq()).toString
+      val treeJson = show(nodes, Seq(), Seq()).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
       treeJson must /("nodes") */("id" -> 3)
     }
 
-    "contain all documents" in {
-      val nodes = Seq[(Node,Iterable[Long],Iterable[(Long,Long)], Iterable[(Long, Long)])]()
-      val documentsWithNodeIdsAndTagIds = Seq(
-        (Document(id=10l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L)),
-        (Document(id=20l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L)),
-        (Document(id=30l, documentType=DocumentType.CsvImportDocument, description="description", title=Some("title")), Seq(5L), Seq(1L))
-      )
-
-      val treeJson = show(nodes, documentsWithNodeIdsAndTagIds, Seq(), Seq()).toString
-      
-      treeJson must /("documents") */("id" -> 10l)
-      treeJson must /("documents") */("id" -> 20l)
-      treeJson must /("documents") */("id" -> 30l)
-    }
-    
     "contain tags" in {
-      val nodes = Seq[(Node,Iterable[Long],Iterable[(Long,Long)], Iterable[(Long, Long)])]()
-      val dummyDocuments = Seq[(Document,Seq[Long],Seq[Long])]()
+      val nodes = Seq[(Node,Iterable[Long])]()
 
       val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
 
@@ -58,7 +42,7 @@ class showSpec extends Specification {
         (baseTag.copy(id=5L, name="tag1"), 5L),
         (baseTag.copy(id=15L, name="tag2"), 10L)
       )
-      val treeJson = show(nodes, dummyDocuments, tags, Seq()).toString
+      val treeJson = show(nodes, tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")

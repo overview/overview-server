@@ -1,109 +1,48 @@
 package controllers
 
 import play.api.mvc.Controller
-import play.api.libs.json.JsValue
-import scala.collection.mutable.Buffer
+import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import org.overviewproject.tree.orm.{Document,DocumentSet,Node,SearchResult,Tag}
-import models.IdList
-import models.orm.finders.{DocumentFinder,NodeFinder,NodeDocumentFinder,SearchResultFinder,TagFinder}
+import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
+import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
 
-  private def nodesToJson(documentSetId: Long, nodes: Iterable[Node]) = {
-    // FIXME move this to "models" and test it
+  trait Storage {
+    def findRootNodesWithChildIds(documentSetId: Long, depth: Int) : Iterable[(Node,Iterable[Long])]
+    def findChildNodesWithChildIds(documentSetId: Long, parentNodeId: Long) : Iterable[(Node,Iterable[Long])]
+    def findNode(documentSetId: Long, nodeId: Long) : Iterable[Node]
+    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
+    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
 
-    val nodeIds = nodes.map(_.id)
-
-    val nodeTagCounts : Map[Long,Iterable[(Long,Long)]] = NodeDocumentFinder
-      .byNodeIds(nodeIds)
-      .allTagCountsByNodeId
-      .groupBy(_._1)
-      .mapValues((x: Iterable[(Long,Long,Long)]) => x.map({ y: (Long,Long,Long) => (y._2, y._3) }))
-
-    val nodeSearchResultCounts : Map[Long,Iterable[(Long,Long)]] = NodeDocumentFinder
-      .byNodeIds(nodeIds)
-      .allSearchResultCountsByNodeId
-      .groupBy(_._1)
-      .mapValues((x: Iterable[(Long,Long,Long)]) => x.map({ y: (Long,Long,Long) => (y._2, y._3) }))
-
-    val nodeChildIds : Map[Option[Long],Iterable[Long]] = NodeFinder
-      .byParentIds(nodeIds)
-      .toParentIdAndId
-      .groupBy(_._1)
-      .mapValues((x: Iterable[(Option[Long],Long)]) => x.map(_._2))
-
-    val nodesWithChildIdsAndCounts : Iterable[(Node,Iterable[Long],Iterable[(Long,Long)],Iterable[(Long,Long)])] = nodes
-      .map({ node: Node => (
-        node,
-        nodeChildIds.getOrElse(Some(node.id), Seq()),
-        nodeTagCounts.getOrElse(node.id, Seq()),
-        nodeSearchResultCounts.getOrElse(node.id, Seq())
-      )})
-
-    val documentIds = nodes.flatMap(_.cachedDocumentIds).toSeq.distinct
-
-    val documents : Iterable[(Document,Seq[Long],Seq[Long])] = DocumentFinder.byIds(documentIds)
-      .withNodeIdsAndTagIdsAsLongStrings
-      .map((tuple: (Document, Option[String], Option[String])) =>
-        // copy() is because Squeryl frees Strings too early
-        (tuple._1.copy(), IdList.longs(tuple._2.getOrElse("")).ids, IdList.longs(tuple._3.getOrElse("")).ids))
-    val tags : Iterable[(Tag,Long)] = TagFinder.byDocumentSet(documentSetId).withCounts
-    val searchResults : Iterable[SearchResult] = SearchResultFinder.byDocumentSet(documentSetId)
-
-    views.json.Tree.show(nodesWithChildIdsAndCounts, documents, tags, searchResults)
+    def updateNode(node: Node) : Node
   }
-
-  private def showNodesStartingAt(documentSetId: Long, node: Node, childLevels: Int) = {
-    // FIXME move this to "models" and test it
-
-    var nodes : Buffer[Node] = Buffer(node)
-
-    var thisLevel : Iterable[Node] = nodes.toSeq
-    for (i <- 0 to childLevels - 1) {
-      val nodeIds = thisLevel.map(_.id)
-      if (nodeIds.nonEmpty) {
-        thisLevel = NodeFinder
-          .byParentIds(nodeIds)
-          .map(_.copy())
-
-        nodes ++= thisLevel
-      }
-    }
-
-    nodesToJson(documentSetId, nodes.toSeq)
-  }
+  val storage : NodeController.Storage
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val root : Iterable[Node] = NodeFinder
-      .byDocumentSetAndParent(documentSetId, None)
-      .map(_.copy()) // avoid Squeryl bug
+    val nodes = storage.findRootNodesWithChildIds(documentSetId, rootChildLevels)
 
-    if (root.isEmpty) {
+    if (nodes.isEmpty) {
       NotFound
     } else {
-      Ok(showNodesStartingAt(documentSetId, root.head, rootChildLevels))
+      val tags = storage.findTagsWithCounts(documentSetId)
+      val searchResults = storage.findSearchResults(documentSetId)
+      Ok(views.json.Tree.show(nodes, tags, searchResults))
     }
   }
 
   def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val root : Iterable[Node] = NodeFinder
-      .byDocumentSetAndId(documentSetId, id)
-      .map(_.copy()) // avoid Squeryl bug
+    val nodes = storage.findChildNodesWithChildIds(documentSetId, id)
 
-    if (root.isEmpty) {
-      NotFound
-    } else {
-      Ok(showNodesStartingAt(documentSetId, root.head, 1))
-    }
+    Ok(views.json.Tree.show(nodes))
   }
 
   def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    findNode(documentSetId, id) match {
+    storage.findNode(documentSetId, id).headOption match {
       case None => NotFound
       case Some(node) =>
         val form = forms.NodeForm(node)
@@ -111,22 +50,79 @@ trait NodeController extends Controller {
         form.bindFromRequest().fold(
           f => BadRequest,
           node => {
-            val savedNode = updateNode(node)
+            val savedNode = storage.updateNode(node)
             Ok(views.json.Node.show(savedNode))
           })
     }
   }
-
-  protected def findNode(documentSetId: Long, id: Long) : Option[Node]
-  protected def updateNode(node: Node) : Node
 }
 
 object NodeController extends NodeController {
-  override protected def findNode(documentSetId: Long, id: Long) = {
-    NodeFinder.byDocumentSetAndId(documentSetId, id).headOption
-  }
+  override val storage = new NodeController.Storage {
+    private def addChildIds(nodes: Iterable[Node]) : Iterable[(Node,Iterable[Long])] = {
+      if (nodes.nonEmpty) {
+        val nodeIds = nodes.map(_.id)
+        val nodeChildIds : Map[Option[Long],Iterable[Long]] = NodeFinder
+          .byParentIds(nodeIds)
+          .toParentIdAndId
+          .groupBy(_._1)
+          .mapValues((x: Iterable[(Option[Long],Long)]) => x.map(_._2))
 
-  override protected def updateNode(node: Node) = {
-    NodeStore.update(node)
+        nodes.map(node => (node, nodeChildIds.getOrElse(Some(node.id), Seq())))
+      } else {
+        Seq()
+      }
+    }
+
+    private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {
+      if (nodes.nonEmpty) {
+        val nodeIds = nodes.map(_.id)
+        NodeFinder
+          .byParentIds(nodeIds)
+          .map(_.copy()) // work around Squeryl bug
+      } else {
+        Seq()
+      }
+    }
+
+    @tailrec
+    private def addChildNodes(parentNodes: Iterable[Node], thisLevelNodes: Iterable[Node], depth: Int) : Iterable[Node] = {
+      if (thisLevelNodes.isEmpty) {
+        parentNodes
+      } else if (depth == 0) {
+        parentNodes ++ thisLevelNodes
+      } else {
+        addChildNodes(parentNodes ++ thisLevelNodes, childrenOf(thisLevelNodes), depth - 1)
+      }
+    }
+
+    override def findRootNodesWithChildIds(documentSetId: Long, depth: Int) = {
+      val root : Iterable[Node] = NodeFinder.byDocumentSetAndParent(documentSetId, None)
+        .map(_.copy()) // Squeryl bug
+      val nodes = addChildNodes(Seq(), root, depth)
+      addChildIds(nodes)
+    }
+
+    override def findChildNodesWithChildIds(documentSetId: Long, parentNodeId: Long) = {
+      val nodes = NodeFinder.byDocumentSetAndParent(documentSetId, Some(parentNodeId))
+        .map(_.copy()) // Squeryl bug
+      addChildIds(nodes)
+    }
+
+    override def findTagsWithCounts(documentSetId: Long) = {
+      TagFinder.byDocumentSet(documentSetId).withCounts
+    }
+
+    override def findSearchResults(documentSetId: Long) = {
+      SearchResultFinder.byDocumentSet(documentSetId)
+    }
+
+    override def findNode(documentSetId: Long, nodeId: Long) = {
+      NodeFinder.byDocumentSetAndId(documentSetId, nodeId)
+    }
+
+    override def updateNode(node: Node) = {
+      NodeStore.update(node)
+    }
   }
 }

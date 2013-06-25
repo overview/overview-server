@@ -25,7 +25,7 @@ define [
   }
 
   HOVER_NODE_TEMPLATE = _.template("""
-    <div class="inner">(<%- node.doclist.n.toLocaleString() %>) <%- node.description %></div>
+    <div class="inner">(<%- node.size.toLocaleString() %>) <%- node.description %></div>
   """)
 
   # In given canvas 2d context, draws a rectangle with corner radius r
@@ -223,7 +223,7 @@ define [
             break
 
       if color
-        this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.doclist.n)
+        this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.size)
 
       undefined
 

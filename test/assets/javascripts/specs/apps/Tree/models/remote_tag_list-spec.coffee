@@ -113,8 +113,8 @@ require [
       transaction_queue = undefined
       remote_tag_list = undefined
 
-      dummy_tag = (id, name, doclist=undefined) ->
-        { id: id, name: name, doclist: doclist? && _.clone(doclist) || { n: 0, docids: [] } }
+      dummy_tag = (id, name, size=undefined) ->
+        { id: id, name: name, size: 0 }
 
       beforeEach ->
         tag_store = new MockTagStore()
@@ -134,6 +134,8 @@ require [
         remote_tag_list = undefined
 
       describe 'with some default tags', ->
+        cache = undefined
+
         beforeEach ->
           tag_store.tags = [ dummy_tag(1, 'AA'), dummy_tag(2, 'BB') ]
           cache = {
@@ -142,6 +144,7 @@ require [
             document_store: document_store
             transaction_queue: transaction_queue
             server: server
+            refresh_tagcounts: jasmine.createSpy()
             add_tag: () ->
             create_tag: () ->
             edit_tag: () ->
@@ -157,11 +160,11 @@ require [
             on_demand_tree.id_tree.children = { 1: [2, 3], 2: [4, 5], 3: [6, 7], 4: [8], 5: [9] }
             on_demand_tree.id_tree.parent = { 2: 1, 3: 1, 4: 2, 5: 2, 6: 3, 7: 3, 8: 4, 9: 5 }
             on_demand_tree.nodes = {
-              1: { id: 1, tagcounts: { "1": 6, "2": 7 }, doclist: { n: 15, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-15
-              2: { id: 2, tagcounts: { "1": 5, "2": 6 }, doclist: { n: 13, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-13
-              3: { id: 3, tagcounts: { "1": 1, "2": 1 }, doclist: { n: 2, docids: [ 14, 15 ] } },                         # 14-15
-              4: { id: 4, tagcounts: { "1": 5, "2": 5 }, doclist: { n: 12, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }, # 1-12
-              5: { id: 5, tagcounts: { "2": 1 }, doclist: { n: 1, docids: [ 13 ] } },                                     # 13
+              1: { id: 1, size: 15 } # 1-15
+              2: { id: 2, size: 13 } # 1-13
+              3: { id: 3, size: 2 }  # 14-15
+              4: { id: 4, size: 12 } # 1-12
+              5: { id: 5, size: 1 }  # 13
             }
             document_store.documents = {
               1: { id: 1, title: "doc1", tagids: [ 1 ] },
@@ -179,8 +182,8 @@ require [
               14: { id: 14, title: "doc14", tagids: [ 1 ] },
               15: { id: 15, title: "doc15", tagids: [ 2 ] },
             }
-            tag_store.tags[0].doclist = { n: 6, docids: [ 1, 3, 5, 7, 9, 14 ] }
-            tag_store.tags[1].doclist = { n: 7, docids: [ 2, 4, 7, 8, 10, 13, 15 ] }
+            tag_store.tags[0].size = 6
+            tag_store.tags[1].size = 7
 
           describe 'when selection is empty', ->
             it 'should not add the tag to any documents', ->
@@ -209,9 +212,6 @@ require [
 
             it 'should apply the tag to documents in that node\'s children\'s doclists', ->
               expect(document_store.documents[13].tagids).toContain(1)
-
-            it 'should add the tagcount to the node', ->
-              expect(on_demand_tree.add_tag_to_node).toHaveBeenCalledWith(2, tag_store.tags[0])
 
             it 'should not apply the tag to other documents', ->
               expect(document_store.documents[15].tagids).not.toContain(1)
@@ -247,7 +247,10 @@ require [
                   server.deferreds[0].resolve({ added: 8, })
 
                 it 'should set the new tag count', ->
-                  expect(remote_tag_list.tags[0].doclist.n).toEqual(14)
+                  expect(remote_tag_list.tags[0].size).toEqual(14)
+
+                it 'should schedule a tag-count refresh', ->
+                  expect(cache.refresh_tagcounts).toHaveBeenCalledWith(tag_store.tags[0])
 
             it 'should make the server call with the selection given at call time even if it has changed since', ->
               selection.tags.push(1)
@@ -283,9 +286,6 @@ require [
             it 'should not remove the tag from other documents', ->
               expect(document_store.documents[15].tagids).toContain(2)
 
-            it 'should remove the tagcount from the node', ->
-              expect(on_demand_tree.remove_tag_from_node).toHaveBeenCalledWith(2, tag_store.tags[1])
-
             it 'should queue a server call', ->
               expect(transaction_queue.callbacks.length).toEqual(1)
 
@@ -314,4 +314,7 @@ require [
                   server.deferreds[0].resolve({ removed: 6 })
 
                 it 'should set the new tag count', ->
-                  expect(remote_tag_list.tags[1].doclist.n).toEqual(1)
+                  expect(remote_tag_list.tags[1].size).toEqual(1)
+
+                it 'should schedule a tag-count refresh', ->
+                  expect(cache.refresh_tagcounts).toHaveBeenCalledWith(tag_store.tags[1])

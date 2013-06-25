@@ -1,15 +1,4 @@
 define [ './server' ], (Server) ->
-  list_to_hash = (list_of_objects) ->
-    ret = {}
-    ret[o.id] = o for o in list_of_objects
-    ret
-
-  handle_node_resolved = (needs_resolver, obj) ->
-    document_store = needs_resolver.document_store
-    documents_hash = list_to_hash(obj.documents)
-    for node in obj.nodes
-      document_store.add_doclist(node.doclist, documents_hash)
-
   resolve_root = (needs_resolver) ->
     needs_resolver.server.get('root').done (obj) ->
       tag_store = needs_resolver.tag_store
@@ -23,16 +12,8 @@ define [ './server' ], (Server) ->
         else
           search_result_store.add(search_result)
 
-      documents_hash = list_to_hash(obj.documents)
-      document_store = needs_resolver.document_store
-      for tag in obj.tags
-        document_store.add_doclist(tag.doclist, documents_hash)
-
-      handle_node_resolved(needs_resolver, obj)
-
   resolve_node = (needs_resolver, id) ->
-    needs_resolver.server.get('node', { path_argument: id }).done (obj) ->
-      handle_node_resolved(needs_resolver, obj)
+    needs_resolver.server.get('node', { path_argument: id })
 
   resolve_selection_documents_slice = (needs_resolver, obj) ->
     list_to_param = (list) ->
@@ -56,7 +37,7 @@ define [ './server' ], (Server) ->
   }
 
   class NeedsResolver
-    constructor: (@document_store, @tag_store, @search_result_store, server=undefined) ->
+    constructor: (@tag_store, @search_result_store, server=undefined) ->
       @server = server || new Server()
 
       @needs = {}

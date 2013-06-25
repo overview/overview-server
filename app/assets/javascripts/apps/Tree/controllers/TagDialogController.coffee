@@ -24,16 +24,10 @@ define [
   #
   # This dialog allows edits. It will be closed when the user clicks "close".
   (tagStore, cache) ->
-    tagToCount = (tag) ->
-      root = cache.on_demand_tree.get_root()
-      tagCounts = root?.tagcounts
-      tagCounts?[tag.id] || 0
-
     tagStoreProxy = new TagStoreProxy(tagStore)
 
     view = new TagListView({
       collection: tagStoreProxy.collection,
-      tagToCount: tagToCount
       exportUrl: window.location.pathname + "/tags.csv" # TODO routing in JS
     })
 

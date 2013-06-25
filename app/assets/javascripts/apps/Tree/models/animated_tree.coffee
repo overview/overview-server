@@ -61,7 +61,7 @@ define [ './observable', './animated_node' ], (observable, AnimatedNode) ->
       this._notify('needs-update')
 
     _node_is_partially_loaded: (node) ->
-      node?.doclist?.n? && @id_tree.children[node?.id] || false
+      node?.size && @id_tree.children[node?.id] || false
 
     _node_is_fully_loaded: (node) ->
       return false if !this._node_is_partially_loaded(node)

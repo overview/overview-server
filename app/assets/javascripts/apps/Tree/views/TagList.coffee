@@ -48,7 +48,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
           <input type="hidden" name="id" value="<%- tag.id || '' %>" />
           <input type="color" name="color" value="<%- tag.get('color') %>"
           /><input type="text" name="name" value="<%- tag.get('name') %>" />
-          <div class="count"><%- t('n_documents', tagCount(tag)) %></div>
+          <div class="count"><%- t('n_documents', tag.get('size') || 0) %></div>
         </form>
         <a class="remove" href="#"><%- t('remove') %></a>
       </li>
@@ -74,7 +74,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
 
     initialize: ->
       throw 'must set options.collection' if !@options.collection
-      throw 'must set options.tagToCount: (tag) -> Number' if !@options.tagToCount
 
       @listenTo(@collection, 'add', (tag) => @_addTag(tag))
       @listenTo(@collection, 'remove', (tag) => @_removeTag(tag))
@@ -88,7 +87,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         t: t
         tags: @collection
         exportUrl: @options.exportUrl
-        renderTag: (tag) => @tagTemplate({ tag: tag, tagCount: @options.tagToCount, t: t })
+        renderTag: (tag) => @tagTemplate({ tag: tag, t: t })
       })
       @$el.html(html)
       addSpectrum(@$('input[type=color]'))
@@ -105,7 +104,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       html = @tagTemplate({
         t: t
         tag: tag
-        tagCount: @options.tagToCount
       })
 
       index = @collection.indexOf(tag)
@@ -132,7 +130,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       cid = $(e.target).closest('[data-cid]').attr('data-cid')
 
       tag = @collection.get(cid)
-      count = @options.tagToCount(tag)
+      count = tag.get('size') || 0
       message = t('remove.confirm', tag.get('name'), count)
 
       @trigger('remove', tag) if confirm(message)

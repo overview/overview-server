@@ -1,4 +1,4 @@
-define [ './id_tree', './lru_paging_strategy' ], (IdTree, LruPagingStrategy) ->
+define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPagingStrategy) ->
   DEFAULT_OPTIONS = {
     cache_size: 5000,
   }
@@ -177,7 +177,8 @@ define [ './id_tree', './lru_paging_strategy' ], (IdTree, LruPagingStrategy) ->
       @cache.resolve_deferred('root').done(this._add_json.bind(this))
 
     demand_node: (id) ->
-      @cache.resolve_deferred('node', id).done(this._add_json.bind(this))
+      @cache.resolve_deferred('node', id)
+        .done(this._add_json.bind(this))
 
     _collapse_node: (editable, id) ->
       c = @id_tree.children
@@ -205,59 +206,11 @@ define [ './id_tree', './lru_paging_strategy' ], (IdTree, LruPagingStrategy) ->
       parent_id = @id_tree.parent[node.id]
       if parent_id? then @nodes[parent_id] else undefined
 
-    remove_tag_from_node: (nodeid, tag) ->
-      node = @nodes[nodeid]
-      count = node.tagcounts[tag.id]
-      this._remove_tagid_from_node_and_children(node, tag.id)
-
-      parent = this.get_node_parent(node)
-      this._add_tagcount_to_node_and_ancestors(parent, tag.id, -count) if parent?
-
-      count
-
-    _remove_tagid_from_node_and_children: (node, tagid) ->
-      tagcounts = node.tagcounts
-      delete tagcounts[tagid] if tagcounts[tagid]?
-
-      for child_node in this.get_loaded_node_children(node)
-        this._remove_tagid_from_node_and_children(child_node, tagid)
-      undefined
-
-    add_tag_to_node: (nodeid, tag) ->
-      node = @nodes[nodeid]
-
-      difference = this._add_tagid_to_node_and_children(node, tag.id)
-
-      parent = this.get_node_parent(node)
-      this._add_tagcount_to_node_and_ancestors(parent, tag.id, difference) if parent?
-
-      difference
-
-    _add_tagid_to_node_and_children: (node, tagid) ->
-      tagcounts = node.tagcounts
-      count_before = tagcounts[tagid] || 0
-      count_after = node.doclist.n
-      tagcounts[tagid] = count_after
-
-      for child_node in this.get_loaded_node_children(node)
-        this._add_tagid_to_node_and_children(child_node, tagid)
-
-      count_after - count_before
-
-    _add_tagcount_to_node_and_ancestors: (node, tagid, count) ->
-      tagcounts = node.tagcounts
-      tagcounts[tagid] ||= 0
-      tagcounts[tagid] += count
-      delete tagcounts[tagid] if tagcounts[tagid] == 0
-
-      parent = this.get_node_parent(node)
-      this._add_tagcount_to_node_and_ancestors(parent, tagid, count) if parent?
-
     rewrite_tag_id: (old_tagid, tagid) ->
       old_tagid_string = "#{old_tagid}"
       tagid_string = "#{tagid}"
       for __, node of @nodes
-        tagcounts = node.tagcounts
+        tagcounts = (node.tagcounts ||= {})
         tagcount = tagcounts[old_tagid_string]
         if tagcount?
           delete tagcounts[old_tagid_string]

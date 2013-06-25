@@ -34,7 +34,7 @@ require [
 
       add_nodes = (list) ->
         response = {
-          nodes: ({ id: item[0], children: item[1], doclist: { n: item[2] } } for item in list),
+          nodes: ({ id: item[0], children: item[1], size: item[2] } for item in list),
         }
         on_demand_tree.demand_node(list[0][0]).resolve(response)
 

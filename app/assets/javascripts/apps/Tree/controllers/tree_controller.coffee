@@ -69,16 +69,12 @@ define [
       log('clicked node', "#{nodeid}")
       new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
 
-      node = cache.on_demand_tree.nodes[nodeid]
-      if node?.doclist?.n == 1
-        new_selection = new_selection.replace({ documents: [ node.doclist.docids[0] ] })
-
       state.set('selection', new_selection)
 
     view.observe 'expand', (nodeid) ->
       return if !nodeid?
       log('expanded node', "#{nodeid}")
-      cache.on_demand_tree.demand_node(nodeid)
+      expand_deferred(nodeid)
 
     view.observe 'collapse', (nodeid) ->
       return if !nodeid?
@@ -96,12 +92,15 @@ define [
     state.observe 'selection-changed', ->
       if nodeid = selected_nodeid()
         expand(nodeid)
-        
+
+      if tagid = state.selection.tags?[0]
+        cache.refresh_tagcounts(tagid)
+
     select_nodeid = (nodeid) ->
       new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
       state.set('selection', new_selection)
 
-    selected_nodeid = () ->
+    selected_nodeid = ->
       state.selection.nodes[0] || cache.on_demand_tree.id_tree.root
 
     # Moves selection in the given direction.
@@ -126,6 +125,13 @@ define [
       child_nodeid = view.nodeid_below(nodeid)
       if !child_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
         cache.on_demand_tree.demand_node(nodeid)
+          .done (json) ->
+            tagid = state.focused_tag?.id || state.selection.tags[0] || undefined
+            console.log(json, tagid)
+            if tagid
+              nodeIds = _.pluck(json?.nodes || [], 'id')
+              if nodeIds.length
+                cache.refresh_tagcounts(tagid, nodeIds)
       else
         $.Deferred().resolve()
 

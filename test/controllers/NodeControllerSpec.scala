@@ -1,49 +1,26 @@
 package controllers
 
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start,stop}
-
-import org.overviewproject.test.IdGenerator._
-import org.overviewproject.test.Specification
 
 import controllers.auth.AuthorizedRequest
 import org.overviewproject.tree.orm.Node
 import models.OverviewUser
 import models.orm.User
 
-class NodeControllerSpec extends Specification {
+class NodeControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
 
-  class TestNodeController(val node: Node) extends NodeController {
-    var savedNode : Option[Node] = None
-
-    override def findNode(documentSetId: Long, id: Long) = {
-      if (documentSetId == node.documentSetId && id == node.id) {
-        Some(node)
-      } else {
-        None
-      }
-    }
-
-    override def updateNode(node: Node) = {
-      savedNode = Some(node)
-      node
-    }
-  }
-
   trait TestScope extends Scope {
-    lazy val node = Node(
-      id=1L,
-      documentSetId=1L,
-      parentId=None,
-      description="description",
-      cachedSize=0,
-      cachedDocumentIds=Array[Long]()
-    )
-    lazy val user = OverviewUser(User())
-    lazy val controller = new TestNodeController(node)
+    val mockStorage = mock[NodeController.Storage]
+    val controller = new NodeController {
+      override val storage = mockStorage
+    }
+    val user = mock[OverviewUser]
     def getRequest = new AuthorizedRequest(FakeRequest(), user)
     def postRequest = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
 
@@ -54,17 +31,29 @@ class NodeControllerSpec extends Specification {
 
   "NodeController" should {
     "edit a node" in new TestScope {
-      val result = update(node.documentSetId, node.id)
-      status(result) must beEqualTo(OK)
-      controller.savedNode.map(_.description).getOrElse("") must beEqualTo("new description")
+      val node = Node(
+        id=1L,
+        documentSetId=1L,
+        parentId=None,
+        description="description",
+        cachedSize=0,
+        cachedDocumentIds=Array[Long]()
+      )
+
+      mockStorage.findNode(1L, 1L) returns Seq(node)
+      mockStorage.updateNode(any[Node]) returns node // unused
+
+      val result = update(1L, 1L)
+      there was one(mockStorage).updateNode(node.copy(description="new description"))
     }
 
     "return NotFound when a node isn't found" in new TestScope {
-      val result = update(node.documentSetId + 1, node.id) // invalid
+      mockStorage.findNode(1L, 1L) returns Seq()
+      val result = update(1L, 1L)
       status(result) must beEqualTo(NOT_FOUND)
     }
 
-    // TODO test show() and index(). First, make them use Squeryl?
+    // TODO test show() and index().
   }
 
   step(stop)

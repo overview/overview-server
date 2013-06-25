@@ -1,40 +1,17 @@
 package views.json.Tree
 
-import play.api.libs.json.{JsValue, JsString}
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
-import org.overviewproject.tree.orm.{Node,Document,SearchResult,Tag}
+import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 
 object show {
-  private[Tree] def writeNodeAndChildNodeIdsAndCounts(
-    node: Node,
-    childNodeIds: Iterable[Long],
-    tagCounts: Iterable[(Long,Long)],
-    searchResultCounts: Iterable[(Long,Long)]) : JsValue = {
-
-    val jsonTagCounts = tagCounts.map({ x: (Long,Long) => (x._1.toString, x._2) }).toMap
-    val jsonSearchResultCounts = searchResultCounts.map({ x: (Long,Long) => (x._1.toString, x._2) }).toMap
-
+  private[Tree] def writeNodeAndChildNodeIds(node: Node, childNodeIds: Iterable[Long]) : JsValue = {
     Json.obj(
       "id" -> node.id,
       "description" -> node.description,
       "children" -> childNodeIds.toSeq,
-      "doclist" -> Json.obj(
-        "n" -> node.cachedSize,
-        "docids" -> node.cachedDocumentIds
-      ),
-      "tagcounts" -> jsonTagCounts,
-      "searchResultCounts" -> jsonSearchResultCounts
-    )
-  }
-
-  private[Tree] def writeDocumentAndNodeIdsAndTagIds(document: Document, nodeIds: Iterable[Long], tagIds: Iterable[Long]) : JsValue = {
-    Json.obj(
-      "id" -> document.id,
-      "description" -> document.description,
-      "title" -> document.title,
-      "nodeids" -> nodeIds,
-      "tagids" -> tagIds
+      "size" -> node.cachedSize
     )
   }
 
@@ -43,24 +20,25 @@ object show {
       "id" -> tag.id,
       "name" -> tag.name,
       "color" -> ("#" + tag.color),
-      "doclist" -> Json.obj(
-        "n" -> count,
-        "docids" -> Seq[Long]()
-      )
+      "size" -> count
     )
   }
 
   def apply(
-    nodes: Iterable[(Node,Iterable[Long],Iterable[(Long,Long)],Iterable[(Long,Long)])],
-    documents: Iterable[(Document,Iterable[Long],Iterable[Long])],
+    nodes: Iterable[(Node,Iterable[Long])],
     tags: Iterable[(Tag,Long)],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
-      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIdsAndCounts)),
-      "documents" -> documents.map(Function.tupled(writeDocumentAndNodeIdsAndTagIds)),
+      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIds)),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(Function.tupled(writeTagAndCount))
+    )
+  }
+
+  def apply(nodes: Iterable[(Node,Iterable[Long])]) : JsValue = {
+    Json.obj(
+      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIds))
     )
   }
 }

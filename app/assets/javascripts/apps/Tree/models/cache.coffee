@@ -31,7 +31,7 @@ define [
       @document_store = new DocumentStore()
       @tag_store = new TagStore()
       @search_result_store = new SearchResultStore("#{window.location.pathname}/search-results")
-      @needs_resolver = new NeedsResolver(@document_store, @tag_store, @search_result_store)
+      @needs_resolver = new NeedsResolver(@tag_store, @search_result_store)
       @transaction_queue = new TransactionQueue()
       @server = @needs_resolver.server
       @tag_api = new TagLikeApi(@tag_store, @transaction_queue, "#{window.location.pathname}/tags")
@@ -62,14 +62,26 @@ define [
       deferred
 
     # Requests new node counts from the server, and updates the cache
-    refresh_tagcounts: (tag) ->
+    #
+    # Params:
+    #
+    # * tag: tag (or tag ID) to refresh. Note: if it's a tag ID, make sure this
+    #   isn't being called in an asynchronous callback, as tags are wont to
+    #   change IDs.
+    # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
+    #   every loaded node ID.
+    refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
+      tagid = tag.id || tag
       nodes = @on_demand_tree.nodes
-      node_ids = _(nodes).keys()
+      node_ids = if onlyNodeIds?
+        onlyNodeIds
+      else
+        _(nodes).keys()
       node_ids_string = node_ids.join(',')
-      deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tag.id })
+      deferred = @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
       deferred.done (data) =>
         @on_demand_tree.id_tree.edit ->
-          tagid = tag.id
+          tagid = tagid
           server_tagcounts = {}
 
           i = 0
@@ -77,17 +89,15 @@ define [
             nodeid = data[i++]
             count = data[i++]
 
-            server_tagcounts[nodeid] = count
+            node = nodes[nodeid]
 
-          for nodeid in node_ids
-            tagcounts = nodes[nodeid]?.tagcounts
-            continue if !tagcounts?
+            if node?
+              tagcounts = (node.tagcounts ||= {})
 
-            count = server_tagcounts[nodeid]
-            if count
-              tagcounts[tagid] = count
-            else
-              delete tagcounts[tagid]
+              if count
+                tagcounts[tagid] = count
+              else
+                delete tagcounts[tagid]
 
           undefined
 

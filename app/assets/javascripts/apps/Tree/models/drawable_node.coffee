@@ -207,7 +207,7 @@ define [ 'underscore' ], (_) ->
       # After calling this method, @__inner_width will be set on all nodes.
       @fraction()
       @walk (dn) ->
-        dn.__inner_width = dn.animated_node.node.doclist.n * dn._fraction
+        dn.__inner_width = dn.animated_node.node.size * dn._fraction
 
       @__inner_width
 

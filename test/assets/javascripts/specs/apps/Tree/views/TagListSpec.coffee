@@ -5,12 +5,8 @@ require [
   'apps/Tree/views/TagList'
   'i18n'
 ], ($, _, Backbone, TagList, i18n) ->
-  makeModel = (name="name", color="#abcdef", options={}) ->
-    new Backbone.Model(_.extend({}, { name: name, color: color }, options))
-
-  tagToCount = (tag) ->
-    m = /(\d+)/.exec(tag.cid)
-    +m[1]
+  makeModel = (name="name", options={}) ->
+    new Backbone.Model(_.extend({ name: name }, options))
 
   describe 'apps/Tree/views/TagList', ->
     collection = undefined
@@ -36,7 +32,6 @@ require [
         collection = new Backbone.Collection([])
         view = new TagList({
           collection: collection
-          tagToCount: tagToCount
         })
 
       it 'should render an empty list', ->
@@ -62,17 +57,15 @@ require [
         view?.off()
         view = new TagList({
           collection: collection
-          tagToCount: tagToCount
           exportUrl: 'https://example.org'
         })
         expect(view.$('a.export').length).toEqual(0)
 
     describe 'starting with two tags', ->
       beforeEach ->
-        collection = new Backbone.Collection([ makeModel('tag10'), makeModel('tag20') ])
+        collection = new Backbone.Collection([ makeModel('tag10', { color: '#abcdef', size: 10 }), makeModel('tag20') ])
         view = new TagList({
           collection: collection
-          tagToCount: tagToCount
           exportUrl: 'https://example.org'
         })
 
@@ -136,7 +129,6 @@ require [
         view?.off()
         view = new TagList({
           collection: collection
-          tagToCount: tagToCount
           exportUrl: 'https://example.org'
         })
         expect(view.$('a.export').attr('href')).toEqual('https://example.org')
@@ -178,4 +170,4 @@ require [
       it 'should confirm remove with the tag name and count', ->
         spyOn(window, 'confirm').andReturn(false)
         view.$('li:eq(0) a.remove').click()
-        expect(window.confirm).toHaveBeenCalledWith("remove.confirm,tag10,#{tagToCount(collection.first())}")
+        expect(window.confirm).toHaveBeenCalledWith("remove.confirm,tag10,10")
