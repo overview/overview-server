@@ -49,9 +49,10 @@ define [
     view.on 'create-submitted', (name) ->
       tag = { name: name }
       log('created tag', "#{tag_to_short_string(tag)} on #{state.selection.to_string()}")
-      tag = remote_tag_list.cache.add_tag(tag)
-      remote_tag_list.cache.create_tag(tag)
-      remote_tag_list.add_tag_to_selection(tag, state.selection)
+      tag = cache.add_tag(tag)
+      cache.create_tag(tag)
+      cache.addTagToSelection(tag, state.selection)
+        .done(-> cache.refresh_tagcounts(tag))
       state.set('focused_tag', tag)
 
     view.on 'organize-clicked', ->
