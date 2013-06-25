@@ -28,7 +28,7 @@ class PersistentTagSpec extends DbSpecification {
     }
 
     "find an existing tag" in new TagContext {
-      val tag = Tag(documentSetId, tagName, "#ffffff")
+      val tag = Tag(documentSetId, tagName, "ffffff")
       Schema.tags.insertOrUpdate(tag)
 
       val foundTag = PersistentTag.findOrCreate(documentSetId, tagName)

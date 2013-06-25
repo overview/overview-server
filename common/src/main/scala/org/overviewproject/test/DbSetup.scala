@@ -78,8 +78,8 @@ object DbSetup {
 
   def insertTag(documentSetId: Long, name: String)(implicit c: Connection): Long = {
     SQL("""
-        INSERT INTO tag (name, document_set_id)
-        VALUES ({name}, {documentSetId})
+        INSERT INTO tag (name, document_set_id, color)
+        VALUES ({name}, {documentSetId}, 'ffffff')
         """).on("name" -> name, "documentSetId" -> documentSetId).
       executeInsert().getOrElse(failInsert)
   }

@@ -22,7 +22,7 @@ class TagClonerSpec extends DbSpecification {
         sourceDocumentSetId = insertDocumentSet("TagClonerSpec")
         cloneDocumentSetId = insertDocumentSet("CloneTagClonerSpec")
 
-        val tags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-" + i, "#ffffff"))
+        val tags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-" + i, "ffffff"))
         Schema.tags.insert(tags)
         tagIdMapping = TagCloner.clone(sourceDocumentSetId, cloneDocumentSetId)
 
