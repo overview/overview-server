@@ -119,7 +119,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
           connectionStatus.connectionSucceeded
         }
         case Failure(e) => Akka.system.scheduler.scheduleOnce(1 second) {
-          Logger.error(e.getMessage(), e)
+          Logger.info(e.getMessage(), e) // Don't log to error to avoid generating error emails during startup
           attemptSessionCreation(factory, destination)
         }
       }

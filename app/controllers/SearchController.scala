@@ -6,6 +6,7 @@ import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.forms.SearchForm
 import org.overviewproject.jobs.models.Search
 import controllers.util.JobQueueSender
+import play.api.Logger
 
 trait SearchController extends Controller {
   trait JobQueue {
@@ -20,7 +21,10 @@ trait SearchController extends Controller {
       formWithErrors => BadRequest,
       search => {
         jobQueue.createSearch(search).fold(
-          _ => InternalServerError,
+          _ => {
+            Logger.error("Not connected to Message Broker")
+            InternalServerError
+          },
           _ => Accepted)
       })
   }

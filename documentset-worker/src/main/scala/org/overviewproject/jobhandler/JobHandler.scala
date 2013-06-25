@@ -131,7 +131,10 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
       currentJobCompletion = None
       goto(Ready)
     }
-    case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
+    case Event(ConnectionFailure(e), _) => {
+      Logger.error(s"Connection Failure: ${e.getMessage}")
+      goto(NotConnected) using ConnectionFailed(e)
+    }
   }
 
   onTransition {
@@ -155,7 +158,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   }
 
   private def handleConnectionFailure(e: Exception): Unit = {
-    Logger.error(s"Connection Failure: ${e.getMessage}")
+    Logger.info(s"Connection Failure: ${e.getMessage}")
     self ! ConnectionFailure(e)
   }
 
