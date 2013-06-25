@@ -608,12 +608,14 @@ define [
     _redraw: () ->
       # Add the focused tag to "focus tagids": stack of recently-viewed tags
       # (initialized to all tags)
-      tagid = @tree.state.focused_tag?.id
-      if tagid
+      if tagid = @tree.state.focused_tag?.id
         index = @focus_tagids.indexOf(tagid)
-        if index == -1
-          throw "Invalid tag"
-        else if index != 0
+        # index may be:
+        # * -1, if focused tag has been deleted
+        # * 0, if it's at the top of the stack
+        # * >0, if it's below the top item
+        # If it's >0, move it to 0
+        if index > 0
           @focus_tagids.splice(index, 1)
           @focus_tagids.unshift(tagid)
 
