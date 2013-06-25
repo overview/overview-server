@@ -3,7 +3,6 @@ define [
   './models/animated_focus'
   './models/animator'
   './models/property_interpolator'
-  './models/remote_tag_list'
   './models/world'
   './models/selection'
   './controllers/keyboard_controller'
@@ -17,7 +16,7 @@ define [
   './controllers/auto_focus_controller'
   './views/Mode'
 ], ($, \
-    AnimatedFocus, Animator, PropertyInterpolator, RemoteTagList, World, Selection, \
+    AnimatedFocus, Animator, PropertyInterpolator, World, Selection, \
     KeyboardController, Logger, \
     tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
@@ -73,8 +72,6 @@ define [
       )()
 
       world = new World()
-
-      remote_tag_list = new RemoteTagList(world.cache)
 
       world.cache.load_root().done ->
         world.state.set('selection', new Selection({ nodes: [world.cache.on_demand_tree.id_tree.root] }))
@@ -156,7 +153,7 @@ define [
       auto_focus_controller(focus, world)
 
       tag_list_controller({
-        remote_tag_list: remote_tag_list
+        cache: world.cache
         state: world.state
         el: els.tags
       })

@@ -15,24 +15,23 @@ object show {
     )
   }
 
-  private[Tree] def writeTagAndCount(tag: Tag, count: Long) : JsValue = {
+  private[Tree] def writeTag(tag: Tag) : JsValue = {
     Json.obj(
       "id" -> tag.id,
       "name" -> tag.name,
-      "color" -> ("#" + tag.color),
-      "size" -> count
+      "color" -> ("#" + tag.color)
     )
   }
 
   def apply(
     nodes: Iterable[(Node,Iterable[Long])],
-    tags: Iterable[(Tag,Long)],
+    tags: Iterable[Tag],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
       "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIds)),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
-      "tags" -> tags.map(Function.tupled(writeTagAndCount))
+      "tags" -> tags.map(writeTag)
     )
   }
 

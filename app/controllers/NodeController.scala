@@ -16,7 +16,7 @@ trait NodeController extends Controller {
     def findRootNodesWithChildIds(documentSetId: Long, depth: Int) : Iterable[(Node,Iterable[Long])]
     def findChildNodesWithChildIds(documentSetId: Long, parentNodeId: Long) : Iterable[(Node,Iterable[Long])]
     def findNode(documentSetId: Long, nodeId: Long) : Iterable[Node]
-    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
+    def findTags(documentSetId: Long) : Iterable[Tag]
     def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
 
     def updateNode(node: Node) : Node
@@ -29,9 +29,10 @@ trait NodeController extends Controller {
     if (nodes.isEmpty) {
       NotFound
     } else {
-      val tags = storage.findTagsWithCounts(documentSetId)
+      val tags = storage.findTags(documentSetId)
       val searchResults = storage.findSearchResults(documentSetId)
       Ok(views.json.Tree.show(nodes, tags, searchResults))
+        .withHeaders(CACHE_CONTROL -> "max-age=0")
     }
   }
 
@@ -39,6 +40,7 @@ trait NodeController extends Controller {
     val nodes = storage.findChildNodesWithChildIds(documentSetId, id)
 
     Ok(views.json.Tree.show(nodes))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
   def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
@@ -109,8 +111,8 @@ object NodeController extends NodeController {
       addChildIds(nodes)
     }
 
-    override def findTagsWithCounts(documentSetId: Long) = {
-      TagFinder.byDocumentSet(documentSetId).withCounts
+    override def findTags(documentSetId: Long) = {
+      TagFinder.byDocumentSet(documentSetId)
     }
 
     override def findSearchResults(documentSetId: Long) = {

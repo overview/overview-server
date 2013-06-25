@@ -183,6 +183,65 @@ define [
       @transaction_queue.queue =>
         @server.post('node_update', new_node, { path_argument: id })
 
+    # Adds the given Tag to all documents specified by the Selection.
+    #
+    # This only applies to documents in our document_store. The server-side
+    # data will remain unchanged.
+    addTagToSelectionLocal: (tag, selection) ->
+      documents = this._selection_to_documents(selection)
+      if documents?
+        this._maybe_add_tagid_to_document(tag.id, document) for document in documents
+
+    # Tells the server to add the given Tag to all documents specified by the
+    # Selection.
+    #
+    # This leaves our document_store unaffected.
+    addTagToSelectionRemote: (tag, selection) ->
+      if @_selection_to_documents(selection)?
+        postData = @_selection_to_post_data(selection)
+        @transaction_queue.queue =>
+          @server.post('tag_add', postData, { path_argument: tag.id })
+
+    # Adds the given Tag to all documents specified by the Selection.
+    #
+    # This calls addTagToSelectionLocal() and addTagToSelectionRemote().
+    #
+    # Return value: a Deferred which will be resolved once the tag has been
+    # added.
+    addTagToSelection: (tag, selection) ->
+      @addTagToSelectionLocal(tag, selection)
+      @addTagToSelectionRemote(tag, selection)
+
+    # Removes the given Tag from all documents specified by the Selection.
+    #
+    # This only applies to documents in our document_store. The server-side
+    # data will remain unchanged.
+    removeTagFromSelectionLocal: (tag, selection) ->
+      documents = this._selection_to_documents(selection)
+      if documents?
+        @_maybe_remove_tagid_from_document(tag.id, document) for document in documents
+
+    # Tells the server to remove the given Tag to all documents specified by the
+    # Selection.
+    #
+    # This leaves our document_store unaffected.
+    removeTagFromSelectionRemote: (tag, selection) ->
+      if @_selection_to_documents(selection)?
+        postData = @_selection_to_post_data(selection)
+        @transaction_queue.queue =>
+          @server.post('tag_remove', postData, { path_argument: tag.id })
+
+    # Removes the given Tag to all documents specified by the Selection.
+    #
+    # This calls removeTagFromSelectionLocal() and
+    # removeTagFromSelectionRemote().
+    #
+    # Return value: a Deferred which will be resolved once the tag has been
+    # removed.
+    removeTagFromSelection: (tag, selection) ->
+      @removeTagFromSelectionLocal(tag, selection)
+      @removeTagFromSelectionRemote(tag, selection)
+
     # Given a Selection, returns:
     #
     # * [ 'tag', 'Tag name' ] if it's a one-tag selection (ignoring documents)
@@ -212,3 +271,32 @@ define [
             [ 'searchResult', query ]
       else
         [ 'other' ]
+
+    # Returns loaded docids from selection.
+    #
+    # If nothing is selected, returns undefined. Do not confuse this with
+    # the empty-Array return value, which only means we don't have any loaded
+    # docids that match the selection.
+    _selection_to_documents: (selection) ->
+      return undefined if selection.isEmpty()
+
+      selection.documents_from_cache(this)
+
+    _maybe_add_tagid_to_document: (tagid, document) ->
+      tagids = document.tagids
+      if tagid not in tagids
+        tagids.push(tagid)
+        @document_store.change(document)
+
+    _maybe_remove_tagid_from_document: (tagid, document) ->
+      tagids = document.tagids
+      index = tagids.indexOf(tagid)
+      if index >= 0
+        tagids.splice(index, 1)
+        @document_store.change(document)
+
+    _selection_to_post_data: (selection) ->
+      nodes: selection.nodes.join(',')
+      documents: selection.documents.join(',')
+      tags: selection.tags.join(',')
+      searchResults: selection.searchResults.join(',')

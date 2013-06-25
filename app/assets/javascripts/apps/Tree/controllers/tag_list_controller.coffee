@@ -12,11 +12,12 @@ define [
     "#{tag.id} (#{tag.name})"
 
   tag_list_controller = (options) ->
-    remote_tag_list = options.remote_tag_list
+    cache = options.cache
+    tag_store = cache.tag_store
     state = options.state
     el = options.el
 
-    proxy = new TagStoreProxy(remote_tag_list.tag_store)
+    proxy = new TagStoreProxy(tag_store)
     collection = proxy.collection
     view = new InlineTagListView({
       collection: proxy.collection
@@ -28,13 +29,15 @@ define [
     view.on 'add-clicked', (tag) ->
       tag = proxy.unmap(tag)
       log('added tag', "#{tag_to_short_string(tag)} to #{state.selection.to_string()}")
-      remote_tag_list.add_tag_to_selection(tag, state.selection)
+      cache.addTagToSelection(tag, state.selection)
+        .done(-> cache.refresh_tagcounts(tag))
       state.set('focused_tag', tag)
 
     view.on 'remove-clicked', (tag) ->
       tag = proxy.unmap(tag)
       log('removed tag', "#{tag_to_short_string(tag)} from #{state.selection.to_string()}")
-      remote_tag_list.remove_tag_from_selection(tag, state.selection)
+      cache.removeTagFromSelection(tag, state.selection)
+        .done(-> cache.refresh_tagcounts(tag))
       state.set('focused_tag', tag)
 
     view.on 'name-clicked', (tag) ->
@@ -52,6 +55,6 @@ define [
       state.set('focused_tag', tag)
 
     view.on 'organize-clicked', ->
-      TagDialogController(remote_tag_list.tag_store, remote_tag_list.cache)
+      TagDialogController(tag_store, cache)
 
     { view: view }

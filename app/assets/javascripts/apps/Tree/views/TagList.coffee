@@ -9,7 +9,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         .spectrum({
           preferredFormat: 'hex6'
           showButtons: false
-          move: (color) -> $input.spectrum('set', color.toHexString()) # Issue #168
+          move: (color) -> $input.spectrum('set', color.toHexString()).change() # Issue #168
         })
 
   removeSpectrum = ($els) ->
@@ -118,6 +118,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     _changeTag: (tag, options) ->
       $li = @_$liForTag(tag)
       $li.find('input[name=id]').val(tag.id)
+      $li.find('.count').text(t('n_documents', tag.get('size')))
 
       if !options? || !options.interacting
         $li.find('input[name=name]').val(tag.get('name'))

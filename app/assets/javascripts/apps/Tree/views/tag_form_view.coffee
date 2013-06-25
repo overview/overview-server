@@ -31,7 +31,7 @@ define [
       $color.spectrum({
         preferredFormat: 'hex6'
         showButtons: false
-        move: (color) -> $color.spectrum('set', color.toHexString()) # Issue #168
+        move: (color) -> $color.spectrum('set', color.toHexString()).change() # Issue #168
       })
 
       $form.modal()

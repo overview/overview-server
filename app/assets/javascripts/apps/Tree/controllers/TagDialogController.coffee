@@ -1,9 +1,10 @@
 define [
+  'jquery'
   'underscore'
   '../collections/TagStoreProxy'
   '../views/TagList'
   'i18n'
-], (_, TagStoreProxy, TagListView, i18n) ->
+], ($, _, TagStoreProxy, TagListView, i18n) ->
 
   t = (key, args...) -> i18n("views.DocumentSet.show.tag_list.#{key}", args...)
 
@@ -58,3 +59,13 @@ define [
       tagStoreProxy.destroy()
       view.remove()
       $dialog.remove()
+
+    # Refresh tag counts
+    cache.transaction_queue.queue ->
+      $.getJSON(window.location.pathname + "/tags.json") # TODO routing in JS
+        .done (json) ->
+          # The fresh data from the server will only be set in the proxy. It
+          # won't be set in the underlying tag store.
+          #
+          # TODO remove proxying altogether and just use a Backbone.Collection.
+          tagStoreProxy.collection.set(json?.tags || [])

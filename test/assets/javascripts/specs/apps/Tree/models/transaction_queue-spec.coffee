@@ -46,6 +46,13 @@ require [
         expect(runs).toEqual(2)
         expect(ds.length).toEqual(2)
 
+      it 'should return a Deferred when queuing', ->
+        op = Deferred()
+        ret = queue.queue(-> op)
+        expect(ret.state()).toBe('pending')
+        op.resolve()
+        expect(ret.state()).toBe('resolved')
+
       it 'should run a second callback after the queue has completed', ->
         d = undefined
 

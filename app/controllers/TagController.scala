@@ -85,6 +85,12 @@ trait TagController extends Controller {
     )
   }
 
+  def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
+    Ok(views.json.Tag.index(tagsWithCounts))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
+  }
+
   def indexCsv(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
     val tagsWithCounts = storage.findTagsWithCounts(documentSetId)
 
@@ -168,6 +174,7 @@ trait TagController extends Controller {
           case Some(tag) => {
             val counts = storage.tagCountsByNodeId(tagId, nodeIds)
             Ok(views.json.Tag.nodeCounts(counts))
+              .withHeaders(CACHE_CONTROL -> "max-age=0")
           }
         }
       }

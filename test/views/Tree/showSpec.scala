@@ -38,9 +38,9 @@ class showSpec extends Specification {
 
       val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
 
-      val tags = List[(Tag,Long)](
-        (baseTag.copy(id=5L, name="tag1"), 5L),
-        (baseTag.copy(id=15L, name="tag2"), 10L)
+      val tags = Seq[Tag](
+        baseTag.copy(id=5L, name="tag1"),
+        baseTag.copy(id=15L, name="tag2")
       )
       val treeJson = show(nodes, tags, Seq()).toString
       

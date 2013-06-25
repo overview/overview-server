@@ -2,6 +2,9 @@
 // https://github.com/bgrins/spectrum
 // Author: Brian Grinstead
 // License: MIT
+//
+// ADAM HOOPER AT OVERVIEW DID SOMETHING:
+// https://github.com/bgrins/spectrum/issues/97
 
 define(['jquery', 'tinycolor'], (function ($, tinycolor, undefined) {
     var defaultOpts = {
@@ -660,7 +663,7 @@ define(['jquery', 'tinycolor'], (function ($, tinycolor, undefined) {
             var color = get();
 
             if (isInput) {
-                boundElement.val(color.toString(currentPreferredFormat)).change();
+                boundElement.val(color.toString(currentPreferredFormat));
             }
 
             var hasChanged = !tinycolor.equals(color, colorOnShow);
