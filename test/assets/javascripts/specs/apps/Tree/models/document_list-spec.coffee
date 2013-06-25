@@ -7,6 +7,7 @@ require [
       @nodes = (properties.nodes || {})
       @tags = (properties.tags || {})
       @documents = (properties.documents || {})
+      @searchResults = (properties.searchResults || {})
 
     documents_from_cache: (cache) -> []
 
@@ -36,7 +37,7 @@ require [
 
   describe 'models/document_list', ->
     describe 'DocumentList', ->
-      doc = (i) -> { id: i, title: "doc#{i}" }
+      doc = (i) -> { id: i, title: "doc#{i}", searchResultIds: [] }
       doclist = (start, end) ->
         {
           documents: doc(i) for i in [ start ... end ],
