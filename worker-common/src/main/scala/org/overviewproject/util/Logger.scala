@@ -12,8 +12,14 @@ object Logger {
   def info(msg: String) = logger.info(msg)
   def warn(msg: String) = logger.warn(msg)
   def error(msg: String) = logger.error(msg)
-  
-  def logElapsedTime(op: String, t0: Long) {
+
+  def trace(msg: String, t: Throwable) = logger.trace(msg, t)
+  def debug(msg: String, t: Throwable) = logger.debug(msg, t)
+  def info(msg: String, t: Throwable) = logger.info(msg, t)
+  def warn(msg: String, t: Throwable) = logger.warn(msg, t)
+  def error(msg: String, t: Throwable) = logger.error(msg, t)
+
+  def logElapsedTime(op: String, t0: Long) { 
     val t1 = System.nanoTime()
     info(op + ", time: " + ("%.3f" format (t1 - t0) / 1e9) + " seconds")
   }
