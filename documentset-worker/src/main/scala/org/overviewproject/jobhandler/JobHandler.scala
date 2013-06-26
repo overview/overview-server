@@ -106,6 +106,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
       connectionStatus match {
         case Success(_) => goto(Ready)
         case Failure(e) => {
+          Logger.info(s"Connection to Message Broker Failed: ${e.getMessage}", e)
           setTimer("retry", StartListening, ReconnectionInterval, repeat = false)
           stay using ConnectionFailed(e)
         }
@@ -132,7 +133,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
       goto(Ready)
     }
     case Event(ConnectionFailure(e), _) => {
-      Logger.error(s"Connection Failure: ${e.getMessage}")
+      Logger.error(s"Connection Failure: ${e.getMessage}", e)
       goto(NotConnected) using ConnectionFailed(e)
     }
   }
