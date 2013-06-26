@@ -20,7 +20,11 @@ body.document-set-index {
     margin-top: 20px;
   }
 
-  .document-sets>ul, .document-set-creation-jobs>ul {
+  .document-set-creation-jobs>ul{
+    .document-set-list-old();
+  }
+
+  .document-sets>ul {
     .document-set-list();
   }
 
@@ -38,10 +42,6 @@ body.document-set-index {
     &>h2, &>p {
       margin-left: 20px; // margin of .well
     }
-  }
-
-  .document-sets {
-    margin: 20px -20px; // escape the .well
   }
 
   #error-list-modal {

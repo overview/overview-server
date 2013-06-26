@@ -1,4 +1,63 @@
-.document-set-list() {
+@import "../../variables.less";
+@import "../../mixins.less";
+@import "../../vendor/bootstrap/less/mixins.less";
+
+.document-set-list {
+  li {
+    padding: 1em;
+    margin: 1em 0;
+    background: @darkBodyBackground;
+    .border-radius(10px);
+    .box-shadow(1px 1px 5px @mutedShadeColor);
+  }
+
+  h3 {
+    margin: 0;
+    font-family: inherit;
+    font-weight: normal;
+    font-size: 1.6em;
+    line-height: 1;
+    padding-bottom: .25em;
+
+    a {
+      color: inherit;
+    }
+  }
+
+  h4 {
+    .muted;
+    margin: 0;
+    font-family: inherit;
+    font-weight: normal;
+    font-size: 1em;
+    line-height: 1.5;
+
+    span {
+      &::before {
+        padding: 0 .6em;
+        content: "/";
+      }
+
+      &:first-child::before {
+        content: none;
+      }
+    }
+
+    a.error-count {
+      color: @errorColor;
+    }
+  }
+
+  div.actions {
+    float: right;
+
+    form {
+      display: inline;
+    }
+  }
+}
+
+.document-set-list-old() {
   margin: 0;
 
   &>li {
