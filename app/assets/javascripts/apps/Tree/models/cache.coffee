@@ -109,13 +109,13 @@ define [
       deferred
 
     refreshSearchResultCounts: (searchResult) ->
+      searchResultId = searchResult.id? && searchResult.id || searchResult
       nodes = @on_demand_tree.nodes
       node_ids = (k for k, __ of nodes)
       node_ids_string = node_ids.join(',')
-      deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResult.id })
+      deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResultId })
       deferred.done (data) =>
         @on_demand_tree.id_tree.edit ->
-          searchResultId = searchResult.id
           responseCounts = {}
 
           i = 0
@@ -125,8 +125,7 @@ define [
             responseCounts[nodeid] = count
 
           for nodeid in node_ids
-            counts = nodes[nodeid]?.searchResultCounts
-            continue if !counts
+            counts = (nodes[nodeid]?.searchResultCounts ||= {})
             responseCount = responseCounts[nodeid]
             if responseCount
               counts[searchResultId] = responseCount
