@@ -35,15 +35,15 @@ define [
 
     templates:
       root: _.template("""
-        <a href="#" class="list"><i class="icon-th-list"></i><%- t('list') %></a>
+        <a href="#" class="list"><i class="icon-list"></i><%- t('list') %></a>
         <div class="box">
           <header></header>
           <article></article>
         </div>
         """)
       header: _.template("""
-        <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-arrow-left"></i><span><%- t('previous') %></span></a>
-        <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="icon-arrow-right"></i><span><%- t('next') %></span></a>
+        <a href="#" class="previous <%= cursorIndex ? '' : 'disabled' %>"><i class="icon-chevron-left"></i><span><%- t('previous') %></span></a>
+        <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="icon-chevron-right"></i><span><%- t('next') %></span></a>
         <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
         <div class="selection"><%= selectionHtml %></div>
         <h2><%- (document && document.get('title')) ? t('title', document.get('title')) : t('title.empty') %></h2>

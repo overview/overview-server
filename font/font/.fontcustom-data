@@ -1,0 +1,27 @@
+{
+  "fonts": [
+    "overview-project-icons.ttf",
+    "overview-project-icons.woff",
+    "overview-project-icons.eot",
+    "overview-project-icons.svg"
+  ],
+  "templates": [
+    "fontcustom-bootstrap.css",
+    "fontcustom-preview.html",
+    "fontcustom.css"
+  ],
+  "file_name": "overview-project-icons",
+  "glyphs": [
+    "chevron-left",
+    "upload",
+    "download",
+    "plus",
+    "tag",
+    "chevron-right",
+    "trash",
+    "share",
+    "edit",
+    "minus",
+    "list"
+  ]
+}

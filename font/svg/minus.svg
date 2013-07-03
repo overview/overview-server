@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="384"
+   height="512"
+   id="svg3957"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="minus.svg">
+  <metadata
+     id="metadata3036">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3034" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1855"
+     inkscape:window-height="1176"
+     id="namedview3032"
+     showgrid="true"
+     units="px"
+     inkscape:snap-bbox="true"
+     inkscape:zoom="1.0205015"
+     inkscape:cx="135.44797"
+     inkscape:cy="385.38068"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3165"
+       units="px"
+       empspacing="32"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       spacingx="1px"
+       spacingy="1px" />
+  </sodipodi:namedview>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(264,-591.21927)">
+    <path
+       inkscape:connector-curvature="0"
+       id="xf068"
+       class="horiz-adv-x-1408"
+       d="m 120,873.03741 v -52.36362 q 0,-10.9091 -7.63636,-18.54545 -7.63636,-7.63637 -18.545447,-7.63637 H -237.81811 q -10.90909,0 -18.54545,7.63637 -7.63636,7.63635 -7.63636,18.54545 v 52.36362 q 0,10.90913 7.63636,18.5455 7.63636,7.63636 18.54545,7.63636 H 93.818193 q 10.909087,0 18.545447,-7.63636 Q 120,883.94654 120,873.03741 z" />
+  </g>
+</svg>

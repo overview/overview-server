@@ -1,0 +1,21 @@
+To edit our font:
+
+1. Edit SVG files in svg/. All icons should have:
+  * em box: 512px * 512px. (Make the width thinner if the font is thinner;
+    never modify the height.
+  * descender: 64px. (With a 32px * 32px grid, you should usually leave two
+    grid squares at the bottom of the icon, to match up with fonts' baselines.)
+  * mean height: 352 px. (With a 32px * 32px grid, you should usually leave
+    three grid squares from the top of the icon.)
+2. Follow the instructions at http://fontcustom.com/#installation to install
+   Font Custom.
+3. In this directory, run `fontcustom compile svg`
+4. `cp font/overview-project-icons.* ../public/fonts/`
+5. Edit `font/fontcustom-bootstrap.css` to add a base path to the fonts. For
+   instance, `overview-project-icons.eot` should become
+   `../fonts/overview-project-icons.eot`.overview-project-icons.eot` should become
+   `../fonts/overview-project-icons.eot`.overview-project-icons.eot` should become
+   `../fonts/overview-project-icons.eot`.overview-project-icons.eot` should become
+   `../fonts/overview-project-icons.eot`.overview-project-icons.eot` should become
+   `../fonts/overview-project-icons.eot`.
+4. `cp font/fontcustom-bootstrap.css ../app/assets/stylesheets/icons.less`

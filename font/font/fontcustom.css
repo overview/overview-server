@@ -1,0 +1,48 @@
+/* 
+ * Font Custom: bare CSS
+ */
+
+@font-face {
+  font-family: "overview-project-icons";
+  src: url("overview-project-icons.eot");
+  src: url("overview-project-icons.eot?#iefix") format("embedded-opentype"),
+       url("overview-project-icons.woff") format("woff"),
+       url("overview-project-icons.ttf") format("truetype"),
+       url("overview-project-icons.svg#overview-project-icons") format("svg");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.icon-chevron-left:before,
+.icon-upload:before,
+.icon-download:before,
+.icon-plus:before,
+.icon-tag:before,
+.icon-chevron-right:before,
+.icon-trash:before,
+.icon-share:before,
+.icon-edit:before,
+.icon-minus:before,
+.icon-list:before {
+  font-family: "overview-project-icons";
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  display: inline-block;
+  text-decoration: inherit;
+}
+
+.icon-chevron-left:before { content: "\f100"; }
+.icon-upload:before { content: "\f101"; }
+.icon-download:before { content: "\f102"; }
+.icon-plus:before { content: "\f103"; }
+.icon-tag:before { content: "\f104"; }
+.icon-chevron-right:before { content: "\f105"; }
+.icon-trash:before { content: "\f106"; }
+.icon-share:before { content: "\f107"; }
+.icon-edit:before { content: "\f108"; }
+.icon-minus:before { content: "\f109"; }
+.icon-list:before { content: "\f10a"; }

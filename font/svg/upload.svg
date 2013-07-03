@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="384"
+   height="512"
+   id="svg4061"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="upload.svg">
+  <metadata
+     id="metadata3083">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3081" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1855"
+     inkscape:window-height="1176"
+     id="namedview3079"
+     showgrid="true"
+     inkscape:snap-global="true"
+     inkscape:snap-to-guides="true"
+     inkscape:snap-grids="true"
+     inkscape:snap-page="true"
+     inkscape:snap-center="true"
+     inkscape:snap-object-midpoints="true"
+     inkscape:snap-midpoints="true"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-paths="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-bbox-edge-midpoints="false"
+     inkscape:snap-bbox-midpoints="false"
+     inkscape:snap-nodes="false"
+     units="px"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:document-units="px"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="140.40806"
+     inkscape:cy="311.50614"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3085"
+       empspacing="32"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       units="px"
+       originy="2.7755576e-17px"
+       spacingx="1px"
+       spacingy="1px" />
+    <sodipodi:guide
+       orientation="0,1"
+       position="0,64"
+       id="guide3087" />
+    <sodipodi:guide
+       position="0,0"
+       orientation="0,616.25"
+       id="guide3097" />
+    <sodipodi:guide
+       position="616.25,0"
+       orientation="-640,0"
+       id="guide3099" />
+    <sodipodi:guide
+       position="384,512"
+       orientation="0,-616.25"
+       id="guide3101" />
+    <sodipodi:guide
+       position="0,640"
+       orientation="640,0"
+       id="guide3103" />
+  </sodipodi:namedview>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0.14286002,-263.2396)">
+    <path
+       inkscape:connector-curvature="0"
+       id="xf01b"
+       d="m 279.35712,514.2396 q -1.99997,5.00001 -7.49997,5.00001 h -48.00003 v 88 q 0,3.49997 -2.24998,5.74997 -2.25003,2.25001 -5.75002,2.25001 h -48 q -3.49998,0 -5.74999,-2.25001 -2.25,-2.25 -2.25,-5.74997 v -88 h -48 q -3.5,0 -5.75,-2.25 -2.25001,-2.25001 -2.25001,-5.75 0,-3 2.5,-6 l 79.75,-79.75002 q 2.75001,-2.24998 5.75,-2.24998 3,0 5.75,2.24998 l 80.00003,80.00002 q 3.75002,4 1.74997,8.74999 z m -87.5,-130.99999 q -37,0 -68.24999,18.24998 -31.24999,18.25003 -49.5,49.5 -18.249994,31.25001 -18.249994,68.25002 0,36.99998 18.249994,68.25 18.25001,31.24997 49.5,49.49997 31.24999,18.24999 68.24999,18.24999 37.00002,0 68.25004,-18.24999 31.24999,-18.25 49.5,-49.49997 18.25001,-31.25002 18.25001,-68.25 0,-37.00001 -18.25001,-68.25002 -18.25001,-31.24997 -49.5,-49.5 -31.25002,-18.24998 -68.25004,-18.24998 z m 192.00002,136 q 0,52.24998 -25.75,96.37499 -25.74998,44.12499 -69.87495,69.875 -44.12502,25.75 -96.37507,25.75 -52.24999,0 -96.374988,-25.75 -44.124995,-25.75001 -69.87499,-69.875 -25.75000202,-44.12501 -25.75000202,-96.37499 0,-52.25 25.75000202,-96.375 25.749995,-44.12501 69.87499,-69.875 44.124998,-25.75001 96.374988,-25.75001 52.25005,0 96.37507,25.75001 44.12497,25.74999 69.87495,69.875 25.75,44.125 25.75,96.375 z" />
+  </g>
+</svg>

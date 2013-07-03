@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="448"
+   height="512"
+   id="svg3801"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="list.svg">
+  <metadata
+     id="metadata3027">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs3025" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1855"
+     inkscape:window-height="1176"
+     id="namedview3023"
+     showgrid="true"
+     units="px"
+     inkscape:snap-bbox="true"
+     inkscape:zoom="1.0227795"
+     inkscape:cx="114.70064"
+     inkscape:cy="268.53963"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3181"
+       units="px"
+       empspacing="32"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       spacingx="1px"
+       spacingy="1px" />
+  </sodipodi:namedview>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(96,-1063.2193)">
+    <path
+       inkscape:connector-curvature="0"
+       id="xf03a"
+       class="horiz-adv-x-1792"
+       d="m -32,1215.2192 v -47.9999 q 0,-3.25 -2.375,-5.6251 -2.375001,-2.3749 -5.625,-2.3749 h -48 q -3.25,0 -5.625,2.3749 -2.375,2.3751 -2.375,5.6251 v 47.9999 q 0,3.25 2.375,5.6251 2.375,2.3749 5.625,2.3749 h 48 q 3.249999,0 5.625,-2.3749 2.375,-2.3751 2.375,-5.6251 z m 0,96.0001 v -48.0001 q 0,-3.25 -2.375,-5.6249 -2.375001,-2.3751 -5.625,-2.3751 h -48 q -3.25,0 -5.625,2.3751 -2.375,2.3749 -2.375,5.6249 v 48.0001 q 0,3.25 2.375,5.625 2.375,2.375 5.625,2.375 h 48 q 3.249999,0 5.625,-2.375 2.375,-2.375 2.375,-5.625 z m 0,96.0001 v -48.0001 q 0,-3.25 -2.375,-5.6251 -2.375001,-2.3749 -5.625,-2.3749 h -48 q -3.25,0 -5.625,2.3749 -2.375,2.3751 -2.375,5.6251 v 48.0001 q 0,3.25 2.375,5.6249 2.375,2.3749 5.625,2.3749 h 48 q 3.249999,0 5.625,-2.3749 2.375,-2.3749 2.375,-5.6249 z m 384,-192.0002 v -47.9999 q 0,-3.25 -2.375,-5.6251 -2.37499,-2.3749 -5.625,-2.3749 H 8 q -3.2500016,0 -5.625,2.3749 Q 0,1163.9693 0,1167.2193 v 47.9999 q 0,3.25 2.375,5.6251 2.3749984,2.3749 5.625,2.3749 h 336 q 3.25001,0 5.625,-2.3749 2.375,-2.3751 2.375,-5.6251 z m -384,288.0001 v -48.0001 q 0,-3.25 -2.375,-5.6249 -2.375001,-2.3749 -5.625,-2.3749 h -48 q -3.25,0 -5.625,2.3749 -2.375,2.3749 -2.375,5.6249 v 48.0001 q 0,3.25 2.375,5.6251 2.375,2.3749 5.625,2.3749 h 48 q 3.249999,0 5.625,-2.3749 2.375,-2.3751 2.375,-5.6251 z m 384,-192 v -48.0001 q 0,-3.25 -2.375,-5.6249 -2.37499,-2.3751 -5.625,-2.3751 H 8 q -3.2500016,0 -5.625,2.3751 Q 0,1259.9692 0,1263.2192 v 48.0001 q 0,3.25 2.375,5.625 2.3749984,2.375 5.625,2.375 h 336 q 3.25001,0 5.625,-2.375 2.375,-2.375 2.375,-5.625 z m 0,96.0001 v -48.0001 q 0,-3.25 -2.375,-5.6251 -2.37499,-2.3749 -5.625,-2.3749 H 8 q -3.2500016,0 -5.625,2.3749 Q 0,1355.9693 0,1359.2193 v 48.0001 q 0,3.25 2.375,5.6249 2.3749984,2.3749 5.625,2.3749 h 336 q 3.25001,0 5.625,-2.3749 2.375,-2.3749 2.375,-5.6249 z m 0,95.9999 v -48.0001 q 0,-3.25 -2.375,-5.6249 -2.37499,-2.3749 -5.625,-2.3749 H 8 q -3.2500016,0 -5.625,2.3749 Q 0,1451.9692 0,1455.2192 v 48.0001 q 0,3.25 2.375,5.6251 2.3749984,2.3749 5.625,2.3749 h 336 q 3.25001,0 5.625,-2.3749 2.375,-2.3751 2.375,-5.6251 z" />
+  </g>
+</svg>
