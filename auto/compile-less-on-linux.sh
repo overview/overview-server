@@ -9,7 +9,7 @@
 # Usage:
 #
 # 1. `COMPILE_LESS=false play run`
-# 2. `auto/compile-less-on-linux.sh1
+# 2. `auto/compile-less-on-linux.sh`
 # 3. Edit stylesheets as you normally would
 #
 # What happens:
