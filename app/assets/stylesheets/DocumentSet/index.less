@@ -5,6 +5,19 @@
 @import "index/mixins.less";
 
 body.document-set-index {
+  .page-header {
+    .overview-page-header();
+  }
+
+  .page-header + button, .page-header + #flash + button {
+    margin: .5em 0 1em;
+    float: right;
+  }
+
+  .page-header + button + *, .page-header + #flash + button + * {
+    clear: both;
+  }
+
   button.toggle-import {
     position: relative;
     z-index: 1;
