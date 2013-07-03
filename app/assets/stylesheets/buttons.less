@@ -1,0 +1,99 @@
+@import "./variables.less";
+
+// Started with Twitter Bootstrap, then went nuts
+// Only supports class="btn", "btn btn-danger", "btn btn-primary"
+
+.btnBackground(@color1, @color2, @color3) {
+  // +---+
+  // |1 /|
+  // | / |
+  // |/  |
+  // +   |
+  // |   |
+  // | 2 |
+  // |   |
+  // |   +
+  // |  /|
+  // | / |
+  // |/ 3|
+  // +---+
+  // The background will be positioned such that only 1 and 2 are visible.
+  // On hover, it will move such that only 2 and 3 are visible.
+  @svg: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='400%' viewBox='0 0 1 4' preserveAspectRatio='none'><rect fill='@{color1}' x='0' y='0' width='1' height='4' /><path fill='@{color2}' d='M0,1L1,0L1,4L0,4Z' /><path fill='@{color3}' d='M0,4L1,3.5L1,4L0,4Z' /></svg>";
+  background-image: url(@svg);
+  background-position: 0 0;
+  .transition(background-position .15s linear);
+
+  &:hover, &:active, &.active, &.disabled, &[disabled] {
+    background-position: 100% 100%;
+  }
+
+  &:active, &.active {
+    background-color: @color1;
+    background-image: none;
+  }
+}
+
+.btnColor(@color) {
+  @shadowColor: contrast(@color);
+  color: @color;
+  text-shadow: 0 0 2px @shadowColor;
+}
+
+.btn {
+  display: inline-block;
+  .ie7-inline-block();
+  padding: 4px 12px;
+  margin-bottom: 0; // For input.btn
+  font-size: @baseFontSize;
+  line-height: @baseLineHeight;
+  *line-height: @baseLineHeight;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid @btnBorder;
+  *border: 0; // Remove the border to prevent IE7's black border on input:focus
+  border-bottom-color: darken(@btnBorder, 10%);
+  .border-radius(@baseBorderRadius);
+  .box-shadow(~"inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.15)");
+
+  // Focus state for keyboard and accessibility
+  &:focus {
+    .tab-focus();
+  }
+
+  // Active state
+  &.active,
+  &:active {
+    outline: 0;
+    .box-shadow(~"inset 0 2px 4px rgba(0,0,0,.15), 0 1px 2px rgba(0,0,0,.05)");
+  }
+
+  // Disabled state
+  &.disabled,
+  &[disabled] {
+    cursor: default;
+    background-color: darken(@white, 10%);
+    background-image: none;
+    .opacity(65);
+    .box-shadow(none);
+  }
+}
+
+a.btn:hover {
+  text-decoration: none;
+}
+
+.btn {
+  .btnColor(@btnColor);
+  .btnBackground(@btnBackground1, @btnBackground2, @btnBackground3);
+}
+.btn-primary {
+  .btnColor(@btnPrimaryColor);
+  .btnBackground(@btnPrimaryBackground1, @btnPrimaryBackground2, @btnPrimaryBackground3);
+}
+// Danger and error appear as red
+.btn-danger {
+  .btnColor(@btnDangerColor);
+  .btnBackground(@btnDangerBackground1, @btnDangerBackground2, @btnDangerBackground3);
+}
