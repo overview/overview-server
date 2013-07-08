@@ -1,0 +1,19 @@
+@w: 1145;
+@h: 200;
+@unitsPerEm: 100; // a guess
+@baseline: 5; // units from the bottom of the logo
+@hInEms: (@h / @unitsPerEm);
+@wInEms: (@w / @unitsPerEm);
+
+.documentcloud-logo {
+  display: inline-block;
+  color: transparent;
+  background: url(/assets/images/documentcloud-logo.svg) no-repeat top left;
+  background-size: contain;
+  vertical-align: baseline;
+
+  height: 1em * @hInEms;
+  line-height: @hInEms;
+  width: 1em * @wInEms;
+  margin-bottom: -1em * @baseline / @unitsPerEm;
+}

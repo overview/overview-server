@@ -240,7 +240,7 @@ views.DocumentSet.index.description_jobs=We’re importing and analyzing your do
 views.DocumentSet.index.import_public=Import an example document set
 views.DocumentSet.index.import_dropdown=Import your documents
 views.DocumentSet.index.import_from_shared=Import documents shared with you
-views.DocumentSet.index.import_from_documentcloud_account=Import a DocumentCloud project
+views.DocumentSet.index.import_from_documentcloud_account_html=Import from your <span class="documentcloud-logo">DocumentCloud</span> project
 views.DocumentSet.index.import_from_upload=Import from a CSV file
 
 views.DocumentSet.show.DocumentList.title={0}
