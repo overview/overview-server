@@ -7,6 +7,9 @@
   <li>
     <form method="POST" action="@routes.CloneImportJobController.create(documentSet.id)" class="form-inline"><button class="btn btn-primary">@m("import")</button></form>
     <h3>@documentSet.title</h3>
-    <p class="shared-by">@m("shared_by", owner.email)</p>
+    <h4>
+      <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>
+      <span class="shared-by">@m("shared_by", owner.email)</span>
+    </h4>
   </li>
 }

@@ -14,5 +14,7 @@ define [ 'underscore' ], (_) ->
         <button class="btn btn-primary"><%- i18n('views.DocumentSet._documentSet.action_import') %></button>
       </form>
       <h3><%- project.title %></h3>
-      <p class="status"><span class="document-count"><%- i18n('views.DocumentSet._documentSet.nDocuments', project.document_count || (project.document_ids && project.document_ids.length)) %></span></p>
+      <h4>
+        <span class="document-count"><%- i18n('views.DocumentSet._documentSet.nDocuments', project.document_count || (project.document_ids && project.document_ids.length)) %></span>
+      </h4>
     </li>""")
