@@ -69,6 +69,33 @@ body.document-set-index {
     }
   }
 
+  .dropdown-menu {
+    .border-radius(0);
+    border: 1px solid @mutedShadeColor;
+    padding: 0;
+    overflow: hidden;
+
+    li {
+      padding: 0 1em;
+      margin-top: -1px; // so top looks same as bottom on hover
+
+      &:hover {
+        background: @darkBodyBackground;
+      }
+    }
+
+    a {
+      padding: .75em 0;
+      background: transparent;
+      border-bottom: 1px solid @darkBodyBackground;
+
+      &:hover {
+        background: transparent;
+        color: inherit;
+      }
+    }
+  }
+
   .document-set-creation-jobs {
     margin-top: 20px;
   }
