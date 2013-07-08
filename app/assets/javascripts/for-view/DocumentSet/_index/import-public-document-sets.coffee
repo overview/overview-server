@@ -15,10 +15,4 @@ define [ 'jquery' ], ($) ->
       url = $div.attr('data-source-url')
       load_url($div, url)
 
-    if $('#import-public').is('.active')
-      if $('button.toggle-import').is('.collapsed')
-        $('button.toggle-import').one('click', show)
-      else
-        show()
-    else
-      $('a[data-toggle=tab][href="#import-public"]').one('show', show)
+    $('#import-public').on('activate', show)

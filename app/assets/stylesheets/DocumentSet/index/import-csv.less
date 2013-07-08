@@ -1,0 +1,102 @@
+@import-once "../../mixins.less";
+
+#import-from-upload {
+  progress {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    height: 30px;
+    margin: 20px 0;
+  }
+
+  .modal {
+    p {
+      margin-top: 10px;
+
+      &.prompt {
+        .muted;
+      }
+    }
+  }
+
+  form {
+    input[type=file] {
+      line-height: inherit;
+      height: auto;
+    }
+
+    select {
+      margin-bottom: 0;
+    }
+
+    .preview {
+      max-height: 400px; // TODO make it shorter when the window is short
+      overflow: auto;
+
+      .error {
+        color: @red;
+        font-weight: bold;
+      }
+
+      pre {
+        font-size: .8em;
+        overflow: auto;
+
+        ol {
+          margin-left: 4em;
+          background: white;
+        }
+
+        li:hover {
+          background: @tableBackgroundHover;
+        }
+      }
+
+      table {
+        .table;
+        .table-condensed;
+        .table-bordered;
+        font-family: monospace;
+        white-space: pre;
+
+        table-layout: fixed;
+        width: 100%;
+
+        th, td {
+          font-size: .8em;
+          overflow: hidden;
+        }
+
+        div {
+          max-height: 10em;
+          width: auto;
+          overflow: auto;
+        }
+      }
+    }
+
+    .requirements li {
+      list-style-position: inside;
+      list-style-type: disc;
+
+      &.ok {
+        list-style-type: none;
+        color: @green;
+
+        &:before {
+          content: "✔";
+        }
+      }
+
+      &.bad {
+        list-style-type: none;
+        color: @red;
+        font-weight: bold;
+
+        &:before {
+          content: "✘";
+        }
+      }
+    }
+  }
+}

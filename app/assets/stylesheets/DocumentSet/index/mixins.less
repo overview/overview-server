@@ -120,3 +120,39 @@
     margin-left: 10px;
   }
 }
+
+.document-set-list-small() {
+  margin: 0;
+
+  li {
+    display: block;
+    .clearfix;
+    margin-top: 10px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  form {
+    margin: 0;
+    padding: 0;
+    float: left;
+  }
+
+  h3 {
+    margin: 0;
+    padding: 5px;
+    float: left;
+    font-size: 1em;
+    line-height: inherit;
+    font-weight: bold;
+  }
+
+  p.status, p.shared-by {
+    margin: 0;
+    padding: 5px 5px 5px 0;
+    float: left;
+    color: @grayLight;
+  }
+}

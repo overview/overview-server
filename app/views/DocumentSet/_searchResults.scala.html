@@ -4,7 +4,6 @@
 )(implicit lang: Lang)
 
 @defining(scopedMessages(messageScope)) { m =>
-  <h2>@m("title")</h2>
   <p class="preamble">@m("preamble")</p>
   @if(documentSets.isEmpty) {
     <p class="empty">@m("empty")</p>

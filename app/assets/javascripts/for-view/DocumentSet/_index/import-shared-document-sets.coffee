@@ -15,7 +15,4 @@ define [ 'jquery' ], ($) ->
       url = $div.attr('data-source-url')
       load_url($div, url)
 
-    if $('#import-shared').is('.active')
-      $('button.toggle-import').one('click', show)
-    else
-      $('a[data-toggle=tab][href="#import-shared"]').one('show', show)
+    $('#import-shared').on('activate', show)

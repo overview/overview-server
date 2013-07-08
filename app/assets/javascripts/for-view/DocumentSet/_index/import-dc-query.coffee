@@ -1,5 +1,7 @@
 define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_with_login) ->
   $ ->
+    $dcimportDiv = $('#import-from-documentcloud-account .import-pane-contents')
+
     $dcquery_submit = $('#import-from-documentcloud-query button')
     refresh_dcquery_submit = () ->
       $form = $dcquery_submit.closest('form')
@@ -16,15 +18,11 @@ define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_wi
     refresh_dcquery_submit()
 
     show = ->
-      dcimport_div = document.getElementById('import-from-documentcloud-account')
-      import_project_with_login(dcimport_div)
+      import_project_with_login($dcimportDiv[0])
 
-    if $('#import-from-documentcloud-account').is('.active')
-      $('button.toggle-import').one('click', show)
-    else
-      $('a[data-toggle=tab][href="#import-from-documentcloud-account"]').one('show', show)
+    $('#import-from-documentcloud-account').one('activate', show)
 
-    $('div #import-from-documentcloud-account').on 'change click', 'form.update input[type=checkbox]', (e) ->
+    $dcimportDiv.on 'change click', 'form.update input[type=checkbox]', (e) ->
       $checkbox = $(e.currentTarget)
       $splitDocumentInputs = $('input[type=hidden][name=split_documents]')
       $splitDocumentInputs.each (i, input) ->

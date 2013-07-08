@@ -38,6 +38,11 @@
   @shadowColor: contrast(@color);
   color: @color;
   text-shadow: 0 0 2px @shadowColor;
+
+  &:hover {
+    color: @color; // override a:hover color
+    text-shadow: 0 0 2px @shadowColor, 0 0 2px @shadowColor; // up contrast
+  }
 }
 
 .btn {

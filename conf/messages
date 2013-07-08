@@ -138,7 +138,7 @@ views.DocumentCloudImportJob.new.submit_credentials.label=Verify DocumentCloud e
 
 views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
-views.DocumentSet._dcimport.legend=Enter your DocumentCloud email and password
+views.DocumentSet._dcimport.preamble=Enter your DocumentCloud email and password
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
@@ -168,7 +168,6 @@ views.DocumentSet._errorList.h3=Documents with errors
 
 views.DocumentSet._export.h3=Export your document set
 views.DocumentSet._export.close=Close
-
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.label=From…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
@@ -176,10 +175,17 @@ views.DocumentSet._import.from_public=Example document set
 views.DocumentSet._import.from_shared=Document sets shared with you
 views.DocumentSet._import.from_upload=CSV upload
 
+views.DocumentSet._importDocumentCloud.h1=Import a DocumentCloud project
+
+views.DocumentSet._importPane.back=Back to your document sets
+
+views.DocumentSet._importPublic.h1=Import an example document set
 views.DocumentSet._importPublic.loading=Loading document sets…
+
+views.DocumentSet._importShared.h1=Import a document set shared with you
 views.DocumentSet._importShared.loading=Loading document sets…
 
-views.DocumentSet._manualForm.title=Import from DocumentCloud
+views.DocumentSet._manualForm.title=Import a DocumentCloud project
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=My document set
 views.DocumentSet._manualForm.help.title=Overview will use this name for your document set
@@ -200,7 +206,7 @@ views.DocumentSet._share.email_placeholder=user@example.org
 views.DocumentSet._share.remove=remove
 views.DocumentSet._share.example_document_set.checkbox_label=Set as example document set
 
-views.DocumentSet._uploadForm.h2=Upload a document set
+views.DocumentSet._uploadForm.h1=Upload a document set
 views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
 views.DocumentSet._uploadForm.label.charset=Specify an encoding:
 views.DocumentSet._uploadForm.preview.h4=Preview
@@ -211,7 +217,7 @@ views.DocumentSet._uploadForm.charset.windows1252=Western (Windows-1252, ISO-885
 views.DocumentSet._uploadForm.help.requirements_html=Overview can load CSV files exported from Radian 6 and Sysomos. Or, your file must meet these requirements (<a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/" target="_blank" title="(opens in new window)">help and example files</a>)
 views.DocumentSet._uploadForm.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
 views.DocumentSet._uploadForm.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
-views.DocumentSet._uploadForm.requirements.header=The first line of the file must list the column names. The text must be in a column named text, snippet, or contents.
+views.DocumentSet._uploadForm.requirements.header=The first line of the file must list the column names. The text must be in a column named “text”, “snippet”, or “contents”.
 views.DocumentSet._uploadForm.requirements.data=Each row must describe a single document, and there must be at least one.
 views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
 views.DocumentSet._uploadForm.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
@@ -229,6 +235,11 @@ views.DocumentSet.index.h1=Your document sets
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
+views.DocumentSet.index.import_public=Import an example document set
+views.DocumentSet.index.import_dropdown=Import your documents
+views.DocumentSet.index.import_from_shared=Import documents shared with you
+views.DocumentSet.index.import_from_documentcloud_account=Import a DocumentCloud project
+views.DocumentSet.index.import_from_upload=Import from a CSV file
 
 views.DocumentSet.show.DocumentList.title={0}
 views.DocumentSet.show.DocumentList.title.empty=(no title)

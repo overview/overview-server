@@ -270,7 +270,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
         upload.always -> stopped = true
         upload.done ->
           $(window).off('beforeunload.document-set-index-upload')
-          window.location.reload()
+          window.location.assign(window.location.origin + window.location.pathname + window.location.search)
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
         $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
@@ -362,7 +362,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
     refresh_from_csv_reader()
 
   $ ->
-    $('a[data-toggle=tab][href="#import-from-upload"]').one 'show', () ->
+    $('#import-from-upload').one 'activate', ->
       $form = $('#import-from-upload').find('form')
       $modal = $('#document-set-upload-progress').modal({ show: false })
       make_csv_upload_form($form, $modal)

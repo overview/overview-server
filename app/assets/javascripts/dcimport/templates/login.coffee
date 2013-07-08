@@ -1,6 +1,6 @@
 define [ 'jquery', 'underscore' ], ($, _) ->
   _.template("""
-    <h2><%- i18n('views.DocumentSet._dcimport.legend') %></h2>
+    <p class="preamble"><%- i18n('views.DocumentSet._dcimport.preamble') %></p>
     <form class="form-horizontal" method="get" action="#">
       <% if (error) { %>
         <div class="control-group error">

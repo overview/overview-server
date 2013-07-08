@@ -1,22 +1,26 @@
 define [
   'jquery',
+  'underscore',
   'i18n',
   'dcimport/CredentialStore',
   'dcimport/request_json_with_login',
   'dcimport/templates/project',
   'dcimport/templates/split_documents'
-], ($, i18n, CredentialStore, request_json_with_login, project_template, split_documents_template) ->
+], ($, _, i18n, CredentialStore, request_json_with_login, project_template, split_documents_template) ->
   PROJECT_URL = '/imports/documentcloud' # where to POST
 
-  empty_html = '<p>You have no projects to import.</p>' # FIXME i18n
+  empty_html = _.template("""
+    <p class="empty"><%- i18n('views.DocumentSet._dcimport.empty') %></p>
+  """)
 
   (div) ->
+    $div = $(div)
+
     show_data = (data) ->
-      $div = $(div)
       $div.empty()
 
       if !data?.projects?.length
-        $div.append(empty_html)
+        $div.append(empty_html({ i18n: i18n }))
       else
         $checkbox_form = $(split_documents_template({ i18n: i18n }))
         $div.append($checkbox_form)

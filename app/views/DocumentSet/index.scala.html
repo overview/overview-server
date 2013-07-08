@@ -16,7 +16,7 @@
 }
 
 @jsMessageKeys = @{Seq(
-  "views.DocumentSet._dcimport.legend",
+  "views.DocumentSet._dcimport.preamble",
   "views.DocumentSet._dcimport.error",
   "views.DocumentSet._dcimport.labels.email",
   "views.DocumentSet._dcimport.labels.password",
@@ -28,6 +28,7 @@
   "views.DocumentSet._uploadForm.error.SyntaxError",
   "views.DocumentSet._uploadForm.leavePageWarning",
   "views.DocumentSet._documentSet.action_import",
+  "views.DocumentSet._documentSet.nDocuments",
   "views.DocumentSet._share.loading",
   "views.DocumentSet._share.error",
   "views.DocumentSet._share.explanation",
@@ -44,35 +45,70 @@
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @views.html.DocumentSet._import(user, form)
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <div id="jobs-and-document-sets">
+      <div class="page-header"><h1>@m("h1")</h1></div>
 
-    @if(jobs) {
-      <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
-        <h2>@m("subtitle_jobs")</h2>
-        <p class="description">@m("description_jobs")</p>
-        <ul class="unstyled">
-          @jobs.toIterable.map(Function.tupled(views.html.ImportJob._documentSetCreationJob.apply))
-        </ul>
-      </div>
-    }
-
-    @if(documentSets || jobs) {
-      <div class="document-sets">
-        <ul class="unstyled">
-          @documentSets.map(displayDocumentSet(_))
-        </ul>
-        @if(documentSets) {
-          @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
-        } else {
-          <p class="no-document-sets">@m("no_document_sets")</p>
-        }
+      <div class="nav-buttons">
+        <a class="btn" href="#import-public">@m("import_public")</a>
+        <div class="dropdown">
+          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+            @m("import_dropdown")
+            <b class="caret"></b>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a href="#import-shared">@m("import_from_shared")</a></li>
+            <li><a href="#import-from-documentcloud-account">@m("import_from_documentcloud_account")</a></li>
+            <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
+          </ul>
+        </div>
       </div>
 
+      @if(jobs) {
+        <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
+          <h2>@m("subtitle_jobs")</h2>
+          <p class="description">@m("description_jobs")</p>
+          <ul class="unstyled">
+            @jobs.toIterable.map(Function.tupled(views.html.ImportJob._documentSetCreationJob.apply))
+          </ul>
+        </div>
+      }
 
-      @views.html.DocumentSet._errorList()
-      @views.html.DocumentSet._sharingOptions()
-      @views.html.DocumentSet._exportOptions()
-    }
+      @if(documentSets || jobs) {
+        <div class="document-sets">
+          <ul class="unstyled">
+            @documentSets.map(displayDocumentSet(_))
+          </ul>
+          @if(documentSets) {
+            @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+          } else {
+            <p class="no-document-sets">@m("no_document_sets")</p>
+          }
+        </div>
+
+
+        @views.html.DocumentSet._errorList()
+        @views.html.DocumentSet._sharingOptions()
+        @views.html.DocumentSet._exportOptions()
+      }
+    </div>
+
+    <div class="import-pane" id="import-public">
+      @views.html.DocumentSet._importPublic()
+    </div>
+
+    <div class="import-pane" id="import-shared">
+      @views.html.DocumentSet._importShared()
+    </div>
+
+    <div class="import-pane" id="import-from-documentcloud-account">
+      @views.html.DocumentSet._importDocumentCloud()
+    </div>
+
+    <div class="import-pane" id="import-from-upload">
+      @views.html.DocumentSet._uploadForm()
+    </div>
+
+    <div class="import-pane-click-sink"></div>
   }
 }
