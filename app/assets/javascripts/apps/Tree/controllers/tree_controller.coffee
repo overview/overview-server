@@ -95,10 +95,10 @@ define [
       if nodeid = selected_nodeid()
         expand(nodeid)
 
-      if tagid = state.selection.tags?[0] && tagid >= 0
+      if (tagid = state.selection.tags?[0]) && tagid >= 0
         cache.refresh_tagcounts(tagid)
 
-      if searchResultId = state.selection.searchResults?[0] && searchResultId >= 0
+      if (searchResultId = state.selection.searchResults?[0]) && searchResultId >= 0
         cache.refreshSearchResultCounts(searchResultId)
 
     select_nodeid = (nodeid) ->
