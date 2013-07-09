@@ -236,9 +236,16 @@ define [
       selectedPxs = []
       leafPxs = []
 
+      buffer = Math.max(@options.node_line_width, @options.node_line_width_selected, @options.node_line_width_leaf) * 0.5
+      minX = 0
+      maxX = @width
+
       for dn in @allDrawableNodes
         animated_node = dn.animated_node
         px = dn._px
+
+        continue if px.left + px.width + buffer < minX || px.left - buffer > maxX
+
         if animated_node.selected
           selectedPxs.push(px)
         else if animated_node.children?.length is 0
@@ -246,14 +253,10 @@ define [
         else
           normalPxs.push(px)
 
-      minX = 0
-      maxX = @width
       radius = @options.node_corner_radius
       drawPxs = (pxs) ->
         ctx.beginPath()
         for px in pxs
-          continue if px.right < minX
-          continue if px.left > maxX
           drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
 
       ctx.lineWidth = @options.node_line_width_selected
@@ -293,7 +296,7 @@ define [
         width = px.width - 12 # border + padding
         continue if width < 15
 
-        continue if px.right < 0
+        continue if px.left + px.width < 0
         continue if px.left > maxX
 
         node = dn.animated_node.node
@@ -317,7 +320,11 @@ define [
       ctx.save()
 
       lineWidth = ctx.lineWidth = @options.connector_line_width
-      ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
+      if @focus.zoom > 0.05
+        # setLineDash() is pretty, but at high zoom levels these lines are
+        # extremely long and so it costs lots and lots of CPU. Only enable it
+        # when zoomed further out.
+        ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
       ctx.strokeStyle = @options.color.line_faded
 
       ctx.beginPath()
@@ -356,10 +363,14 @@ define [
       ctx.strokeStyle = '#666666'
       ctx.fillStyle = '#ffffff'
       halfLineWidth = lineWidth * 0.5
+      radius = 6
+      outerRadius = radius + halfLineWidth
+      minX = 0
+      maxX = @width
 
       node_to_useful_xy = (drawable_node) ->
         px = drawable_node._px
-        if px.width > 20
+        if px.width > 20 && px.hmid + outerRadius >= minX && px.hmid - outerRadius <= maxX
           x: px.hmid
           y: px.top + px.height - halfLineWidth
         else
@@ -380,7 +391,7 @@ define [
       for circle in expandCircles.concat(collapseCircles)
         xy = circle[0]
         ctx.beginPath()
-        ctx.arc(xy.x, xy.y, 6, 0, Math.PI * 2, true)
+        ctx.arc(xy.x, xy.y, radius, 0, Math.PI * 2, true)
         ctx.fill()
         ctx.stroke()
 
