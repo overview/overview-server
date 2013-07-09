@@ -49,6 +49,10 @@
     <div id="jobs-and-document-sets">
       <div class="page-header"><h1>@m("h1")</h1></div>
 
+      @if(documentSets.isEmpty && jobs.isEmpty) {
+        <p class="preamble">@m("no_document_sets_or_jobs")</p>
+      }
+
       <div class="nav-buttons">
         <a class="btn" href="#import-public">@m("import_public")</a>
         <div class="dropdown">
