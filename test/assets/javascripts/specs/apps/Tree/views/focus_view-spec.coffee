@@ -12,6 +12,9 @@ require [
       @zoom = 1
       @pan = 0
 
+    target_zoom: -> @zoom
+    target_pan: -> @pan
+
   describe 'views/focus_view', ->
     describe 'FocusView', ->
       HANDLE_WIDTH=10
