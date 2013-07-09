@@ -100,7 +100,8 @@ trait ProjectSettings {
   )
   
   val messageBrokerDependencies = Seq(
-    "org.apache.activemq" % "apache-apollo" % "1.6"
+    "org.apache.activemq" % "apache-apollo" % "1.6",
+    javaxMailDep
   )
 
 }
