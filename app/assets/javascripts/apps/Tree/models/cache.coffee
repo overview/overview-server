@@ -86,7 +86,6 @@ define [
           .done (data) =>
             @on_demand_tree.id_tree.edit ->
               tagid = tagid
-              server_tagcounts = {}
 
               i = 0
               while i < data.length
