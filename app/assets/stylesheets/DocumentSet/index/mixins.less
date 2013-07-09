@@ -125,9 +125,11 @@
   margin: 0;
 
   li {
+    margin-left: -1em; // to make the on-hover shading look good
+    margin-right: -1em;
     display: block;
     .clearfix;
-    padding: .75em 0;
+    padding: .75em 1em;
     border-top: 1px dashed @mutedShadeColor;
 
     &:first-child {
