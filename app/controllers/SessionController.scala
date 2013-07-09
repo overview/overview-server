@@ -34,7 +34,6 @@ object SessionController extends Controller {
       user => {
         val recordedUser = user.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
         AuthResults.loginSucceeded(request, user).flashing(
-          "success" -> m("create.success"),
           "event" -> "session-create"
         )
       }

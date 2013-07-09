@@ -14,7 +14,6 @@ controllers.DocumentSetController.delete.success=You have deleted your document 
 controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.
 
-controllers.SessionController.create.success=You have logged in. Welcome back.
 controllers.SessionController.delete.success=You have logged out. We hope you’ll log in again sometime.
 
 controllers.UserController.create.success=Thank you for registering. There’s one more step: please check your email and click the confirmation link.
