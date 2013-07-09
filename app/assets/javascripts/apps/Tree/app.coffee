@@ -35,12 +35,14 @@ define [
           <div id="tree-app-left">
             <div id="tree-app-tree-container">
               <div id="tree-app-left-top">
+                <div id="tree-app-search"></div>
+              </div>
+              <div id="tree-app-left-middle">
                 <div id="tree-app-tree"></div>
                 <div id="tree-app-zoom-slider"></div>
               </div>
               <div id="tree-app-left-bottom">
                 <div id="tree-app-tags"></div>
-                <div id="tree-app-search"></div>
               </div>
             </div>
           </div>
@@ -52,7 +54,9 @@ define [
 
         $(options.mainEl).html(html)
 
-        $('#tree-app-search').remove() if searchDisabled
+        if searchDisabled
+          $('#tree-app-search').remove()
+          $('#tree-app-left').addClass('search-disabled')
 
         el = (id) -> document.getElementById(id)
 
@@ -66,7 +70,7 @@ define [
           documentCursor: el('tree-app-document-cursor')
           document: el('tree-app-document')
           left: el('tree-app-left')
-          leftTop: el('tree-app-left-top')
+          leftMiddle: el('tree-app-left-middle')
           leftBottom: el('tree-app-left-bottom')
         }
       )()
@@ -84,7 +88,7 @@ define [
 
         # Give room to the tags and search results at the bottom
         h = $(els.leftBottom).outerHeight()
-        $(els.leftTop).css({ bottom: h })
+        $(els.leftMiddle).css({ bottom: h })
 
         # Round the iframe's parent's width, because it needs an integer number of px
         $document = $(els.document)

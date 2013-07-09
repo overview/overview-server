@@ -6,13 +6,20 @@
 #tree-app-search {
   clear: both;
   border: 5px solid transparent;
-  border-top: 0;
 
   form {
     margin-bottom: 0;
   }
 
+  input[type=submit] {
+    .border-right-radius(0);
+  }
+
   input[type=text] {
+    &:focus {
+      z-index: auto; // Bootstrap rrgh, on-node-hover should come above <input type="text">
+    }
+
     &.state-inprogress {
       color: white;
       text-shadow: 0 0 .1em @grayDark;

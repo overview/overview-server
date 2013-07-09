@@ -29,7 +29,7 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
           <% } %>
           value="<%- selectedSearchResult ? selectedSearchResult.get('query') : '' %>"
           />
-        <div class="btn-group dropup">
+        <div class="btn-group">
           <input type="submit" value="Search" class="btn" />
           <% if (collection.length) { %>
             <button class="btn dropdown-toggle" data-toggle="dropdown">
