@@ -138,7 +138,7 @@ views.DocumentCloudImportJob.new.submit_credentials.label=Verify DocumentCloud e
 
 views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
-views.DocumentSet._dcimport.preamble=Enter your DocumentCloud email and password
+views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-logo">DocumentCloud</span> email and password to access your projects.
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
