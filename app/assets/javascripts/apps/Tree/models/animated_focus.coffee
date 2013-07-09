@@ -124,6 +124,21 @@ define [ './observable' ], (observable) ->
         @animator.animate_object_properties(this, { _animated_pan: pan }, undefined, time)
       this._notify('pan', pan)
 
+    animate_zoom_and_pan: (zoom, pan, time=undefined) ->
+      zoom = @_sanify_zoom(zoom)
+      pan = @_sanify_pan_at_zoom(pan, zoom)
+      time = Date.now() if !time?
+      this._maybe_notifying_needs_update ->
+        @animator.animate_object_properties(this, { _animated_zoom: zoom, _animated_pan: pan }, undefined, time)
+      this._notify('zoom', @zoom)
+      this._notify('pan', @pan)
+
+    isZoomedInFully: ->
+      @target_zoom() <= MIN_ZOOM
+
+    isZoomedOutFully: ->
+      @target_zoom() >= 1
+
     _sanify_zoom: (zoom) ->
       if zoom > 1
         1

@@ -123,8 +123,8 @@ define [ 'jquery', '../models/observable' ], ($, observable) ->
     # * "left" and "right" may overlap "middle", but they will always leave
     #   @options.handle_width pixels *not* overlapped.
     _get_xs_and_widths: () ->
-      zoom = @focus.zoom
-      pan = @focus.pan
+      zoom = @focus.target_zoom()
+      pan = @focus.target_pan()
 
       width = @div.clientWidth || $(@div).width() # first is subpixel-perfect; the second is for tests
 

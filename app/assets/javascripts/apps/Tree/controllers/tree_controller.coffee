@@ -83,11 +83,13 @@ define [
       state.set('selection', new_selection)
       cache.on_demand_tree.unload_node_children(nodeid)
 
-    view.observe 'zoom-pan', (obj) ->
+    view.observe 'zoom-pan', (obj, options) ->
       log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
       focus.set_auto_pan_zoom(false)
-      focus.set_zoom(obj.zoom)
-      focus.set_pan(obj.pan)
+      if options?.animate
+        focus.animate_zoom_and_pan(obj.zoom, obj.pan)
+      else
+        focus.set_zoom_and_pan(obj.zoom, obj.pan)
 
     state.observe 'selection-changed', ->
       if nodeid = selected_nodeid()

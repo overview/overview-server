@@ -1,3 +1,5 @@
+@import-once '../../mixins.less';
+
 #tree-app-tree {
   border: 5px solid transparent;
 
@@ -19,6 +21,31 @@
 
     .inner {
       display: inline;
+    }
+  }
+
+  .zoom-buttons {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    button {
+      .btn;
+      float: left;
+      clear: both;
+      display: block;
+      width: 100%;
+      font-weight: bold;
+      font-size: 1.5em;
+      padding: .25em .5em;
+      line-height: 1;
+
+      &:first-child {
+        .border-bottom-radius(0);
+      }
+      &:last-child {
+        .border-top-radius(0);
+      }
     }
   }
 }

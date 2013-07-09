@@ -414,6 +414,14 @@ define [
       @$hover_node_description = $('<div class="hover-node-description" style="display:none;"></div>')
       $div.append(@$hover_node_description) # FIXME find a better place for this
 
+      $zoom_buttons = $("""<div class="zoom-buttons">
+          <button class="zoom-in">+</button>
+          <button class="zoom-out">-</button>
+        </div>""")
+      $div.append($zoom_buttons)
+      @zoomInButton = $zoom_buttons.find('.zoom-in')[0]
+      @zoomOutButton = $zoom_buttons.find('.zoom-out')[0]
+
       this._attach()
       this.update()
 
@@ -492,6 +500,16 @@ define [
       @focus.observe('pan', update)
       @cache.tag_store.observe('changed', update)
       $(window).on('resize.tree-view', update)
+
+      @focus.observe('zoom', this._refresh_zoom_button_status.bind(this))
+      $(@zoomInButton).on 'click', (e) =>
+        e.preventDefault()
+        e.stopPropagation() # don't pan
+        @_notify('zoom-pan', { zoom: @focus.zoom * 0.5, pan: @focus.pan }, { animate: true })
+      $(@zoomOutButton).on 'click', (e) =>
+        e.preventDefault()
+        e.stopPropagation() # don't pan
+        @_notify('zoom-pan', { zoom: @focus.zoom * 2, pan: @focus.pan }, { animate: true })
 
       @cache.tag_store.observe('added', this._on_tag_added.bind(this))
       @cache.tag_store.observe('removed', this._on_tag_removed.bind(this))
@@ -663,6 +681,10 @@ define [
       if !@_needs_update
         @_needs_update = true
         this._notify('needs-update')
+
+    _refresh_zoom_button_status: ->
+      @zoomInButton.className = @focus.isZoomedInFully() && 'disabled' || ''
+      @zoomOutButton.className = @focus.isZoomedOutFully() && 'disabled' || ''
 
     # Sets the node being hovered.
     #
