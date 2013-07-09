@@ -234,7 +234,7 @@ views.DocumentSet._smallDocumentSet.import=Clone
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
-views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of documents called Document Sets. Click these buttons to import some document sets and get started:
+views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of documents called Document Sets. If you don’t have your own documents right now, click “Import an example document set”.
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
@@ -349,7 +349,7 @@ views.Session.new_.h1=Log in
 
 views.SharedDocumentSet.index.title=Document sets shared with you 
 views.SharedDocumentSet.index.preamble=When other Overview users share documents with you, they appear here.
-views.SharedDocumentSet.index.empty=There are currently no document sets shared with you
+views.SharedDocumentSet.index.empty=Nobody is sharing a document set with you right now.
 
 views.Tag._form.h3=Edit tag
 views.Tag._form.labels.name=Name
