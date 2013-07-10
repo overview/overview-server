@@ -8,6 +8,7 @@ Feature: Example document sets
     Given there is a public document set "example document set" owned by "admin@example.org"
       And I am logged in as "user@example.org"
     When I browse to the document sets page
+     And I click the "Import an example document set" link
      And I wait for all AJAX requests to complete
      And I wait for all animations to complete
     Then I should see a clone button for the example document set "example document set"

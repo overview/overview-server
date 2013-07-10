@@ -66,6 +66,11 @@ class CommonSteps extends BaseSteps {
     CommonSteps.clickElement(elementName, label)
   }
 
+  When("""^I click "([^"]*)" in the "([^"]*)" dropdown"""){ (link:String, menu: String) =>
+    CommonSteps.clickElement("a", menu)
+    CommonSteps.clickElement("a", link)
+  }
+
   When("""^I enter an? (\w+) of "([^"]*)"$"""){ (name:String, text:String) =>
     val elems = browser.$("input", withName(name))
     elems.text(text)
@@ -222,7 +227,7 @@ object CommonSteps {
   }
 
   def waitForJQuery = {
-    waitForJavascriptBoolean("return jQuery && jQuery.isReady;")
+    waitForJavascriptBoolean("return !!(window.jQuery && jQuery.isReady);")
   }
 
   def waitForFileReadersToComplete = {

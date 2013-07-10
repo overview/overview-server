@@ -6,7 +6,7 @@ Feature: Upload a CSV
   Scenario: Previewing a CSV upload
     Given I am logged in as "user@example.org"
     When I browse to the document set index
-     And I click the "CSV upload" link
+     And I click "Import from a CSV file" in the "Import your documents" dropdown
      And I wait for all animations to complete
      And I choose the file "CsvUpload.csv"
     Then I should see a CSV preview
@@ -15,7 +15,7 @@ Feature: Upload a CSV
   Scenario: Resetting a CSV upload
     Given I am logged in as "user@example.org"
     When I browse to the document set index
-     And I click the "CSV upload" link
+     And I click "Import from a CSV file" in the "Import your documents" dropdown
      And I wait for all animations to complete
      And I choose the file "CsvUpload.csv"
      And I click the "Reset" button
@@ -30,7 +30,7 @@ Feature: Upload a CSV
   Scenario: Creating a CsvImport DocumentSet
     Given I am logged in as "user@example.org"
     When I wait for a CSV upload with the file "CsvUpload.csv" to complete
-    Then I should see the document set "CsvUpload.csv"
+    Then I should see a document set "CsvUpload.csv"
 
   @worker
   Scenario: Viewing a CsvImport DocumentSet

@@ -32,7 +32,8 @@ class CsvImportSteps extends BaseSteps {
 object CsvImportSteps {
 
   def uploadFile(filename: String) = {
-    CommonSteps.clickElement("a", "CSV upload")
+    CommonSteps.clickElement("a", "Import your documents")
+    CommonSteps.clickElement("a", "Import from a CSV file")
     CommonSteps.waitForAnimationsToComplete
     CommonSteps.chooseFile(filename)
     CommonSteps.waitForFileReadersToComplete

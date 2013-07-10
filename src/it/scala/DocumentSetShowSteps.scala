@@ -23,7 +23,7 @@ class DocumentSetShowSteps extends BaseSteps {
     CommonSteps.waitForAjaxToComplete
     val iframe = browser.findFirst("#document iframe").getElement
     browser.webDriver.switchTo.frame(iframe)
-    browser.findFirst("h3").getText must beEqualTo(title)
+    browser.findFirst("h2").getText must beEqualTo(title)
     val divClass = docType match {
       case "Facebook" => "type-facebook"
       case "Twitter" => "type-twitter"
@@ -43,7 +43,7 @@ class DocumentSetShowSteps extends BaseSteps {
   Then("""^tag "([^"]*)" should have (\d+) documents$""") { (tagName: String, count: Int) =>
     browser.find(".tag-name", withText(tagName)).click()
     CommonSteps.waitForAjaxToComplete
-    val t = browser.find("#document-list h4").getText()
+    val t = browser.find("#document-list-title").getText()
     t must startWith(s"$count documents")
   }
 
@@ -53,7 +53,7 @@ object DocumentSetShowSteps {
   private def browser = Framework.browser
 
   def clickDocument(title: String): Unit = {
-    val elem = browser.findFirst("#document-list a", new Filter("title", title))
+    val elem = browser.findFirst("#document-list h3", withText(title))
     elem.click()
   }
 }

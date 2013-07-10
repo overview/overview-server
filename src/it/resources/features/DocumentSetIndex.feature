@@ -7,4 +7,4 @@ Feature: Show my document sets
     Given there is a document set "my document set" owned by "user@example.org"
       And I am logged in as "user@example.org"
     When I browse to the document set index
-    Then I should see the document set "my document set"
+    Then I should see a document set "my document set"

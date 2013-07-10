@@ -28,7 +28,8 @@ Feature: Shared document sets
       And "user2@example.org" is allowed to view the document set "example document set"
       And I am logged in as "user2@example.org"
     When I browse to the document sets page
-     And I click the "Document sets shared with you" link
+     And I click "Import documents shared with you" in the "Import your documents" dropdown
+     And I wait for all animations to complete
      And I wait for all AJAX requests to complete
     Then I should see a clone button for the shared document set "example document set"
 

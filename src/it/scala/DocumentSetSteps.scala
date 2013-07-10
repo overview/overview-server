@@ -37,6 +37,7 @@ class DocumentSetSteps extends BaseSteps {
 
   When("""^I clone the example document set "([^"]*)"$"""){ (title:String) =>
     browser.goTo(routes.DocumentSetController.index(0).url)
+    CommonSteps.clickElement("a", "Import an example document set")
     CommonSteps.waitForAjaxToComplete
     CommonSteps.waitForAnimationsToComplete
     browser.findFirst("#import-public-document-sets form button").click()
@@ -44,8 +45,8 @@ class DocumentSetSteps extends BaseSteps {
 
   When("""^I clone the shared document set "([^"]*)"$"""){ (title:String) =>
     browser.goTo(routes.DocumentSetController.index(0).url)
-    CommonSteps.waitForAnimationsToComplete // TODO there should be no animations here
-    CommonSteps.clickElement("a", "Document sets shared with you")
+    CommonSteps.clickElement("a", "Import your documents")
+    CommonSteps.clickElement("a", "Import documents shared with you")
     CommonSteps.waitForAjaxToComplete
     CommonSteps.waitForAnimationsToComplete
     browser.findFirst("#import-shared-document-sets form button").click()
@@ -72,7 +73,7 @@ class DocumentSetSteps extends BaseSteps {
 
   Then("""^I should see a document set "([^"]*)"$""") { (title:String) =>
     val documentSet = DocumentSetSteps.getDocumentSet(title)
-    Option(browser.findFirst(".document-sets h2", withText(title))) must beSome
+    Option(browser.findFirst(".document-sets h3", withText(title))) must beSome
   }
 
   Then("""^the document set "([^"]*)" should be public$"""){ (title:String) =>
