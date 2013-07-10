@@ -4,7 +4,7 @@ define [
   './Document'
 ], ($, Backbone, Document) ->
   URL_BASE = "/documents"
-  DOCUMENTCLOUD_BASE = "//www.documentcloud.org/documents"
+  DOCUMENTCLOUD_BASE = "https://www.documentcloud.org/documents"
 
   Backbone.Model.extend
     documentCloudUrl: (id) ->
