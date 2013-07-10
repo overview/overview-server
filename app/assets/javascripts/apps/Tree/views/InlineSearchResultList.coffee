@@ -140,7 +140,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
       if existing?
         @trigger('search-result-clicked', existing)
-      else
+      else if query
         @trigger('create-submitted', query)
 
       $input.val('')
