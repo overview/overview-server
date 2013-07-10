@@ -275,6 +275,12 @@ views.DocumentSet.show.DocumentListTitle.searchResult.title_html=<strong>{0}</st
 views.DocumentSet.show.DocumentListTitle.searchResult.edit=edit tag…
 views.DocumentSet.show.DocumentListTitle.multiple.title_html=<strong>{0}</strong> in selection
 
+views.DocumentSet.show.InlineSearchResultList.query_placeholder=Search all documents
+views.DocumentSet.show.InlineSearchResultList.search=Search
+views.DocumentSet.show.InlineSearchResultList.create_tag=Create tag from search results
+
+views.DocumentSet.show.SearchResultList.tag_name=Documents matching search “{0}”
+
 views.DocumentSet.show.tag_list.header=Tags
 views.DocumentSet.show.tag_list.n_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentSet.show.tag_list.preamble=These are all the tags you have created in this document set.

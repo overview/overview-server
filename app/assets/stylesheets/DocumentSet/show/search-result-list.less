@@ -8,7 +8,8 @@
   border: 5px solid transparent;
 
   form {
-    margin-bottom: 0;
+    margin: 0;
+    display: inline-block;
   }
 
   input[type=submit] {
@@ -34,6 +35,23 @@
       color: white;
       text-shadow: 0 0 .1em @grayDark;
       background-color: @complete-color;
+    }
+  }
+
+  a.create-tag {
+    line-height: 30px; // from Bootstrap's form
+    vertical-align: bottom;
+    cursor: pointer;
+    margin-left: .75em;
+
+    i {
+      line-height: 30px;
+      vertical-align: bottom;
+      margin-right: .3em;
+    }
+
+    &:hover i {
+      text-decoration: none;
     }
   }
 }

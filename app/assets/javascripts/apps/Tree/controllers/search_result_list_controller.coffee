@@ -3,11 +3,16 @@ define [
   '../collections/SearchResultStoreProxy'
   '../views/InlineSearchResultList'
   './logger'
-], (Selection, SearchResultStoreProxy, InlineSearchResultListView, Logger) ->
+  'i18n'
+], (Selection, SearchResultStoreProxy, InlineSearchResultListView, Logger, i18n) ->
+  t = (key, args...) -> i18n("views.DocumentSet.show.SearchResultList.#{key}", args...)
   log = Logger.for_component('search_result_list')
 
   search_result_to_short_string = (search_result) ->
     "#{search_result.id} (#{search_result.query})"
+
+  searchResultToTagName = (searchResultModel) ->
+    t('tag_name', searchResultModel.get('query'))
 
   # SearchResult controller
   #
@@ -30,6 +35,9 @@ define [
     view = new InlineSearchResultListView({
       collection: proxy.collection
       searchResultIdToModel: (id) -> if proxy.canMap(id) then proxy.map(id) else undefined
+      canCreateTagFromSearchResult: (searchResultModel) ->
+        searchResultModel &&
+          !cache.tag_store.find_by_name(searchResultToTagName(searchResultModel))?
       state: state
       el: el
     })
@@ -43,6 +51,21 @@ define [
       searchResult = proxy.unmap(searchResult)
       log('clicked search result', "#{search_result_to_short_string(searchResult)}")
       state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
+
+    view.on 'create-tag-clicked', (searchResultModel) ->
+      tag = { name: searchResultToTagName(searchResultModel) }
+      log('created tag', tag.name)
+      tag = cache.add_tag(tag)
+      cache.create_tag(tag)
+      cache.addTagToSelection(tag, state.selection.pick('searchResults'))
+        .done ->
+          cache.refresh_tagcounts(tag)
+          # This shouldn't be done on "done": it should be done right away.
+          # But that leads to a crash, as our Backbone proxies execute out
+          # of order. Make TagStore and SearchResultStore plain
+          # Backbone.Collections, then un-indent this.
+          state.set('selection', new Selection({ tags: [ tag.id ] }))
+      state.set('focused_tag', tag)
 
     view.on 'create-submitted', (query) ->
       searchResult = { query: query }

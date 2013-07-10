@@ -7,7 +7,10 @@ define [
   './search_result_store'
   './needs_resolver'
   './transaction_queue'
-], ($, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue) ->
+  'i18n'
+], ($, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue, i18n) ->
+  t = (key, args...) -> i18n("views.DocumentSet.show.cache.#{key}", args...)
+
   Deferred = $.Deferred
 
   # A Cache stores documents, nodes and tags, plus a transaction queue.

@@ -1,7 +1,14 @@
-define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Backbone) ->
-  # FIXME i18n
+define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($, _, Backbone, i18n) ->
+  t = (key, args...) -> i18n("views.DocumentSet.show.InlineSearchResultList.#{key}", args...)
 
   # A list of inline search results
+  #
+  # Parameters:
+  #
+  # * collection, a Backbone.Collection of search-result models
+  # * searchResultIdToModel, a function mapping search-result ID to search-result model
+  # * state, a State
+  # * (optional) canCreateTagFromSearchResult, a function mapping search-result model to boolean.
   #
   # Events:
   #
@@ -9,12 +16,14 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
   # * create-submitted(query): The user requested adding a new search with
   #   the given query. query is guaranteed not to match any search results in
   #   the collection, and the query will always be trimmed of whitespace.
+  # * create-tag-clicked(searchResult): A "create tag" button was clicked
   Backbone.View.extend
     id: 'search-result-list'
 
     events:
       'click li.search-result': '_onClickSearchResult'
       'click .dropdown-toggle': '_onClickDropdownToggle'
+      'click a.create-tag:not(.disabled)': '_onClickCreateTag'
       'input input[type=text]': '_onInput'
       'submit form': '_onSubmit'
 
@@ -23,14 +32,14 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
         <input
           type="text"
           name="query"
-          placeholder="Search all documents"
+          placeholder="<%- t('query_placeholder') %>"
           <% if (selectedSearchResult) { %>
             class="state-<%- (selectedSearchResult.get('state') || 'InProgress').toLowerCase() %>"
           <% } %>
           value="<%- selectedSearchResult ? selectedSearchResult.get('query') : '' %>"
           />
         <div class="btn-group">
-          <input type="submit" value="Search" class="btn" />
+          <input type="submit" value="<%- t('search') %>" class="btn" />
           <% if (collection.length) { %>
             <button class="btn dropdown-toggle" data-toggle="dropdown">
               <span class="caret"></span>
@@ -47,6 +56,12 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
           <% } %>
         </div>
       </form>
+      <% if (canCreateTagFromSearchResult) { %>
+        <a
+          class="create-tag"
+          data-cid="<%- selectedSearchResult.cid %>"
+          ><i class="icon-tag"></i><%- t('create_tag') %></a>
+      <% } %>
     """)
 
     initialize: ->
@@ -86,6 +101,8 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
       html = @template({
         collection: @collection
         selectedSearchResult: selectedSearchResult
+        canCreateTagFromSearchResult: @options.canCreateTagFromSearchResult?(selectedSearchResult)
+        t: t
       })
 
       @$el.html(html)
@@ -101,6 +118,14 @@ define [ 'jquery', 'underscore', 'backbone', 'bootstrap-dropdown' ], ($, _, Back
 
     _onClickDropdownToggle: (e) ->
       e.preventDefault() # don't submit the form
+
+    _onClickCreateTag: (e) ->
+      e.preventDefault()
+      model = @_eventToModel(e)
+      $(e.target).closest('a')
+        .addClass('disabled')
+        .fadeOut(-> $(e.target).remove())
+      @trigger('create-tag-clicked', model)
 
     _onInput: (e) ->
       e.currentTarget.className = 'editing'
