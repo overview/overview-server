@@ -53,17 +53,17 @@ class _documentSetSpec extends Specification {
     }
 
     "should show a document count" in new NormalDocumentSetContext {
-      $("span.document-count").text() must endWith("document_count")
+      $("span.document-count").text() must endWith("nDocuments")
     }
 
     "should not show error count if none exist" in new NormalDocumentSetContext {
-      $(".error-list").length must be_==(0)
+      $(".error-count").length must be_==(0)
     }
 
     "should show error count popup if there are errors" in new DocumentSetWithErrorsContext {
-      $(".error-list").text.trim must endWith("error_count")
-      $(".error-list").attr("href") must be equalTo("/documentsets/1/error-list")
-      $(".error-list").attr("data-target") must be equalTo("#error-list-modal")
+      $("a.error-count").text.trim must endWith("nErrors")
+      $("a.error-count").attr("href") must be equalTo("/documentsets/1/error-list")
+      $("a.error-count").attr("data-target") must be equalTo("#error-list-modal")
     }
   }
 }

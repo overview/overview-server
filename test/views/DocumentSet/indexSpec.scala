@@ -79,7 +79,7 @@ class indexSpec extends Specification {
         DocumentSet(id=2, title="title2", query=Some("query2"))
       )
       $(".document-sets").length must equalTo(1)
-      $(".document-sets li#document-set-1 h2 a").attr("href") must endWith("/1")
+      $(".document-sets li#document-set-1 h3 a").attr("href") must endWith("/1")
       $(".document-sets li#document-set-2").text must contain("title2")
     }
     
