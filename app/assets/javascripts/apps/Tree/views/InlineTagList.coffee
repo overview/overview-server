@@ -74,7 +74,12 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
 
     render: ->
       selectedTagId = @state.selection.tags[0]
-      selectedTag = selectedTagId && @tagIdToModel(selectedTagId)
+      selectedTag = undefined
+      if selectedTagId?
+        try
+          selectedTag = @tagIdToModel(selectedTagId)
+        catch e
+          console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
 
       html = @template({
         collection: @collection
