@@ -23,6 +23,7 @@ case class DocumentSetCreationJob(
   id: Long = 0L,
   documentSetId: Long = 0L,
   @Column("type") jobType: DocumentSetCreationJobType.Value,
+  lang: String = "en",
   documentcloudUsername: Option[String] = None,
   documentcloudPassword: Option[String] = None,
   splitDocuments: Boolean = false,

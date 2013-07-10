@@ -9,6 +9,7 @@ case class DocumentSet(
   override val id: Long = 0,
   title: String = "",
   query: Option[String] = None,
+  lang: String = "en",
   @Column("public") isPublic: Boolean = false,
   createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
   documentCount: Int = 0,

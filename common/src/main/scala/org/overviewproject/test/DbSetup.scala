@@ -19,8 +19,8 @@ object DbSetup {
 
   def insertCsvImportDocumentSet(uploadedFileId: Long)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count)
-      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0)
+      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count, lang)
+      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en')
       """).on(
       'title -> "Csv Import",
       'uploadedFileId -> uploadedFileId).executeInsert().getOrElse(failInsert)
@@ -28,8 +28,8 @@ object DbSetup {
 
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count)
-      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0)
+      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count, lang)
+      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en')
       """).on(
       'title -> ("From query: " + query),
       'query -> query).executeInsert().getOrElse(failInsert)
