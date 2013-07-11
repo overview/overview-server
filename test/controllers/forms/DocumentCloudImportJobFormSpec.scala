@@ -16,6 +16,7 @@ class DocumentCloudImportJobFormSpec extends Specification {
         ownerEmail=ownerEmail,
         title="",
         query="projectid:1-project",
+        lang="en",
         credentials=None,
         splitDocuments=false
       )
@@ -52,6 +53,12 @@ class DocumentCloudImportJobFormSpec extends Specification {
       form.bind(data).error("query") must(beSome)
     }.pendingUntilFixed("This will work in Play 2.1.2. See https://github.com/playframework/Play20/pull/910")
 
+    "fail if lang is not supported" in new BasicFormScope {
+      override def data = super.data ++ Map("lang" -> "not a valid language")
+      
+      form.bind(data).error("lang") must beSome
+    }
+    
     "add ownerEmail to the return value" in new BasicFormScope {
       form.bind(data).value.map(_.ownerEmail) must beSome(ownerEmail)
     }
@@ -68,6 +75,13 @@ class DocumentCloudImportJobFormSpec extends Specification {
     "set splitDocuments to false" in new BasicFormScope {
       override def data = super.data ++ Map("split_documents" -> "false")
       form.bind(data).value.map(_.splitDocuments) must beSome(false)
+    }
+    
+    "set lang" in new BasicFormScope {
+      val lang = "sv"
+      override def data = super.data ++ Map("lang" -> lang)
+      
+      form.bind(data).value.map(_.lang) must beSome(lang)
     }
 
     "add credentials if given" in new BasicFormScope {

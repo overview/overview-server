@@ -13,21 +13,23 @@ object DocumentCloudImportJobStore {
     */
   def insert(job: DocumentCloudImportJob) : DocumentSetCreationJob = {
     val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
-      title=job.title,
-      query=Some(job.query)
+      title = job.title,
+      query = Some(job.query),
+      lang = job.lang
     ))
     DocumentSetUserStore.insertOrUpdate(DocumentSetUser(
-      documentSetId=documentSet.id,
-      userEmail=job.ownerEmail,
-      role=Ownership.Owner
+      documentSetId = documentSet.id,
+      userEmail = job.ownerEmail,
+      role = Ownership.Owner
     ))
     DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-      documentSetId=documentSet.id,
-      state=DocumentSetCreationJobState.NotStarted,
-      jobType=DocumentSetCreationJobType.DocumentCloud,
-      documentcloudUsername=job.credentials.map(_.username),
-      documentcloudPassword=job.credentials.map(_.password),
-      splitDocuments=job.splitDocuments
+      documentSetId = documentSet.id,
+      state = DocumentSetCreationJobState.NotStarted,
+      jobType = DocumentSetCreationJobType.DocumentCloud,
+      lang = job.lang,
+      documentcloudUsername = job.credentials.map(_.username),
+      documentcloudPassword = job.credentials.map(_.password),
+      splitDocuments = job.splitDocuments
     ))
   }
 }
