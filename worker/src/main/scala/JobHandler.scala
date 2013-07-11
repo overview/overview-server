@@ -163,7 +163,7 @@ object JobHandler {
     documentSet.map { ds =>
       val nodeWriter = new NodeWriter(job.documentSetId)
 
-      val indexer = new DocumentSetIndexer(nodeWriter, progressFn)
+      val indexer = new DocumentSetIndexer(nodeWriter, job.lang, progressFn)
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
       producer.produce()

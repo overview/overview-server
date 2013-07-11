@@ -12,6 +12,7 @@ class JobRestarterSpec extends Specification with Mockito {
 
   class TestJob extends PersistentDocumentSetCreationJob {
     val jobType = CsvUpload
+    val lang = "se"
     val documentSetId = 1L
     val documentCloudUsername: Option[String] = None
     val documentCloudPassword: Option[String] = None

@@ -18,25 +18,27 @@ import org.specs2.mutable.Specification
 import org.overviewproject.nlp.UnigramDocumentVectorGenerator
 import org.overviewproject.nlp.Lexer
 import scala.Int.int2long
+import org.overviewproject.nlp.StopWordSet
 
 class IndexDocumentsSpec extends Specification {
   
   "Lexer" should {
-
+	 
+    val stopWords = StopWordSet("en")
     "remove stop words" in {
-      Lexer.makeTerms("no i haha you") must beEqualTo(Seq("haha"))
+      Lexer.makeTerms("no i haha you", stopWords) must beEqualTo(Seq("haha"))
     }
     
     "tokenize a complex string" in {
       val sentence = "the quick\t  brown.. Fox jump{s over\nyour 500 lAzy"
       val terms = Seq("quick", "brown", "fox", "jumps", "lazy")
-      Lexer.makeTerms(sentence) must beEqualTo(terms)
+      Lexer.makeTerms(sentence, stopWords) must beEqualTo(terms)
     }
     
     "truncate long words" in {
       val longword = "thequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydogthequickbrownfoxjumpsoverthelazydog"
       val sentence = "now is the time for all good " + longword + " to come to the aid of their module."
-      Lexer.makeTerms(sentence).map(_.length).max must beEqualTo(Lexer.maxTokenLength)      
+      Lexer.makeTerms(sentence, stopWords).map(_.length).max must beEqualTo(Lexer.maxTokenLength)      
     }
   }    
 
@@ -49,7 +51,8 @@ class IndexDocumentsSpec extends Specification {
       
       // load every doc in the test directory, generate terms and load into vector generator
       val filenames =  new File("worker/src/test/resources/docs").listFiles
-      val docterms = filenames.map(filename => (filename, Lexer.makeTerms(io.Source.fromFile(filename).mkString)))
+      val docterms = filenames.map(filename => (filename, 
+          Lexer.makeTerms(io.Source.fromFile(filename).mkString, StopWordSet("en"))))
       for ((filename,terms) <- docterms) {
         vectorGen.addDocument(filename.hashCode, terms)
       }
