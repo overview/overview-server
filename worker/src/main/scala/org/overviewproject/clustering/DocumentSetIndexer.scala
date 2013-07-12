@@ -25,7 +25,7 @@ import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.nlp.StopWordSet
 
 
-class DocumentSetIndexer(nodeWriter: NodeWriter, lang: String, progAbort: ProgressAbortFn) extends DocumentConsumer {
+class DocumentSetIndexer(nodeWriter: NodeWriter, lang: String, suppliedStopWords: Option[String], progAbort: ProgressAbortFn) extends DocumentConsumer {
 
   // --- private ---
   val t0 = System.nanoTime()
@@ -39,7 +39,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, lang: String, progAbort: Progre
   
   // When we get the document text back, we feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
-    vectorGen.addDocument(documentId, Lexer.makeTerms(text, StopWordSet(lang, None)))
+    vectorGen.addDocument(documentId, Lexer.makeTerms(text, StopWordSet(lang, suppliedStopWords)))
   }
 
   private def addDocumentDescriptions(docVecs: DocumentSetVectors)(implicit c: Connection) {
