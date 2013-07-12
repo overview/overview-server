@@ -18,13 +18,14 @@ class StopWordSetSpec extends Specification {
       stopWords must contain("och")
     }
     
-    "split supplied stopwords by whitespace" in {
-     val (word1, word2, word3) = ("one", "two", "three")
-      val suppliedStopWordsString = s"  $word1\t  $word2\n\n$word3\n"
+    "split supplied stopwords by whitespace and commas" in {
+     val (word1, word2, word3, word4) = ("one", "two", "three", "four")
+     
+      val suppliedStopWordsString = s"  $word1\t  $word2\n\n$word3,$word4\n"
       
       val stopWords: Set[String] = StopWordSet("en", Some(suppliedStopWordsString))
       
-      stopWords must contain(word1, word2, word3)
+      stopWords must contain(word1, word2, word3, word4)
     }
     
     "convert supplied stopwords to lowercase" in {

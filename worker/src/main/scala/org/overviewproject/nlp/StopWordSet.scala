@@ -28,10 +28,10 @@ object StopWordSet {
   private def fileAsStream(filename: String): InputStream = getClass.getResourceAsStream(filename)
 
   private def extractStopWords(wordString: Option[String]): Set[String] = wordString.map { s =>
-    val whitespace = """[\s\u00A0]+""".r
+    val separators = """[\s\u00A0,]+""".r
     val invalidChars = """[^\w\d'-]""".r
     
-    val words = whitespace.split(s.trim).toSet
+    val words = separators.split(s.trim).toSet
     
     words.map { w =>
       invalidChars.replaceAllIn(w, "").toLowerCase
