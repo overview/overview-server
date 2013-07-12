@@ -39,7 +39,7 @@ class DocumentSetIndexer(nodeWriter: NodeWriter, lang: String, progAbort: Progre
   
   // When we get the document text back, we feed the text to the vector generator
   def processDocument(documentId: Long, text: String): Unit = {
-    vectorGen.addDocument(documentId, Lexer.makeTerms(text, StopWordSet(lang)))
+    vectorGen.addDocument(documentId, Lexer.makeTerms(text, StopWordSet(lang, None)))
   }
 
   private def addDocumentDescriptions(docVecs: DocumentSetVectors)(implicit c: Connection) {

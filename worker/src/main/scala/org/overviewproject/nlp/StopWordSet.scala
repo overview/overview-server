@@ -7,10 +7,12 @@ import org.overviewproject.util.Logger
 object StopWordSet {
   private val DefaultStopWordsFile: String = "/stopwords-en.csv"
   private val EmptyStopWordsStream: InputStream = new ByteArrayInputStream(Array.empty)
-  def apply(lang: String): Set[String] = {
+  
+  def apply(lang: String, suppliedStopWordString: Option[String]): Set[String] = {
     val stopWordLines = io.Source.fromInputStream(stopWordsFile(lang)).getLines
-
-    stopWordLines.toSet
+    val suppliedStopWords = extractStopWords(suppliedStopWordString)
+    
+    stopWordLines.toSet ++ suppliedStopWords
   }
 
   private def stopWordsFile(lang: String): InputStream = {
@@ -22,7 +24,12 @@ object StopWordSet {
       EmptyStopWordsStream
     }
   }
-
+  
   private def fileAsStream(filename: String): InputStream = getClass.getResourceAsStream(filename)
 
+  private def extractStopWords(wordString: Option[String]): Set[String] = wordString.map { s =>
+    val whitespace = """[\s\u00A0]+""".r
+    whitespace.split(s.trim).toSet
+  }.getOrElse(Set.empty[String]) 
+    
 }
