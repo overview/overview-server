@@ -11,6 +11,7 @@ case class DocumentSet(
   query: Option[String] = None,
   lang: String = "en",
   @Column("public") isPublic: Boolean = false,
+  suppliedStopWords: Option[String] = None,
   createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
   documentCount: Int = 0,
   documentProcessingErrorCount: Int = 0,

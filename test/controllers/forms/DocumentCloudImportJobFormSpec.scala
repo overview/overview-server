@@ -13,12 +13,13 @@ class DocumentCloudImportJobFormSpec extends Specification {
       def data : Map[String,String] = Map()
       def form : Form[DocumentCloudImportJob] = DocumentCloudImportJobForm(ownerEmail)
       def baseJob = DocumentCloudImportJob(
-        ownerEmail=ownerEmail,
-        title="",
-        query="projectid:1-project",
-        lang="en",
-        credentials=None,
-        splitDocuments=false
+        ownerEmail = ownerEmail,
+        title = "",
+        query = "projectid:1-project",
+        lang = "en",
+        credentials = None,
+        splitDocuments = false,
+        suppliedStopWords = None
       )
     }
 
@@ -99,6 +100,13 @@ class DocumentCloudImportJobFormSpec extends Specification {
     "add no credentials if the given credentials are incomplete" in new BasicFormScope {
       override def data = super.data ++ Map("documentcloud_username" -> "user@documentcloud.org")
       form.bind(data).value must beSome(baseJob)
+    }
+    
+    "add supplied stopwords if given" in new BasicFormScope {
+      val suppliedStopWords = "ignore these words"
+      override def data = super.data ++ Map("supplied_stop_words" -> suppliedStopWords)
+      
+      form.bind(data).value.map(_.suppliedStopWords).flatten must beSome(suppliedStopWords)  
     }
   }
 }

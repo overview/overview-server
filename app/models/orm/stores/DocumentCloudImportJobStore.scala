@@ -15,7 +15,8 @@ object DocumentCloudImportJobStore {
     val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
       title = job.title,
       query = Some(job.query),
-      lang = job.lang
+      lang = job.lang,
+      suppliedStopWords = job.suppliedStopWords
     ))
     DocumentSetUserStore.insertOrUpdate(DocumentSetUser(
       documentSetId = documentSet.id,
@@ -29,7 +30,8 @@ object DocumentCloudImportJobStore {
       lang = job.lang,
       documentcloudUsername = job.credentials.map(_.username),
       documentcloudPassword = job.credentials.map(_.password),
-      splitDocuments = job.splitDocuments
+      splitDocuments = job.splitDocuments,
+      suppliedStopWords = job.suppliedStopWords
     ))
   }
 }
