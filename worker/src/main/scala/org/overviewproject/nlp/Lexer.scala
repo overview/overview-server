@@ -42,7 +42,7 @@ object Lexer {
     text = "<[^>]*>".r.replaceAllIn(text, "")
 
     // collapse runs of spaces (including non-breaking space, U+160) into single space
-    text = "[ \t\n\r\u0160]+".r.replaceAllIn(text, " ")
+    text = "[ \t\n\r\u00A0]+".r.replaceAllIn(text, " ")
 
     // allow only alphanum, dash, apostrophe, space
     text = text.filter(c => c.isDigit || c.isLetter || " -'".contains(c))
