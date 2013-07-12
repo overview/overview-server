@@ -29,7 +29,13 @@ object StopWordSet {
 
   private def extractStopWords(wordString: Option[String]): Set[String] = wordString.map { s =>
     val whitespace = """[\s\u00A0]+""".r
-    whitespace.split(s.trim).toSet
+    val invalidChars = """[^\w\d'-]""".r
+    
+    val words = whitespace.split(s.trim).toSet
+    
+    words.map { w =>
+      invalidChars.replaceAllIn(w, "").toLowerCase
+    }
   }.getOrElse(Set.empty[String]) 
     
 }

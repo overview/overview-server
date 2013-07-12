@@ -27,6 +27,22 @@ class StopWordSetSpec extends Specification {
       stopWords must contain(word1, word2, word3)
     }
     
+    "convert supplied stopwords to lowercase" in {
+      val stopWord = "STOPWORD"
+        
+      val stopWords: Set[String] = StopWordSet("en", Some(stopWord))
+      
+      stopWords must contain(stopWord.toLowerCase)
+    }
+    
+    "strip all non-alphanumeric chars except - and ' from supplied stopwords" in {
+      val (word1, word2, word3) = ("qapla'", "7-of-9", "engage")
+      val stopWordString = s"""$word1! ($word2) "$word3""""
+      
+      val stopWords: Set[String] = StopWordSet("en", Some(stopWordString))
+      
+      stopWords must contain(word1, word2, word3)
+    }
   }
 
 }
