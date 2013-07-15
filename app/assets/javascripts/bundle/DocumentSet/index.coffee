@@ -50,15 +50,16 @@ requirejs.config({
 })
 
 require [
-  'for-view/DocumentSet/_index/nav',
-  'for-view/DocumentSet/_index/import-dc-query',
-  'for-view/DocumentSet/_index/import-public-document-sets',
-  'for-view/DocumentSet/_index/import-shared-document-sets',
-  'for-view/DocumentSet/_index/import-upload',
-  'for-view/DocumentSet/_index/share-document-set',
-  'for-view/DocumentSet/_index/watch-jobs',
-  'for-view/DocumentSet/index',
-  'elements/form-submit-with-feedback',
-  'elements/form-with-confirm',
+  'for-view/DocumentSet/_index/nav'
+  'for-view/DocumentSet/_index/import-dc-query'
+  'for-view/DocumentSet/_index/import-public-document-sets'
+  'for-view/DocumentSet/_index/import-shared-document-sets'
+  'for-view/DocumentSet/_index/import-upload'
+  'for-view/DocumentSet/_index/share-document-set'
+  'for-view/DocumentSet/_index/watch-jobs'
+  'for-view/DocumentSet/index'
+  'elements/form-submit-with-feedback'
+  'elements/form-with-confirm'
   'elements/twitter-bootstrap'
+  'common/disable-forms-on-unload'
 ], ->
