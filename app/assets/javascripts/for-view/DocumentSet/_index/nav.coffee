@@ -13,7 +13,8 @@ define [ 'jquery' ], ($) ->
     $buttonsDiv.on 'click', 'a', (e) ->
       e.preventDefault() # We want to scroll ourselves
       href = $(this).attr('href')
-      window.location.hash = href # which will then call setHref()
+      window.history?.replaceState?({}, '', href)
+      setHref(href)
 
     $(window).on 'hashchange', ->
       setHref(window.location.hash)

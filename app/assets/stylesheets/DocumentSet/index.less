@@ -10,7 +10,7 @@ body.document-set-index {
   }
 
   .nav-buttons {
-    margin: .5em 0 1em;
+    margin: (@overviewPageHeaderMarginTop + (@overviewPageHeaderLineHeight - 2em) / 2) 0 1em;
     float: right;
 
     .dropdown {
@@ -18,12 +18,18 @@ body.document-set-index {
     }
   }
 
-  .nav-buttons + * {
-    clear: both;
+  #jobs-and-document-sets .nav-buttons {
+    margin: 1.5em 0;
+    display: block;
+    text-align: right;
+
+    a {
+      text-align: left;
+    }
   }
 
-  .import-pane .nav-buttons {
-    margin-top: -2.5em; // is this right? It looks right...
+  .document-sets {
+    clear: both;
   }
 
   p.preamble {
@@ -35,27 +41,19 @@ body.document-set-index {
     position: relative;
 
     .import-pane {
+      background: @bodyBackground;
       position: absolute;
       .opacity(0);
       top: 0;
-      left: 100%;
+      left: 0;
       width: 100%;
-      .transition(~"opacity .35s ease-in-out, left .35s ease-in-out");
-    }
-
-    .import-pane-click-sink {
-      // So users can't click on import panes that are scrolled out of view
-      position: absolute;
-      .opacity(0);
-      left: 100%;
-      width: 100%;
-      top: 0;
-      height: 100%;
-      z-index: 1;
+      .transition(opacity .35s ease-in-out);
     }
 
     #jobs-and-document-sets {
+      background: @bodyBackground;
       position: relative;
+      z-index: 1;
       .transition(~"opacity .35s ease-in-out, left .35s ease-in-out");
     }
 

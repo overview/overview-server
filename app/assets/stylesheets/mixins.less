@@ -1,10 +1,13 @@
 @import-once "./variables.less";
 @import-once "./vendor/bootstrap/less/mixins.less";
 
+@overviewPageHeaderMarginTop: 2em;
+@overviewPageHeaderLineHeight: 3em;
+
 .overview-page-header() {
   // Undo Twitter Bootstrap styles
   // XXX remove this stuff when Twitter Bootstrap is removed
-  margin: 2em 0 0;
+  margin: @overviewPageHeaderMarginTop 0 0;
   padding-bottom: 0;
   border: none;
 
