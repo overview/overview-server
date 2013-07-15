@@ -57,6 +57,7 @@ body.document-set-index {
       top: 0;
       left: 0;
       width: 100%;
+      z-index: -1;
       .transition(opacity .35s ease-in-out);
     }
 
@@ -77,6 +78,7 @@ body.document-set-index {
     &[data-import-pane="from-documentcloud-account"]>#import-from-documentcloud-account,
     &[data-import-pane="from-upload"]>#import-from-upload {
       left: 0;
+      z-index: 0;
       .opacity(100);
     }
   }
