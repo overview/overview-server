@@ -13,6 +13,12 @@
   <![endif]-->
 
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/index").url)
+
+  @* Let's hope there is no end-script tag in _supportedLanguages.... *@
+  <script>
+    window.supportedLanguages = @Html(views.DocumentSet._supportedLanguages().toString());
+    window.defaultLanguageCode = "@org.overviewproject.util.SupportedLanguages.defaultLanguage.languageCode";
+  </script>
 }
 
 @jsMessageKeys = @{Seq(
@@ -21,6 +27,7 @@
   "views.DocumentSet._dcimport.labels.email",
   "views.DocumentSet._dcimport.labels.password",
   "views.DocumentSet._dcimport.labels.split_documents",
+  "views.DocumentSet._dcimport.labels.language",
   "views.DocumentSet._dcimport.placeholders.email",
   "views.DocumentSet._dcimport.submit",
   "views.DocumentSet._dcimport.explanation",

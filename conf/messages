@@ -144,6 +144,7 @@ views.DocumentSet._dcimport.error=You entered a wrong email address or password,
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
 views.DocumentSet._dcimport.labels.split_documents=Split each document into individual pages
+views.DocumentSet._dcimport.labels.language=Language of the text in all documents
 views.DocumentSet._dcimport.placeholders.email=user@example.org
 views.DocumentSet._dcimport.submit=Log in to DocumentCloud
 views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to our servers when you import a project, and it will be purged when the import is finished.
