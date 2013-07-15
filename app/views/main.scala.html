@@ -22,21 +22,22 @@
   </head>
   <body class="@bodyClass">
     @views.html.components.navbar(optionalUser)
+
+    @if(flash.data.nonEmpty) {
+      <div id="flash">
+        @for((key, value) <- flash.data) {
+          @if(Seq("success", "error").contains(key)) {
+            <div class="alert alert-@key fade in"><button type="button" class="close" data-dismiss="alert">×</button>@value</div>
+          } else {
+            <div class="event" data-key="@key" data-value="@value"></div>
+          }
+        }
+      </div>
+    }
+
     <div class="container">
       @if(h1 != "") {
         <div class="page-header"><h1>@h1</h1></div>
-      }
-
-      @if(flash.data.nonEmpty) {
-        <div id="flash">
-          @for((key, value) <- flash.data) {
-            @if(Seq("success", "error").contains(key)) {
-              <div class="alert alert-@key fade in"><button type="button" class="close" data-dismiss="alert">×</button>@value</div>
-            } else {
-              <div class="event" data-key="@key" data-value="@value"></div>
-            }
-          }
-        </div>
       }
 
       @content
