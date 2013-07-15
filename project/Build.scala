@@ -105,7 +105,9 @@ object ApplicationBuild extends Build with ProjectSettings {
       "bundle/DocumentSet/index.js",
       "bundle/DocumentSet/show.js",
       "bundle/Document/show.js",
-      "bundle/Welcome/show.js"
+      "bundle/Welcome/show.js",
+      "bundle/admin/ImportJob/index.js",
+      "bundle/admin/User/index.js"
     ),
     requireJsShim += "main.js",
     aggregate in Compile := true,

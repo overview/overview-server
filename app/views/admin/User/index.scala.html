@@ -5,8 +5,12 @@
 
 @import models.orm.UserRole
 
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/User/index").url)
+}
+
 @defining(scopedMessages("views.admin.User.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1")) {
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1"), javascripts=javascripts) {
     <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
     <table class="table table-hover">
       <thead>

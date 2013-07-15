@@ -88,7 +88,8 @@ GET    /admin/users     controllers.admin.UserController.index()
 POST   /admin/users/:id controllers.admin.UserController.update(id: Long)
 DELETE /admin/users/:id controllers.admin.UserController.delete(id: Long)
 
-GET    /admin/imports controllers.admin.ImportJobController.index()
+GET    /admin/imports        controllers.admin.ImportJobController.index()
+DELETE /admin/imports/:jobId controllers.admin.ImportJobController.delete(jobId: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET    /assets/*file controllers.Assets.at(path="/public", file)

@@ -3,12 +3,12 @@
   jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,models.orm.User)]
 )(implicit lang: Lang, flash: Flash)
 
-@import org.overviewproject.tree.Ownership
-@import models.orm.finders.DocumentSetUserFinder
-@import views.html.helper.EnumToString
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/ImportJob/index").url)
+}
 
 @defining(scopedMessages("views.admin.ImportJob.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index") {
+  @main(optionalUser=Some(user), title=m("title"), h1=m("h1"), bodyClass="admin-document-set-creation-job-index", javascripts=javascripts) {
     <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
     <table class="table table-hover">
       <thead>
@@ -21,6 +21,7 @@
           <th class="email">@m("th.email")</th>
           <th class="title">@m("th.title")</th>
           <th class="query">@m("th.query")</th>
+          <th class="actions"></th>
         </tr>
       </thead>
       <tbody>
@@ -34,6 +35,11 @@
             <td class="email">@owner.email</td>
             <td class="title">@documentSet.title</td>
             <td class="query">@documentSet.query.getOrElse("")</td>
+            <td class="actions">
+              <form method="post" class="delete form-inline" data-confirm="Are you sure?" action="@controllers.admin.routes.ImportJobController.delete(job.id)?X-HTTP-Method-Override=DELETE"
+                ><input type="submit" class="btn btn-danger" value="Delete"
+              /></form>
+            </td>
           </tr>
         }
       </tbody>

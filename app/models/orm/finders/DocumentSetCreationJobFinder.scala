@@ -90,6 +90,11 @@ object DocumentSetCreationJobFinder extends Finder {
     Schema.documentSetCreationJobs.where(_.sourceDocumentSetId === sourceDocumentSet)
   }
 
+  /** @return All DocumentSetCreationJobs with the given ID (either 0 or 1 rows). */
+  def byDocumentSetCreationJob(documentSetCreationJob: Long) : DocumentSetCreationJobFinderResult = {
+    Schema.documentSetCreationJobs.where(_.id === documentSetCreationJob)
+  }
+
   /** @return All DocumentSetCreationJobs ahead of the given one in the
     * worker's queue.
     */
