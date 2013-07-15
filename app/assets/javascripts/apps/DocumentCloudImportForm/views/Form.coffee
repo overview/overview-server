@@ -18,6 +18,21 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           </div>
         </div>
         <div class="control-group">
+          <label class="control-label" for="documentcloud-lang"><%- t("lang.label") %></label>
+          <div class="controls">
+            <select
+              id="documentcloud-lang"
+              name="lang">
+              <% _.each(langs, function(lang) { %>
+                <option
+                  <%= lang.code == defaultLanguageCode && 'selected="selected"' || '' %>
+                  value="<%- lang.code %>"
+                  ><%- lang.name %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="control-group">
           <div class="controls">
             <label>
               <input type="checkbox" name="split_documents" value="true" /><!-- unchecked by default -->
@@ -36,6 +51,8 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     initialize: ->
       @_renderInitial()
+      throw 'Must set supportedLanguages, an Array of { code: "en", name: "English" }' if !@options.supportedLanguages
+      throw 'Must set defaultLanguageCode, a 2-letter code like "en"' if !@options.defaultLanguageCode
 
       @model.on('change:status', => @render())
       @render()
@@ -51,6 +68,9 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         @$el.hide()
 
     _renderInitial: ->
-      html = @template({ t: t })
+      html = @template
+        t: t
+        langs: @options.supportedLanguages
+        defaultLanguageCode: @options.defaultLanguageCode
       @$el.html(html)
   })

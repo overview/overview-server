@@ -24,7 +24,7 @@ define [ 'jquery', 'dcimport/import_project_with_login' ], ($, import_project_wi
 
     $dcimportDiv.on 'change click', 'form.update', (e) ->
       splitDocuments = $(e.currentTarget).find('[name=split_documents]').is(':checked')
-      $('input[type=hidden][name=split_documents]').val(splitDocuments)
+      $('input[type=hidden][name=split_documents]').val(splitDocuments && 'true' || 'false')
 
       lang = $(e.currentTarget).find('[name=lang]').val()
       $('input[type=hidden][name=lang]').val(lang)

@@ -5,6 +5,12 @@
 
 @javascripts = {
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentCloudImportJob/new").url)
+
+  @* Let's hope there is no end-script tag in _supportedLanguages.... *@
+  <script>
+    window.supportedLanguages = @Html(views.DocumentSet._supportedLanguages().toString());
+    window.defaultLanguageCode = "@org.overviewproject.util.SupportedLanguages.defaultLanguage.languageCode";
+  </script>
 }
 
 @jsMessageKeys = @{Seq(
@@ -15,6 +21,7 @@
   "views.DocumentCloudImportJob.new.fetching",
   "views.DocumentCloudImportJob.new.fetched",
   "views.DocumentCloudImportJob.new.form_preamble",
+  "views.DocumentCloudImportJob.new.lang.label",
   "views.DocumentCloudImportJob.new.query.document_count",
   "views.DocumentCloudImportJob.new.query.preamble",
   "views.DocumentCloudImportJob.new.split_documents.label",

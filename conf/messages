@@ -120,6 +120,7 @@ views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.email.label=DocumentCloud email
 views.DocumentCloudImportJob.new.email.placeholder=user@example.org
+views.DocumentCloudImportJob.new.lang.label=Language of documents
 views.DocumentCloudImportJob.new.password.label=Password
 views.DocumentCloudImportJob.new.credentials_preamble=You’re about to import DocumentCloud documents, but first you need to verify your DocumentCloud email and password.
 views.DocumentCloudImportJob.new.fetched=Your DocumentCloud email and password are correct.

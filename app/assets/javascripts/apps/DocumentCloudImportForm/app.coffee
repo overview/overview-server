@@ -11,10 +11,18 @@ define [
     # That element will update itself as needed, and it will finish with
     # a form submission.
     constructor: (query, submitUrl, options) ->
+      throw 'Must pass options.supportedLanguages, an Array of { code: "en", name: "English" }' if !options.supportedLanguages
+      throw 'Must pass options.defaultLanguageCode, a 2-letter code like "en"' if !options.defaultLanguageCode
+
       @query = new DocumentCloudQuery({ id: query })
       @queryFetcher = new DocumentCloudQueryFetcher({ query: @query })
 
-      view = new View({ model: @queryFetcher, submitUrl: submitUrl })
+      view = new View({
+        model: @queryFetcher
+        submitUrl: submitUrl
+        supportedLanguages: options.supportedLanguages
+        defaultLanguageCode: options.defaultLanguageCode
+      })
 
       @el = options?.el || document.createElement('div')
       @el.appendChild(view.el)
