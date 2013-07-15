@@ -27,7 +27,7 @@ class DocumentCloudImportJobControllerSpec extends Specification with Mockito {
   }
 
   trait CreateScope extends BaseScope {
-    def formBody = Seq("title" -> "title", "query" -> "projectid:1-slug")
+    def formBody = Seq("title" -> "title", "query" -> "projectid:1-slug", "lang" -> "en")
     override def fakeRequest = FakeRequest().withFormUrlEncodedBody(formBody : _*)
     lazy val result = controller.create()(request)
   }
