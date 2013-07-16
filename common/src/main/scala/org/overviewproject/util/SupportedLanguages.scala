@@ -11,9 +11,9 @@ object SupportedLanguages {
     "sv"
   )
 
-  val languages = languageCodes.map(SupportedLanguage.apply)
+  val languages : Set[SupportedLanguage] = languageCodes.map(SupportedLanguage.apply)
 
-  val defaultLanguage = SupportedLanguage("en")
+  val defaultLanguage : SupportedLanguage = SupportedLanguage("en")
 
   /** A list of languages, sorted by their display names in callerLocale */
   def languagesSortedInCallerLocale(callerLocale: Locale) : Seq[SupportedLanguage] = {
