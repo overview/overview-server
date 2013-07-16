@@ -24,7 +24,7 @@
     @views.html.components.navbar(optionalUser)
 
     @if(flash.data.nonEmpty) {
-      <div id="flash">
+      <div id="flash" class="container">
         @for((key, value) <- flash.data) {
           @if(Seq("success", "error").contains(key)) {
             <div class="alert alert-@key fade in"><button type="button" class="close" data-dismiss="alert">×</button>@value</div>
