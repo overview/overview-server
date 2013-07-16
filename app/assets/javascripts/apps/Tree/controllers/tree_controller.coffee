@@ -132,7 +132,6 @@ define [
         cache.on_demand_tree.demand_node(nodeid)
           .done (json) ->
             tagid = state.focused_tag?.id || state.selection.tags[0] || undefined
-            console.log(json, tagid)
             if tagid
               nodeIds = _.pluck(json?.nodes || [], 'id')
               if nodeIds.length
