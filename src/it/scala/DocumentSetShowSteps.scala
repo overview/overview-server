@@ -21,9 +21,7 @@ class DocumentSetShowSteps extends BaseSteps {
   Then("""^I should see the (Facebook|Twitter|DocumentCloud|secure|insecure) document "([^"]*)"$""") { (docType: String, title: String) =>
     DocumentSetShowSteps.clickDocument(title)
     CommonSteps.waitForAjaxToComplete
-    val iframe = browser.findFirst("#document iframe").getElement
-    browser.webDriver.switchTo.frame(iframe)
-    browser.findFirst("h2").getText must beEqualTo(title)
+    browser.findFirst("#tree-app-document-cursor h2").getText must beEqualTo(title)
     val divClass = docType match {
       case "Facebook" => "type-facebook"
       case "Twitter" => "type-twitter"
@@ -32,8 +30,7 @@ class DocumentSetShowSteps extends BaseSteps {
       case "insecure" => "type-insecure"
       case _ => throw new AssertionError("Unknown docType %s".format(docType))
     }
-    Option(browser.findFirst("div.%s".format(divClass))) must beSome
-    browser.webDriver.switchTo.defaultContent
+    Option(browser.findFirst("#tree-app-document-cursor div.%s".format(divClass))) must beSome
   }
 
   Then("""^I should see the tag "([^"]*)"$""") { (tagName: String) =>
