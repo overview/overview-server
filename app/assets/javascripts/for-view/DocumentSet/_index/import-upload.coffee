@@ -236,11 +236,15 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
 
       if file?
         charset = $form.find('[name=charset]').val()
+        lang = $form.find('[name=lang]').val() || window.defaultLanguageCode
 
         upload = new Upload(
           file,
           url_prefix,
-          _.extend({ contentType: "text/csv; charset=#{charset}" }, upload_options))
+          _.extend({
+            queryString: "lang=#{lang}"
+            contentType: "text/csv; charset=#{charset}"
+          }, upload_options))
 
         progress_elem = $modal.find('progress')[0]
         bytes_uploaded = 0
@@ -280,7 +284,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
 
     refresh_form_enabled = () ->
       $form.find(':submit').attr('disabled', (!ready_to_submit || upload?) && 'disabled' || false)
-      $form.find(':file, select[name=charset]').attr('disabled', upload? && 'disabled' || false)
+      $form.find(':file, select').attr('disabled', upload? && 'disabled' || false)
       $form.find(':reset').attr('disabled', !file? && 'disabled' || false)
 
     $form.on 'submit', (e) ->

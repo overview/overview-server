@@ -212,8 +212,9 @@ views.DocumentSet._share.example_document_set.checkbox_label=Set as example docu
 views.DocumentSet._smallDocumentSet.nDocuments={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 
 views.DocumentSet._uploadForm.h1=Upload a document set
-views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
 views.DocumentSet._uploadForm.label.charset=Specify an encoding:
+views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
+views.DocumentSet._uploadForm.label.lang=Language of documents:
 views.DocumentSet._uploadForm.preview.h4=Preview
 views.DocumentSet._uploadForm.submit=Upload
 views.DocumentSet._uploadForm.reset=Reset

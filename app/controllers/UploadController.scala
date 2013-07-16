@@ -16,6 +16,7 @@ import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
+import org.overviewproject.util.SupportedLanguages
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
@@ -43,13 +44,20 @@ trait UploadController extends Controller {
     }
   }
 
-  /** Handle file upload and kick of documentSetCreationJob */
-  def create(guid: UUID) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
+  /** Handle file upload and kick of documentSetCreationJob.
+    *
+    * inputDocumentSetLanguage is a HACK. Revert this commit!
+    */
+  def create(guid: UUID, languageCode: String) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
     val upload: OverviewUpload = request.body
+
+    val validLanguageCode : String = Option(languageCode)
+      .filter(SupportedLanguages.languageCodes.contains(_))
+      .getOrElse(SupportedLanguages.defaultLanguage.languageCode)
 
     val result = uploadResult(upload)
     if (result == Ok) {
-      createDocumentSetCreationJob(upload)
+      createDocumentSetCreationJob(upload, validLanguageCode)
       deleteUpload(upload)
     }
 
@@ -85,7 +93,7 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload) : Unit
-  protected def createDocumentSetCreationJob(upload: OverviewUpload) : Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) : Unit
 }
 
 /**
@@ -102,15 +110,17 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-  override protected def createDocumentSetCreationJob(upload: OverviewUpload) {
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage : String) {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,
-        uploadedFileId = Some(upload.uploadedFile.id)
+        uploadedFileId = Some(upload.uploadedFile.id),
+        lang = documentSetLanguage
       ))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-        documentSetId=documentSet.id,
+        documentSetId = documentSet.id,
+        lang = documentSetLanguage,
         state = DocumentSetCreationJobState.NotStarted,
         jobType = DocumentSetCreationJobType.CsvUpload,
         contentsOid = Some(upload.contentsOid)
