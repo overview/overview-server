@@ -1,6 +1,6 @@
 @(
   name: String,
-  selectedLanguageCode: Option[String]
+  selectedLanguageCode: Option[String] = None
 )(implicit lang: Lang)
 
 @import org.overviewproject.util.SupportedLanguages
@@ -11,7 +11,7 @@
       @for(supportedLanguage <- SupportedLanguages.languagesSortedInCallerLocale(locale)) {
         <option
           value="@supportedLanguage.languageCode"
-          selected="@(if (supportedLanguage.languageCode == defaultLanguageCode) "selected" else "")"
+          @Html(if (supportedLanguage.languageCode == defaultLanguageCode) "selected=\"selected\"" else "")
           >@supportedLanguage.displayLanguage(locale)</option>
       }
     }
