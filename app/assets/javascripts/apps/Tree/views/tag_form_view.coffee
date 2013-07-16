@@ -95,7 +95,7 @@ define [
           </div>
         </div>
         <div class="modal-footer">
-          <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete') %>" value="<%- i18n('views.Tag._form.delete') %>" />
+          <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete', tag.name) %>" value="<%- i18n('views.Tag._form.delete') %>" />
           <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Tag._form.close') %>" />
           <input type="submit" class="btn btn-primary" value="<%- i18n('views.Tag._form.submit') %>" />
         </div>

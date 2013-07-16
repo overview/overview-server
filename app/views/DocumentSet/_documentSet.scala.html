@@ -25,7 +25,7 @@
         <i class="icon-download"></i> @m("export")
       </a>
 
-      <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"
+      <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete", documentSet.title)" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"
         >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>
     </div>
