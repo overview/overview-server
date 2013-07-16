@@ -103,12 +103,19 @@ object Form {
     checkbox(field, options ++ descriptionOptions(field, m))
   }
 
+  /** Returns an INPUT element with a cross-site request forgery token.
+    *
+    * For requests without CSRF tokens (test requests), returns nothing.
+    */
   def csrfToken()(implicit request: RequestHeader) : Html = {
-    Html(<input
-      type="hidden"
-      name={play.filters.csrf.CSRF.Conf.TOKEN_NAME}
-      value={play.filters.csrf.CSRF.getToken(request).getOrElse(throw new Exception("CSRF.getToken() failed")).value}
-      />.buildString(false))
+    val name = play.filters.csrf.CSRF.Conf.TOKEN_NAME
+    val maybeToken = play.filters.csrf.CSRF.getToken(request)
+
+    Html(
+      maybeToken
+        .map(token => <input type="hidden" name={name} value={token.value} />.buildString(false))
+        .getOrElse("")
+    )
   }
 
   private def descriptionOptions(field: Field, m: views.ScopedMessages): Map[Symbol, String] = 
