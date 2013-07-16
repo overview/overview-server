@@ -9,9 +9,9 @@ object StopWordSet {
   private val EmptyStopWordsStream: InputStream = new ByteArrayInputStream(Array.empty)
 
   def apply(lang: String, suppliedStopWordString: Option[String]): Set[String] = {
-    val stopWordLines = io.Source.fromInputStream(stopWordsFile(lang)).getLines
+    val stopWordLines = io.Source.fromInputStream(stopWordsFile(lang))(io.Codec("UTF-8")).getLines
     val suppliedStopWords = extractStopWords(suppliedStopWordString)
-
+    
     stopWordLines.toSet ++ suppliedStopWords
   }
 
