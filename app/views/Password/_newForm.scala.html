@@ -1,9 +1,10 @@
 @(
   form: Form[String]
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.Password._newForm")) { m =>
   <form method="post" action="@routes.PasswordController.create()" class="well form-horizontal" autocomplete="off">
+    @helper.Form.csrfToken
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
     @helper.Form.translatedSubmit(m)

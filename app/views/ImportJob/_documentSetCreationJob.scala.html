@@ -2,11 +2,12 @@
   job: org.overviewproject.tree.orm.DocumentSetCreationJob,
   documentSet: org.overviewproject.tree.orm.DocumentSet,
   nAheadInQueue: Long
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 @import views.helper.DocumentSetHelper
 @defining(scopedMessages("views.ImportJob._documentSetCreationJob")) { m =>
   <li data-document-set-id="@documentSet.id">
     <form method="post" class="delete form-inline" data-confirm="@m("confirm_cancel")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE">
+      @helper.Form.csrfToken
       <input type="submit" class="btn btn-danger" value="@m("action_cancel")" />
     </form>
     <h2>@documentSet.title</h2>

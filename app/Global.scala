@@ -1,8 +1,8 @@
 import play.api.GlobalSettings
+import play.api.mvc.{Handler,RequestHeader,WithFilters}
+import play.filters.csrf.CSRFFilter
 
-import play.api.mvc.{Handler,RequestHeader}
-
-object Global extends GlobalSettings {
+object Global extends WithFilters(CSRFFilter()) with GlobalSettings {
   private val HttpOverrideKey = "X-HTTP-Method-Override"
 
   override def onRouteRequest(request: RequestHeader): Option[Handler] = {

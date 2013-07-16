@@ -1,7 +1,7 @@
 @(
   loginForm: Form[OverviewUser],
   userForm: Form[PotentialNewUser]
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Welcome/show").url)

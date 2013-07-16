@@ -1,6 +1,6 @@
 @(
   form: Form[OverviewUser]
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.Session._form")) { m =>
   <form method="post" action="@routes.SessionController.create()" class="well session-form form-horizontal">
@@ -9,6 +9,7 @@
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
     @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
     <fieldset class="form-actions">
+      @helper.Form.csrfToken
       <input type="submit" class="btn btn-primary" value="@m("submit")" />
       <span class="help-block muted forgot-password">@Html(m("forgot_password_html", routes.PasswordController.new_()))</span>
     </fieldset>

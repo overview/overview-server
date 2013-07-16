@@ -1,11 +1,13 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
   owner: models.orm.User
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
   <li>
-    <form method="POST" action="@routes.CloneImportJobController.create(documentSet.id)" class="form-inline"><button class="btn btn-primary">@m("import")</button></form>
+    <form method="POST" action="@routes.CloneImportJobController.create(documentSet.id)" class="form-inline"
+      >@helper.Form.csrfToken<button class="btn btn-primary">@m("import")</button
+    ></form>
     <h3>@documentSet.title</h3>
     <h4>
       <span class="document-count">@m("nDocuments", documentSet.documentCount)</span>

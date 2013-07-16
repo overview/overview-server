@@ -22,12 +22,14 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
     </div>
     <p><%- t('explanation') %></p>
     <form method="post" class="input-append add-viewer" action="<%- create_url %>">
+      <%= window.csrfTokenHtml %>
       <input type="hidden" name="role" value="Viewer" />
       <input type="email" class="span2" placeholder="<%- t('email_placeholder') %>" name="email" />
       <button type="submit" class="btn add-viewer-button" disabled="true"><i class="icon-plus"/> <%- t('add') %></button>
     </form>
     <% if (is_admin) { %>    
       <form method="post" class="update form-inline" action="<%- update_url %>">
+        <%= window.csrfTokenHtml %>
         <input id="set-as-example-document-set" type="checkbox" name="public" value="true"<%= is_public && ' checked="checked"' || '' %> />
         <input type="hidden" name="public" value="false" />
         <label for="set-as-example-document-set">
@@ -114,6 +116,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
         $.ajax({
           url: url
           type: 'DELETE'
+          data: window.csrfTokenData || {}
         })
 
       $('#sharing-options-modal').on 'input', (e) ->

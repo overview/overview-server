@@ -55,7 +55,7 @@ define [ 'backbone' ], (Backbone) ->
           {
             type: 'POST'
             url: query.url().replace(/^.*\/api\//, '/documentcloud-proxy/')
-            data: credentials.toPostData()
+            data: $.extend({}, window.csrfTokenData || {}, credentials.toPostData())
           }
       else
         {}

@@ -3,7 +3,7 @@
   documentSets: ResultPage[org.overviewproject.tree.orm.DocumentSet],
   jobs: ResultPage[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)],
   form: controllers.forms.DocumentSetForm.FormType
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   <!--[if lte IE 9]>

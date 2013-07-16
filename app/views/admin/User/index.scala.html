@@ -1,7 +1,7 @@
 @(
   user: OverviewUser,
   users: Seq[OverviewUser]
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @import models.orm.UserRole
 
@@ -36,6 +36,7 @@
             <td class="actions">
               @if(otherUser.id != user.id) {
                 <form method="post" action="@controllers.admin.routes.UserController.update(otherUser.id)">
+                  @helper.Form.csrfToken
                   <input type="hidden" name="email" value="@otherUser.email"/>
                   @if(otherUser.isAdministrator) {
                     <input type="hidden" name="role" value="@UserRole.NormalUser.id"/>
@@ -46,6 +47,7 @@
                   }
                 </form>
                 <form method="post" class="delete" data-confirm="@m("confirm.delete", otherUser.email)" action="@controllers.admin.routes.UserController.delete(otherUser.id)?X-HTTP-Method-Override=DELETE">
+                  @helper.Form.csrfToken
                   <input type="submit" value="@m("action.delete")" />
                 </form>
               }

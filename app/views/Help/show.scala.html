@@ -1,6 +1,6 @@
 @(
   optionalUser: Option[OverviewUser]
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @main(optionalUser=optionalUser, title="Help", h1="Help", bodyClass="help-show") {
   <h2>Overview reads your documents and sorts them by topic</h2>

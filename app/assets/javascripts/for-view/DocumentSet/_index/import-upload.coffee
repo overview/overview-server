@@ -242,7 +242,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
           file,
           url_prefix,
           _.extend({
-            queryString: "lang=#{lang}"
+            queryString: window.csrfTokenQueryString + "&lang=#{lang}"
             contentType: "text/csv; charset=#{charset}"
           }, upload_options))
 

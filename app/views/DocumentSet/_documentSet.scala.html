@@ -1,7 +1,7 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
   viewer: OverviewUser
-)(implicit lang: play.api.i18n.Lang)
+)(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
 @import views.helper.DocumentSetHelper
 
@@ -26,7 +26,7 @@
       </a>
 
       <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete")" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"
-        ><input type="submit" class="btn btn-danger" value="@m("action_delete")"
+        >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>
     </div>
     <h3><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h3>

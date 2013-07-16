@@ -8,7 +8,9 @@
 )(
   content: Html
 )(
-  implicit lang: Lang, flash: Flash
+  implicit lang: Lang,
+  flash: Flash,
+  request: RequestHeader
 )
 @import play.api.Play
 @import play.api.Play.current
@@ -19,6 +21,13 @@
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
     <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
+    <script>
+      window.csrfTokenName = "@play.filters.csrf.CSRF.Conf.TOKEN_NAME";
+      window.csrfToken = "@play.filters.csrf.CSRF.getToken(request).getOrElse(throw new Exception("No CSRF token")).value";
+      window.csrfTokenHtml = '<input type="hidden" name="' + window.csrfTokenName + '" value="' + window.csrfToken + '" />';
+      window.csrfTokenData = {}; window.csrfTokenData[window.csrfTokenName] = window.csrfToken;
+      window.csrfTokenQueryString = window.csrfTokenName + "=" + window.csrfToken;
+    </script>
   </head>
   <body class="@bodyClass">
     @views.html.components.navbar(optionalUser)

@@ -2,7 +2,7 @@
   user: OverviewUser,
   documentSet: org.overviewproject.tree.orm.DocumentSet,
   logEntries: Iterable[(models.orm.LogEntry,models.orm.User)]
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @main(optionalUser=Some(user), title="Log", h1="Log") {
   <p class="download-csv">You may also download <a href="@routes.LogEntryController.index(documentSet.id, ".csv")">this log as a spreadsheet</a>.</p>

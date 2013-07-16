@@ -1,10 +1,11 @@
 @(
   token: String,
   form: Form[String]
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.Password._editForm")) { m =>
   <form method="post" action="@routes.PasswordController.update(token)" class="well form-horizontal" autocomplete="off">
+    @helper.Form.csrfToken
     @helper.Form.errors(form.globalErrors)
     @helper.Form.translatedInput(form("password"), m, Map('type -> "password", 'class -> "minlength-password", 'required -> "required", scala.Symbol("data-minlength-password-error-too-short") -> Messages("password.secure"), scala.Symbol("data-minlength-password-min-length") -> "7"))
     @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))

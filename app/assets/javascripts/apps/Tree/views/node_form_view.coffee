@@ -61,6 +61,7 @@ define [
             </div>
           </div>
           <div class="modal-footer">
+            <%= window.csrfTokenHtml %>
             <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Node._form.close') %>" />
             <input type="submit" class="btn btn-primary" value="<%- i18n('views.Node._form.submit') %>" />
           </div>

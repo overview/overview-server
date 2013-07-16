@@ -8,6 +8,6 @@ define [ 'jquery' ], ($) ->
         #
         # This is a HACK. We should implement this more broadly, not as a
         # side-effect of data-confirm forms.
-        window.setTimeout((-> $(form).on('submit', (e2) -> e2.preventDefault())), 0)
+        window.setTimeout((-> $(form).on('submit', (e2) -> e2.preventDefault(); false)), 0)
       else
         e.preventDefault()

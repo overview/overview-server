@@ -1,2 +1,4 @@
-@(documentSets: Iterable[(org.overviewproject.tree.orm.DocumentSet,models.orm.User)])(implicit lang: Lang)
+@(
+  documentSets: Iterable[(org.overviewproject.tree.orm.DocumentSet,models.orm.User)]
+)(implicit lang: Lang, request: RequestHeader)
 @views.html.DocumentSet._searchResults(documentSets, "views.PublicDocumentSet.index")

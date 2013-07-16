@@ -1,7 +1,7 @@
 @(
   user: OverviewUser,
   jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,models.orm.User)]
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/ImportJob/index").url)
@@ -37,7 +37,7 @@
             <td class="query">@documentSet.query.getOrElse("")</td>
             <td class="actions">
               <form method="post" class="delete form-inline" data-confirm="Are you sure?" action="@controllers.admin.routes.ImportJobController.delete(job.id)?X-HTTP-Method-Override=DELETE"
-                ><input type="submit" class="btn btn-danger" value="Delete"
+                >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="Delete"
               /></form>
             </td>
           </tr>

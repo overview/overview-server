@@ -3,6 +3,7 @@ package views.html.helper
 import play.api.data.{ Field, FormError }
 import play.api.templates.Html
 import play.api.i18n.{ Lang, Messages }
+import play.api.mvc.RequestHeader
 import scala.xml.{ UnprefixedAttribute, MetaData }
 
 object Form {
@@ -66,9 +67,9 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = 
+  def translatedInput(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html =  {
     input(field, options ++ descriptionOptions(field, m))
-
+  }
 
   def checkbox(field: Field, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
     val fieldsetClassName = "control-group" + field.error.map({ (e: FormError) => " error" }).getOrElse("")
@@ -98,15 +99,22 @@ object Form {
          </fieldset>.buildString(false))
   }
 
-  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = 
+  def translatedCheckbox(field: Field, m: views.ScopedMessages, options: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
     checkbox(field, options ++ descriptionOptions(field, m))
-  
+  }
+
+  def csrfToken()(implicit request: RequestHeader) : Html = {
+    Html(<input
+      type="hidden"
+      name={play.filters.csrf.CSRF.Conf.TOKEN_NAME}
+      value={play.filters.csrf.CSRF.getToken(request).getOrElse(throw new Exception("CSRF.getToken() failed")).value}
+      />.buildString(false))
+  }
 
   private def descriptionOptions(field: Field, m: views.ScopedMessages): Map[Symbol, String] = 
      Map('label -> "label", 'placeholder -> "placeholder", 'helpText -> "help").flatMap { 
       case (sym, prefix) =>  m.optional(prefix + "." + field.name).map(sym -> _) 
   }
-    
     
   private implicit def mapToAttributes(in: Map[Symbol, String]): scala.xml.MetaData = {
     in.foldLeft[MetaData](scala.xml.Null)((next, keyval) => new UnprefixedAttribute(keyval._1.name, keyval._2, next))

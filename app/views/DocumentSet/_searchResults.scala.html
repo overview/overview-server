@@ -1,7 +1,7 @@
 @(
   documentSets: Iterable[(org.overviewproject.tree.orm.DocumentSet,models.orm.User)],
   messageScope: String
-)(implicit lang: Lang)
+)(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages(messageScope)) { m =>
   <p class="preamble">@m("preamble")</p>

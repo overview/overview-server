@@ -29,6 +29,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
     template: _.template("""
       <form method="post" action="#" class="input-append">
+        <%= window.csrfTokenHtml %>
         <input
           type="text"
           name="query"

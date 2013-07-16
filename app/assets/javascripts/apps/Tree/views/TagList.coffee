@@ -45,6 +45,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     tagTemplate: _.template("""
       <li class="existing" data-cid="<%= tag.cid %>">
         <form method="post" action="#" class="form-horizontal">
+          <%= window.csrfTokenHtml %>
           <input type="hidden" name="id" value="<%- tag.id || '' %>" />
           <input type="color" name="color" value="<%- tag.get('color') %>"
           /><input type="text" name="name" value="<%- tag.get('name') %>" />

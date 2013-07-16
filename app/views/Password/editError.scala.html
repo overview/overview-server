@@ -1,4 +1,4 @@
-@()(implicit lang: Lang, flash: Flash)
+@()(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.Password.editError")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="password-edit-error", h1=m("h1")) {

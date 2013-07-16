@@ -1,6 +1,6 @@
 @(
   email: String
-)(implicit lang: Lang, flash: Flash)
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.Confirmation.create")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="confirmation-create", h1=m("h1")) {

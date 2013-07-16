@@ -7,6 +7,7 @@ define [ 'underscore' ], (_) ->
   template = _.template("""
     <li>
       <form method="post" class="form-inline" action="<%- url %>">
+        <%= window.csrfTokenHtml %>
         <input type="hidden" name="title" value="<%- project.title %>" />
         <input type="hidden" name="query" value="projectid:<%- project.id %>" />
         <input type="hidden" name="documentcloud_username" value="<%- credentials.email %>" />

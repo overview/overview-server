@@ -1,4 +1,4 @@
-@()(implicit lang: Lang)
+@()(implicit lang: Lang, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
   @_importPane(m("h1")) {
     <form class="document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
@@ -45,6 +45,7 @@
         </div>
       </div>
       <div>
+        @helper.Form.csrfToken
         <button type="reset" class="btn">@m("reset")</button>
         <button type="submit" class="btn btn-primary"><i class="icon-upload"></i>@m("submit")</button>
       </div>

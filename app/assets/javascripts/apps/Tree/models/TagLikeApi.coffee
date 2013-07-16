@@ -69,7 +69,7 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.create(tagLike)
         ajaxOptions:
           type: 'POST'
-          data: tagLike
+          data: $.extend({}, window.csrfTokenData || {}, tagLike)
         callback: (tagLikeFromServer) =>
           @store.change(tagLike, tagLikeFromServer)
       })
@@ -81,7 +81,7 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.update(tagLike)
         ajaxOptions:
           type: 'PUT'
-          data: tagLike
+          data: $.extend({}, window.csrfTokenData || {}, tagLike)
       })
 
       @_queue(options)
@@ -91,6 +91,7 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.destroy(tagLike)
         ajaxOptions:
           type: 'DELETE'
+          data: window.csrfTokenData
       })
 
       @_queue(options)

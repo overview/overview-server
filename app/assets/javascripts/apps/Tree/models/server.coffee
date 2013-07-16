@@ -18,7 +18,7 @@ define [ 'jquery', './router' ], ($, Router) ->
       path = @router.route_to_path(route, options?.path_argument)
 
       $.ajax($.extend({
-        data: data,
+        data: $.extend({}, window.csrfTokenData || {}, data)
       }, options || {}, {
         type: 'POST'
         url: path,
@@ -28,7 +28,7 @@ define [ 'jquery', './router' ], ($, Router) ->
       path = @router.route_to_path(route, options?.path_argument)
 
       $.ajax($.extend({
-        data: data,
+        data: $.extend({}, window.csrfTokenData || {}, data)
       }, options || {}, {
         type: 'DELETE'
         url: path

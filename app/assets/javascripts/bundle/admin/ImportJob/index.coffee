@@ -37,5 +37,4 @@ requirejs.config({
 require [
   'elements/form-with-confirm'
   'elements/twitter-bootstrap'
-  'common/disable-forms-on-unload'
 ], ->

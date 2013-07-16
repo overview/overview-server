@@ -60,7 +60,7 @@ define [ 'jquery', 'base64', 'i18n', 'dcimport/CredentialStore', 'dcimport/templ
           url: url.replace(/^.*\/api\//, '/documentcloud-proxy/')
           timeout: 20000
           dataType: 'json'
-          data: { email: credentials.email, password: credentials.password }
+          data: $.extend({}, window.csrfTokenData || {}, { email: credentials.email, password: credentials.password })
         }
 
       ajax = $.ajax(ajax_options)
