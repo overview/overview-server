@@ -94,11 +94,7 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload) : Unit
-<<<<<<< HEAD
   protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) : Unit
-=======
-  protected def createDocumentSetCreationJob(upload: OverviewUpload, lang: String) : Unit
->>>>>>> Accept lang paramter in URL for Uploads
 }
 
 /**
@@ -129,7 +125,6 @@ object UploadController extends UploadController with PgConnection {
         lang = documentSetLanguage,
         state = DocumentSetCreationJobState.NotStarted,
         jobType = DocumentSetCreationJobType.CsvUpload,
-        lang = lang,
         contentsOid = Some(upload.contentsOid)
       ))
     }
