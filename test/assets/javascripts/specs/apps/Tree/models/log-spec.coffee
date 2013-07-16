@@ -9,6 +9,9 @@ require [
     }
 
   describe 'models/log', ->
+    beforeEach ->
+      spyOn($, 'ajax')
+
     describe 'Log', ->
       describe 'entries', ->
         it 'should begin empty', ->
@@ -52,43 +55,43 @@ require [
           expect(log.entries).toEqual([])
 
       describe 'upload_entries_to_server_and_clear', ->
-        class MockServer
-          post: (@path, @data, @options) ->
-
         log = undefined
-        mock_server = undefined
 
         beforeEach ->
           log = new Log()
           log.add_entry(create_entry())
-          mock_server = new MockServer()
 
         it 'should clear entries', ->
-          log.upload_entries_to_server_and_clear(mock_server)
+          log.upload_entries_to_server_and_clear()
           expect(log.entries).toEqual([])
 
+        it 'should send an ajax request', ->
+          log.upload_entries_to_server_and_clear()
+          expect($.ajax).toHaveBeenCalled()
+
         it 'should post to the proper path', ->
-          log.upload_entries_to_server_and_clear(mock_server)
-          expect(mock_server.path).toEqual('create_log_entries')
+          log.upload_entries_to_server_and_clear()
+          expect($.ajax.mostRecentCall.args[0].url).toMatch(/\bcreate-many\b/)
 
         it 'should post a JSON array', ->
           entry = log.entries[0]
-          log.upload_entries_to_server_and_clear(mock_server)
-          expect(mock_server.data).toMatch(/^\[\{.*\}\]$/)
-          expect(mock_server.data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))
+          log.upload_entries_to_server_and_clear()
+          data = $.ajax.mostRecentCall.args[0].data
+          expect(data).toMatch(/^\[\{.*\}\]$/)
+          expect(data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))
 
         it 'should not post when empty', ->
           log.clear_entries()
-          log.upload_entries_to_server_and_clear(mock_server)
-          expect(mock_server.path).toBeUndefined()
+          log.upload_entries_to_server_and_clear()
+          expect($.ajax).not.toHaveBeenCalled()
 
         it 'should set contentType: "application/json" on the $.ajax request', ->
-          log.upload_entries_to_server_and_clear(mock_server)
-          expect(mock_server.options.contentType).toEqual('application/json')
+          log.upload_entries_to_server_and_clear()
+          expect($.ajax.mostRecentCall.args[0].contentType).toEqual('application/json')
 
         it 'should set global: false on the $.ajax request', ->
-          log.upload_entries_to_server_and_clear(mock_server)
-          expect(mock_server.options.global).toBe(false)
+          log.upload_entries_to_server_and_clear()
+          expect($.ajax.mostRecentCall.args[0].global).toBe(false)
 
       describe 'for_component()', ->
         it 'should return a function that can be used as a shortcut', ->
