@@ -1,8 +1,10 @@
 define [ 'jquery' ], ($) ->
   makeUrlFunctions = (baseUrl) ->
-    create: (tagLike) -> baseUrl
-    update: (tagLike) -> "#{baseUrl}/#{tagLike.id}"
-    destroy: (tagLike) -> "#{baseUrl}/#{tagLike.id}"
+    queryString = window.csrfTokenQueryString && "?#{window.csrfTokenQueryString}" || ''
+
+    create: (tagLike) -> "#{baseUrl}#{queryString}"
+    update: (tagLike) -> "#{baseUrl}/#{tagLike.id}#{queryString}"
+    destroy: (tagLike) -> "#{baseUrl}/#{tagLike.id}#{queryString}"
 
   # A TagLikeApi sends updates to the server via REST HTTP calls. It is mostly
   # _independent_ of TagLikeStore.
@@ -69,7 +71,7 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.create(tagLike)
         ajaxOptions:
           type: 'POST'
-          data: $.extend({}, window.csrfTokenData || {}, tagLike)
+          data: tagLike
         callback: (tagLikeFromServer) =>
           @store.change(tagLike, tagLikeFromServer)
       })
@@ -81,7 +83,7 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.update(tagLike)
         ajaxOptions:
           type: 'PUT'
-          data: $.extend({}, window.csrfTokenData || {}, tagLike)
+          data: tagLike
       })
 
       @_queue(options)
@@ -91,7 +93,6 @@ define [ 'jquery' ], ($) ->
         url: => @_urlBuilders.destroy(tagLike)
         ajaxOptions:
           type: 'DELETE'
-          data: window.csrfTokenData
       })
 
       @_queue(options)
