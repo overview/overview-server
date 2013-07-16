@@ -1,18 +1,20 @@
 package views.html.DocumentSet
 
-import scala.Array.canBuildFrom
-
-import org.overviewproject.tree.orm.DocumentSet
+import jodd.lagarto.dom.jerry.Jerry.jerry
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.Play.{start, stop}
+import play.api.test.{FakeApplication,FakeRequest}
 
-import jodd.lagarto.dom.jerry.Jerry.jerry
+import org.overviewproject.tree.orm.DocumentSet
 import models.OverviewUser
 
 class _documentSetSpec extends Specification {
+  step(start(FakeApplication()))
 
   trait ViewContext extends Scope with Mockito {
+    implicit val request = FakeRequest()
     val documentSet: DocumentSet
     val user = mock[OverviewUser]
     user.isAdministrator returns false
@@ -53,7 +55,7 @@ class _documentSetSpec extends Specification {
     }
 
     "should show a document count" in new NormalDocumentSetContext {
-      $("span.document-count").text() must endWith("nDocuments")
+      $("span.document-count").text() must equalTo("no documents")
     }
 
     "should not show error count if none exist" in new NormalDocumentSetContext {
@@ -61,9 +63,11 @@ class _documentSetSpec extends Specification {
     }
 
     "should show error count popup if there are errors" in new DocumentSetWithErrorsContext {
-      $("a.error-count").text.trim must endWith("nErrors")
+      $("a.error-count").text.trim must equalTo("10 documents could not be loaded")
       $("a.error-count").attr("href") must be equalTo("/documentsets/1/error-list")
       $("a.error-count").attr("data-target") must be equalTo("#error-list-modal")
     }
   }
+
+  step(stop)
 }

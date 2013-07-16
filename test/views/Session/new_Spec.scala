@@ -6,14 +6,15 @@ import org.specs2.specification.Scope
 import play.api.data.Form
 import play.api.data.Forms.{email,nonEmptyText,mapping}
 import play.api.Play.{start, stop}
-import play.api.test.FakeApplication
+import play.api.test.{FakeApplication,FakeRequest}
 
 class new_Spec extends Specification {
   trait OurContext extends Scope {
-    lazy val loginForm = controllers.forms.LoginForm()
-    lazy val userForm = controllers.forms.UserForm()
+    val loginForm = controllers.forms.LoginForm()
+    val userForm = controllers.forms.UserForm()
 
-    lazy implicit val flash = play.api.mvc.Flash()
+    implicit val flash = play.api.mvc.Flash()
+    implicit val request = FakeRequest()
     lazy val body = new_(loginForm, userForm).body
     lazy val j = jerry(body)
     def $(selector: String) = j.$(selector)

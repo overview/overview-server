@@ -6,7 +6,7 @@ import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import play.api.mvc.Flash
 import play.api.Play.{ start, stop }
-import play.api.test.FakeApplication
+import play.api.test.{FakeApplication,FakeRequest}
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
@@ -17,9 +17,10 @@ import models.{ OverviewUser, ResultPage }
 class indexSpec extends Specification {
 
   trait ViewContext extends Scope with Mockito {
-    implicit lazy val flash = new Flash()
-    lazy val ormUser = new models.orm.User()
-    lazy val user = OverviewUser(ormUser)
+    implicit val flash = new Flash()
+    implicit val request = FakeRequest()
+    val ormUser = new models.orm.User()
+    val user = OverviewUser(ormUser)
 
     val jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
     implicit lazy val jobsPage = ResultPage(jobs, 10, 1)

@@ -6,13 +6,14 @@ import org.specs2.specification.Scope
 import play.api.data.Form
 import play.api.data.Forms.{mapping,text}
 import play.api.Play.{start, stop}
-import play.api.test.FakeApplication
+import play.api.test.{FakeApplication,FakeRequest}
 
 import models.{ConfirmationRequest,OverviewUser}
 
 class indexSpec extends Specification {
   trait OurContext extends Scope {
-    lazy implicit val flash = play.api.mvc.Flash()
+    implicit val flash = play.api.mvc.Flash()
+    implicit val request = FakeRequest()
 
     lazy val user : Option[models.orm.User] = None
     lazy val emptyForm = Form(mapping(
