@@ -30,6 +30,7 @@ define [
       })
 
       @$el.append("<input type=\"hidden\" name=\"query\" value=\"#{@model.get('query').id}\" />")
+      @$el.append(window.csrfTokenHtml) if window.csrfTokenHtml?
 
       @el.appendChild(credentialsView.el)
       @el.appendChild(queryView.el)
