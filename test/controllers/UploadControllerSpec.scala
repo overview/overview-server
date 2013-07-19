@@ -32,15 +32,17 @@ class UploadControllerSpec extends Specification with Mockito {
     var uploadDeleted: Boolean = false
     var jobStarted: Boolean = false
     var lang: Option[String] = _
+    var stopWords: Option[String] = _
     
     def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
     def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
-    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) { 
+    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]) { 
       jobStarted = true
       lang = Some(documentSetLanguage)
+      stopWords = suppliedStopWords
     }
   }
 
@@ -70,8 +72,9 @@ class UploadControllerSpec extends Specification with Mockito {
     val user = OverviewUser(User(1l))
     val controller = new TestUploadController(Option(upload))
     val lang = "sv"
+    val stopWords = "some stop words"
     val request = new AuthorizedRequest(FakeRequest()
-        .withFormUrlEncodedBody(("lang" -> lang)), user)
+        .withFormUrlEncodedBody(("lang" -> lang), ("supplied_stop_words" -> stopWords)), user)
     
     	
     val result = controller.startClustering(guid)(request)
@@ -128,6 +131,7 @@ class UploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo(OK)
       controller.jobStarted must beTrue
       controller.lang must beSome(lang)
+      controller.stopWords must beSome(stopWords)
       controller.uploadDeleted must beTrue
     }
     

@@ -66,7 +66,7 @@ trait UploadController extends Controller {
         
         findUpload(request.user.id, guid) match {
           case Some(u) if uploadResult(u) == Ok => {
-            createDocumentSetCreationJob(u, lang)
+            createDocumentSetCreationJob(u, lang, stopWords)
             deleteUpload(u)
             Ok
           }
@@ -105,7 +105,7 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload): Unit
-  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String): Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]): Unit
 }
 
 /**
@@ -122,16 +122,18 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) {
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]) {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,
         uploadedFileId = Some(upload.uploadedFile.id),
-        lang = documentSetLanguage))
+        lang = documentSetLanguage,
+        suppliedStopWords = suppliedStopWords))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId = documentSet.id,
         lang = documentSetLanguage,
+        suppliedStopWords = suppliedStopWords,
         state = DocumentSetCreationJobState.NotStarted,
         jobType = DocumentSetCreationJobType.CsvUpload,
         contentsOid = Some(upload.contentsOid)))
