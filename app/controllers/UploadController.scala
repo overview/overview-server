@@ -52,7 +52,7 @@ trait UploadController extends Controller {
    */
   def create(guid: UUID, languageCode: String) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
     val upload: OverviewUpload = request.body
-    
+
     uploadResult(upload)
   }
 
@@ -60,11 +60,14 @@ trait UploadController extends Controller {
 
     UploadControllerForm().bindFromRequest().fold(
       f => BadRequest,
-      { lang =>
+      { f =>
+        val lang = f._1
+        val stopWords = f._2
+        
         findUpload(request.user.id, guid) match {
           case Some(u) if uploadResult(u) == Ok => {
             createDocumentSetCreationJob(u, lang)
-             deleteUpload(u)
+            deleteUpload(u)
             Ok
           }
           case Some(u) => uploadResult(u)

@@ -21,7 +21,14 @@ class UploadControllerFormSpec extends Specification {
       val lang = "sv"
       val data = Map("lang" -> lang)
       
-      form.bind(data).value must beSome(lang)
+      form.bind(data).value.map(_._1) must beSome(lang)
+    }
+    
+    "return supplied stop words is provided" in new FormScope {
+      val stopWords = "the and foo"
+      val data = Map("lang" -> "en", "supplied_stop_words" -> stopWords)
+      
+      form.bind(data).value.map(_._2).flatten must beSome(stopWords)
     }
   }
 }
