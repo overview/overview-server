@@ -19,6 +19,7 @@ import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Docum
 import org.overviewproject.util.SupportedLanguages
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
+import controllers.forms.UploadControllerForm
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
 import models.orm.{ DocumentSetUser, User }
 import models.orm.finders.UserFinder
@@ -37,32 +38,39 @@ trait UploadController extends Controller {
   // Should move into BaseController and/or TransactionAction, but it's not
   // clear how, since the usage here flips the dependency
   def authorizedBodyParser[A](authority: Authority)(f: OverviewUser => BodyParser[A]) = parse.using { implicit request =>
-    val user : Either[Result, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
+    val user: Either[Result, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
     user match {
       case Left(e) => parse.error(e)
       case Right(user) => f(user)
     }
   }
 
-
-  /** Handle file upload and kick of documentSetCreationJob.
-    *
-    * inputDocumentSetLanguage is a HACK. Revert this commit!
-    */
+  /**
+   * Handle file upload and kick of documentSetCreationJob.
+   *
+   * inputDocumentSetLanguage is a HACK. Revert this commit!
+   */
   def create(guid: UUID, languageCode: String) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
     val upload: OverviewUpload = request.body
+    
+    uploadResult(upload)
+  }
 
-    val validLanguageCode : String = Option(languageCode)
-      .filter(SupportedLanguages.languageCodes.contains(_))
-      .getOrElse(SupportedLanguages.defaultLanguage.languageCode)
+  def startClustering(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
 
-    val result = uploadResult(upload)
-    if (result == Ok) {
-      createDocumentSetCreationJob(upload, validLanguageCode)
-      deleteUpload(upload)
-    }
-
-    result
+    UploadControllerForm().bindFromRequest().fold(
+      f => BadRequest,
+      { lang =>
+        findUpload(request.user.id, guid) match {
+          case Some(u) if uploadResult(u) == Ok => {
+            createDocumentSetCreationJob(u, lang)
+             deleteUpload(u)
+            Ok
+          }
+          case Some(u) => uploadResult(u)
+          case None => NotFound
+        }
+      })
   }
 
   private def uploadResult(upload: OverviewUpload) =
@@ -93,8 +101,8 @@ trait UploadController extends Controller {
 
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
-  protected def deleteUpload(upload: OverviewUpload) : Unit
-  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) : Unit
+  protected def deleteUpload(upload: OverviewUpload): Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String): Unit
 }
 
 /**
@@ -111,22 +119,19 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-
-  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage : String) {
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,
         uploadedFileId = Some(upload.uploadedFile.id),
-        lang = documentSetLanguage
-      ))
+        lang = documentSetLanguage))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId = documentSet.id,
         lang = documentSetLanguage,
         state = DocumentSetCreationJobState.NotStarted,
         jobType = DocumentSetCreationJobType.CsvUpload,
-        contentsOid = Some(upload.contentsOid)
-      ))
+        contentsOid = Some(upload.contentsOid)))
     }
   }
 }

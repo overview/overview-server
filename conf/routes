@@ -28,6 +28,7 @@ HEAD   /uploads/:uuid controllers.UploadController.show(uuid: java.util.UUID)
 # This is POST because you can't have Content-Range in a PUT. But POST + subsequent PATCH is probably best
 # lang is a HACK. We'll remove it soon via git revert, right?
 POST   /uploads/:uuid controllers.UploadController.create(uuid: java.util.UUID, lang: String ?= "")
+POST   /uploads/:uuid/finish         controllers.UploadController.startClustering(uuid: java.util.UUID)
 
 GET    /imports.json controllers.ImportJobController.index()
 

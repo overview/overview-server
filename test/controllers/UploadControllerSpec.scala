@@ -31,13 +31,17 @@ class UploadControllerSpec extends Specification with Mockito {
   class TestUploadController(upload: Option[OverviewUpload] = None) extends UploadController {
     var uploadDeleted: Boolean = false
     var jobStarted: Boolean = false
+    var lang: Option[String] = _
     
     def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
     def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
-    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) { jobStarted = true }
+    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String) { 
+      jobStarted = true
+      lang = Some(documentSetLanguage)
+    }
   }
 
   trait UploadContext[A] extends Scope {
@@ -62,6 +66,17 @@ class UploadControllerSpec extends Specification with Mockito {
     val result = controller.show(guid)(request)
   }
 
+  trait StartClusteringRequest extends UploadContext[AnyContent] {
+    val user = OverviewUser(User(1l))
+    val controller = new TestUploadController(Option(upload))
+    val lang = "sv"
+    val request = new AuthorizedRequest(FakeRequest()
+        .withFormUrlEncodedBody(("lang" -> lang)), user)
+    
+    	
+    val result = controller.startClustering(guid)(request)
+  }
+  
   trait NoStartedUpload {
     def upload: OverviewUpload = null
   }
@@ -101,17 +116,28 @@ class UploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo (PARTIAL_CONTENT)
     }
     
-    "start a DocumentSetCreationJob and delete the upload" in new CreateRequest with CompleteUpload {
+    "return OK if upload complete" in new CreateRequest with CompleteUpload {
+      status(result) must be equalTo(OK)
+    }
+    
+  }
+  
+  "UploadController.startClustering" should {
+    
+    "start a DocumentSetCreationJob and delete the upload" in new StartClusteringRequest with CompleteUpload {
       status(result) must be equalTo(OK)
       controller.jobStarted must beTrue
+      controller.lang must beSome(lang)
       controller.uploadDeleted must beTrue
     }
     
-    "not start a DocumentSetCreationJob if upload is not complete" in new CreateRequest with IncompleteUpload {
+    "not start a DocumentSetCreationJob if upload is not complete" in new StartClusteringRequest with IncompleteUpload {
       status(result) must be equalTo(PARTIAL_CONTENT)
       controller.jobStarted must beFalse
     }
+    
   }
+
 
   "UploadController.show" should {
     "return NOT_FOUND if upload does not exist" in new HeadRequest with NoStartedUpload {
@@ -136,6 +162,7 @@ class UploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo (NOT_FOUND)
     }
   }
+  
 
   step(stop)
 }
