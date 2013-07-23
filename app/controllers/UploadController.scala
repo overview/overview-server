@@ -66,7 +66,7 @@ trait UploadController extends Controller {
         
         findUpload(request.user.id, guid) match {
           case Some(u) if uploadResult(u) == Ok => {
-            createDocumentSetCreationJob(u, lang, stopWords)
+            createDocumentSetCreationJob(u, lang, stopWords.getOrElse(""))
             deleteUpload(u)
             Ok
           }
@@ -105,7 +105,7 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload): Unit
-  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]): Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String): Unit
 }
 
 /**
@@ -122,7 +122,7 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]) {
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String) {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,

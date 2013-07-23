@@ -19,7 +19,7 @@ class DocumentCloudImportJobFormSpec extends Specification {
         lang = "en",
         credentials = None,
         splitDocuments = false,
-        suppliedStopWords = None)
+        suppliedStopWords = "")
     }
 
     trait BasicFormScope extends FormScope {
@@ -110,7 +110,7 @@ class DocumentCloudImportJobFormSpec extends Specification {
       val suppliedStopWords = "ignore these words"
       override def data = super.data ++ Map("supplied_stop_words" -> suppliedStopWords)
 
-      form.bind(data).value.map(_.suppliedStopWords).flatten must beSome(suppliedStopWords)
+      form.bind(data).value.map(_.suppliedStopWords) must beSome(suppliedStopWords)
     }
   }
 }

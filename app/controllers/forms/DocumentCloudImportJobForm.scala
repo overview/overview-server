@@ -26,7 +26,7 @@ object DocumentCloudImportJobForm {
       lang = lang,
       credentials = credentials,
       splitDocuments = splitDocuments.getOrElse(false),
-      suppliedStopWords = suppliedStopWords
+      suppliedStopWords = suppliedStopWords.getOrElse("")
     )
   }
 
@@ -42,7 +42,7 @@ object DocumentCloudImportJobForm {
         "supplied_stop_words" -> Forms.optional(Forms.text)
       )
       (buildJob(ownerEmail))
-      ((job) => Some(job.title, job.query, job.lang, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments), job.suppliedStopWords))
+      ((job) => Some(job.title, job.query, job.lang, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments), Some(job.suppliedStopWords)))
     )
   }
 }

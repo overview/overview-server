@@ -39,10 +39,10 @@ class UploadControllerSpec extends Specification with Mockito {
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
     def deleteUpload(upload: OverviewUpload) { uploadDeleted = true }
-    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: Option[String]) { 
+    def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String) { 
       jobStarted = true
       lang = Some(documentSetLanguage)
-      stopWords = suppliedStopWords
+      stopWords = Some(suppliedStopWords)
     }
   }
 

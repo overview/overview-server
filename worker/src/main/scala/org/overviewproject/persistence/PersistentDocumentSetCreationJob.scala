@@ -79,7 +79,7 @@ object PersistentDocumentSetCreationJob {
     val documentSetId: Long = documentSetCreationJob.documentSetId
     val jobType: DocumentSetCreationJobType.Value = documentSetCreationJob.jobType
     val lang: String = documentSetCreationJob.lang
-    val suppliedStopWords: Option[String] = documentSetCreationJob.suppliedStopWords
+    val suppliedStopWords: Option[String] = Some(documentSetCreationJob.suppliedStopWords)
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val splitDocuments: Boolean = documentSetCreationJob.splitDocuments

@@ -24,7 +24,7 @@ case class DocumentSetCreationJob(
   documentSetId: Long = 0L,
   @Column("type") jobType: DocumentSetCreationJobType.Value,
   lang: String = "en",
-  suppliedStopWords: Option[String] = None,
+  suppliedStopWords: String = "",
   documentcloudUsername: Option[String] = None,
   documentcloudPassword: Option[String] = None,
   splitDocuments: Boolean = false,

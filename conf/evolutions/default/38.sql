@@ -1,6 +1,7 @@
 # --- !Ups
 BEGIN;
 
+
 ALTER TABLE node ADD COLUMN is_leaf BOOLEAN NOT NULL DEFAULT TRUE;
 UPDATE node SET is_leaf = FALSE WHERE id IN (SELECT DISTINCT parent_id FROM node);
 ALTER TABLE node ALTER COLUMN is_leaf DROP DEFAULT;
@@ -8,5 +9,6 @@ ALTER TABLE node ALTER COLUMN is_leaf DROP DEFAULT;
 COMMIT;
 
 # --- !Downs
+
 
 ALTER TABLE node DROP COLUMN is_leaf;
