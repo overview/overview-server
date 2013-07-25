@@ -104,4 +104,7 @@ trait ProjectSettings {
     javaxMailDep
   )
 
+  val searchIndexDependencies = Seq(
+    "org.elasticsearch" % "elasticsearch" % "0.90.2"
+  )
 }

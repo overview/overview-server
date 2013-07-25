@@ -36,7 +36,14 @@ object ApplicationBuild extends Build with ProjectSettings {
         printClasspath))
 
   
-  
+  val searchIndex = Project("search-index", file("search-index"), settings = 
+    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings ++
+      Seq(     
+        libraryDependencies ++=  searchIndexDependencies,
+        printClasspath))
+
+
+
   
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {
