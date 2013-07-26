@@ -105,6 +105,7 @@ trait ProjectSettings {
   )
 
   val searchIndexDependencies = Seq(
-    "org.elasticsearch" % "elasticsearch" % "0.90.2"
+    "org.elasticsearch" % "elasticsearch" % "0.90.2",
+    "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
   )
 }
