@@ -69,7 +69,7 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   import org.overviewproject.documentcloud.QueryProcessorProtocol._
   import org.overviewproject.jobhandler.SearchSaverProtocol._
 
-  private val queryProcessor = context.actorOf(Props(produceQueryProcessor(createQuery, requestQueue)))
+  private val queryProcessor = context.actorOf(Props(produceQueryProcessor(query, requestQueue)))
   private val searchSaver = context.actorOf(Props(produceSearchSaver))
 
   startWith(Idle, Uninitialized)
@@ -132,8 +132,6 @@ class DocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRe
   }
 
   initialize
-
-  private def createQuery: String = s"projectid:$documentSetId $query"
 
   // We can request all remaining pages at the same time.
   // the request queue will throttle requests, and we don't 

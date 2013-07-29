@@ -28,8 +28,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
       val searchId = 1l
       val documentSetId = 2l
       val queryTerms = "query terms"
-      val expectedQuery = s"projectid:$documentSetId $queryTerms"
-      
+
       val document: Document = mock[Document]
       val documents: Seq[Document] = Seq.fill(5)(document)
     }
@@ -107,7 +106,7 @@ class DocumentSearcherSpec extends Specification with NoTimeConversions with Moc
         queryProcessor.ref, searchSaver.ref)
 
       documentSearcher ! StartSearch(searchId)
-      documentSearcher.underlyingActor.queryString must beSome(expectedQuery)
+      documentSearcher.underlyingActor.queryString must beSome(queryTerms)
       queryProcessor.expectMsg(GetPage(1))
     }
 
