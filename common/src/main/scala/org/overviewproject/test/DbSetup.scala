@@ -47,8 +47,8 @@ object DbSetup {
 
   def insertNode(documentSetId: Long, parentId: Option[Long], description: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO node (id, document_set_id, parent_id, description)
-      VALUES ({id}, {document_set_id}, {parent_id}, {description})
+      INSERT INTO node (id, document_set_id, parent_id, description, is_leaf)
+      VALUES ({id}, {document_set_id}, {parent_id}, {description}, FALSE)
       """).on(
       "id" -> nextNodeId(documentSetId),
       "document_set_id" -> documentSetId,

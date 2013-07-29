@@ -87,23 +87,24 @@ define [
         node_ids_string = node_ids.join(',')
         @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
           .done (data) =>
-            @on_demand_tree.id_tree.edit ->
-              tagid = tagid
+            i = 0
+            while i < data.length
+              nodeid = data[i++]
+              count = data[i++]
 
-              i = 0
-              while i < data.length
-                nodeid = data[i++]
-                count = data[i++]
+              node = nodes[nodeid]
 
-                node = nodes[nodeid]
+              if node?
+                tagCounts = (node.tagCounts ||= {})
 
-                if node?
-                  tagcounts = (node.tagcounts ||= {})
+                if count
+                  tagCounts[tagid] = count
+                else
+                  delete tagCounts[tagid]
 
-                  if count
-                    tagcounts[tagid] = count
-                  else
-                    delete tagcounts[tagid]
+            @on_demand_tree.id_tree.batchAdd(->) # trigger update
+
+            undefined
 
             deferred.resolve()
           .fail -> deferred.reject()
@@ -117,7 +118,7 @@ define [
       node_ids_string = node_ids.join(',')
       deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResultId })
       deferred.done (data) =>
-        @on_demand_tree.id_tree.edit ->
+        @on_demand_tree.id_tree.batchAdd (__) -> # FIXME this isn't really an add
           responseCounts = {}
 
           i = 0
@@ -156,9 +157,9 @@ define [
       nodes = @on_demand_tree.nodes
       @on_demand_tree.id_tree.edit ->
         for __, node of nodes
-          tagcounts = node.tagcounts
-          if tagcounts?[tagid_string]?
-            delete tagcounts[tagid_string]
+          tagCounts = node.tagCounts
+          if tagCounts?[tagid_string]?
+            delete tagCounts[tagid_string]
 
         undefined
 

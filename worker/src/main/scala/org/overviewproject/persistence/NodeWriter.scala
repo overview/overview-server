@@ -35,7 +35,8 @@ class NodeWriter(documentSetId: Long) {
       parentId=parentId,
       description=node.description,
       cachedSize=node.documentIdCache.numberOfDocuments,
-      cachedDocumentIds=node.documentIdCache.documentIds
+      cachedDocumentIds=node.documentIdCache.documentIds,
+      isLeaf = node.children.isEmpty
     )
 
     Schema.nodes.insert(n)
@@ -44,5 +45,4 @@ class NodeWriter(documentSetId: Long) {
 
     node.children.foreach(writeSubTree(_, Some(n.id)))
   }
-
 }

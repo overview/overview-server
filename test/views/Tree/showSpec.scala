@@ -13,7 +13,8 @@ class showSpec extends Specification {
       parentId=parentId,
       description="description",
       cachedSize=cachedSize,
-      cachedDocumentIds=cachedDocumentIds
+      cachedDocumentIds=cachedDocumentIds,
+      isLeaf=false
     )
   }
   
@@ -21,9 +22,9 @@ class showSpec extends Specification {
     
     "contain all nodes" in {
       val nodes = List(
-        (buildNode(1, None, 2, Array(1L, 2L)), Seq(1L, 2L)),
-        (buildNode(2, Some(1L), 1, Array(1L)), Seq[Long]()),
-        (buildNode(3, Some(1L), 1, Array(2L)), Seq[Long]())
+        buildNode(1, None, 2, Array(1L, 2L)),
+        buildNode(2, Some(1L), 1, Array(1L)),
+        buildNode(3, Some(1L), 1, Array(2L))
       )
 
       val treeJson = show(nodes, Seq(), Seq()).toString
@@ -34,7 +35,7 @@ class showSpec extends Specification {
     }
 
     "contain tags" in {
-      val nodes = Seq[(Node,Iterable[Long])]()
+      val nodes = Seq[Node]()
 
       val baseTag = Tag(id=5L, name="tag1", documentSetId=1L, color="ffffff")
 

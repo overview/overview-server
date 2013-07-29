@@ -6,18 +6,16 @@ require [
       id_tree = undefined
 
       do_add = (id, children) ->
-        id_tree.edit (editable) ->
-          editable.add(id, children)
+        id_tree.batchAdd (add) -> add(id, children)
 
       do_remove = (id) ->
-        id_tree.edit (editable) ->
-          editable.remove(id)
+        id_tree.batchRemove (remove) -> remove(id)
 
       beforeEach ->
         id_tree = new IdTree()
 
-      it 'should have a @root of -1', ->
-        expect(id_tree.root).toEqual(-1)
+      it 'should have a @root of undefined', ->
+        expect(id_tree.root).toEqual(null)
 
       it 'should have no @children', ->
         expect(_.keys(id_tree.children)).toEqual([])
@@ -26,63 +24,68 @@ require [
         expect(_.keys(id_tree.parent)).toEqual([])
 
       it 'should make the first-added node the root', ->
-        do_add(1, [2, 3])
+        do_add(null, 1)
         expect(id_tree.root).toEqual(1)
 
       it 'should add to @children', ->
-        do_add(1, [2, 3])
+        do_add(null, 1)
+        do_add(1, 2)
+        do_add(1, 3)
         expect(id_tree.children[1]).toEqual([2, 3])
 
       it 'should add to @parent', ->
+        do_add(null, 1)
         do_add(1, [2, 3])
-        expect(id_tree.parent[1]).toBeUndefined()
+        expect(id_tree.parent[1]).toBe(null)
         expect(id_tree.parent[2]).toEqual(1)
         expect(id_tree.parent[3]).toEqual(1)
 
       it 'should make has() work', ->
         expect(id_tree.has(1)).toBe(false)
+        do_add(null, 1)
         do_add(1, [2, 3])
         expect(id_tree.has(1)).toBe(true)
         expect(id_tree.has(2)).toBe(false)
 
-      it 'should make has() work even with child-less nodes', ->
-        do_add(1, [])
-        expect(id_tree.has(1)).toBe(true)
-
       it 'should make all() work', ->
+        do_add(null, 1)
         do_add(1, [2, 3])
         do_add(2, [4, 5])
-        expect(id_tree.all()).toEqual([1, 2])
+        expect(id_tree.all()).toEqual([1, 2, 3, 4, 5])
 
       it 'should trigger :root', ->
-        root = undefined
-        id_tree.observe('root', (r) -> root = r)
-        do_add(1, [])
-        expect(root).toEqual(1)
-
-      it 'should notify :root before/after :add/:remove such that notifications make a consistent tree', ->
-        calls = []
-        id_tree.observe('root', () -> calls.push('root'))
-        id_tree.observe('add', () -> calls.push('add'))
-        id_tree.observe('remove', () -> calls.push('remove'))
-        do_add(1, [2, 3]) # add, root
-        do_add(2, []) # add
-        do_remove(2) # remove
-        do_remove(1) # root, remove
-        expect(calls).toEqual(['add', 'root', 'add', 'remove', 'root', 'remove'])
+        spy = jasmine.createSpy()
+        id_tree.observe('change', spy)
+        do_add(null, 1)
+        expect(spy).toHaveBeenCalledWith({ added: [1], root: 1 })
 
       describe 'Starting with a simple tree', ->
         beforeEach ->
-          do_add(1, [2, 3])
-          do_add(2, [4, 5])
-          do_add(3, [6, 7])
-          do_add(4, [8, 9])
+          id_tree.batchAdd (add) ->
+            add(null, 1)
+            add(1, [2, 3])
+            add(2, [4, 5])
+            add(3, [6, 7])
+            add(4, [8, 9])
 
-        it 'should notify :remove from deepest to shallowest', ->
-          args = []
-          id_tree.observe('remove', (ids) -> args.push(ids))
-          do_remove(1)
-          expect(args).toEqual([[4, 3, 2, 1]])
+        it 'should walk() postorder', ->
+          arr = []
+          id_tree.walk((x) -> arr.push(x))
+          expect(arr).toEqual([ 8, 9, 4, 5, 2, 6, 7, 3, 1 ])
+
+        it 'should walkFrom() postorder', ->
+          arr = []
+          id_tree.walkFrom(2, (x) -> arr.push(x))
+          expect(arr).toEqual([ 8, 9, 4, 5, 2 ])
+
+        it 'should throw InvalidWalkRoot when calling walkFrom on an invalid id', ->
+          expect(-> id_tree.walkFrom(10, ->)).toThrow('InvalidWalkRoot')
+
+        it 'should notify on removal', ->
+          spy = jasmine.createSpy()
+          id_tree.observe('change', spy)
+          id_tree.batchRemove((remove) -> remove([8, 9]))
+          expect(spy).toHaveBeenCalledWith({ removed: [ 8, 9 ] })
 
         it 'should return undefined when calling loaded_descendents() on an unloaded node', ->
           expect(id_tree.loaded_descendents(8)).toEqual(undefined)
@@ -129,139 +132,48 @@ require [
             ret = id_tree.is_id_ancestor_of_id(3, 9)
             expect(ret).toBe(false)
 
-      describe 'after removing a child', ->
+      describe 'after removing a node', ->
         beforeEach ->
-          do_add(1, [2, 3])
-          do_add(2, [4, 5])
-          do_remove(2)
+          id_tree.batchAdd (add) ->
+            add(null, 1)
+            add(1, [2, 3])
+            add(2, [4, 5])
+          do_remove([5, 4])
 
         it 'should not has() the node', ->
-          expect(id_tree.has(2)).toBeFalsy()
+          expect(id_tree.has(4)).toBe(false)
 
-        it 'should keep a parent entry for the node', ->
-          expect(id_tree.parent[2]).toEqual(1)
-
-        it 'should delete parent entries for sub-nodes', ->
+        it 'should delete the parent entry for the node', ->
           expect(id_tree.parent[4]).toBeUndefined()
-          expect(id_tree.parent[5]).toBeUndefined()
 
-        it 'should keep the child entry from the parent node', ->
-          expect(id_tree.children[1]).toEqual([2, 3])
+        it 'should delete the child entries from the parent node', ->
+          expect(id_tree.children[2]).toBeUndefined()
 
-        it 'should set @root to -1 when removing the root node', ->
-          do_remove(1)
-          expect(id_tree.root).toEqual(-1)
+        it 'should set @root to null when removing the root node', ->
+          do_remove([3, 2, 1])
+          expect(id_tree.root).toBe(null)
 
-        it 'should trigger :root when removing the root node', ->
-          root = id_tree.root
-          id_tree.observe('root', (r) -> root = r)
-          do_remove(1)
-          expect(root).toEqual(-1)
+        it 'should trigger change with root when removing the root node', ->
+          spy = jasmine.createSpy()
+          id_tree.observe('change', spy)
+          do_remove([3, 2, 1])
+          expect(spy).toHaveBeenCalledWith({ removed: [ 3, 2, 1 ], root: null })
 
       describe 'starting with a bigger tree', ->
         beforeEach ->
-          do_add(1, [2, 3])
-          do_add(2, [4, 5])
-          do_add(3, [6, 7])
-          do_add(4, [8, 9])
-          do_add(5, [])
-
-        it 'should remove everything when removing the root', ->
-          do_remove(1)
-          expect(id_tree.children).toEqual({})
-          expect(id_tree.parent).toEqual({})
-
-        it 'should remove sub-nodes when removing', ->
-          do_remove(2)
-          expect(id_tree.children[5]).toBeUndefined()
-          expect(id_tree.parent[9]).toBeUndefined()
+          id_tree.batchAdd (add) ->
+            add(null, 1)
+            add(1, [2, 3])
+            add(2, [4, 5])
+            add(3, [6, 7])
+            add(4, [8, 9])
 
         it 'should throw an error when removing a missing node', ->
           expect(() ->
-            do_remove(9)
-          ).toThrow('MissingNode')
+            do_remove(10)
+          ).toThrow('NoNodeToRemove')
 
         it 'should throw an error when adding an unexpected node', ->
           expect(() ->
-            do_add(10, [])
-          ).toThrow('MissingNode')
-
-        it 'should throw an error when adding an existing node', ->
-          expect(() ->
-            do_add(4, [8, 9])
-          ).toThrow('NodeAlreadyExists')
-
-        it 'should not notify :root when removing a non-root node', ->
-          called = false
-          id_tree.observe('root', () -> called = true)
-          do_remove(2)
-          expect(called).toBeFalsy()
-
-        it 'should notify :add with an ID when adding', ->
-          args = []
-          id_tree.observe('add', (ids) -> args.push(ids))
-          do_add(6, [])
-          expect(args).toEqual([[6]])
-
-        it 'should notify :remove with an ID when removing', ->
-          args = []
-          id_tree.observe('remove', (ids) -> args.push(ids))
-          do_remove(4)
-          expect(args).toEqual([[4]])
-
-        it 'should notify :remove with multiple IDs when removing', ->
-          args = []
-          id_tree.observe('remove', (ids) -> args.push(ids))
-          do_remove(2)
-          expect(args).toEqual([[5, 4, 2]]) # order doesn't matter
-
-        it 'should notify :remove-undefined when removing', ->
-          args = []
-          id_tree.observe('remove-undefined', (ids) -> args.push(ids))
-          do_remove(4)
-          expect(args).toEqual([[9, 8]])
-
-        it 'should notify :remove-undefined before :remove', ->
-          args = []
-          id_tree.observe('remove', (ids) -> args.push(ids))
-          id_tree.observe('remove-undefined', (ids) -> args.push(ids))
-          do_remove(4)
-          expect(args).toEqual([[9, 8], [4]])
-
-        it 'should notify :add with multiple IDs when adding in a single edit', ->
-          args = []
-          id_tree.observe('add', (ids) -> args.push(ids))
-          id_tree.edit (editable) ->
-            editable.add(6, [7, 8])
-            editable.add(7, [])
-            editable.add(8, [])
-            expect(args).toEqual([])
-          expect(args).toEqual([[6, 7, 8]])
-
-        it 'should notify :add and :remove when changing in the same edit', ->
-          args = []
-          id_tree.observe('add', (ids) -> args.push(ids))
-          id_tree.observe('remove', (ids) -> args.push(ids))
-          id_tree.edit (editable) ->
-            editable.add(6, [7, 8])
-            editable.add(7, [])
-            editable.remove(2)
-          expect(args).toEqual([[6, 7], [5, 4, 2]])
-
-        it 'should notify :edit after an edit', ->
-          obj = undefined
-          id_tree.observe('edit', (o) -> obj = o)
-          id_tree.edit (editable) ->
-            editable.add(6, [7, 8])
-          expect(obj).toEqual({
-            add: [6],
-            remove: [],
-            remove_undefined: [],
-            root: undefined,
-          })
-
-        it 'should notify :edit even if nothing has changed', ->
-          called = false
-          id_tree.observe('edit', () -> called = true)
-          id_tree.edit(->)
-          expect(called).toBeTruthy()
+            do_add(10, 11)
+          ).toThrow('MissingParent')

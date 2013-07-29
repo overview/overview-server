@@ -22,7 +22,8 @@ class NodeClonerSpec extends DbSpecification {
           parentId=parentId,
           description="node height: " + depth,
           cachedSize=100,
-          cachedDocumentIds=documentCache
+          cachedDocumentIds=documentCache,
+          isLeaf=(depth == 1)
         )
 
         Schema.nodes.insert(child)

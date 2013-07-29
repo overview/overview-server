@@ -1,12 +1,13 @@
 define [
   'underscore'
   'jquery'
-  '../models/animated_tree'
+  '../models/AnimatedTree'
   '../models/animator'
   '../models/property_interpolator'
+  '../models/TreeLayout'
   '../views/tree_view'
   './logger'
-], (_, $, AnimatedTree, Animator, PropertyInterpolator, TreeView, Logger) ->
+], (_, $, AnimatedTree, Animator, PropertyInterpolator, TreeLayout, TreeView, Logger) ->
   log = Logger.for_component('tree')
 
   log_pan_zoom = _.throttle(((args...) -> log('zoomed/panned', args...)), 500)
@@ -44,7 +45,8 @@ define [
   tree_controller = (div, cache, focus, state) ->
     interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
     animator = new Animator(interpolator)
-    animated_tree = new AnimatedTree(cache.on_demand_tree, state, animator)
+    layout = new TreeLayout(animator)
+    animated_tree = new AnimatedTree(cache.on_demand_tree, state, animator, layout)
     view = new TreeView(div, cache, animated_tree, focus)
 
     animating = false
@@ -60,7 +62,7 @@ define [
         requestAnimationFrame(animate_frame)
 
     # XXX maybe move the focus tag into AnimatedTree?
-    state.observe('focused_tag-changed', -> cache.on_demand_tree.id_tree.edit(->))
+    state.observe('focused_tag-changed', -> view._set_needs_update())
 
     view.observe('needs-update', animate)
 
@@ -127,8 +129,8 @@ define [
     # The Deferred will be returned resolved if the node is already expanded
     # or is a leaf.
     expand_deferred = (nodeid) ->
-      child_nodeid = view.nodeid_below(nodeid)
-      if !child_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
+      children = cache.on_demand_tree.id_tree.children[nodeid]
+      if !children?
         cache.on_demand_tree.demand_node(nodeid)
           .done (json) ->
             tagid = state.focused_tag?.id || state.selection.tags[0] || undefined

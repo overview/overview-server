@@ -14,14 +14,15 @@ object NodeCloner extends InDatabaseCloner {
           cloned_cache AS
             (SELECT node_id, array_agg(clone_id) AS cached_document_ids FROM cloned_document_ids GROUP BY node_id)
 
-        INSERT INTO node (id, document_set_id, parent_id, description, cached_document_ids, cached_size)
+        INSERT INTO node (id, document_set_id, parent_id, description, cached_document_ids, cached_size, is_leaf)
           SELECT
             ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & id) AS clone_id,
             {cloneDocumentSetId},
             ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & parent_id) AS clone_parent_id,
             description,
             cloned_cache.cached_document_ids,
-            cached_size
+            cached_size,
+            is_leaf
           FROM node, cloned_cache WHERE document_set_id = {sourceDocumentSetId} AND node.id = node_id
         """)
 

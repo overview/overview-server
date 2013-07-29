@@ -6,12 +6,13 @@ import play.api.libs.json.Json
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 
 object show {
-  private[Tree] def writeNodeAndChildNodeIds(node: Node, childNodeIds: Iterable[Long]) : JsValue = {
+  private[Tree] def writeNode(node: Node) : JsValue = {
     Json.obj(
       "id" -> node.id,
+      "parentId" -> node.parentId,
       "description" -> node.description,
-      "children" -> childNodeIds.toSeq,
-      "size" -> node.cachedSize
+      "size" -> node.cachedSize,
+      "isLeaf" -> node.isLeaf
     )
   }
 
@@ -24,20 +25,20 @@ object show {
   }
 
   def apply(
-    nodes: Iterable[(Node,Iterable[Long])],
+    nodes: Iterable[Node],
     tags: Iterable[Tag],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
-      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIds)),
+      "nodes" -> nodes.map(writeNode),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(writeTag)
     )
   }
 
-  def apply(nodes: Iterable[(Node,Iterable[Long])]) : JsValue = {
+  def apply(nodes: Iterable[Node]) : JsValue = {
     Json.obj(
-      "nodes" -> nodes.map(Function.tupled(writeNodeAndChildNodeIds))
+      "nodes" -> nodes.map(writeNode)
     )
   }
 }

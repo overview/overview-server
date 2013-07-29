@@ -37,7 +37,8 @@ class NodeControllerSpec extends Specification with Mockito {
         parentId=None,
         description="description",
         cachedSize=0,
-        cachedDocumentIds=Array[Long]()
+        cachedDocumentIds=Array[Long](),
+        isLeaf=false
       )
 
       mockStorage.findNode(1L, 1L) returns Seq(node)

@@ -1,74 +1,67 @@
 define [ './observable' ], (observable) ->
-  # A special, fast tree which only stores IDs
+  # A special, fast tree which only stores IDs. The tree is made for speed.
   #
-  # This tree is made for speed. Inserts do not create any objects, and it
-  # only notifies observers of batch operations. Its most important lookup
-  # methods aren't methods at all: they're hash lookups.
+  # Modify the tree using batch operations. There are two key operations one
+  # can execute in batch:
   #
-  # To create:
+  # * add edge: add an edge from a parent node to a child node
+  # * remove node: remove an entire tree node
+  #
+  # The first edge added determines the root node.
+  #
+  # Create and edit the tree like this:
   #
   #     id_tree = new IdTree()
-  #     id_tree.edit (editable) ->
-  #       editable.add(1, [2, 3])
-  #       editable.add(2, [4, 5])
-  #       editable.add(3, [6, 7])
-  #       editable.add(4, [])
+  #     id_tree.batchAdd (add) ->
+  #       add(null, 1) # add a root node
+  #       add(1, 2) # one edge
+  #       add(1, 3) # another edge
+  #       add(2, [4, 5]) # alternate API
+  #       [ [4, 6], [4, 7], [4, 8] ].map(add.apply.bind({})) # getting creative
   #
-  # Observers will be notified of two changes:
+  #     id_tree.batchRemove (remove) ->
+  #       remove(1) # exception: can only remove child nodes
+  #       remove(8)
+  #       remove([7, 6])
+  #       remove([5, 4, 3, 2])
+  #       remove(1)
   #
-  # 1. `root`, which will notify that `root` is now `1`
-  # 2. `add`, which will notify that [1, 2, 3, 4] were added
+  # When editing a tree, follow these rules:
   #
-  # The other notifications are `remove` and `remove-undefined`, which mirror
-  # `add` but remove sub-nodes as well. They will be called after an `edit`, if
-  # need be: first `add`, then `remove-undefined`, and finally `remove`. The
-  # order of IDs is consistent: the `add` list ends with the deepest nodes, and
-  # the `remove` lists begin with them.
+  # * Add a parent before adding its children
+  # * Add all edges from a given parent in a single batch
+  # * Delete all children of a given parent in a single batch
+  # * Do not create any cycles
+  # * Use the correct types. Pass 1, for instance, as opposed to "1"
   #
-  # Finally, `edit` is notified after any change.
+  # Watch for tree changes like this:
+  #
+  #     id_tree = new IdTree()
+  #     id_tree.observe 'change', (changes) ->
+  #       console.log("New root ID", changes.root) # may be undefined
+  #       console.log("Added child nodes", changes.added) # ordered: parents are always added before children
+  #       console.log("Removed nodes", changes.removed) # ordered: children are always removed before parents
   #
   # Now, to read the tree, use this interface, which is optimized for speed:
   #
   #     id_tree.root # 1
-  #     id_tree.has(1) # true
-  #     id_tree.has(6) # false
+  #     id_tree.has(1) # true: the node is a parent
+  #     id_tree.has(6) # true: the node is a child
+  #     id_tree.has(9) # false: never added
   #     id_tree.children[1] # [2, 3]
   #     id_tree.children[4] # []
   #     id_tree.children[6] # undefined
-  #     id_tree.parent[6] # 3, even though node 6 isn't there
+  #     id_tree.parent[6] # 4
   #     id_tree.parent[3] # 1
-  #     id_tree.parent[1] # undefined
-  #     id_tree.loaded_descendents(1) # [ 4, 2, 3 ]
-  #
-  # Some invariants of the IdTree, true before/after every method call:
-  #
-  # * Any id that `children` points to has an inverse `parent` entry
-  # * The inverse is true, except nothing points to `root`. (This means every
-  #   node has a path back to the root.)
-  # * `has()` returns whether the `children` entry is defined.
-  #
-  # And some undefined behavior:
-  #
-  # * Loops (i.e., a non-tree)
-  # * Re-adding a node that was just removed, all in the same edit
+  #     id_tree.parent[1] # null
+  #     id_tree.descendents(2) # [ 4, 5, 6, 7, 8 ]
   class IdTree
     observable(this)
 
     constructor: () ->
-      @root = -1
+      @root = null
       @children = {}
       @parent = {}
-
-      @_editor = {
-        add: this._add.bind(this),
-        remove: this._remove.bind(this),
-      }
-      @_edits = {
-        add: [],
-        remove: [],
-        remove_undefined: [],
-        root: undefined,
-      }
 
     # Returns true iff the node's list of children is loaded.
     #
@@ -77,10 +70,32 @@ define [ './observable' ], (observable) ->
       @children[id]?
 
     # Returns all node IDs for which the list of children is loaded.
-    #
-    # Running time: O(n), where n is the number of nodes in the tree.
-    all: () ->
-      +i for i, _ of @children
+    all: ->
+      +i for i, _ of @parent
+
+    # Walk the entire tree, post-order
+    walk: (callback) -> @walkFrom(@root, callback)
+
+    # Walk the subtree rooted at id, post-order
+    walkFrom: (id, callback) ->
+      idKey = String(id)
+      throw 'InvalidWalkRoot' if idKey not of @parent
+      if idKey of @children
+        @walkFrom(childId, callback) for childId in @children[idKey]
+      callback(id)
+      undefined
+
+    # Walk the entire tree, pre-order
+    walkPreorder: (callback) -> @walkFromPreorder(@root, callback)
+
+    # Walk the subtree rooted at id, pre-order
+    walkFromPreorder: (id, callback) ->
+      idKey = String(id)
+      throw 'InvalidWalkRoot' if idKey not of @parent
+      callback(id)
+      if idKey of @children
+        @walkFromPreorder(childId, callback) for childId in @children[idKey]
+      undefined
 
     # Returns true iff id1 is higher than id2 in the tree.
     #
@@ -95,38 +110,75 @@ define [ './observable' ], (observable) ->
 
       false
 
-    edit: (callback) ->
-      callback(@_editor)
+    batchAdd: (callback) ->
+      oldRoot = @root
+      added = []
 
-      this._notify('add', @_edits.add) if @_edits.add.length
-      this._notify('root', @root) if @_edits.root
-      this._notify('remove-undefined', @_edits.remove_undefined) if @_edits.remove_undefined.length
-      this._notify('remove', @_edits.remove) if @_edits.remove.length
+      add = (parent, child) =>
+        if parent is null
+          throw 'RootAlreadyExists' if @root isnt null
+          @root = child
+        else
+          parentKey = String(parent)
+          throw 'MissingParent' if parentKey not of @parent
+          (@children[parentKey] ||= []).push(child)
 
-      this._notify('edit', {
-        add: @_edits.add,
-        root: @_edits.root,
-        remove_undefined: @_edits.remove_undefined,
-        remove: @_edits.remove
-      })
+        childKey = String(child)
+        @parent[childKey] = parent
 
-      @_edits.add = []
-      @_edits.remove = []
-      @_edits.remove_undefined = []
-      @_edits.root = undefined
+        added.push(child)
+        undefined
 
-    _add: (id, children) ->
-      throw 'NodeAlreadyExists' if @children[id]?
+      addWrapper = (parent, childOrChildren) ->
+        if Array.isArray(childOrChildren)
+          for child in childOrChildren
+            add(parent, child)
+        else
+          add(parent, childOrChildren)
+        undefined
 
-      if @root == -1
-        @root = id
-        @_edits.root = true
-      else
-        throw 'MissingNode' if !@parent[id]?
+      callback(addWrapper)
 
-      @children[id] = children
-      (@parent[child_id] = id for child_id in children)
-      @_edits.add.push(id)
+      changes = { added: added }
+      changes.root = @root if @root != oldRoot
+      @_notify('change', changes)
+
+    batchRemove: (callback) ->
+      oldRoot = @root
+      removed = []
+
+      remove = (child) =>
+        childKey = String(child)
+
+        throw 'NoNodeToRemove' if childKey not of @parent
+
+        parent = @parent[childKey]
+        delete @parent[childKey]
+
+        if parent is null
+          throw 'InvalidRootToRemove' if child != @root
+          @root = null
+        else
+          parentKey = String(parent)
+          # Assume we're deleting all in the same batchRemove()
+          delete @children[parentKey] if parentKey of @children
+
+        removed.push(child)
+        undefined
+
+      removeWrapper = (idOrIds) ->
+        if Array.isArray(idOrIds)
+          for id in idOrIds
+            remove(id)
+        else
+          remove(idOrIds)
+        undefined
+
+      callback(removeWrapper)
+
+      changes = { removed: removed }
+      changes.root = @root if @root != oldRoot
+      @_notify('change', changes)
 
     loaded_descendents: (id) ->
       return undefined if !@children[id]?
@@ -142,29 +194,3 @@ define [ './observable' ], (observable) ->
           to_visit.push(child_id) for child_id in children
 
       ret
-
-    _remove: (id) ->
-      child_ids = []
-      to_visit = @children[id]
-
-      throw 'MissingNode' if !to_visit?
-
-      # Breadth-first search
-      while cur = to_visit.shift()
-        child_ids.push(cur)
-        if children = @children[cur]
-          @_edits.remove.unshift(cur) # @_edits.remove is deepest-to-shallowest
-          (to_visit.push(child_id) for child_id in children)
-        else
-          @_edits.remove_undefined.unshift(cur)
-
-      for child_id in child_ids
-        delete @parent[child_id]
-        delete @children[child_id]
-
-      if @root == id
-        @root = -1
-        @_edits.root = true
-
-      delete @children[id]
-      @_edits.remove.push(id)

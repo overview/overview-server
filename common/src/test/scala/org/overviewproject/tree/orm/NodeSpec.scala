@@ -17,7 +17,8 @@ class NodeSpec extends DbSpecification {
         parentId=None,
         description="description",
         cachedSize=10,
-        cachedDocumentIds=Array[Long](1, 2, 3, 4, 5)
+        cachedDocumentIds=Array[Long](1, 2, 3, 4, 5),
+        isLeaf=false
       )
 
       Schema.nodes.insert(node)

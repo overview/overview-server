@@ -59,7 +59,8 @@ class DocumentSetStoreSpec extends Specification {
         parentId=None,
         description="description",
         cachedSize=0,
-        cachedDocumentIds=Array[Long]()
+        cachedDocumentIds=Array[Long](),
+        isLeaf=false
       ))
     }
 

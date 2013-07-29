@@ -124,12 +124,13 @@ require [
         beforeEach ->
           tree = {
             id_tree: {
-              edit: (cb) -> cb(); @edited = true
+              batchAdd: jasmine.createSpy()
+              batchRemove: jasmine.createSpy()
             }
             nodes: {
-              "1": { id: 1, children: [2, 3], tagcounts: { "1": 10 } },
-              "2": { id: 2, children: [4, 5], tagcounts: { "1": 5 } },
-              "3": { id: 3, children: [6, 7], tagcounts: { "1": 5 } },
+              "1": { id: 1, tagcounts: { "1": 10 } },
+              "2": { id: 2, tagcounts: { "1": 5 } },
+              "3": { id: 3, tagcounts: { "1": 5 } },
             }
           }
           cache.on_demand_tree = tree
@@ -158,10 +159,10 @@ require [
           it 'should not crash when receiving an unloaded node', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])
 
-          it 'should call id_tree.edit()', ->
+          it 'should call id_tree.batchAdd()', ->
             # After refreshing node counts, we need to redraw. See #128.
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])
-            expect(cache.on_demand_tree.id_tree.edited).toBe(true)
+            expect(cache.on_demand_tree.id_tree.batchAdd).toHaveBeenCalled()
 
       describe 'with a node', ->
         node = undefined
@@ -227,9 +228,9 @@ require [
               edit: (cb) -> cb(); @edited = true
             }
             nodes: {
-              "1": { id: 1, children: [2, 3], tagcounts: { "1": 10 } },
-              "2": { id: 2, children: [4, 5], tagcounts: { "1": 5 } },
-              "3": { id: 3, children: [6, 7], tagcounts: { "1": 5 } },
+              "1": { id: 1, tagcounts: { "1": 10 } },
+              "2": { id: 2, tagcounts: { "1": 5 } },
+              "3": { id: 3, tagcounts: { "1": 5 } },
             }
           }
           cache.on_demand_tree = tree

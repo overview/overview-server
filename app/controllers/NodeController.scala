@@ -13,8 +13,17 @@ trait NodeController extends Controller {
   private[controllers] val rootChildLevels = 2 // When showing the root, show this many levels of children
 
   trait Storage {
-    def findRootNodesWithChildIds(documentSetId: Long, depth: Int) : Iterable[(Node,Iterable[Long])]
-    def findChildNodesWithChildIds(documentSetId: Long, parentNodeId: Long) : Iterable[(Node,Iterable[Long])]
+    /** A tree of Nodes for the document set, starting at the root.
+      *
+      * Nodes are returned in order: when iterating over the return value, if a
+      * Node refers to a parentId, the Node corresponding to that parentId has
+      * already appeared in the return value.
+      */
+    def findRootNodes(documentSetId: Long, depth: Int) : Iterable[Node]
+
+    /** The direct descendents of the given parent Node ID. */
+    def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
+
     def findNode(documentSetId: Long, nodeId: Long) : Iterable[Node]
     def findTags(documentSetId: Long) : Iterable[Tag]
     def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
@@ -24,7 +33,7 @@ trait NodeController extends Controller {
   val storage : NodeController.Storage
 
   def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val nodes = storage.findRootNodesWithChildIds(documentSetId, rootChildLevels)
+    val nodes = storage.findRootNodes(documentSetId, rootChildLevels)
 
     if (nodes.isEmpty) {
       NotFound
@@ -37,7 +46,7 @@ trait NodeController extends Controller {
   }
 
   def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val nodes = storage.findChildNodesWithChildIds(documentSetId, id)
+    val nodes = storage.findChildNodes(documentSetId, id)
 
     Ok(views.json.Tree.show(nodes))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
@@ -61,21 +70,6 @@ trait NodeController extends Controller {
 
 object NodeController extends NodeController {
   override val storage = new NodeController.Storage {
-    private def addChildIds(nodes: Iterable[Node]) : Iterable[(Node,Iterable[Long])] = {
-      if (nodes.nonEmpty) {
-        val nodeIds = nodes.map(_.id)
-        val nodeChildIds : Map[Option[Long],Iterable[Long]] = NodeFinder
-          .byParentIds(nodeIds)
-          .toParentIdAndId
-          .groupBy(_._1)
-          .mapValues((x: Iterable[(Option[Long],Long)]) => x.map(_._2))
-
-        nodes.map(node => (node, nodeChildIds.getOrElse(Some(node.id), Seq())))
-      } else {
-        Seq()
-      }
-    }
-
     private def childrenOf(nodes: Iterable[Node]) : Iterable[Node] = {
       if (nodes.nonEmpty) {
         val nodeIds = nodes.map(_.id)
@@ -98,17 +92,15 @@ object NodeController extends NodeController {
       }
     }
 
-    override def findRootNodesWithChildIds(documentSetId: Long, depth: Int) = {
+    override def findRootNodes(documentSetId: Long, depth: Int) = {
       val root : Iterable[Node] = NodeFinder.byDocumentSetAndParent(documentSetId, None)
         .map(_.copy()) // Squeryl bug
-      val nodes = addChildNodes(Seq(), root, depth)
-      addChildIds(nodes)
+      addChildNodes(Seq(), root, depth)
     }
 
-    override def findChildNodesWithChildIds(documentSetId: Long, parentNodeId: Long) = {
-      val nodes = NodeFinder.byDocumentSetAndParent(documentSetId, Some(parentNodeId))
+    override def findChildNodes(documentSetId: Long, parentNodeId: Long) = {
+      NodeFinder.byDocumentSetAndParent(documentSetId, Some(parentNodeId))
         .map(_.copy()) // Squeryl bug
-      addChildIds(nodes)
     }
 
     override def findTags(documentSetId: Long) = {

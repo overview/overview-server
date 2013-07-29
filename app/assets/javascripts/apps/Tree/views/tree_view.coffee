@@ -7,21 +7,21 @@ define [
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
 ], ($, _, observable, DrawableNode, ColorTable) ->
   DEFAULT_OPTIONS = {
-    color: {
-      line: '#888888',
-      line_selected: '#000000',
-      line_default: '#333333',
-      line_faded: '#999999',
-    },
-    connector_line_width: 2.5, # px
+    color:
+      line: '#888888'
+      line_selected: '#000000'
+      line_default: '#333333'
+      line_faded: '#999999'
+    connector_line_width: 2.5 # px
     node_corner_radius: 5, # px
-    node_line_width: 2, # px
-    node_expand_width: 1.5, # px
+    node_line_width: 2 # px
+    node_expand_width: 1.5 # px
     node_expand_click_radius: 12 # px
-    node_line_width_selected: 4, # px
-    node_line_width_leaf: 1, # px
+    node_expand_radius: 6 # px
+    node_line_width_selected: 4 # px
+    node_line_width_leaf: 1 # px
     start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
-    mousewheel_zoom_factor: 1.2,
+    mousewheel_zoom_factor: 1.2
   }
 
   HOVER_NODE_TEMPLATE = _.template("""
@@ -86,73 +86,53 @@ define [
       @ctx.lineStyle = @options.color.line
       @ctx.font = '12px "Open Sans", Helvetica, Arial, sans-serif'
       @ctx.textBaseline = 'top'
-      @ctx.shadowColor = 'white'
 
     clear: () ->
       @ctx.clearRect(0, 0, @width, @height)
       @root = undefined # will be overwritten if the tree isn't empty
 
-    _auto_fit_pan: (drawable_node) ->
-      if @focus_nodes?.length
-        nodes = @focus_nodes
-
-        # left_bound, right_bound: absolute X coordinates which must be in view
-        left_bound = undefined
-        right_bound = undefined
-        @root.walk (dn) ->
-          if nodes.indexOf(dn.animated_node.node.id) != -1
-            # We want the outer bounds--that is, the bounds of the selected node
-            # and its children.
-            a = dn.absolute_position()
-            width = dn.outer_width()
-            node_left_bound = a.hmid - width * 0.5
-            node_right_bound = a.hmid + width * 0.5
-
-            left_bound = node_left_bound if !left_bound? || node_left_bound < left_bound
-            right_bound = node_right_bound if !right_bound? || node_right_bound > right_bound
-
-        if left_bound? && right_bound?
-          # left_pan, right_pan: same, but as "focus" coordinates (from -0.5 to 0.5)
-          tree_width = @root.outer_width()
-          left_pan = left_bound / tree_width - 0.5
-          right_pan = right_bound / tree_width - 0.5
-          @focus.auto_fit_pan(left_pan, right_pan)
-
     draw: () ->
       this.clear()
       return if !@tree.root?
 
-      @root = new DrawableNode(@tree.root)
-      allNodes = @allDrawableNodes = []
-      @root.walk((dn) -> allNodes.push(dn))
-      @_auto_fit_pan()
+      # Give AnimatedTree a thinner width/height than the canvas has. When we
+      # stroke that's _centered_ on the pixels we give: if we stroke from 0,0
+      # to 0,width with a stroke width of 2, then half of that stroke will
+      # appear above y=0. We need that top half (and left, and right, and
+      # bottom) to show up.
 
-      px_per_hunit = (@width - @options.node_line_width_selected) / @root.outer_width() / @focus.zoom
-      px_per_vunit = (@height - 0.5 * @options.node_line_width_selected - 0.5 * @options.node_expand_click_radius) / @root.outer_height() # zoom doesn't affect Y axis
-      pan_units = @root.outer_width() * (0.5 + @focus.pan - @focus.zoom * 0.5)
+      margin =
+        left: @options.node_line_width_selected * 0.5
+        right: @options.node_line_width_selected * 0.5
+        top: @options.node_line_width_selected * 0.5
+        bottom: @options.node_expand_radius + @options.node_expand_width * 0.5
 
-      # Set _px objects on all nodes
-      @root.px(px_per_hunit, px_per_vunit, -0.5 * @options.node_line_width_selected / px_per_hunit + pan_units, 0.5 * @options.node_line_width_selected / px_per_vunit)
+      drawableNodes = @drawableNodes = @tree.calculatePixels(
+        @width - margin.left - margin.right,
+        @height - margin.top - margin.bottom,
+        @focus.zoom,
+        @focus.pan,
+        margin.left,
+        margin.top
+      )
 
-      for drawable_node in @allDrawableNodes
-        this._draw_single_node(drawable_node)
-      this._draw_nodes()
-      this._draw_labels()
-      this._draw_lines_from_parents_to_children()
-      this._draw_expand_and_collapse_for_tree()
+      #@_auto_fit_pan() # TODO make this use @tree somehow?
 
-    pixel_to_drawable_node: (x, y) ->
-      drawable_node = undefined
-      @root?.walk (dn) ->
-        return if drawable_node?
-        px = dn._px
+      this._draw_colors(drawableNodes)
+      this._draw_nodes(drawableNodes)
+      this._draw_labels(drawableNodes)
+      this._draw_lines_from_parents_to_children(drawableNodes)
+      this._draw_expand_and_collapse_for_tree(drawableNodes)
+
+    pixel_to_node: (x, y) ->
+      for px in @drawableNodes
         if x >= px.left && x <= px.left + px.width && y >= px.top && y <= px.top + px.height
-          drawable_node = dn
-      drawable_node
+          return px
+      undefined
 
     _pixel_to_expand_or_collapse_node: (x, y, list_of_circles) ->
       maxR2 = @options.node_expand_click_radius * @options.node_expand_click_radius
-      for entry in (list_of_circles || []) # [ xy, drawable_node ] pairs
+      for entry in (list_of_circles || []) # [ xy, px ] pairs
         xy = entry[0]
         dx = xy.x - x
         dy = xy.y - y
@@ -167,19 +147,15 @@ define [
       @_pixel_to_expand_or_collapse_node(x, y, @collapse_circles || [])
 
     pixel_to_action: (x, y) ->
-      event = (key, drawable_node) ->
-        { event: key, id: drawable_node.animated_node.node.id }
+      event = (key, node) ->
+        { event: key, id: node.json.id }
 
-      if drawable_node = @pixel_to_expand_node(x, y)
-        event('expand', drawable_node)
-      else if drawable_node = @pixel_to_collapse_node(x, y)
-        event('collapse', drawable_node)
-      else if drawable_node = @pixel_to_drawable_node(x, y)
-        event('click', drawable_node)
-        #if !drawable_node.animated_node.loaded
-        #  event('expand', drawable_node)
-        #else
-        #  event('click', drawable_node)
+      if node = @pixel_to_expand_node(x, y)
+        event('expand', node)
+      else if node = @pixel_to_collapse_node(x, y)
+        event('collapse', node)
+      else if node = @pixel_to_node(x, y)
+        event('click', node)
       else
         undefined
 
@@ -194,40 +170,43 @@ define [
 
       ctx = @ctx
 
-      ctx.save()
       ctx.fillStyle = color
       ctx.beginPath()
       drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.node_corner_radius)
       ctx.fill()
+
+    _draw_colors: (drawableNodes) ->
+      ctx = @ctx
+
+      ctx.save()
+
+      for px in drawableNodes
+        json = px.json
+
+        # Use the first tagid for which there's a count
+        count = 0
+        color = null
+
+        if @colorLogic.searchResultIds?
+          for id in @colorLogic.searchResultIds
+            count = json.searchResultCounts?[id]
+            if count
+              color = @colorLogic.color(id)
+              break
+        else if @colorLogic.tagIds?
+          for id in @colorLogic.tagIds
+            count = json.tagCounts?[id]
+            if count
+              color = @colorLogic.color(id)
+              break
+
+        if color
+          @_draw_tagcount(px.left, px.top, px.width, px.height, color, count / json.size)
+
       ctx.restore()
-
-    _draw_single_node: (drawable_node) ->
-      px = drawable_node._px
-      animated_node = drawable_node.animated_node
-      node = animated_node.node
-
-      # Use the first tagid for which there's a count
-      count = 0
-      color = undefined
-      if @colorLogic.searchResultIds?
-        for id in @colorLogic.searchResultIds
-          count = node.searchResultCounts?[id]
-          if count
-            color = @colorLogic.color(id)
-            break
-      if @colorLogic.tagIds?
-        for id in @colorLogic.tagIds
-          count = node.tagcounts?[id]
-          if count
-            color = @colorLogic.color(id)
-            break
-
-      if color
-        this._draw_tagcount(px.left, px.top, px.width, px.height, color, count / node.size)
-
       undefined
 
-    _draw_nodes: ->
+    _draw_nodes: (drawableNodes) ->
       ctx = @ctx
 
       ctx.save()
@@ -240,30 +219,35 @@ define [
       minX = 0
       maxX = @width
 
-      for dn in @allDrawableNodes
-        animated_node = dn.animated_node
-        px = dn._px
+      for px in drawableNodes
+        node = px.node
 
         continue if px.left + px.width + buffer < minX || px.left - buffer > maxX
 
-        if animated_node.selected
+        if node.selected_fraction.current
           selectedPxs.push(px)
-        else if animated_node.children?.length is 0
+        else if px.isLeaf
           leafPxs.push(px)
         else
           normalPxs.push(px)
 
       radius = @options.node_corner_radius
       drawPxs = (pxs) ->
-        ctx.beginPath()
         for px in pxs
           drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
 
-      ctx.lineWidth = @options.node_line_width_selected
       ctx.strokeStyle = @options.color.line_selected
-      ctx.beginPath()
-      drawPxs(selectedPxs)
-      ctx.stroke()
+      for px in selectedPxs
+        t = px.node.selected_fraction.current
+        u = 1 - t
+        otherWidth = if px.isLeaf
+          @options.node_line_width_leaf
+        else
+          @options.node_line_width
+        ctx.lineWidth = t * @options.node_line_width_selected + u * otherWidth
+        ctx.beginPath()
+        drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
+        ctx.stroke()
 
       ctx.lineWidth = @options.node_line_width_leaf
       ctx.strokeStyle = @options.color.line_faded
@@ -281,40 +265,38 @@ define [
 
       undefined
 
-    _draw_labels: ->
+    _draw_labels: (drawableNodes) ->
       ctx = @ctx
 
       ctx.save()
 
       ctx.fillStyle = '#333333'
-      ctx.beginPath()
 
       maxX = @width
 
-      for dn in @allDrawableNodes
-        px = dn._px
+      for px in drawableNodes
         width = px.width - 12 # border + padding
-        continue if width < 15
 
+        continue if width < 15
         continue if px.left + px.width < 0
         continue if px.left > maxX
 
-        node = dn.animated_node.node
-        description = node.description
+        description = px.json.description
         continue if !description
 
+        top = px.top + 3
         left = px.left + 6
-        right = left + width
 
         ctx.save()
-        ctx.rect(left, px.top + 3, width, 15)
+        ctx.beginPath()
+        ctx.rect(left, top, width, 20)
         ctx.clip()
-        ctx.fillText(description, left, px.top + 3)
+        ctx.fillText(description, left, top)
         ctx.restore()
 
       ctx.restore()
 
-    _draw_lines_from_parents_to_children: ->
+    _draw_lines_from_parents_to_children: (drawableNodes) ->
       ctx = @ctx
 
       ctx.save()
@@ -332,22 +314,21 @@ define [
       minX = -@options.connector_line_width
       maxX = @width + @options.connector_line_width
 
-      for dn in @allDrawableNodes when dn.parent?
-        child_px = dn._px
-        parent_px = dn.parent._px
+      for px in drawableNodes when px.parent?
+        parentPx = px.parent
 
-        x1 = parent_px.hmid
-        x2 = child_px.hmid
+        x1 = parentPx.hmid
+        x2 = px.hmid
 
         continue if x1 < minX && x2 < minX
         continue if x1 > maxX && x2 > maxX
 
-        y1 = parent_px.top + parent_px.height
-        y2 = child_px.top
+        y1 = parentPx.top + parentPx.height
+        y2 = px.top
         mid_y = 0.5 * (y1 + y2)
 
         ctx.moveTo(x1, y1)
-        ctx.bezierCurveTo(x1, mid_y + (0.1 * child_px.height), x2, mid_y - (0.1 * child_px.height), x2, y2)
+        ctx.bezierCurveTo(x1, mid_y + (0.1 * px.height), x2, mid_y - (0.1 * px.height), x2, y2)
 
       ctx.stroke()
 
@@ -355,7 +336,7 @@ define [
 
       undefined
 
-    _draw_expand_and_collapse_for_tree: ->
+    _draw_expand_and_collapse_for_tree: (drawableNodes) ->
       ctx = @ctx
       ctx.save()
 
@@ -363,13 +344,13 @@ define [
       ctx.strokeStyle = '#666666'
       ctx.fillStyle = '#ffffff'
       halfLineWidth = lineWidth * 0.5
-      radius = 6
+      radius = @options.node_expand_radius
+      glyphRadius = radius - 2
       outerRadius = radius + halfLineWidth
       minX = 0
       maxX = @width
 
-      node_to_useful_xy = (drawable_node) ->
-        px = drawable_node._px
+      px_to_useful_xy = (px) ->
         if px.width > 20 && px.hmid + outerRadius >= minX && px.hmid - outerRadius <= maxX
           x: px.hmid
           y: px.top + px.height - halfLineWidth
@@ -379,13 +360,13 @@ define [
       expandCircles = @expand_circles = []
       collapseCircles = @collapse_circles = []
 
-      for drawable_node in @allDrawableNodes
-        xy = node_to_useful_xy(drawable_node)
+      for px in drawableNodes when !px.isLeaf
+        xy = px_to_useful_xy(px)
         if xy?
-          if drawable_node.children()?.length
-            collapseCircles.push([ xy, drawable_node ])
-          else if !drawable_node.animated_node.loaded
-            expandCircles.push([ xy, drawable_node ])
+          if px.node.opened_fraction.current == 1
+            collapseCircles.push([ xy, px ])
+          else if px.node.opened_fraction.current == 0
+            expandCircles.push([ xy, px ])
 
       # Draw circles
       for circle in expandCircles.concat(collapseCircles)
@@ -399,14 +380,14 @@ define [
       ctx.beginPath()
       for circle in collapseCircles
         xy = circle[0]
-        ctx.moveTo(xy.x - 4, xy.y)
-        ctx.lineTo(xy.x + 4, xy.y)
+        ctx.moveTo(xy.x - glyphRadius, xy.y)
+        ctx.lineTo(xy.x + glyphRadius, xy.y)
       for circle in expandCircles
         xy = circle[0]
-        ctx.moveTo(xy.x - 4, xy.y)
-        ctx.lineTo(xy.x + 4, xy.y)
-        ctx.moveTo(xy.x, xy.y + 4)
-        ctx.lineTo(xy.x, xy.y - 4)
+        ctx.moveTo(xy.x - glyphRadius, xy.y)
+        ctx.lineTo(xy.x + glyphRadius, xy.y)
+        ctx.moveTo(xy.x, xy.y + glyphRadius)
+        ctx.lineTo(xy.x, xy.y - glyphRadius)
       ctx.stroke()
 
       ctx.restore()
@@ -446,62 +427,27 @@ define [
       else
         undefined
 
-    # Returns the sibling (left or right) of the given node, or undefined if
-    # there is no sibling.
-    #
-    # Parameters:
-    # * nodeid: node ID to start at
-    # * index_diff: +1 for node to the right; -1 for node to the left
-    _nodeid_sibling: (nodeid, index_diff) ->
-      parent_nodeid = @tree.id_tree.parent[nodeid]
-      return undefined if !parent_nodeid?
-      siblings = @tree.id_tree.children[parent_nodeid]
-      node_index = siblings.indexOf(nodeid)
-      sibling_index = node_index + index_diff
-      if 0 <= sibling_index < siblings.length
-        siblings[sibling_index]
-      else
-        undefined
-
     # Returns the node to the left or right of the given node.
     #
-    # If there is no sibling, this method will traverse the tree to find a node
-    # as nearby as possible and as close to the same level as possible.
-    _nearby_nodeid_at_nearest_level: (nodeid, index_diff) ->
-      # Make "nodeid" go up the tree until sibling_nodeid is found. Count the
-      # levels we climb.
-      levels_away = 0
-      sibling_nodeid = undefined
+    # If there is no sibling, this method will return undefined.
+    _sibling: (nodeid, indexDiff) ->
+      parentid = @tree.id_tree.parent[nodeid]
+      if parentid
+        siblings = @tree.id_tree.children[parentid]
+        nodeIndex = siblings.indexOf(nodeid)
+        siblingIndex = nodeIndex + indexDiff
 
-      while true
-        parent_nodeid = @tree.id_tree.parent[nodeid]
-        return undefined if !parent_nodeid?
-        sibling_nodeid = @_nodeid_sibling(nodeid, index_diff)
-        if !sibling_nodeid?
-          nodeid = parent_nodeid
-          levels_away += 1
+        if 0 <= siblingIndex < siblings.length
+          siblings[siblingIndex]
         else
-          break
+          undefined
+      else
+        # root node has no siblings
+        undefined
 
-      # Descend the number of levels we've climbed. At the end, sibling_id will
-      # be the result we want. parent_nodeid will be one above, in case we can't
-      # descend all the way
-      parent_nodeid = undefined # never return the parent
-      while levels_away > 0 && sibling_nodeid?
-        parent_nodeid = sibling_nodeid
-        siblings = @tree.id_tree.children[parent_nodeid]
-        # sibling_index: rightmost or leftmost index
-        sibling_index = index_diff < 0 && (siblings.length - 1) || 0
-        sibling_nodeid = siblings[sibling_index]
-        # don't descend to nodes that can't be drawn
-        sibling_nodeid = undefined if !@tree.id_tree.children[sibling_nodeid]
-        levels_away -= 1
+    nodeid_left: (nodeid) -> @_sibling(nodeid, -1)
 
-      sibling_nodeid || parent_nodeid
-
-    nodeid_left: (nodeid) -> @_nearby_nodeid_at_nearest_level(nodeid, -1)
-
-    nodeid_right: (nodeid) -> @_nearby_nodeid_at_nearest_level(nodeid, 1)
+    nodeid_right: (nodeid) -> @_sibling(nodeid, 1)
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
@@ -553,8 +499,8 @@ define [
 
     _handle_hover: () ->
       $(@canvas).on 'mousemove', (e) =>
-        dn = @_event_to_drawable_node(e) # might be undefined
-        @set_hover_node(dn)
+        px = @_event_to_px(e) # might be undefined
+        @set_hover_node(px)
         e.preventDefault()
 
       $(@canvas).on 'mouseleave', (e) =>
@@ -618,12 +564,12 @@ define [
 
         this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
-    _event_to_drawable_node: (e) ->
+    _event_to_px: (e) ->
       offset = $(@canvas).offset()
       x = e.pageX - offset.left
       y = e.pageY - offset.top
 
-      @last_draw?.pixel_to_drawable_node(x, y)
+      @last_draw?.pixel_to_node(x, y)
 
     _event_to_action: (e) ->
       return undefined if !@tree.root?
@@ -659,17 +605,17 @@ define [
       selection = @tree.state.selection
       colorLogic = if selection.searchResults.length
         {
-          searchResultIds: "#{id}" for id in selection.searchResults
+          searchResultIds: selection.searchResults.slice(0)
           color: -> '#50ade5'
         }
       else if selection.tags.length
         {
-          tagIds: "#{id}" for id in selection.tags
+          tagIds: selection.tags.slice(0)
           color: (id) -> tag_id_to_color[id]
         }
       else
         {
-          tagIds: "#{id}" for id in @focus_tagids
+          tagIds: @focus_tagids.slice(0)
           color: (id) -> tag_id_to_color[id]
         }
 
@@ -683,7 +629,7 @@ define [
       @tree.update()
       @focus.update()
       this._redraw()
-      @_needs_update = @tree.needs_update() || @focus.needs_update()
+      @_needs_update = @tree.needsUpdate() || @focus.needs_update()
 
     needs_update: () ->
       @_needs_update
@@ -700,16 +646,15 @@ define [
     # Sets the node being hovered.
     #
     # We'll adjust @$hover_node_description to match.
-    set_hover_node: (drawable_node) ->
-      px = drawable_node?._px
+    set_hover_node: (px) ->
       if !px?
         @$hover_node_description.removeAttr('data-node-id')
         @$hover_node_description.hide()
         return
 
       # If we're here, drawable_node is valid
-      node = drawable_node.animated_node.node
-      node_id_string = "#{node?.id}"
+      json = px.json
+      node_id_string = "#{json?.id}"
 
       return if @$hover_node_description.attr('data-node-id') == node_id_string
 
@@ -717,7 +662,7 @@ define [
       @$hover_node_description.hide()
       @$hover_node_description.empty()
 
-      html = HOVER_NODE_TEMPLATE({ node: node })
+      html = HOVER_NODE_TEMPLATE({ node: json })
       @$hover_node_description.append(html)
       @$hover_node_description.attr('data-node-id', node_id_string)
       @$hover_node_description.css({ opacity: 0.001 })

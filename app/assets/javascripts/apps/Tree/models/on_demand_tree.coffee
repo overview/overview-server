@@ -5,6 +5,17 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
 
   # An incomplete tree structure.
   #
+  # This class serves the following functions:
+  #
+  # * It requests nodes from the server
+  # * It stores the server's literal JSON responses
+  # * It automatically removes nodes from the tree when there are too many
+  #
+  # In particular, this class does _not_ store the tree structure. It
+  # does provide getChildren() and getParent() convenience methods to
+  # look up the JSON objects above and below a particular node. But it doesn't
+  # trigger any event when the return values of those functions would change.
+  #
   # The tree depends upon a cache. It will call
   # `cache.resolve_deferred('node', [id])` and act upon the deferred JSON result.
   # The first call will be to `cache.resolve_deferred('root')`.
@@ -13,7 +24,7 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
   #
   #     tree = new OnDemandTree()
   #     tree.demand_root() # will notify :added (with IDs) and :root
-  #     deferred = tree.demand(id) # will demand node and fire :add if it's new
+  #     deferred = tree.demand_node(id) # will demand node and fire :add if it's new
   #     node = tree.nodes[id] # will return node, only if present
   #     nodeids = tree.id_tree.children[node.id] # valid for all nodes
   #     tree.demand(id).done(-> tree.id_tree.children[node.id]) # guaranteed
@@ -23,8 +34,8 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
   # demand(id) and get_node(id). (To make a node more likely to survive cache
   # flushes, call tree.get_node(id).)
   #
-  # Observers can handle :add, :remove, :remove-undefined on the id_tree to
-  # maintain consistent views of the tree.
+  # Observers can handle :change on the id_tree to maintain consistent views
+  # of the tree.
   #
   # Events happen after the fact. In particular, you cannot .get_node_children()
   # on removed nodes during :remove. (You *will* be notified of all the removals
@@ -32,12 +43,22 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
   #
   # Options:
   #
-  # * cache_size (default 1000): number of nodes to *not* remove
+  # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
     constructor: (@cache, options={}) ->
       @id_tree = new IdTree()
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
+
+    getNode: (id) -> @nodes[String(id)]
+    getChildren: (id) ->
+      id = id.id? && id.id || id
+      childIds = @id_tree.children[id]
+      childIds?.map((id) => @nodes[String(id)]) || undefined
+    getParent: (id) ->
+      idKey = String(id.id? && id.id || id)
+      parentId = @nodes[idKey]?.parentId
+      parentId && @nodes[String(parentId)] || null
 
     # Our @_paging_strategy suggests a node to remove, but it might be high up.
     # Let's suggest the lowest-possible nodes.
@@ -59,23 +80,22 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
       leaf_nodeids = []
 
       visit_nodeid_at_depth = (nodeid, depth) ->
-        d[nodeid] = depth
+        idKey = String(nodeid)
+
+        d[idKey] = depth
         max_depth = depth if depth > max_depth
 
-        is_leaf = true
-
-        for childid in c[nodeid]
-          if c[childid]?
-            is_leaf = false
+        if idKey of c
+          for childid in c[idKey]
             visit_nodeid_at_depth(childid, depth + 1)
-
-        leaf_nodeids.push(nodeid) if is_leaf
+        else
+          leaf_nodeids.push(nodeid)
 
         undefined
 
       visit_nodeid_at_depth(id, 0)
 
-      leaf_nodeids.filter((leafid) -> d[leafid] == max_depth)
+      leaf_nodeids.filter((leafid) -> d[String(leafid)] == max_depth)
 
     # Returns IDs that relate to the given one.
     #
@@ -98,122 +118,138 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
         children = c[cur]
         if children?
           for child in children
-            ret.push(child) if c[child]? && child != id
+            ret.push(child) if child != id
         cur = p[cur]
-      ret.push(@id_tree.root) if @id_tree.root != -1
+      ret.push(@id_tree.root) if @id_tree.root != null
 
       ret
 
-    _remove_leaf_node: (editable, leafid) ->
-      editable.remove(leafid)
+    _remove_leaf_node: (idTreeRemove, leafid) ->
+      idTreeRemove(leafid)
       delete @nodes[leafid]
       @_paging_strategy.free(leafid)
 
-    _remove_up_to_n_nodes_starting_at_id: (editable, n, id) ->
+    _remove_up_to_n_nodes_starting_at_id: (idTreeRemove, n, id) ->
       removed = 0
 
       loop
         # Assume if a node isn't frozen, nothing below it is frozen
         deepest_leaf_nodeids = this._id_to_deep_descendent_ids(id)
         for nodeid in deepest_leaf_nodeids
-          this._remove_leaf_node(editable, nodeid)
+          this._remove_leaf_node(idTreeRemove, nodeid)
           removed += 1
 
         return removed if deepest_leaf_nodeids[0] == id || removed >= n
 
-    _remove_n_nodes: (editable, n) ->
+    _remove_n_nodes: (idTreeRemove, n) ->
       while n > 0
         id = @_paging_strategy.find_id_to_free()
-        n -= this._remove_up_to_n_nodes_starting_at_id(editable, n, id)
+        n -= this._remove_up_to_n_nodes_starting_at_id(idTreeRemove, n, id)
 
     _add_json: (json) ->
       return if !json.nodes.length
 
-      @id_tree.edit (editable) =>
-        # (This comes in handy later)
-        top_added_id = json.nodes[0].id # this ID is already in the tree
-        frozen_ids = this._id_to_important_other_ids(top_added_id)
-        frozen_ids.push(top_added_id) if @nodes[top_added_id]?
+      # We'll first add the nodes we've received. If we've gone over our paging
+      # limit, then we'll then remove excess nodes.
 
-        added_ids = []
+      added_ids = []
+      overflow_ids = []
 
-        # Actually add to the tree
+      # Actually add to the tree
+      @id_tree.batchAdd (idTreeAdd) =>
         for node in json.nodes
-          if !@nodes[node.id]?
-            @nodes[node.id] = node
-            editable.add(node.id, node.children)
+          idKey = String(node.id)
+          if idKey not of @nodes
+            @nodes[idKey] = node
+            idTreeAdd(node.parentId, node.id)
             added_ids.push(node.id)
 
-        overflow_ids = []
+      # Track the IDs we can, without overloading our paging strategy
+      for id in added_ids
+        if @_paging_strategy.is_full()
+          overflow_ids.push(id)
+        else
+          @_paging_strategy.add(id)
+      added_ids.splice(-overflow_ids.length)
 
-        # Track the IDs we can, without overloading our paging strategy
-        for id in added_ids
-          if @_paging_strategy.is_full()
-            overflow_ids.push(id)
-          else
-            @_paging_strategy.add(id)
-        added_ids.splice(-overflow_ids.length)
+      if overflow_ids.length
+        # Our tree is over-sized. Let's find old nodes to remove.
 
-        if overflow_ids.length
-          # Our tree is over-sized. Let's find old nodes to remove.
+        # For paging, figure out frozen_ids, the IDs we must not free. These
+        # are all ancestors and uncles of the nodes we've added
+        overflowIdSet = {}
+        overflowIdSet[id] = null for id in overflow_ids
+        frozenIdSet = {}
+        for id in added_ids.concat(overflow_ids)
+          id = String(id)
+          loop
+            parentId = @id_tree.parent[id]
+            break if parentId is null
+            siblingIds = @id_tree.children[parentId]
+            (frozenIdSet[siblingId] = null) for siblingId in siblingIds
+            id = parentId
+        frozenIdSet[@id_tree.root] = null
+        frozen_ids = (id for id, __ of frozenIdSet when id not of overflowIdSet)
 
-          # Freeze the nodes we *don't* want to remove
-          frozen_ids.push(id) for id in added_ids
+        @_paging_strategy.freeze(id) for id in frozen_ids
 
-          @_paging_strategy.freeze(id) for id in frozen_ids
+        # Remove expendable nodes
+        @id_tree.batchRemove (idTreeRemove) =>
+          this._remove_n_nodes(idTreeRemove, overflow_ids.length)
 
-          # Remove expendable nodes
-          this._remove_n_nodes(editable, overflow_ids.length)
+        # Unfreeze those important nodes
+        @_paging_strategy.thaw(id) for id in frozen_ids
 
-          # Unfreeze those important nodes
-          @_paging_strategy.thaw(id) for id in frozen_ids
-
-          # Now we have space for the new ones
-          @_paging_strategy.add(id) for id in overflow_ids
+        # Now we have space for the new ones
+        @_paging_strategy.add(id) for id in overflow_ids
 
         undefined
 
     demand_root: () ->
-      @cache.resolve_deferred('root').done(this._add_json.bind(this))
+      @cache.resolve_deferred('root')
+        .done(this._add_json.bind(this))
 
     demand_node: (id) ->
       @cache.resolve_deferred('node', id)
         .done(this._add_json.bind(this))
 
-    _collapse_node: (editable, id) ->
-      c = @id_tree.children
+    _collapse_node: (idTreeRemove, id) ->
+      idsToRemove = []
+      @id_tree.walkFrom(id, (x) -> idsToRemove.push(x) if x != id)
 
-      for childid in c[id]
-        if c[childid]?
-          this._collapse_node(editable, childid)
-          editable.remove(childid)
-          delete @nodes[childid]
-          @_paging_strategy.free(childid)
+      for idToRemove in idsToRemove
+        idKey = String(idToRemove)
+        @_paging_strategy.free(idToRemove)
+        idTreeRemove(idToRemove)
+        delete @nodes[idKey]
+
+      undefined
 
     # "Collapse" a node (public-facing method)
     unload_node_children: (id) ->
-      @id_tree.edit (editable) =>
-        this._collapse_node(editable, id)
+      @id_tree.batchRemove (idTreeRemove) =>
+        this._collapse_node(idTreeRemove, id)
 
     get_loaded_node_children: (node) ->
       _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
 
+    get_node: (id) ->
+      @nodes[String(id)]
+
     get_root: ->
       id = @id_tree.root
-      id? && @nodes[id] || undefined
+      id? && @get_node(id) || undefined
 
     get_node_parent: (node) ->
       parent_id = @id_tree.parent[node.id]
       if parent_id? then @nodes[parent_id] else undefined
 
     rewrite_tag_id: (old_tagid, tagid) ->
-      old_tagid_string = "#{old_tagid}"
-      tagid_string = "#{tagid}"
       for __, node of @nodes
-        tagcounts = (node.tagcounts ||= {})
-        tagcount = tagcounts[old_tagid_string]
+        tagCounts = (node.tagCounts ||= {})
+        tagcount = tagCounts[old_tagid]
         if tagcount?
-          delete tagcounts[old_tagid_string]
-          tagcounts[tagid_string] = tagcount
+          delete tagCounts[old_tagid]
+          tagCounts[tagid] = tagcount
 
       undefined
