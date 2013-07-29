@@ -6,7 +6,6 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
-import ua.t3hnar.bcrypt._
 
 import helpers.DbTestContext
 

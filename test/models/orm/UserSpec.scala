@@ -5,7 +5,6 @@ import org.joda.time.DateTime.now
 import org.specs2.mutable.Specification
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
-import ua.t3hnar.bcrypt._
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import helpers.DbTestContext
