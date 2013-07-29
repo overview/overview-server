@@ -9,7 +9,7 @@ package models
 
 import java.sql.Timestamp
 import java.util.Date
-import ua.t3hnar.bcrypt._
+import com.github.t3hnar.bcrypt._
 
 import models.orm.User
 import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }

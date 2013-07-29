@@ -96,8 +96,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   ).dependsOn(workerCommon, common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
-    resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/",
-    resolvers += "scala-bcrypt repo" at "http://nexus.thenewmotion.com/content/repositories/releases-public/"
+    resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/"
   ).settings(
     CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration : _*
   ).configs(
