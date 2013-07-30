@@ -56,9 +56,9 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
       childIds = @id_tree.children[id]
       childIds?.map((id) => @nodes[String(id)]) || undefined
     getParent: (id) ->
-      idKey = String(id.id? && id.id || id)
-      parentId = @nodes[idKey]?.parentId
-      parentId && @nodes[String(parentId)] || null
+      id = id.id? && id.id || id
+      parentId = @nodes[id]?.parentId
+      parentId && @nodes[parentId] || null
 
     # Our @_paging_strategy suggests a node to remove, but it might be high up.
     # Let's suggest the lowest-possible nodes.
@@ -80,13 +80,11 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
       leaf_nodeids = []
 
       visit_nodeid_at_depth = (nodeid, depth) ->
-        idKey = String(nodeid)
-
-        d[idKey] = depth
+        d[nodeid] = depth
         max_depth = depth if depth > max_depth
 
-        if idKey of c
-          for childid in c[idKey]
+        if nodeid of c
+          for childid in c[nodeid]
             visit_nodeid_at_depth(childid, depth + 1)
         else
           leaf_nodeids.push(nodeid)
@@ -95,7 +93,7 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
 
       visit_nodeid_at_depth(id, 0)
 
-      leaf_nodeids.filter((leafid) -> d[String(leafid)] == max_depth)
+      leaf_nodeids.filter((leafid) -> d[leafid] == max_depth)
 
     # Returns IDs that relate to the given one.
     #
@@ -157,12 +155,10 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
 
       # Actually add to the tree
       @id_tree.batchAdd (idTreeAdd) =>
-        for node in json.nodes
-          idKey = String(node.id)
-          if idKey not of @nodes
-            @nodes[idKey] = node
-            idTreeAdd(node.parentId, node.id)
-            added_ids.push(node.id)
+        for node in json.nodes when (!node.parentId? || node.parentId of @nodes) and node.id not of @nodes
+          @nodes[node.id] = node
+          idTreeAdd(node.parentId, node.id)
+          added_ids.push(node.id)
 
       # Track the IDs we can, without overloading our paging strategy
       for id in added_ids
@@ -218,10 +214,9 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
       @id_tree.walkFrom(id, (x) -> idsToRemove.push(x) if x != id)
 
       for idToRemove in idsToRemove
-        idKey = String(idToRemove)
         @_paging_strategy.free(idToRemove)
         idTreeRemove(idToRemove)
-        delete @nodes[idKey]
+        delete @nodes[idToRemove]
 
       undefined
 

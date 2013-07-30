@@ -97,6 +97,19 @@ require [
           ]})
           expect(tree.getNode(7)).toBeDefined()
 
+        it 'should not add child nodes if their parent disappeared before they were resolved', ->
+          # GitHub: https://github.com/overview/overview-server/issues/222
+          deferred = tree.demand_node(4)
+          tree.unload_node_children(1)
+          deferred.resolve({ nodes: [
+            id: 6, parentId: 4, size: 10
+            id: 7, parentId: 4, size: 2
+          ]})
+          expect(tree.getNode(7)).toBeUndefined()
+          expect(tree.nodes).toEqual({
+            1: { id: 1, parentId: null, size: 50 }
+          })
+
         it 'should unload nodes through unload_node_children()', ->
           tree.unload_node_children(1)
           expect(tree.id_tree.children[1]).toBeUndefined()
