@@ -111,11 +111,12 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       $input = @$('input[type=text]')
       name = $input.val().replace(/^\s*(.*?)\s*$/, '$1')
 
-      existing = @collection.findWhere({ name: name })
+      if name
+        existing = @collection.findWhere({ name: name })
 
-      if existing?
-        @trigger('add-clicked', existing)
-      else
-        @trigger('create-submitted', name)
+        if existing?
+          @trigger('add-clicked', existing)
+        else
+          @trigger('create-submitted', name)
 
       $input.val('')

@@ -64,6 +64,13 @@ require [
           view.$('form').submit()
           expect(spy).toHaveBeenCalledWith('foo')
 
+        it 'should not notify :create-submitted when input is empty', ->
+          # https://github.com/overview/overview-server/issues/567
+          spy = jasmine.createSpy()
+          view.on('create-submitted', spy)
+          view.$('form').submit()
+          expect(spy).not.toHaveBeenCalled()
+
         it 'should reset the form after :create-submitted', ->
           view.$('input[type=text]').val('   foo ')
           view.$('form').submit()
