@@ -2,10 +2,9 @@ define [
   'jquery'
   'underscore'
   '../models/observable'
-  '../models/drawable_node'
   '../models/color_table'
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
-], ($, _, observable, DrawableNode, ColorTable) ->
+], ($, _, observable, ColorTable) ->
   DEFAULT_OPTIONS = {
     color:
       line: '#888888'
