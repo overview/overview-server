@@ -67,7 +67,7 @@ define [ 'jquery', 'backbone' ], ($, Backbone) ->
         update(e)
         e.preventDefault()
 
-      $(document).on 'mouseup.focus-view', (e) ->
+      $(document).on 'mouseup.focus-view', (e) =>
         update(e)
         @$overlayPane?.remove()
         @$overlayPane = undefined
