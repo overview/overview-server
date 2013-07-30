@@ -107,6 +107,11 @@ require [
         expect($li.find('input[name=name]').val()).toEqual('tag11')
         expect($li.find('input[name=color]').val()).toEqual('#111111')
 
+      it 'should render a tag without size as size 0 on change', ->
+        # https://github.com/overview/overview-server/issues/568
+        collection.first().set({ size: null })
+        expect(view.$('li:eq(0)').find('.count').text()).toEqual('n_documents,0')
+
       it 'should not change a tag when interacting', ->
         collection.first().set(
           { name: 'tag11', color: '#111111' },

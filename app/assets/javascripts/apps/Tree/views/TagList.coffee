@@ -119,7 +119,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     _changeTag: (tag, options) ->
       $li = @_$liForTag(tag)
       $li.find('input[name=id]').val(tag.id)
-      $li.find('.count').text(t('n_documents', tag.get('size')))
+      $li.find('.count').text(t('n_documents', tag.get('size') || 0))
 
       if !options? || !options.interacting
         $li.find('input[name=name]').val(tag.get('name'))
