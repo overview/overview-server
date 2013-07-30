@@ -12,15 +12,36 @@ define [
       line_selected: '#000000'
       line_default: '#333333'
       line_faded: '#999999'
+      highlight: '#6ab9e9'
+    nodeStyles:
+      normal:
+        normal:
+          strokeStyle: '#333333'
+          lineWidth: 2
+        highlighted:
+          strokeStyle: '#6ab9e9'
+          lineWidth: 2
+      leaf:
+        normal:
+          strokeStyle: '#666666'
+          lineWidth: 1
+        highlighted:
+          strokeStyle: '#6ab9e9'
+          lineWidth: 1
+      selected:
+        normal:
+          strokeStyle: '#000000'
+          lineWidth: 4
+        highlighted:
+          strokeStyle: '#6ab9e9'
+          lineWidth: 4
+    maxNodeBorderWidth: 4 # px
+    nodeCornerRadius: 5 # px
+
     connector_line_width: 2.5 # px
-    node_corner_radius: 5, # px
-    node_line_width: 2 # px
     node_expand_width: 1.5 # px
     node_expand_click_radius: 12 # px
     node_expand_radius: 6 # px
-    node_line_width_selected: 4 # px
-    node_line_width_leaf: 1 # px
-    start_fade_width: 10 #px begin fade to leaf color if node is narrower than this at current zoom
     mousewheel_zoom_factor: 1.2
   }
 
@@ -55,7 +76,7 @@ define [
     ctx.closePath()
 
   class DrawOperation
-    constructor: (@canvas, @tree, @colorLogic, @focus_nodes, @focus, @options) ->
+    constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @focus, @options) ->
       @canvas.width = @width = Math.floor(parseFloat(@canvas.parentNode.clientWidth))
       @canvas.height = @height = Math.floor(parseFloat(@canvas.parentNode.clientHeight))
 
@@ -102,9 +123,9 @@ define [
       # bottom) to show up.
 
       margin =
-        left: @options.node_line_width_selected * 0.5
-        right: @options.node_line_width_selected * 0.5
-        top: @options.node_line_width_selected * 0.5
+        left: @options.maxNodeBorderWidth * 0.5
+        right: @options.maxNodeBorderWidth * 0.5
+        top: @options.maxNodeBorderWidth * 0.5
         bottom: @options.node_expand_radius + @options.node_expand_width * 0.5
 
       drawableNodes = @drawableNodes = @tree.calculatePixels(
@@ -171,7 +192,7 @@ define [
 
       ctx.fillStyle = color
       ctx.beginPath()
-      drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.node_corner_radius)
+      drawBottomRoundedRect(ctx, left, top + height * 0.75, tagwidth, height * 0.25, @options.nodeCornerRadius)
       ctx.fill()
 
     _draw_colors: (drawableNodes) ->
@@ -210,55 +231,56 @@ define [
 
       ctx.save()
 
-      normalPxs = []
-      selectedPxs = []
-      leafPxs = []
+      # We draw six categories, all nodes all at once: that's much faster
+      # than styling every node individually.
+      pxs =
+        normal:
+          normal: []
+          highlighted: []
+        selected:
+          normal: []
+          highlighted: []
+        leaf:
+          normal: []
+          highlighted: []
 
-      buffer = Math.max(@options.node_line_width, @options.node_line_width_selected, @options.node_line_width_leaf) * 0.5
-      minX = 0
-      maxX = @width
+      # Fill pxs
+      (=>
+        buffer = Math.max(@options.node_line_width, @options.node_line_width_selected, @options.node_line_width_leaf) * 0.5
+        minX = 0
+        maxX = @width
 
-      for px in drawableNodes
-        node = px.node
+        for px in drawableNodes
+          node = px.node
 
-        continue if px.left + px.width + buffer < minX || px.left - buffer > maxX
+          continue if px.left + px.width + buffer < minX || px.left - buffer > maxX
 
-        if node.selected_fraction.current
-          selectedPxs.push(px)
-        else if px.isLeaf
-          leafPxs.push(px)
-        else
-          normalPxs.push(px)
+          type1 = if (node.selected_fraction.v2? && node.selected_fraction.v2 == 1) || node.selected_fraction.current == 1
+            'selected'
+          else if px.isLeaf
+            'leaf'
+          else
+            'normal'
 
-      radius = @options.node_corner_radius
-      drawPxs = (pxs) ->
-        for px in pxs
-          drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
+          type2 = if node.json.id of @highlightedNodeIds
+            'highlighted'
+          else
+            'normal'
 
-      ctx.strokeStyle = @options.color.line_selected
-      for px in selectedPxs
-        t = px.node.selected_fraction.current
-        u = 1 - t
-        otherWidth = if px.isLeaf
-          @options.node_line_width_leaf
-        else
-          @options.node_line_width
-        ctx.lineWidth = t * @options.node_line_width_selected + u * otherWidth
-        ctx.beginPath()
-        drawRoundedRect(ctx, px.left, px.top, px.width, px.height, radius)
-        ctx.stroke()
+          pxs[type1][type2].push(px)
+      )()
 
-      ctx.lineWidth = @options.node_line_width_leaf
-      ctx.strokeStyle = @options.color.line_faded
-      ctx.beginPath()
-      drawPxs(leafPxs)
-      ctx.stroke()
-
-      ctx.lineWidth = @options.node_line_width
-      ctx.strokeStyle = @options.color.line_default
-      ctx.beginPath()
-      drawPxs(normalPxs)
-      ctx.stroke()
+      # Render pxs, each with the correct styles
+      for type1, type2s of pxs
+        for type2, nodes of type2s when nodes.length
+          # Set styles
+          for k, v of @options.nodeStyles[type1][type2]
+            ctx[k] = v
+          # Draw path
+          ctx.beginPath()
+          for px in nodes
+            drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.nodeCornerRadius)
+          ctx.stroke()
 
       ctx.restore()
 
@@ -298,29 +320,17 @@ define [
     _draw_lines_from_parents_to_children: (drawableNodes) ->
       ctx = @ctx
 
-      ctx.save()
-
-      lineWidth = ctx.lineWidth = @options.connector_line_width
-      if @focus.get('zoom') > 0.05
-        # setLineDash() is pretty, but at high zoom levels these lines are
-        # extremely long and so it costs lots and lots of CPU. Only enable it
-        # when zoomed further out.
-        ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
-      ctx.strokeStyle = @options.color.line_faded
-
-      ctx.beginPath()
-
       minX = -@options.connector_line_width
       maxX = @width + @options.connector_line_width
 
-      for px in drawableNodes when px.parent?
+      drawLineToParent = (px) ->
         parentPx = px.parent
 
         x1 = parentPx.hmid
         x2 = px.hmid
 
-        continue if x1 < minX && x2 < minX
-        continue if x1 > maxX && x2 > maxX
+        return if x1 < minX && x2 < minX
+        return if x1 > maxX && x2 > maxX
 
         y1 = parentPx.top + parentPx.height
         y2 = px.top
@@ -329,6 +339,25 @@ define [
         ctx.moveTo(x1, y1)
         ctx.bezierCurveTo(x1, mid_y + (0.1 * px.height), x2, mid_y - (0.1 * px.height), x2, y2)
 
+      ctx.save()
+
+      lineWidth = ctx.lineWidth = @options.connector_line_width
+      if @focus.get('zoom') > 0.05
+        # setLineDash() is pretty, but at high zoom levels these lines are
+        # extremely long and so it costs lots and lots of CPU. Only enable it
+        # when zoomed further out.
+        ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
+
+      ctx.strokeStyle = @options.color.line_faded
+      ctx.beginPath()
+      for px in drawableNodes when px.parent? && px.json.id not of @highlightedNodeIds
+        drawLineToParent(px)
+      ctx.stroke()
+
+      ctx.strokeStyle = @options.color.highlight
+      ctx.beginPath()
+      for px in drawableNodes when px.parent? && px.json.id of @highlightedNodeIds
+        drawLineToParent(px)
       ctx.stroke()
 
       ctx.restore()
@@ -581,7 +610,7 @@ define [
 
       @last_draw?.pixel_to_action(x, y)
 
-    _redraw: () ->
+    _getColorLogic: ->
       # Add the focused tag to "focus tagids": stack of recently-viewed tags
       # (initialized to all tags)
       if tagid = @tree.state.focused_tag?.id
@@ -604,7 +633,7 @@ define [
         tag_id_to_color[id] = color
 
       selection = @tree.state.selection
-      colorLogic = if selection.searchResults.length
+      if selection.searchResults.length
         {
           searchResultIds: selection.searchResults.slice(0)
           color: -> '#50ade5'
@@ -620,10 +649,38 @@ define [
           color: (id) -> tag_id_to_color[id]
         }
 
+    # Returns a set of { nodeid: null }.
+    #
+    # A node is highlighted if (one of the following):
+    #
+    # * The node or one of its children is selected
+    # * A document in the node is selected
+    _getHighlightedNodeIds: ->
+      ret = {}
+
+      # Selected nodes
+      for nodeid in @tree.state.selection.nodes
+        node = @tree.getAnimatedNode(nodeid)
+        while node?
+          ret[node.json.id] = null
+          node = node.parent
+
+      # Selected documents
+      for docid in @tree.state.selection.documents
+        document = @cache.document_store.documents[docid]
+        if document?
+          (ret[nodeid] = null) for nodeid in document.nodeids
+
+      ret
+
+    _redraw: () ->
+      colorLogic = @_getColorLogic()
+      highlightedNodeIds = @_getHighlightedNodeIds()
+
       shown_tagids = @tree.state.selection.tags
       shown_tagids = @focus_tagids if !shown_tagids.length
 
-      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, @tree.state.selection.nodes, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @focus, @options)
       @last_draw.draw()
 
     update: () ->
