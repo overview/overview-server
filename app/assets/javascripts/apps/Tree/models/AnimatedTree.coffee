@@ -1,4 +1,29 @@
 define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, AnimatedNode) ->
+  # Given 3x3 matrices a and b, returns ab.
+  #
+  # Each matrix is assumed to look like this:
+  #
+  #   [ a1 c1 e1 ] [ a2 c2 e2 ]
+  #   [ b1 d1 f1 ] [ b2 d2 f2 ]
+  #   [  0  0  1 ] [  0  0  1 ]
+  #
+  # So their product is:
+  #
+  #   [ a1*a2+c1*b2   a1*c2+c1*d2   a1*e2+c1*f2+e1 ]
+  #   [ b1*a2+d1*b2   b1*c2+d1*d2   b1*e2+d1*f2+f1 ]
+  #   [           0             0                1 ]
+  #
+  # The parameters and return value are of the form [ a, b, c, d, e, f ].
+  transformMatrixMultiply = (a, b) ->
+    [
+      a[0] * b[0] + a[2] * b[1]
+      a[1] * b[0] + a[3] * b[1]
+      a[0] * b[2] + a[2] * b[3]
+      a[1] * b[2] + a[3] * b[3]
+      a[0] * b[4] + a[2] * b[5] + a[4]
+      a[1] * b[4] + a[3] * b[5] + a[5]
+    ]
+
   # A tree of animation nodes which tracks an OnDemandTree
   #
   # This class serves the following functions:
@@ -173,12 +198,23 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       @_needsUpdate = true
       this._notify('needs-update') if !old_needs_update && this.needsUpdate()
 
+    # Returns the { top, left, right, bottom } in relative units of the given
+    # AnimatedNode and its children, as calculated at the previous tick.
+    calculateBounds: (node) ->
+      @layout.calculateBounds(node)
+
+    # Returns the { top, left, right, bottom } in relative units of the given
+    # AnimatedNode and its children, as it will be in the eventual layout.
+    calculateBounds2: (node) ->
+      @layout.calculateBounds2(node)
+
     _updateLayout: ->
       return if !@root?
 
       ms = Date.now()
       @layout.calculateSize2(this, ms)
       @layout.calculatePosition2(this, ms)
+      @bounds2 = @layout.calculateBounds2(@root)
       @_tick()
 
     _tick: ->
@@ -186,11 +222,47 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
 
       ms = Date.now()
       @layout.calculateSizeAndPosition(this, @animator, ms)
-      @bounds = @layout.calculateBounds(this)
+      @bounds = @layout.calculateBounds(@root)
 
       undefined
 
-    # Calculates the transform from relative coordinates to view coordinates.
+    # Calculates the transform from relative coordinates to [ 0 .. 1 ]
+    getNormalizeTransform: ->
+      # y = (yIn - yTop) / h
+      #   = yIn / h - yTop / h
+      #
+      # x = (xIn - xLeft) / w
+      #   = xIn / w - xLeft / w
+      w = @bounds.right - @bounds.left
+      x0 = @bounds.left
+      h = @bounds.bottom - @bounds.top
+      y0 = @bounds.top
+
+      [
+        1 / w
+        0
+        0
+        1 / h
+        - x0 / w
+        - y0 / h
+      ]
+
+    # Calculates the transform from [ 0 .. 1 ] to [ tx .. tx + width ] (same with y)
+    getScaleTransform: (w, h, x0, y0) ->
+      # y = yIn * h + y0
+      # x = xIn * w + x0
+      [
+        w
+        0
+        0
+        h
+        x0
+        y0
+      ]
+
+
+    # Calculates the transform from relative coordinates to
+    # x ∈ [ tx .. tx + width ], y ∈ [ ty .. ty + height ]
     #
     # The result is a matrix described as [ a, b, c, d, e, f ] as in
     # http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#transformations:
@@ -200,53 +272,24 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     #     0 0 1
     #
     # Here, b and c will be 0, but we'll return them anyway for API conformity.
-    #
-    # The Y transform is simple: multiply relative y by height / bounds.bottom.
-    # The X transform is more complex: first convert X to a relative
-    # [ -0.5 .. 0.5 ] scale, then apply pan and zoom, then scale to width.
-    calculateTransform: (width, height, zoom, pan, tx, ty) ->
-      # Y is easy enough:
-      #
-      # yDesired = yRelative scaled to [ 0 .. height ]
-      #   = (yRelative - yTop) / hRelative * height
-      # yTop = 0
-      # d = height / hRelative
-      # f = 0
-      hRelative = (@bounds.bottom - @bounds.top) || 1
+    getTransform: (animatedFocus, width, height, tx, ty, ms=undefined) ->
+      ms ?= Date.now()
 
-      # For X, let's do some math. Define:
-      #
-      # xNormalized = (xRelative scaled to [ -0.5 .. 0.5 ])
-      # xDesired = ((xNormalized - pan) / zoom) scaled to [ 0 .. width ]
-      #
-      # Remember, the useful portion of (xNormalized + pan) / zoom
-      # spans [ -0.5 .. 0.5 ].
-      #
-      # Now derive a and e:
-      #
-      # xMid = (xMin + xMax) * 0.5
-      # wRelative = xMax - xMin
-      # xNormalized = (x - xMid) / wRelative
-      # xDesired = (((x - xMid) / wRelative - pan) / zoom + 0.5) * width
-      # xDesired = ((x - xMid) / wRelative - pan) / zoom * width + 0.5 * width
-      # xDesired = (x - xMid) / wRelative / zoom * width - pan / zoom * width + 0.5 * width
-      # xDesired = x / wRelative / zoom * width - xMid / wRelative / zoom * width - pan / zoom * width + 0.5 * width
-      # a = 1 / wRelative / zoom * width
-      #   = width / wRelative / zoom
-      # e = -xMid / wRelative / zoom * width - pan / zoom * width + 0.5 * width
-      #   = width * (-xMid / wRelative / zoom - pan / zoom + 0.5)
-      #   = width * (0.5 + (-xMid / wRelative - pan) / zoom)
-      wRelative = (@bounds.right - @bounds.left)
-      xMid = (@bounds.left + @bounds.right) * 0.5
+      normalizeTransform = @getNormalizeTransform()
+      zoomPanTransform = animatedFocus.getTransform(this, ms)
+      scaleTransform = @getScaleTransform(width, height, tx, ty)
 
-      [
-        width / wRelative / zoom
-        0
-        0
-        height / hRelative
-        width * (0.5 + (-xMid / wRelative - pan) / zoom) + tx
-        ty
-      ]
+      # We want to do this:
+      #
+      # scaleTransform(zoomPanTransform(normalizeTransform(coord)))
+      #
+      # By the associative property, that is:
+      #
+      # (scaleTransform * zoomPanTransform * normalizeTransform)(coord)
+      transformMatrixMultiply(
+        transformMatrixMultiply(scaleTransform, zoomPanTransform),
+        normalizeTransform
+      )
 
     # Returns an Array of drawable objects.
     #
@@ -267,20 +310,24 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     #
     # The parameters are:
     #
+    # * animatedFocus: AnimatedFocus, used to find zoom/pan transform
     # * width: width the rectangle being returned
     # * height: height of the rectangle being returned
     # * tx: left of the rectangle being returned
     # * ty: top of the rectangle being returned
     # * zoom: zoom, from 0.000001 to 1
     # * pan: pan, from -0.5 to 0.5
-    calculatePixels: (width, height, zoom, pan, tx, ty) ->
+    calculatePixels: (animatedFocus, width, height, tx, ty) ->
       ret = []
       byId = {} # id -> pixels, for finding parents
 
       return ret if !@root
 
-      transform = @calculateTransform(width, height, zoom, pan, tx, ty)
+      ms = Date.now()
 
+      transform = @getTransform(animatedFocus, width, height, tx, ty)
+
+      # assume b and c are 0
       sx = transform[0]
       sy = transform[3]
       tx = transform[4]

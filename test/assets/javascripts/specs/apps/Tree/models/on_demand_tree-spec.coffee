@@ -75,9 +75,9 @@ require [
           expect(tree.getNode(20)).toBeUndefined()
 
         it 'should rewrite a tag id', ->
-          tree.nodes[1].tagcounts = { "1": 20, "2": 10 }
+          tree.nodes[1].tagCounts = { "1": 20, "2": 10 }
           tree.rewrite_tag_id(2, 7)
-          expect(tree.nodes[1].tagcounts).toEqual({ "1": 20, "7": 10 })
+          expect(tree.nodes[1].tagCounts).toEqual({ "1": 20, "7": 10 })
 
         it 'should allow demand_node() on unresolved nodes', ->
           deferred = tree.demand_node(4)

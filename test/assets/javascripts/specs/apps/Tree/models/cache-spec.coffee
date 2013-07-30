@@ -128,9 +128,9 @@ require [
               batchRemove: jasmine.createSpy()
             }
             nodes: {
-              "1": { id: 1, tagcounts: { "1": 10 } },
-              "2": { id: 2, tagcounts: { "1": 5 } },
-              "3": { id: 3, tagcounts: { "1": 5 } },
+              "1": { id: 1, tagCounts: { "1": 10 } },
+              "2": { id: 2, tagCounts: { "1": 5 } },
+              "3": { id: 3, tagCounts: { "1": 5 } },
             }
           }
           cache.on_demand_tree = tree
@@ -150,11 +150,11 @@ require [
 
           it 'should update node counts', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
-            expect(tree.nodes[2].tagcounts[1]).toEqual(20)
+            expect(tree.nodes[2].tagCounts[1]).toEqual(20)
 
           it 'should delete node counts that are 0', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0 ])
-            expect(tree.nodes[3].tagcounts).toEqual({})
+            expect(tree.nodes[3].tagCounts).toEqual({})
 
           it 'should not crash when receiving an unloaded node', ->
             cache.server.deferreds[0].resolve([ 1, 20, 2, 20, 3, 0, 4, 20 ])
@@ -228,9 +228,9 @@ require [
               edit: (cb) -> cb(); @edited = true
             }
             nodes: {
-              "1": { id: 1, tagcounts: { "1": 10 } },
-              "2": { id: 2, tagcounts: { "1": 5 } },
-              "3": { id: 3, tagcounts: { "1": 5 } },
+              "1": { id: 1, tagCounts: { "1": 10 } },
+              "2": { id: 2, tagCounts: { "1": 5 } },
+              "3": { id: 3, tagCounts: { "1": 5 } },
             }
           }
           cache.on_demand_tree = tree
@@ -258,8 +258,8 @@ require [
             cache.remove_tag(tag)
             expect(cache.on_demand_tree.id_tree.edited).toBe(true)
 
-          it 'should remove tagcounts for the deleted tag', ->
+          it 'should remove tagCounts for the deleted tag', ->
             cache.remove_tag(tag)
-            expect(tree.nodes["1"].tagcounts).toEqual({})
-            expect(tree.nodes["2"].tagcounts).toEqual({})
-            expect(tree.nodes["3"].tagcounts).toEqual({})
+            expect(tree.nodes["1"].tagCounts).toEqual({})
+            expect(tree.nodes["2"].tagCounts).toEqual({})
+            expect(tree.nodes["3"].tagCounts).toEqual({})

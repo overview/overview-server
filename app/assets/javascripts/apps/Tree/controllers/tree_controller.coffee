@@ -70,7 +70,6 @@ define [
       return if !nodeid?
       log('clicked node', "#{nodeid}")
       new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
-
       state.set('selection', new_selection)
 
     view.observe 'expand', (nodeid) ->
@@ -87,15 +86,17 @@ define [
 
     view.observe 'zoom-pan', (obj, options) ->
       log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
-      focus.set_auto_pan_zoom(false)
       if options?.animate
-        focus.animate_zoom_and_pan(obj.zoom, obj.pan)
+        focus.animatePanAndZoom(obj.pan, obj.zoom)
       else
-        focus.set_zoom_and_pan(obj.zoom, obj.pan)
+        focus.setPanAndZoom(obj.pan, obj.zoom)
 
     state.observe 'selection-changed', ->
       if nodeid = selected_nodeid()
         expand(nodeid)
+        node = animated_tree.getAnimatedNode(nodeid)
+        node = node.parent if node.parent?
+        focus.animateNode(node)
 
       if (tagid = state.selection.tags?[0]) && tagid >= 0
         cache.refresh_tagcounts(tagid)

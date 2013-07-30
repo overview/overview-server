@@ -299,18 +299,20 @@ define [ 'underscore' ], (_) ->
       secondWalk(tree.root, -tree.root.scratch.prelim, 1)
       undefined
 
-    calculateBounds: (tree) ->
+    _calculateBounds: (node, positionProperty, sizeProperty) ->
       minX = Infinity
       maxX = -Infinity
       minY = Infinity
       maxY = -Infinity
 
-      tree.root.walk (v) ->
-        if v.position && v.size
-          w = v.size.width
-          h = v.size.height
-          x1 = v.position.xMiddle - w * 0.5
-          y1 = v.position.top
+      node.walk (v) ->
+        position = v[positionProperty]
+        size = v[sizeProperty]
+        if position && size
+          w = size.width
+          h = size.height
+          x1 = position.xMiddle - w * 0.5
+          y1 = position.top
           x2 = x1 + w
           y2 = y1 + h
 
@@ -323,3 +325,6 @@ define [ 'underscore' ], (_) ->
       right: maxX
       top: minY
       bottom: maxY
+
+    calculateBounds: (node) -> @_calculateBounds(node, 'position', 'size')
+    calculateBounds2: (node) -> @_calculateBounds(node, 'position2', 'size2')

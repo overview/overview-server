@@ -1,6 +1,6 @@
 define [
   'jquery'
-  './models/animated_focus'
+  './models/AnimatedFocus'
   './models/animator'
   './models/property_interpolator'
   './models/world'
@@ -13,13 +13,12 @@ define [
   './controllers/tree_controller'
   './controllers/document_list_controller'
   './controllers/document_contents_controller'
-  './controllers/auto_focus_controller'
   './views/Mode'
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, World, Selection, \
     KeyboardController, Logger, \
     tag_list_controller, search_result_list_controller, \
-    focus_controller, tree_controller, document_list_controller, document_contents_controller, auto_focus_controller, \
+    focus_controller, tree_controller, document_list_controller, document_contents_controller, \
     ModeView) ->
 
   class App
@@ -136,7 +135,7 @@ define [
 
       interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
       animator = new Animator(interpolator)
-      focus = new AnimatedFocus(animator)
+      focus = new AnimatedFocus({}, { animator: animator })
       focus_controller(els.zoomSlider, focus)
 
       controller = tree_controller(els.tree, world.cache, focus, world.state)
@@ -153,8 +152,6 @@ define [
       keyboard_controller.add_controller('DocumentListController', controller)
 
       new ModeView({ el: options.mainEl, state: world.state })
-
-      auto_focus_controller(focus, world)
 
       tag_list_controller({
         cache: world.cache

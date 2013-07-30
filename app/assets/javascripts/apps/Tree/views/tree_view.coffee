@@ -108,10 +108,9 @@ define [
         bottom: @options.node_expand_radius + @options.node_expand_width * 0.5
 
       drawableNodes = @drawableNodes = @tree.calculatePixels(
+        @focus,
         @width - margin.left - margin.right,
         @height - margin.top - margin.bottom,
-        @focus.zoom,
-        @focus.pan,
         margin.left,
         margin.top
       )
@@ -302,7 +301,7 @@ define [
       ctx.save()
 
       lineWidth = ctx.lineWidth = @options.connector_line_width
-      if @focus.zoom > 0.05
+      if @focus.get('zoom') > 0.05
         # setLineDash() is pretty, but at high zoom levels these lines are
         # extremely long and so it costs lots and lots of CPU. Only enable it
         # when zoomed further out.
@@ -452,21 +451,20 @@ define [
     _attach: () ->
       update = this._set_needs_update.bind(this)
       @tree.observe('needs-update', update)
-      @focus.observe('needs-update', update)
-      @focus.observe('zoom', update)
-      @focus.observe('pan', update)
+      @focus.on('change', update)
       @cache.tag_store.observe('changed', update)
       $(window).on('resize.tree-view', update)
 
-      @focus.observe('zoom', this._refresh_zoom_button_status.bind(this))
+      @focus.on('change:zoom', this._refresh_zoom_button_status.bind(this))
+
       $(@zoomInButton).on 'click', (e) =>
         e.preventDefault()
         e.stopPropagation() # don't pan
-        @_notify('zoom-pan', { zoom: @focus.zoom * 0.5, pan: @focus.pan }, { animate: true })
+        @_notify('zoom-pan', { zoom: @focus.get('zoom') * 0.5, pan: @focus.get('pan') }, { animate: true })
       $(@zoomOutButton).on 'click', (e) =>
         e.preventDefault()
         e.stopPropagation() # don't pan
-        @_notify('zoom-pan', { zoom: @focus.zoom * 2, pan: @focus.pan }, { animate: true })
+        @_notify('zoom-pan', { zoom: @focus.get('zoom') * 2, pan: @focus.get('pan') }, { animate: true })
 
       @cache.tag_store.observe('added', this._on_tag_added.bind(this))
       @cache.tag_store.observe('removed', this._on_tag_removed.bind(this))
@@ -512,29 +510,32 @@ define [
         return if e.which != 1
         e.preventDefault()
 
-        @focus.block_auto_pan_zoom()
-
         start_x = e.pageX
-        zoom = @focus.zoom
-        start_pan = @focus.pan
+        zoom = @focus.get('zoom')
+        start_pan = @focus.get('pan')
         width = $(@canvas).width()
+        dragging = false # if we only move one pixel, that doesn't count
 
         update_from_event = (e) =>
           dx = e.pageX - start_x
+
+          dragging ||= true if Math.abs(dx) > 3
+
+          return if !dragging
+
           d_pan = (dx / width) * zoom
 
           this._notify('zoom-pan', { zoom: zoom, pan: start_pan - d_pan })
 
-        $('body').append('<div id="mousemove-handler"></div>')
+        $('body').append('<div id="focus-view-mousemove-handler"></div>')
         $(document).on 'mousemove.tree-view', (e) ->
           update_from_event(e)
           e.stopImmediatePropagation() # prevent normal hover operation
           e.preventDefault()
 
         $(document).on 'mouseup.tree-view', (e) =>
-          @focus.unblock_auto_pan_zoom()
           update_from_event(e)
-          $('#mousemove-handler').remove()
+          $('#focus-view-mousemove-handler').remove()
           $(document).off('.tree-view')
           e.preventDefault()
 
@@ -555,9 +556,9 @@ define [
 
         sign = e.deltaY > 0 && 1 || -1
 
-        zoom1 = @focus.zoom
+        zoom1 = @focus.get('zoom')
         zoom2 = zoom1 * Math.pow(@options.mousewheel_zoom_factor, -sign)
-        pan1 = @focus.pan
+        pan1 = @focus.get('pan')
         relative_cursor_fraction = ((x / width) - 0.5)
 
         pan2 = pan1 + relative_cursor_fraction * zoom1 - relative_cursor_fraction * zoom2
@@ -627,9 +628,9 @@ define [
 
     update: () ->
       @tree.update()
-      @focus.update()
+      @focus.update(@tree)
       this._redraw()
-      @_needs_update = @tree.needsUpdate() || @focus.needs_update()
+      @_needs_update = @tree.needsUpdate() || @focus.needsUpdate()
 
     needs_update: () ->
       @_needs_update
