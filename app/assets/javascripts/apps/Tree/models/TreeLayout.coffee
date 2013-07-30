@@ -1,7 +1,7 @@
 define [ 'underscore' ], (_) ->
   DEFAULT_OPTIONS = {
     vpadding: 0.5 # fraction of a node's height
-    hpadding: 0.1 # fraction of the deepest leaf node's average width
+    hpadding: 0.25 # fraction of the deepest leaf node's median width
     duration: 1000 # ms
   }
 
@@ -88,22 +88,26 @@ define [ 'underscore' ], (_) ->
 
       # Find hpadding for all nodes: the padding we need to make the deepest
       # nodes separate
-      deepestNodes = []
-      depth = 0
-      goDeeper = (node, level) ->
-        if level > depth
-          depth = level
-          deepestNodes = [node]
-        else if level == depth
-          deepestNodes.push(node)
+      leafNodes = [] # leaf or collapsed node
+      (->
+        populateLeafNodes = (node, level) ->
+          if node.children? && node.children.length && node.children[0].fraction2?
+            populateLeafNodes(child) for child in node.children
+          else
+            leafNodes.push(node)
+        populateLeafNodes(tree.root)
+      )()
 
-        if node.children? && node.children.length && node.children[0].fraction2?
-          goDeeper(child, level + 1) for child in node.children
-        undefined
-
-      goDeeper(tree.root, 1)
-
-      hpadding = @options.hpadding * deepestNodes.reduce(((s, n) -> s + n.json.size), 0) / deepestNodes.length
+      hpadding = if leafNodes.length
+        leafNodes.sort((a, b) -> a.json.size - b.json.size)
+        medianIndex = leafNodes.length >>> 1
+        medianSize = if leafNodes.length & 1
+          leafNodes[medianIndex].json.size
+        else
+          (leafNodes[medianIndex - 1].json.size + leafNodes[medianIndex].json.size) * 0.5
+        @options.hpadding * medianSize
+      else
+        0
 
       tree.root.walk (v) ->
         # We use fraction2 to determine whether to set/unset size2
