@@ -7,6 +7,5 @@ define [ 'underscore', '../views/FocusView', './logger' ], (_, FocusView, Logger
     view = new FocusView({ el: div, model: focus })
 
     view.on 'zoom-pan', (obj) ->
-      console.log(obj)
       throttled_log('zoomed/panned', "zoom #{obj.zoom}, pan #{obj.pan}")
       focus.setPanAndZoom(obj.pan, obj.zoom)
