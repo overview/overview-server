@@ -187,34 +187,34 @@ define [ 'underscore' ], (_) ->
       # Returns a replacement defaultAncestor
       apportion = (v, w, defaultAncestor) ->
         if w?
-          vⁱₚ = vᵒₚ = v
-          vⁱₘ = w
-          vᵒₘ = vⁱₚ.parent.children[0]
-          sⁱₚ = vⁱₚ.scratch.mod
-          sᵒₚ = vᵒₚ.scratch.mod
-          sⁱₘ = vⁱₘ.scratch.mod
-          sᵒₘ = vᵒₘ.scratch.mod
-          while nextRight(vⁱₘ)? && nextLeft(vⁱₚ)?
-            vⁱₘ = nextRight(vⁱₘ)
-            vⁱₚ = nextLeft(vⁱₚ)
-            vᵒₘ = nextLeft(vᵒₘ)
-            vᵒₚ = nextRight(vᵒₚ)
-            vᵒₚ.scratch.ancestor = v
-            shift = (vⁱₘ.scratch.prelim + sⁱₘ) - (vⁱₚ.scratch.prelim + sⁱₚ) + distance(vⁱₘ, vⁱₚ)
+          vip = vop = v
+          vim = w
+          vom = vip.parent.children[0]
+          sip = vip.scratch.mod
+          sop = vop.scratch.mod
+          sim = vim.scratch.mod
+          som = vom.scratch.mod
+          while nextRight(vim)? && nextLeft(vip)?
+            vim = nextRight(vim)
+            vip = nextLeft(vip)
+            vom = nextLeft(vom)
+            vop = nextRight(vop)
+            vop.scratch.ancestor = v
+            shift = (vim.scratch.prelim + sim) - (vip.scratch.prelim + sip) + distance(vim, vip)
             if shift > 0
-              moveSubtree(ancestor(vⁱₘ, v, defaultAncestor), v, shift)
-              sⁱₚ += shift
-              sᵒₚ += shift
-            sⁱₘ += vⁱₘ.scratch.mod
-            sⁱₚ += vⁱₚ.scratch.mod
-            sᵒₘ += vᵒₘ.scratch.mod
-            sᵒₚ += vᵒₚ.scratch.mod
-          if nextRight(vⁱₘ)? && !nextRight(vᵒₚ)?
-            vᵒₚ.scratch.thread = nextRight(vⁱₘ)
-            vᵒₚ.scratch.mod += sⁱₘ - sᵒₚ
-          if nextLeft(vⁱₚ)? && !nextLeft(vᵒₘ)?
-            vᵒₘ.scratch.thread = nextLeft(vⁱₚ)
-            vᵒₘ.scratch.mod += sⁱₚ - sᵒₘ
+              moveSubtree(ancestor(vim, v, defaultAncestor), v, shift)
+              sip += shift
+              sop += shift
+            sim += vim.scratch.mod
+            sip += vip.scratch.mod
+            som += vom.scratch.mod
+            sop += vop.scratch.mod
+          if nextRight(vim)? && !nextRight(vop)?
+            vop.scratch.thread = nextRight(vim)
+            vop.scratch.mod += sim - sop
+          if nextLeft(vip)? && !nextLeft(vom)?
+            vom.scratch.thread = nextLeft(vip)
+            vom.scratch.mod += sip - som
             defaultAncestor = v
 
         defaultAncestor
@@ -233,16 +233,16 @@ define [ 'underscore' ], (_) ->
         else
           v.scratch.thread
 
-      moveSubtree = (wₘ, wₚ, shift) ->
-        wₘ = wₘ.scratch
-        wₚ = wₚ.scratch
-        subtrees = wₚ.number - wₘ.number
+      moveSubtree = (wm, wp, shift) ->
+        wm = wm.scratch
+        wp = wp.scratch
+        subtrees = wp.number - wm.number
         change = shift / subtrees
-        wₘ.change += change
-        wₚ.change -= change
-        wₚ.shift += shift
-        wₚ.prelim += shift
-        wₚ.mod += shift
+        wm.change += change
+        wp.change -= change
+        wp.shift += shift
+        wp.prelim += shift
+        wp.mod += shift
         undefined
 
       executeShifts = (v) ->
@@ -257,11 +257,11 @@ define [ 'underscore' ], (_) ->
           shift += w.shift + change
         undefined
 
-      # Returns left of the greatest uncommon ancestors between vⁱₘ and v
-      ancestor = (vⁱₘ, v, defaultAncestor) ->
-        if vⁱₘ.scratch.ancestor.parent is v.parent
-          # vⁱₘ and v are siblings
-          vⁱₘ.scratch.ancestor
+      # Returns left of the greatest uncommon ancestors between vim and v
+      ancestor = (vim, v, defaultAncestor) ->
+        if vim.scratch.ancestor.parent is v.parent
+          # vim and v are siblings
+          vim.scratch.ancestor
         else
           defaultAncestor
 
