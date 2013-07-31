@@ -19,7 +19,11 @@ object ApplicationBuild extends Build with ProjectSettings {
   )
     
   val ourTestOptions = ourTestWithNoDbOptions ++ Seq(
-    Tests.Setup(() => System.setProperty("datasource.default.url", testDatabaseUrl)),
+    Tests.Setup { () => 
+      System.setProperty("datasource.default.url", testDatabaseUrl)
+      System.setProperty("logback.configurationFile", "logback-test.xml")
+    }
+     ,
     Tests.Setup(loader => ClearTestDatabase(loader))
   )
   
@@ -92,6 +96,10 @@ object ApplicationBuild extends Build with ProjectSettings {
       if (System.getProperty("datasource.default.url") == null) {
         System.setProperty("datasource.default.url", appDatabaseUrl)
       }
+    }
+  ).settings(
+    initialize ~= { _ =>
+      System.setProperty("logback.configurationFile", "workerdevlog.xml")
     }
   ).dependsOn(workerCommon, common)
 

@@ -9,4 +9,5 @@ project=$1
 shift
 
 CLASSPATH=`play $project/print-classpath | grep -v -e '\[.*info.*]' -e '\[.*success.*]' -e 'Waiting for lock'`
+
 java $JAVA_OPTS -cp "$CLASSPATH" $@
