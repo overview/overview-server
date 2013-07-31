@@ -125,13 +125,15 @@ define [ 'backbone' ], (Backbone) ->
       u = 1 - t
 
       nextPanAndZoom = if (node = @nextObject.node)?
-        bounds2 = animatedTree.bounds2
-        fullWidth = bounds2.right - bounds2.left
-        fullLeft = bounds2.left
+        # We animate to bounds, not bounds2. This way, the zoom stays locked
+        # where it belongs when the node moves after zooming is complete.
+        bounds = animatedTree.bounds
+        fullWidth = bounds.right - bounds.left
+        fullLeft = bounds.left
 
-        nodeBounds2 = animatedTree.calculateBounds2(node)
-        nodeWidth = nodeBounds2.right - nodeBounds2.left
-        nodeMiddle = (nodeBounds2.left + nodeBounds2.right) * 0.5
+        nodeBounds = animatedTree.calculateBounds(node)
+        nodeWidth = nodeBounds.right - nodeBounds.left
+        nodeMiddle = (nodeBounds.left + nodeBounds.right) * 0.5
 
         pan: (nodeMiddle - fullLeft) / fullWidth - 0.5
         zoom: nodeWidth / fullWidth
