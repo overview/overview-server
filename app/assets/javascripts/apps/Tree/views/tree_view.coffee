@@ -6,34 +6,41 @@ define [
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
 ], ($, _, observable, ColorTable) ->
   DEFAULT_OPTIONS = {
-    color:
-      line: '#888888'
-      line_selected: '#000000'
-      line_default: '#333333'
-      line_faded: '#999999'
-      highlight: '#6ab9e9'
-    nodeStyles:
-      normal:
-        normal:
-          strokeStyle: '#333333'
-          lineWidth: 2
-        highlighted:
-          strokeStyle: '#6ab9e9'
-          lineWidth: 2
-      leaf:
-        normal:
-          strokeStyle: '#666666'
-          lineWidth: 1
-        highlighted:
-          strokeStyle: '#6ab9e9'
-          lineWidth: 1
-      selected:
-        normal:
-          strokeStyle: '#000000'
-          lineWidth: 4
-        highlighted:
-          strokeStyle: '#6ab9e9'
-          lineWidth: 4
+    lineStyles:
+      # Just a hash
+      normal: '#999999'
+      highlighted: '#6ab9e9'
+
+    nodeStyleRules: [
+      # Similar to CSS, nodes have several classes.
+      #
+      # Here, similar to CSS, later rules take precedence. Each entry
+      # must have a "type" (akin to HTML className). The special type
+      # "" applies to all nodes.
+      {
+        type: ''
+        fillStyle: '#ffffff'
+        strokeStyle: '#666666'
+        lineWidth: 2
+      }
+      {
+        type: 'highlighted'
+        strokeStyle: '#6ab9e9'
+      }
+      {
+        type: 'hover'
+        fillStyle: '#f4f4f4'
+      }
+      {
+        type: 'selected'
+        fillStyle: '#f4f4f4'
+        lineWidth: 4
+      }
+      {
+        type: 'leaf'
+        lineWidth: 1
+      }
+    ]
     maxNodeBorderWidth: 4 # px
     nodeCornerRadius: 5 # px
 
@@ -75,11 +82,13 @@ define [
     ctx.closePath()
 
   class DrawOperation
-    constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @focus, @options) ->
+    constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
       @canvas.width = @width = Math.floor(parseFloat(@canvas.parentNode.clientWidth))
       @canvas.height = @height = Math.floor(parseFloat(@canvas.parentNode.clientHeight))
 
       @ctx = @canvas.getContext('2d')
+
+      @drawableNodes = [] # in case user hovers before tree is loaded
 
       # HDPI stuff: http://www.html5rocks.com/en/tutorials/canvas/hidpi/
       device_pixel_ratio = window.devicePixelRatio || 1
@@ -103,7 +112,6 @@ define [
 
         @ctx.scale(ratio, ratio)
 
-      @ctx.lineStyle = @options.color.line
       @ctx.font = '12px "Open Sans", Helvetica, Arial, sans-serif'
       @ctx.textBaseline = 'top'
 
@@ -136,9 +144,11 @@ define [
       )
 
       #@_auto_fit_pan() # TODO make this use @tree somehow?
+      classifiedDrawableNodes = @_classifyDrawableNodes(drawableNodes)
 
+      this._drawNodeFills(classifiedDrawableNodes)
       this._draw_colors(drawableNodes)
-      this._draw_nodes(drawableNodes)
+      this._drawNodeBorders(classifiedDrawableNodes)
       this._draw_labels(drawableNodes)
       this._draw_lines_from_parents_to_children(drawableNodes)
       this._draw_expand_and_collapse_for_tree(drawableNodes)
@@ -225,61 +235,97 @@ define [
       ctx.restore()
       undefined
 
-    _draw_nodes: (drawableNodes) ->
+    # Returns { 'highlighted': [ px1, px2, ... ], 'highlighted.hover': [ px3 ], ... }
+    #
+    # px1, px2, px3 etc. are objects in the passed `drawableNodes` array.
+    #
+    # Out-of-bounds nodes are filtered out of the return value.
+    #
+    # Each node can have one or several of the following classes:
+    # * selected: a selected node
+    # * highlighted: (when viewing a document) a node containing the document
+    # * hover: a node the user is hovering over with a pointing device
+    # * leaf: a leaf node
+    #
+    # If a node has no classes, it will be keyed by the empty string.
+    #
+    # Why classify like this? Because then we can set the canvas style once per
+    # list instead of once per node. That makes fewer draw operations.
+    _classifyDrawableNodes: (drawableNodes) ->
+      ret = {}
+
+      buffer = Math.max(@options.node_line_width, @options.node_line_width_selected, @options.node_line_width_leaf) * 0.5
+      minX = 0 - buffer
+      maxX = @width + buffer
+
+      nodeTypes = [] # avoid extra object collection by reusing the same array
+      for px in drawableNodes
+        continue if px.left + px.width < minX || px.left > maxX
+
+        node = px.node
+        nodeId = node.json.id
+
+        if (node.selected_fraction.v2? && node.selected_fraction.v2 == 1) || node.selected_fraction.current == 1
+          nodeTypes.push('selected')
+
+        if node.isLeaf
+          nodeTypes.push('leaf')
+
+        if nodeId == @hoverNodeId
+          nodeTypes.push('hover')
+
+        if nodeId of @highlightedNodeIds
+          nodeTypes.push('highlighted')
+
+        nodeType = nodeTypes.join('.')
+        (ret[nodeType] ||= []).push(px)
+        nodeTypes.splice(0, 10) # empty the entire array
+
+      ret
+
+    _getStyle: (type) ->
+      types = {}
+      (types[x] = null) for x in type.split('.')
+
+      ret = {}
+
+      for rule in @options.nodeStyleRules
+        if rule.type == '' || rule.type of types
+          for k, v of rule when k != 'type'
+            ret[k] = v
+
+      ret
+
+    _drawNodeFills: (classifiedDrawableNodes) ->
       ctx = @ctx
 
       ctx.save()
 
-      # We draw six categories, all nodes all at once: that's much faster
-      # than styling every node individually.
-      pxs =
-        normal:
-          normal: []
-          highlighted: []
-        selected:
-          normal: []
-          highlighted: []
-        leaf:
-          normal: []
-          highlighted: []
+      for type, nodes of classifiedDrawableNodes
+        style = @_getStyle(type)
+        ctx.fillStyle = style.fillStyle
 
-      # Fill pxs
-      (=>
-        buffer = Math.max(@options.node_line_width, @options.node_line_width_selected, @options.node_line_width_leaf) * 0.5
-        minX = 0
-        maxX = @width
+        ctx.beginPath()
+        for px in nodes
+          drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.nodeCornerRadius)
+        ctx.fill()
 
-        for px in drawableNodes
-          node = px.node
+      ctx.restore()
 
-          continue if px.left + px.width + buffer < minX || px.left - buffer > maxX
+    _drawNodeBorders: (classifiedDrawableNodes) ->
+      ctx = @ctx
 
-          type1 = if (node.selected_fraction.v2? && node.selected_fraction.v2 == 1) || node.selected_fraction.current == 1
-            'selected'
-          else if px.isLeaf
-            'leaf'
-          else
-            'normal'
+      ctx.save()
 
-          type2 = if node.json.id of @highlightedNodeIds
-            'highlighted'
-          else
-            'normal'
+      for type, nodes of classifiedDrawableNodes
+        style = @_getStyle(type)
+        ctx.strokeStyle = style.strokeStyle
+        ctx.lineWidth = style.lineWidth
 
-          pxs[type1][type2].push(px)
-      )()
-
-      # Render pxs, each with the correct styles
-      for type1, type2s of pxs
-        for type2, nodes of type2s when nodes.length
-          # Set styles
-          for k, v of @options.nodeStyles[type1][type2]
-            ctx[k] = v
-          # Draw path
-          ctx.beginPath()
-          for px in nodes
-            drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.nodeCornerRadius)
-          ctx.stroke()
+        ctx.beginPath()
+        for px in nodes
+          drawRoundedRect(ctx, px.left, px.top, px.width, px.height, @options.nodeCornerRadius)
+        ctx.stroke()
 
       ctx.restore()
 
@@ -347,13 +393,13 @@ define [
         # when zoomed further out.
         ctx.setLineDash?([ Math.ceil(@options.connector_line_width), Math.ceil(@options.connector_line_width) ])
 
-      ctx.strokeStyle = @options.color.line_faded
+      ctx.strokeStyle = @options.lineStyles.normal
       ctx.beginPath()
       for px in drawableNodes when px.parent? && px.json.id not of @highlightedNodeIds
         drawLineToParent(px)
       ctx.stroke()
 
-      ctx.strokeStyle = @options.color.highlight
+      ctx.strokeStyle = @options.lineStyles.highlighted
       ctx.beginPath()
       for px in drawableNodes when px.parent? && px.json.id of @highlightedNodeIds
         drawLineToParent(px)
@@ -423,8 +469,7 @@ define [
     observable(this)
 
     constructor: (@div, @cache, @tree, @focus, options={}) ->
-      options_color = _.extend({}, options.color, DEFAULT_OPTIONS.color)
-      @options = _.extend({}, DEFAULT_OPTIONS, options, { color: options_color })
+      @options = _.extend({}, DEFAULT_OPTIONS, options)
       @focus_tagids = (t.id for t in @cache.tag_store.tags)
 
       $div = $(@div)
@@ -679,7 +724,7 @@ define [
       shown_tagids = @tree.state.selection.tags
       shown_tagids = @focus_tagids if !shown_tagids.length
 
-      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @focus, @options)
+      @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()
 
     update: () ->
@@ -704,44 +749,48 @@ define [
     #
     # We'll adjust @$hover_node_description to match.
     set_hover_node: (px) ->
+      hoverNodeId = px?.json?.id
+      return if hoverNodeId == @hoverNodeId
+      @hoverNodeId = hoverNodeId
+
       if !px?
         @$hover_node_description.removeAttr('data-node-id')
         @$hover_node_description.hide()
-        return
+      else
+        json = px.json
+        node_id_string = "#{json?.id}"
 
-      # If we're here, drawable_node is valid
-      json = px.json
-      node_id_string = "#{json?.id}"
+        return if @$hover_node_description.attr('data-node-id') == node_id_string
 
-      return if @$hover_node_description.attr('data-node-id') == node_id_string
+        # If we're here, we're hovering on a new node
+        @$hover_node_description.hide()
+        @$hover_node_description.empty()
 
-      # If we're here, we're hovering on a new node
-      @$hover_node_description.hide()
-      @$hover_node_description.empty()
+        html = HOVER_NODE_TEMPLATE({ node: json })
+        @$hover_node_description.append(html)
+        @$hover_node_description.attr('data-node-id', node_id_string)
+        @$hover_node_description.css({ opacity: 0.001 })
+        @$hover_node_description.show() # Show it, so we can calculate dims
 
-      html = HOVER_NODE_TEMPLATE({ node: json })
-      @$hover_node_description.append(html)
-      @$hover_node_description.attr('data-node-id', node_id_string)
-      @$hover_node_description.css({ opacity: 0.001 })
-      @$hover_node_description.show() # Show it, so we can calculate dims
+        h = @$hover_node_description.outerHeight(true)
+        w = @$hover_node_description.outerWidth(true)
 
-      h = @$hover_node_description.outerHeight(true)
-      w = @$hover_node_description.outerWidth(true)
+        $canvas = $(@canvas)
+        offset = $canvas.offset()
+        document_width = $(document).width()
 
-      $canvas = $(@canvas)
-      offset = $canvas.offset()
-      document_width = $(document).width()
+        top = px.top - h
+        left = px.hmid - w * 0.5
 
-      top = px.top - h
-      left = px.hmid - w * 0.5
+        if left + offset.left < 0
+          left = 0
+        if left + offset.left + w > document_width
+          left = document_width - w - offset.left
 
-      if left + offset.left < 0
-        left = 0
-      if left + offset.left + w > document_width
-        left = document_width - w - offset.left
+        @$hover_node_description.css({
+          left: left
+          top: top
+        })
+        @$hover_node_description.animate({ opacity: 0.9 }, 'fast')
 
-      @$hover_node_description.css({
-        left: left
-        top: top
-      })
-      @$hover_node_description.animate({ opacity: 0.9 }, 'fast')
+      @_set_needs_update()
