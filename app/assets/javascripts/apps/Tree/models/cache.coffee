@@ -155,7 +155,7 @@ define [
 
       tagid_string = "#{tag.id}"
       nodes = @on_demand_tree.nodes
-      @on_demand_tree.id_tree.edit ->
+      @on_demand_tree.id_tree.batchAdd -> # trigger callbacks
         for __, node of nodes
           tagCounts = node.tagCounts
           if tagCounts?[tagid_string]?
@@ -170,7 +170,7 @@ define [
       @tag_api.destroy(tag)
 
     edit_node: (node, new_node) ->
-      @on_demand_tree.id_tree.edit ->
+      @on_demand_tree.id_tree.batchAdd -> # trigger callbacks
         for k, v of new_node
           if !v?
             node[k] = undefined
