@@ -92,7 +92,7 @@ define [
         focus.setPanAndZoom(obj.pan, obj.zoom)
 
     state.observe 'selection-changed', ->
-      if nodeid = selected_nodeid()
+      if nodeid = state.selection.nodes[0]
         expand(nodeid)
         node = animated_tree.getAnimatedNode(nodeid)
         node = node.parent if node.parent?
