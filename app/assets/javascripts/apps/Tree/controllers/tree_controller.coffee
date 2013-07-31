@@ -69,6 +69,7 @@ define [
     view.observe 'click', (nodeid) ->
       return if !nodeid?
       log('clicked node', "#{nodeid}")
+      expand_deferred(nodeid)
       new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
       state.set('selection', new_selection)
 
@@ -93,7 +94,6 @@ define [
 
     state.observe 'selection-changed', ->
       if nodeid = state.selection.nodes[0]
-        expand(nodeid)
         node = animated_tree.getAnimatedNode(nodeid)
         node = node.parent if node.parent?
         focus.animateNode(node)
@@ -121,6 +121,7 @@ define [
       if new_nodeid?
         log("moved to #{finder}", "nodeid_before:#{nodeid} nodeid_after:#{new_nodeid}")
         select_nodeid(new_nodeid)
+        expand_deferred(new_nodeid)
       else
         log("failed to move to #{finder}", "nodeid_before:#{nodeid}")
       new_nodeid

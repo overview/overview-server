@@ -47,7 +47,8 @@ define [
     connector_line_width: 2.5 # px
     node_expand_width: 1.5 # px
     node_expand_click_radius: 12 # px
-    node_expand_radius: 6 # px
+    node_expand_radius: 8 # px
+    node_expand_glyph_radius: 4 # px
     mousewheel_zoom_factor: 1.2
   }
 
@@ -418,7 +419,7 @@ define [
       ctx.fillStyle = '#ffffff'
       halfLineWidth = lineWidth * 0.5
       radius = @options.node_expand_radius
-      glyphRadius = radius - 2
+      glyphRadius = @options.node_expand_glyph_radius
       outerRadius = radius + halfLineWidth
       minX = 0
       maxX = @width
@@ -441,13 +442,42 @@ define [
           else if px.node.opened_fraction.current == 0
             expandCircles.push([ xy, px ])
 
-      # Draw circles
-      for circle in expandCircles.concat(collapseCircles)
+      # Draw circle fills
+      ctx.beginPath()
+      for circle in collapseCircles.concat(expandCircles)
         xy = circle[0]
-        ctx.beginPath()
         ctx.arc(xy.x, xy.y, radius, 0, Math.PI * 2, true)
-        ctx.fill()
-        ctx.stroke()
+        ctx.closePath()
+      ctx.fill()
+
+      ctx.beginPath()
+      ctx.fillStyle = '#f4f4f4' # hover style
+      hasHoverStyle = (px) =>
+        node = px.node
+        px.json.id == @hoverNodeId ||
+          node.selected_fraction.current == 1 ||
+          (node.selected_fraction.v2? && node.selected_fraction.v2 == 1)
+      for circle in expandCircles when hasHoverStyle(circle[1])
+        xy = circle[0]
+        ctx.arc(xy.x, xy.y, radius, 0, Math.PI * 2, true)
+        ctx.closePath()
+      ctx.fill()
+
+      # Draw circle borders -- semicircles for expand, because users can click
+      # anywhere on the node to expand.
+      ctx.beginPath()
+      for circle in collapseCircles
+        xy = circle[0]
+        ctx.moveTo(xy.x + radius, xy.y)
+        ctx.arc(xy.x, xy.y, radius, 0, Math.PI * 2, true)
+      ctx.stroke()
+
+      ctx.beginPath()
+      for circle in expandCircles
+        xy = circle[0]
+        ctx.moveTo(xy.x - radius, xy.y)
+        ctx.arc(xy.x, xy.y, radius, Math.PI, Math.PI * 2, true)
+      ctx.stroke()
 
       # Draw + and -'s
       ctx.beginPath()

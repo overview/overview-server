@@ -206,6 +206,7 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
         .done(this._add_json.bind(this))
 
     demand_node: (id) ->
+      return if @id_tree.children[id]? # TODO make this async
       @cache.resolve_deferred('node', id)
         .done(this._add_json.bind(this))
 
