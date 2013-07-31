@@ -269,7 +269,7 @@ define [
         if (node.selected_fraction.v2? && node.selected_fraction.v2 == 1) || node.selected_fraction.current == 1
           nodeTypes.push('selected')
 
-        if node.isLeaf
+        if px.isLeaf
           nodeTypes.push('leaf')
 
         if nodeId == @hoverNodeId
