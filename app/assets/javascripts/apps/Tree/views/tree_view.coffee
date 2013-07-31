@@ -695,19 +695,10 @@ define [
 
     # Returns a set of { nodeid: null }.
     #
-    # A node is highlighted if (one of the following):
-    #
-    # * The node or one of its children is selected
-    # * A document in the node is selected
+    # A node is highlighted if we are viewing a document that is contained
+    # in the node.
     _getHighlightedNodeIds: ->
       ret = {}
-
-      # Selected nodes
-      for nodeid in @tree.state.selection.nodes
-        node = @tree.getAnimatedNode(nodeid)
-        while node?
-          ret[node.json.id] = null
-          node = node.parent
 
       # Selected documents
       for docid in @tree.state.selection.documents
