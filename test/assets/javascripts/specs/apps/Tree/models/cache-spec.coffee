@@ -80,7 +80,7 @@ require [
     constructor: () ->
       @id_tree = { root: -1, children: {}, parent: {} }
       @nodes = {}
-      @id_tree = { edit: (cb) -> cb.apply({}) }
+      @id_tree = { batchAdd: (cb) -> cb.apply({}) }
 
     add_tag_to_node: () ->
 
@@ -172,7 +172,7 @@ require [
           node = { id: 1, description: "description" }
           tree = {
             id_tree: {
-              edit: (cb) -> cb(); @edited = true
+              batchAdd: (cb) -> cb(); @edited = true
             }
             nodes: { "1": node }
           }
@@ -225,7 +225,7 @@ require [
           cache.tag_store.add(tag)
           tree = {
             id_tree: {
-              edit: (cb) -> cb(); @edited = true
+              batchAdd: (cb) -> cb(); @edited = true
             }
             nodes: {
               "1": { id: 1, tagCounts: { "1": 10 } },
@@ -254,7 +254,7 @@ require [
             cache.remove_tag(tag)
             expect(cache.document_store.remove_tag_id).toHaveBeenCalledWith(tag.id)
 
-          it 'should call id_tree.edit()', ->
+          it 'should call id_tree.batchAdd()', ->
             cache.remove_tag(tag)
             expect(cache.on_demand_tree.id_tree.edited).toBe(true)
 
