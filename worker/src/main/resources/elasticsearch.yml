@@ -1,0 +1,105 @@
+##################### ElasticSearch Configuration Example #####################
+
+# This file contains an overview of various configuration settings,
+# targeted at operations staff. Application developers should
+# consult the guide at <http://elasticsearch.org/guide>.
+#
+# The installation procedure is covered at
+# <http://elasticsearch.org/guide/reference/setup/installation.html>.
+#
+# ElasticSearch comes with reasonable defaults for most settings,
+# so you can try it out without bothering with configuration.
+#
+# Most of the time, these defaults are just fine for running a production
+# cluster. If you're fine-tuning your cluster, or wondering about the
+# effect of certain configuration option, please _do ask_ on the
+# mailing list or IRC channel [http://elasticsearch.org/community].
+
+# Any element in the configuration can be replaced with environment variables
+# by placing them in ${...} notation. For example:
+#
+# node.rack: ${RACK_ENV_VAR}
+
+# See <http://elasticsearch.org/guide/reference/setup/configuration.html>
+# for information on supported formats and syntax for the configuration file.
+
+
+################################### Cluster ###################################
+
+# Cluster name identifies your cluster for auto-discovery. If you're running
+# multiple clusters on the same network, make sure you're using unique names.
+#
+# cluster.name: elasticsearch
+
+
+#################################### Node #####################################
+
+# Node names are generated dynamically on startup, so you're relieved
+# from configuring them manually. You can tie this node to a specific name:
+#
+node.name: "Worker client"
+
+# Every node can be configured to allow or deny being eligible as the master,
+# and to allow or deny to store the data.
+#
+# Allow this node to be eligible as a master node (enabled by default):
+#
+# node.master: true
+#
+# Allow this node to store data (enabled by default):
+#
+# node.data: true
+
+node.master: false
+node.data: false
+
+
+
+#################################### Index ####################################
+
+# You can set a number of options (such as shard/replica options, mapping
+# or analyzer definitions, translog settings, ...) for indices globally,
+# in this file.
+#
+# Note, that it makes more sense to configure index settings specifically for
+# a certain index, either when creating it or by using the index templates API.
+#
+# See <http://elasticsearch.org/guide/reference/index-modules/> and
+# <http://elasticsearch.org/guide/reference/api/admin-indices-create-index.html>
+# for more information.
+
+# Set the number of shards (splits) of an index (5 by default):
+#
+index.number_of_shards: 1
+
+# Set the number of replicas (additional copies) of an index (1 by default):
+#
+# index.number_of_replicas: 1
+
+# Note, that for development on a local machine, with small indices, it usually
+# makes sense to "disable" the distributed features:
+#
+# index.number_of_shards: 1
+# index.number_of_replicas: 0
+
+# These settings directly affect the performance of index and search operations
+# in your cluster. Assuming you have enough machines to hold shards and
+# replicas, the rule of thumb is:
+#
+# 1. Having more *shards* enhances the _indexing_ performance and allows to
+#    _distribute_ a big index across machines.
+# 2. Having more *replicas* enhances the _search_ performance and improves the
+#    cluster _availability_.
+#
+# The "number_of_shards" is a one-time setting for an index.
+#
+# The "number_of_replicas" can be increased or decreased anytime,
+# by using the Index Update Settings API.
+#
+# ElasticSearch takes care about load balancing, relocating, gathering the
+# results from nodes, etc. Experiment with different settings to fine-tune
+# your setup.
+
+# Use the Index Status API (<http://localhost:9200/A/_status>) to inspect
+# the index status.
+

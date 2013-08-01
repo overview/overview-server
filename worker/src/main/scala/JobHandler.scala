@@ -16,9 +16,13 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.Database
-import org.overviewproject.http.DocumentCloudDocumentProducer 
+import org.overviewproject.http.DocumentCloudDocumentProducer
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.util.WorkerActorSystem
+import org.overviewproject.util.SearchIndex
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
 
 object JobHandler {
   // Run a single job
@@ -92,12 +96,24 @@ object JobHandler {
   }
 
   def main(args: Array[String]) {
-    val pollingInterval = 500 //milliseconds
-
     val config = new SystemPropertiesDatabaseConfiguration()
     val dataSource = new DataSource(config)
 
     DB.connect(dataSource)
+ 
+    val searchIndexSetup = Try {
+      SearchIndex.createIndexIfNotExisting
+    }
+    
+    searchIndexSetup match {
+      case Success(v) => startHandlingJobs
+      case Failure(e) => Logger.error("Unable to create Search Index", e)
+    }
+  }
+  
+  
+  private def startHandlingJobs: Unit = {
+    val pollingInterval = 500 //milliseconds
 
     DB.withConnection { implicit connection =>
       restartInterruptedJobs

@@ -42,6 +42,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   def produce() {
     val t0 = System.nanoTime()
 
+    SearchIndex.createDocumentSetAlias(documentSetId)
+    
     // First step to partitioning work into actors.
     // Next step is to create supervisor actor that manages the actors being created below.
     // A separate actor could monitor cancellation status an then inform the supervisor actor
@@ -120,6 +122,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       DocumentWriter.write(document)
       document.id
     }
+    
+    SearchIndex.indexDocument(documentSetId, id, text, Some(doc.title), Some(doc.id))
     consumer.processDocument(id, text)
     numDocs += 1
 
@@ -132,4 +136,5 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     context.stop(importerActor)
   }
 
+  
 }

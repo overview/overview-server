@@ -16,6 +16,7 @@ import org.overviewproject.util.Progress._
 import org.overviewproject.persistence.DocumentTagWriter
 import org.overviewproject.persistence.orm.Tag
 import org.overviewproject.persistence.PersistentTag
+import org.overviewproject.util.SearchIndex
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -34,6 +35,8 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
+    SearchIndex.createDocumentSetAlias(documentSetId)
+    
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
@@ -50,6 +53,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
       if (numberOfParsedDocuments < maxDocuments) {
         val documentId = writeAndCommitDocument(documentSetId, doc)
+        SearchIndex.indexDocument(documentSetId, documentId, doc.text, doc.title, doc.suppliedId)
         consumer.processDocument(documentId, doc.text)
         numberOfParsedDocuments += 1
       } else numberOfSkippedDocuments += 1
