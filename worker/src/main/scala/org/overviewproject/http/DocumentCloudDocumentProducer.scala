@@ -35,6 +35,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private val FetchingFraction = 0.5
   private val documentSetId = job.documentSetId
+  private val indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)  
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
   private var totalDocs: Option[Int] = None
@@ -42,8 +43,6 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   def produce() {
     val t0 = System.nanoTime()
 
-    SearchIndex.createDocumentSetAlias(documentSetId)
-    
     // First step to partitioning work into actors.
     // Next step is to create supervisor actor that manages the actors being created below.
     // A separate actor could monitor cancellation status an then inform the supervisor actor
@@ -108,7 +107,11 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       }
     }
 
+    indexingSession.complete
     consumer.productionComplete()
+    Await.result(indexingSession.requestsComplete, Duration.Inf)
+    Logger.info("Indexing complete")
+    
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
   }
@@ -123,7 +126,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
       document.id
     }
     
-    SearchIndex.indexDocument(documentSetId, id, text, Some(doc.title), Some(doc.id))
+    indexingSession.indexDocument(documentSetId, id, text, Some(doc.title), Some(doc.id))
+
     consumer.processDocument(id, text)
     numDocs += 1
 
