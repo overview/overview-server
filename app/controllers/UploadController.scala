@@ -40,7 +40,7 @@ trait UploadController extends Controller {
    *
    * inputDocumentSetLanguage is a HACK. Revert this commit!
    */
-  def create(guid: UUID, languageCode: String) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
+  def create(guid: UUID) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
     val upload: OverviewUpload = request.body
 
     uploadResult(upload)
@@ -58,7 +58,7 @@ trait UploadController extends Controller {
           case Some(u) if uploadResult(u) == Ok => {
             createDocumentSetCreationJob(u, lang, stopWords.getOrElse(""))
             deleteUpload(u)
-            Ok
+            Redirect(routes.DocumentSetController.index())
           }
           case Some(u) => uploadResult(u)
           case None => NotFound
