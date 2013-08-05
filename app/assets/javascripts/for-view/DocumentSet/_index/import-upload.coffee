@@ -1,4 +1,4 @@
-define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/file' ], ($, CsvReader, Upload, i18n) ->
+define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', 'apps/ImportOptions/app', 'util/shims/file' ], ($, _, CsvReader, Upload, i18n, ImportOptionsApp) ->
   FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
   FILE_PREVIEW_SIZE = 20480 # 20kb
   TOLERATED_ENCODING_ERRORS = 0.01 # 1%: ratio of bad-chars : total-chars
@@ -21,6 +21,11 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
     ).replace(/[\x00-\x07\x0B\x0E-\x1F]/g, escape)
 
   make_csv_upload_form = ($form, $modal) ->
+    importOptionsApp = new ImportOptionsApp
+      supportedLanguages: window.supportedLanguages
+      defaultLanguageCode: window.defaultLanguageCode
+      excludeOptions: [ 'split_documents' ]
+    $form.find('.ok').prepend(importOptionsApp.el)
     given_url = $form.attr('action')
     url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'
 
@@ -236,15 +241,11 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
 
       if file?
         charset = $form.find('[name=charset]').val()
-        lang = $form.find('[name=lang]').val() || window.defaultLanguageCode
 
         upload = new Upload(
           file,
           url_prefix,
-          _.extend({
-            queryString: window.csrfTokenQueryString + "&lang=#{lang}"
-            contentType: "text/csv; charset=#{charset}"
-          }, upload_options))
+          _.extend({ contentType: "text/csv; charset=#{charset}" }, upload_options))
 
         progress_elem = $modal.find('progress')[0]
         bytes_uploaded = 0
@@ -273,8 +274,13 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
           bytes_total = e.total || 1
         upload.always -> stopped = true
         upload.done ->
+          # POST to .../finish with the options
           $(window).off('beforeunload.document-set-index-upload')
-          window.location.assign(window.location.origin + window.location.pathname + window.location.search)
+          $submitForm = $('<form method="post" style="display:none;"><input type="submit" value="submit"/></form>')
+            .attr('action', "#{upload.url}/finish")
+            .append(importOptionsApp.el)
+            .append($form.find('[name=csrfToken]').clone())
+          $submitForm[0].submit()
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
         $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
@@ -284,7 +290,7 @@ define [ 'jquery', 'util/csv_reader', 'util/net/upload', 'i18n', 'util/shims/fil
 
     refresh_form_enabled = () ->
       $form.find(':submit').attr('disabled', (!ready_to_submit || upload?) && 'disabled' || false)
-      $form.find(':file, select').attr('disabled', upload? && 'disabled' || false)
+      $form.find(':file, select[name=charset]').attr('disabled', upload? && 'disabled' || false)
       $form.find(':reset').attr('disabled', !file? && 'disabled' || false)
 
     $form.on 'submit', (e) ->

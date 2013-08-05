@@ -92,12 +92,11 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     #                 send files to `http://example.org/upload/__uuid__`.
     #     options: Key/value pairs including these:
     #       contentType: Content-Type header (passed to jQuery.ajax())
-    #       queryString: Query string (without question mark)
     #       xhr_factory: function that accepts an "upload-progress" callback of
     #                    signature function(bytes_loaded, bytes_total) and returns
     #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
     constructor: (@file, url_prefix, options={}) ->
-      @url = url_prefix + this._generate_uuid() + (options?.queryString && "?#{options.queryString}" || '')
+      @url = url_prefix + this._generate_uuid()
       @state = states.WAITING
       # bytes_uploaded is accurate when leaving STARTING and entering UPLOADING.
       # We send a computed `loaded` variable when notifying progress() callbacks
