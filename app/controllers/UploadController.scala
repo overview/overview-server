@@ -36,14 +36,16 @@ trait UploadController extends Controller {
   }
 
   /**
-   * Handle file upload and kick of documentSetCreationJob.
-   *
-   * inputDocumentSetLanguage is a HACK. Revert this commit!
+   * Handle file upload.
    */
   def create(guid: UUID) = TransactionAction(authorizedFileUploadBodyParser(guid)) { implicit request: Request[OverviewUpload] =>
     val upload: OverviewUpload = request.body
 
-    uploadResult(upload)
+    if (isUploadComplete(upload)) {
+      Ok
+    } else {
+      BadRequest
+    }
   }
 
   def startClustering(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
@@ -52,37 +54,44 @@ trait UploadController extends Controller {
       f => BadRequest,
       { f =>
         val lang = f._1
-        val stopWords = f._2
+        val stopWords = f._2.getOrElse("")
         
         findUpload(request.user.id, guid) match {
-          case Some(u) if uploadResult(u) == Ok => {
-            createDocumentSetCreationJob(u, lang, stopWords.getOrElse(""))
-            deleteUpload(u)
-            Redirect(routes.DocumentSetController.index())
+          case Some(u) => {
+            if (isUploadComplete(u)) {
+              createDocumentSetCreationJob(u, lang, stopWords)
+              deleteUpload(u)
+              Redirect(routes.DocumentSetController.index())
+            } else {
+              Conflict
+            }
           }
-          case Some(u) => uploadResult(u)
           case None => NotFound
         }
       })
   }
 
-  private def uploadResult(upload: OverviewUpload) =
-    if (upload.uploadedFile.size == 0) NotFound
-    else if (upload.uploadedFile.size == upload.size) Ok
-    else PartialContent
+  private def isUploadComplete(upload: OverviewUpload) = {
+    upload.uploadedFile.size == upload.size && upload.size > 0
+  }
 
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
     def contentRange(upload: OverviewUpload): String = "0-%d/%d".format(upload.uploadedFile.size - 1, upload.size)
     def contentDisposition(upload: OverviewUpload): String = upload.uploadedFile.contentDisposition
 
     findUpload(request.user.id, guid).map { u =>
-      uploadResult(u) match {
-        case NotFound => NotFound
-        case r => r.withHeaders(
+      if (isUploadComplete(u)) {
+        Ok.withHeaders(
+          (CONTENT_LENGTH, u.uploadedFile.size.toString),
+          (CONTENT_DISPOSITION, contentDisposition(u))
+        )
+      } else {
+        PartialContent.withHeaders(
           (CONTENT_RANGE, contentRange(u)),
-          (CONTENT_DISPOSITION, contentDisposition(u)))
+          (CONTENT_DISPOSITION, contentDisposition(u))
+        )
       }
-    } getOrElse (NotFound)
+    }.getOrElse(NotFound)
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
