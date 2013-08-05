@@ -120,7 +120,6 @@ views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.email.label=DocumentCloud email
 views.DocumentCloudImportJob.new.email.placeholder=user@example.org
-views.DocumentCloudImportJob.new.lang.label=Language of documents
 views.DocumentCloudImportJob.new.password.label=Password
 views.DocumentCloudImportJob.new.credentials_preamble=You’re about to import DocumentCloud documents, but first you need to verify your DocumentCloud email and password.
 views.DocumentCloudImportJob.new.fetched=Your DocumentCloud email and password are correct.
@@ -128,7 +127,6 @@ views.DocumentCloudImportJob.new.fetching=Loading document information from Docu
 views.DocumentCloudImportJob.new.form_preamble=Choose how this document set should look in Overview:
 views.DocumentCloudImportJob.new.query.document_count={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 views.DocumentCloudImportJob.new.query.preamble=This is the set of DocumentCloud documents you’re about to import:
-views.DocumentCloudImportJob.new.split_documents.label=Split each page into its own document in Overview
 views.DocumentCloudImportJob.new.title.label=Title in Overview
 views.DocumentCloudImportJob.new.title.placeholder=Title
 views.DocumentCloudImportJob.new.title.value={0} (from DocumentCloud)
@@ -144,8 +142,6 @@ views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-
 views.DocumentSet._dcimport.error=You entered a wrong email address or password, or DocumentCloud is unavailable. Please try again.
 views.DocumentSet._dcimport.labels.email=Email
 views.DocumentSet._dcimport.labels.password=Password
-views.DocumentSet._dcimport.labels.split_documents=Split each document into individual pages
-views.DocumentSet._dcimport.labels.language=Language of the text in all documents
 views.DocumentSet._dcimport.placeholders.email=user@example.org
 views.DocumentSet._dcimport.submit=Log in to DocumentCloud
 views.DocumentSet._dcimport.explanation=Your password will be sent (securely) to our servers when you import a project, and it will be purged when the import is finished.
@@ -247,6 +243,15 @@ views.DocumentSet.index.import_dropdown=Import your documents
 views.DocumentSet.index.import_from_shared=Import documents shared with you
 views.DocumentSet.index.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
 views.DocumentSet.index.import_from_upload=Import from a CSV file
+
+views.DocumentSet.index.ImportOptions.title=Import options
+views.DocumentSet.index.ImportOptions.lang.label=Language of documents
+views.DocumentSet.index.ImportOptions.split_documents.label=Split each page into its own document in Overview
+views.DocumentSet.index.ImportOptions.supplied_stop_words.label=Words to ignore (optional)
+views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
+views.DocumentSet.index.ImportOptions.dialog.title=Import options
+views.DocumentSet.index.ImportOptions.dialog.cancel=Cancel
+views.DocumentSet.index.ImportOptions.dialog.submit=Import documents
 
 views.DocumentSet.show.DocumentList.title={0}
 views.DocumentSet.show.DocumentList.title.empty=(no title)

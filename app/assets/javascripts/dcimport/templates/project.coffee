@@ -12,8 +12,6 @@ define [ 'underscore' ], (_) ->
         <input type="hidden" name="query" value="projectid:<%- project.id %>" />
         <input type="hidden" name="documentcloud_username" value="<%- credentials.email %>" />
         <input type="hidden" name="documentcloud_password" value="<%- credentials.password %>" />
-        <input type="hidden" name="split_documents" value="false" />
-        <input type="hidden" name="lang" value="<%- window.defaultLanguageCode %>" />
         <button class="btn btn-primary"><%- i18n('views.DocumentSet._documentSet.action_import') %></button>
       </form>
       <h3><%- project.title %></h3>

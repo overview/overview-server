@@ -12,8 +12,7 @@ define [
       'submit': 'onSubmit'
 
     initialize: ->
-      throw 'Must pass options.supportedLanguages, an Array of { code: "en", name: "English" }' if !@options.supportedLanguages
-      throw 'Must pass options.defaultLanguageCode, a 2-letter code like "en"' if !@options.defaultLanguageCode
+      throw 'Must pass options.extraOptionsEl, an HTML element' if !@options.extraOptionsEl
 
       @render()
 
@@ -25,8 +24,7 @@ define [
       queryView = new QueryView({ model: @model })
       formView = new FormView({
         model: @model
-        supportedLanguages: @options.supportedLanguages
-        defaultLanguageCode: @options.defaultLanguageCode
+        extraOptionsEl: @options.extraOptionsEl
       })
 
       @$el.append("<input type=\"hidden\" name=\"query\" value=\"#{@model.get('query').id}\" />")

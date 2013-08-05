@@ -4,9 +4,8 @@ define [
   'i18n',
   'dcimport/CredentialStore',
   'dcimport/request_json_with_login',
-  'dcimport/templates/project',
-  'dcimport/templates/import-options'
-], ($, _, i18n, CredentialStore, request_json_with_login, project_template, import_options_template) ->
+  'dcimport/templates/project'
+], ($, _, i18n, CredentialStore, request_json_with_login, project_template) ->
   PROJECT_URL = '/imports/documentcloud' # where to POST
 
   empty_html = _.template("""
@@ -22,8 +21,6 @@ define [
       if !data?.projects?.length
         $div.append(empty_html({ i18n: i18n }))
       else
-        $checkbox_form = $(import_options_template({ i18n: i18n }))
-        $div.append($checkbox_form)
         credentials = CredentialStore.get()
         $ul = $('<ul class="unstyled projects"></ul>')
         for project in data.projects

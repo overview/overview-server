@@ -5,6 +5,10 @@ requirejs.config({
 
   shim: {
     'base64': { exports: 'Base64' }
+    'backbone': {
+      deps: [ 'jquery', 'underscore' ]
+      exports: 'Backbone'
+    }
     'bootstrap-alert': {
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.alert'
@@ -29,11 +33,16 @@ requirejs.config({
       deps: [ 'jquery' ]
       exports: -> 'jQuery.fn' # doesn't export anything
     }
+    'bootstrap-dialog': {
+      deps: [ 'bootstrap-modal' ]
+      exports: 'BootstrapDialog'
+    }
     underscore: { exports: '_' }
     md5: { exports: 'CryptoJS.MD5' }
   }
 
   paths: {
+    'backbone': 'vendor/backbone'
     'base64': 'vendor/base64'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
@@ -41,6 +50,7 @@ requirejs.config({
     'bootstrap-modal': 'vendor/bootstrap-modal'
     'bootstrap-tab': 'vendor/bootstrap-tab'
     'bootstrap-transition': 'vendor/bootstrap-transition'
+    'bootstrap-dialog': 'vendor/bootstrap-dialog'
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'

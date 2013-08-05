@@ -6,11 +6,6 @@ require [
   describe 'apps/DocumentCloudImportForm/views/Form', ->
     model = undefined
     view = undefined
-    langs = [
-      { code: 'de', name: 'German' }
-      { code: 'en', name: 'English' }
-      { code: 'fr', name: 'French' }
-    ]
 
     beforeEach ->
       model = new Backbone.Model({
@@ -24,15 +19,15 @@ require [
       })
       i18n.reset_messages({
         'views.DocumentCloudImportJob.new.form_preamble': 'form_preamble'
-        'views.DocumentCloudImportJob.new.lang.label': 'lang.label'
         'views.DocumentCloudImportJob.new.title.label': 'title.label'
         'views.DocumentCloudImportJob.new.title.placeholder': 'title.placeholder'
         'views.DocumentCloudImportJob.new.title.value': 'title.value,{0}'
-        'views.DocumentCloudImportJob.new.split_documents.label': 'split_documents.label'
         'views.DocumentCloudImportJob.new.submit.label': 'submit.label'
         'views.DocumentCloudImportJob.new.submit.preamble': 'submit.preamble'
       })
-      view = new FormView({ model: model, supportedLanguages: langs, defaultLanguageCode: 'en' })
+      view = new FormView
+        model: model
+        extraOptionsEl: Backbone.$('<div class="some-extra-options"></div>')[0]
 
     it 'should not render anything when status is not fetched', ->
       model.set('status', 'unknown')
@@ -51,5 +46,5 @@ require [
       model.set('status', 'fetched')
       expect(view.$('input[name=title]').val()).toEqual("title.value,title2")
 
-    it 'should select the default language by default', ->
-      expect(view.$('select[name=lang]').val()).toEqual('en')
+    it 'should render the extra options', ->
+      expect(view.$('.some-extra-options').length).toEqual(1)

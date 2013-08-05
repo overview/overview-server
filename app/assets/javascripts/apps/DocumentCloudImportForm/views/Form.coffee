@@ -17,29 +17,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
               />
           </div>
         </div>
-        <div class="control-group">
-          <label class="control-label" for="documentcloud-lang"><%- t("lang.label") %></label>
-          <div class="controls">
-            <select
-              id="documentcloud-lang"
-              name="lang">
-              <% _.each(langs, function(lang) { %>
-                <option
-                  <%= lang.code == defaultLanguageCode && 'selected="selected"' || '' %>
-                  value="<%- lang.code %>"
-                  ><%- lang.name %></option>
-              <% }) %>
-            </select>
-          </div>
-        </div>
-        <div class="control-group">
-          <div class="controls">
-            <label>
-              <input type="checkbox" name="split_documents" value="true" /><!-- unchecked by default -->
-              <%- t("split_documents.label") %>
-            </label>
-          </div>
-        </div>
+        <div class="extra-options"></div>
         <div class="control-group">
           <div class="controls">
             <button type="submit" class="btn"><%- t("submit.label") %></button>
@@ -51,8 +29,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     initialize: ->
       @_renderInitial()
-      throw 'Must set supportedLanguages, an Array of { code: "en", name: "English" }' if !@options.supportedLanguages
-      throw 'Must set defaultLanguageCode, a 2-letter code like "en"' if !@options.defaultLanguageCode
+      throw 'Must set extraOptionsEl, an HTML element' if !@options.extraOptionsEl
 
       @model.on('change:status', => @render())
       @render()
@@ -70,7 +47,8 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     _renderInitial: ->
       html = @template
         t: t
-        langs: @options.supportedLanguages
-        defaultLanguageCode: @options.defaultLanguageCode
       @$el.html(html)
+      @$('.extra-options')
+        .empty()
+        .append(@options.extraOptionsEl)
   })
