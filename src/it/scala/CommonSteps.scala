@@ -9,7 +9,7 @@ import org.openqa.selenium.interactions.Actions
 import org.openqa.selenium.support.ui.WebDriverWait
 import org.openqa.selenium.support.ui.ExpectedCondition
 import org.openqa.selenium.{ JavascriptExecutor, WebDriver }
-import ua.t3hnar.bcrypt._
+import com.github.t3hnar.bcrypt._
 
 import models.OverviewDatabase
 import models.orm.{User,UserRole}

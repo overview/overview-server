@@ -4,7 +4,7 @@ import com.icegreen.greenmail.util.GreenMailUtil
 import java.util.Date
 import java.sql.Timestamp
 import javax.mail.internet.InternetAddress
-import ua.t3hnar.bcrypt._
+import com.github.t3hnar.bcrypt._
 
 import models.OverviewDatabase
 import models.orm.User
