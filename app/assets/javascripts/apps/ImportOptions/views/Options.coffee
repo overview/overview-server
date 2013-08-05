@@ -15,35 +15,41 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       'change [name=supplied_stop_words]': '_onChangeSuppliedStopWords'
 
     template: _.template("""
-      <div class="control-group">
-        <div class="controls">
-          <label>
-            <input type="checkbox" name="split_documents" <%= split_documents ? 'checked="checked"' : '' %> value="true" />
-            <%- t('split_documents.label') %>
-          </label>
+      <% if ('split_documents' in options) { %>
+        <div class="control-group">
+          <div class="controls">
+            <label>
+              <input type="checkbox" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
+              <%- t('split_documents.label') %>
+            </label>
+          </div>
         </div>
-      </div>
+      <% } %>
 
-      <div class="control-group">
-        <label class="control-label" for="import-options-lang"><%- t('lang.label') %></label>
-        <div class="controls">
-          <select id="import-options-lang" name="lang">
-            <% _.each(supportedLanguages, function(language) { %>
-              <option value="<%- language.code %>" <%= lang == language.code ? 'selected="selected"' : '' %>>
-                <%- language.name %>
-              </option>
-            <% }); %>
-          </select>
+      <% if ('lang' in options) { %>
+        <div class="control-group">
+          <label class="control-label" for="import-options-lang"><%- t('lang.label') %></label>
+          <div class="controls">
+            <select id="import-options-lang" name="lang">
+              <% _.each(supportedLanguages, function(language) { %>
+                <option value="<%- language.code %>" <%= options.lang == language.code ? 'selected="selected"' : '' %>>
+                  <%- language.name %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
         </div>
-      </div>
+      <% } %>
 
-      <div class="control-group">
-        <label class="control-label" for="import-options-supplied-stop-words"><%- t('supplied_stop_words.label') %></label>
-        <div class="controls">
-          <textarea id="import-options-supplied-stop-words" name="supplied_stop_words"><%- supplied_stop_words %></textarea>
-          <p class="help-block"><%- t('supplied_stop_words.help') %></p>
+      <% if ('supplied_stop_words' in options) { %>
+        <div class="control-group">
+          <label class="control-label" for="import-options-supplied-stop-words"><%- t('supplied_stop_words.label') %></label>
+          <div class="controls">
+            <textarea id="import-options-supplied-stop-words" name="supplied_stop_words"><%- options.supplied_stop_words %></textarea>
+            <p class="help-block"><%- t('supplied_stop_words.help') %></p>
+          </div>
         </div>
-      </div>
+      <% } %>
     """)
 
     initialize: ->
@@ -52,7 +58,11 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       @initialRender()
 
     initialRender: ->
-      html = @template(_.extend({ t: t, supportedLanguages: @model.supportedLanguages }, @model.attributes))
+      html = @template({
+        t: t
+        supportedLanguages: @model.supportedLanguages
+        options: @model.attributes
+      })
       @$el.html(html)
 
     _onChangeSplitDocuments: (e) ->

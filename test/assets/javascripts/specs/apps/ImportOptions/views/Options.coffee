@@ -15,36 +15,47 @@ require [
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
 
-      model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '' })
-      model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
-      view = new OptionsView({ model: model })
-
     afterEach ->
       view?.remove()
 
-    it 'should start with the checkbox matching split_documents', ->
-      expect(view.$('[name=split_documents]').prop('checked')).toEqual(model.get('split_documents'))
+    describe 'with some options', ->
+      beforeEach ->
+        model = new Backbone.Model({ split_documents: false, lang: 'en' })
+        model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
+        view = new OptionsView({ model: model })
 
-    it 'should set split_documents to true on the model', ->
-      $input = view.$('[name=split_documents]')
-      $input.prop('checked', true)
-      $input.change()
-      expect(model.get('split_documents')).toBe(true)
+      it 'should not render the excluded option', ->
+        expect(view.$('[name=supplied_stop_words]').length).toEqual(0)
 
-    it 'should set split_documents to false on the model', ->
-      $input = view.$('[name=split_documents]')
-      $input.prop('checked', false)
-      $input.change()
-      expect(model.get('split_documents')).toBe(false)
+    describe 'with all options', ->
+      beforeEach ->
+        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '' })
+        model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
+        view = new OptionsView({ model: model })
 
-    it 'should start with lang matching lang', ->
-      expect(view.$('[name=lang]').val()).toEqual(model.get('lang'))
+      it 'should start with the checkbox matching split_documents', ->
+        expect(view.$('[name=split_documents]').prop('checked')).toEqual(model.get('split_documents'))
 
-    it 'should change lang on the model', ->
-      $select = view.$('[name=lang]')
-      $select.val('fr')
-      $select.change()
-      expect(model.get('lang')).toEqual('fr')
+      it 'should set split_documents to true on the model', ->
+        $input = view.$('[name=split_documents]')
+        $input.prop('checked', true)
+        $input.change()
+        expect(model.get('split_documents')).toBe(true)
 
-    it 'should start with supplied_stop_words matching supplied_stop_words', ->
-      expect(view.$('[name=supplied_stop_words]').val()).toEqual(model.get('supplied_stop_words'))
+      it 'should set split_documents to false on the model', ->
+        $input = view.$('[name=split_documents]')
+        $input.prop('checked', false)
+        $input.change()
+        expect(model.get('split_documents')).toBe(false)
+
+      it 'should start with lang matching lang', ->
+        expect(view.$('[name=lang]').val()).toEqual(model.get('lang'))
+
+      it 'should change lang on the model', ->
+        $select = view.$('[name=lang]')
+        $select.val('fr')
+        $select.change()
+        expect(model.get('lang')).toEqual('fr')
+
+      it 'should start with supplied_stop_words matching supplied_stop_words', ->
+        expect(view.$('[name=supplied_stop_words]').val()).toEqual(model.get('supplied_stop_words'))

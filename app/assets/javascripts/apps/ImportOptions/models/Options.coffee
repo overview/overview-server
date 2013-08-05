@@ -9,5 +9,8 @@ define [ 'backbone' ], (Backbone) ->
       throw 'Must set options.defaultLanguageCode' if !options.defaultLanguageCode
       throw 'Must set options.supportedLanguages' if !options.supportedLanguages
 
+      for key in (options.excludeOptions || [])
+        delete @attributes[key]
+
       @supportedLanguages = options.supportedLanguages
-      @set('lang', options.defaultLanguageCode)
+      @set('lang', options.defaultLanguageCode) if @attributes.lang?

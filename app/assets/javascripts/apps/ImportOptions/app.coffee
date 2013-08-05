@@ -37,6 +37,18 @@ define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i
   #    the options are added.)
   # 4. If the user presses "Cancel" in the dialog, the dialog disappears and
   #    the page is left alone.
+  #
+  # Options
+  # =======
+  #
+  # Required:
+  #
+  # * `supportedLanguages`: An Array of `{ code: "en", name: "English" }` values
+  # * `defaultLanguageCode`: A language code like `"en"`
+  #
+  # Optional:
+  #
+  # * `excludeOptions`: An Array of options to exclude, such as `split_documents`.
   class App
     constructor: (@options) ->
       throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages
