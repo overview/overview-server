@@ -1,22 +1,12 @@
 package controllers
 
-import java.sql.Connection
 import java.util.UUID
-import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.Session
 import play.api.Play.current
-import play.api.db.DB
-import play.api.libs.iteratee.Error
-import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, BodyParsers, Controller, Request, RequestHeader, Result }
-import play.api.mvc.AnyContent
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
 
-import org.overviewproject.postgres.LO
-import org.overviewproject.postgres.SquerylPostgreSqlAdapter
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
-import org.overviewproject.util.SupportedLanguages
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
 import controllers.forms.UploadControllerForm
