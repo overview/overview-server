@@ -500,7 +500,7 @@ define [
 
     constructor: (@div, @cache, @tree, @focus, options={}) ->
       @options = _.extend({}, DEFAULT_OPTIONS, options)
-      @focus_tagids = (t.id for t in @cache.tag_store.tags)
+      @focus_tagids = []
 
       $div = $(@div)
       @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
@@ -569,7 +569,6 @@ define [
         e.stopPropagation() # don't pan
         @_notify('zoom-pan', { zoom: @focus.get('zoom') * 2, pan: @focus.get('pan') }, { animate: true })
 
-      @cache.tag_store.observe('added', this._on_tag_added.bind(this))
       @cache.tag_store.observe('removed', this._on_tag_removed.bind(this))
       @cache.tag_store.observe('id-changed', this._on_tagid_changed.bind(this))
 
@@ -581,10 +580,6 @@ define [
       this._handle_hover()
       this._handle_drag()
       this._handle_mousewheel()
-
-    _on_tag_added: (tag) ->
-      @focus_tagids.unshift(tag.id)
-      # No need to redraw: that will happen elsewhere if necessary.
 
     _on_tag_removed: (tag) ->
       index = @focus_tagids.indexOf(tag.id)
@@ -685,18 +680,12 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getColorLogic: ->
-      # Add the focused tag to "focus tagids": stack of recently-viewed tags
-      # (initialized to all tags)
+      # Add the focused tag to "focus tagids", the most-recently-focused tag ID
+      # (initialized to empty, max 1 tag)
       if tagid = @tree.state.focused_tag?.id
-        index = @focus_tagids.indexOf(tagid)
-        # index may be:
-        # * -1, if focused tag has been deleted
-        # * 0, if it's at the top of the stack
-        # * >0, if it's below the top item
-        # If it's >0, move it to 0
-        if index > 0
-          @focus_tagids.splice(index, 1)
-          @focus_tagids.unshift(tagid)
+        @focus_tagids.splice(0, @focus_tagids.length, tagid)
+      else
+        @focus_tagids.splice(0, @focus_tagids.length)
 
       # Cache colors, so each node shows most-recently-selected tag.
       color_table = new ColorTable()
