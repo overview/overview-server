@@ -6,7 +6,7 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.overviewproject.documentcloud.Document
 import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.SearchSaverProtocol.Save
+import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
 
 
 class SearchSaverSpec extends Specification with Mockito {
@@ -15,22 +15,18 @@ class SearchSaverSpec extends Specification with Mockito {
     
     class TestSearchSaver extends SearchSaver with SearchSaverComponents {
       val storage = mock[Storage]
-      
-      def storeDocumentsCalled(searchId: Long, documentSetId: Long, documents: Iterable[Document]) =
-        there was one(storage).storeDocuments(searchId, documentSetId, documents)
     }
         
-    "Store documents with search result id" in new ActorSystemContext {
+    
+    "Store document ids with search result id" in new ActorSystemContext {
       val searchResultId = 4l
-      val documentSetId = 1l
-      val document = mock[Document]
-      val documents = Seq.fill(10)(document)
+      val documentIds = Array[Long](1, 2, 3)
       
       val searchSaver = TestActorRef(new TestSearchSaver)
       
-      searchSaver ! Save(searchResultId, documentSetId, documents)
+      searchSaver ! SaveIds(searchResultId, documentIds)
       
-      searchSaver.underlyingActor.storeDocumentsCalled(searchResultId, documentSetId, documents) 
+     there was one(searchSaver.underlyingActor.storage).storeDocuments(searchResultId, documentIds)
     }
   }
 }

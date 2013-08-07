@@ -91,6 +91,7 @@ trait ProjectSettings {
   )
   
   val documentSetWorkerProjectDependencies = Seq(
+    elasticSearchDep,
     javaxMailDep,
     jdbc,
     geronimoJmsDep,

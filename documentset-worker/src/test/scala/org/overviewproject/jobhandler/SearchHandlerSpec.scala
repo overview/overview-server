@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler
 
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.{DocumentSearcherDone, StartSearch}
+import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
+import org.overviewproject.jobhandler.SearchIndexSearcherProtocol.{ SearchComplete, StartSearch }
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.ActorSystemContext
@@ -24,6 +25,7 @@ class SearchHandlerSpec extends Specification with Mockito {
 
       storage.searchExists(anyLong, anyString) returns searchExists
       storage.createSearchResult(anyLong, anyString) returns 1l
+      storage.queryForProject(anyLong, anyString) returns "search terms"
       
       val actorCreator = new ActorCreator { // can't mock creation of actors
         override def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
@@ -76,7 +78,7 @@ class SearchHandlerSpec extends Specification with Mockito {
 
       parent ! SearchDocumentSet(documentSetId, searchTerms, testActor)
 
-      documentSearcherProbe.expectMsg(StartSearch(1l))
+      documentSearcherProbe.expectMsg(StartSearch(1l, documentSetId, searchTerms))
     }
     
     "send JobDone to parent when receiving Done from DocumentSearcher" in new SearchHandlerContext {
@@ -85,7 +87,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
       
       parent ! SearchDocumentSet(documentSetId, searchTerms, testActor)
-      parent ! DocumentSearcherDone
+      parent ! SearchComplete
       
       expectMsg(JobDone)
     }
@@ -98,7 +100,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       searchHandlerWatcher watch searchHandler
       
       searchHandler ! SearchDocumentSet(documentSetId, searchTerms, testActor)
-      searchHandler ! DocumentSearcherDone
+      searchHandler ! SearchComplete
 
       val storage = searchHandler.underlyingActor.storage
       

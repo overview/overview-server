@@ -9,18 +9,17 @@ import org.overviewproject.tree.orm.DocumentSearchResult
 
 object SearchSaverProtocol {
   case class Save(searchResultId: Long, documentSetId: Long, documents: Iterable[Document])
+  case class SaveIds(searchResultId: Long, documentIds: Iterable[Long])
 }
 
 trait SearchSaverComponents {
   val storage: Storage
 
   class Storage {
-    def storeDocuments(searchId: Long, documentSetId: Long, documents: Iterable[Document]): Unit = {
-      Database.inTransaction {
-        val documentCloudIds = documents.map(_.id)
-        val documentSetDocuments = DocumentFinder.byDocumentSetAndDocumentCloudIds(documentSetId, documentCloudIds)
 
-        val documentSearchResults = documentSetDocuments.map(d => DocumentSearchResult(d.id, searchId))
+    def storeDocuments(searchId: Long, documentIds: Iterable[Long]): Unit = {
+      Database.inTransaction {
+        val documentSearchResults = documentIds.map(docId => DocumentSearchResult(docId, searchId))
 
         DocumentSearchResultStore.insertBatch(documentSearchResults)
       }
@@ -34,7 +33,7 @@ class SearchSaver extends Actor {
   import SearchSaverProtocol._
 
   def receive = {
-    case Save(searchId, documentSetId, documents) => storage.storeDocuments(searchId, documentSetId, documents)
+    case SaveIds(searchId, documentIds) => storage.storeDocuments(searchId, documentIds)
   }
 }
 

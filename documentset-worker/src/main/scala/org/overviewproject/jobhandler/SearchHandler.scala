@@ -9,7 +9,7 @@ import SearchHandlerFSM._
 import org.overviewproject.http.RequestQueueProtocol.Failure
 import org.overviewproject.jobs.models.Search
 import org.overviewproject.database.orm.finders.DocumentSetFinder
-
+import org.overviewproject.searchindex.ElasticSearchComponents
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
@@ -73,7 +73,8 @@ trait SearchHandler extends Actor with FSM[State, Data] {
 
   import SearchHandlerProtocol._
   import DocumentSearcherProtocol._
-
+  import SearchIndexSearcherProtocol.{StartSearch => Foo, SearchComplete, SearchFailure}
+  
   startWith(Idle, Uninitialized)
   
   when(Idle) {
@@ -90,7 +91,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   }
   
   when(Searching) {
-    case Event(DocumentSearcherDone, SearchInfo(searchId, documentSetId, query)) =>
+    case Event(SearchComplete, SearchInfo(searchId, documentSetId, query)) =>
       context.parent ! JobDone
       storage.completeSearch(searchId, documentSetId, query)
       stop()
@@ -110,7 +111,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
 
-    documentSearcher ! StartSearch(searchId)
+    documentSearcher ! Foo(searchId, documentSetId, query)
   }
 
 }
@@ -150,6 +151,7 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
 
   class ActorCreatorImpl extends ActorCreator {
     def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
-      new DocumentSearcher(documentSetId, query, requestQueue) with DocumentSearcherComponentsImpl
+      //new DocumentSearcher(documentSetId, query, requestQueue) with DocumentSearcherComponentsImpl
+      new SearchIndexSearcher with ElasticSearchComponents
   }
 }

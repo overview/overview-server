@@ -19,14 +19,12 @@ class SearchSaverComponentsSpec extends DbSpecification {
       val documentSetId = insertDocumentSet("SearchSaverComponentSpec")
       val documentIds = insertDocuments(documentSetId, 10)
       val searchResult = SearchResultStore.insertOrUpdate(SearchResult(InProgress, documentSetId, "query"))
-      val documentCloudDocuments = Seq.tabulate(10)(n =>
-        Document(s"documentCloudId-${n + 1}", "title", 1, "public", "textUrl", "pageUrl"))
 
       val searchSaverComponent = new SearchSaverComponents {
         override val storage: Storage = new Storage
       }
       
-      searchSaverComponent.storage.storeDocuments(searchResult.id, documentSetId, documentCloudDocuments)
+      searchSaverComponent.storage.storeDocuments(searchResult.id, documentIds)
       
       
       val storedDocumentIds = 
