@@ -6,6 +6,9 @@
  */
 package org.overviewproject.csv
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import org.overviewproject.database.{ Database, DB }
 import org.overviewproject.persistence.{ DocumentSetIdGenerator, DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
@@ -17,6 +20,7 @@ import org.overviewproject.persistence.DocumentTagWriter
 import org.overviewproject.persistence.orm.Tag
 import org.overviewproject.persistence.PersistentTag
 import org.overviewproject.util.SearchIndex
+import org.overviewproject.util.Logger
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -32,10 +36,10 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private val documentTagWriter = new DocumentTagWriter(documentSetId)
+  private val indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
-    SearchIndex.createDocumentSetAlias(documentSetId)
     
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
@@ -53,7 +57,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
       if (numberOfParsedDocuments < maxDocuments) {
         val documentId = writeAndCommitDocument(documentSetId, doc)
-        SearchIndex.indexDocument(documentSetId, documentId, doc.text, doc.title, doc.suppliedId)
+        indexingSession.indexDocument(documentSetId, documentId, doc.text, doc.title, doc.suppliedId)
         consumer.processDocument(documentId, doc.text)
         numberOfParsedDocuments += 1
       } else numberOfSkippedDocuments += 1
@@ -61,9 +65,13 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       reportProgress(uploadReader.bytesRead, uploadedFile.size)
 
     }
+    indexingSession.complete
     
     Database.inTransaction{ documentTagWriter.flush() }
     consumer.productionComplete()
+    Await.result(indexingSession.requestsComplete, Duration.Inf)
+    Logger.info("Indexing complete")
+    
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
   }
 
