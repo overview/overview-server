@@ -1,16 +1,15 @@
 package org.overviewproject.jobhandler
 
-import akka.actor.Actor
-import akka.actor.FSM
-import org.overviewproject.jobhandler.SearchIndexSearcherFSM._
-import scala.util.Success
-import scala.concurrent.Future
-import org.elasticsearch.action.search.SearchResponse
-import scala.util.Failure
-import akka.actor._
 import scala.collection.JavaConverters._
-import scala.util.Try
-import org.overviewproject.util.Logger
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+
+import akka.actor._
+
+import org.elasticsearch.action.search.SearchResponse
+
+
+import org.overviewproject.jobhandler.SearchIndexSearcherFSM._
 
 object SearchIndexSearcherProtocol {
   case class StartSearch(searchId: Long, documentSetId: Long, query: String)

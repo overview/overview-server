@@ -1,18 +1,17 @@
 package org.overviewproject.util
 
 import scala.collection.JavaConverters._
-import org.elasticsearch.node.NodeBuilder.nodeBuilder
+import scala.concurrent.{Future, Promise}
+
+import org.elasticsearch.action.bulk.{ BulkProcessor, BulkRequest, BulkResponse }
+import org.elasticsearch.action.index.IndexRequest
+import org.elasticsearch.client.Client
 import org.elasticsearch.cluster.metadata.AliasAction
+import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
 import org.elasticsearch.index.query.FilterBuilders
-import org.elasticsearch.common.xcontent.XContentBuilder
-import org.elasticsearch.client.Client
-import org.elasticsearch.action.bulk.BulkProcessor
-import org.elasticsearch.action.bulk.BulkRequest
-import org.elasticsearch.action.bulk.BulkResponse
-import org.elasticsearch.action.index.IndexRequest
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import org.elasticsearch.node.NodeBuilder.nodeBuilder
+
 
 trait DocumentSetIndexingSession {
   def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit

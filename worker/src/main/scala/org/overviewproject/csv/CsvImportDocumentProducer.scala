@@ -8,7 +8,6 @@ package org.overviewproject.csv
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-
 import org.overviewproject.database.{ Database, DB }
 import org.overviewproject.persistence.{ DocumentSetIdGenerator, DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
@@ -19,8 +18,8 @@ import org.overviewproject.util.Progress._
 import org.overviewproject.persistence.DocumentTagWriter
 import org.overviewproject.persistence.orm.Tag
 import org.overviewproject.persistence.PersistentTag
-import org.overviewproject.util.SearchIndex
-import org.overviewproject.util.Logger
+import org.overviewproject.util.{ DocumentSetIndexingSession, Logger, SearchIndex }
+
 
 /**
  * Feed the consumer documents generated from the uploaded file specified by uploadedFileId
@@ -36,10 +35,12 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private val UpdateInterval = 1000l // only update state every second to reduce locked database access 
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private val documentTagWriter = new DocumentTagWriter(documentSetId)
-  private val indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
+  private var indexingSession: DocumentSetIndexingSession = _
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
   def produce() {
+    
+    indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
     
     val uploadedFile = Database.inTransaction {
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)

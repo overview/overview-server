@@ -1,12 +1,11 @@
 package org.overviewproject.jobhandler
 
+import akka.testkit.TestActorRef
 
-import org.specs2.mutable.Specification
+import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
-import org.overviewproject.documentcloud.Document
-import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
+import org.specs2.mutable.Specification
 
 
 class SearchSaverSpec extends Specification with Mockito {

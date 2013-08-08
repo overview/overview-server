@@ -1,17 +1,17 @@
 package org.overviewproject.jobhandler
 
-import org.overviewproject.jobhandler.SearchIndexSearcherProtocol.{ SearchComplete, StartSearch }
+import akka.actor._
+import akka.testkit.{ TestActorRef, TestProbe }
+
+import org.overviewproject.http.RequestQueueProtocol.Failure
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
+
+import org.overviewproject.jobhandler.SearchIndexSearcherProtocol.{ SearchComplete, StartSearch }
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import akka.actor._
-import akka.testkit.TestProbe
-import akka.testkit.TestActorRef
-import org.overviewproject.http.RequestQueueProtocol.Failure
-import org.overviewproject.jobs.models.Search
 
 
 class SearchHandlerSpec extends Specification with Mockito {

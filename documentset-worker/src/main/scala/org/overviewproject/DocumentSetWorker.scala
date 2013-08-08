@@ -1,15 +1,16 @@
 package org.overviewproject
+import scala.concurrent.duration._
 
+import akka.actor._
 
 import scala.language.postfixOps
-import scala.concurrent.duration._
+
+import org.overviewproject.database.DB
+import org.overviewproject.database.DataSource
+import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{AsyncHttpClientWrapper, RequestQueue}
 import org.overviewproject.jobhandler.JobHandler
 import org.overviewproject.jobhandler.JobHandlerProtocol.StartListening
-import akka.actor._
-import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
-import org.overviewproject.database.DataSource
-import org.overviewproject.database.DB
 
 
 /**

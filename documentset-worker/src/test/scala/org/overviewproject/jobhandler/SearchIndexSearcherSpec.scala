@@ -1,20 +1,22 @@
 package org.overviewproject.jobhandler
 
-
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
-import org.specs2.time.NoTimeConversions
-import org.specs2.mock.Mockito
 import scala.concurrent.Promise
-import org.elasticsearch.action.search.SearchResponse
-import akka.testkit.TestProbe
+
 import akka.actor._
-import org.elasticsearch.search.SearchHit
-import org.elasticsearch.search.SearchHits
+import akka.testkit.{TestActorRef, TestProbe}
+
+import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.search.{SearchHit, SearchHits}
+import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
 import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
-import org.elasticsearch.search.SearchHitField
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.time.NoTimeConversions
+
+import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
+import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
+import org.overviewproject.test.ActorSystemContext
 
 class SearchIndexSearcherSpec extends Specification with NoTimeConversions with Mockito {
 

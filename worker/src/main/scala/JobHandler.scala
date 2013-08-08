@@ -6,23 +6,22 @@
  * @author Jonas Karlsson
  */
 
-import com.jolbox.bonecp._
-import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, DataSource, DB }
 import java.sql.Connection
+
+import scala.util._
+
+import com.jolbox.bonecp._
+
+import org.overviewproject.clone.CloneDocumentSet
+import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, DataSource, DB }
+import org.overviewproject.database.Database
 import org.overviewproject.persistence._
+import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
 import org.overviewproject.util.Progress._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.tree.DocumentSetCreationJobType
-import org.overviewproject.clustering.DocumentSetIndexer
-import org.overviewproject.database.Database
-import org.overviewproject.http.DocumentCloudDocumentProducer
-import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.util.WorkerActorSystem
 import org.overviewproject.util.SearchIndex
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
 
 object JobHandler {
   // Run a single job

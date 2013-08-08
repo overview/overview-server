@@ -10,6 +10,8 @@ import scala.language.postfixOps
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
 
+import akka.actor._
+
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
 import org.overviewproject.documentcloud.ImporterProtocol._
@@ -21,7 +23,6 @@ import org.overviewproject.util._
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 
-import akka.actor._
 
 /** Feeds the documents from sourceDocList to the consumer */
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
@@ -35,10 +36,10 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private val FetchingFraction = 0.5
   private val documentSetId = job.documentSetId
-  private val indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)  
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var numDocs = 0
   private var totalDocs: Option[Int] = None
+  private var indexingSession: DocumentSetIndexingSession = _ 
 
   def produce() {
     val t0 = System.nanoTime()
@@ -58,6 +59,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     //   responsible for one document only. DocumentRetrievers simply retrieve the document. 
     //   A different retriever could be used to request the document text page-by-page.
 
+    indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)  
     var result: RetrievalResult = null
     
     WorkerActorSystem.withActorSystem { implicit context =>

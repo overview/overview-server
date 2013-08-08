@@ -1,16 +1,17 @@
 package org.overviewproject.jobhandler
 
+import akka.actor._
+
 import org.overviewproject.database.Database
+import org.overviewproject.database.orm.finders.DocumentSetFinder
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
-import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
-import akka.actor._
-import SearchHandlerFSM._
 import org.overviewproject.http.RequestQueueProtocol.Failure
-import org.overviewproject.jobs.models.Search
-import org.overviewproject.database.orm.finders.DocumentSetFinder
+import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
+
+import SearchHandlerFSM._
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {

@@ -1,10 +1,10 @@
 package org.overviewproject.jobhandler
 
 import akka.actor.Actor
-import org.overviewproject.documentcloud.Document
-import org.overviewproject.database.orm.finders.DocumentFinder
-import org.overviewproject.database.orm.stores.DocumentSearchResultStore
+
 import org.overviewproject.database.Database
+import org.overviewproject.database.orm.stores.DocumentSearchResultStore
+import org.overviewproject.documentcloud.Document
 import org.overviewproject.tree.orm.DocumentSearchResult
 
 object SearchSaverProtocol {

@@ -1,15 +1,15 @@
 package org.overviewproject.searchindex
 
-import org.overviewproject.jobhandler.SearcherComponents
-import org.overviewproject.jobhandler.SearchIndex
-import org.elasticsearch.index.query.QueryBuilders
-import org.elasticsearch.node.NodeBuilder.nodeBuilder
-import org.elasticsearch.action.search.SearchType
-import org.elasticsearch.common.unit.TimeValue
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
+
 import org.elasticsearch.action.ActionListener
-import scala.concurrent.Future
-import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.action.search.{ SearchResponse, SearchType }
+import org.elasticsearch.common.unit.TimeValue
+import org.elasticsearch.index.query.QueryBuilders
+
+import org.overviewproject.jobhandler.SearchIndex
+
+import org.overviewproject.jobhandler.SearcherComponents
 import org.overviewproject.util.Logger
 
 trait ElasticSearchComponents extends SearcherComponents {

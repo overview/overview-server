@@ -1,19 +1,20 @@
 package org.overviewproject.jobhandler
 
+import javax.jms._
+
+import scala.concurrent.{Promise, Future, Await}
+import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.{Failure, Success, Try}
+
+import akka.actor._
+
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
-import akka.actor._
-import javax.jms._
-import JobHandlerFSM._
 import org.overviewproject.util.Configuration
-import scala.util.{ Failure, Success, Try }
-import scala.annotation.tailrec
-import scala.concurrent.Promise
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import org.overviewproject.util.Logger
+
+import JobHandlerFSM._
 
 /**
  * Messages the JobHandler can process
