@@ -1,7 +1,7 @@
 package org.overviewproject.util
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ Future, Promise }
 
 import org.elasticsearch.action.bulk.{ BulkProcessor, BulkRequest, BulkResponse }
 import org.elasticsearch.action.index.IndexRequest
@@ -12,11 +12,10 @@ import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
 import org.elasticsearch.index.query.FilterBuilders
 import org.elasticsearch.node.NodeBuilder.nodeBuilder
 
-
 trait DocumentSetIndexingSession {
   def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit
   def complete: Unit
-  
+
   def requestsComplete: Future[Unit]
 }
 
@@ -99,27 +98,25 @@ object SearchIndex {
   }
 
   private def createMapping: Unit = {
-
-    val mapping = jsonBuilder.startObject
-      .startObject(DocumentTypeName)
-      .startObject("properties")
-      .startObject(DocumentSetIdField)
-      .field("type", LongType)
-      .endObject
-      .startObject(IdField)
-      .field("type", StringType)
-      .endObject
-      .startObject(TextField)
-      .field("type", StringType)
-      .endObject
-      .startObject(SuppliedIdField)
-      .field("type", StringType)
-      .endObject
-      .startObject(TitleField)
-      .field("type", StringType)
-      .endObject
-      .endObject
-      .endObject
+    def addField(builder: XContentBuilder, fieldInfo: (String, String)): XContentBuilder =
+      builder.startObject(fieldInfo._1)
+        .field("type", fieldInfo._2)
+        .endObject
+        
+    def fields = Seq(
+      (DocumentSetIdField, LongType),
+      (IdField, StringType),
+      (TextField, StringType),
+      (SuppliedIdField, StringType),
+      (TitleField, StringType)
+    ) 
+    
+    
+    val mapping = fields.foldLeft(jsonBuilder.startObject
+        .startObject(DocumentTypeName)
+          .startObject("properties"))(addField)
+          .endObject
+        .endObject
 
     admin.preparePutMapping(IndexName)
       .setType(DocumentTypeName)
@@ -131,7 +128,7 @@ object SearchIndex {
     private val bulkProcessor = new BulkProcessor.Builder(client, this).build
     private val sessionComplete = Promise[Unit]
     private val allRequestsComplete = Promise[Unit]
-    
+
     override def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit = {
       val indexRequest = client.prepareIndex(DocumentSetAlias(documentSetId), "document")
 
@@ -146,27 +143,25 @@ object SearchIndex {
 
       bulkProcessor.add(request)
     }
-    
+
     override def complete: Unit = {
       bulkProcessor.close
       sessionComplete.success()
     }
-    
+
     override def requestsComplete: Future[Unit] = allRequestsComplete.future
-    
+
     override def beforeBulk(executionId: Long, request: BulkRequest): Unit = Logger.debug("Starting bulk indexing request")
-    
+
     override def afterBulk(executionId: Long, request: BulkRequest, response: BulkResponse) = {
       if (sessionComplete.isCompleted) allRequestsComplete.success()
-      
+
       Logger.debug("Bulk indexing request complete")
     }
-    
+
     override def afterBulk(executionId: Long, request: BulkRequest, failure: Throwable) = {
       allRequestsComplete.failure(failure)
     }
-    
-    
 
   }
 }
