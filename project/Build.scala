@@ -88,7 +88,11 @@ object ApplicationBuild extends Build with ProjectSettings {
   val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies, useSharedConfig = false)
   
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
-    .dependsOn(common, workerCommon)
+   .settings(
+     initialize ~= { _ =>
+       System.setProperty("logback.configurationFile", "workerdevlog.xml")
+     }
+   ) .dependsOn(common, workerCommon)
   
   
   val worker = OverviewProject("worker", workerProjectDependencies).settings(
