@@ -27,23 +27,27 @@ trait ElasticSearchComponents extends SearcherComponents {
     override def onFailure(failure: Throwable): Unit = {
       p.failure(failure)
     }
-
   }
-  class ElasticSearchIndex extends SearchIndex {
 
+  class ElasticSearchIndex extends SearchIndex {
+   
+    private val PageSize = 100
+    private val ScrollTime = new TimeValue(60000)
+    private val SearchableFields = Seq("text", "title", "supplied_id")
+    
     private val client = ElasticSearchClient.client
 
     override def startSearch(index: String, queryString: String): Future[SearchResponse] = {
       Logger.debug(s"Starting query: $queryString")
-      val query = QueryBuilders.multiMatchQuery(queryString, "text", "title")
+      val query = QueryBuilders.multiMatchQuery(queryString, SearchableFields: _*)
 
       val listener = new ActionResult[SearchResponse]()
 
       client.prepareSearch(index)
         .setSearchType(SearchType.SCAN)
-        .setScroll(new TimeValue(60000))
+        .setScroll(ScrollTime)
         .setQuery(query)
-        .setSize(100)
+        .setSize(PageSize)
         .execute(listener)
 
       listener.resultFuture
@@ -53,7 +57,7 @@ trait ElasticSearchComponents extends SearcherComponents {
       val listener = new ActionResult[SearchResponse]()
       
       client.prepareSearchScroll(scrollId)
-        .setScroll(new TimeValue(60000))
+        .setScroll(ScrollTime)
         .execute(listener)
       
       listener.resultFuture
