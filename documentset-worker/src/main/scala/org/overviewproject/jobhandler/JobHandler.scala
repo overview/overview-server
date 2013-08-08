@@ -2,7 +2,6 @@ package org.overviewproject.jobhandler
 
 import scala.language.postfixOps
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import akka.actor._
 import javax.jms._

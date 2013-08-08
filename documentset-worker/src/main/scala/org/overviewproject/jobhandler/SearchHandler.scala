@@ -10,6 +10,7 @@ import org.overviewproject.http.RequestQueueProtocol.Failure
 import org.overviewproject.jobs.models.Search
 import org.overviewproject.database.orm.finders.DocumentSetFinder
 import org.overviewproject.searchindex.ElasticSearchComponents
+import org.overviewproject.util.Logger
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
@@ -72,8 +73,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   this: SearchHandlerComponents =>
 
   import SearchHandlerProtocol._
-  import DocumentSearcherProtocol._
-  import SearchIndexSearcherProtocol.{StartSearch => Foo, SearchComplete, SearchFailure}
+  import SearchIndexSearcherProtocol._
   
   startWith(Idle, Uninitialized)
   
@@ -107,11 +107,11 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   private def startSearch(documentSetId: Long, searchTerms: String, requestQueue: ActorRef, searchId: Long): Unit = {
 
     val query = storage.queryForProject(documentSetId, searchTerms)
-
+    Logger.debug(s"Starting Search [$documentSetId]: $query")
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
 
-    documentSearcher ! Foo(searchId, documentSetId, query)
+    documentSearcher ! StartSearch(searchId, documentSetId, query)
   }
 
 }

@@ -16,9 +16,6 @@ object SearchIndexSearcherProtocol {
   case class StartSearch(searchId: Long, documentSetId: Long, query: String)
   case object SearchComplete
   case class SearchFailure(e: Throwable)
-
-  case class SearchInfo(scrollId: String)
-  case class SearchResult(result: SearchResponse)
 }
 
 object SearchIndexSearcherFSM {
@@ -48,6 +45,9 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
   import SearchSaverProtocol._
   import context.dispatcher
 
+  private case class SearchInfo(scrollId: String)
+  private case class SearchResult(result: SearchResponse)
+
   private val searchSaver = context.actorOf(Props(produceSearchSaver))
 
   startWith(Idle, Uninitialized)
@@ -65,7 +65,13 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
       stay
     }
     case Event(SearchResult(r), Search(searchId, _, _)) => {
-      val ids = for (hit <- r.getHits.hits) yield hit.field("id").value[Long]
+      val ids: Array[Long] = for (hit <- r.getHits.hits) yield {
+        val m = hit.getSource.asScala
+        Logger.debug(m.keys.mkString("[", ",", "]"))
+        Logger.debug(s"SOURCE ${m.get("id")}")
+        
+        hit.getSource.get("id").asInstanceOf[Long]
+      } 
 
       if (ids.length > 0) {
         searchSaver ! SaveIds(searchId, ids)

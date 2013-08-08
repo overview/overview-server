@@ -1,6 +1,5 @@
 package org.overviewproject.jobhandler
 
-import org.overviewproject.jobhandler.DocumentSearcherProtocol.DocumentSearcherDone
 import org.overviewproject.jobhandler.SearchIndexSearcherProtocol.{ SearchComplete, StartSearch }
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
