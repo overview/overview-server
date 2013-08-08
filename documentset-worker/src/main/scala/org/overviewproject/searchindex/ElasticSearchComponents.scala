@@ -10,6 +10,7 @@ import scala.concurrent.Promise
 import org.elasticsearch.action.ActionListener
 import scala.concurrent.Future
 import org.elasticsearch.action.search.SearchResponse
+import org.overviewproject.util.Logger
 
 trait ElasticSearchComponents extends SearcherComponents {
 
@@ -30,10 +31,10 @@ trait ElasticSearchComponents extends SearcherComponents {
   }
   class ElasticSearchIndex extends SearchIndex {
 
-    private val node = nodeBuilder.node
-    private val client = node.client
+    private val client = ElasticSearchClient.client
 
     override def startSearch(index: String, queryString: String): Future[SearchResponse] = {
+      Logger.debug(s"Starting query: $queryString")
       val query = QueryBuilders.multiMatchQuery(queryString, "text", "title")
 
       val listener = new ActionResult[SearchResponse]()

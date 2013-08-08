@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler
 
+
 import org.specs2.mutable.Specification
 import org.overviewproject.test.ActorSystemContext
 import akka.testkit.TestActorRef
@@ -117,9 +118,10 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
     def completeSearchRequest(resultPromise: Promise[SearchResponse], scrollId: String, ids: Array[Long]): Unit = {
       val hitList = ids.map { id =>
         val hit = mock[SearchHit]
-        val field = mock[SearchHitField]
-        field.value[Long] returns id
-        hit.field(anyString) returns field
+        val source = mock[java.util.Map[String, Object]]
+        source.get("id") returns id.asInstanceOf[Object]
+
+        hit.getSource returns source
 
         hit
       }
