@@ -8,7 +8,8 @@ object SupportedLanguages {
     "en",
     "es",
     "fr",
-    "sv"
+    "sv",
+    "nl"
   )
 
   val languages : Set[SupportedLanguage] = languageCodes.map(SupportedLanguage.apply)
