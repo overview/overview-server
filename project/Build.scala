@@ -91,7 +91,6 @@ object ApplicationBuild extends Build with ProjectSettings {
    .settings(
      initialize ~= { _ =>
        System.setProperty("logback.configurationFile", "workerdevlog.xml")
-       System.setProperty("es.cluster.name", "DevSearchIndex")
      }
    ) .dependsOn(common, workerCommon)
   
@@ -105,7 +104,6 @@ object ApplicationBuild extends Build with ProjectSettings {
   ).settings(
     initialize ~= { _ =>
       System.setProperty("logback.configurationFile", "workerdevlog.xml")
-      System.setProperty("es.cluster.name", "DevSearchIndex")
     }
   ).dependsOn(workerCommon, common)
 

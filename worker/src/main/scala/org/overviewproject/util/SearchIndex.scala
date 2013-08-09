@@ -7,6 +7,7 @@ import org.elasticsearch.action.bulk.{ BulkProcessor, BulkRequest, BulkResponse 
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.Client
 import org.elasticsearch.cluster.metadata.AliasAction
+import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
 import org.elasticsearch.index.query.FilterBuilders
@@ -33,8 +34,9 @@ object SearchIndex {
   private val TextField = "text"
   private val SuppliedIdField = "supplied_id"
   private val TitleField = "title"
-
-  private val node = nodeBuilder.node
+  private val ConfigFile = Configuration.searchIndex.configFile
+  
+  private val node = nodeBuilder.settings(ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)).node
   private val client = node.client
   private val admin = client.admin.indices
 

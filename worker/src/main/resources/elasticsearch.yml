@@ -31,7 +31,7 @@
 #
 # cluster.name: elasticsearch
 
-
+cluster.name: "Dev SearchIndex"
 #################################### Node #####################################
 
 # Node names are generated dynamically on startup, so you're relieved
