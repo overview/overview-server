@@ -152,6 +152,10 @@ cloud:
    aws:
       access_key: ${ES_ACCESS_KEY} 
       secret_key: ${ES_SECRET_KEY}
-   discovery:
-      type: ec2
+
+discovery:
+   type: ec2
+   ec2:
+      groups: ${ES_SECURITY_GROUP}
+
 

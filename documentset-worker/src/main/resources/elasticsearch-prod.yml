@@ -131,7 +131,9 @@ index.number_of_shards: 10
 #
 # 1. Disable multicast discovery (enabled by default):
 #
-# discovery.zen.ping.multicast.enabled: false
+
+discovery.zen.ping.multicast.enabled: false
+
 #
 # 2. Configure an initial list of master nodes in the cluster
 #    to perform discovery when new nodes (master or data) are started:
@@ -152,6 +154,10 @@ cloud:
    aws:
       access_key: ${ES_ACCESS_KEY} 
       secret_key: ${ES_SECRET_KEY}
-   discovery:
-      type: ec2
+
+discovery:
+   type: ec2
+   ec2:
+      groups: ${ES_SECURITY_GROUP}
+
 
