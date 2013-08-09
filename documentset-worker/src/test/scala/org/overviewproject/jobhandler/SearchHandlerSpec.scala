@@ -6,9 +6,9 @@ import akka.testkit.{ TestActorRef, TestProbe }
 import org.overviewproject.http.RequestQueueProtocol.Failure
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
-
-import org.overviewproject.jobhandler.SearchIndexSearcherProtocol.{ SearchComplete, StartSearch }
+import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
 import org.overviewproject.test.ActorSystemContext
+
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -70,7 +70,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       expectMsg(JobDone)
     }
 
-    "create a new SearchResult and start DocumentSearcher if SearchResult doesn't exist" in new SearchHandlerContext {
+    "create a new SearchResult and start Searcher if SearchResult doesn't exist" in new SearchHandlerContext {
       val documentSearcherProbe = TestProbe()
 
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
@@ -80,7 +80,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       documentSearcherProbe.expectMsg(StartSearch(1l, documentSetId, searchTerms))
     }
     
-    "send JobDone to parent when receiving Done from DocumentSearcher" in new SearchHandlerContext {
+    "send JobDone to parent when receiving SearchComplete from Searcher" in new SearchHandlerContext {
       val documentSearcherProbe = TestProbe()
       
       val parent = createSearchHandlerParent(searchExists = false, testActor, documentSearcherProbe.ref)
@@ -91,7 +91,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       expectMsg(JobDone)
     }
     
-    "set SearchResult state to Complete when receiving Done from Document Searcher" in new SearchHandlerContext {
+    "set SearchResult state to Complete when receiving SearchComplete from Searcher" in new SearchHandlerContext {
       
       val searchHandler = TestActorRef(new TestSearchHandler(searchExists = false, testActor))
       val searchHandlerWatcher = TestProbe()
@@ -107,7 +107,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       searchHandlerWatcher.expectMsgType[Terminated]
     }
     
-    "set SearchResultState to Error when receiving Failure from Document Searcher" in new SearchHandlerContext {
+    "set SearchResultState to Error when receiving SearchFailure from Searcher" in new SearchHandlerContext {
       val searchHandler = TestActorRef(new TestSearchHandler(searchExists = false, testActor))
       val searchHandlerWatcher = TestProbe()
       
@@ -116,7 +116,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       val error = new Exception("exception from RequestQueue")
       
       searchHandler ! SearchDocumentSet(documentSetId, searchTerms, testActor)
-      searchHandler ! Failure(error)
+      searchHandler ! SearchFailure(error)
       
       val storage = searchHandler.underlyingActor.storage
       
