@@ -36,6 +36,7 @@ trait ProjectSettings {
   val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
+  val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
   
   // Project dependencies
   val serverProjectDependencies = Seq(
@@ -73,6 +74,7 @@ trait ProjectSettings {
     openCsvDep,
     squerylDep,
     elasticSearchDep,
+    elasticSearchCloudAwsDep,
     akkaTestkit % "test",
     mockitoDep % "test",
     specs2Dep % "test",
@@ -92,6 +94,7 @@ trait ProjectSettings {
   
   val documentSetWorkerProjectDependencies = Seq(
     elasticSearchDep,
+    elasticSearchCloudAwsDep,
     javaxMailDep,
     jdbc,
     geronimoJmsDep,
@@ -109,6 +112,6 @@ trait ProjectSettings {
 
   val searchIndexDependencies = Seq(
     elasticSearchDep,
-    "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
+    elasticSearchCloudAwsDep
   )
 }
