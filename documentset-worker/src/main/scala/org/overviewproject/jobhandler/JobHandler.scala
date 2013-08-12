@@ -16,6 +16,8 @@ import org.overviewproject.util.Logger
 
 import JobHandlerFSM._
 
+trait Command
+
 /**
  * Messages the JobHandler can process
  */
@@ -27,7 +29,8 @@ object JobHandlerProtocol {
   // Internal messages that should really be private, but are 
   // public for easier testing. 
   case class CommandMessage(message: TextMessage)
-  case class SearchCommand(documentSetId: Long, query: String)
+  case class SearchCommand(documentSetId: Long, query: String) extends Command
+  case class DeleteCommand(documentSetId: Long) extends Command
   case class ConnectionFailure(e: Exception)
 }
 
