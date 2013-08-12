@@ -6,7 +6,6 @@ import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.DocumentSetFinder
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
-import org.overviewproject.http.RequestQueueProtocol.Failure
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
