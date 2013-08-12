@@ -10,6 +10,7 @@ import scala.util.{Failure, Success, Try}
 import akka.actor._
 
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
+import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.util.Configuration
 import org.overviewproject.util.Logger
@@ -81,6 +82,7 @@ trait SearchComponent {
 
   trait ActorCreator {
     def produceSearchHandler: Actor
+    def produceDeleteHandler: Actor
   }
 }
 
@@ -124,6 +126,11 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
     case Event(SearchCommand(documentSetId, query), _) => {
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! SearchDocumentSet(documentSetId, query, requestQueue)
+      goto(WaitingForCompletion)
+    }
+    case Event(DeleteCommand(documentSetId), _) => {
+      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
+      deleteHandler ! DeleteDocumentSet(documentSetId)
       goto(WaitingForCompletion)
     }
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
@@ -231,6 +238,8 @@ trait SearchComponentImpl extends SearchComponent {
       override val storage: Storage = new StorageImpl
       override val actorCreator: ActorCreator = new ActorCreatorImpl
     }
+    
+    override def produceDeleteHandler: Actor = new DeleteHandler {}
   }
 }
 

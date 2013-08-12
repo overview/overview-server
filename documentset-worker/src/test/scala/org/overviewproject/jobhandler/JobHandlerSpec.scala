@@ -1,26 +1,28 @@
 package org.overviewproject.jobhandler
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mock.Mockito
-import akka.actor.ActorRef
 import akka.actor.Actor
-import akka.testkit.TestProbe
+import akka.actor.ActorRef
 import akka.testkit.TestActorRef
+import akka.testkit.TestProbe
+
+import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
-import javax.jms.TextMessage
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mock.Mockito
+
+import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import scala.util.Try
-import scala.concurrent.Future
-import scala.util.Success
-import scala.util.Failure
 
 class JobHandlerSpec extends Specification with Mockito {
 
   "JobHandler" should {
 
-    class TestJobHandler(searchProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
+    class TestJobHandler(specificHandlerProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
       var messageCallback: Option[String => Future[Unit]] = None
       var failureCallback: Option[Exception => Unit] = None
       var connectionCreationCount: Int = 0
@@ -35,7 +37,8 @@ class JobHandlerSpec extends Specification with Mockito {
       }
 
       val actorCreator = new ActorCreator {
-        override def produceSearchHandler: Actor = new ForwardingActor(searchProbe)
+        override def produceSearchHandler: Actor = new ForwardingActor(specificHandlerProbe)
+        override def produceDeleteHandler: Actor = new ForwardingActor(specificHandlerProbe)
       }
     }
 
@@ -56,6 +59,18 @@ class JobHandlerSpec extends Specification with Mockito {
         "args" : {
           "documentSetId" : $documentSetId,
           "query" : "$query"
+        }
+      }"""
+    }
+    
+    trait DeleteMessageSetup extends Scope {
+      val documentSetId = 3l
+      
+      val commandMessage = s"""
+      {
+        "cmd" : "delete",
+        "args" : {
+          "documentSetId" : $documentSetId
         }
       }"""
     }
@@ -87,6 +102,17 @@ class JobHandlerSpec extends Specification with Mockito {
       
 
       completion must beSome.which(f => !f.isCompleted)
+    }
+    
+    "start delete handler on incoming delete command" in new ActorSystemContext with DeleteMessageSetup {
+      val deleteHandler = TestProbe()
+      
+      val jobHandler = TestActorRef(new TestJobHandler(deleteHandler.ref, testActor, commandMessage))
+      jobHandler ! StartListening
+      val completion = jobHandler.underlyingActor.messageCallback.map(f => f(commandMessage))
+      
+      deleteHandler.expectMsg(DeleteDocumentSet(documentSetId))
+      
     }
 
     "complete jobCompletion future when JobDone is received" in new ActorSystemContext with MessageSetup {
