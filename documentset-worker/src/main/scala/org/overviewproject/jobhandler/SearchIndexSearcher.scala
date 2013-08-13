@@ -3,13 +3,11 @@ package org.overviewproject.jobhandler
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import akka.actor._
-
 import org.elasticsearch.action.search.SearchResponse
-
-
 import org.overviewproject.jobhandler.SearchIndexSearcherFSM._
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 
 object SearchIndexSearcherProtocol {
   case class StartSearch(searchId: Long, documentSetId: Long, query: String)
@@ -31,6 +29,8 @@ object SearchIndexSearcherFSM {
 trait SearchIndex {
   def startSearch(index: String, query: String): Future[SearchResponse]
   def getNextSearchResultPage(scrollId: String): Future[SearchResponse]
+  def deleteDocuments(documentSetId: Long): Future[DeleteByQueryResponse]
+  def deleteDocumentSetAlias(documentSetId: Long): Future[IndicesAliasesResponse]
 }
 
 trait SearcherComponents {
@@ -43,6 +43,7 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
   import SearchIndexSearcherProtocol._
   import SearchSaverProtocol._
   import context.dispatcher
+  
 
   private case class SearchInfo(scrollId: String)
   private case class SearchResult(result: SearchResponse)

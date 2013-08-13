@@ -151,7 +151,6 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
 
   class ActorCreatorImpl extends ActorCreator {
     def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
-      //new DocumentSearcher(documentSetId, query, requestQueue) with DocumentSearcherComponentsImpl
       new SearchIndexSearcher with ElasticSearchComponents
   }
 }
