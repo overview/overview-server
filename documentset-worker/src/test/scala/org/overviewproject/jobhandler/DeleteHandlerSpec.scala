@@ -15,72 +15,78 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 class DeleteHandlerSpec extends Specification with Mockito {
 
   "DeleteHandler" should {
-    
+
     trait MockComponents {
       val searchIndex = mock[SearchIndex]
-      
+
       val deleteResultPromise = Promise[DeleteByQueryResponse]
       val deleteAliasResultPromise = Promise[IndicesAliasesResponse]
-      
+
       searchIndex.deleteDocuments(anyLong) returns deleteResultPromise.future
       searchIndex.deleteDocumentSetAlias(any) returns deleteAliasResultPromise.future
     }
-    
+
     "delete documents and alias with the specified documentSetId from the index" in new ActorSystemContext {
       val documentSetId = 2l
       val parentProbe = TestProbe()
 
       val deleteHandler: TestActorRef[DeleteHandler with MockComponents] = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
-      
+
       deleteHandler ! DeleteDocumentSet(documentSetId)
-      
+
       val searchIndex = deleteHandler.underlyingActor.searchIndex
-      
-      there was one(searchIndex).deleteDocuments(documentSetId)
+
       there was one(searchIndex).deleteDocumentSetAlias(documentSetId)
+
+      val deleteAlias = deleteHandler.underlyingActor.deleteAliasResultPromise
+      val aliasResult = mock[IndicesAliasesResponse]
+      deleteAlias.success(aliasResult)
+
+      there was one(searchIndex).deleteDocuments(documentSetId)
     }
-    
+
     "notify parent when deletion of documents and alias completes successfully" in new ActorSystemContext {
       val documentSetId = 2l
       val parentProbe = TestProbe()
 
       val deleteHandler: TestActorRef[DeleteHandler with MockComponents] = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
-      
+
       deleteHandler ! DeleteDocumentSet(documentSetId)
-      
+
       val deleteDocuments = deleteHandler.underlyingActor.deleteResultPromise
       val deleteAlias = deleteHandler.underlyingActor.deleteAliasResultPromise
       val documentResult = mock[DeleteByQueryResponse]
       val aliasResult = mock[IndicesAliasesResponse]
-      
+
       deleteDocuments.success(documentResult)
       parentProbe.expectNoMsg
-      
+
       deleteAlias.success(aliasResult)
-      
+
       parentProbe.expectMsg(JobDone)
     }
-    
+
     "notify parent when deletion fails" in new ActorSystemContext {
       val documentSetId = 2l
       val parentProbe = TestProbe()
 
       val deleteHandler: TestActorRef[DeleteHandler with MockComponents] = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
-      
+
       deleteHandler ! DeleteDocumentSet(documentSetId)
-      
+
       val deleteDocuments = deleteHandler.underlyingActor.deleteResultPromise
       val deleteAlias = deleteHandler.underlyingActor.deleteAliasResultPromise
-      
+
       val error = new Exception
       val aliasResult = mock[IndicesAliasesResponse]
-      
+
       deleteDocuments.failure(error)
       deleteAlias.success(aliasResult)
-      
+
       // FIXME: We can't distinguish between failure and success right now
       parentProbe.expectMsg(JobDone)
-      
+
     }
   }
 }
+
