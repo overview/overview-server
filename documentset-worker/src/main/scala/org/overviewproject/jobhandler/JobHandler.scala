@@ -1,18 +1,22 @@
 package org.overviewproject.jobhandler
 
 import javax.jms._
+
 import scala.concurrent.{Promise, Future, Await}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+
 import akka.actor._
+
 import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
+import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
 import org.overviewproject.util.Logger
+
 import JobHandlerFSM._
-import org.overviewproject.searchindex.ElasticSearchComponents
 
 trait Command
 
@@ -122,7 +126,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   when(Ready) {
     case Event(SearchCommand(documentSetId, query), _) => {
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
-      searchHandler ! SearchDocumentSet(documentSetId, query, requestQueue)
+      searchHandler ! SearchDocumentSet(documentSetId, query)
       goto(WaitingForCompletion)
     }
     case Event(DeleteCommand(documentSetId), _) => {

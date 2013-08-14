@@ -1,20 +1,17 @@
 package org.overviewproject.jobhandler
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
-import akka.actor.Actor
-import akka.actor.ActorRef
-import akka.testkit.TestActorRef
-import akka.testkit.TestProbe
+import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
+
+import akka.actor._
+import akka.testkit.{ TestActorRef, TestProbe }
 
 import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.ActorSystemContext
-import org.specs2.mock.Mockito
 
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
@@ -98,7 +95,7 @@ class JobHandlerSpec extends Specification with Mockito {
       jobHandler ! StartListening
       val completion = jobHandler.underlyingActor.messageCallback.map(f => f(commandMessage))
       
-      searchHandler.expectMsg(SearchDocumentSet(documentSetId, query, testActor))
+      searchHandler.expectMsg(SearchDocumentSet(documentSetId, query))
       
 
       completion must beSome.which(f => !f.isCompleted)

@@ -14,7 +14,7 @@ import SearchHandlerFSM._
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
-  case class SearchDocumentSet(documentSetId: Long, query: String, requestQueue: ActorRef)
+  case class SearchDocumentSet(documentSetId: Long, query: String)
 }
 
 /**
@@ -60,7 +60,7 @@ trait SearchHandlerComponents {
   }
   
   trait ActorCreator {
-    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor     
+    def produceDocumentSearcher(documentSetId: Long, query: String): Actor     
   }
 }
 
@@ -78,14 +78,14 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   startWith(Idle, Uninitialized)
   
   when(Idle) {
-    case Event(SearchDocumentSet(documentSetId, query, requestQueue), _) =>
+    case Event(SearchDocumentSet(documentSetId, query), _) =>
       if (storage.searchExists(documentSetId, query)) {
         context.parent ! JobDone
         goto(Idle) using Uninitialized
       }
       else {
         val searchId = storage.createSearchResult(documentSetId, query)
-        startSearch(documentSetId, query, requestQueue, searchId)
+        startSearch(documentSetId, query, searchId)
         goto(Searching) using SearchInfo(searchId, documentSetId, query)
       }
   }
@@ -104,12 +104,12 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   initialize
 
   
-  private def startSearch(documentSetId: Long, searchTerms: String, requestQueue: ActorRef, searchId: Long): Unit = {
+  private def startSearch(documentSetId: Long, searchTerms: String, searchId: Long): Unit = {
 
     val query = storage.queryForProject(documentSetId, searchTerms)
     Logger.debug(s"Starting Search [$documentSetId]: $query")
     val documentSearcher =
-      context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query, requestQueue)))
+      context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query)))
 
     documentSearcher ! StartSearch(searchId, documentSetId, query)
   }
@@ -150,7 +150,7 @@ trait SearchHandlerComponentsImpl extends SearchHandlerComponents {
   }
 
   class ActorCreatorImpl extends ActorCreator {
-    def produceDocumentSearcher(documentSetId: Long, query: String, requestQueue: ActorRef): Actor =
+    def produceDocumentSearcher(documentSetId: Long, query: String): Actor =
       new SearchIndexSearcher with ElasticSearchComponents
   }
 }
