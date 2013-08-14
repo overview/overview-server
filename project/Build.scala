@@ -11,6 +11,11 @@ object ApplicationBuild extends Build with ProjectSettings {
     scalaVersion := ourScalaVersion,
     resolvers ++= ourResolvers)
 
+  val workerJavaOpts = "-Dlogback.configurationFile=workerdevlog.xml" +: {
+    if (System.getProperty("datasource.default.url") == null) Seq("-Ddatasource.default.url=" + appDatabaseUrl)
+    else Nil
+  }
+  
   val ourTestWithNoDbOptions = Seq(
     Tests.Argument("xonly"),
     Tests.Setup { loader =>
@@ -83,17 +88,13 @@ object ApplicationBuild extends Build with ProjectSettings {
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
     .settings(
       Keys.fork := true,
-      javaOptions in run ++= Seq(
-        "-Dlogback.configurationFile=workerdevlog.xml",
-        "-Ddatasource.default.url=" + appDatabaseUrl),
+      javaOptions in run ++= workerJavaOpts,
       javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml")
     .dependsOn(common, workerCommon)
 
   val worker = OverviewProject("worker", workerProjectDependencies).settings(
     Keys.fork := true,
-    javaOptions in run ++= Seq(
-      "-Dlogback.configurationFile=workerdevlog.xml",
-      "-Ddatasource.default.url=" + appDatabaseUrl),
+    javaOptions in run ++=  workerJavaOpts,
     javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml").dependsOn(workerCommon, common)
 
   val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
