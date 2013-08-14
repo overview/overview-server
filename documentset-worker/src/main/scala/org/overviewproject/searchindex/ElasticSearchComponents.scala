@@ -12,7 +12,8 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 
 trait ElasticSearchComponents extends SearcherComponents {
-
+  private val IndexName = "documents_v1"
+    
   private class ActionResult[A] extends ActionListener[A] {
 
     private val p: Promise[A] = Promise()
@@ -65,7 +66,7 @@ trait ElasticSearchComponents extends SearcherComponents {
     override def deleteDocuments(documentSetId: Long): Future[DeleteByQueryResponse] = {
       val listener = new ActionResult[DeleteByQueryResponse]
       val query = QueryBuilders.termQuery("document_set_id", documentSetId)
-      client.prepareDeleteByQuery("documents")
+      client.prepareDeleteByQuery(IndexName)
         .setQuery(query)
         .execute(listener)
 
@@ -76,7 +77,7 @@ trait ElasticSearchComponents extends SearcherComponents {
       val listener = new ActionResult[IndicesAliasesResponse]
       val adminClient = client.admin.indices
       adminClient.prepareAliases.
-        removeAlias("documents", s"documents_$documentSetId")
+        removeAlias(IndexName, s"documents_$documentSetId")
         .execute(listener)
 
       listener.resultFuture
