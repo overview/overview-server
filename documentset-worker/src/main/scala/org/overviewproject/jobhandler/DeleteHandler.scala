@@ -10,21 +10,21 @@ object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long)
 }
 
-
 trait DeleteHandler extends Actor with SearcherComponents {
- import DeleteHandlerProtocol._
- import context.dispatcher
- 
+  import DeleteHandlerProtocol._
+  import context.dispatcher
+
   def receive = {
     case DeleteDocumentSet(documentSetId) => {
-      val aliasResponse = searchIndex.deleteDocumentSetAlias(documentSetId)
-      val documentsResponse = searchIndex.deleteDocuments(documentSetId) 
-      
+
+      // delete alias first, so no new documents can be inserted.
+      // creating futures inside for comprehension ensures the calls
+      // are run sequentially
       val combinedResponse = for {
-        a <- aliasResponse
-        d <- documentsResponse
-      } yield d
-      
+        aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
+        documentsResponse <- searchIndex.deleteDocuments(documentSetId)
+      } yield documentsResponse
+
       combinedResponse onComplete {
         case Success(r) => {
           context.parent ! JobDone
