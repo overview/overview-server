@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.mvc.Controller
-
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
@@ -10,8 +9,10 @@ import controllers.forms.DocumentSetForm.Credentials
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentFinder, DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.orm.DocumentSetUser 
+import models.orm.DocumentSetUser
 import models.ResultPage
+import controllers.util.JobQueueSender
+import org.overviewproject.jobs.models.Delete
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -67,6 +68,8 @@ trait DocumentSetController extends Controller {
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     storage.findDocumentSet(id).map(storage.deleteDocumentSet) // ignore not-found
+    
+    JobQueueSender.send(Delete(id))
     Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m("delete.success"),
       "event" -> "document-set-delete"
