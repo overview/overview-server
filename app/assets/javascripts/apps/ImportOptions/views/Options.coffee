@@ -20,7 +20,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           <div class="controls">
             <label>
               <input type="checkbox" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
-              <%- t('split_documents.label') %>
+              <%- t('split_documents.label') %> (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="<%- t('click_for_help') %>">?</a>)
             </label>
           </div>
         </div>
@@ -43,7 +43,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
       <% if ('supplied_stop_words' in options) { %>
         <div class="control-group">
-          <label class="control-label" for="import-options-supplied-stop-words"><%- t('supplied_stop_words.label') %></label>
+          <label class="control-label" for="import-options-supplied-stop-words"><%- t('supplied_stop_words.label') %> (<a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="<%- t('click_for_help') %>">?</a>)</label>
           <div class="controls">
             <textarea id="import-options-supplied-stop-words" name="supplied_stop_words"><%- options.supplied_stop_words %></textarea>
             <p class="help-block"><%- t('supplied_stop_words.help') %></p>

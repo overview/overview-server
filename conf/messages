@@ -251,6 +251,7 @@ views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these wo
 views.DocumentSet.index.ImportOptions.dialog.title=Import options
 views.DocumentSet.index.ImportOptions.dialog.cancel=Cancel
 views.DocumentSet.index.ImportOptions.dialog.submit=Import documents
+views.DocumentSet.index.ImportOptions.click_for_help=click for help
 
 views.DocumentSet.show.DocumentList.title={0}
 views.DocumentSet.show.DocumentList.title.empty=(no title)
