@@ -101,12 +101,19 @@ object JobHandler {
     DB.connect(dataSource)
  
     val searchIndexSetup = Try {
+      Logger.info("Looking for Search Index")
       SearchIndex.createIndexIfNotExisting
     }
     
     searchIndexSetup match {
-      case Success(v) => startHandlingJobs
-      case Failure(e) => Logger.error("Unable to create Search Index", e)
+      case Success(v) => {
+        Logger.info("Starting to scan for jobs")
+        startHandlingJobs
+      }
+      case Failure(e) => {
+        Logger.error("Unable to create Search Index", e)
+        throw(e)
+      }
     }
   }
   
