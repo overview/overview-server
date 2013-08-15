@@ -9,12 +9,14 @@ define [ 'jquery' ], ($) ->
     # Params:
     # * callback: Code that returns a jQuery Promise. This code may be
     #   executed immediately (if the queue is empty) or later (if it isn't).
+    # * debugInfo: Anything you want; this will appear in the debugger if the
+    #   callback fails.
     #
     # Returns: a Promise that will be resolved (or rejected) when the
     # callback's Promise is. (It may be resolved by the time it's returned.)
-    queue: (callback) ->
+    queue: (callback, debugInfo) ->
       deferred = $.Deferred()
-      @_callbacks.push({ callback: callback, deferred: deferred })
+      @_callbacks.push({ callback: callback, deferred: deferred, debugInfo: debugInfo })
       this._next()
       $.when(deferred)
 
@@ -30,11 +32,11 @@ define [ 'jquery' ], ($) ->
           .done (args...) ->
             publicDeferred.resolve(args...)
           .fail (args...) ->
-            throw "transactionFailed"
-            # The queue will be stalled forever!
+            #console.log(obj)
+            throw "transactionFailed" # The queue will be stalled forever!
             publicDeferred.reject(args...)
           .always =>
             @_running = false
-            @_next()
+            window.setTimeout((=> @_next()), 0)
 
       undefined

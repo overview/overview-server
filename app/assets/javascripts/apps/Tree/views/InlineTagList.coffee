@@ -55,16 +55,8 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       @tagIdToModel = @options.tagIdToModel
       @state = @options.state
 
-      @stateCallbacks = {
-        'selection-changed': => @render()
-      }
-      for key, callback of @stateCallbacks
-        @state.observe(key, callback)
-
-      @collection.on('change', => @render())
-      @collection.on('add', => @render())
-      @collection.on('remove', => @render())
-      @collection.on('reset', => @render())
+      @listenTo(@state, 'change:selection', => @render())
+      @listenTo(@collection, 'change add remove reset', => @render())
       @render()
 
     remove: ->
@@ -73,7 +65,8 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       Backbone.View.prototype.remove.apply(this)
 
     render: ->
-      selectedTagId = @state.selection.tags[0]
+      selection = @state.get('selection')
+      selectedTagId = selection.tags[0]
       selectedTag = undefined
       if selectedTagId?
         try

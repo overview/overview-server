@@ -217,18 +217,19 @@ define [
         count = 0
         color = null
 
-        if @colorLogic.searchResultIds?
-          for id in @colorLogic.searchResultIds
-            count = json.searchResultCounts?[id]
-            if count
-              color = @colorLogic.color(id)
-              break
-        else if @colorLogic.tagIds?
-          for id in @colorLogic.tagIds
-            count = json.tagCounts?[id]
-            if count
-              color = @colorLogic.color(id)
-              break
+        if @colorLogic?
+          if @colorLogic.searchResultIds?
+            for id in @colorLogic.searchResultIds
+              count = json.searchResultCounts?[id]
+              if count
+                color = @colorLogic.color
+                break
+          else if @colorLogic.tagIds?
+            for id in @colorLogic.tagIds
+              count = json.tagCounts?[id]
+              if count
+                color = @colorLogic.color
+                break
 
         if color
           @_draw_tagcount(px.left, px.top, px.width, px.height, color, count / json.size)
@@ -500,7 +501,6 @@ define [
 
     constructor: (@div, @cache, @tree, @focus, options={}) ->
       @options = _.extend({}, DEFAULT_OPTIONS, options)
-      @focus_tagids = []
 
       $div = $(@div)
       @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
@@ -553,6 +553,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
+      @tree.state.on('change:selection change:taglike', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @cache.tag_store.observe('changed', update)
@@ -569,9 +570,6 @@ define [
         e.stopPropagation() # don't pan
         @_notify('zoom-pan', { zoom: @focus.get('zoom') * 2, pan: @focus.get('pan') }, { animate: true })
 
-      @cache.tag_store.observe('removed', this._on_tag_removed.bind(this))
-      @cache.tag_store.observe('id-changed', this._on_tagid_changed.bind(this))
-
       $(@canvas).on 'mousedown', (e) =>
         action = this._event_to_action(e)
         @set_hover_node(undefined) # on click, un-hover
@@ -580,18 +578,6 @@ define [
       this._handle_hover()
       this._handle_drag()
       this._handle_mousewheel()
-
-    _on_tag_removed: (tag) ->
-      index = @focus_tagids.indexOf(tag.id)
-      if index != -1
-        @focus_tagids.splice(index, 1)
-      # No need to redraw: that will happen elsewhere if necessary.
-
-    _on_tagid_changed: (old_tagid, tag) ->
-      index = @focus_tagids.indexOf(old_tagid)
-      if index != -1
-        @focus_tagids[index] = tag.id
-      # No need to redraw: it would produce the same result.
 
     _handle_hover: () ->
       $(@canvas).on 'mousemove', (e) =>
@@ -680,37 +666,13 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getColorLogic: ->
-      # Add the focused tag to "focus tagids", the most-recently-focused tag ID
-      # (initialized to empty, max 1 tag)
-      if tagid = @tree.state.focused_tag?.id
-        @focus_tagids.splice(0, @focus_tagids.length, tagid)
+      taglike = @tree.state.get('taglike')
+      if taglike?.name?
+        { tagIds: [ taglike.id ], color: taglike.color || (new ColorTable()).get(taglike.name) }
+      else if taglike?.query?
+        { searchResultIds: [ taglike.id ], color: '#50ade5' }
       else
-        @focus_tagids.splice(0, @focus_tagids.length)
-
-      # Cache colors, so each node shows most-recently-selected tag.
-      color_table = new ColorTable()
-      tag_id_to_color = {}
-      for tag in @cache.tag_store.tags
-        id = "#{tag.id}"
-        color = tag.color || color_table.get(tag.name)
-        tag_id_to_color[id] = color
-
-      selection = @tree.state.selection
-      if selection.searchResults.length
-        {
-          searchResultIds: selection.searchResults.slice(0)
-          color: -> '#50ade5'
-        }
-      else if selection.tags.length
-        {
-          tagIds: selection.tags.slice(0)
-          color: (id) -> tag_id_to_color[id]
-        }
-      else
-        {
-          tagIds: @focus_tagids.slice(0)
-          color: (id) -> tag_id_to_color[id]
-        }
+        null
 
     # Returns a set of { nodeid: null }.
     #
@@ -720,7 +682,8 @@ define [
       ret = {}
 
       # Selected documents
-      for docid in @tree.state.selection.documents
+      selection = @tree.state.get('selection')
+      for docid in selection.documents
         document = @cache.document_store.documents[docid]
         if document?
           (ret[nodeid] = null) for nodeid in document.nodeids
@@ -730,9 +693,6 @@ define [
     _redraw: () ->
       colorLogic = @_getColorLogic()
       highlightedNodeIds = @_getHighlightedNodeIds()
-
-      shown_tagids = @tree.state.selection.tags
-      shown_tagids = @focus_tagids if !shown_tagids.length
 
       @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()

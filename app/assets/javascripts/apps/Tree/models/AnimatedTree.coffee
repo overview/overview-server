@@ -112,12 +112,12 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       lastSelectedIdSet = {}
       animator = @animator
 
-      @state.observe 'selection-changed', =>
+      @state.on 'change:selection', (__, selection) =>
         @_maybe_notifying_needs_update =>
           time = Date.now()
 
           selectedIdSet = {}
-          (selectedIdSet[id] = null) for id in (state.selection?.nodes || [])
+          (selectedIdSet[id] = null) for id in (selection?.nodes || [])
 
           time = Date.now()
 
@@ -143,7 +143,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       selected = {}
       nodes = @on_demand_tree.nodes
       animatedNodes = @nodes
-      (selected[id] = null) for id in @state.selection.nodes || []
+      (selected[id] = null) for id in @state.get('selection').nodes || []
 
       # When ids are added to the tree, their parents become open. Assume their
       # parents were unopened before (because siblings are always added all at
@@ -187,7 +187,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       ms ?= Date.now()
 
       json = @_getNode(rootId)
-      @root = new AnimatedNode(json, null, rootId in (@state.selection.nodes || []), ms)
+      @root = new AnimatedNode(json, null, rootId in (@state.get('selection').nodes || []), ms)
       @nodes[rootId] = @root
 
       undefined

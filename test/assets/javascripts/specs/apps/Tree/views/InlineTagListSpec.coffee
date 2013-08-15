@@ -1,12 +1,17 @@
 define [
-  'apps/Tree/models/observable'
   'apps/Tree/views/InlineTagList'
-], (observable, InlineTagListView) ->
-  class MockState
-    observable(this)
+  'backbone'
+], (InlineTagListView, Backbone) ->
+  class MockSelection
+    constructor: (attributes = {}) ->
+      @nodes = attributes.nodes ? []
+      @tags = attributes.tags ? []
+      @documents = attributes.documents ? []
+      @searchResults = attributes.searchResults ? []
 
-    constructor: () ->
-      @selection = { nodes: [], tags: [], documents: [], searchResults: [] }
+  MockState = Backbone.Model.extend
+    defaults:
+      selection: { nodes: [], tags: [], documents: [], searchResults: [] }
 
   describe 'views/InlineTagList', ->
     describe 'InlineTagList', ->
@@ -112,9 +117,8 @@ define [
           expect(spy).toHaveBeenCalled()
 
         it 'should set "selected" on selected tags', ->
-          state.selection.tags = [1]
           view.tagIdToModel = -> collection.at(0)
-          state._notify('selection-changed', state.selection)
+          state.set('selection', new MockSelection({ tags: [ 1 ] }))
           expect(view.$('li:eq(0)').hasClass('selected')).toBe(true)
           expect(view.$('li:eq(1)').hasClass('selected')).toBe(false)
 

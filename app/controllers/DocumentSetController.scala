@@ -110,14 +110,7 @@ object DocumentSetController extends DocumentSetController {
     }
 
     override def isDocumentSetSearchable(documentSet: DocumentSet): Boolean = {
-      // Only DocumentCloud docsets that aren't split by pages are searchable
-      val maybeDoc = DocumentFinder.byDocumentSet(documentSet).headOption
-      val maybeDocumentCloudId = maybeDoc.flatMap(_.documentcloudId)
-
-      maybeDocumentCloudId match {
-        case Some(documentCloudId) => !documentCloudId.contains("#")
-        case None => false
-      }
+      true
     }
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {

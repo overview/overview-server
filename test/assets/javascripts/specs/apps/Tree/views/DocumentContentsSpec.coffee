@@ -1,12 +1,17 @@
 define [
   'apps/Tree/views/DocumentContents'
-  'apps/Tree/models/observable'
-], (DocumentContents, observable) ->
-  class MockState
-    observable(this)
+  'backbone'
+], (DocumentContents, Backbone) ->
+  class MockSelection
+    constructor: (attrs = {}) ->
+      for k in [ 'documents', 'nodes', 'searchResults', 'tags' ]
+        this[k] = attrs[k] ? []
 
-    constructor: () ->
-      @selection = { nodes: [], tags: [], documents: [], documents_from_cache: () -> [] }
+    documents_from_cache: -> []
+
+  MockState = Backbone.Model.extend
+    defaults:
+      selection: new MockSelection()
 
   class MockCache
     constructor: () ->
@@ -43,20 +48,19 @@ define [
           expect(view.$el.html()).toEqual('')
 
         it 'should build an iframe when there is a selected document', ->
-          state.selection.documents = [1]
-          state._notify('selection-changed', state.selection)
+          state.set('selection', new MockSelection({ documents: [1] }))
           expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
 
         it 'should build an iframe when there is a selection that resolves to a document', ->
-          state.selection.documents_from_cache = () -> [ { id: 1 } ]
-          spyOn(state.selection, 'documents_from_cache').andReturn([{ id: 1 }])
-          state._notify('selection-changed', state.selection)
+          newSelection = new MockSelection()
+          newSelection.spyOn('documents_from_cache').andReturn([{ id: 1 }])
+          state.set('selection', newSelection)
           expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
-          expect(state.selection.documents_from_cache).toHaveBeenCalledWith(cache)
+          expect(newSelection.documents_from_cache).toHaveBeenCalledWith(cache)
 
       describe 'beginning on a document', ->
         beforeEach ->
-          state.selection.documents = [1]
+          state.set('selection', new MockSelection({ documents: [ 1 ] }))
           view = new DocumentContents({ cache: cache, state: state })
 
         it 'should show the iframe', ->
@@ -69,8 +73,7 @@ define [
               setDocument: (x) -> doc = x
             }
           }
-          state.selection.documents = [2]
-          state._notify('selection-changed', state.selection)
+          state.set('selection', new MockSelection({ documents: [ 2 ] }))
           expect(doc?.id).toEqual(2)
 
         it 'should not call setDocument() when the selection changes but the selected document does not', ->
@@ -80,6 +83,5 @@ define [
               setDocument: (x) -> doc = x
             }
           }
-          state.selection.nodes = [4]
-          state._notify('selection-changed', state.selection)
+          state.set('selection', new MockSelection({ nodes: [4] }))
           expect(doc).toBeUndefined()

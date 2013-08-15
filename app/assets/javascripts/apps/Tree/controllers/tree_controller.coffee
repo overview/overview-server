@@ -61,16 +61,13 @@ define [
         animating = true
         requestAnimationFrame(animate_frame)
 
-    # XXX maybe move the focus tag into AnimatedTree?
-    state.observe('focused_tag-changed', -> view._set_needs_update())
-
     view.observe('needs-update', animate)
 
     view.observe 'click', (nodeid) ->
       return if !nodeid?
       log('clicked node', "#{nodeid}")
       expand_deferred(nodeid)
-      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
+      new_selection = state.get('selection').replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
       state.set('selection', new_selection)
 
     view.observe 'expand', (nodeid) ->
@@ -81,7 +78,7 @@ define [
     view.observe 'collapse', (nodeid) ->
       return if !nodeid?
       log('collapsed node', "#{nodeid}")
-      new_selection = update_selection_to_parent_of_nodeid_if_necessary(state.selection, nodeid, cache.on_demand_tree)
+      new_selection = update_selection_to_parent_of_nodeid_if_necessary(state.get('selection'), nodeid, cache.on_demand_tree)
       state.set('selection', new_selection)
       cache.on_demand_tree.unload_node_children(nodeid)
 
@@ -92,24 +89,24 @@ define [
       else
         focus.setPanAndZoom(obj.pan, obj.zoom)
 
-    state.observe 'selection-changed', ->
-      if nodeid = state.selection.nodes[0]
+    state.on 'change:selection', (__, selection) ->
+      if nodeid = selection.nodes[0]
         node = animated_tree.getAnimatedNode(nodeid)
         node = node.parent if node.parent?
         focus.animateNode(node)
 
-      if (tagid = state.selection.tags?[0]) && tagid >= 0
-        cache.refresh_tagcounts(tagid)
-
-      if (searchResultId = state.selection.searchResults?[0]) && searchResultId >= 0
-        cache.refreshSearchResultCounts(searchResultId)
+    state.on 'change:taglike', (__, taglike) ->
+      if taglike?.name? # it's a tag
+        cache.refresh_tagcounts(taglike)
+      else if taglike?.query? # it's a search result
+        cache.refreshSearchResultCounts(taglike)
 
     select_nodeid = (nodeid) ->
-      new_selection = state.selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
+      new_selection = state.get('selection').replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
       state.set('selection', new_selection)
 
     selected_nodeid = ->
-      state.selection.nodes[0] || cache.on_demand_tree.id_tree.root
+      state.get('selection').nodes[0] || cache.on_demand_tree.id_tree.root
 
     # Moves selection in the given direction.
     #
@@ -135,11 +132,14 @@ define [
       if !children?
         cache.on_demand_tree.demand_node(nodeid)
           .done (json) ->
-            tagid = state.focused_tag?.id || state.selection.tags[0] || undefined
-            if tagid
+            taglike = state.get('taglike')
+            if taglike?
               nodeIds = _.pluck(json?.nodes || [], 'id')
               if nodeIds.length
-                cache.refresh_tagcounts(tagid, nodeIds)
+                if taglike.name? # it's a tag
+                  cache.refresh_tagcounts(taglike, nodeIds)
+                else if taglike.query? # it's a searchResult
+                  cache.refreshSearchResultCounts(taglike, nodeIds)
       else
         $.Deferred().resolve()
 

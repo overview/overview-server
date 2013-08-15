@@ -37,10 +37,13 @@ define [
           ds.push(d)
           d
 
+        spyOn(window, 'setTimeout')
         _.times(2, -> queue.queue(cb))
         expect(ds.length).toEqual(1)
         ds[0].resolve()
         expect(runs).toEqual(1)
+        expect(window.setTimeout).toHaveBeenCalled()
+        window.setTimeout.mostRecentCall.args[0].call()
         expect(ds.length).toEqual(2)
         ds[1].resolve()
         expect(runs).toEqual(2)

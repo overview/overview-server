@@ -17,19 +17,21 @@ define [ './cache', './state' ], (Cache, State) ->
       @cache.document_store.rewrite_tag_id(old_tagid, tag.id)
       @cache.on_demand_tree.rewrite_tag_id(old_tagid, tag.id)
 
-      index = @state.selection.tags.indexOf(old_tagid)
+      selection = @state.get('selection')
+      index = selection.tags.indexOf(old_tagid)
       if index != -1
-        tags = @state.selection.tags.slice(0)
+        tags = selection.tags.slice(0)
         tags.splice(index, 1, tag.id)
-        selection = @state.selection.replace({ tags: tags })
-        @state.set('selection', selection)
+        newSelection = selection.replace({ tags: tags })
+        @state.set('selection', newSelection)
 
     rewrite_search_result_id: (oldId, searchResult) ->
       # The backend guarantees a search result can only have documents if it
       # has an ID. So we know we don't need to rewrite any IDs in @cache.
-      index = @state.selection.searchResults.indexOf(oldId)
+      selection = @state.get('selection')
+      index = selection.searchResults.indexOf(oldId)
       if index != -1
-        searchResults = @state.selection.searchResults.slice(0)
+        searchResults = selection.searchResults.slice(0)
         searchResults.splice(index, 1, searchResult.id)
-        selection = @state.selection.replace({ searchResults: searchResults })
-        @state.set('selection', selection)
+        newSelection = selection.replace({ searchResults: searchResults })
+        @state.set('selection', newSelection)

@@ -109,9 +109,9 @@ define [
     _addSelection: ->
       state = @get('state')
 
-      updateSelection = => @set('selection', @get('state').selection)
+      updateSelection = => @set('selection', @get('state').get('selection'))
       updateSelection()
-      state.observe('selection-changed', updateSelection)
+      state.on('change:selection', updateSelection)
 
     _addSelectionModuloDocuments: ->
       updateFromSelection = =>

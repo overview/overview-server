@@ -74,11 +74,9 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
-      deferred = new Deferred()
-
       nodes = @on_demand_tree.nodes
 
-      @transaction_queue.queue =>
+      @transaction_queue.queue(=>
         tagid = tag.id || tag
         node_ids = if onlyNodeIds?
           onlyNodeIds
@@ -105,37 +103,36 @@ define [
             @on_demand_tree.id_tree.batchAdd(->) # trigger update
 
             undefined
-
-            deferred.resolve()
-          .fail -> deferred.reject()
-
-      deferred
+      , 'refresh_tagcounts')
 
     refreshSearchResultCounts: (searchResult) ->
       searchResultId = searchResult.id? && searchResult.id || searchResult
       nodes = @on_demand_tree.nodes
-      node_ids = (k for k, __ of nodes)
-      node_ids_string = node_ids.join(',')
-      deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResultId })
-      deferred.done (data) =>
-        @on_demand_tree.id_tree.batchAdd (__) -> # FIXME this isn't really an add
-          responseCounts = {}
 
-          i = 0
-          while i < data.length
-            nodeid = data[i++]
-            count = data[i++]
-            responseCounts[nodeid] = count
+      @transaction_queue.queue(=>
+        node_ids = (k for k, __ of nodes)
+        node_ids_string = node_ids.join(',')
+        deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResultId })
+        deferred.done (data) =>
+          @on_demand_tree.id_tree.batchAdd (__) -> # FIXME this isn't really an add
+            responseCounts = {}
 
-          for nodeid in node_ids
-            counts = (nodes[nodeid]?.searchResultCounts ||= {})
-            responseCount = responseCounts[nodeid]
-            if responseCount
-              counts[searchResultId] = responseCount
-            else
-              delete counts[searchResultId]
+            i = 0
+            while i < data.length
+              nodeid = data[i++]
+              count = data[i++]
+              responseCounts[nodeid] = count
 
-          undefined
+            for nodeid in node_ids
+              counts = (nodes[nodeid]?.searchResultCounts ||= {})
+              responseCount = responseCounts[nodeid]
+              if responseCount
+                counts[searchResultId] = responseCount
+              else
+                delete counts[searchResultId]
+
+            undefined
+      , 'refreshSearchResultCounts')
 
     create_tag: (tag, options) ->
       @tag_api.create(tag, options)
@@ -201,8 +198,9 @@ define [
     addTagToSelectionRemote: (tag, selection) ->
       if @_selection_to_documents(selection)?
         postData = @_selection_to_post_data(selection)
-        @transaction_queue.queue =>
+        @transaction_queue.queue(=>
           @server.post('tag_add', postData, { path_argument: tag.id })
+        , 'Cache.addTagToSelectionRemote')
 
     # Adds the given Tag to all documents specified by the Selection.
     #

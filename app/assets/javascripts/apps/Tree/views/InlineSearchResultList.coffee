@@ -73,16 +73,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @searchResultIdToModel = @options.searchResultIdToModel
       @state = @options.state
 
-      @stateCallbacks = {
-        'selection-changed': => @render()
-      }
-      for key, callback of @stateCallbacks
-        @state.observe(key, callback)
-
-      @collection.on('change', => @render())
-      @collection.on('add', => @render())
-      @collection.on('remove', => @render())
-      @collection.on('reset', => @render())
+      @listenTo(@state, 'change:selection', => @render())
+      @listenTo(@collection, 'change add remove reset', => @render())
       @render()
 
     remove: ->
@@ -91,7 +83,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       Backbone.View.prototype.remove.apply(this)
 
     render: ->
-      selectedSearchResultId = @state.selection.searchResults[0]
+      selection = @state.get('selection')
+      selectedSearchResultId = selection.searchResults[0]
       selectedSearchResult = selectedSearchResultId && @searchResultIdToModel(selectedSearchResultId)
 
       # If the currently-selected search result ID is changing, the selection

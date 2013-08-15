@@ -50,14 +50,16 @@ define [
     view.on 'search-result-clicked', (searchResult) ->
       searchResult = proxy.unmap(searchResult)
       log('clicked search result', "#{search_result_to_short_string(searchResult)}")
-      state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
+      state.set
+        selection: new Selection({ searchResults: [ searchResult.id ] })
+        taglike: searchResult
 
     view.on 'create-tag-clicked', (searchResultModel) ->
       tag = { name: searchResultToTagName(searchResultModel) }
       log('created tag', tag.name)
       tag = cache.add_tag(tag)
       cache.create_tag(tag)
-      cache.addTagToSelection(tag, state.selection.pick('searchResults'))
+      cache.addTagToSelection(tag, state.get('selection').pick('searchResults'))
         .done ->
           cache.refresh_tagcounts(tag)
           # This shouldn't be done on "done": it should be done right away.
@@ -65,13 +67,15 @@ define [
           # of order. Make TagStore and SearchResultStore plain
           # Backbone.Collections, then un-indent this.
           state.set('selection', new Selection({ tags: [ tag.id ] }))
-      state.set('focused_tag', tag)
+      state.set('taglike', tag)
 
     view.on 'create-submitted', (query) ->
       searchResult = { query: query }
       log('created search', "#{search_result_to_short_string(searchResult)}")
       searchResult = cache.search_result_store.addAndPoll(searchResult)
       cache.search_result_api.create(searchResult)
-      state.set('selection', new Selection({ searchResults: [ searchResult.id ] }))
+      state.set
+        selection: new Selection({ searchResults: [ searchResult.id ] })
+        taglike: searchResult
 
     { view: view }

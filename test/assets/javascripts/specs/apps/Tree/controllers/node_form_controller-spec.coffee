@@ -1,7 +1,8 @@
 define [
   'apps/Tree/controllers/node_form_controller'
   'apps/Tree/models/observable'
-], (node_form_controller, observable) ->
+  'backbone'
+], (node_form_controller, observable, Backbone) ->
   class MockNodeFormView
     observable(this)
 
@@ -28,8 +29,7 @@ define [
       beforeEach ->
         log_values = []
         cache = jasmine.createSpyObj('cache', [ 'update_node' ])
-        state = jasmine.createSpyObj('state', [ 'set' ])
-        state.selection = jasmine.createSpyObj('selection', [ 'minus' ])
+        state = new Backbone.Model({ selection: jasmine.createSpyObj('selection', [ 'minus' ]) })
         controller = node_form_controller(node, cache, state, options)
 
       it 'should create a view when called', ->

@@ -35,9 +35,9 @@ define [ '../views/tag_form_view', './logger' ], (TagFormView, Logger) ->
 
     form.observe 'delete', ->
       log('deleted tag', tag_to_short_string(tag))
-      if state.focused_tag?.id == tag.id
-        state.set('focused_tag', undefined)
-      state.set('selection', state.selection.minus({ tags: [ tag.id ] }))
+      if state.get('taglike') == tag
+        state.set('taglike', null)
+      state.set('selection', state.get('selection').minus({ tags: [ tag.id ] }))
       cache.delete_tag(tag)
 
     undefined

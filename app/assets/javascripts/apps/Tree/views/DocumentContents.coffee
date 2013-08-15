@@ -14,14 +14,9 @@ define [
 
       @app = new DocumentDisplayApp({ el: @el })
 
-      @_onStateSelectionChanged = => @render()
-      @state.observe('selection-changed', @_onStateSelectionChanged)
+      @listenTo(@state, 'change:selection', => @render())
 
       @render()
-
-    stopListening: ->
-      @state.unobserve('selection-changed', @_onStateSelectionChanged)
-      Backbone.View.prototype.stopListening.call(this)
 
     # Returns a JSON POD document object, or undefined.
     #
@@ -30,7 +25,8 @@ define [
     # * There is one selected document; and
     # * The document is in the cache.
     _getDocument: ->
-      docids = @state.selection?.documents
+      selection = @state.get('selection')
+      docids = selection.documents
       return undefined if docids.length != 1
       docid = docids[0]
       @cache.document_store.documents[docid]

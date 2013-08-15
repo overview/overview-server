@@ -1,7 +1,8 @@
 define [
   'apps/Tree/controllers/tag_form_controller'
   'apps/Tree/models/observable'
-], (tag_form_controller, observable) ->
+  'backbone'
+], (tag_form_controller, observable, Backbone) ->
   class MockTagFormView
     observable(this)
 
@@ -28,8 +29,7 @@ define [
       beforeEach ->
         log_values = []
         cache = jasmine.createSpyObj('cache', [ 'update_tag', 'delete_tag' ])
-        state = jasmine.createSpyObj('state', [ 'set' ])
-        state.selection = jasmine.createSpyObj('selection', [ 'minus' ])
+        state = new Backbone.Model({ selection: jasmine.createSpyObj('selection', [ 'minus' ]) })
         controller = tag_form_controller(tag, cache, state, options)
 
       it 'should create a view when called', ->
@@ -44,24 +44,24 @@ define [
         view.delete()
         expect(cache.delete_tag).toHaveBeenCalledWith(tag)
 
-      it 'should deselect state.focused_tag if necessary on delete', ->
-        state.focused_tag = tag
+      it 'should deselect state.taglike if necessary on delete', ->
+        state.set('taglike', tag)
         view.delete()
-        expect(state.set).toHaveBeenCalledWith('focused_tag', undefined)
+        expect(state.get('taglike')).toBe(null)
 
       it 'should remove the tag from state.selection if necessary on delete', ->
         empty_selection = { tags: [], nodes: [], documents: [] }
-        state.selection = {
+        state.set('selection', {
           tags: []
           nodes: []
           documents: []
           minus: (sub) ->
             expect(sub).toEqual({ tags: [1] })
             empty_selection
-        }
+        })
 
         view.delete()
-        expect(state.set).toHaveBeenCalledWith('selection', empty_selection)
+        expect(state.get('selection')).toEqual(empty_selection)
 
       it 'should log on start', ->
         expect(log_values[0]).toEqual(['began editing tag', '1 (tag)'])
