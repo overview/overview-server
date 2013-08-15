@@ -6,10 +6,13 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
 
+import org.overviewproject.tree.orm.{Document,Tag}
+import org.overviewproject.tree.orm.finders.FinderResult
+
 import controllers.auth.{ AuthorizedAction, Authorities }
 import models.export._
-import models.orm.finders.{ DocumentFinder, FinderResult, TagFinder }
-import org.overviewproject.tree.orm.{Document,Tag}
+import models.orm.finders.{ DocumentFinder, TagFinder }
+
 
 trait DocumentSetExportController extends Controller {
   import Authorities._

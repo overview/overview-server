@@ -3,6 +3,7 @@ package models.orm.finders
 import models.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSearchResult
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
 
 object DocumentSearchResultFinder extends Finder {

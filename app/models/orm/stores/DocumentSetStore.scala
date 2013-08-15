@@ -4,6 +4,8 @@ import org.squeryl.{ KeyedEntityDef, Query }
 
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.tree.orm.finders.FinderResult
+
 import models.orm.finders._
 import models.orm.stores._
 import models.orm.Schema

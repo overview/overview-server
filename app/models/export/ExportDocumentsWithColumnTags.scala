@@ -1,11 +1,12 @@
 package models.export
 
-import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ BufferedWriter, OutputStream, OutputStreamWriter }
 
-import models.{ OverviewDatabase, OverviewDocument }
-import models.orm.finders.FinderResult
+import au.com.bytecode.opencsv.CSVWriter
 import org.overviewproject.tree.orm.{Document,Tag}
+import org.overviewproject.tree.orm.finders.FinderResult
+
+import models.{ OverviewDatabase, OverviewDocument }
 
 class ExportDocumentsWithColumnTags(
   documents: FinderResult[(Document,Option[String])],

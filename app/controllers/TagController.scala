@@ -16,7 +16,8 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.forms.{SelectionForm,TagForm,NodeIdsForm}
 import org.overviewproject.tree.orm.Tag
-import models.orm.finders.{DocumentFinder,DocumentTagFinder,NodeDocumentFinder,TagFinder,FinderResult}
+import org.overviewproject.tree.orm.finders.FinderResult
+import models.orm.finders.{ DocumentFinder, DocumentTagFinder, NodeDocumentFinder, TagFinder }
 import models.orm.stores.{DocumentTagStore,TagStore}
 import models.Selection
 

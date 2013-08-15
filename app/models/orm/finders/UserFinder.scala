@@ -2,6 +2,8 @@ package models.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
 import models.orm.{ Schema, User }
 
 object UserFinder extends Finder {

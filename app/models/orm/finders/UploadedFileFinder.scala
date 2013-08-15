@@ -2,6 +2,8 @@ package models.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.UploadedFile
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
 import models.orm.Schema
 
 object UploadedFileFinder extends Finder {

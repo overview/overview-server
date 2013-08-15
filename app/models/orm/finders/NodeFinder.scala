@@ -1,12 +1,14 @@
 package models.orm.finders
 
-import org.squeryl.Query
-import scala.collection.mutable.Buffer
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.Node
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
+import org.squeryl.Query
+
 import models.orm.Schema
 
 object NodeFinder extends Finder {

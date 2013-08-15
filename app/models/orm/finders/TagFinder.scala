@@ -1,12 +1,15 @@
 package models.orm.finders
 
-import org.squeryl.Query
-import org.squeryl.dsl.GroupWithMeasures
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
-import org.overviewproject.tree.orm.Tag
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.Tag
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
+import org.squeryl.Query
+import org.squeryl.dsl.GroupWithMeasures
+
 import models.orm.Schema
 
 object TagFinder extends Finder {

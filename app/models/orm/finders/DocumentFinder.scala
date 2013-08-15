@@ -4,9 +4,10 @@ import org.squeryl.Query
 import org.squeryl.dsl.GroupWithMeasures
 import scala.language.implicitConversions
 import scala.language.postfixOps
-
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
 import models.orm.Schema
 import models.Selection
 

@@ -1,4 +1,4 @@
-package models.orm.finders
+package org.overviewproject.tree.orm.finders
 
 import org.squeryl.Query
 import org.overviewproject.postgres.SquerylEntrypoint

@@ -1,11 +1,12 @@
 package models.export
 
-import au.com.bytecode.opencsv.CSVWriter
 import java.io.{ BufferedWriter, OutputStream, OutputStreamWriter }
 
-import models.{ OverviewDatabase, OverviewDocument }
-import models.orm.finders.FinderResult
+import au.com.bytecode.opencsv.CSVWriter
 import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.finders.FinderResult
+
+import models.{ OverviewDatabase, OverviewDocument }
 
 class ExportDocumentsWithStringTags(documents: FinderResult[(Document,Option[String])]) extends Export {
   override def contentTypeHeader = "text/csv; charset=\"utf-8\""

@@ -1,9 +1,12 @@
 package models.orm.finders
 
-import org.squeryl.Query
 import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+
+import org.squeryl.Query
+
 import models.orm.{ LogEntry, Schema, User }
 
 object LogEntryFinder extends Finder {

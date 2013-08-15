@@ -1,16 +1,18 @@
 package models.export
-
-import au.com.bytecode.opencsv.CSVReader
 import java.io.{ ByteArrayOutputStream, StringReader }
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
+
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
-import org.overviewproject.util.TempFile
 import org.overviewproject.tree.orm.{Document,DocumentType,Tag}
-import models.orm.finders.FinderResult
+import org.overviewproject.tree.orm.finders.FinderResult
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+
+
+
+import au.com.bytecode.opencsv.CSVReader
 
 class ExportDocumentsWithColumnTagsSpec extends Specification with Mockito {
   step(start(FakeApplication()))
