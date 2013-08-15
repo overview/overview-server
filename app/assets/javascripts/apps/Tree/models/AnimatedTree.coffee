@@ -85,7 +85,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     update: ->
       @animator.update() # update fractions
       @_tick() # use fractions to update node sizes/positions
-      @_needsUpdate = false # needsUpdate will check @root.rootedTreeUpdatedAt
+      @_needsUpdate = false # needsUpdate will check @root.updatedAt
       undefined
 
     _getNode: (id) -> @on_demand_tree.getNode(id)
@@ -326,6 +326,12 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       ms = Date.now()
 
       transform = @getTransform(animatedFocus, width, height, tx, ty)
+      round = if @root.updatedAt?
+        # we're animating. Use fractions for smooth animations
+        (x) -> x
+      else
+        # we're done animating. Snap to pixels for crispness
+        Math.round
 
       # assume b and c are 0
       sx = transform[0]
@@ -343,11 +349,11 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
 
           o =
             isLeaf: node.json.isLeaf
-            left: hmid - w * 0.5
-            width: w
-            top: top
-            height: h
-            hmid: hmid
+            left: round(hmid - w * 0.5)
+            width: round(w)
+            top: round(top)
+            height: round(h)
+            hmid: round(hmid) # it's okay if rounding means hmid != left+width/2
             node: node
             json: node.json
             parent: null
