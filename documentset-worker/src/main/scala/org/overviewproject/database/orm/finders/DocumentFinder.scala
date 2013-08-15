@@ -1,8 +1,9 @@
 package org.overviewproject.database.orm.finders
 
-import org.overviewproject.tree.orm.Document
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
 object DocumentFinder extends Finder {
 
