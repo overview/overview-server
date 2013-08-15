@@ -7,6 +7,9 @@ import org.overviewproject.util.{ DocumentSetCreationJobStateDescription, Logger
 import org.overviewproject.util.Progress.Progress
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import java.sql.Connection
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
  * The Procedure trait enables the specification of blocks of code
@@ -111,6 +114,8 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
 
   val cloneNodeDocuments: (Long, Long) => Boolean
   val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
+  
+  val indexDocuments: (Long) => Future[Unit]
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
 
@@ -119,19 +124,25 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
     // The alternative would be to not return values from a step, and instead 
     // nest the step scopes (which would be even uglier)
 
-    stepInTransaction(0.20, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
-    stepInTransaction(0.45, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId))
+    stepInTransaction(0.15, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
+    val indexing = stepInTransaction(0.20, Saving)(indexDocuments(cloneDocumentSetId))
+    stepInTransaction(0.40, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId))
 
-    for (tagIdMapping <- stepInTransaction(0.55, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
-      stepInTransaction(0.65, Saving) {
+    for (tagIdMapping <- stepInTransaction(0.50, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
+      stepInTransaction(0.60, Saving) {
         cloneDocumentTags(sourceDocumentSetId, cloneDocumentSetId, tagIdMapping)
       }
 
-    stepInTransaction(0.95, Saving) {
+    stepInTransaction(0.90, Saving) {
       cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     }
-    stepInTransaction(1.00, Done) {
+    stepInTransaction(0.95, Saving) {
       cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
+    }
+    stepInTransaction(1.00, Done) {
+      indexing.left.map { f =>
+        Await.result(f, Duration.Inf)
+      }
     }
   }
 
@@ -157,6 +168,8 @@ object CloneDocumentSet {
       override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
+      
+      override val indexDocuments = DocumentSetIndexer.indexDocuments _
     }
     cloner.observeSteps(progressObservers)
     cloner.clone(sourceDocumentSetId, cloneDocumentSetId)
