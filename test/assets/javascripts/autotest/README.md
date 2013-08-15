@@ -4,19 +4,17 @@ Autotest
 Helps run JavaScript tests
 
 1. Install NodeJS
-2. sudo npm install -g grunt-cli
-3. npm install
-4. grunt
-5. browse to http://localhost:9876/capture?strict
-6. Press Enter when Grunt prompts
+2. Run `sudo npm install -g grunt-cli
+3. Run `npm install` in this directory
+4. Run `grunt`
 
-How it works
-------------
+You'll see test status (and, if Growl is running, notifications) every time
+a JavaScript or CoffeeScript file changes.
 
-Grunt will do the following:
+Editing the Framework
+=====================
 
-1. Watch all CoffeeScript files and compile them to Javascript
-2. Start a JSTD server
-3. Prompt you to browse to http://localhost:9876/capture?strict to connect to the JSTD server
-4. Run tests
-5. Run tests whenever new JavaScript files are compiled
+1. Turn off the running `grunt` process
+2. Edit files in `../framework/`
+3. Edit `./karma.conf.js`
+4. Start `grunt` again

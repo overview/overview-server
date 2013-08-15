@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/controllers/tag_form_controller'
   'apps/Tree/models/observable'
 ], (tag_form_controller, observable) ->

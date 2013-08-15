@@ -1,6 +1,6 @@
 PATH = 'apps/DocumentCloudImportForm/models/DocumentCloudQueryFetcher'
 
-require [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
+define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
   withFakeCorsSupport = (cors, callback) ->
     realCors = $.support.cors
     $.support.cors = cors

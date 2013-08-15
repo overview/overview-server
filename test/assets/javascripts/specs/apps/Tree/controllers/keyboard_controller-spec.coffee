@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/controllers/keyboard_controller'
 ], (KeyboardController) ->
   # This test makes a few assumptions about what keyboard shortcuts

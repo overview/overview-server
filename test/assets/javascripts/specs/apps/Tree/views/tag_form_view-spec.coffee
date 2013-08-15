@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'i18n'
   'apps/Tree/views/tag_form_view'

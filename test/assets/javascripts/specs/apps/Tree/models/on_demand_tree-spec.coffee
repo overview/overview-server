@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'apps/Tree/models/on_demand_tree'
 ], ($, OnDemandTree) ->

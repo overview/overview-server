@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'i18n'
   'apps/Tree/views/node_form_view'

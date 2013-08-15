@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/property_interpolator'
 ], (PropertyInterpolator) ->
   EASING = {

@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/document_store'
 ], (DocumentStore) ->
   describe 'models/document_store', ->

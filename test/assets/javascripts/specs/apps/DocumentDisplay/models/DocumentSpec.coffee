@@ -1,4 +1,4 @@
-require [
+define [
   'apps/DocumentDisplay/models/Document'
 ], (Document) ->
   describe 'apps/DocumentDisplay/models/Document', ->

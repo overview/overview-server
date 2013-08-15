@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/animator'
   'apps/Tree/models/property_interpolator'
   'apps/Tree/models/AnimatedFocus'

@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'apps/Tree/models/document_list'
 ], ($, DocumentList) ->

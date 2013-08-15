@@ -1,4 +1,4 @@
-require [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
+define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
   class MockTransactionQueue
     constructor: () ->
       @deferred = undefined

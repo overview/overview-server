@@ -1,4 +1,4 @@
-require [
+define [
   'underscore'
   'apps/Tree/views/DocumentListTitle'
   'apps/Tree/models/observable'

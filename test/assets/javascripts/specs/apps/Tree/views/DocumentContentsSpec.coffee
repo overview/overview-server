@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/views/DocumentContents'
   'apps/Tree/models/observable'
 ], (DocumentContents, observable) ->

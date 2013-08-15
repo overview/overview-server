@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'backbone'
   'i18n'

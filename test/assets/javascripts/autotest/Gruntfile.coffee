@@ -1,99 +1,89 @@
 module.exports = (grunt) ->
-  spawn = require('child_process').spawn
-
-  childProcesses = []
-  otherChildProcess = undefined
-  needAnotherJsTestDriverRun = false
-
-  process.on 'exit', ->
-    for childProcess in childProcesses
-      childProcess.kill()
-    otherChildProcess?.kill()
-    undefined
-
-  process.on('SIGTERM', process.exit)
+  jsSrc = '../../../../app/assets/javascripts'
+  jsTest = '../specs'
+  jsFramework = '../framework'
 
   grunt.initConfig
-    pkg: grunt.file.readJSON('package.json')
-
     clean: [ 'framework-js', 'src-js', 'test-js' ]
 
     copy:
       src:
         expand: true
-        cwd: '../../../../app/assets/javascripts'
+        cwd: jsSrc
         src: [ '**/*.js' ]
-        dest: 'src-js/'
+        dest: 'src-js'
+
       framework:
         expand: true
-        cwd: '../framework'
+        cwd: jsFramework
         src: [ '**/*.js' ]
-        dest: 'framework-js/'
+        dest: 'framework-js'
 
-    regarde:
-      js:
-        files: '../../../../app/assets/javascripts/**/*.js'
-        tasks: [ 'copy' ]
+    coffee:
+      options:
+        flatten: false
 
-      tests:
-        files: [ 'src-js/**/*.js', 'test-js/**/*.js' ]
-        tasks: [ 'runJsTests' ]
+      src:
+        expand: true
+        cwd: jsSrc
+        src: [ '**/*.coffee' ]
+        dest: 'src-js'
+        ext: '.js'
 
-  grunt.registerTask 'startCoffee', 'Starts monitoring CoffeeScript files for changes', ->
-    coffeePath = 'node_modules/grunt-contrib-coffee/node_modules/coffee-script/bin/coffee'
+      test:
+        expand: true
+        cwd: jsTest
+        src: [ '**/*.coffee' ]
+        dest: 'test-js'
+        ext: '.js'
 
-    opts = { stdio: [ 'ignore', process.stdout, process.stderr ] }
-    childProcesses.push(spawn(coffeePath, [ '-c', '-o', 'src-js', '-w', '../../../../app/assets/javascripts' ], opts))
-    childProcesses.push(spawn(coffeePath, [ '-c', '-o', 'framework-js', '-w', '../framework' ], opts))
-    childProcesses.push(spawn(coffeePath, [ '-c', '-o', 'test-js/specs', '-w', '../specs' ], opts))
+      framework:
+        expand: true
+        cwd: jsFramework
+        src: [ '**/*.coffee' ]
+        dest: 'framework-js'
+        ext: '.js'
 
-  grunt.registerTask 'startJstdServer', 'Starts a JSTD server on port 9876', ->
-    opts = { stdio: [ 'ignore', process.stdout, process.stderr ] }
-    childProcesses.push(spawn('java', [ '-jar', '../framework/JsTestDriver.jar', '--port', '9876' ], opts))
+    karma:
+      options:
+        configFile: 'karma.conf.js'
+      unit:
+        background: true
+      continuous:
+        singleRun: true
 
-  grunt.registerTask 'prompt', 'Waits until the user hits Enter', ->
-    done = @async()
+    watch:
+      options:
+        spawn: false
+      'coffee-src':
+        files: [ "#{jsSrc}/**/*.coffee" ]
+        tasks: [ 'coffee:src', 'karma:unit:run' ]
+      'coffee-test':
+        files: [ "#{jsTest}/**/*.coffee" ]
+        tasks: [ 'coffee:test', 'karma:unit:run' ]
+      'js-src':
+        files: [ "#{jsSrc}/**/*.js" ]
+        tasks: [ 'copy:src', 'karma:unit:run' ]
 
-    # no need for async callback here
-    setTimeout(->
-      process.stdout.write("Browse to http://localhost:9876/capture?strict in several browsers, then press Enter:")
-    , 5000)
-
-    process.stdin.resume()
-    process.stdin.once 'readable', ->
-      process.stdin.pause()
-      done()
-
-  grunt.registerTask 'runJsTests', 'Run JS tests through JSTD', ->
-    run = (callback) ->
-      opts = { stdio: [ 'ignore', process.stdout, process.stderr ] }
-      child = spawn('java', [ '-jar', '../framework/JsTestDriver.jar', '--config', '../jsTestDriver.conf', '--basePath', '.', '--captureConsole', '--reset', '--tests', 'all' ], opts)
-      child.once 'exit', ->
-        otherChildProcess = undefined
-        callback()
-      otherChildProcess = child
-
-    runUntilDone = (callback) ->
-      run ->
-        if needAnotherJsTestDriverRun
-          needAnotherJsTestDriverRun = false
-          runUntilDone(callback)
-
-    if otherChildProcess
-      needAnotherJsTestDriverRun = true
-    else
-      runUntilDone ->
-
-  grunt.loadNpmTasks('grunt-regarde')
   grunt.loadNpmTasks('grunt-contrib-clean')
   grunt.loadNpmTasks('grunt-contrib-copy')
+  grunt.loadNpmTasks('grunt-contrib-coffee')
+  grunt.loadNpmTasks('grunt-contrib-watch')
+  grunt.loadNpmTasks('grunt-karma')
+
+  # Only rewrite changed files on watch
+  grunt.event.on 'watch', (action, filepath) ->
+    if filepath.indexOf(jsSrc) == 0
+      grunt.config('coffee.src.src', filepath.replace(jsSrc, '.'))
+      grunt.config('copy.src.src', filepath.replace(jsSrc, '.'))
+    else if filepath.indexOf(jsTest) == 0
+      grunt.config('coffee.test.src', filepath.replace(jsTest, '.'))
 
   grunt.registerTask('default', [
+    'karma:unit' # spin up PhantomJS early, so it'll be ready later
     'clean'
-    'startCoffee'
     'copy'
-    'startJstdServer'
-    'prompt'
-    'runJsTests'
-    'regarde'
+    'coffee'
+    'karma:unit:run'
+    'watch'
   ])

@@ -1,4 +1,4 @@
-require [
+define [
   'apps/DocumentCloudImportForm/models/Credentials'
 ], (Credentials) ->
   describe 'apps/DocumentCloudImportForm/models/Credentials', ->

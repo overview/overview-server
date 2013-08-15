@@ -1,4 +1,4 @@
-require [
+define [
   'apps/DocumentDisplay/models/Preferences'
 ], (Preferences) ->
   describe 'apps/DocumentDisplay/models/Preferences', ->

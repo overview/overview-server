@@ -1,5 +1,10 @@
+tests = [];
+for file, __ of window.__karma__.files
+  if /spec\.js$/i.test(file)
+    tests.push(file)
+
 requirejs.config({
-  baseUrl: '/test/src-js'
+  baseUrl: '/base/src-js'
 
   shim: {
     jquery: { exports: '$' }
@@ -36,4 +41,10 @@ requirejs.config({
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
   }
+
+  # ask Require.js to load these files (all our tests)
+  deps: tests,
+
+  # start test run, once Require.js is done
+  callback: window.__karma__.start
 })

@@ -1,4 +1,4 @@
-require [
+define [
   'backbone'
   'i18n'
   'apps/DocumentDisplay/views/Heading'

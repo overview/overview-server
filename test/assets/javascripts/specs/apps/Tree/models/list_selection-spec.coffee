@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/list_selection'
 ], (ListSelection) ->
   describe 'models/list_selection', ->

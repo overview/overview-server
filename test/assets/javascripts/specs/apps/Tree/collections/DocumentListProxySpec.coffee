@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/observable'
   'apps/Tree/collections/DocumentListProxy'
 ], (observable, DocumentListProxy) ->

@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'backbone'
   'apps/DocumentCloudImportForm/views/Credentials'

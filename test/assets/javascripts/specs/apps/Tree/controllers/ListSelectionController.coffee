@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/controllers/ListSelectionController'
 ], (ListSelectionController) ->
   describe 'apps/Tree/controllers/ListSelectionController', ->

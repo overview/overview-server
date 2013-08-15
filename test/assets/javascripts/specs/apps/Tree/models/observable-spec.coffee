@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/observable'
 ], (observable) ->
   describe 'models/observable', ->

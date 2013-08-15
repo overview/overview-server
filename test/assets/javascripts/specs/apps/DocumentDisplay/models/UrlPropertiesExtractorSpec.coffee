@@ -1,4 +1,4 @@
-require [
+define [
   'apps/DocumentDisplay/models/UrlPropertiesExtractor'
 ], (UrlPropertiesExtractor) ->
   describe 'apps/DocumentDisplay/models/UrlPropertiesExtractor', ->

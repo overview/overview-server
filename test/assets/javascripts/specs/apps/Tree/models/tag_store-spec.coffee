@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/tag_store'
 ], (TagStore) ->
   describe 'models/tag_store', ->

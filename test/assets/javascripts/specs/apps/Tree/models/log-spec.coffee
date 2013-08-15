@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/log'
 ], (Log) ->
   create_entry = (options={}) ->

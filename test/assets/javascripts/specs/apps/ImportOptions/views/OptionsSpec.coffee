@@ -1,4 +1,4 @@
-require [
+define [
   'backbone'
   'apps/ImportOptions/views/Options'
   'i18n'
@@ -14,6 +14,7 @@ require [
         'views.DocumentSet.index.ImportOptions.lang.label': 'lang.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
+        'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
 
     afterEach ->
       view?.remove()

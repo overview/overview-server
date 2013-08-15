@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'apps/Tree/models/search_result_store'
 ], ($, SearchResultStore) ->

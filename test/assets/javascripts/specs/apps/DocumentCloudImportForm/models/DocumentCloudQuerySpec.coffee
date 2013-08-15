@@ -1,6 +1,6 @@
 PATH = 'apps/DocumentCloudImportForm/models/DocumentCloudQuery'
 
-require [ 'jquery', 'backbone', PATH ], ($, Backbone, Query) ->
+define [ 'jquery', 'backbone', PATH ], ($, Backbone, Query) ->
   describe PATH, ->
     describe 'url()', ->
       it 'should URL-encode the ID', ->

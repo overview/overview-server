@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'apps/Tree/models/cache'
   'apps/Tree/models/observable'

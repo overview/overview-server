@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/views/DocumentListCursor',
   'i18n'
 ], (View, i18n) ->

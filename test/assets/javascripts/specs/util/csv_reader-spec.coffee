@@ -1,4 +1,4 @@
-require [
+define [
   'util/csv_reader'
 ], (CsvReader) ->
   describe 'util/csv_reader', ->

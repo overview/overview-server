@@ -1,4 +1,4 @@
-require [ 'i18n' ], (i18n) ->
+define [ 'i18n' ], (i18n) ->
   describe 'i18n', ->
     messages = {
       'messages.simple': 'a simple message',

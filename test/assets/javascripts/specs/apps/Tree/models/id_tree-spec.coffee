@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/id_tree'
 ], (IdTree) ->
   describe 'models/id_tree', ->

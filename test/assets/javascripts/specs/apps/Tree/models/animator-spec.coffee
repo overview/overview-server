@@ -1,5 +1,5 @@
 # Not a true unit test: relies on PropertyInterpolator
-require [
+define [
   'apps/Tree/models/property_interpolator'
   'apps/Tree/models/animator'
 ], (PropertyInterpolator, Animator) ->

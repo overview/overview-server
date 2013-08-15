@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'backbone'
   'apps/Tree/views/FocusView'

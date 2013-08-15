@@ -1,4 +1,4 @@
-require [
+define [
   'apps/Tree/models/lru_paging_strategy'
 ], (LruPagingStrategy) ->
   describe 'models/lru_paging_strategy', ->

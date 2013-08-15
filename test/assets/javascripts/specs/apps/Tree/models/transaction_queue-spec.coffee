@@ -1,4 +1,4 @@
-require [
+define [
   'jquery'
   'apps/Tree/models/transaction_queue'
 ], ($, TransactionQueue) ->

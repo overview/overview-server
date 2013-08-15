@@ -1,4 +1,4 @@
-require [
+define [
   'backbone'
   'apps/DocumentCloudImportForm/views/Form'
   'i18n'

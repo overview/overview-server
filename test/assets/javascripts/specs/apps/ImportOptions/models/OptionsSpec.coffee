@@ -1,4 +1,4 @@
-require [
+define [
   'apps/ImportOptions/models/Options'
 ], (Options) ->
   describe 'apps/ImportOptions/models/Options', ->
