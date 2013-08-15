@@ -123,7 +123,11 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
-      val document = Document(DocumentCloudDocument, documentSetId, id = ids.next, title = Some(doc.title), documentcloudId = Some(doc.id))
+      val document = Document(DocumentCloudDocument, documentSetId, 
+          id = ids.next, 
+          title = Some(doc.title), 
+          text = Some(text),
+          documentcloudId = Some(doc.id))
       DocumentWriter.write(document)
       document.id
     }
