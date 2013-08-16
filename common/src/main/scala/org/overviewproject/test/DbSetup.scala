@@ -2,8 +2,8 @@ package org.overviewproject.test
 
 import anorm._
 import java.sql.Connection
-
 import org.overviewproject.test.IdGenerator._
+import org.overviewproject.util.DocumentSetVersion
 
 object DbSetup {
 
@@ -19,20 +19,22 @@ object DbSetup {
 
   def insertCsvImportDocumentSet(uploadedFileId: Long)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words)
-      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '')
+      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words, version)
+      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '', {version})
       """).on(
       'title -> "Csv Import",
-      'uploadedFileId -> uploadedFileId).executeInsert().getOrElse(failInsert)
+      'uploadedFileId -> uploadedFileId,
+      'version -> DocumentSetVersion.current).executeInsert().getOrElse(failInsert)
   }
 
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words)
-      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '')
+      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words, version)
+      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '', {version})
       """).on(
       'title -> ("From query: " + query),
-      'query -> query).executeInsert().getOrElse(failInsert)
+      'query -> query,
+      'version -> DocumentSetVersion.current).executeInsert().getOrElse(failInsert)
   }
 
   def insertUploadedFile(contentDisposition: String, contentType: String, size: Long)(implicit c: Connection): Long = {
