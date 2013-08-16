@@ -1,34 +1,35 @@
 package controllers
 
 import play.api.mvc.Controller
-import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.NotStarted
-import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.forms.DocumentSetForm.Credentials
-import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
-import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentFinder, DocumentSetFinder, DocumentSetUserFinder }
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.orm.DocumentSetUser
-import models.ResultPage
-import controllers.util.JobQueueSender
+
 import org.overviewproject.jobs.models.Delete
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
+
+import controllers.auth.{ AuthorizedAction, Authorities }
+import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
+import controllers.util.JobQueueSender
+import models.ResultPage
+import models.orm.finders.{DocumentSetCreationJobFinder, DocumentSetFinder}
+import models.orm.stores.DocumentSetStore
+
+
 
 trait DocumentSetController extends Controller {
   import Authorities._
 
   trait Storage {
     def findDocumentSet(id: Long): Option[DocumentSet]
-    def findDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[DocumentSet]
-    def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
+    def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
+    def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
-    /** Returns true iff we can search the document set.
-      *
-      * This is a '''hack'''. All document sets ''should'' be searchable, but
-      * at the moment they are not. Once they are, remove this method.
-      */
+    /**
+     * Returns true iff we can search the document set.
+     *
+     * This is a '''hack'''. All document sets ''should'' be searchable, but
+     * document sets imported before indexing was implemented are not.
+     */
     def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
@@ -52,8 +53,7 @@ trait DocumentSetController extends Controller {
         Ok(views.html.DocumentSet.show(
           request.user,
           documentSet,
-          storage.isDocumentSetSearchable(documentSet)
-        ))
+          storage.isDocumentSetSearchable(documentSet)))
       case None => NotFound
     }
   }
@@ -68,12 +68,11 @@ trait DocumentSetController extends Controller {
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
     storage.findDocumentSet(id).map(storage.deleteDocumentSet) // ignore not-found
-    
+
     JobQueueSender.send(Delete(id))
     Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m("delete.success"),
-      "event" -> "document-set-delete"
-    )
+      "event" -> "document-set-delete")
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
@@ -86,21 +85,23 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  val storage : DocumentSetController.Storage
+  val storage: DocumentSetController.Storage
 }
 
 object DocumentSetController extends DocumentSetController {
+  private val FirstSearchableDocumentSetVersion = 2
+
   object DatabaseStorage extends Storage {
     override def findDocumentSet(id: Long): Option[DocumentSet] = {
       DocumentSetFinder.byDocumentSet(id).headOption
     }
 
-    override def findDocumentSets(userEmail: String, pageSize: Int, page: Int) : ResultPage[DocumentSet] = {
+    override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
       val query = DocumentSetFinder.byOwner(userEmail)
       ResultPage(query, pageSize, page)
     }
 
-    override def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)] = {
+    override def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSetCreationJob, DocumentSet, Long)] = {
       val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
       ResultPage(query, pageSize, page)
     }
@@ -109,9 +110,8 @@ object DocumentSetController extends DocumentSetController {
       DocumentSetStore.insertOrUpdate(documentSet)
     }
 
-    override def isDocumentSetSearchable(documentSet: DocumentSet): Boolean = {
-      true
-    }
+
+    override def isDocumentSetSearchable(documentSet: DocumentSet): Boolean = documentSet.version >= FirstSearchableDocumentSetVersion
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {
       DocumentSetStore.deleteOrCancelJob(documentSet)
