@@ -98,7 +98,7 @@ define [
     state.on 'change:taglike', (__, taglike) ->
       if taglike?.name? # it's a tag
         cache.refresh_tagcounts(taglike)
-      else if taglike?.query? # it's a search result
+      else if taglike?.id > 0 && taglike?.query? # it's a search result
         cache.refreshSearchResultCounts(taglike)
 
     select_nodeid = (nodeid) ->
