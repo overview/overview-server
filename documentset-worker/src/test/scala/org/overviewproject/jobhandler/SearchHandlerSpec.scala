@@ -50,7 +50,6 @@ class SearchHandlerSpec extends Specification with Mockito {
     trait SearchHandlerSetup extends Scope {
       val documentSetId = 5l
       val searchTerms = "search terms"
-      val query = s"projectid: 1234 $searchTerms"
       
       def createSearchHandlerParent(searchExists: Boolean, parentProbe: ActorRef, documentSearcherProbe: ActorRef)
         (implicit system: ActorSystem): ActorRef = 
