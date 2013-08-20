@@ -39,7 +39,7 @@ trait ElasticSearchComponents extends SearcherComponents {
     private val client = ElasticSearchClient.client
 
     override def startSearch(index: String, queryString: String): Future[SearchResponse] = {
-      Logger.debug(s"Starting query: $queryString")
+      Logger.info(s"Starting query:[$index] $queryString")
       val query = QueryBuilders.multiMatchQuery(queryString, SearchableFields: _*)
 
       val listener = new ActionResult[SearchResponse]()
