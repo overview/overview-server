@@ -101,6 +101,10 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
           tagLike.id = updatedTagLike.id
         if updatedTagLike.state?
           tagLike.state = updatedTagLike.state
+        if updatedTagLike.color?
+          tagLike.color = updatedTagLike.color
+        if updatedTagLike.name?
+          tagLike.name = updatedTagLike.name
         
       @_sort()
 
