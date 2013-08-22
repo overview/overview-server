@@ -10,6 +10,7 @@ import org.overviewproject.jobhandler.SearcherComponents
 import org.overviewproject.util.Logger
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
+import org.overviewproject.util.Configuration
 
 trait ElasticSearchComponents extends SearcherComponents {
 
@@ -30,7 +31,7 @@ trait ElasticSearchComponents extends SearcherComponents {
 
   class ElasticSearchIndex extends SearchIndex {
 
-    private val IndexName = "documents_v1"
+    private val IndexName = Configuration.searchIndex.indexName
     
     private val PageSize = 100
     private val ScrollTime = new TimeValue(60000)

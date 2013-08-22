@@ -22,7 +22,7 @@ trait DocumentSetIndexingSession {
 
 object SearchIndex {
 
-  private val IndexName = "documents_v1"
+  private val IndexName = Configuration.searchIndex.indexName
   private val IndexAlias = "documents"
   private def DocumentSetAlias(id: Long) = s"documents_$id"
   private val DocumentTypeName = "document"

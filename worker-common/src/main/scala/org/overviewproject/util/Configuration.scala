@@ -56,9 +56,11 @@ object SearchIndexDefaults extends ConfigurationDefault {
   override def path: Option[String] = Some("search_index")
 
   val ConfigFile = "config_file"
-
+  val IndexName = "index_name"
+    
   override def defaultValues: Map[String, Any] = Map(
-    (ConfigFile -> "elasticsearch.yml"))
+    (ConfigFile -> "elasticsearch.yml"),
+    (IndexName -> "documents_v1"))
 }
 
 class WorkerConfiguration(configuration: Config) {
@@ -82,13 +84,14 @@ class MessageQueueConfiguration(configuration: Config) {
 }
 
 class SearchIndexConfiguration(configuration: Config) {
-  import SearchIndexDefaults.ConfigFile
+  import SearchIndexDefaults._
   
   val prefix: String = "search_index"
 
   private val config = configuration.getConfig(prefix)
 
   val configFile: String = config.getString(ConfigFile)
+  val indexName: String = config.getString(IndexName)
 }
 
 object Configuration extends ConfigurationWithDefaults {
