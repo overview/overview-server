@@ -45,10 +45,20 @@ object ApplicationBuild extends Build with ProjectSettings {
         printClasspath))
 
   val searchIndex = Project("search-index", file("search-index"), settings =
-    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings ++
-      Seq(
+    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings).settings(
         libraryDependencies ++= searchIndexDependencies,
-        printClasspath))
+        Keys.fork := true,
+        javaOptions in run <++= (baseDirectory) map { (d) => 
+          Seq(
+            "-Des.path.home=" + d,
+            "-Xms1g", "-Xmx1g", "-Xss256k",
+            "-XX:+UseParNewGC",  "-XX:+UseConcMarkSweepGC", "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
+            "-Djava.awt.headless=true",
+            "-Delasticsearch",
+            "-Des.foreground=yes"
+          )
+        },
+       printClasspath)
 
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {

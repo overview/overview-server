@@ -111,6 +111,7 @@ trait ProjectSettings {
   )
 
   val searchIndexDependencies = Seq(
+    "log4j" % "log4j" % "1.2.17",
     elasticSearchDep,
     elasticSearchCloudAwsDep
   )
