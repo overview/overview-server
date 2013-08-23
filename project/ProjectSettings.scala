@@ -48,13 +48,14 @@ trait ProjectSettings {
     squerylDep,
     stompDep,
     mockitoDep % "it,test",
+    elasticSearchDep % "it",
     "com.typesafe" %% "play-plugins-util" % "2.1.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
     "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "it",
-    "org.seleniumhq.selenium" % "selenium-java" % "2.31.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
+    "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
   )
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
