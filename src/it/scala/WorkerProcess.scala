@@ -32,6 +32,7 @@ class WorkerProcess {
       "-Dplay.home=" + playHome,
       "-Dsbt.boot.properties=" + sbtBootProperties,
       "-Ddatasource.default.url=" + databaseUrl,
+      "-Dlogback.configurationFile=logback-test.xml",
       "-jar", sbtJar
     )
 
