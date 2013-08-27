@@ -90,21 +90,11 @@ define [ 'underscore', './observable', './color_table' ], (_, observable, ColorT
     change: (tagLike, attributes) ->
       oldId = tagLike.id
 
-      # Hack to fix issues that may be better fixed elsewhere:
-      # - change is called with empty attributes when a search result is created
-      # - Previous way of iterating through tagLike attributes did not work
-      #   with Firefox.
-      # If the server updates other attributes, they need to be explicitly added.
-      if (attributes.length != 0)
-        updatedTagLike = @parse(attributes)
-        if updatedTagLike.id?
-          tagLike.id = updatedTagLike.id
-        if updatedTagLike.state?
-          tagLike.state = updatedTagLike.state
-        if updatedTagLike.color?
-          tagLike.color = updatedTagLike.color
-        if updatedTagLike.name?
-          tagLike.name = updatedTagLike.name
+      for k, v of attributes
+        if !v?
+          tagLike[k] = undefined
+        else
+          tagLike[k] = v
         
       @_sort()
 
