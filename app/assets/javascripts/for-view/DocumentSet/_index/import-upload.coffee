@@ -280,6 +280,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
             .attr('action', "#{upload.url}/finish")
             .append(importOptionsApp.el)
             .append($form.find('[name=csrfToken]').clone())
+            .appendTo('body')
           $submitForm[0].submit()
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
