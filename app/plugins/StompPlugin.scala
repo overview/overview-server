@@ -54,6 +54,12 @@ trait MessageQueueConnection {
    */
   def send(messageText: String): Either[Unit, Unit]
   
+  /**
+   * Send a message to the `messageGroup`. @return a `Left[Unit]` if the connection
+   * is down, `Right[Unit]` otherwise
+   */
+  def send(messageText: String, messageGroup: String): Either[Unit, Unit]
+  
   /** 
    *  Close the connection. Should only be called when application
    *  is shutting down, since there is no way to reconnect.
@@ -65,7 +71,8 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
   private val messageSender: MessageSender = new MessageSender
 
   override def send(messageText: String): Either[Unit, Unit] = messageSender.send(messageText)
-
+  override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = messageSender.send(messageText, Some(messageGroup))
+  
   override def close: Unit = messageSender.close
 
   private class MessageSender extends ExceptionListener {
@@ -83,13 +90,15 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
         createSession
     }
 
-    def send(messageText: String): Either[Unit, Unit] =
+    def send(messageText: String, messageGroup: Option[String] = None): Either[Unit, Unit] =
       Either.cond(connectionStatus.isConnected,
         for {
           s <- session
           p <- producer
         } {
           val message = s.createTextMessage(messageText)
+          messageGroup.map { g => message.setStringProperty("message_group", g) }
+          
           p.send(message)
         }, ())
 
@@ -144,5 +153,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
 
 class MockMessageQueueConnection extends MessageQueueConnection {
   override def send(messageText: String): Either[Unit, Unit] = Right()
+  override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = Right()
+  
   override def close: Unit = {}
 }

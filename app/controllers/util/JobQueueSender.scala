@@ -27,10 +27,8 @@ object JobQueueSender {
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("search"),
       "args" -> toJson(search)))
-
-    val connection = use[StompPlugin].queueConnection
-
-    connection.send(jsonMessage.toString)
+      
+    sendMessageToGroup(jsonMessage, search.documentSetId)
   }
 
   /**
@@ -43,9 +41,14 @@ object JobQueueSender {
       "args" -> toJson(Map(
         "documentSetId" -> delete.documentSetId))))
 
+    sendMessageToGroup(jsonMessage, delete.documentSetId)
+  }
+  
+  private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit,Unit] = {
+
     val connection = use[StompPlugin].queueConnection
 
-    connection.send(jsonMessage.toString)
+    connection.send(jsonMessage.toString, s"$documentSetId")
   }
 }
 
