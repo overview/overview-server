@@ -2,15 +2,14 @@ package org.overviewproject.jobhandler
 
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
-
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
 import org.overviewproject.test.ActorSystemContext
-
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.test.ForwardingActor
 
 
 class SearchHandlerSpec extends Specification with Mockito {
@@ -31,12 +30,6 @@ class SearchHandlerSpec extends Specification with Mockito {
       }
     }
     
-    class ForwardingActor(target: ActorRef) extends Actor {
-      def receive = {
-        case msg => target forward msg
-      }
-    }
-
     class SearchHandlerParent(searchExists: Boolean, parentProbe: ActorRef, documentSearcherProbe: ActorRef) extends Actor {
       val searchHandler = context.actorOf(Props(new TestSearchHandler(searchExists, documentSearcherProbe)))
 

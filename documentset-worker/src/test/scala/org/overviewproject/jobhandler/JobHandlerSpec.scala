@@ -2,18 +2,16 @@ package org.overviewproject.jobhandler
 
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
-
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
-
 import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.ActorSystemContext
-
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.test.ForwardingActor
 
 class JobHandlerSpec extends Specification with Mockito {
 
@@ -39,12 +37,7 @@ class JobHandlerSpec extends Specification with Mockito {
       }
     }
 
-    class ForwardingActor(target: ActorRef) extends Actor {
-      def receive = {
-        case msg => target forward msg
-      }
-    }
-
+    
     trait MessageSetup extends Scope {
       val documentSetId = 5l
       val query = "projectid:333 search terms"

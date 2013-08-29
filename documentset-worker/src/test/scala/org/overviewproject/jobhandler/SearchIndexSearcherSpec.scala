@@ -1,10 +1,8 @@
 package org.overviewproject.jobhandler
 
 import scala.concurrent.Promise
-
 import akka.actor._
 import akka.testkit.{TestActorRef, TestProbe}
-
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.search.{SearchHit, SearchHits}
 import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
@@ -13,10 +11,10 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
-
 import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
 import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
 import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.ForwardingActor
 
 class SearchIndexSearcherSpec extends Specification with NoTimeConversions with Mockito {
 
@@ -39,13 +37,6 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
       val searchResultPromise2 = Promise[SearchResponse]
 
       searchIndex.getNextSearchResultPage(anyString) returns (searchResultPromise1.future, searchResultPromise2.future)
-    }
-
-    class ForwardingActor(target: ActorRef) extends Actor {
-      def receive = {
-        case m => target forward m
-      }
-      override def postStop = target ! PoisonPill
     }
 
     class ParentActor(parentProbe: ActorRef, childProps: Props) extends Actor {
