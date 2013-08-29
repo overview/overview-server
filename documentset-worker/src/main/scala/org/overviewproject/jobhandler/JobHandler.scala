@@ -181,14 +181,14 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
  * messages.
  */
 trait MessageServiceComponentImpl extends MessageServiceComponent {
-  class MessageServiceImpl extends MessageService {
+  class MessageServiceImpl(queueName: String) extends MessageService {
     private val ConnectionRetryPause = 2000
     private val MaxConnectionAttempts = 5
 
     private val BrokerUri: String = Configuration.messageQueue.brokerUri
     private val Username: String = Configuration.messageQueue.username
     private val Password: String = Configuration.messageQueue.password
-    private val QueueName: String = Configuration.messageQueue.queueName
+    private val QueueName: String = queueName
 
     private var connection: Connection = _
     private var consumer: MessageConsumer = _
@@ -248,8 +248,9 @@ object JobHandler {
   class JobHandlerImpl(requestQueue: ActorRef) extends JobHandler(requestQueue)
       with MessageServiceComponentImpl with SearchComponentImpl {
 
-    override val messageService = new MessageServiceImpl
+    override val messageService = new MessageServiceImpl(Configuration.messageQueue.queueName)
     override val actorCreator = new ActorCreatorImpl
+
   }
 
   def apply(requestQueue: ActorRef): Props = Props(new JobHandlerImpl(requestQueue))
