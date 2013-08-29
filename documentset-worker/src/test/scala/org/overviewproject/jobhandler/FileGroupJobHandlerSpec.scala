@@ -35,6 +35,7 @@ class FileGroupJobHandlerSpec extends Specification {
       jobHandler.underlyingActor.connectionCreationCount must be equalTo(1)
     }
     
+    
     "restart connection if connection fails" in new ActorSystemContext {
       val jobHandler = TestActorRef(new TestJobHandler)
       val testJobHandler = jobHandler.underlyingActor
@@ -43,7 +44,7 @@ class FileGroupJobHandlerSpec extends Specification {
       
       testJobHandler.failureCallback.map(f => f(new Exception("Connection failed")))
       
-      awaitCond(testJobHandler.connectionCreationCount == 2)
+      testJobHandler.connectionCreationCount must be equalTo(2)
       
     }
 
