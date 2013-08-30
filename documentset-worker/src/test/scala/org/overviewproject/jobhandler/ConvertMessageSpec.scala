@@ -20,7 +20,7 @@ class ConvertMessageSpec extends Specification {
         }
      }"""
 
-      val command: Command = ConvertMessage(messageString)
+      val command: Any = ConvertMessage(messageString)
 
       command must beLike { case SearchCommand(documentSetId, queryString) => ok }
 
@@ -36,7 +36,7 @@ class ConvertMessageSpec extends Specification {
         }
       }"""
 
-      val command: Command = ConvertMessage(messageString)
+      val command: Any = ConvertMessage(messageString)
       
       command must beLike { case DeleteCommand(documentSetId) => ok}
     }

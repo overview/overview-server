@@ -7,10 +7,21 @@ import scala.concurrent.duration._
 import FileGroupJobHandlerFSM._
 import scala.util.{ Failure, Success }
 import org.overviewproject.util.Logger
+import org.overviewproject.jobhandler.FileHandlerProtocol.ExtractText
+
+
+trait TextExtractorComponent {
+  val actorCreator: ActorCreator
+  
+  trait ActorCreator {
+    def produceTextExtractor: Actor
+  }
+}
 
 object FileGroupJobHandlerProtocol {
   case object ListenForFileGroupJobs
   case class ConnectionFailure(e: Exception)
+  case class ProcessFileCommand(documentSetId: Long, fileId: Long)
 }
 
 object FileGroupJobHandlerFSM {
@@ -24,7 +35,7 @@ object FileGroupJobHandlerFSM {
 }
 
 class FileGroupJobHandler extends Actor with FSM[State, Data] {
-  this: MessageServiceComponent =>
+  this: MessageServiceComponent with TextExtractorComponent =>
 
   import FileGroupJobHandlerProtocol._
 
@@ -49,6 +60,11 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
+    case Event(ProcessFileCommand(documentSetId, fileId), _) => {
+      val fileHandler = context.actorOf(Props(actorCreator.produceTextExtractor))
+      fileHandler ! ExtractText(documentSetId, fileId)
+      stay
+    }
   }
 
   onTransition {
@@ -60,6 +76,7 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
   initialize
 
   private def deliverMessage(message: String): Future[Unit] = {
+    self ! ConvertMessage(message)
     import context.dispatcher
     future {
       ()
