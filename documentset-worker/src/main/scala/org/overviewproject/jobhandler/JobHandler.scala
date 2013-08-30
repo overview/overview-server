@@ -165,7 +165,7 @@ class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
 
   private def deliverMessage(message: String): Future[Unit] = {
     currentJobCompletion = Some(Promise[Unit])
-    self ! ConvertMessage(message)
+    self ! ConvertDocumentSetMessage(message)
     currentJobCompletion.get.future
   }
 

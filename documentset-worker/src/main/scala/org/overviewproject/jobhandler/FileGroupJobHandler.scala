@@ -76,7 +76,7 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
   initialize
 
   private def deliverMessage(message: String): Future[Unit] = {
-    self ! ConvertMessage(message)
+    self ! ConvertFileGroupMessage(message)
     import context.dispatcher
     future {
       ()
