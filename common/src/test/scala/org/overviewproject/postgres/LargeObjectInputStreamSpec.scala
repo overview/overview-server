@@ -1,9 +1,8 @@
-package org.overviewproject.persistence
+package org.overviewproject.postgres
 
 import org.overviewproject.test.DbSpecification
 import org.postgresql.PGConnection
 import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
 
 class LargeObjectInputStreamSpec extends DbSpecification {
 

@@ -11,8 +11,8 @@ import java.nio.charset.{Charset,CharsetDecoder,CodingErrorAction}
 import java.sql.Connection
 import scala.util.control.Exception.allCatch
 import org.overviewproject.database.{ Database, DB }
-import org.overviewproject.persistence.{ EncodedUploadFile, LargeObjectInputStream }
-import org.overviewproject.postgres.LO
+import org.overviewproject.persistence.EncodedUploadFile
+import org.overviewproject.postgres.{ LO, LargeObjectInputStream }
 
 
 /**
