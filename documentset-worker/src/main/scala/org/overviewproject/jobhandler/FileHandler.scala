@@ -3,21 +3,29 @@ package org.overviewproject.jobhandler
 import akka.actor.Actor
 import org.overviewproject.tree.orm.File
 import java.io.InputStream
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.util.PDFTextStripper
+import org.overviewproject.database.orm.finders.FileFinder
+import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.util.Logger
+import org.overviewproject.database.DB
+import org.overviewproject.database.Database
 
 object FileHandlerProtocol {
   case class ExtractText(documentSetId: Long, fileId: Long)
+  case object JobDone
 }
 
 trait FileHandlerComponents {
 
   val dataStore: DataStore
-  val pdfProcessor: PdfProcessor 
-  
+  val pdfProcessor: PdfProcessor
+
   trait DataStore {
     def findFile(fileId: Long): Option[File]
     def fileContentStream(oid: Long): InputStream
   }
-  
+
   trait PdfProcessor {
     def extractText(fileStream: InputStream): String
   }
@@ -25,7 +33,7 @@ trait FileHandlerComponents {
 
 class FileHandler extends Actor {
   self: FileHandlerComponents =>
-    
+
   import FileHandlerProtocol._
 
   def receive = {
@@ -33,6 +41,38 @@ class FileHandler extends Actor {
       val file = dataStore.findFile(fileId).get
       val fileStream = dataStore.fileContentStream(file.contentsOid)
       val text = pdfProcessor.extractText(fileStream)
+      Logger.debug(text)
+      sender ! JobDone
     }
   }
 }
+
+trait PdfBoxPdfProcessor {
+
+  val pdfTextStripper = new PDFTextStripper
+
+  def extractText(fileStream: InputStream): String = {
+    val document = PDDocument.load(fileStream)
+
+    pdfTextStripper.getText(document)
+  }
+
+}
+
+class FileHandlerImpl extends FileHandler with FileHandlerComponents {
+  class DataStoreImpl extends DataStore {
+    override def findFile(fileId: Long): Option[File] = Database.inTransaction {
+      FileFinder.byId(fileId).headOption
+    } 
+    
+    override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
+  }
+  class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor
+  
+  override val dataStore = new DataStoreImpl
+  override val pdfProcessor = new PdfProcessorImpl
+}
+
+  
+
+  

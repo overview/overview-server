@@ -101,6 +101,7 @@ trait ProjectSettings {
     geronimoJmsDep,
     stompDep,
     squerylDep,
+    "org.apache.pdfbox" % "pdfbox" % "1.8.2",
     akkaTestkit % "test",
     specs2Dep % "test",
     mockitoDep % "test"

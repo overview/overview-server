@@ -2,14 +2,14 @@ package org.overviewproject
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
 import akka.actor._
-
 import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
 import org.overviewproject.jobhandler.JobHandler
 import org.overviewproject.jobhandler.JobHandlerProtocol.StartListening
+import org.overviewproject.jobhandler.FileGroupJobHandler
+import org.overviewproject.jobhandler.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared
@@ -39,5 +39,7 @@ object DocumentSetWorker extends App {
     jh ! StartListening
   }
 
+  val fileGroupJobHandler = system.actorOf(FileGroupJobHandler())
+  fileGroupJobHandler ! ListenForFileGroupJobs
 }
 

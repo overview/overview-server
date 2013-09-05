@@ -7,7 +7,8 @@ import scala.concurrent.duration._
 import FileGroupJobHandlerFSM._
 import scala.util.{ Failure, Success }
 import org.overviewproject.util.Logger
-import org.overviewproject.jobhandler.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.FileHandlerProtocol._
+import scala.concurrent.Promise
 
 
 trait TextExtractorComponent {
@@ -20,6 +21,7 @@ trait TextExtractorComponent {
 
 object FileGroupJobHandlerProtocol {
   case object ListenForFileGroupJobs
+  
   case class ConnectionFailure(e: Exception)
   case class ProcessFileCommand(documentSetId: Long, fileId: Long)
 }
@@ -28,6 +30,7 @@ object FileGroupJobHandlerFSM {
   sealed trait State
   case object NotConnected extends State
   case object Ready extends State
+  case object WaitingForCompletion extends State
 
   sealed trait Data
   case object Working extends Data
@@ -38,7 +41,9 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
   this: MessageServiceComponent with TextExtractorComponent =>
 
   import FileGroupJobHandlerProtocol._
-
+  
+  private var currentJobCompletion: Option[Promise[Unit]] = None
+  
   private val ReconnectionInterval = 1 seconds
 
   startWith(NotConnected, Working)
@@ -63,7 +68,17 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
     case Event(ProcessFileCommand(documentSetId, fileId), _) => {
       val fileHandler = context.actorOf(Props(actorCreator.produceTextExtractor))
       fileHandler ! ExtractText(documentSetId, fileId)
-      stay
+      
+      goto(WaitingForCompletion)
+    }
+  }
+  
+  when(WaitingForCompletion) {
+    case Event(JobDone, _) => {
+      currentJobCompletion.map(_.success())
+      currentJobCompletion = None
+      sender ! PoisonPill
+      goto(Ready)		
     }
   }
 
@@ -76,15 +91,32 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
   initialize
 
   private def deliverMessage(message: String): Future[Unit] = {
+    currentJobCompletion = Some(Promise[Unit])
     self ! ConvertFileGroupMessage(message)
-    import context.dispatcher
-    future {
-      ()
-    }
+    currentJobCompletion.get.future
   }
 
   private def handleConnectionFailure(e: Exception): Unit = {
     Logger.info(s"Connection Failure: ${e.getMessage}")
     self ! ConnectionFailure(e)
   }
+}
+
+trait TextExtractorComponentImpl extends TextExtractorComponent {
+
+  class ActorCreatorImpl extends ActorCreator {
+    override def produceTextExtractor: Actor = {
+      new FileHandlerImpl
+    }
+  }
+ override val actorCreator = new ActorCreatorImpl
+
+}
+
+object FileGroupJobHandler {
+  class FileGroupJobHandlerImpl extends FileGroupJobHandler with MessageServiceComponentImpl with TextExtractorComponentImpl {
+    override val messageService = new MessageServiceImpl("/queue/file-group-commands")
+  }
+  
+  def apply(): Props = Props[FileGroupJobHandlerImpl]
 }
