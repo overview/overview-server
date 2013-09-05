@@ -10,6 +10,9 @@ import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.Logger
 import org.overviewproject.database.DB
 import org.overviewproject.database.Database
+import org.overviewproject.database.orm.FileText
+import org.overviewproject.database.orm.stores.FileTextStore
+
 
 object FileHandlerProtocol {
   case class ExtractText(documentSetId: Long, fileId: Long)
@@ -24,6 +27,7 @@ trait FileHandlerComponents {
   trait DataStore {
     def findFile(fileId: Long): Option[File]
     def fileContentStream(oid: Long): InputStream
+    def storeText(fileId: Long, text: String): Unit
   }
 
   trait PdfProcessor {
@@ -41,7 +45,8 @@ class FileHandler extends Actor {
       val file = dataStore.findFile(fileId).get
       val fileStream = dataStore.fileContentStream(file.contentsOid)
       val text = pdfProcessor.extractText(fileStream)
-      Logger.debug(text)
+      dataStore.storeText(fileId, text)
+      
       sender ! JobDone
     }
   }
@@ -66,6 +71,11 @@ class FileHandlerImpl extends FileHandler with FileHandlerComponents {
     } 
     
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
+    
+    override def storeText(fileId: Long, text: String): Unit = {
+      val fileText = FileText(fileId, text)
+      FileTextStore.insertOrUpdate(fileText)
+    }
   }
   class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor
   

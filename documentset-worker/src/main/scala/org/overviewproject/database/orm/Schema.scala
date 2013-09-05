@@ -13,4 +13,5 @@ object Schema extends org.squeryl.Schema {
   val documents = table[Document]
   val documentSets = table[DocumentSet]
   val files = table[File]
+  val fileTexts = table[FileText]
 }

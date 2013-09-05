@@ -8,6 +8,7 @@ import java.util.UUID
 import java.io.InputStream
 import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.FileHandlerProtocol.ExtractText
+import org.overviewproject.tree.orm.FileJobState._
 
 class FileHandlerSpec extends Specification with Mockito {
 
@@ -19,7 +20,8 @@ class FileHandlerSpec extends Specification with Mockito {
       "contentType",
       1L,
       100L,
-      1L)
+      InProgress)
+
 
     val extractedText: String = "Text from PDF"
 
@@ -47,6 +49,7 @@ class FileHandlerSpec extends Specification with Mockito {
       there was one(dataStore).fileContentStream(file.contentsOid)
       
       there was one(pdfProcessor).extractText(any)
+      there was one(dataStore).storeText(file.id, extractedText)
 
     }
   }
