@@ -11,6 +11,7 @@ import org.specs2.mutable.Specification
 import scala.concurrent.Promise
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
+import org.overviewproject.jobhandler.documentset.SearchIndex
 
 class DeleteHandlerSpec extends Specification with Mockito {
 

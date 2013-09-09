@@ -5,8 +5,8 @@ import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.search.{ SearchResponse, SearchType }
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.QueryBuilders
-import org.overviewproject.jobhandler.SearchIndex
-import org.overviewproject.jobhandler.SearcherComponents
+import org.overviewproject.jobhandler.documentset.SearchIndex
+import org.overviewproject.jobhandler.documentset.SearcherComponents
 import org.overviewproject.util.Logger
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse

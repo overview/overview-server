@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.database.orm.stores.SearchResultStore

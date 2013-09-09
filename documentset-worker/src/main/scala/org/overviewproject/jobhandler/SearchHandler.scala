@@ -1,7 +1,6 @@
 package org.overviewproject.jobhandler
 
 import akka.actor._
-
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.DocumentSetFinder
 import org.overviewproject.database.orm.finders.SearchResultFinder
@@ -9,8 +8,8 @@ import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
-
 import SearchHandlerFSM._
+import org.overviewproject.jobhandler.documentset.SearchIndexSearcher
 
 /** Message sent to the SearchHandler */
 object SearchHandlerProtocol {
@@ -73,7 +72,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   this: SearchHandlerComponents =>
 
   import SearchHandlerProtocol._
-  import SearchIndexSearcherProtocol._
+  import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
   
   startWith(Idle, Uninitialized)
   

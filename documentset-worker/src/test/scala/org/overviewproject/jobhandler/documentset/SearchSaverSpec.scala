@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import akka.testkit.TestActorRef
 
-import org.overviewproject.jobhandler.SearchSaverProtocol.SaveIds
+import org.overviewproject.jobhandler.documentset.SearchSaverProtocol.SaveIds
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification

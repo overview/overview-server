@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import akka.actor._
 import org.elasticsearch.action.search.SearchResponse
-import org.overviewproject.jobhandler.SearchIndexSearcherFSM._
+import org.overviewproject.jobhandler.documentset.SearchIndexSearcherFSM._
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 

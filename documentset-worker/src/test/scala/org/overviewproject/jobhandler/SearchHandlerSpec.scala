@@ -4,7 +4,7 @@ import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
-import org.overviewproject.jobhandler.SearchIndexSearcherProtocol._
+import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
