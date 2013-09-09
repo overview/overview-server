@@ -15,6 +15,7 @@ object DocumentSetCreationJobState extends Enumeration {
   val InProgress = Value(1, "IN_PROGRESS")
   val Error = Value(2, "ERROR")
   val Cancelled = Value(3, "CANCELLED")
+  val Preparing = Value(4, "PREPARING")
 }
 
 import DocumentSetCreationJobState._

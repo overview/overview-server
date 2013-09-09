@@ -31,7 +31,9 @@ object DocumentSetCreationJobFinder extends Finder {
 
     def withDocumentSetsAndQueuePositions : FinderResult[(DocumentSetCreationJob, DocumentSet, Long)] = {
       val jobsInQueue = from(Schema.documentSetCreationJobs)(dscj =>
-        where(dscj.state === DocumentSetCreationJobState.NotStarted or dscj.state === DocumentSetCreationJobState.InProgress)
+        where(dscj.state === DocumentSetCreationJobState.NotStarted or 
+              dscj.state === DocumentSetCreationJobState.InProgress or
+              dscj.state === DocumentSetCreationJobState.Preparing)
         select(dscj)
       )
 
