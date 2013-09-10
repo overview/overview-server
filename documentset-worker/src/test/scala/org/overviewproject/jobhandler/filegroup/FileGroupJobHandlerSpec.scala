@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 import scala.concurrent.Future
@@ -6,11 +6,12 @@ import scala.util.Try
 import scala.util.Success
 import org.overviewproject.test.ActorSystemContext
 import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.FileGroupJobHandlerProtocol._
+import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol._
 import akka.actor._
 import org.overviewproject.test.ForwardingActor
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.MessageServiceComponent
 
 
 class FileGroupJobHandlerSpec extends Specification {

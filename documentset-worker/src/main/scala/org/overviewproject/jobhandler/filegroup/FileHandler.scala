@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
 import org.overviewproject.tree.orm.File

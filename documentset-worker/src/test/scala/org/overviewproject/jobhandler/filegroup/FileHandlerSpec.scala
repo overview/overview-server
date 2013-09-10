@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 import org.overviewproject.test.ActorSystemContext
@@ -7,7 +7,7 @@ import org.overviewproject.tree.orm.File
 import java.util.UUID
 import java.io.InputStream
 import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
 
 class FileHandlerSpec extends Specification with Mockito {

@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.filegroup
 
 import scala.language.postfixOps
 import akka.actor._
@@ -7,8 +7,11 @@ import scala.concurrent.duration._
 import FileGroupJobHandlerFSM._
 import scala.util.{ Failure, Success }
 import org.overviewproject.util.Logger
-import org.overviewproject.jobhandler.FileHandlerProtocol._
+import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol._
 import scala.concurrent.Promise
+import org.overviewproject.jobhandler.MessageServiceComponent
+import org.overviewproject.jobhandler.MessageServiceComponentImpl
+
 
 
 trait TextExtractorComponent {
