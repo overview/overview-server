@@ -15,14 +15,14 @@ import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDo
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.{ Configuration, Logger }
 
-import JobHandlerFSM._
+import DocumentSetJobHandlerFSM._
 
 trait Command
 
 /**
  * Messages the JobHandler can process
  */
-object JobHandlerProtocol {
+object DocumentSetJobHandlerProtocol {
   /** Start listening to the connection on the message queue */
   case object StartListening
   case object JobDone
@@ -42,7 +42,7 @@ object JobHandlerProtocol {
  * WaitingForCompletion -> Ready: when the command handler is done
  * <all states> -> NotConnected: when connection fails
  */
-object JobHandlerFSM {
+object DocumentSetJobHandlerFSM {
   sealed trait State
   case object NotConnected extends State
   case object Ready extends State
@@ -74,10 +74,10 @@ trait SearchComponent {
  * To handle new types of command, expand `ConvertMessage` to generate new message type,
  * and add a new case to the `Listening` state to handle the new type.
  */
-class JobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
+class DocumentSetJobHandler(requestQueue: ActorRef) extends Actor with FSM[State, Data] {
   this: MessageServiceComponent with SearchComponent =>
 
-  import JobHandlerProtocol._
+  import DocumentSetJobHandlerProtocol._
 
   private var currentJobCompletion: Option[Promise[Unit]] = None
 
@@ -169,8 +169,8 @@ trait SearchComponentImpl extends SearchComponent {
   }
 }
 
-object JobHandler {
-  class JobHandlerImpl(requestQueue: ActorRef) extends JobHandler(requestQueue)
+object DocumentSetJobHandler {
+  class JobHandlerImpl(requestQueue: ActorRef) extends DocumentSetJobHandler(requestQueue)
       with MessageServiceComponentImpl with SearchComponentImpl {
 
     override val messageService = new MessageServiceImpl(Configuration.messageQueue.queueName)

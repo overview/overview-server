@@ -8,7 +8,7 @@ import akka.testkit.{ TestActorRef, TestProbe }
 
 import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
-import org.overviewproject.jobhandler.documentset.JobHandlerProtocol._
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mock.Mockito
@@ -19,7 +19,7 @@ class JobHandlerSpec extends Specification with Mockito {
 
   "JobHandler" should {
 
-    class TestJobHandler(specificHandlerProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends JobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
+    class TestJobHandler(specificHandlerProbe: ActorRef, requestQueue: ActorRef, messageText: String) extends DocumentSetJobHandler(requestQueue) with MessageServiceComponent with SearchComponent {
       var messageCallback: Option[String => Future[Unit]] = None
       var failureCallback: Option[Exception => Unit] = None
       var connectionCreationCount: Int = 0

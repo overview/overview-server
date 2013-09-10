@@ -6,8 +6,8 @@ import akka.actor._
 import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
-import org.overviewproject.jobhandler.documentset.JobHandler
-import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.StartListening
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.StartListening
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandler
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 
@@ -34,7 +34,7 @@ object DocumentSetWorker extends App {
   val requestQueue = system.actorOf(Props(new RequestQueue(client, 4, 6 minutes)))
 
   // Start as many job handlers as you need
-  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(JobHandler(requestQueue)))
+  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler(requestQueue)))
   jobHandlers.foreach { jh =>
     jh ! StartListening
   }

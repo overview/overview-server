@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import akka.actor.Actor
 
-import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.JobDone
 import org.overviewproject.util.Logger
 
 
