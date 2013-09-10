@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.{ DeleteCommand, SearchCommand }

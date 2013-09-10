@@ -13,7 +13,6 @@ import JobHandlerFSM._
 import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.util.{ Configuration, Logger }
 import org.overviewproject.jobhandler.MessageServiceComponentImpl
-import org.overviewproject.jobhandler.ConvertDocumentSetMessage
 
 trait Command
 
