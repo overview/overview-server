@@ -1,9 +1,9 @@
 package org.overviewproject.jobhandler
 
 import play.api.libs.json._
-
-import org.overviewproject.jobhandler.JobHandlerProtocol.{ DeleteCommand, SearchCommand }
+import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.{ DeleteCommand, SearchCommand }
 import org.overviewproject.jobhandler.FileGroupJobHandlerProtocol.ProcessFileCommand
+import org.overviewproject.jobhandler.documentset.Command
 
 
 trait ConvertMessage {

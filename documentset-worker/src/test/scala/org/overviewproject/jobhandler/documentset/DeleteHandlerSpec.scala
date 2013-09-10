@@ -4,7 +4,7 @@ import akka.actor._
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
-import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification

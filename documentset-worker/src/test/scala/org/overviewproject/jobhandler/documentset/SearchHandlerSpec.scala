@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
-import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
-import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
+import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
