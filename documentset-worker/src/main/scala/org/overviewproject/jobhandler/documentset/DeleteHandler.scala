@@ -1,9 +1,11 @@
 package org.overviewproject.jobhandler.documentset
 
 import scala.language.postfixOps
+import scala.util.{Failure, Success}
+
 import akka.actor.Actor
+
 import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
-import scala.util.{ Failure, Success }
 import org.overviewproject.util.Logger
 
 

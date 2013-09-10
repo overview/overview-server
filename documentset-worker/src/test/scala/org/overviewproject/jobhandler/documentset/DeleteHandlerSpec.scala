@@ -1,16 +1,17 @@
 package org.overviewproject.jobhandler.documentset
 
+import scala.concurrent.Promise
+
 import akka.actor._
-import akka.testkit.TestActorRef
-import akka.testkit.TestProbe
+import akka.testkit.{ TestActorRef, TestProbe }
+
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
-import scala.concurrent.Promise
-import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 
 
 class DeleteHandlerSpec extends Specification with Mockito {

@@ -1,18 +1,21 @@
 package org.overviewproject.jobhandler.documentset
 
 import javax.jms._
-import scala.concurrent.{Promise, Future, Await}
-import scala.concurrent.duration._
+
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{Promise, Future}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+
 import akka.actor._
+
+import org.overviewproject.jobhandler.{ MessageServiceComponent, MessageServiceComponentImpl }
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.searchindex.ElasticSearchComponents
-import JobHandlerFSM._
-import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.util.{ Configuration, Logger }
-import org.overviewproject.jobhandler.MessageServiceComponentImpl
+
+import JobHandlerFSM._
 
 trait Command
 

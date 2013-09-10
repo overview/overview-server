@@ -1,13 +1,14 @@
 package org.overviewproject.jobhandler.documentset
 
 import akka.actor._
+
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.DocumentSetFinder
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.documentset.JobHandlerProtocol.JobDone
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
+
 import SearchHandlerFSM._
 
 

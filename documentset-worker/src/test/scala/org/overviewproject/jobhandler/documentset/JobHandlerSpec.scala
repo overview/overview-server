@@ -1,18 +1,19 @@
 package org.overviewproject.jobhandler.documentset
 
 import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
+
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
+
+import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.JobHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
-import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.test.ForwardingActor
-import org.overviewproject.jobhandler.MessageServiceComponent
 
 class JobHandlerSpec extends Specification with Mockito {
 

@@ -3,11 +3,13 @@ package org.overviewproject.jobhandler.documentset
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
+
 import akka.actor._
+
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
+import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.search.SearchResponse
 import org.overviewproject.jobhandler.documentset.SearchIndexSearcherFSM._
-import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 
 object SearchIndexSearcherProtocol {
   case class StartSearch(searchId: Long, documentSetId: Long, query: String)
