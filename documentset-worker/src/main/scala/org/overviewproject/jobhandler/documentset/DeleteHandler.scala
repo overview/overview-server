@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import scala.language.postfixOps
 import akka.actor.Actor
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import scala.util.{ Failure, Success }
 import org.overviewproject.util.Logger
-import org.overviewproject.jobhandler.documentset.SearcherComponents
+
 
 object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long)

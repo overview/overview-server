@@ -4,7 +4,7 @@ import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
-import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.JobHandlerProtocol._
 import org.overviewproject.jobhandler.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.ActorSystemContext

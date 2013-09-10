@@ -1,9 +1,9 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.jobhandler.documentset
 
 import akka.actor._
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.JobHandlerProtocol.JobDone
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
@@ -11,7 +11,7 @@ import org.specs2.mutable.Specification
 import scala.concurrent.Promise
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
-import org.overviewproject.jobhandler.documentset.SearchIndex
+
 
 class DeleteHandlerSpec extends Specification with Mockito {
 
