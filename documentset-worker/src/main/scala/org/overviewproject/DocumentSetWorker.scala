@@ -7,7 +7,7 @@ import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.StartListening
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandler
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 

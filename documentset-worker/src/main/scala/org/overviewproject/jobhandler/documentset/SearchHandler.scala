@@ -5,7 +5,7 @@ import akka.actor._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.JobDone
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
 

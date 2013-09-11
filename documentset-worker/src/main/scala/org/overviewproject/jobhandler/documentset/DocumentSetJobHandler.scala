@@ -13,6 +13,7 @@ import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.{ Configuration, Logger }
 import DocumentSetJobHandlerFSM._
 import org.overviewproject.jobhandler.MessageQueueActor
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.JobDone
 import org.overviewproject.jobhandler.MessageHandling
 
 trait Command
@@ -21,10 +22,6 @@ trait Command
  * Messages the JobHandler can process
  */
 object DocumentSetJobHandlerProtocol {
-  /** Start listening to the connection on the message queue */
-  case object StartListening
-  case object JobDone
-
   // Internal messages that should really be private, but are 
   // public for easier testing. 
   case class SearchCommand(documentSetId: Long, query: String) extends Command
@@ -112,6 +109,7 @@ trait DocumentSetMessageHandling extends MessageHandling[Command] {
 }
 
 class DocumentSetJobHandler extends MessageQueueActor[Command] with MessageServiceComponentImpl with DocumentSetMessageHandling {
+  Logger.debug("what the what")
   override val messageService = new MessageServiceImpl(Configuration.messageQueue.queueName)
 }
 

@@ -8,7 +8,7 @@ import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.JobDone
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.JobDone
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
