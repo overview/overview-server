@@ -34,7 +34,7 @@ object DocumentSetWorker extends App {
   val requestQueue = system.actorOf(Props(new RequestQueue(client, 4, 6 minutes)))
 
   // Start as many job handlers as you need
-  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler(requestQueue)))
+  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler()))
   jobHandlers.foreach { jh =>
     jh ! StartListening
   }

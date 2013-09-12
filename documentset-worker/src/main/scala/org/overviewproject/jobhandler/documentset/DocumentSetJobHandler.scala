@@ -109,11 +109,10 @@ trait DocumentSetMessageHandling extends MessageHandling[Command] {
 }
 
 class DocumentSetJobHandler extends MessageQueueActor[Command] with MessageServiceComponentImpl with DocumentSetMessageHandling {
-  Logger.debug("what the what")
   override val messageService = new MessageServiceImpl(Configuration.messageQueue.queueName)
 }
 
 object DocumentSetJobHandler {
 
-  def apply(requestQueue: ActorRef): Props = Props[DocumentSetJobHandler]
+  def apply(): Props = Props[DocumentSetJobHandler]
 }
