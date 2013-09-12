@@ -74,6 +74,7 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
 
   when(WaitingForCompletion) {
     case Event(JobDone, _) => {
+      context.parent ! JobDone
       currentJobCompletion.map(_.success())
       currentJobCompletion = None
       goto(Ready)

@@ -66,5 +66,19 @@ class MessageQueueActorSpec extends Specification {
       messageQueue.connectionCreationCount must be equalTo(2)
     }
     
+    "Send JobDone to parent" in new ActorSystemContext {
+      val parentProbe = TestProbe()
+      val messageHandler = TestProbe()
+      val message = "Some command as json"
+        
+      val messageQueueActor = TestActorRef(Props(new TestMessageQueueActor(messageHandler.ref)), parentProbe.ref, "Message Queue")
+      
+      messageQueueActor ! StartListening
+      messageQueueActor ! message
+      messageQueueActor ! JobDone
+      
+      parentProbe.expectMsg(JobDone)
+    }
+    
   }
 }
