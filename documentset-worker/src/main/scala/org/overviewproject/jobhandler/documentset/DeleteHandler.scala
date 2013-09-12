@@ -5,7 +5,7 @@ import scala.util.{Failure, Success}
 
 import akka.actor.Actor
 
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.JobDone
+import org.overviewproject.jobhandler.JobDone
 import org.overviewproject.util.Logger
 
 

@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.documentset
 import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.JobDone
+import org.overviewproject.jobhandler.JobDone
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }

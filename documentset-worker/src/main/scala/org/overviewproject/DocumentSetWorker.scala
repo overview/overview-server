@@ -10,6 +10,7 @@ import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandler
 import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
+import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared
@@ -39,7 +40,6 @@ object DocumentSetWorker extends App {
     jh ! StartListening
   }
 
-  val fileGroupJobHandler = system.actorOf(FileGroupJobHandler())
-  fileGroupJobHandler ! ListenForFileGroupJobs
+  val clusteringJobHandler = system.actorOf(ClusteringJobHandler())
 }
 

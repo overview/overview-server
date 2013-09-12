@@ -7,8 +7,9 @@ import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
 import scala.concurrent.{ Promise, Future }
 
-import MessageQueueActorFSM._
 import org.overviewproject.util.Logger
+
+import MessageQueueActorFSM._
 
 trait MessageHandling[T] {
   def createMessageHandler: Props
@@ -17,7 +18,6 @@ trait MessageHandling[T] {
 
 object MessageQueueActorProtocol {
   case object StartListening
-  case object JobDone
   case class ConnectionFailure(e: Exception)
 }
 

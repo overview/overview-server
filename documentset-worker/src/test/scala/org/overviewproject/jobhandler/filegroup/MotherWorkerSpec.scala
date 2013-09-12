@@ -6,22 +6,13 @@ import org.overviewproject.test.ForwardingActor
 import org.overviewproject.test.ActorSystemContext
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-
-class DummyActor extends Actor {
-  def receive = {
-    case _ =>
-  }
-}
-
-object DummyActor {
-  def apply(): Props = Props[DummyActor]
-}
+import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 
 class MotherWorkerSpec extends Specification {
 
   class TestMotherWorker(fileGroupJobHandler: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
 
-    override def createFileGroupJobHandler: Props = DummyActor()
+    override def createFileGroupJobHandler: Props = ForwardingActor(fileGroupJobHandler)
 
     def numberOfChildren: Int = context.children.size
   }
@@ -34,6 +25,8 @@ class MotherWorkerSpec extends Specification {
       val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       motherWorker.underlyingActor.numberOfChildren must be equalTo (2)
+      
+      fileGroupJobHandler.expectMsg(ListenForFileGroupJobs)
     }
   }
 }

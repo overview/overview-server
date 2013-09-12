@@ -9,3 +9,7 @@ class ForwardingActor(target: ActorRef) extends Actor {
   
   override def postStop = target ! PoisonPill
 }
+
+object ForwardingActor {
+  def apply(target: ActorRef): Props = Props(new ForwardingActor(target))
+}
