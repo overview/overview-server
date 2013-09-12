@@ -1,7 +1,7 @@
 package org.overviewproject.database.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.{ Document, DocumentSearchResult, DocumentSet, File, SearchResult }
+import org.overviewproject.tree.orm._
 
 
 object Schema extends org.squeryl.Schema {
@@ -14,4 +14,5 @@ object Schema extends org.squeryl.Schema {
   val documentSets = table[DocumentSet]
   val files = table[File]
   val fileTexts = table[FileText]
+  val fileUploads = table[FileUpload]
 }

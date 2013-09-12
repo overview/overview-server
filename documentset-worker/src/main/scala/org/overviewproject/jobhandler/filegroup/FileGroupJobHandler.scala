@@ -26,7 +26,7 @@ object FileGroupJobHandlerProtocol {
   case object ListenForFileGroupJobs
   
   case class ConnectionFailure(e: Exception)
-  case class ProcessFileCommand(documentSetId: Long, fileId: Long)
+  case class ProcessFileCommand(documentSetId: Long, uploadedFileId: Long)
 }
 
 object FileGroupJobHandlerFSM {
@@ -68,9 +68,9 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
-    case Event(ProcessFileCommand(documentSetId, fileId), _) => {
+    case Event(ProcessFileCommand(documentSetId, uploadedFileId), _) => {
       val fileHandler = context.actorOf(Props(actorCreator.produceTextExtractor))
-      fileHandler ! ExtractText(documentSetId, fileId)
+      fileHandler ! ExtractText(documentSetId, uploadedFileId)
       
       goto(WaitingForCompletion)
     }

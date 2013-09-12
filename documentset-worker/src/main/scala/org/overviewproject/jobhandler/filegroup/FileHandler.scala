@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
-import org.overviewproject.tree.orm.File
+import org.overviewproject.tree.orm.FileUpload
 import java.io.InputStream
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.util.PDFTextStripper
@@ -12,10 +12,15 @@ import org.overviewproject.database.DB
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.FileText
 import org.overviewproject.database.orm.stores.FileTextStore
+import org.overviewproject.database.orm.finders.FileUploadFinder
+import org.overviewproject.tree.orm.File
+import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.database.orm.stores.FileStore
+import org.overviewproject.util.ContentDisposition
 
 
 object FileHandlerProtocol {
-  case class ExtractText(documentSetId: Long, fileId: Long)
+  case class ExtractText(documentSetId: Long, uploadedFileId: Long)
   case object JobDone
 }
 
@@ -25,8 +30,9 @@ trait FileHandlerComponents {
   val pdfProcessor: PdfProcessor
 
   trait DataStore {
-    def findFile(fileId: Long): Option[File]
+    def findFileUpload(fileUploadId: Long): Option[FileUpload]
     def fileContentStream(oid: Long): InputStream
+    def storeFile(file: File): Unit
     def storeText(fileId: Long, text: String): Unit
   }
 
@@ -41,11 +47,20 @@ class FileHandler extends Actor {
   import FileHandlerProtocol._
 
   def receive = {
-    case ExtractText(documentSetId, fileId) => {
-      val file = dataStore.findFile(fileId).get
-      val fileStream = dataStore.fileContentStream(file.contentsOid)
+    case ExtractText(documentSetId, fileUploadId) => {
+      val fileUpload = dataStore.findFileUpload(fileUploadId).get
+      val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
       val text = pdfProcessor.extractText(fileStream)
-      dataStore.storeText(fileId, text)
+      val file = File(
+          fileUpload.guid,
+          ContentDisposition.filename(fileUpload.contentDisposition).getOrElse("unknown name"),
+          fileUpload.contentType,
+          fileUpload.contentsOid,
+          fileUpload.size,
+          Complete,
+          text,
+          fileUpload.lastActivity)
+      dataStore.storeFile(file)
       
       sender ! JobDone
     }
@@ -66,11 +81,15 @@ trait PdfBoxPdfProcessor {
 
 class FileHandlerImpl extends FileHandler with FileHandlerComponents {
   class DataStoreImpl extends DataStore {
-    override def findFile(fileId: Long): Option[File] = Database.inTransaction {
-      FileFinder.byId(fileId).headOption
+    override def findFileUpload(fileUploadId: Long): Option[FileUpload] = Database.inTransaction {
+      FileUploadFinder.byId(fileUploadId).headOption
     } 
     
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
+    
+    override def storeFile(file: File): Unit = {
+      FileStore.insertOrUpdate(file)
+    }
     
     override def storeText(fileId: Long, text: String): Unit = {
       val fileText = FileText(fileId, text)

@@ -1,4 +1,4 @@
-package models.upload
+package org.overviewproject.util
 
 import java.net.URLDecoder
 import scala.util.control.Exception._

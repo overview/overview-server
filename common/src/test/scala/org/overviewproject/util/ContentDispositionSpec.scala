@@ -1,12 +1,9 @@
-package models.upload
+package org.overviewproject.util
 
 import org.specs2.mutable.Specification
-import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
-import java.sql.Timestamp
 import org.specs2.specification.Scope
 
-@RunWith(classOf[JUnitRunner])
+
 class ContentDispositionSpec extends Specification {
   "OverviewUploadedFile contentDisposition" should {
 

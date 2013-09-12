@@ -4,6 +4,7 @@ import java.net.URLDecoder
 import java.sql.Timestamp
 import scala.util.control.Exception._
 import org.overviewproject.tree.orm.UploadedFile
+import org.overviewproject.util.ContentDisposition
 
 trait OverviewUploadedFile {
   val id: Long

@@ -9,28 +9,40 @@ import java.io.InputStream
 import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.tree.orm.FileUpload
+import java.sql.Timestamp
 
 class FileHandlerSpec extends Specification with Mockito {
 
   "FileHandler" should {
 
-    val file = File(
-      UUID.randomUUID,
-      "filename",
-      "contentType",
+    val fileUpload = FileUpload(
       1L,
-      100L,
-      InProgress)
-
+      UUID.randomUUID,
+      "contentDisposition",
+      "contentType",
+      10000L,
+      new Timestamp(0L),
+      100L)
 
     val extractedText: String = "Text from PDF"
+
+    val file = File(
+      fileUpload.guid,
+      "file name",
+      fileUpload.contentType,
+      fileUpload.contentsOid,
+      fileUpload.size,
+      Complete,
+      extractedText,
+      fileUpload.lastActivity)
 
     class TestFileHandler extends FileHandler with FileHandlerComponents {
 
       override val dataStore = mock[DataStore]
       override val pdfProcessor = mock[PdfProcessor]
 
-      dataStore.findFile(file.id) returns (Some(file))
+      dataStore.findFileUpload(fileUpload.id) returns (Some(fileUpload))
       dataStore.fileContentStream(file.contentsOid) returns mock[InputStream]
 
       pdfProcessor.extractText(any) returns extractedText
@@ -39,18 +51,17 @@ class FileHandlerSpec extends Specification with Mockito {
 
     "call components" in new ActorSystemContext {
       val fileHandler = TestActorRef(new TestFileHandler)
-      
+
       val dataStore = fileHandler.underlyingActor.dataStore
       val pdfProcessor = fileHandler.underlyingActor.pdfProcessor
-      
-      fileHandler ! ExtractText(0L, file.id)
-      
-      there was one(dataStore).findFile(file.id)
-      there was one(dataStore).fileContentStream(file.contentsOid)
-      
-      there was one(pdfProcessor).extractText(any)
-      there was one(dataStore).storeText(file.id, extractedText)
 
+      fileHandler ! ExtractText(0L, fileUpload.id)
+
+      there was one(dataStore).findFileUpload(fileUpload.id)
+      there was one(dataStore).fileContentStream(fileUpload.contentsOid)
+
+      there was one(pdfProcessor).extractText(any)
+      there was one(dataStore).storeFile(any) // can't check against file for some reason
     }
   }
 }

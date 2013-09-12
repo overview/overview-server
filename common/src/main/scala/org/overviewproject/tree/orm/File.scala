@@ -12,10 +12,11 @@ case class File (
   contentsOid: Long,
   size: Long,
   state: FileJobState.Value,
-  uploadedAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
+  text: String,
+  uploadedAt: Timestamp,
   override val id: Long = 0L   
 ) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)
   
-  def this() = this(new UUID(0, 0), "", "", 0, 0, Error)
+  def this() = this(new UUID(0, 0), "", "", 0, 0, Error, "", new Timestamp(0))
 }
