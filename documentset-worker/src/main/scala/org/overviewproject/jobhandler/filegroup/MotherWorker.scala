@@ -7,7 +7,8 @@ import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
+import org.overviewproject.tree.orm.FileJobState._
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -23,9 +24,12 @@ trait FileGroupJobHandlerComponent {
   val storage: Storage
 
   trait Storage {
-    def findFileGroup(fileGroupId: Long): FileGroup
+    def findFileGroup(fileGroupId: Long): Option[FileGroup]
+    def countFileUploads(fileGroupId: Long): Int
+    def countProcessedFiles(fileGroupId: Long): Int
     def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long
     def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long
+
   }
 }
 
@@ -42,10 +46,23 @@ class MotherWorker extends Actor {
   }
 
   def receive = {
-    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) => {
-      val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
-      
-      storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, suppliedStopWords)
-    }
+    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
+      storage.findFileGroup(fileGroupId).map { fileGroup =>
+        val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
+        val jobState = computeJobState(fileGroup)
+        storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
+      }
+
   }
+
+  /**
+   * If all files have been uploaded, and all uploaded files have been processed,
+   * the documentSetCreationJob state is `NotStarted` (ready for clustering). Otherwise the state
+   * is `Preparing`
+   */
+  private def computeJobState(fileGroup: FileGroup): DocumentSetCreationJobState.Value =
+    if ((fileGroup.state == Complete) &&
+      (storage.countFileUploads(fileGroup.id) == storage.countProcessedFiles(fileGroup.id))) NotStarted
+    else Preparing
+
 }
