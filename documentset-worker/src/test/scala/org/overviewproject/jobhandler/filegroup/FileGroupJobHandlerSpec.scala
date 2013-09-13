@@ -52,7 +52,7 @@ class FileGroupJobHandlerSpec extends Specification {
         "cmd" : "process_file",
         "args" : {
           "documentSetId": 1,
-          "fileId": 2
+          "uploadedFileId": 2
          }
       }"""
         
