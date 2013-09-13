@@ -12,6 +12,7 @@ import org.overviewproject.test.ForwardingActor
 import akka.testkit.TestProbe
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.jobhandler.MessageServiceComponent
+import org.overviewproject.jobhandler.JobDone
 
 
 class FileGroupJobHandlerSpec extends Specification {
@@ -51,7 +52,7 @@ class FileGroupJobHandlerSpec extends Specification {
       val message = """{
         "cmd" : "process_file",
         "args" : {
-          "documentSetId": 1,
+          "fileGroupId": 1,
           "uploadedFileId": 2
          }
       }"""
@@ -78,5 +79,28 @@ class FileGroupJobHandlerSpec extends Specification {
       
     }
 
+    "forward JobDone to parent" in new ActorSystemContext {
+      val fileGroupId = 1
+      val uploadedFileId = 2
+      
+      val message = s"""{
+        "cmd" : "process_file",
+        "args" : {
+          "fileGroupId": $fileGroupId,
+          "uploadedFileId": $uploadedFileId
+         }
+      }"""
+        
+      val parentProbe = TestProbe()
+      val fileHandler = TestProbe()
+      val jobHandler = TestActorRef(Props(new TestJobHandler(fileHandler.ref)), parentProbe.ref, "job handler")
+      
+      jobHandler ! ListenForFileGroupJobs
+      jobHandler ! ProcessFileCommand(fileGroupId, uploadedFileId)
+      
+      jobHandler ! JobDone(fileGroupId)
+      
+      parentProbe.expectMsg(JobDone(fileGroupId))
+    }
   }
 }

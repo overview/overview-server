@@ -10,6 +10,7 @@ import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.DeleteCommand
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.JobDone
 
 class DocumentSetMessageHandlerSpec extends Specification {
   
@@ -52,6 +53,22 @@ class DocumentSetMessageHandlerSpec extends Specification {
       messageHandler ! deleteCommand
       
       deleteHandler.expectMsg(deleteMessage)
+    }
+    
+    "tell parent JobDone" in new ActorSystemContext {
+      val parentProbe = TestProbe()
+      val documentSetId = 1l
+      val deleteCommand = DeleteCommand(documentSetId)
+      val deleteMessage = DeleteDocumentSet(documentSetId)
+      
+      val deleteHandler = TestProbe()
+      
+      val messageHandler = TestActorRef(Props(new TestMessageHandler(deleteHandler.ref)), parentProbe.ref, "Message Handler")
+      
+      messageHandler ! deleteCommand
+      messageHandler ! JobDone(documentSetId)
+      
+      parentProbe.expectMsg(JobDone(documentSetId))
     }
   }
 

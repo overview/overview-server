@@ -65,7 +65,7 @@ class DeleteHandlerSpec extends Specification with Mockito {
 
       deleteAlias.success(aliasResult)
 
-      parentProbe.expectMsg(JobDone)
+      parentProbe.expectMsg(JobDone(documentSetId))
     }
 
     "notify parent when deletion fails" in new ActorSystemContext {
@@ -86,7 +86,7 @@ class DeleteHandlerSpec extends Specification with Mockito {
       deleteAlias.success(aliasResult)
 
       // FIXME: We can't distinguish between failure and success right now
-      parentProbe.expectMsg(JobDone)
+      parentProbe.expectMsg(JobDone(documentSetId))
 
     }
   }

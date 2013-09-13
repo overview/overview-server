@@ -11,6 +11,7 @@ import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol._
 import scala.concurrent.Promise
 import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.MessageServiceComponentImpl
+import org.overviewproject.jobhandler.JobDone
 
 
 
@@ -26,7 +27,7 @@ object FileGroupJobHandlerProtocol {
   case object ListenForFileGroupJobs
   
   case class ConnectionFailure(e: Exception)
-  case class ProcessFileCommand(documentSetId: Long, uploadedFileId: Long)
+  case class ProcessFileCommand(fileGroupId: Long, uploadedFileId: Long)
 }
 
 object FileGroupJobHandlerFSM {
@@ -68,19 +69,20 @@ class FileGroupJobHandler extends Actor with FSM[State, Data] {
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
-    case Event(ProcessFileCommand(documentSetId, uploadedFileId), _) => {
+    case Event(ProcessFileCommand(fileGroupId, uploadedFileId), _) => {
       val fileHandler = context.actorOf(Props(actorCreator.produceTextExtractor))
-      fileHandler ! ExtractText(documentSetId, uploadedFileId)
+      fileHandler ! ExtractText(fileGroupId, uploadedFileId)
       
       goto(WaitingForCompletion)
     }
   }
   
   when(WaitingForCompletion) {
-    case Event(JobDone, _) => {
+    case Event(JobDone(fileGroupId), _) => {
       currentJobCompletion.map(_.success())
       currentJobCompletion = None
       sender ! PoisonPill
+      context.parent ! JobDone(fileGroupId)
       goto(Ready)		
     }
   }

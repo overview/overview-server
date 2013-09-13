@@ -30,12 +30,12 @@ trait DeleteHandler extends Actor with SearcherComponents {
 
       combinedResponse onComplete {
         case Success(r) => {
-          context.parent ! JobDone
+          context.parent ! JobDone(documentSetId)
           context.stop(self)
         }
         case Failure(t) => {
           Logger.error("Deleting indexed documents failed", t)
-          context.parent ! JobDone
+          context.parent ! JobDone(documentSetId)
           context.stop(self)
         }
 

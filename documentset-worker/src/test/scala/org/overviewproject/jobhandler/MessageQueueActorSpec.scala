@@ -47,7 +47,7 @@ class MessageQueueActorSpec extends Specification {
       
       messageHandler.expectMsg(s"CONVERTED$message")
       
-      messageQueueActor ! JobDone
+      messageQueueActor ! JobDone(1l)
       
       completion must beSome.which(c => c.isCompleted)
     }
@@ -70,14 +70,15 @@ class MessageQueueActorSpec extends Specification {
       val parentProbe = TestProbe()
       val messageHandler = TestProbe()
       val message = "Some command as json"
+      val jobEntityId = 1l
         
       val messageQueueActor = TestActorRef(Props(new TestMessageQueueActor(messageHandler.ref)), parentProbe.ref, "Message Queue")
       
       messageQueueActor ! StartListening
       messageQueueActor ! message
-      messageQueueActor ! JobDone
+      messageQueueActor ! JobDone(jobEntityId)
       
-      parentProbe.expectMsg(JobDone)
+      parentProbe.expectMsg(JobDone(jobEntityId))
     }
     
   }

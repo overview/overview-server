@@ -107,7 +107,27 @@ class MotherWorkerSpec extends Specification with Mockito {
       motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
       there was one(storage).storeDocumentSet(title, lang, stopWords)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, NotStarted, lang, stopWords)
+    }
+    
+    "submit a job when JobDone is received and StartClustering has been received" in new ActorSystemContext {
+      val numberOfUploads = 5
 
+      val fileGroupJobHandler = TestProbe()
+      val fileGroup = mock[FileGroup]
+      fileGroup.id returns fileGroupId
+      fileGroup.state returns Complete
+
+      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
+
+      val storage = motherWorker.underlyingActor.storage
+      storage.findFileGroup(fileGroupId) returns Some(fileGroup)
+      storage.countFileUploads(fileGroupId) returns numberOfUploads
+      storage.countProcessedFiles(fileGroupId) returns (numberOfUploads - 1)
+
+      storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
+
+      motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
+      
       
     }
   }

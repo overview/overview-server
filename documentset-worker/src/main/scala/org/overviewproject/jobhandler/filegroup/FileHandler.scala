@@ -17,11 +17,11 @@ import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.util.ContentDisposition
+import org.overviewproject.jobhandler.JobDone
 
 
 object FileHandlerProtocol {
-  case class ExtractText(documentSetId: Long, uploadedFileId: Long)
-  case object JobDone
+  case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
 }
 
 trait FileHandlerComponents {
@@ -47,7 +47,7 @@ class FileHandler extends Actor {
   import FileHandlerProtocol._
 
   def receive = {
-    case ExtractText(documentSetId, fileUploadId) => {
+    case ExtractText(fileGroupId, fileUploadId) => {
       val fileUpload = dataStore.findFileUpload(fileUploadId).get
       val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
       val text = pdfProcessor.extractText(fileStream)
@@ -62,7 +62,7 @@ class FileHandler extends Actor {
           fileUpload.lastActivity)
       dataStore.storeFile(file)
       
-      sender ! JobDone
+      sender ! JobDone(fileGroupId)
     }
   }
 }

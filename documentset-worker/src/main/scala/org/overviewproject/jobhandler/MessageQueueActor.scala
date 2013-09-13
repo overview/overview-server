@@ -60,7 +60,7 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
 
       }
     }
-    case Event(JobDone, _) => stay
+    case Event(JobDone(id), _) => stay
     case Event(ConnectionFailure, _) => stay // For some reason, and extra event is generated when job is in progress
   }
 
@@ -73,8 +73,8 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
   }
 
   when(WaitingForCompletion) {
-    case Event(JobDone, _) => {
-      context.parent ! JobDone
+    case Event(JobDone(id), _) => {
+      context.parent ! JobDone(id)
       currentJobCompletion.map(_.success())
       currentJobCompletion = None
       goto(Ready)

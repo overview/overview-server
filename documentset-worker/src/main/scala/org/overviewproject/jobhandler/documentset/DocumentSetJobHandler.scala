@@ -78,8 +78,8 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
   }
 
   when(WaitingForCompletion) {
-    case Event(JobDone, _) => {
-      context.parent ! JobDone
+    case Event(JobDone(documentSetId), _) => {
+      context.parent ! JobDone(documentSetId)
       goto(Ready)
     }
   }

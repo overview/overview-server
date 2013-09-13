@@ -80,7 +80,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   when(Idle) {
     case Event(SearchDocumentSet(documentSetId, query), _) =>
       if (storage.searchExists(documentSetId, query)) {
-        context.parent ! JobDone
+        context.parent ! JobDone(documentSetId)
         goto(Idle) using Uninitialized
       }
       else {
@@ -92,11 +92,11 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   
   when(Searching) {
     case Event(SearchComplete, SearchInfo(searchId, documentSetId, query)) =>
-      context.parent ! JobDone
+      context.parent ! JobDone(documentSetId)
       storage.completeSearch(searchId, documentSetId, query)
       stop()
     case Event(SearchFailure(e), SearchInfo(searchId, documentSetId, query)) =>
-      context.parent ! JobDone
+      context.parent ! JobDone(documentSetId)
       storage.failSearch(searchId, documentSetId, query)
       stop()
   }

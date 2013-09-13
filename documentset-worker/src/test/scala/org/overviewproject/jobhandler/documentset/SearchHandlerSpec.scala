@@ -58,7 +58,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       
       parent ! SearchDocumentSet(documentSetId, searchTerms)
 
-      expectMsg(JobDone)
+      expectMsg(JobDone(documentSetId))
     }
 
     "create a new SearchResult and start Searcher if SearchResult doesn't exist" in new SearchHandlerContext {
@@ -79,7 +79,7 @@ class SearchHandlerSpec extends Specification with Mockito {
       parent ! SearchDocumentSet(documentSetId, searchTerms)
       parent ! SearchComplete
       
-      expectMsg(JobDone)
+      expectMsg(JobDone(documentSetId))
     }
     
     "set SearchResult state to Complete when receiving SearchComplete from Searcher" in new SearchHandlerContext {

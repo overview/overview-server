@@ -6,11 +6,12 @@ import org.specs2.mock.Mockito
 import org.overviewproject.tree.orm.File
 import java.util.UUID
 import java.io.InputStream
-import akka.testkit.TestActorRef
+import akka.testkit.{ ImplicitSender, TestActorRef }
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.FileUpload
 import java.sql.Timestamp
+import org.overviewproject.jobhandler.JobDone
 
 class FileHandlerSpec extends Specification with Mockito {
 
@@ -62,6 +63,15 @@ class FileHandlerSpec extends Specification with Mockito {
 
       there was one(pdfProcessor).extractText(any)
       there was one(dataStore).storeFile(any) // can't check against file for some reason
+    }
+    
+    "send JobDone to sender" in new ActorSystemContext {
+      val documentSetId = 1l
+      val fileHandler = TestActorRef(new TestFileHandler)
+      
+      fileHandler ! ExtractText(documentSetId, fileUpload.id)
+      
+      expectMsg(JobDone(documentSetId))
     }
   }
 }
