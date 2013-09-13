@@ -15,6 +15,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Pr
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.jobhandler.JobDone
 
 class MotherWorkerSpec extends Specification with Mockito {
 
@@ -109,26 +110,28 @@ class MotherWorkerSpec extends Specification with Mockito {
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, NotStarted, lang, stopWords)
     }
     
-    "submit a job when JobDone is received and StartClustering has been received" in new ActorSystemContext {
+    "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new ActorSystemContext {
       val numberOfUploads = 5
 
+      val documentSetCreationJob = DocumentSetCreationJob(
+        id = 1l,
+        documentSetId = 10l,
+        jobType = FileUpload,
+        fileGroupId = Some(fileGroupId),
+        state = Preparing
+      )
       val fileGroupJobHandler = TestProbe()
-      val fileGroup = mock[FileGroup]
-      fileGroup.id returns fileGroupId
-      fileGroup.state returns Complete
 
       val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       val storage = motherWorker.underlyingActor.storage
-      storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
-      storage.countProcessedFiles(fileGroupId) returns (numberOfUploads - 1)
+      storage.countProcessedFiles(fileGroupId) returns numberOfUploads
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
 
-      storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
-
-      motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
+      motherWorker ! JobDone(fileGroupId)
       
-      
+      there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
     }
   }
 }

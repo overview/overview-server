@@ -9,6 +9,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.jobhandler.JobDone
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -27,9 +28,11 @@ trait FileGroupJobHandlerComponent {
     def findFileGroup(fileGroupId: Long): Option[FileGroup]
     def countFileUploads(fileGroupId: Long): Int
     def countProcessedFiles(fileGroupId: Long): Int
+    def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
+    
     def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long
     def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long
-
+    def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
   }
 }
 
@@ -52,6 +55,10 @@ class MotherWorker extends Actor {
         val jobState = computeJobState(fileGroup)
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
       }
+    case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
+      if (storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId))
+        storage.submitDocumentSetCreationJob(job)
+    }
 
   }
 
