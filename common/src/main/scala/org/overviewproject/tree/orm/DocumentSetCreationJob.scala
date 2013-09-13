@@ -31,6 +31,7 @@ case class DocumentSetCreationJob(
   splitDocuments: Boolean = false,
   contentsOid: Option[Long] = None,
   sourceDocumentSetId: Option[Long] = None,
+  fileGroupId: Option[Long] = None,
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double = 0.0,
   statusDescription: String = "") extends KeyedEntity[Long] {

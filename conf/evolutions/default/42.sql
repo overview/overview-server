@@ -53,6 +53,9 @@ CREATE TABLE file_upload (
 
 CREATE INDEX file_upload_file_group_id ON file_upload (file_group_id);
 
+ALTER TABLE document_set_creation_job ADD COLUMN file_group_id BIGINT REFERENCES file_group(id);
+CREATE INDEX document_set_creation_job_file_group_id ON document_set_creation_job (file_group_id);
+
 COMMIT;
 
 
@@ -60,6 +63,8 @@ COMMIT;
 # --- !Downs
 
 BEGIN;
+
+ALTER TABLE document_set_creation_job DROP COLUMN file_group_id;
 
 DROP TABLE IF EXISTS file_upload CASCADE;
 DROP TABLE IF EXISTS file_group_file CASCADE;
