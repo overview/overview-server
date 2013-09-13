@@ -56,8 +56,7 @@ class MotherWorker extends Actor {
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
       }
     case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
-      if (storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId))
-        storage.submitDocumentSetCreationJob(job)
+      if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
     }
 
   }
@@ -68,8 +67,10 @@ class MotherWorker extends Actor {
    * is `Preparing`
    */
   private def computeJobState(fileGroup: FileGroup): DocumentSetCreationJobState.Value =
-    if ((fileGroup.state == Complete) &&
-      (storage.countFileUploads(fileGroup.id) == storage.countProcessedFiles(fileGroup.id))) NotStarted
+    if ((fileGroup.state == Complete) && fileProcessingComplete(fileGroup.id)) NotStarted
     else Preparing
 
+  /** file processing is complete when number of uploads matches number of processed files */
+    private def fileProcessingComplete(fileGroupId: Long): Boolean =
+      storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId)
 }
