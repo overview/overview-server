@@ -13,6 +13,7 @@ class FileUploadFinderSpec extends DbSpecification {
 
   object FileGroupStore extends BaseStore(Schema.fileGroups)
   object FileUploadStore extends BaseStore(Schema.fileUploads)
+  
   step(setupDb)
   
   "FileUploadFinder" should {
