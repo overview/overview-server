@@ -32,7 +32,7 @@ trait FileHandlerComponents {
   trait DataStore {
     def findFileUpload(fileUploadId: Long): Option[FileUpload]
     def fileContentStream(oid: Long): InputStream
-    def storeFile(file: File): Unit
+    def storeFile(fileGroupId: Long, file: File): Unit
     def storeText(fileId: Long, text: String): Unit
   }
 
@@ -60,7 +60,7 @@ class FileHandler extends Actor {
           Complete,
           text,
           fileUpload.lastActivity)
-      dataStore.storeFile(file)
+      dataStore.storeFile(fileGroupId, file)
       
       sender ! JobDone(fileGroupId)
     }
@@ -87,8 +87,8 @@ class FileHandlerImpl extends FileHandler with FileHandlerComponents {
     
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
     
-    override def storeFile(file: File): Unit = Database.inTransaction {
-      FileStore.insertOrUpdate(file)
+    override def storeFile(fileGroupId: Long, file: File): Unit = Database.inTransaction {
+      FileStore.insertWithFileGroup(fileGroupId, file)
     }
     
     override def storeText(fileId: Long, text: String): Unit = Database.inTransaction {

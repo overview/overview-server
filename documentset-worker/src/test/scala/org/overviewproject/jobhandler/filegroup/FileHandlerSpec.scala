@@ -62,7 +62,7 @@ class FileHandlerSpec extends Specification with Mockito {
       there was one(dataStore).fileContentStream(fileUpload.contentsOid)
 
       there was one(pdfProcessor).extractText(any)
-      there was one(dataStore).storeFile(any) // can't check against file for some reason
+      there was one(dataStore).storeFile(any, any) // can't check against file for some reason
     }
     
     "send JobDone to sender" in new ActorSystemContext {
