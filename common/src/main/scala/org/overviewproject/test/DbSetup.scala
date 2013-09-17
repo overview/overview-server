@@ -61,7 +61,7 @@ object DbSetup {
   def insertDocument(documentSetId: Long, description: String, documentCloudId: String, title: Option[String] = None)(implicit connection: Connection): Long = {
     SQL("""
         INSERT INTO document (id, type, document_set_id, description, documentcloud_id, title)
-        VALUES ({id}, 'DocumentCloudDocument'::document_type, {documentSetId}, {description}, {documentCloudId}, {title})
+        VALUES ({id}, 1, {documentSetId}, {description}, {documentCloudId}, {title})
         """).on(
       "id" -> nextDocumentId(documentSetId),
       "documentSetId" -> documentSetId,

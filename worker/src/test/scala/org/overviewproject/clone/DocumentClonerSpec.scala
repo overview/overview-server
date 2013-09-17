@@ -17,7 +17,7 @@ class DocumentClonerSpec extends DbSpecification {
     trait CloneContext extends DbTestContext {
       var documentSetId: Long = _
       var documentSetCloneId: Long = _
-      var expectedCloneData: Seq[(String, Long, String)] = _
+      var expectedCloneData: Seq[(DocumentType, Long, String)] = _
       var documentIdMapping: Map[Long, Long] = _
       var sourceDocuments: Seq[Document] = _
       var clonedDocuments: Seq[Document] = _
@@ -39,7 +39,7 @@ class DocumentClonerSpec extends DbSpecification {
         Schema.documents.insert(documents)
         sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
 
-        expectedCloneData = sourceDocuments.map(d => (CsvImportDocument.value, documentSetCloneId, d.text.get))
+        expectedCloneData = sourceDocuments.map(d => (CsvImportDocument, documentSetCloneId, d.text.get))
 
         DocumentCloner.clone(documentSetId, documentSetCloneId)
         clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
@@ -52,7 +52,7 @@ class DocumentClonerSpec extends DbSpecification {
     }
 
     "Create document clones" in new CloneContext {
-      val clonedData = clonedDocuments.map(d => (CsvImportDocument.value, d.documentSetId, d.text.get))
+      val clonedData = clonedDocuments.map(d => (CsvImportDocument, d.documentSetId, d.text.get))
       clonedData must haveTheSameElementsAs(expectedCloneData)
     }
     

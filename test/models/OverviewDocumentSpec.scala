@@ -29,7 +29,7 @@ class OverviewDocumentSpec extends DbSpecification {
       def text: String = "Text"
       
       override def ormDocument = Document(
-        new DocumentType("CsvImportDocument"),
+        DocumentType.CsvImportDocument,
         id=ormDocumentId,
         url=suppliedUrl,
         suppliedId=suppliedId,
@@ -45,7 +45,7 @@ class OverviewDocumentSpec extends DbSpecification {
       def documentcloudId: String = "123-documentcloud-id"
 
       override def ormDocument = Document(
-        new DocumentType("DocumentCloudDocument"),
+        DocumentType.DocumentCloudDocument,
         id=ormDocumentId,
         documentcloudId=Some(documentcloudId)
       )

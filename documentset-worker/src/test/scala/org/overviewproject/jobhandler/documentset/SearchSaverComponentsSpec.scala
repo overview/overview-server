@@ -13,7 +13,7 @@ class SearchSaverComponentsSpec extends DbSpecification {
 
   "SearchSaverComponent" should {
 
-    inExample("save DocumentSearchResults") in new DbTestContext {
+    "save DocumentSearchResults" in new DbTestContext {
       val documentSetId = insertDocumentSet("SearchSaverComponentSpec")
       val documentIds = insertDocuments(documentSetId, 10)
       val searchResult = SearchResultStore.insertOrUpdate(SearchResult(InProgress, documentSetId, "query"))
