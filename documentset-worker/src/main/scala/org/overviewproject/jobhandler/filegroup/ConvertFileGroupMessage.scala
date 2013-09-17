@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup
 
 import org.overviewproject.jobhandler.ConvertMessage
 import play.api.libs.json.Json
-import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ProcessFileCommand
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol._
 
 
 
@@ -11,7 +11,7 @@ object ConvertFileGroupMessage extends ConvertMessage {
 
   private val processFileCommandReads = Json.reads[ProcessFileCommand]
 
-  def apply(message: String): Any = {
+  def apply(message: String): Command = {
     val m = getMessage(message)
 
     m.cmd match {

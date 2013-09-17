@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
-import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.tree.orm.DocumentSetCreationJobState
 import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.DocumentSet
@@ -16,6 +16,7 @@ import org.overviewproject.database.orm.finders.FileUploadFinder
 import org.overviewproject.database.orm.stores.DocumentSetStore
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
+import org.overviewproject.database.Database
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -47,9 +48,11 @@ class MotherWorker extends Actor {
 
   import MotherWorkerProtocol._
 
-  private val fileGroupJobHandlers: Seq[ActorRef] = for (i <- 1 to 2) yield {
+  private val NumberOfDaughters = 2
+
+  private val fileGroupJobHandlers: Seq[ActorRef] = for (i <- 1 to NumberOfDaughters) yield {
     val handler = context.actorOf(createFileGroupJobHandler)
-    handler ! ListenForFileGroupJobs
+    handler ! StartListening
 
     handler
   }
@@ -60,9 +63,13 @@ class MotherWorker extends Actor {
         val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
         val jobState = computeJobState(fileGroup)
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
+
+        context.parent ! JobDone(fileGroupId)
       }
     case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
       if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
+
+      context.parent ! JobDone(fileGroupId)
     }
 
   }
@@ -88,16 +95,24 @@ object MotherWorker {
     override val storage: StorageImpl = new StorageImpl
 
     class StorageImpl extends Storage {
-      def findFileGroup(fileGroupId: Long): Option[FileGroup] = FileGroupFinder.byId(fileGroupId).headOption
+      def findFileGroup(fileGroupId: Long): Option[FileGroup] = Database.inTransaction {
+        FileGroupFinder.byId(fileGroupId).headOption
+      }
 
-      def countFileUploads(fileGroupId: Long): Long = FileUploadFinder.countsByFileGroup(fileGroupId)
+      def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
+        FileUploadFinder.countsByFileGroup(fileGroupId)
+      }
 
-      def countProcessedFiles(fileGroupId: Long): Long = FileFinder.countByFinishedState(fileGroupId)
+      def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
+        FileFinder.countByFinishedState(fileGroupId)
+      }
 
       def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =
-        DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption
+        Database.inTransaction {
+          DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption
+        }
 
-      def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long = {
+      def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long = Database.inTransaction {
         val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
           title = title,
           lang = lang,
@@ -106,21 +121,25 @@ object MotherWorker {
         documentSet.id
       }
 
-      def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long = {
-        val documentSetCreationJob = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-          documentSetId = documentSetId,
-          jobType = FileUpload,
-          lang = lang,
-          suppliedStopWords = suppliedStopWords,
-          fileGroupId = Some(fileGroupId),
-          state = state))
-        documentSetCreationJob.id
-      }
+      def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long =
+        Database.inTransaction {
+          val documentSetCreationJob = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
+            documentSetId = documentSetId,
+            jobType = FileUpload,
+            lang = lang,
+            suppliedStopWords = suppliedStopWords,
+            fileGroupId = Some(fileGroupId),
+            state = state))
+          documentSetCreationJob.id
+        }
 
-      def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob = 
-        DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
+      def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob =
+        Database.inTransaction {
+          DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
+        }
+
     }
   }
-  
+
   def apply(): Props = Props[MotherWorkerImpl]
 }

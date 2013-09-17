@@ -87,11 +87,11 @@ class FileHandlerImpl extends FileHandler with FileHandlerComponents {
     
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
     
-    override def storeFile(file: File): Unit = {
+    override def storeFile(file: File): Unit = Database.inTransaction {
       FileStore.insertOrUpdate(file)
     }
     
-    override def storeText(fileId: Long, text: String): Unit = {
+    override def storeText(fileId: Long, text: String): Unit = Database.inTransaction {
       val fileText = FileText(fileId, text)
       FileTextStore.insertOrUpdate(fileText)
     }

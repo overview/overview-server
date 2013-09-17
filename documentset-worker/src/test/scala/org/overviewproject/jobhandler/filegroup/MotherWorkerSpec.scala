@@ -6,7 +6,6 @@ import org.overviewproject.test.ForwardingActor
 import org.overviewproject.test.ActorSystemContext
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.StartClusteringCommand
 import org.specs2.mock.Mockito
 import org.overviewproject.tree.orm.FileGroup
@@ -42,7 +41,6 @@ class MotherWorkerSpec extends Specification with Mockito {
 
       motherWorker.underlyingActor.numberOfChildren must be equalTo (2)
 
-      fileGroupJobHandler.expectMsg(ListenForFileGroupJobs)
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new ActorSystemContext {
