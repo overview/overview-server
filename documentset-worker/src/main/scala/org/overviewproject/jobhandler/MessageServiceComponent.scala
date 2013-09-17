@@ -59,7 +59,7 @@ trait MessageServiceComponentImpl extends MessageServiceComponent {
       consumer = createConsumer
       consumer.setMessageListener(messageHandler)
       connection.start
-      Logger.info("Connected to message broker")
+      Logger.info(s"Connected to message broker: $queueName")
     }
 
     private class MessageHandler(messageDelivery: String => Future[Unit]) extends MessageListener {

@@ -8,8 +8,6 @@ import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
-import org.overviewproject.jobhandler.filegroup.FileGroupJobHandler
-import org.overviewproject.jobhandler.filegroup.FileGroupJobHandlerProtocol.ListenForFileGroupJobs
 import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
 
 /**
@@ -41,5 +39,6 @@ object DocumentSetWorker extends App {
   }
 
   val clusteringJobHandler = system.actorOf(ClusteringJobHandler())
+  clusteringJobHandler ! StartListening
 }
 

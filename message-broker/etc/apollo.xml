@@ -55,6 +55,7 @@
     
     <queue id="document-set-commands" auto_delete_after="0"/>
     <queue id="file-group-commands" auto_delete_after="0"/> 
+    <queue id="clustering-commands" auto_delete_after="0"/>
   </virtual_host>
 
 
