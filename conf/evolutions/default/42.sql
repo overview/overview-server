@@ -56,6 +56,13 @@ CREATE INDEX file_upload_file_group_id ON file_upload (file_group_id);
 ALTER TABLE document_set_creation_job ADD COLUMN file_group_id BIGINT REFERENCES file_group(id);
 CREATE INDEX document_set_creation_job_file_group_id ON document_set_creation_job (file_group_id);
 
+INSERT INTO document_set_creation_job_type (id, name) VALUES (4, 'FileUpload');
+ALTER TABLE document_set_creation_job ADD CONSTRAINT document_set_creation_job_file_upload_job_type_check
+  CHECK (type <> 4 OR file_group_id IS NOT NULL);
+
+ALTER TABLE document_set_creation_job DROP CONSTRAINT document_set_creation_job_state_check;
+ALTER TABLE document_set_creation_job ADD CONSTRAINT document_set_creation_job_state_check CHECK (state IN (0,1,2,3,4));
+
 COMMIT;
 
 
@@ -64,6 +71,12 @@ COMMIT;
 
 BEGIN;
 
+DELETE FROM document_set_creation_job WHERE document_set_creation_job.state = 4;
+ALTER TABLE document_set_creation_job DROP CONSTRAINT document_set_creation_job_state_check;
+ALTER TABLE document_set_creation_job ADD CONSTRAINT document_set_creation_job_state_check CHECK (state IN (0,1,2,3));
+
+ALTER TABLE document_set_creation_job DROP CONSTRAINT document_set_creation_job_file_upload_job_type_check;
+DELETE FROM document_set_creation_job_type WHERE id = 4;
 ALTER TABLE document_set_creation_job DROP COLUMN file_group_id;
 
 DROP TABLE IF EXISTS file_upload CASCADE;
