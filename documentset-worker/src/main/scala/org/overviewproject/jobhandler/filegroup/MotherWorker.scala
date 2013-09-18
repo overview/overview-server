@@ -17,6 +17,9 @@ import org.overviewproject.database.orm.stores.DocumentSetStore
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
 import org.overviewproject.database.Database
+import org.overviewproject.database.orm.stores.DocumentSetUserStore
+import org.overviewproject.tree.orm.DocumentSetUser
+import org.overviewproject.tree.Ownership
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -38,6 +41,7 @@ trait FileGroupJobHandlerComponent {
     def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
 
     def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long
+    def storeDocumentSetUser(documentSetId: Long, userEmail: String): Unit
     def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
   }
@@ -61,6 +65,7 @@ class MotherWorker extends Actor {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
       storage.findFileGroup(fileGroupId).map { fileGroup =>
         val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
+        storage.storeDocumentSetUser(documentSetId, fileGroup.userEmail)
         val jobState = computeJobState(fileGroup)
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
 
@@ -119,6 +124,10 @@ object MotherWorker {
           suppliedStopWords = suppliedStopWords))
 
         documentSet.id
+      }
+      
+      def storeDocumentSetUser(documentSetId: Long, userEmail: String): Unit = Database.inTransaction {
+        DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSetId, userEmail, Ownership.Owner))
       }
 
       def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long =

@@ -33,6 +33,7 @@ class MotherWorkerSpec extends Specification with Mockito {
     val stopWords = "ignore us"
     val fileGroupId = 1l
     val documentSetId = 2l
+    val userEmail = "user@email.com"
 
     "create 2 FileGroupJobHandlers" in new ActorSystemContext {
       val fileGroupJobHandler = TestProbe()
@@ -49,6 +50,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       val fileGroup = mock[FileGroup]
       fileGroup.id returns fileGroupId
       fileGroup.state returns InProgress
+      fileGroup.userEmail returns userEmail
 
       val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
@@ -59,6 +61,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
 
       there was one(storage).storeDocumentSet(title, lang, stopWords)
+      there was one(storage).storeDocumentSetUser(documentSetId, userEmail)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
 
     }
