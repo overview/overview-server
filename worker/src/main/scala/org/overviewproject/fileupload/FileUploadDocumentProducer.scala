@@ -15,6 +15,8 @@ import org.overviewproject.persistence.PersistentDocumentSet
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.persistence.DocRetrievalErrorWriter
+import org.overviewproject.util.DocumentSetIndexingSession
+import org.overviewproject.util.SearchIndex
 
 class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
                                  consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer
@@ -25,10 +27,13 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   private val FetchingFraction = 0.25
   private var jobCancelled: Boolean = false
   private val ids = new DocumentSetIdGenerator(documentSetId)
+  private var indexingSession: DocumentSetIndexingSession = _
 
   var numberOfDocumentsRead = 0
 
   def produce(): Unit = {
+
+    indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
 
     var lastUpdateTime = 0l
     var fileErrors: Seq[DocumentRetrievalError] = Seq()
@@ -43,7 +48,8 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
         if (file.state == Complete) {
           val documentId = writeAndCommitDocument(documentSetId, file)
-
+          indexingSession.indexDocument(documentSetId, documentId, file.text, Some(file.name), None)
+          
           consumer.processDocument(documentId, file.text)
         } else {
           fileErrors = DocumentRetrievalError("", file.name) +: fileErrors
@@ -54,7 +60,8 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
         lastUpdateTime = reportProgress(numberOfDocumentsRead, fileCount, lastUpdateTime)
       }
     }
-    
+    indexingSession.complete
+
     consumer.productionComplete()
     updateDocumentSetCounts(documentSetId, numberOfDocumentsRead, 0)
 
