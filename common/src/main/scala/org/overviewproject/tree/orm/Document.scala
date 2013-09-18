@@ -4,16 +4,7 @@ import org.squeryl.KeyedEntity
 import org.squeryl.annotations.Column
 import org.overviewproject.postgres.PostgresqlEnum
 
-object DocumentType extends Enumeration {
-  type DocumentType = Value
-  
-  val DocumentCloudDocument = Value(1, "DocumentCloudDocument")
-  val CsvImportDocument = Value("CsvImportDocument")
-  val FileUploadDocument = Value("FileUploadDocument")
-}
-
 case class Document(
-  @Column("type") val documentType: DocumentType.Value,
   @Column("document_set_id") val documentSetId: Long = 0L,
   val description: String = "",
   val title: Option[String] = None,
@@ -25,7 +16,5 @@ case class Document(
 
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
   override def isPersisted(): Boolean = (id > 0)
-  
-  def this() = this(documentType = DocumentType.DocumentCloudDocument) 
 }
 

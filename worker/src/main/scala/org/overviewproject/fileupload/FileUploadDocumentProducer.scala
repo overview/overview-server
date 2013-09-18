@@ -9,7 +9,6 @@ import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.database.Database
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.persistence.DocumentWriter
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
 import org.overviewproject.persistence.PersistentDocumentSet
@@ -62,8 +61,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   }
 
   private def writeAndCommitDocument(documentSetId: Long, file: File): Long = Database.inTransaction {
-    val document = Document(FileUploadDocument, documentSetId, id = ids.next,
-      title = Some(file.name), text = Some(file.text))
+    val document = Document(id = ids.next, title = Some(file.name), text = Some(file.text))
 
     DocumentWriter.write(document)
 

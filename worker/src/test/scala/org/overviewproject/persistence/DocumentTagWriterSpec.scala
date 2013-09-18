@@ -7,7 +7,6 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType._
 
 class DocumentTagWriterSpec extends DbSpecification {
 
@@ -17,7 +16,7 @@ class DocumentTagWriterSpec extends DbSpecification {
     
     inExample("write DocumentTags in batches") in new DbTestContext {
       val documentSetId = insertDocumentSet("DocumentTagWriterSpec")
-      val document = Document(CsvImportDocument, documentSetId, "title", text = Some("text"))
+      val document = Document(documentSetId, "title", text = Some("text"))
       Schema.documents.insert(document)
       
       val documentTagWriter = new DocumentTagWriter(documentSetId)

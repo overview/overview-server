@@ -5,7 +5,7 @@ import java.io.{ ByteArrayOutputStream, StringReader }
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 
-import org.overviewproject.tree.orm.{ Document, DocumentType }
+import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.finders.FinderResult
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -39,7 +39,7 @@ class ExportDocumentsWithStringTagsSpec extends Specification with Mockito {
   }
 
   trait OneDocumentScope extends BaseScope {
-    def document : Document = Document(documentType=DocumentType.DocumentCloudDocument)
+    def document : Document = Document()
     def tags : Option[String] = None
     finderResult.toIterable returns Seq((document, tags))
     lazy val resultRow = resultRows(1)

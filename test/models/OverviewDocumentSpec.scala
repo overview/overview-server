@@ -7,7 +7,7 @@ import play.api.test.FakeApplication
 
 // OverviewDocument wraps models.orm.Document. Let's be transparent about that
 // in this test.
-import org.overviewproject.tree.orm.{ Document, DocumentType }
+import org.overviewproject.tree.orm.Document
 
 class OverviewDocumentSpec extends DbSpecification {
   step(start(FakeApplication()))
@@ -29,7 +29,6 @@ class OverviewDocumentSpec extends DbSpecification {
       def text: String = "Text"
       
       override def ormDocument = Document(
-        DocumentType.CsvImportDocument,
         id=ormDocumentId,
         url=suppliedUrl,
         suppliedId=suppliedId,
@@ -45,7 +44,6 @@ class OverviewDocumentSpec extends DbSpecification {
       def documentcloudId: String = "123-documentcloud-id"
 
       override def ormDocument = Document(
-        DocumentType.DocumentCloudDocument,
         id=ormDocumentId,
         documentcloudId=Some(documentcloudId)
       )

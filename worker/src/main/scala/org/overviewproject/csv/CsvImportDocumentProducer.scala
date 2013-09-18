@@ -11,7 +11,6 @@ import scala.concurrent.duration._
 import org.overviewproject.database.{ Database, DB }
 import org.overviewproject.persistence.{ DocumentSetIdGenerator, DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType.{ CsvImportDocument => CsvImportDocumentType }
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
@@ -92,7 +91,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
 
   private def writeAndCommitDocument(documentSetId: Long, doc: CsvImportDocument): Long = {
     Database.inTransaction {
-      val document = Document(CsvImportDocumentType, documentSetId, id = ids.next, title = doc.title,
+      val document = Document(documentSetId, id = ids.next, title = doc.title,
         suppliedId = doc.suppliedId, text = Some(doc.text), url = doc.url)
       DocumentWriter.write(document)
       writeTags(document, doc.tags)

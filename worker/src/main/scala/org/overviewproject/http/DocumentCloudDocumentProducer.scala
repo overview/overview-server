@@ -18,7 +18,6 @@ import org.overviewproject.documentcloud.ImporterProtocol._
 import org.overviewproject.persistence._
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
-import org.overviewproject.tree.orm.DocumentType.DocumentCloudDocument
 import org.overviewproject.util._
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
@@ -123,7 +122,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private def notify(doc: RetrievedDocument, text: String)(implicit context: ActorSystem): Unit = {
     val id = Database.inTransaction {
-      val document = Document(DocumentCloudDocument, documentSetId, 
+      val document = Document(documentSetId, 
           id = ids.next, 
           title = Some(doc.title), 
           text = Some(text),

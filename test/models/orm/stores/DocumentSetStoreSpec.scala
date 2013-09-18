@@ -33,7 +33,6 @@ class DocumentSetStoreSpec extends Specification {
     def insertDocument(documentSet : DocumentSet) = {
       DocumentStore.insert(Document(
         id=1L,
-        documentType=DocumentType.DocumentCloudDocument,
         documentSetId=documentSet.id,
         documentcloudId=Some("1-hello"),
         description="description"

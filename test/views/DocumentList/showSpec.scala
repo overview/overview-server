@@ -2,7 +2,7 @@ package views.json.DocumentList
 
 import org.specs2.mutable.Specification
 
-import org.overviewproject.tree.orm.{Document,DocumentType}
+import org.overviewproject.tree.orm.Document
 import models.{ResultPage,ResultPageDetails}
 
 class showSpec extends Specification {
@@ -12,7 +12,6 @@ class showSpec extends Specification {
     "contain documents and total_items" in {
       val documents = Seq(
         (Document(
-          documentType=DocumentType.DocumentCloudDocument,
           documentSetId=1L,
           id=5L,
           description="description",

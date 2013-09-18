@@ -5,7 +5,6 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, Node }
-import org.overviewproject.tree.orm.DocumentType._
 import org.squeryl.KeyedEntity
 import org.overviewproject.persistence.DocumentSetIdGenerator
 
@@ -46,7 +45,6 @@ class NodeDocumentClonerSpec extends DbSpecification {
       ))
       val sourceDocuments = Seq.tabulate(10)(i => Document(
         id=documentIds.next,
-        documentType=CsvImportDocument,
         documentSetId=documentSetId,
         text=Some("text-" + i)
       ))

@@ -5,7 +5,6 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.{ Document, DocumentTag }
-import org.overviewproject.tree.orm.DocumentType._
 import org.squeryl.KeyedEntity
 import org.overviewproject.persistence.DocumentSetIdGenerator
 
@@ -41,7 +40,7 @@ class DocumentTagClonerSpec extends DbSpecification {
         val sourceIds = new DocumentSetIdGenerator(sourceDocumentSetId)
         val cloneIds = new DocumentSetIdGenerator(cloneDocumentSetId)
         
-        val sourceDocuments = Seq.tabulate(10)(i => Document(CsvImportDocument, sourceDocumentSetId, text = Some("text-" + i), id = sourceIds.next))
+        val sourceDocuments = Seq.tabulate(10)(i => Document(sourceDocumentSetId, text = Some("text-" + i), id = sourceIds.next))
         val sourceTags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-i", "000000"))
         val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneIds.next))
         val cloneTags = sourceTags.map(_.copy(documentSetId = cloneDocumentSetId))

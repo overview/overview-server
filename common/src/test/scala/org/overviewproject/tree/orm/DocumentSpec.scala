@@ -3,7 +3,6 @@ package org.overviewproject.tree.orm
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.IdGenerator._
-import org.overviewproject.tree.orm.DocumentType._
 import org.overviewproject.postgres.SquerylEntrypoint._
 
 class DocumentSpec extends DbSpecification {
@@ -20,19 +19,19 @@ class DocumentSpec extends DbSpecification {
         document = createDocument
       }
       
-      def createDocument: Document = Document(DocumentCloudDocument, documentSetId, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      def createDocument: Document = Document(documentSetId, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
     } 
     
     trait DocumentWithDescription extends DocumentContext {
       val documentDescription = "description"
         
-      override def createDocument: Document = Document(DocumentCloudDocument, documentSetId, documentDescription, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      override def createDocument: Document = Document(documentSetId, documentDescription, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
     }
     
     trait DocumentWithTitle extends DocumentContext {
       val documentTitle = Some("title")
       
-      override def createDocument: Document = Document(DocumentCloudDocument, documentSetId, title = documentTitle, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      override def createDocument: Document = Document(documentSetId, title = documentTitle, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
     }
     
     "read and write description" in new DocumentWithDescription {

@@ -6,7 +6,6 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.tree.orm.DocumentType._
 
 
 class DocumentClonerSpec extends DbSpecification {
@@ -17,7 +16,7 @@ class DocumentClonerSpec extends DbSpecification {
     trait CloneContext extends DbTestContext {
       var documentSetId: Long = _
       var documentSetCloneId: Long = _
-      var expectedCloneData: Seq[(DocumentType, Long, String)] = _
+      var expectedCloneData: Seq[(Long, String)] = _
       var documentIdMapping: Map[Long, Long] = _
       var sourceDocuments: Seq[Document] = _
       var clonedDocuments: Seq[Document] = _
@@ -29,7 +28,7 @@ class DocumentClonerSpec extends DbSpecification {
       }
 
       def documents: Seq[Document] = Seq.tabulate(10)(i =>
-          Document(CsvImportDocument, documentSetId, text = Some("text-" + i), id = ids.next))
+          Document(documentSetId, text = Some("text-" + i), id = ids.next))
 
       override def setupWithDb = {
         documentSetId = createCsvImportDocumentSet
@@ -39,7 +38,7 @@ class DocumentClonerSpec extends DbSpecification {
         Schema.documents.insert(documents)
         sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
 
-        expectedCloneData = sourceDocuments.map(d => (CsvImportDocument, documentSetCloneId, d.text.get))
+        expectedCloneData = sourceDocuments.map(d => (documentSetCloneId, d.text.get))
 
         DocumentCloner.clone(documentSetId, documentSetCloneId)
         clonedDocuments = Schema.documents.where(d => d.documentSetId === documentSetCloneId).toSeq
@@ -48,11 +47,11 @@ class DocumentClonerSpec extends DbSpecification {
     }
     
     trait DocumentsWithLargeIds extends CloneContext {
-      override def documents: Seq[Document] = Seq(Document(CsvImportDocument, documentSetId, text = Some("text"), id = ids.next + 0xFFFFFFFAl))
+      override def documents: Seq[Document] = Seq(Document(documentSetId, text = Some("text"), id = ids.next + 0xFFFFFFFAl))
     }
 
     "Create document clones" in new CloneContext {
-      val clonedData = clonedDocuments.map(d => (CsvImportDocument, d.documentSetId, d.text.get))
+      val clonedData = clonedDocuments.map(d => (d.documentSetId, d.text.get))
       clonedData must haveTheSameElementsAs(expectedCloneData)
     }
     
