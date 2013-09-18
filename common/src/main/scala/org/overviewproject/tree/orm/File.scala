@@ -3,7 +3,7 @@ package org.overviewproject.tree.orm
 import org.squeryl.KeyedEntity
 import java.util.UUID
 import java.sql.Timestamp
-import org.overviewproject.tree.orm.FileJobState.Error
+import org.overviewproject.tree.orm.FileJobState._
 
 case class File (
   guid: UUID,
@@ -11,7 +11,7 @@ case class File (
   contentType: String,
   contentsOid: Long,
   size: Long,
-  state: FileJobState.Value,
+  state: FileJobState,
   text: String,
   uploadedAt: Timestamp,
   override val id: Long = 0L   

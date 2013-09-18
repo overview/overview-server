@@ -12,11 +12,13 @@ import org.overviewproject.tree.orm.Document
 import org.overviewproject.persistence.DocumentWriter
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
 import org.overviewproject.persistence.PersistentDocumentSet
-
+import org.overviewproject.documentcloud.DocumentRetrievalError
+import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.persistence.DocRetrievalErrorWriter
 
 class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
                                  consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer
-                                 with PersistentDocumentSet {
+    with PersistentDocumentSet {
 
   private val UpdateInterval = 1000l
   private val PreparingFraction = 0.25
@@ -26,38 +28,50 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
   var numberOfDocumentsRead = 0
 
-  def produce(): Unit = Database.inTransaction {
+  def produce(): Unit = {
 
     var lastUpdateTime = 0l
-    val fileCount: Long = FileFinder.byFileGroup(fileGroupId).count
-    val files: Iterable[File] = FileFinder.byFileGroup(fileGroupId)
-    val iterator = files.iterator
+    var fileErrors: Seq[DocumentRetrievalError] = Seq()
 
-    while (!jobCancelled && iterator.hasNext) {
-      val file = iterator.next
+    Database.inTransaction {
+      val fileCount: Long = FileFinder.byFileGroup(fileGroupId).count
+      val files: Iterable[File] = FileFinder.byFileGroup(fileGroupId)
+      val iterator = files.iterator
 
-      val documentId = writeAndCommitDocument(documentSetId, file)
+      while (!jobCancelled && iterator.hasNext) {
+        val file = iterator.next
 
-      consumer.processDocument(documentId, file.text)
-      numberOfDocumentsRead += 1
+        if (file.state == Complete) {
+          val documentId = writeAndCommitDocument(documentSetId, file)
 
-      lastUpdateTime = reportProgress(numberOfDocumentsRead, fileCount, lastUpdateTime)
+          consumer.processDocument(documentId, file.text)
+        } else {
+          fileErrors = DocumentRetrievalError("", file.name) +: fileErrors
+        }
+
+        numberOfDocumentsRead += 1
+
+        lastUpdateTime = reportProgress(numberOfDocumentsRead, fileCount, lastUpdateTime)
+      }
     }
-
+    
     consumer.productionComplete()
     updateDocumentSetCounts(documentSetId, numberOfDocumentsRead, 0)
+
+    Database.inTransaction {
+      DocRetrievalErrorWriter.write(documentSetId, fileErrors)
+    }
   }
 
   private def reportProgress(numberOfDocumentsRead: Long, fileCount: Long, lastUpdateTime: Long): Long = {
     val now = scala.compat.Platform.currentTime
 
     if (now - lastUpdateTime > UpdateInterval) {
-      val fractionComplete = PreparingFraction + FetchingFraction * numberOfDocumentsRead / fileCount 
+      val fractionComplete = PreparingFraction + FetchingFraction * numberOfDocumentsRead / fileCount
       jobCancelled = progAbort(Progress(fractionComplete, Parsing(numberOfDocumentsRead, fileCount)))
-        
+
       now
-    }
-    else lastUpdateTime
+    } else lastUpdateTime
   }
 
   private def writeAndCommitDocument(documentSetId: Long, file: File): Long = Database.inTransaction {
