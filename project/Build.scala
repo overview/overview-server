@@ -94,7 +94,8 @@ object ApplicationBuild extends Build with ProjectSettings {
   val common = OverviewProject("common", commonProjectDependencies, useSharedConfig = false)
 
   val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies, useSharedConfig = false)
-
+    .dependsOn(common)
+    
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
     .settings(
       Keys.fork := true,

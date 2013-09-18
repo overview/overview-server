@@ -54,23 +54,21 @@ object JobHandler {
       }
 
       j.jobType match {
-        case DocumentSetCreationJobType.CsvUpload | DocumentSetCreationJobType.DocumentCloud => handleCreationJob(j, progFn)
         case DocumentSetCreationJobType.Clone => handleCloneJob(j)
+        case _ => handleCreationJob(j, progFn)
       }
 
       Database.inTransaction { j.delete }
 
     } catch {
       case e: Exception => reportError(j, e)
-      case t: Throwable =>  { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
+      case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
         reportError(j, t)
         DB.close()
-        throw(t)
+        throw (t)
       }
     }
   }
-  
-
 
   // Run each job currently listed in the database
   def scanForJobs: Unit = {
@@ -99,12 +97,12 @@ object JobHandler {
     val dataSource = new DataSource(config)
 
     DB.connect(dataSource)
- 
+
     val searchIndexSetup = Try {
       Logger.info("Looking for Search Index")
       SearchIndex.createIndexIfNotExisting
     }
-    
+
     searchIndexSetup match {
       case Success(v) => {
         Logger.info("Starting to scan for jobs")
@@ -112,12 +110,11 @@ object JobHandler {
       }
       case Failure(e) => {
         Logger.error("Unable to create Search Index", e)
-        throw(e)
+        throw (e)
       }
     }
   }
-  
-  
+
   private def startHandlingJobs: Unit = {
     val pollingInterval = 500 //milliseconds
 
@@ -206,7 +203,7 @@ object JobHandler {
       CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
     }
   }
-  
+
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
     job.state = Error

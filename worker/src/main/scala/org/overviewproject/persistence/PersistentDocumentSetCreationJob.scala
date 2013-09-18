@@ -1,6 +1,8 @@
 /*
  * PersistentDocumentSetCreationJob.scala
  *
+ * FIXME: replace this with a DocumentSetCreationJobStore
+ * 
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
  */
@@ -36,6 +38,9 @@ trait PersistentDocumentSetCreationJob {
   // Only Clone jobs require sourceDocumentSetId
   val sourceDocumentSetId: Option[Long]
 
+  // Only FileUpload jobs require fileGroupId
+  val fileGroupId: Option[Long]
+  
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -85,7 +90,8 @@ object PersistentDocumentSetCreationJob {
     val splitDocuments: Boolean = documentSetCreationJob.splitDocuments
     val contentsOid: Option[Long] = documentSetCreationJob.contentsOid
     val sourceDocumentSetId: Option[Long] = documentSetCreationJob.sourceDocumentSetId
-
+    val fileGroupId: Option[Long] = documentSetCreationJob.fileGroupId
+    
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
     var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)

@@ -89,8 +89,9 @@ trait ProjectSettings {
     akkaTestkit,
     specs2Dep,    
     geronimoJmsDep,
+    squerylDep,
     stompDep,
-     mockitoDep % "test"
+    mockitoDep % "test"
   )
   
   val documentSetWorkerProjectDependencies = Seq(

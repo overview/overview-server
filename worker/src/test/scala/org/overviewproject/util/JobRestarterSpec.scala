@@ -20,7 +20,8 @@ class JobRestarterSpec extends Specification with Mockito {
     val splitDocuments: Boolean = false
     val contentsOid: Option[Long] = None
     val sourceDocumentSetId: Option[Long] = None
-
+    val fileGroupId: Option[Long] = None
+    
     var state = InProgress
     var fractionComplete = 0.98
     var statusDescription: Option[String] = Some("Almost finished!")

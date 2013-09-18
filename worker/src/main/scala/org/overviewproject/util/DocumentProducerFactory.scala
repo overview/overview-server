@@ -11,6 +11,7 @@ import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
 import org.overviewproject.persistence.{DocumentSet, PersistentDocumentSetCreationJob}
 import org.overviewproject.util.Progress.ProgressAbortFn
+import org.overviewproject.fileupload.FileUploadDocumentProducer
 
 
 /** Common functionality for DocumentProducers */
@@ -55,6 +56,8 @@ object DocumentProducerFactory {
         new DocumentCloudDocumentProducer(documentSetCreationJob, documentSet.query.get, credentials, MaxDocuments, consumer, progAbort)
       case DocumentSetCreationJobType.CsvUpload =>
         new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
+      case DocumentSetCreationJobType.FileUpload =>
+        new FileUploadDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.fileGroupId.get, consumer, progAbort )
     }
   }
 }
