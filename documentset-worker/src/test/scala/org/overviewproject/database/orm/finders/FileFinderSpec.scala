@@ -20,7 +20,7 @@ class FileFinderSpec extends DbSpecification {
   "FileFinder" should {
 
     "count finished Files" in new DbTestContext {
-      val fileGroup = FileGroupStore.insertOrUpdate(FileGroup(UUID.randomUUID, 1l, Complete))
+      val fileGroup = FileGroupStore.insertOrUpdate(FileGroup(UUID.randomUUID, "admin@overviewproject.org", Complete))
 
       val numberOfCompleteFiles = 3
       val numberOfErrorFiles = 3

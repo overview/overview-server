@@ -6,11 +6,11 @@ import org.overviewproject.tree.orm.FileJobState.Error
 
 case class FileGroup(
     guid: UUID,
-    userId: Long,
+    userEmail: String,
     state: FileJobState.Value,
     override val id: Long = 0L) extends KeyedEntity[Long] {
 
-  def this() = this(new UUID(0, 0), 0, Error)
+  def this() = this(new UUID(0, 0), "", Error)
 
   override def isPersisted(): Boolean = (id > 0)
 }

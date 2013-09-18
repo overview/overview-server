@@ -21,7 +21,7 @@ class FileUploadFinderSpec extends DbSpecification {
     
     "count FileUploads" in new DbTestContext {
       val numberOfFileUploads = 10
-      val fileGroup = FileGroupStore.insertOrUpdate(FileGroup(UUID.randomUUID, 1l, Complete))
+      val fileGroup = FileGroupStore.insertOrUpdate(FileGroup(UUID.randomUUID, "admin@overviewproject.org", Complete))
       
       val fileUploads = Seq.tabulate(numberOfFileUploads)(n => FileUpload(
           fileGroup.id,

@@ -5,10 +5,9 @@ BEGIN;
 CREATE TABLE file_group (
   id               BIGSERIAL PRIMARY KEY,
   guid             UUID NOT NULL,
-  user_id          BIGINT NOT NULL REFERENCES "user" (id),
+  user_email       VARCHAR(255) NOT NULL,
   state            INTEGER NOT NULL
 );
-CREATE INDEX file_group_user_id ON file_group (user_id);
 
 CREATE TABLE file_job_state (
   id                INTEGER NOT NULL,
