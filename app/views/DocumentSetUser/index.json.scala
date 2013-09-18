@@ -1,6 +1,6 @@
 package views.json.DocumentSetUser
 
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.JsValue
 

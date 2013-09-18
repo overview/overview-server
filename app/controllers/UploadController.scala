@@ -6,12 +6,12 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
 
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, DocumentSetUser }
 import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
 import controllers.forms.UploadControllerForm
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
-import models.orm.{ DocumentSetUser, User }
+import models.orm.User
 import models.orm.finders.UserFinder
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.{ OverviewDatabase, OverviewUser }

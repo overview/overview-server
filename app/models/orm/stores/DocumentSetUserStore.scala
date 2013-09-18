@@ -3,7 +3,7 @@ package models.orm.stores
 import org.squeryl.Query
 import org.overviewproject.postgres.SquerylEntrypoint._
 
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import models.orm.Schema
 
 object DocumentSetUserStore {

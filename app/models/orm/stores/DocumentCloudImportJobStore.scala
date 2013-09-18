@@ -2,7 +2,7 @@ package models.orm.stores
 
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
-import models.orm.DocumentSetUser 
+import org.overviewproject.tree.orm.DocumentSetUser 
 import models.DocumentCloudImportJob
 
 object DocumentCloudImportJobStore {

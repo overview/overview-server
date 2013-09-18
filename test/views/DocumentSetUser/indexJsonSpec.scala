@@ -3,7 +3,7 @@ package views.json.DocumentSetUser
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.Ownership
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 
 class indexSpec extends Specification {
 

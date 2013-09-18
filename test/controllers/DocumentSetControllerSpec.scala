@@ -17,7 +17,7 @@ import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.DocumentSet
 import controllers.auth.AuthorizedRequest
 import controllers.forms.DocumentSetForm.Credentials
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import models.{ OverviewUser, ResultPage }
 
 class DocumentSetControllerSpec extends Specification with Mockito {

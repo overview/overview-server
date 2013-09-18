@@ -1,7 +1,7 @@
 package steps
 
 import models.OverviewDatabase
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import models.orm.stores.DocumentSetUserStore
 import controllers.routes
 import org.overviewproject.tree.Ownership

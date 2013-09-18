@@ -11,7 +11,7 @@ import play.api.test.Helpers._
 import org.overviewproject.tree.Ownership
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 
 class DocumentSetUserControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))

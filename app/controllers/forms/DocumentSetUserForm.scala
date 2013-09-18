@@ -4,7 +4,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 
 import org.overviewproject.tree.Ownership
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 
 object DocumentSetUserForm {
   def apply(documentSetId: Long): Form[DocumentSetUser] = Form(

@@ -5,7 +5,7 @@ import play.api.mvc.Controller
 import org.overviewproject.tree.Ownership
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetUserForm
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import models.orm.finders.DocumentSetUserFinder
 import models.orm.stores.DocumentSetUserStore
 

@@ -4,7 +4,7 @@ import org.fluentlenium.core.filter.FilterConstructor.withText
 
 import controllers.routes
 import models.OverviewDatabase
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.stores.{ DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.tree.Ownership

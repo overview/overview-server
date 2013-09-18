@@ -5,7 +5,7 @@ import org.specs2.specification.Scope
 import play.api.data.Form
 
 import org.overviewproject.tree.Ownership
-import models.orm.DocumentSetUser
+import org.overviewproject.tree.orm.DocumentSetUser
 
 class DocumentSetUserFormSpec extends Specification {
 

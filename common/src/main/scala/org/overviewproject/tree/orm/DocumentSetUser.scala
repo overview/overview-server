@@ -1,4 +1,4 @@
-package models.orm
+package org.overviewproject.tree.orm
 
 import org.squeryl.KeyedEntity
 import org.squeryl.dsl.CompositeKey2

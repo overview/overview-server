@@ -2,9 +2,10 @@ package models.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.DocumentSetUser
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
-import models.orm.{ DocumentSetUser, Schema }
+import models.orm.Schema
 
 object DocumentSetUserFinder extends Finder {
   /** @return All `DocumentSetUser`s for a DocumentSet.
