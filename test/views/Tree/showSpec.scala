@@ -3,7 +3,7 @@ package views.json.Tree
 import play.api.libs.json.Json.toJson
 import org.specs2.mutable.Specification
 
-import org.overviewproject.tree.orm.{Node,Document,DocumentType,Tag}
+import org.overviewproject.tree.orm.{ Node, Document, Tag }
 
 class showSpec extends Specification {
   def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
