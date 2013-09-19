@@ -82,7 +82,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   }
 
   private def writeAndCommitDocument(documentSetId: Long, file: File): Long = Database.inTransaction {
-    val document = Document(id = ids.next, title = Some(file.name), text = Some(file.text))
+    val document = Document(documentSetId, id = ids.next, title = Some(file.name), text = Some(file.text))
 
     DocumentWriter.write(document)
 
