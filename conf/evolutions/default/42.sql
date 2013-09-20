@@ -22,22 +22,17 @@ INSERT INTO file_job_state (id, description) VALUES
 
 CREATE TABLE file (
   id                BIGSERIAL PRIMARY KEY,
+  file_group_id     BIGINT NOT NULL references file_group (id),
   guid              UUID NOT NULL,
   name              VARCHAR NOT NULL,
   content_type      VARCHAR NOT NULL,
-  contents_oid      OID NOT NULL,
   size              BIGINT NOT NULL,
   uploaded_at       TIMESTAMP NOT NULL,
   state             INTEGER NOT NULL,
   text		    VARCHAR NOT NULL
 );
+CREATE INDEX file_file_group_id ON file (file_group_id);
 
-CREATE TABLE file_group_file (
-  file_group_id     BIGINT NOT NULL REFERENCES file_group (id),
-  file_id           BIGINT NOT NULL REFERENCES file (id)
-);
-CREATE INDEX file_group_file_file_group_id ON file_group_file (file_group_id);
-CREATE INDEX file_group_file_file_id ON file_group_file (file_id);
 
 CREATE TABLE file_upload (
   id                    BIGSERIAL PRIMARY KEY,

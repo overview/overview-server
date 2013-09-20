@@ -29,10 +29,10 @@ class FileHandlerSpec extends Specification with Mockito {
     val extractedText: String = "Text from PDF"
 
     val file = File(
+      1L,
       fileUpload.guid,
       "file name",
       fileUpload.contentType,
-      fileUpload.contentsOid,
       fileUpload.size,
       Complete,
       extractedText,
@@ -44,7 +44,7 @@ class FileHandlerSpec extends Specification with Mockito {
       override val pdfProcessor = mock[PdfProcessor]
 
       dataStore.findFileUpload(fileUpload.id) returns (Some(fileUpload))
-      dataStore.fileContentStream(file.contentsOid) returns mock[InputStream]
+      dataStore.fileContentStream(fileUpload.contentsOid) returns mock[InputStream]
 
       pdfProcessor.extractText(any) returns extractedText
 
@@ -62,15 +62,15 @@ class FileHandlerSpec extends Specification with Mockito {
       there was one(dataStore).fileContentStream(fileUpload.contentsOid)
 
       there was one(pdfProcessor).extractText(any)
-      there was one(dataStore).storeFile(any, any) // can't check against file for some reason
+      there was one(dataStore).storeFile(any) // can't check against file for some reason
     }
-    
+
     "send JobDone to sender" in new ActorSystemContext {
       val documentSetId = 1l
       val fileHandler = TestActorRef(new TestFileHandler)
-      
+
       fileHandler ! ExtractText(documentSetId, fileUpload.id)
-      
+
       expectMsg(JobDone(documentSetId))
     }
   }

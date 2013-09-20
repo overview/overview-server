@@ -6,10 +6,10 @@ import java.sql.Timestamp
 import org.overviewproject.tree.orm.FileJobState._
 
 case class File (
+  fileGroupId: Long,
   guid: UUID,
   name: String,
   contentType: String,
-  contentsOid: Long,
   size: Long,
   state: FileJobState,
   text: String,
@@ -18,5 +18,5 @@ case class File (
 ) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)
   
-  def this() = this(new UUID(0, 0), "", "", 0, 0, Error, "", new Timestamp(0))
+  def this() = this(0, new UUID(0, 0), "", "", 0, Error, "", new Timestamp(0))
 }

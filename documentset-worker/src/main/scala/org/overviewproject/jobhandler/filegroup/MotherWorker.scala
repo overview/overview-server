@@ -109,7 +109,7 @@ object MotherWorker {
       }
 
       def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
-        FileFinder.countByFinishedState(fileGroupId)
+        FileFinder.byFinishedState(fileGroupId).count
       }
 
       def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =

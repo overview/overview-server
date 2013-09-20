@@ -9,11 +9,6 @@ object FileFinder extends Finder {
 
   type FileFinderResult = FinderResult[File]
   
-  def byFileGroup(fileGroupId: Long): FileFinderResult = {
-    join(Schema.files, Schema.fileGroupFiles)((f, fgf) =>
-      where(fgf.fileGroupId === fileGroupId)
-      select(f)
-      on(f.id === fgf.fileId)
-    )
-  }
+  def byFileGroup(fileGroupId: Long): FileFinderResult = 
+    Schema.files.where(f => f.fileGroupId === fileGroupId)
 }

@@ -30,7 +30,7 @@ class FileFinderSpec extends DbSpecification {
       storeFiles(numberOfErrorFiles, fileGroup.id, Error)
       storeFiles(numberOfInProgressFiles, fileGroup.id, InProgress)
 
-      FileFinder.countByFinishedState(fileGroup.id) must be equalTo(numberOfCompleteFiles + numberOfErrorFiles)
+      FileFinder.byFinishedState(fileGroup.id).count must be equalTo(numberOfCompleteFiles + numberOfErrorFiles)
     }
   }
 
@@ -38,10 +38,10 @@ class FileFinderSpec extends DbSpecification {
 
   private def storeFiles(numberOfFiles: Int, fileGroupId: Long, state: FileJobState.Value): Unit =
     for (i <- 1 to numberOfFiles) {
-      val file = File(UUID.randomUUID, s"name-$i", "application/pdf", i, 1000 * i,
+      val file = File(fileGroupId, UUID.randomUUID, s"name-$i", "application/pdf", 1000 * i,
         state, s"text-$i", new Timestamp(scala.compat.Platform.currentTime))
       
-        FileStore.insertWithFileGroup(fileGroupId, file)
+        FileStore.insertOrUpdate(file)
     }
 
 }

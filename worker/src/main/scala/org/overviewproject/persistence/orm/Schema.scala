@@ -2,7 +2,6 @@ package org.overviewproject.persistence.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._
-import org.overviewproject.database.orm.FileGroupFile
 
 
 object Schema extends org.squeryl.Schema {
@@ -19,7 +18,8 @@ object Schema extends org.squeryl.Schema {
   val documentTags = table[DocumentTag]
   val documentSets = table[DocumentSet]
   val files = table[File]
-  val fileGroupFiles = table[FileGroupFile]
+  val fileGroups = table[FileGroup]
+  val fileUploads = table[FileUpload]
   
   on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))
