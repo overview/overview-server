@@ -1,21 +1,14 @@
 package org.overviewproject.fileupload
 
-import org.overviewproject.util.DocumentProducer
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn }
-import org.overviewproject.tree.orm.File
-import org.overviewproject.persistence.orm.finders.FileFinder
-import org.overviewproject.util.DocumentConsumer
-import org.overviewproject.persistence.DocumentSetIdGenerator
-import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.database.Database
-import org.overviewproject.tree.orm.Document
-import org.overviewproject.persistence.DocumentWriter
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
-import org.overviewproject.persistence.PersistentDocumentSet
 import org.overviewproject.documentcloud.DocumentRetrievalError
+import org.overviewproject.persistence._
+import org.overviewproject.persistence.orm.finders.FileFinder
+import org.overviewproject.tree.orm.{ Document, File }
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.persistence.DocRetrievalErrorWriter
-import org.overviewproject.util.DocumentSetIndexingSession
+import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession } 
+import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
+import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn }
 import org.overviewproject.util.SearchIndex
 
 class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
@@ -88,5 +81,5 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
     document.id
   }
-
+  
 }

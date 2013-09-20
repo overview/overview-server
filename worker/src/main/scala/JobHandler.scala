@@ -10,18 +10,18 @@ import java.sql.Connection
 
 import scala.util._
 
-import com.jolbox.bonecp._
-
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.DocumentSetIndexer
-import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, DataSource, DB }
-import org.overviewproject.database.Database
+import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence._
+import org.overviewproject.persistence.orm.finders.{ FileFinder, FileGroupFinder, FileUploadFinder }
+import org.overviewproject.persistence.orm.stores.{ FileGroupStore, FileStore, FileUploadStore }
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.util.{ DocumentProducerFactory, ExceptionStatusMessage, JobRestarter, Logger, ThrottledProgressReporter }
+import org.overviewproject.util._
 import org.overviewproject.util.Progress._
-import org.overviewproject.util.SearchIndex
+
+import com.jolbox.bonecp._
 
 object JobHandler {
   // Run a single job
@@ -58,7 +58,10 @@ object JobHandler {
         case _ => handleCreationJob(j, progFn)
       }
 
-      Database.inTransaction { j.delete }
+      Database.inTransaction {
+        j.delete
+        deleteFileGroupData(j)
+      }
 
     } catch {
       case e: Exception => reportError(j, e)
@@ -162,6 +165,12 @@ object JobHandler {
       uploadedFileId.map { u =>
         SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
       }
+      
+      job.fileGroupId.map { fileGroupId =>
+        SQL("SELECT lo_unlink(contents_oid) FROM file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)  
+      }
+      
+      deleteFileGroupData(job)
     }
   }
 
@@ -212,6 +221,16 @@ object JobHandler {
       job.update
       if (job.state == Cancelled) job.delete
     }
+  }
+
+  private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
+    job.fileGroupId.map { fileGroupId =>
+      FileStore.delete(FileFinder.byFileGroup(fileGroupId).toQuery)
+      FileUploadStore.delete(FileUploadFinder.byFileGroup(fileGroupId).toQuery)
+
+      FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
+    }
+
   }
 }
 
