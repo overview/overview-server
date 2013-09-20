@@ -28,6 +28,7 @@ class FileGroupMessageHandler extends Actor {
     case ProcessFileCommand(fileGroupId, uploadedFileId) =>
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
+      context.parent ! JobStart(fileGroupId)
     case JobDone(fileGroupId) => context.parent ! JobDone(fileGroupId)
   }
 }
