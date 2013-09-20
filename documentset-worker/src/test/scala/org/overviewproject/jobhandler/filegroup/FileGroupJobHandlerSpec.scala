@@ -12,7 +12,7 @@ import org.overviewproject.test.ForwardingActor
 import akka.testkit.TestProbe
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.jobhandler.MessageServiceComponent
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 import org.specs2.mock.Mockito
 
 class DummyActor extends Actor {

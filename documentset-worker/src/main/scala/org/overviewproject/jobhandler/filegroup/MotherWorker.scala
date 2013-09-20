@@ -9,7 +9,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.database.orm.finders.FileFinder
 import org.overviewproject.database.orm.finders.FileGroupFinder
 import org.overviewproject.database.orm.finders.FileUploadFinder

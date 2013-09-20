@@ -10,7 +10,7 @@ import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.DeleteCommand
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 
 class DocumentSetMessageHandlerSpec extends Specification {
   

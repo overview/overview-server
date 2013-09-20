@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 
 
 trait TextExtractorComponent {

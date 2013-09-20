@@ -17,7 +17,7 @@ import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.util.ContentDisposition
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 
 
 object FileHandlerProtocol {

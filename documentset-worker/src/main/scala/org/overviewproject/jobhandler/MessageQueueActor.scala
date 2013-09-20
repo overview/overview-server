@@ -1,12 +1,13 @@
 package org.overviewproject.jobhandler
 
 import scala.language.postfixOps
-import akka.actor._
-import play.api.libs.json.JsValue
-import scala.util.{ Failure, Success }
+import scala.concurrent.{Promise, Future}
 import scala.concurrent.duration._
-import scala.concurrent.{ Promise, Future }
+import scala.util.{Failure, Success}
 
+import akka.actor._
+
+import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
 
 import MessageQueueActorFSM._
@@ -66,6 +67,10 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
+    case Event(JobStart(id), _) => {
+      context.parent ! JobStart(id)
+      stay
+    }
     case Event(message, listener: Listening) => {
       listener.messageHandler ! message
       goto(WaitingForCompletion) using listener

@@ -11,7 +11,7 @@ import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.FileUpload
 import java.sql.Timestamp
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 
 class FileHandlerSpec extends Specification with Mockito {
 

@@ -14,7 +14,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Pr
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 
 class MotherWorkerSpec extends Specification with Mockito {
 

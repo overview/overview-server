@@ -13,7 +13,7 @@ import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.{ Configuration, Logger }
 import DocumentSetJobHandlerFSM._
 import org.overviewproject.jobhandler.MessageQueueActor
-import org.overviewproject.jobhandler.JobDone
+import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandling
 
 trait Command

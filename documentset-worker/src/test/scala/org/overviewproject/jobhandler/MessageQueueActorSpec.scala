@@ -2,15 +2,13 @@ package org.overviewproject.jobhandler
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
-
 import akka.actor._
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
-
 import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
-
 import org.specs2.mutable.Specification
+import org.overviewproject.jobhandler.JobProtocol._
 
 
 class MessageQueueActorSpec extends Specification {
@@ -81,5 +79,19 @@ class MessageQueueActorSpec extends Specification {
       parentProbe.expectMsg(JobDone(jobEntityId))
     }
     
+    "Send JobStart to parent" in new ActorSystemContext {
+      val parentProbe = TestProbe()
+      val messageHandler = TestProbe()
+      val message = "Some command as json"
+      val jobEntityId = 1l
+        
+      val messageQueueActor = TestActorRef(Props(new TestMessageQueueActor(messageHandler.ref)), parentProbe.ref, "Message Queue")
+      
+      messageQueueActor ! StartListening
+      messageQueueActor ! JobStart(jobEntityId)
+      
+      parentProbe.expectMsg(JobStart(jobEntityId))
+      
+    }
   }
 }
