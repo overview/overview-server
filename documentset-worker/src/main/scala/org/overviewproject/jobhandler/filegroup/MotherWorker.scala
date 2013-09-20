@@ -31,7 +31,7 @@ object MotherWorkerProtocol {
 }
 
 trait FileGroupJobHandlerComponent {
-  def createFileGroupJobHandler: Props
+  def createFileGroupJobHandler(jobMonitor: ActorRef): Props
   val storage: Storage
 
   trait Storage {
@@ -55,7 +55,7 @@ class MotherWorker extends Actor {
   private val NumberOfDaughters = 2
 
   private val fileGroupJobHandlers: Seq[ActorRef] = for (i <- 1 to NumberOfDaughters) yield {
-    val handler = context.actorOf(createFileGroupJobHandler)
+    val handler = context.actorOf(createFileGroupJobHandler(self))
     handler ! StartListening
 
     handler
@@ -95,7 +95,7 @@ class MotherWorker extends Actor {
 
 object MotherWorker {
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
-    override def createFileGroupJobHandler: Props = FileGroupJobHandler()
+    override def createFileGroupJobHandler(jobMonitor: ActorRef): Props = FileGroupJobHandler(jobMonitor)
 
     override val storage: StorageImpl = new StorageImpl
 

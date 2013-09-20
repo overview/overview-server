@@ -19,7 +19,7 @@ object FileGroupMessageHandlerProtocol {
   case class ProcessFileCommand(fileGroupId: Long, uploadedFileId: Long) extends Command
 }
 
-class FileGroupMessageHandler extends Actor {
+class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor {
   this: TextExtractorComponent =>
 
   import FileGroupMessageHandlerProtocol._
@@ -43,7 +43,7 @@ trait TextExtractorComponentImpl extends TextExtractorComponent {
 }
 
 object FileGroupMessageHandler {
-  class FileGroupMessageHandlerImpl extends FileGroupMessageHandler with TextExtractorComponentImpl 
+  class FileGroupMessageHandlerImpl(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with TextExtractorComponentImpl 
   
-  def apply(): Props = Props[FileGroupMessageHandlerImpl]
+  def apply(jobMonitor: ActorRef): Props = Props(new FileGroupMessageHandlerImpl(jobMonitor))
 }

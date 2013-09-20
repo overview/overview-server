@@ -20,7 +20,7 @@ class MotherWorkerSpec extends Specification with Mockito {
 
   class TestMotherWorker(fileGroupJobHandler: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
 
-    override def createFileGroupJobHandler: Props = ForwardingActor(fileGroupJobHandler)
+    override def createFileGroupJobHandler(jobMonitor: ActorRef): Props = ForwardingActor(fileGroupJobHandler)
 
     def numberOfChildren: Int = context.children.size
 

@@ -25,7 +25,7 @@ class FileGroupJobHandlerSpec extends Specification with Mockito {
 
   "FileGroupJobHandler" should {
 
-    class TestMessageHandler extends FileGroupMessageHandler with TextExtractorComponent {
+    class TestMessageHandler(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with TextExtractorComponent {
 
       val actorCreator = mock[ActorCreator]
       actorCreator.produceTextExtractor returns Props[DummyActor]
@@ -33,9 +33,10 @@ class FileGroupJobHandlerSpec extends Specification with Mockito {
     }
 
     "start file handler on incoming command" in new ActorSystemContext {
+      val jobMonitor = TestProbe()
       val command = ProcessFileCommand(1l, 10l)
 
-      val messageHandler = TestActorRef(new TestMessageHandler)
+      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
 
       messageHandler ! command
       val actorCreator = messageHandler.underlyingActor.actorCreator
@@ -44,11 +45,12 @@ class FileGroupJobHandlerSpec extends Specification with Mockito {
     }
 
     "send JobStart to parent when message is received" in new ActorSystemContext {
+      val jobMonitor = TestProbe()
       val fileGroupId = 1l
       val command = ProcessFileCommand(fileGroupId, 10l)
 
       val parentProbe = TestProbe()
-      val messageHandler = TestActorRef(Props(new TestMessageHandler), parentProbe.ref, "message handler")
+      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "message handler")
 
       messageHandler ! command
       
@@ -56,10 +58,11 @@ class FileGroupJobHandlerSpec extends Specification with Mockito {
     }
     
     "forward JobDone to parent" in new ActorSystemContext {
+      val jobMonitor = TestProbe()
       val fileGroupId = 1l
 
       val parentProbe = TestProbe()
-      val messageHandler = TestActorRef(Props(new TestMessageHandler), parentProbe.ref, "message handler")
+      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "message handler")
 
       messageHandler ! JobDone(fileGroupId)
 

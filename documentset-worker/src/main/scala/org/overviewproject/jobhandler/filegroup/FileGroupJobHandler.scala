@@ -9,12 +9,12 @@ import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol._
 
 import FileGroupMessageHandlerProtocol._
 
-class FileGroupJobHandler extends MessageQueueActor[Command] with MessageServiceComponentImpl with MessageHandling[Command] {
+class FileGroupJobHandler(jobMonitor: ActorRef) extends MessageQueueActor[Command] with MessageServiceComponentImpl with MessageHandling[Command] {
   override val messageService = new MessageServiceImpl("/queue/file-group-commands")
-  override def createMessageHandler: Props = FileGroupMessageHandler()
+  override def createMessageHandler: Props = FileGroupMessageHandler(jobMonitor)
   override def convertMessage(message: String): Command = ConvertFileGroupMessage(message)
 }
 
 object FileGroupJobHandler {
-  def apply(): Props = Props[FileGroupJobHandler]
+  def apply(jobMonitor: ActorRef): Props = Props(new FileGroupJobHandler(jobMonitor))
 }
