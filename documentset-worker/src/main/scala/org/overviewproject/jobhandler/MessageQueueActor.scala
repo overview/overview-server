@@ -7,7 +7,7 @@ import scala.util.{Failure, Success}
 
 import akka.actor._
 
-import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.util.Logger
 
 import MessageQueueActorFSM._
@@ -35,11 +35,26 @@ object MessageQueueActorFSM {
   case class ConnectionFailed(e: Throwable) extends Data
 }
 
+/**
+ * A bridge between message queues and actor messages.
+ * Tries to connect to the message queue specified by the mixed in MessageServiceComponent.
+ * When a message is received, it's converted to a message object and sent to the message handler
+ * specified by the MessageHandling mixin.
+ * When the message handler completes, it notifies the MessageQueueActor, which acknowledges the original message
+ * queue actor, and listens for a new message. At most one message is being processed at any given time.
+ * The message queue message delivery and acknowledgement occurs in a separate thread, so the MessageQueueActor can
+ * still receieve akka messages while the MessageServiceComponent is blocked waiting to acknowledge the queue message.
+ */
 trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandling[T] {
   this: MessageServiceComponent =>
 
   // Time between reconnection attempts
   private val ReconnectionInterval = 1 seconds
+  
+  // The communication mechanism between the Actor thread and the MessageServiceComponent thread
+  // The MessageServiceComponent blocks waiting for `currentJobCompletion` to complete. The `MessageQueueActor`
+  // completes the promise when the message handler has finished its task.
+  // FIXME: make `currentJobCompletion` a state variable
   private var currentJobCompletion: Option[Promise[Unit]] = None
 
   import MessageQueueActorProtocol._
@@ -61,16 +76,11 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
 
       }
     }
-    case Event(JobDone(id), _) => stay
     case Event(ConnectionFailure, _) => stay // For some reason, and extra event is generated when job is in progress
   }
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
-    case Event(JobStart(id), _) => {
-      context.parent ! JobStart(id)
-      stay
-    }
     case Event(message, listener: Listening) => {
       listener.messageHandler ! message
       goto(WaitingForCompletion) using listener
@@ -78,8 +88,7 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
   }
 
   when(WaitingForCompletion) {
-    case Event(JobDone(id), _) => {
-      context.parent ! JobDone(id)
+    case Event(MessageHandled, _) => {
       currentJobCompletion.map(_.success())
       currentJobCompletion = None
       goto(Ready)
@@ -90,6 +99,7 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
     }
   }
   
+  // Send `StartListening` to self when connection fails to try to reestablish the connection.
   onTransition {
     case _ -> NotConnected => (nextStateData: @unchecked) match { // error if ConnectionFailed is not set
       case ConnectionFailed(e) => {
@@ -105,6 +115,9 @@ trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandl
 
   initialize
 
+  // The callback that will be executed when the MessageService component receives a message on the queue
+  // The MessageService thread blocks until the returned future completes. 
+  // No new messages are requested until the future completes.
   private def deliverMessage(message: String): Future[Unit] = {
     currentJobCompletion = Some(Promise[Unit])
     val messageData = convertMessage(message)

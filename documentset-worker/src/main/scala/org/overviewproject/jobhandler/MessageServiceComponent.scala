@@ -36,6 +36,8 @@ trait MessageServiceComponent {
 /**
  * Implementation of connecting to the message queue and receiving and responding to
  * messages.
+ * Sets up an asynchronous callback for messages, which blocks on a `Future` completion before
+ * acknowledging the message
  */
 trait MessageServiceComponentImpl extends MessageServiceComponent {
   class MessageServiceImpl(queueName: String) extends MessageService {

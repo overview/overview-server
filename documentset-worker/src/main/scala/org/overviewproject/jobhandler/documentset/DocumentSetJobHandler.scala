@@ -1,20 +1,22 @@
 package org.overviewproject.jobhandler.documentset
 
 import javax.jms._
-import scala.language.postfixOps
-import scala.concurrent.{ Promise, Future }
+
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
+
 import akka.actor._
-import org.overviewproject.jobhandler.{ MessageServiceComponent, MessageServiceComponentImpl }
+
+import org.overviewproject.jobhandler.{ MessageHandling, MessageQueueActor }
+import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.jobhandler.MessageServiceComponentImpl
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.searchindex.ElasticSearchComponents
-import org.overviewproject.util.{ Configuration, Logger }
+import org.overviewproject.util.Configuration
+
+
 import DocumentSetJobHandlerFSM._
-import org.overviewproject.jobhandler.MessageQueueActor
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandling
 
 trait Command
 
@@ -79,7 +81,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 
   when(WaitingForCompletion) {
     case Event(JobDone(documentSetId), _) => {
-      context.parent ! JobDone(documentSetId)
+      context.parent ! MessageHandled
       goto(Ready)
     }
   }

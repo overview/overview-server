@@ -1,20 +1,19 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
 import akka.actor._
-import org.overviewproject.test.ForwardingActor
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestActorRef
-import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.StartClusteringCommand
-import org.specs2.mock.Mockito
-import org.overviewproject.tree.orm.FileGroup
-import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
-import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import akka.testkit._
+
 import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.StartClusteringCommand
+import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
+import org.overviewproject.tree.orm.{ DocumentSetCreationJob, FileGroup }
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
+import org.overviewproject.tree.orm.FileJobState._
+
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 
 class MotherWorkerSpec extends Specification with Mockito {
 
@@ -45,7 +44,6 @@ class MotherWorkerSpec extends Specification with Mockito {
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new ActorSystemContext {
-
       val fileGroupJobHandler = TestProbe()
       val fileGroup = mock[FileGroup]
       fileGroup.id returns fileGroupId
@@ -63,7 +61,8 @@ class MotherWorkerSpec extends Specification with Mockito {
       there was one(storage).storeDocumentSet(title, lang, stopWords)
       there was one(storage).storeDocumentSetUser(documentSetId, userEmail)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
-
+      
+      expectMsg(MessageHandled)
     }
 
     "create job when StartClustering is received but all files have not been processed" in new ActorSystemContext {

@@ -1,25 +1,18 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
+
+import org.overviewproject.database.Database
+import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, FileFinder, FileGroupFinder, FileUploadFinder }
+import org.overviewproject.database.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
-import org.overviewproject.tree.orm.FileGroup
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
+import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.database.orm.finders.FileFinder
-import org.overviewproject.database.orm.finders.FileGroupFinder
-import org.overviewproject.database.orm.finders.FileUploadFinder
-import org.overviewproject.database.orm.stores.DocumentSetStore
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.database.Database
-import org.overviewproject.database.orm.stores.DocumentSetUserStore
-import org.overviewproject.tree.orm.DocumentSetUser
-import org.overviewproject.tree.Ownership
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -69,12 +62,10 @@ class MotherWorker extends Actor {
         val jobState = computeJobState(fileGroup)
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
 
-        context.parent ! JobDone(fileGroupId)
+        sender ! MessageHandled
       }
     case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
       if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
-
-      context.parent ! JobDone(fileGroupId)
     }
 
   }

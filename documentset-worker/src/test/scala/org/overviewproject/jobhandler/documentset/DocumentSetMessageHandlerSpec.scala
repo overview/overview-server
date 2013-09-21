@@ -1,16 +1,16 @@
 package org.overviewproject.jobhandler.documentset
 
-import org.specs2.mutable.Specification
 import akka.actor._
-import org.overviewproject.test.ForwardingActor
-import org.overviewproject.test.ActorSystemContext
-import akka.testkit.TestProbe
-import akka.testkit.TestActorRef
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.SearchCommand
-import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.DeleteCommand
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import akka.testkit._
+
 import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
+import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
+import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+
+import org.specs2.mutable.Specification
 
 class DocumentSetMessageHandlerSpec extends Specification {
   
@@ -55,7 +55,7 @@ class DocumentSetMessageHandlerSpec extends Specification {
       deleteHandler.expectMsg(deleteMessage)
     }
     
-    "tell parent JobDone" in new ActorSystemContext {
+    "tell parent MessageHandled when JobDone is received" in new ActorSystemContext {
       val parentProbe = TestProbe()
       val documentSetId = 1l
       val deleteCommand = DeleteCommand(documentSetId)
@@ -68,7 +68,7 @@ class DocumentSetMessageHandlerSpec extends Specification {
       messageHandler ! deleteCommand
       messageHandler ! JobDone(documentSetId)
       
-      parentProbe.expectMsg(JobDone(documentSetId))
+      parentProbe.expectMsg(MessageHandled)
     }
   }
 

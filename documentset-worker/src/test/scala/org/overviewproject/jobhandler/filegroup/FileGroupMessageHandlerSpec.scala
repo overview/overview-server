@@ -14,6 +14,7 @@ import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.JobProtocol._
 import org.specs2.mock.Mockito
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
 
 class DummyActor extends Actor {
   def receive = {
@@ -21,9 +22,9 @@ class DummyActor extends Actor {
   }
 }
 
-class FileGroupJobHandlerSpec extends Specification with Mockito {
+class FileGroupMessageHandlerSpec extends Specification with Mockito {
 
-  "FileGroupJobHandler" should {
+  "FileGroupMessageHandler" should {
 
     class TestMessageHandler(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with TextExtractorComponent {
 
@@ -44,29 +45,39 @@ class FileGroupJobHandlerSpec extends Specification with Mockito {
       there was one(actorCreator).produceTextExtractor
     }
 
-    "send JobStart to parent when message is received" in new ActorSystemContext {
+    "send JobStart to monitor when message is received" in new ActorSystemContext {
       val jobMonitor = TestProbe()
       val fileGroupId = 1l
       val command = ProcessFileCommand(fileGroupId, 10l)
 
-      val parentProbe = TestProbe()
-      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "message handler")
+      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
 
       messageHandler ! command
       
-      parentProbe.expectMsg(JobStart(fileGroupId))
+      jobMonitor.expectMsg(JobStart(fileGroupId))
     }
     
-    "forward JobDone to parent" in new ActorSystemContext {
+    "forward JobDone to monitor" in new ActorSystemContext {
       val jobMonitor = TestProbe()
       val fileGroupId = 1l
 
-      val parentProbe = TestProbe()
-      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "message handler")
+      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
 
       messageHandler ! JobDone(fileGroupId)
 
-      parentProbe.expectMsg(JobDone(fileGroupId))
+      jobMonitor.expectMsg(JobDone(fileGroupId))
+    }
+    
+    "send MessageHandled to parent" in new ActorSystemContext {
+      val parentProbe = TestProbe()
+      val jobMonitor = TestProbe()
+      val fileGroupId = 1l
+      
+      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "Message Handler")
+          
+      messageHandler ! JobDone(fileGroupId)
+      
+      parentProbe.expectMsg(MessageHandled)
     }
   }
 }

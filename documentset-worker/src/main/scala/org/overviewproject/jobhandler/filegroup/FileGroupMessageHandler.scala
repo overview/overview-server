@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor._
 import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
 import org.overviewproject.jobhandler.JobProtocol._
-
+import org.overviewproject.jobhandler.MessageHandlerProtocol._
 
 trait TextExtractorComponent {
   val actorCreator: ActorCreator
@@ -28,8 +28,11 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor {
     case ProcessFileCommand(fileGroupId, uploadedFileId) =>
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
-      context.parent ! JobStart(fileGroupId)
-    case JobDone(fileGroupId) => context.parent ! JobDone(fileGroupId)
+      jobMonitor ! JobStart(fileGroupId)
+    case JobDone(fileGroupId) => {
+      jobMonitor ! JobDone(fileGroupId)
+      context.parent ! MessageHandled
+    }
   }
 }
 
