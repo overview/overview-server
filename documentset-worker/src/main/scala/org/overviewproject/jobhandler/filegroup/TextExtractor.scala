@@ -20,11 +20,11 @@ import org.overviewproject.util.ContentDisposition
 import org.overviewproject.jobhandler.JobProtocol._
 
 
-object FileHandlerProtocol {
+object TextExtractorProtocol {
   case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
 }
 
-trait FileHandlerComponents {
+trait TextExtractorComponents {
 
   val dataStore: DataStore
   val pdfProcessor: PdfProcessor
@@ -41,10 +41,10 @@ trait FileHandlerComponents {
   }
 }
 
-class FileHandler extends Actor {
-  self: FileHandlerComponents =>
+class TextExtractor extends Actor {
+  self: TextExtractorComponents =>
 
-  import FileHandlerProtocol._
+  import TextExtractorProtocol._
 
   def receive = {
     case ExtractText(fileGroupId, fileUploadId) => {
@@ -63,6 +63,7 @@ class FileHandler extends Actor {
       dataStore.storeFile(file)
       
       sender ! JobDone(fileGroupId)
+      context.stop(self)
     }
   }
 }
@@ -81,7 +82,7 @@ trait PdfBoxPdfProcessor {
 
 }
 
-class FileHandlerImpl extends FileHandler with FileHandlerComponents {
+class TextExtractorImpl extends TextExtractor with TextExtractorComponents {
   class DataStoreImpl extends DataStore {
     override def findFileUpload(fileUploadId: Long): Option[FileUpload] = Database.inTransaction {
       FileUploadFinder.byId(fileUploadId).headOption

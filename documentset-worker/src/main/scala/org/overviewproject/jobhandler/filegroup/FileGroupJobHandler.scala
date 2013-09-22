@@ -5,7 +5,7 @@ import akka.actor._
 import org.overviewproject.jobhandler.{ MessageHandling, MessageQueueActor, MessageServiceComponentImpl }
 import org.overviewproject.jobhandler.MessageQueueActor
 import org.overviewproject.jobhandler.MessageServiceComponentImpl
-import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol._
+import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol._
 
 import FileGroupMessageHandlerProtocol._
 

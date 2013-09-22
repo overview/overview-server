@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
-import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 
@@ -39,7 +39,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor {
 trait TextExtractorComponentImpl extends TextExtractorComponent {
 
   class ActorCreatorImpl extends ActorCreator {
-    override def produceTextExtractor: Props = Props[FileHandlerImpl]
+    override def produceTextExtractor: Props = Props[TextExtractorImpl]
   }
  override val actorCreator = new ActorCreatorImpl
 

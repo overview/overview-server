@@ -10,7 +10,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.
 import akka.actor._
 import org.overviewproject.test.ForwardingActor
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.JobProtocol._
 import org.specs2.mock.Mockito

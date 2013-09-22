@@ -7,15 +7,17 @@ import org.overviewproject.tree.orm.File
 import java.util.UUID
 import java.io.InputStream
 import akka.testkit.{ ImplicitSender, TestActorRef }
-import org.overviewproject.jobhandler.filegroup.FileHandlerProtocol.ExtractText
+import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.FileUpload
 import java.sql.Timestamp
 import org.overviewproject.jobhandler.JobProtocol._
+import akka.testkit.TestProbe
+import akka.actor.Terminated
 
-class FileHandlerSpec extends Specification with Mockito {
+class TextExtractorSpec extends Specification with Mockito {
 
-  "FileHandler" should {
+  "TextExtractor" should {
 
     val fileUpload = FileUpload(
       1L,
@@ -38,7 +40,7 @@ class FileHandlerSpec extends Specification with Mockito {
       extractedText,
       fileUpload.lastActivity)
 
-    class TestFileHandler extends FileHandler with FileHandlerComponents {
+    class TestTextExtractor extends TextExtractor with TextExtractorComponents {
 
       override val dataStore = mock[DataStore]
       override val pdfProcessor = mock[PdfProcessor]
@@ -51,7 +53,7 @@ class FileHandlerSpec extends Specification with Mockito {
     }
 
     "call components" in new ActorSystemContext {
-      val fileHandler = TestActorRef(new TestFileHandler)
+      val fileHandler = TestActorRef(new TestTextExtractor)
 
       val dataStore = fileHandler.underlyingActor.dataStore
       val pdfProcessor = fileHandler.underlyingActor.pdfProcessor
@@ -67,11 +69,23 @@ class FileHandlerSpec extends Specification with Mockito {
 
     "send JobDone to sender" in new ActorSystemContext {
       val documentSetId = 1l
-      val fileHandler = TestActorRef(new TestFileHandler)
+      val fileHandler = TestActorRef(new TestTextExtractor)
 
       fileHandler ! ExtractText(documentSetId, fileUpload.id)
 
       expectMsg(JobDone(documentSetId))
+    }
+    
+    "die after job is done" in new ActorSystemContext {
+      val deathWatcher = TestProbe()
+      
+      val documentSetId = 1l
+      val fileHandler = TestActorRef(new TestTextExtractor)
+      deathWatcher.watch(fileHandler)
+      
+      fileHandler ! ExtractText(documentSetId, fileUpload.id)
+      
+      deathWatcher.expectMsgType[Terminated].actor must be(fileHandler) 
     }
   }
 }
