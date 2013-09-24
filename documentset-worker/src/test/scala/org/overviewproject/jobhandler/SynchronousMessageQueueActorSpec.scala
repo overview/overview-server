@@ -8,69 +8,70 @@ import scala.util.{ Failure, Success, Try }
 import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 
-
 class SynchronousMessageQueueActorSpec extends Specification {
 
   val connectionFailure = new Exception("connection failed")
-  
-  class TestSynchronousMessageQueueActor(recipient: ActorRef, failedConnectionAttempts: Int = 0) extends SynchronousMessageQueueActor(recipient)
-      with MessageServiceComponent {
 
+  class TestMessageService(failedConnectionAttempts: Int = 0) extends MessageService {
     var messageCallback: Option[String => Future[Unit]] = None
     var failureCallback: Option[Exception => Unit] = None
     var connectionCreationCount: Int = 0
-   
-    override val messageService = new MessageService {
-      override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = {
-        connectionCreationCount += 1
-        messageCallback = Some(messageDelivery)
-        failureCallback = Some(failureHandler)
-        
-        if (connectionCreationCount > failedConnectionAttempts) Success()
-        else Failure(connectionFailure)
-      }
+
+    override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = {
+      connectionCreationCount += 1
+      messageCallback = Some(messageDelivery)
+      failureCallback = Some(failureHandler)
+
+      if (connectionCreationCount > failedConnectionAttempts) Success()
+      else Failure(connectionFailure)
     }
   }
+
+  class TestSynchronousMessageQueueActor(recipient: ActorRef, messageService: MessageService)
+    extends SynchronousMessageQueueActor(recipient, messageService)
 
   "SynchronousMessageActor" should {
 
     "send incoming messages to recipient and acknowledge immediately" in new ActorSystemContext {
+      val messageService = new TestMessageService
       val recipient = TestProbe()
       val message = "A message"
 
-      val synchronousMessageQueueActor = TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref))
-      
+      val synchronousMessageQueueActor = TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref, messageService))
+
       synchronousMessageQueueActor ! StartListening
-      val completion = synchronousMessageQueueActor.underlyingActor.messageCallback.map(_(message))
-      
+      val completion = messageService.messageCallback.map(_(message))
+
       recipient.expectMsg(message)
-      
+
       completion must beSome.which(_.isCompleted)
     }
-    
+
     "restart connection if connection creation fails" in new ActorSystemContext {
+      val messageService = new TestMessageService(failedConnectionAttempts = 1)
       val recipient = TestProbe()
       val message = "A message"
 
-      val synchronousMessageQueueActor = 
-        TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref, failedConnectionAttempts = 1))
-      
+      val synchronousMessageQueueActor =
+        TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref, messageService))
+
       synchronousMessageQueueActor ! StartListening
-      
-      awaitCond(synchronousMessageQueueActor.underlyingActor.connectionCreationCount == 2)
+
+      awaitCond(messageService.connectionCreationCount == 2)
     }
-    
+
     "restart connection if connection drops" in new ActorSystemContext {
+      val messageService = new TestMessageService
       val recipient = TestProbe()
       val message = "A message"
 
-      val synchronousMessageQueueActor = TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref))
+      val synchronousMessageQueueActor = TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref, messageService))
 
       synchronousMessageQueueActor ! StartListening
       synchronousMessageQueueActor ! ConnectionFailure(connectionFailure)
-      
-      synchronousMessageQueueActor.underlyingActor.connectionCreationCount must be equalTo(2)
-      
+
+      messageService.connectionCreationCount must be equalTo (2)
+
     }
   }
 }
