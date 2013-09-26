@@ -17,6 +17,8 @@ class SynchronousMessageQueueActorSpec extends Specification {
     var failureCallback: Option[Exception => Unit] = None
     var connectionCreationCount: Int = 0
 
+    override val queueName = "/queue/message-queue-name"
+      
     override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = {
       connectionCreationCount += 1
       messageCallback = Some(messageDelivery)
@@ -28,7 +30,7 @@ class SynchronousMessageQueueActorSpec extends Specification {
   }
 
   class TestSynchronousMessageQueueActor(recipient: ActorRef, messageService: MessageService)
-    extends SynchronousMessageQueueActor(recipient, messageService)
+    extends SynchronousMessageQueueActor[String](recipient, messageService, identity) 
 
   "SynchronousMessageActor" should {
 

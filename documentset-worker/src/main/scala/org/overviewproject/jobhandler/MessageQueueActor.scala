@@ -45,8 +45,7 @@ object MessageQueueActorFSM {
  * The message queue message delivery and acknowledgement occurs in a separate thread, so the MessageQueueActor can
  * still receieve akka messages while the MessageServiceComponent is blocked waiting to acknowledge the queue message.
  */
-trait MessageQueueActor[T] extends Actor with FSM[State, Data] with MessageHandling[T] {
-  this: MessageServiceComponent =>
+abstract class MessageQueueActor[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
 
   // Time between reconnection attempts
   private val ReconnectionInterval = 1 seconds

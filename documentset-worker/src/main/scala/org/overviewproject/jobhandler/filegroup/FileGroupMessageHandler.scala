@@ -19,21 +19,45 @@ object FileGroupMessageHandlerProtocol {
   case class ProcessFileCommand(fileGroupId: Long, uploadedFileId: Long) extends Command
 }
 
-class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor {
+object FileGroupMessageHandlerFSM {
+  sealed trait State
+  case object Idle extends State
+  case object Working extends State
+  
+  sealed trait Data
+  case object NoData extends Data
+  case class Request(requestor: ActorRef) extends Data
+}
+
+import FileGroupMessageHandlerFSM._
+
+class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State, Data] {
   this: TextExtractorComponent =>
 
   import FileGroupMessageHandlerProtocol._
 
-  def receive = {
-    case ProcessFileCommand(fileGroupId, uploadedFileId) =>
+  startWith(Idle, NoData)
+  
+  when (Idle) {
+    case Event(ProcessFileCommand(fileGroupId, uploadedFileId), _) => {
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
       jobMonitor ! JobStart(fileGroupId)
-    case JobDone(fileGroupId) => {
-      jobMonitor ! JobDone(fileGroupId)
-      context.parent ! MessageHandled
+
+      goto(Working) using Request(sender)
     }
   }
+  
+  when (Working) {
+    case Event(JobDone(fileGroupId), Request(requestor)) => {
+      jobMonitor ! JobDone(fileGroupId)
+       requestor ! MessageHandled
+       
+       goto(Idle) using NoData
+    }
+  }
+  
+  initialize
 }
 
 trait TextExtractorComponentImpl extends TextExtractorComponent {

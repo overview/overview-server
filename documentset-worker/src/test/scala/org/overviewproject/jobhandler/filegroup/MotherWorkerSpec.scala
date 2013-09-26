@@ -2,7 +2,6 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
 import akka.testkit._
-
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.StartClusteringCommand
@@ -11,15 +10,16 @@ import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.{ DocumentSetCreationJob, FileGroup }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
-
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
+
 
 class MotherWorkerSpec extends Specification with Mockito {
 
   class TestMotherWorker(fileGroupJobHandler: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
 
-    override def createFileGroupJobHandler(jobMonitor: ActorRef): Props = ForwardingActor(fileGroupJobHandler)
+    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = ForwardingActor(fileGroupJobHandler)
 
     def numberOfChildren: Int = context.children.size
 
@@ -34,13 +34,23 @@ class MotherWorkerSpec extends Specification with Mockito {
     val documentSetId = 2l
     val userEmail = "user@email.com"
 
-    "create 2 FileGroupJobHandlers" in new ActorSystemContext {
+    "start 2 FileGroupMessageHandlers" in new ActorSystemContext {
+      val fileGroupMessageHandler = TestProbe()
+
+      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupMessageHandler.ref))
+
+      motherWorker.underlyingActor.numberOfChildren must be equalTo (2)
+    }
+    
+    "forward ProcessFile message to file group message handlers" in new ActorSystemContext {
       val fileGroupJobHandler = TestProbe()
+      val uploadedFileId = 10l
 
       val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
-      motherWorker.underlyingActor.numberOfChildren must be equalTo (2)
-
+      motherWorker ! ProcessFileCommand(fileGroupId, uploadedFileId)
+      
+      fileGroupJobHandler.expectMsg(ProcessFileCommand(fileGroupId, uploadedFileId))
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new ActorSystemContext {

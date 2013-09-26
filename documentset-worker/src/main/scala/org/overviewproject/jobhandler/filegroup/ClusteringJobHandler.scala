@@ -1,14 +1,25 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.overviewproject.jobhandler.{ MessageHandling, MessageQueueActor, MessageServiceComponentImpl }
-import akka.actor.Props
 
+import akka.actor._
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
+import org.overviewproject.jobhandler.SynchronousMessageQueueActor
 
-class ClusteringJobHandler extends MessageQueueActor[Command] with MessageServiceComponentImpl with MessageHandling[Command] {
-  override val messageService = new MessageServiceImpl("/queue/clustering-commands")
-  override def createMessageHandler: Props = MotherWorker()
-  override def convertMessage(message: String): Command = ConvertClusteringMessage(message)
+class ClusteringJobHandler extends Actor {
+  val motherWorker = context.actorOf(MotherWorker())
+  val fileGroupQueueListener = context.actorOf(SynchronousMessageQueueActor(motherWorker, 
+      "/queue/file-group-commands", ConvertFileGroupMessage.apply))
+  val clusteringCommandsListener = context.actorOf(SynchronousMessageQueueActor(motherWorker, 
+      "/queue/clustering-commands", ConvertClusteringMessage.apply))
+  
+  
+  def receive = {
+    case StartListening => {
+      fileGroupQueueListener ! StartListening
+      clusteringCommandsListener ! StartListening
+    }
+  }
 }
 
 object ClusteringJobHandler {

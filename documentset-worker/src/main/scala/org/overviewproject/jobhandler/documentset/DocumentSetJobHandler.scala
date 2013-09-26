@@ -1,22 +1,21 @@
 package org.overviewproject.jobhandler.documentset
 
-import javax.jms._
-
 import scala.concurrent.duration._
 
 import akka.actor._
 
-import org.overviewproject.jobhandler.{ MessageHandling, MessageQueueActor }
+import org.overviewproject.jobhandler.{ ApolloMessageService, MessageQueueActor, MessageService }
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.jobhandler.MessageServiceComponentImpl
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
 
-
 import DocumentSetJobHandlerFSM._
+
+import javax.jms._
+
 
 trait Command
 
@@ -105,16 +104,17 @@ class DocumentSetMessageHandlerImpl extends DocumentSetMessageHandler with Searc
   override val actorCreator = new ActorCreatorImpl
 }
 
-trait DocumentSetMessageHandling extends MessageHandling[Command] {
+
+class DocumentSetJobHandler(messageService: MessageService) extends MessageQueueActor[Command](messageService) {
   override def createMessageHandler: Props = Props[DocumentSetMessageHandlerImpl]
   override def convertMessage(message: String): Command = ConvertDocumentSetMessage(message)
-}
 
-class DocumentSetJobHandler extends MessageQueueActor[Command] with MessageServiceComponentImpl with DocumentSetMessageHandling {
-  override val messageService = new MessageServiceImpl(Configuration.messageQueue.queueName)
-}
+} 
+
 
 object DocumentSetJobHandler {
+ private val messageService = new ApolloMessageService(Configuration.messageQueue.queueName)
 
-  def apply(): Props = Props[DocumentSetJobHandler]
+  
+  def apply(): Props = Props(new DocumentSetJobHandler(messageService))
 }

@@ -1,14 +1,17 @@
 package org.overviewproject
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.concurrent.duration._
+
 import akka.actor._
+
 import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
 import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
+
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared

@@ -11,7 +11,7 @@ object ConvertClusteringMessage extends ConvertMessage {
   
   def apply(message: String): Command = {
     val m = getMessage(message)
-    
+    println(s"------>$m")
     m.cmd match { 
       case StartClusteringCmdMsg => startClusteringCommandReads.reads(m.args).get
     }

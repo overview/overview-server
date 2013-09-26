@@ -1,7 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
-
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, FileFinder, FileGroupFinder, FileUploadFinder }
 import org.overviewproject.database.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
@@ -13,6 +12,8 @@ import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.util.Configuration
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -24,7 +25,7 @@ object MotherWorkerProtocol {
 }
 
 trait FileGroupJobHandlerComponent {
-  def createFileGroupJobHandler(jobMonitor: ActorRef): Props
+  def createFileGroupMessageHandler(jobMonitor: ActorRef): Props
   val storage: Storage
 
   trait Storage {
@@ -46,13 +47,12 @@ class MotherWorker extends Actor {
   import MotherWorkerProtocol._
 
   private val NumberOfDaughters = 2
+  private val ClusteringQueue = Configuration.messageQueue.clusteringQueueName
+  private val FileGroupQueue = Configuration.messageQueue.fileGroupQueueName
+  
+  private val fileGroupMessageHandlers: Seq[ActorRef] = for (i <- 1 to NumberOfDaughters) yield 
+    context.actorOf(createFileGroupMessageHandler(self))
 
-  private val fileGroupJobHandlers: Seq[ActorRef] = for (i <- 1 to NumberOfDaughters) yield {
-    val handler = context.actorOf(createFileGroupJobHandler(self))
-    handler ! StartListening
-
-    handler
-  }
 
   def receive = {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
@@ -64,6 +64,9 @@ class MotherWorker extends Actor {
 
         sender ! MessageHandled
       }
+    case command: ProcessFileCommand => {
+      fileGroupMessageHandlers.head forward command
+    }
     case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
       if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
     }
@@ -86,7 +89,7 @@ class MotherWorker extends Actor {
 
 object MotherWorker {
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
-    override def createFileGroupJobHandler(jobMonitor: ActorRef): Props = FileGroupJobHandler(jobMonitor)
+    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = FileGroupMessageHandler(jobMonitor)
 
     override val storage: StorageImpl = new StorageImpl
 

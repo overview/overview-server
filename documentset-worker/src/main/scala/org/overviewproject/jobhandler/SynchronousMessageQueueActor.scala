@@ -11,18 +11,6 @@ import SynchronousMessageQueueActorFSM._
 import scala.util.Try
 
 
-trait MessageService {
-  /**
-   *  Create a connection to the message queue.
-   *  @returns `Success` if connection is  established, `Failure` otherwise
-   *  @param messageDelivery will be called when a new message is received. The method
-   *  should return a `Future` that will be completed when the job specified in the message
-   *  has finished processing.
-   *  @param failureHandler will be called if the connection fails.
-   */
-  def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit]
-}
-
 object SynchronousMessageQueueActorFSM {
   sealed trait State
   case object NotConnected extends State
@@ -34,16 +22,17 @@ object SynchronousMessageQueueActorFSM {
   case class Listener(recipient: ActorRef) extends Data
 }
 
-class SynchronousMessageQueueActor(messageRecipient: ActorRef,
-                                   messageService: MessageService) extends Actor with FSM[State, Data] {
+class SynchronousMessageQueueActor[T](messageRecipient: ActorRef,
+                                   messageService: MessageService,
+                                   converter: String => T) extends Actor with FSM[State, Data] {
 
   // Time between reconnection attempts
   private val ReconnectionInterval = 1 seconds
 
   import MessageQueueActorProtocol._
-
+  
   startWith(NotConnected, Idle)
-
+ 
   when(NotConnected) {
     case Event(StartListening, _) => {
       val connectionStatus = messageService.createConnection(deliverMessage, handleConnectionFailure)
@@ -64,8 +53,8 @@ class SynchronousMessageQueueActor(messageRecipient: ActorRef,
 
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
-    case Event(message, listener: Listener) => {
-      listener.recipient ! message
+    case Event(message: String, listener: Listener) => {
+      listener.recipient ! converter(message)
 
       stay
     }
@@ -80,6 +69,7 @@ class SynchronousMessageQueueActor(messageRecipient: ActorRef,
 
   initialize
 
+
   // The callback that will be executed when the MessageService component receives a message on the queue
   // The MessageService thread blocks until the returned future completes. 
   // No new messages are requested until the future completes.
@@ -92,6 +82,16 @@ class SynchronousMessageQueueActor(messageRecipient: ActorRef,
     Logger.info(s"Connection Failure: ${e.getMessage}")
     self ! ConnectionFailure(e)
   }
-
 }
+
+object SynchronousMessageQueueActor {
+
+  def apply[T](recipient: ActorRef, queueName: String, converter: String => T): Props = {
+    val messageService = new ApolloMessageService(queueName)
+    
+    Props(new SynchronousMessageQueueActor[T](recipient, messageService, converter)) 
+    
+  }
+}
+
 

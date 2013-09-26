@@ -11,10 +11,11 @@ import akka.actor._
 import org.overviewproject.test.ForwardingActor
 import akka.testkit.TestProbe
 import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
-import org.overviewproject.jobhandler.MessageServiceComponent
 import org.overviewproject.jobhandler.JobProtocol._
 import org.specs2.mock.Mockito
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import akka.testkit.TestFSMRef
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerFSM._
 
 class DummyActor extends Actor {
   def receive = {
@@ -58,26 +59,31 @@ class FileGroupMessageHandlerSpec extends Specification with Mockito {
     }
     
     "forward JobDone to monitor" in new ActorSystemContext {
+      val requestor = TestProbe()
       val jobMonitor = TestProbe()
       val fileGroupId = 1l
-
-      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
-
+      val command = ProcessFileCommand(fileGroupId, 10l)
+      
+      val messageHandler = TestFSMRef(new TestMessageHandler(jobMonitor.ref))
+      
+      messageHandler.setState(Working, Request(requestor.ref))
       messageHandler ! JobDone(fileGroupId)
 
       jobMonitor.expectMsg(JobDone(fileGroupId))
     }
     
-    "send MessageHandled to parent" in new ActorSystemContext {
-      val parentProbe = TestProbe()
+    "send MessageHandled to command sender" in new ActorSystemContext {
+      val requestor = TestProbe()
       val jobMonitor = TestProbe()
       val fileGroupId = 1l
       
-      val messageHandler = TestActorRef(Props(new TestMessageHandler(jobMonitor.ref)), parentProbe.ref, "Message Handler")
+      
+      val messageHandler = TestFSMRef(new TestMessageHandler(jobMonitor.ref))
           
+      messageHandler.setState(Working, Request(requestor.ref))
       messageHandler ! JobDone(fileGroupId)
       
-      parentProbe.expectMsg(MessageHandled)
+      requestor.expectMsg(MessageHandled)
     }
   }
 }

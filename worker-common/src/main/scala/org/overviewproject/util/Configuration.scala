@@ -24,6 +24,8 @@ trait ConfigurationWithDefaults {
   }
 }
 
+// Add default values to the appropriate *Default object
+// then add an attribute to the corresponding *Configuration object
 object WorkerDefaults extends ConfigurationDefault {
   override def path: Option[String] = None
 
@@ -42,6 +44,8 @@ object MessageQueueDefaults extends ConfigurationDefault {
 
   val BrokerUri = "broker_uri"
   val QueueName = "queue_name"
+  val FileGroupQueueName = "file_group_queue_name"
+  val ClusteringQueueName = "clustering_commands_queue_name"
   val Username: String = "username"
   val Password: String = "password"
 
@@ -49,7 +53,10 @@ object MessageQueueDefaults extends ConfigurationDefault {
     (BrokerUri -> "tcp://localhost:61613"),
     (Username -> "admin"),
     (Password -> "password"),
-    (QueueName -> "/queue/document-set-commands"))
+    (QueueName -> "/queue/document-set-commands"),
+    (FileGroupQueueName -> "/queue/file-group-commands"),
+    (ClusteringQueueName -> "/queue/clustering-commands")
+  )
 }
 
 object SearchIndexDefaults extends ConfigurationDefault {
@@ -81,6 +88,8 @@ class MessageQueueConfiguration(configuration: Config) {
   val username: String = config.getString(Username)
   val password: String = config.getString(Password)
   val queueName: String = config.getString(QueueName)
+  val fileGroupQueueName: String = config.getString(FileGroupQueueName)
+  val clusteringQueueName: String = config.getString(ClusteringQueueName)
 }
 
 class SearchIndexConfiguration(configuration: Config) {
