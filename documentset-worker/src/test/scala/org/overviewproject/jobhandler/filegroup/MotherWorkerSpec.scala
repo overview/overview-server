@@ -45,12 +45,16 @@ class MotherWorkerSpec extends Specification with Mockito {
     "forward ProcessFile message to file group message handlers" in new ActorSystemContext {
       val fileGroupJobHandler = TestProbe()
       val uploadedFileId = 10l
+      val responseToSender = "Message was forwarded by MotherWorker"
 
       val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       motherWorker ! ProcessFileCommand(fileGroupId, uploadedFileId)
       
       fileGroupJobHandler.expectMsg(ProcessFileCommand(fileGroupId, uploadedFileId))
+      fileGroupJobHandler.reply(responseToSender)
+      
+      expectMsg(responseToSender)
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new ActorSystemContext {
