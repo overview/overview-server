@@ -45,6 +45,7 @@ object MotherWorkerFSM {
   sealed trait State
   case object Scheduling extends State
 
+  
   sealed trait Data
   case class Daughters(free: List[ActorRef], busy: List[ActorRef], queue: List[FileGroupCommand]) extends Data
 }
@@ -98,7 +99,9 @@ trait MotherWorker extends Actor with FSM[State, Data] {
       }
 
       if (daughters.queue.isEmpty) {
-        stay using daughters
+        val busy = daughters.busy.filterNot(_.path == sender.path)
+        val free = sender +: daughters.free
+        stay using daughters.copy(free = free, busy = busy)
       } else {
         val nextCommand = daughters.queue.head
         sender ! nextCommand

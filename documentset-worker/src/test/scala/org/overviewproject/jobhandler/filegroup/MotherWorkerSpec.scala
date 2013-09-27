@@ -46,6 +46,7 @@ class MotherWorkerSpec extends Specification with Mockito {
     val stopWords = "ignore us"
     val fileGroupId = 1l
     val documentSetId = 2l
+    val uploadedFileId = 10l
     val userEmail = "user@email.com"
 
     abstract class MotherSetup extends ActorSystemContext with Before {
@@ -59,7 +60,7 @@ class MotherWorkerSpec extends Specification with Mockito {
         fileGroup.state returns state
         fileGroup.userEmail returns userEmail
       }
-      
+
       def before = {
         daughters = Seq.fill(2)(TestProbe())
         motherWorker = TestActorRef(new TestMotherWorker(daughters.map(_.ref)))
@@ -71,7 +72,6 @@ class MotherWorkerSpec extends Specification with Mockito {
     }
 
     "send ProcessFile message to file group message handlers" in new MotherSetup {
-      val uploadedFileId = 10l
 
       motherWorker ! ProcessFileCommand(fileGroupId, uploadedFileId)
 
@@ -79,7 +79,6 @@ class MotherWorkerSpec extends Specification with Mockito {
     }
 
     "don't forward ProcessFile messages if all message handlers are busy" in new MotherSetup {
-      val uploadedFileId = 10l
 
       val messages = Seq.tabulate(3)(n => ProcessFileCommand(fileGroupId, uploadedFileId + n))
 
@@ -90,10 +89,9 @@ class MotherWorkerSpec extends Specification with Mockito {
     }
 
     "forward queued ProcessFile message when message handlers become free" in new MotherSetup {
-      val uploadedFileId = 10l
       val messages = Seq.tabulate(3)(n => ProcessFileCommand(fileGroupId, uploadedFileId + n))
 
-      motherWorker.underlyingActor.storage.findDocumentSetCreationJobByFileGroupId(any) returns None
+      storage.findDocumentSetCreationJobByFileGroupId(any) returns None
 
       messages.foreach { msg => motherWorker ! msg }
 
@@ -102,7 +100,22 @@ class MotherWorkerSpec extends Specification with Mockito {
       daughters(1).reply(JobDone(messages(1).fileGroupId))
       daughters(0).expectNoMsg
       daughters(1).expectMsg(messages(2))
+    }
 
+    "make sure message handler gets new ProcessFile message after finishing one task" in new MotherSetup {
+      storage.findDocumentSetCreationJobByFileGroupId(any) returns None
+      val messages = Seq.tabulate(3)(n => ProcessFileCommand(fileGroupId, uploadedFileId + n))
+
+      messages.take(2).foreach { msg => motherWorker ! msg }
+
+      daughters.foreach(_.receiveN(1))
+
+      daughters(0).reply(JobDone(messages(0).fileGroupId))
+      there was one(storage).findDocumentSetCreationJobByFileGroupId(any) // hack to make reply finish before next msg is received
+
+      daughters(0).send(motherWorker, messages(2))
+
+      daughters(0).expectMsg(messages(2))
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new MotherSetup {
@@ -124,7 +137,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       val numberOfUploads = 5
 
       val fileGroup = createFileGroup(Complete)
-      
+
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns (numberOfUploads - 1)
