@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.concurrent.duration._
 import akka.actor._
 import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
@@ -14,6 +15,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 import org.specs2.mutable.Before
+import org.specs2.time.NoTimeConversions
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   def receive = {
@@ -22,7 +24,7 @@ class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   }
 }
 
-class MotherWorkerSpec extends Specification with Mockito {
+class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions {
 
   class TestMotherWorker(daughters: Seq[ActorRef]) extends MotherWorker with FileGroupJobHandlerComponent {
 
@@ -41,6 +43,7 @@ class MotherWorkerSpec extends Specification with Mockito {
   }
 
   "MotherWorker" should {
+    val Pause = 20 millis
     val title = "title"
     val lang = "sv"
     val stopWords = "ignore us"
@@ -85,7 +88,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       messages.foreach { msg => motherWorker ! msg }
 
       daughters.flatMap(_.receiveN(1)) must haveTheSameElementsAs(messages.take(2))
-      daughters.map(_.expectNoMsg)
+      daughters.map(_.expectNoMsg(Pause))
     }
 
     "forward queued ProcessFile message when message handlers become free" in new MotherSetup {
@@ -98,7 +101,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       daughters.flatMap(_.receiveN(1))
 
       daughters(1).reply(JobDone(messages(1).fileGroupId))
-      daughters(0).expectNoMsg
+      daughters(0).expectNoMsg(Pause)
       daughters(1).expectMsg(messages(2))
     }
 
@@ -111,9 +114,9 @@ class MotherWorkerSpec extends Specification with Mockito {
       daughters.foreach(_.receiveN(1))
 
       daughters(0).reply(JobDone(messages(0).fileGroupId))
-      there was one(storage).findDocumentSetCreationJobByFileGroupId(any) // hack to make reply finish before next msg is received
+      daughters(0).expectNoMsg(Pause)
 
-      daughters(0).send(motherWorker, messages(2))
+      motherWorker ! messages(2)
 
       daughters(0).expectMsg(messages(2))
     }
