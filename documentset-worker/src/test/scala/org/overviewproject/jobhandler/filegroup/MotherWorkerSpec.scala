@@ -48,16 +48,18 @@ class MotherWorkerSpec extends Specification with Mockito {
     val documentSetId = 2l
     val userEmail = "user@email.com"
 
-    trait ProbeSetup {
-      def createDaughters(implicit a: ActorSystem): Seq[TestProbe] = Seq.fill(2)(TestProbe())
-      def createMother(daughterProbes: Seq[TestProbe])(implicit a: ActorSystem): TestActorRef[TestMotherWorker] =
-        TestActorRef(new TestMotherWorker(daughterProbes.map(_.ref)))
-    }
-
     abstract class MotherSetup extends ActorSystemContext with Before {
       var daughters: Seq[TestProbe] = _
       var motherWorker: TestActorRef[TestMotherWorker] = _
 
+      def storage = motherWorker.underlyingActor.storage
+      def createFileGroup(state: FileJobState): FileGroup = {
+        val fileGroup = mock[FileGroup]
+        fileGroup.id returns fileGroupId
+        fileGroup.state returns state
+        fileGroup.userEmail returns userEmail
+      }
+      
       def before = {
         daughters = Seq.fill(2)(TestProbe())
         motherWorker = TestActorRef(new TestMotherWorker(daughters.map(_.ref)))
@@ -104,12 +106,8 @@ class MotherWorkerSpec extends Specification with Mockito {
     }
 
     "create job when StartClustering is received but FileGroup is not complete" in new MotherSetup {
-      val fileGroup = mock[FileGroup]
-      fileGroup.id returns fileGroupId
-      fileGroup.state returns InProgress
-      fileGroup.userEmail returns userEmail
+      val fileGroup = createFileGroup(InProgress)
 
-      val storage = motherWorker.underlyingActor.storage
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
 
@@ -125,11 +123,8 @@ class MotherWorkerSpec extends Specification with Mockito {
     "create job when StartClustering is received but all files have not been processed" in new MotherSetup {
       val numberOfUploads = 5
 
-      val fileGroup = mock[FileGroup]
-      fileGroup.id returns fileGroupId
-      fileGroup.state returns Complete
-
-      val storage = motherWorker.underlyingActor.storage
+      val fileGroup = createFileGroup(Complete)
+      
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns (numberOfUploads - 1)
@@ -145,11 +140,8 @@ class MotherWorkerSpec extends Specification with Mockito {
     "submit a job when StartClustering is received and all files have been processed" in new MotherSetup {
       val numberOfUploads = 5
 
-      val fileGroup = mock[FileGroup]
-      fileGroup.id returns fileGroupId
-      fileGroup.state returns Complete
+      val fileGroup = createFileGroup(Complete)
 
-      val storage = motherWorker.underlyingActor.storage
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
@@ -171,8 +163,6 @@ class MotherWorkerSpec extends Specification with Mockito {
         fileGroupId = Some(fileGroupId),
         state = Preparing)
 
-
-      val storage = motherWorker.underlyingActor.storage
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
