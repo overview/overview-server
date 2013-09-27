@@ -13,7 +13,7 @@ import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.util.Configuration
-import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -41,7 +41,17 @@ trait FileGroupJobHandlerComponent {
   }
 }
 
-class MotherWorker extends Actor {
+object MotherWorkerFSM {
+  sealed trait State
+  case object Scheduling extends State
+
+  sealed trait Data
+  case class Daughters(free: List[ActorRef], busy: List[ActorRef], queue: List[FileGroupCommand]) extends Data
+}
+
+import MotherWorkerFSM._
+
+trait MotherWorker extends Actor with FSM[State, Data] {
   this: FileGroupJobHandlerComponent =>
 
   import MotherWorkerProtocol._
@@ -49,13 +59,13 @@ class MotherWorker extends Actor {
   private val NumberOfDaughters = 2
   private val ClusteringQueue = Configuration.messageQueue.clusteringQueueName
   private val FileGroupQueue = Configuration.messageQueue.fileGroupQueueName
-  
-  private val fileGroupMessageHandlers: Seq[ActorRef] = for (i <- 1 to NumberOfDaughters) yield 
-    context.actorOf(createFileGroupMessageHandler(self))
 
+  private val fileGroupMessageHandlers = List.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
 
-  def receive = {
-    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
+  startWith(Scheduling, Daughters(fileGroupMessageHandlers, Nil, Nil))
+
+  when(Scheduling) {
+    case Event(StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords), _) => {
       storage.findFileGroup(fileGroupId).map { fileGroup =>
         val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
         storage.storeDocumentSetUser(documentSetId, fileGroup.userEmail)
@@ -64,14 +74,41 @@ class MotherWorker extends Actor {
 
         sender ! MessageHandled
       }
-    case command: ProcessFileCommand => {
-      fileGroupMessageHandlers.head forward command
+      stay
     }
-    case JobDone(fileGroupId) => storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
-      if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
+
+    case Event(command: ProcessFileCommand, daughters: Daughters) => {
+      daughters.free match {
+        case next :: rest => {
+          next ! command
+          stay using Daughters(rest, next +: daughters.busy, daughters.queue)
+        }
+        case Nil => {
+          val d = Daughters(daughters.free, daughters.busy, daughters.queue :+ command)
+
+          stay using (d)
+        }
+      }
+    }
+
+
+    case Event(JobDone(fileGroupId), daughters: Daughters) => {
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
+        if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
+      }
+
+      if (daughters.queue.isEmpty) {
+        stay using daughters
+      } else {
+        val nextCommand = daughters.queue.head
+        sender ! nextCommand
+        stay using daughters.copy(queue = daughters.queue.tail)
+      }
     }
 
   }
+
+  initialize
 
   /**
    * If all files have been uploaded, and all uploaded files have been processed,
@@ -119,7 +156,7 @@ object MotherWorker {
 
         documentSet.id
       }
-      
+
       def storeDocumentSetUser(documentSetId: Long, userEmail: String): Unit = Database.inTransaction {
         DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSetId, userEmail, Ownership.Owner))
       }

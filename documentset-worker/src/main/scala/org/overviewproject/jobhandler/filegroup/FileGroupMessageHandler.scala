@@ -26,7 +26,7 @@ object FileGroupMessageHandlerFSM {
   
   sealed trait Data
   case object NoData extends Data
-  case class Request(requestor: ActorRef) extends Data
+
 }
 
 import FileGroupMessageHandlerFSM._
@@ -44,16 +44,15 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
       jobMonitor ! JobStart(fileGroupId)
 
-      goto(Working) using Request(sender)
+      goto(Working) 
     }
   }
   
   when (Working) {
-    case Event(JobDone(fileGroupId), Request(requestor)) => {
+    case Event(JobDone(fileGroupId), _) => {
       jobMonitor ! JobDone(fileGroupId)
-       requestor ! MessageHandled
        
-       goto(Idle) using NoData
+       goto(Idle)
     }
   }
   

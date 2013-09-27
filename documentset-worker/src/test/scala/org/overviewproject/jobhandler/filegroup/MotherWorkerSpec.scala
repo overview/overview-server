@@ -13,13 +13,27 @@ import org.overviewproject.tree.orm.FileJobState._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
+import org.specs2.mutable.Before
 
+class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
+  def receive = {
+    case command: ProcessFileCommand => core ! command
+    case status => jobMonitor ! status
+  }
+}
 
 class MotherWorkerSpec extends Specification with Mockito {
 
-  class TestMotherWorker(fileGroupJobHandler: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
+  class TestMotherWorker(daughters: Seq[ActorRef]) extends MotherWorker with FileGroupJobHandlerComponent {
 
-    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = ForwardingActor(fileGroupJobHandler)
+    private var daughterCount = 0
+
+    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = {
+      val daughter = daughters(daughterCount)
+      daughterCount += 1
+
+      Props(new DaughterShell(daughter, jobMonitor))
+    }
 
     def numberOfChildren: Int = context.children.size
 
@@ -34,37 +48,66 @@ class MotherWorkerSpec extends Specification with Mockito {
     val documentSetId = 2l
     val userEmail = "user@email.com"
 
-    "start 2 FileGroupMessageHandlers" in new ActorSystemContext {
-      val fileGroupMessageHandler = TestProbe()
+    trait ProbeSetup {
+      def createDaughters(implicit a: ActorSystem): Seq[TestProbe] = Seq.fill(2)(TestProbe())
+      def createMother(daughterProbes: Seq[TestProbe])(implicit a: ActorSystem): TestActorRef[TestMotherWorker] =
+        TestActorRef(new TestMotherWorker(daughterProbes.map(_.ref)))
+    }
 
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupMessageHandler.ref))
+    abstract class MotherSetup extends ActorSystemContext with Before {
+      var daughters: Seq[TestProbe] = _
+      var motherWorker: TestActorRef[TestMotherWorker] = _
 
+      def before = {
+        daughters = Seq.fill(2)(TestProbe())
+        motherWorker = TestActorRef(new TestMotherWorker(daughters.map(_.ref)))
+      }
+    }
+
+    "start 2 FileGroupMessageHandlers" in new MotherSetup {
       motherWorker.underlyingActor.numberOfChildren must be equalTo (2)
     }
-    
-    "forward ProcessFile message to file group message handlers" in new ActorSystemContext {
-      val fileGroupJobHandler = TestProbe()
-      val uploadedFileId = 10l
-      val responseToSender = "Message was forwarded by MotherWorker"
 
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
+    "send ProcessFile message to file group message handlers" in new MotherSetup {
+      val uploadedFileId = 10l
 
       motherWorker ! ProcessFileCommand(fileGroupId, uploadedFileId)
-      
-      fileGroupJobHandler.expectMsg(ProcessFileCommand(fileGroupId, uploadedFileId))
-      fileGroupJobHandler.reply(responseToSender)
-      
-      expectMsg(responseToSender)
+
+      daughters(0).expectMsg(ProcessFileCommand(fileGroupId, uploadedFileId))
     }
 
-    "create job when StartClustering is received but FileGroup is not complete" in new ActorSystemContext {
-      val fileGroupJobHandler = TestProbe()
+    "don't forward ProcessFile messages if all message handlers are busy" in new MotherSetup {
+      val uploadedFileId = 10l
+
+      val messages = Seq.tabulate(3)(n => ProcessFileCommand(fileGroupId, uploadedFileId + n))
+
+      messages.foreach { msg => motherWorker ! msg }
+
+      daughters.flatMap(_.receiveN(1)) must haveTheSameElementsAs(messages.take(2))
+      daughters.map(_.expectNoMsg)
+    }
+
+    "forward queued ProcessFile message when message handlers become free" in new MotherSetup {
+      val uploadedFileId = 10l
+      val messages = Seq.tabulate(3)(n => ProcessFileCommand(fileGroupId, uploadedFileId + n))
+
+      motherWorker.underlyingActor.storage.findDocumentSetCreationJobByFileGroupId(any) returns None
+
+      messages.foreach { msg => motherWorker ! msg }
+
+      daughters.flatMap(_.receiveN(1))
+
+      daughters(1).reply(JobDone(messages(1).fileGroupId))
+      daughters(0).expectNoMsg
+      daughters(1).expectMsg(messages(2))
+
+    }
+
+    "create job when StartClustering is received but FileGroup is not complete" in new MotherSetup {
       val fileGroup = mock[FileGroup]
       fileGroup.id returns fileGroupId
       fileGroup.state returns InProgress
       fileGroup.userEmail returns userEmail
-
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       val storage = motherWorker.underlyingActor.storage
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
@@ -75,19 +118,16 @@ class MotherWorkerSpec extends Specification with Mockito {
       there was one(storage).storeDocumentSet(title, lang, stopWords)
       there was one(storage).storeDocumentSetUser(documentSetId, userEmail)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
-      
+
       expectMsg(MessageHandled)
     }
 
-    "create job when StartClustering is received but all files have not been processed" in new ActorSystemContext {
+    "create job when StartClustering is received but all files have not been processed" in new MotherSetup {
       val numberOfUploads = 5
 
-      val fileGroupJobHandler = TestProbe()
       val fileGroup = mock[FileGroup]
       fileGroup.id returns fileGroupId
       fileGroup.state returns Complete
-
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       val storage = motherWorker.underlyingActor.storage
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
@@ -101,16 +141,13 @@ class MotherWorkerSpec extends Specification with Mockito {
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
 
     }
-    
-    "submit a job when StartClustering is received and all files have been processed" in new ActorSystemContext {
+
+    "submit a job when StartClustering is received and all files have been processed" in new MotherSetup {
       val numberOfUploads = 5
 
-      val fileGroupJobHandler = TestProbe()
       val fileGroup = mock[FileGroup]
       fileGroup.id returns fileGroupId
       fileGroup.state returns Complete
-
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       val storage = motherWorker.underlyingActor.storage
       storage.findFileGroup(fileGroupId) returns Some(fileGroup)
@@ -123,8 +160,8 @@ class MotherWorkerSpec extends Specification with Mockito {
       there was one(storage).storeDocumentSet(title, lang, stopWords)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, NotStarted, lang, stopWords)
     }
-    
-    "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new ActorSystemContext {
+
+    "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new MotherSetup {
       val numberOfUploads = 5
 
       val documentSetCreationJob = DocumentSetCreationJob(
@@ -132,11 +169,8 @@ class MotherWorkerSpec extends Specification with Mockito {
         documentSetId = 10l,
         jobType = FileUpload,
         fileGroupId = Some(fileGroupId),
-        state = Preparing
-      )
-      val fileGroupJobHandler = TestProbe()
+        state = Preparing)
 
-      val motherWorker = TestActorRef(new TestMotherWorker(fileGroupJobHandler.ref))
 
       val storage = motherWorker.underlyingActor.storage
       storage.countFileUploads(fileGroupId) returns numberOfUploads
@@ -144,7 +178,7 @@ class MotherWorkerSpec extends Specification with Mockito {
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
 
       motherWorker ! JobDone(fileGroupId)
-      
+
       there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
     }
   }
