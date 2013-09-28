@@ -132,8 +132,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       there was one(storage).storeDocumentSet(title, lang, stopWords)
       there was one(storage).storeDocumentSetUser(documentSetId, userEmail)
       there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
-
-      expectMsg(MessageHandled)
     }
 
     "create job when StartClustering is received but all files have not been processed" in new MotherSetup {

@@ -98,7 +98,7 @@ trait MotherWorker extends Actor with FSM[State, Data] {
       }
 
       if (daughters.queue.isEmpty) {
-        val busy = daughters.busy.filterNot(_.path == sender.path)
+        val busy = daughters.busy.filterNot(_ == sender)
         val free = sender +: daughters.free
         stay using daughters.copy(free = free, busy = busy)
       } else {
