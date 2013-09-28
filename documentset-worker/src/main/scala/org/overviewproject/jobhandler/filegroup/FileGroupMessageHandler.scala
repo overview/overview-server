@@ -42,7 +42,6 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
     case Event(ProcessFileCommand(fileGroupId, uploadedFileId), _) => {
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
-      jobMonitor ! JobStart(fileGroupId)
 
       goto(Working) 
     }

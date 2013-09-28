@@ -46,18 +46,6 @@ class FileGroupMessageHandlerSpec extends Specification with Mockito {
       there was one(actorCreator).produceTextExtractor
     }
 
-    "send JobStart to monitor when message is received" in new ActorSystemContext {
-      val jobMonitor = TestProbe()
-      val fileGroupId = 1l
-      val command = ProcessFileCommand(fileGroupId, 10l)
-
-      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
-
-      messageHandler ! command
-
-      jobMonitor.expectMsg(JobStart(fileGroupId))
-    }
-
     "forward JobDone to monitor" in new ActorSystemContext {
       val requestor = TestProbe()
       val jobMonitor = TestProbe()

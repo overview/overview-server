@@ -73,7 +73,6 @@ trait MotherWorker extends Actor with FSM[State, Data] {
         val jobState = computeJobState(fileGroup)
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
 
-        sender ! MessageHandled
       }
       stay
     }
