@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.collection.mutable.{ Map, Queue }
 import akka.actor._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, FileFinder, FileGroupFinder, FileUploadFinder }
@@ -41,18 +42,10 @@ trait FileGroupJobHandlerComponent {
   }
 }
 
-object MotherWorkerFSM {
-  sealed trait State
-  case object Scheduling extends State
 
-  
-  sealed trait Data
-  case class Daughters(free: List[ActorRef], busy: List[ActorRef], queue: List[FileGroupCommand]) extends Data
-}
 
-import MotherWorkerFSM._
 
-trait MotherWorker extends Actor with FSM[State, Data] {
+trait MotherWorker extends Actor {
   this: FileGroupJobHandlerComponent =>
 
   import MotherWorkerProtocol._
@@ -61,12 +54,14 @@ trait MotherWorker extends Actor with FSM[State, Data] {
   private val ClusteringQueue = Configuration.messageQueue.clusteringQueueName
   private val FileGroupQueue = Configuration.messageQueue.fileGroupQueueName
 
-  private val fileGroupMessageHandlers = List.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
+  private val freeWorkers = Queue.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
+  private val busyWorkers = Map.empty[ActorRef, ProcessFileCommand]
+  private val workQueue = Queue.empty[ProcessFileCommand]
+  
+  
 
-  startWith(Scheduling, Daughters(fileGroupMessageHandlers, Nil, Nil))
-
-  when(Scheduling) {
-    case Event(StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords), _) => {
+  def receive = {
+    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) => {
       storage.findFileGroup(fileGroupId).map { fileGroup =>
         val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
         storage.storeDocumentSetUser(documentSetId, fileGroup.userEmail)
@@ -74,43 +69,33 @@ trait MotherWorker extends Actor with FSM[State, Data] {
         storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
 
       }
-      stay
     }
 
-    case Event(command: ProcessFileCommand, daughters: Daughters) => {
-      daughters.free match {
-        case next :: rest => {
-          next ! command
-          stay using Daughters(rest, next +: daughters.busy, daughters.queue)
-        }
-        case Nil => {
-          val d = Daughters(daughters.free, daughters.busy, daughters.queue :+ command)
-
-          stay using (d)
-        }
+    case command: ProcessFileCommand => {
+      if (!freeWorkers.isEmpty) {
+        val next = freeWorkers.dequeue()
+        busyWorkers += (next -> command)
+        next ! command
+      }
+      else {
+        workQueue.enqueue(command)
       }
     }
 
 
-    case Event(JobDone(fileGroupId), daughters: Daughters) => {
+    case JobDone(fileGroupId) => {
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
         if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
       }
 
-      if (daughters.queue.isEmpty) {
-        val busy = daughters.busy.filterNot(_ == sender)
-        val free = sender +: daughters.free
-        stay using daughters.copy(free = free, busy = busy)
-      } else {
-        val nextCommand = daughters.queue.head
-        sender ! nextCommand
-        stay using daughters.copy(queue = daughters.queue.tail)
-      }
+      busyWorkers -= sender
+      freeWorkers.enqueue(sender)
+      
+      if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
 
   }
 
-  initialize
 
   /**
    * If all files have been uploaded, and all uploaded files have been processed,
