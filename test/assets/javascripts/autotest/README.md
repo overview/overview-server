@@ -4,7 +4,7 @@ Autotest
 Helps run JavaScript tests
 
 1. Install NodeJS
-2. Run `sudo npm install -g grunt-cli
+2. Run `sudo npm install -g grunt-cli`
 3. Run `sudo npm install -g coffee-script` (see https://github.com/gruntjs/grunt/pull/767 to see why we can't just depend on it)
 4. Run `npm install` in this directory
 5. Run `grunt`
