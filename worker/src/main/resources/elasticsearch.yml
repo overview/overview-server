@@ -102,4 +102,11 @@ index.number_of_shards: 1
 
 # Use the Index Status API (<http://localhost:9200/A/_status>) to inspect
 # the index status.
+discovery:
+  zen:
+    ping:
+      multicast:
+        enabled: false
+      unicast:
+        hosts: 127.0.0.1[9300-9400]
 
