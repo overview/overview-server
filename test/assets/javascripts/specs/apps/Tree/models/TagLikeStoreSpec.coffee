@@ -131,14 +131,6 @@ define [
           store.change(tag2, { name: 'Afoo' })
           expect(store.objects[1].name).toEqual('Afoo')
 
-        it 'should set changed values by value', ->
-          doclist = { n: 1, docids: [ 1 ] }
-          store.change(tag2, { doclist: doclist })
-          doclist.n = 2
-          expect(tag2.doclist.n).toEqual(1)
-          doclist.docids.push(4)
-          expect(tag2.doclist.docids).toEqual([1])
-
         it 'should change a tag property to undefined', ->
           store.change(tag2, { foo: 'bar' })
           store.change(tag2, { foo: undefined })
