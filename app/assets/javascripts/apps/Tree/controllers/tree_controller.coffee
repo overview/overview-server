@@ -5,7 +5,7 @@ define [
   '../models/animator'
   '../models/property_interpolator'
   '../models/TreeLayout'
-  '../views/tree_view'
+  '../views/TreeView'
   './logger'
 ], (_, $, AnimatedTree, Animator, PropertyInterpolator, TreeLayout, TreeView, Logger) ->
   log = Logger.for_component('tree')
