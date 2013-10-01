@@ -44,9 +44,11 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
           indexingSession.indexDocument(documentSetId, documentId, text, Some(file.name), None)
           
           consumer.processDocument(documentId, text)
-        } orElse(file.errorMessage).map { error =>
-          fileErrors = DocumentRetrievalError(file.name, error) +: fileErrors
+        } getOrElse {
+          val error = file.errorMessage.getOrElse(s"Inconsistent GroupedProcessFile in Database: ${file.id}")
+          fileErrors = DocumentRetrievalError(file.name, error) +: fileErrors            
         }
+        
 
         numberOfDocumentsRead += 1
 
