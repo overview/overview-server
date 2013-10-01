@@ -1,0 +1,7 @@
+@()(implicit lang: Lang, request: RequestHeader)
+@defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
+  @_importPane(m("h1")) {
+    <form class="document-set-upload" method="post" action="@routes.MassUploadController.create(new java.util.UUID(0, 0))">
+    </form>
+  }
+}

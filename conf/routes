@@ -27,6 +27,8 @@ HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.U
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)
 POST   /uploads/:uuid/finish controllers.UploadController.startClustering(uuid: java.util.UUID)
 
+PUT    /files/:guid controllers.MassUploadController.create(guid: java.util.UUID)
+
 GET    /imports.json controllers.ImportJobController.index()
 
 POST   /imports/documentcloud              controllers.DocumentCloudImportJobController.create()
@@ -75,10 +77,10 @@ POST   /documentsets/:id/search-results/:searchResultId/node-counts controllers.
 GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
 
 # Routes for public document sets
-GET    /public-document-sets                     controllers.PublicDocumentSetController.index() 
+GET    /public-document-sets                     controllers.PublicDocumentSetController.index()
 
 # Routes for shared document sets
-GET    /shared-document-sets                     controllers.SharedDocumentSetController.index() 
+GET    /shared-document-sets                     controllers.SharedDocumentSetController.index()
 
 # Routes for browsers that dont' support CORS
 # really GET, but with hidden password

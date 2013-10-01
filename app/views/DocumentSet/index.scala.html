@@ -30,7 +30,7 @@
   "views.DocumentSet.index.ImportOptions.dialog.title",
   "views.DocumentSet.index.ImportOptions.dialog.cancel",
   "views.DocumentSet.index.ImportOptions.dialog.submit",
-  "views.DocumentSet.index.ImportOptions.click_for_help",  
+  "views.DocumentSet.index.ImportOptions.click_for_help",
   "views.DocumentSet._dcimport.preamble_html",
   "views.DocumentSet._dcimport.error",
   "views.DocumentSet._dcimport.labels.email",
@@ -78,6 +78,7 @@
             <li><a href="#import-shared">@m("import_from_shared")</a></li>
             <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
             <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
+            <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
           </ul>
         </div>
       </div>
@@ -125,6 +126,10 @@
 
     <div class="import-pane" id="import-from-upload">
       @views.html.DocumentSet._uploadForm()
+    </div>
+
+    <div class="import-pane" id="import-from-mass-upload">
+      @views.html.DocumentSet._massUploadForm()
     </div>
   }
 }

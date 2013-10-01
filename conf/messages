@@ -228,6 +228,9 @@ views.DocumentSet._uploadForm.progress.prompt=Meanwhile, you can open Overview i
 views.DocumentSet._uploadForm.progress.cancel=Cancel upload
 views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
+views.DocumentSet._massUploadForm.h1=Upload PDF files
+
+
 views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
 views.DocumentSet._smallDocumentSet.import=Clone
 
@@ -242,6 +245,7 @@ views.DocumentSet.index.import_dropdown=Import your documents
 views.DocumentSet.index.import_from_shared=Import documents shared with you
 views.DocumentSet.index.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
 views.DocumentSet.index.import_from_upload=Import from a CSV file
+views.DocumentSet.index.import_from_mass_upload=Upload PDF files
 
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.lang.label=Language of documents
@@ -362,7 +366,7 @@ views.Session._form.forgot_password_html=Forgot your password? <a href="{0}">Res
 views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
-views.SharedDocumentSet.index.title=Document sets shared with you 
+views.SharedDocumentSet.index.title=Document sets shared with you
 views.SharedDocumentSet.index.preamble=When other Overview users share documents with you, they appear here.
 views.SharedDocumentSet.index.empty=Nobody is sharing a document set with you right now.
 
