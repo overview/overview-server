@@ -5,13 +5,14 @@ import org.squeryl.KeyedEntity
 import java.util.UUID
 
 // This class should be merged with or replace UploadedFile
-case class FileUpload(
+case class GroupedFileUpload(
     fileGroupId: Long,
     guid: UUID,
-    contentDisposition: String,
     contentType: String,
+    name: String,
     size: Long,
-    lastActivity: Timestamp,
+    lastModifiedDate: String,
+    uploadedSize: Long,
     contentsOid: Long,
     id: Long = 0L) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)

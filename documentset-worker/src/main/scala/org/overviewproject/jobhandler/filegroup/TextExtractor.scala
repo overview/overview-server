@@ -1,21 +1,21 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
-import org.overviewproject.tree.orm.FileUpload
+import org.overviewproject.tree.orm.GroupedFileUpload
 import java.io.InputStream
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.util.PDFTextStripper
-import org.overviewproject.database.orm.finders.FileFinder
+import org.overviewproject.database.orm.finders.GroupedProcessedFileFinder
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.util.Logger
 import org.overviewproject.database.DB
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.FileText
 import org.overviewproject.database.orm.stores.FileTextStore
-import org.overviewproject.database.orm.finders.FileUploadFinder
-import org.overviewproject.tree.orm.File
+import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+import org.overviewproject.tree.orm.GroupedProcessedFile
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.database.orm.stores.FileStore
+import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
 import org.overviewproject.util.ContentDisposition
 import org.overviewproject.jobhandler.JobProtocol._
 
@@ -30,9 +30,9 @@ trait TextExtractorComponents {
   val pdfProcessor: PdfProcessor
 
   trait DataStore {
-    def findFileUpload(fileUploadId: Long): Option[FileUpload]
+    def findFileUpload(fileUploadId: Long): Option[GroupedFileUpload]
     def fileContentStream(oid: Long): InputStream
-    def storeFile(file: File): Unit
+    def storeFile(file: GroupedProcessedFile): Unit
     def storeText(fileId: Long, text: String): Unit
   }
 
@@ -51,15 +51,13 @@ class TextExtractor extends Actor {
       val fileUpload = dataStore.findFileUpload(fileUploadId).get
       val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
       val text = pdfProcessor.extractText(fileStream)
-      val file = File(
+      val file = GroupedProcessedFile(
           fileGroupId,
-          fileUpload.guid,
-          ContentDisposition.filename(fileUpload.contentDisposition).getOrElse("unknown name"),
           fileUpload.contentType,
-          fileUpload.size,
-          Complete,
-          text,
-          fileUpload.lastActivity)
+          fileUpload.name,
+          None,
+          Some(text),
+          fileUpload.contentsOid)
       dataStore.storeFile(file)
       
       sender ! JobDone(fileGroupId)
@@ -84,14 +82,14 @@ trait PdfBoxPdfProcessor {
 
 class TextExtractorImpl extends TextExtractor with TextExtractorComponents {
   class DataStoreImpl extends DataStore {
-    override def findFileUpload(fileUploadId: Long): Option[FileUpload] = Database.inTransaction {
-      FileUploadFinder.byId(fileUploadId).headOption
+    override def findFileUpload(fileUploadId: Long): Option[GroupedFileUpload] = Database.inTransaction {
+      GroupedFileUploadFinder.byId(fileUploadId).headOption
     } 
     
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
     
-    override def storeFile(file: File): Unit = Database.inTransaction {
-      FileStore.insertOrUpdate(file)
+    override def storeFile(file: GroupedProcessedFile): Unit = Database.inTransaction {
+      GroupedProcessedFileStore.insertOrUpdate(file)
     }
     
     override def storeText(fileId: Long, text: String): Unit = Database.inTransaction {

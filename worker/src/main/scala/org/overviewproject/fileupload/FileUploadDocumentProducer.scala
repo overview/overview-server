@@ -4,7 +4,7 @@ import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence._
 import org.overviewproject.persistence.orm.finders.FileFinder
-import org.overviewproject.tree.orm.{ Document, File }
+import org.overviewproject.tree.orm.{ Document, GroupedProcessedFile }
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession } 
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
@@ -33,19 +33,19 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
     Database.inTransaction {
       val fileCount: Long = FileFinder.byFileGroup(fileGroupId).count
-      val files: Iterable[File] = FileFinder.byFileGroup(fileGroupId)
+      val files: Iterable[GroupedProcessedFile] = FileFinder.byFileGroup(fileGroupId)
       val iterator = files.iterator
 
       while (!jobCancelled && iterator.hasNext) {
         val file = iterator.next
 
-        if (file.state == Complete) {
+        file.text.map { text =>
           val documentId = writeAndCommitDocument(documentSetId, file)
-          indexingSession.indexDocument(documentSetId, documentId, file.text, Some(file.name), None)
+          indexingSession.indexDocument(documentSetId, documentId, text, Some(file.name), None)
           
-          consumer.processDocument(documentId, file.text)
-        } else {
-          fileErrors = DocumentRetrievalError("", file.name) +: fileErrors
+          consumer.processDocument(documentId, text)
+        } orElse(file.errorMessage).map { error =>
+          fileErrors = DocumentRetrievalError(file.name, error) +: fileErrors
         }
 
         numberOfDocumentsRead += 1
@@ -74,8 +74,8 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     } else lastUpdateTime
   }
 
-  private def writeAndCommitDocument(documentSetId: Long, file: File): Long = Database.inTransaction {
-    val document = Document(documentSetId, id = ids.next, title = Some(file.name), text = Some(file.text))
+  private def writeAndCommitDocument(documentSetId: Long, file: GroupedProcessedFile): Long = Database.inTransaction {
+    val document = Document(documentSetId, id = ids.next, title = Some(file.name), text = file.text)
 
     DocumentWriter.write(document)
 

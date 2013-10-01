@@ -17,9 +17,9 @@ object Schema extends org.squeryl.Schema {
   val tags = table[Tag]
   val documentTags = table[DocumentTag]
   val documentSets = table[DocumentSet]
-  val files = table[File]
+  val groupedProcessedFiles = table[GroupedProcessedFile]
   val fileGroups = table[FileGroup]
-  val fileUploads = table[FileUpload]
+  val groupedFileUploads = table[GroupedFileUpload]
   
   on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))

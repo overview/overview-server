@@ -4,10 +4,11 @@ BEGIN;
 
 CREATE TABLE file_group (
   id               BIGSERIAL PRIMARY KEY,
-  guid             UUID NOT NULL,
+  name             VARCHAR,
   user_email       VARCHAR(255) NOT NULL,
   state            INTEGER NOT NULL
 );
+CREATE INDEX file_group_user_email ON file_group (user_email);
 
 CREATE TABLE file_job_state (
   id                INTEGER NOT NULL,
@@ -16,36 +17,33 @@ CREATE TABLE file_job_state (
 
 INSERT INTO file_job_state (id, description) VALUES
   (1, 'Complete'),
-  (2, 'InProgress'),
-  (3, 'Error');
+  (2, 'InProgress');
 
 
-CREATE TABLE file (
-  id                BIGSERIAL PRIMARY KEY,
-  file_group_id     BIGINT NOT NULL references file_group (id),
-  guid              UUID NOT NULL,
-  name              VARCHAR NOT NULL,
-  content_type      VARCHAR NOT NULL,
-  size              BIGINT NOT NULL,
-  uploaded_at       TIMESTAMP NOT NULL,
-  state             INTEGER NOT NULL,
-  text		    VARCHAR NOT NULL
+
+CREATE TABLE grouped_processed_file (
+  id                   BIGSERIAL PRIMARY KEY,
+  file_group_id        BIGINT NOT NULL references file_group (id),
+  content_type         VARCHAR NOT NULL,
+  name                 VARCHAR NOT NULL,
+  error_message        VARCHAR,
+  text                 VARCHAR,
+  contents_oid         OID NOT NULL
 );
-CREATE INDEX file_file_group_id ON file (file_group_id);
+CREATE INDEX grouped_processed_file_file_group_id ON grouped_processed_file (file_group_id);
 
-
-CREATE TABLE file_upload (
+CREATE TABLE grouped_file_upload (
   id                    BIGSERIAL PRIMARY KEY,
   file_group_id         BIGINT NOT NULL REFERENCES file_group (id),
   guid                  UUID NOT NULL,
-  content_disposition   VARCHAR NOT NULL,
   content_type          VARCHAR NOT NULL,
+  name                  VARCHAR NOT NULL,
   size                  BIGINT NOT NULL,
-  last_activity         TIMESTAMP NOT NULL,
+  last_modified_date    VARCHAR(255) NOT NULL,
+  uploaded_size		BIGINT NOT NULL,
   contents_oid          OID NOT NULL
 );
-
-CREATE INDEX file_upload_file_group_id ON file_upload (file_group_id);
+CREATE INDEX grouped_file_upload_file_group_id ON grouped_file_upload (file_group_id);
 
 ALTER TABLE document_set_creation_job ADD COLUMN file_group_id BIGINT REFERENCES file_group(id);
 CREATE INDEX document_set_creation_job_file_group_id ON document_set_creation_job (file_group_id);
@@ -73,9 +71,8 @@ ALTER TABLE document_set_creation_job DROP CONSTRAINT document_set_creation_job_
 DELETE FROM document_set_creation_job_type WHERE id = 4;
 ALTER TABLE document_set_creation_job DROP COLUMN file_group_id;
 
-DROP TABLE IF EXISTS file_upload CASCADE;
-DROP TABLE IF EXISTS file_group_file CASCADE;
-DROP TABLE IF EXISTS file CASCADE;
+DROP TABLE IF EXISTS grouped_file_upload CASCADE;
+DROP TABLE IF EXISTS grouped_process_file CASCADE;
 DROP TABLE IF EXISTS file_job_state CASCADE;
 DROP TABLE IF EXISTS file_group CASCADE;
 

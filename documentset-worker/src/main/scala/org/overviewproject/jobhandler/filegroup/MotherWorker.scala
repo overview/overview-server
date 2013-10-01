@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.filegroup
 import scala.collection.mutable.{ Map, Queue }
 import akka.actor._
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, FileFinder, FileGroupFinder, FileUploadFinder }
+import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
 import org.overviewproject.database.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
@@ -123,11 +123,11 @@ object MotherWorker {
       }
 
       def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
-        FileUploadFinder.countsByFileGroup(fileGroupId)
+        GroupedFileUploadFinder.countsByFileGroup(fileGroupId)
       }
 
       def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
-        FileFinder.byFinishedState(fileGroupId).count
+        GroupedProcessedFileFinder.byFileGroup(fileGroupId).count
       }
 
       def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =

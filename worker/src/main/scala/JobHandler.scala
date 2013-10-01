@@ -14,8 +14,8 @@ import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence._
-import org.overviewproject.persistence.orm.finders.{ FileFinder, FileGroupFinder, FileUploadFinder }
-import org.overviewproject.persistence.orm.stores.{ FileGroupStore, FileStore, FileUploadStore }
+import org.overviewproject.persistence.orm.finders.{ FileFinder, FileGroupFinder, GroupedFileUploadFinder }
+import org.overviewproject.persistence.orm.stores.{ FileStore, FileGroupStore, GroupedFileUploadStore }
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
@@ -226,7 +226,7 @@ object JobHandler {
   private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
     job.fileGroupId.map { fileGroupId =>
       FileStore.delete(FileFinder.byFileGroup(fileGroupId).toQuery)
-      FileUploadStore.delete(FileUploadFinder.byFileGroup(fileGroupId).toQuery)
+      GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
 
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
     }

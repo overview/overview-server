@@ -3,13 +3,13 @@ package org.overviewproject.jobhandler.filegroup
 import org.specs2.mutable.Specification
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
-import org.overviewproject.tree.orm.File
+import org.overviewproject.tree.orm.GroupedProcessedFile
 import java.util.UUID
 import java.io.InputStream
 import akka.testkit.{ ImplicitSender, TestActorRef }
 import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.tree.orm.FileUpload
+import org.overviewproject.tree.orm.GroupedFileUpload
 import java.sql.Timestamp
 import org.overviewproject.jobhandler.JobProtocol._
 import akka.testkit.TestProbe
@@ -19,26 +19,26 @@ class TextExtractorSpec extends Specification with Mockito {
 
   "TextExtractor" should {
 
-    val fileUpload = FileUpload(
+    val fileUpload = GroupedFileUpload(
       1L,
       UUID.randomUUID,
-      "contentDisposition",
       "contentType",
+      "name",
       10000L,
-      new Timestamp(0L),
+      "2011-02-19",
+      10000L,
       100L)
 
     val extractedText: String = "Text from PDF"
 
-    val file = File(
+    val file = GroupedProcessedFile(
       1L,
-      fileUpload.guid,
-      "file name",
       fileUpload.contentType,
-      fileUpload.size,
-      Complete,
-      extractedText,
-      fileUpload.lastActivity)
+      "file name",
+      None,
+      Some(extractedText),
+      fileUpload.contentsOid)
+      
 
     class TestTextExtractor extends TextExtractor with TextExtractorComponents {
 
