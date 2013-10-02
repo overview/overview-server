@@ -2,6 +2,8 @@
 
 BEGIN;
 
+LOCK TABLE document;
+
 ALTER TABLE document DROP COLUMN "type";
 DROP TYPE document_type;
 
@@ -14,6 +16,8 @@ COMMIT;
 BEGIN;
 
 CREATE TYPE document_type AS ENUM ('DocumentCloudDocument', 'CsvImportDocument');
+
+LOCK TABLE document;
 
 ALTER TABLE document ADD COLUMN "type" document_type;
 UPDATE document SET "type" = CASE  WHEN documentcloud_id IS NULL THEN 'CsvImportDocument'::document_type
