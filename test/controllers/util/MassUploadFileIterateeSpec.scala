@@ -24,7 +24,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val fileGroup = smartMock[FileGroup]
       fileGroup.id returns 1l
 
-      storage.createFileGroup(any) returns fileGroup
+      storage.findCurrentFileGroup returns Some(fileGroup)
       storage.createUpload(any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
@@ -43,7 +43,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val result = Await.result(resultFuture, Duration.Inf)
       
       result must be equalTo(iteratee.fileUpload)
-      there was one(iteratee.storage).createFileGroup(userEmail)
+      there was one(iteratee.storage).findCurrentFileGroup
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
   }
