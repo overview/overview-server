@@ -70,8 +70,8 @@ class indexSpec extends Specification {
       $(".document-sets ul").length must equalTo(1)
     }
 
-    "Show form for adding new document sets" in new ViewContext {
-      $("form").length must equalTo(1)
+    "Show forms for adding new document sets" in new ViewContext {
+      $("form").length must equalTo(2)
     }
 
     "Show links to DocumentSets if there are some" in new ViewContext {
