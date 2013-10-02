@@ -61,7 +61,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
         <a
           class="create-tag"
           data-cid="<%- selectedSearchResult.cid %>"
-          ><i class="icon-tag"></i><%- t('create_tag') %></a>
+          ><i class="overview-icon-tag"></i><%- t('create_tag') %></a>
       <% } %>
     """)
 

@@ -9,7 +9,7 @@ To edit our font:
     three grid squares from the top of the icon.)
 2. Follow the instructions at http://fontcustom.com/#installation to install
    Font Custom.
-3. In this directory, run `fontcustom compile svg`
+3. In this directory, run `fontcustom compile svg -c svg/fontcustom.yml -f overview-project-icons --no-hash`
 4. `cp font/overview-project-icons.* ../public/fonts/`
 5. Edit `font/fontcustom-bootstrap.css` to add a base path to the fonts. For
    instance, `overview-project-icons.eot` should become

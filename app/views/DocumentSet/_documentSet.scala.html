@@ -15,14 +15,14 @@
         data-is-admin="@viewer.isAdministrator"
         data-is-public="@documentSet.isPublic"
         data-update-url="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
-        <i class="icon-share"></i> @m("share")
+        <i class="overview-icon-share"></i> @m("share")
       </a>
 
       <a class="btn"
         data-remote="@routes.DocumentSetExportController.index(documentSet.id)"
         data-toggle="modal"
         data-target="#export-modal">
-        <i class="icon-download"></i> @m("export")
+        <i class="overview-icon-download"></i> @m("export")
       </a>
 
       <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete", documentSet.title)" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"

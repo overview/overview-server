@@ -31,8 +31,8 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
               data-cid="<%- tag.cid %>"
               style="background-color:<%- tag.get('color') %>">
             <a class="btn tag-name"><%- tag.get('name') %></a>
-            <a class="btn tag-add" title="add tag to selection"><i class="icon-plus"></i></a>
-            <a class="btn tag-remove" title="remove tag from selection"><i class="icon-minus"></i></a>
+            <a class="btn tag-add" title="add tag to selection"><i class="overview-icon-plus"></i></a>
+            <a class="btn tag-remove" title="remove tag from selection"><i class="overview-icon-minus"></i></a>
           </li>
         <% }); %>
         <li class="btn-group">

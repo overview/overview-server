@@ -25,7 +25,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
       <%= window.csrfTokenHtml %>
       <input type="hidden" name="role" value="Viewer" />
       <input type="email" class="span2" placeholder="<%- t('email_placeholder') %>" name="email" />
-      <button type="submit" class="btn add-viewer-button" disabled="true"><i class="icon-plus"/> <%- t('add') %></button>
+      <button type="submit" class="btn add-viewer-button" disabled="true"><i class="overview-icon-plus"/> <%- t('add') %></button>
     </form>
     <% if (is_admin) { %>    
       <form method="post" class="update form-inline" action="<%- update_url %>">
