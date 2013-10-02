@@ -1,16 +1,14 @@
 package controllers.util
 
 import java.io.ByteArrayInputStream
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Random
-
 import play.api.libs.iteratee.Enumerator
-
 import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
 
 
 class MassUploadFileIterateeSpec extends Specification with Mockito {
@@ -29,8 +27,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       storage.appendData(any, any) returns fileUpload
     }
 
-    "produce a MassUploadFile" in {
-      val userEmail = "user@email.co.nz"
+    trait UploadContext extends Scope {
       val data = new Array[Byte](100)
       Random.nextBytes(data)
 
@@ -39,9 +36,16 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val input = new ByteArrayInputStream(data)
       val enumerator = Enumerator.fromStream(input)
 
-      val resultFuture = enumerator.run(iteratee())
-      val result = Await.result(resultFuture, Duration.Inf)
       
+      def result = {
+        val resultFuture = enumerator.run(iteratee())
+        Await.result(resultFuture, Duration.Inf)
+      }
+      
+    }
+    
+    
+    "produce a MassUploadFile" in new UploadContext {
       result must be equalTo(iteratee.fileUpload)
       there was one(iteratee.storage).findCurrentFileGroup
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
