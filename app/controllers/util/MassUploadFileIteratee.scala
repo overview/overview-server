@@ -11,13 +11,13 @@ trait MassUploadFileIteratee {
 
   trait Storage {
     def findCurrentFileGroup: Option[FileGroup]
-    def createFileGroup(name: String, user: String): FileGroup
+    def createFileGroup(userEmail: String): FileGroup
     def createUpload(fileGroupId: Long): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Array[Byte]): GroupedFileUpload
   }
 
-  def apply(): Iteratee[Array[Byte], GroupedFileUpload] = {
-    val fileGroup = storage.createFileGroup("", "")
+  def apply(userEmail: String): Iteratee[Array[Byte], GroupedFileUpload] = {
+    val fileGroup = storage.createFileGroup(userEmail)
     val initialUpload = storage.createUpload(fileGroup.id)
 
     Iteratee.fold(initialUpload) { (upload, data) =>

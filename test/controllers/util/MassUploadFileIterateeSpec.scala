@@ -24,12 +24,13 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val fileGroup = smartMock[FileGroup]
       fileGroup.id returns 1l
 
-      storage.createFileGroup(any, any) returns fileGroup
+      storage.createFileGroup(any) returns fileGroup
       storage.createUpload(any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
 
     "produce a MassUploadFile" in {
+      val userEmail = "user@email.co.nz"
       val data = new Array[Byte](100)
       Random.nextBytes(data)
 
@@ -38,10 +39,11 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val input = new ByteArrayInputStream(data)
       val enumerator = Enumerator.fromStream(input)
 
-      val resultFuture = enumerator.run(iteratee())
+      val resultFuture = enumerator.run(iteratee(userEmail))
       val result = Await.result(resultFuture, Duration.Inf)
       
       result must be equalTo(iteratee.fileUpload)
+      there was one(iteratee.storage).createFileGroup(userEmail)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
   }
