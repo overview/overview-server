@@ -61,18 +61,14 @@ trait MotherWorker extends Actor {
       submitCompleteJob(fileGroupId)
 
     case command: ProcessFileCommand => {
-      if (!freeWorkers.isEmpty) {
-          startWork(command)
-        } else {
-        workQueue.enqueue(command)
-      }
+      if (!freeWorkers.isEmpty) startWork(command)
+      else workQueue.enqueue(command)
     }
 
     case JobDone(fileGroupId) => {
       submitCompleteJob(fileGroupId)
-
-      busyWorkers -= sender
-      freeWorkers.enqueue(sender)
+      
+      setFree(sender)
 
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
@@ -105,6 +101,11 @@ trait MotherWorker extends Actor {
     val next = freeWorkers.dequeue()
     busyWorkers += (next -> command)
     next ! command
+  }
+  
+  private def setFree(worker: ActorRef): Unit = {
+    busyWorkers -= worker
+    freeWorkers.enqueue(worker)
   }
 }
 
