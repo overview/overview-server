@@ -15,7 +15,7 @@ trait MassUploadFileIteratee {
     def appendData(upload: GroupedFileUpload, data: Array[Byte]): GroupedFileUpload
   }
 
-  def apply(userEmail: String): Iteratee[Array[Byte], GroupedFileUpload] = {
+  def apply(): Iteratee[Array[Byte], GroupedFileUpload] = {
     val fileGroup = storage.findCurrentFileGroup.get
     val initialUpload = storage.createUpload(fileGroup.id)
 

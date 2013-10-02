@@ -39,7 +39,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val input = new ByteArrayInputStream(data)
       val enumerator = Enumerator.fromStream(input)
 
-      val resultFuture = enumerator.run(iteratee(userEmail))
+      val resultFuture = enumerator.run(iteratee())
       val result = Await.result(resultFuture, Duration.Inf)
       
       result must be equalTo(iteratee.fileUpload)
