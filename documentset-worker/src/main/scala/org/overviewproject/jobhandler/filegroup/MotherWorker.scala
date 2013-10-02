@@ -57,32 +57,19 @@ trait MotherWorker extends Actor {
   private val workQueue = Queue.empty[ProcessFileCommand]
 
   def receive = {
-    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) => {
-      if (fileProcessingComplete(fileGroupId)) {
-        storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
-          case Some(job) => storage.submitDocumentSetCreationJob(job)
-          case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
-        }
-      }
-    }
+    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
+      submitCompleteJob(fileGroupId)
 
     case command: ProcessFileCommand => {
       if (!freeWorkers.isEmpty) {
-        val next = freeWorkers.dequeue()
-        busyWorkers += (next -> command)
-        next ! command
-      } else {
+          startWork(command)
+        } else {
         workQueue.enqueue(command)
       }
     }
 
     case JobDone(fileGroupId) => {
-      if (fileProcessingComplete(fileGroupId)) {
-        storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
-          case Some(job) => storage.submitDocumentSetCreationJob(job)
-          case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
-        }
-      }
+      submitCompleteJob(fileGroupId)
 
       busyWorkers -= sender
       freeWorkers.enqueue(sender)
@@ -104,6 +91,21 @@ trait MotherWorker extends Actor {
   /** file processing is complete when number of uploads matches number of processed files */
   private def fileProcessingComplete(fileGroupId: Long): Boolean =
     storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId)
+  
+  private def submitCompleteJob(fileGroupId: Long): Unit = {
+    if (fileProcessingComplete(fileGroupId)) {
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
+        case Some(job) => storage.submitDocumentSetCreationJob(job)
+        case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
+      }
+    }
+  }
+  
+  private def startWork(command: ProcessFileCommand): Unit = {
+    val next = freeWorkers.dequeue()
+    busyWorkers += (next -> command)
+    next ! command
+  }
 }
 
 object MotherWorker {
