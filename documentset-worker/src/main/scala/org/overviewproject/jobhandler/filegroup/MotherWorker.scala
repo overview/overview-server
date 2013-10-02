@@ -31,14 +31,10 @@ trait FileGroupJobHandlerComponent {
   val storage: Storage
 
   trait Storage {
-    def findFileGroup(fileGroupId: Long): Option[FileGroup]
     def countFileUploads(fileGroupId: Long): Long
     def countProcessedFiles(fileGroupId: Long): Long
     def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
 
-    def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long
-    def storeDocumentSetUser(documentSetId: Long, userEmail: String): Unit
-    def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
   }
 }
@@ -67,7 +63,7 @@ trait MotherWorker extends Actor {
 
     case JobDone(fileGroupId) => {
       submitCompleteJob(fileGroupId)
-      
+
       setFree(sender)
 
       if (!workQueue.isEmpty) self ! workQueue.dequeue
@@ -87,7 +83,7 @@ trait MotherWorker extends Actor {
   /** file processing is complete when number of uploads matches number of processed files */
   private def fileProcessingComplete(fileGroupId: Long): Boolean =
     storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId)
-  
+
   private def submitCompleteJob(fileGroupId: Long): Unit = {
     if (fileProcessingComplete(fileGroupId)) {
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
@@ -96,13 +92,13 @@ trait MotherWorker extends Actor {
       }
     }
   }
-  
+
   private def startWork(command: ProcessFileCommand): Unit = {
     val next = freeWorkers.dequeue()
     busyWorkers += (next -> command)
     next ! command
   }
-  
+
   private def setFree(worker: ActorRef): Unit = {
     busyWorkers -= worker
     freeWorkers.enqueue(worker)
@@ -116,49 +112,21 @@ object MotherWorker {
     override val storage: StorageImpl = new StorageImpl
 
     class StorageImpl extends Storage {
-      def findFileGroup(fileGroupId: Long): Option[FileGroup] = Database.inTransaction {
-        FileGroupFinder.byId(fileGroupId).headOption
-      }
 
-      def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
+      override def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
         GroupedFileUploadFinder.countsByFileGroup(fileGroupId)
       }
 
-      def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
+      override def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
         GroupedProcessedFileFinder.byFileGroup(fileGroupId).count
       }
 
-      def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =
+      override def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =
         Database.inTransaction {
           DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption
         }
 
-      def storeDocumentSet(title: String, lang: String, suppliedStopWords: String): Long = Database.inTransaction {
-        val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
-          title = title,
-          lang = lang,
-          suppliedStopWords = suppliedStopWords))
-
-        documentSet.id
-      }
-
-      def storeDocumentSetUser(documentSetId: Long, userEmail: String): Unit = Database.inTransaction {
-        DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSetId, userEmail, Ownership.Owner))
-      }
-
-      def storeDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, state: DocumentSetCreationJobState.Value, lang: String, suppliedStopWords: String): Long =
-        Database.inTransaction {
-          val documentSetCreationJob = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-            documentSetId = documentSetId,
-            jobType = FileUpload,
-            lang = lang,
-            suppliedStopWords = suppliedStopWords,
-            fileGroupId = Some(fileGroupId),
-            state = state))
-          documentSetCreationJob.id
-        }
-
-      def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob =
+      override def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob =
         Database.inTransaction {
           DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
         }
