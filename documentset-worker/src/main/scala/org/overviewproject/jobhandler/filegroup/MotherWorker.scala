@@ -15,6 +15,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Pr
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
+import org.overviewproject.util.Logger
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -42,9 +43,6 @@ trait FileGroupJobHandlerComponent {
   }
 }
 
-
-
-
 trait MotherWorker extends Actor {
   this: FileGroupJobHandlerComponent =>
 
@@ -57,17 +55,14 @@ trait MotherWorker extends Actor {
   private val freeWorkers = Queue.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
   private val busyWorkers = Map.empty[ActorRef, ProcessFileCommand]
   private val workQueue = Queue.empty[ProcessFileCommand]
-  
-  
 
   def receive = {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) => {
-      storage.findFileGroup(fileGroupId).map { fileGroup =>
-        val documentSetId = storage.storeDocumentSet(title, lang, suppliedStopWords)
-        storage.storeDocumentSetUser(documentSetId, fileGroup.userEmail)
-        val jobState = computeJobState(fileGroup)
-        storage.storeDocumentSetCreationJob(documentSetId, fileGroupId, jobState, lang, suppliedStopWords)
-
+      if (fileProcessingComplete(fileGroupId)) {
+        storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
+          case Some(job) => storage.submitDocumentSetCreationJob(job)
+          case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
+        }
       }
     }
 
@@ -76,26 +71,26 @@ trait MotherWorker extends Actor {
         val next = freeWorkers.dequeue()
         busyWorkers += (next -> command)
         next ! command
-      }
-      else {
+      } else {
         workQueue.enqueue(command)
       }
     }
 
-
     case JobDone(fileGroupId) => {
-      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId).map { job =>
-        if (fileProcessingComplete(fileGroupId)) storage.submitDocumentSetCreationJob(job)
+      if (fileProcessingComplete(fileGroupId)) {
+        storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
+          case Some(job) => storage.submitDocumentSetCreationJob(job)
+          case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
+        }
       }
 
       busyWorkers -= sender
       freeWorkers.enqueue(sender)
-      
+
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
 
   }
-
 
   /**
    * If all files have been uploaded, and all uploaded files have been processed,

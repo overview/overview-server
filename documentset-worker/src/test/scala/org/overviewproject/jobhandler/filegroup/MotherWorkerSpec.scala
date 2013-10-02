@@ -121,50 +121,36 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       daughters(0).expectMsg(messages(2))
     }
 
-    "create job when StartClustering is received but FileGroup is not complete" in new MotherSetup {
-      val fileGroup = createFileGroup(InProgress)
 
-      storage.findFileGroup(fileGroupId) returns Some(fileGroup)
-      storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
-
-      motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
-
-      there was one(storage).storeDocumentSet(title, lang, stopWords)
-      there was one(storage).storeDocumentSetUser(documentSetId, userEmail)
-      there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
-    }
-
-    "create job when StartClustering is received but all files have not been processed" in new MotherSetup {
+    "do nothing when StartClustering is received but all files have not been processed" in new MotherSetup {
       val numberOfUploads = 5
 
-      val fileGroup = createFileGroup(Complete)
-
-      storage.findFileGroup(fileGroupId) returns Some(fileGroup)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns (numberOfUploads - 1)
 
-      storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
-
       motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
-      there was one(storage).storeDocumentSet(title, lang, stopWords)
-      there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, Preparing, lang, stopWords)
+
+      there was no(storage).submitDocumentSetCreationJob(any)
 
     }
 
     "submit a job when StartClustering is received and all files have been processed" in new MotherSetup {
       val numberOfUploads = 5
+      val documentSetCreationJob = DocumentSetCreationJob(
+        id = 1l,
+        documentSetId = 10l,
+        jobType = FileUpload,
+        fileGroupId = Some(fileGroupId),
+        state = Preparing)
 
-      val fileGroup = createFileGroup(Complete)
-
-      storage.findFileGroup(fileGroupId) returns Some(fileGroup)
+     
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
 
-      storage.storeDocumentSet(title, lang, stopWords) returns documentSetId
-
       motherWorker ! StartClusteringCommand(fileGroupId, title, lang, stopWords)
-      there was one(storage).storeDocumentSet(title, lang, stopWords)
-      there was one(storage).storeDocumentSetCreationJob(documentSetId, fileGroupId, NotStarted, lang, stopWords)
+
+      there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
     }
 
     "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new MotherSetup {
