@@ -14,7 +14,6 @@ import play.api.test.FakeHeaders
 import play.api.test.Helpers._
 import java.util.UUID
 
-
 class MassUploadFileIterateeSpec extends Specification with Mockito {
 
   "MassUploadFileIteratee" should {
@@ -22,7 +21,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     class TestMassUploadFileIteratee extends MassUploadFileIteratee {
       override val storage = smartMock[Storage]
 
-      val fileUpload = smartMock[GroupedFileUpload] 
+      val fileUpload = smartMock[GroupedFileUpload]
       val fileGroup = smartMock[FileGroup]
       fileGroup.id returns 1l
 
@@ -35,11 +34,11 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val contentType = "ignoredForNow"
       val filename = "filename.ext"
       val contentDisposition = s"attachement; filename=$filename"
-      val start  = 0
+      val start = 0
       val end = 999
       val total = 1000
 
-      val data = new Array[Byte](100)
+      val data = new Array[Byte](1000)
       Random.nextBytes(data)
 
       val iteratee = new TestMassUploadFileIteratee
@@ -51,28 +50,71 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         (CONTENT_TYPE, Seq(contentType)),
         (CONTENT_RANGE, Seq(s"$start-$end/$total")),
         (CONTENT_LENGTH, Seq(s"$total")),
-        (CONTENT_DISPOSITION, Seq(contentDisposition))     
-      )
+        (CONTENT_DISPOSITION, Seq(contentDisposition)))
 
       val request: RequestHeader = {
         val r = mock[RequestHeader]
         r.headers returns FakeHeaders(headers)
         r
       }
-      
+
       def result = {
         val resultFuture = enumerator.run(iteratee(request))
         Await.result(resultFuture, Duration.Inf)
       }
-      
+
     }
-    
+
+    trait UploadContext2 extends Scope {
+      val contentType = "ignoredForNow"
+      val filename = "filename.ext"
+      val contentDisposition = s"attachement; filename=$filename"
+      val start = 0
+      val end = 999
+      val total = 1000
+
+      val data = new Array[Byte](total)
+      Random.nextBytes(data)
+
+      val iteratee = new TestMassUploadFileIteratee
+      val chunkSize = 400
+
+      val input = new ByteArrayInputStream(data)
+      val enumerator = Enumerator.fromStream(input, chunkSize)
+
+      val headers: Seq[(String, Seq[String])] = Seq(
+        (CONTENT_TYPE, Seq(contentType)),
+        (CONTENT_RANGE, Seq(s"$start-$end/$total")),
+        (CONTENT_LENGTH, Seq(s"$total")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)))
+
+      val request: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(headers)
+        r
+      }
+
+      def result = {
+        val resultFuture = enumerator.run(iteratee(request))
+        Await.result(resultFuture, Duration.Inf)
+      }
+
+    }
 
     "produce a MassUploadFile" in new UploadContext {
       result must beRight
       there was one(iteratee.storage).findCurrentFileGroup
       there was one(iteratee.storage).createUpload(1l, contentType, filename, total)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
+    }
+
+    "handle chunked input" in new UploadContext2 {
+      result must beRight
+
+
+      there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, chunkSize))
+      there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(chunkSize, 2 * chunkSize))
+      there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(2 * chunkSize, total))
     }
   }
 }
