@@ -38,6 +38,7 @@ define [
 
     render: ->
       @$el.html(@template(t: t))
+      @$ul = @$el.find('.files')
 
     _addFiles: ->
       fileInput = @$el.find('.invisible-file-input')[0]
@@ -47,7 +48,8 @@ define [
     _onCollectionAdd: (model) ->
       uploadView = new @uploadViewClass(model: model)
       uploadView.render()
-      @$el.find('.files').append(uploadView.el)
+      _.defer => # it seems more responsive when we defer this
+        @$ul.append(uploadView.el)
 
     _addButtonHover: ->
       @$el.find('button.select-files').addClass('hover')

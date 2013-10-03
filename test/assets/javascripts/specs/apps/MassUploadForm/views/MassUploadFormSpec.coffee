@@ -42,8 +42,11 @@ define [
       it 'adds an uploadView when a file is added', ->
         view.render()
         model.uploads.add(new Backbone.Model())
-        expect(uploadViewRenderSpy).toHaveBeenCalled()
-        expect(view.$el.find('.files li').length).toEqual(1)
+        waits(0) # We defer the add, as it seems more responsive that way
+
+        runs ->
+          expect(uploadViewRenderSpy).toHaveBeenCalled()
+          expect(view.$el.find('.files li').length).toEqual(1)
 
     describe 'dom events', ->
       it 'changes the button hover state when the invisible input is hovered', ->
