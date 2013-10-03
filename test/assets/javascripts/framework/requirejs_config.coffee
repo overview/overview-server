@@ -22,6 +22,9 @@ requirejs.config({
       deps: [ 'jquery', 'tinycolor' ]
       exports: 'jQuery.fn.spectrum'
     tinycolor: { exports: 'tinycolor' }
+    'jquery.mousewheel':
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.mousewheel'
   }
 
   paths: {
@@ -40,6 +43,7 @@ requirejs.config({
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
+    MassUpload: 'vendor/mass-upload'
   }
 
   # ask Require.js to load these files (all our tests)
