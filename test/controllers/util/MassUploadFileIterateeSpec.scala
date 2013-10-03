@@ -44,7 +44,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val iteratee = new TestMassUploadFileIteratee
 
       val input = new ByteArrayInputStream(data)
-      val enumerator = Enumerator.fromStream(input)
+      val enumerator: Enumerator[Array[Byte]]
 
       val headers: Seq[(String, Seq[String])] = Seq(
         (CONTENT_TYPE, Seq(contentType)),
@@ -62,55 +62,27 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         val resultFuture = enumerator.run(iteratee(request))
         Await.result(resultFuture, Duration.Inf)
       }
-
     }
 
-    trait UploadContext2 extends Scope {
-      val contentType = "ignoredForNow"
-      val filename = "filename.ext"
-      val contentDisposition = s"attachement; filename=$filename"
-      val start = 0
-      val end = 999
-      val total = 1000
-
-      val data = new Array[Byte](total)
-      Random.nextBytes(data)
-
-      val iteratee = new TestMassUploadFileIteratee
+    trait SingleChunkUpload extends UploadContext {
+      override val enumerator = Enumerator.fromStream(input)
+    }
+    
+    trait MultipleChunksUpload extends UploadContext {
       val chunkSize = 400
-
-      val input = new ByteArrayInputStream(data)
-      val enumerator = Enumerator.fromStream(input, chunkSize)
-
-      val headers: Seq[(String, Seq[String])] = Seq(
-        (CONTENT_TYPE, Seq(contentType)),
-        (CONTENT_RANGE, Seq(s"$start-$end/$total")),
-        (CONTENT_LENGTH, Seq(s"$total")),
-        (CONTENT_DISPOSITION, Seq(contentDisposition)))
-
-      val request: RequestHeader = {
-        val r = mock[RequestHeader]
-        r.headers returns FakeHeaders(headers)
-        r
-      }
-
-      def result = {
-        val resultFuture = enumerator.run(iteratee(request))
-        Await.result(resultFuture, Duration.Inf)
-      }
-
+      override val enumerator = Enumerator.fromStream(input, chunkSize)
     }
 
-    "produce a MassUploadFile" in new UploadContext {
+    "produce a MassUploadFile" in new SingleChunkUpload {
       result must beRight
+
       there was one(iteratee.storage).findCurrentFileGroup
       there was one(iteratee.storage).createUpload(1l, contentType, filename, total)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
 
-    "handle chunked input" in new UploadContext2 {
+    "handle chunked input" in new MultipleChunksUpload {
       result must beRight
-
 
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, chunkSize))
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(chunkSize, 2 * chunkSize))
