@@ -6,26 +6,29 @@ import play.api.libs.iteratee.Iteratee
 import play.api.mvc.RequestHeader
 import play.api.http.HeaderNames._
 import org.overviewproject.util.ContentDisposition
+import play.api.mvc.Result
 
 trait MassUploadFileIteratee {
 
   val storage: Storage
 
+  def apply(request: RequestHeader): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
+    val fileGroup = storage.findCurrentFileGroup.get
+    val info = RequestInformation(request)
+    val initialUpload: Either[Result, GroupedFileUpload] =
+      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, info.total))
+
+    Iteratee.fold(initialUpload) { (upload, data) =>
+      upload.right.map { u =>
+        storage.appendData(u, data)
+      }
+    }
+  }
+
   trait Storage {
     def findCurrentFileGroup: Option[FileGroup]
     def createUpload(fileGroupId: Long, contentType: String, filename: String, size: Long): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Array[Byte]): GroupedFileUpload
-  }
-
-  def apply(request: RequestHeader): Iteratee[Array[Byte], GroupedFileUpload] = {
-    val fileGroup = storage.findCurrentFileGroup.get
-    val info = RequestInformation(request)
-    val initialUpload =
-      storage.createUpload(fileGroup.id, info.contentType, info.filename, info.total)
-
-    Iteratee.fold(initialUpload) { (upload, data) =>
-      storage.appendData(upload, data)
-    }
   }
 
   private case class RequestInformation(filename: String, contentType: String, start: Long, end: Long, total: Long)

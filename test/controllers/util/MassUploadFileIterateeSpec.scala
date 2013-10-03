@@ -69,7 +69,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     
 
     "produce a MassUploadFile" in new UploadContext {
-      result
+      result must beRight
       there was one(iteratee.storage).findCurrentFileGroup
       there was one(iteratee.storage).createUpload(1l, contentType, filename, total)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
