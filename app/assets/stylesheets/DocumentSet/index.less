@@ -78,7 +78,8 @@ body.document-set-index {
     &[data-import-pane="public"]>#import-public,
     &[data-import-pane="shared"]>#import-shared,
     &[data-import-pane="from-documentcloud-account"]>#import-from-documentcloud-account,
-    &[data-import-pane="from-upload"]>#import-from-upload {
+    &[data-import-pane="from-upload"]>#import-from-upload,
+    &[data-import-pane="from-mass-upload"]>#import-from-mass-upload {
       height: auto;
       .opacity(100);
     }
@@ -153,7 +154,7 @@ body.document-set-index {
       line-height: 30px;
       font-weight: bold;
     }
-    
+
     li a {
       opacity: 0.1;
       .transition(opacity .35s ease);
@@ -168,6 +169,7 @@ body.document-set-index {
   }
 
   @import "./index/import-pane.less";
-  @import "./index/import-csv.less";
+  @import "./index/import-upload.less";
+  @import "./index/import-mass-upload.less";
   @import "./index/import-options.less";
 }

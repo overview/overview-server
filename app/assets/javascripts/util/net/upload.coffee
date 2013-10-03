@@ -97,6 +97,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     #                    an XMLHttpRequest. (Defaults to HTML5-only code.)
     constructor: (@file, url_prefix, options={}) ->
       @url = url_prefix + this._generate_uuid()
+      @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
       @state = states.WAITING
       # bytes_uploaded is accurate when leaving STARTING and entering UPLOADING.
       # We send a computed `loaded` variable when notifying progress() callbacks

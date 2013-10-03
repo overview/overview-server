@@ -229,7 +229,8 @@ views.DocumentSet._uploadForm.progress.cancel=Cancel upload
 views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
 views.DocumentSet._massUploadForm.h1=Upload PDF files
-
+views.DocumentSet._massUploadForm.upload_prompt=Select files to upload
+views.DocumentSet._massUploadForm.submit=Finished selecting files
 
 views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
 views.DocumentSet._smallDocumentSet.import=Clone

@@ -56,6 +56,7 @@ requirejs.config({
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
     underscore: 'vendor/underscore'
+    'mass-upload': 'vendor/mass-upload'
   }
 })
 
@@ -65,6 +66,7 @@ require [
   'for-view/DocumentSet/_index/import-public-document-sets',
   'for-view/DocumentSet/_index/import-shared-document-sets',
   'for-view/DocumentSet/_index/import-upload',
+  'for-view/DocumentSet/_index/import-mass-upload',
   'for-view/DocumentSet/_index/share-document-set',
   'for-view/DocumentSet/_index/watch-jobs',
   'for-view/DocumentSet/index',

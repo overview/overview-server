@@ -29,7 +29,7 @@
   background-position: 0 0;
   .transition(background-position .15s linear);
 
-  &:hover, &:active, &.active, &.disabled, &[disabled] {
+  &:hover, &.hover, &:active, &.active, &.disabled, &[disabled] {
     background-position: 100% 100%;
   }
 
@@ -44,7 +44,7 @@
   color: @color;
   text-shadow: 0 0 2px @shadowColor;
 
-  &:hover {
+  &:hover, &.hover {
     color: @color; // override a:hover color
     text-shadow: 0 0 2px @shadowColor, 0 0 2px @shadowColor; // up contrast
   }
@@ -90,7 +90,7 @@
   }
 }
 
-a.btn:hover {
+a.btn:hover, a.btn.hover {
   text-decoration: none;
 }
 
