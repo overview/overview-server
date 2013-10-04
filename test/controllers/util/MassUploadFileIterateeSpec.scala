@@ -26,7 +26,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       fileGroup.id returns 1l
 
       storage.findCurrentFileGroup returns Some(fileGroup)
-      storage.createUpload(any, any, any, any) returns fileUpload
+      storage.createUpload(any, any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
 
@@ -38,7 +38,9 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val end = 255
       val total = 256
       val bufferSize = total
-      
+      val guid = UUID.randomUUID
+      val lastModifiedDate = "2013-12-24"
+        
       val data = Array.tabulate[Byte](256)(_.toByte)
       
       val iteratee = new TestMassUploadFileIteratee
@@ -59,7 +61,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       }
 
       def result = {
-        val resultFuture = enumerator.run(iteratee(request, bufferSize))
+        val resultFuture = enumerator.run(iteratee(request, guid, lastModifiedDate, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
     }
@@ -84,7 +86,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       result must beRight
 
       there was one(iteratee.storage).findCurrentFileGroup
-      there was one(iteratee.storage).createUpload(1l, contentType, filename, total)
+      there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total, lastModifiedDate)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
 

@@ -7,17 +7,18 @@ import play.api.mvc.RequestHeader
 import play.api.http.HeaderNames._
 import org.overviewproject.util.ContentDisposition
 import play.api.mvc.Result
+import java.util.UUID
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
 
   val storage: Storage
 
-  def apply(request: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
+  def apply(request: RequestHeader, guid: UUID, lastModifiedDate: String, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
     val fileGroup = storage.findCurrentFileGroup.get
     val info = RequestInformation(request)
     val initialUpload: Either[Result, GroupedFileUpload] =
-      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, info.total))
+      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total, lastModifiedDate))
 
     var buffer = Array[Byte]()
     
@@ -39,7 +40,7 @@ trait MassUploadFileIteratee {
 
   trait Storage {
     def findCurrentFileGroup: Option[FileGroup]
-    def createUpload(fileGroupId: Long, contentType: String, filename: String, size: Long): GroupedFileUpload
+    def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long, lastModifiedDate: String): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
