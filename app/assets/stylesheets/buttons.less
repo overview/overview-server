@@ -48,6 +48,11 @@
     color: @color; // override a:hover color
     text-shadow: 0 0 2px @shadowColor, 0 0 2px @shadowColor; // up contrast
   }
+
+  &:disabled, &.disabled {
+    color: @btnColor;
+    text-shadow: none;
+  }
 }
 
 .btn {

@@ -3,7 +3,8 @@ define [
   'backbone'
   'apps/MassUploadForm/views/MassUploadForm'
   'i18n'
-], ($, Backbone, MassUploadForm, i18n) ->
+  'apps/ImportOptions/app'
+], ($, Backbone, MassUploadForm, i18n, ImportOptionsApp) ->
   describe 'apps/MassUploadForm/views/MassUploadForm', ->
     model = undefined
     view = undefined
@@ -30,6 +31,8 @@ define [
       view = new MassUploadForm
         model: model
         uploadViewClass: uploadViewClass
+        supportedLanguages: [ {code: "en", name: "English"} ]
+        defaultLanguageCode: 'en'
       $.extend model,
         addFiles: jasmine.createSpy()
 
@@ -38,15 +41,39 @@ define [
         view.render()
         expect(view.$el.find('input[type=file]').length).toEqual(1)
 
-    describe 'model events', ->
-      it 'adds an uploadView when a file is added', ->
+    describe 'model add event', ->
+      beforeEach ->
         view.render()
         model.uploads.add(new Backbone.Model())
         waits(0) # We defer the add, as it seems more responsive that way
 
+      it 'adds an uploadView when a file is added', ->
         runs ->
           expect(uploadViewRenderSpy).toHaveBeenCalled()
           expect(view.$el.find('.files li').length).toEqual(1)
+
+      describe 'submit button', ->
+        it 'enables the submit button', ->
+          expect(view.$('.upload-submit')).not.toBeDisabled()
+
+        it 'shows a modal with the import options app', ->
+          spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog')
+          view.$('.upload-submit').click()
+          expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
+            jasmine.any(HTMLElement),
+            supportedLanguages: jasmine.any(Array)
+            defaultLanguageCode: 'en'
+            callback: jasmine.any(Function)
+          )
+
+        describe 'after selecting options', ->
+          it 'disables the "set options" button', ->
+            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+            view.$('.upload-submit').click()
+            expect(view.$('button.upload-submit')).toBeDisabled()
+            expect(view.$('button.select-files')).toBeDisabled()
+            expect(view.$(':file')).toBeDisabled()
+
 
     describe 'dom events', ->
       it 'changes the button hover state when the invisible input is hovered', ->
@@ -79,9 +106,14 @@ define [
         view.render()
         expect(view.$el.text()).toMatch(/upload_prompt/)
 
-      it 'has a submit button', ->
-        view.render()
-        expect(view.$(':submit').length).toEqual(1)
-        expect(view.$el.text()).toMatch(/submit/)
+      describe 'submit button', ->
+        it 'has a submit button', ->
+          view.render()
+          expect(view.$('.upload-submit').length).toEqual(1)
+          expect(view.$el.text()).toMatch(/submit/)
+
+        it 'is disabled with no files selected', ->
+          view.render()
+          expect(view.$('.upload-submit')).toBeDisabled()
 
 

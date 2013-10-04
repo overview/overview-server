@@ -6,8 +6,13 @@ define [
   'mass-upload'
 ], ($, MassUploadForm, MassUploadTransport, UploadView, MassUpload) ->
   class App
-    constructor: (url, csrfToken) ->
-      model = new MassUpload( MassUploadTransport({url: url, csrfToken: csrfToken}) )
-      view = new MassUploadForm(model: model, uploadViewClass: UploadView)
+    constructor: (options) ->
+      model = new MassUpload( MassUploadTransport({url: options.baseUrl, csrfToken: options.csrfToken}) )
+      view = new MassUploadForm(
+        model: model,
+        uploadViewClass: UploadView,
+        supportedLanguages: options.supportedLanguages,
+        defaultLanguageCode:options.defaultLanguageCode
+      )
       view.render()
       @el = view.el

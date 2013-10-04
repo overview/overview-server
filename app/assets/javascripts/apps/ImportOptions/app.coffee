@@ -51,12 +51,49 @@ define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i
   # * `excludeOptions`: An Array of options to exclude, such as `split_documents`.
   class App
     constructor: (@options) ->
-      throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages
-      throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode
+      throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages?
+      throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode?
 
       @model = new Options({}, @options)
       view = new OptionsView({ model: @model })
       @el = view.el
+
+    @addHiddenInputsThroughDialog: (form, options) ->
+      $form = $(form)
+      app = new App(options)
+
+      submit = ->
+        for k, v of app.model.attributes
+          $input = $('<input type="hidden" />')
+            .attr('name', k)
+            .attr('value', v)
+          $form.append($input)
+        options.callback()
+
+      $h3 = $('<h3></h3>').text(t('dialog.title'))
+      $close = $('<a href="#" class="close" data-dismiss="modal">×</a>')
+
+      dialog = new BootstrapDialog
+        title: $close.after($h3)
+        content: app.el
+        buttons: [
+          {
+            label: t('dialog.cancel')
+            cssClass: 'btn-default'
+            onclick: -> dialog.close()
+          }
+          {
+            label: t('dialog.submit')
+            cssClass: 'btn-primary'
+            onclick: ->
+              dialog.close()
+              submit()
+          }
+        ]
+      dialog.open()
+      dialog.getDialog().on('hidden', -> dialog.destroy())
+
+      undefined
 
     @interceptSubmitEvent: (e, options) ->
       form = e.target
@@ -67,37 +104,11 @@ define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i
         # We're intercepting a user's submit event
         e.preventDefault()
 
-        $form = $(form)
-        app = new App(options)
+        options = _.extend {}, options, callback: ->
+          $(form)
+            .attr('import-options-submitting', true)
+            .submit()
 
-        submit = ->
-          for k, v of app.model.attributes
-            $input = $('<input type="hidden" />')
-              .attr('name', k)
-              .attr('value', v)
-            $form.append($input)
-          $form.attr('import-options-submitting', true)
-          $form.submit()
-
-        $h3 = $('<h3></h3>').text(t('dialog.title'))
-        $close = $('<a href="#" class="close" data-dismiss="modal">×</a>')
-
-        dialog = new BootstrapDialog
-          title: $close.after($h3)
-          content: app.el
-          buttons: [
-            {
-              label: t('dialog.cancel')
-              cssClass: 'btn-default'
-              onclick: -> dialog.close()
-            }
-            {
-              label: t('dialog.submit')
-              cssClass: 'btn-primary'
-              onclick: submit
-            }
-          ]
-        dialog.open()
-        dialog.getDialog().on('hidden', -> dialog.destroy())
+        @addHiddenInputsThroughDialog(form, options)
 
       undefined
