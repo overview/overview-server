@@ -22,16 +22,14 @@ trait MassUploadFileIteratee {
     var buffer = Array[Byte]()
     
     Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](initialUpload) { (upload, data) =>
+      buffer ++= data
       upload.right.map { u =>
-        if (buffer.size + data.size >= bufferSize) {
-          val bufferedData = buffer ++ data
+        if (buffer.size >= bufferSize) {
+          val update = storage.appendData(u, buffer)
           buffer = Array[Byte]()
-          storage.appendData(u, bufferedData)
+          update
         }
-        else {
-          buffer = buffer ++ data
-          u
-        }
+        else u
       }
     } mapDone { output =>
       if (buffer.size > 0) output.right.map (storage.appendData(_, buffer))
@@ -42,7 +40,7 @@ trait MassUploadFileIteratee {
   trait Storage {
     def findCurrentFileGroup: Option[FileGroup]
     def createUpload(fileGroupId: Long, contentType: String, filename: String, size: Long): GroupedFileUpload
-    def appendData(upload: GroupedFileUpload, data: Array[Byte]): GroupedFileUpload
+    def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
   private case class RequestInformation(filename: String, contentType: String, start: Long, end: Long, total: Long)
