@@ -35,12 +35,12 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val filename = "filename.ext"
       val contentDisposition = s"attachement; filename=$filename"
       val start = 0
-      val end = 999
-      val total = 1000
-
-      val data = new Array[Byte](1000)
-      Random.nextBytes(data)
-
+      val end = 255
+      val total = 256
+      val bufferSize = total
+      
+      val data = Array.tabulate[Byte](256)(_.toByte)
+      
       val iteratee = new TestMassUploadFileIteratee
 
       val input = new ByteArrayInputStream(data)
@@ -59,7 +59,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       }
 
       def result = {
-        val resultFuture = enumerator.run(iteratee(request))
+        val resultFuture = enumerator.run(iteratee(request, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
     }
@@ -69,7 +69,14 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     }
     
     trait MultipleChunksUpload extends UploadContext {
-      val chunkSize = 400
+      val chunkSize = 100
+      override val bufferSize = chunkSize
+      override val enumerator = Enumerator.fromStream(input, chunkSize)
+    }
+    
+    trait BufferedUpload extends UploadContext {
+      val chunkSize = 64
+      override val bufferSize = 150
       override val enumerator = Enumerator.fromStream(input, chunkSize)
     }
 
@@ -83,10 +90,17 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
     "handle chunked input" in new MultipleChunksUpload {
       result must beRight
-
+      
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, chunkSize))
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(chunkSize, 2 * chunkSize))
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(2 * chunkSize, total))
+    }
+    
+    "buffer chunks" in new BufferedUpload {
+      result must beRight
+      
+      there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, 192))
+      there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(192, 256))
     }
   }
 }

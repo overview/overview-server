@@ -9,19 +9,33 @@ import org.overviewproject.util.ContentDisposition
 import play.api.mvc.Result
 
 trait MassUploadFileIteratee {
+  val DefaultBufferSize = 1024 * 1024
 
   val storage: Storage
 
-  def apply(request: RequestHeader): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
+  def apply(request: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
     val fileGroup = storage.findCurrentFileGroup.get
     val info = RequestInformation(request)
     val initialUpload: Either[Result, GroupedFileUpload] =
       Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, info.total))
 
-    Iteratee.fold(initialUpload) { (upload, data) =>
+    var buffer = Array[Byte]()
+    
+    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](initialUpload) { (upload, data) =>
       upload.right.map { u =>
-        storage.appendData(u, data)
+        if (buffer.size + data.size >= bufferSize) {
+          val bufferedData = buffer ++ data
+          buffer = Array[Byte]()
+          storage.appendData(u, bufferedData)
+        }
+        else {
+          buffer = buffer ++ data
+          u
+        }
       }
+    } mapDone { output =>
+      if (buffer.size > 0) output.right.map (storage.appendData(_, buffer))
+      else output
     }
   }
 
