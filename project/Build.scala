@@ -15,7 +15,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     if (System.getProperty("datasource.default.url") == null) Seq("-Ddatasource.default.url=" + appDatabaseUrl)
     else Nil
   }
-  
+
   val ourTestWithNoDbOptions = Seq(
     Tests.Argument("xonly"),
     Tests.Setup { loader =>
@@ -24,7 +24,7 @@ object ApplicationBuild extends Build with ProjectSettings {
         .getMethod("getLogger", loader.loadClass("java.lang.String"))
         .invoke(null, "ROOT")
     }
-  )	
+  )
 
   val ourTestOptions = ourTestWithNoDbOptions ++ Seq(
     Tests.Setup { () =>
@@ -48,7 +48,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings).settings(
         libraryDependencies ++= searchIndexDependencies,
         Keys.fork := true,
-        javaOptions in run <++= (baseDirectory) map { (d) => 
+        javaOptions in run <++= (baseDirectory) map { (d) =>
           Seq(
             "-Des.path.home=" + d,
             "-Xms1g", "-Xmx1g", "-Xss256k",
@@ -95,7 +95,7 @@ object ApplicationBuild extends Build with ProjectSettings {
 
   val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies, useSharedConfig = false)
     .dependsOn(common)
-    
+
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
     .settings(
       Keys.fork := true,
@@ -129,7 +129,8 @@ object ApplicationBuild extends Build with ProjectSettings {
             javaOptions in Test ++= Seq(
               "-Dconfig.file=conf/application-test.conf",
               "-Dlogger.resource=logback-test.xml",
-              "-Ddb.default.url=" + testDatabaseUrl),
+              "-Ddb.default.url=" + testDatabaseUrl,
+              "-XX:MaxPermSize=256m"),
             javaOptions in IntegrationTest ++= Seq(
               "-Dconfig.file=conf/application-it.conf",
               "-Dlogger.resource=logback-test.xml",
