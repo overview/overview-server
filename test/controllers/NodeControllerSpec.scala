@@ -27,25 +27,25 @@ class NodeControllerSpec extends Specification with Mockito {
     def index(documentSetId: Long) = controller.index(documentSetId)(getRequest)
     def show(documentSetId: Long, nodeId: Long) = controller.show(documentSetId, nodeId)(getRequest)
     def update(documentSetId: Long, nodeId: Long) = controller.update(documentSetId, nodeId)(postRequest)
+
+    val sampleNode = Node(
+      id=1L,
+      documentSetId=1L,
+      parentId=None,
+      description="description",
+      cachedSize=0,
+      cachedDocumentIds=Array[Long](),
+      isLeaf=false
+    )
   }
 
   "NodeController" should {
     "edit a node" in new TestScope {
-      val node = Node(
-        id=1L,
-        documentSetId=1L,
-        parentId=None,
-        description="description",
-        cachedSize=0,
-        cachedDocumentIds=Array[Long](),
-        isLeaf=false
-      )
-
-      mockStorage.findNode(1L, 1L) returns Seq(node)
-      mockStorage.updateNode(any[Node]) returns node // unused
+      mockStorage.findNode(1L, 1L) returns Seq(sampleNode)
+      mockStorage.updateNode(any[Node]) returns sampleNode // unused
 
       val result = update(1L, 1L)
-      there was one(mockStorage).updateNode(node.copy(description="new description"))
+      there was one(mockStorage).updateNode(sampleNode.copy(description="new description"))
     }
 
     "return NotFound when a node isn't found" in new TestScope {
@@ -54,7 +54,16 @@ class NodeControllerSpec extends Specification with Mockito {
       status(result) must beEqualTo(NOT_FOUND)
     }
 
-    // TODO test show() and index().
+    "shows a node" in new TestScope {
+      mockStorage.findChildNodes(1L, 1L) returns Seq(sampleNode.copy(description="some stuff"))
+
+      val result = show(1L, 1L)
+      status(result) must beEqualTo(OK)
+      contentAsString(result) must beMatching(""".*"some stuff".*""")
+      header(CACHE_CONTROL, result) must beSome("max-age=0")
+    }
+
+    // TODO test index().
   }
 
   step(stop)
