@@ -22,7 +22,7 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
-        'views.DocumentSet._massUploadForm.submit': 'submit'
+        'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
 
       uploadViewClass = Backbone.View.extend(tagName: 'li')
       uploadViewRenderSpy = spyOn(uploadViewClass.prototype, 'render').andCallThrough()
@@ -54,11 +54,11 @@ define [
 
       describe 'submit button', ->
         it 'enables the submit button', ->
-          expect(view.$('.upload-submit')).not.toBeDisabled()
+          expect(view.$('.choose-options')).not.toBeDisabled()
 
         it 'shows a modal with the import options app', ->
           spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog')
-          view.$('.upload-submit').click()
+          view.$('.choose-options').click()
           expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
             jasmine.any(HTMLElement),
             supportedLanguages: jasmine.any(Array)
@@ -69,8 +69,8 @@ define [
         describe 'after selecting options', ->
           it 'disables the "set options" button', ->
             spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
-            view.$('.upload-submit').click()
-            expect(view.$('button.upload-submit')).toBeDisabled()
+            view.$('.choose-options').click()
+            expect(view.$('button.choose-options')).toBeDisabled()
             expect(view.$('button.select-files')).toBeDisabled()
             expect(view.$(':file')).toBeDisabled()
 
@@ -106,14 +106,12 @@ define [
         view.render()
         expect(view.$el.text()).toMatch(/upload_prompt/)
 
-      describe 'submit button', ->
-        it 'has a submit button', ->
+      describe 'choose options button', ->
+        it 'has a "finished selecting files" button', ->
           view.render()
-          expect(view.$('.upload-submit').length).toEqual(1)
-          expect(view.$el.text()).toMatch(/submit/)
+          expect(view.$('.choose-options').length).toEqual(1)
+          expect(view.$el.text()).toMatch(/choose_options/)
 
         it 'is disabled with no files selected', ->
           view.render()
-          expect(view.$('.upload-submit')).toBeDisabled()
-
-
+          expect(view.$('.choose-options')).toBeDisabled()

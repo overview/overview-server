@@ -17,9 +17,9 @@ define [
           <input type="file" class="invisible-file-input" multiple="multiple" />
         </div>
 
-        <button type='button' class="upload-submit btn" disabled="disabled">
+        <button type='button' class="choose-options btn" disabled="disabled">
           <i class="icon-play-circle"></i>
-          <%- t('submit') %>
+          <%- t('choose_options') %>
         </button>
       </div>
       <ul class='files'></ul>
@@ -29,7 +29,7 @@ define [
       'change .invisible-file-input': '_addFiles'
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
-      'click .upload-submit': '_requestOptions'
+      'click .choose-options': '_requestOptions'
 
     initialize: ->
       throw 'Must set uploadViewClass, a Backbone.View' if !@options.uploadViewClass?
@@ -55,7 +55,7 @@ define [
       uploadView.render()
 
       if ! @finishEnabled
-        @$('button.upload-submit').prop('disabled', false)
+        @$('button.choose-options').prop('disabled', false)
         @finishEnabled = true
 
       _.defer => # it seems more responsive when we defer this
