@@ -32,50 +32,56 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
   "MassUploadController.show" should {
 
-    trait UploadContext extends Scope {
+    trait FileGroupProvider {
+      def foundFileGroup: Option[FileGroup]
+    }
+
+    trait UploadProvider {
+      def foundUpload: Option[GroupedFileUpload]
+    }
+
+    trait UploadContext extends Before with FileGroupProvider with UploadProvider {
 
       val guid = UUID.randomUUID
       val user = OverviewUser(User(1l))
       val request = new AuthorizedRequest(FakeRequest(), user)
       val controller = new TestMassUploadController
 
+      def before = {
+        controller.storage.findFileGroupInProgress(user.email) returns foundFileGroup
+        controller.storage.findGroupedFileUpload(guid) returns foundUpload
+      }
+
       lazy val result: Result = controller.show(guid)(request)
     }
 
-    trait NoFileGroup {
-      this: UploadContext =>
-
-      controller.storage.findFileGroupInProgress(user.email) returns None
+    trait NoFileGroup extends FileGroupProvider {
+      override def foundFileGroup = None
     }
 
-    trait InProgressFileGroup {
-      this: UploadContext =>
-
-      val fileGroup = smartMock[FileGroup]
-      controller.storage.findFileGroupInProgress(user.email) returns Some(fileGroup)
-
+    trait InProgressFileGroup extends FileGroupProvider {
+      override def foundFileGroup = Some(smartMock[FileGroup])
     }
 
-    trait NoUpload {
-      this: UploadContext =>
-
-      controller.storage.findGroupedFileUpload(guid) returns None
+    trait NoUpload extends UploadProvider {
+      override def foundUpload = None
     }
-    
-    trait CompleteUpload {
-      this: UploadContext =>
+
+    trait CompleteUpload extends UploadProvider {
 
       val uploadSize = 1000l
       val filename = "foo.pdf"
       val contentDisposition = s"attachment ; filename=$filename"
-      val upload = smartMock[GroupedFileUpload]
 
-      controller.storage.findGroupedFileUpload(guid) returns Some(upload)
+      override def foundUpload = {
+        val upload = smartMock[GroupedFileUpload]
 
-      upload.size returns uploadSize
-      upload.uploadedSize returns uploadSize
-      upload.name returns filename
+        upload.size returns uploadSize
+        upload.uploadedSize returns uploadSize
+        upload.name returns filename
 
+        Some(upload)
+      }
     }
 
     "return NOT_FOUND if upload does not exist" in new UploadContext with NoUpload with InProgressFileGroup {
