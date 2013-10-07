@@ -15,6 +15,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.mvc.RequestHeader
 import org.overviewproject.tree.orm.FileGroup
+import org.specs2.specification.Scope
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -30,16 +31,20 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
   "MassUploadController.show" should {
 
-    "return NOT_FOUND if upload does not exist" in {
+    trait UploadContext extends Scope {
       val guid = UUID.randomUUID
       val user = OverviewUser(User(1l))
-      val fileGroup = mock[FileGroup]
       val request = new AuthorizedRequest(FakeRequest(), user)
       val controller = new TestMassUploadController
+      
+      def result: Result = controller.show(guid)(request)
+    }
+    
+    "return NOT_FOUND if upload does not exist" in new UploadContext {
+      val fileGroup = mock[FileGroup]
+
       controller.storage.findGroupedFileUpload(guid) returns None
       controller.storage.findFileGroupInProgress(user.email) returns Some(fileGroup)
-      
-      val result = controller.show(guid)(request)
       
       status(result) must be equalTo(NOT_FOUND)
     }
