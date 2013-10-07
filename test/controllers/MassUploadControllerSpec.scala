@@ -14,6 +14,7 @@ import controllers.auth.AuthorizedRequest
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import play.api.mvc.RequestHeader
+import org.overviewproject.tree.orm.FileGroup
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -24,7 +25,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
     def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
       ???
       
-    override val storage = mock[Storage]
+    override val storage = smartMock[Storage]
   }
 
   "MassUploadController.show" should {
@@ -32,9 +33,11 @@ class MassUploadControllerSpec extends Specification with Mockito {
     "return NOT_FOUND if upload does not exist" in {
       val guid = UUID.randomUUID
       val user = OverviewUser(User(1l))
+      val fileGroup = mock[FileGroup]
       val request = new AuthorizedRequest(FakeRequest(), user)
       val controller = new TestMassUploadController
       controller.storage.findGroupedFileUpload(guid) returns None
+      controller.storage.findFileGroupInProgress(user.email) returns Some(fileGroup)
       
       val result = controller.show(guid)(request)
       
@@ -42,7 +45,18 @@ class MassUploadControllerSpec extends Specification with Mockito {
     }
 
     "return NOT_FOUND if no InProgress FileGroup exists" in {
-      pending
+      val guid = UUID.randomUUID
+      val user = OverviewUser(User(1l))
+      val upload = smartMock[GroupedFileUpload]
+      val request = new AuthorizedRequest(FakeRequest(), user)
+      val controller = new TestMassUploadController
+      controller.storage.findGroupedFileUpload(guid) returns Some(upload)
+      controller.storage.findFileGroupInProgress(user.email) returns None
+      
+      val result = controller.show(guid)(request)
+      
+      status(result) must be equalTo(NOT_FOUND)
+
     }
 
     "return Ok with content length if upload is complete" in {

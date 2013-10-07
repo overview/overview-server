@@ -13,6 +13,7 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import controllers.auth.AuthorizedBodyParser
 import controllers.auth.AuthorizedAction
 import controllers.util.MassUploadFileIteratee
+import org.overviewproject.tree.orm.FileGroup
 
 trait MassUploadController extends Controller {
 
@@ -25,8 +26,13 @@ trait MassUploadController extends Controller {
 
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
 
-    storage.findGroupedFileUpload(guid) match {
-      case Some(upload) => Ok
+    val result = for {
+      fileGroup <- storage.findFileGroupInProgress(request.user.email)
+      upload <- storage.findGroupedFileUpload(guid)
+    } yield Ok
+    
+    result match {
+      case Some(r) => r
       case None => NotFound
     }
   }
@@ -37,6 +43,7 @@ trait MassUploadController extends Controller {
 
   trait Storage {
     def findGroupedFileUpload(guid: UUID): Option[GroupedFileUpload]
+    def findFileGroupInProgress(userEmail: String): Option[FileGroup]
   }
 
   private def authorizedUploadBodyParser(guid: UUID, lastModifiedDate: String) =
@@ -59,6 +66,7 @@ object MassUploadController extends MassUploadController {
   
   class DatabaseStorage extends Storage {
     override def findGroupedFileUpload(guid: UUID): Option[GroupedFileUpload] = ???
+    def findFileGroupInProgress(userEmail: String): Option[FileGroup] = ???
   }
 }
 
