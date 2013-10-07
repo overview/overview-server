@@ -14,8 +14,8 @@ trait MassUploadFileIteratee {
 
   val storage: Storage
 
-  def apply(request: RequestHeader, guid: UUID, lastModifiedDate: String, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
-    val fileGroup = storage.findCurrentFileGroup.get
+  def apply(userId: Long, request: RequestHeader, guid: UUID, lastModifiedDate: String, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
+    val fileGroup = storage.findCurrentFileGroup(userId).get
     val info = RequestInformation(request)
     val initialUpload: Either[Result, GroupedFileUpload] =
       Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total, lastModifiedDate))
@@ -39,7 +39,7 @@ trait MassUploadFileIteratee {
   }
 
   trait Storage {
-    def findCurrentFileGroup: Option[FileGroup]
+    def findCurrentFileGroup(userId: Long): Option[FileGroup]
     def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long, lastModifiedDate: String): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
