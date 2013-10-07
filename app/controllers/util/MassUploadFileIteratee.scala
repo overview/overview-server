@@ -9,6 +9,8 @@ import org.overviewproject.util.ContentDisposition
 import play.api.mvc.Result
 import java.util.UUID
 import models.orm.finders.FileGroupFinder
+import org.overviewproject.postgres.LO
+import models.orm.stores.GroupedFileUploadStore
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
@@ -22,7 +24,7 @@ trait MassUploadFileIteratee {
       Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total, lastModifiedDate))
 
     var buffer = Array[Byte]()
-    
+
     Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](initialUpload) { (upload, data) =>
       buffer ++= data
       upload.right.map { u =>
@@ -30,11 +32,10 @@ trait MassUploadFileIteratee {
           val update = storage.appendData(u, buffer)
           buffer = Array[Byte]()
           update
-        }
-        else u
+        } else u
       }
     } mapDone { output =>
-      if (buffer.size > 0) output.right.map (storage.appendData(_, buffer))
+      if (buffer.size > 0) output.right.map(storage.appendData(_, buffer))
       else output
     }
   }
@@ -63,16 +64,23 @@ trait MassUploadFileIteratee {
 
 object MassUploadFileIteratee extends MassUploadFileIteratee {
   import org.overviewproject.tree.orm.FileJobState.InProgress
-  
-  class DatabaseStorage extends Storage {
-    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] = 
+
+  class DatabaseStorage extends Storage with PgConnection {
+    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
-    
+
     override def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long, lastModifiedDate: String): GroupedFileUpload =
-      ???
+      withPgConnection { implicit c =>
+        val upload = LO.withLargeObject { lo =>
+          GroupedFileUpload(fileGroupId, guid, contentType, filename, size, lastModifiedDate, 0, lo.oid)
+        }
+
+        GroupedFileUploadStore.insertOrUpdate(upload)
+      }
+
     override def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload = ???
-    
+
   }
-  
+
   override val storage = new DatabaseStorage
 }
