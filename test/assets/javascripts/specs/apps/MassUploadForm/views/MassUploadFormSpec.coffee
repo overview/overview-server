@@ -10,7 +10,7 @@ define [
     view = undefined
     uploadViewRenderSpy = undefined
 
-    mockOutFileInput = ->
+    mockFileInput = ->
       # A file input can't have its "files" attribute set. But we need
       # to mock that, so we'll replace it with a div.
       #
@@ -91,7 +91,7 @@ define [
         view.render()
 
         fileList = [ {}, {} ]  # two things
-        $fileInput = mockOutFileInput()
+        $fileInput = mockFileInput()
         $fileInput[0].files = fileList
         $fileInput.trigger('change')
 
@@ -115,3 +115,41 @@ define [
         it 'is disabled with no files selected', ->
           view.render()
           expect(view.$('.choose-options')).toBeDisabled()
+
+    describe 'form submission', ->
+      submitSpy = undefined
+
+      beforeEach ->
+        submitSpy = spyOn($.fn, 'submit')
+        view.render()
+
+      it 'submits the form when uploading is finished and options are chosen', ->
+        # add a finished upload
+        model.uploads.add(new Backbone.Model)
+        model.set(status: 'waiting')
+
+        # choose options
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        view.$('.choose-options').click()
+
+        expect(submitSpy).toHaveBeenCalled()
+
+      it 'submits the form when options are set before the upload is done', ->
+        # add an upload
+        model.uploads.add(new Backbone.Model)
+
+        # choose options
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        view.$('.choose-options').click()
+
+        # finish uploading
+        model.set(status: 'waiting')
+
+        expect(submitSpy).toHaveBeenCalled()
+
+      it 'does not submit the form until the upload is finished', ->
+        model.uploads.add(new Backbone.Model)
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        view.$('.choose-options').click()
+
+        expect(submitSpy).not.toHaveBeenCalled()

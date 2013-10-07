@@ -40,6 +40,8 @@ define [
       @listenTo(@collection, 'add', (model) => @_onCollectionAdd(model))
       @uploadViewClass = @options.uploadViewClass
       @finishEnabled = false
+      @listenTo(@model, 'change', @_shouldSubmit)
+      @optionsSet = false
 
     render: ->
       @$el.html(@template(t: t))
@@ -77,4 +79,13 @@ define [
 
     _optionsSetDone: ->
       @$('button, :file').prop('disabled', true)
+      @optionsSet = true
+      @_shouldSubmit()
 
+    _shouldSubmit: ->
+      if(
+        @model.uploads.length > 0 &&
+        @model.get('status') == 'waiting' &&
+        @optionsSet
+      )
+        @$el.closest('form').submit()
