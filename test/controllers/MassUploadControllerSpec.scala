@@ -37,11 +37,11 @@ class MassUploadControllerSpec extends Specification with Mockito {
       val request = new AuthorizedRequest(FakeRequest(), user)
       val controller = new TestMassUploadController
       
-      def result: Result = controller.show(guid)(request)
+      lazy val result: Result = controller.show(guid)(request)
     }
     
     "return NOT_FOUND if upload does not exist" in new UploadContext {
-      val fileGroup = mock[FileGroup]
+      val fileGroup = smartMock[FileGroup]
 
       controller.storage.findGroupedFileUpload(guid) returns None
       controller.storage.findFileGroupInProgress(user.email) returns Some(fileGroup)
@@ -49,23 +49,33 @@ class MassUploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo(NOT_FOUND)
     }
 
-    "return NOT_FOUND if no InProgress FileGroup exists" in {
-      val guid = UUID.randomUUID
-      val user = OverviewUser(User(1l))
+    "return NOT_FOUND if no InProgress FileGroup exists" in new UploadContext {
       val upload = smartMock[GroupedFileUpload]
-      val request = new AuthorizedRequest(FakeRequest(), user)
-      val controller = new TestMassUploadController
+
       controller.storage.findGroupedFileUpload(guid) returns Some(upload)
       controller.storage.findFileGroupInProgress(user.email) returns None
-      
-      val result = controller.show(guid)(request)
       
       status(result) must be equalTo(NOT_FOUND)
 
     }
 
-    "return Ok with content length if upload is complete" in {
-      pending
+    "return Ok with content length if upload is complete" in new UploadContext {
+      val uploadSize = 1000l
+      val filename = "foo.pdf"
+      val contentDisposition = s"attachment ; filename=$filename"
+      val fileGroup = smartMock[FileGroup]
+      val upload = smartMock[GroupedFileUpload]
+
+      controller.storage.findFileGroupInProgress(user.email) returns Some(fileGroup)
+      controller.storage.findGroupedFileUpload(guid) returns Some(upload)
+      
+      upload.size returns uploadSize
+      upload.uploadedSize returns uploadSize
+      upload.name returns filename
+      
+      status(result) must be equalTo(OK)
+      header(CONTENT_LENGTH, result) must beSome(s"$uploadSize")
+      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
     "return PartialContent with content range if upload is not complete" in {

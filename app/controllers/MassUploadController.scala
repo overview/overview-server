@@ -29,7 +29,10 @@ trait MassUploadController extends Controller {
     val result = for {
       fileGroup <- storage.findFileGroupInProgress(request.user.email)
       upload <- storage.findGroupedFileUpload(guid)
-    } yield Ok
+    } yield Ok.withHeaders(
+        (CONTENT_LENGTH, s"${upload.size}"),
+        (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}")
+    )
     
     result match {
       case Some(r) => r
