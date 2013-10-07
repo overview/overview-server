@@ -20,13 +20,13 @@ trait MassUploadController extends Controller {
     else BadRequest
   }
 
-  def massUploadFileIteratee(guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
+  def massUploadFileIteratee(userEmail: String, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
   
   private def authorizedUploadBodyParser(guid: UUID, lastModifiedDate: String) =
-    AuthorizedBodyParser(anyUser) { user => uploadBodyParser(guid, lastModifiedDate) }
+    AuthorizedBodyParser(anyUser) { user => uploadBodyParser(user.email, guid, lastModifiedDate) }
   
-  private def uploadBodyParser(guid: UUID, lastModifiedDate: String) = BodyParser("Mass upload bodyparser") { request =>
-    massUploadFileIteratee(guid, lastModifiedDate)
+  private def uploadBodyParser(userEmail: String, guid: UUID, lastModifiedDate: String) = BodyParser("Mass upload bodyparser") { request =>
+    massUploadFileIteratee(userEmail, guid, lastModifiedDate)
   }
   
   private def isUploadComplete(upload: GroupedFileUpload): Boolean = 
@@ -34,7 +34,7 @@ trait MassUploadController extends Controller {
 }
 
 object MassUploadController extends MassUploadController {
-  def massUploadFileIteratee(guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+  def massUploadFileIteratee(userEmail: String, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
     ???
 }
 

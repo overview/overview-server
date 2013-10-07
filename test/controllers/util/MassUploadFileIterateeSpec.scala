@@ -31,7 +31,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     }
 
     trait UploadContext extends Scope {
-      val userId = 1l
+      val userEmail = "user@ema.il"
       val contentType = "ignoredForNow"
       val filename = "filename.ext"
       val contentDisposition = s"attachement; filename=$filename"
@@ -62,7 +62,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       }
 
       def result = {
-        val resultFuture = enumerator.run(iteratee(userId, request, guid, lastModifiedDate, bufferSize))
+        val resultFuture = enumerator.run(iteratee(userEmail, request, guid, lastModifiedDate, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
     }
@@ -86,7 +86,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     "produce a MassUploadFile" in new SingleChunkUpload {
       result must beRight
 
-      there was one(iteratee.storage).findCurrentFileGroup(userId)
+      there was one(iteratee.storage).findCurrentFileGroup(userEmail)
       there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total, lastModifiedDate)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
