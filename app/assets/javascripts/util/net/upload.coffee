@@ -123,7 +123,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _generate_uuid: () ->
       # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
       # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-      hash = md5("#{@file.name}::#{@file.lastModifiedDate.value}::#{@file.size}").toString()
+      hash = md5("#{@file.name}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
       parts = []
       parts.push(hash[0...8])
       parts.push(hash[8...12])
@@ -253,7 +253,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
         xhr: create_xhr
         contentType: @options.contentType || 'application/octet-stream'
         headers: {
-          'Content-Disposition': "attachment; filename=#{@file.name}"
+          'Content-Disposition': "attachment; filename=#{@file.name}; modification-date=\"#{@file.lastModifiedDate.toString()}\""
           'Content-Range': "#{@bytes_uploaded}-#{@file.size}/#{@file.size}"
         }
       })
