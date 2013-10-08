@@ -16,6 +16,8 @@ import controllers.util.MassUploadFileIteratee
 import org.overviewproject.tree.orm.FileGroup
 import models.orm.finders.FileGroupFinder
 import models.orm.finders.GroupedFileUploadFinder
+import org.overviewproject.jobs.models.ProcessGroupedFileUpload
+import controllers.util.JobQueueSender
 
 trait MassUploadController extends Controller {
 
@@ -96,7 +98,10 @@ object MassUploadController extends MassUploadController {
   
   class ApolloQueue extends MessageQueue {
     
-    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long) = ???
+    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long) = { 
+     val command = ProcessGroupedFileUpload(fileGroupId, groupedFileUploadId) 
+      JobQueueSender.send(command)
+    }
   }
 }
 

@@ -8,6 +8,8 @@ import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import plugins.StompPlugin
 import org.overviewproject.jobs.models.Delete
+import org.overviewproject.jobs.models.ProcessGroupedFileUpload
+import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -27,7 +29,7 @@ object JobQueueSender {
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("search"),
       "args" -> toJson(search)))
-      
+
     sendMessageToGroup(jsonMessage, search.documentSetId)
   }
 
@@ -43,12 +45,33 @@ object JobQueueSender {
 
     sendMessageToGroup(jsonMessage, delete.documentSetId)
   }
-  
-  private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit,Unit] = {
 
+  /**
+   * Send a `ProcessGroupedFileUpload` message to the FileGroup message queue.
+   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
+   */
+  def send(processUpload: ProcessGroupedFileUpload): Either[Unit, Unit] = {
+    implicit val processUploadArgWrites: Writes[ProcessGroupedFileUpload] = (
+      (__ \ "fileGroupId").write[Long] and
+      (__ \ "uploadedFileId").write[Long])(unlift(ProcessGroupedFileUpload.unapply))
+
+    val jsonMessage = toJson(Map(
+      "cmd" -> toJson("process_file"),
+      "args" -> toJson(processUpload)))
+
+    sendMessageToFileGroupJobQueue(jsonMessage)
+  }
+
+  private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit, Unit] = {
     val connection = use[StompPlugin].documentSetCommandQueue
 
     connection.send(jsonMessage.toString, s"$documentSetId")
+  }
+
+  private def sendMessageToFileGroupJobQueue(jsonMessage: JsValue): Either[Unit, Unit] = {
+    val connection = use[StompPlugin].fileGroupCommandQueue
+
+    connection.send(jsonMessage.toString)
   }
 }
 
