@@ -2,34 +2,16 @@ package plugins
 
 import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
-import org.fusesource.stomp.jms.{StompJmsConnectionFactory, StompJmsDestination}
+import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
 
-import javax.jms.{DeliveryMode, ExceptionListener, JMSException, MessageProducer, Session}
-import play.api.{Application, Logger, Play}
+import javax.jms.{ DeliveryMode, ExceptionListener, JMSException, MessageProducer, Session }
+import play.api.{ Application, Logger, Play }
 import play.api.Play.current
 import play.api.Plugin
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
-/**
- * Plugin that manages a connection to the Message Broker.
- * Set `message_queue.mock=true` in application.conf to mock out
- * the connection.
- */
-class StompPlugin(application: Application) extends Plugin {
-  lazy val queueConnection: MessageQueueConnection =
-    if (useMock) new MockMessageQueueConnection
-    else new StompJmsMessageQueueConnection
-
-  override def onStart(): Unit = queueConnection
-
-  override def onStop(): Unit = queueConnection.close
-
-  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
-}
-
 
 /** Message queue config values set in application.conf */
 trait MessageQueueConfiguration {
@@ -45,6 +27,22 @@ trait MessageQueueConfiguration {
       .getOrElse(throw new Exception(s"Unable to read message_queue configuration for $key"))
 }
 
+/**
+ * Plugin that manages a connection to the Message Broker.
+ * Set `message_queue.mock=true` in application.conf to mock out
+ * the connection.
+ */
+class StompPlugin(application: Application) extends Plugin with MessageQueueConfiguration {
+  lazy val queueConnection: MessageQueueConnection =
+    if (useMock) new MockMessageQueueConnection
+    else new StompJmsMessageQueueConnection(QueueName)
+
+  override def onStart(): Unit = queueConnection
+
+  override def onStop(): Unit = queueConnection.close
+
+  private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
+}
 
 /** Operations on the message queue */
 trait MessageQueueConnection {
@@ -53,26 +51,26 @@ trait MessageQueueConnection {
    * is down, `Right[Unit]` otherwise
    */
   def send(messageText: String): Either[Unit, Unit]
-  
+
   /**
    * Send a message to the `messageGroup`. @return a `Left[Unit]` if the connection
    * is down, `Right[Unit]` otherwise
    */
   def send(messageText: String, messageGroup: String): Either[Unit, Unit]
-  
-  /** 
+
+  /**
    *  Close the connection. Should only be called when application
    *  is shutting down, since there is no way to reconnect.
    */
   def close: Unit
 }
 
-class StompJmsMessageQueueConnection extends MessageQueueConnection with MessageQueueConfiguration {
+class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConnection with MessageQueueConfiguration {
   private val messageSender: MessageSender = new MessageSender
 
   override def send(messageText: String): Either[Unit, Unit] = messageSender.send(messageText)
   override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = messageSender.send(messageText, Some(messageGroup))
-  
+
   override def close: Unit = messageSender.close
 
   private class MessageSender extends ExceptionListener {
@@ -80,7 +78,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
 
     private var session: Option[Session] = None
     private var producer: Option[MessageProducer] = None
-    
+
     createSession
 
     override def onException(exception: JMSException): Unit = {
@@ -98,7 +96,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
         } {
           val message = s.createTextMessage(messageText)
           messageGroup.map { g => message.setStringProperty("message_group", g) }
-          
+
           p.send(message)
         }, ())
 
@@ -108,7 +106,7 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
       val factory = new StompJmsConnectionFactory()
       factory.setBrokerURI(BrokerUri)
 
-      val destination = new StompJmsDestination(QueueName)
+      val destination = new StompJmsDestination(queueName)
 
       attemptSessionCreation(factory, destination)
     }
@@ -154,6 +152,6 @@ class StompJmsMessageQueueConnection extends MessageQueueConnection with Message
 class MockMessageQueueConnection extends MessageQueueConnection {
   override def send(messageText: String): Either[Unit, Unit] = Right()
   override def send(messageText: String, messageGroup: String): Either[Unit, Unit] = Right()
-  
+
   override def close: Unit = {}
 }
