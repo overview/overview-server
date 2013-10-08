@@ -22,7 +22,10 @@ trait MassUploadController extends Controller {
   def create(guid: UUID, lastModifiedDate: String) = TransactionAction(authorizedUploadBodyParser(guid, lastModifiedDate)) { implicit request: Request[GroupedFileUpload] =>
     val upload: GroupedFileUpload = request.body
 
-    if (isUploadComplete(upload)) Ok
+    if (isUploadComplete(upload)) {
+      messageQueue.sendProcessFile(upload.fileGroupId, upload.id)
+      Ok
+    }
     else BadRequest
   }
 
@@ -45,12 +48,17 @@ trait MassUploadController extends Controller {
   protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
 
   val storage: Storage
-
+  val messageQueue: MessageQueue
+  
   trait Storage {
     def findCurrentFileGroup(userEmail: String): Option[FileGroup]
     def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
   }
 
+  trait MessageQueue {
+    def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
+  }
+  
   private def authorizedUploadBodyParser(guid: UUID, lastModifiedDate: String) =
     AuthorizedBodyParser(anyUser) { user => uploadBodyParser(user.email, guid, lastModifiedDate) }
 
@@ -73,8 +81,9 @@ object MassUploadController extends MassUploadController {
   override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
     MassUploadFileIteratee(userEmail, request, guid, lastModifiedDate)
 
-  val storage = new DatabaseStorage
-
+  override val storage = new DatabaseStorage
+  override val messageQueue = new ApolloQueue
+  
   class DatabaseStorage extends Storage {
     import org.overviewproject.tree.orm.FileJobState.InProgress
 
@@ -83,6 +92,11 @@ object MassUploadController extends MassUploadController {
       
     override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = 
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
+  }
+  
+  class ApolloQueue extends MessageQueue {
+    
+    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long) = ???
   }
 }
 

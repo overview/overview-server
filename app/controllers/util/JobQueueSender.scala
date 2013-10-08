@@ -46,7 +46,7 @@ object JobQueueSender {
   
   private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit,Unit] = {
 
-    val connection = use[StompPlugin].queueConnection
+    val connection = use[StompPlugin].documentSetCommandQueue
 
     connection.send(jsonMessage.toString, s"$documentSetId")
   }

@@ -14,13 +14,14 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 /** Message queue config values set in application.conf */
-trait MessageQueueConfiguration {
+object MessageQueueConfiguration {
   private val QueuePrefix = "message_queue"
 
   val BrokerUri = configValue("broker_uri")
   val Username = configValue("username")
   val Password = configValue("password")
-  val QueueName = configValue("queue_name")
+  val DocumentSetCommandQueueName = configValue("queue_name")
+  val FileGroupCommandQueueName = configValue("file_group_queue_name")
 
   private def configValue(key: String): String =
     Play.current.configuration.getString(s"$QueuePrefix.$key")
@@ -32,16 +33,22 @@ trait MessageQueueConfiguration {
  * Set `message_queue.mock=true` in application.conf to mock out
  * the connection.
  */
-class StompPlugin(application: Application) extends Plugin with MessageQueueConfiguration {
-  lazy val queueConnection: MessageQueueConnection =
-    if (useMock) new MockMessageQueueConnection
-    else new StompJmsMessageQueueConnection(QueueName)
+class StompPlugin(application: Application) extends Plugin {
+  lazy val documentSetCommandQueue: MessageQueueConnection = 
+    createQueue(MessageQueueConfiguration.DocumentSetCommandQueueName)
 
-  override def onStart(): Unit = queueConnection
+  lazy val fileGroupCommandQueue: MessageQueueConnection =
+    createQueue(MessageQueueConfiguration.FileGroupCommandQueueName)
 
-  override def onStop(): Unit = queueConnection.close
+  override def onStart(): Unit = documentSetCommandQueue
+
+  override def onStop(): Unit = documentSetCommandQueue.close
 
   private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
+  private def createQueue(queueName: String): MessageQueueConnection =
+    if (useMock) new MockMessageQueueConnection
+    else new StompJmsMessageQueueConnection(MessageQueueConfiguration.DocumentSetCommandQueueName)
+
 }
 
 /** Operations on the message queue */
@@ -65,7 +72,7 @@ trait MessageQueueConnection {
   def close: Unit
 }
 
-class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConnection with MessageQueueConfiguration {
+class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConnection {
   private val messageSender: MessageSender = new MessageSender
 
   override def send(messageText: String): Either[Unit, Unit] = messageSender.send(messageText)
@@ -104,7 +111,7 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
 
     private def createSession: Unit = {
       val factory = new StompJmsConnectionFactory()
-      factory.setBrokerURI(BrokerUri)
+      factory.setBrokerURI(MessageQueueConfiguration.BrokerUri)
 
       val destination = new StompJmsDestination(queueName)
 
@@ -113,8 +120,9 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
 
     private def attemptSessionCreation(factory: StompJmsConnectionFactory, destination: StompJmsDestination): Unit =
       Try {
-        Logger.debug(s"Attempting to create Session.")
-        val connection = factory.createConnection(Username, Password)
+        Logger.debug(s"[$queueName] Attempting to create Session.")
+        val connection = factory.createConnection(MessageQueueConfiguration.Username,
+          MessageQueueConfiguration.Password)
         connection.setExceptionListener(this)
         connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
       } match {
@@ -126,7 +134,7 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
           connectionStatus.connectionSucceeded
         }
         case Failure(e) => Akka.system.scheduler.scheduleOnce(1 second) {
-          Logger.info(e.getMessage(), e) // Don't log to error to avoid generating error emails during startup
+          Logger.info(s"[$queueName] ${e.getMessage()}", e) // Don't log to error to avoid generating error emails during startup
           attemptSessionCreation(factory, destination)
         }
       }
