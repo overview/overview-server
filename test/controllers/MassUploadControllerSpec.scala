@@ -49,7 +49,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
       def before = {
         val fileGroup = createFileGroup
-        controller.storage.findFileGroupInProgress(user.email) returns fileGroup
+        controller.storage.findCurrentFileGroup(user.email) returns fileGroup
         fileGroup map { fg => fg.id returns fileGroupId }
         
         controller.storage.findGroupedFileUpload(fileGroupId, guid) returns createUpload

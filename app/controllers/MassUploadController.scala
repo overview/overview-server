@@ -14,6 +14,8 @@ import controllers.auth.AuthorizedBodyParser
 import controllers.auth.AuthorizedAction
 import controllers.util.MassUploadFileIteratee
 import org.overviewproject.tree.orm.FileGroup
+import models.orm.finders.FileGroupFinder
+import models.orm.finders.GroupedFileUploadFinder
 
 trait MassUploadController extends Controller {
 
@@ -27,7 +29,7 @@ trait MassUploadController extends Controller {
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
 
     val result = for {
-      fileGroup <- storage.findFileGroupInProgress(request.user.email)
+      fileGroup <- storage.findCurrentFileGroup(request.user.email)
       upload <- storage.findGroupedFileUpload(fileGroup.id, guid)
     } yield {
       if (isUploadComplete(upload)) Ok.withHeaders(showRequestHeaders(upload): _*)
@@ -45,7 +47,7 @@ trait MassUploadController extends Controller {
   val storage: Storage
 
   trait Storage {
-    def findFileGroupInProgress(userEmail: String): Option[FileGroup]
+    def findCurrentFileGroup(userEmail: String): Option[FileGroup]
     def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
   }
 
@@ -67,14 +69,20 @@ trait MassUploadController extends Controller {
 }
 
 object MassUploadController extends MassUploadController {
+
   override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
     MassUploadFileIteratee(userEmail, request, guid, lastModifiedDate)
 
   val storage = new DatabaseStorage
 
   class DatabaseStorage extends Storage {
-    override def findFileGroupInProgress(userEmail: String): Option[FileGroup] = ???
-    override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = ???
+    import org.overviewproject.tree.orm.FileJobState.InProgress
+
+    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
+      FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
+      
+    override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = 
+      GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
   }
 }
 
