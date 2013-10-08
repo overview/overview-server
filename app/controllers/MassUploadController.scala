@@ -18,6 +18,7 @@ import models.orm.finders.FileGroupFinder
 import models.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 import controllers.util.JobQueueSender
+import org.overviewproject.tree.orm.GroupedFileUpload
 
 trait MassUploadController extends Controller {
 
@@ -32,17 +33,12 @@ trait MassUploadController extends Controller {
   }
 
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
-
-    val result = for {
-      fileGroup <- storage.findCurrentFileGroup(request.user.email)
-      upload <- storage.findGroupedFileUpload(fileGroup.id, guid)
-    } yield {
-      if (isUploadComplete(upload)) Ok.withHeaders(showRequestHeaders(upload): _*)
-      else PartialContent.withHeaders(showRequestHeaders(upload): _*)
-    }
-
-    result match {
-      case Some(r) => r
+    def resultWithHeaders(status: Status, upload: GroupedFileUpload): Result =
+      status.withHeaders(showRequestHeaders(upload): _*)
+      
+    findUploadInCurrentFileGroup(request.user.email, guid) match {
+      case Some(u) if (isUploadComplete(u)) => resultWithHeaders(Ok, u)
+      case Some(u) => resultWithHeaders(PartialContent, u)
       case None => NotFound
     }
   }
@@ -69,6 +65,12 @@ trait MassUploadController extends Controller {
       massUploadFileIteratee(userEmail, request, guid, lastModifiedDate)
     }
 
+  private def findUploadInCurrentFileGroup(userEmail: String, guid: UUID): Option[GroupedFileUpload] =
+    for {
+      fileGroup <- storage.findCurrentFileGroup(userEmail)
+      upload <- storage.findGroupedFileUpload(fileGroup.id, guid)
+    } yield upload
+    
   private def isUploadComplete(upload: GroupedFileUpload): Boolean =
     (upload.uploadedSize == upload.size) && (upload.size > 0)
 

@@ -76,11 +76,13 @@ class MassUploadControllerSpec extends Specification with Mockito {
     override def createUpload = None
   }
 
-  trait CompleteUpload extends UploadProvider {
-
+  trait UploadInfo {
     val size = 1000l
     val filename = "foo.pdf"
     val contentDisposition = s"attachment ; filename=$filename"
+  }
+
+  trait CompleteUpload extends UploadProvider with UploadInfo {
     val uploadId = 10l
 
     override def createUpload = {
@@ -95,11 +97,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
     }
   }
 
-  trait IncompleteUpload extends UploadProvider {
-    val size = 1000l
+  trait IncompleteUpload extends UploadProvider with UploadInfo {
     val uploadSize = 500l
-    val filename = "foo.pdf"
-    val contentDisposition = s"attachment ; filename=$filename"
 
     override def createUpload = {
       val upload = smartMock[GroupedFileUpload]
