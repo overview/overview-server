@@ -29,12 +29,10 @@ trait MassUploadController extends Controller {
     val result = for {
       fileGroup <- storage.findFileGroupInProgress(request.user.email)
       upload <- storage.findGroupedFileUpload(guid)
-    } yield if (upload.size == upload.uploadedSize) Ok.withHeaders(
-      (CONTENT_LENGTH, s"${upload.size}"),
-      (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
-    else PartialContent.withHeaders(
-      (CONTENT_RANGE, s"0-${upload.uploadedSize - 1}/${upload.size}"),
-      (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
+    } yield {
+      if (isUploadComplete(upload)) Ok.withHeaders(showRequestHeaders(upload): _*)
+      else PartialContent.withHeaders(showRequestHeaders(upload): _*)
+    }
 
     result match {
       case Some(r) => r
@@ -61,6 +59,11 @@ trait MassUploadController extends Controller {
 
   private def isUploadComplete(upload: GroupedFileUpload): Boolean =
     (upload.uploadedSize == upload.size) && (upload.size > 0)
+
+  private def showRequestHeaders(upload: GroupedFileUpload): Seq[(String, String)] = Seq(
+    (CONTENT_LENGTH, s"${upload.uploadedSize}"),
+    (CONTENT_RANGE, s"0-${upload.uploadedSize - 1}/${upload.size}"),
+    (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
 }
 
 object MassUploadController extends MassUploadController {
