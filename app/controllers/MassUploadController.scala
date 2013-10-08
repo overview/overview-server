@@ -28,7 +28,7 @@ trait MassUploadController extends Controller {
 
     val result = for {
       fileGroup <- storage.findFileGroupInProgress(request.user.email)
-      upload <- storage.findGroupedFileUpload(guid)
+      upload <- storage.findGroupedFileUpload(fileGroup.id, guid)
     } yield {
       if (isUploadComplete(upload)) Ok.withHeaders(showRequestHeaders(upload): _*)
       else PartialContent.withHeaders(showRequestHeaders(upload): _*)
@@ -45,8 +45,8 @@ trait MassUploadController extends Controller {
   val storage: Storage
 
   trait Storage {
-    def findGroupedFileUpload(guid: UUID): Option[GroupedFileUpload]
     def findFileGroupInProgress(userEmail: String): Option[FileGroup]
+    def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
   }
 
   private def authorizedUploadBodyParser(guid: UUID, lastModifiedDate: String) =
@@ -73,8 +73,8 @@ object MassUploadController extends MassUploadController {
   val storage = new DatabaseStorage
 
   class DatabaseStorage extends Storage {
-    override def findGroupedFileUpload(guid: UUID): Option[GroupedFileUpload] = ???
-    def findFileGroupInProgress(userEmail: String): Option[FileGroup] = ???
+    override def findFileGroupInProgress(userEmail: String): Option[FileGroup] = ???
+    override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = ???
   }
 }
 

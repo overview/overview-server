@@ -33,38 +33,41 @@ class MassUploadControllerSpec extends Specification with Mockito {
   "MassUploadController.show" should {
 
     trait FileGroupProvider {
-      def foundFileGroup: Option[FileGroup]
+      def createFileGroup: Option[FileGroup]
     }
 
     trait UploadProvider {
-      def foundUpload: Option[GroupedFileUpload]
+      def createUpload: Option[GroupedFileUpload]
     }
 
     trait UploadContext extends Before with FileGroupProvider with UploadProvider {
-
+      val fileGroupId = 1l
       val guid = UUID.randomUUID
       val user = OverviewUser(User(1l))
       val request = new AuthorizedRequest(FakeRequest(), user)
       val controller = new TestMassUploadController
 
       def before = {
-        controller.storage.findFileGroupInProgress(user.email) returns foundFileGroup
-        controller.storage.findGroupedFileUpload(guid) returns foundUpload
+        val fileGroup = createFileGroup
+        controller.storage.findFileGroupInProgress(user.email) returns fileGroup
+        fileGroup map { fg => fg.id returns fileGroupId }
+        
+        controller.storage.findGroupedFileUpload(fileGroupId, guid) returns createUpload
       }
 
       lazy val result: Result = controller.show(guid)(request)
     }
 
     trait NoFileGroup extends FileGroupProvider {
-      override def foundFileGroup = None
+      override def createFileGroup() = None
     }
 
     trait InProgressFileGroup extends FileGroupProvider {
-      override def foundFileGroup = Some(smartMock[FileGroup])
+      override def createFileGroup = Some(smartMock[FileGroup])
     }
 
     trait NoUpload extends UploadProvider {
-      override def foundUpload = None
+      override def createUpload = None
     }
 
     trait CompleteUpload extends UploadProvider {
@@ -73,7 +76,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       val filename = "foo.pdf"
       val contentDisposition = s"attachment ; filename=$filename"
 
-      override def foundUpload = {
+      override def createUpload = {
         val upload = smartMock[GroupedFileUpload]
 
         upload.size returns size
@@ -90,7 +93,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       val filename = "foo.pdf"
       val contentDisposition = s"attachment ; filename=$filename"
 
-      override def foundUpload = {
+      override def createUpload = {
         val upload = smartMock[GroupedFileUpload]
 
         upload.size returns size
@@ -122,9 +125,6 @@ class MassUploadControllerSpec extends Specification with Mockito {
       header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
-    "return NOT_FOUND if user does not own upload" in {
-      pending
-    }
   }
   step(stop)
 }
