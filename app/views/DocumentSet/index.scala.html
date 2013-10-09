@@ -80,7 +80,9 @@
             <li><a href="#import-shared">@m("import_from_shared")</a></li>
             <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
             <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
-            <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
+            @if(play.api.Play.isDev(play.api.Play.current)) {
+              <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
+            }
           </ul>
         </div>
       </div>
