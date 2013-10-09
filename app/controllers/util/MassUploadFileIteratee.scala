@@ -11,6 +11,7 @@ import java.util.UUID
 import models.orm.finders.FileGroupFinder
 import org.overviewproject.postgres.LO
 import models.orm.stores.GroupedFileUploadStore
+import models.OverviewDatabase
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
@@ -66,8 +67,9 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
   import org.overviewproject.tree.orm.FileJobState.InProgress
 
   class DatabaseStorage extends Storage with PgConnection {
-    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
+    override def findCurrentFileGroup(userEmail: String): Option[FileGroup] = OverviewDatabase.inTransaction {
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
+    }
 
     override def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long, lastModifiedDate: String): GroupedFileUpload =
       withPgConnection { implicit c =>
@@ -75,15 +77,19 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
           GroupedFileUpload(fileGroupId, guid, contentType, filename, size, lastModifiedDate, 0, lo.oid)
         }
 
-        GroupedFileUploadStore.insertOrUpdate(upload)
+        OverviewDatabase.inTransaction {
+          GroupedFileUploadStore.insertOrUpdate(upload)
+        }
       }
 
     override def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload =
       withPgConnection { implicit c =>
-      	val uploadedSize = LO.withLargeObject(upload.contentsOid) { lo => lo.add(data.toArray) } 
-      	val updatedUpload = upload.copy(uploadedSize = uploadedSize)
-      	
-      	GroupedFileUploadStore.insertOrUpdate(updatedUpload)
+        val uploadedSize = LO.withLargeObject(upload.contentsOid) { lo => lo.add(data.toArray) }
+        val updatedUpload = upload.copy(uploadedSize = uploadedSize)
+
+        OverviewDatabase.inTransaction {
+          GroupedFileUploadStore.insertOrUpdate(updatedUpload)
+        }
       }
 
   }
