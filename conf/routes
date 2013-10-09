@@ -27,8 +27,9 @@ HEAD   /uploads/:uuid        controllers.UploadController.show(uuid: java.util.U
 POST   /uploads/:uuid        controllers.UploadController.create(uuid: java.util.UUID)
 POST   /uploads/:uuid/finish controllers.UploadController.startClustering(uuid: java.util.UUID)
 
-HEAD   /files/:guid controllers.MassUploadController.show(guid: java.util.UUID)
-PUT    /files/:guid controllers.MassUploadController.create(guid: java.util.UUID, lastModifiedDate ?= "")
+HEAD   /files/:guid   controllers.MassUploadController.show(guid: java.util.UUID)
+POST   /files/:guid   controllers.MassUploadController.create(guid: java.util.UUID, lastModifiedDate ?= "")
+POST   /files/finish  controllers.MassUploadController.startClustering()
 
 GET    /imports.json controllers.ImportJobController.index()
 
