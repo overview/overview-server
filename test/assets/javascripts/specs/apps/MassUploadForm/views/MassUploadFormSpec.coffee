@@ -41,6 +41,10 @@ define [
         view.render()
         expect(view.$el.find('input[type=file]').length).toEqual(1)
 
+      it 'only shows pdf files by default', ->
+        view.render()
+        expect(view.$el.find('input[type=file]').attr('accept')).toEqual('application/pdf')
+
     describe 'model add event', ->
       beforeEach ->
         view.render()

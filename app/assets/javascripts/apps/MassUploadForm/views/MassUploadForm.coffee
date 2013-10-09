@@ -14,7 +14,7 @@ define [
             <i class="overview-icon-plus"></i>
             <%- t('upload_prompt') %>
           </button>
-          <input type="file" class="invisible-file-input" multiple="multiple" />
+          <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
         </div>
 
         <button type='button' class="choose-options btn" disabled="disabled">
