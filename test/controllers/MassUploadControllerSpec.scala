@@ -18,6 +18,8 @@ import org.overviewproject.tree.orm.FileGroup
 import org.specs2.specification.Scope
 import org.specs2.mutable.Before
 import play.api.test.FakeHeaders
+import org.specs2.execute.PendingUntilFixed
+import org.overviewproject.tree.orm.DocumentSet
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -48,7 +50,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
     var foundFileGroup: Option[FileGroup] = _
     var foundUpload: Option[GroupedFileUpload] = _
 
-    def before = {
+    def before: Unit = {
       foundFileGroup = createFileGroup
       foundUpload = createUpload
 
@@ -160,6 +162,44 @@ class MassUploadControllerSpec extends Specification with Mockito {
       header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
+  }
+
+  "MassUploadController.startClustering" should {
+
+    trait StartClusteringRequest extends UploadContext {
+      val fileGroupName = "This becomes the Document Set Name"
+      val lang = "sv"
+      val stopWords = "ignore these words"
+      val formData = Seq(
+        ("name" -> fileGroupName),
+        ("lang" -> lang),
+        ("supplied_stop_words" -> stopWords))
+     val documentSetId = 11l
+
+      override def executeRequest: Result = {
+        val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), user)
+        controller.startClustering(request)
+      }
+      
+      override def before: Unit = {
+        super.before
+        val documentSet = mock[DocumentSet]
+        documentSet.id returns documentSetId
+        
+        controller.storage.createDocumentSet(user.email, fileGroupName, lang, stopWords) returns documentSet
+      }
+    }
+    
+    "create job and send startClustering command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
+      status(result) must be equalTo(OK)
+      there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang, stopWords)
+      there was one(controller.storage).createMassUploadDocumentSetCreationJob(documentSetId, lang, stopWords)
+      there was one(controller.messageQueue).startClustering(fileGroupId, fileGroupName, lang, stopWords)
+    }
+    
+    "return NotFound if user has no FileGroup InProgress" in new StartClusteringRequest with NoUpload with NoFileGroup {
+      status(result) must be equalTo(NOT_FOUND)
+    }
   }
   step(stop)
 }
