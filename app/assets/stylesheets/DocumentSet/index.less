@@ -67,11 +67,12 @@ body.document-set-index {
       position: relative;
       height: auto;
       .transition(~"opacity .35s ease-in-out, left .35s ease-in-out, height .35s ease-in-out");
+      display: block;
     }
 
     &[data-import-pane]>#jobs-and-document-sets {
       height: 0;
-      left: -100%;
+      left: -200%;
       .opacity(0);
     }
 
