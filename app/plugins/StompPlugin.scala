@@ -47,7 +47,7 @@ class StompPlugin(application: Application) extends Plugin {
   private def useMock: Boolean = Play.current.configuration.getBoolean("message_queue.mock").getOrElse(false)
   private def createQueue(queueName: String): MessageQueueConnection =
     if (useMock) new MockMessageQueueConnection
-    else new StompJmsMessageQueueConnection(MessageQueueConfiguration.DocumentSetCommandQueueName)
+    else new StompJmsMessageQueueConnection(queueName)
 
 }
 
