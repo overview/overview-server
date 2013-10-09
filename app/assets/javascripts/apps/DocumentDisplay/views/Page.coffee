@@ -66,6 +66,12 @@ define [
         </div>
       """)
 
+      localPDF: _.template("""
+        <div class="page type-local-pdf">
+          <iframe class="document" src="<%- url.url %>"></iframe>
+        </div>
+      """)
+
       secure: _.template("""
         <div class="page type-secure">
           <ul class="actions">

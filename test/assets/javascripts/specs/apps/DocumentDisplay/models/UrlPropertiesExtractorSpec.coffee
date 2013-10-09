@@ -97,6 +97,13 @@ define [
       )
 
       itShouldRecognize(
+        'a local PDF',
+        '/documents/1234/pdf-download',
+          type: 'localPDF'
+          url: '/documents/1234/pdf-download'
+      )
+
+      itShouldRecognize(
         'a secure web page',
         'https://example.org',
           type: 'secure'

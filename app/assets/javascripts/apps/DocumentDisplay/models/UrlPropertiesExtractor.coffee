@@ -18,9 +18,16 @@ define [], ->
     {
       id: 'documentCloud'
       name: 'DocumentCloud document'
-      regex: /// ^(?:https?:)?//(?:www\.)?documentcloud\.org/documents/([-a-zA-Z0-9]+)(#p[0-9]+)? ///
+      regex: /// ^(?:https?:)?//(?:www\.)?documentcloud\.org/documents/([-a-zA-Z0-9]+)(\#p[0-9]+)? ///
       capture: [ 'id', 'page' ]
       url: (o) -> "https://www.documentcloud.org/documents/#{o.id}.html"
+    }
+    {
+      id: 'localPDF'
+      name: 'Local PDF document'
+      regex: /// ^(/documents/\d+/pdf-download)$ ///
+      capture: [ 'uri' ]
+      url: (o) -> o.uri
     }
     {
       id: 'secure'

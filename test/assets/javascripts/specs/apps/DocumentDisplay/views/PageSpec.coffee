@@ -23,6 +23,8 @@ define [
         'views.Document.show.sidebar.disable': 'disable-sidebar'
         'views.Document.show.wrap.enable': 'enable-wrap'
         'views.Document.show.wrap.disable': 'disable-wrap'
+        'views.Document.show.buttons.document': 'document-button'
+        'views.Document.show.buttons.text': 'text-button'
       })
       preferences = new Preferences()
       state = new Backbone.Model({ preferences: preferences })
@@ -193,6 +195,22 @@ define [
 
       it 'should not have anny preferences', ->
         expect(view.$('a.boolean-preference').length).toEqual(0)
+
+    describe 'with a locally-stored PDF document', ->
+      beforeEach ->
+        document = new Backbone.Model({
+          text: 'text'
+          urlProperties:
+            type: 'localPDF'
+            url: '/documents/1234/pdf-download'
+        })
+        state.set('document', document)
+
+      it 'creates an iframe pointing to the document', ->
+        expect(view.$('iframe')).toHaveAttr('src', '/documents/1234/pdf-download')
+
+      it 'does not have any preferences', ->
+        expect(view.$('page')).not.toContain('a.boolean-preference')
 
     describe 'with an insecure document', ->
       beforeEach ->
