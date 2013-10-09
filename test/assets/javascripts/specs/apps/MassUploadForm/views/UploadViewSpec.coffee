@@ -34,7 +34,7 @@ define [
       it 'displays a queued but not uploading file, with an icon', ->
         init()
         expect(view.$el).toHaveClass('waiting')
-        expect(view.$el).toContain('i.icon-ellipsis-horizontal')
+        expect(view.$el).toContain('i.icon-time')
 
       it 'displays an uploading file', ->
         init()
@@ -46,7 +46,7 @@ define [
         init(true)
         model.trigger('change')
         expect(view.$el).toHaveClass('uploaded')
-        expect(view.$el).toContain('i.icon-check')
+        expect(view.$el).toContain('i.icon-ok')
 
 
 

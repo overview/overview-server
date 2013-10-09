@@ -21,13 +21,10 @@
     height: 1.4em;
     margin: .1em 1em;
 
-    .filename {
-
-    }
-
     i {
-      margin-left: 1em;
-      float: right;
+      margin-right: 1em;
+      margin-top: 3px;
+      float: left;
     }
   }
 
@@ -52,9 +49,7 @@
   }
 
   .waiting {
-    .filename {
-      .muted;
-    }
+    .muted;
   }
 
   .uploading {
@@ -64,8 +59,6 @@
   }
 
   .uploaded {
-    .filename {
-      color: @successColor;
-    }
+    color: @successColor;
   }
 }

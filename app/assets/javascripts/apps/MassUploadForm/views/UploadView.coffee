@@ -3,14 +3,14 @@ define [
   'backbone'
 ], (_, Backbone) ->
   STATUS_ICONS =
-    waiting: 'icon-ellipsis-horizontal'
+    waiting: 'icon-time'
     uploading: 'icon-spinner icon-spin'
-    uploaded: 'icon-check'
+    uploaded: 'icon-ok'
 
   Backbone.View.extend
     tagName: 'li'
     template: _.template('''
-      <span class='filename'><%- model.id %></span><i class='<%- icon %>'></i>
+      <i class='<%- icon %>'></i><span class='filename'><%- model.id %></span>
       ''')
 
     initialize: ->
