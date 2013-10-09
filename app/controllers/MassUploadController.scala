@@ -22,6 +22,11 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import controllers.forms.MassUploadControllerForm
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
+import models.orm.stores.DocumentSetStore
+import models.orm.stores.DocumentSetUserStore
+import org.overviewproject.tree.orm.DocumentSetUser
+import org.overviewproject.tree.Ownership
+import models.orm.stores.DocumentSetCreationJobStore
 
 trait MassUploadController extends Controller {
 
@@ -146,6 +151,8 @@ object MassUploadController extends MassUploadController {
 
   class DatabaseStorage extends Storage {
     import org.overviewproject.tree.orm.FileJobState.InProgress
+    import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
+    import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 
     override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
@@ -153,10 +160,25 @@ object MassUploadController extends MassUploadController {
     override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] =
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
 
-    override def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet =
-      ???
-    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob =
-      ???
+    override def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet = {
+      val documentSet = DocumentSetStore.insertOrUpdate(
+        DocumentSet(title = title, lang = lang, suppliedStopWords = suppliedStopWords))
+
+      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
+
+      documentSet
+    }
+
+    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob = {
+      DocumentSetCreationJobStore.insertOrUpdate(
+        DocumentSetCreationJob(
+          documentSetId = documentSetId,
+          lang = lang,
+          suppliedStopWords = suppliedStopWords,
+          state = Preparing,
+          jobType = FileUpload))
+    }
+
   }
 
   class ApolloQueue extends MessageQueue {
