@@ -19,7 +19,9 @@ trait MassUploadFileIteratee {
   val storage: Storage
 
   def apply(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
-    val fileGroup = storage.findCurrentFileGroup(userEmail).get
+    val fileGroup = storage.findCurrentFileGroup(userEmail)
+      .getOrElse(storage.createFileGroup(userEmail))
+
     val info = RequestInformation(request)
     val initialUpload: Either[Result, GroupedFileUpload] =
       Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total, lastModifiedDate))
@@ -42,6 +44,7 @@ trait MassUploadFileIteratee {
   }
 
   trait Storage {
+    def createFileGroup(userEmail: String): FileGroup
     def findCurrentFileGroup(userEmail: String): Option[FileGroup]
     def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long, lastModifiedDate: String): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
@@ -67,6 +70,9 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
   import org.overviewproject.tree.orm.FileJobState.InProgress
 
   class DatabaseStorage extends Storage with PgConnection {
+
+    override def createFileGroup(userEmail: String): FileGroup = ???
+
     override def findCurrentFileGroup(userEmail: String): Option[FileGroup] = OverviewDatabase.inTransaction {
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
     }

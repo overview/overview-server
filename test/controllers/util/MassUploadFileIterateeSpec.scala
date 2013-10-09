@@ -18,19 +18,29 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
   "MassUploadFileIteratee" should {
 
-    class TestMassUploadFileIteratee extends MassUploadFileIteratee {
+    class TestMassUploadFileIteratee(createFileGroup: Boolean) extends MassUploadFileIteratee {
       override val storage = smartMock[Storage]
 
-      val fileUpload = smartMock[GroupedFileUpload]
       val fileGroup = smartMock[FileGroup]
       fileGroup.id returns 1l
+      
+      val fileUpload = smartMock[GroupedFileUpload]
 
-      storage.findCurrentFileGroup(any) returns Some(fileGroup)
+      if (createFileGroup) {
+    	  storage.findCurrentFileGroup(any) returns None
+    	  storage.createFileGroup(any) returns fileGroup
+      }
+      else storage.findCurrentFileGroup(any) returns Some(fileGroup)
+      
       storage.createUpload(any, any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
+    
+    trait FileGroupProvider {
+      val createFileGroup: Boolean
+    }
 
-    trait UploadContext extends Scope {
+    trait UploadContext extends Scope with FileGroupProvider {
       val userEmail = "user@ema.il"
       val contentType = "ignoredForNow"
       val filename = "filename.ext"
@@ -44,8 +54,6 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         
       val data = Array.tabulate[Byte](256)(_.toByte)
       
-      val iteratee = new TestMassUploadFileIteratee
-
       val input = new ByteArrayInputStream(data)
       val enumerator: Enumerator[Array[Byte]]
 
@@ -61,12 +69,22 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         r
       }
 
+      lazy val iteratee = new TestMassUploadFileIteratee(createFileGroup)
+
       def result = {
         val resultFuture = enumerator.run(iteratee(userEmail, request, guid, lastModifiedDate, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
     }
 
+    trait ExistingFileGroup extends FileGroupProvider {
+      override val createFileGroup: Boolean = false
+    }
+    
+    trait NoFileGroup extends FileGroupProvider {
+      override val createFileGroup: Boolean = true
+    }
+    
     trait SingleChunkUpload extends UploadContext {
       override val enumerator = Enumerator.fromStream(input)
     }
@@ -83,7 +101,13 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       override val enumerator = Enumerator.fromStream(input, chunkSize)
     }
 
-    "produce a MassUploadFile" in new SingleChunkUpload {
+    "create a FileGroup if there is none" in new SingleChunkUpload with NoFileGroup {
+      result must beRight
+      
+      there was one(iteratee.storage).createFileGroup(userEmail)
+    }
+    
+    "produce a MassUploadFile" in new SingleChunkUpload with ExistingFileGroup {
       result must beRight
 
       there was one(iteratee.storage).findCurrentFileGroup(userEmail)
@@ -91,7 +115,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
 
-    "handle chunked input" in new MultipleChunksUpload {
+    "handle chunked input" in new MultipleChunksUpload with ExistingFileGroup {
       result must beRight
       
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, chunkSize))
@@ -99,7 +123,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(2 * chunkSize, total))
     }
     
-    "buffer chunks" in new BufferedUpload {
+    "buffer chunks" in new BufferedUpload with ExistingFileGroup {
       result must beRight
       
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, 192))
