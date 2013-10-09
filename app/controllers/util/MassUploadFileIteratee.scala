@@ -67,11 +67,14 @@ trait MassUploadFileIteratee {
 }
 
 object MassUploadFileIteratee extends MassUploadFileIteratee {
+  import models.orm.stores.FileGroupStore
   import org.overviewproject.tree.orm.FileJobState.InProgress
 
   class DatabaseStorage extends Storage with PgConnection {
 
-    override def createFileGroup(userEmail: String): FileGroup = ???
+    override def createFileGroup(userEmail: String): FileGroup = OverviewDatabase.inTransaction {
+      FileGroupStore.insertOrUpdate(FileGroup(userEmail, InProgress))
+    }
 
     override def findCurrentFileGroup(userEmail: String): Option[FileGroup] = OverviewDatabase.inTransaction {
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
