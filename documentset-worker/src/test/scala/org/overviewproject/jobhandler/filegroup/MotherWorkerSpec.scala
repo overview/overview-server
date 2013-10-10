@@ -133,6 +133,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       there was no(storage).submitDocumentSetCreationJob(any)
 
     }
+    
 
     "submit a job when StartClustering is received and all files have been processed" in new MotherSetup {
       val numberOfUploads = 5
@@ -153,6 +154,18 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
     }
 
+    "do nothing when all files have been processed by StartClustering has not been received" in new MotherSetup {
+      val numberOfUploads = 5
+
+      storage.countFileUploads(fileGroupId) returns numberOfUploads
+      storage.countProcessedFiles(fileGroupId) returns numberOfUploads
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns None
+      
+      motherWorker ! JobDone(fileGroupId)
+      
+      there was no(storage).submitDocumentSetCreationJob(any)
+    }
+    
     "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new MotherSetup {
       val numberOfUploads = 5
 

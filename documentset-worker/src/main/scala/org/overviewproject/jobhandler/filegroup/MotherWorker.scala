@@ -86,9 +86,8 @@ trait MotherWorker extends Actor {
 
   private def submitCompleteJob(fileGroupId: Long): Unit = {
     if (fileProcessingComplete(fileGroupId)) {
-      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) match {
-        case Some(job) => storage.submitDocumentSetCreationJob(job)
-        case None => Logger.error(s"Received clustering request for non-existing job $fileGroupId")
+      storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) map {
+        storage.submitDocumentSetCreationJob
       }
     }
   }
