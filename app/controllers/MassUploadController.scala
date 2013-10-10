@@ -90,7 +90,7 @@ trait MassUploadController extends Controller {
     def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet
 
     /** @returns a newly created DocumentSetCreationJob */
-    def createMassUploadDocumentSetCreationJob(documentSetId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob
+    def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob
 
   }
 
@@ -137,7 +137,7 @@ trait MassUploadController extends Controller {
         val suppliedStopWords = optionalStopWords.getOrElse("")
 
         val documentSet = storage.createDocumentSet(userEmail, name, lang, suppliedStopWords)
-        storage.createMassUploadDocumentSetCreationJob(documentSet.id, lang, suppliedStopWords)
+        storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, suppliedStopWords)
         messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
 
         Ok
@@ -176,10 +176,11 @@ object MassUploadController extends MassUploadController {
       documentSet
     }
 
-    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob = {
+    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob = {
       DocumentSetCreationJobStore.insertOrUpdate(
         DocumentSetCreationJob(
           documentSetId = documentSetId,
+          fileGroupId = Some(fileGroupId),
           lang = lang,
           suppliedStopWords = suppliedStopWords,
           state = Preparing,
