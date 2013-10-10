@@ -67,6 +67,7 @@ define [
             jasmine.any(HTMLElement),
             supportedLanguages: jasmine.any(Array)
             defaultLanguageCode: 'en'
+            excludeOptions: ['split_documents']
             callback: jasmine.any(Function)
           )
 

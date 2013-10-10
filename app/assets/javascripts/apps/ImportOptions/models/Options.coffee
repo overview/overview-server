@@ -4,6 +4,7 @@ define [ 'backbone' ], (Backbone) ->
       split_documents: false
       supplied_stop_words: ''
       lang: ''
+      name: ''
 
     initialize: (attributes, options) ->
       throw 'Must set options.defaultLanguageCode' if !options.defaultLanguageCode

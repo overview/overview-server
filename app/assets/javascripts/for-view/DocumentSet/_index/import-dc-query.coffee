@@ -10,4 +10,5 @@ define [ 'jquery', 'dcimport/import_project_with_login', 'apps/ImportOptions/app
       OptionsApp.interceptSubmitEvent(e, {
         supportedLanguages: window.supportedLanguages
         defaultLanguageCode: window.defaultLanguageCode
+        excludeOptions: ['name']
       })

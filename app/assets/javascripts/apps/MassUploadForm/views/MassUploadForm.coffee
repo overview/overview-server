@@ -74,6 +74,7 @@ define [
         @el,
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
+        excludeOptions: ['split_documents']
         callback: => @_optionsSetDone()
       )
 

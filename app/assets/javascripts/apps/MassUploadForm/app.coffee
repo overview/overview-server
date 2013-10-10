@@ -12,7 +12,7 @@ define [
         model: model,
         uploadViewClass: UploadView,
         supportedLanguages: options.supportedLanguages,
-        defaultLanguageCode:options.defaultLanguageCode
+        defaultLanguageCode: options.defaultLanguageCode
       )
       view.render()
       @el = view.el

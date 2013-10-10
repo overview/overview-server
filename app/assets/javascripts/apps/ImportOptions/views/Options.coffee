@@ -13,8 +13,20 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       'change [name=split_documents]': '_onChangeSplitDocuments'
       'change [name=lang]': '_onChangeLang'
       'change [name=supplied_stop_words]': '_onChangeSuppliedStopWords'
+      'change [name=name]': '_onChangeName'
 
     template: _.template("""
+      <% if ('name' in options) { %>
+        <div class="control-group">
+          <label class="control-label" for="import-options-name"><%- t('name.label') %></label>
+          <div class="controls">
+            <label>
+              <input type="text" id="import-options-name" name="name" value="<%- options.name %>" />
+            </label>
+          </div>
+        </div>
+      <% } %>
+
       <% if ('split_documents' in options) { %>
         <div class="control-group">
           <div class="controls">
@@ -73,3 +85,6 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     _onChangeSuppliedStopWords: (e) ->
       @model.set('supplied_stop_words', Backbone.$(e.target).val())
+
+    _onChangeName: (e) ->
+      @model.set('name', Backbone.$(e.target).val())
