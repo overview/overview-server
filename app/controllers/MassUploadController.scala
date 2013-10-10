@@ -36,7 +36,7 @@ trait MassUploadController extends Controller {
    *  the details of the upload. `create` notifies the worker that an upload needs to
    *  be processed.
    */
-  def create(guid: UUID, lastModifiedDate: String) = TransactionAction(authorizedUploadBodyParser(guid, lastModifiedDate)) { implicit request: Request[GroupedFileUpload] =>
+  def create(guid: UUID) = TransactionAction(authorizedUploadBodyParser(guid)) { implicit request: Request[GroupedFileUpload] =>
     val upload: GroupedFileUpload = request.body
 
     if (isUploadComplete(upload)) {
@@ -71,7 +71,7 @@ trait MassUploadController extends Controller {
   }
 
   // method to create the MassUploadFileIteratee
-  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
+  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
 
   /** interface to database related methods */
   val storage: Storage
@@ -102,12 +102,12 @@ trait MassUploadController extends Controller {
     def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Either[Unit, Unit]
   }
 
-  private def authorizedUploadBodyParser(guid: UUID, lastModifiedDate: String) =
-    AuthorizedBodyParser(anyUser) { user => uploadBodyParser(user.email, guid, lastModifiedDate) }
+  private def authorizedUploadBodyParser(guid: UUID) =
+    AuthorizedBodyParser(anyUser) { user => uploadBodyParser(user.email, guid) }
 
-  private def uploadBodyParser(userEmail: String, guid: UUID, lastModifiedDate: String) =
+  private def uploadBodyParser(userEmail: String, guid: UUID) =
     BodyParser("Mass upload bodyparser") { request =>
-      massUploadFileIteratee(userEmail, request, guid, lastModifiedDate)
+      massUploadFileIteratee(userEmail, request, guid)
     }
 
   private def findUploadInCurrentFileGroup(userEmail: String, guid: UUID): Option[GroupedFileUpload] =
@@ -144,8 +144,8 @@ trait MassUploadController extends Controller {
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
 
-  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
-    MassUploadFileIteratee(userEmail, request, guid, lastModifiedDate)
+  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+    MassUploadFileIteratee(userEmail, request, guid)
 
   override val storage = new DatabaseStorage
   override val messageQueue = new ApolloQueue

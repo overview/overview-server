@@ -13,6 +13,7 @@ import play.api.mvc.RequestHeader
 import play.api.test.FakeHeaders
 import play.api.test.Helpers._
 import java.util.UUID
+import java.net.URLEncoder
 
 class MassUploadFileIterateeSpec extends Specification with Mockito {
 
@@ -44,13 +45,13 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val userEmail = "user@ema.il"
       val contentType = "ignoredForNow"
       val filename = "filename.ext"
-      val contentDisposition = s"attachement; filename=$filename"
+      val lastModifiedDate = "Tue, 10 Oct 2013 12:22 -0500"
+      val contentDisposition = s"""attachment; filename=$filename ; modification-date="$lastModifiedDate""""
       val start = 0
       val end = 255
       val total = 256
       val bufferSize = total
       val guid = UUID.randomUUID
-      val lastModifiedDate = "2013-12-24"
         
       val data = Array.tabulate[Byte](256)(_.toByte)
       
@@ -72,7 +73,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       lazy val iteratee = new TestMassUploadFileIteratee(createFileGroup)
 
       def result = {
-        val resultFuture = enumerator.run(iteratee(userEmail, request, guid, lastModifiedDate, bufferSize))
+        val resultFuture = enumerator.run(iteratee(userEmail, request, guid, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
     }
@@ -111,7 +112,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       result must beRight
 
       there was one(iteratee.storage).findCurrentFileGroup(userEmail)
-      there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total, lastModifiedDate)
+      there was one(iteratee.storage).createUpload(1l, contentType, filename, lastModifiedDate, guid, total)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
 

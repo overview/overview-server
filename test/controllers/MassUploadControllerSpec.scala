@@ -27,7 +27,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
   class TestMassUploadController extends MassUploadController {
     // We can leave this undefined, since it will not be called.
-    def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID, lastModifiedDate: String): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
       ???
 
     override val storage = smartMock[Storage]
@@ -117,12 +117,11 @@ class MassUploadControllerSpec extends Specification with Mockito {
   "MassUploadController.create" should {
 
     trait CreateRequest extends UploadContext {
-      val lastModifiedDate: String = "a date"
       override def executeRequest: Result = {
         val baseRequest = FakeRequest[GroupedFileUpload]("POST", s"/files/$guid", FakeHeaders(), foundUpload.get)
         val request = new AuthorizedRequest(baseRequest, user)
 
-        controller.create(guid, lastModifiedDate)(request)
+        controller.create(guid)(request)
       }
     }
 

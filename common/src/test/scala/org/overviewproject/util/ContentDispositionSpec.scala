@@ -70,10 +70,9 @@ class ContentDispositionSpec extends Specification {
 
     trait IncludesModifiedDateParameter extends DispositionParameter {
       val name="file.ext"
-      val modificationDate = "Wed, 09 Oct 2013 05:42:00 EST"
-      val encodedModificationDate = URLEncoder.encode(modificationDate, "UTF-8")
-      
-      override lazy val dispParams: String = """filename=%s ; modification-date=%s""".format(name, encodedModificationDate)
+      val modificationDate = "Wed, 09 Oct 2013 05:42:00 -0500"
+            
+      override lazy val dispParams: String = """filename=%s ; modification-date="%s"""".format(name, modificationDate)
     }
 
     trait ContentDispositionContext extends Scope {
