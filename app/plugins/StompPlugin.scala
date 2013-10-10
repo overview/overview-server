@@ -22,7 +22,8 @@ object MessageQueueConfiguration {
   val Password = configValue("password")
   val DocumentSetCommandQueueName = configValue("queue_name")
   val FileGroupCommandQueueName = configValue("file_group_queue_name")
-
+  val ClusteringCommandQueueName = configValue("clustering_queue_name")
+  
   private def configValue(key: String): String =
     Play.current.configuration.getString(s"$QueuePrefix.$key")
       .getOrElse(throw new Exception(s"Unable to read message_queue configuration for $key"))
@@ -39,6 +40,9 @@ class StompPlugin(application: Application) extends Plugin {
 
   lazy val fileGroupCommandQueue: MessageQueueConnection =
     createQueue(MessageQueueConfiguration.FileGroupCommandQueueName)
+    
+  lazy val clusteringCommandQueue: MessageQueueConnection = 
+    createQueue(MessageQueueConfiguration.ClusteringCommandQueueName)
 
   override def onStart(): Unit = documentSetCommandQueue
 

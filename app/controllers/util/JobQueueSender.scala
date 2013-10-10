@@ -10,6 +10,8 @@ import plugins.StompPlugin
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 import org.overviewproject.jobs.models.ProcessGroupedFileUpload
+import org.overviewproject.jobs.models.StartClustering
+import org.overviewproject.jobs.models.StartClustering
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -62,6 +64,24 @@ object JobQueueSender {
     sendMessageToFileGroupJobQueue(jsonMessage)
   }
 
+  /**
+   * Send a `StartClustering` message to the Clusterin message queue.
+   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
+   */
+  def send(startClustering: StartClustering): Either[Unit, Unit] = {
+    implicit val startClusteringWrites: Writes[StartClustering] = (
+      (__ \ "fileGroupId").write[Long] and
+      (__ \ "title").write[String] and
+      (__ \ "lang").write[String] and
+      (__ \ "suppliedStopWords").write[String])(unlift(StartClustering.unapply))
+
+    val jsonMessage = toJson(Map(
+      "cmd" -> toJson("start_clustering"),
+      "args" -> toJson(startClustering)))
+
+    sendMessageToClusteringQueue(jsonMessage)
+  }
+
   private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit, Unit] = {
     val connection = use[StompPlugin].documentSetCommandQueue
 
@@ -70,6 +90,12 @@ object JobQueueSender {
 
   private def sendMessageToFileGroupJobQueue(jsonMessage: JsValue): Either[Unit, Unit] = {
     val connection = use[StompPlugin].fileGroupCommandQueue
+
+    connection.send(jsonMessage.toString)
+  }
+
+  private def sendMessageToClusteringQueue(jsonMessage: JsValue): Either[Unit, Unit] = {
+    val connection = use[StompPlugin].clusteringCommandQueue
 
     connection.send(jsonMessage.toString)
   }

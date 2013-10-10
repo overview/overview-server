@@ -27,6 +27,7 @@ import models.orm.stores.DocumentSetUserStore
 import org.overviewproject.tree.orm.DocumentSetUser
 import org.overviewproject.tree.Ownership
 import models.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.jobs.models.StartClustering
 
 trait MassUploadController extends Controller {
 
@@ -189,7 +190,9 @@ object MassUploadController extends MassUploadController {
     }
 
     override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Either[Unit, Unit] = {
-      ???
+      val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
+      
+      JobQueueSender.send(command)
     }
   }
 }
