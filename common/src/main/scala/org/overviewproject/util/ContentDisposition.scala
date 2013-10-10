@@ -4,6 +4,13 @@ import java.net.URLDecoder
 import scala.util.control.Exception._
 
 object ContentDisposition {
+
+  def filename(contentDisposition: String): Option[String] =
+    findParameterValue(contentDisposition, "filename") flatMap cleanupValue
+
+  def modificationDate(contentDisposition: String): Option[String] =
+    findParameterValue(contentDisposition, "modification-date") flatMap cleanupValue
+
   // Based on behavior described by
   // https://github.com/rack/rack/blob/master/lib/rack/multipart.rb
   private def findParameterValue(contentDisposition: String, parameterKey: String): Option[String] = {
@@ -27,6 +34,11 @@ object ContentDisposition {
     }
   }
 
+  private def cleanupValue(value: String): Option[String] =
+    decode(
+      unescapeQuotes(
+        stripQuotes(value)))
+
   private def stripQuotes(filename: String): String = {
     val QuotedString = """^".*"$"""
     // Using regexp to extract filename results in escaped quotes being unescaped
@@ -42,19 +54,5 @@ object ContentDisposition {
   private def decode(filename: String): Option[String] = {
     allCatch opt { URLDecoder.decode(filename, "UTF-8") }
   }
-
-  def filename(contentDisposition: String): Option[String] =
-    findParameterValue(contentDisposition, "filename") flatMap { n =>
-      decode(
-        unescapeQuotes(
-          stripQuotes(n)))
-    }
-
-  def modificationDate(contentDisposition: String): Option[String] =
-    findParameterValue(contentDisposition, "modification-date") flatMap { n =>
-      decode(
-        unescapeQuotes(
-          stripQuotes(n)))
-    }
 
 }
