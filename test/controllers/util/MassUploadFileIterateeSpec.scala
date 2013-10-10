@@ -33,7 +33,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       }
       else storage.findCurrentFileGroup(any) returns Some(fileGroup)
       
-      storage.createUpload(any, any, any, any, any, any) returns fileUpload
+      storage.createUpload(any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
     
@@ -45,8 +45,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       val userEmail = "user@ema.il"
       val contentType = "ignoredForNow"
       val filename = "filename.ext"
-      val lastModifiedDate = "Tue, 10 Oct 2013 12:22 -0500"
-      val contentDisposition = s"""attachment; filename=$filename ; modification-date="$lastModifiedDate""""
+      val contentDisposition = s"""attachment; filename=$filename"""
       val start = 0
       val end = 255
       val total = 256
@@ -112,7 +111,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       result must beRight
 
       there was one(iteratee.storage).findCurrentFileGroup(userEmail)
-      there was one(iteratee.storage).createUpload(1l, contentType, filename, lastModifiedDate, guid, total)
+      there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total)
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data)
     }
 

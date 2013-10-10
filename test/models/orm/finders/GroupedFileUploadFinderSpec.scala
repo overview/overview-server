@@ -36,7 +36,7 @@ class GroupedFileUploadFinderSpec extends Specification {
       override def setupWithDb = {
         fileGroup = Schema.fileGroups.insert(FileGroup(userEmail, InProgress))
         upload = Schema.groupedFileUploads.insert(GroupedFileUpload(
-          fileGroup.id, guid, "content-type", "filename", 1000, "date", 1000, 10l))
+          fileGroup.id, guid, "content-type", "filename", 1000, 1000, 10l))
       }
     }
 

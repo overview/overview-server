@@ -11,7 +11,6 @@ case class GroupedFileUpload(
     contentType: String,
     name: String,
     size: Long,
-    lastModifiedDate: String,
     uploadedSize: Long,
     contentsOid: Long,
     id: Long = 0L) extends KeyedEntity[Long] {

@@ -24,8 +24,7 @@ trait MassUploadFileIteratee {
 
     val info = RequestInformation(request)
     val initialUpload: Either[Result, GroupedFileUpload] =
-      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, info.modificationDate, 
-          guid, info.total))
+      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
 
     var buffer = Array[Byte]()
 
@@ -47,12 +46,11 @@ trait MassUploadFileIteratee {
   trait Storage {
     def createFileGroup(userEmail: String): FileGroup
     def findCurrentFileGroup(userEmail: String): Option[FileGroup]
-    def createUpload(fileGroupId: Long, contentType: String, filename: String, lastModifiedAt: String, 
-        guid: UUID, size: Long): GroupedFileUpload
+    def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long): GroupedFileUpload
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
-  private case class RequestInformation(filename: String, contentType: String, modificationDate: String,
+  private case class RequestInformation(filename: String, contentType: String,
       start: Long, end: Long, total: Long)
       
   private object RequestInformation {
@@ -63,10 +61,9 @@ trait MassUploadFileIteratee {
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       val rangeMatch = range.findFirstMatchIn(contentRange).get
       val List(start, end, length) = rangeMatch.subgroups.take(3)
-      val lastModifiedAt = ContentDisposition.modificationDate(contentDisposition).getOrElse("")
       
       RequestInformation(ContentDisposition.filename(contentDisposition).get, contentType, 
-          lastModifiedAt, start.toLong, end.toLong, length.toLong)
+          start.toLong, end.toLong, length.toLong)
     }
   }
 }
@@ -85,10 +82,10 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
       FileGroupFinder.byUserAndState(userEmail, InProgress).headOption
     }
 
-    override def createUpload(fileGroupId: Long, contentType: String, filename: String, lastModifiedDate: String, guid: UUID, size: Long): GroupedFileUpload =
+    override def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long): GroupedFileUpload =
       withPgConnection { implicit c =>
         val upload = LO.withLargeObject { lo =>
-          GroupedFileUpload(fileGroupId, guid, contentType, filename, size, lastModifiedDate, 0, lo.oid)
+          GroupedFileUpload(fileGroupId, guid, contentType, filename, size, 0, lo.oid)
         }
 
         OverviewDatabase.inTransaction {

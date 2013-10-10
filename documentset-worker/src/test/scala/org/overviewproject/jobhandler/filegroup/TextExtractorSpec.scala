@@ -25,7 +25,6 @@ class TextExtractorSpec extends Specification with Mockito {
       "contentType",
       "name",
       10000L,
-      "2011-02-19",
       10000L,
       100L)
 

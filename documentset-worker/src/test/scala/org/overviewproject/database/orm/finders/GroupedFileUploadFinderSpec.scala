@@ -29,7 +29,6 @@ class GroupedFileUploadFinderSpec extends DbSpecification {
           "application/pdf",
           s"file$n",
           n * 1000,
-          "2011-03-22",
           n * 1000,
           n))
       GroupedFileUploadStore.insertBatch(groupedFileUploads)
