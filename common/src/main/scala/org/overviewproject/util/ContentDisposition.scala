@@ -6,7 +6,7 @@ import scala.util.control.Exception._
 object ContentDisposition {
   // Based on behavior described by
   // https://github.com/rack/rack/blob/master/lib/rack/multipart.rb
-  private def findFilename(contentDisposition: String): Option[String] = {
+  private def findParameterValue(contentDisposition: String, parameterKey: String): Option[String] = {
     val Token = """[^\s()<>,;:\\"\/\[\]?=]+"""
     val ConDisp = """\s*%s\s*""".format(Token)
     def DispParam(key: String, groupValue: Boolean) = {
@@ -14,9 +14,9 @@ object ContentDisposition {
       """;\s*(?:%s)=(%s"(?:\\"|[^"])*"|%s)*""".format(key, captureGroup, Token)
     }
 
-    val FilenameParam = DispParam(key = "(?i)filename", groupValue = true).r
-    val BrokenQuoted = """^%s.*;\s(?i)filename="([^"]*)"(?:\s*$|\s*;\s*%s=).*""".format(ConDisp, Token).r
-    val BrokenUnquoted = """^%s.*;\s(?i)filename=(%s).*""".format(ConDisp, Token).r
+    val FilenameParam = DispParam(key = "(?i)%s".format(parameterKey), groupValue = true).r
+    val BrokenQuoted = """^%s.*;\s(?i)%s="([^"]*)"(?:\s*$|\s*;\s*%s=).*""".format(ConDisp, parameterKey, Token).r
+    val BrokenUnquoted = """^%s.*;\s(?i)%s=(%s).*""".format(ConDisp, parameterKey, Token).r
     val Rfc2183 = """^%s((?:%s)+)$""".format(ConDisp, DispParam(key = Token, groupValue = false)).r
 
     contentDisposition match {
@@ -44,9 +44,17 @@ object ContentDisposition {
   }
 
   def filename(contentDisposition: String): Option[String] =
-    findFilename(contentDisposition) flatMap { n =>
+    findParameterValue(contentDisposition, "filename") flatMap { n =>
       decode(
         unescapeQuotes(
           stripQuotes(n)))
     }
+
+  def modificationDate(contentDisposition: String): Option[String] =
+    findParameterValue(contentDisposition, "modification-date") flatMap { n =>
+      decode(
+        unescapeQuotes(
+          stripQuotes(n)))
+    }
+
 }

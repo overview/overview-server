@@ -1,8 +1,8 @@
 package org.overviewproject.util
 
+import java.net.URLEncoder
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-
 
 class ContentDispositionSpec extends Specification {
   "OverviewUploadedFile contentDisposition" should {
@@ -68,6 +68,14 @@ class ContentDispositionSpec extends Specification {
       val name = """"%XY%4-b""""
     }
 
+    trait IncludesModifiedDateParameter extends DispositionParameter {
+      val name="file.ext"
+      val modificationDate = "Wed, 09 Oct 2013 05:42:00 EST"
+      val encodedModificationDate = URLEncoder.encode(modificationDate, "UTF-8")
+      
+      override lazy val dispParams: String = """filename=%s ; modification-date=%s""".format(name, encodedModificationDate)
+    }
+
     trait ContentDispositionContext extends Scope {
       self: DispositionParameter =>
 
@@ -120,6 +128,10 @@ class ContentDispositionSpec extends Specification {
 
     "Handle mixed case - Broken quoted" in new ContentDispositionContext with MixedCaseWithQuotedFilenameFollowedByGarbage {
       ContentDisposition.filename(contentDisposition) must beSome(name)
+    }
+    
+    "Find modification date parameter" in new ContentDispositionContext with IncludesModifiedDateParameter {
+      ContentDisposition.modificationDate(contentDisposition) must beSome(modificationDate)
     }
   }
 
