@@ -65,6 +65,7 @@ define [
 
       beforeEach ->
         file = {
+          name: 'foo.pdf'
           lastModifiedDate: new Date('2013-10-01T12:00:00Z')
         }
         uploadSpy = spyOn(Upload.prototype, 'start').andCallThrough()

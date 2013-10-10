@@ -59,7 +59,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
   #     ...
   #     upload.start()
   #
-  #     console.log(upload.bytes_uploaded, upload.bytes_total)
+  #     console.log(upload.uploaded_offset, upload.bytes_total)
   #
   #     upload.abort()
   #
@@ -99,10 +99,10 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       @url = url_prefix + this._generate_uuid()
       @url += "?csrfToken=#{encodeURIComponent(options.csrfToken)}" if options.csrfToken?
       @state = states.WAITING
-      # bytes_uploaded is accurate when leaving STARTING and entering UPLOADING.
+      # uploaded_offset is accurate when leaving STARTING and entering UPLOADING.
       # We send a computed `loaded` variable when notifying progress() callbacks
       # while UPLOADING.
-      @bytes_uploaded = 0
+      @uploaded_offset = 0
 
       @options = extend({
         xhr_factory: (callback) ->
@@ -123,7 +123,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _generate_uuid: () ->
       # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
       # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-      hash = md5("#{@file.name}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
+      hash = md5("#{@_filename()}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
       parts = []
       parts.push(hash[0...8])
       parts.push(hash[8...12])
@@ -203,9 +203,9 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
 
         if jqxhr.state() == 'resolved' || jqxhr.status == 404
           # We got a response from the server, so we're ready to upload
-          @bytes_uploaded = content_range_to_end(jqxhr.getResponseHeader('Content-Range'))
+          @uploaded_offset = content_range_to_end(jqxhr.getResponseHeader('Content-Range'))
 
-          if jqxhr.state() == 'resolved' && @bytes_uploaded >= @file.size
+          if jqxhr.state() == 'resolved' && @uploaded_offset >= @file.size
             this._set_state(states.DONE)
           else
             this._set_state(states.UPLOADING)
@@ -233,16 +233,19 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       this._to_uploading()
 
     _to_uploading: () ->
-      @deferred.notify({ state: 'uploading', loaded: @bytes_uploaded, total: @file.size })
+      @deferred.notify({ state: 'uploading', loaded: @uploaded_offset, total: @file.size })
 
-      blob = @file.slice(@bytes_uploaded, @file.size)
+      blob = @file.slice(@uploaded_offset, @file.size)
 
       jqxhr = undefined
 
       create_xhr = () =>
         @options.xhr_factory (loaded, total) =>
           return if !jqxhr? or jqxhr isnt @uploading_jqxhr
-          @deferred.notify({ state: 'uploading', loaded: @bytes_uploaded + loaded, total: @bytes_uploaded + total })
+          @deferred.notify({ state: 'uploading', loaded: @uploaded_offset + loaded, total: @uploaded_offset + total })
+
+      sendOffset = @file.size - 1
+      sendOffset = 0 if sendOffset < 0
 
       @uploading_jqxhr = ajax({
         url: @url
@@ -253,8 +256,8 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
         xhr: create_xhr
         contentType: @options.contentType || 'application/octet-stream'
         headers: {
-          'Content-Disposition': "attachment; filename=#{@file.name}; modification-date=\"#{@file.lastModifiedDate.toString()}\""
-          'Content-Range': "#{@bytes_uploaded}-#{@file.size}/#{@file.size}"
+          'Content-Disposition': "attachment; filename=\"#{@_filename()}\""
+          'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}"
         }
       })
 
@@ -304,7 +307,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     # from STARTING and UPLOADING.
 
     _to_failed: () ->
-      @deferred.notify({ state: 'failed', loaded: @bytes_uploaded, total: @file.size })
+      @deferred.notify({ state: 'failed', loaded: @uploaded_offset + 1, total: @file.size })
       @deferred.reject()
 
     _starting_to_failed: () ->
@@ -314,3 +317,6 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _uploading_to_failed: () ->
       this._from_uploading()
       this._to_failed()
+
+    _filename: () ->
+      @file.name.replace(/"/g, '')
