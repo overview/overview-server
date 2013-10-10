@@ -119,10 +119,16 @@ trait MassUploadController extends Controller {
   private def isUploadComplete(upload: GroupedFileUpload): Boolean =
     (upload.uploadedSize == upload.size) && (upload.size > 0)
 
-  private def showRequestHeaders(upload: GroupedFileUpload): Seq[(String, String)] = Seq(
-    (CONTENT_LENGTH, s"${upload.uploadedSize}"),
-    (CONTENT_RANGE, s"0-${upload.uploadedSize - 1}/${upload.size}"),
-    (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
+  private def showRequestHeaders(upload: GroupedFileUpload): Seq[(String, String)] = {
+    def computeEnd(uploadedSize: Long): Long =
+      if (upload.uploadedSize == 0) 0
+      else upload.uploadedSize - 1
+
+    Seq(
+      (CONTENT_LENGTH, s"${upload.uploadedSize}"),
+      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
+      (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
+  }
 
   private def startClusteringFileGroupWithOptions(userEmail: String, options: (String, String, Option[String])): Result = {
     storage.findCurrentFileGroup(userEmail) match {
@@ -191,7 +197,7 @@ object MassUploadController extends MassUploadController {
 
     override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Either[Unit, Unit] = {
       val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
-      
+
       JobQueueSender.send(command)
     }
   }
