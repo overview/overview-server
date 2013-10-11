@@ -5,18 +5,22 @@ import akka.actor.SupervisorStrategy._
 import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
-
 import FileGroupMessageHandlerFSM._
 import scala.concurrent.duration.Duration
+import org.overviewproject.database.Database
+import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+import org.overviewproject.database.orm.finders.GroupedProcessedFileFinder
+import org.overviewproject.tree.orm.GroupedProcessedFile
+import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
 
 trait FileGroupMessageHandlerComponent {
   val actorCreator: ActorCreator
   val storage: Storage
-  
+
   trait ActorCreator {
     def produceTextExtractor: Props
   }
-  
+
   trait Storage {
     def writeFileInErrorState(fileGroupId: Long, uploadedFileId: Long): Unit
   }
@@ -67,7 +71,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
     case Event(JobDone(fileGroupId), job: Job) => {
       jobMonitor ! JobDone(fileGroupId)
       context.unwatch(job.worker)
-      
+
       goto(Idle)
     }
     case Event(Terminated(worker), job: Job) => {
@@ -82,15 +86,26 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
 }
 
 trait FileGroupMessageHandlerComponentImpl extends FileGroupMessageHandlerComponent {
+
   override val actorCreator = new TextExtractorCreator
-  override val storage = new DatabaseStorage 
-  
+  override val storage = new DatabaseStorage
+
   class TextExtractorCreator extends ActorCreator {
     override def produceTextExtractor: Props = Props[TextExtractorImpl]
   }
-  
+
   class DatabaseStorage extends Storage {
-    override def writeFileInErrorState(fileGroupId: Long, uploadedFileId: Long): Unit = ???
+    private val ErrorMessage = "Unable to process file"
+
+    override def writeFileInErrorState(fileGroupId: Long, uploadedFileId: Long): Unit = Database.inTransaction {
+      GroupedFileUploadFinder.byId(uploadedFileId).headOption map { u =>
+        val file = GroupedProcessedFileFinder.byContentsOid(u.contentsOid).headOption.getOrElse(
+          GroupedProcessedFile(fileGroupId, u.contentType, u.name, Some(ErrorMessage), None, u.contentsOid))
+          
+        GroupedProcessedFileStore.insertOrUpdate(file)
+      }
+
+    }
   }
 
 }

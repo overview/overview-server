@@ -12,4 +12,7 @@ object GroupedProcessedFileFinder extends FinderById[GroupedProcessedFile](Schem
   def byFileGroup(fileGroupId: Long): GroupedProcessedFileFinderResult =
     Schema.groupedProcessedFiles.where(f => f.fileGroupId === fileGroupId)
     
+  def byContentsOid(oid: Long): GroupedProcessedFileFinderResult = 
+    Schema.groupedProcessedFiles.where(f => f.contentsOid === oid)
+    
 }
