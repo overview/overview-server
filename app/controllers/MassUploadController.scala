@@ -96,10 +96,10 @@ trait MassUploadController extends Controller {
 
   trait MessageQueue {
     /** Notify worker that an uploaded file needs to be processed */
-    def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Either[Unit, Unit]
+    def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
-    def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Either[Unit, Unit]
+    def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit
   }
 
   private def authorizedUploadBodyParser(guid: UUID) =
@@ -126,8 +126,7 @@ trait MassUploadController extends Controller {
 
     Seq(
       (CONTENT_LENGTH, s"${upload.uploadedSize}"),
-      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
-      (CONTENT_DISPOSITION, s"attachment ; filename=${upload.name}"))
+      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"))
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String, options: (String, String, Option[String])): Result = {
@@ -191,15 +190,17 @@ object MassUploadController extends MassUploadController {
 
   class ApolloQueue extends MessageQueue {
 
-    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Either[Unit, Unit] = {
+    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit = {
       val command = ProcessGroupedFileUpload(fileGroupId, groupedFileUploadId)
-      JobQueueSender.send(command)
+      if (JobQueueSender.send(command).isLeft) 
+        throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
     }
 
-    override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Either[Unit, Unit] = {
+    override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit = {
       val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
 
-      JobQueueSender.send(command)
+      if (JobQueueSender.send(command).isLeft) 
+        throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")
     }
   }
 }

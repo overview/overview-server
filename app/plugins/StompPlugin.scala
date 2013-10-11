@@ -44,7 +44,11 @@ class StompPlugin(application: Application) extends Plugin {
   lazy val clusteringCommandQueue: MessageQueueConnection = 
     createQueue(MessageQueueConfiguration.ClusteringCommandQueueName)
 
-  override def onStart(): Unit = documentSetCommandQueue
+  override def onStart(): Unit = {
+    documentSetCommandQueue
+    fileGroupCommandQueue
+    clusteringCommandQueue
+  }
 
   override def onStop(): Unit = documentSetCommandQueue.close
 
@@ -109,7 +113,8 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
           messageGroup.map { g => message.setStringProperty("message_group", g) }
 
           p.send(message)
-        }, ())
+        },  
+        Logger.error(s"[$queueName] Trying to send message to closed connection"))
 
     def close: Unit = session.map(_.close)
 
@@ -131,7 +136,7 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
         connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
       } match {
         case Success(s) => {
-          Logger.debug("Session created")
+          Logger.debug(s"[$queueName] Session created")
           session = Some(s)
           producer = session.map(_.createProducer(destination))
           producer.map(_.setDeliveryMode(DeliveryMode.NON_PERSISTENT))

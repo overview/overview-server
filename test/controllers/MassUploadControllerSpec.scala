@@ -165,13 +165,11 @@ class MassUploadControllerSpec extends Specification with Mockito {
     "return Ok with content length if upload is complete" in new ShowRequest with CompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (OK)
       header(CONTENT_LENGTH, result) must beSome(s"$size")
-      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
     "return PartialContent with content range if upload is not complete" in new ShowRequest with IncompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (PARTIAL_CONTENT)
       header(CONTENT_RANGE, result) must beSome(s"0-${uploadSize - 1}/$size")
-      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
     
     "return a valid content_range if uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
