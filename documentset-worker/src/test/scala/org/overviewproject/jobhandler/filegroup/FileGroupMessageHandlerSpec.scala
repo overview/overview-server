@@ -19,7 +19,20 @@ import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerFSM._
 
 class DummyActor extends Actor {
   def receive = {
-    case _ =>
+    case ExtractText(fileGroupId, uploadedFileId) => {
+      sender ! JobDone(fileGroupId)
+      context.stop(self)
+    }
+  }
+}
+
+class FailingActor extends Actor {
+  def receive = {
+// FIXME: If we actually throw an exception, the unit tests print ugly stack traces
+// In Akka 2.2 we will be able to turn off logging by setting loggingEnabled = false
+// on the SupervisorStrategy
+//    case _ => throw(new Exception("Fail"))
+    case _ => context.stop(self)
   }
 }
 
@@ -27,13 +40,20 @@ class FileGroupMessageHandlerSpec extends Specification with Mockito {
 
   "FileGroupMessageHandler" should {
 
-    class TestMessageHandler(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with TextExtractorComponent {
+    class TestMessageHandler(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with FileGroupMessageHandlerComponent {
 
-      val actorCreator = mock[ActorCreator]
+      override val storage = mock[Storage]
+      override val actorCreator = mock[ActorCreator]
       actorCreator.produceTextExtractor returns Props[DummyActor]
-
     }
 
+    class FailingMessageHandler(jobMonitor: ActorRef) extends FileGroupMessageHandler(jobMonitor) with FileGroupMessageHandlerComponent {
+
+      override val storage = mock[Storage]
+      override val actorCreator = mock[ActorCreator]
+      actorCreator.produceTextExtractor returns Props[FailingActor]
+    }
+    
     "start file handler on incoming command" in new ActorSystemContext {
       val jobMonitor = TestProbe()
       val command = ProcessFileCommand(1l, 10l)
@@ -52,12 +72,25 @@ class FileGroupMessageHandlerSpec extends Specification with Mockito {
       val fileGroupId = 1l
       val command = ProcessFileCommand(fileGroupId, 10l)
 
-      val messageHandler = TestFSMRef(new TestMessageHandler(jobMonitor.ref))
+      val messageHandler = TestActorRef(new TestMessageHandler(jobMonitor.ref))
 
-      messageHandler.setState(Working, NoData)
-      messageHandler ! JobDone(fileGroupId)
+      messageHandler ! command
 
       jobMonitor.expectMsg(JobDone(fileGroupId))
+    }
+    
+    "set ProcessedFile state to Error if processing fails" in new ActorSystemContext {
+      val jobMonitor = TestProbe()
+      val fileGroupId = 1l
+      val uploadedFileId = 10l
+      val command = ProcessFileCommand(fileGroupId, uploadedFileId)
+
+      val messageHandler = TestActorRef(new FailingMessageHandler(jobMonitor.ref))
+      
+      messageHandler ! command
+      
+      there was one(messageHandler.underlyingActor.storage).writeFileInErrorState(fileGroupId, uploadedFileId)
+      jobMonitor.expectMsg(JobDone(fileGroupId))  
     }
   }
 }
