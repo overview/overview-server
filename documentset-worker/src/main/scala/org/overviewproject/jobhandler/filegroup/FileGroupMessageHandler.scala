@@ -31,6 +31,10 @@ object FileGroupMessageHandlerFSM {
 
 import FileGroupMessageHandlerFSM._
 
+
+/**
+ * Spawns actors to process files.
+ */
 class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State, Data] {
   this: TextExtractorComponent =>
 

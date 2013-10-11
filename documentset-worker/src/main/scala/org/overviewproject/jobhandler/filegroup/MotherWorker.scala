@@ -39,6 +39,10 @@ trait FileGroupJobHandlerComponent {
   }
 }
 
+/**
+ * Manages the workers that process uploaded files.
+ * Starts the DocumentSetCreationJob when everything is ready.
+ */
 trait MotherWorker extends Actor {
   this: FileGroupJobHandlerComponent =>
 
@@ -71,14 +75,6 @@ trait MotherWorker extends Actor {
 
   }
 
-  /**
-   * If all files have been uploaded, and all uploaded files have been processed,
-   * the documentSetCreationJob state is `NotStarted` (ready for clustering). Otherwise the state
-   * is `Preparing`
-   */
-  private def computeJobState(fileGroup: FileGroup): DocumentSetCreationJobState.Value =
-    if ((fileGroup.state == Complete) && fileProcessingComplete(fileGroup.id)) NotStarted
-    else Preparing
 
   /** file processing is complete when number of uploads matches number of processed files */
   private def fileProcessingComplete(fileGroupId: Long): Boolean =
