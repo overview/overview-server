@@ -3,13 +3,13 @@ package org.overviewproject.jobhandler
 import scala.language.postfixOps
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.control.Exception.allCatch
 import scala.util.{ Failure, Success }
 import akka.actor._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.util.Logger
 import SynchronousMessageQueueActorFSM._
 import scala.util.Try
-
 
 object SynchronousMessageQueueActorFSM {
   sealed trait State
@@ -23,16 +23,16 @@ object SynchronousMessageQueueActorFSM {
 }
 
 class SynchronousMessageQueueActor[T](messageRecipient: ActorRef,
-                                   messageService: MessageService,
-                                   converter: String => T) extends Actor with FSM[State, Data] {
+                                      messageService: MessageService,
+                                      converter: String => T) extends Actor with FSM[State, Data] {
 
   // Time between reconnection attempts
   private val ReconnectionInterval = 1 seconds
 
   import MessageQueueActorProtocol._
-  
+
   startWith(NotConnected, Idle)
- 
+
   when(NotConnected) {
     case Event(StartListening, _) => {
       val connectionStatus = messageService.createConnection(deliverMessage, handleConnectionFailure)
@@ -54,7 +54,11 @@ class SynchronousMessageQueueActor[T](messageRecipient: ActorRef,
   when(Ready) {
     case Event(ConnectionFailure(e), _) => goto(NotConnected) using ConnectionFailed(e)
     case Event(message: String, listener: Listener) => {
-      listener.recipient ! converter(message)
+      val convertedMessage = allCatch either converter(message)
+
+      convertedMessage.fold(
+        e => Logger.error(s"Unable to convert incoming message", e),
+        m => listener.recipient ! converter(message))
 
       stay
     }
@@ -68,7 +72,6 @@ class SynchronousMessageQueueActor[T](messageRecipient: ActorRef,
   }
 
   initialize
-
 
   // The callback that will be executed when the MessageService component receives a message on the queue
   // The MessageService thread blocks until the returned future completes. 
@@ -88,9 +91,9 @@ object SynchronousMessageQueueActor {
 
   def apply[T](recipient: ActorRef, queueName: String, converter: String => T): Props = {
     val messageService = new ApolloMessageService(queueName)
-    
-    Props(new SynchronousMessageQueueActor[T](recipient, messageService, converter)) 
-    
+
+    Props(new SynchronousMessageQueueActor[T](recipient, messageService, converter))
+
   }
 }
 

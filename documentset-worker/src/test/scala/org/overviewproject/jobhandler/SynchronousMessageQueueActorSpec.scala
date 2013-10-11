@@ -18,7 +18,7 @@ class SynchronousMessageQueueActorSpec extends Specification {
     var connectionCreationCount: Int = 0
 
     override val queueName = "/queue/message-queue-name"
-      
+
     override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = {
       connectionCreationCount += 1
       messageCallback = Some(messageDelivery)
@@ -29,8 +29,9 @@ class SynchronousMessageQueueActorSpec extends Specification {
     }
   }
 
-  class TestSynchronousMessageQueueActor(recipient: ActorRef, messageService: MessageService)
-    extends SynchronousMessageQueueActor[String](recipient, messageService, identity) 
+  class TestSynchronousMessageQueueActor(recipient: ActorRef, messageService: MessageService,
+                                         converter: String => String = identity)
+      extends SynchronousMessageQueueActor[String](recipient, messageService, converter)
 
   "SynchronousMessageActor" should {
 
@@ -73,7 +74,24 @@ class SynchronousMessageQueueActorSpec extends Specification {
       synchronousMessageQueueActor ! ConnectionFailure(connectionFailure)
 
       messageService.connectionCreationCount must be equalTo (2)
-
     }
+
+    "consume messages that fail to convert" in new ActorSystemContext {
+      val messageService = new TestMessageService
+      val recipient = TestProbe()
+      val message = "a message"
+
+      def failingConversion(m: String): String = throw new Exception("message unparsable for some reason")
+      val synchronousMessageQueueActor =
+        TestActorRef(new TestSynchronousMessageQueueActor(recipient.ref, messageService, failingConversion))
+
+      synchronousMessageQueueActor ! StartListening
+      val completion = messageService.messageCallback.map(_(message)) 
+
+      completion must beSome.which(_.isCompleted)
+      
+      recipient.expectNoMsg
+      
+    } 
   }
 }
