@@ -2,6 +2,8 @@ package org.overviewproject.jobhandler.filegroup
 
 import scala.collection.mutable.{ Map, Queue }
 import akka.actor._
+import akka.actor.SupervisorStrategy._
+
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
 import org.overviewproject.database.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
@@ -16,6 +18,7 @@ import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
 import org.overviewproject.util.Logger
+import scala.concurrent.duration.Duration
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -56,6 +59,14 @@ trait MotherWorker extends Actor {
   private val busyWorkers = Map.empty[ActorRef, ProcessFileCommand]
   private val workQueue = Queue.empty[ProcessFileCommand]
 
+  freeWorkers.foreach(context.watch)
+  
+  override val supervisorStrategy = 
+    OneForOneStrategy(0, Duration.Inf) {
+      case _: Exception => Stop
+      case _: Throwable => Escalate
+  }
+  
   def receive = {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
       submitCompleteJob(fileGroupId)
@@ -72,12 +83,21 @@ trait MotherWorker extends Actor {
 
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
+    
+    case Terminated(w) => {
+      val newWorker = context.actorOf(createFileGroupMessageHandler(self))
+      freeWorkers.enqueue(newWorker)
+      freeWorkers.dequeueAll(_ == w)
+      busyWorkers.get(w) map {c => self ! c}
+      busyWorkers -= w
+      
+    }
 
   }
 
 
   /** file processing is complete when number of uploads matches number of processed files */
-  private def fileProcessingComplete(fileGroupId: Long): Boolean =
+  private def fileProcessingComplete(fileGroupId: Long): Boolean = 
     storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId)
 
   private def submitCompleteJob(fileGroupId: Long): Unit = {

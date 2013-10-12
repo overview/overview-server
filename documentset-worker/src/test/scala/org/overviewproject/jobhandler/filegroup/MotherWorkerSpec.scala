@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.concurrent.duration._
+import scala.util.control.Exception._
 import akka.actor._
 import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
@@ -24,6 +25,30 @@ class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   }
 }
 
+class FailureGenerator {
+  var failedOnce = false
+
+  def possiblyFail: Unit =
+    if (!failedOnce) {
+      failedOnce = true
+      throw new Exception("fail")
+    }
+}
+class FailingDaughter(jobMonitor: ActorRef, failureGenerator: FailureGenerator) extends Actor {
+  override def preRestart(reason: Throwable, message: Option[Any]) = println("------> pre restart")
+  override def postRestart(reason: Throwable) = println("-----> post rersyr")
+
+  def receive = {
+    case ProcessFileCommand(fileGroupId, uploadId) => {
+      allCatch either failureGenerator.possiblyFail fold (
+        _ => context.stop(self), // FIXME: akka-2.2 will allow us to suppress the logs from exception. For now just die without throwing
+        _ => jobMonitor ! JobDone(fileGroupId)
+      ) 
+    }
+  }
+
+}
+
 class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions {
 
   class TestMotherWorker(daughters: Seq[ActorRef]) extends MotherWorker with FileGroupJobHandlerComponent {
@@ -40,6 +65,16 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
     def numberOfChildren: Int = context.children.size
 
     override val storage = mock[Storage]
+  }
+
+  class MotherWorkerWithFailingDaughter(jobMonitorProbe: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
+    val failureGenerator = new FailureGenerator
+
+    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props =
+      Props(new FailingDaughter(jobMonitorProbe, failureGenerator))
+
+    override val storage = mock[Storage]
+    def numberOfChildren: Int = context.children.size
   }
 
   "MotherWorker" should {
@@ -121,7 +156,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       daughters(0).expectMsg(messages(2))
     }
 
-
     "do nothing when StartClustering is received but all files have not been processed" in new MotherSetup {
       val numberOfUploads = 5
 
@@ -133,7 +167,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       there was no(storage).submitDocumentSetCreationJob(any)
 
     }
-    
 
     "submit a job when StartClustering is received and all files have been processed" in new MotherSetup {
       val numberOfUploads = 5
@@ -144,7 +177,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
         fileGroupId = Some(fileGroupId),
         state = Preparing)
 
-     
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
@@ -160,12 +192,12 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns None
-      
+
       motherWorker ! JobDone(fileGroupId)
-      
+
       there was no(storage).submitDocumentSetCreationJob(any)
     }
-    
+
     "submit a job when JobDone for the last processed file is received and StartClustering has been received" in new MotherSetup {
       val numberOfUploads = 5
 
@@ -183,6 +215,19 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       motherWorker ! JobDone(fileGroupId)
 
       there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
+    }
+  }
+
+  "MotherWorker with failing daughters" should {
+
+    "requeue command failing daughter was processing" in new ActorSystemContext {
+      val jobMonitor = TestProbe()
+      val fileGroupId = 1l
+      val command = ProcessFileCommand(fileGroupId, 2l)
+      val motherWorker = TestActorRef(new MotherWorkerWithFailingDaughter(jobMonitor.ref))
+
+      motherWorker ! command
+      jobMonitor.expectMsg(JobDone(fileGroupId))
     }
   }
 }
