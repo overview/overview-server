@@ -2,16 +2,14 @@ package org.overviewproject
 
 import scala.language.postfixOps
 import scala.concurrent.duration._
-
 import akka.actor._
-
+import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
-import org.overviewproject.http.{ AsyncHttpClientWrapper, RequestQueue }
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
-
+import org.overviewproject.util.Logger
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared
@@ -24,24 +22,44 @@ import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
  */
 object DocumentSetWorker extends App {
   private val NumberOfJobHandlers = 4
-  
+
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
 
   DB.connect(dataSource)
 
-  val client = new AsyncHttpClientWrapper
-
   val system = ActorSystem("WorkerActorSystem")
-  val requestQueue = system.actorOf(Props(new RequestQueue(client, 4, 6 minutes)))
+  val actorCareTaker = system.actorOf(Props(new ActorCareTaker(NumberOfJobHandlers)))
 
-  // Start as many job handlers as you need
-  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler()))
-  jobHandlers.foreach { jh =>
-    jh ! StartListening
-  }
-
-  val clusteringJobHandler = system.actorOf(ClusteringJobHandler())
-  clusteringJobHandler ! StartListening
+  actorCareTaker ! StartListening
 }
 
+
+/**
+ * Supervisor for the actors.
+ * If an error occurs at this level, we assume that something catastrophic has occurred.
+ * All actors get killed, and we die.
+ */
+class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
+
+  // Start as many job handlers as you need
+  val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
+
+  val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
+
+  override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
+    case _ => Stop
+  }
+
+  def receive = {
+    case StartListening => {
+      jobHandlers.foreach ( _ ! StartListening )
+      clusteringJobHandler ! StartListening
+    }
+    case Terminated(a) => {
+      Logger.error("Unexpected shutdown")
+      context.system.shutdown
+    }
+  }
+
+}
