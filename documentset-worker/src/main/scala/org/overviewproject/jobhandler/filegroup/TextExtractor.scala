@@ -19,7 +19,6 @@ import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
 import org.overviewproject.util.ContentDisposition
 import org.overviewproject.jobhandler.JobProtocol._
 
-
 object TextExtractorProtocol {
   case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
 }
@@ -48,18 +47,18 @@ class TextExtractor extends Actor {
 
   def receive = {
     case ExtractText(fileGroupId, fileUploadId) => {
-      val fileUpload = dataStore.findFileUpload(fileUploadId).get
-      val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
-      val text = pdfProcessor.extractText(fileStream)
-      val file = GroupedProcessedFile(
+      dataStore.findFileUpload(fileUploadId).map { fileUpload =>
+        val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
+        val text = pdfProcessor.extractText(fileStream)
+        val file = GroupedProcessedFile(
           fileGroupId,
           fileUpload.contentType,
           fileUpload.name,
           None,
           Some(text),
           fileUpload.contentsOid)
-      dataStore.storeFile(file)
-      
+        dataStore.storeFile(file)
+      }
       sender ! JobDone(fileGroupId)
       context.stop(self)
     }
@@ -74,7 +73,7 @@ trait PdfBoxPdfProcessor {
     val document = PDDocument.load(fileStream)
     val text = pdfTextStripper.getText(document)
     document.close()
-    
+
     text
   }
 
@@ -84,21 +83,21 @@ class TextExtractorImpl extends TextExtractor with TextExtractorComponents {
   class DataStoreImpl extends DataStore {
     override def findFileUpload(fileUploadId: Long): Option[GroupedFileUpload] = Database.inTransaction {
       GroupedFileUploadFinder.byId(fileUploadId).headOption
-    } 
-    
+    }
+
     override def fileContentStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
-    
+
     override def storeFile(file: GroupedProcessedFile): Unit = Database.inTransaction {
       GroupedProcessedFileStore.insertOrUpdate(file)
     }
-    
+
     override def storeText(fileId: Long, text: String): Unit = Database.inTransaction {
       val fileText = FileText(fileId, text)
       FileTextStore.insertOrUpdate(fileText)
     }
   }
   class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor
-  
+
   override val dataStore = new DataStoreImpl
   override val pdfProcessor = new PdfProcessorImpl
 }

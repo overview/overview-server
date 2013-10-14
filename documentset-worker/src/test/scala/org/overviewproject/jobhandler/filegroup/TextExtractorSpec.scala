@@ -14,77 +14,88 @@ import java.sql.Timestamp
 import org.overviewproject.jobhandler.JobProtocol._
 import akka.testkit.TestProbe
 import akka.actor.Terminated
+import org.specs2.mutable.Before
 
 class TextExtractorSpec extends Specification with Mockito {
 
   "TextExtractor" should {
 
-    val fileUpload = GroupedFileUpload(
-      1L,
-      UUID.randomUUID,
-      "contentType",
-      "name",
-      10000L,
-      10000L,
-      100L)
+    class TestTextExtractor(foundFileUpload: Option[GroupedFileUpload], extractedText: String) extends TextExtractor with TextExtractorComponents {
+      override val dataStore = smartMock[DataStore]
+      override val pdfProcessor = smartMock[PdfProcessor]
 
-    val extractedText: String = "Text from PDF"
-
-    val file = GroupedProcessedFile(
-      1L,
-      fileUpload.contentType,
-      "file name",
-      None,
-      Some(extractedText),
-      fileUpload.contentsOid)
-      
-
-    class TestTextExtractor extends TextExtractor with TextExtractorComponents {
-
-      override val dataStore = mock[DataStore]
-      override val pdfProcessor = mock[PdfProcessor]
-
-      dataStore.findFileUpload(fileUpload.id) returns (Some(fileUpload))
-      dataStore.fileContentStream(fileUpload.contentsOid) returns mock[InputStream]
+      dataStore.findFileUpload(any) returns foundFileUpload
+      dataStore.fileContentStream(any) returns mock[InputStream]
 
       pdfProcessor.extractText(any) returns extractedText
 
     }
 
-    "call components" in new ActorSystemContext {
-      val fileHandler = TestActorRef(new TestTextExtractor)
+    trait UploadSetup extends ActorSystemContext with Before {
+      val documentSetId = 1l
+      
+      val fileUploadId = 1l
+      val contentsOid = 10l
+      val extractedText: String = "Text from PDF"
+
+      var fileHandler: TestActorRef[TestTextExtractor] = _
+      val foundFileUpload: Option[GroupedFileUpload]
+
+      def before = {
+        fileHandler = TestActorRef(new TestTextExtractor(foundFileUpload, extractedText))
+      }
+    }
+
+    trait ValidUpload extends UploadSetup {
+      val fileUpload = smartMock[GroupedFileUpload]
+      fileUpload.id returns fileUploadId
+      fileUpload.contentsOid returns contentsOid
+
+      override val foundFileUpload = Some(fileUpload)
+
+    }
+
+    trait CancelledUpload extends UploadSetup {
+      override val foundFileUpload = None
+    }
+
+    "call components" in new ValidUpload {
 
       val dataStore = fileHandler.underlyingActor.dataStore
       val pdfProcessor = fileHandler.underlyingActor.pdfProcessor
 
-      fileHandler ! ExtractText(0L, fileUpload.id)
+      fileHandler ! ExtractText(documentSetId, fileUploadId)
 
-      there was one(dataStore).findFileUpload(fileUpload.id)
-      there was one(dataStore).fileContentStream(fileUpload.contentsOid)
+      there was one(dataStore).findFileUpload(fileUploadId)
+      there was one(dataStore).fileContentStream(contentsOid)
 
       there was one(pdfProcessor).extractText(any)
       there was one(dataStore).storeFile(any) // can't check against file for some reason
     }
 
-    "send JobDone to sender" in new ActorSystemContext {
-      val documentSetId = 1l
-      val fileHandler = TestActorRef(new TestTextExtractor)
+    "send JobDone to sender" in new ValidUpload {
 
-      fileHandler ! ExtractText(documentSetId, fileUpload.id)
-
+      fileHandler ! ExtractText(documentSetId, fileUploadId)
       expectMsg(JobDone(documentSetId))
     }
-    
-    "die after job is done" in new ActorSystemContext {
+
+    "die after job is done" in new ValidUpload {
       val deathWatcher = TestProbe()
-      
-      val documentSetId = 1l
-      val fileHandler = TestActorRef(new TestTextExtractor)
+
       deathWatcher.watch(fileHandler)
+
+      fileHandler ! ExtractText(documentSetId, fileUploadId)
+
+      deathWatcher.expectMsgType[Terminated].actor must be(fileHandler)
+    }
+    
+    "ignore cancelled uploads" in new CancelledUpload {
+      val storage = fileHandler.underlyingActor.dataStore
       
-      fileHandler ! ExtractText(documentSetId, fileUpload.id)
+      fileHandler ! ExtractText(documentSetId, fileUploadId)
       
-      deathWatcher.expectMsgType[Terminated].actor must be(fileHandler) 
+      there was no(storage).fileContentStream(any)
+      expectMsg(JobDone(documentSetId))
     }
   }
 }
