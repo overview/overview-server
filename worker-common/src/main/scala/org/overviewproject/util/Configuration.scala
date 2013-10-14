@@ -32,11 +32,13 @@ object WorkerDefaults extends ConfigurationDefault {
   val MaxDocuments: String = "max_documents"
   val MaxInFlightRequests: String = "max_inflight_requests"
   val PageSize: String = "page_size"
+  val ClusteringAlg: String = "clustering_alg"
 
   override def defaultValues: Map[String, Any] = Map(
     (MaxDocuments -> 50000),
     (PageSize -> 50),
-    (MaxInFlightRequests -> 4))
+    (MaxInFlightRequests -> 4),
+    (ClusteringAlg -> "KMeansComponents"))
 }
 
 object MessageQueueDefaults extends ConfigurationDefault {
@@ -76,6 +78,7 @@ class WorkerConfiguration(configuration: Config) {
   val maxDocuments: Int = configuration.getInt(MaxDocuments)
   val maxInFlightRequests = configuration.getInt(MaxInFlightRequests)
   val pageSize: Int = configuration.getInt(PageSize)
+  val clusteringAlg : String = configuration.getString(ClusteringAlg)
 }
 
 class MessageQueueConfiguration(configuration: Config) {
@@ -115,6 +118,7 @@ object Configuration extends ConfigurationWithDefaults {
   val maxDocuments = globalConfig.maxDocuments
   val pageSize = globalConfig.pageSize
   val maxInFlightRequests = globalConfig.maxInFlightRequests
+  val clusteringAlg = globalConfig.clusteringAlg
 
   val messageQueue = new MessageQueueConfiguration(configuration)
   val searchIndex = new SearchIndexConfiguration(configuration)

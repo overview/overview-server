@@ -24,7 +24,8 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   
   private val cc = new ConnectedComponentsDocuments(docVecs)
 
-  // Expand out the nodes of the tree by thresholding the documents in each and seeing if they split into components
+  // Each node of the tree is a connected component. 
+  // Threshold edges to specified level, to break each component into child components
   // Returns new set of leaf nodes
   private def ExpandTree(currentLeaves: List[DocTreeNode], thresh: Double) = {
     var nextLeaves = List[DocTreeNode]()
@@ -33,16 +34,12 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
 
       val childComponents = cc.allComponents(node.docs, thresh)
 
-      if (childComponents.size == 1) {
-        // lower threshold did not split this component, pass unchanged to next level
-        nextLeaves = node :: nextLeaves
-      } else {
-        // lower threshold did split this component, create a child TreeNode for each resulting component
-        for (component <- childComponents) {
-          val newLeaf = new DocTreeNode(component)
-          node.children += newLeaf
-          nextLeaves = newLeaf :: nextLeaves
-        }
+      // lower threshold did split this component, create a child TreeNode for each resulting component
+      for (component <- childComponents) {
+        val newLeaf = new DocTreeNode(component)
+        newLeaf.description = s"[$thresh] "
+        node.children += newLeaf
+        nextLeaves = newLeaf :: nextLeaves
       }
     }
 
@@ -58,11 +55,13 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     var currentLeaves = List(root)
 
     breakable {
-      for (curStep <- 1 to threshSteps.size - 2) {
+      for (curStep <- 1 to threshSteps.size - 1) {
         if (progAbort(Progress(curStep / numSteps, ClusteringLevel(curStep + 1)))) break
         currentLeaves = ExpandTree(currentLeaves, threshSteps(curStep))
       }
     }
+
+/* Don't do single document leaves - they add massive overhead to tree and don't help user
 
     // bottom level thresh=0.0 is one leaf node for each document
     if (!progAbort(Progress((numSteps - 1) / numSteps, ClusteringLevel(numSteps.toInt)))) {
@@ -71,13 +70,13 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
           node.children = node.docs.map(item => new DocTreeNode(Set(item)))
       }
     }   
+*/
   }
    
   // Steps distance thresh along given sequence. First step must always be 1 = full graph, 0 must always be last = leaves
   def BuildTree(root:DocTreeNode, threshSteps: Seq[Double], progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     require(threshSteps.head == 1.0)
-    require(threshSteps.last == 0.0)
-    require(threshSteps.forall(step => step >= 0 && step <= 1.0))
+    require(threshSteps.forall(step => step > 0 && step <= 1.0))
 
     // root thresh=1.0 is one node with all documents
     progAbort(Progress(0, ClusteringLevel(1)))
@@ -103,7 +102,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
   // this entry encapsulates default parameters and usage
   def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     // By default: step down in roughly 0.1 increments
-    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
+    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
 
     // Use edge sampling if docset is large enough, with hard-coded number of samples
     // Random graph connectivity arguments suggest num samples does not need to scale with docset size
@@ -148,7 +147,7 @@ class HybridDocTreeBuilder(protected val docVecs: DocumentSetVectors) {
   
   // here we do not recurse as the connected component splitter always goes down to the leaves
   private def splitCC(node:DocTreeNode, progAbort:ProgressAbortFn) : Unit = {
-    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0)
+    val threshSteps = List(1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
     val tree = cc.buildNodeSubtree(node, threshSteps, progAbort) // actually build the tree!
   }
   
