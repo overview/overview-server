@@ -44,13 +44,17 @@ object BuildDocTree {
     val builder = new KMeansComponentsDocTreeBuilder(docVecs, arity)
     builder.BuildTree(root, progAbort) // actually build the tree!
   }
-  
+
+  def applyConnectedComponents(root:DocTreeNode, docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
+    (new ConnectedComponentDocTreeBuilder(docVecs)).applyConnectedComponents(root, docVecs, progAbort)
+  }
    
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
 
     //applyKMeans(nonEmptyDocs, docVecs, progAbort)             // experimental
     applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
+    //applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
         
     SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node
     
