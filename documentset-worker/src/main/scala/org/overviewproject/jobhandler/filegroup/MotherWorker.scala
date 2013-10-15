@@ -3,10 +3,9 @@ package org.overviewproject.jobhandler.filegroup
 import scala.collection.mutable.{ Map, Queue }
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.{ DocumentSetCreationJobFinder, GroupedProcessedFileFinder, FileGroupFinder, GroupedFileUploadFinder }
-import org.overviewproject.database.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import org.overviewproject.database.orm.finders._
+import org.overviewproject.database.orm.stores._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
@@ -19,6 +18,7 @@ import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
 import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
+
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -130,6 +130,8 @@ trait MotherWorker extends Actor {
 }
 
 object MotherWorker {
+  import org.overviewproject.postgres.SquerylEntrypoint._
+
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
     override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = FileGroupMessageHandler(jobMonitor)
 
@@ -155,8 +157,17 @@ object MotherWorker {
           DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
         }
 
-      override def deleteDocumentSetData(fileGroupId: Long): Unit = ???
-      override def deleteFileGroupData(fileGroupId: Long): Unit = ???
+      override def deleteDocumentSetData(fileGroupId: Long): Unit = Database.inTransaction {
+        DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption.map { job =>
+          DocumentSetStore.delete(job.documentSetId)
+          DocumentSetCreationJobStore.delete(job.id)
+        }
+      }
+      
+      override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
+        GroupedFileUploadStore.deleteUnprocessedUploadsAndContents(fileGroupId)
+        GroupedProcessedFileStore.deleteWithContentsByFileGroup(fileGroupId)
+      }
 
     }
   }
