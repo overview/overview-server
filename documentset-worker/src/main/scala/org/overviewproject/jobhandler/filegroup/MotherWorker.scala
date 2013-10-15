@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
-import scala.collection.mutable.{ Map, Queue }
+import scala.collection.mutable.{ ArrayBuffer, Map, Queue }
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.Database
@@ -18,7 +18,6 @@ import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
 import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
-
 
 object MotherWorkerProtocol {
   sealed trait Command
@@ -62,6 +61,7 @@ trait MotherWorker extends Actor {
   private val freeWorkers = Queue.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
   private val busyWorkers = Map.empty[ActorRef, ProcessFileCommand]
   private val workQueue = Queue.empty[ProcessFileCommand]
+  private val cancelledJobs = ArrayBuffer.empty[Long]
 
   freeWorkers.foreach(context.watch)
 
@@ -77,8 +77,12 @@ trait MotherWorker extends Actor {
 
     case CancelProcessing(fileGroupId) => {
       workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
-      storage.deleteDocumentSetData(fileGroupId)
-      storage.deleteFileGroupData(fileGroupId)
+      if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
+        cancelledJobs += fileGroupId
+      else {
+        storage.deleteDocumentSetData(fileGroupId)
+        storage.deleteFileGroupData(fileGroupId)
+      }
     }
 
     case command: ProcessFileCommand => {
@@ -87,9 +91,17 @@ trait MotherWorker extends Actor {
     }
 
     case JobDone(fileGroupId) => {
-      submitCompleteJob(fileGroupId)
-
       setFree(sender)
+
+      if (cancelledJobs.exists(_ == fileGroupId)) {
+        if (!busyWorkers.exists(w => w._2.fileGroupId == fileGroupId)) {
+          cancelledJobs -= fileGroupId
+          storage.deleteDocumentSetData(fileGroupId)
+          storage.deleteFileGroupData(fileGroupId)
+        }
+      } else {
+        submitCompleteJob(fileGroupId)
+      }
 
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
@@ -163,7 +175,7 @@ object MotherWorker {
           DocumentSetCreationJobStore.delete(job.id)
         }
       }
-      
+
       override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
         GroupedFileUploadStore.deleteUnprocessedUploadsAndContents(fileGroupId)
         GroupedProcessedFileStore.deleteWithContentsByFileGroup(fileGroupId)

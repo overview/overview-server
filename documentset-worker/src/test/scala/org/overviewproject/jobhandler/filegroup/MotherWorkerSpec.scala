@@ -18,6 +18,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.
 import org.specs2.mutable.Before
 import org.specs2.time.NoTimeConversions
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelProcessing
+import org.specs2.execute.PendingUntilFixed
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   def receive = {
@@ -292,12 +293,32 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 
-    "wait for running jobs to complete before deleting stored data" in {
-      skipped
-    }
+    "wait for running jobs to complete before deleting stored data" in new ActorSystemContext {
+      val jobMonitorProbe = TestProbe()
+      val daughters = Seq.fill(2)(TestActorRef(new WaitingDaughter(jobMonitorProbe.ref)))
+      val motherWorker = TestActorRef(new TestMotherWorker(daughters))
+      val storage = motherWorker.underlyingActor.storage
+      val cancelledFileGroupId = 2l
 
-    "ignore JobDone messages for unknown jobs" in {
-      skipped
+
+      val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
+
+      commandsToCancel.foreach(motherWorker ! _)
+      motherWorker ! CancelProcessing(cancelledFileGroupId)
+      
+      there was no(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was no(storage).deleteFileGroupData(cancelledFileGroupId)
+      
+      daughters(0) ! "Finish job"
+      jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
+      there was no(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was no(storage).deleteFileGroupData(cancelledFileGroupId)
+      
+      daughters(1) ! "Finish job"
+      jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
+      Thread.sleep(10) // Mockito does not work well in a multi-threaded environment. We need to find a better way.
+      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 
   }
