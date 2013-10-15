@@ -52,7 +52,8 @@ class ConnectedComponentDocTreeBuilderSpec extends Specification {
                            0.2,     // no change
                            0.1)     // split 34 => 3,4
     
-    val tree = new ConnectedComponentDocTreeBuilder(docSet).BuildFullTree(threshSteps)
+    val minComponentSize = 0
+    val tree = new ConnectedComponentDocTreeBuilder(docSet).BuildFullTree(threshSteps, minComponentSize)
     
     // Check that the tree has the structure in the diagram above 
     tree.toString must beEqualTo("(1,2,3,4,5, (1,2,3,4,5, (3,4,5, (3,4, (3,4, (3,4))), (5, (5, (5)))), (1,2, (1,2, (1,2, (1,2))))))")
