@@ -306,18 +306,16 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       commandsToCancel.foreach(motherWorker ! _)
       motherWorker ! CancelProcessing(cancelledFileGroupId)
       
-      there was no(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)
       
       daughters(0) ! "Finish job"
       jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
-      there was no(storage).deleteDocumentSetData(cancelledFileGroupId)
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)
       
       daughters(1) ! "Finish job"
       jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
       Thread.sleep(10) // Mockito does not work well in a multi-threaded environment. We need to find a better way.
-      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 

@@ -77,10 +77,11 @@ trait MotherWorker extends Actor {
 
     case CancelProcessing(fileGroupId) => {
       workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
+      storage.deleteDocumentSetData(fileGroupId)
+
       if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
         cancelledJobs += fileGroupId
       else {
-        storage.deleteDocumentSetData(fileGroupId)
         storage.deleteFileGroupData(fileGroupId)
       }
     }
@@ -96,7 +97,6 @@ trait MotherWorker extends Actor {
       if (cancelledJobs.exists(_ == fileGroupId)) {
         if (!busyWorkers.exists(w => w._2.fileGroupId == fileGroupId)) {
           cancelledJobs -= fileGroupId
-          storage.deleteDocumentSetData(fileGroupId)
           storage.deleteFileGroupData(fileGroupId)
         }
       } else {
