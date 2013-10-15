@@ -27,6 +27,7 @@ object MotherWorkerProtocol {
     title: String,
     lang: String,
     suppliedStopWords: String) extends Command
+  case class CancelProcessing(fileGroupId: Long) extends Command
 }
 
 trait FileGroupJobHandlerComponent {
@@ -71,6 +72,10 @@ trait MotherWorker extends Actor {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
       submitCompleteJob(fileGroupId)
 
+    case CancelProcessing(fileGroupId) => {
+      workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
+    }
+    
     case command: ProcessFileCommand => {
       if (!freeWorkers.isEmpty) startWork(command)
       else workQueue.enqueue(command)
@@ -84,7 +89,7 @@ trait MotherWorker extends Actor {
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
     
-    case Terminated(w) => {
+    case Terminated(w) => { 
       val newWorker = context.actorOf(createFileGroupMessageHandler(self))
       freeWorkers.enqueue(newWorker)
       freeWorkers.dequeueAll(_ == w)

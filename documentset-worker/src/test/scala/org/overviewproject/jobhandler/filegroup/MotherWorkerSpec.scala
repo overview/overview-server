@@ -17,6 +17,7 @@ import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 import org.specs2.mutable.Before
 import org.specs2.time.NoTimeConversions
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelProcessing
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   def receive = {
@@ -25,27 +26,49 @@ class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   }
 }
 
-class FailureGenerator {
-  var failedOnce = false
 
-  def possiblyFail: Unit =
-    if (!failedOnce) {
-      failedOnce = true
-      throw new Exception("fail")
-    }
-}
-class FailingDaughter(jobMonitor: ActorRef, failureGenerator: FailureGenerator) extends Actor {
-  override def preRestart(reason: Throwable, message: Option[Any]) = println("------> pre restart")
-  override def postRestart(reason: Throwable) = println("-----> post rersyr")
-
+class FailingDaughter(jobMonitor: ActorRef, failOnMessage: Boolean) extends Actor {
   def receive = {
     case ProcessFileCommand(fileGroupId, uploadId) => {
-      allCatch either failureGenerator.possiblyFail fold (
-        _ => context.stop(self), // FIXME: akka-2.2 will allow us to suppress the logs from exception. For now just die without throwing
-        _ => jobMonitor ! JobDone(fileGroupId)
-      ) 
+      if (failOnMessage) context.stop(self)
+      else jobMonitor ! JobDone(fileGroupId)
     }
   }
+}
+
+class WaitingDaughter(jobMonitorProbe: ActorRef) extends Actor with FSM[String, (Long, Option[ActorRef])] {
+  private val Idle = "Idle"
+  private val Working = "Working"
+  private val FinishAtOnce = "FinishAtOnce"
+
+  startWith("Idle", (0, None))
+
+  when(Idle) {
+    case Event(ProcessFileCommand(fileGroupId, _), _) =>
+      goto(Working) using (fileGroupId, Some(sender))
+    case Event(_, _) =>
+      goto(FinishAtOnce) using (0, None)
+  }
+
+  when(FinishAtOnce) {
+    case Event(ProcessFileCommand(fileGroupId, _), _) => {
+      sender ! JobDone(fileGroupId)
+      jobMonitorProbe ! JobDone(fileGroupId)
+
+      goto(Idle) using (0, None)
+    }
+
+  }
+  when(Working) {
+    case Event(_, (fileGroupId, jobMonitorProxy)) => {
+      jobMonitorProxy.get ! JobDone(fileGroupId)
+      jobMonitorProbe ! JobDone(fileGroupId)
+
+      goto(Idle) using (0, None)
+    }
+  }
+
+  initialize
 
 }
 
@@ -64,16 +87,23 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
     def numberOfChildren: Int = context.children.size
 
-    override val storage = mock[Storage]
+    override val storage = smartMock[Storage]
   }
 
   class MotherWorkerWithFailingDaughter(jobMonitorProbe: ActorRef) extends MotherWorker with FileGroupJobHandlerComponent {
-    val failureGenerator = new FailureGenerator
+    private var daughterCount = 0
 
-    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props =
-      Props(new FailingDaughter(jobMonitorProbe, failureGenerator))
+    override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = {
+      daughterCount += 1
+      val failOnMessage = (daughterCount == 1)
+      Props(new FailingDaughter(jobMonitorProbe, failOnMessage))
+    }
+      
 
-    override val storage = mock[Storage]
+    override val storage = smartMock[Storage]
+    storage.countFileUploads(any) returns 10
+    storage.countProcessedFiles(any) returns 5
+    
     def numberOfChildren: Int = context.children.size
   }
 
@@ -92,12 +122,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       var motherWorker: TestActorRef[TestMotherWorker] = _
 
       def storage = motherWorker.underlyingActor.storage
-      def createFileGroup(state: FileJobState): FileGroup = {
-        val fileGroup = mock[FileGroup]
-        fileGroup.id returns fileGroupId
-        fileGroup.state returns state
-        fileGroup.userEmail returns userEmail
-      }
 
       def before = {
         daughters = Seq.fill(2)(TestProbe())
@@ -216,9 +240,6 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
       there was one(storage).submitDocumentSetCreationJob(documentSetCreationJob)
     }
-  }
-
-  "MotherWorker with failing daughters" should {
 
     "requeue command failing daughter was processing" in new ActorSystemContext {
       val jobMonitor = TestProbe()
@@ -229,5 +250,45 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       motherWorker ! command
       jobMonitor.expectMsg(JobDone(fileGroupId))
     }
+
+    "remove queued commands" in new ActorSystemContext {
+      val jobMonitorProbe = TestProbe()
+      val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
+      val motherWorker = TestActorRef(new TestMotherWorker(daughters))
+      val storage = motherWorker.underlyingActor.storage
+      val runningFileGroupId = 1l
+      val cancelledFileGroupId = 2l
+
+      storage.countFileUploads(runningFileGroupId) returns 10
+      storage.countProcessedFiles(runningFileGroupId) returns 5
+
+      val runningCommands = Seq.tabulate(4)(n => ProcessFileCommand(runningFileGroupId, n))
+      val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
+
+      val commandSequence = runningCommands.take(2) ++ commandsToCancel ++ runningCommands.drop(2)
+
+      commandSequence.foreach(motherWorker ! _)
+      motherWorker ! CancelProcessing(cancelledFileGroupId)
+
+      daughters(0) ! "finish running job"
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
+      daughters(0) ! "finish job sent after cancellation"
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
+
+    }
+
+    "delete stored data" in {
+      skipped
+    }
+
+    "wait for running jobs to complete before deleting stored data" in {
+      skipped
+    }
+
+    "ignore JobDone messages for unknown jobs" in {
+      skipped
+    }
+
   }
+
 }
