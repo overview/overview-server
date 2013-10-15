@@ -10,6 +10,11 @@ define [
     view = undefined
     uploadViewRenderSpy = undefined
 
+    MockUpload = Backbone.Model.extend(
+      isFullyUploaded: ->
+        @get('isFullyUploaded')
+    )
+
     mockFileInput = ->
       # A file input can't have its "files" attribute set. But we need
       # to mock that, so we'll replace it with a div.
@@ -23,11 +28,14 @@ define [
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
+        'views.DocumentSet._massUploadForm.cancel': 'cancel'
 
       uploadViewClass = Backbone.View.extend(tagName: 'li')
       uploadViewRenderSpy = spyOn(uploadViewClass.prototype, 'render').andCallThrough()
       model = new Backbone.Model
       model.uploads = new Backbone.Collection
+      model.removeUpload = jasmine.createSpy()
+
       view = new MassUploadForm
         model: model
         uploadViewClass: uploadViewClass
@@ -107,19 +115,52 @@ define [
         expect($fileInput[0].value).toEqual('')
 
     describe 'buttons', ->
-      it 'has an add files button', ->
+      beforeEach ->
         view.render()
+
+      it 'has an add files button', ->
         expect(view.$el.text()).toMatch(/upload_prompt/)
 
       describe 'choose options button', ->
         it 'has a "finished selecting files" button', ->
-          view.render()
           expect(view.$('.choose-options').length).toEqual(1)
           expect(view.$el.text()).toMatch(/choose_options/)
 
         it 'is disabled with no files selected', ->
-          view.render()
           expect(view.$('.choose-options')).toBeDisabled()
+
+      describe 'cancel button', ->
+        it 'has a cancel button with the correct message', ->
+          expect(view.$('.cancel').length).toEqual(1)
+          expect(view.$el.text()).toMatch(/cancel/)
+
+        it 'removes files in the correct way', ->
+          model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
+          model.uploads.add(new MockUpload(status: 'uploading'))
+          model.uploads.add(new MockUpload(status: 'waiting'))
+          view.$('.cancel').click()
+          expect(model.removeUpload).toHaveBeenCalled()
+
+        it 're-renders and resets the collection', ->
+          # this is necessary because removeUpload leaves things in a weird state
+          # eventually this should be fixed.
+          spyOn(view.model.uploads, 'reset')
+          view.$('.cancel').click()
+          expect(view.model.uploads.reset).toHaveBeenCalled()
+
+        # Don't do this yet, since it's not clear that it's needed.
+        #
+        # it 'sends a cancel message to the server', ->
+        #   clearAjaxRequests()
+        #   view.$('.cancel').click()
+        #   request = mostRecentAjaxRequest()
+        #   expect(request.method).toEqual('POST')
+        #   expect(request.url).toEqual('/files/cancel')
+
+        it 'returns to the document sets pane', ->
+          spyOn(view, 'setHash')
+          view.$('.cancel').click()
+          expect(view.setHash).toHaveBeenCalledWith('')
 
     describe 'form submission', ->
       submitSpy = undefined

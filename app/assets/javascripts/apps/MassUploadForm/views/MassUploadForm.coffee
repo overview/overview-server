@@ -23,6 +23,9 @@ define [
         </button>
       </div>
       <ul class='files'></ul>
+      <button type='button' class='cancel btn'>
+        <%- t('cancel') %>
+      </button>
       ''')
 
     events:
@@ -30,6 +33,7 @@ define [
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
       'click .choose-options': '_requestOptions'
+      'click .cancel': '_cancel'
 
     initialize: ->
       throw 'Must set uploadViewClass, a Backbone.View' if !@options.uploadViewClass?
@@ -46,6 +50,9 @@ define [
     render: ->
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
+
+    setHash: (hash) ->
+      window.location.hash = hash  #for testability
 
     _addFiles: ->
       fileInput = @$el.find('.invisible-file-input')[0]
@@ -90,3 +97,12 @@ define [
         @optionsSet
       )
         @$el.closest('form').submit()
+
+    _cancel: ->
+      @model.uploads.each (upload) =>
+        @model.removeUpload(upload)
+
+      @model.uploads.reset()
+      @render()
+      @finishEnabled = false
+      @setHash('')
