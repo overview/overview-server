@@ -77,6 +77,7 @@ trait MotherWorker extends Actor {
       submitCompleteJob(fileGroupId)
 
     case CancelUploadWithDocumentSetCommand(documentSetId) => {
+      Logger.info(s"Cancelling document set ${documentSetId}")
       for {
         job <- storage.findUploadingJobWithDocumentSet(documentSetId)
         fileGroupId <- job.fileGroupId
