@@ -102,6 +102,7 @@ define [
       @model.uploads.each (upload) =>
         @model.removeUpload(upload)
 
+      $.ajax('/files', type: 'DELETE')
       @model.uploads.reset()
       @render()
       @finishEnabled = false

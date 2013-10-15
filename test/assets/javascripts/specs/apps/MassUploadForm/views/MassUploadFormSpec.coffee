@@ -134,7 +134,9 @@ define [
           expect(view.$('.cancel').length).toEqual(1)
           expect(view.$el.text()).toMatch(/cancel/)
 
-        it 'removes files in the correct way', ->
+        it 'removes files in the "correct" way', ->
+          # in the future, we should only remove un-uploaded files this way,
+          # since we don't want to delete them off the server one-by-one
           model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
           model.uploads.add(new MockUpload(status: 'uploading'))
           model.uploads.add(new MockUpload(status: 'waiting'))
@@ -148,14 +150,12 @@ define [
           view.$('.cancel').click()
           expect(view.model.uploads.reset).toHaveBeenCalled()
 
-        # Don't do this yet, since it's not clear that it's needed.
-        #
-        # it 'sends a cancel message to the server', ->
-        #   clearAjaxRequests()
-        #   view.$('.cancel').click()
-        #   request = mostRecentAjaxRequest()
-        #   expect(request.method).toEqual('POST')
-        #   expect(request.url).toEqual('/files/cancel')
+        it 'sends a cancel message to the server', ->
+          clearAjaxRequests()
+          view.$('.cancel').click()
+          request = mostRecentAjaxRequest()
+          expect(request.method).toEqual('DELETE')
+          expect(request.url).toEqual('/files')
 
         it 'returns to the document sets pane', ->
           spyOn(view, 'setHash')
