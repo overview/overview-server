@@ -44,13 +44,13 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
    */
   def deleteOrCancelJob(documentSet: Long): Unit = {
     deleteOrCancelPendingClones(documentSet)
-
+    
     DocumentSetCreationJobFinder.byDocumentSet(documentSet).forUpdate.headOption match {
       case Some(job) =>
         if (job.state == DocumentSetCreationJobState.InProgress || job.state == DocumentSetCreationJobState.Cancelled) {
           DocumentSetCreationJobStore.cancel(job)
           deleteClientGeneratedInformation(documentSet)
-        } else {
+        } else if (job.state != DocumentSetCreationJobState.Preparing) { // Preparing state handled by worker
           DocumentSetCreationJobStore.deletePending(job)
           deleteAssumingJobDoesNotExist(documentSet)
         }

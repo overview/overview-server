@@ -1,16 +1,15 @@
 package controllers
 
 import play.api.mvc.Controller
-
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
-
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.util.JobQueueSender
 import models.ResultPage
 import models.orm.finders.{DocumentSetCreationJobFinder, DocumentSetFinder}
 import models.orm.stores.DocumentSetStore
+import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
 
 
 
@@ -67,8 +66,10 @@ trait DocumentSetController extends Controller {
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
     val m = views.Magic.scopedMessages("controllers.DocumentSetController")
+    
+    // FIXME: Move all deletion to worker and remove database access here
     storage.findDocumentSet(id).map(storage.deleteDocumentSet) // ignore not-found
-
+    JobQueueSender.send(CancelUploadWithDocumentSet(id))
     JobQueueSender.send(Delete(id))
     Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m("delete.success"),

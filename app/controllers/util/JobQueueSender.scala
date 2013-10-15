@@ -12,6 +12,7 @@ import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 import org.overviewproject.jobs.models.StartClustering
 import org.overviewproject.jobs.models.StartClustering
+import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -65,7 +66,7 @@ object JobQueueSender {
   }
 
   /**
-   * Send a `StartClustering` message to the Clusterin message queue.
+   * Send a `StartClustering` message to the Clustering message queue.
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
   def send(startClustering: StartClustering): Either[Unit, Unit] = {
@@ -78,6 +79,18 @@ object JobQueueSender {
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("start_clustering"),
       "args" -> toJson(startClustering)))
+
+    sendMessageToClusteringQueue(jsonMessage)
+  }
+
+  /**
+   * Send a `CancelUploadWithDocumentSet` message to the Clustering message queue.
+   */
+  def send(cancelUpload: CancelUploadWithDocumentSet): Either[Unit, Unit] = {
+    val jsonMessage = toJson(Map(
+      "cmd" -> toJson("cancel_upload_with_document_set"),
+      "args" -> toJson(Map(
+        "documentSetId" -> cancelUpload.documentSetId))))
 
     sendMessageToClusteringQueue(jsonMessage)
   }
