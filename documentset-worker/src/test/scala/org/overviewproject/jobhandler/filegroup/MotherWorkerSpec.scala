@@ -301,7 +301,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
 
-      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was one(storage).deleteDocumentSetData(documentSetCreationJob)
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 
@@ -324,7 +324,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       commandsToCancel.foreach(motherWorker ! _)
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
       
-      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was one(storage).deleteDocumentSetData(documentSetCreationJob)
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)
       
       daughters(0) ! "Finish job"

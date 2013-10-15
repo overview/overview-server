@@ -41,7 +41,7 @@ trait FileGroupJobHandlerComponent {
 
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
 
-    def deleteDocumentSetData(fileGroupId: Long): Unit
+    def deleteDocumentSetData(documentSetCreationJob: DocumentSetCreationJob): Unit
     def deleteFileGroupData(fileGroupId: Long): Unit
   }
 }
@@ -78,11 +78,12 @@ trait MotherWorker extends Actor {
 
     case CancelUploadWithDocumentSetCommand(documentSetId) => {
       for {
-        job <- storage.findUploadingJobWithDocumentSet(documentSetId) 
+        job <- storage.findUploadingJobWithDocumentSet(documentSetId)
         fileGroupId <- job.fileGroupId
       } {
+        storage.deleteDocumentSetData(job)
+
         workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
-        storage.deleteDocumentSetData(fileGroupId)
 
         if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
           cancelledJobs += fileGroupId
@@ -150,7 +151,7 @@ trait MotherWorker extends Actor {
 object MotherWorker {
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-  
+
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
     override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = FileGroupMessageHandler(jobMonitor)
 
@@ -180,11 +181,9 @@ object MotherWorker {
           DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
         }
 
-      override def deleteDocumentSetData(fileGroupId: Long): Unit = Database.inTransaction {
-        DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption.map { job =>
-          DocumentSetStore.delete(job.documentSetId)
-          DocumentSetCreationJobStore.delete(job.id)
-        }
+      override def deleteDocumentSetData(documentSetCreationJob: DocumentSetCreationJob): Unit = Database.inTransaction {
+        DocumentSetStore.delete(documentSetCreationJob.documentSetId)
+        DocumentSetCreationJobStore.delete(documentSetCreationJob.id)
       }
 
       override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
