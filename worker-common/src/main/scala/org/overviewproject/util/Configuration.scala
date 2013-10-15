@@ -90,7 +90,8 @@ object Configuration extends ConfigurationKeys(ConfigFactory.load()) {
     ("page_size" -> 50),
     ("max_inflight_requests" -> 4),
     ("clustering_alg" -> "KMeansComponents"),
-    ("min_connected_component_size" -> 10))
+    ("min_connected_component_size" -> 10),
+    ("sampled_edges_per_document" -> 200))
 
   val messageQueue = new MessageQueueConfig(myConfig)
   val searchIndex = new SearchIndexConfig(myConfig)

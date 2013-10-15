@@ -110,7 +110,7 @@ class ConnectedComponentDocTreeBuilder(protected val docVecs: DocumentSetVectors
     // Use edge sampling if docset is large enough, with hard-coded number of samples
     // Random graph connectivity arguments suggest num samples does not need to scale with docset size
     val numDocsWhereSamplingHelpful = 10000
-    val numSampledEdgesPerDoc = 200
+    val numSampledEdgesPerDoc = Configuration.getInt("sampled_edges_per_document")
 
     if (docVecs.size > numDocsWhereSamplingHelpful)
       sampleCloseEdges(numSampledEdgesPerDoc, 0.8) // use sampled edges if the docset is large
