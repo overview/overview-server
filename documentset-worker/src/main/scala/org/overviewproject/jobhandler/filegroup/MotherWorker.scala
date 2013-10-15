@@ -81,6 +81,7 @@ trait MotherWorker extends Actor {
         job <- storage.findUploadingJobWithDocumentSet(documentSetId)
         fileGroupId <- job.fileGroupId
       } {
+        Logger.info(s"Cancelling job ${job.id}")
         storage.deleteDocumentSetData(job)
 
         workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
@@ -182,13 +183,16 @@ object MotherWorker {
         }
 
       override def deleteDocumentSetData(documentSetCreationJob: DocumentSetCreationJob): Unit = Database.inTransaction {
-        DocumentSetStore.delete(documentSetCreationJob.documentSetId)
+        val documentSetId = documentSetCreationJob.documentSetId
         DocumentSetCreationJobStore.delete(documentSetCreationJob.id)
+        DocumentSetUserStore.delete(DocumentSetUserFinder.byDocumentSet(documentSetId).toQuery)
+        DocumentSetStore.delete(documentSetId)
       }
 
       override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
         GroupedFileUploadStore.deleteUnprocessedUploadsAndContents(fileGroupId)
         GroupedProcessedFileStore.deleteWithContentsByFileGroup(fileGroupId)
+        FileGroupStore.delete(fileGroupId)
       }
 
     }

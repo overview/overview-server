@@ -9,9 +9,10 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 object GroupedFileUploadStore extends BaseStore(Schema.groupedFileUploads) {
 
   def deleteUnprocessedUploadsAndContents(fileGroupId: Long): Int = {
-    val query = from(Schema.groupedFileUploads, Schema.groupedProcessedFiles)((u, f) =>
-      where(u.fileGroupId === fileGroupId and u.contentsOid === f.contentsOid)
-        select (u))
+    val query = join(Schema.groupedFileUploads, Schema.groupedProcessedFiles)((u, f) =>
+      where(u.fileGroupId === fileGroupId)
+        select (u)
+        on (u.contentsOid === f.contentsOid))
 
     from(query)(u =>
       select(&(lo_unlink(Some(u.contentsOid)))))
