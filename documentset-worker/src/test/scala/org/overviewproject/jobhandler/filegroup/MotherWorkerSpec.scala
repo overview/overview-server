@@ -17,7 +17,7 @@ import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 import org.specs2.mutable.Before
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelProcessing
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelUploadWithDocumentSetCommand
 import org.specs2.execute.PendingUntilFixed
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
@@ -252,16 +252,21 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       jobMonitor.expectMsg(JobDone(fileGroupId))
     }
 
-    "remove queued commands" in new ActorSystemContext {
+    "remove queued commands when cancelling job" in new ActorSystemContext {
       val jobMonitorProbe = TestProbe()
       val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
       val motherWorker = TestActorRef(new TestMotherWorker(daughters))
       val storage = motherWorker.underlyingActor.storage
       val runningFileGroupId = 1l
       val cancelledFileGroupId = 2l
-
+      val documentSetId = 10l
+      
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns cancelledFileGroupId
+      
       storage.countFileUploads(runningFileGroupId) returns 10
       storage.countProcessedFiles(runningFileGroupId) returns 5
+      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
 
       val runningCommands = Seq.tabulate(4)(n => ProcessFileCommand(runningFileGroupId, n))
       val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
@@ -269,7 +274,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val commandSequence = runningCommands.take(2) ++ commandsToCancel ++ runningCommands.drop(2)
 
       commandSequence.foreach(motherWorker ! _)
-      motherWorker ! CancelProcessing(cancelledFileGroupId)
+      motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
 
       daughters(0) ! "finish running job"
       jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
@@ -278,33 +283,42 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
     }
 
-    "delete stored data" in new ActorSystemContext {
+    "delete stored data when cancelling job" in new ActorSystemContext {
       val jobMonitorProbe = TestProbe()
       val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
       val motherWorker = TestActorRef(new TestMotherWorker(daughters))
       val storage = motherWorker.underlyingActor.storage
+      val documentSetId = 10l
 
       val cancelledFileGroupId = 2l
 
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns cancelledFileGroupId
+      
+      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
 
-      motherWorker ! CancelProcessing(cancelledFileGroupId)
+      motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
 
       there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 
-    "wait for running jobs to complete before deleting stored data" in new ActorSystemContext {
+    "wait for running jobs to complete before deleting stored data when cancelling job" in new ActorSystemContext {
       val jobMonitorProbe = TestProbe()
       val daughters = Seq.fill(2)(TestActorRef(new WaitingDaughter(jobMonitorProbe.ref)))
       val motherWorker = TestActorRef(new TestMotherWorker(daughters))
       val storage = motherWorker.underlyingActor.storage
+      val documentSetId = 10l
       val cancelledFileGroupId = 2l
 
-
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns cancelledFileGroupId
+      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
+      
       val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
 
       commandsToCancel.foreach(motherWorker ! _)
-      motherWorker ! CancelProcessing(cancelledFileGroupId)
+      motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
       
       there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)

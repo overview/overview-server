@@ -6,14 +6,17 @@ import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
 
 object ConvertClusteringMessage extends ConvertMessage {
   private val StartClusteringCmdMsg = "start_clustering"
+  private val CancelProcessingCmdMsg = "cancel_processing"
 
   private val startClusteringCommandReads = Json.reads[StartClusteringCommand]
+  private val cancelUploadWithDocumentSetCommandReads = Json.reads[CancelUploadWithDocumentSetCommand]
   
   def apply(message: String): Command = {
     val m = getMessage(message)
 
     m.cmd match { 
       case StartClusteringCmdMsg => startClusteringCommandReads.reads(m.args).get
+      case CancelProcessingCmdMsg => cancelUploadWithDocumentSetCommandReads.reads(m.args).get
     }
   }
 }

@@ -26,7 +26,7 @@ object MotherWorkerProtocol {
     title: String,
     lang: String,
     suppliedStopWords: String) extends Command
-  case class CancelProcessing(fileGroupId: Long) extends Command
+  case class CancelUploadWithDocumentSetCommand(documentSetId: Long) extends Command
 }
 
 trait FileGroupJobHandlerComponent {
@@ -36,6 +36,7 @@ trait FileGroupJobHandlerComponent {
   trait Storage {
     def countFileUploads(fileGroupId: Long): Long
     def countProcessedFiles(fileGroupId: Long): Long
+    def findFileGroupWithDocumentSet(documentSetId: Long): Option[FileGroup]
     def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
 
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
@@ -75,15 +76,20 @@ trait MotherWorker extends Actor {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
       submitCompleteJob(fileGroupId)
 
-    case CancelProcessing(fileGroupId) => {
-      workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
-      storage.deleteDocumentSetData(fileGroupId)
+    case CancelUploadWithDocumentSetCommand(documentSetId) => {
+      storage.findFileGroupWithDocumentSet(documentSetId).map { fileGroup =>
 
-      if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
-        cancelledJobs += fileGroupId
-      else {
-        storage.deleteFileGroupData(fileGroupId)
+        workQueue.dequeueAll(c => c.fileGroupId == fileGroup.id)
+        storage.deleteDocumentSetData(fileGroup.id)
+
+        if (busyWorkers.exists(w => w._2.fileGroupId == fileGroup.id))
+          cancelledJobs += fileGroup.id
+        else {
+          storage.deleteFileGroupData(fileGroup.id)
+        }
+
       }
+
     }
 
     case command: ProcessFileCommand => {
@@ -158,6 +164,8 @@ object MotherWorker {
       override def countProcessedFiles(fileGroupId: Long): Long = Database.inTransaction {
         GroupedProcessedFileFinder.byFileGroup(fileGroupId).count
       }
+
+      override def findFileGroupWithDocumentSet(documentSetId: Long): Option[FileGroup] = ???
 
       override def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =
         Database.inTransaction {
