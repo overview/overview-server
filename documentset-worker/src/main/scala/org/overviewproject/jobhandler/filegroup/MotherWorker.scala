@@ -40,6 +40,9 @@ trait FileGroupJobHandlerComponent {
     def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
 
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
+
+    def deleteDocumentSetData(fileGroupId: Long): Unit
+    def deleteFileGroupData(fileGroupId: Long): Unit
   }
 }
 
@@ -61,21 +64,23 @@ trait MotherWorker extends Actor {
   private val workQueue = Queue.empty[ProcessFileCommand]
 
   freeWorkers.foreach(context.watch)
-  
-  override val supervisorStrategy = 
+
+  override val supervisorStrategy =
     OneForOneStrategy(0, Duration.Inf) {
       case _: Exception => Stop
       case _: Throwable => Escalate
-  }
-  
+    }
+
   def receive = {
     case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
       submitCompleteJob(fileGroupId)
 
     case CancelProcessing(fileGroupId) => {
       workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
+      storage.deleteDocumentSetData(fileGroupId)
+      storage.deleteFileGroupData(fileGroupId)
     }
-    
+
     case command: ProcessFileCommand => {
       if (!freeWorkers.isEmpty) startWork(command)
       else workQueue.enqueue(command)
@@ -88,21 +93,20 @@ trait MotherWorker extends Actor {
 
       if (!workQueue.isEmpty) self ! workQueue.dequeue
     }
-    
-    case Terminated(w) => { 
+
+    case Terminated(w) => {
       val newWorker = context.actorOf(createFileGroupMessageHandler(self))
       freeWorkers.enqueue(newWorker)
       freeWorkers.dequeueAll(_ == w)
-      busyWorkers.get(w) map {c => self ! c}
+      busyWorkers.get(w) map { c => self ! c }
       busyWorkers -= w
-      
+
     }
 
   }
 
-
   /** file processing is complete when number of uploads matches number of processed files */
-  private def fileProcessingComplete(fileGroupId: Long): Boolean = 
+  private def fileProcessingComplete(fileGroupId: Long): Boolean =
     storage.countFileUploads(fileGroupId) == storage.countProcessedFiles(fileGroupId)
 
   private def submitCompleteJob(fileGroupId: Long): Unit = {
@@ -150,6 +154,9 @@ object MotherWorker {
         Database.inTransaction {
           DocumentSetCreationJobStore.insertOrUpdate(documentSetCreationJob.copy(state = NotStarted))
         }
+
+      override def deleteDocumentSetData(fileGroupId: Long): Unit = ???
+      override def deleteFileGroupData(fileGroupId: Long): Unit = ???
 
     }
   }

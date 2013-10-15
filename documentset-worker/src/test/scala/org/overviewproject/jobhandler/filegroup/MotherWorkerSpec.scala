@@ -277,8 +277,19 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
     }
 
-    "delete stored data" in {
-      skipped
+    "delete stored data" in new ActorSystemContext {
+      val jobMonitorProbe = TestProbe()
+      val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
+      val motherWorker = TestActorRef(new TestMotherWorker(daughters))
+      val storage = motherWorker.underlyingActor.storage
+
+      val cancelledFileGroupId = 2l
+
+
+      motherWorker ! CancelProcessing(cancelledFileGroupId)
+
+      there was one(storage).deleteDocumentSetData(cancelledFileGroupId)
+      there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
 
     "wait for running jobs to complete before deleting stored data" in {
