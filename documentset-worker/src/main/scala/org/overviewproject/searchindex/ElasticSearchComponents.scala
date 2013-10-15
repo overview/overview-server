@@ -31,7 +31,7 @@ trait ElasticSearchComponents extends SearcherComponents {
 
   class ElasticSearchIndex extends SearchIndex {
 
-    private val IndexName = Configuration.searchIndex.indexName
+    private val IndexName = Configuration.searchIndex.getString("index_name")
     
     private val PageSize = 100
     private val ScrollTime = new TimeValue(60000)

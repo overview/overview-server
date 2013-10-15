@@ -40,7 +40,7 @@ trait DocumentConsumer {
  */
 object DocumentProducerFactory {
   /** The maximum number of documents processed for a document set */
-  private val MaxDocuments = Configuration.maxDocuments
+  private val MaxDocuments = Configuration.getInt("max_documents")
   
   /** Return a DocumentProducer based on the DocumentSet type */
   def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,

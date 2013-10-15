@@ -27,7 +27,7 @@ import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
 class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query: String, credentials: Option[Credentials], maxDocuments: Int, consumer: DocumentConsumer,
   progAbort: ProgressAbortFn) extends DocumentProducer with PersistentDocumentSet {
 
-  private val MaxInFlightRequests = Configuration.maxInFlightRequests
+  private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"

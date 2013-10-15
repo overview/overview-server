@@ -11,9 +11,9 @@ class ApolloMessageService(override val queueName: String) extends MessageServic
   private val ConnectionRetryPause = 2000
   private val MaxConnectionAttempts = 5
 
-  private val BrokerUri: String = Configuration.messageQueue.brokerUri
-  private val Username: String = Configuration.messageQueue.username
-  private val Password: String = Configuration.messageQueue.password
+  private val BrokerUri: String = Configuration.messageQueue.getString("broker_uri")
+  private val Username: String = Configuration.messageQueue.getString("username")
+  private val Password: String = Configuration.messageQueue.getString("password")
   private val QueueName: String = queueName
 
   private var connection: Connection = _

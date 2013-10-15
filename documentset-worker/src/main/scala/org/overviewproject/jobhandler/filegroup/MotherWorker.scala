@@ -52,8 +52,8 @@ trait MotherWorker extends Actor {
   import MotherWorkerProtocol._
 
   private val NumberOfDaughters = 2
-  private val ClusteringQueue = Configuration.messageQueue.clusteringQueueName
-  private val FileGroupQueue = Configuration.messageQueue.fileGroupQueueName
+  private val ClusteringQueue = Configuration.messageQueue.getString("clustering_commands_queue_name")
+  private val FileGroupQueue = Configuration.messageQueue.getString("file_group_queue_name")
 
   private val freeWorkers = Queue.fill(NumberOfDaughters)(context.actorOf(createFileGroupMessageHandler(self)))
   private val busyWorkers = Map.empty[ActorRef, ProcessFileCommand]

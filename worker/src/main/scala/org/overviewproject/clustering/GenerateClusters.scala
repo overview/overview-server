@@ -53,7 +53,7 @@ object BuildDocTree {
   def apply(docVecs: DocumentSetVectors, progAbort: ProgressAbortFn = NoProgressReporting): DocTreeNode = {
     var (nonEmptyDocs, emptyDocs) = gatherEmptyDocs(docVecs)
 
-    Configuration.clusteringAlg match {
+    Configuration.getString("clustering_alg") match {
       case "KMeans" => applyKMeans(nonEmptyDocs, docVecs, progAbort) 
       case "ConnectedComponents" => applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
       case _  => applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    

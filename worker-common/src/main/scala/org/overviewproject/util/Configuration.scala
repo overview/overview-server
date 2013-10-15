@@ -1,15 +1,67 @@
+/**
+ * Configuration.scala
+ *
+ * Defines keys and default values for worker processes
+ *
+ * Based on a simple wrapper for Play configuration objects
+ *   - add a key with a default in one line of code
+ *   - access is type-checked versus type of default value
+ *   - supports paths, e.g. foo.bar.key = blah
+ * 
+ * Overview Project, created October 2013
+ *
+ * @author Jonathan Stray
+ *
+ */
+
 package org.overviewproject.util
-
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.{ Config, ConfigFactory }
 
-trait ConfigurationDefault {
-  def path: Option[String]
-  def defaultValues: Map[String, Any]
+
+// Base class. Subclass and define "keys" to create a configuration object
+// Optionally define "path" to root the keys in a sub-path
+abstract class ConfigurationKeys(configuration : Config) {
+  def path: Option[String] = None
+  def keys: Map[String, Any]
+
+  private val defaults = ConfigFactory.parseMap(keys.asJava)
+
+  // Different config object if we are root (empty path) or not
+  protected val myConfig =
+    if (path.isEmpty) {
+      configuration.withFallback(defaults)
+    } else { 
+      configuration.withFallback(defaults.atPath(path.get)).getConfig(path.get)
+    }
+          
+  def getString(key:String) : String = {
+      keys.get(key) match {
+      case Some(value:String) => 
+        myConfig.getString(key) // default value supplied above
+      case None => 
+        throw new IllegalArgumentException(s"unknown configuration key $key")
+      case Some(s) => 
+        val keyType = s.getClass.getName
+        throw new IllegalArgumentException(s"caller asked for String but key $key has type $keyType")
+    }
+  }
+
+  def getInt(key:String) : Int = {
+      keys.get(key) match {
+      case Some(value:Int) => 
+        myConfig.getInt(key)
+      case None => 
+        throw new IllegalArgumentException(s"unknown configuration key $key")
+      case Some(s) => 
+        val keyType = s.getClass.getName
+        throw new IllegalArgumentException(s"caller asked for Int but key $key has type $keyType")
+    }
+  }
+
 }
 
-trait ConfigurationWithDefaults {
+/*trait ConfigurationWithDefaults {
   def defaultConfigs: Iterable[ConfigurationDefault]
 
   def createWithDefaults: Config = {
@@ -24,54 +76,39 @@ trait ConfigurationWithDefaults {
   }
 }
 
+
 // Add default values to the appropriate *Default object
 // then add an attribute to the corresponding *Configuration object
-object WorkerDefaults extends ConfigurationDefault {
-  override def path: Option[String] = None
-
-  val MaxDocuments: String = "max_documents"
-  val MaxInFlightRequests: String = "max_inflight_requests"
-  val PageSize: String = "page_size"
-  val ClusteringAlg: String = "clustering_alg"
-
-  override def defaultValues: Map[String, Any] = Map(
-    (MaxDocuments -> 50000),
-    (PageSize -> 50),
-    (MaxInFlightRequests -> 4),
-    (ClusteringAlg -> "KMeansComponents"))
+object WorkerConfig extends ConfigurationKeys {
+  override def keys: Map[String, Any] = Map(
+    ("max_documents" -> 50000),
+    ("page_size" -> 50),
+    ("max_inflight_requests" -> 4),
+    ("clustering_alg" -> "KMeansComponents"))
 }
+*/
 
-object MessageQueueDefaults extends ConfigurationDefault {
-  override def path: Option[String] = Some("message_queue")
+class MessageQueueConfig(configuration:Config) extends ConfigurationKeys(configuration) {
+  override def path = Some("message_queue")
 
-  val BrokerUri = "broker_uri"
-  val QueueName = "queue_name"
-  val FileGroupQueueName = "file_group_queue_name"
-  val ClusteringQueueName = "clustering_commands_queue_name"
-  val Username: String = "username"
-  val Password: String = "password"
-
-  override def defaultValues: Map[String, Any] = Map(
-    (BrokerUri -> "tcp://localhost:61613"),
-    (Username -> "admin"),
-    (Password -> "password"),
-    (QueueName -> "/queue/document-set-commands"),
-    (FileGroupQueueName -> "/queue/file-group-commands"),
-    (ClusteringQueueName -> "/queue/clustering-commands")
+  override def keys: Map[String, Any] = Map(
+    ("broker_uri" -> "tcp://localhost:61613"),
+    ("username" -> "admin"),
+    ("password" -> "password"),
+    ("queue_name" -> "/queue/document-set-commands"),
+    ("file_group_queue_name" -> "/queue/file-group-commands"),
+    ("clustering_commands_queue_name" -> "/queue/clustering-commands")
   )
 }
 
-object SearchIndexDefaults extends ConfigurationDefault {
-  override def path: Option[String] = Some("search_index")
-
-  val ConfigFile = "config_file"
-  val IndexName = "index_name"
+class SearchIndexConfig(configuration:Config) extends ConfigurationKeys(configuration) {
+  override def path = Some("search_index")
     
-  override def defaultValues: Map[String, Any] = Map(
-    (ConfigFile -> "elasticsearch.yml"),
-    (IndexName -> "documents_v1"))
+  override def keys: Map[String, Any] = Map(
+    ("config_file" -> "elasticsearch.yml"),
+    ("index_name" -> "documents_v1"))
 }
-
+/*
 class WorkerConfiguration(configuration: Config) {
   import WorkerDefaults._
   
@@ -123,4 +160,18 @@ object Configuration extends ConfigurationWithDefaults {
   val messageQueue = new MessageQueueConfiguration(configuration)
   val searchIndex = new SearchIndexConfiguration(configuration)
 
+}
+
+*/
+
+// Root configuration object reads keys at root level, and points to sub-paths
+object Configuration extends ConfigurationKeys(ConfigFactory.load()) {
+  override def keys: Map[String, Any] = Map(
+    ("max_documents" -> 50000),
+    ("page_size" -> 50),
+    ("max_inflight_requests" -> 4),
+    ("clustering_alg" -> "KMeansComponents"))
+
+  val messageQueue = new MessageQueueConfig(myConfig)
+  val searchIndex = new SearchIndexConfig(myConfig)
 }

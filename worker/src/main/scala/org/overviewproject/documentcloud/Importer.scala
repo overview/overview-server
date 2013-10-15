@@ -24,7 +24,7 @@ class Importer(
 
   import ImporterProtocol._
 
-  private val MaxInFlightRequests = Configuration.maxInFlightRequests
+  private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
   private val RequestQueueName = "requestqueue"
 

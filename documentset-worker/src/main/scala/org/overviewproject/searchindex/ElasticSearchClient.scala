@@ -9,7 +9,7 @@ import org.overviewproject.util.Configuration
  * Configuration is setup in elasticsearch.yml
  */
 object ElasticSearchClient {
-  private val ConfigFile = Configuration.searchIndex.configFile
+  private val ConfigFile = Configuration.searchIndex.getString("config_file")
   
   private val node = nodeBuilder.settings(ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)).node
   

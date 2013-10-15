@@ -20,7 +20,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
 
     abstract class QueryContext extends ActorSystemContext with Before {
       val query = "query string"
-      val pageSize = Configuration.pageSize
+      val pageSize = Configuration.getInt("page_size")
       
       var progressReportCount: Int = 0
       
@@ -108,7 +108,7 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       {
         "total": $total,
         "page": $page,
-        "per_page": ${Configuration.pageSize},
+        "per_page": ${Configuration.getInt("page_size")},
         "q": "Query",
         "documents": $jsonDocumentArray 
       }"""

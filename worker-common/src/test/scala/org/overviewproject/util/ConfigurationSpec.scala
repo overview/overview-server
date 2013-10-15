@@ -2,54 +2,65 @@ package org.overviewproject.util
 
 import scala.collection.JavaConverters._
 import org.specs2.mutable.Specification
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 
 class ConfigurationSpec extends Specification {
 
-  "Configuration" should {
-    object RootDefaults extends ConfigurationDefault {
-      override def path: Option[String] = None
-      override def defaultValues: Map[String, Any] = Map(
-        "str" -> "value",
-        "int" -> 5)
-    }
+  // NOTE: this line does not seem to load worker-conf/application.conf
+  // This file tests default values, not any value actually from the conf file
+  // jms 2013-10-14
+  val playConfig = ConfigFactory.load()
 
-    object SubDefaults extends ConfigurationDefault {
+  "Configuration" should {
+
+    class SubKeys(config:Config) extends ConfigurationKeys(config) {
       override def path: Option[String] = Some("path")
-      override def defaultValues: Map[String, Any] = Map(
+      override def keys: Map[String, Any] = Map(
         "sub" -> "subvalue")
     }
 
-    object TestConfiguration extends ConfigurationWithDefaults {
-      override val defaultConfigs = Seq(RootDefaults, SubDefaults)
+    object RootKeys extends ConfigurationKeys(playConfig) {
+      override def keys: Map[String, Any] = Map(
+        "str" -> "value",
+        "int" -> 5)
 
-      val configuration = createWithDefaults
-    }
-
-    "have BrokerUri value" in {
-
-      Configuration.messageQueue.brokerUri must be equalTo ("tcp://localhost:61613")
-    }
-
-    "have MaxDocuments value" in {
-      Configuration.maxDocuments must be equalTo (50000)
-    }
-
-    "have pageSize value" in {
-      Configuration.pageSize must be equalTo (50)
-    }
-
-    "have maxInFlightRequests value" in {
-      Configuration.maxInFlightRequests must be equalTo (4)
+      val subKeys = new SubKeys(playConfig)
     }
 
     "read default values" in {
-      TestConfiguration.configuration.getString("str") must be equalTo ("value")
-      TestConfiguration.configuration.getInt("int") must be equalTo (5)
+      RootKeys.getString("str") must be equalTo ("value")
+      RootKeys.getInt("int") must be equalTo (5)
+    }
+
+    "can't read undefined keys" in {
+      RootKeys.getString("foo") must throwA[IllegalArgumentException]
+    }
+
+    "test type safety" in 
+    {
+      RootKeys.getInt("str") must throwA[IllegalArgumentException]
     }
 
     "read values in sub path" in {
-      TestConfiguration.configuration.getString("path.sub") must be equalTo ("subvalue")
+      RootKeys.subKeys.getString("sub") must be equalTo ("subvalue")
     }
+
+    "have MaxDocuments value" in {
+      Configuration.getInt("max_documents") must be equalTo (50000)
+    }
+/*
+    "have BrokerUri value" in {
+
+      Configuration.messageQueue.getString("broker_uri") must be equalTo ("tcp://localhost:61613")
+    }
+*/
+    "have pageSize value" in {
+      Configuration.getInt("page_size") must be equalTo (50)
+    }
+
+    "have maxInFlightRequests value" in {
+      Configuration.getInt("max_inflight_requests") must be equalTo (4)
+    }
+
   }
 }

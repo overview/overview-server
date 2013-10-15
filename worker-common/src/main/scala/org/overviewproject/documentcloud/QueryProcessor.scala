@@ -30,7 +30,7 @@ class QueryProcessor(query: String, credentials: Option[Credentials], requestQue
     s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
   }
 
-  private val PageSize: Int = Configuration.pageSize
+  private val PageSize: Int = Configuration.getInt("page_size")
   private val Encoding: String = "UTF-8"
 
   def receive = {

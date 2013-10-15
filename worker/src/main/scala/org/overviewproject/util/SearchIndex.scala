@@ -22,7 +22,7 @@ trait DocumentSetIndexingSession {
 
 object SearchIndex {
 
-  private val IndexName = Configuration.searchIndex.indexName
+  private val IndexName = Configuration.searchIndex.getString("index_name")
   private val IndexAlias = "documents"
   private def DocumentSetAlias(id: Long) = s"documents_$id"
   private val DocumentTypeName = "document"
@@ -34,7 +34,7 @@ object SearchIndex {
   private val TextField = "text"
   private val SuppliedIdField = "supplied_id"
   private val TitleField = "title"
-  private val ConfigFile = Configuration.searchIndex.configFile
+  private val ConfigFile = Configuration.searchIndex.getString("config_file")
   
   private val node = nodeBuilder.settings(ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)).node
   private val client = node.client
