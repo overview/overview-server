@@ -16,14 +16,13 @@ class ConnectedComponentDocTreeBuilderSpec extends Specification {
   
  
   // Test document vectors. Only five docs, but designed to test following aspects of tree generation:
-  // - a node not splitting as the threshold changes
-  // - some nodes already having size = 1 before we get to the last pass (where thresh=0), some not
+  // - nodes split or not as threshold changes
+  // - some nodes have size = 1 at last pass, some not
   // Designed so the output of each threshold pass is like so 
   //        12345
   //      12    345
   //      12   34  5
   //      12  3  4  5
-  //     1  2
   // We do this by setting:
   //    distance(1,2) = 0.1, distance(3,4) = 0.2, distance(34,5) = 0.4, distance(12,34) = 0.6  
   // Using four different dimensions/terms, shared between docs wherever there is an "edge" of given weight
@@ -51,13 +50,12 @@ class ConnectedComponentDocTreeBuilderSpec extends Specification {
                            0.5,     // split 12345 => 12, 345
                            0.3,      // split 345 => 34,5
                            0.2,     // no change
-                           0.1,     // split 34 => 3,4
-                           0)       // leaf nodes, split 12 => 1,2
+                           0.1)     // split 34 => 3,4
     
     val tree = new ConnectedComponentDocTreeBuilder(docSet).BuildFullTree(threshSteps)
     
     // Check that the tree has the structure in the diagram above 
-    tree.toString must beEqualTo("(1,2,3,4,5, (3,4,5, (3,4, (3), (4)), (5)), (1,2, (1), (2)))")
+    tree.toString must beEqualTo("(1,2,3,4,5, (1,2,3,4,5, (3,4,5, (3,4, (3,4, (3,4))), (5, (5, (5)))), (1,2, (1,2, (1,2, (1,2))))))")
    }
  }
 }
