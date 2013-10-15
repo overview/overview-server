@@ -36,7 +36,7 @@ trait FileGroupJobHandlerComponent {
   trait Storage {
     def countFileUploads(fileGroupId: Long): Long
     def countProcessedFiles(fileGroupId: Long): Long
-    def findFileGroupWithDocumentSet(documentSetId: Long): Option[FileGroup]
+    def findUploadingJobWithDocumentSet(documentSetId: Long): Option[DocumentSetCreationJob]
     def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob]
 
     def submitDocumentSetCreationJob(documentSetCreationJob: DocumentSetCreationJob): DocumentSetCreationJob
@@ -77,19 +77,19 @@ trait MotherWorker extends Actor {
       submitCompleteJob(fileGroupId)
 
     case CancelUploadWithDocumentSetCommand(documentSetId) => {
-      storage.findFileGroupWithDocumentSet(documentSetId).map { fileGroup =>
+      for {
+        job <- storage.findUploadingJobWithDocumentSet(documentSetId) 
+        fileGroupId <- job.fileGroupId
+      } {
+        workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
+        storage.deleteDocumentSetData(fileGroupId)
 
-        workQueue.dequeueAll(c => c.fileGroupId == fileGroup.id)
-        storage.deleteDocumentSetData(fileGroup.id)
-
-        if (busyWorkers.exists(w => w._2.fileGroupId == fileGroup.id))
-          cancelledJobs += fileGroup.id
+        if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
+          cancelledJobs += fileGroupId
         else {
-          storage.deleteFileGroupData(fileGroup.id)
+          storage.deleteFileGroupData(fileGroupId)
         }
-
       }
-
     }
 
     case command: ProcessFileCommand => {
@@ -149,7 +149,8 @@ trait MotherWorker extends Actor {
 
 object MotherWorker {
   import org.overviewproject.postgres.SquerylEntrypoint._
-
+  import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+  
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
     override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = FileGroupMessageHandler(jobMonitor)
 
@@ -165,7 +166,9 @@ object MotherWorker {
         GroupedProcessedFileFinder.byFileGroup(fileGroupId).count
       }
 
-      override def findFileGroupWithDocumentSet(documentSetId: Long): Option[FileGroup] = ???
+      override def findUploadingJobWithDocumentSet(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
+        DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, Preparing).headOption
+      }
 
       override def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =
         Database.inTransaction {

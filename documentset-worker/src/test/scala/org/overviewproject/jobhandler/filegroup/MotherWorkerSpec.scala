@@ -261,12 +261,13 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val cancelledFileGroupId = 2l
       val documentSetId = 10l
       
-      val fileGroup = smartMock[FileGroup]
-      fileGroup.id returns cancelledFileGroupId
+      val documentSetCreationJob = smartMock[DocumentSetCreationJob]
+      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
       
       storage.countFileUploads(runningFileGroupId) returns 10
       storage.countProcessedFiles(runningFileGroupId) returns 5
-      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
+      storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
 
       val runningCommands = Seq.tabulate(4)(n => ProcessFileCommand(runningFileGroupId, n))
       val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
@@ -292,10 +293,11 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
       val cancelledFileGroupId = 2l
 
-      val fileGroup = smartMock[FileGroup]
-      fileGroup.id returns cancelledFileGroupId
+      val documentSetCreationJob = smartMock[DocumentSetCreationJob]
+      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
       
-      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
+      storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
 
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
 
@@ -311,9 +313,11 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val documentSetId = 10l
       val cancelledFileGroupId = 2l
 
-      val fileGroup = smartMock[FileGroup]
-      fileGroup.id returns cancelledFileGroupId
-      storage.findFileGroupWithDocumentSet(documentSetId) returns Some(fileGroup)
+      val documentSetCreationJob = smartMock[DocumentSetCreationJob]
+      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
+      
+      storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
       
       val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
 
