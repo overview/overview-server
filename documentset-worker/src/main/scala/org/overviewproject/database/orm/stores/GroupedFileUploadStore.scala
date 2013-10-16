@@ -5,17 +5,22 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.squeryl.Query
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.finders.FinderResult
 
 object GroupedFileUploadStore extends BaseStore(Schema.groupedFileUploads) {
 
-  def deleteUnprocessedUploadsAndContents(fileGroupId: Long): Int = {
-    val query = join(Schema.groupedFileUploads, Schema.groupedProcessedFiles)((u, f) =>
+  def deleteLargeObjectsInFileGroup(fileGroupId: Long): Unit = {
+    val query = from(Schema.groupedFileUploads)(u =>
       where(u.fileGroupId === fileGroupId)
-        select (u)
-        on (u.contentsOid === f.contentsOid))
+        select (&(lo_unlink(Some(u.contentsOid)))))
 
-    from(query)(u =>
-      select(&(lo_unlink(Some(u.contentsOid)))))
+    query.headOption.get // force execution
+  }
+
+  def deleteByFileGroup(fileGroupId: Long) = {
+    val query = from(Schema.groupedFileUploads)(u =>
+      where(u.fileGroupId === fileGroupId)
+        select (u))
 
     delete(query)
   }

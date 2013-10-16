@@ -206,8 +206,9 @@ object MotherWorker {
       }
 
       override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
-        GroupedFileUploadStore.deleteUnprocessedUploadsAndContents(fileGroupId)
-        GroupedProcessedFileStore.deleteWithContentsByFileGroup(fileGroupId)
+        GroupedFileUploadStore.deleteLargeObjectsInFileGroup(fileGroupId)
+        GroupedFileUploadStore.deleteByFileGroup(fileGroupId)
+        GroupedProcessedFileStore.deleteByFileGroup(fileGroupId)
         FileGroupStore.delete(fileGroupId)
       }
 
