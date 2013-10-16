@@ -12,6 +12,8 @@ case class Document(
   val text: Option[String] = None,
   val url: Option[String] = None,
   @Column("documentcloud_id") val documentcloudId: Option[String] = None,
+  val contentsOid: Option[Long] = None,
+  val contentLength: Option[Long] = None,
   override val id: Long = 0L) extends KeyedEntity[Long] {
 
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68

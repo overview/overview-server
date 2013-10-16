@@ -56,7 +56,8 @@ class TextExtractor extends Actor {
           fileUpload.name,
           None,
           Some(text),
-          fileUpload.contentsOid)
+          fileUpload.contentsOid,
+          fileUpload.size)
         dataStore.storeFile(file)
       }
       sender ! JobDone(fileGroupId)

@@ -9,6 +9,7 @@ case class GroupedProcessedFile (
   errorMessage: Option[String],
   text: Option[String],
   contentsOid: Long,
+  size: Long,
   override val id: Long = 0L   
 ) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)

@@ -100,7 +100,7 @@ trait FileGroupMessageHandlerComponentImpl extends FileGroupMessageHandlerCompon
     override def writeFileInErrorState(fileGroupId: Long, uploadedFileId: Long): Unit = Database.inTransaction {
       GroupedFileUploadFinder.byId(uploadedFileId).headOption map { u =>
         val file = GroupedProcessedFileFinder.byContentsOid(u.contentsOid).headOption.getOrElse(
-          GroupedProcessedFile(fileGroupId, u.contentType, u.name, Some(ErrorMessage), None, u.contentsOid))
+          GroupedProcessedFile(fileGroupId, u.contentType, u.name, Some(ErrorMessage), None, u.contentsOid, u.size))
           
         GroupedProcessedFileStore.insertOrUpdate(file)
       }
