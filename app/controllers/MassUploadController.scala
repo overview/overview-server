@@ -139,7 +139,7 @@ trait MassUploadController extends Controller {
         storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, suppliedStopWords)
         messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
 
-        Ok
+        Redirect(routes.DocumentSetController.index())
       }
       case None => NotFound
     }
