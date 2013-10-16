@@ -9,23 +9,38 @@ define [
   Backbone.View.extend
     template: _.template('''
       <div>
-        <div class="upload-prompt">
-          <button class="btn btn-primary select-files" type="button">
-            <i class="overview-icon-plus"></i>
-            <%- t('upload_prompt') %>
-          </button>
-          <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
-        </div>
+        <ul class='files'>
+          <li class="empty-upload">
+            <i class='icon-cloud-upload'></i>
+            <div><%- t('drop_target') %></div>
+          </li>
+        </ul>
 
-        <button type='button' class="choose-options btn" disabled="disabled">
-          <i class="icon-play-circle"></i>
-          <%- t('choose_options') %>
-        </button>
+        <div class='controls'>
+          <button type='button' class='cancel btn'>
+            <%- t('cancel') %>
+          </button>
+
+          <div class='right-controls'>
+            <div class="upload-prompt">
+              <button class="btn btn-primary select-files" type="button">
+                <i class="overview-icon-plus"></i>
+                <%- t('upload_prompt') %>
+              </button>
+              <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
+            </div>
+
+            <button type='button' class="choose-options btn" disabled="disabled">
+              <i class="icon-play-circle"></i>
+              <%- t('choose_options') %>
+            </button>
+          </div>
+        </div>
       </div>
-      <ul class='files'></ul>
-      <button type='button' class='cancel btn'>
-        <%- t('cancel') %>
-      </button>
+
+      <div class="wait-for-import">
+        <%- t('wait_for_import') %>
+      </div>
       ''')
 
     events:
@@ -67,6 +82,8 @@ define [
         @$('button.choose-options').prop('disabled', false)
         @finishEnabled = true
 
+      @$ul.find('.empty-upload').remove()
+
       _.defer => # it seems more responsive when we defer this
         @$ul.append(uploadView.el)
 
@@ -86,7 +103,8 @@ define [
       )
 
     _optionsSetDone: ->
-      @$('button, :file').prop('disabled', true)
+      @$('button.choose-options, button.select-files, :file').prop('disabled', true)
+      @$('.wait-for-import').css('display', 'block')
       @optionsSet = true
       @_shouldSubmit()
 

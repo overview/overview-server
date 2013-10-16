@@ -12,8 +12,8 @@
     border: 1px solid @mutedShadeColor;
     display: inline-block;
     padding: 0.5em;
-    min-width: 30em;
-    max-width: 90%;
+    width: 35em;
+    min-height: 9em;
   }
 
   li {
@@ -28,28 +28,62 @@
     }
   }
 
-  .cancel {
-    display: block;
-  }
+  li.empty-upload {
+    color: @mutedShadeColor;
+    text-align: center;
+    margin-top: 1em;
 
-  .upload-prompt {
-    position: relative;
-    // height: 2em;
-    display: inline-block;
-
-    .invisible-file-input {
-      opacity: 0;
-      cursor: pointer;
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
+    i {
+      display: block;
+      margin: 0;
+      float: none;
+      font-size: 5em;
     }
   }
 
-  .upload-submit {
-    display: inline-block;
+  .controls {
+    width: 36em;
+
+    .right-controls {
+      width: 20em;
+      float: right;
+    }
+
+    .cancel {
+      display: inline-block;
+      float: left;
+    }
+
+    .choose-options {
+      display: inline-block;
+      float: right;
+    }
+
+    .upload-prompt {
+      position: relative;
+      display: inline-block;
+
+      .invisible-file-input {
+        opacity: 0;
+        cursor: pointer;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+      }
+    }
+
+    .upload-submit {
+      display: inline-block;
+    }
+  }
+
+  .wait-for-import {
+    display: none;
+    margin-top: 4em;
+    width: 35em;
+    text-align: center;
   }
 
   .waiting {

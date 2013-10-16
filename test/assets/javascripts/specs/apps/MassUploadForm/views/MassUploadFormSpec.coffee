@@ -28,6 +28,8 @@ define [
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
+        'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
+        'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
 
       uploadViewClass = Backbone.View.extend(tagName: 'li')
@@ -52,6 +54,10 @@ define [
       it 'only shows pdf files by default', ->
         view.render()
         expect(view.$el.find('input[type=file]').attr('accept')).toEqual('application/pdf')
+
+      it 'has an empty state', ->
+        view.render()
+        expect(view.$el.text()).toMatch('drop_target')
 
     describe 'model add event', ->
       beforeEach ->
@@ -128,6 +134,24 @@ define [
 
         it 'is disabled with no files selected', ->
           expect(view.$('.choose-options')).toBeDisabled()
+
+
+        describe 'after selecting options', ->
+          beforeEach ->
+            # add a finished upload
+            model.uploads.add(new Backbone.Model)
+            model.set(status: 'waiting')
+
+            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+            view.$('.choose-options').click()
+
+          it 'disables itself and the select files button', ->
+            expect(view.$('button.choose-options')).toBeDisabled()
+            expect(view.$('button.select-files')).toBeDisabled()
+            expect(view.$(':file')).toBeDisabled()
+
+          it 'shows the finished importing text', ->
+            expect(view.$('.wait-for-import')).toHaveCss(display: 'block')
 
       describe 'cancel button', ->
         it 'has a cancel button with the correct message', ->

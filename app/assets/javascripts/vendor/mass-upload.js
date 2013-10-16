@@ -77,7 +77,6 @@ define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileIn
 define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone, Upload) {
   return Backbone.Collection.extend({
     model: Upload,
-    comparator: 'id',
     addFiles: function(files) {
       var file, uploads;
       uploads = (function() {
