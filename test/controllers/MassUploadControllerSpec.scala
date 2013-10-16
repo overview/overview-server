@@ -206,7 +206,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
     }
     
     "create job and send startClustering command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
-      status(result) must be equalTo(OK)
+      status(result) must be equalTo(SEE_OTHER)
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang, stopWords)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(documentSetId, fileGroupId, lang, stopWords)
       there was one(controller.messageQueue).startClustering(fileGroupId, fileGroupName, lang, stopWords)
