@@ -13,6 +13,7 @@ import org.overviewproject.jobs.models.ProcessGroupedFileUpload
 import org.overviewproject.jobs.models.StartClustering
 import org.overviewproject.jobs.models.StartClustering
 import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
+import org.overviewproject.jobs.models.CancelUpload
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -91,6 +92,18 @@ object JobQueueSender {
       "cmd" -> toJson("cancel_upload_with_document_set"),
       "args" -> toJson(Map(
         "documentSetId" -> cancelUpload.documentSetId))))
+
+    sendMessageToClusteringQueue(jsonMessage)
+  }
+
+  /**
+   * Send `CancelUpload` to Clustering message queue
+   */
+  def send(cancelUpload: CancelUpload): Either[Unit, Unit] = {
+    val jsonMessage = toJson(Map(
+      "cmd" -> toJson("cancel_upload"),
+      "args" -> toJson(Map(
+        "fileGroupId" -> cancelUpload.fileGroupId))))
 
     sendMessageToClusteringQueue(jsonMessage)
   }

@@ -27,6 +27,7 @@ object MotherWorkerProtocol {
     lang: String,
     suppliedStopWords: String) extends Command
   case class CancelUploadWithDocumentSetCommand(documentSetId: Long) extends Command
+  case class CancelUploadCommand(fileGroupId: Long) extends Command
 }
 
 trait FileGroupJobHandlerComponent {
@@ -84,15 +85,13 @@ trait MotherWorker extends Actor {
       } {
         Logger.info(s"Cancelling job ${job.id}")
         storage.deleteDocumentSetData(job)
-
-        workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
-
-        if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
-          cancelledJobs += fileGroupId
-        else {
-          storage.deleteFileGroupData(fileGroupId)
-        }
+        cancelUpload(fileGroupId)
       }
+    }
+    
+    case CancelUploadCommand(fileGroupId) => {
+      Logger.info(s"Cancelling upload with file group $fileGroupId")
+      cancelUpload(fileGroupId)
     }
 
     case command: ProcessFileCommand => {
@@ -136,6 +135,22 @@ trait MotherWorker extends Actor {
         storage.submitDocumentSetCreationJob
       }
     }
+  }
+
+  /**
+   * Cancel the upload.
+   * Either deletes all associated data right away, or waits for any in progress
+   * jobs to complete.
+   */
+  private def cancelUpload(fileGroupId: Long): Unit = {
+    workQueue.dequeueAll(c => c.fileGroupId == fileGroupId)
+
+    if (busyWorkers.exists(w => w._2.fileGroupId == fileGroupId))
+      cancelledJobs += fileGroupId
+    else {
+      storage.deleteFileGroupData(fileGroupId)
+    }
+
   }
 
   private def startWork(command: ProcessFileCommand): Unit = {

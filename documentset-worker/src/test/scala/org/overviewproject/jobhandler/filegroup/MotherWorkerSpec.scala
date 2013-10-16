@@ -6,7 +6,6 @@ import akka.actor._
 import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.StartClusteringCommand
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.{ DocumentSetCreationJob, FileGroup }
@@ -17,8 +16,9 @@ import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 import org.specs2.mutable.Before
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelUploadWithDocumentSetCommand
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
 import org.specs2.execute.PendingUntilFixed
+
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
   def receive = {
@@ -26,7 +26,6 @@ class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {
     case status => jobMonitor ! status
   }
 }
-
 
 class FailingDaughter(jobMonitor: ActorRef, failOnMessage: Boolean) extends Actor {
   def receive = {
@@ -99,12 +98,11 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val failOnMessage = (daughterCount == 1)
       Props(new FailingDaughter(jobMonitorProbe, failOnMessage))
     }
-      
 
     override val storage = smartMock[Storage]
     storage.countFileUploads(any) returns 10
     storage.countProcessedFiles(any) returns 5
-    
+
     def numberOfChildren: Int = context.children.size
   }
 
@@ -260,11 +258,11 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val runningFileGroupId = 1l
       val cancelledFileGroupId = 2l
       val documentSetId = 10l
-      
+
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
       documentSetCreationJob.state returns Preparing
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
-      
+
       storage.countFileUploads(runningFileGroupId) returns 10
       storage.countProcessedFiles(runningFileGroupId) returns 5
       storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
@@ -296,7 +294,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
       documentSetCreationJob.state returns Preparing
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
-      
+
       storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
 
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
@@ -316,27 +314,55 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
       documentSetCreationJob.state returns Preparing
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
-      
+
       storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
-      
+
       val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
 
       commandsToCancel.foreach(motherWorker ! _)
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
-      
+
       there was one(storage).deleteDocumentSetData(documentSetCreationJob)
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)
-      
+
       daughters(0) ! "Finish job"
       jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
       there was no(storage).deleteFileGroupData(cancelledFileGroupId)
-      
+
       daughters(1) ! "Finish job"
       jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
       Thread.sleep(10) // Mockito does not work well in a multi-threaded environment. We need to find a better way.
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
+    
+    "remove queued commands when cancelling upload" in new ActorSystemContext {
+      val jobMonitorProbe = TestProbe()
+      val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
+      val motherWorker = TestActorRef(new TestMotherWorker(daughters))
+      val storage = motherWorker.underlyingActor.storage
+      val runningFileGroupId = 1l
+      val cancelledFileGroupId = 2l
 
+      storage.countFileUploads(runningFileGroupId) returns 10
+      storage.countProcessedFiles(runningFileGroupId) returns 5
+
+      val runningCommands = Seq.tabulate(4)(n => ProcessFileCommand(runningFileGroupId, n))
+      val commandsToCancel = Seq.tabulate(5)(n => ProcessFileCommand(cancelledFileGroupId, n))
+
+      val commandSequence = runningCommands.take(2) ++ commandsToCancel ++ runningCommands.drop(2)
+
+      commandSequence.foreach(motherWorker ! _)
+      motherWorker ! CancelUploadCommand(cancelledFileGroupId)
+
+      daughters(0) ! "finish running job"
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
+      daughters(0) ! "finish job sent after cancellation"
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
+
+    }
+
+
+    
   }
 
 }

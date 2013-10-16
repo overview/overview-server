@@ -28,6 +28,8 @@ import org.overviewproject.tree.orm.DocumentSetUser
 import org.overviewproject.tree.Ownership
 import models.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.jobs.models.StartClustering
+import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
+import org.overviewproject.jobs.models.CancelUpload
 
 trait MassUploadController extends Controller {
 
@@ -69,6 +71,17 @@ trait MassUploadController extends Controller {
       e => BadRequest,
       startClusteringFileGroupWithOptions(request.user.email, _))
   }
+  
+  /**
+   * Cancel the upload and notify the worker to delete all uploaded files
+   */
+  def cancelUpload = AuthorizedAction(anyUser) { implicit request =>
+    storage.findCurrentFileGroup(request.user.email).map { fileGroup =>
+      messageQueue.cancelUpload(fileGroup.id)
+      
+      Ok
+    }.getOrElse(NotFound)  
+  }
 
   // method to create the MassUploadFileIteratee
   protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
@@ -100,6 +113,9 @@ trait MassUploadController extends Controller {
 
     /** Notify the worker that clustering can start */
     def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit
+    
+    /** Tell worker to delete all processing for the FileGroup and delete all associated files */
+    def cancelUpload(fileGroupId: Long): Unit
   }
 
   private def authorizedUploadBodyParser(guid: UUID) =
@@ -201,6 +217,13 @@ object MassUploadController extends MassUploadController {
 
       if (JobQueueSender.send(command).isLeft) 
         throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")
+    }
+    
+    override def cancelUpload(fileGroupId: Long): Unit = {
+      val command = CancelUpload(fileGroupId)
+      
+      if (JobQueueSender.send(command).isLeft)
+        throw new Exception(s"Cound not send CancelUpload($fileGroupId)")
     }
   }
 }
