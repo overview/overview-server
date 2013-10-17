@@ -167,7 +167,7 @@ object JobHandler {
       }
       
       job.fileGroupId.map { fileGroupId =>
-        SQL("SELECT lo_unlink(contents_oid) FROM file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)  
+        SQL("SELECT lo_unlink(contents_oid) FROM grouped_file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)  
       }
       
       deleteFileGroupData(job)
