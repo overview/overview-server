@@ -30,7 +30,7 @@ define [
               <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
             </div>
 
-            <button type='button' class="choose-options btn" disabled="disabled">
+            <button type='button' class="btn btn-primary choose-options" disabled="disabled">
               <i class="icon-play-circle"></i>
               <%- t('choose_options') %>
             </button>
