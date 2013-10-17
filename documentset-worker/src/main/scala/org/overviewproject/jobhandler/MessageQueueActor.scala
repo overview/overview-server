@@ -121,8 +121,9 @@ abstract class MessageQueueActor[T](messageService: MessageService) extends Acto
     Logger.info(s"Received message $message")
     currentJobCompletion = Some(Promise[Unit])
     val messageData = convertMessage(message)
+    val f = currentJobCompletion.getOrElse(throw new Exception("Future had unexpectedly disappeared"))
     self ! messageData
-    currentJobCompletion.get.future
+    f.future
   }
 
   private def handleConnectionFailure(e: Exception): Unit = {
