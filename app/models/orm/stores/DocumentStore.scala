@@ -10,7 +10,7 @@ object DocumentStore extends BaseStore(models.orm.Schema.documents) with NoInser
   def deleteContents(query: Query[Document]) = {
     from(query)(d =>
       select(&(lo_unlink(d.contentsOid)))  
-    ).headOption.get
+    ).toIterable
     
   }
 }
