@@ -26,6 +26,9 @@ sealed trait OverviewDocument {
   /** Optional URL of the document */
   val url: Option[String]
   
+  /** Optional Content Length, for uploaded documents */
+  val contentLength: Option[Long]
+  
   /** URL to view the document.
     *
     * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
@@ -37,20 +40,20 @@ sealed trait OverviewDocument {
 
 object OverviewDocument {
   val DocumentCloudUrlPrefix = "https://www.documentcloud.org/documents/"
-
+  def UploadedDocumentUrl(documentId: Long, oid: Long) = s"/documents/${documentId}/contents/${oid}"
+  
   case class OverviewDocumentImpl(val ormDocument: Document) extends OverviewDocument {
     override val id = ormDocument.id
     override val description = ormDocument.description
     override val title = ormDocument.title
     override val suppliedId = ormDocument.suppliedId.orElse(ormDocument.documentcloudId)
     override val text = ormDocument.text
-    override val url : Option[String] = ormDocument.url match {
-      case Some(url) => Some(url)
-      case None => ormDocument.documentcloudId match {
-        case Some(id) => Some(DocumentCloudUrlPrefix + id)
-        case None => None
-      }
-    }
+    override val contentLength = ormDocument.contentLength
+    
+    override val url : Option[String] = 
+      ormDocument.url.orElse(
+        ormDocument.documentcloudId.map(id => s"$DocumentCloudUrlPrefix$id")).orElse(
+          ormDocument.contentsOid.map(oid => UploadedDocumentUrl(ormDocument.id, oid)))
   }
 
   /** Factory method */

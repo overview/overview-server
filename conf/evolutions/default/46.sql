@@ -22,7 +22,7 @@ BEGIN;
 
 ALTER TABLE document DROP COLUMN content_length;
 ALTER TABLE document DROP COLUMN contents_oid;
-ALTER TABLE grouped_processed_File DROP COLUMN size;
+ALTER TABLE grouped_processed_file DROP COLUMN size;
 
 COMMIT;
 

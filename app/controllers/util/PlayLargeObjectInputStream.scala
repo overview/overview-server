@@ -1,14 +1,15 @@
-package org.overviewproject.postgres
+package controllers.util
 
-import scala.util.control.Exception._
 import java.io.InputStream
-import org.overviewproject.database.Database
-import org.overviewproject.database.DB
-import org.postgresql.util.PSQLException
 import java.io.IOException
+import scala.util.control.Exception._
 import org.postgresql.util.PSQLException
+import org.overviewproject.postgres.LO
 
-class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStream {
+
+
+class PlayLargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStream with PgConnection {
+  
   private var ReadWhenClosedExceptionMessage = "Attempting to read from closed stream"
 
   private val buffer = new Array[Byte](bufferSize)
@@ -87,8 +88,8 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
   private def convertPsqlException(f: => Unit) { handling(classOf[PSQLException]) by (e => throw new IOException(e.getMessage)) apply f }
 
   private def refreshBuffer() {
-    if (bufferPosition >= bufferSize) Database.inTransaction {
-      implicit val pgc = DB.pgConnection(Database.currentConnection)
+    if (bufferPosition >= bufferSize) withPgConnection { implicit pgConnection =>
+      
       LO.withLargeObject(oid) { largeObject =>
         largeObject.seek(largeObjectPosition)
         val bytesRead = largeObject.read(buffer, 0, bufferSize)
@@ -99,4 +100,6 @@ class LargeObjectInputStream(oid: Long, bufferSize: Int = 8192) extends InputStr
       }
     }
   }
+
+   
 }
