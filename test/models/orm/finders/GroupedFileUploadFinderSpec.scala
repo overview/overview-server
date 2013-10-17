@@ -10,20 +10,20 @@ import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.GroupedFileUpload
 import java.util.UUID
 
-object Schema extends org.squeryl.Schema {
-  override def columnNameFromPropertyName(propertyName: String) =
-    NamingConventionTransforms.snakify(propertyName)
-
-  override def tableNameFromClassName(className: String) =
-    NamingConventionTransforms.snakify(className)
-
-  val fileGroups = table[FileGroup]
-  val groupedFileUploads = table[GroupedFileUpload]
-}
-
 class GroupedFileUploadFinderSpec extends Specification {
 
   step(start(FakeApplication()))
+
+  object Schema extends org.squeryl.Schema {
+    override def columnNameFromPropertyName(propertyName: String) =
+      NamingConventionTransforms.snakify(propertyName)
+
+    override def tableNameFromClassName(className: String) =
+      NamingConventionTransforms.snakify(className)
+
+    val fileGroups = table[FileGroup]
+    val groupedFileUploads = table[GroupedFileUpload]
+  }
 
   "GroupedFileUploadFinder" should {
 
@@ -48,7 +48,7 @@ class GroupedFileUploadFinderSpec extends Specification {
       val wrongGuid = UUID.randomUUID()
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroup.id, wrongGuid).headOption must beNone
     }
-    
+
     "return GroupedFileUpload if it exists in the given FileGroup" in new UploadContext {
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroup.id, guid).headOption must beSome(upload)
     }
