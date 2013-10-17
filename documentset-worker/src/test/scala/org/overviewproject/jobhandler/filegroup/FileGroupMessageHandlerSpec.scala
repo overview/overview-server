@@ -89,8 +89,9 @@ class FileGroupMessageHandlerSpec extends Specification with Mockito {
       
       messageHandler ! command
       
-      there was one(messageHandler.underlyingActor.storage).writeFileInErrorState(fileGroupId, uploadedFileId)
       jobMonitor.expectMsg(JobDone(fileGroupId))  
+
+      there was one(messageHandler.underlyingActor.storage).writeFileInErrorState(fileGroupId, uploadedFileId)
     }
   }
 }
