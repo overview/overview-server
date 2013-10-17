@@ -1,9 +1,7 @@
 package org.overviewproject.jobhandler.documentset
 
 import scala.concurrent.duration._
-
 import akka.actor._
-
 import org.overviewproject.jobhandler.{ ApolloMessageService, MessageQueueActor, MessageService }
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
@@ -11,10 +9,9 @@ import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDo
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
-
 import DocumentSetJobHandlerFSM._
-
 import javax.jms._
+import org.overviewproject.util.Logger
 
 
 trait Command
@@ -67,6 +64,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 
   when(Ready) {
     case Event(SearchCommand(documentSetId, query), _) => {
+      Logger.info(s"Received search command $query")
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       searchHandler ! SearchDocumentSet(documentSetId, query)
       goto(WaitingForCompletion)

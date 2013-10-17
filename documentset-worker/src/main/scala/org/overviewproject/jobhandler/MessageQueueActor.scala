@@ -118,6 +118,7 @@ abstract class MessageQueueActor[T](messageService: MessageService) extends Acto
   // The MessageService thread blocks until the returned future completes. 
   // No new messages are requested until the future completes.
   private def deliverMessage(message: String): Future[Unit] = {
+    Logger.info(s"Received message $message")
     currentJobCompletion = Some(Promise[Unit])
     val messageData = convertMessage(message)
     self ! messageData
