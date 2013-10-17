@@ -98,7 +98,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
       storage.completeSearch(searchId, documentSetId, query)
       stop()
     case Event(SearchFailure(e), SearchInfo(searchId, documentSetId, query)) =>
-      Logger.error(s"Search failed $query")
+      Logger.error(s"Search failed $query", e)
       context.parent ! JobDone(documentSetId)
       storage.failSearch(searchId, documentSetId, query)
       stop()
