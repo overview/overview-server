@@ -3,13 +3,12 @@ package org.overviewproject.jobhandler.documentset
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-
 import akka.actor._
-
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
 import org.elasticsearch.action.search.SearchResponse
 import org.overviewproject.jobhandler.documentset.SearchIndexSearcherFSM._
+import org.overviewproject.util.Logger
 
 object SearchIndexSearcherProtocol {
   case class StartSearch(searchId: Long, documentSetId: Long, query: String)
@@ -62,14 +61,17 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
 
   when(WaitingForSearchInfo) {
     case Event(SearchInfo(scrollId), _) => {
+      Logger.info("get next result")
       getNextSearchResultPage(scrollId)
       stay
     }
     case Event(SearchResult(r), Search(searchId)) if searchHasHits(r) => {
+      Logger.info("search has hits")
       saveAndContinueSearch(searchId, r)
       stay
     }
     case Event(SearchResult(r), Search(searchId)) => {
+      Logger.info("saving search")
       waitForSavesToComplete
       goto(WaitingForSearchSaverEnd) using Search(searchId)
     }
@@ -85,6 +87,7 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
   initialize
 
   private def getSearchInfo(documentSetId: Long, query: String): Unit = {
+    Logger.info(s"GetSearchInfo $query")
     val index = documentSetIndex(documentSetId)
     searchIndex.startSearch(index, query) onComplete handleSearchResult(r => SearchInfo(r.getScrollId))
   }
