@@ -62,6 +62,9 @@ define [
       @listenTo(@model, 'change', @_shouldSubmit)
       @optionsSet = false
 
+      $('div.nav-buttons a').click =>
+        @_cancelButton()
+
     render: ->
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
