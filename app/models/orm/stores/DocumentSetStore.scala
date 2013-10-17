@@ -83,6 +83,7 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
     DocumentSetCreationJobFinder.byDocumentSet(documentSet).forUpdate.headOption.map(DocumentSetCreationJobStore.deletePending)
     NodeDocumentStore.delete(NodeDocumentFinder.byDocumentSet(documentSet).toQuery)
     NodeStore.delete(NodeFinder.byDocumentSet(documentSet).toQuery)
+    DocumentStore.deleteContents(DocumentFinder.byDocumentSet(documentSet).toQuery)
     DocumentStore.delete(DocumentFinder.byDocumentSet(documentSet).toQuery)
     DocumentProcessingErrorStore.delete(DocumentProcessingErrorFinder.byDocumentSet(documentSet).toQuery)
   }
