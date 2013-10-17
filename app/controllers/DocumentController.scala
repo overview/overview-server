@@ -41,7 +41,7 @@ trait DocumentController extends Controller {
           header = ResponseHeader(OK, Map(
             CONTENT_LENGTH -> s"${document.contentLength.get}",
             CONTENT_TYPE -> "application/pdf",
-            CONTENT_DISPOSITION -> s"""attachment ; filename="$filename""""
+            CONTENT_DISPOSITION -> s"""inline ; filename="$filename""""
           )),
           body = dataContent
         )
