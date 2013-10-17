@@ -98,9 +98,9 @@ define [
 
       itShouldRecognize(
         'a local PDF',
-        '/documents/1234/pdf-download',
-          type: 'localPDF'
-          url: '/documents/1234/pdf-download'
+        '/documents/1234/contents/4567',
+          type: 'localObject'
+          url: '/documents/1234/contents/4567'
       )
 
       itShouldRecognize(

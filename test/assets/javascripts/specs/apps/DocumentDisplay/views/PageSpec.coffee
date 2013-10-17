@@ -25,6 +25,7 @@ define [
         'views.Document.show.wrap.disable': 'disable-wrap'
         'views.Document.show.buttons.document': 'document-button'
         'views.Document.show.buttons.text': 'text-button'
+        'views.Document.show.missing_plugin': 'missing-plugin'
       })
       preferences = new Preferences()
       state = new Backbone.Model({ preferences: preferences })
@@ -201,13 +202,16 @@ define [
         document = new Backbone.Model({
           text: 'text'
           urlProperties:
-            type: 'localPDF'
-            url: '/documents/1234/pdf-download'
+            type: 'localObject'
+            url: '/documents/1234/contents/4567'
         })
         state.set('document', document)
 
-      it 'creates an iframe pointing to the document', ->
-        expect(view.$('iframe')).toHaveAttr('src', '/documents/1234/pdf-download')
+      it 'creates an object pointing to the document, with pdf viewer settings', ->
+        expect(view.$('object')).toHaveAttr('data', '/documents/1234/contents/4567#scrollbar=1&toolbar=1&navpanes=1&view=FitH')
+
+      it 'shows the missing plugin message', ->
+        expect(view.$('object')).toHaveText('missing-plugin')
 
       it 'does not have any preferences', ->
         expect(view.$('page')).not.toContain('a.boolean-preference')

@@ -118,6 +118,7 @@ views.Document.show.title.empty_title=(document with no title)
 views.Document.show.source=Source: 
 views.Document.show.buttons.document=Document
 views.Document.show.buttons.text=Text
+views.Document.show.missing_plugin=Your browser is missing the plugin to view this file. Click above to download, or try the free <a href="http://get.adobe.com/reader/" target="_blank">Acrobat Reader</a> plugin.
 
 views.DocumentCloudImportJob.new.title=Import documents from DocumentCloud
 views.DocumentCloudImportJob.new.h1=Import documents from DocumentCloud

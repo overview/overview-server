@@ -23,9 +23,9 @@ define [], ->
       url: (o) -> "https://www.documentcloud.org/documents/#{o.id}.html"
     }
     {
-      id: 'localPDF'
-      name: 'Local PDF document'
-      regex: /// ^(/documents/\d+/pdf-download)$ ///
+      id: 'localObject'
+      name: 'Local document (object)'
+      regex: /// ^(/documents/\d+/contents/\d+)$ ///
       capture: [ 'uri' ]
       url: (o) -> o.uri
     }
