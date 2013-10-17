@@ -7,9 +7,7 @@
  */
 
 import java.sql.Connection
-
 import scala.util._
-
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
@@ -20,8 +18,8 @@ import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
-
 import com.jolbox.bonecp._
+import org.overviewproject.persistence.orm.finders.DocumentFinder
 
 object JobHandler {
   // Run a single job
@@ -165,11 +163,11 @@ object JobHandler {
       uploadedFileId.map { u =>
         SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
       }
-      
+
       job.fileGroupId.map { fileGroupId =>
-        SQL("SELECT lo_unlink(contents_oid) FROM grouped_file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)  
+        SQL("SELECT lo_unlink(contents_oid) FROM grouped_file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)
       }
-      
+
       deleteFileGroupData(job)
     }
   }
@@ -208,9 +206,20 @@ object JobHandler {
       JobProgressLogger.apply(job.documentSetId, _: Progress))
 
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
-      Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
-      CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
+      if (failOnUploadedDocumentSets(sourceDocumentSetId)) {
+        throw new DisplayedError("not_implemented_error")
+      }
+      else {
+        Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
+        CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
+      }
     }
+  }
+
+  private def failOnUploadedDocumentSets(documentSetId: Long): Boolean = Database.inTransaction {
+    DocumentFinder.byDocumentSet(documentSetId).headOption.map { document =>
+      document.contentsOid.isDefined
+    }.getOrElse(false)
   }
 
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
