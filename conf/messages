@@ -55,6 +55,7 @@ mailers.Password.createErrorUserDoesNotExist.signature=The Overview Project deve
 models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
+models.DocumentSetCreationJob.state.PREPARING=processing uploaded files
 
 views.admin.ImportJob.index.title=Jobs
 views.admin.ImportJob.index.h1=Jobs
