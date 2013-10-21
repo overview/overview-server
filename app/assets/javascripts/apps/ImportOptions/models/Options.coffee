@@ -3,6 +3,7 @@ define [ 'backbone' ], (Backbone) ->
     defaults:
       split_documents: false
       supplied_stop_words: ''
+      important_words: ''
       lang: ''
       name: ''
 

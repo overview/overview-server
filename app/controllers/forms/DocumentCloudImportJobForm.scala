@@ -13,7 +13,8 @@ object DocumentCloudImportJobForm {
     username: Option[String],
     password: Option[String],
     splitDocuments: Option[Boolean],
-    suppliedStopWords: Option[String]
+    suppliedStopWords: Option[String],
+    importantWords: Option[String]
   ) = {
     val credentials = for {
       definedUsername <- username;
@@ -26,7 +27,8 @@ object DocumentCloudImportJobForm {
       lang = lang,
       credentials = credentials,
       splitDocuments = splitDocuments.getOrElse(false),
-      suppliedStopWords = suppliedStopWords.getOrElse("")
+      suppliedStopWords = suppliedStopWords.getOrElse(""),
+      importantWords = importantWords.getOrElse("")
     )
   }
 
@@ -39,10 +41,11 @@ object DocumentCloudImportJobForm {
         "documentcloud_username" -> Forms.optional(Forms.text),
         "documentcloud_password" -> Forms.optional(Forms.text),
         "split_documents" -> Forms.optional(Forms.boolean),
-        "supplied_stop_words" -> Forms.optional(Forms.text)
+        "supplied_stop_words" -> Forms.optional(Forms.text),
+        "important_words" -> Forms.optional(Forms.text)
       )
       (buildJob(ownerEmail))
-      ((job) => Some(job.title, job.query, job.lang, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments), Some(job.suppliedStopWords)))
+      ((job) => Some(job.title, job.query, job.lang, job.credentials.map(_.username), job.credentials.map(_.password), Some(job.splitDocuments), Some(job.suppliedStopWords), Some(job.importantWords)))
     )
   }
 }

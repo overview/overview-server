@@ -13,6 +13,7 @@ case class DocumentSet(
   lang: String = "en",
   @Column("public") isPublic: Boolean = false,
   suppliedStopWords: String = "",
+  importantWords: String = "",
   createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
   documentCount: Int = 0,
   documentProcessingErrorCount: Int = 0,

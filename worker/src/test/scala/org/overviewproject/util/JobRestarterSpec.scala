@@ -14,6 +14,7 @@ class JobRestarterSpec extends Specification with Mockito {
     val jobType = CsvUpload
     val lang = "se"
     val suppliedStopWords = None
+    val importantWords = None
     val documentSetId = 1L
     val documentCloudUsername: Option[String] = None
     val documentCloudPassword: Option[String] = None

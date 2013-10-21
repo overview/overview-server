@@ -15,6 +15,8 @@ define [
         'views.DocumentSet.index.ImportOptions.name.label': 'name.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
+        'views.DocumentSet.index.ImportOptions.important_words.label': 'important_words.label'
+        'views.DocumentSet.index.ImportOptions.important_words.help': 'important_words.help'
         'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
 
     afterEach ->
@@ -29,11 +31,12 @@ define [
       it 'should not render the excluded options', ->
         expect(view.$('[name=supplied_stop_words]').length).toEqual(0)
         expect(view.$('[name=split_documents]').length).toEqual(0)
+        expect(view.$('[name=important_words]').length).toEqual(0)
         expect(view.$('[name=name]').length).toEqual(0)
 
     describe 'with all options', ->
       beforeEach ->
-        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '', name: '' })
+        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '', important_words: '', name: '' })
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         view = new OptionsView({ model: model })
 
@@ -64,6 +67,9 @@ define [
       it 'should start with supplied_stop_words matching supplied_stop_words', ->
         expect(view.$('[name=supplied_stop_words]').val()).toEqual(model.get('supplied_stop_words'))
 
+      it 'should start with important_words matching important_words', ->
+        expect(view.$('[name=important_words]').val()).toEqual(model.get('important_words'))
+
       it 'should start with name matching name', ->
         expect(view.$('[name=name]').val()).toEqual(model.get('name'))
 
@@ -75,3 +81,4 @@ define [
         $input.val('a fine set of documents')
         $input.change()
         expect(model.get('name')).toEqual('a fine set of documents')
+

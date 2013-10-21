@@ -36,6 +36,10 @@ define [
         it 'should begin as empty string', ->
           expect(subject.get('supplied_stop_words')).toEqual('')
 
+      describe 'important_words', ->
+        it 'should begin as empty string', ->
+          expect(subject.get('important_words')).toEqual('')
+
       describe 'supportedLanguages', ->
         it 'should be the list of supported languages', ->
           expect(subject.supportedLanguages).toEqual(ctorOptions.supportedLanguages)

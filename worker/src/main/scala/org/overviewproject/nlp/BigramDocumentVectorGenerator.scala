@@ -105,7 +105,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // ---- state ----
   private val docSpool = new TempFile
   private val spoolWriter = new CSVWriter(new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8")))
-  spoolWriter.writeNext(Array("id","text","weight"))             // write csv file header
+  spoolWriter.writeNext(Array("id","text"))             // write csv file header
  
   // -- Vocabulary tables --
   

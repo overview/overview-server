@@ -26,6 +26,7 @@ trait PersistentDocumentSetCreationJob {
   val jobType: DocumentSetCreationJobType.Value
   val lang: String
   val suppliedStopWords: Option[String]
+  val importantWords: Option[String]
   val splitDocuments: Boolean
 
   // Only some jobs require DocumentCloud credentials
@@ -85,6 +86,7 @@ object PersistentDocumentSetCreationJob {
     val jobType: DocumentSetCreationJobType.Value = documentSetCreationJob.jobType
     val lang: String = documentSetCreationJob.lang
     val suppliedStopWords: Option[String] = Some(documentSetCreationJob.suppliedStopWords)
+    val importantWords: Option[String] = Some(documentSetCreationJob.importantWords)
     val documentCloudUsername: Option[String] = documentSetCreationJob.documentcloudUsername
     val documentCloudPassword: Option[String] = documentSetCreationJob.documentcloudPassword
     val splitDocuments: Boolean = documentSetCreationJob.splitDocuments

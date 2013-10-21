@@ -7,5 +7,6 @@ case class DocumentCloudImportJob(
   lang: String,
   credentials: Option[DocumentCloudCredentials],
   splitDocuments: Boolean,
-  suppliedStopWords: String
+  suppliedStopWords: String,
+  importantWords: String
 )

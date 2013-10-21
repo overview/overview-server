@@ -16,7 +16,8 @@ object DocumentCloudImportJobStore {
       title = job.title,
       query = Some(job.query),
       lang = job.lang,
-      suppliedStopWords = job.suppliedStopWords
+      suppliedStopWords = job.suppliedStopWords,
+      importantWords = job.importantWords
     ))
     DocumentSetUserStore.insertOrUpdate(DocumentSetUser(
       documentSetId = documentSet.id,
@@ -31,7 +32,8 @@ object DocumentCloudImportJobStore {
       documentcloudUsername = job.credentials.map(_.username),
       documentcloudPassword = job.credentials.map(_.password),
       splitDocuments = job.splitDocuments,
-      suppliedStopWords = job.suppliedStopWords
+      suppliedStopWords = job.suppliedStopWords,
+      importantWords = job.importantWords
     ))
   }
 }

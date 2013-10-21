@@ -55,11 +55,12 @@ trait UploadController extends Controller {
       { f =>
         val lang = f._1
         val stopWords = f._2.getOrElse("")
+        val importantWords = f._3.getOrElse("")
         
         findUpload(request.user.id, guid) match {
           case Some(u) => {
             if (isUploadComplete(u)) {
-              createDocumentSetCreationJob(u, lang, stopWords)
+              createDocumentSetCreationJob(u, lang, stopWords, importantWords)
               deleteUpload(u)
               Redirect(routes.DocumentSetController.index())
             } else {
@@ -104,7 +105,7 @@ trait UploadController extends Controller {
   protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload): Unit
-  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String): Unit
+  protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String, importantWords: String): Unit
 }
 
 /**
@@ -121,18 +122,20 @@ object UploadController extends UploadController with PgConnection {
     upload.delete
   }
 
-  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String) {
+  override protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String, importantWords: String) {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,
         uploadedFileId = Some(upload.uploadedFile.id),
         lang = documentSetLanguage,
-        suppliedStopWords = suppliedStopWords))
+        suppliedStopWords = suppliedStopWords,
+        importantWords = importantWords))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId = documentSet.id,
         lang = documentSetLanguage,
         suppliedStopWords = suppliedStopWords,
+        importantWords = importantWords,
         state = DocumentSetCreationJobState.NotStarted,
         jobType = DocumentSetCreationJobType.CsvUpload,
         contentsOid = Some(upload.contentsOid)))

@@ -19,7 +19,8 @@ class DocumentCloudImportJobFormSpec extends Specification {
         lang = "en",
         credentials = None,
         splitDocuments = false,
-        suppliedStopWords = "")
+        suppliedStopWords = "",
+        importantWords = "")
     }
 
     trait BasicFormScope extends FormScope {
@@ -111,6 +112,13 @@ class DocumentCloudImportJobFormSpec extends Specification {
       override def data = super.data ++ Map("supplied_stop_words" -> suppliedStopWords)
 
       form.bind(data).value.map(_.suppliedStopWords) must beSome(suppliedStopWords)
+    }
+
+    "add important words if given" in new BasicFormScope {
+      val importantWords = "these words and \\wRegexes[\\d+] REALLY Matter"
+      override def data = super.data ++ Map("important_words" -> importantWords)
+
+      form.bind(data).value.map(_.importantWords) must beSome(importantWords)
     }
   }
 }
