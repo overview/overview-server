@@ -13,6 +13,7 @@
  *
  */
 package org.overviewproject.nlp
+
 import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
 
 case class WeightedTermString(term:String,weight:TermWeight)
@@ -38,6 +39,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
       10 * t.count(_.isDigit) < 4 * t.length // < 40% digits, acceptable
   }
 
+
   // If the raw term string matches any of the regex patterns, we emit the term and the pattern weight
   // multiply the weights of the matched patterns if more than one
   // Otherwise standard processing strips punctuation, lowecases, checks termAcceptable
@@ -47,8 +49,12 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     var weight:TermWeight = 1
     var matched = false
 
+    // Strip leading/trailing punct
+    def isPunct(c:Char) = c.toString.matches("\\p{Punct}")
+    val strippedTerm = rawTerm.dropWhile(isPunct(_)).reverse.dropWhile(isPunct(_)).reverse
+
     weightedTerms foreach { case (pattern,patternWeight) => 
-      if (rawTerm.matches(pattern)) {
+      if (strippedTerm.matches(pattern)) {
         weight *= patternWeight
         matched = true 
       }
@@ -56,10 +62,10 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
 
     if (matched) {
       // Got a match, return unprocessed term (case sensitive etc.)
-      Some(WeightedTermString(rawTerm, weight))
+      Some(WeightedTermString(strippedTerm.filter(_ != '"'), weight))   // $$$ strip " as we problems writing it to json
     } else {
       // lose case, allow only alphanum, dash, apostrophe
-      var term = rawTerm.toLowerCase.filter(c => c.isDigit || c.isLetter || "-'".contains(c))
+      var term = strippedTerm.toLowerCase.filter(c => c.isDigit || c.isLetter || "-'".contains(c))
       if (termAcceptable(term))
         Some(WeightedTermString(term, 1f))
       else
