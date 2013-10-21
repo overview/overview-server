@@ -34,10 +34,8 @@ object DocumentSetWorker extends App {
   //  actorCareTaker ! StartListening
 
   val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler()))
-  val clusteringJobHandler = system.actorOf(ClusteringJobHandler())
-
+  
   jobHandlers.foreach(_ ! StartListening)
-  clusteringJobHandler ! StartListening
 
 }
 
