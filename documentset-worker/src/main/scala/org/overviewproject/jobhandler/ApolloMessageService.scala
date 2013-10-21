@@ -20,14 +20,12 @@ class ApolloMessageService(override val queueName: String) extends MessageServic
   private var consumer: MessageConsumer = _
 
   override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = Try {
-    val factory = new StompJmsConnectionFactory()
-    factory.setBrokerURI(BrokerUri)
-    connection = factory.createConnection(Username, Password)
-    connection.setExceptionListener(new FailureHandler(failureHandler))
+    connection = MessageQueueConnection.connection
+
     val messageHandler = new MessageHandler(messageDelivery)
     consumer = createConsumer
     consumer.setMessageListener(messageHandler)
-    connection.start
+
     Logger.info(s"Connected to message broker: $queueName")
   }
 

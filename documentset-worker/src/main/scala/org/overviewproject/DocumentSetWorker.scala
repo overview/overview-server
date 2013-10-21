@@ -22,21 +22,15 @@ import org.overviewproject.util.Logger
  */
 object DocumentSetWorker extends App {
   private val NumberOfJobHandlers = 4
-
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
 
   DB.connect(dataSource)
 
   val system = ActorSystem("WorkerActorSystem")
-  //  val actorCareTaker = system.actorOf(Props(new ActorCareTaker(NumberOfJobHandlers)))
-  //
-  //  actorCareTaker ! StartListening
-
-  val jobHandlers = Seq.fill(NumberOfJobHandlers)(system.actorOf(DocumentSetJobHandler()))
+  val actorCareTaker = system.actorOf(Props(new ActorCareTaker(NumberOfJobHandlers)))
   
-  jobHandlers.foreach(_ ! StartListening)
-
+  actorCareTaker ! StartListening
 }
 
 /**
@@ -49,7 +43,7 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
-  // val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
+  val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
 
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => Stop
@@ -58,7 +52,7 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
   def receive = {
     case StartListening => {
       jobHandlers.foreach(_ ! StartListening)
-      // clusteringJobHandler ! StartListening
+      clusteringJobHandler ! StartListening
     }
     case Terminated(a) => {
       Logger.error("Unexpected shutdown")
