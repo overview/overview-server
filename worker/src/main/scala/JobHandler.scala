@@ -13,7 +13,7 @@ import scala.util._
 
 import org.elasticsearch.ElasticSearchException
 import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.clustering.DocumentSetIndexer
+import org.overviewproject.clustering.{DocumentSetIndexer, DocumentSetIndexerOptions}
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence._
 import org.overviewproject.persistence.orm.finders.{ DocumentFinder, FileFinder, FileGroupFinder, GroupedFileUploadFinder }
@@ -202,7 +202,10 @@ object JobHandler {
     documentSet.map { ds =>
       val nodeWriter = new NodeWriter(job.documentSetId)
 
-      val indexer = new DocumentSetIndexer(nodeWriter, job.lang, job.suppliedStopWords, progressFn)
+      val opts = new DocumentSetIndexerOptions
+      opts.lang = job.lang
+      opts.suppliedStopWords = job.suppliedStopWords
+      val indexer = new DocumentSetIndexer(nodeWriter, opts, progressFn)
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
       producer.produce()

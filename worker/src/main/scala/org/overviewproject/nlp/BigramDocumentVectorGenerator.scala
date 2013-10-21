@@ -16,9 +16,10 @@ package org.overviewproject.nlp
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import scala.collection.mutable.{Map, IndexedSeq}
-
+import play.api.libs.json._
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
+
 
 case class BigramKey(val term1:TermID, val term2:TermID = BigramKey.noTerm) {
   def isBigram = term2 != BigramKey.noTerm
@@ -28,6 +29,8 @@ object BigramKey {
 }
 
 
+// This is a hash map from BigramKey -> VocabRecord that is "flat",
+// that is, heavily optimized to use as little memory as possible
 object FlatBigrams {
   // Basic flattener for Int->Long map
   implicit object BigramFlattener extends KeyValueFlattener[BigramKey,VocabRecord] {
@@ -87,6 +90,12 @@ object FlatBigrams {
 // then we throw out bigrams that don't seem to be collocations, and trim doc vecs accordingly.
 class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
+  type WeightedBigramKey = (BigramKey,TermWeight)
+
+  // needed to write/read json
+  implicit val WeightedTermStringFormat = Json.format[WeightedTermString]
+
+
   // --- Config ---
   var minBigramOccurrences:Int   = 5                // throw out bigram if it has less than this many occurrences
   var minBigramLikelihood:Double = 30               // ...or if not this many times more likely than chance to be a colocation
@@ -96,7 +105,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // ---- state ----
   private val docSpool = new TempFile
   private val spoolWriter = new CSVWriter(new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8")))
-  spoolWriter.writeNext(Array("id","text"))             // write csv file header
+  spoolWriter.writeNext(Array("id","text","weight"))             // write csv file header
  
   // -- Vocabulary tables --
   
@@ -159,42 +168,46 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
  
   // --- Processing during addDocument ---
   
-  // Walks over a sequence of strings, converting each to a termID, and emitting BigramKeys over every unigram and bigram
+  // Walks over a sequence of terms, converting each to a termID, and emitting BigramKeys over every unigram and bigram
   // All term IDs are relative to inStrings
   // Side effect: adds entries to inStrings
-  class BigramIterator(val terms:Seq[String]) extends Iterator[BigramKey] {
+  // Unigrams are emitted with original weights, bigrams emitted with weight 1.0
+  class BigramIterator(val terms:Seq[WeightedTermString]) extends Iterator[WeightedBigramKey] {
 
     private val t1 = terms.iterator
     private val t2 = if (!terms.isEmpty) terms.tail.iterator else null
   
     private var lastTerm:TermID = BigramKey.noTerm
+    private var lastWeight:TermWeight = 0
       
     def hasNext = t1.hasNext
     
     // flips between emitting bigrams and unigrams in such a way that t1.next is true iff we haven't finished 
     def next = {
       if (lastTerm == BigramKey.noTerm) {
-        lastTerm = inStrings.stringToId(t1.next)
+        val t1TermWeight = t1.next
+        lastTerm = inStrings.stringToId(t1TermWeight.term)
+        lastWeight = t1TermWeight.weight                    
         if (t2.hasNext)
-          BigramKey(lastTerm, inStrings.stringToId(t2.next))    // emit bigram
+          (BigramKey(lastTerm, inStrings.stringToId(t2.next.term)), 1)  // emit bigram with weight 1
         else
-          BigramKey(lastTerm)                                     // or if there isn't a next term, emit unigram
+          (BigramKey(lastTerm), lastWeight)                           // or if there isn't a next term, emit unigram
       } else {
         val term = lastTerm
         lastTerm = BigramKey.noTerm
-        BigramKey(term)                                           // emit unigram
+        (BigramKey(term), lastWeight)                               // every other call, emit unigram
       }
     }
   }
   
   // Count all unigrams and bigrams appearing in a document vector
-  def countBigramTerms(terms:Seq[String]) = {
+  def countBigramTerms(terms:Seq[WeightedTermString]) = {
     val termIter =  new BigramIterator(terms)
-    val termCounts = Map[BigramKey, Int]()
+    val termCounts = Map[BigramKey, TermWeight]()
     
-    for (bigram <- termIter) {
-      val prev_count = termCounts.getOrElse(bigram, 0)
-      termCounts += (bigram-> (prev_count + 1))
+    for ((termKey, termWeight) <- termIter) {
+      val prev_count:TermWeight = termCounts.getOrElse(termKey, 0)
+      termCounts += (termKey -> (prev_count + termWeight))
     }
     termCounts
   } 
@@ -208,13 +221,11 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   }
   
   // saves document terms to a temp file
-  def spoolDocToDisk(docId: DocumentID, terms: Seq[String]) : Unit = {   
-    // check requirement: terms can't have sep char in them (default: space)
-    require(terms.forall(_.forall(_ != spoolTermSepChar))) 
+  def spoolDocToDisk(docId: DocumentID, terms: Seq[WeightedTermString]) : Unit = {   
     
-    // write docid,text to disk
+    // write docid,terms to disk (terms as JSON)
     val idStr = docId.toString
-    val termsStr = terms.mkString(spoolTermSepChar.toString)
+    val termsStr = Json.stringify(Json.toJson(terms))
     spoolWriter.writeNext(Array(idStr, termsStr))
   }
   
@@ -229,10 +240,10 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   }
     
   // Iterator that reads saved document terms back in, counting term frequency and creating new TF vectors
-  def documentVectorIterator() : Iterator[(DocumentID, Map[BigramKey, Int])] = {
+  def documentVectorIterator() : Iterator[(DocumentID, Map[BigramKey, TermWeight])] = {
         
     // iterator to read the documents in one at a time from CSV, converting back to document vectors
-    new Iterator[(DocumentID, Map[BigramKey, Int])] {
+    new Iterator[(DocumentID, Map[BigramKey, TermWeight])] {
       
       spoolWriter.close()              // flushes, so we can read all we've written
       val spoolReader = new CSVReader(new BufferedReader(new InputStreamReader(docSpool.inputStream, "utf-8")))
@@ -242,7 +253,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
       def hasNext = line != null
       def next = {
         val id = line(0).toLong.asInstanceOf[DocumentID]
-        val terms = line(1).split(spoolTermSepChar.toString)
+        val terms = Json.parse(line(1)).as[Seq[WeightedTermString]]
         val docVec = countBigramTerms(terms)
           
         line = spoolReader.readNext()
@@ -259,7 +270,7 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // addDocument updates the bigram vocabulary table, and save document to disk
   // Importantly, we do not save the document vector here 
   // (otherwise we'd use a ton of memory, as most bigrams will be discarded during colocation detection)
-  def addDocument(docId: DocumentID, terms: Seq[String]) = {
+  def addDocumentWithWeightedTerms(docId: DocumentID, terms: Seq[WeightedTermString]) = {
   
     if (terms.size > 0) {
       val docVec = countBigramTerms(terms)
@@ -267,6 +278,11 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
       spoolDocToDisk(docId, terms)
     }
     _numDocs += 1
+  }
+
+  // Add terms without weights
+  def addDocument(docId: DocumentID, terms: Seq[String]) = {
+    addDocumentWithWeightedTerms(docId, terms.map(t => WeightedTermString(t,1)))
   }
   
   // Generate inverse document frequency map: term -> idf
