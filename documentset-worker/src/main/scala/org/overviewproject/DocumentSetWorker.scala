@@ -21,7 +21,7 @@ import org.overviewproject.util.Logger
  * may want to explicitly disconnect from the queue, to rebalance the message groups.
  */
 object DocumentSetWorker extends App {
-  private val NumberOfJobHandlers = 4
+  private val NumberOfJobHandlers = 1
 
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
@@ -45,7 +45,7 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
-  val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
+ // val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
 
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => Stop
@@ -54,7 +54,7 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
   def receive = {
     case StartListening => {
       jobHandlers.foreach ( _ ! StartListening )
-      clusteringJobHandler ! StartListening
+     // clusteringJobHandler ! StartListening
     }
     case Terminated(a) => {
       Logger.error("Unexpected shutdown")
