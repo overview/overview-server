@@ -25,6 +25,7 @@ class MessageQueueConnectionSpec extends Specification with Mockito {
   "ConnectionMonitor" should {
 
     abstract class ConnectionSetup extends ActorSystemContext with Before {
+      val error = new Exception("Connection Failure")
       var messageQueueConnection: TestActorRef[TestMessageQueueConnection] = _
       lazy val connectionFactory = messageQueueConnection.underlyingActor.connectionFactory
       lazy val connection: Connection  = messageQueueConnection.underlyingActor.connection
@@ -43,7 +44,7 @@ class MessageQueueConnectionSpec extends Specification with Mockito {
 
     "restart connection on failure" in new ConnectionSetup {
       messageQueueConnection ! StartConnection
-      messageQueueConnection ! ConnectionFailure(new Exception("failure"))
+      messageQueueConnection ! ConnectionFailure(error)
 
       there were two(connectionFactory).createConnection(any, any, any)
     }
@@ -66,13 +67,16 @@ class MessageQueueConnectionSpec extends Specification with Mockito {
       client.expectMsg(ConnectedTo(connection))
     }
     
-    "notify clients when connection fails" in {
-      skipped
-    }
+    "notify clients when connection fails" in new ConnectionSetup {
+      val client = TestProbe()
+      
+      messageQueueConnection ! StartConnection
+      messageQueueConnection.tell(RegisterClient, client.ref)
+      messageQueueConnection ! ConnectionFailure(error)
+      
+      client.expectMsg(ConnectedTo(connection))
+      client.expectMsg(ConnectionFailure(error))
 
-    "notify clients when connection restarts" in {
-      skipped
     }
-
   }
 }

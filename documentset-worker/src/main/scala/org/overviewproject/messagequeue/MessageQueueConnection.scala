@@ -88,6 +88,8 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
 
   private def restartConnection(e: Throwable, clients: Seq[ActorRef]) = {
     Logger.info(s"Connection to Message Broker Failed: ${e.getMessage}", e)
+    clients.foreach { _ ! ConnectionFailure(e) }
+    
     self ! StartConnection
     goto(NotConnected) using NoConnection(clients)
   }
