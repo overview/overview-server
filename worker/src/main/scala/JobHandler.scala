@@ -20,6 +20,7 @@ import org.overviewproject.util._
 import org.overviewproject.util.Progress._
 import com.jolbox.bonecp._
 import org.overviewproject.persistence.orm.finders.DocumentFinder
+import scala.annotation.tailrec
 
 object JobHandler {
   // Run a single job
@@ -99,23 +100,27 @@ object JobHandler {
 
     DB.connect(dataSource)
 
-    val searchIndexSetup = Try {
-      Logger.info("Looking for Search Index")
-      SearchIndex.createIndexIfNotExisting
-    }
+    connectToSearchIndex
+    Logger.info("Starting to scan for jobs")
+    startHandlingJobs
+  }
 
-    searchIndexSetup match {
-      case Success(v) => {
-        Logger.info("Starting to scan for jobs")
-        startHandlingJobs
-      }
+  @tailrec
+  private def connectToSearchIndex: Unit = {
+    val SearchIndexRetryInterval = 5000
+
+    Logger.info("Looking for Search Index")
+    val attempt = Try { SearchIndex.createIndexIfNotExisting }
+
+    attempt match {
+      case Success(v) => Logger.info("Found Search Index")
       case Failure(e) => {
         Logger.error("Unable to create Search Index", e)
-        throw (e)
+        Thread.sleep(SearchIndexRetryInterval)
+        connectToSearchIndex
       }
     }
   }
-
   private def startHandlingJobs: Unit = {
     val pollingInterval = 500 //milliseconds
 
@@ -208,8 +213,7 @@ object JobHandler {
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
       if (failOnUploadedDocumentSets(sourceDocumentSetId)) {
         throw new DisplayedError("not_implemented_error")
-      }
-      else {
+      } else {
         Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
         CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
       }
