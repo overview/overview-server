@@ -40,7 +40,7 @@ CREATE TABLE grouped_file_upload (
   name                  VARCHAR NOT NULL,
   size                  BIGINT NOT NULL,
   last_modified_date    VARCHAR(255) NOT NULL,
-  uploaded_size		BIGINT NOT NULL,
+  uploaded_size         BIGINT NOT NULL,
   contents_oid          OID NOT NULL
 );
 CREATE INDEX grouped_file_upload_file_group_id ON grouped_file_upload (file_group_id);
@@ -72,7 +72,7 @@ DELETE FROM document_set_creation_job_type WHERE id = 4;
 ALTER TABLE document_set_creation_job DROP COLUMN file_group_id;
 
 DROP TABLE IF EXISTS grouped_file_upload CASCADE;
-DROP TABLE IF EXISTS grouped_process_file CASCADE;
+DROP TABLE IF EXISTS grouped_processed_file CASCADE;
 DROP TABLE IF EXISTS file_job_state CASCADE;
 DROP TABLE IF EXISTS file_group CASCADE;
 
