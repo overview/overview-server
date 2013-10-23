@@ -1,16 +1,75 @@
 package org.overviewproject.jobhandler
 
 import scala.language.postfixOps
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{ Promise, Future }
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
-
+import scala.util.{ Failure, Success }
 import akka.actor._
-
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.util.Logger
-
 import MessageQueueActorFSM._
+
+import MessageQueueActorFSM2._
+import javax.jms.Connection
+
+trait Message {
+  val text: String
+}
+
+trait MessageService2 {
+  def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit
+  def acknowledge(message: Message): Unit
+}
+
+object MessageQueueActorFSM2 {
+  sealed trait State2
+  case object MessageHandlerIsIdle extends State2
+  case object MessageHandlerIsBusy extends State2
+
+  sealed trait Data2
+  case class MessageHandler(messageHandler: ActorRef) extends Data2
+  case class Task(messageHandler: ActorRef, message: Message) extends Data2
+}
+
+object MessageQueueActorProtocol2 {
+  case class RegisterWith(connectionMonitor: ActorRef)
+}
+
+abstract class MessageQueueActor2[T](messageService: MessageService2) extends Actor with FSM[State2, Data2] with MessageHandling[T] {
+  import MessageQueueActorProtocol2._
+  import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+
+  startWith(MessageHandlerIsIdle, MessageHandler(context.actorOf(createMessageHandler)))
+
+  when(MessageHandlerIsIdle) {
+    case Event(RegisterWith(connectionMonitor), _) => {
+      connectionMonitor ! RegisterClient
+      stay
+    }
+    case Event(ConnectedTo(connection), _) => {
+      messageService.listenToConnection(connection, deliverMessage)
+      stay
+    }
+    case Event(message: Message, MessageHandler(messageHandler)) => {
+      messageHandler ! convertMessage(message.text)
+      goto(MessageHandlerIsBusy) using Task(messageHandler, message)
+    }
+  }
+  
+  when(MessageHandlerIsBusy) {
+    case Event(MessageHandled, Task(messageHandler, message)) => {
+      messageService.acknowledge(message)
+      
+      goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
+    }
+    
+  }
+  initialize
+
+  private def deliverMessage(message: Message): Unit = {
+    self ! message
+  }
+}
 
 trait MessageHandling[T] {
   def createMessageHandler: Props
@@ -49,7 +108,7 @@ abstract class MessageQueueActor[T](messageService: MessageService) extends Acto
 
   // Time between reconnection attempts
   private val ReconnectionInterval = 1 seconds
-  
+
   // The communication mechanism between the Actor thread and the MessageServiceComponent thread
   // The MessageServiceComponent blocks waiting for `currentJobCompletion` to complete. The `MessageQueueActor`
   // completes the promise when the message handler has finished its task.
@@ -97,7 +156,7 @@ abstract class MessageQueueActor[T](messageService: MessageService) extends Acto
       goto(NotConnected) using ConnectionFailed(e)
     }
   }
-  
+
   // Send `StartListening` to self when connection fails to try to reestablish the connection.
   onTransition {
     case _ -> NotConnected => (nextStateData: @unchecked) match { // error if ConnectionFailed is not set
@@ -110,7 +169,6 @@ abstract class MessageQueueActor[T](messageService: MessageService) extends Acto
       }
     }
   }
-
 
   initialize
 

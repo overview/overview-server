@@ -2,75 +2,122 @@ package org.overviewproject.jobhandler
 
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
-
 import akka.actor._
 import akka.testkit._
-
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mutable.Specification
+import org.specs2.mock.Mockito
+import javax.jms.Connection
+import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+import org.overviewproject.jobhandler.MessageQueueActorProtocol2._
+import org.specs2.mutable.Before
 
-class MessageQueueActorSpec extends Specification {
+class MessageQueueActorSpec extends Specification with Mockito {
 
-  val connectionFailure = new Exception("connection failed")
+  //  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends MessageQueueActor[String](messageService) {
+  //    override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
+  //    override def convertMessage(message: String): String = s"CONVERTED$message"
+  //
+  //  }
 
-  class TestMessageService(failedConnectionAttempts: Int = 0) extends MessageService {
-    var messageCallback: Option[String => Future[Unit]] = None
-    var failureCallback: Option[Exception => Unit] = None
-    var connectionCreationCount: Int = 0
+  class TestMessageService extends MessageService2 {
+    var deliverMessage: Message => Unit = _
+    var lastAcknowledged: Option[Message] = None
 
-    override val queueName = "Pepe leQueue"
-      
-    override def createConnection(messageDelivery: String => Future[Unit], failureHandler: Exception => Unit): Try[Unit] = {
-      connectionCreationCount += 1
-      messageCallback = Some(messageDelivery)
-      failureCallback = Some(failureHandler)
-
-      if (connectionCreationCount > failedConnectionAttempts) Success()
-      else Failure(connectionFailure)
+    override def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit = {
+      deliverMessage = messageDelivery
     }
-  }
-
-  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends MessageQueueActor[String](messageService) {
-    override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
-    override def convertMessage(message: String): String = s"CONVERTED$message"
-
+    
+    override def acknowledge(message: Message): Unit = lastAcknowledged = Some(message)
   }
   
+  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService2) extends MessageQueueActor2[String](messageService) {
+    override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
+    override def convertMessage(message: String): String = s"CONVERTED$message"
+  }
+
   "MessageQueueActor" should {
-    
-    "send incoming messages to handler" in new ActorSystemContext {
-      val messageService = new TestMessageService
-      val messageHandler = TestProbe()
-      val message = "Some command as json"
-        
-      val messageQueueActor = TestActorRef(new TestMessageQueueActor(messageHandler.ref, messageService))
+
+    trait MessageServiceProvider {
+      val messageService: MessageService2
+    }
+
+    abstract class MessageQueueActorSetup extends ActorSystemContext with Before {
+      self: MessageServiceProvider =>
+      var messageHandler: TestProbe = _
+      var messageQueueActor: TestActorRef[TestMessageQueueActor] = _
+
+      def before = {
+        messageHandler = TestProbe()
+        messageQueueActor = TestActorRef(new TestMessageQueueActor(messageHandler.ref, messageService))
+      }
+    }
+
+    trait MockedMessageService extends MessageServiceProvider {
+      override val messageService = smartMock[MessageService2]
+    }
+
+    trait FakeMessageService extends MessageServiceProvider {
+      val testMessageService = new TestMessageService
+      val messageService = testMessageService
+    }
+
+    "register itself with connection monitor" in new MessageQueueActorSetup with MockedMessageService {
+      val connectionMonitor = TestProbe()
+
+      messageQueueActor ! RegisterWith(connectionMonitor.ref)
+
+      connectionMonitor.expectMsg(RegisterClient)
+    }
+
+    "start listening to incoming connection" in new MessageQueueActorSetup with MockedMessageService {
+      val connection = smartMock[Connection]
+
+      messageQueueActor ! ConnectedTo(connection)
+
+      there was one(messageService).listenToConnection(any, any)
+
+    }
+
+    "send incoming message to listener" in new MessageQueueActorSetup with FakeMessageService {
+      val connection = smartMock[Connection]
+      val messageText = "a message"
+      val message = smartMock[Message]
+      message.text returns messageText
       
-      messageQueueActor ! StartListening
-      val completion = messageService.messageCallback.map(_(message))
+      messageQueueActor ! ConnectedTo(connection)
+
+      testMessageService.deliverMessage(message)
+      messageHandler.expectMsg(s"CONVERTED$messageText")
+    }
+
+    "acknowledge message when handled by listener" in new MessageQueueActorSetup with FakeMessageService {
+      val messageText = "a message"
+      val message = smartMock[Message]
+      message.text returns messageText
+      val connection = smartMock[Connection]
       
-      messageHandler.expectMsg(s"CONVERTED$message")
       
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
       messageQueueActor ! MessageHandled
       
-      completion must beSome.which(c => c.isCompleted)
+      messageService.lastAcknowledged must beSome(message)
     }
-    
-    "restart connection if connection fails before message is received" in new ActorSystemContext {
-      val messageService = new TestMessageService
-      val messageHandler = TestProbe()
-      val message = "Some command as json"
-        
-      val messageQueueActor = TestActorRef(new TestMessageQueueActor(messageHandler.ref, messageService))
-      
-      messageQueueActor ! StartListening
 
-      messageService.failureCallback.map(_(new Exception("connection failed")))
-      
-      messageService.connectionCreationCount must be equalTo(2)
+    "ignore message handled from listener when connection has failed" in {
+      skipped
     }
-    
+
+    "ignore message handled from listener when new connection has been re-established" in {
+      skipped
+    }
+
+    "hold new message after connection has been re-established, until listener has handled previous message" in {
+      skipped
+    }
   }
 }
