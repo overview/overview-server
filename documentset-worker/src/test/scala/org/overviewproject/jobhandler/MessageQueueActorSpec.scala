@@ -6,7 +6,6 @@ import akka.actor._
 import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
@@ -17,12 +16,6 @@ import org.overviewproject.jobhandler.MessageQueueActorProtocol2._
 import org.specs2.mutable.Before
 
 class MessageQueueActorSpec extends Specification with Mockito {
-
-  //  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends MessageQueueActor[String](messageService) {
-  //    override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
-  //    override def convertMessage(message: String): String = s"CONVERTED$message"
-  //
-  //  }
 
   class TestMessageService extends MessageService2 {
     var deliverMessage: Message => Unit = _
@@ -107,7 +100,10 @@ class MessageQueueActorSpec extends Specification with Mockito {
       messageQueueActor ! ConnectedTo(connection)
       testMessageService.deliverMessage(message)
       
-      messageQueueActor 
+      messageQueueActor ! ConnectionFailed
+      messageQueueActor ! MessageHandled
+      
+      messageService.lastAcknowledged must beNone
     }
 
     "ignore message handled from listener when new connection has been re-established" in {

@@ -25,7 +25,9 @@ trait ConnectionFactory {
 object ConnectionMonitorProtocol {
   case object RegisterClient
   case class ConnectedTo(connection: Connection)
+  case object ConnectionFailed
 }
+
 object MessageQueueConnectionProtocol {
   case object StartConnection
   case class ConnectionFailure(e: Throwable)
@@ -90,7 +92,7 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
 
   private def restartConnection(e: Throwable, clients: Seq[ActorRef]) = {
     Logger.info(s"Connection to Message Broker Failed: ${e.getMessage}", e)
-    clients.foreach { _ ! ConnectionFailure(e) }
+    clients.foreach { _ ! ConnectionFailed }
     
     self ! StartConnection
     goto(NotConnected) using NoConnection(clients)

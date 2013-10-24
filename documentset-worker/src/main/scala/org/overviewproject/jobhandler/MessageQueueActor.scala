@@ -25,7 +25,8 @@ object MessageQueueActorFSM2 {
   sealed trait State2
   case object MessageHandlerIsIdle extends State2
   case object MessageHandlerIsBusy extends State2
-
+  case object IgnoreMessageHandler extends State2
+  
   sealed trait Data2
   case class MessageHandler(messageHandler: ActorRef) extends Data2
   case class Task(messageHandler: ActorRef, message: Message) extends Data2
@@ -62,7 +63,16 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
       
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
-    
+    case Event(ConnectionFailed, Task(messageHandler, _)) => {
+      goto(IgnoreMessageHandler) using MessageHandler(messageHandler)
+    }
+  }
+  
+  when(IgnoreMessageHandler) {
+    case Event(MessageHandled, messageHandler: MessageHandler) => {
+      goto(MessageHandlerIsIdle) using messageHandler
+    } 
+      
   }
   initialize
 

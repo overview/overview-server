@@ -76,7 +76,7 @@ class MessageQueueConnectionSpec extends Specification with Mockito {
       messageQueueConnection ! ConnectionFailure(error)
       
       client.expectMsg(ConnectedTo(connection))
-      client.expectMsg(ConnectionFailure(error))
+      client.expectMsg(ConnectionFailed)
 
     }
   }
