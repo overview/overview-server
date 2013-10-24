@@ -6,10 +6,9 @@ import akka.testkit._
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.specs2.mutable.Before
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.MessageQueueActorProtocol2.RegisterWith
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.RegisterWith
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import javax.jms.Connection
 
@@ -20,7 +19,7 @@ class SynchronousMessageQueueActorSpec extends Specification with Mockito {
     case _ => s"CONVERTED$message"
   }
   
-  class TestMessageService extends MessageService2 {
+  class TestMessageService extends MessageService {
     var currentConnection: Connection = _
     var deliverMessage: MessageContainer => Unit = _
 
@@ -41,7 +40,7 @@ class SynchronousMessageQueueActorSpec extends Specification with Mockito {
   "MessageReceiver" should {
 
     trait MessageServiceProvider {
-      val messageService: MessageService2 
+      val messageService: MessageService 
     }
     
     abstract class MessageReceiverSetup extends ActorSystemContext with Before {
@@ -60,7 +59,7 @@ class SynchronousMessageQueueActorSpec extends Specification with Mockito {
     }
 
     trait MockMessageServiceProvider extends MessageServiceProvider {
-      override val messageService = smartMock[MessageService2]
+      override val messageService = smartMock[MessageService]
     }
    
     trait FakeMessageServiceProvider extends MessageServiceProvider {

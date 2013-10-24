@@ -6,14 +6,19 @@ import akka.actor._
 import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.{ DataSource, DB }
 import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
 import org.overviewproject.util.Logger
 import org.overviewproject.messagequeue.MessageQueueConnection
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
-import org.overviewproject.jobhandler.MessageQueueActorProtocol2.RegisterWith
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.RegisterWith
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
+
+object ActorCareTakerProtocol {
+  case object StartListening
+}
+
+import ActorCareTakerProtocol._
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared

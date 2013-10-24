@@ -2,11 +2,9 @@ package org.overviewproject.jobhandler.filegroup
 
 
 import akka.actor._
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
-import org.overviewproject.jobhandler.SynchronousMessageQueueActor
 import org.overviewproject.messagequeue.apollo.ApolloMessageReceiver
-import org.overviewproject.jobhandler.MessageQueueActorProtocol2.RegisterWith
+import org.overviewproject.jobhandler.MessageQueueActorProtocol.RegisterWith
 
 class ClusteringJobHandler extends Actor {
   val motherWorker = context.actorOf(MotherWorker())

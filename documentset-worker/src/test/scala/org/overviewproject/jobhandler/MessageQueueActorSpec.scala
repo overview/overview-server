@@ -12,12 +12,12 @@ import org.specs2.mock.Mockito
 import javax.jms.Connection
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.jobhandler.MessageQueueActorProtocol2._
+import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.specs2.mutable.Before
 
 class MessageQueueActorSpec extends Specification with Mockito {
 
-  class TestMessageService extends MessageService2 {
+  class TestMessageService extends MessageService {
     var currentConnection: Connection = _
     var deliverMessage: MessageContainer => Unit = _
     var lastAcknowledged: Option[MessageContainer] = None
@@ -33,7 +33,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
   }
 
-  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService2) extends MessageQueueActor2[String](messageService) {
+  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends MessageQueueActor2[String](messageService) {
     override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
     override def convertMessage(message: String): String = s"CONVERTED$message"
   }
@@ -42,7 +42,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
 
     trait MessageServiceProvider {
       val connection = smartMock[Connection]
-      val messageService: MessageService2
+      val messageService: MessageService
     }
 
     abstract class MessageQueueActorSetup extends ActorSystemContext with Before {
@@ -57,7 +57,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     trait MockedMessageService extends MessageServiceProvider {
-      override val messageService = smartMock[MessageService2]
+      override val messageService = smartMock[MessageService]
     }
 
     trait FakeMessageService extends MessageServiceProvider {

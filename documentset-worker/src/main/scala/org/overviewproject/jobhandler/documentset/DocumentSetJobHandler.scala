@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.documentset
 
 import scala.concurrent.duration._
 import akka.actor._
-import org.overviewproject.jobhandler.{ ApolloMessageService2, MessageQueueActor2, MessageService2 }
+import org.overviewproject.jobhandler.{ ApolloMessageService, MessageQueueActor2, MessageService }
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
@@ -103,7 +103,7 @@ class DocumentSetMessageHandlerImpl extends DocumentSetMessageHandler with Searc
 }
 
 
-class DocumentSetJobHandler(messageService: MessageService2) extends MessageQueueActor2[Command](messageService) {
+class DocumentSetJobHandler(messageService: MessageService) extends MessageQueueActor2[Command](messageService) {
   override def createMessageHandler: Props = Props[DocumentSetMessageHandlerImpl]
   override def convertMessage(message: String): Command = ConvertDocumentSetMessage(message)
 
@@ -112,7 +112,7 @@ class DocumentSetJobHandler(messageService: MessageService2) extends MessageQueu
 
 object DocumentSetJobHandler {
  private val messageService = 
-   new ApolloMessageService2(Configuration.messageQueue.getString("queue_name"), Session.CLIENT_ACKNOWLEDGE)
+   new ApolloMessageService(Configuration.messageQueue.getString("queue_name"), Session.CLIENT_ACKNOWLEDGE)
   
   def apply(): Props = Props(new DocumentSetJobHandler(messageService))
 }
