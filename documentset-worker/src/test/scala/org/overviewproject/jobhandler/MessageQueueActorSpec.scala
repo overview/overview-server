@@ -12,6 +12,7 @@ import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import javax.jms.Connection
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import org.overviewproject.jobhandler.MessageQueueActorProtocol2._
 import org.specs2.mutable.Before
 
@@ -42,6 +43,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
   "MessageQueueActor" should {
 
     trait MessageServiceProvider {
+      val connection = smartMock[Connection]
       val messageService: MessageService2
     }
 
@@ -49,7 +51,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
       self: MessageServiceProvider =>
       var messageHandler: TestProbe = _
       var messageQueueActor: TestActorRef[TestMessageQueueActor] = _
-
+      
       def before = {
         messageHandler = TestProbe()
         messageQueueActor = TestActorRef(new TestMessageQueueActor(messageHandler.ref, messageService))
@@ -63,6 +65,11 @@ class MessageQueueActorSpec extends Specification with Mockito {
     trait FakeMessageService extends MessageServiceProvider {
       val testMessageService = new TestMessageService
       val messageService = testMessageService
+      
+      val messageText = "a message"
+      val message = smartMock[Message]
+      message.text returns messageText
+
     }
 
     "register itself with connection monitor" in new MessageQueueActorSetup with MockedMessageService {
@@ -74,8 +81,6 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     "start listening to incoming connection" in new MessageQueueActorSetup with MockedMessageService {
-      val connection = smartMock[Connection]
-
       messageQueueActor ! ConnectedTo(connection)
 
       there was one(messageService).listenToConnection(any, any)
@@ -83,11 +88,6 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     "send incoming message to listener" in new MessageQueueActorSetup with FakeMessageService {
-      val connection = smartMock[Connection]
-      val messageText = "a message"
-      val message = smartMock[Message]
-      message.text returns messageText
-      
       messageQueueActor ! ConnectedTo(connection)
 
       testMessageService.deliverMessage(message)
@@ -95,11 +95,6 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     "acknowledge message when handled by listener" in new MessageQueueActorSetup with FakeMessageService {
-      val messageText = "a message"
-      val message = smartMock[Message]
-      message.text returns messageText
-      val connection = smartMock[Connection]
-      
       
       messageQueueActor ! ConnectedTo(connection)
       testMessageService.deliverMessage(message)
@@ -108,8 +103,11 @@ class MessageQueueActorSpec extends Specification with Mockito {
       messageService.lastAcknowledged must beSome(message)
     }
 
-    "ignore message handled from listener when connection has failed" in {
-      skipped
+    "ignore message handled from listener when connection has failed" in new MessageQueueActorSetup with FakeMessageService {
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
+      
+      messageQueueActor 
     }
 
     "ignore message handled from listener when new connection has been re-established" in {

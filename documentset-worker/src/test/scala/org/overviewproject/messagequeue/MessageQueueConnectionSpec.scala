@@ -2,6 +2,7 @@ package org.overviewproject.messagequeue
 
 import scala.util.{ Success, Try }
 import akka.testkit._
+import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito

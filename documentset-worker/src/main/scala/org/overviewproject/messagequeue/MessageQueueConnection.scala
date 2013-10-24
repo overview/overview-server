@@ -22,12 +22,13 @@ trait ConnectionFactory {
   def createConnection(brokerUri: String, username: String, password: String): Try[Connection]
 }
 
+object ConnectionMonitorProtocol {
+  case object RegisterClient
+  case class ConnectedTo(connection: Connection)
+}
 object MessageQueueConnectionProtocol {
   case object StartConnection
   case class ConnectionFailure(e: Throwable)
-  case object RegisterClient
-  case class ConnectedTo(connection: Connection)
-
 }
 
 object MessageQueueConnectionFSM {
@@ -42,7 +43,8 @@ object MessageQueueConnectionFSM {
 
 trait MessageQueueConnection extends Actor with FSM[State, Data] with ConnectionFactory {
   import MessageQueueConnectionProtocol._
-
+  import ConnectionMonitorProtocol._
+  
   private val BrokerUri: String = Configuration.messageQueue.getString("broker_uri")
   private val Username: String = Configuration.messageQueue.getString("username")
   private val Password: String = Configuration.messageQueue.getString("password")

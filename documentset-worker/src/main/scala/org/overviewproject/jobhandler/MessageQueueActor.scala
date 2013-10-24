@@ -37,7 +37,7 @@ object MessageQueueActorProtocol2 {
 
 abstract class MessageQueueActor2[T](messageService: MessageService2) extends Actor with FSM[State2, Data2] with MessageHandling[T] {
   import MessageQueueActorProtocol2._
-  import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+  import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 
   startWith(MessageHandlerIsIdle, MessageHandler(context.actorOf(createMessageHandler)))
 
