@@ -10,6 +10,10 @@ import org.overviewproject.jobhandler.MessageQueueActorProtocol.StartListening
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
 import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
 import org.overviewproject.util.Logger
+import org.overviewproject.messagequeue.MessageQueueConnection
+import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+import org.overviewproject.jobhandler.MessageQueueActorProtocol2.RegisterWith
+import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 
 /**
  * Creates as many JobHandler actors as we think we can handle, with a shared
@@ -40,6 +44,7 @@ object DocumentSetWorker extends App {
  */
 class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
 
+  val connectionMonitor = context.actorOf(ApolloMessageQueueConnection())
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
@@ -51,7 +56,8 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
 
   def receive = {
     case StartListening => {
-      jobHandlers.foreach(_ ! StartListening)
+      jobHandlers.foreach(_ ! RegisterWith(connectionMonitor))
+      connectionMonitor ! StartConnection
       clusteringJobHandler ! StartListening
     }
     case Terminated(a) => {

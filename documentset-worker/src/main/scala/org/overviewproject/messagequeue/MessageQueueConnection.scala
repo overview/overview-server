@@ -4,14 +4,13 @@ import javax.jms.Connection
 import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success, Try }
-import akka.actor.Actor
-import akka.actor.FSM
+import akka.actor._
 import org.overviewproject.util.Configuration
 import MessageQueueConnectionFSM._
 import javax.jms.ExceptionListener
 import javax.jms.JMSException
 import org.overviewproject.util.Logger
-import akka.actor.ActorRef
+
 
 trait Message {
   val content: String
@@ -98,4 +97,5 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
     goto(NotConnected) using NoConnection(clients)
   }
 }
+
 
