@@ -28,6 +28,9 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     override def acknowledge(message: Message): Unit = lastAcknowledged = Some(message)
+    override def stopListening: Unit = {
+      currentConnection = null
+    }
   }
 
   class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService2) extends MessageQueueActor2[String](messageService) {
@@ -136,7 +139,23 @@ class MessageQueueActorSpec extends Specification with Mockito {
       messageQueueActor ! ConnectedTo(newConnection2)
       messageQueueActor ! MessageHandled
 
-      messageService.currentConnection must be equalTo(newConnection2)
+      messageService.currentConnection must be equalTo (newConnection2)
+    }
+
+    "close message service when connection fails " in new MessageQueueActorSetup with MockedMessageService {
+      messageQueueActor ! ConnectedTo(connection)
+      messageQueueActor ! ConnectionFailed
+
+      there was one(messageService).stopListening
+    }
+
+    "close message service when connection fails while message handler is busy" in new MessageQueueActorSetup with FakeMessageService {
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
+
+      messageQueueActor ! ConnectionFailed
+
+      testMessageService.currentConnection must beNull
     }
   }
 }

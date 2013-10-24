@@ -19,6 +19,7 @@ trait Message {
 trait MessageService2 {
   def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit
   def acknowledge(message: Message): Unit
+  def stopListening: Unit
 }
 
 object MessageQueueActorFSM2 {
@@ -59,6 +60,10 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
       messageHandler ! convertMessage(message.text)
       goto(MessageHandlerIsBusy) using Task(messageHandler, message)
     }
+    case Event(ConnectionFailed, _) => {
+      messageService.stopListening
+      stay
+    }
   }
   
   when(MessageHandlerIsBusy) {
@@ -68,6 +73,7 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
     case Event(ConnectionFailed, Task(messageHandler, _)) => {
+      messageService.stopListening
       goto(IgnoreMessageHandler) using MessageHandler(messageHandler)
     }
   }
@@ -83,7 +89,7 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
     case Event(ConnectedTo(connection), MessageHandler(messageHandler)) => {
       stay using Reconnected(messageHandler, connection)
     }
-    case Event(ConnectionFailed, data) => {
+    case Event(ConnectionFailed, data) => { 
       stay using MessageHandler(data.messageHandler)
     }
       
