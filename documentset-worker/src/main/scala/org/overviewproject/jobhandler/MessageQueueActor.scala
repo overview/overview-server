@@ -27,9 +27,13 @@ object MessageQueueActorFSM2 {
   case object MessageHandlerIsBusy extends State2
   case object IgnoreMessageHandler extends State2
   
-  sealed trait Data2
+  sealed trait Data2 {
+    val messageHandler: ActorRef
+  }
+  
   case class MessageHandler(messageHandler: ActorRef) extends Data2
   case class Task(messageHandler: ActorRef, message: Message) extends Data2
+  case class Reconnected(messageHandler: ActorRef, connection: Connection) extends Data2
 }
 
 object MessageQueueActorProtocol2 {
@@ -72,6 +76,16 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
     case Event(MessageHandled, messageHandler: MessageHandler) => {
       goto(MessageHandlerIsIdle) using messageHandler
     } 
+    case Event(MessageHandled, Reconnected(messageHandler, connection)) => {
+      self ! ConnectedTo(connection)
+      goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
+    }
+    case Event(ConnectedTo(connection), MessageHandler(messageHandler)) => {
+      stay using Reconnected(messageHandler, connection)
+    }
+    case Event(ConnectionFailed, data) => {
+      stay using MessageHandler(data.messageHandler)
+    }
       
   }
   initialize

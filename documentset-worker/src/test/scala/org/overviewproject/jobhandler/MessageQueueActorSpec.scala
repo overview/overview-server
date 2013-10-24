@@ -18,16 +18,18 @@ import org.specs2.mutable.Before
 class MessageQueueActorSpec extends Specification with Mockito {
 
   class TestMessageService extends MessageService2 {
+    var currentConnection: Connection = _
     var deliverMessage: Message => Unit = _
     var lastAcknowledged: Option[Message] = None
 
     override def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit = {
+      currentConnection = connection
       deliverMessage = messageDelivery
     }
-    
+
     override def acknowledge(message: Message): Unit = lastAcknowledged = Some(message)
   }
-  
+
   class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService2) extends MessageQueueActor2[String](messageService) {
     override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
     override def convertMessage(message: String): String = s"CONVERTED$message"
@@ -44,7 +46,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
       self: MessageServiceProvider =>
       var messageHandler: TestProbe = _
       var messageQueueActor: TestActorRef[TestMessageQueueActor] = _
-      
+
       def before = {
         messageHandler = TestProbe()
         messageQueueActor = TestActorRef(new TestMessageQueueActor(messageHandler.ref, messageService))
@@ -58,7 +60,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
     trait FakeMessageService extends MessageServiceProvider {
       val testMessageService = new TestMessageService
       val messageService = testMessageService
-      
+
       val messageText = "a message"
       val message = smartMock[Message]
       message.text returns messageText
@@ -88,30 +90,53 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
 
     "acknowledge message when handled by listener" in new MessageQueueActorSetup with FakeMessageService {
-      
+
       messageQueueActor ! ConnectedTo(connection)
       testMessageService.deliverMessage(message)
       messageQueueActor ! MessageHandled
-      
+
       messageService.lastAcknowledged must beSome(message)
     }
 
     "ignore message handled from listener when connection has failed" in new MessageQueueActorSetup with FakeMessageService {
       messageQueueActor ! ConnectedTo(connection)
       testMessageService.deliverMessage(message)
-      
+
       messageQueueActor ! ConnectionFailed
       messageQueueActor ! MessageHandled
-      
+
       messageService.lastAcknowledged must beNone
     }
 
-    "ignore message handled from listener when new connection has been re-established" in {
-      skipped
+    "ignore message handled from listener when new connection has been re-established" in new MessageQueueActorSetup with FakeMessageService {
+      val newConnection = mock[Connection]
+
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
+
+      messageQueueActor ! ConnectionFailed
+      messageQueueActor ! ConnectedTo(newConnection)
+      messageQueueActor ! MessageHandled
+
+      messageService.lastAcknowledged must beNone
+      messageService.currentConnection must be equalTo (newConnection)
+
     }
 
-    "hold new message after connection has been re-established, until listener has handled previous message" in {
-      skipped
+    "handle repeated connection failures while message handler is busy" in new MessageQueueActorSetup with FakeMessageService {
+      val newConnection1 = mock[Connection]
+      val newConnection2 = mock[Connection]
+
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
+
+      messageQueueActor ! ConnectionFailed
+      messageQueueActor ! ConnectedTo(newConnection1)
+      messageQueueActor ! ConnectionFailed
+      messageQueueActor ! ConnectedTo(newConnection2)
+      messageQueueActor ! MessageHandled
+
+      messageService.currentConnection must be equalTo(newConnection2)
     }
   }
 }
