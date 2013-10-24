@@ -180,7 +180,13 @@ views.DocumentSet._import.from_upload=CSV upload
 
 views.DocumentSet._importDocumentCloud.h1=Import a DocumentCloud project
 
-views.DocumentSet._importPane.back=Back to your document sets
+views.DocumentSet._importPane.back=Document sets
+views.DocumentSet._importPane.import_public=Import an example document set
+views.DocumentSet._importPane.import_dropdown=Import documents
+views.DocumentSet._importPane.import_from_shared=Import documents shared with you
+views.DocumentSet._importPane.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
+views.DocumentSet._importPane.import_from_upload=Import from a CSV file
+views.DocumentSet._importPane.import_from_mass_upload=Upload PDF files
 
 views.DocumentSet._importPublic.h1=Import an example document set
 views.DocumentSet._importPublic.loading=Loading document sets…
@@ -249,7 +255,7 @@ views.DocumentSet.index.no_document_sets=You have no document sets ready for vie
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
 views.DocumentSet.index.import_public=Import an example document set
-views.DocumentSet.index.import_dropdown=Import your documents
+views.DocumentSet.index.import_dropdown=Import documents
 views.DocumentSet.index.import_from_shared=Import documents shared with you
 views.DocumentSet.index.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
 views.DocumentSet.index.import_from_upload=Import from a CSV file
@@ -323,7 +329,7 @@ views.ImportJob._documentSetCreationJob.job_state_description.retrieving_documen
 views.ImportJob._documentSetCreationJob.job_state_description.saving_document_tree=Saving document tree
 views.ImportJob._documentSetCreationJob.job_state_description.worker_error=Import failed (system error)
 views.ImportJob._documentSetCreationJob.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
-views.ImportJob._documentSetCreationJob.job_state_description.not_implemented_error=Cloning document sets with uploaded files is not yet implemented 
+views.ImportJob._documentSetCreationJob.job_state_description.not_implemented_error=Cloning document sets with uploaded files is not yet implemented
 views.ImportJob._documentSetCreationJob.jobs_to_process=Waiting for {0,choice,0#no jobs|1#one job|2#{0,number,integer} jobs} to complete before processing can begin
 views.ImportJob._documentSetCreationJob.action_cancel=Cancel Import
 views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.

@@ -63,6 +63,7 @@ body.document-set-index {
     }
 
     #jobs-and-document-sets {
+      .opacity(0);
       background: @bodyBackground;
       position: relative;
       height: auto;
@@ -82,6 +83,7 @@ body.document-set-index {
     &[data-import-pane="from-upload"]>#import-from-upload,
     &[data-import-pane="from-mass-upload"]>#import-from-mass-upload {
       height: auto;
+      min-height: 350px;
       .opacity(100);
     }
   }

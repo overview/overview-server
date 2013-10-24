@@ -1,5 +1,6 @@
+@(hasDocuments: Boolean)
 @defining(scopedMessages("views.DocumentSet._importDocumentCloud")) { m =>
-  @_importPane(m("h1")) {
+  @_importPane(h1 = m("h1"), hasDocuments = hasDocuments) {
     <h2>@m("loading")</h2>
     <!-- This content will be replaced in JavaScript -->
   }

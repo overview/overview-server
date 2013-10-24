@@ -21,6 +21,10 @@
   </script>
 }
 
+@noDocuments = @{
+  documentSets.isEmpty && jobs.isEmpty
+}
+
 @jsMessageKeys = @{Seq(
   "views.DocumentSet.index.ImportOptions.title",
   "views.DocumentSet.index.ImportOptions.lang.label",
@@ -69,12 +73,11 @@
     <div id="jobs-and-document-sets">
       <div class="page-header"><h1>@m("h1")</h1></div>
 
-      @if(documentSets.isEmpty && jobs.isEmpty) {
+      @if(noDocuments) {
         <p class="preamble">@m("no_document_sets_or_jobs")</p>
       }
 
       <div class="nav-buttons">
-        <a class="btn" href="#import-public">@m("import_public")</a>
         <div class="dropdown">
           <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
             @m("import_dropdown")
@@ -85,6 +88,7 @@
             <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
             <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
             <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
+            <li><a href="#import-public">@m("import_public")</a></li>
           </ul>
         </div>
       </div>
@@ -119,23 +123,23 @@
     </div>
 
     <div class="import-pane" id="import-public">
-      @views.html.DocumentSet._importPublic()
+      @views.html.DocumentSet._importPublic(! (noDocuments))
     </div>
 
     <div class="import-pane" id="import-shared">
-      @views.html.DocumentSet._importShared()
+      @views.html.DocumentSet._importShared(! (noDocuments))
     </div>
 
     <div class="import-pane" id="import-from-documentcloud-account">
-      @views.html.DocumentSet._importDocumentCloud()
+      @views.html.DocumentSet._importDocumentCloud(! (noDocuments))
     </div>
 
     <div class="import-pane" id="import-from-upload">
-      @views.html.DocumentSet._uploadForm()
+      @views.html.DocumentSet._uploadForm(! (noDocuments))
     </div>
 
     <div class="import-pane" id="import-from-mass-upload">
-      @views.html.DocumentSet._massUploadForm()
+      @views.html.DocumentSet._massUploadForm(! (noDocuments))
     </div>
   }
 }

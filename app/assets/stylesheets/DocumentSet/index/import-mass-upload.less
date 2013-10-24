@@ -1,7 +1,7 @@
 @import-once "../../mixins.less";
 
 #import-from-mass-upload {
-  ul {
+  ul.files {
     padding: 0;
     list-style: none;
     max-height: 20em;
@@ -14,34 +14,34 @@
     padding: 0.5em;
     width: 35em;
     min-height: 9em;
-  }
 
-  li {
-    line-height: 1.4em;
-    height: 1.4em;
-    margin: .1em 1em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+    li {
+      line-height: 1.4em;
+      height: 1.4em;
+      margin: .1em 1em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
 
-    i {
-      margin-right: 1em;
-      margin-top: 3px;
-      float: left;
+      i {
+        margin-right: 1em;
+        margin-top: 3px;
+        float: left;
+      }
     }
-  }
 
-  li.empty-upload {
-    color: @mutedShadeColor;
-    height: inherit;
-    text-align: center;
-    margin-top: 1em;
+    li.empty-upload {
+      color: @mutedShadeColor;
+      height: inherit;
+      text-align: center;
+      margin-top: 1em;
 
-    i {
-      display: block;
-      margin: 0;
-      float: none;
-      font-size: 5em;
+      i {
+        display: block;
+        margin: 0;
+        float: none;
+        font-size: 5em;
+      }
     }
   }
 

@@ -62,8 +62,11 @@ define [
       @listenTo(@model, 'change', @_shouldSubmit)
       @optionsSet = false
 
-      $('div.nav-buttons a').click =>
-        @_cancelButton()
+      $('div.nav-buttons a.back').click =>
+        @_cancel()
+
+      $('div.nav-buttons li a').click =>
+        @_cancel()
 
     render: ->
       @$el.html(@template(t: t))

@@ -1,6 +1,6 @@
-@()(implicit lang: Lang)
+@(hasDocuments: Boolean)(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._importPublic")) { m =>
-  @_importPane(m("h1")) {
+  @_importPane(h1 = m("h1"), hasDocuments = hasDocuments) {
     <div id="import-public-document-sets" data-source-url="@routes.PublicDocumentSetController.index">
       <h2>@m("loading")</h2>
       <!-- This content will be replaced in JavaScript -->
