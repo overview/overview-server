@@ -12,13 +12,13 @@ import MessageQueueActorFSM._
 import MessageQueueActorFSM2._
 import javax.jms.Connection
 
-trait Message {
+trait MessageContainer {
   val text: String
 }
 
 trait MessageService2 {
-  def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit
-  def acknowledge(message: Message): Unit
+  def listenToConnection(connection: Connection, messageDelivery: MessageContainer => Unit): Unit
+  def acknowledge(message: MessageContainer): Unit
   def stopListening: Unit
 }
 
@@ -33,7 +33,7 @@ object MessageQueueActorFSM2 {
   }
   
   case class MessageHandler(messageHandler: ActorRef) extends Data2
-  case class Task(messageHandler: ActorRef, message: Message) extends Data2
+  case class Task(messageHandler: ActorRef, message: MessageContainer) extends Data2
   case class Reconnected(messageHandler: ActorRef, connection: Connection) extends Data2
 }
 
@@ -56,7 +56,7 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
       messageService.listenToConnection(connection, deliverMessage)
       stay
     }
-    case Event(message: Message, MessageHandler(messageHandler)) => {
+    case Event(message: MessageContainer, MessageHandler(messageHandler)) => {
       messageHandler ! convertMessage(message.text)
       goto(MessageHandlerIsBusy) using Task(messageHandler, message)
     }
@@ -96,7 +96,7 @@ abstract class MessageQueueActor2[T](messageService: MessageService2) extends Ac
   }
   initialize
 
-  private def deliverMessage(message: Message): Unit = {
+  private def deliverMessage(message: MessageContainer): Unit = {
     self ! message
   }
 }

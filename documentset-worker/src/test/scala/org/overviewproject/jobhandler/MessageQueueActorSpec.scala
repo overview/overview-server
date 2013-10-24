@@ -19,15 +19,15 @@ class MessageQueueActorSpec extends Specification with Mockito {
 
   class TestMessageService extends MessageService2 {
     var currentConnection: Connection = _
-    var deliverMessage: Message => Unit = _
-    var lastAcknowledged: Option[Message] = None
+    var deliverMessage: MessageContainer => Unit = _
+    var lastAcknowledged: Option[MessageContainer] = None
 
-    override def listenToConnection(connection: Connection, messageDelivery: Message => Unit): Unit = {
+    override def listenToConnection(connection: Connection, messageDelivery: MessageContainer => Unit): Unit = {
       currentConnection = connection
       deliverMessage = messageDelivery
     }
 
-    override def acknowledge(message: Message): Unit = lastAcknowledged = Some(message)
+    override def acknowledge(message: MessageContainer): Unit = lastAcknowledged = Some(message)
     override def stopListening: Unit = {
       currentConnection = null
     }
@@ -65,7 +65,7 @@ class MessageQueueActorSpec extends Specification with Mockito {
       val messageService = testMessageService
 
       val messageText = "a message"
-      val message = smartMock[Message]
+      val message = smartMock[MessageContainer]
       message.text returns messageText
 
     }
