@@ -10,6 +10,27 @@ import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.util.Logger
 import SynchronousMessageQueueActorFSM._
 import scala.util.Try
+import org.overviewproject.jobhandler.MessageQueueActorProtocol2.RegisterWith
+import org.overviewproject.messagequeue.ConnectionMonitorProtocol.{ RegisterClient, ConnectedTo, ConnectionFailed => CF }
+
+class MessageReceiver[T](messageRecipient: ActorRef,
+                         messageService: MessageService2,
+                         convertMessage: String => T) extends Actor {
+  
+   def receive = {
+     case RegisterWith(connectionMonitor) => connectionMonitor ! RegisterClient
+     case ConnectedTo(connection) => messageService.listenToConnection(connection, deliverMessage)
+     case CF => messageService.stopListening
+     case message: MessageContainer => {
+       Try(convertMessage(message.text)) match {
+         case Success(m) => messageRecipient ! m
+         case Failure(e) => Logger.error(s"Unable to convert incoming message", e)
+       }
+     }
+   }
+   
+   private def deliverMessage(message: MessageContainer): Unit = self ! message
+}
 
 object SynchronousMessageQueueActorFSM {
   sealed trait State
