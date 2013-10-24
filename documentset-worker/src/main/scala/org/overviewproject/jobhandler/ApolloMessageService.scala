@@ -7,7 +7,7 @@ import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination
 import org.overviewproject.util.{ Configuration, Logger }
 import scala.concurrent.{ Await, Future }
 
-class ApolloMessageService2(queueName: String) extends MessageService2 {
+class ApolloMessageService2(queueName: String, acknowledgeMode: Int = Session.AUTO_ACKNOWLEDGE) extends MessageService2 {
 
   private var session: Option[Session] = None
   private var consumer: Option[MessageConsumer] = None
@@ -44,7 +44,7 @@ class ApolloMessageService2(queueName: String) extends MessageService2 {
 
   private def createConsumer(connection: Connection): MessageConsumer = {
     val destination = new StompJmsDestination(queueName)
-    val newSession = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE)
+    val newSession = connection.createSession(false, acknowledgeMode)
     session = Some(newSession)
     
     newSession.createConsumer(destination)

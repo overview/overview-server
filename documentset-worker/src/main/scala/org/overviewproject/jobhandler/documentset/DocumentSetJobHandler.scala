@@ -111,8 +111,8 @@ class DocumentSetJobHandler(messageService: MessageService2) extends MessageQueu
 
 
 object DocumentSetJobHandler {
- private val messageService = new ApolloMessageService2(Configuration.messageQueue.getString("queue_name"))
-
+ private val messageService = 
+   new ApolloMessageService2(Configuration.messageQueue.getString("queue_name"), Session.CLIENT_ACKNOWLEDGE)
   
   def apply(): Props = Props(new DocumentSetJobHandler(messageService))
 }

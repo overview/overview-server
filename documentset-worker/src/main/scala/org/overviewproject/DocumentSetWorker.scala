@@ -56,9 +56,9 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
 
   def receive = {
     case StartListening => {
+      clusteringJobHandler ! RegisterWith(connectionMonitor)
       jobHandlers.foreach(_ ! RegisterWith(connectionMonitor))
       connectionMonitor ! StartConnection
-      clusteringJobHandler ! StartListening
     }
     case Terminated(a) => {
       Logger.error("Unexpected shutdown")
