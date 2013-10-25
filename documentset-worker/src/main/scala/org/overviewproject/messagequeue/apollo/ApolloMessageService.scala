@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue.apollo
 
 import javax.jms._
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success, Try }
-import org.fusesource.stomp.jms.{ StompJmsConnectionFactory, StompJmsDestination }
-import org.overviewproject.util.{ Configuration, Logger }
-import scala.concurrent.{ Await, Future }
+import org.fusesource.stomp.jms.StompJmsDestination
+import org.overviewproject.util.Logger
+import org.overviewproject.messagequeue.{ MessageService, MessageContainer }
+
 
 class ApolloMessageService(queueName: String, acknowledgeMode: Int = Session.AUTO_ACKNOWLEDGE) extends MessageService {
 

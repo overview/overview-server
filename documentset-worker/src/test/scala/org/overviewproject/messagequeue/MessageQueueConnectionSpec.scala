@@ -1,15 +1,14 @@
 package org.overviewproject.messagequeue
 
-import scala.util.{ Success, Try }
+import scala.util.{Success, Try}
 import akka.testkit._
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{ Before, Specification }
+
 import javax.jms.Connection
-import org.specs2.mutable.Before
-import org.overviewproject.util.MessageQueueConfig
 
 class MessageQueueConnectionSpec extends Specification with Mockito {
 

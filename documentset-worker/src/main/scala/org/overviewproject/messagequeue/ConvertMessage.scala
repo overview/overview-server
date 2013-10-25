@@ -1,6 +1,8 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue
 
 import play.api.libs.json._
+import play.api.libs.functional.syntax.functionalCanBuildApplicative
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 
 
 trait ConvertMessage {

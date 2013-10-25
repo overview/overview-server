@@ -1,25 +1,13 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue
 
+import javax.jms.Connection
 import scala.language.postfixOps
 import scala.concurrent.{ Promise, Future }
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 import akka.actor._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.util.Logger
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
 
-import MessageQueueActorFSM._
-import javax.jms.Connection
-
-trait MessageContainer {
-  val text: String
-}
-
-trait MessageService {
-  def listenToConnection(connection: Connection, messageDelivery: MessageContainer => Unit): Unit
-  def acknowledge(message: MessageContainer): Unit
-  def stopListening: Unit
-}
 
 object MessageQueueActorFSM {
   sealed trait State
@@ -47,6 +35,7 @@ trait MessageHandling[T] {
 }
 
 
+import MessageQueueActorFSM._
 
 abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
   import MessageQueueActorProtocol._

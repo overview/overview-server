@@ -4,7 +4,7 @@ import akka.actor._
 import akka.testkit._
 
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet

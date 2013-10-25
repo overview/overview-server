@@ -1,16 +1,15 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue
 
-import scala.language.postfixOps
-import scala.concurrent.Future
+
 import scala.concurrent.duration._
-import scala.util.control.Exception.allCatch
-import scala.util.{ Failure, Success }
-import akka.actor._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.util.Logger
+import scala.util.{Failure, Success}
 import scala.util.Try
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.RegisterWith
+
+import akka.actor._
+
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
+import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.util.Logger
 
 class MessageReceiver[T](messageRecipient: ActorRef,
                          messageService: MessageService,

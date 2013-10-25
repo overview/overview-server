@@ -1,17 +1,19 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.concurrent.duration.Duration
+
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
-import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import FileGroupMessageHandlerFSM._
-import scala.concurrent.duration.Duration
+
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.database.orm.finders.GroupedProcessedFileFinder
-import org.overviewproject.tree.orm.GroupedProcessedFile
+import org.overviewproject.database.orm.finders.{ GroupedFileUploadFinder, GroupedProcessedFileFinder }
 import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
+import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol._
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
+import org.overviewproject.tree.orm.GroupedProcessedFile
+
+import FileGroupMessageHandlerFSM._
 
 trait FileGroupMessageHandlerComponent {
   val actorCreator: ActorCreator

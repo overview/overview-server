@@ -1,6 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.overviewproject.jobhandler.ConvertMessage
+import org.overviewproject.messagequeue.ConvertMessage
 import play.api.libs.json.Json
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol._
 

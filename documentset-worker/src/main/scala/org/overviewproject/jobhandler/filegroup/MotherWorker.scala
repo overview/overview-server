@@ -7,7 +7,7 @@ import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders._
 import org.overviewproject.database.orm.stores._
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._

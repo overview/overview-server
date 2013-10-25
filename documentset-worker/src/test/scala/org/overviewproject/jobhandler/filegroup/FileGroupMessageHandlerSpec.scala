@@ -13,7 +13,7 @@ import akka.testkit.TestProbe
 import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol.ExtractText
 import org.overviewproject.jobhandler.JobProtocol._
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import akka.testkit.TestFSMRef
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerFSM._
 

@@ -2,22 +2,23 @@ package org.overviewproject.jobhandler.filegroup
 
 import scala.concurrent.duration._
 import scala.util.control.Exception._
+
 import akka.actor._
 import akka.testkit._
+
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
+import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
-import org.overviewproject.tree.orm.{ DocumentSetCreationJob, FileGroup }
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
 import org.overviewproject.tree.orm.FileJobState._
 import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
-import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.ProcessFileCommand
 import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
-import org.specs2.execute.PendingUntilFixed
 
 
 class DaughterShell(core: ActorRef, jobMonitor: ActorRef) extends Actor {

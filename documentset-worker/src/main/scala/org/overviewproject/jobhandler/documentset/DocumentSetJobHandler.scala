@@ -1,15 +1,18 @@
 package org.overviewproject.jobhandler.documentset
 
 import scala.concurrent.duration._
+
 import akka.actor._
-import org.overviewproject.jobhandler.{ ApolloMessageService, AcknowledgingMessageReceiver, MessageService }
+
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
+import org.overviewproject.messagequeue.{ AcknowledgingMessageReceiver, MessageService }
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
+import org.overviewproject.messagequeue.apollo.ApolloMessageService
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
-import DocumentSetJobHandlerFSM._
+
 import javax.jms._
 
 
@@ -54,6 +57,9 @@ trait SearchComponent {
     def produceDeleteHandler: Actor
   }
 }
+
+
+import DocumentSetJobHandlerFSM._
 
 class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
   this: SearchComponent =>

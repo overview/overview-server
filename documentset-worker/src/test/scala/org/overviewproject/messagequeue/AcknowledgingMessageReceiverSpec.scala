@@ -1,19 +1,18 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue
 
-import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
 import akka.actor._
 import akka.testkit._
+
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.MessageHandlerProtocol._
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
-import org.specs2.mutable.Specification
-import org.specs2.mock.Mockito
-import javax.jms.Connection
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.jobhandler.MessageQueueActorProtocol._
-import org.specs2.mutable.Before
+import org.overviewproject.messagequeue.MessageHandlerProtocol._
+import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import org.specs2.mock.Mockito
+import org.specs2.mutable.{ Before, Specification }
+
+import javax.jms.Connection
 
 class AcknowledgingMessageReceiverSpec extends Specification with Mockito {
 

@@ -1,15 +1,13 @@
-package org.overviewproject.jobhandler
+package org.overviewproject.messagequeue
 
-import org.specs2.mutable.Specification
 import akka.actor._
 import akka.testkit._
-import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.MessageQueueActorProtocol.RegisterWith
+
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
+import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mock.Mockito
+import org.specs2.mutable.{ Before, Specification }
 import javax.jms.Connection
 
 class SynchronousMessageQueueActorSpec extends Specification with Mockito {

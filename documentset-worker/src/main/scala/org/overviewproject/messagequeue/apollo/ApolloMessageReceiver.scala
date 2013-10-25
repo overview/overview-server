@@ -1,9 +1,8 @@
 package org.overviewproject.messagequeue.apollo
 
 import akka.actor._
-import org.overviewproject.jobhandler.MessageContainer
-import org.overviewproject.jobhandler.ApolloMessageService
-import org.overviewproject.jobhandler.MessageReceiver
+import org.overviewproject.messagequeue.{ MessageContainer, MessageReceiver }
+
 
 object ApolloMessageReceiver {
 
