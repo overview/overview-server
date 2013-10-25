@@ -19,7 +19,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
   "DeleteHandler" should {
 
     trait MockComponents {
-      val searchIndex = mock[SearchIndex]
+      val searchIndex = mock[SearchIndexComponent]
 
       val deleteResultPromise = Promise[DeleteByQueryResponse]
       val deleteAliasResultPromise = Promise[IndicesAliasesResponse]

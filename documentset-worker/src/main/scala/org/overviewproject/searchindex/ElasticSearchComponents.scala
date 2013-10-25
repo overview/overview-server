@@ -5,7 +5,7 @@ import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.search.{ SearchResponse, SearchType }
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.QueryBuilders
-import org.overviewproject.jobhandler.documentset.SearchIndex
+import org.overviewproject.jobhandler.documentset.SearchIndexComponent
 import org.overviewproject.jobhandler.documentset.SearcherComponents
 import org.overviewproject.util.Logger
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
@@ -29,7 +29,7 @@ trait ElasticSearchComponents extends SearcherComponents {
     }
   }
 
-  class ElasticSearchIndex extends SearchIndex {
+  class ElasticSearchIndex extends SearchIndexComponent {
 
     private val IndexName = Configuration.searchIndex.getString("index_name")
     
@@ -87,6 +87,6 @@ trait ElasticSearchComponents extends SearcherComponents {
     }
   }
 
-  override val searchIndex: SearchIndex = new ElasticSearchIndex
+  override val searchIndex: SearchIndexComponent = new ElasticSearchIndex
 
 }

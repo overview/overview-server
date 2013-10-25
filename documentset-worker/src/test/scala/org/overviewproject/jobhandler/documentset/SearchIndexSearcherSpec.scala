@@ -26,7 +26,7 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
       val nextScrollId = "scrollId1"
 
       val startSearchPromise = Promise[SearchResponse]
-      val searchIndex = mock[SearchIndex]
+      val searchIndex = mock[SearchIndexComponent]
 
       searchIndex.startSearch(anyString, anyString) returns startSearchPromise.future
 
@@ -46,7 +46,7 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
 
     }
 
-    class TestSearchIndexSearcher(override val searchIndex: SearchIndex, searchSaver: ActorRef) extends SearchIndexSearcher with SearcherComponents {
+    class TestSearchIndexSearcher(override val searchIndex: SearchIndexComponent, searchSaver: ActorRef) extends SearchIndexSearcher with SearcherComponents {
       override def produceSearchSaver: Actor = new ForwardingActor(searchSaver)
     }
 

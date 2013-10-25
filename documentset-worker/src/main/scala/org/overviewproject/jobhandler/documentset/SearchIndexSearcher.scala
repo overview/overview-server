@@ -27,7 +27,7 @@ object SearchIndexSearcherFSM {
   case class Search(searchId: Long) extends Data
 }
 
-trait SearchIndex {
+trait SearchIndexComponent {
   def startSearch(index: String, query: String): Future[SearchResponse]
   def getNextSearchResultPage(scrollId: String): Future[SearchResponse]
   def deleteDocuments(documentSetId: Long): Future[DeleteByQueryResponse]
@@ -35,7 +35,7 @@ trait SearchIndex {
 }
 
 trait SearcherComponents {
-  val searchIndex: SearchIndex
+  val searchIndex: SearchIndexComponent
   def produceSearchSaver: Actor = new SearchSaver with ActualSearchSaverComponents
 }
 
