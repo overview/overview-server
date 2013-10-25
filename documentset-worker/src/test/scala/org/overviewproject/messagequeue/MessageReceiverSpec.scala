@@ -4,13 +4,13 @@ import akka.actor._
 import akka.testkit._
 
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import javax.jms.Connection
 
-class SynchronousMessageQueueActorSpec extends Specification with Mockito {
+class MessageReceiverSpec extends Specification with Mockito {
 
   def testConversion(message: String): String = message match {
     case "unknown" => throw new Exception("could not convert message")

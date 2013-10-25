@@ -11,7 +11,7 @@ import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
 import org.overviewproject.util.Logger
 import org.overviewproject.messagequeue.MessageQueueConnection
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
-import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
 
 object ActorCareTakerProtocol {

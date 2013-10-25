@@ -9,7 +9,7 @@ import akka.actor._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 
 
-object MessageQueueActorFSM {
+object AcknowledgingMessageReceiverFSM {
   sealed trait State
   case object MessageHandlerIsIdle extends State
   case object MessageHandlerIsBusy extends State
@@ -24,7 +24,7 @@ object MessageQueueActorFSM {
   case class Reconnected(messageHandler: ActorRef, connection: Connection) extends Data
 }
 
-object MessageQueueActorProtocol {
+object AcknowledgingMessageReceiverProtocol {
   case class RegisterWith(connectionMonitor: ActorRef)
 }
 
@@ -35,10 +35,10 @@ trait MessageHandling[T] {
 }
 
 
-import MessageQueueActorFSM._
+import AcknowledgingMessageReceiverFSM._
 
 abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
-  import MessageQueueActorProtocol._
+  import AcknowledgingMessageReceiverProtocol._
   import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 
   startWith(MessageHandlerIsIdle, MessageHandler(context.actorOf(createMessageHandler)))

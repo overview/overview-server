@@ -8,7 +8,7 @@ import scala.util.Try
 import akka.actor._
 
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
-import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.util.Logger
 
 class MessageReceiver[T](messageRecipient: ActorRef,

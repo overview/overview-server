@@ -6,7 +6,7 @@ import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.messagequeue.MessageQueueActorProtocol._
+import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mock.Mockito
