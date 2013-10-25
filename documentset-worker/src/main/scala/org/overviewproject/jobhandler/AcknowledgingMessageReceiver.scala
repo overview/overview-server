@@ -48,7 +48,7 @@ trait MessageHandling[T] {
 
 
 
-abstract class MessageQueueActor2[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
+abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
   import MessageQueueActorProtocol._
   import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 
@@ -90,7 +90,7 @@ abstract class MessageQueueActor2[T](messageService: MessageService) extends Act
       goto(MessageHandlerIsIdle) using messageHandler
     } 
     case Event(MessageHandled, Reconnected(messageHandler, connection)) => {
-      self ! ConnectedTo(connection)
+      self! ConnectedTo(connection)
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
     case Event(ConnectedTo(connection), MessageHandler(messageHandler)) => {
@@ -99,8 +99,8 @@ abstract class MessageQueueActor2[T](messageService: MessageService) extends Act
     case Event(ConnectionFailed, data) => { 
       stay using MessageHandler(data.messageHandler)
     }
-      
   }
+      
   initialize
 
   private def deliverMessage(message: MessageContainer): Unit = {

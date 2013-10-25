@@ -15,7 +15,7 @@ import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 import org.overviewproject.jobhandler.MessageQueueActorProtocol._
 import org.specs2.mutable.Before
 
-class MessageQueueActorSpec extends Specification with Mockito {
+class AcknowledgingMessageReceiverSpec extends Specification with Mockito {
 
   class TestMessageService extends MessageService {
     var currentConnection: Connection = _
@@ -33,12 +33,12 @@ class MessageQueueActorSpec extends Specification with Mockito {
     }
   }
 
-  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends MessageQueueActor2[String](messageService) {
+  class TestMessageQueueActor(messageHandler: ActorRef, messageService: MessageService) extends AcknowledgingMessageReceiver[String](messageService) {
     override def createMessageHandler: Props = Props(new ForwardingActor(messageHandler))
     override def convertMessage(message: String): String = s"CONVERTED$message"
   }
 
-  "MessageQueueActor" should {
+  "AcknowledgingMessageReceiver" should {
 
     trait MessageServiceProvider {
       val connection = smartMock[Connection]
@@ -82,7 +82,6 @@ class MessageQueueActorSpec extends Specification with Mockito {
       messageQueueActor ! ConnectedTo(connection)
 
       there was one(messageService).listenToConnection(any, any)
-
     }
 
     "send incoming message to listener" in new MessageQueueActorSetup with FakeMessageService {
