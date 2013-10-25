@@ -32,6 +32,8 @@ define [
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
 
+      clearAjaxRequests()
+
       uploadViewClass = Backbone.View.extend(tagName: 'li')
       uploadViewRenderSpy = spyOn(uploadViewClass.prototype, 'render').andCallThrough()
       model = new Backbone.Model
@@ -45,6 +47,12 @@ define [
         defaultLanguageCode: 'en'
       $.extend model,
         addFiles: jasmine.createSpy()
+
+    describe 'init', ->
+      it 'cancels previous uploads', ->
+        # remove this when we add resumable uploads
+        expect(mostRecentAjaxRequest().url).toEqual('/files')
+        expect(mostRecentAjaxRequest().method).toEqual('DELETE')
 
     describe 'render', ->
       it 'has a file input', ->

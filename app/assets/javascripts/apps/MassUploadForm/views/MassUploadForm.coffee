@@ -62,6 +62,9 @@ define [
       @listenTo(@model, 'change', @_shouldSubmit)
       @optionsSet = false
 
+      # remove this when we add resumable uploads
+      $.ajax('/files', type: 'DELETE')
+
       $('div.nav-buttons a.back').click =>
         @_cancel()
 
