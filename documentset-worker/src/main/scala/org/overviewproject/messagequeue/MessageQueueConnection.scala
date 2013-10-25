@@ -70,7 +70,7 @@ trait MessageQueueConnection extends Actor with FSM[State, Data] with Connection
   initialize
 
   private class FailureHandler extends ExceptionListener {
-    def onException(e: JMSException): Unit = self ! ConnectionFailure
+    def onException(e: JMSException): Unit = self ! ConnectionFailure(e)
   }
 
   private def startConnection(clients: Seq[ActorRef]) = {
