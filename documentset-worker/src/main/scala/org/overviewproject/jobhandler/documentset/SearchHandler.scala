@@ -84,7 +84,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
         goto(Idle) using Uninitialized
       }
       else {
-        Logger.info(s"starting search $query")
+        Logger.info(s"Starting search [$documentSetId]: $query")
         val searchId = storage.createSearchResult(documentSetId, query)
         startSearch(documentSetId, query, searchId)
         goto(Searching) using SearchInfo(searchId, documentSetId, query)
@@ -93,7 +93,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   
   when(Searching) {
     case Event(SearchComplete, SearchInfo(searchId, documentSetId, query)) =>
-      Logger.info(s"Search complete $query")
+      Logger.info(s"Search complete [$documentSetId]: $query")
       context.parent ! JobDone(documentSetId)
       storage.completeSearch(searchId, documentSetId, query)
       stop()
@@ -110,7 +110,6 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   private def startSearch(documentSetId: Long, searchTerms: String, searchId: Long): Unit = {
 
     val query = storage.queryForProject(documentSetId, searchTerms)
-    Logger.debug(s"Starting Search [$documentSetId]: $query")
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query)))
 

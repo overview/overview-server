@@ -61,17 +61,14 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
 
   when(WaitingForSearchInfo) {
     case Event(SearchInfo(scrollId), _) => {
-      Logger.info("get next result")
       getNextSearchResultPage(scrollId)
       stay
     }
     case Event(SearchResult(r), Search(searchId)) if searchHasHits(r) => {
-      Logger.info("search has hits")
       saveAndContinueSearch(searchId, r)
       stay
     }
     case Event(SearchResult(r), Search(searchId)) => {
-      Logger.info("saving search")
       waitForSavesToComplete
       goto(WaitingForSearchSaverEnd) using Search(searchId)
     }
@@ -87,7 +84,6 @@ trait SearchIndexSearcher extends Actor with FSM[State, Data] with SearcherCompo
   initialize
 
   private def getSearchInfo(documentSetId: Long, query: String): Unit = {
-    Logger.info(s"GetSearchInfo $query")
     val index = documentSetIndex(documentSetId)
     searchIndex.startSearch(index, query) onComplete handleSearchResult(r => SearchInfo(r.getScrollId))
   }

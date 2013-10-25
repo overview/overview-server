@@ -111,7 +111,7 @@ class StompJmsMessageQueueConnection(queueName: String) extends MessageQueueConn
         } {
           val message = s.createTextMessage(messageText)
           messageGroup.map { g => message.setStringProperty("message_group", g) }
-          Logger.info(s"-----------> [$queueName] Sending $messageText")
+
           p.send(message)
         },  
         Logger.error(s"[$queueName] Trying to send message to closed connection"))
