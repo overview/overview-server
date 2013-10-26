@@ -38,7 +38,7 @@ define [
       uploadViewRenderSpy = spyOn(uploadViewClass.prototype, 'render').andCallThrough()
       model = new Backbone.Model
       model.uploads = new Backbone.Collection
-      model.removeUpload = jasmine.createSpy()
+      model.abort = jasmine.createSpy()
 
       view = new MassUploadForm
         model: model
@@ -167,20 +167,11 @@ define [
           expect(view.$el.text()).toMatch(/cancel/)
 
         it 'removes files in the "correct" way', ->
-          # in the future, we should only remove un-uploaded files this way,
-          # since we don't want to delete them off the server one-by-one
           model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
           model.uploads.add(new MockUpload(status: 'uploading'))
           model.uploads.add(new MockUpload(status: 'waiting'))
           view.$('.cancel').click()
-          expect(model.removeUpload).toHaveBeenCalled()
-
-        it 're-renders and resets the collection', ->
-          # this is necessary because removeUpload leaves things in a weird state
-          # eventually this should be fixed.
-          spyOn(view.model.uploads, 'reset')
-          view.$('.cancel').click()
-          expect(view.model.uploads.reset).toHaveBeenCalled()
+          expect(model.abort).toHaveBeenCalled()
 
         it 'sends a cancel message to the server', ->
           clearAjaxRequests()

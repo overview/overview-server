@@ -98,6 +98,8 @@ define [
         upload = uploadSpy.mostRecentCall.object
         expect(upload.url).toMatch(/[\?&]csrfToken=a_token/)
 
+      it 'returns an abort callback', ->
+        expect(transport.doUploadFile(file)).toEqual(jasmine.any(Function))
 
     describe 'doDeleteFile', ->
       it 'exists, but does not do anything for now', ->

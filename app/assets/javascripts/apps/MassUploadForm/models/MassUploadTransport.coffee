@@ -30,6 +30,7 @@ define [
           progressCallback?(_.pick(progressEvent, 'total', 'loaded'))
         .done(successCallback)
         .fail(errorCallback)
+      -> upload.abort()
 
     doDeleteFile: ->
 

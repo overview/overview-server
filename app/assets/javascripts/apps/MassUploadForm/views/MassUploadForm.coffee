@@ -126,11 +126,8 @@ define [
         @$el.closest('form').submit()
 
     _cancel: ->
-      @model.uploads.each (upload) =>
-        @model.removeUpload(upload)
-
+      @model.abort()
       $.ajax('/files', type: 'DELETE')
-      @model.uploads.reset()
       @render()
       @finishEnabled = false
       @setHash('')
