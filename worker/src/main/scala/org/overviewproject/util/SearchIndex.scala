@@ -39,7 +39,7 @@ object SearchIndex {
   private val TitleField = "title"
   private val ConfigFile = Configuration.searchIndex.getString("config_file")
   private val SearchIndexHost = Configuration.searchIndex.getString("host")
-  
+  private val SearchIndexPort = Configuration.searchIndex.getInt("port")
   private var client: TransportClient = _
   private def admin = client.admin.indices
 
@@ -47,8 +47,10 @@ object SearchIndex {
     if (client != null) client.close
     
     val settings = ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)
+    Logger.info(s"Connecting to Search Index [${settings.get("cluster.name")}] at $SearchIndexHost:$SearchIndexPort")
+    
     client =  new TransportClient(settings)
-    client.addTransportAddress(new InetSocketTransportAddress("127.0.0.1", 9300))
+    client.addTransportAddress(new InetSocketTransportAddress(SearchIndexHost, SearchIndexPort))
   }
   
   def createIndexIfNotExisting = {

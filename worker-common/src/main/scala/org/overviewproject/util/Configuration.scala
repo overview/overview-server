@@ -82,7 +82,7 @@ class SearchIndexConfig(configuration:Config) extends ConfigurationKeys(configur
     ("config_file" -> "elasticsearch.yml"),
     ("index_name" -> "documents_v1"),
     ("host" -> "127.0.0.1"),
-    ("port" -> "9300"))
+    ("port" -> 9300))
 }
 
 // Root configuration object reads keys at root level, and points to sub-paths
