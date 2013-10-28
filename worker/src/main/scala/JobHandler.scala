@@ -110,7 +110,10 @@ object JobHandler {
     val SearchIndexRetryInterval = 5000
 
     Logger.info("Looking for Search Index")
-    val attempt = Try { SearchIndex.createIndexIfNotExisting }
+    val attempt = Try {
+      SearchIndex.connectToSearchIndexCluster
+      SearchIndex.createIndexIfNotExisting
+    }
 
     attempt match {
       case Success(v) => Logger.info("Found Search Index")
