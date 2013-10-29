@@ -67,10 +67,6 @@ object JobHandler {
       }
 
     } catch {
-      case e: ElasticSearchException => {
-        reportError(j, e)
-        connectToSearchIndex
-      }
       case e: Exception => reportError(j, e)
       case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
         reportError(j, t)
@@ -119,7 +115,6 @@ object JobHandler {
 
     Logger.info("Looking for Search Index")
     val attempt = Try {
-      SearchIndex.connectToSearchIndexCluster
       SearchIndex.createIndexIfNotExisting
     }
 
