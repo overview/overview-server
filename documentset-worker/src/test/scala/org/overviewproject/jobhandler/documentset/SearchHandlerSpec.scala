@@ -131,11 +131,15 @@ class SearchHandlerSpec extends Specification with Mockito {
 
     "set SearchResultState to Error if Searcher dies unexpectedly" in new ActorSystemContext {
       val searchHandler = TestActorRef(new SearchHandlerWithSearchFailure)
+      val searchHandlerWatcher = TestProbe()
+
+      searchHandlerWatcher watch searchHandler
       
       searchHandler ! SearchDocumentSet(1l, "search terms")
       
       val storage = searchHandler.underlyingActor.storage
       
+      searchHandlerWatcher.expectMsgType[Terminated]
       there was one(storage).failSearch(1l, 1l, "search terms")
     }
   }
