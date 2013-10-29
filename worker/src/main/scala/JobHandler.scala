@@ -7,20 +7,24 @@
  */
 
 import java.sql.Connection
+
+import scala.annotation.tailrec
 import scala.util._
+
+import org.elasticsearch.ElasticSearchException
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.DocumentSetIndexer
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence._
-import org.overviewproject.persistence.orm.finders.{ FileFinder, FileGroupFinder, GroupedFileUploadFinder }
+import org.overviewproject.persistence.orm.finders.{ DocumentFinder, FileFinder, FileGroupFinder, GroupedFileUploadFinder }
 import org.overviewproject.persistence.orm.stores.{ FileStore, FileGroupStore, GroupedFileUploadStore }
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
+
 import com.jolbox.bonecp._
-import org.overviewproject.persistence.orm.finders.DocumentFinder
-import scala.annotation.tailrec
+
 
 object JobHandler {
   // Run a single job
@@ -63,6 +67,10 @@ object JobHandler {
       }
 
     } catch {
+      case e: ElasticSearchException => {
+        reportError(j, e)
+        connectToSearchIndex
+      }
       case e: Exception => reportError(j, e)
       case t: Throwable => { // Rethrow (and die) if we get non-Exception throwables, such as java.lang.error
         reportError(j, t)

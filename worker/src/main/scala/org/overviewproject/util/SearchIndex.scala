@@ -44,7 +44,10 @@ object SearchIndex {
   private def admin = client.admin.indices
 
   def connectToSearchIndexCluster: Unit = {
-    if (client != null) client.close
+    if (client != null) {
+      client.close
+      client = null
+    }
     
     val settings = ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)
     Logger.info(s"Connecting to Search Index [${settings.get("cluster.name")}] at $SearchIndexHost:$SearchIndexPort")
