@@ -1,7 +1,8 @@
 package org.overviewproject.jobhandler.documentset
 
+import scala.concurrent.duration.Duration
 import akka.actor._
-
+import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.SearchResultFinder
 import org.overviewproject.database.orm.stores.SearchResultStore
@@ -74,6 +75,12 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   import SearchHandlerProtocol._
   import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
 
+  override val supervisorStrategy =
+    OneForOneStrategy(0, Duration.Inf) {
+      case _: Exception => Stop
+      case _: Throwable => Escalate
+    }
+
   startWith(Idle, Uninitialized)
 
   when(Idle) {
@@ -90,16 +97,24 @@ trait SearchHandler extends Actor with FSM[State, Data] {
   }
 
   when(Searching) {
-    case Event(SearchComplete, SearchInfo(searchId, documentSetId, query)) =>
+    case Event(SearchComplete, SearchInfo(searchId, documentSetId, query)) => {
       Logger.info(s"Search complete [$documentSetId]: $query")
       context.parent ! JobDone(documentSetId)
       storage.completeSearch(searchId, documentSetId, query)
       stop()
-    case Event(SearchFailure(e), SearchInfo(searchId, documentSetId, query)) =>
+    }
+    case Event(SearchFailure(e), SearchInfo(searchId, documentSetId, query)) => {
       Logger.error(s"Search failed $query", e)
       context.parent ! JobDone(documentSetId)
       storage.failSearch(searchId, documentSetId, query)
       stop()
+    }
+    case Event(Terminated(searcher), SearchInfo(searchId, documentSetId, query)) => {
+      Logger.error(s"Search failed $query")
+      context.parent ! JobDone(documentSetId)
+      storage.failSearch(searchId, documentSetId, query)
+      stop()
+    }
   }
 
   initialize
@@ -110,6 +125,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
     val documentSearcher =
       context.actorOf(Props(actorCreator.produceDocumentSearcher(documentSetId, query)))
 
+    context.watch(documentSearcher)
     documentSearcher ! StartSearch(searchId, documentSetId, query)
   }
 
