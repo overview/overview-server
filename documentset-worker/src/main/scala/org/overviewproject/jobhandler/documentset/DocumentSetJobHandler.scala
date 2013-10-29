@@ -94,10 +94,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 /** Create a SearchHandler */
 trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
-    override def produceSearchHandler: Actor = new SearchHandler with SearchHandlerComponentsImpl {
-      override val storage: Storage = new StorageImpl
-      override val actorCreator: ActorCreator = new ActorCreatorImpl
-    }
+    override def produceSearchHandler: Actor = new SearchHandler with SearchIndexAndSearchStorage
 
     override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {}
   }
