@@ -22,6 +22,20 @@ class DocumentSetMessageHandlerSpec extends Specification {
     }
   }
 
+  class FailingActor extends Actor {
+    def receive = {
+      case _ => context.stop(self)
+    }
+  }
+
+  class FailingTestMessagHandler extends DocumentSetMessageHandler with SearchComponent {
+
+    val actorCreator = new ActorCreator {
+      override def produceSearchHandler: Actor = new FailingActor
+      override def produceDeleteHandler: Actor = new FailingActor
+    }
+  }
+
   "DocumentSetMessageHandler" should {
 
     trait DocumentSetInfo {
@@ -61,11 +75,23 @@ class DocumentSetMessageHandlerSpec extends Specification {
     abstract class DeleteWithParentContext extends ActorSystemContext with DeleteInfo with Before {
       var parent: TestProbe = _
       var messageHandler: TestActorRef[Nothing] = _
-      
+
       def before = {
         parent = TestProbe()
         deleteHandler = TestProbe()
         messageHandler = TestActorRef(Props(new TestMessageHandler(deleteHandler.ref)), parent.ref, "Message Handler")
+      }
+    }
+
+    abstract class FailingMessageHandlerWithParentContext extends ActorSystemContext with DocumentSetInfo with Before {
+      var parent: TestProbe = _
+      var messageHandler: TestActorRef[Nothing] = _
+
+      def before = {
+        parent = TestProbe()
+
+        messageHandler = TestActorRef(Props(new FailingTestMessagHandler), parent.ref, "Message Handler")
+
       }
     }
 
@@ -84,6 +110,14 @@ class DocumentSetMessageHandlerSpec extends Specification {
     "tell parent MessageHandled when JobDone is received" in new DeleteWithParentContext {
       messageHandler ! deleteCommand
       messageHandler ! JobDone(documentSetId)
+
+      parent.expectMsg(MessageHandled)
+    }
+
+    // TODO: We need proper error recovery
+    // If we don't ack the message, it keeps getting resent, potentially causing the same error
+    "tell parent MessageHandled if an message handler dies unexpectedly" in new FailingMessageHandlerWithParentContext {
+      messageHandler ! DeleteCommand(documentSetId)
 
       parent.expectMsg(MessageHandled)
     }
