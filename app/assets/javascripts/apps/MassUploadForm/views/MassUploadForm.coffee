@@ -3,7 +3,8 @@ define [
   'backbone'
   'i18n'
   'apps/ImportOptions/app'
-], (_, Backbone, i18n, ImportOptionsApp) ->
+  'apps/MassUploadForm/views/UploadProgressView'
+], (_, Backbone, i18n, ImportOptionsApp, UploadProgressView) ->
   t = (m, args...) -> i18n("views.DocumentSet._massUploadForm.#{m}", args...)
 
   Backbone.View.extend
@@ -15,6 +16,8 @@ define [
             <div><%- t('drop_target') %></div>
           </li>
         </ul>
+
+        <div class='progress'></div>
 
         <div class='controls'>
           <button type='button' class='cancel btn'>
@@ -71,6 +74,7 @@ define [
       $('div.nav-buttons li a').click =>
         @_cancel()
 
+
     render: ->
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
@@ -95,6 +99,11 @@ define [
 
       _.defer => # it seems more responsive when we defer this
         @$ul.append(uploadView.el)
+
+
+      if(@collection.length > 0)
+        progressView = new UploadProgressView({model: @model, el: @$el.find('.progress')})
+        progressView.render()
 
     _addButtonHover: ->
       @$el.find('button.select-files').addClass('hover')

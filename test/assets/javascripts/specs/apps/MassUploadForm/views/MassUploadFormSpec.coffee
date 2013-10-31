@@ -55,16 +55,16 @@ define [
         expect(mostRecentAjaxRequest().method).toEqual('DELETE')
 
     describe 'render', ->
-      it 'has a file input', ->
+      beforeEach ->
         view.render()
+
+      it 'has a file input', ->
         expect(view.$el.find('input[type=file]').length).toEqual(1)
 
       it 'only shows pdf files by default', ->
-        view.render()
         expect(view.$el.find('input[type=file]').attr('accept')).toEqual('application/pdf')
 
       it 'has an empty state', ->
-        view.render()
         expect(view.$el.text()).toMatch('drop_target')
 
     describe 'model add event', ->
@@ -77,6 +77,10 @@ define [
         runs ->
           expect(uploadViewRenderSpy).toHaveBeenCalled()
           expect(view.$el.find('.files li').length).toEqual(1)
+
+      it 'renders a progress bar', ->
+        runs ->
+          expect(view.$el).toContain('progress')
 
       describe 'submit button', ->
         it 'enables the submit button', ->
