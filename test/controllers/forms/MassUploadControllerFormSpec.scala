@@ -48,11 +48,18 @@ class MassUploadControllerFormSpec extends Specification {
         SuppliedStopWords -> stopWords)
     }
 
+    trait BlankName extends FormData {
+      override val data: Map[String, String] = Map(
+        Name -> "    ",
+        Lang -> lang,
+        SuppliedStopWords -> stopWords)
+    }
     trait NoSuppliedStopWords extends FormData {
       override val data: Map[String, String] = Map(
         Name -> name,
         Lang -> lang)
     }
+
 
     "return all the feels" in new FormScope with ValidForm {
       filledForm.value must beSome(name, lang, Some(stopWords))
@@ -63,6 +70,10 @@ class MassUploadControllerFormSpec extends Specification {
     }
 
     "fail if name is missing" in new FormScope with MissingName {
+      filledForm.error(Name) must beSome
+    }
+    
+    "fail if name is blank" in new FormScope with BlankName {
       filledForm.error(Name) must beSome
     }
     

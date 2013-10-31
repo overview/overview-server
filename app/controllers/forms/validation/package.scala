@@ -16,4 +16,10 @@ package object validation {
       Invalid(ValidationError("forms.validation.unsupportedLanguage", languageCode))
     }
   }
+  
+  def notWhitespaceOnly: Constraint[String] = Constraint[String]("constraint.notWhiteSpaceOnly") { t =>
+    if (!t.matches("""^\s*$""")) Valid
+    else Invalid(ValidationError("forms.validation.blankText"))
+    
+  }
 }

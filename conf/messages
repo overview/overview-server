@@ -24,6 +24,7 @@ forms.LoginForm.error.invalid_credentials=Wrong email address or password
 forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can’t log in until you click the link in the confirmation email we sent you.
 
 forms.validation.unsupportedLanguage=The requested languages is not supported
+forms.validation.blankText=The field must contain non-whitespace characters
 
 mailers.User.create.subject=Overview Project new account confirmation
 mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
