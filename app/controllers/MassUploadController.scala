@@ -1,35 +1,20 @@
 package controllers
 
 import java.util.UUID
-import play.api.mvc.{ Controller, Request, RequestHeader, Result }
-import org.overviewproject.tree.orm.GroupedFileUpload
-import controllers.util.TransactionAction
-import controllers.auth.Authorities.anyUser
-import play.api.mvc.BodyParser
-import org.overviewproject.tree.orm.GroupedFileUpload
 import play.api.libs.iteratee.Iteratee
-import org.overviewproject.tree.orm.GroupedFileUpload
-import org.overviewproject.tree.orm.GroupedFileUpload
-import controllers.auth.AuthorizedBodyParser
-import controllers.auth.AuthorizedAction
-import controllers.util.MassUploadFileIteratee
-import org.overviewproject.tree.orm.FileGroup
-import models.orm.finders.FileGroupFinder
-import models.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.jobs.models.ProcessGroupedFileUpload
-import controllers.util.JobQueueSender
-import org.overviewproject.tree.orm.GroupedFileUpload
-import controllers.forms.MassUploadControllerForm
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import models.orm.stores.DocumentSetStore
-import models.orm.stores.DocumentSetUserStore
-import org.overviewproject.tree.orm.DocumentSetUser
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
+import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload, StartClustering }
 import org.overviewproject.tree.Ownership
-import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.jobs.models.StartClustering
-import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
-import org.overviewproject.jobs.models.CancelUpload
+import org.overviewproject.tree.orm._
+import org.overviewproject.tree.orm.FileJobState._
+import controllers.auth.Authorities.anyUser
+import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser }
+import controllers.forms.MassUploadControllerForm
+import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAction }
+import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
+import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
+import models.orm.stores.FileGroupStore
+
 
 trait MassUploadController extends Controller {
 
@@ -105,6 +90,8 @@ trait MassUploadController extends Controller {
     /** @returns a newly created DocumentSetCreationJob */
     def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob
 
+    /** @returns a FileGroup with state set to Complete */
+    def completeFileGroup(fileGroup: FileGroup): FileGroup
   }
 
   trait MessageQueue {
@@ -151,6 +138,8 @@ trait MassUploadController extends Controller {
         val (name, lang, optionalStopWords) = options
         val suppliedStopWords = optionalStopWords.getOrElse("")
 
+        storage.completeFileGroup(fileGroup)
+        
         val documentSet = storage.createDocumentSet(userEmail, name, lang, suppliedStopWords)
         storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, suppliedStopWords)
         messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
@@ -172,7 +161,7 @@ object MassUploadController extends MassUploadController {
   override val messageQueue = new ApolloQueue
 
   class DatabaseStorage extends Storage {
-    import org.overviewproject.tree.orm.FileJobState.InProgress
+    import org.overviewproject.tree.orm.FileJobState._
     import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
     import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 
@@ -202,6 +191,8 @@ object MassUploadController extends MassUploadController {
           jobType = FileUpload))
     }
 
+    override def completeFileGroup(fileGroup: FileGroup): FileGroup = 
+      FileGroupStore.insertOrUpdate(fileGroup.copy(state = Complete))
   }
 
   class ApolloQueue extends MessageQueue {
