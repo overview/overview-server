@@ -1,13 +1,17 @@
 define [
   'jquery'
   'backbone'
+  'i18n'
   'apps/MassUploadForm/views/UploadProgressView'
-], ($, Backbone, UploadProgressView) ->
+], ($, Backbone, i18n, UploadProgressView) ->
   describe 'apps/MassUploadForm/views/UploadProgressView', ->
     model = undefined
     view = undefined
 
     beforeEach ->
+      i18n.reset_messages
+        'views.DocumentSet._uploadProgress.uploading': 'uploading'
+
       model = new Backbone.Model()
       view = new UploadProgressView({model: model})
 

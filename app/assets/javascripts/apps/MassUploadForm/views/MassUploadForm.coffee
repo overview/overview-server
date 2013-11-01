@@ -17,7 +17,7 @@ define [
           </li>
         </ul>
 
-        <div class='progress'></div>
+        <div class='progress-bar'></div>
 
         <div class='controls'>
           <button type='button' class='cancel btn'>
@@ -63,6 +63,7 @@ define [
       @uploadViewClass = @options.uploadViewClass
       @finishEnabled = false
       @listenTo(@model, 'change', @_shouldSubmit)
+      @listenTo(@model, 'change', @_hideProgress)
       @optionsSet = false
 
       # remove this when we add resumable uploads
@@ -102,7 +103,7 @@ define [
 
 
       if(@collection.length > 0)
-        progressView = new UploadProgressView({model: @model, el: @$el.find('.progress')})
+        progressView = new UploadProgressView({model: @model, el: @$el.find('.progress-bar')})
         progressView.render()
 
     _addButtonHover: ->
@@ -127,12 +128,18 @@ define [
       @_shouldSubmit()
 
     _shouldSubmit: ->
-      if(
-        @model.uploads.length > 0 &&
-        @model.get('status') == 'waiting' &&
-        @optionsSet
-      )
+      if(@_uploadDone() && @optionsSet)
         @$el.closest('form').submit()
+
+    _hideProgress: ->
+      if(@_uploadDone())
+        @$el.find('.progress-bar').css('display', 'none')
+      else
+        @$el.find('.progress-bar').css('display', 'block')
+
+    _uploadDone: ->
+      @model.uploads.length > 0 &&
+      @model.get('status') == 'waiting'
 
     _cancel: ->
       @model.abort()

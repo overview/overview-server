@@ -246,6 +246,8 @@ views.DocumentSet._massUploadForm.cancel=Cancel upload
 views.DocumentSet._massUploadForm.drop_target=Select files to upload
 views.DocumentSet._massUploadForm.wait_for_import=Your files will be imported after all uploads are complete
 
+views.DocumentSet._uploadProgress.uploading=Uploading...
+
 views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
 views.DocumentSet._smallDocumentSet.import=Clone
 

@@ -4,7 +4,7 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
     className: 'list-files-progress'
 
     # Text to show before the progress bar
-    preamble: ''
+    preamble: -> ''
 
     # Attribute in MassUpload that is a { loaded: N, total: N } object
     progressProperty: ''
@@ -13,7 +13,7 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
     errorProperty: ''
 
     # Text to show to prompt for retry
-    retryText: 'Retry'
+    retryText: ''
 
     events:
       'click .retry': '_onRetry'
@@ -30,7 +30,7 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
         <a href="#" class="retry"><%- retryText %></a>
       </div>
       <div class="preamble">
-        <%- preamble %>
+        <%- preamble() %>
       </div>
       <div class="progress">
         <progress value="<%= progress.loaded %>" max="<%= progress.total %>"></progress>

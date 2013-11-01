@@ -1,9 +1,13 @@
-define [ 'apps/MassUploadForm/views/AbstractProgressView' ], (AbstractProgressView) ->
-  # When listing files, shows a progress bar
+define [
+  'i18n'
+  'apps/MassUploadForm/views/AbstractProgressView'
+], (i18n, AbstractProgressView) ->
+  t = (m, args...) -> i18n("views.DocumentSet._uploadProgress.#{m}", args...)
+
   AbstractProgressView.extend
     className: 'upload-progress'
     progressProperty: 'uploadProgress'
     errorProperty: 'uploadErrors'
-    preamble: 'Synchronization progress'
+    preamble: -> t('uploading')
 
     getError: -> @model.get('uploadErrors')?[0]?.error || null

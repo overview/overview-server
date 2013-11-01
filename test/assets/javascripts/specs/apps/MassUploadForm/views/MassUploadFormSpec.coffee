@@ -31,6 +31,7 @@ define [
         'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
+        'views.DocumentSet._uploadProgress.uploading': 'uploading'
 
       clearAjaxRequests()
 
@@ -189,7 +190,7 @@ define [
           view.$('.cancel').click()
           expect(view.setHash).toHaveBeenCalledWith('')
 
-    describe 'form submission', ->
+    describe 'finishing upload', ->
       submitSpy = undefined
 
       beforeEach ->
@@ -210,6 +211,7 @@ define [
       it 'submits the form when options are set before the upload is done', ->
         # add an upload
         model.uploads.add(new Backbone.Model)
+        model.set(status: 'uploading')
 
         # choose options
         spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
@@ -226,3 +228,21 @@ define [
         view.$('.choose-options').click()
 
         expect(submitSpy).not.toHaveBeenCalled()
+
+      it 'hides the progress bar when the upload finishes', ->
+        # add a finished upload
+        model.uploads.add(new Backbone.Model)
+        model.set(status: 'waiting')
+
+        expect(view.$el.find('.progress-bar').css('display')).toEqual('none')
+
+      it 'shows the progress bar when adding another file', ->
+        # finished upload
+        model.uploads.add(new Backbone.Model)
+        model.set(status: 'waiting')
+
+        # now, add an unfinished upload
+        model.uploads.add(new Backbone.Model)
+        model.set(status: 'uploading')
+
+        expect(view.$el.find('.progress-bar').css('display')).toEqual('block')
