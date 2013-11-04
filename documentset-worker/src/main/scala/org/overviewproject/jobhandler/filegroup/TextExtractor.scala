@@ -1,23 +1,20 @@
 package org.overviewproject.jobhandler.filegroup
 
-import akka.actor.Actor
-import org.overviewproject.tree.orm.GroupedFileUpload
 import java.io.InputStream
+import scala.util.control.Exception.ultimately
+import akka.actor.Actor
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.util.PDFTextStripper
-import org.overviewproject.database.orm.finders.GroupedProcessedFileFinder
-import org.overviewproject.postgres.LargeObjectInputStream
-import org.overviewproject.util.Logger
-import org.overviewproject.database.DB
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.FileText
-import org.overviewproject.database.orm.stores.FileTextStore
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.tree.orm.GroupedProcessedFile
-import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.database.orm.stores.FileTextStore
 import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
-import org.overviewproject.util.ContentDisposition
 import org.overviewproject.jobhandler.JobProtocol._
+import org.overviewproject.postgres.LargeObjectInputStream
+import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.tree.orm.GroupedFileUpload
+import org.overviewproject.tree.orm.GroupedProcessedFile
 
 object TextExtractorProtocol {
   case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
@@ -72,8 +69,9 @@ trait PdfBoxPdfProcessor {
 
   def extractText(fileStream: InputStream): String = {
     val document = PDDocument.load(fileStream)
-    val text = pdfTextStripper.getText(document)
-    document.close()
+    val text = ultimately(document.close) {
+      pdfTextStripper.getText(document)
+    }
 
     text
   }

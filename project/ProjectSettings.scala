@@ -103,6 +103,8 @@ trait ProjectSettings {
     stompDep,
     squerylDep,
     "org.apache.pdfbox" % "pdfbox" % "1.8.2",
+    "org.bouncycastle" % "bcprov-jdk15" % "1.44",
+    "org.bouncycastle" % "bcmail-jdk15" % "1.44",
     akkaTestkit % "test",
     specs2Dep % "test",
     mockitoDep % "test"
