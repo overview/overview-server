@@ -9,32 +9,26 @@
 <div style="text-align: center; height:100px"><a href="/documentsets" class="btn btn-primary" style="width: 200px; margin: auto; margin-top: 30px">Try it out on an example document set! </a></div>
   
   <br /><h2>Talk to us!</h2>
-  Are you wondering if Overview will work for your data? Other questions? Bugs? Something you&#8217;d like to see in a future version! Tweet us <a href="https://twitter.com/overviewproject">&#64;overviewproject</a>, try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="mailto:info&#64;overviewproject.org">contact us</a> directly!</p>
+  Are you wondering if Overview will work for your docs? Having a problem on deadline? Other questions? Bugs? We're here to help. Tweet us <a href="https://twitter.com/overviewproject">&#64;overviewproject</a>, try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="mailto:info&#64;overviewproject.org">contact us</a> directly!</p>
 
   <br /><h2>Step-by-step instructions</h2>
-  <p>For more, see the FAQ <a href="http://overview.ap.org/faq/">Overview FAQ</a>, or try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> where developers and users are around to answer questions.</p>
-  <p><strong>There are two ways to get your documents into Overview: import a DocumentCloud project, or upload a CSV file.</strong></p>
+  <p>For more, see the <a href="http://overview.ap.org/faq/">Overview FAQ</a>, or try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> where developers and users are around to answer questions.</p>
 
-  <br /><p><strong>1. If you are a journalist, put your documents in a DocumentCloud project.</strong><br />
+  <br /><p><strong>1. There are three ways to get your documents into Overview.</strong><br />
 
-  <a href="https://documentcloud.org">DocumentCloud</a> is a free tool for journalists to upload, OCR, search, store, and publish their documents. If you are a journalist and you don't already have a DocumentCloud account, <a href="https://www.documentcloud.org/contact">here&#8217;s how to get one</a>.</p>
+ <ul>
+  <li>If all of your documents are in PDF form you can simply <a href="http://overview.ap.org/blog/2013/11/pdf-upload-the-easiest-way-yet-to-get-your-documents-into-overview/">upload them directly</a>. Note that documents scanned from paper must first be <a href="http://en.wikipedia.org/wiki/Optical_character_recognition">OCR'd</a> to turn their images into searchable text.</li><br />
 
-  <p>Log in to your DocumentCloud account and create a project to store all of your files, using the &#8220;New Project&#8221; button. Then select &#8220;New Documents.&#8221; Now here&#8217;s the trick to batch uploads: when the file dialog box opens, you can select all of the documents in a folder simultaneously by clicking on the first, then shift-clicking on the last (or pressing Control-A on Windows, or Command-A on Mac). You can keep the documents private if you like.</li>
+  <li>If you are a journalist, you can upload your documents to <a href="https://documentcloud.org">DocumentCloud</a>, a free tool to upload, OCR, search, store, and publish documents in many formats. If you don't already have a DocumentCloud account, <a href="https://www.documentcloud.org/contact">here&#8217;s how to get one</a>. Log in to your DocumentCloud account and create a project to store all of your files, using the &#8220;New Project&#8221; button. Then log into Overview and import your project.</li><br />
 
-  <figure><img src="@routes.Assets.at("images/Help/step1.png")" alt="" /></figure>
+  <li>You can also upload your documents as a CSV file, a type of speadsheet file that you can save from Excel, export from a database system, or create manually in a text editor. The CSV file must have a column named "text" with the full text of each document, one document per row. Here's lots more on <a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/">how to prepare a CSV file for Overview</a>.</li><br />
+</ul>
 
-  Then log into Overview and import your project. From the main screen, select &#8220;Import your documents&#8221; and then &#8220;Import your DocumentCloud project&#8221; and enter your DocumentCloud username and password when prompted. Your DocumentCloud projects will appear. Select the project that you want to explore, and get a coffee while Overview imports and analyzes it.</p>
-  
-  <br /><p><strong>2. You can also upload your documents as a CSV file.</strong><br />
-  This is the best option if you're not a journalist, or if your documents are in data format. A CSV file is a speadsheet file that you can save from Excel, export from a database system, or create manually in a text editor. The CSV file must have a column named "text" with the full text of each document, one document per row. You can also add a "URL" column to tell Overview how to display the document when you view it inside the application -- this works particularly well with tweets.</p> 
+  <p>Whether you upload directly or go through DocumentCloud, here&#8217;s how to upload many documents simultaneously: when the file dialog box opens you can select all of the documents in a folder simultaneously by clicking on the first file, then shift-clicking on the last flie (or pressing Control-A on Windows, or Command-A on Mac).</p>
 
-  <p>To upload your CSV, log into Overview and select &#8220;Import your documents&#8221; and then &#8220;import from a CSV file&#8221;. Choose the file, check the preview to make sure you have selected the correct character encoding, and go.</p>
+  <p>Overview keeps all uploaded documents private, unless you share them explicitly.</p>
 
-  <figure><img src="@routes.Assets.at("images/Help/step2.png")" alt="" /></figure>
-
-  <p>Here's lots more on <a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/">how to prepare a CSV file for Overview</a>.</p>
-
-  <br /><p><strong>3. Explore the documents in the tree view</strong></p>
+  <br /><p><strong>2. Explore the documents in the tree view</strong></p>
   <p>Overview&#8217;s main screen is divided into four parts: the folder tree, search field, tag list, and document viewer.</p>
   <figure><img src="@routes.Assets.at("images/Help/step3.png")" alt="" /></figure>
   <p>You can navigate through the folders in the tree with the arrow keys, or by clicking. Each folder is labelled by the keywords that best describe the documents filed under that folder. The label also tells you if MOST, SOME, or ALL of the documents in that folder contain each keyword. A folder's sub-folders contain, collectively, all of the documents in the parent folder, broken down into  increasingly narrow topics.</p>
@@ -45,14 +39,14 @@
 
   <p>The tree automatically expands and zooms to follow your selections. Or you can pan it by dragging with the mouse, and zoom using the +/- buttons or the mouse wheel. Folders marked with ⊕ can be expanded to show sub-folders, while ⊖ hides sub-folders.</p>
 
-  <br /><p><strong>4. Tag interesting documents</strong><br />
+  <br /><p><strong>3. Tag interesting documents</strong><br />
   As you explore the folder tree, you&#8217;ll run across individual documents or entire folders you want to remember. Enter a descriptive tag in the &#8220;new tag&#8221; field and press &#8220;tag.&#8221; If you're currently viewing a specific document, overview will tag just that document. If instead you're viewing the list of documents in a folder, Overview will tag the entire folder.</p>
   <figure><img src="@routes.Assets.at("images/Help/step4.png")" alt="" /></figure>
   <p>Tags and folders have independent lives: each document can have any number of tags applied to it, and the same tag can be applied anywhere in the tree.<p>
   <p>Once you&#8217;ve created a tag, you can add that tag to the current document or document list at any time by pressing the + button that appears when your mouse is over the tag name. Or press &#8211; to remove the tag.</p>
   <p>Clicking on a tag name selects that tag,  highlighting the tagged documents in the tree and loading them into the document list.</p>
   
-  <br /><p><strong>5. Work your way through the tree</strong><br />
+  <br /><p><strong>4. Work your way through the tree</strong><br />
   When you have a lot of documents, it pays to be systematic. We recommend working your way through the folders in the tree from left to right &#8212; biggest folders to smallest folders. Select a folder then view a few of the documents in it to see if you understand what they have in common. If specific words appear in MOST or ALL documents in a folder, that's a sign that the folder contains a single meaningful topic. Otherwise there may be more than one important topic in the documents in that folder, so try opening child folders instead until you find a folder where all of the documents are similar. Then tag that folder with a descriptive label.</p>
 
   <p>Use search to find specific documents of interest, but pay attention to which folders contain those documents. You may find other relevant documents in the same folder, even if they don't contain your search term.</p>
@@ -60,5 +54,9 @@
   <p>As you proceed, you may find documents that talk about similar topics in different folders. Overview doesn&#8217;t know what you want out of your documents, so it can&#8217;t always guess how they should be arranged. You can apply a tag to any combination of folders and documents to create a set that is meaningful to you.</p>
   <p>You may also discover that the documents in a folder are irrelevant to your work, in which case you can tag them with &#8220;read&#8221; and simply move on. Part of the power of Overview is being able to decide <em>not</em> to look at an entire folder.</p>
   <p>When you&#8217;re finished this process, you&#8217;ll have a neatly categorized tree, and a set of tags corresponding to all the interesting topics in your documents.</p>
+  
+  <br /><p><strong>5. Learn more!</strong><br />
+
+  <p>Overview has many more powerful features: you can automatically <a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/">split long documents into individual pages</a>, <a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/">ignore meaningless words, <a href="http://overview.ap.org/blog/2013/07/comparing-text-to-data-by-importing-tags/">compare data to text</a>, and many other things. See the <a href="http://overview.ap.org/">Overview blog</a> for more tips and tricks, or <a href="http://overview.ap.org/contact/">contact us</a> to ask about your specific needs!
   
 }
