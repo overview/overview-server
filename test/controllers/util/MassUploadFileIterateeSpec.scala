@@ -19,13 +19,15 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
   "MassUploadFileIteratee" should {
 
-    class TestMassUploadFileIteratee(createFileGroup: Boolean) extends MassUploadFileIteratee {
+    abstract class TestMassUploadFileIteratee extends MassUploadFileIteratee {
+      val fileUpload = smartMock[GroupedFileUpload]
+    }
+
+    class SucceedingMassUploadFileIteratee(createFileGroup: Boolean) extends TestMassUploadFileIteratee {
       override val storage = smartMock[Storage]
 
       val fileGroup = smartMock[FileGroup]
       fileGroup.id returns 1l
-
-      val fileUpload = smartMock[GroupedFileUpload]
 
       if (createFileGroup) {
         storage.findCurrentFileGroup(any) returns None
@@ -34,6 +36,18 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       storage.createUpload(any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
+    }
+
+    class FailingMassUploadFileIteratee extends TestMassUploadFileIteratee {
+      override val storage = smartMock[Storage]
+
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns 1l
+
+      storage.findCurrentFileGroup(any) returns Some(fileGroup)
+
+      storage.createUpload(any, any, any, any, any) returns fileUpload
+      storage.appendData(any, any) throws new RuntimeException("append failed")
     }
 
     trait FileGroupProvider {
@@ -64,12 +78,19 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         r
       }
 
-      lazy val iteratee = new TestMassUploadFileIteratee(createFileGroup)
+      lazy val iteratee: TestMassUploadFileIteratee = new SucceedingMassUploadFileIteratee(createFileGroup)
 
       def result = {
         val resultFuture = enumerator.run(iteratee(userEmail, createRequest, guid, bufferSize))
         Await.result(resultFuture, Duration.Inf)
       }
+    }
+
+    trait FailingUploadContext extends UploadContext {
+      override lazy val iteratee: TestMassUploadFileIteratee = new FailingMassUploadFileIteratee
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)
+      override val createFileGroup = false
     }
 
     trait GoodHeaders extends Headers {
@@ -113,7 +134,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       override val bufferSize = 150
       override val enumerator = Enumerator.fromStream(input, chunkSize)
     }
-    
+
     trait UploadWithMissingHeaders extends UploadContext with MissingOptionalHeaders {
       override val bufferSize = total
       override val enumerator = Enumerator.fromStream(input)
@@ -147,11 +168,15 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(0, 192))
       there was one(iteratee.storage).appendData(iteratee.fileUpload, data.slice(192, 256))
     }
-    
+
     "Use empty strings for missing optional headers" in new UploadWithMissingHeaders with ExistingFileGroup {
       result must beRight
-      
+
       there was one(iteratee.storage).createUpload(1l, "", "", guid, total)
+    }
+
+    "Return an error result if appending data fails" in new FailingUploadContext with GoodHeaders {
+      result must beLeft
     }
   }
 }

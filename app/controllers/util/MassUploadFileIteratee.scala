@@ -1,9 +1,11 @@
 package controllers.util
 
+import scala.util.control.Exception._
 import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.GroupedFileUpload
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.RequestHeader
+import play.api.mvc.Results._
 import play.api.http.HeaderNames._
 import org.overviewproject.util.ContentDisposition
 import play.api.mvc.Result
@@ -30,15 +32,14 @@ trait MassUploadFileIteratee {
 
     Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](initialUpload) { (upload, data) =>
       buffer ++= data
-      upload.right.map { u =>
-        if (buffer.size >= bufferSize) {
-          val update = storage.appendData(u, buffer)
-          buffer = Array[Byte]()
-          update
-        } else u
+      if (buffer.size >= bufferSize) {
+        val update = flushBuffer(upload, buffer)
+        buffer = Array[Byte]()
+        update
       }
+      else upload
     } mapDone { output =>
-      if (buffer.size > 0) output.right.map(storage.appendData(_, buffer))
+      if (buffer.size > 0) flushBuffer(output, buffer)
       else output
     }
   }
@@ -50,9 +51,21 @@ trait MassUploadFileIteratee {
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
+  private def flushBuffer(upload: Either[Result, GroupedFileUpload], buffer: Array[Byte]): Either[Result, GroupedFileUpload] = 
+    for {
+      u <- upload.right
+      update <- attemptAppend(u, buffer).right
+    } yield update
+    
+  private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[Result, GroupedFileUpload] = {
+    val appendResult = allCatch either storage.appendData(upload, buffer)
+    
+    for (_ <- appendResult.left) yield InternalServerError
+  }
+
   private case class RequestInformation(filename: String, contentType: String,
-      start: Long, end: Long, total: Long)
-      
+                                        start: Long, end: Long, total: Long)
+
   private object RequestInformation {
     def apply(request: RequestHeader): RequestInformation = {
       val contentType = request.headers.get(CONTENT_TYPE).getOrElse("")
@@ -62,7 +75,7 @@ trait MassUploadFileIteratee {
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       val rangeMatch = range.findFirstMatchIn(contentRange).get
       val List(start, end, length) = rangeMatch.subgroups.take(3)
-      
+
       RequestInformation(filename, contentType, start.toLong, end.toLong, length.toLong)
     }
   }
