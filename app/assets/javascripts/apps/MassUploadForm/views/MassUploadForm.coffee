@@ -48,14 +48,14 @@ define [
       <div id="cancel-modal" class="modal hide fade" role="dialog">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h3 id="myModalLabel">Confirm Cancel</h3>
+          <h3 id="myModalLabel"><%- t('confirm_cancel.title') %></h3>
         </div>
         <div class="modal-body">
-          <p>Are you sure you want to cancel this upload?</p>
+          <p><%- t('confirm_cancel.prompt') %></p>
         </div>
         <div class="modal-footer">
-          <button class="btn" data-dismiss="modal" aria-hidden="true">Back</button>
-          <button class="btn btn-primary cancel-upload">Cancel Upload</button>
+          <button class="btn" data-dismiss="modal" aria-hidden="true"><%- t('confirm_cancel.back_button') %></button>
+          <button class="btn btn-primary cancel-upload"><%- t('confirm_cancel.confirm_button') %></button>
         </div>
       </div>
       ''')

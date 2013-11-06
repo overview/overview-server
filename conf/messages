@@ -245,6 +245,10 @@ views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
 views.DocumentSet._massUploadForm.drop_target=Select files to upload
 views.DocumentSet._massUploadForm.wait_for_import=Your files will be imported after all uploads are complete
+views.DocumentSet._massUploadForm.confirm_cancel.title=Confirm Cancel
+views.DocumentSet._massUploadForm.confirm_cancel.prompt=Are you sure you want to cancel this upload?
+views.DocumentSet._massUploadForm.confirm_cancel.back_button=Back
+views.DocumentSet._massUploadForm.confirm_cancel.confirm_button=Cancel Upload
 
 views.DocumentSet._uploadProgress.uploading=Uploading...
 

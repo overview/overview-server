@@ -32,6 +32,10 @@ define [
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
+        'views.DocumentSet._massUploadForm.confirm_cancel.title': 'title'
+        'views.DocumentSet._massUploadForm.confirm_cancel.prompt': 'prompt'
+        'views.DocumentSet._massUploadForm.confirm_cancel.back_button': 'back_button'
+        'views.DocumentSet._massUploadForm.confirm_cancel.confirm_button': 'confirm_button'
 
       clearAjaxRequests()
 
