@@ -41,6 +41,9 @@ define [
       model.uploads = new Backbone.Collection
       model.abort = jasmine.createSpy()
 
+      # fake the import options menu
+      $('body').append('<div class="nav-buttons"><ul><li><a href="#foo">foo</a></li></ul></div>')
+
       view = new MassUploadForm
         model: model
         uploadViewClass: uploadViewClass
@@ -48,6 +51,9 @@ define [
         defaultLanguageCode: 'en'
       $.extend model,
         addFiles: jasmine.createSpy()
+
+    afterEach ->
+      $('div.nav-buttons').remove()
 
     describe 'init', ->
       it 'cancels previous uploads', ->
@@ -148,7 +154,6 @@ define [
         it 'is disabled with no files selected', ->
           expect(view.$('.choose-options')).toBeDisabled()
 
-
         describe 'after selecting options', ->
           beforeEach ->
             # add a finished upload
@@ -167,28 +172,77 @@ define [
             expect(view.$('.wait-for-import')).toHaveCss(display: 'block')
 
       describe 'cancel button', ->
+        beforeEach ->
+          jasmine.Clock.useMock()
+          spyOn(view, 'getHash').andReturn('#import-from-mass-upload')
+
         it 'has a cancel button with the correct message', ->
           expect(view.$('.cancel').length).toEqual(1)
           expect(view.$el.text()).toMatch(/cancel/)
 
-        it 'removes files in the "correct" way', ->
-          model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
-          model.uploads.add(new MockUpload(status: 'uploading'))
-          model.uploads.add(new MockUpload(status: 'waiting'))
-          view.$('.cancel').click()
-          expect(model.abort).toHaveBeenCalled()
+        describe 'without an upload', ->
+          it 'does not ask for confirmation', ->
+            modalSpy = spyOn($.fn, 'modal')
+            view.$('.cancel').click()
+            expect(modalSpy).not.toHaveBeenCalledWith('show')
 
-        it 'sends a cancel message to the server', ->
-          clearAjaxRequests()
-          view.$('.cancel').click()
-          request = mostRecentAjaxRequest()
-          expect(request.method).toEqual('DELETE')
-          expect(request.url).toEqual('/files')
+        describe 'with an upload', ->
+          beforeEach ->
+            model.uploads.add(new MockUpload(status: 'uploading'))
 
-        it 'returns to the document sets pane', ->
+          it 'asks for confirmation', ->
+            modalSpy = spyOn($.fn, 'modal')
+            view.$('.cancel').click()
+            expect(modalSpy).toHaveBeenCalledWith('show')
+            expect(modalSpy.mostRecentCall.object.selector).toEqual('#cancel-modal')
+
+          it 'closes the modal', ->
+            view.$('.cancel').click()
+            jasmine.Clock.tick(100)
+            modalSpy = spyOn($.fn, 'modal')
+            view.$('.cancel-upload').click()
+            expect(modalSpy).toHaveBeenCalledWith('hide')
+            expect(modalSpy.mostRecentCall.object.selector).toEqual('#cancel-modal')
+
+          it 'removes files in the "correct" way', ->
+            model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
+            model.uploads.add(new MockUpload(status: 'uploading'))
+            model.uploads.add(new MockUpload(status: 'waiting'))
+            view.$('.cancel').click()
+            jasmine.Clock.tick(100)
+            view.$('.cancel-upload').click()
+            expect(model.abort).toHaveBeenCalled()
+
+          it 'sends a cancel message to the server', ->
+            clearAjaxRequests()
+            view.$('.cancel').click()
+            jasmine.Clock.tick(100)
+            view.$('.cancel-upload').click()
+
+            request = mostRecentAjaxRequest()
+            expect(request.method).toEqual('DELETE')
+            expect(request.url).toEqual('/files')
+
+          it 'returns to the document sets pane', ->
+            spyOn(view, 'setHash')
+            view.$('.cancel').click()
+            jasmine.Clock.tick(100)
+            view.$('.cancel-upload').click()
+
+            expect(view.setHash).toHaveBeenCalledWith('')
+
+      describe 'cancelling with the import options menu', ->
+        beforeEach ->
+          jasmine.Clock.useMock()
+          spyOn(view, 'getHash').andReturn('#import-from-mass-upload')
+
+        it 'goes to the correct place', ->
           spyOn(view, 'setHash')
-          view.$('.cancel').click()
-          expect(view.setHash).toHaveBeenCalledWith('')
+          $('div.nav-buttons li a').click()
+          jasmine.Clock.tick(100)
+          view.$('.cancel-upload').click()
+
+          expect(view.setHash).toHaveBeenCalledWith('#foo')
 
     describe 'finishing upload', ->
       submitSpy = undefined

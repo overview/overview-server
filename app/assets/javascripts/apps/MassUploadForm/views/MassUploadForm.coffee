@@ -44,6 +44,20 @@ define [
       <div class="wait-for-import">
         <%- t('wait_for_import') %>
       </div>
+
+      <div id="cancel-modal" class="modal hide fade" role="dialog">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="myModalLabel">Confirm Cancel</h3>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to cancel this upload?</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" data-dismiss="modal" aria-hidden="true">Back</button>
+          <button class="btn btn-primary cancel-upload">Cancel Upload</button>
+        </div>
+      </div>
       ''')
 
     events:
@@ -51,7 +65,7 @@ define [
       'mouseenter .invisible-file-input': '_addButtonHover'
       'mouseleave .invisible-file-input': '_removeButtonHover'
       'click .choose-options': '_requestOptions'
-      'click .cancel': '_cancel'
+      'click .cancel': '_confirmCancel'
 
     initialize: ->
       throw 'Must set uploadViewClass, a Backbone.View' if !@options.uploadViewClass?
@@ -69,12 +83,14 @@ define [
       # remove this when we add resumable uploads
       $.ajax('/files', type: 'DELETE')
 
-      $('div.nav-buttons a.back').click =>
-        @_cancel()
+      @$el.find('div.nav-buttons a.back').click =>
+        @_confirmCancel()
 
-      $('div.nav-buttons li a').click =>
-        @_cancel()
-
+      $('div.nav-buttons li a').click (e) =>
+        if(@getHash() == '#import-from-mass-upload')
+          e.preventDefault()
+          e.stopPropagation()
+          @_confirmCancel(e)
 
     render: ->
       @$el.html(@template(t: t))
@@ -82,6 +98,9 @@ define [
 
     setHash: (hash) ->
       window.location.hash = hash  #for testability
+
+    getHash: ->
+      window.location.hash #for testability
 
     _addFiles: ->
       fileInput = @$el.find('.invisible-file-input')[0]
@@ -100,7 +119,6 @@ define [
 
       _.defer => # it seems more responsive when we defer this
         @$ul.append(uploadView.el)
-
 
       if(@collection.length > 0)
         progressView = new UploadProgressView({model: @model, el: @$el.find('.progress-bar')})
@@ -141,9 +159,20 @@ define [
       @model.uploads.length > 0 &&
       @model.get('status') == 'waiting'
 
-    _cancel: ->
+    _confirmCancel: (e) ->
+      target = e.currentTarget.hash
+
+      if(@collection.length > 0)
+        @$el.find('#cancel-modal').modal('show')
+        @$el.find('#cancel-modal .cancel-upload').click =>
+          @_cancel(target)
+      else
+        @_cancel(target)
+
+    _cancel: (target) ->
+      @$el.find('#cancel-modal').modal('hide')
       @model.abort()
       $.ajax('/files', type: 'DELETE')
       @render()
       @finishEnabled = false
-      @setHash('')
+      @setHash(target || '')
