@@ -34,6 +34,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         storage.createFileGroup(any) returns fileGroup
       } else storage.findCurrentFileGroup(any) returns Some(fileGroup)
 
+      storage.findUpload(any, any) returns None
       storage.createUpload(any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) returns fileUpload
     }
@@ -46,6 +47,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       storage.findCurrentFileGroup(any) returns Some(fileGroup)
 
+      storage.findUpload(any, any) returns None
       storage.createUpload(any, any, any, any, any) returns fileUpload
       storage.appendData(any, any) throws new RuntimeException("append failed")
     }

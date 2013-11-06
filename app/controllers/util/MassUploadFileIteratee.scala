@@ -14,6 +14,7 @@ import models.orm.finders.FileGroupFinder
 import org.overviewproject.postgres.LO
 import models.orm.stores.GroupedFileUploadStore
 import models.OverviewDatabase
+import models.orm.finders.GroupedFileUploadFinder
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
@@ -25,12 +26,13 @@ trait MassUploadFileIteratee {
       .getOrElse(storage.createFileGroup(userEmail))
 
     val info = RequestInformation(request)
-    val initialUpload: Either[Result, GroupedFileUpload] =
-      Right(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
+    val initialUpload = storage.findUpload(fileGroup.id, guid).map(_.copy(uploadedSize = info.start))
+      .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
 
+    
     var buffer = Array[Byte]()
 
-    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](initialUpload) { (upload, data) =>
+    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](Right(initialUpload)) { (upload, data) =>
       buffer ++= data
       if (buffer.size >= bufferSize) {
         val update = flushBuffer(upload, buffer)
@@ -48,6 +50,7 @@ trait MassUploadFileIteratee {
     def createFileGroup(userEmail: String): FileGroup
     def findCurrentFileGroup(userEmail: String): Option[FileGroup]
     def createUpload(fileGroupId: Long, contentType: String, filename: String, guid: UUID, size: Long): GroupedFileUpload
+    def findUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
@@ -105,6 +108,10 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
           GroupedFileUploadStore.insertOrUpdate(upload)
         }
       }
+    
+    override def findUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = OverviewDatabase.inTransaction {
+      GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
+    }
 
     override def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload =
       withPgConnection { implicit c =>
