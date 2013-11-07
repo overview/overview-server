@@ -33,7 +33,6 @@ trait SearchController extends Controller {
 object SearchController extends SearchController {
   override val jobQueue = new JobQueue {
     def createSearch(search: Search): Either[Unit, Unit] = {
-      Logger.info(s"Searching for ${search.query}")
       JobQueueSender.send(search)
     }
   }
