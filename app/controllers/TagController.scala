@@ -11,7 +11,6 @@ package controllers
 import au.com.bytecode.opencsv.CSVWriter
 import java.io.StringWriter
 import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import controllers.forms.{SelectionForm,TagForm,NodeIdsForm}
@@ -20,6 +19,7 @@ import org.overviewproject.tree.orm.finders.FinderResult
 import models.orm.finders.{ DocumentFinder, DocumentTagFinder, NodeDocumentFinder, TagFinder }
 import models.orm.stores.{DocumentTagStore,TagStore}
 import models.Selection
+import play.api.Logger
 
 trait TagController extends Controller {
   trait Storage {
@@ -81,6 +81,7 @@ trait TagController extends Controller {
       formWithErrors => BadRequest,
       unsavedTag => {
         val tag = storage.insertOrUpdate(unsavedTag)
+        Logger.info(s"Adding tag ${tag.name}")
         Ok(views.json.Tag.create(tag))
       }
     )
