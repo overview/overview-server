@@ -7,7 +7,6 @@ import controllers.forms.SearchForm
 import org.overviewproject.jobs.models.Search
 import controllers.util.JobQueueSender
 import play.api.Logger
-import java.nio.charset.Charset
 
 trait SearchController extends Controller {
   trait JobQueue {
@@ -34,7 +33,7 @@ trait SearchController extends Controller {
 object SearchController extends SearchController {
   override val jobQueue = new JobQueue {
     def createSearch(search: Search): Either[Unit, Unit] = {
-      Logger.info(s"Searching for ${search.query} ${Charset.defaultCharset}")
+      Logger.info(s"Searching for ${search.query}")
       JobQueueSender.send(search)
     }
   }
