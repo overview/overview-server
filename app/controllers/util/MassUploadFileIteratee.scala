@@ -117,7 +117,7 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
 
     override def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload =
       withPgConnection { implicit c =>
-        val uploadedSize = LO.withLargeObject(upload.contentsOid) { lo => lo.add(data.toArray) }
+        val uploadedSize = LO.withLargeObject(upload.contentsOid) { lo => lo.insert(data.toArray, upload.uploadedSize.toInt) }
         val updatedUpload = upload.copy(uploadedSize = uploadedSize)
 
         OverviewDatabase.inTransaction {
