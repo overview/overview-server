@@ -22,6 +22,9 @@ trait LargeObject {
   /** Appends data to the end of the LargeObject. @return total size of object */
   def add(data: Array[Byte]): Long
 
+  /** Insert data at the specified start position. @return total size of the object */
+  def insert(data: Array[Byte], start: Int): Long
+  
   /** @return an InputStream for reading the stored data */
   def inputStream: java.io.InputStream
 
@@ -88,6 +91,12 @@ object LO {
 
     def add(data: Array[Byte]): Long = {
       pgLo.seek(0, SEEK_END) // Hopefully this is efficient even in the case of multiple writes.
+      pgLo.write(data, 0, data.size)
+      pgLo.tell
+    }
+    
+    def insert(data: Array[Byte], start: Int): Long = {
+      pgLo.seek(start, SEEK_SET)
       pgLo.write(data, 0, data.size)
       pgLo.tell
     }

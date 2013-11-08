@@ -24,6 +24,10 @@ class LargeObjectSpec extends DbSpecification {
       def addData(data: Array[Byte]): Long = {
         LO.withLargeObject(oid) { _.add(data) }
       }
+      
+      def insertData(data: Array[Byte], start: Int): Long = {
+        LO.withLargeObject(oid) { _.insert(data, start) }
+      }
     }
 
     "create a new instance" in new LoContext {
@@ -78,6 +82,20 @@ class LargeObjectSpec extends DbSpecification {
       }
     }
 
+    "insert data" in new LoContext {
+      val data1 = Array[Byte](1, 2, 3, 4)
+      val data2 = Array[Byte](5, 6, 7, 8)
+      val overwrittenData = data1.take(2) ++ data2
+      
+      insertData(data1, 0) must be equalTo 4
+      insertData(data2, 2) must be equalTo 6
+      
+      LO.withLargeObject(oid) { largeObject =>
+        val readData = new Array[Byte](6)
+        largeObject.inputStream.read(readData)
+        readData must be equalTo(overwrittenData)
+      }
+    }
     "delete the large object" in new LoContext {
       val data = Array[Byte](1, 2, 3, 4)
       addData(data)
