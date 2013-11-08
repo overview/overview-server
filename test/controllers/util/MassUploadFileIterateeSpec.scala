@@ -33,12 +33,11 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
     abstract class TestMassUploadFileIteratee extends MassUploadFileIteratee {
       override val storage = smartMock[Storage]
+      val fileGroup = smartMock[FileGroup]
+      fileGroup.id returns fileGroupId
     }
 
     class SucceedingMassUploadFileIteratee(createFileGroup: Boolean) extends TestMassUploadFileIteratee {
-
-      val fileGroup = smartMock[FileGroup]
-      fileGroup.id returns 1l
 
       if (createFileGroup) {
         storage.findCurrentFileGroup(any) returns None
@@ -52,14 +51,15 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
     class FailingMassUploadFileIteratee extends TestMassUploadFileIteratee {
 
-      val fileGroup = smartMock[FileGroup]
-      fileGroup.id returns 1l
-
       storage.findCurrentFileGroup(any) returns Some(fileGroup)
 
       storage.findUpload(any, any) returns None
-      storage.createUpload(fileGroupId, contentType, filename, guid, total) returns null
+      storage.createUpload(fileGroupId, contentType, filename, guid, total) returns fileUpload
       storage.appendData(any, any) throws new RuntimeException("append failed")
+    }
+
+    class RestartingMassUploadFileIteratee extends TestMassUploadFileIteratee {
+      storage.findCurrentFileGroup(any) returns Some(fileGroup)
     }
 
     trait FileGroupProvider {
@@ -99,6 +99,29 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
       override val createFileGroup = false
     }
 
+    trait RestartingUploadContext extends Scope with Headers {
+      val bufferSize: Int
+
+      val data = Array.tabulate[Byte](total)(_.toByte)
+
+      val input = new ByteArrayInputStream(data)
+      val enumerator: Enumerator[Array[Byte]]
+
+      def createRequest: RequestHeader = {
+        val r = mock[RequestHeader]
+        r.headers returns FakeHeaders(headers)
+        r
+      }
+
+      lazy val iteratee: TestMassUploadFileIteratee = new RestartingMassUploadFileIteratee
+
+      def result = {
+        val resultFuture = enumerator.run(iteratee(userEmail, createRequest, guid, bufferSize))
+        Await.result(resultFuture, Duration.Inf)
+      }
+
+    }
+
     trait GoodHeaders extends Headers {
 
       override val headers: Seq[(String, Seq[String])] = Seq(
@@ -113,6 +136,16 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
         (CONTENT_RANGE, Seq(s"$start-$end/$total")))
     }
 
+    trait RestartHeaders extends Headers {
+      val restart = 100
+
+      override val headers: Seq[(String, Seq[String])] = Seq(
+        (CONTENT_TYPE, Seq(contentType)),
+        (CONTENT_RANGE, Seq(s"$restart-$end/$total")),
+        (CONTENT_LENGTH, Seq(s"${total - restart}")),
+        (CONTENT_DISPOSITION, Seq(contentDisposition)))
+
+    }
     trait ExistingFileGroup extends FileGroupProvider {
       override val createFileGroup: Boolean = false
     }
@@ -139,6 +172,11 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     }
 
     trait UploadWithMissingHeaders extends UploadContext with MissingOptionalHeaders {
+      override val bufferSize = total
+      override val enumerator = Enumerator.fromStream(input)
+    }
+
+    trait RestartContext extends RestartingUploadContext with RestartHeaders {
       override val bufferSize = total
       override val enumerator = Enumerator.fromStream(input)
     }
@@ -208,5 +246,20 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     "Return an error result if appending data fails" in new FailingUploadContext with GoodHeaders {
       result must beLeft
     }.pendingUntilFixed // possibly scala bug? https://github.com/scala/scala/pull/3082
+
+    "append data at start byte if less than uploadedSize" in new RestartContext {
+      iteratee.storage.findUpload(fileGroupId, guid) returns Some(fileUpload.copy(uploadedSize = restart + 10))
+
+      iteratee.storage.appendData(any, any) returns fileUpload.copy(uploadedSize = total)
+
+      result must beRight
+
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
+      there was one(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      upload.getValue.uploadedSize must be equalTo restart
+    }
   }
 }
