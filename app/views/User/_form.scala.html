@@ -3,13 +3,17 @@
 )(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.User._form")) { m =>
-  <form method="post" action="@routes.UserController.create()" class="well user-form form-horizontal" autocomplete="off">
+  <form method="post" action="@routes.UserController.create()" class="user-form form-horizontal" autocomplete="off">
     <h3>@m("h3")</h3>
     @helper.Form.csrfToken
     @helper.Form.errors(form.globalErrors)
-    @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
-    @helper.Form.translatedInput(form("password"), m, Map('type -> "password", 'class -> "minlength-password", 'required -> "required", scala.Symbol("data-minlength-password-error-too-short") -> Messages("password.secure"), scala.Symbol("data-minlength-password-min-length") -> "7"))
-    @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
+    <div>
+      @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
+    </div>
+    <div>
+      @helper.Form.translatedInput(form("password"), m, Map('type -> "password", 'class -> "minlength-password", 'required -> "required", scala.Symbol("data-minlength-password-error-too-short") -> Messages("password.secure"), scala.Symbol("data-minlength-password-min-length") -> "7"))
+      @helper.Form.translatedInput(form("password2"), m, Map('type -> "password", 'class -> "confirm-password", 'required -> "required", scala.Symbol("data-confirm-password-error-does-not-match") -> m("error_password2_does_not_match")))
+    </div>
     @helper.Form.translatedCheckbox(form("subscribe"), m, Map('type -> "checkbox", 'class -> "checkbox", 'value -> "true", 'checked -> "checked"))
     @helper.Form.translatedSubmit(m, Map(Symbol("data-feedback") -> m("submit_feedback")))
   </form>

@@ -13,3 +13,4 @@ require [
   'elements/minlength-password'
   'elements/form-submit-with-feedback'
 ], () ->
+  $('iframe.intro-video').attr('src', 'https://player.vimeo.com/video/71483614?byline=0&portrait=0&color=ffffff')

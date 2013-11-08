@@ -5,7 +5,9 @@
 )
 @defining(scopedMessages("views.components.navbar")) { m =>
   <nav>
-    <header><a href="@routes.WelcomeController.show()">@t("brand.name")</a></header>
+    <header>
+      <a href="@routes.WelcomeController.show()"><img class="logo" src="@routes.Assets.at("images/logo-small.png")" alt="@m("brand_name")" /></a>
+    </header>
     <div class="all">
       <ul>
         <li><a href="http://overview.ap.org/">@m("link_blog")</a></li>

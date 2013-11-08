@@ -11,11 +11,15 @@
   @main(optionalUser=None, title=m("title"), bodyClass="session-new", h1=m("h1"), javascripts=javascripts) {
     <div class="row">
       <div class="span6">
-        @views.html.Session._form(loginForm)
+        <div class="well">
+          @views.html.Session._form(loginForm)
+        </div>
       </div>
 
       <div class="span6">
-        @views.html.User._form(registrationForm)
+        <div class="well">
+          @views.html.User._form(registrationForm)
+        </div>
       </div>
     </div>
   }

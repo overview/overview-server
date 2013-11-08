@@ -16,4 +16,4 @@ define [ 'jquery' ], ($) ->
       load_url($div, url)
 
     $('#import-public').on('activate', show)
-    $('iframe.quick-start-video').attr('src', 'https://player.vimeo.com/video/77729177')
+    $('iframe.quick-start-video').attr('src', 'https://player.vimeo.com/video/77729177?byline=0&portrait=0&color=ffffff')

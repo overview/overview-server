@@ -1,0 +1,119 @@
+body.welcome-show {
+  height: 100%;
+
+  img.logo {
+    display: none;
+  }
+
+  img.big-logo {
+    width: 100%;
+  }
+
+  .blurb {
+    h3 {
+      font-size: 21px;
+    }
+  }
+
+  p.learn {
+    text-align: center;
+    font-weight: 150;
+    font-size: 30px;
+    margin-top: 30px;
+  }
+
+  .intro-video-container {
+    text-align: center;
+    width: 500px;
+  }
+
+  div.container {
+    margin-top: 10px;
+    padding-bottom: 310px;
+    overflow: auto;
+  }
+
+  div.bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 310px;
+    width: 100%;
+    background-color: black;
+    color: white;
+    // image credit: subtlepatterns.com
+    background: url('/assets/images/dark_stripes.png');
+
+    &>.row-fluid {
+      margin-top: 10px;
+    }
+  }
+
+  .form-horizontal {
+    .btn {
+      border: 0;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 150;
+      margin: 0;
+    }
+
+    .form-actions {
+      margin-top: 0;
+      padding-top: 0;
+      border: 0;
+      background: 0;
+    }
+
+    p.help-block {
+      font-size: 12px;
+    }
+
+    .control-group {
+      margin-bottom: 13px;
+    }
+  }
+
+  .session-form {
+    margin-left: 50px;
+    height: 100%;
+  }
+
+  .fluid-divider {
+    padding-left: 50px;
+    margin-left: 0;
+    border-left: 1px solid #636266;
+  }
+
+  div#flash {
+    // the flash message is not useful on this page.
+    display: none;
+  }
+
+  @media all and (max-width: 1065px) {
+    div.container {
+      padding-bottom: 0;
+      overflow: visible;
+    }
+
+    div.bottom-bar {
+      position: relative;
+      height: 100%;
+    }
+
+    .fluid-divider {
+      border: 0;
+      width: 520px;
+    }
+  }
+
+  @media all and (max-width: 500px) {
+    iframe.intro-video {
+      width: 320px;
+    }
+  }
+}
+
+
