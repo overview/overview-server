@@ -5,6 +5,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Random
 import play.api.libs.iteratee.Enumerator
+import play.api.mvc.Results._
 import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -15,6 +16,7 @@ import play.api.test.Helpers._
 import java.util.UUID
 import java.net.URLEncoder
 import org.mockito.ArgumentCaptor
+import views.html.defaultpages.badRequest
 
 class MassUploadFileIterateeSpec extends Specification with Mockito {
 
@@ -194,9 +196,15 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       result must beRight
 
+      val upload = ArgumentCaptor.forClass(classOf[GroupedFileUpload])
+      val chunk = ArgumentCaptor.forClass(classOf[Iterable[Byte]])
+
       there was one(iteratee.storage).findCurrentFileGroup(userEmail)
       there was one(iteratee.storage).createUpload(1l, contentType, filename, guid, total)
-      there was one(iteratee.storage).appendData(fileUpload, data)
+      there was one(iteratee.storage).appendData(upload.capture, chunk.capture)
+
+      upload.getValue.guid must be equalTo guid
+      chunk.getValue must be equalTo data
     }
 
     "handle chunked input" in new MultipleChunksUpload with ExistingFileGroup {
@@ -238,6 +246,8 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     }
 
     "Use empty strings for missing optional headers" in new UploadWithMissingHeaders with ExistingFileGroup {
+      iteratee.storage.createUpload(fileGroupId, "", "", guid, total) returns fileUpload
+      iteratee.storage.appendData(any, any) returns fileUpload
       result must beRight
 
       there was one(iteratee.storage).createUpload(1l, "", "", guid, total)
@@ -261,5 +271,12 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
       upload.getValue.uploadedSize must be equalTo restart
     }
+
+    "return an error if start of content range is past uploadedSize" in new RestartContext {
+      iteratee.storage.findUpload(fileGroupId, guid) returns Some(fileUpload.copy(uploadedSize = restart - 10))
+
+      result must beLeft(BadRequest)
+    }
+
   }
 }

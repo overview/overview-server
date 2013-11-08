@@ -26,13 +26,15 @@ trait MassUploadFileIteratee {
       .getOrElse(storage.createFileGroup(userEmail))
 
     val info = RequestInformation(request)
-    val initialUpload = storage.findUpload(fileGroup.id, guid).map(_.copy(uploadedSize = info.start))
+    val initialUpload = storage.findUpload(fileGroup.id, guid)
       .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
 
+    val validUploadStart =  if (info.start > initialUpload.uploadedSize) Left(BadRequest)
+    else Right(initialUpload.copy(uploadedSize = info.start))
     
     var buffer = Array[Byte]()
 
-    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](Right(initialUpload)) { (upload, data) =>
+    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](validUploadStart) { (upload, data) =>
       buffer ++= data
       if (buffer.size >= bufferSize) {
         val update = flushBuffer(upload, buffer)
