@@ -9,14 +9,16 @@
 
 @defining(scopedMessages("views.Welcome.show")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="welcome-show", javascripts=javascripts) {
-    <div class="row-fluid">
-      <div class="span6 blurb">
-        <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
-        <p class="text">@m("p1")</p>
-        <p class="learn"><a href="/help">@m("learn")</a></p>
-      </div>
-      <div class="span6 intro-video-container">
-        <iframe class="intro-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+    <div class="centering-cell">
+      <div class="row-fluid">
+        <div class="span6 blurb">
+          <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
+          <p class="text">@m("p1")</p>
+          <p class="learn"><a href="/help">@m("learn")</a></p>
+        </div>
+        <div class="span6 intro-video-container">
+          <iframe class="intro-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        </div>
       </div>
     </div>
 

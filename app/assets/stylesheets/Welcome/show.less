@@ -1,6 +1,11 @@
 body.welcome-show {
   height: 100%;
 
+  .centering-cell {
+    display: table-cell;
+    vertical-align: middle;
+  }
+
   img.logo {
     display: none;
   }
@@ -29,8 +34,10 @@ body.welcome-show {
 
   div.container {
     margin-top: 10px;
-    padding-bottom: 310px;
+    padding-bottom: 360px;
     overflow: auto;
+    display: table;
+    height: 100%;
   }
 
   div.bottom-bar {
@@ -104,6 +111,8 @@ body.welcome-show {
     div.container {
       padding-bottom: 0;
       overflow: visible;
+      display: block;
+      height: inherit;
     }
 
     div.bottom-bar {
