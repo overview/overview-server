@@ -24,7 +24,11 @@ define [ 'backbone' ], (Backbone) ->
   #   focus.animatePanAndZoom(0.25, -0.375, ms) # pan to 0.25, zoom to -0.375
   #   focus.animatePan(0.25, ms) # helper
   #   focus.animateZoom(-0.375, ms) # helper
-  #   focus.animateNode(node, ms) # pan/zoom to the given node
+  #   focus.animateNode(node) # pan/zoom to the given node
+  #   focus.animateNodeDisplayNode(node, displayNode)
+  #       # pan/zoom to the given node, but constrain the zoom so the displayNode
+  #       # is clearly visible. Used for auto-zooming without obscuring the selection
+  #       # in docsets with lots of nodes
   #   focus.update(animatedTree, ms) # updates pan/zoom properties
   #   focus.getTransform(animatedTree, ms)
   #       # returns a transform mapping [ 0 .. 1 ] to [ 0 .. 1 ].
@@ -77,9 +81,7 @@ define [ 'backbone' ], (Backbone) ->
       @set('nextObject', nextObject)
 
     _sanifyPanAndZoom: (pan, zoom) ->
-      zoom = @_sanifyZoom(zoom)
-
-      zoom: zoom
+      zoom: @_sanifyZoom(zoom)
       pan: @_sanifyPanAtZoom(pan, zoom)
 
     _sanifyZoom: (zoom) ->
@@ -113,6 +115,10 @@ define [ 'backbone' ], (Backbone) ->
     setNode: (node) -> @_setNextObject({ node: node }, 'set')
     animateNode: (node) -> @_setNextObject({ node: node }, 'animate')
 
+    animateNodeDisplayNode: (node, displayNode) ->
+      @displayNode = displayNode
+      @_setNextObject({ node: node }, 'animate')
+
     isZoomedInFully: -> @get('zoom') <= MIN_ZOOM
     isZoomedOutFully: -> @get('zoom') >= 1
 
@@ -123,20 +129,32 @@ define [ 'backbone' ], (Backbone) ->
 
       t = @fraction.current
       u = 1 - t
-
       nextPanAndZoom = if (node = @nextObject.node)?
         # We animate to bounds, not bounds2. This way, the zoom stays locked
         # where it belongs when the node moves after zooming is complete.
         bounds = animatedTree.bounds
         fullWidth = bounds.right - bounds.left
         fullLeft = bounds.left
-
         nodeBounds = animatedTree.calculateBounds(node)
         nodeWidth = nodeBounds.right - nodeBounds.left
         nodeMiddle = (nodeBounds.left + nodeBounds.right) * 0.5
 
-        pan: (nodeMiddle - fullLeft) / fullWidth - 0.5
-        zoom: nodeWidth / fullWidth
+        pan = (nodeMiddle - fullLeft) / fullWidth - 0.5
+        zoom = nodeWidth / fullWidth
+
+        if(@displayNode)
+          displayNodeBounds = animatedTree.calculateBounds(@displayNode)
+          displayNodeWidth = displayNodeBounds.right - displayNodeBounds.left
+
+          # if the display (selected, generally) node is really small compared to the parent,
+          # set the size/zoom based on it instead.
+          if(displayNodeWidth < nodeWidth / 4)
+            displayNodeMiddle = (displayNodeBounds.left + displayNodeBounds.right) * 0.5
+            pan = (displayNodeMiddle - fullLeft) / fullWidth - 0.5
+            zoom = displayNodeWidth * 4 / fullWidth
+
+        pan: pan
+        zoom: zoom
       else
         @nextObject
 

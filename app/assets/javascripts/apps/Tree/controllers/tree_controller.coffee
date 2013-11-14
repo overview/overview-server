@@ -92,8 +92,11 @@ define [
     state.on 'change:selection', (__, selection) ->
       if nodeid = selection.nodes[0]
         node = animated_tree.getAnimatedNode(nodeid)
-        node = node.parent if node.parent?
-        focus.animateNode(node)
+        debugger
+        if node.parent?
+          focus.animateNodeDisplayNode(node.parent, node)
+        else
+          focus.animateNode(node)
 
     state.on 'change:taglike', (__, taglike) ->
       if taglike?.name? # it's a tag
