@@ -1,6 +1,7 @@
 package controllers.util
 
 import scala.util.control.Exception._
+import scala.util.{ Failure, Success, Try }
 import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.GroupedFileUpload
 import play.api.libs.iteratee.Iteratee
@@ -15,6 +16,7 @@ import org.overviewproject.postgres.LO
 import models.orm.stores.GroupedFileUploadStore
 import models.OverviewDatabase
 import models.orm.finders.GroupedFileUploadFinder
+import play.api.Logger
 
 trait MassUploadFileIteratee {
   val DefaultBufferSize = 1024 * 1024
@@ -25,13 +27,20 @@ trait MassUploadFileIteratee {
     val fileGroup = storage.findCurrentFileGroup(userEmail)
       .getOrElse(storage.createFileGroup(userEmail))
 
-    val info = RequestInformation(request)
-    val initialUpload = storage.findUpload(fileGroup.id, guid)
-      .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
+    val infoAttempt = Try(RequestInformation(request))
+    val validUploadStart = infoAttempt match {
+      case Success(info) => {
+        val initialUpload = storage.findUpload(fileGroup.id, guid)
+          .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
+        if (info.start > initialUpload.uploadedSize) Left(BadRequest)
+        else Right(initialUpload.copy(uploadedSize = info.start))
+      }
+      case Failure(e) => {
+        Logger.error(s"Failed to parse upload request headers ${request.headers}")
+        Left(BadRequest)
+      }
+    }
 
-    val validUploadStart =  if (info.start > initialUpload.uploadedSize) Left(BadRequest)
-    else Right(initialUpload.copy(uploadedSize = info.start))
-    
     var buffer = Array[Byte]()
 
     Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](validUploadStart) { (upload, data) =>
@@ -40,8 +49,7 @@ trait MassUploadFileIteratee {
         val update = flushBuffer(upload, buffer)
         buffer = Array[Byte]()
         update
-      }
-      else upload
+      } else upload
     } mapDone { output =>
       if (buffer.size > 0) flushBuffer(output, buffer)
       else output
@@ -56,15 +64,15 @@ trait MassUploadFileIteratee {
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
-  private def flushBuffer(upload: Either[Result, GroupedFileUpload], buffer: Array[Byte]): Either[Result, GroupedFileUpload] = 
+  private def flushBuffer(upload: Either[Result, GroupedFileUpload], buffer: Array[Byte]): Either[Result, GroupedFileUpload] =
     for {
       u <- upload.right
       update <- attemptAppend(u, buffer).right
     } yield update
-    
+
   private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[Result, GroupedFileUpload] = {
     val appendResult = allCatch either storage.appendData(upload, buffer)
-    
+
     for (_ <- appendResult.left) yield InternalServerError
   }
 
@@ -110,7 +118,7 @@ object MassUploadFileIteratee extends MassUploadFileIteratee {
           GroupedFileUploadStore.insertOrUpdate(upload)
         }
       }
-    
+
     override def findUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] = OverviewDatabase.inTransaction {
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
     }
