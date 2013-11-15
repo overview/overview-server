@@ -45,7 +45,7 @@ class OverviewDocumentProcessingErrorSpec extends Specification {
 
     "map message for internal errors" in new InternalErrors {
       val internalErrors = errorGroups.head
-      internalErrors._1 must be equalTo ("Overview Internal Error")
+      internalErrors._1 must be equalTo ("Unable to process file")
     }
 
     "map message for http status codes" in new HttpErrors {

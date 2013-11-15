@@ -28,7 +28,7 @@ object OverviewDocumentProcessingError {
     val url: String = documentProcessingError.textUrl
   }
 
-  private val InternalError: String = "Overview Internal Error"
+  private val InternalError: String = "Unable to process file"
   private val UnknownStatus: String = "Unknown Status"
   private val HttpStatusCode: Map[Int, String] = Map(
     (100 -> "Continue"),
