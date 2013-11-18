@@ -61,6 +61,7 @@ object JobHandler {
         case _ => handleCreationJob(j, progFn)
       }
 
+      Logger.info(s"Cleaning up job ${j.documentSetId}")
       Database.inTransaction {
         j.delete
         deleteFileGroupData(j)
@@ -84,6 +85,7 @@ object JobHandler {
     }
 
     firstSubmittedJob.map { j =>
+      Logger.info(s"Processing job: ${j.documentSetId}")
       handleSingleJob(j)
       System.gc()
     }
