@@ -147,9 +147,12 @@ object SearchIndex {
 
   private class DocumentSetIndexingSessionImpl(client: Client, documentSetId: Long) extends DocumentSetIndexingSession with BulkProcessor.Listener {
     private val bulkProcessor = new BulkProcessor.Builder(client, this).build
-    private val sessionComplete = Promise[Unit]
     private val allRequestsComplete = Promise[Unit]
-
+    
+    // Use mutable variables and locking to determine when all requests have been handled.
+    private var requestInProgress: Boolean = false
+    private var sessionComplete: Boolean = false
+    
     override def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit = {
       val indexRequest = client.prepareIndex(DocumentSetAlias(documentSetId), "document")
 
@@ -167,16 +170,24 @@ object SearchIndex {
 
     override def complete: Unit = {
       bulkProcessor.close
-      sessionComplete.success()
+      synchronized {
+        sessionComplete = true
+        if (!requestInProgress) allRequestsComplete.success()
+      }
     }
 
     override def requestsComplete: Future[Unit] = allRequestsComplete.future
 
-    override def beforeBulk(executionId: Long, request: BulkRequest): Unit = Logger.debug("Starting bulk indexing request")
+    override def beforeBulk(executionId: Long, request: BulkRequest): Unit = {
+      Logger.debug("Starting bulk indexing request")
+      synchronized { requestInProgress = true }
+    }
 
     override def afterBulk(executionId: Long, request: BulkRequest, response: BulkResponse) = {
-      if (sessionComplete.isCompleted) allRequestsComplete.success()
-
+      synchronized {
+        requestInProgress = false
+        if (sessionComplete) allRequestsComplete.success()
+      }
       Logger.debug("Bulk indexing request complete")
     }
 
