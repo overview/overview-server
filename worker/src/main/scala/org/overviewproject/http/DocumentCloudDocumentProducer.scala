@@ -9,9 +9,7 @@ package org.overviewproject.http
 import scala.language.postfixOps
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration._
-
 import akka.actor._
-
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.{Document => RetrievedDocument, _ }
 import org.overviewproject.documentcloud.ImporterProtocol._
@@ -21,6 +19,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState.Cancelled
 import org.overviewproject.util._
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 import org.overviewproject.util.Progress.{Progress, ProgressAbortFn}
+import java.util.concurrent.TimeoutException
 
 
 /** Feeds the documents from sourceDocList to the consumer */
@@ -29,6 +28,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
   private val MaxInFlightRequests = Configuration.getInt("max_inflight_requests")
   private val SuperTimeout = 6 minutes // Regular timeout is 5 minutes
+  private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done
   private val RequestQueueName = "requestqueue"
   private val QueryProcessorName = "queryprocessor"
   private val ImporterName = "importer"
@@ -110,7 +110,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
 
     indexingSession.complete
     consumer.productionComplete()
-    Await.result(indexingSession.requestsComplete, Duration.Inf)
+    
+    Await.result(indexingSession.requestsComplete, IndexingTimeout)
     Logger.info("Indexing complete")
     
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved

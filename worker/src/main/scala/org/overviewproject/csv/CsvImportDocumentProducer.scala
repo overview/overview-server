@@ -6,6 +6,7 @@
  */
 package org.overviewproject.csv
 
+import scala.language.postfixOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.overviewproject.database.{ Database, DB }
@@ -26,6 +27,7 @@ import org.overviewproject.util.{ DocumentSetIndexingSession, Logger, SearchInde
 class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploadedFileId: Long, consumer: DocumentConsumer, maxDocuments: Int, progAbort: ProgressAbortFn)
   extends DocumentProducer with PersistentDocumentSet {
 
+  private val IndexingTimeout = 3 minutes // Indexing should be complete after clustering is done  
   private val FetchingFraction = 0.5
   private val uploadReader = new UploadReader()
   private var bytesRead = 0l
@@ -69,7 +71,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     
     Database.inTransaction{ documentTagWriter.flush() }
     consumer.productionComplete()
-    Await.result(indexingSession.requestsComplete, Duration.Inf)
+    Await.result(indexingSession.requestsComplete, IndexingTimeout)
     Logger.info("Indexing complete")
     
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
