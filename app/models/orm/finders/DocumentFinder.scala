@@ -13,117 +13,109 @@ import models.Selection
 
 object DocumentFinder extends Finder {
   class DocumentFinderResult(query: Query[Document]) extends FinderResult(query) {
-    def withTagsAsStrings : FinderResult[(Document,Option[String])] = {
+    def withTagsAsStrings: FinderResult[(Document, Option[String])] = {
       val tagStringsByDocumentId = join(Schema.documentTags, Schema.tags.leftOuter)((dt, t) =>
         groupBy(dt.documentId)
-        compute(string_agg(t.map(_.name), ","))
-        on(dt.tagId === t.map(_.id))
-      )
+          compute (string_agg(t.map(_.name), ","))
+          on (dt.tagId === t.map(_.id)))
 
       join(query, tagStringsByDocumentId.leftOuter)((d, ts) =>
         select(d, ts.flatMap(_.measures))
-        on(d.id === ts.map(_.key))
-      )
+          on (d.id === ts.map(_.key)))
     }
 
-    def withTagsAsLongStrings : FinderResult[(Document,Option[String])] = {
+    def withTagsAsLongStrings: FinderResult[(Document, Option[String])] = {
       val tagLongStringsByDocumentId = from(Schema.documentTags)(dt =>
         groupBy(dt.documentId)
-        compute(string_agg(format("%s", dt.tagId), ","))
-      )
+          compute (string_agg(format("%s", dt.tagId), ",")))
 
       join(query, tagLongStringsByDocumentId.leftOuter)((d, ts) =>
         select(d, ts.flatMap(_.measures))
-        on(d.id === ts.map(_.key))
-      )
+          on (d.id === ts.map(_.key)))
     }
 
     /** Returns just the IDs. */
-    def toIds : FinderResult[Long] = {
+    def toIds: FinderResult[Long] = {
       from(query)(d => select(d.id))
     }
 
-    /** Returns just the IDs.
-      *
-      * The IDs will be for documents ordered by title, description and ID.
-      */
-    def toIdsOrdered : FinderResult[Long] = {
+    /**
+     * Returns just the IDs.
+     *
+     * The IDs will be for documents ordered by title, description and ID.
+     */
+    def toIdsOrdered: FinderResult[Long] = {
       from(query)(d =>
         select(d.id)
-        orderBy(d.title, d.description, d.id)
-      )
+          orderBy (d.title, d.description, d.id))
     }
 
-    /** Returns (Document,nodeIdsString,tagIdsString) tuples.
-      *
-      * Squeryl does not work with Option[Array] at this time, so we use
-      * string_agg instead of array_agg.
-      */
-    def withNodeIdsAndTagIdsAsLongStrings : FinderResult[(Document,Option[String],Option[String])] = {
-      val nodeIdStrings : Query[GroupWithMeasures[Long,Option[String]]] = join(query, Schema.nodeDocuments)((q, nd) =>
+    /**
+     * Returns (Document,nodeIdsString,tagIdsString) tuples.
+     *
+     * Squeryl does not work with Option[Array] at this time, so we use
+     * string_agg instead of array_agg.
+     */
+    def withNodeIdsAndTagIdsAsLongStrings: FinderResult[(Document, Option[String], Option[String])] = {
+      val nodeIdStrings: Query[GroupWithMeasures[Long, Option[String]]] = join(query, Schema.nodeDocuments)((q, nd) =>
         groupBy(nd.documentId)
-        compute(string_agg(cast(nd.nodeId, "varchar"), ","))
-        on(nd.documentId === q.id)
-      )
+          compute (string_agg(cast(nd.nodeId, "varchar"), ","))
+          on (nd.documentId === q.id))
 
-      val tagIdStrings : Query[GroupWithMeasures[Long,Option[String]]] = join(query, Schema.documentTags)((q, dt) =>
+      val tagIdStrings: Query[GroupWithMeasures[Long, Option[String]]] = join(query, Schema.documentTags)((q, dt) =>
         groupBy(dt.documentId)
-        compute(string_agg(cast(dt.tagId, "varchar"), ","))
-        on(dt.documentId === q.id)
-      )
+          compute (string_agg(cast(dt.tagId, "varchar"), ","))
+          on (dt.documentId === q.id))
 
       join(query, nodeIdStrings.leftOuter, tagIdStrings.leftOuter)((d, n, t) =>
         select(d, n.flatMap(_.measures), t.flatMap(_.measures))
-        orderBy(d.title, d.description, d.id)
-        on(d.id === n.map(_.key), d.id === t.map(_.key))
-      )
+          orderBy (d.title, d.description, d.id)
+          on (d.id === n.map(_.key), d.id === t.map(_.key)))
     }
   }
-  implicit private def queryToDocumentFinderResult(query: Query[Document]) : DocumentFinderResult = new DocumentFinderResult(query)
+  implicit private def queryToDocumentFinderResult(query: Query[Document]): DocumentFinderResult = new DocumentFinderResult(query)
 
-  /** @return All `Document`s with the given ID.
-    *
-    * This can have 0 or 1 row.
-    */
-  def byId(id: Long) : DocumentFinderResult = {
+  /**
+   * @return All `Document`s with the given ID.
+   *
+   * This can have 0 or 1 row.
+   */
+  def byId(id: Long): DocumentFinderResult = {
     Schema.documents.where(_.id === id)
   }
 
   /** @return All `Document`s with any of the given IDs. */
-  def byIds(ids: Traversable[Long]) : DocumentFinderResult = {
+  def byIds(ids: Traversable[Long]): DocumentFinderResult = {
     Schema.documents.where(_.id in ids)
   }
 
   /** @return All `Document`s with the given DocumentSet. */
-  def byDocumentSet(documentSet: Long) : DocumentFinderResult = {
+  def byDocumentSet(documentSet: Long): DocumentFinderResult = {
     Schema.documents.where(_.documentSetId === documentSet)
   }
 
   /** @return All `Document`s in the given Selection. */
-  def bySelection(selection: Selection) : DocumentFinderResult = {
+  def bySelection(selection: Selection): DocumentFinderResult = {
     var query = Schema.documents.where(_.documentSetId === selection.documentSetId)
 
     if (selection.nodeIds.nonEmpty) {
       val idsFromNodes = from(Schema.nodeDocuments)(nd =>
         where(nd.nodeId in selection.nodeIds)
-        select(nd.documentId)
-      )
+          select (nd.documentId))
       query = query.where(_.id in idsFromNodes)
     }
 
     if (selection.tagIds.nonEmpty) {
       val idsFromTags = from(Schema.documentTags)(dt =>
         where(dt.tagId in selection.tagIds)
-        select(dt.documentId)
-      )
+          select (dt.documentId))
       query = query.where(_.id in idsFromTags)
     }
 
     if (selection.searchResultIds.nonEmpty) {
       val idsFromSearchResults = from(Schema.documentSearchResults)(dsr =>
         where(dsr.searchResultId in selection.searchResultIds)
-        select(dsr.documentId)
-      )
+          select (dsr.documentId))
       query = query.where(_.id in idsFromSearchResults)
     }
 
@@ -132,5 +124,19 @@ object DocumentFinder extends Finder {
     }
 
     query
+  }
+
+  /** @return All `Document`s in the documentSet that have not been tagged */
+  def untaggedInDocumentset(documentSet: Long): DocumentFinderResult = {
+    from(Schema.documents)(d =>
+      where((d.documentSetId === documentSet) and
+        (d.id notIn from(Schema.documentTags)(dt =>
+          where(dt.tagId in from(Schema.nodeDocuments)(nd =>
+            where(nd.nodeId in from(Schema.nodes)(n =>
+              where((n.documentSetId === documentSet) and (n.parentId isNull))
+                select (n.id)))
+              select (nd.documentId)))
+            select (dt.documentId))))
+        select (d))
   }
 }

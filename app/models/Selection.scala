@@ -6,8 +6,8 @@ case class Selection(
   val documentSetId: Long,
   val nodeIds: Seq[Long],
   val tagIds: Seq[Long],
-  val searchResultIds: Seq[Long],
-  val documentIds: Seq[Long]
+  val documentIds: Seq[Long],
+  val searchResultIds: Seq[Long]
 )
 
 object Selection {
@@ -20,7 +20,7 @@ object Selection {
     apply(documentSetId, Seq[Long](), Seq[Long](), Seq[Long](), Seq[Long]())
   }
 
-  def apply(documentSetId: Long, nodeIds: SeqLongParam, tagIds: SeqLongParam, searchResultIds: SeqLongParam, documentIds: SeqLongParam) : Selection = {
-    apply(documentSetId, nodeIds.ids, tagIds.ids, searchResultIds.ids, documentIds.ids)
+  def apply(documentSetId: Long, nodeIds: SeqLongParam, tagIds: SeqLongParam, documentIds: SeqLongParam, searchResultIds: SeqLongParam) : Selection = {
+    apply(documentSetId, nodeIds.ids, tagIds.ids, documentIds.ids, searchResultIds.ids)
   }
 }
