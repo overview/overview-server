@@ -11,7 +11,7 @@ class SelectionSpec extends Specification {
     val searchResultIds: Seq[Long] = Seq(1L)
     val documentIds: String
 
-    lazy val selection = Selection(documentSetId, nodeIds, tagIds, searchResultIds, documentIds)
+    lazy val selection = Selection(documentSetId, nodeIds, tagIds, documentIds, searchResultIds)
     def parsedDocumentIds = selection.documentIds
   }
 
@@ -22,8 +22,8 @@ class SelectionSpec extends Specification {
       selection.documentSetId must beEqualTo(1L)
       selection.nodeIds must beEqualTo(Seq(2L))
       selection.tagIds must beEqualTo(Seq(3L))
-      selection.searchResultIds must beEqualTo(Seq(4L))
-      selection.documentIds must beEqualTo(Seq(5L))
+      selection.documentIds must beEqualTo(Seq(4L))
+      selection.searchResultIds must beEqualTo(Seq(5L))
     }
 
     "parse strings into Seq[Long]" in new ParseDocumentIdsScope {
