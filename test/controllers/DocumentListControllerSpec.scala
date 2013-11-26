@@ -27,17 +27,20 @@ class DocumentListControllerSpec extends Specification with Mockito {
     val searchResults = ""
     val pageSize = 10
     val page = 1
+    val untagged = false
+    
     def expectedSelection = Selection(
       documentSetId=documentSetId,
       nodeIds=Seq[Long](),
       tagIds=Seq[Long](),
+      documentIds=Seq[Long](),
       searchResultIds=Seq[Long](),
-      documentIds=Seq[Long]()
+      untagged=false
     )
 
     val user = mock[OverviewUser]
     val request = new AuthorizedRequest(FakeRequest(), user)
-    lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, pageSize, page)(request)
+    lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, untagged, pageSize, page)(request)
   }
 
   trait StubbedScope extends BaseScope {

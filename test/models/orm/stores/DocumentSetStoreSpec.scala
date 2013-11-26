@@ -227,7 +227,7 @@ class DocumentSetStoreSpec extends Specification {
       insertDocumentSearchResult(document, searchResult)
       
       DocumentSetStore.deleteOrCancelJob(documentSet.id)
-      val searchResultSelection = Selection(documentSet.id, Nil, Nil, Seq(searchResult.id), Nil)
+      val searchResultSelection = Selection(documentSet.id, Nil, Nil, Nil, Seq(searchResult.id), false)
       DocumentFinder.bySelection(searchResultSelection).count must be equalTo(0)
       SearchResultFinder.byDocumentSet(documentSet.id).count must be equalTo(0)
     }

@@ -10,17 +10,19 @@ object SelectionForm {
         "nodes" -> Forms.default(Forms.text, ""),
         "tags" -> Forms.default(Forms.text, ""),
         "searchResults" -> Forms.default(Forms.text, ""),
-        "documents" -> Forms.default(Forms.text, "")
+        "documents" -> Forms.default(Forms.text, ""),
+        "untagged" -> Forms.default(Forms.boolean, false)
       )
-      ((nodes, tags, searchResults, documents) =>
-        Selection(documentSetId, nodes, tags, searchResults, documents)
+      ((nodes, tags, documents, searchResults, untagged) =>
+        Selection(documentSetId, nodes, tags, documents, searchResults, untagged)
       )
       ((selection: Selection) =>
         Some((
           selection.nodeIds         .map(_.toString).mkString(","),
           selection.tagIds          .map(_.toString).mkString(","),
+          selection.documentIds     .map(_.toString).mkString(","),
           selection.searchResultIds .map(_.toString).mkString(","),
-          selection.documentIds     .map(_.toString).mkString(",")
+          selection.untagged
         ))
       )
     )

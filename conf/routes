@@ -50,7 +50,7 @@ GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.inde
 POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)
 DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.delete(id: Long, email: String)
 
-GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", searchResults: String ?= "", pageSize: Int ?= 20, page: Int ?= 1)
+GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", searchResults: String ?= "", untagged: Boolean ?= false, pageSize: Int ?= 20, page: Int ?= 1)
 
 GET    /documentsets/:id/export                                controllers.DocumentSetExportController.index(id: Long)
 GET    /documentsets/:id/export/documents-with-string-tags.csv controllers.DocumentSetExportController.documentsWithStringTags(id: Long)
