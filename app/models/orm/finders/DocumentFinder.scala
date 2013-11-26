@@ -123,20 +123,25 @@ object DocumentFinder extends Finder {
       query = query.where(_.id in selection.documentIds)
     }
 
-    query
-  }
+    if (selection.untagged) {
+      val parentNode = from(Schema.nodes)(n =>
+        where((n.documentSetId === selection.documentSetId) and (n.parentId isNull))
+          select (n.id))
+      val documentsInNodes = from(Schema.nodeDocuments)(nd =>
+        where(nd.nodeId in parentNode)
+          select (nd.documentId))
 
-  /** @return All `Document`s in the documentSet that have not been tagged */
-  def untaggedInDocumentset(documentSet: Long): DocumentFinderResult = {
-    from(Schema.documents)(d =>
-      where((d.documentSetId === documentSet) and
-        (d.id notIn from(Schema.documentTags)(dt =>
-          where(dt.tagId in from(Schema.nodeDocuments)(nd =>
-            where(nd.nodeId in from(Schema.nodes)(n =>
-              where((n.documentSetId === documentSet) and (n.parentId isNull))
-                select (n.id)))
-              select (nd.documentId)))
-            select (dt.documentId))))
-        select (d))
+      val tags = from(Schema.tags)(t =>
+        where(t.documentSetId === selection.documentSetId)
+          select (t.id))
+          
+      val taggedDocuments = from(Schema.documentTags)(dt =>
+        where (dt.tagId in tags)
+        select (dt.documentId))
+        
+      query = query.where(d => (d.id notIn taggedDocuments) and (d.id in documentsInNodes))
+    }
+
+    query
   }
 }
