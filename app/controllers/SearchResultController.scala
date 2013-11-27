@@ -49,7 +49,7 @@ trait SearchResultController extends Controller {
           case None => NotFound
           case Some(searchResult) => {
             val counts = storage.searchResultCountsByNodeId(searchResultId, nodeIds)
-            Ok(views.json.SearchResult.nodeCounts(counts))
+            Ok(views.json.helper.nodeCounts(counts))
           }
         }
       }

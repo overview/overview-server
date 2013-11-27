@@ -174,7 +174,7 @@ trait TagController extends Controller {
           case None => NotFound
           case Some(tag) => {
             val counts = storage.tagCountsByNodeId(tagId, nodeIds)
-            Ok(views.json.Tag.nodeCounts(counts))
+            Ok(views.json.helper.nodeCounts(counts))
               .withHeaders(CACHE_CONTROL -> "max-age=0")
           }
         }

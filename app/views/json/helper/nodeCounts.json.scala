@@ -1,4 +1,4 @@
-package views.json.SearchResult
+package views.json.helper
 
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
