@@ -25,10 +25,6 @@ define [ 'backbone' ], (Backbone) ->
   #   focus.animatePan(0.25, ms) # helper
   #   focus.animateZoom(-0.375, ms) # helper
   #   focus.animateNode(node) # pan/zoom to the given node
-  #   focus.animateNodeDisplayNode(node, displayNode)
-  #       # pan/zoom to the given node, but constrain the zoom so the displayNode
-  #       # is clearly visible. Used for auto-zooming without obscuring the selection
-  #       # in docsets with lots of nodes
   #   focus.update(animatedTree, ms) # updates pan/zoom properties
   #   focus.getTransform(animatedTree, ms)
   #       # returns a transform mapping [ 0 .. 1 ] to [ 0 .. 1 ].
@@ -115,10 +111,6 @@ define [ 'backbone' ], (Backbone) ->
     setNode: (node) -> @_setNextObject({ node: node }, 'set')
     animateNode: (node) -> @_setNextObject({ node: node }, 'animate')
 
-    animateNodeDisplayNode: (node, displayNode) ->
-      @displayNode = displayNode
-      @_setNextObject({ node: node }, 'animate')
-
     isZoomedInFully: -> @get('zoom') <= MIN_ZOOM
     isZoomedOutFully: -> @get('zoom') >= 1
 
@@ -140,18 +132,11 @@ define [ 'backbone' ], (Backbone) ->
         nodeMiddle = (nodeBounds.left + nodeBounds.right) * 0.5
 
         pan = (nodeMiddle - fullLeft) / fullWidth - 0.5
-        zoom = nodeWidth / fullWidth
 
-        if(@displayNode)
-          displayNodeBounds = animatedTree.calculateBounds(@displayNode)
-          displayNodeWidth = displayNodeBounds.right - displayNodeBounds.left
-
-          # if the display (selected, generally) node is really small compared to the parent,
-          # set the size/zoom based on it instead.
-          if(displayNodeWidth < nodeWidth / 4)
-            displayNodeMiddle = (displayNodeBounds.left + displayNodeBounds.right) * 0.5
-            pan = (displayNodeMiddle - fullLeft) / fullWidth - 0.5
-            zoom = displayNodeWidth * 4 / fullWidth
+        if node.narrow?
+          zoom = nodeWidth * 4 / fullWidth
+        else
+          zoom = nodeWidth / fullWidth
 
         pan: pan
         zoom: zoom

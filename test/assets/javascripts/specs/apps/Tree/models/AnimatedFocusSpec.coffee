@@ -35,26 +35,19 @@ define [
         expect(focus.get('pan')).toEqual(-0.125)
         expect(focus.get('zoom')).toEqual(0.5)
 
-      it 'sets pan and zoom for a specific node, with a minimum zoom defined by a different (probably child) node', ->
-        node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 100, isLeaf: false}, null)
-        childNode = new AnimatedNode({id: 2, parentId: node.id, description: "some different words", size: 5, isLeaf: true}, null)
+      it 'zooms the node less when the narrow property is set', ->
+        node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 10, isLeaf: true}, null)
+        node.narrow = true
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
-        animatedTree.calculateBounds.andCallFake((animateNode) ->
-          if node == animateNode
-            return {right: 25, left: -75}
-          else
-            return {right: 4, left: 2}
-        )
-
+        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
 
-        focus.animateNodeDisplayNode(node, childNode)
+        focus.animateNode(node)
         focus.fraction = {current: 1}
         focus.update(animatedTree, 1000)
 
-        expect(focus.get('pan')).toBeGreaterThan(0.014)
-        expect(focus.get('pan')).toBeLessThan(0.016)
-        expect(focus.get('zoom')).toEqual(0.04)
+        expect(focus.get('pan')).toEqual(-0.125)
+        expect(focus.get('zoom')).toEqual(2)
 
       it 'should allow setting time explicitly for animation', ->
         focus.animatePanAndZoom(0.25, 0.1, 500)
