@@ -135,6 +135,15 @@ define [ 'backbone' ], (Backbone) ->
 
         if node.narrow?
           zoom = nodeWidth * 4 / fullWidth
+
+          # if the node is near the right edge, slide the tree to the left to avoid wasting space
+          if node.position.xMiddle + (nodeWidth / 2) > bounds.right * .95
+            pan = (nodeMiddle - nodeWidth * 1.5 - fullLeft) / fullWidth - 0.5
+
+          # same goes for the left
+          if node.position.xMiddle - (nodeWidth / 2) < bounds.left * 1.05
+            pan = (nodeMiddle + nodeWidth * 1.5 - fullLeft) / fullWidth - 0.5
+
         else
           zoom = nodeWidth / fullWidth
 

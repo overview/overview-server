@@ -38,6 +38,7 @@ define [
       it 'zooms the node less when the narrow property is set', ->
         node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 10, isLeaf: true}, null)
         node.narrow = true
+        node.position = {xMiddle: 5}
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
         animatedTree.calculateBounds.andReturn({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
@@ -47,6 +48,36 @@ define [
         focus.update(animatedTree, 1000)
 
         expect(focus.get('pan')).toEqual(-0.125)
+        expect(focus.get('zoom')).toEqual(2)
+
+      it 'pans narrow nodes on right edge of the tree to the right edge of the viewport', ->
+        node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 10, isLeaf: true}, null)
+        node.narrow = true
+        node.position = {xMiddle: 95}
+        animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
+        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.bounds = {right: 100, left: -100}
+
+        focus.animateNode(node)
+        focus.fraction = {current: 1}
+        focus.update(animatedTree, 1000)
+
+        expect(focus.get('pan')).toEqual(-0.875)
+        expect(focus.get('zoom')).toEqual(2)
+
+      it 'pans narrow nodes on left edge of the tree to the left edge of the viewport', ->
+        node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 10, isLeaf: true}, null)
+        node.narrow = true
+        node.position = {xMiddle: -95}
+        animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
+        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.bounds = {right: 100, left: -100}
+
+        focus.animateNode(node)
+        focus.fraction = {current: 1}
+        focus.update(animatedTree, 1000)
+
+        expect(focus.get('pan')).toEqual(0.625)
         expect(focus.get('zoom')).toEqual(2)
 
       it 'should allow setting time explicitly for animation', ->
