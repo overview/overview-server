@@ -1,6 +1,7 @@
 package models.orm.finders
 
 import scala.language.implicitConversions
+import scala.language.postfixOps
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
@@ -56,6 +57,16 @@ object NodeDocumentFinder extends Finder {
       )
 
       from(main)(row => select(row.key._1, row.key._2, row.measures))
+    }
+    
+    def untaggedDocumentCountsByNodeId: FinderResult[(Long, Long)] = {
+      val main: Query[GroupWithMeasures[Long, Long]] = join(query, Schema.documentTags.leftOuter)((nd, dt) =>
+        where(dt.map(_.tagId).getOrElse(-1l) isNull)  // Not clear if get would be safe here
+        groupBy(nd.nodeId)
+        compute(org.overviewproject.postgres.SquerylEntrypoint.count)
+        on(nd.documentId === dt.map(_.documentId)))
+
+     from(main)(row => select(row.key, row.measures))
     }
   }
   implicit private def queryToNodeDocumentFinderResult(query: Query[NodeDocument]) : NodeDocumentFinderResult = new NodeDocumentFinderResult(query)
