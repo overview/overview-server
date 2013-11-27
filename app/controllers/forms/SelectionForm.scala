@@ -9,8 +9,8 @@ object SelectionForm {
       Forms.mapping(
         "nodes" -> Forms.default(Forms.text, ""),
         "tags" -> Forms.default(Forms.text, ""),
-        "searchResults" -> Forms.default(Forms.text, ""),
         "documents" -> Forms.default(Forms.text, ""),
+        "searchResults" -> Forms.default(Forms.text, ""),
         "untagged" -> Forms.default(Forms.boolean, false)
       )
       ((nodes, tags, documents, searchResults, untagged) =>
