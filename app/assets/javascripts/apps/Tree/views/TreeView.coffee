@@ -203,11 +203,17 @@ define [
         sign = e.deltaY > 0 && 1 || -1
 
         zoom1 = @focus.get('zoom')
-        zoom2 = zoom1 * Math.pow(@options.mousewheel_zoom_factor, -sign)
+
         pan1 = @focus.get('pan')
         relative_cursor_fraction = ((x / width) - 0.5)
+        zoom2 = zoom1 * Math.pow(@options.mousewheel_zoom_factor, -sign)
 
-        pan2 = pan1 + relative_cursor_fraction * zoom1 - relative_cursor_fraction * zoom2
+        # lock zoom on center when zoomed all the way out
+        if zoom2 >= 1
+          zoom2 = 1
+          pan2 = 1
+        else
+          pan2 = pan1 + relative_cursor_fraction * zoom1 - relative_cursor_fraction * zoom2
 
         this._notify('zoom-pan', { zoom: zoom2, pan: pan2 })
 
