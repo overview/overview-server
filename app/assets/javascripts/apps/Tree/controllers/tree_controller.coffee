@@ -84,6 +84,12 @@ define [
 
     view.observe 'zoom-pan', (obj, options) ->
       log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
+
+      # don't attempt to zoom past 1, since that doesn't make any sense
+      if obj.zoom >= 1
+        obj.zoom = 1
+        obj.pan = 0
+
       if options?.animate
         focus.animatePanAndZoom(obj.pan, obj.zoom)
       else
