@@ -7,7 +7,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
   error_html = _.template('<p class="errpr"><%- message %></p>', { message: t('error') })
   viewer_li_template = _.template("""
     <li data-email="<%- viewer.email %>">
-      <%- viewer.email %><a class="remove" href="<%- remove_url_pattern.replace('{0}', encodeURIComponent(viewer.email)) %>"><%- t('remove') %></a>
+      <%- viewer.email %><a class="remove" href="<%- remove_url_pattern.replace('VIEWER_EMAIL', encodeURIComponent(viewer.email)) %>"><%- t('remove') %></a>
     </li>
   """)
   sharing_dialog_template =  _.template("""

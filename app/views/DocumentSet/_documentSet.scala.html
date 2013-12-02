@@ -11,7 +11,7 @@
       <a class="btn show-sharing-settings"
         href="@routes.DocumentSetUserController.indexJson(documentSet.id)"
         data-create-url="@routes.DocumentSetUserController.create(documentSet.id)"
-        data-delete-url-pattern="@routes.DocumentSetUserController.delete(documentSet.id, "{0}")"
+        data-delete-url-pattern="@routes.DocumentSetUserController.delete(documentSet.id, "VIEWER_EMAIL")"
         data-is-admin="@viewer.isAdministrator"
         data-is-public="@documentSet.isPublic"
         data-update-url="@routes.DocumentSetController.update(documentSet.id)?X-HTTP-Method-Override=PUT">
