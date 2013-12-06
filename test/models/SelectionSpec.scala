@@ -33,5 +33,13 @@ class SelectionSpec extends Specification {
       override val documentIds = "1,2,3"
       parsedDocumentIds must beEqualTo(Seq(1L, 2L, 3L))
     }
+    
+    "set untagged to true if magic tagId 0 when constructed from strings" in new Scope {
+      import models.Selection._
+      val selection = Selection(1l, "", "0", "", "", false)
+      
+      selection.tagIds must beEmpty
+      selection.untagged must beTrue
+    }
   }
 }

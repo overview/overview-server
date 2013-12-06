@@ -15,6 +15,8 @@ case class Selection(
 )
 
 object Selection {
+  private val MagicUntaggedTagId = 0l
+  
   class SeqLongParam(val ids: Seq[Long])
 
   implicit def stringToSeqLongParam(s: String) = new SeqLongParam(IdList.longs(s).ids)
@@ -26,6 +28,10 @@ object Selection {
 
   def apply(documentSetId: Long, nodeIds: SeqLongParam, tagIds: SeqLongParam, documentIds: SeqLongParam, 
       searchResultIds: SeqLongParam, untagged: Boolean) : Selection = {
-    apply(documentSetId, nodeIds.ids, tagIds.ids, documentIds.ids, searchResultIds.ids, untagged)
+    if (tagIds.ids.contains(MagicUntaggedTagId)) {  
+      apply(documentSetId, nodeIds.ids, tagIds.ids.filterNot(_ == MagicUntaggedTagId),
+    		documentIds.ids, searchResultIds.ids, true)
+    }
+    else apply(documentSetId, nodeIds.ids, tagIds.ids, documentIds.ids, searchResultIds.ids, untagged)
   }
 }
