@@ -27,11 +27,11 @@ object Selection {
   }
 
   def apply(documentSetId: Long, nodeIds: SeqLongParam, tagIds: SeqLongParam, documentIds: SeqLongParam, 
-      searchResultIds: SeqLongParam, untagged: Boolean) : Selection = {
+      searchResultIds: SeqLongParam) : Selection = {
     if (tagIds.ids.contains(MagicUntaggedTagId)) {  
       apply(documentSetId, nodeIds.ids, tagIds.ids.filterNot(_ == MagicUntaggedTagId),
     		documentIds.ids, searchResultIds.ids, true)
     }
-    else apply(documentSetId, nodeIds.ids, tagIds.ids, documentIds.ids, searchResultIds.ids, untagged)
+    else apply(documentSetId, nodeIds.ids, tagIds.ids, documentIds.ids, searchResultIds.ids, false)
   }
 }

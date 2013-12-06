@@ -18,13 +18,13 @@ trait DocumentListController extends Controller {
   val storage : DocumentListController.Storage
 
   def index(documentSetId: Long, nodes: String, tags: String,
-            documents: String, searchResults: String, untagged: Boolean, pageSize: Int, page: Int)
+            documents: String, searchResults: String, pageSize: Int, page: Int)
             = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
 
     val realPageSize = math.max(0, math.min(pageSize, MaxPageSize))
     val realPage = math.max(1, page)
 
-    val selection = Selection(documentSetId, nodes, tags, documents, searchResults, untagged)
+    val selection = Selection(documentSetId, nodes, tags, documents, searchResults)
     val documentPage = storage.findDocuments(selection, realPageSize, realPage)
 
     Ok(views.json.DocumentList.show(documentPage))

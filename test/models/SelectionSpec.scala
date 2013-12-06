@@ -10,9 +10,9 @@ class SelectionSpec extends Specification {
     val tagIds: Seq[Long] = Seq(1L)
     val documentIds: String
     val searchResultIds: Seq[Long] = Seq(1L)
-    val untagged: Boolean = true
+
     
-    lazy val selection = Selection(documentSetId, nodeIds, tagIds, documentIds, searchResultIds, untagged)
+    lazy val selection = Selection(documentSetId, nodeIds, tagIds, documentIds, searchResultIds)
     def parsedDocumentIds = selection.documentIds
   }
 
@@ -36,7 +36,7 @@ class SelectionSpec extends Specification {
     
     "set untagged to true if magic tagId 0 when constructed from strings" in new Scope {
       import models.Selection._
-      val selection = Selection(1l, "", "0", "", "", false)
+      val selection = Selection(1l, "", "0", "", "")
       
       selection.tagIds must beEmpty
       selection.untagged must beTrue

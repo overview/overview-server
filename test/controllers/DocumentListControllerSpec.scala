@@ -40,7 +40,7 @@ class DocumentListControllerSpec extends Specification with Mockito {
 
     val user = mock[OverviewUser]
     val request = new AuthorizedRequest(FakeRequest(), user)
-    lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, untagged, pageSize, page)(request)
+    lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, pageSize, page)(request)
   }
 
   trait StubbedScope extends BaseScope {
