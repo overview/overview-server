@@ -42,6 +42,7 @@ define [
         'views.DocumentSet.show.DocumentListCursor.list': 'list'
         'views.DocumentSet.show.DocumentListCursor.selection.node_html': 'selection.node_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
+        'views.DocumentSet.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.other_html': 'selection.other_html'
         'views.DocumentSet.show.DocumentListCursor.title': 'title,{0}'

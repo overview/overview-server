@@ -18,6 +18,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       </div>
     """)
 
+    # <strong>4 documents</strong> with no tags
+    # Params: t, nDocuments, tag
+    untagged: _.template("""
+      <div class="tag">
+        <h4><%= t('untagged.title_html', t('num_documents', nDocuments)) %></h4>
+      </div>
+    """)
+
     # <strong>4 documents</strong> in node "Node"
     # Params: t, nDocuments, node
     node: _.template("""
@@ -110,8 +118,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
           if nTags + nNodes + nSearchResults == 1
             if nTags
               tagId = selection.tags[0]
-              tag = @tagStore.find_by_id(tagId)
-              templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
+              if tagId == 0  #untagged
+                templates.untagged({ t: t, nDocuments: nDocuments })
+              else
+                tag = @tagStore.find_by_id(tagId)
+                templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
             else if nNodes
               nodeId = selection.nodes[0]
               node = @onDemandTree.nodes[nodeId]

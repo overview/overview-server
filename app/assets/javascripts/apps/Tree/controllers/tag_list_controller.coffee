@@ -59,4 +59,11 @@ define [
     view.on 'organize-clicked', ->
       TagDialogController(tag_store, cache)
 
+    view.on 'untagged-clicked', ->
+      tag = { id: 0, name: 'untagged' }
+      state.set
+        selection: new Selection({ tags: [0] }) # even if id is negative
+        taglike: tag
+
+
     { view: view }

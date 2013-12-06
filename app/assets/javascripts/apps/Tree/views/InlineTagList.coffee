@@ -20,6 +20,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       'click a.tag-add': '_onClickAdd'
       'click a.tag-remove': '_onClickRemove'
       'click a.organize': '_onClickOrganize'
+      'click a.untagged': '_onClickUntagged'
       'submit form': '_onSubmit'
 
     template: _.template("""
@@ -40,6 +41,9 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
             <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
             <input type="submit" value="Create new tag" class="btn" />
           </form>
+        </li>
+        <li class="btn-group">
+          <a class="btn untagged" href="#">untagged</a>
         </li>
         <li class="btn-group">
           <a class="btn organize" href="#">organize tags…</a>
@@ -97,6 +101,10 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
     _onClickOrganize: (e) ->
       e.preventDefault()
       @trigger('organize-clicked')
+
+    _onClickUntagged: (e) ->
+      e.preventDefault()
+      @trigger('untagged-clicked')
 
     _onSubmit: (e) ->
       e.preventDefault()

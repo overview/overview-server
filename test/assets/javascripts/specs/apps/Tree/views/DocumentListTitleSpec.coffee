@@ -41,6 +41,7 @@ define [
         'views.DocumentSet.show.DocumentListTitle.loading': 'loading'
         'views.DocumentSet.show.DocumentListTitle.tag.title_html': 'tag.title_html,{0},{1}'
         'views.DocumentSet.show.DocumentListTitle.tag.edit': 'tag.edit'
+        'views.DocumentSet.show.DocumentListTitle.untagged.title_html': 'untagged.title_html,{0}'
         'views.DocumentSet.show.DocumentListTitle.node.title_html': 'node.title_html,{0},{1}'
         'views.DocumentSet.show.DocumentListTitle.node.edit': 'node.edit'
         'views.DocumentSet.show.DocumentListTitle.searchResult.title_html': 'searchResult.title_html,{0},{1}'
@@ -100,6 +101,17 @@ define [
         documentList2 = new DocumentList({ nodes: [], tags: [2], searchResults: [] }, 8)
         view.setDocumentList(documentList2)
         expect(view.$('h4').text()).toEqual('tag.title_html,num_documents,8,Tag 2')
+
+    describe 'with the untagged tag', ->
+      beforeEach ->
+        spyOn(cache.tag_store, 'find_by_id')  # untagged isn't present in the tag store
+
+        documentList = new DocumentList({ nodes: [], tags: [0], searchResults: [] }, 4)
+        view = new DocumentListTitle({ documentList: documentList, cache: cache })
+
+      it 'should render the title', ->
+        expect(cache.tag_store.find_by_id).not.toHaveBeenCalled()
+        expect(view.$('h4').text()).toEqual('untagged.title_html,num_documents,4')
 
     describe 'with a Node', ->
       beforeEach ->

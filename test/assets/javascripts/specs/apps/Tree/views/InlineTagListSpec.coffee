@@ -33,7 +33,7 @@ define [
         view.remove()
 
       it 'should start without tags', ->
-        expect(view.$('li').length).toEqual(2)
+        expect(view.$('li').length).toEqual(3)
 
       it 'should show a form', ->
         expect(view.$('form').length).toEqual(1)
@@ -132,3 +132,11 @@ define [
         it 'should change a tag name', ->
           collection.at(0).set({ name: 'AA2' })
           expect(view.$('li:eq(0) .tag-name').text()).toEqual('AA2')
+
+        it 'should notify :untagged-click when clicking the untagged button', ->
+          spy = jasmine.createSpy()
+          view.on('untagged-clicked', spy)
+          view.$('.untagged').click()
+          expect(spy).toHaveBeenCalled()
+
+

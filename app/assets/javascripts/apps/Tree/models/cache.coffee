@@ -74,6 +74,7 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
+      debugger
       nodes = @on_demand_tree.nodes
 
       @transaction_queue.queue(=>
@@ -83,6 +84,7 @@ define [
         else
           _(nodes).keys()
         node_ids_string = node_ids.join(',')
+        debugger
         @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
           .done (data) =>
             i = 0
@@ -104,6 +106,9 @@ define [
 
             undefined
       , 'refresh_tagcounts')
+
+    refresh_untagged: (onlyNodeIds=undefined) ->
+
 
     refreshSearchResultCounts: (searchResult) ->
       searchResultId = searchResult.id? && searchResult.id || searchResult
@@ -228,6 +233,7 @@ define [
     removeTagFromSelectionRemote: (tag, selection) ->
       if @_selection_to_documents(selection)?
         postData = @_selection_to_post_data(selection)
+        postData = @_selection_to_post_data(selection)
         @transaction_queue.queue =>
           @server.post('tag_remove', postData, { path_argument: tag.id })
 
@@ -249,6 +255,7 @@ define [
     #   documents)
     # * [ 'searchResult', 'Search query' ] if it's a one-search-result
     #   selection (ignoring documents)
+    # * [ 'untagged' ] if it's the special untagged tag
     # * [ 'other' ] if it's something else (or undefined)
     describeSelectionWithoutDocuments: (selection) ->
       nodeCount = selection?.nodes?.length
@@ -263,8 +270,11 @@ define [
             [ 'node', description ]
           when tagCount
             id = selection.tags[0]
-            name = @tag_store.find_by_id(id)?.name
-            [ 'tag', name ]
+            if id == 0
+              [ 'untagged' ]
+            else
+              name = @tag_store.find_by_id(id)?.name
+              [ 'tag', name ]
           else
             id = selection.searchResults[0]
             query = @search_result_store.find_by_id(id)?.query

@@ -118,6 +118,30 @@ define [
       it 'should have a tag_store', ->
         expect(cache.tag_store).toBeDefined()
 
+      describe 'refresh_untagged', ->
+        tree = undefined
+
+        # beforeEach ->
+        #   tree = {
+        #     id_tree: {
+        #       batchAdd: jasmine.createSpy()
+        #       batchRemove: jasmine.createSpy()
+        #     }
+        #     nodes: {
+        #       "1": { id: 1, tagCounts: { "1": 10 } },
+        #       "2": { id: 2, tagCounts: { "1": 5 } },
+        #       "3": { id: 3, tagCounts: { "1": 5 } },
+        #     }
+        #   }
+        #   cache.on_demand_tree = tree
+
+        it 'should POST to the untagged /node-counts', ->
+          cache.refresh_untagged({ id: 0, name: 'untagged' })
+          cache.transaction_queue.next()
+          expect(cache.server.posts[0]).toEqual([ 'tag_node_counts', { nodes: '1,2,3' }, { path_argument: 1 } ])
+
+
+
       describe 'refresh_tagcounts', ->
         tree = undefined
 
