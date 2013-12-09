@@ -74,18 +74,33 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
-      
+      tagid = tag.id || tag
+      @refresh_node_counts(((node_id_string) =>
+        @request_tag_node_counts(node_id_string, tagid))
+        , tagid, onlyNodeIds, 'refresh_tagcounts')
+
+    request_tag_node_counts: (node_ids_string, tagid) ->
+      @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
+
+
+    refresh_untagged: (onlyNodeIds=undefined) ->
+      @refresh_node_counts(@request_untagged_node_counts
+        , 0, onlyNodeIds, 'refresh_untagged')
+        
+    request_untagged_node_counts: (node_ids_string) =>
+      @server.post('untagged_node_counts', { nodes: node_ids_string })
+        
+    refresh_node_counts: (node_count_request, tagid, onlyNodeIds, debug_info) ->
       nodes = @on_demand_tree.nodes
 
-      @transaction_queue.queue(=>
-        tagid = tag.id || tag
+      @transaction_queue.queue(=>  
         node_ids = if onlyNodeIds?
           onlyNodeIds
         else
           _(nodes).keys()
         node_ids_string = node_ids.join(',')
-        
-        @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
+
+        node_count_request(node_ids_string)
           .done (data) =>
             i = 0
             while i < data.length
@@ -105,39 +120,8 @@ define [
             @on_demand_tree.id_tree.batchAdd(->) # trigger update
 
             undefined
-      , 'refresh_tagcounts')
-
-    refresh_untagged: (onlyNodeIds=undefined) ->
-      nodes = @on_demand_tree.nodes
-
-      @transaction_queue.queue(=>
-        node_ids = if onlyNodeIds?
-          onlyNodeIds
-        else
-          _(nodes).keys()
-        node_ids_string = node_ids.join(',')
-        
-        @server.post('untagged_node_counts', { nodes: node_ids_string })
-          .done (data) =>
-            i = 0
-            while i < data.length
-              nodeid = data[i++]
-              count = data[i++]
-
-              node = nodes[nodeid]
-
-              if node?
-                tagCounts = (node.tagCounts ||= {})
-
-                if count
-                  tagCounts[0] = count
-                else
-                  delete tagCounts[0]
-
-            @on_demand_tree.id_tree.batchAdd(->) # trigger update
-
-            undefined
-      , 'refresh_untagged') 
+          , debug_info)
+      
 
 
     refreshSearchResultCounts: (searchResult) ->
