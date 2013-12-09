@@ -108,7 +108,9 @@ define [
           focus.animateNode(node) # root node.
 
     state.on 'change:taglike', (__, taglike) ->
-      if taglike?.name? # it's a tag
+      if taglike?.id == 0 # it's untagged
+        cache.refresh_untagged()
+      else if taglike?.name? # it's a tag
         cache.refresh_tagcounts(taglike)
       else if taglike?.id > 0 && taglike?.query? # it's a search result
         cache.refreshSearchResultCounts(taglike)
@@ -148,7 +150,9 @@ define [
             if taglike?
               nodeIds = _.pluck(json?.nodes || [], 'id')
               if nodeIds.length
-                if taglike.name? # it's a tag
+                if taglike.id == 0
+                  cache.refresh_untagged()
+                else if taglike.name? # it's a tag
                   cache.refresh_tagcounts(taglike, nodeIds)
                 else if taglike.query? # it's a searchResult
                   cache.refreshSearchResultCounts(taglike, nodeIds)

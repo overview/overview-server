@@ -72,7 +72,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
       selection = @state.get('selection')
       selectedTagId = selection.tags[0]
       selectedTag = undefined
-      if selectedTagId?
+      if selectedTagId? && selectedTagId != 0
         try
           selectedTag = @tagIdToModel(selectedTagId)
         catch e

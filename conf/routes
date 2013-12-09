@@ -72,6 +72,7 @@ POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(i
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
 # We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
 POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long)
+POST   /documentsets/:id/tags/untagged-node-counts  controllers.UntaggedDocumentsController.nodeCounts(id: Long)
 
 POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
 

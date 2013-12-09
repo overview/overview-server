@@ -74,7 +74,7 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
-      debugger
+      
       nodes = @on_demand_tree.nodes
 
       @transaction_queue.queue(=>
@@ -84,7 +84,7 @@ define [
         else
           _(nodes).keys()
         node_ids_string = node_ids.join(',')
-        debugger
+        
         @server.post('tag_node_counts', { nodes: node_ids_string }, { path_argument: tagid })
           .done (data) =>
             i = 0
@@ -108,6 +108,36 @@ define [
       , 'refresh_tagcounts')
 
     refresh_untagged: (onlyNodeIds=undefined) ->
+      nodes = @on_demand_tree.nodes
+
+      @transaction_queue.queue(=>
+        node_ids = if onlyNodeIds?
+          onlyNodeIds
+        else
+          _(nodes).keys()
+        node_ids_string = node_ids.join(',')
+        
+        @server.post('untagged_node_counts', { nodes: node_ids_string })
+          .done (data) =>
+            i = 0
+            while i < data.length
+              nodeid = data[i++]
+              count = data[i++]
+
+              node = nodes[nodeid]
+
+              if node?
+                tagCounts = (node.tagCounts ||= {})
+
+                if count
+                  tagCounts[0] = count
+                else
+                  delete tagCounts[0]
+
+            @on_demand_tree.id_tree.batchAdd(->) # trigger update
+
+            undefined
+      , 'refresh_untagged') 
 
 
     refreshSearchResultCounts: (searchResult) ->

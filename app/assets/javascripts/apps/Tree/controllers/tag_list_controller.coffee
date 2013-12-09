@@ -60,7 +60,7 @@ define [
       TagDialogController(tag_store, cache)
 
     view.on 'untagged-clicked', ->
-      tag = { id: 0, name: 'untagged' }
+      tag = { id: 0, name: 'untagged', color: '#dddddd' }
       state.set
         selection: new Selection({ tags: [0] }) # even if id is negative
         taglike: tag
