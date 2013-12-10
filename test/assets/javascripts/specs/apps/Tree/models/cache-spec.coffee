@@ -134,7 +134,7 @@ define [
         it 'should POST to the untagged /node-counts', ->
           cache.refresh_untagged()
           cache.transaction_queue.next()
-          expect(cache.server.posts[0]).toEqual([ 'untagged_node_counts', { nodes: '1,2,3' } ])
+          expect(cache.server.posts[0]).toEqual([ 'untagged_node_counts', { nodes: '1,2,3' }, { path_argument: 0 } ])
 
 
 
