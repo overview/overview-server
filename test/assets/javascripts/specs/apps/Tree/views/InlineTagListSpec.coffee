@@ -1,7 +1,8 @@
 define [
   'apps/Tree/views/InlineTagList'
   'backbone'
-], (InlineTagListView, Backbone) ->
+  'i18n'
+], (InlineTagListView, Backbone, i18n) ->
   class MockSelection
     constructor: (attributes = {}) ->
       @nodes = attributes.nodes ? []
@@ -14,6 +15,15 @@ define [
       selection: { nodes: [], tags: [], documents: [], searchResults: [] }
 
   describe 'views/InlineTagList', ->
+    beforeEach ->
+      i18n.reset_messages({
+        'views.InlineTagList.create': 'create'
+        'views.InlineTagList.add': 'add'
+        'views.InlineTagList.remove': 'remove'
+        'views.InlineTagList.show_untagged': 'show_untagged'
+        'views.InlineTagList.organize': 'organize'
+      })
+
     describe 'InlineTagList', ->
       state = undefined
       collection = undefined

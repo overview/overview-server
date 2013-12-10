@@ -1,5 +1,5 @@
-define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
-  # FIXME i18n
+define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
+  t = (key, args...) -> i18n("views.InlineTagList.#{key}", args...)
 
   # A list of inline tags, with controls for adding or removing them.
   #
@@ -32,21 +32,21 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
               data-cid="<%- tag.cid %>"
               style="background-color:<%- tag.get('color') %>">
             <a class="btn tag-name"><%- tag.get('name') %></a>
-            <a class="btn tag-add" title="add tag to selection"><i class="overview-icon-plus"></i></a>
-            <a class="btn tag-remove" title="remove tag from selection"><i class="overview-icon-minus"></i></a>
+            <a class="btn tag-add" title="<%- t('add') %>"><i class="overview-icon-plus"></i></a>
+            <a class="btn tag-remove" title="<%- t('remove') %>"><i class="overview-icon-minus"></i></a>
           </li>
         <% }); %>
         <li class="btn-group">
           <form method="post" action="#" class="input-append">
             <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
-            <input type="submit" value="Create new tag" class="btn" />
+            <input type="submit" value="<%- t('create') %>" class="btn" />
           </form>
         </li>
         <li class="btn-group">
-          <a class="btn untagged" href="#">untagged</a>
+          <a class="btn untagged" href="#"><%- t('show_untagged') %></a>
         </li>
         <li class="btn-group">
-          <a class="btn organize" href="#">organize tags…</a>
+          <a class="btn organize" href="#"><%- t('organize') %></a>
         </li>
       </ul>
     """)
@@ -79,6 +79,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
           console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
 
       html = @template({
+        t: t
         collection: @collection
         selectedTag: selectedTag
       })
