@@ -67,8 +67,17 @@ define [
       return if !nodeid?
       log('clicked node', "#{nodeid}")
       expand_deferred(nodeid)
-      new_selection = state.get('selection').replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
-      state.set('selection', new_selection)
+      old_selection = state.get('selection')
+      new_selection = old_selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
+      if old_selection.pick('nodes', 'tags', 'searchResults').equals(new_selection)
+        # Ignore the click.
+        #
+        # We can't change this behavior because it will break a hack in
+        # document_list_controller's refreshStateSelection.
+        #
+        # See bug #59844284
+      else
+        state.set('selection', new_selection)
 
     view.observe 'expand', (nodeid) ->
       return if !nodeid?
