@@ -35,6 +35,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       </div>
     """)
 
+    # Searching for "Search"
+    # Params: t, searchResult
+    searching: _.template("""
+      <div class="search-result" data-id="<%- searchResult.id %>">
+        <h4><%= t('searching.title_html', searchResult.query) %></h4>
+      </div>
+    """)
+
     # <strong>4 documents</strong> in search "Search"
     # Params: t, nDocuments, searchResult
     searchResult: _.template("""
@@ -109,12 +117,22 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       html = if @documentList
         nDocuments = @documentList.n
 
-        if nDocuments?
-          selection = @documentList.selection
-          nNodes = selection.nodes.length
-          nTags = selection.tags.length
-          nSearchResults = selection.searchResults.length
+        selection = @documentList.selection
+        nNodes = selection.nodes.length
+        nTags = selection.tags.length
+        nSearchResults = selection.searchResults.length
 
+        if nSearchResults == 1 && nTags == 0 && nNodes == 0 # searching... (or showing search results)
+          searchResultId = selection.searchResults[0]
+          searchResult = @searchResultStore.find_by_id(searchResultId)
+
+          if nDocuments? && searchResult.state == 'Complete'
+            templates.searchResult(t: t, nDocuments: nDocuments, searchResult: searchResult)
+          else
+            templates.searching(t: t, searchResult: searchResult)
+        else if !nDocuments? # loading... (the list is now unset)
+          templates.loading(t: t)
+        else # there are documents loaded already (maybe 0)
           if nTags + nNodes + nSearchResults == 1
             if nTags
               tagId = selection.tags[0]
@@ -128,13 +146,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
               node = @onDemandTree.nodes[nodeId]
               templates.node({ t: t, nDocuments: nDocuments, node: node })
             else # nSearchResults
-              searchResultId = selection.searchResults[0]
-              searchResult = @searchResultStore.find_by_id(searchResultId)
-              templates.searchResult({ t: t, nDocuments: nDocuments, searchResult: searchResult })
+              throw 'assertion error'
           else
             templates.multiple({ t: t, nDocuments: nDocuments })
-        else
-          templates.loading({ t: t })
       else
         ''
 

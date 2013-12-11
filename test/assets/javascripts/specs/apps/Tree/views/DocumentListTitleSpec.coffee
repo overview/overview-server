@@ -39,6 +39,7 @@ define [
       i18n.reset_messages({
         'views.DocumentSet.show.DocumentListTitle.num_documents': 'num_documents,{0}'
         'views.DocumentSet.show.DocumentListTitle.loading': 'loading'
+        'views.DocumentSet.show.DocumentListTitle.searching.title_html': 'searching.title_html,{0}'
         'views.DocumentSet.show.DocumentListTitle.tag.title_html': 'tag.title_html,{0},{1}'
         'views.DocumentSet.show.DocumentListTitle.tag.edit': 'tag.edit'
         'views.DocumentSet.show.DocumentListTitle.untagged.title_html': 'untagged.title_html,{0}'
@@ -128,11 +129,24 @@ define [
         expect(args).toEqual([ 1 ])
 
     describe 'with a SearchResult', ->
-      beforeEach ->
-        documentList = new DocumentList({ nodes: [], tags: [], searchResults: [1] }, 4)
+      init = (nDocuments, searchResultState) ->
+        spyOn(cache.search_result_store, 'find_by_id').andReturn
+          id: 1
+          query: 'Search 1'
+          state: searchResultState
+        documentList = new DocumentList({ nodes: [], tags: [], searchResults: [1] }, nDocuments)
         view = new DocumentListTitle({ documentList: documentList, cache: cache })
 
+      it 'should render search message when searching', ->
+        init(undefined, 'Searching')
+        expect(view.$el.text()).toMatch(/searching/)
+
+      it 'should render search message when search is halfway done', ->
+        init(4, 'Searching')
+        expect(view.$el.text()).toMatch(/searching/)
+
       it 'should render the title', ->
+        init(4, 'Complete')
         expect(view.$('h4').text()).toEqual('searchResult.title_html,num_documents,4,Search 1')
 
     describe 'with Tags and/or Nodes', ->
