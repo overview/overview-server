@@ -21,7 +21,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           <label class="control-label" for="import-options-name"><%- t('name.label') %></label>
           <div class="controls">
             <label>
-              <input type="text" id="import-options-name" name="name" value="<%- options.name %>" />
+              <input required="required" type="text" id="import-options-name" name="name" value="<%- options.name %>" />
             </label>
           </div>
         </div>

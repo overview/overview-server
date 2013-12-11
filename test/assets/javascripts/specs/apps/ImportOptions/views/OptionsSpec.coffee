@@ -67,6 +67,9 @@ define [
       it 'should start with name matching name', ->
         expect(view.$('[name=name]').val()).toEqual(model.get('name'))
 
+      it 'should make name required', ->
+        expect(view.$('[name=name]').prop('required')).toBeTruthy()
+
       it 'should change name on the model', ->
         $input = view.$('[name=name]')
         $input.val('a fine set of documents')
