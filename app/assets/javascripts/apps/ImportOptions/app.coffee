@@ -1,5 +1,5 @@
 define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i18n' ], ($, BootstrapDialog, Options, OptionsView, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.index.ImportOptions.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   # Produces document-set import options, either inline in a form or
   # through a dialog.

@@ -1,5 +1,5 @@
 define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($, _, Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.show.InlineSearchResultList.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.show.InlineSearchResultList')
 
   # A list of inline search results
   #

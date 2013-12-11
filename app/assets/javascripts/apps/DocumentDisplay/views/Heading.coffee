@@ -1,5 +1,5 @@
 define [ 'backbone', 'i18n' ], (Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.Document.show.#{key}", args...)
+  t = i18n.namespaced('views.Document.show')
 
   Backbone.View.extend
     tagName: 'h3'

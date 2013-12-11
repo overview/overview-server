@@ -2,7 +2,7 @@ define [
   'backbone'
   'i18n'
 ], (Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.show.DocumentListCursor.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.show.DocumentListCursor')
 
   # Shows the Document corresponding to the user's cursor.
   #

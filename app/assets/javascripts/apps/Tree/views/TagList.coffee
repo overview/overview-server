@@ -1,5 +1,5 @@
 define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.show.tag_list.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.show.tag_list')
 
   addSpectrum = ($els) ->
     $els.filter(':not(.spectrum)').each ->

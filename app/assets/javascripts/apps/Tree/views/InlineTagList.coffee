@@ -1,5 +1,5 @@
 define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.InlineTagList.#{key}", args...)
+  t = i18n.namespaced('views.InlineTagList')
 
   # A list of inline tags, with controls for adding or removing them.
   #

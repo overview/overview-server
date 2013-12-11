@@ -5,7 +5,7 @@ define [
   './logger'
   'i18n'
 ], (Selection, SearchResultStoreProxy, InlineSearchResultListView, Logger, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.show.SearchResultList.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.show.SearchResultList')
   log = Logger.for_component('search_result_list')
 
   search_result_to_short_string = (search_result) ->

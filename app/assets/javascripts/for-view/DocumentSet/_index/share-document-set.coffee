@@ -1,5 +1,5 @@
 define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet._share.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet._share')
 
   EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ # http://www.w3.org/TR/html-markup/datatypes.html#form.data.emailaddress
 

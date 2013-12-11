@@ -1,5 +1,5 @@
 define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentCloudImportJob.new.#{key}", args...)
+  t = i18n.namespaced('views.DocumentCloudImportJob.new')
 
   Backbone.View.extend({
     className: 'import-form'

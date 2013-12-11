@@ -148,4 +148,7 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
   i18n.reset_messages = (messages) ->
     cache.reset(messages)
 
+  i18n.namespaced = (namespace) ->
+    (key, args...) -> i18n("#{namespace}.#{key}", args...)
+
   i18n

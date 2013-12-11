@@ -43,3 +43,14 @@ define [ 'i18n' ], (i18n) ->
         expect(result).toEqual(expected)
 
     make_test(subkey, args, expected) for [ subkey, args, expected] in tests
+
+    describe '.namespaced', ->
+      it 'should translate within a namespace', ->
+        i18n.reset_messages({ 'name.space.foo': 'bar' })
+        t = i18n.namespaced('name.space')
+        expect(t('foo')).toEqual('bar')
+
+      it 'should pass arguments', ->
+        i18n.reset_messages({ 'name.space.foo': 'bar {0} {1}' })
+        t = i18n.namespaced('name.space')
+        expect(t('foo', 1, 2)).toEqual('bar 1 2')

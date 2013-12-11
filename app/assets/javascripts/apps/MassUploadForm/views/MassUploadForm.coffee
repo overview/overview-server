@@ -5,7 +5,7 @@ define [
   'apps/ImportOptions/app'
   'apps/MassUploadForm/views/UploadProgressView'
 ], (_, Backbone, i18n, ImportOptionsApp, UploadProgressView) ->
-  t = (m, args...) -> i18n("views.DocumentSet._massUploadForm.#{m}", args...)
+  t = i18n.namespaced('views.DocumentSet._massUploadForm')
 
   Backbone.View.extend
     template: _.template('''

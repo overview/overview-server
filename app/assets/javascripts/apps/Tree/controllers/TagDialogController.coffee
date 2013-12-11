@@ -5,8 +5,7 @@ define [
   '../views/TagList'
   'i18n'
 ], ($, _, TagStoreProxy, TagListView, i18n) ->
-
-  t = (key, args...) -> i18n("views.DocumentSet.show.tag_list.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.show.tag_list')
 
   template = _.template("""
     <div class="modal fade">

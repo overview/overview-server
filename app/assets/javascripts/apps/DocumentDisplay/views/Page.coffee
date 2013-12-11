@@ -10,7 +10,7 @@ define [
   PAGE_KEY_FRACTION = 0.8 # max percentage of an element that should scroll away
   PAGE_KEY_MARGIN = 100 # min px that should remain visible
 
-  t = (key, args...) -> i18n("views.Document.show.#{key}", args...)
+  t = i18n.namespaced('views.Document.show')
 
   Backbone.View.extend
     className: 'document'

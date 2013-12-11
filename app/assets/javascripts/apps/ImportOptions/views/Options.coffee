@@ -1,5 +1,5 @@
 define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
-  t = (key, args...) -> i18n("views.DocumentSet.index.ImportOptions.#{key}", args...)
+  t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   # Presents an Options in a write-only manner.
   #

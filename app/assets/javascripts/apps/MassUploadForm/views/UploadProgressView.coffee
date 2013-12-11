@@ -2,7 +2,7 @@ define [
   'i18n'
   'apps/MassUploadForm/views/AbstractProgressView'
 ], (i18n, AbstractProgressView) ->
-  t = (m, args...) -> i18n("views.DocumentSet._uploadProgress.#{m}", args...)
+  t = i18n.namespaced('views.DocumentSet._uploadProgress')
 
   AbstractProgressView.extend
     className: 'upload-progress'
