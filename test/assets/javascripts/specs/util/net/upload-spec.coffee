@@ -37,6 +37,21 @@ define [
       fakeFile.slice = jasmine.createSpy().andReturn('a file blob')
 
     # TODO: test stop, abort, etc.
+    describe 'starting an upload with a unicode filename', ->
+      beforeEach ->
+        fakeFile.name = '元気なですか？.pdf'  # filename with unicode
+        upload = new Upload(fakeFile, '/upload/')
+        mockUploadXhr()
+        upload.start()
+        mostRecentAjaxRequest().response(status: 404)  # not found, go ahead and upload
+
+      it 'starts the upload, and properly unicode-escapes the filename', ->
+        request = mostRecentAjaxRequest()
+
+        expect(upload.state).toEqual(3)
+        expect(request.method).toEqual('POST')
+        expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
+
 
     describe 'starting an upload', ->
       beforeEach ->

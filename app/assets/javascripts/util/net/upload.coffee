@@ -247,6 +247,14 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       sendOffset = @file.size - 1
       sendOffset = 0 if sendOffset < 0
 
+      headers = { 'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}" }
+
+      filename = @_filename()
+      if filename.match(/[^\u0000-\u00ff]/)
+        headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeURIComponent(filename)}"
+      else
+        headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+
       @uploading_jqxhr = ajax({
         url: @url
         type: 'POST'
@@ -255,10 +263,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
         timeout: UPLOADING_TIMEOUT
         xhr: create_xhr
         contentType: @options.contentType || 'application/octet-stream'
-        headers: {
-          'Content-Disposition': "attachment; filename=\"#{@_filename()}\""
-          'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}"
-        }
+        headers: headers
       })
 
       # Somebody else might change the state. If they do, they'll modify
