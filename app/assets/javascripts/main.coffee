@@ -39,6 +39,10 @@ requirejs.config({
       deps: [ 'jquery' ]
       exports: -> 'jQuery.fn' # doesn't export anything
     }
+    'jquery.validate': {
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.validate'
+    }
     underscore: { exports: '_' }
     spectrum: {
       deps: [ 'jquery', 'tinycolor' ]
@@ -59,6 +63,7 @@ requirejs.config({
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
+    'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'

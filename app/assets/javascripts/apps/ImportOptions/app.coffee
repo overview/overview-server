@@ -1,4 +1,4 @@
-define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 'bootstrap-modal' ], ($, _, Options, OptionsView, i18n) ->
+define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 'jquery.validate', 'bootstrap-modal' ], ($, _, Options, OptionsView, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   DialogTemplate = _.template("""
@@ -86,10 +86,16 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
       dialogHtml = DialogTemplate(t: t)
       $dialog = $(dialogHtml)
       $dialog.find('.modal-body').append(app.el)
-      $dialog.on('reset', -> $dialog.modal('hide'))
-      $dialog.on('hidden', -> $dialog.remove())
-      $dialog.on('submit', (e) -> e.preventDefault(); submit())
-      $dialog.appendTo('body').modal()
+      $dialog
+        .on('reset', -> $dialog.modal('hide'))
+        .on('hidden', -> $dialog.remove())
+        .appendTo('body')
+        .modal()
+
+      $dialog.validate
+        submitHandler: (form) ->
+          submit()
+          $dialog.modal('hide')
 
       undefined
 
