@@ -1,5 +1,19 @@
-define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i18n' ], ($, BootstrapDialog, Options, OptionsView, i18n) ->
+define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 'bootstrap-modal' ], ($, _, Options, OptionsView, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
+
+  DialogTemplate = _.template("""
+    <form class="modal fade hide" method="get" action="">
+      <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">×</a>
+        <h3><%- t('dialog.title') %></h3>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-default" type="reset"><%- t('dialog.cancel') %></button>
+        <button class="btn btn-primary" type="submit"><%- t('dialog.submit') %></button>
+      </div>
+    </form>
+  """)
 
   # Produces document-set import options, either inline in a form or
   # through a dialog.
@@ -59,7 +73,6 @@ define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i
       @el = view.el
 
     @addHiddenInputsThroughDialog: (form, options) ->
-      $form = $(form)
       app = new App(options)
 
       submit = ->
@@ -67,31 +80,16 @@ define [ 'jquery', 'bootstrap-dialog', './models/Options', './views/Options', 'i
           $input = $('<input type="hidden" />')
             .attr('name', k)
             .attr('value', v)
-          $form.append($input)
+          $(form).append($input)
         options.callback()
 
-      $h3 = $('<h3></h3>').text(t('dialog.title'))
-      $close = $('<a href="#" class="close" data-dismiss="modal">×</a>')
-
-      dialog = new BootstrapDialog
-        title: $close.after($h3)
-        content: app.el
-        buttons: [
-          {
-            label: t('dialog.cancel')
-            cssClass: 'btn-default'
-            onclick: -> dialog.close()
-          }
-          {
-            label: t('dialog.submit')
-            cssClass: 'btn-primary'
-            onclick: ->
-              dialog.close()
-              submit()
-          }
-        ]
-      dialog.open()
-      dialog.getDialog().on('hidden', -> dialog.destroy())
+      dialogHtml = DialogTemplate(t: t)
+      $dialog = $(dialogHtml)
+      $dialog.find('.modal-body').append(app.el)
+      $dialog.on('reset', -> $dialog.modal('hide'))
+      $dialog.on('hidden', -> $dialog.remove())
+      $dialog.on('submit', (e) -> e.preventDefault(); submit())
+      $dialog.appendTo('body').modal()
 
       undefined
 

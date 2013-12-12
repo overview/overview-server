@@ -25,9 +25,6 @@ requirejs.config({
     'jquery.mousewheel':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.mousewheel'
-    'bootstrap-dialog':
-      deps: [ 'bootstrap-modal' ]
-      exports: 'BootstrapDialog'
   }
 
   paths: {
@@ -39,7 +36,6 @@ requirejs.config({
     'bootstrap-modal': 'vendor/bootstrap-modal'
     'bootstrap-tab': 'vendor/bootstrap-tab'
     'bootstrap-transition': 'vendor/bootstrap-transition'
-    'bootstrap-dialog': 'vendor/bootstrap-dialog'
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'
