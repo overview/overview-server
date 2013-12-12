@@ -130,7 +130,9 @@ define [
     _removeButtonHover: ->
       @$el.find('button.select-files').removeClass('hover')
 
-    _requestOptions: ->
+    _requestOptions: (e) ->
+      e.stopPropagation()
+      e.preventDefault()
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
         supportedLanguages: @options.supportedLanguages
