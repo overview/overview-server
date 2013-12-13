@@ -5,6 +5,7 @@ define [ 'jquery', 'apps/DocumentCloudImportForm/app', 'apps/ImportOptions/app' 
     submitUrl = el.getAttribute('data-submit-url')
 
     optionsApp = new OptionsApp
+      excludeOptions: [ 'name' ]
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
 
