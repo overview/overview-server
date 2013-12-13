@@ -26,11 +26,11 @@ TARGET1="$DIR/../target/scala-2.10/resource_managed/main/public/stylesheets/main
 TARGET2DIR="$DIR/../target/scala-2.10/classes/public/stylesheets" # dunno why
 TARGET2="$TARGET2DIR/main.css" # dunno why
 
-/usr/bin/lessc --verbose $SRC /tmp/lessc.tmp && mv -v /tmp/lessc.tmp $TARGET1 && (mkdir -p $TARGET2DIR ; ln -vf $TARGET1 $TARGET2)
+lessc --verbose $SRC /tmp/lessc.tmp && mv -v /tmp/lessc.tmp $TARGET1 && (mkdir -p $TARGET2DIR ; ln -vf $TARGET1 $TARGET2)
 inotifywait -mqe close_write -r $WATCH | while read -r line; do
   MATCH=$(echo "$line" | grep -c '\.less$')
   if [ $MATCH -eq 1 ]; then
     echo $line
-    /usr/bin/lessc --verbose $SRC /tmp/lessc.tmp && mv -v /tmp/lessc.tmp $TARGET1 && (mkdir -p $TARGET2DIR ; ln -vf $TARGET1 $TARGET2)
+    lessc --verbose $SRC /tmp/lessc.tmp && mv -v /tmp/lessc.tmp $TARGET1 && (mkdir -p $TARGET2DIR ; ln -vf $TARGET1 $TARGET2)
   fi
 done;
