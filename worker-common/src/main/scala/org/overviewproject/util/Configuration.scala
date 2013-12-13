@@ -18,10 +18,14 @@ package org.overviewproject.util
 import scala.collection.JavaConverters._
 import com.typesafe.config.{ Config, ConfigFactory }
 
+trait Configuration {
+  def getString(key: String) : String
+  def getInt(key: String) : Int
+}
 
 // Base class. Subclass and define "keys" to create a configuration object
 // Optionally define "path" to root the keys in a sub-path
-abstract class ConfigurationKeys(configuration : Config) {
+abstract class ConfigurationKeys(configuration : Config) extends Configuration {
   def path: Option[String] = None
   def keys: Map[String, Any]
 
@@ -93,6 +97,7 @@ object Configuration extends ConfigurationKeys(ConfigFactory.load()) {
     ("max_inflight_requests" -> 4),
     ("clustering_alg" -> "KMeansComponents"),
     ("min_connected_component_size" -> 10),
+    ("documentcloud_url" -> "https://www.documentcloud.org"),
     ("sampled_edges_per_document" -> 200))
 
   val messageQueue = new MessageQueueConfig(myConfig)

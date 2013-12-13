@@ -7,6 +7,7 @@ import org.overviewproject.http.RequestQueueProtocol.{AddToFront, Result}
 import org.overviewproject.test.{ActorSystemContext, TestSimpleResponse}
 import org.overviewproject.util.Configuration
 import org.specs2.mutable.Specification
+import org.specs2.mock.Mockito
 import org.specs2.time.NoTimeConversions
 import akka.actor.{Actor, ActorRef, Props, actorRef2Scala}
 import akka.testkit.{TestActorRef, TestProbe}
@@ -14,7 +15,7 @@ import org.specs2.mutable.Before
 import org.overviewproject.http.RequestQueueProtocol.Failure
 
 
-class QueryProcessorSpec extends Specification with NoTimeConversions {
+class QueryProcessorSpec extends Specification with NoTimeConversions with Mockito {
 
   "QueryProcessor" should {
 
@@ -41,7 +42,31 @@ class QueryProcessorSpec extends Specification with NoTimeConversions {
       
       queryProcessor ! GetPage(pageNum)
       expectMsg(AddToFront(PublicRequest(pageQuery(pageNum, query))))
+    }
+
+    "request non-default query page" in new QueryContext {
+      object NonStandardConfig extends Configuration {
+        private val defaultConfiguration = Configuration // the object
+
+        def getString(key: String) : String = {
+          if (key == "documentcloud_url") {
+            "https://foo.bar"
+          } else {
+            defaultConfiguration.getString(key)
+          }
+        }
+
+        def getInt(key: String) : Int = defaultConfiguration.getInt(key)
+      }
+
+      override def createQueryProcessor(credentials: Option[Credentials] = None, maxDocuments: Int = 1000): Actor =
+        new QueryProcessor(query, credentials, testActor, configuration = NonStandardConfig)
+
+      val pageNum = 5
+      val queryProcessor = TestActorRef(createQueryProcessor())
       
+      queryProcessor ! GetPage(pageNum)
+      expectMsg(AddToFront(PublicRequest(s"https://foo.bar/api/search.json?per_page=$pageSize&page=$pageNum&q=query+string")))
     }
 
     "send authenticated request if credentials are provided" in new QueryContext {

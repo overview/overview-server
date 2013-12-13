@@ -1,5 +1,6 @@
 package controllers
 
+import play.api.Play
 import play.api.data.{Form,Forms}
 import play.api.mvc.{Controller,ResponseHeader,SimpleResult}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -21,7 +22,9 @@ import models.OverviewUser
  * to a different domain than ours.
  */
 trait DocumentCloudProxyController extends Controller {
-  val DocumentCloudApiProjectsUrl = "https://www.documentcloud.org/api/projects.json"
+  val DocumentCloudApiProjectsPath = "api/projects.json"
+  val DocumentCloudUrl = play.api.Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org/api/projects.json")
+  val DocumentCloudApiProjectsUrl = s"$DocumentCloudUrl/$DocumentCloudApiProjectsPath"
 
   def projects() = AuthorizedAction(anyUser) { implicit request =>
     val form = Form(Forms.tuple(

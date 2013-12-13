@@ -1,11 +1,10 @@
 package org.overviewproject.documentcloud
 
+import akka.actor._
 import java.net.URLEncoder
 import org.overviewproject.http._
 import org.overviewproject.http.RequestQueueProtocol._
-import org.overviewproject.util.Logger
-import akka.actor._
-import org.overviewproject.util.Configuration
+import org.overviewproject.util.{Configuration,Logger}
 
 /** Messages sent when interacting with QueryProcessor */
 object QueryProcessorProtocol {
@@ -22,12 +21,19 @@ object QueryProcessorProtocol {
  * @param credentials If provided, will be used to authenticate query and requests for private documents.
  * @param requestQueue The actor handling http requests
  */
-class QueryProcessor(query: String, credentials: Option[Credentials], requestQueue: ActorRef) extends Actor {
+class QueryProcessor(
+    query: String,
+    credentials: Option[Credentials],
+    requestQueue: ActorRef,
+    private val configuration : Configuration = Configuration
+  ) extends Actor {
 
   import QueryProcessorProtocol._
 
+  private val DocumentCloudUrl = configuration.getString("documentcloud_url")
+
   private def createQueryUrlForPage(query: String, pageNum: Int): String = {
-    s"https://www.documentcloud.org/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
+    s"$DocumentCloudUrl/api/search.json?per_page=$PageSize&page=$pageNum&q=$query"
   }
 
   private val PageSize: Int = Configuration.getInt("page_size")
