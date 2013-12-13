@@ -250,7 +250,8 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       headers = { 'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}" }
 
       filename = @_filename()
-      if filename.match(/[^\u0000-\u00ff]/)
+      if /[^ !#$%&´\*\+\-\.0-9A-Z\^_`a-z\|~]/.test(filename)
+        # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
         headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeURIComponent(filename)}"
       else
         headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""

@@ -52,6 +52,16 @@ define [
         expect(request.method).toEqual('POST')
         expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
 
+    it 'Escapes an even slightly not-HTTP-friendly filename', ->
+      # If the filename isn't an HTTP "token", we UTF-8-escape it
+      fakeFile.name = 'file,name.txt'
+      upload = new Upload(fakeFile, '/upload/')
+      mockUploadXhr()
+      upload.start()
+      mostRecentAjaxRequest().response(status: 404)
+
+      request = mostRecentAjaxRequest()
+      expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''file%2Cname.txt")
 
     describe 'starting an upload', ->
       beforeEach ->
