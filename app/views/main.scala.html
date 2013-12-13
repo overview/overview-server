@@ -32,6 +32,11 @@
         </script>
       }
     }
+    @defining(play.api.Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org")) { documentCloudUrl =>
+      <script>
+        window.documentCloudUrl = "@documentCloudUrl";
+      </script>
+    }
   </head>
   <body class="@bodyClass">
     @views.html.components.navbar(optionalUser)
