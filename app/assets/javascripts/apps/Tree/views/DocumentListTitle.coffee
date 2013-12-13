@@ -43,6 +43,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       </div>
     """)
 
+    # Overview error in search "Search"
+    # Params: t, searchResult
+    searchError: _.template("""
+      <div class="search-result" data-id="<%- searchResult.id %>">
+        <h4><%= t('searchError.title_html', searchResult.query) %></h4>
+      </div>
+    """)
+
     # <strong>4 documents</strong> in search "Search"
     # Params: t, nDocuments, searchResult
     searchResult: _.template("""
@@ -114,7 +122,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       Backbone.View.prototype.remove.call(this)
 
     render: ->
-      html = if @documentList
+      html = ''
+      className = ''
+
+      if @documentList
         nDocuments = @documentList.n
 
         selection = @documentList.selection
@@ -126,33 +137,37 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
           searchResultId = selection.searchResults[0]
           searchResult = @searchResultStore.find_by_id(searchResultId)
 
-          if nDocuments? && searchResult.state == 'Complete'
-            templates.searchResult(t: t, nDocuments: nDocuments, searchResult: searchResult)
+          if searchResult.state == 'Error'
+            html = templates.searchError(t: t, searchResult: searchResult)
+            className = 'search-error'
+          else if nDocuments? && searchResult.state == 'Complete'
+            html = templates.searchResult(t: t, nDocuments: nDocuments, searchResult: searchResult)
           else
-            templates.searching(t: t, searchResult: searchResult)
+            html = templates.searching(t: t, searchResult: searchResult)
+            className = 'search-pending'
         else if !nDocuments? # loading... (the list is now unset)
-          templates.loading(t: t)
+          html = templates.loading(t: t)
         else # there are documents loaded already (maybe 0)
           if nTags + nNodes + nSearchResults == 1
             if nTags
               tagId = selection.tags[0]
               if tagId == 0  #untagged
-                templates.untagged({ t: t, nDocuments: nDocuments })
+                html = templates.untagged({ t: t, nDocuments: nDocuments })
               else
                 tag = @tagStore.find_by_id(tagId)
-                templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
+                html = templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
             else if nNodes
               nodeId = selection.nodes[0]
               node = @onDemandTree.nodes[nodeId]
-              templates.node({ t: t, nDocuments: nDocuments, node: node })
+              html = templates.node({ t: t, nDocuments: nDocuments, node: node })
             else # nSearchResults
               throw 'assertion error'
           else
-            templates.multiple({ t: t, nDocuments: nDocuments })
-      else
-        ''
+            html = templates.multiple({ t: t, nDocuments: nDocuments })
 
-      @$el.html(html)
+      @$el
+        .html(html)
+        .attr('class', className)
 
     _onTagEditClicked: (e) ->
       e.preventDefault()

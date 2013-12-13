@@ -40,6 +40,7 @@ define [
         'views.DocumentSet.show.DocumentListTitle.num_documents': 'num_documents,{0}'
         'views.DocumentSet.show.DocumentListTitle.loading': 'loading'
         'views.DocumentSet.show.DocumentListTitle.searching.title_html': 'searching.title_html,{0}'
+        'views.DocumentSet.show.DocumentListTitle.searchError.title_html': 'searchError.title_html,{0}'
         'views.DocumentSet.show.DocumentListTitle.tag.title_html': 'tag.title_html,{0},{1}'
         'views.DocumentSet.show.DocumentListTitle.tag.edit': 'tag.edit'
         'views.DocumentSet.show.DocumentListTitle.untagged.title_html': 'untagged.title_html,{0}'
@@ -141,6 +142,10 @@ define [
         init(undefined, 'Searching')
         expect(view.$el.text()).toMatch(/searching/)
 
+      it 'should have class=search-pending when searching', ->
+        init(undefined, 'Searching')
+        expect(view.$el.attr('class')).toEqual('search-pending')
+
       it 'should render search message when search is halfway done', ->
         init(4, 'Searching')
         expect(view.$el.text()).toMatch(/searching/)
@@ -148,6 +153,14 @@ define [
       it 'should render the title', ->
         init(4, 'Complete')
         expect(view.$('h4').text()).toEqual('searchResult.title_html,num_documents,4,Search 1')
+
+      it 'should render an error', ->
+        init(undefined, 'Error')
+        expect(view.$('h4').text()).toEqual('searchError.title_html,Search 1')
+
+      it 'should have class=search-error on search error', ->
+        init(undefined, 'Error')
+        expect(view.$el.attr('class')).toEqual('search-error')
 
     describe 'with Tags and/or Nodes', ->
       beforeEach ->
