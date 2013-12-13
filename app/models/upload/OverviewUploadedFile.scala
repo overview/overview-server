@@ -14,7 +14,7 @@ trait OverviewUploadedFile {
   val size: Long
 
   def filename: String = {
-    ContentDisposition.filename(contentDisposition).getOrElse("Upload " + uploadedAt)
+    ContentDisposition(contentDisposition).filename.getOrElse("Upload " + uploadedAt)
   }
 
   def withSize(size: Long): OverviewUploadedFile

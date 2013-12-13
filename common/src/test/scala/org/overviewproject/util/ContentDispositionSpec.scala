@@ -6,6 +6,7 @@ import org.specs2.specification.Scope
 
 class ContentDispositionSpec extends Specification {
   "OverviewUploadedFile contentDisposition" should {
+    // http://greenbytes.de/tech/tc2231/
 
     trait DispositionParameter {
       val name: String
@@ -60,14 +61,6 @@ class ContentDispositionSpec extends Specification {
       override lazy val dispParams: String = """FILENAME="%s" ;blablabla=""".format(name)
     }
 
-    trait UrlEncodedName extends DispositionParameter {
-      val name = """"%68%65%6C%6C%6F"""" // "hello"
-    }
-
-    trait InvalidEncoding extends DispositionParameter {
-      val name = """"%XY%4-b""""
-    }
-
     trait IncludesModifiedDateParameter extends DispositionParameter {
       val name="file.ext"
       val modificationDate = "Wed, 09 Oct 2013 05:42:00 -0500"
@@ -82,55 +75,60 @@ class ContentDispositionSpec extends Specification {
     }
 
     "find filename in simplest possible case" in new ContentDispositionContext with SimpleParameter {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
     "find filename among multiple parameters (RFC2183)" in new ContentDispositionContext with MultipleParameters {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
     "find quoted filename" in new ContentDispositionContext with FilenameInQuotes {
-      ContentDisposition.filename(contentDisposition) must beSome(unquotedName)
+      ContentDisposition(contentDisposition).filename must beSome(unquotedName)
     }
 
     "find filename with escaped quotes" in new ContentDispositionContext with FilenameWithEscapedQuote {
-      ContentDisposition.filename(contentDisposition) must beSome(unquotedName.replaceAllLiterally("""\""", ""))
+      ContentDisposition(contentDisposition).filename must beSome(unquotedName.replaceAllLiterally("""\""", ""))
     }
 
     "accept the unacceptable" in new ContentDispositionContext with UnfortunatelyAccepted {
-      ContentDisposition.filename(contentDisposition) must beSome
+      ContentDisposition(contentDisposition).filename must beSome
     }
 
     "find filename parameter followed by garbage" in new ContentDispositionContext with FilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
     "find quoted filename parameter followed by garbage" in new ContentDispositionContext with QuotedFilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
-    "Decoded encoded filename" in new ContentDispositionContext with UrlEncodedName {
-      ContentDisposition.filename(contentDisposition) must beSome("hello")
-    }
-
-    "Handle invalid encoding" in new ContentDispositionContext with InvalidEncoding {
-      ContentDisposition.filename(contentDisposition) must beNone
+    "not decode encoded filename in quotes" in new ContentDispositionContext with DispositionParameter {
+      val name = """"%68%65%6C%6C%6F"""" // "hello"
+      ContentDisposition(contentDisposition).filename must beSome("%68%65%6C%6C%6F")
     }
 
     "Handle mixed case - RFC2183" in new ContentDispositionContext with ValidMixedCase {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
     "Handle mixed case - Broken Unquoted" in new ContentDispositionContext with MixedCaseFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
 
     "Handle mixed case - Broken quoted" in new ContentDispositionContext with MixedCaseWithQuotedFilenameFollowedByGarbage {
-      ContentDisposition.filename(contentDisposition) must beSome(name)
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
     
     "Find modification date parameter" in new ContentDispositionContext with IncludesModifiedDateParameter {
-      ContentDisposition.modificationDate(contentDisposition) must beSome(modificationDate)
+      ContentDisposition(contentDisposition).modificationDate must beSome(modificationDate)
+    }
+
+    "Handle UTF-8 filenames using RFC2231/5987 encoded UTF-8" in new ContentDispositionContext with DispositionParameter {
+      // http://greenbytes.de/tech/tc2231/#attwithfn2231utf8
+      val name = "元気なですか？.pdf"
+      override lazy val dispParams: String = """attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf"""
+
+      ContentDisposition(contentDisposition).filename must beSome(name)
     }
   }
 

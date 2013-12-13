@@ -83,7 +83,7 @@ trait MassUploadFileIteratee {
     def apply(request: RequestHeader): RequestInformation = {
       val contentType = request.headers.get(CONTENT_TYPE).getOrElse("")
       val contentDisposition = request.headers.get(CONTENT_DISPOSITION)
-      val filename: String = contentDisposition.flatMap(ContentDisposition.filename).getOrElse("")
+      val filename: String = contentDisposition.flatMap(ContentDisposition(_).filename).getOrElse("")
       val contentRange = request.headers.get(CONTENT_RANGE).get
       val range = """(\d+)-(\d+)/(\d+)""".r // start-end/length
       val rangeMatch = range.findFirstMatchIn(contentRange).get
