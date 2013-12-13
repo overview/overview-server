@@ -2,20 +2,11 @@ define [
   'apps/DocumentDisplay/models/Document'
 ], (Document) ->
   describe 'apps/DocumentDisplay/models/Document', ->
-    it 'should set urlProperties', ->
-      document = new Document({
-        text: 'text'
-        url: 'https://example.org'
-      })
-
-      props = document.get('urlProperties')
-      expect(props).toBeDefined()
-      expect(props.url).toEqual('https://example.org')
-
     it 'should set heading to title if available', ->
       document = new Document({
         title: 'title'
         description: 'description'
+        urlProperties: {}
       })
 
       heading = document.get('heading')
@@ -24,6 +15,7 @@ define [
     it 'should set heading to description if there is no title', ->
       document = new Document({
         description: 'description'
+        urlProperties: {}
       })
 
       heading = document.get('heading')
@@ -33,12 +25,13 @@ define [
       document = new Document({
         title: ''
         description: 'description'
+        urlProperties: {}
       })
 
       heading = document.get('heading')
       expect(heading).toEqual('description')
 
     it 'should set heading to "" if title and description are empty', ->
-      document = new Document({})
+      document = new Document(urlProperties: {})
       heading = document.get('heading')
       expect(heading).toBe('')

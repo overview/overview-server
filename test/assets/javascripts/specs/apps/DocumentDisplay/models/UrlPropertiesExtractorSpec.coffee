@@ -2,15 +2,20 @@ define [
   'apps/DocumentDisplay/models/UrlPropertiesExtractor'
 ], (UrlPropertiesExtractor) ->
   describe 'apps/DocumentDisplay/models/UrlPropertiesExtractor', ->
+    extractor = undefined
+    urlToProperties = undefined
+
+    beforeEach ->
+      extractor = new UrlPropertiesExtractor(documentCloudUrl: 'https://www.documentcloud.org')
+      urlToProperties = (url) -> extractor.urlToProperties(url)
+
+    itShouldRecognize = (name, inUrl, outProperties) ->
+      it "should recognize #{name}", ->
+        ret = urlToProperties(inUrl)
+        for property, value of outProperties
+          expect(ret[property]).toEqual(value)
+
     describe 'urlToProperties', ->
-      urlToProperties = UrlPropertiesExtractor.urlToProperties
-
-      itShouldRecognize = (name, inUrl, outProperties) ->
-        it "should recognize #{name}", ->
-          ret = urlToProperties(inUrl)
-          for property, value of outProperties
-            expect(ret[property]).toEqual(value)
-
       itShouldRecognize(
         'an https Twitter url',
         'https://twitter.com/adamhooper/status/317041719847813120',
@@ -130,3 +135,14 @@ define [
           type: 'none'
           url: ''
       )
+
+      describe 'with a custom DocumentCloud URL', ->
+        beforeEach ->
+          extractor = new UrlPropertiesExtractor(documentCloudUrl: 'https://foo.bar')
+
+        itShouldRecognize(
+          'a custom DocumentCloud URL',
+          'https://foo.bar/documents/123-foo.html',
+            type: 'documentCloud'
+            url: 'https://foo.bar/documents/123-foo.html'
+        )

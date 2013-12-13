@@ -2,23 +2,29 @@ define [
   'jquery'
   'backbone'
   './Document'
-], ($, Backbone, Document) ->
+  './UrlPropertiesExtractor'
+], ($, Backbone, Document, UrlPropertiesExtractor) ->
   URL_BASE = "/documents"
-  DOCUMENTCLOUD_BASE = "https://www.documentcloud.org/documents"
 
-  Backbone.Model.extend
-    documentCloudUrl: (id) ->
-      prefs = @get('preferences')
-      sidebar = prefs?.get('sidebar') && 'true' || 'false'
-      "#{DOCUMENTCLOUD_BASE}/#{id}?sidebar=#{sidebar}"
+  class DocumentFinder
+    constructor: (@options) ->
+      throw "Must set options.documentCloudUrl, a URL prefix like 'https://www.documentcloud.org'" if !@options.documentCloudUrl
+      @urlPropertiesExtractor = new UrlPropertiesExtractor(@options)
+
+    documentUrl: (id) -> "#{@options.documentCloudUrl}/documents/#{id}"
 
     findDocumentFromJson: (json) ->
-      if json.heading?
-        $.Deferred().resolve(new Document(json))
+      resolvedJson = if json.heading?
+        $.Deferred().resolve(json)
       else if json.documentcloud_id
-        $.Deferred().resolve(new Document({
+        $.Deferred().resolve
           heading: json.title || json.description
-          url: @documentCloudUrl(json.documentcloud_id)
-        }))
+          url: @documentUrl(json.documentcloud_id)
       else
-        $.getJSON("#{URL_BASE}/#{json.id}.json").pipe((data) -> new Document(data))
+        $.getJSON("#{URL_BASE}/#{json.id}.json")
+
+      resolvedJson.pipe (data) =>
+        new Document($.extend(
+          { urlProperties: @urlPropertiesExtractor.urlToProperties(data.url) },
+          data
+        ))

@@ -11,7 +11,7 @@ define [
     # Callers should access the "el" property to insert it into
     # the page. Then they can call setDocument() to show a document.
     constructor: (options = undefined) ->
-      @finder = new DocumentFinder()
+      @finder = new DocumentFinder(documentCloudUrl: window.documentCloudUrl)
       @state = new State()
       @el = options?.el || document.createElement('div')
 
