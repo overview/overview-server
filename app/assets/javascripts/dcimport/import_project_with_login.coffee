@@ -28,5 +28,5 @@ define [
           $ul.append(html)
         $div.append($ul)
 
-    deferred = request_json_with_login('https://www.documentcloud.org/api/projects.json?include_document_ids=false', div)
+    deferred = request_json_with_login("#{window.documentCloudUrl}/api/projects.json?include_document_ids=false", div)
     deferred.done(show_data)
