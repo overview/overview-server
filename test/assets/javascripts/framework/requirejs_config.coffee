@@ -38,6 +38,7 @@ requirejs.config({
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
+    'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     silverlight: 'vendor/Silverlight.debug'
     spectrum: 'vendor/spectrum'
