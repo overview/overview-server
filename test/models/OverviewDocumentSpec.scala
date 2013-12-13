@@ -3,7 +3,7 @@ package models
 import org.overviewproject.test.DbSpecification
 import org.specs2.specification.Scope
 import play.api.Play.{start,stop}
-import play.api.test.FakeApplication
+import play.api.test.{FakeApplication,WithApplication}
 
 // OverviewDocument wraps models.orm.Document. Let's be transparent about that
 // in this test.
@@ -105,4 +105,15 @@ class OverviewDocumentSpec extends DbSpecification {
   }
 
   step(stop)
+
+  "OverviewDocument with nonstandard DocumentCloud URL" should {
+    "give the proper URL when a custom DocumentCloud URL is configured" in new WithApplication(FakeApplication(additionalConfiguration = Map("overview.documentcloud_url" -> "https://foo.bar"))) {
+      val ormDocument = Document(
+        id=1L,
+        documentcloudId=Some("123-foobar")
+      )
+      val document = OverviewDocument(ormDocument)
+      document.url must beSome("https://foo.bar/documents/123-foobar")
+    }
+  }
 }

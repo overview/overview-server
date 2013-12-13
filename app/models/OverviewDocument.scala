@@ -1,5 +1,7 @@
 package models
 
+import play.api.Play
+
 import org.overviewproject.tree.orm.{ Document, DocumentSet }
 import models.orm.Schema
 
@@ -39,10 +41,14 @@ sealed trait OverviewDocument {
 }
 
 object OverviewDocument {
-  val DocumentCloudUrlPrefix = "https://www.documentcloud.org/documents/"
-  def UploadedDocumentUrl(documentId: Long, oid: Long) = s"/documents/${documentId}/contents/${oid}"
+  private def uploadedDocumentUrl(documentId: Long, oid: Long) = s"/documents/${documentId}/contents/${oid}"
+
+  private def idToDocumentCloudUrl(documentcloudId: String) = {
+    val prefix = play.api.Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org")
+    s"$prefix/documents/$documentcloudId"
+  }
   
-  case class OverviewDocumentImpl(val ormDocument: Document) extends OverviewDocument {
+  private case class OverviewDocumentImpl(val ormDocument: Document) extends OverviewDocument {
     override val id = ormDocument.id
     override val description = ormDocument.description
     override val title = ormDocument.title
@@ -50,10 +56,11 @@ object OverviewDocument {
     override val text = ormDocument.text
     override val contentLength = ormDocument.contentLength
     
-    override val url : Option[String] = 
+    override val url : Option[String] = {
       ormDocument.url.orElse(
-        ormDocument.documentcloudId.map(id => s"$DocumentCloudUrlPrefix$id")).orElse(
-          ormDocument.contentsOid.map(oid => UploadedDocumentUrl(ormDocument.id, oid)))
+        ormDocument.documentcloudId.map(idToDocumentCloudUrl)).orElse(
+          ormDocument.contentsOid.map(oid => uploadedDocumentUrl(ormDocument.id, oid)))
+    }
   }
 
   /** Factory method */
