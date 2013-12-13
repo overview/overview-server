@@ -6,7 +6,11 @@ import org.fusesource.stomp.jms.StompJmsDestination
 import org.overviewproject.util.Logger
 import org.overviewproject.messagequeue.{ MessageService, MessageContainer }
 
-
+/**
+ * ApolloMessageService manages communication with the specified message queue.
+ * Sets up a session while the queue is being listened to. Incoming
+ * messages are forwarded to the specified `messageDelivery` function
+ */
 class ApolloMessageService(queueName: String, acknowledgeMode: Int = Session.AUTO_ACKNOWLEDGE) extends MessageService {
 
   private var session: Option[Session] = None
@@ -16,10 +20,11 @@ class ApolloMessageService(queueName: String, acknowledgeMode: Int = Session.AUT
     val messageHandler = new MessageHandler(messageDelivery)
     consumer = Some(createConsumer(connection))
     consumer.map(_.setMessageListener(messageHandler))
-    
+
     Logger.info(s"Listening to message broker: $queueName")    
   }
 
+  /** Explicit message acknowledge is only needed if acknowledgeMode is set CLIENT_ACKNOWLEDGE */
   override def acknowledge(message: MessageContainer): Unit = {
     // FIXME: Ugly downcast. Acknowledge should just be public in MessageContainer
     message.asInstanceOf[ApolloMessageContainer].message.acknowledge

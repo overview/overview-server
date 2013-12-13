@@ -21,13 +21,16 @@ object ActorCareTakerProtocol {
 import ActorCareTakerProtocol._
 
 /**
- * Creates as many JobHandler actors as we think we can handle, with a shared
- * RequestQueue.
- * Each JobHandler is responsible for listening to the message queue, and spawning
+ * Creates as many DocumentSetJobHandler actors as we think we can handle, with a shared
+ * RequestQueue. DocumentSetJobHandlers handle request specific to DocumentSets, after clustering
+ * has started (such as Search and Delete)
+ * Each DocumentSetJobHandler is responsible for listening to the message queue, and spawning
  * handlers for incoming commands.
  * We assume that the queue is setup with message groups, so that messages for a
- * particular document set are sent to one JobHandler only. At some point JobHandlers
+ * particular document set are sent to one JobHandler only. At some point DocumentSetJobHandlers
  * may want to explicitly disconnect from the queue, to rebalance the message groups.
+ * Also creates a ClusteringJobHandler which manages processing of file uploads, up until the clustering
+ * process starts.
  */
 object DocumentSetWorker extends App {
   private val NumberOfJobHandlers = 4
@@ -44,6 +47,8 @@ object DocumentSetWorker extends App {
 
 /**
  * Supervisor for the actors.
+ * Creates the connection hosting the message queues, and tells 
+ * clients to register for connection status messages.
  * If an error occurs at this level, we assume that something catastrophic has occurred.
  * All actors get killed, and we die.
  */

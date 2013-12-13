@@ -8,7 +8,10 @@ import org.overviewproject.messagequeue.MessageQueueConnection
 import org.overviewproject.util.Configuration
 
 
-
+/**
+ * A MessageQueueConnection that knows the details of how to connect
+ * to an apollo message queue
+ */
 class ApolloMessageQueueConnection extends MessageQueueConnection {
 
   private val BrokerUri: String = Configuration.messageQueue.getString("broker_uri")
