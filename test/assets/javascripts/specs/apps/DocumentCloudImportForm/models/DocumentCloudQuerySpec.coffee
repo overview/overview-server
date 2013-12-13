@@ -4,19 +4,23 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Query) ->
   describe PATH, ->
     describe 'url()', ->
       it 'should URL-encode the ID', ->
-        model = new Query({ id: 'normal search' })
+        model = new Query({ id: 'normal search' }, { documentCloudUrl: 'https://www.documentcloud.org' })
         expect(model.url()).toMatch(/.*normal%20search&/)
 
       it 'should treat projectid:... specially', ->
-        model = new Query({ id: 'projectid:1-my-test-project' })
+        model = new Query({ id: 'projectid:1-my-test-project' }, { documentCloudUrl: 'https://www.documentcloud.org' })
         expect(model.url()).toMatch(///^https://www.documentcloud.org/api/projects/1-my-test-project.json///)
 
       it 'should treat projectid: ... specially (with the space)', ->
-        model = new Query({ id: 'projectid: 1-my-test-project' })
+        model = new Query({ id: 'projectid: 1-my-test-project' }, { documentCloudUrl: 'https://www.documentcloud.org' })
         expect(model.url()).toMatch(///^https://www.documentcloud.org/api/projects/1-my-test-project.json///)
 
+      it 'should work with a custom DocumentCloud installation', ->
+        query = new Query({ id: 'projectid:1' }, { documentCloudUrl: 'https://foo.bar' })
+        expect(query.url()).toEqual('https://foo.bar/api/projects/1.json?include_document_ids=false')
+
     describe 'parse()', ->
-      model = new Query({ id: 'projectid: 1-who-cares' })
+      model = new Query({ id: 'projectid: 1-who-cares' }, { documentCloudUrl: 'https://www.documentcloud.org' })
 
       it 'should parse a BUG-57 + BUG-25 projectid search result', ->
         ret = model.parse({ projects: [

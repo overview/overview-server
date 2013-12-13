@@ -5,12 +5,15 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
   # * title: The title
   # * description: The user-supplied description, if it's a projectid:1-slug query
   # * document_count: a count of all documents
-  Backbone.Model.extend
-    defaults: {
+  class DocumentCloudQuery extends Backbone.Model
+    defaults:
       title: ''
       description: ''
       document_count: 0
-    }
+
+    initialize: (attrs, options) ->
+      throw 'Must set options.documentCloudUrl, a URL prefix like "https://www.documentcloud.org"' if !options?.documentCloudUrl
+      @documentCloudUrl = options.documentCloudUrl
 
     _projectSlug: ->
       if m = /^\s*projectid:\s*([-a-z0-9]+)\s*$/.exec(@id)
@@ -28,9 +31,9 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
     url: ->
       slug = @_projectSlug()
       if slug?
-        "https://www.documentcloud.org/api/projects/#{slug}.json?include_document_ids=false"
+        "#{@documentCloudUrl}/api/projects/#{slug}.json?include_document_ids=false"
       else
-        "https://www.documentcloud.org/api/search.json?q=#{encodeURIComponent(@id)}&per_page=0"
+        "#{@documentCloudUrl}/api/search.json?q=#{encodeURIComponent(@id)}&per_page=0"
 
     parse: (response, options) ->
       # BUG in DocumentCloud returns all projects instead of the one we want.

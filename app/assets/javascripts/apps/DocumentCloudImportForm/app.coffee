@@ -13,7 +13,7 @@ define [
     constructor: (query, submitUrl, options) ->
       throw 'Must pass options.extraOptionsEl, an HTML element' if !options.extraOptionsEl
 
-      @query = new DocumentCloudQuery({ id: query })
+      @query = new DocumentCloudQuery({ id: query }, { documentCloudUrl: window.documentCloudUrl })
       @queryFetcher = new DocumentCloudQueryFetcher({ query: @query })
 
       view = new View({
