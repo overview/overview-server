@@ -83,14 +83,16 @@ define [
       # remove this when we add resumable uploads
       $.ajax('/files', type: 'DELETE')
 
-      @$el.find('div.nav-buttons a.back').click =>
-        @_confirmCancel()
+      $('div.nav-buttons a.back').click (e) =>
+        if(@getHash() == '#import-from-mass-upload')
+          @_confirmCancel(e)
 
       $('div.nav-buttons li a').click (e) =>
         if(@getHash() == '#import-from-mass-upload')
-          e.preventDefault()
-          e.stopPropagation()
           @_confirmCancel(e)
+
+      $('nav a').click (e) =>
+        @_confirmNav(e)
 
     render: ->
       @$el.html(@template(t: t))
@@ -161,7 +163,19 @@ define [
       @model.uploads.length > 0 &&
       @model.get('status') == 'waiting'
 
+    _confirmNav: (e) ->
+      if(@collection.length > 0 && e.currentTarget.target != '_blank')
+        e.preventDefault()
+        e.stopPropagation()
+        targetUrl = e.currentTarget.href
+        @$el.find('#cancel-modal').modal('show')
+        @$el.find('#cancel-modal .cancel-upload').click =>
+          window.location = targetUrl
+          @_cancel()
+
     _confirmCancel: (e) ->
+      e.stopPropagation()
+      e.preventDefault()
       target = e.currentTarget.hash
 
       if(@collection.length > 0)
