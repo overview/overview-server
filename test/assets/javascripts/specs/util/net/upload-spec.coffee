@@ -37,31 +37,47 @@ define [
       fakeFile.slice = jasmine.createSpy().andReturn('a file blob')
 
     # TODO: test stop, abort, etc.
+
     describe 'starting an upload with a unicode filename', ->
-      beforeEach ->
-        fakeFile.name = '元気なですか？.pdf'  # filename with unicode
+      fakeStartUploadWithFilename = (filename) ->
+        # If the filename isn't an HTTP "token", we UTF-8-escape it
+        fakeFile.name = filename
         upload = new Upload(fakeFile, '/upload/')
         mockUploadXhr()
         upload.start()
-        mostRecentAjaxRequest().response(status: 404)  # not found, go ahead and upload
+        mostRecentAjaxRequest().response(status: 404) # not found, go ahead and upload
+
+      mostRecentContentDisposition = ->
+        request = mostRecentAjaxRequest()
+        request.requestHeaders['Content-Disposition']
 
       it 'starts the upload, and properly unicode-escapes the filename', ->
+        fakeStartUploadWithFilename('元気なですか？.pdf') # filename with unicode
         request = mostRecentAjaxRequest()
 
         expect(upload.state).toEqual(3)
         expect(request.method).toEqual('POST')
         expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
 
-    it 'Escapes an even slightly not-HTTP-friendly filename', ->
-      # If the filename isn't an HTTP "token", we UTF-8-escape it
-      fakeFile.name = 'file,name.txt'
-      upload = new Upload(fakeFile, '/upload/')
-      mockUploadXhr()
-      upload.start()
-      mostRecentAjaxRequest().response(status: 404)
+      it 'escapes an even slightly not-HTTP-friendly filename', ->
+        fakeStartUploadWithFilename('file,name.txt')
+        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2Cname.txt")
 
-      request = mostRecentAjaxRequest()
-      expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''file%2Cname.txt")
+      it 'escapes letters encodeURIComponent does not', ->
+        fakeStartUploadWithFilename("file'name.txt")
+        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%27name.txt")
+
+      it 'escapes the asterix', ->
+        fakeStartUploadWithFilename("file*name.txt")
+        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2Aname.txt")
+
+      it 'does not escape the pipe, caret or backtick', ->
+        fakeStartUploadWithFilename("file*|^`name.txt") # trigger encoding
+        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2A|^`name.txt")
+
+      it 'simply quotes complex, no-escaping-necessary characters', ->
+        fakeStartUploadWithFilename("file|^`name.txt")
+        expect(mostRecentContentDisposition()).toEqual('attachment; filename="file|^`name.txt"')
 
     describe 'starting an upload', ->
       beforeEach ->

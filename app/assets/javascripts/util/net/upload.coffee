@@ -29,6 +29,17 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     else
       0
 
+  encodeRfc5987ValueChars = (s) ->
+    # Transcribed from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+    #
+    # I'm not sure this is better than writing one that omits
+    # encodeURIComponent(), but at least I'm reasonably certain it follows
+    # the spec...
+    encodeURIComponent(s)
+      .replace(/['()]/g, escape)
+      .replace(/\*/g, '%2A')
+      .replace(/%(?:7C|60|5E)/g, unescape)
+
   ## We only read CHUNK_SIZE of the file into memory at a time, meaning we only
   ## send CHUNK_SIZE bytes at a time.
   #CHUNK_SIZE=16777216 # 16MB
@@ -250,9 +261,10 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       headers = { 'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}" }
 
       filename = @_filename()
-      if /[^ !#$%&´\*\+\-\.0-9A-Z\^_`a-z\|~]/.test(filename)
+      if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
+      #if /[^ !#$%&´\*\+\-\.0-9A-Z\^_`a-z\|~]/.test(filename)
         # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
-        headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeURIComponent(filename)}"
+        headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
       else
         headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
 
