@@ -86,6 +86,7 @@ define [], ->
     # The returned URL is "better": it replaces http:// or https:// with plain //.
     urlToProperties: (url) ->
       ret = undefined
+      url ?= ''
 
       for extractor in @extractors
         if m = url.match(extractor.regex)

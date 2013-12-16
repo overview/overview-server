@@ -136,6 +136,14 @@ define [
           url: ''
       )
 
+      itShouldRecognize(
+        'no url',
+        undefined,
+          type: 'none'
+          url: ''
+      )
+
+
       describe 'with a custom DocumentCloud URL', ->
         beforeEach ->
           extractor = new UrlPropertiesExtractor(documentCloudUrl: 'https://foo.bar')
