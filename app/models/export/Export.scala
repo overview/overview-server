@@ -21,7 +21,7 @@ trait Export {
     *
     * This method does <em>not</em> call outputStream.close.
     */
-  def exportTo(ouputStream: OutputStream) : Unit
+  def exportTo(outputStream: OutputStream) : Unit
 
   /** The Content-Type HTTP header, as a string.
     *
@@ -47,5 +47,16 @@ trait Export {
     exportTo(tempFile.outputStream)
     tempFile.outputStream.close
     tempFile.inputStream
+  }
+
+  /** Writes a UTF-8 byte-order marker to the output stream.
+    *
+    * Use this for export to programs that do not recognize UTF-8 always, such
+    * as MS Excel.
+    *
+    * https://www.pivotaltracker.com/s/projects/928628/stories/62559464
+    */
+  protected def writeUtf8Bom(outputStream: OutputStream) : Unit = {
+    outputStream.write(Array[Byte](0xef.toByte, 0xbb.toByte, 0xbf.toByte))
   }
 }

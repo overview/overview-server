@@ -11,8 +11,6 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-
-
 import au.com.bytecode.opencsv.CSVReader
 
 class ExportDocumentsWithStringTagsSpec extends Specification with Mockito {
@@ -46,6 +44,12 @@ class ExportDocumentsWithStringTagsSpec extends Specification with Mockito {
   }
 
   "ExportDocumentsWithStringTags" should {
+    "export a UTF-8 byte-order marker" in new OneDocumentScope {
+      result(0) must beEqualTo(0xef.toByte)
+      result(1) must beEqualTo(0xbb.toByte)
+      result(2) must beEqualTo(0xbf.toByte)
+    }
+
     "export None everything" in new OneDocumentScope {
       resultRows.size must beEqualTo(2)
       resultRow.size must beEqualTo(4)

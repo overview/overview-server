@@ -53,6 +53,8 @@ class ExportDocumentsWithColumnTags(
   override def contentTypeHeader = "text/csv; charset=\"utf-8\""
 
   override def exportTo(outputStream: OutputStream) : Unit = {
+    writeUtf8Bom(outputStream)
+
     val writer = new BufferedWriter(new OutputStreamWriter(outputStream, "utf-8"))
     implicit val csvWriter = new CSVWriter(writer)
 
