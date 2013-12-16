@@ -18,7 +18,7 @@ controllers.SessionController.delete.success=You have logged out. We hope you’
 
 controllers.UserController.create.success=Thank you for registering. There’s one more step: please check your email and click the confirmation link.
 
-forms.Confirmation.token.not_found=We could not find a user with this confirmation token. Please try clicking the link in your confirmation email again.
+forms.Confirmation.token.not_found=Nothing happened. Did you click a confirmation link sometime in the past? If so, please log in. Otherwise, please click the link the confirmation email we sent you.
 
 forms.LoginForm.error.invalid_credentials=Wrong email address or password
 forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can’t log in until you click the link in the confirmation email we sent you.
