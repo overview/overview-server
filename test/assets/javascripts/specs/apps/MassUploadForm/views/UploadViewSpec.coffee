@@ -7,46 +7,36 @@ define [
     model = undefined
     view = undefined
 
-    describe 'initialize', ->
-      it 'responds to the model change by rendering', ->
-        model = new Backbone.Model
-        renderSpy = spyOn(UploadView.prototype, 'render')
-        view = new UploadView(model: model)
-        model.trigger('change')
+    init = (attrs) ->
+      class Model extends Backbone.Model
+        defaults:
+          isFullyUploaded: false
+          uploading: false
+        isFullyUploaded: -> @get('isFullyUploaded')
+      model = new Model($.extend({ id: 'foo.pdf' }, attrs ? {}))
+      view = new UploadView(model: model)
+      view.render()
 
-        expect(renderSpy).toHaveBeenCalled()
+    it 'shows the filename', ->
+      init()
+      expect(view.$el.find('.filename').text()).toEqual('foo.pdf')
 
-    describe 'render', ->
-      model = undefined
-      view = undefined
+    describe 'waiting', ->
+      beforeEach -> init()
+      it 'has class waiting', -> expect(view.$el).toHaveClass('waiting')
+      it 'has a wait icon', -> expect(view.$el).toContain('i.icon-time')
 
-      init = (isFullyUploaded) ->
-        Model = Backbone.Model.extend
-          isFullyUploaded: -> isFullyUploaded
-        model = new Model(id: 'foo.pdf')
-        view = new UploadView(model: model)
-        view.render()
+      describe 'transitioning to uploading', ->
+        beforeEach -> model.set(uploading: true)
+        it 'has class uploading', -> expect(view.$el).toHaveClass('uploading')
+        it 'has a spinner', -> expect(view.$el).toContain('i.icon-spin.icon-spinner')
 
-      it 'shows the filename', ->
-        init()
-        expect(view.$el.find('.filename').text()).toEqual('foo.pdf')
+    describe 'uploading', ->
+      beforeEach -> init(uploading: true)
+      it 'has class uploading', -> expect(view.$el).toHaveClass('uploading')
+      it 'has a spinner', -> expect(view.$el).toContain('i.icon-spin.icon-spinner')
 
-      it 'displays a queued but not uploading file, with an icon', ->
-        init()
-        expect(view.$el).toHaveClass('waiting')
-        expect(view.$el).toContain('i.icon-time')
-
-      it 'displays an uploading file', ->
-        init()
-        model.set('uploading', true)
-        expect(view.$el).toHaveClass('uploading')
-        expect(view.$el).toContain('i.icon-spinner.icon-spin')
-
-      it 'displays an uploaded file', ->
-        init(true)
-        model.trigger('change')
-        expect(view.$el).toHaveClass('uploaded')
-        expect(view.$el).toContain('i.icon-ok')
-
-
-
+    describe 'fully uploaded', ->
+      beforeEach -> init(isFullyUploaded: true)
+      it 'has class uploaded', -> expect(view.$el).toHaveClass('uploaded')
+      it 'has an ok icon', -> expect(view.$el).toContain('i.icon-ok')
