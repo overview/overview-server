@@ -59,7 +59,7 @@ define [ 'jquery' ], ($) ->
       @_urlBuilders = makeUrlFunctions(urlRoot)
 
     _queue: (options) ->
-      @transactionQueue.queue =>
+      @transactionQueue.queue ->
         options.ajaxOptions.url = options.url()
         ret = $.ajax(options.ajaxOptions)
         ret.done(options.beforeReceive) if options.beforeReceive?

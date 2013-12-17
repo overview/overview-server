@@ -283,3 +283,34 @@ define [
             expect(tree.nodes["1"].tagCounts).toEqual({})
             expect(tree.nodes["2"].tagCounts).toEqual({})
             expect(tree.nodes["3"].tagCounts).toEqual({})
+
+        describe 'delete_tag', ->
+          deferred = undefined
+
+          beforeEach ->
+            deferred = $.Deferred()
+            cache.tag_api =
+              destroy: jasmine.createSpy('destroy').andReturn(deferred)
+
+          it 'should call tag_api.destroy(tag)', ->
+            cache.delete_tag(tag)
+            expect(cache.tag_api.destroy).toHaveBeenCalledWith(tag)
+
+          it 'should not remove the tag from the store yet', ->
+            # Why not? Because we can run into problems like this:
+            # 1. Delete tag (and remove it from store)
+            # 2. In comes a previously-requested doclist from the server
+            # 3. When rendering the doclist, we have a missing tag
+            # 4. Tag gets deleted from the server
+            #
+            # This is one of a zillion problems. We may wish to add a "deleted"
+            # flag to tags, but we can't delete them immediately.
+            spyOn(cache.tag_store, 'remove')
+            cache.delete_tag(tag)
+            expect(cache.tag_store.remove).not.toHaveBeenCalled()
+
+          it 'should remove the tag from the store when destroying is finished', ->
+            cache.delete_tag(tag)
+            spyOn(cache.tag_store, 'remove')
+            deferred.resolve()
+            expect(cache.tag_store.remove).toHaveBeenCalledWith(tag)

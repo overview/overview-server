@@ -141,23 +141,23 @@ define [
       @tag_api.update(tag, new_tag)
 
     remove_tag: (tag) ->
-      @document_store.remove_tag_id(tag.id)
+      tagId = tag.id
 
-      tagid_string = "#{tag.id}"
+      @document_store.remove_tag_id(tagId)
+
       nodes = @on_demand_tree.nodes
-      @on_demand_tree.id_tree.batchAdd -> # trigger callbacks
-        for __, node of nodes
-          tagCounts = node.tagCounts
-          if tagCounts?[tagid_string]?
-            delete tagCounts[tagid_string]
+      for __, node of nodes
+        tagCounts = node.tagCounts
+        if tagCounts? && tagId of tagCounts
+          delete tagCounts[tagId]
 
-        undefined
+      @on_demand_tree.id_tree.batchAdd(->) # trigger callbacks
 
       @tag_store.remove(tag)
 
     delete_tag: (tag) ->
-      @remove_tag(tag)
       @tag_api.destroy(tag)
+        .done => @remove_tag(tag)
 
     edit_node: (node, new_node) ->
       @on_demand_tree.id_tree.batchAdd -> # trigger callbacks
