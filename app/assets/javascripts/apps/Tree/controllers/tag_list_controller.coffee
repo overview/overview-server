@@ -56,7 +56,7 @@ define [
       state.set(taglike: { tagId: tag.id })
 
     view.on 'organize-clicked', ->
-      TagDialogController(tag_store, cache)
+      new TagDialogController(cache: cache, tagStoreProxy: proxy, state: state)
 
     view.on 'untagged-clicked', ->
       state.setDocumentListParams(DocumentListParams.untagged())
