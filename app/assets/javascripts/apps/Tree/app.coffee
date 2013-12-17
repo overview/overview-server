@@ -4,7 +4,7 @@ define [
   './models/animator'
   './models/property_interpolator'
   './models/world'
-  './models/selection'
+  './models/DocumentListParams'
   './controllers/keyboard_controller'
   './controllers/logger'
   './controllers/tag_list_controller'
@@ -15,7 +15,7 @@ define [
   './controllers/document_contents_controller'
   './views/Mode'
 ], ($, \
-    AnimatedFocus, Animator, PropertyInterpolator, World, Selection, \
+    AnimatedFocus, Animator, PropertyInterpolator, World, DocumentListParams, \
     KeyboardController, Logger, \
     tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, \
@@ -77,7 +77,7 @@ define [
       world = new World()
 
       world.cache.load_root().done ->
-        world.state.set('selection', new Selection({ nodes: [world.cache.on_demand_tree.id_tree.root] }))
+        world.state.setDocumentListParams(DocumentListParams.byNodeId(world.cache.on_demand_tree.id_tree.root))
         Logger.set_server(world.cache.server)
 
       refreshHeight = () ->

@@ -4,7 +4,7 @@ define [
 ], (View, i18n) ->
 
   DocumentList = Backbone.Model.extend
-    describeSelection: -> [ 'other' ]
+    describeSelection: -> [ 'all' ]
 
   describe 'apps/Tree/views/DocumentListCursor', ->
     view = undefined
@@ -40,11 +40,11 @@ define [
         'views.DocumentSet.show.DocumentListCursor.next': 'next'
         'views.DocumentSet.show.DocumentListCursor.previous': 'previous'
         'views.DocumentSet.show.DocumentListCursor.list': 'list'
+        'views.DocumentSet.show.DocumentListCursor.selection.all_html': 'selection.all_html'
         'views.DocumentSet.show.DocumentListCursor.selection.node_html': 'selection.node_html,{0}'
+        'views.DocumentSet.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
         'views.DocumentSet.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.selection.other_html': 'selection.other_html'
         'views.DocumentSet.show.DocumentListCursor.title': 'title,{0}'
         'views.DocumentSet.show.DocumentListCursor.title.empty': 'title.empty'
         'views.DocumentSet.show.DocumentListCursor.description': 'description,{0}'
@@ -159,6 +159,6 @@ define [
       view.setDocumentList(undefined)
       expect(view.el.className).toEqual('showing-unloaded-document')
 
-    it 'should allow starting with documentList: undefined', ->
+    it 'should allow starting with documentList undefined', ->
       initAt(5, undefined)
       expect(view.el.className).toEqual('showing-unloaded-document')

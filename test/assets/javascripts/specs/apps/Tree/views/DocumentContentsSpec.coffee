@@ -9,79 +9,51 @@ define [
 
     documents_from_cache: -> []
 
-  MockState = Backbone.Model.extend
-    defaults:
-      selection: new MockSelection()
-
-  class MockCache
-    constructor: () ->
-      @document_store = { documents: {
-        '1': { id: 1, title: "doc 1", documentcloud_id: "1-doc-1" }
-        '2': { id: 2, title: "doc 2", documentcloud_id: "2-doc-2" }
-      }}
-      @server = {
-        router: {
-          route_to_path: (key, id) -> "/#{key}/#{id}"
-        }
-      }
-
-  xdescribe 'views/document_contents_view', ->
+  describe 'views/document_contents_view', ->
     describe 'DocumentContents', ->
-      cache = undefined
+      cache =
+        # valid document IDs: 1 and 2
+        document_store:
+          documents:
+            1: { id: 1, title: "doc 1", documentcloud_id: "1-doc-1" }
+            2: { id: 2, title: "doc 2", documentcloud_id: "2-doc-2" }
       state = undefined
       view = undefined
+      displayApp = undefined
 
       beforeEach ->
-        cache = new MockCache()
-        state = new MockState()
+        state = new Backbone.Model()
+        displayApp = new Backbone.View()
+        displayApp.setDocument = jasmine.createSpy('setDocument')
+        displayApp.scrollByPages = jasmine.createSpy('scrollByPages')
 
       afterEach ->
         view?.stopListening()
-        cache = undefined
         state = undefined
 
       describe 'beginning empty', ->
         beforeEach ->
-          view = new DocumentContents({ cache: cache, state: state })
+          view = new DocumentContents(cache: cache, state: state, documentDisplayApp: displayApp)
 
-        it 'should be empty when there are no documents in the selection', ->
-          expect(view.$el.html()).toEqual('')
+        it 'should not set the document', ->
+          expect(displayApp.setDocument).not.toHaveBeenCalled()
 
-        it 'should build an iframe when there is a selected document', ->
-          state.set('selection', new MockSelection({ documents: [1] }))
-          expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
+        it 'should not set the document when oneDocumentSelected is false', ->
+          state.set(documentId: 3, oneDocumentSelected: false)
+          expect(displayApp.setDocument).not.toHaveBeenCalled()
 
-        it 'should build an iframe when there is a selection that resolves to a document', ->
-          newSelection = new MockSelection()
-          newSelection.spyOn('documents_from_cache').andReturn([{ id: 1 }])
-          state.set('selection', newSelection)
-          expect(view.$('iframe').attr('src')).toEqual('/document_view/1')
-          expect(newSelection.documents_from_cache).toHaveBeenCalledWith(cache)
+        it 'should not set the document when documentId is null', ->
+          state.set(documentId: null, oneDocumentSelected: true)
+          expect(displayApp.setDocument).not.toHaveBeenCalled()
 
-      describe 'beginning on a document', ->
-        beforeEach ->
-          state.set('selection', new MockSelection({ documents: [ 1 ] }))
-          view = new DocumentContents({ cache: cache, state: state })
+        it 'should set the document when documentId is non-null and oneDocumentSelected is true', ->
+          state.set(documentId: 1, oneDocumentSelected: true)
+          expect(displayApp.setDocument).toHaveBeenCalled()
 
-        it 'should show the iframe', ->
-          expect(view.$('iframe[src="/document_view/1"]').length).toEqual(1)
+        it 'should not set the document when documentId points to a nonexistent document', ->
+          state.set(documentId: 99, oneDocumentSelected: true)
+          expect(displayApp.setDocument).not.toHaveBeenCalled()
 
-        it 'should call the iframe setDocument() on change', ->
-          doc = undefined
-          view.iframe = {
-            contentWindow: {
-              setDocument: (x) -> doc = x
-            }
-          }
-          state.set('selection', new MockSelection({ documents: [ 2 ] }))
-          expect(doc?.id).toEqual(2)
-
-        it 'should not call setDocument() when the selection changes but the selected document does not', ->
-          doc = undefined
-          view.iframe = {
-            contentWindow: {
-              setDocument: (x) -> doc = x
-            }
-          }
-          state.set('selection', new MockSelection({ nodes: [4] }))
-          expect(doc).toBeUndefined()
+        it 'should pass through scroll_by_pages', ->
+          view.scroll_by_pages(1)
+          expect(displayApp.scrollByPages).toHaveBeenCalledWith(1)

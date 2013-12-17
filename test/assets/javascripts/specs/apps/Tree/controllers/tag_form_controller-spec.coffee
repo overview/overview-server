@@ -29,7 +29,7 @@ define [
       beforeEach ->
         log_values = []
         cache = jasmine.createSpyObj('cache', [ 'update_tag', 'delete_tag' ])
-        state = new Backbone.Model({ selection: jasmine.createSpyObj('selection', [ 'minus' ]) })
+        state = new Backbone.Model
         controller = tag_form_controller(tag, cache, state, options)
 
       it 'should create a view when called', ->
@@ -45,23 +45,15 @@ define [
         expect(cache.delete_tag).toHaveBeenCalledWith(tag)
 
       it 'should deselect state.taglike if necessary on delete', ->
-        state.set('taglike', tag)
+        state.set('taglike', { tagId: 1 })
         view.delete()
         expect(state.get('taglike')).toBe(null)
 
-      it 'should remove the tag from state.selection if necessary on delete', ->
-        empty_selection = { tags: [], nodes: [], documents: [] }
-        state.set('selection', {
-          tags: []
-          nodes: []
-          documents: []
-          minus: (sub) ->
-            expect(sub).toEqual({ tags: [1] })
-            empty_selection
-        })
-
+      it 'should change documentListParams if necessary on delete', ->
+        state.set(documentListParams: { type: 'tag', tagId: 1 })
+        state.setDocumentListParams = jasmine.createSpy()
         view.delete()
-        expect(state.get('selection')).toEqual(empty_selection)
+        expect(state.setDocumentListParams).toHaveBeenCalled()
 
       it 'should log on start', ->
         expect(log_values[0]).toEqual(['began editing tag', '1 (tag)'])

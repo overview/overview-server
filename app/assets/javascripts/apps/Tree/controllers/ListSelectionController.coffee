@@ -66,8 +66,9 @@ define [ 'backbone' ], (Backbone) ->
         else # (Ctrl only)
           selection.add_or_remove_index(index)
 
-      @set('cursorIndex', index)
-      @set('selectedIndices', selection.get_indices())
+      @set
+        cursorIndex: index
+        selectedIndices: selection.get_indices()
 
     onClick: (index, options) ->
       @_onActionAtIndex(index, options)
@@ -89,7 +90,6 @@ define [ 'backbone' ], (Backbone) ->
     onSelectAll: ->
       selection = @get('selection')
       selection.unset()
-      @set({
+      @set
         cursorIndex: undefined
         selectedIndices: selection.get_indices()
-      })

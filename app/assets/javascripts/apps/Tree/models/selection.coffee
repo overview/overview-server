@@ -51,7 +51,13 @@ define [ 'underscore' ], (_) ->
       (obj[k] = this[k]) for k in keys
       new Selection(obj)
 
-    documents_from_cache: (cache) ->
+    to_string: () ->
+      "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
+
+    allows_correct_tagcount_adjustments: () ->
+      !!(@nodes.length && !@tags.length && !@documents.length && !@searchResults.length)
+
+    deprecated_documents_from_cache: (cache) ->
       nodeids = {}
       nodeids["#{nodeid}"] = null for nodeid in @nodes
       tagids = {}
@@ -101,9 +107,3 @@ define [ 'underscore' ], (_) ->
         (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase()) ||
           (a.description || '').toLowerCase().localeCompare((b.description || '').toLowerCase()) ||
           a.id - b.id
-
-    to_string: () ->
-      "documents:#{@documents.length},nodes:#{@nodes.length},tags:#{@tags.length}"
-
-    allows_correct_tagcount_adjustments: () ->
-      !!(@nodes.length && !@tags.length && !@documents.length && !@searchResults.length)

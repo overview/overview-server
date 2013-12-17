@@ -59,7 +59,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @tagIdToModel = @options.tagIdToModel
       @state = @options.state
 
-      @listenTo(@state, 'change:selection', => @render())
+      @listenTo(@state, 'change:documentListParams', => @render())
       @listenTo(@collection, 'change add remove reset', => @render())
       @render()
 
@@ -69,8 +69,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       Backbone.View.prototype.remove.apply(this)
 
     render: ->
-      selection = @state.get('selection')
-      selectedTagId = selection.tags[0]
+      selectedTagId = if (params = @state.get('documentListParams'))? && params.type == 'tag'
+        params.tagId
       selectedTag = undefined
       if selectedTagId? && selectedTagId != 0
         try
@@ -78,11 +78,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         catch e
           console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
 
-      html = @template({
+      html = @template
         t: t
         collection: @collection
         selectedTag: selectedTag
-      })
 
       @$el.html(html)
 

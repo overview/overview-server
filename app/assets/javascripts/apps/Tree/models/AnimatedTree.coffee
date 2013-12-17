@@ -33,8 +33,8 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
   # * It points to the OnDemandTree structures: nodes have `.json`.
   # * It adds a "loaded" concept: a node has `.loaded_fraction.current=1` if its
   #   `.children` is defined (even if empty).
-  # * It tracks "selected": a node is `.selected_fraction.current=1` if it is in
-  #   `state.selection.nodes`.
+  # * It tracks "selected": a node is `.selected_fraction.current=1` if it is
+  #   selected in the state.
   #
   # Callers need only create the AnimatedTree, pointed at an OnDemandTree,
   # and they'll get the following:
@@ -107,29 +107,20 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       undefined
 
     _attachState: ->
-      nodes = @nodes
-      state = @state
-      lastSelectedIdSet = {}
-      animator = @animator
+      lastSelectedId = null
 
-      @state.on 'change:selection', (__, selection) =>
+      @state.on 'change:documentListParams', (__, params) =>
         @_maybe_notifying_needs_update =>
           time = Date.now()
 
-          selectedIdSet = {}
-          (selectedIdSet[id] = null) for id in (selection?.nodes || [])
+          if lastSelectedId?
+            @nodes[lastSelectedId]?.setSelected(false, @animator, time)
 
-          time = Date.now()
-
-          for id, __ of lastSelectedIdSet
-            if id not of selectedIdSet
-              nodes[id]?.setSelected(false, animator, time)
-
-          for id, __ of selectedIdSet
-            if id not of lastSelectedIdSet
-              nodes[id]?.setSelected(true, animator, time)
-
-          lastSelectedIdSet = selectedIdSet
+          if params.type == 'node'
+            lastSelectedId = params.nodeId
+            @nodes[lastSelectedId]?.setSelected(true, @animator, time)
+          else
+            lastSelectedId = null
 
           undefined
         undefined
@@ -140,10 +131,11 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       id_tree = @on_demand_tree.id_tree
       p = id_tree.parent
       c = id_tree.children
-      selected = {}
       nodes = @on_demand_tree.nodes
       animatedNodes = @nodes
-      (selected[id] = null) for id in @state.get('selection').nodes || []
+      selectedNodeId = null
+      if (params = @state.get('documentListParams'))? && params.type == 'node'
+        selectedNodeId = params.nodeId
 
       # When ids are added to the tree, their parents become open. Assume their
       # parents were unopened before (because siblings are always added all at
@@ -157,7 +149,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       for parentId in parentIds when parentId isnt null
         parentNode = animatedNodes[parentId]
         siblingNodes = for id in c[parentId]
-          animatedNodes[id] = new AnimatedNode(nodes[id], parentNode, id of selected, ms)
+          animatedNodes[id] = new AnimatedNode(nodes[id], parentNode, id == selectedNodeId, ms)
         parentNode.setChildren(siblingNodes, @animator, undefined, ms)
 
       undefined
@@ -186,8 +178,11 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     _startSetRoot: (rootId, ms=undefined) ->
       ms ?= Date.now()
 
+      if (params = @state.get('documentListParams'))? && params.type == 'node'
+        selectedNodeId = params.nodeId
+
       json = @_getNode(rootId)
-      @root = new AnimatedNode(json, null, rootId in (@state.get('selection').nodes || []), ms)
+      @root = new AnimatedNode(json, null, rootId == selectedNodeId, ms)
       @nodes[rootId] = @root
 
       undefined

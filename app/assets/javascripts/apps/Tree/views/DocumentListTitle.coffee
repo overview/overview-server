@@ -35,6 +35,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       </div>
     """)
 
+    # <strong>100 documents</strong> in this document set
+    # Params: t, nDocuments
+    all: _.template("""
+      <div class="all">
+        <h4><%= t('all.title_html', t('num_documents', nDocuments)) %></h4>
+      </div>
+    """)
+
     # Searching for "Search"
     # Params: t, searchResult
     searching: _.template("""
@@ -56,14 +64,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     searchResult: _.template("""
       <div class="search-result" data-id="<%- searchResult.id %>">
         <h4><%= t('searchResult.title_html', t('num_documents', nDocuments), searchResult.query) %></h4>
-      </div>
-    """)
-
-    # <strong>4 documents</strong> in selection
-    # Params: t, nDocuments, nTags, nNodes
-    multiple: _.template("""
-      <div class="tags-nodes">
-        <h4><%= t('multiple.title_html', t('num_documents', nDocuments)) %></h4>
       </div>
     """)
 
@@ -107,11 +107,20 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         if @$(".tag[data-id=#{tag.id}]")
           @render()
 
+      @_onSearchResultIdChanged = (oldId, searchResult) =>
+        @$(".search-result[data-id=#{oldId}]").attr('data-id', searchResult.id)
+
+      @_onSearchResultChanged = (searchResult) =>
+        if @$(".search-result[data-id=#{searchResult.id}]")
+          @render()
+
       @_onDocumentListChanged = => @render()
 
       @documentList?.observe(@_onDocumentListChanged)
       @tagStore.observe('id-changed', @_onTagIdChanged)
       @tagStore.observe('changed', @_onTagChanged)
+      @searchResultStore.observe('id-changed', @_onSearchResultIdChanged)
+      @searchResultStore.observe('changed', @_onSearchResultChanged)
 
       @render()
 
@@ -119,23 +128,19 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @documentList?.unobserve(@_onDocumentListChanged)
       @tagStore.unobserve('id-changed', @_onTagIdChanged)
       @tagStore.unobserve('changed', @_onTagChanged)
+      @searchResultStore.unobserve('id-changed', @_onSearchResultIdChanged)
+      @searchResultStore.unobserve('changed', @_onSearchResultChanged)
       Backbone.View.prototype.remove.call(this)
 
     render: ->
       html = ''
       className = ''
 
-      if @documentList
+      if @documentList? && (params = @documentList.params)?
         nDocuments = @documentList.n
 
-        selection = @documentList.selection
-        nNodes = selection.nodes.length
-        nTags = selection.tags.length
-        nSearchResults = selection.searchResults.length
-
-        if nSearchResults == 1 && nTags == 0 && nNodes == 0 # searching... (or showing search results)
-          searchResultId = selection.searchResults[0]
-          searchResult = @searchResultStore.find_by_id(searchResultId)
+        if params.type == 'searchResult'
+          searchResult = @searchResultStore.find_by_id(params.searchResultId)
 
           if searchResult.state == 'Error'
             html = templates.searchError(t: t, searchResult: searchResult)
@@ -145,25 +150,17 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
           else
             html = templates.searching(t: t, searchResult: searchResult)
             className = 'search-pending'
-        else if !nDocuments? # loading... (the list is now unset)
+        else if !nDocuments?
+          # loading... (the list is unset)
           html = templates.loading(t: t)
-        else # there are documents loaded already (maybe 0)
-          if nTags + nNodes + nSearchResults == 1
-            if nTags
-              tagId = selection.tags[0]
-              if tagId == 0  #untagged
-                html = templates.untagged({ t: t, nDocuments: nDocuments })
-              else
-                tag = @tagStore.find_by_id(tagId)
-                html = templates.tag({ t: t, nDocuments: nDocuments, tag: tag })
-            else if nNodes
-              nodeId = selection.nodes[0]
-              node = @onDemandTree.nodes[nodeId]
-              html = templates.node({ t: t, nDocuments: nDocuments, node: node })
-            else # nSearchResults
-              throw 'assertion error'
-          else
-            html = templates.multiple({ t: t, nDocuments: nDocuments })
+        else
+          options = { t: t, nDocuments: nDocuments }
+          if params.type == 'tag'
+            options.tag = @tagStore.find_by_id(params.tagId)
+          else if params.type == 'node'
+            options.node = @onDemandTree.nodes[params.nodeId]
+
+          html = templates[params.type](options)
 
       @$el
         .html(html)

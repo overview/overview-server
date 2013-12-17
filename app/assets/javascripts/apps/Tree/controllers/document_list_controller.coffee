@@ -53,7 +53,7 @@ define [
       s += ' (no change)'
     s
 
-  Controller = Backbone.Model.extend
+  class Controller extends Backbone.Model
     # Only set on initialize (properties may change):
     # * tagStore (a TagStore)
     # * documentStore (a DocumentStore)
@@ -63,8 +63,6 @@ define [
     # * cursorEl (an HTMLElement)
     #
     # Read-only, may change or be set to something new:
-    # * selection (a Selection)
-    # * selectionModuloDocuments (a Selection with no documents)
     # * documentList (a DocumentList, may be undefined)
     # * documentListProxy (a DocumentListProxy, may be undefined)
     # * documentCollection (a Backbone.Collection, always defined)
@@ -82,8 +80,6 @@ define [
 
       documentList: undefined
 
-      selection: undefined
-      selectionModuloDocuments: undefined
       listSelection: undefined
       tagCollection: undefined
       documentCollection: undefined
@@ -95,8 +91,9 @@ define [
       throw 'Must specify state, a State' if !attrs.state
       throw 'Must specify cache, a Cache' if !attrs.cache
 
-      @_addSelection()
-      @_addSelectionModuloDocuments()
+      @state = @get('state')
+      @cache = @get('cache')
+
       @_addDocumentList()
       @_addListSelection()
       @_addTagCollection()
@@ -106,29 +103,13 @@ define [
       @_addListView()
       @_addCursorView()
 
-    _addSelection: ->
-      state = @get('state')
-
-      updateSelection = => @set('selection', @get('state').get('selection'))
-      updateSelection()
-      state.on('change:selection', updateSelection)
-
-    _addSelectionModuloDocuments: ->
-      updateFromSelection = =>
-        @set('selectionModuloDocuments', @get('selection').pick('nodes', 'tags', 'searchResults'))
-      updateFromSelection()
-      @on('change:selection', updateFromSelection)
-
     _refreshDocumentList: ->
-      selection = @get('selectionModuloDocuments')
-      documentList = if selection?.nodes?.length || selection?.tags?.length || selection?.searchResults?.length
-        new DocumentList(@get('cache'), selection)
-      else
-        undefined
-      @set('documentList', documentList)
+      params = @state.get('documentListParams')
+      documentList = new DocumentList(@cache, params)
+      @set(documentList: documentList)
 
     _addDocumentList: ->
-      @on('change:selectionModuloDocuments', => @_refreshDocumentList())
+      @listenTo(@state, 'change:documentListParams', @_refreshDocumentList)
       @_refreshDocumentList()
 
     _addTagCollection: ->
@@ -139,8 +120,9 @@ define [
       @searchResultStoreProxy = new SearchResultStoreProxy(@get('searchResultStore'))
       @set('searchResultCollection', @searchResultStoreProxy.collection)
 
-      @get('searchResultCollection').on 'change', (model) =>
-        if model.id in @get('selection').searchResults
+      @listenTo @get('searchResultCollection'), 'change', (model) =>
+        if (params = @state.get('documentListParams'))? && params.type == 'searchResult' && params.searchResultId == model.id
+          # Create the same list again: its contents have changed
           @_refreshDocumentList()
 
     _addDocumentCollection: ->
@@ -163,7 +145,7 @@ define [
 
     _addListSelection: ->
       isValidIndex = (i) => @get('documentCollection')?.at(i)?.id?
-      @set('listSelection', new ListSelectionController({
+      @set('listSelection', listSelection = new ListSelectionController({
         selection: new ListSelection()
         cursorIndex: undefined
         isValidIndex: isValidIndex
@@ -172,83 +154,78 @@ define [
 
       # Update the state's selection when the user clicks around or docs load.
       #
-      # You'd think there would be an infinite loop,
-      # listSelection.change:selectedIndices to this.change:selection to
-      # this.change:selectionModuloDocuments to this.change:documentList to
-      # this.change:documentCollection to listSelection.onSelectAll(). But
-      # that won't happen, because we only change the "documents" part of the
-      # selection, so this will never call change:selectionModuloDocuments.
+      # When the user clicks, here's what happens:
       #
-      # This is still ugly: when the user clicks, we modify both the
-      # ListSelection and the State. Ideally we'd let the State changes
-      # propagate to the ListSelection, but we can't because only the
-      # ListSelection has a cursorIndex.
-      refreshStateSelection = =>
+      # * on click, listSelection changes selectedIndices.
+      # * here, we set the state's documentId to the first selected index.
+      #   (Because we assume there is only one -- if we want to change this,
+      #   we need to make the state have multiple documentIds.)
+      # * TODO on state documentId change, we modify listSelection. (We only do
+      #   this when changing oneDocumentSelected. Will the rest be needed?)
+
+      setStateSelectionFromListSelection = =>
         collection = @get('documentCollection')
-        selectedIndices = @get('listSelection').get('selectedIndices')
-        docids = []
-        for index in selectedIndices || []
-          docid = collection.at(index)?.id
-          docids.push(docid) if docid?
+        cursorIndex = listSelection.get('cursorIndex')
+        docId = cursorIndex? && collection.at(cursorIndex)?.id || null
 
-        selection = @get('selection').replace({ documents: docids })
-        @get('state').set('selection', selection)
+        @get('state').set
+          documentId: docId
+          oneDocumentSelected: cursorIndex?
 
-      resetListSelection = =>
+      setListSelectionFromStateSelection = =>
         # If we're navigating individual documents and we change selection, go
         # to the top of the new document list.
         #
-        # The new doclist won't have loaded, so really, state.selection will
-        # have documents:[]. We catch that by watching for add() on
-        # documentCollection.
-        listSelection = @get('listSelection')
-        if listSelection.get('cursorIndex')?
+        # The new doclist won't have loaded, so documentId will be null. We
+        # catch that by watching for add() on documentCollection.
+        if @state.get('oneDocumentSelected')
           listSelection.set
             cursorIndex: 0
             selectedIndices: [0]
+        else
+          listSelection.onSelectAll()
 
-      @get('listSelection').on('change:selectedIndices', refreshStateSelection)
-      @on 'change:documentCollection', ->
-        resetListSelection() # calls refreshStateSelection
-        @get('documentCollection').once('add', refreshStateSelection)
-
+      @listenTo(listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
+      @listenTo(@state, 'change:oneDocumentSelected', setListSelectionFromStateSelection)
+      @on 'change:documentCollection', =>
+        setListSelectionFromStateSelection() # may call setStateSelectionFromListSelection
+        oldDocCollection = @previous('documentCollection')
+        newDocCollection = @get('documentCollection')
+        @stopListening(oldDocCollection) if oldDocCollection?
+        @listenToOnce(newDocCollection, 'add', setStateSelectionFromListSelection)
 
     _addTitleView: ->
-      cache = @get('cache')
-      state = @get('state')
-      view = new DocumentListTitleView({
+      view = new DocumentListTitleView
         documentList: @get('documentList')
-        cache: cache
-      })
+        cache: @cache
 
       @on 'change:documentList', =>
         view.setDocumentList(@get('documentList'))
 
-      view.on 'edit-node', (nodeid) ->
-        node = cache.on_demand_tree.nodes[nodeid]
+      @listenTo view, 'edit-node', (nodeid) ->
+        node = @cache.on_demand_tree.nodes[nodeid]
         log('began editing node', node_to_short_string(node))
-        node_form_controller(node, cache, state)
+        node_form_controller(node, @cache, @state)
 
-      view.on 'edit-tag', (tagid) ->
-        tag = cache.tag_store.find_by_id(tagid)
+      @listenTo view, 'edit-tag', (tagid) ->
+        tag = @cache.tag_store.find_by_id(tagid)
         log('clicked edit tag', tag_to_short_string(tag))
-        tag_form_controller(tag, cache, state)
+        tag_form_controller(tag, @cache, @state)
 
       @set('titleView', view)
       view.$el.appendTo(@get('listEl'))
 
     _addListView: ->
-      view = new DocumentListView({
+      view = new DocumentListView
         collection: @get('documentCollection')
         selection: @get('listSelection')
         tags: @get('tagCollection')
         tagIdToModel: (id) => @tagStoreProxy.map(id)
-      })
 
-      @on 'change:documentCollection', =>
-        view.setCollection(@get('documentCollection'))
+      @on 'change:documentCollection', (__, documentCollection) =>
+        view.setCollection(documentCollection)
 
-      view.on 'click-document', (model, index, options) =>
+      @listenTo view, 'click-document', (model, index, options) =>
         log('clicked document', "#{model.id} index:#{index} meta:#{options.meta} shift: #{options.shift}")
         @get('listSelection').onClick(index, options)
 
@@ -265,20 +242,19 @@ define [
       @on 'change:documentList', =>
         firstMissingIndex = 0
         fetchMissingDocuments(1)
-      view.on('change:maxViewedIndex', (model, value) => fetchMissingDocuments(value))
+      @listenTo(view, 'change:maxViewedIndex', (model, value) => fetchMissingDocuments(value))
 
       @set('listView', view)
       view.$el.appendTo(@get('listEl'))
 
     _addCursorView: ->
-      view = new DocumentListCursorView({
+      view = new DocumentListCursorView
         selection: @get('listSelection')
         documentList: @get('documentListProxy')?.model
         documentDisplayApp: DocumentDisplayApp
         tags: @get('tagCollection')
         tagIdToModel: (id) => @tagStoreProxy.map(id)
         el: @get('cursorEl')
-      })
 
       @on 'change:documentListProxy', (model, documentListProxy) ->
         view.setDocumentList(documentListProxy?.model)

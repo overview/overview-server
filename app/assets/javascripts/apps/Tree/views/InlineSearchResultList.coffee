@@ -73,7 +73,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @searchResultIdToModel = @options.searchResultIdToModel
       @state = @options.state
 
-      @listenTo(@state, 'change:selection', => @render())
+      @listenTo(@state, 'change:documentListParams', => @render())
       @listenTo(@collection, 'change add remove reset', => @render())
       @render()
 
@@ -83,8 +83,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       Backbone.View.prototype.remove.apply(this)
 
     render: ->
-      selection = @state.get('selection')
-      selectedSearchResultId = selection.searchResults[0]
+      selectedSearchResultId = if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
+        params.searchResultId
+      else
+        null
       selectedSearchResult = selectedSearchResultId && @searchResultIdToModel(selectedSearchResultId)
 
       # If the currently-selected search result ID is changing, the selection
@@ -92,12 +94,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       # render: another event is about to come and cause a render anyway
       return if selectedSearchResultId? && !selectedSearchResult
 
-      html = @template({
+      html = @template
         collection: @collection
         selectedSearchResult: selectedSearchResult
         canCreateTagFromSearchResult: @options.canCreateTagFromSearchResult?(selectedSearchResult)
         t: t
-      })
 
       @$el.html(html)
 

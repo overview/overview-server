@@ -7,6 +7,8 @@ define [
 
     constructor: (@documents, @n, @cache, @selection) ->
 
+    describeParameters: -> [ 'all' ]
+
   class DocumentStore
     observable(this)
 
@@ -37,7 +39,6 @@ define [
       cache =
         document_store: documentStore
         tag_store: tagStore
-        describeSelectionWithoutDocuments: ->
       documentList = new DocumentList(docs, nDocs, cache, selection)
       proxy = new DocumentListProxy(documentList)
       model = proxy.model
@@ -141,8 +142,8 @@ define [
       describe 'with a tag DocumentList', ->
         beforeEach ->
           init([], 10, { tags: [ 1 ] })
-          spyOn(cache, 'describeSelectionWithoutDocuments').andReturn([ 'tag', 'name' ])
+          spyOn(documentList, 'describeParameters').andReturn([ 'tag', 'name' ])
 
         it 'should describe the tag', ->
           expect(model.describeSelection()).toEqual([ 'tag', 'name' ])
-          expect(cache.describeSelectionWithoutDocuments).toHaveBeenCalledWith({ tags: [ 1 ] })
+          expect(documentList.describeParameters).toHaveBeenCalled()

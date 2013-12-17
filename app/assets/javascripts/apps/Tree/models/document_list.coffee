@@ -1,12 +1,11 @@
 define [ 'jquery', './observable' ], ($, observable) ->
   # Stores a possibly-incomplete list of selected documents
   #
-  # When you create a DocumentList (from a Cache and a Selection), its @documents
-  # property is empty and @n is undefined. Call get_placeholder_documents() to
-  # get some documents we know to exist that match the selection; call .slice()
-  # to get a Deferred that will (or has been) resolved to the Documents. When
-  # documents have been found, @documents will be populated with this
-  # (possibly-incomplete) list, and @n will be the total number of documents.
+  # When you create a DocumentList (from a Cache and DocumentListParams), its
+  # @documents is empty and @n is undefined. Call .slice() to get a Deferred
+  # that will (or has been) resolved to the Documents. When documents have been
+  # found, @documents will be populated with this (possibly-incomplete) list,
+  # and @n will be the total number of documents.
   #
   # Always destroy() a DocumentList. Otherwise, the documents will leak.
   #
@@ -16,13 +15,10 @@ define [ 'jquery', './observable' ], ($, observable) ->
   class DocumentList
     observable(this)
 
-    constructor: (@cache, @selection) ->
+    constructor: (@cache, @params) ->
       @documents = []
       @deferreds = {}
       @n = undefined
-
-    get_placeholder_documents: () ->
-      @selection.documents_from_cache(@cache)
 
     # Returns a Deferred which, when resolved, will be a slice of this.documents
     #
@@ -41,19 +37,18 @@ define [ 'jquery', './observable' ], ($, observable) ->
         page = Math.round(start / pageSize) + 1
         throw 'not starting at the start of a page' if Math.round(pageSize * page) != start + pageSize
 
-        searchResultIds = if !@selection.nodes.length && !@selection.tags.length && @selection.searchResults.length == 1
-          [ @selection.searchResults[0] ]
-        else
-          []
+        searchResultId = @params.type == 'searchResult' && @params.searchResultId || null
 
-        @cache.resolve_deferred('selection_documents_slice', { selection: @selection, pageSize: pageSize, page: page }).done((ret) =>
+        @cache.resolve_deferred('selection_documents_slice', { selection: @params.toApiParams(), pageSize: pageSize, page: page }).done((ret) =>
           document_store_input = {
             doclist: { docids: [] },
             documents: {},
           }
 
           for document, i in ret.documents
-            document.searchResultIds = searchResultIds # so when we tag a search result, the change appears
+            if searchResultId?
+              # when we tag a search result, recognize it as a search result
+              (document.searchResultIds ?= []).push(searchResultId)
             document_store_input.doclist.docids.push(document.id)
             document_store_input.documents[document.id] = document
           @n = ret.total_items
@@ -70,6 +65,28 @@ define [ 'jquery', './observable' ], ($, observable) ->
         ).pipe((ret) -> ret.documents)
 
       @deferreds[deferred_key] = deferred
+
+    # Returns all you need for i18n-ized names.
+    #
+    # For instance:
+    #
+    # * [ 'all' ]
+    # * [ 'node', 'node description' ]
+    # * [ 'tag', 'tag name' ]
+    # * [ 'untagged' ]
+    # * [ 'searchResult', 'query' ]
+    describeParameters: ->
+      type = @params.type
+      ret = [ type ]
+
+      if type == 'node'
+        ret.push(@cache.on_demand_tree.nodes[@params.nodeId]?.description || '')
+      else if type == 'searchResult'
+        ret.push(@cache.search_result_store.find_by_id(@params.searchResultId)?.query || '')
+      else if type == 'tag'
+        ret.push(@cache.tag_store.find_by_id(@params.tagId)?.name || '')
+
+      ret
 
     destroy: () ->
       docids = (document.id for document in @documents when document?)

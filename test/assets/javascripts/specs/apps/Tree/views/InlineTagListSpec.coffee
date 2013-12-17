@@ -10,10 +10,6 @@ define [
       @documents = attributes.documents ? []
       @searchResults = attributes.searchResults ? []
 
-  MockState = Backbone.Model.extend
-    defaults:
-      selection: { nodes: [], tags: [], documents: [], searchResults: [] }
-
   describe 'views/InlineTagList', ->
     beforeEach ->
       i18n.reset_messages({
@@ -30,14 +26,13 @@ define [
       view = undefined
 
       beforeEach ->
-        state = new MockState()
+        state = new Backbone.Model
         collection = new Backbone.Collection
         placeholderTagIdToModel = -> { cid: 'c0' } # we'll stub it out later if needed
-        view = new InlineTagListView({
+        view = new InlineTagListView
           collection: collection
           state: state
           tagIdToModel: placeholderTagIdToModel
-        })
 
       afterEach ->
         view.remove()
@@ -128,7 +123,7 @@ define [
 
         it 'should set "selected" on selected tags', ->
           view.tagIdToModel = -> collection.at(0)
-          state.set('selection', new MockSelection({ tags: [ 1 ] }))
+          state.set('documentListParams', { type: 'tag', tagId: 1 })
           expect(view.$('li:eq(0)').hasClass('selected')).toBe(true)
           expect(view.$('li:eq(1)').hasClass('selected')).toBe(false)
 

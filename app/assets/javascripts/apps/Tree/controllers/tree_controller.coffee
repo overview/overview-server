@@ -1,28 +1,34 @@
 define [
   'underscore'
   'jquery'
+  '../models/DocumentListParams'
   '../models/AnimatedTree'
   '../models/animator'
   '../models/property_interpolator'
   '../models/TreeLayout'
   '../views/TreeView'
   './logger'
-], (_, $, AnimatedTree, Animator, PropertyInterpolator, TreeLayout, TreeView, Logger) ->
+], (_, $, DocumentListParams, AnimatedTree, Animator, PropertyInterpolator, TreeLayout, TreeView, Logger) ->
   log = Logger.for_component('tree')
 
   log_pan_zoom = _.throttle(((args...) -> log('zoomed/panned', args...)), 500)
 
-  update_selection_to_parent_of_nodeid_if_necessary = (selection, nodeid, on_demand_tree) ->
-    to_remove = []
+  # If doclist is showing a descendent of nodeId, change doclist to the
+  # parent of nodeId
+  moveDocumentListParamsUpToNodeIdIfNecessary = (state, nodeId, onDemandTree) ->
+    params = state.get('documentListParams')
+    if params.type == 'node' && onDemandTree.id_tree.is_id_ancestor_of_id(nodeId, params.nodeId)
+      state.setDocumentListParams(DocumentListParams.byNodeId(nodeId))
 
-    for maybe_child_nodeid in selection.nodes
-      if on_demand_tree.id_tree.is_id_ancestor_of_id(nodeid, maybe_child_nodeid)
-        to_remove.push(maybe_child_nodeid)
-
-    if to_remove.length
-      selection.minus({ nodes: to_remove }).plus({ nodes: [ nodeid ] })
+  animateFocusToNode = (animated_tree, focus, node) ->
+    if node.parent?
+      if node.size.width < node.parent.size.width / 4
+        node.narrow = true
+        focus.animateNode(node)
+      else
+        focus.animateNode(node.parent) # this is the most common case.
     else
-      selection
+      focus.animateNode(node) # root node.
 
   # Shim window.requestAnimationFrame(), as per
   # http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
@@ -67,29 +73,25 @@ define [
       return if !nodeid?
       log('clicked node', "#{nodeid}")
       expand_deferred(nodeid)
-      old_selection = state.get('selection')
-      new_selection = old_selection.replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
-      if old_selection.pick('nodes', 'tags', 'searchResults').equals(new_selection)
-        # Ignore the click.
-        #
-        # We can't change this behavior because it will break a hack in
-        # document_list_controller's refreshStateSelection.
-        #
-        # See bug #59844284
+
+      params = DocumentListParams.byNodeId(nodeid)
+      if params.equals(state.get('documentListParams'))
+        # Click on already-selected node -> deselect document
+        state.set(oneDocumentSelected: false)
       else
-        state.set('selection', new_selection)
+        # Click on node -> select node
+        state.setDocumentListParams(params)
 
     view.observe 'expand', (nodeid) ->
       return if !nodeid?
       log('expanded node', "#{nodeid}")
       expand_deferred(nodeid)
 
-    view.observe 'collapse', (nodeid) ->
-      return if !nodeid?
-      log('collapsed node', "#{nodeid}")
-      new_selection = update_selection_to_parent_of_nodeid_if_necessary(state.get('selection'), nodeid, cache.on_demand_tree)
-      state.set('selection', new_selection)
-      cache.on_demand_tree.unload_node_children(nodeid)
+    view.observe 'collapse', (nodeId) ->
+      return if !nodeId?
+      log('collapsed node', "#{nodeId}")
+      moveDocumentListParamsUpToNodeIdIfNecessary(state, nodeId, cache.on_demand_tree)
+      cache.on_demand_tree.unload_node_children(nodeId)
 
     view.observe 'zoom-pan', (obj, options) ->
       log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
@@ -104,32 +106,26 @@ define [
       else
         focus.setPanAndZoom(obj.pan, obj.zoom)
 
-    state.on 'change:selection', (__, selection) ->
-      if nodeid = selection.nodes[0]
-        node = animated_tree.getAnimatedNode(nodeid)
-        if node.parent?
-          if node.size.width < node.parent.size.width / 4
-            node.narrow = true
-            focus.animateNode(node)
-          else
-            focus.animateNode(node.parent) # this is the most common case.
-        else
-          focus.animateNode(node) # root node.
+    state.on 'change:documentListParams', (__, params) ->
+      if params.type == 'node'
+        node = animated_tree.getAnimatedNode(params.nodeId)
+        animateFocusToNode(animated_tree, focus, node)
 
-    state.on 'change:taglike', (__, taglike) ->
-      if taglike?.id == 0 # it's untagged
-        cache.refresh_untagged()
-      else if taglike?.name? # it's a tag
-        cache.refresh_tagcounts(taglike)
-      else if taglike?.id > 0 && taglike?.query? # it's a search result
-        cache.refreshSearchResultCounts(taglike)
+      # Refresh counts when needed
+      switch params.type
+        when 'untagged' then cache.refresh_untagged()
+        when 'tag' then cache.refresh_tagcounts(params.tagId)
+        when 'searchResult' then cache.refreshSearchResultCounts(params.searchResultId)
 
     select_nodeid = (nodeid) ->
-      new_selection = state.get('selection').replace({ nodes: [nodeid], tags: [], documents: [], searchResults: [] })
-      state.set('selection', new_selection)
+      state.setDocumentListParams(DocumentListParams.byNodeId(nodeid))
 
     selected_nodeid = ->
-      state.get('selection').nodes[0] || cache.on_demand_tree.id_tree.root
+      params = state.get('documentListParams')
+      if params.type == 'node'
+        params.nodeId
+      else
+        cache.on_demand_tree.id_tree.root
 
     # Moves selection in the given direction.
     #
@@ -155,16 +151,15 @@ define [
       if !children?
         cache.on_demand_tree.demand_node(nodeid)
           .done (json) ->
+            nodeIds = _.pluck(json?.nodes || [], 'id')
             taglike = state.get('taglike')
-            if taglike?
-              nodeIds = _.pluck(json?.nodes || [], 'id')
-              if nodeIds.length
-                if taglike.id == 0
-                  cache.refresh_untagged()
-                else if taglike.name? # it's a tag
-                  cache.refresh_tagcounts(taglike, nodeIds)
-                else if taglike.query? # it's a searchResult
-                  cache.refreshSearchResultCounts(taglike, nodeIds)
+            if taglike? && nodeIds.length
+              if taglike.searchResultId?
+                cache.refreshSearchResultCounts(taglike.searchResultId, nodeIds)
+              else if taglike.tagId?
+                cache.refresh_tagcounts(taglike.tagId, nodeIds)
+              else if taglike.untagged?
+                cache.refresh_untagged(nodeIds)
       else
         $.Deferred().resolve()
 

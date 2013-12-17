@@ -95,7 +95,7 @@ define [
       tags = (@tagIdToModel(tagid) for tagid in maybeDocument?.get('tagids') || [])
       tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
 
-      selectionI18n = @documentList?.describeSelection() || [ 'other' ]
+      selectionI18n = @documentList?.describeSelection() || [ 'all' ]
       selectionI18n[0] = "selection.#{selectionI18n[0]}_html"
       if selectionI18n[1]
         selectionI18n[1] = _.escape(selectionI18n[1])

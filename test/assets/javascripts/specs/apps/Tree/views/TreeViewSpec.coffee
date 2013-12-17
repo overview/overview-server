@@ -4,7 +4,6 @@
     describe 'apps/Tree/views/TreeView', ->
       describe 'helpers', ->
         describe '#getHighlightedNodeIds', ->
-          selection = { nodes: [3], documents: [12] }
           onDemandTree =
             nodes:
               1:
@@ -31,7 +30,7 @@
 
           it 'highlights only the selection and its child nodes', ->
             expect(
-              TreeView.helpers.getHighlightedNodeIds(selection, onDemandTree, documentStore)
+              TreeView.helpers.getHighlightedNodeIds({ type: 'node', nodeId: 3 }, 12, onDemandTree, documentStore)
             ).toEqual(
               3: null
               5: null

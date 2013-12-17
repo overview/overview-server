@@ -1,4 +1,4 @@
-define [ '../views/tag_form_view', './logger' ], (TagFormView, Logger) ->
+define [ '../views/tag_form_view', '../models/DocumentListParams', './logger' ], (TagFormView, DocumentListParams, Logger) ->
   tag_to_short_string = (tag) ->
     "#{tag.id} (#{tag.name})"
 
@@ -35,9 +35,10 @@ define [ '../views/tag_form_view', './logger' ], (TagFormView, Logger) ->
 
     form.observe 'delete', ->
       log('deleted tag', tag_to_short_string(tag))
-      if state.get('taglike') == tag
+      if state.get('taglike')?.tagId == tag.id
         state.set('taglike', null)
-      state.set('selection', state.get('selection').minus({ tags: [ tag.id ] }))
+      if (params = state.get('documentListParams'))? && params.type == 'tag' && params.tagId == tag.id
+        state.setDocumentListParams(DocumentListParams.all())
       cache.delete_tag(tag)
 
     undefined

@@ -1,10 +1,10 @@
 define [
-  '../models/selection'
+  '../models/DocumentListParams'
   '../collections/SearchResultStoreProxy'
   '../views/InlineSearchResultList'
   './logger'
   'i18n'
-], (Selection, SearchResultStoreProxy, InlineSearchResultListView, Logger, i18n) ->
+], (DocumentListParams, SearchResultStoreProxy, InlineSearchResultListView, Logger, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.SearchResultList')
   log = Logger.for_component('search_result_list')
 
@@ -19,7 +19,7 @@ define [
   # Arguments:
   #
   # * cache: a Cache (for creating search results, and for its search_result_store)
-  # * state: a State (for reading and manipulating the selection)
+  # * state: a State (for reading and manipulating the doclist)
   # * el: an HTMLElement (optional)
   #
   # Returned properties:
@@ -50,32 +50,27 @@ define [
     view.on 'search-result-clicked', (searchResult) ->
       searchResult = proxy.unmap(searchResult)
       log('clicked search result', "#{search_result_to_short_string(searchResult)}")
-      state.set
-        selection: new Selection({ searchResults: [ searchResult.id ] })
-        taglike: searchResult
+      state.setDocumentListParams(DocumentListParams.bySearchResultId(searchResult.id))
 
     view.on 'create-tag-clicked', (searchResultModel) ->
       tag = { name: searchResultToTagName(searchResultModel) }
       log('created tag', tag.name)
       tag = cache.add_tag(tag)
       cache.create_tag(tag)
-      cache.addTagToSelection(tag, state.get('selection').pick('searchResults'))
+      cache.addTagToSelection(tag, DocumentListParams.bySearchResultId(searchResultModel.id).toApiParams())
         .done ->
           cache.refresh_tagcounts(tag)
           # This shouldn't be done on "done": it should be done right away.
           # But that leads to a crash, as our Backbone proxies execute out
           # of order. Make TagStore and SearchResultStore plain
           # Backbone.Collections, then un-indent this.
-          state.set('selection', new Selection({ tags: [ tag.id ] }))
-      state.set('taglike', tag)
+          state.setDocumentListParams(DocumentListParams.byTagId(tag.id))
 
     view.on 'create-submitted', (query) ->
       searchResult = { query: query }
       log('created search', "#{search_result_to_short_string(searchResult)}")
       searchResult = cache.search_result_store.addAndPoll(searchResult)
       cache.search_result_api.create(searchResult)
-      state.set
-        selection: new Selection({ searchResults: [ searchResult.id ] })
-        taglike: searchResult
+      state.setDocumentListParams(DocumentListParams.bySearchResultId(searchResult.id))
 
     { view: view }

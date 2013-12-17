@@ -115,7 +115,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:selection change:taglike', update)
+      @tree.state.on('change:documentListParams change:taglike', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @cache.tag_store.observe('changed', update)
@@ -234,17 +234,20 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getColorLogic: ->
-      taglike = @tree.state.get('taglike')
-      if taglike?.name?
-        { tagIds: [ taglike.id ], color: taglike.color || (new ColorTable()).get(taglike.name) }
-      else if taglike?.query?
-        { searchResultIds: [ taglike.id ], color: '#50ade5' }
+      if (taglike = @tree.state.get('taglike'))?
+        if taglike.tagId?
+          tag = @cache.tag_store.find_by_id(taglike.tagId)
+          { tagIds: [ tag.id ], color: tag.color || (new ColorTable()).get(tag.name) }
+        else if taglike.searchResultId?
+          { searchResultIds: [ taglike.searchResultId ], color: '#50ade5' }
+        else if taglike.untagged?
+          { tagIds: [ 0 ], color: '#dddddd' }
       else
         null
 
     _redraw: () ->
       colorLogic = @_getColorLogic()
-      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('selection'), @cache.on_demand_tree, @cache.document_store)
+      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('documentId'), @cache.on_demand_tree, @cache.document_store)
 
       @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()
@@ -322,22 +325,23 @@ define [
     #
     # A node is highlighted if we are viewing a document that is contained
     # in the node.
-    getHighlightedNodeIds: (selection, onDemandTree, documentStore) ->
-      documentNodes = {}
+    getHighlightedNodeIds: (documentListParams, documentId, onDemandTree, documentStore) ->
+      return {} if !documentId?
 
-      # Parent nodes
+      # parentNodes: if our doclist is showing a node's contents, no need to
+      # highlight its parents.
       parentNodes = {}
-      for nodeId in selection.nodes
+      if documentListParams.type == 'node'
+        nodeId = documentListParams.nodeId
         while (nodeId = onDemandTree.nodes[nodeId]?.parentId)?
           parentNodes[nodeId] = null
 
       # Selected documents
-      for selectedDocumentId in selection.documents
-        document = documentStore.documents[selectedDocumentId]
-        if document?
-          for nodeid in document.nodeids
-            if nodeid not of parentNodes
-              documentNodes[nodeid] = null
+      documentNodes = {}
+      if (document = documentStore.documents[documentId])?
+        for nodeId in document.nodeids
+          if nodeId not of parentNodes
+            documentNodes[nodeId] = null
 
       documentNodes
 

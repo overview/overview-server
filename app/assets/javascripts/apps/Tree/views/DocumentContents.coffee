@@ -2,7 +2,28 @@ define [
   'backbone'
   '../../DocumentDisplay/app'
 ], (Backbone, DocumentDisplayApp) ->
-  Backbone.View.extend
+  # A view for a Document.
+  #
+  # Usage:
+  #
+  #   view = new DocumentContents
+  #     cache: cache # for finding document JSON
+  #     state: state # for watching which document we should be viewing
+  #     documentDisplayApp: app # OPTIONAL - defaults to `new DocumentDisplayApp`
+  #
+  #   view.scroll_by_pages(1) # calls documentDisplayApp.scrollByPages(1)
+  #
+  # That does the following:
+  #
+  # * Adds documentDisplayApp.el to view.el
+  # * Calls documentDisplayApp.setDocument(json) for the document in state
+  # * Watches for changes to the state, and adjusts documentdisplayApp to match
+  #
+  # When the document in state is null, nothing happens.
+  # documentDisplayApp.setDocument(null) is _never_ called: it is assumed that
+  # this view will be hidden, so there's no reason to clear it; instead, we
+  # gain responsiveness when the user closes and then opens the same document.
+  class DocumentContents extends Backbone.View
     id: 'document'
 
     initialize: ->
@@ -12,31 +33,28 @@ define [
       @state = @options.state
       @cache = @options.cache
 
-      @app = new DocumentDisplayApp({ el: @el })
+      @app = @options.documentDisplayApp ? new DocumentDisplayApp()
 
-      @listenTo(@state, 'change:selection', => @render())
+      @listenTo(@state, 'change:documentId change:oneDocumentSelected', => @render())
 
+      @el.appendChild(@app.el)
       @render()
 
     # Returns a JSON POD document object, or undefined.
     #
-    # The value will only be defined if
+    # The value will be non-null if:
     #
     # * There is one selected document; and
     # * The document is in the cache.
     _getDocument: ->
-      selection = @state.get('selection')
-      docids = selection.documents
-      return undefined if docids.length != 1
-      docid = docids[0]
-      @cache.document_store.documents[docid]
+      documentId = @state.get('oneDocumentSelected') && @state.get('documentId') || null
+      @cache.document_store.documents[documentId]
 
     scroll_by_pages: (n) ->
       @app.scrollByPages(n)
 
     render: ->
       document = @_getDocument()
-
-      @app.setDocument(document) if document
+      @app.setDocument(document) if document?
 
       this

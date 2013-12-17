@@ -1,5 +1,6 @@
 define [
   'jquery'
+  './selection' # deprecated!
   './document_store'
   './on_demand_tree'
   './tag_store'
@@ -8,7 +9,7 @@ define [
   './needs_resolver'
   './transaction_queue'
   'i18n'
-], ($, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue, i18n) ->
+], ($, Selection, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.cache')
 
   Deferred = $.Deferred
@@ -68,23 +69,24 @@ define [
     #
     # Params:
     #
-    # * tag: tag (or tag ID) to refresh. Note: if it's a tag ID, make sure this
-    #   isn't being called in an asynchronous callback, as tags are wont to
-    #   change IDs.
+    # * tag: tag (or tag ID) to refresh.
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     refresh_tagcounts: (tag, onlyNodeIds=undefined) ->
+      # the ID might change before the transaction begins
+      tag = @tag_store.find_by_id(tag) if !tag.id?
+
       @transaction_queue.queue(=>
-        tagid = tag.id || tag
-        @_refresh_post('tag_node_counts', tagid, onlyNodeIds)
+        tagId = tag.id # Now the ID is correct
+        @_refresh_post('tagCounts', 'tag_node_counts', tagId, onlyNodeIds)
       , 'refresh_tagcounts')
 
     refresh_untagged: (onlyNodeIds=undefined) ->
       @transaction_queue.queue(=>
-        @_refresh_post('untagged_node_counts', 0, onlyNodeIds)
+        @_refresh_post('tagCounts', 'untagged_node_counts', 0, onlyNodeIds)
       , 'refresh_untagged')
 
-    _refresh_post: (endpoint, tagid, onlyNodeIds) ->
+    _refresh_post: (countsKey, endpoint, pathArgument, onlyNodeIds) ->
       nodes = @on_demand_tree.nodes
 
       node_ids = if onlyNodeIds?
@@ -92,7 +94,7 @@ define [
       else
         _(nodes).keys()
 
-      @server.post(endpoint, {nodes: node_ids.join(',')}, {path_argument: tagid})
+      @server.post(endpoint, {nodes: node_ids.join(',')}, {path_argument: pathArgument})
         .done (data) =>
           i = 0
           while i < data.length
@@ -102,44 +104,27 @@ define [
             node = nodes[nodeid]
 
             if node?
-              tagCounts = (node.tagCounts ||= {})
+              counts = (node[countsKey] ||= {})
 
               if count
-                tagCounts[tagid] = count
+                counts[pathArgument] = count
               else
-                delete tagCounts[tagid]
+                delete counts[pathArgument]
 
           @on_demand_tree.id_tree.batchAdd(->) # trigger update
 
           undefined
 
-    refreshSearchResultCounts: (searchResult) ->
-      searchResultId = searchResult.id? && searchResult.id || searchResult
-      nodes = @on_demand_tree.nodes
+    refreshSearchResultCounts: (searchResult, onlyNodeIds=undefined) ->
+      # The ID might change before the transaction begins
+      searchResult = @search_result_store.find_by_id(searchResult) if !searchResult.id?
 
       @transaction_queue.queue(=>
-        node_ids = (k for k, __ of nodes)
-        node_ids_string = node_ids.join(',')
-        deferred = @server.post('search_result_node_counts', { nodes: node_ids_string }, { path_argument: searchResultId })
-        deferred.done (data) =>
-          @on_demand_tree.id_tree.batchAdd (__) -> # FIXME this isn't really an add
-            responseCounts = {}
-
-            i = 0
-            while i < data.length
-              nodeid = data[i++]
-              count = data[i++]
-              responseCounts[nodeid] = count
-
-            for nodeid in node_ids
-              counts = (nodes[nodeid]?.searchResultCounts ||= {})
-              responseCount = responseCounts[nodeid]
-              if responseCount
-                counts[searchResultId] = responseCount
-              else
-                delete counts[searchResultId]
-
-            undefined
+        searchResultId = searchResult.id # now the ID is correct
+        if searchResultId < 0
+          $.Deferred().resolve() # when it gets set, we'll refresh again
+        else
+          @_refresh_post('searchResultCounts', 'search_result_node_counts', searchResultId, onlyNodeIds)
       , 'refreshSearchResultCounts')
 
     create_tag: (tag, options) ->
@@ -291,9 +276,10 @@ define [
     # the empty-Array return value, which only means we don't have any loaded
     # docids that match the selection.
     _selection_to_documents: (selection) ->
+      selection = new Selection(selection) # deprecated!
       return undefined if selection.isEmpty()
 
-      selection.documents_from_cache(this)
+      selection.deprecated_documents_from_cache(this)
 
     _maybe_add_tagid_to_document: (tagid, document) ->
       tagids = document.tagids
@@ -309,6 +295,8 @@ define [
         @document_store.change(document)
 
     _selection_to_post_data: (selection) ->
+      selection = new Selection(selection) # deprecated!
+
       nodes: selection.nodes.join(',')
       documents: selection.documents.join(',')
       tags: selection.tags.join(',')

@@ -1,11 +1,11 @@
 define [
-  '../models/selection'
+  '../models/DocumentListParams'
   '../collections/TagStoreProxy'
   '../views/InlineTagList'
   './tag_form_controller'
   './TagDialogController'
   './logger'
-], (Selection, TagStoreProxy, InlineTagListView, tag_form_controller, TagDialogController, Logger) ->
+], (DocumentListParams, TagStoreProxy, InlineTagListView, tag_form_controller, TagDialogController, Logger) ->
   log = Logger.for_component('tag_list')
 
   tag_to_short_string = (tag) ->
@@ -28,42 +28,38 @@ define [
 
     view.on 'add-clicked', (tag) ->
       tag = proxy.unmap(tag)
-      log('added tag', "#{tag_to_short_string(tag)} to #{state.get('selection').to_string()}")
-      cache.addTagToSelection(tag, state.get('selection'))
+      log('added tag', "#{tag_to_short_string(tag)} to #{JSON.stringify(state.getApiSelection())}")
+      cache.addTagToSelection(tag, state.getApiSelection())
         .done(-> cache.refresh_tagcounts(tag))
-      state.set('taglike', tag)
+      state.set(taglike: { tagId: tag.id })
 
     view.on 'remove-clicked', (tag) ->
       tag = proxy.unmap(tag)
-      log('removed tag', "#{tag_to_short_string(tag)} from #{state.get('selection').to_string()}")
-      cache.removeTagFromSelection(tag, state.get('selection'))
+      log('removed tag', "#{tag_to_short_string(tag)} from #{JSON.stringify(state.getApiSelection())}")
+      cache.removeTagFromSelection(tag, state.getApiSelection())
         .done(-> cache.refresh_tagcounts(tag))
-      state.set('taglike', tag)
+      state.set(taglike: { tagId: tag.id })
 
     view.on 'name-clicked', (tag) ->
       tag = proxy.unmap(tag)
       log('selected tag', "#{tag_to_short_string(tag)}")
-      state.set
-        selection: new Selection({ tags: [tag.id] }) # even if id is negative
-        taglike: tag
+      state.setDocumentListParams(DocumentListParams.byTagId(tag.id))
+      state.set(taglike: { tagId: tag.id })
 
     view.on 'create-submitted', (name) ->
       tag = { name: name }
-      log('created tag', "#{tag_to_short_string(tag)} on #{state.get('selection').to_string()}")
+      log('created tag', "#{tag_to_short_string(tag)} on #{JSON.stringify(state.getApiSelection())}")
       tag = cache.add_tag(tag)
       cache.create_tag(tag)
-      cache.addTagToSelection(tag, state.get('selection'))
+      cache.addTagToSelection(tag, state.getApiSelection())
         .done(-> cache.refresh_tagcounts(tag))
-      state.set('taglike', tag)
+      state.set(taglike: { tagId: tag.id })
 
     view.on 'organize-clicked', ->
       TagDialogController(tag_store, cache)
 
     view.on 'untagged-clicked', ->
-      tag = { id: 0, name: 'untagged', color: '#dddddd' }
-      state.set
-        selection: new Selection({ tags: [0] }) # even if id is negative
-        taglike: tag
-
+      state.setDocumentListParams(DocumentListParams.untagged())
+      state.set(taglike: { untagged: true })
 
     { view: view }

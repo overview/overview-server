@@ -44,7 +44,7 @@ define [ 'backbone' ], (Backbone) ->
 
       @model = new Model()
       @model.describeSelection = =>
-        @cache.describeSelectionWithoutDocuments(@documentList.selection)
+        @documentList.describeParameters()
       @model.documents = new Collection([])
 
       @_documentListCallback = => @_updateFromDocumentList()

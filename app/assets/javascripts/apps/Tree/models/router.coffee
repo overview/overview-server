@@ -27,6 +27,7 @@ define ->
       "/documentsets/#{@document_set_id}/tree/nodes"
 
     _node_path: (id) ->
+      throw new Error("Must have positive id") if id <= 0
       "/documentsets/#{@document_set_id}/tree/nodes/#{id}"
 
     _documents_path: () ->
@@ -36,16 +37,20 @@ define ->
       "/documentsets/#{@document_set_id}/log-entries/create-many"
 
     _tag_add_path: (id) ->
+      throw new Error("Must have positive id") if id <= 0
       "/documentsets/#{@document_set_id}/tags/#{id}/add"
 
     _tag_remove_path: (id) ->
+      throw new Error("Must have positive id") if id <= 0
       "/documentsets/#{@document_set_id}/tags/#{id}/remove"
 
     _tag_node_counts_path: (id) ->
+      throw new Error("Must have positive id") if id <= 0
       "/documentsets/#{@document_set_id}/tags/#{id}/node-counts"
 
     _untagged_node_counts: () ->
       "/documentsets/#{@document_set_id}/tags/untagged-node-counts"
 
     _search_result_node_counts_path: (id) ->
+      throw new Error("Must have positive id") if id <= 0
       "/documentsets/#{@document_set_id}/search-results/#{id}/node-counts"

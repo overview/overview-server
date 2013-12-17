@@ -16,15 +16,13 @@ define [ 'backbone' ], (Backbone) ->
       throw 'Must set options.state, a State' if !@options.state
       throw 'Must set options.el, an HTMLElement' if !@options.el
 
-      @listenTo(@options.state, 'change:selection', => @render())
+      @state = @options.state
+
+      @listenTo(@state, 'change:oneDocumentSelected', => @render())
       @render()
 
     render: ->
-      selection = @options.state.get('selection')
-
-      className = if selection.documents.length == 1
+      @el.className = if @state.get('oneDocumentSelected')
         'document-selected'
       else
         ''
-
-      @el.className = className
