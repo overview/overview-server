@@ -221,7 +221,6 @@ define [
     removeTagFromSelectionRemote: (tag, selection) ->
       if @_selection_to_documents(selection)?
         postData = @_selection_to_post_data(selection)
-        postData = @_selection_to_post_data(selection)
         @transaction_queue.queue =>
           @server.post('tag_remove', postData, { path_argument: tag.id })
 
