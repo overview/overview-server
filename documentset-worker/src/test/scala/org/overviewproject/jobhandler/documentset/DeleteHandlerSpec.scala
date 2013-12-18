@@ -19,7 +19,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     trait MockComponents {
       val searchIndex = mock[SearchIndexComponent]
-
+      val documentSetDeleter = smartMock[DocumentSetDeleter]
       val deleteResultPromise = Promise[DeleteByQueryResponse]
       val deleteAliasResultPromise = Promise[IndicesAliasesResponse]
 
@@ -34,10 +34,12 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       protected var parentProbe: TestProbe = _
       protected var deleteHandler: TestActorRef[DeleteHandler with MockComponents] = _
+      
       protected def searchIndex = deleteHandler.underlyingActor.searchIndex
       protected def deleteAliasResult = deleteHandler.underlyingActor.deleteAliasResultPromise
       protected def deleteDocumentsResult = deleteHandler.underlyingActor.deleteResultPromise
-
+      protected def documentSetDeleter = deleteHandler.underlyingActor.documentSetDeleter
+      
       override def before = {
         parentProbe = TestProbe()
         deleteHandler = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
@@ -47,7 +49,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId)
       deleteAliasResult.success(aliasResult)
-      
+
       there was one(searchIndex).deleteDocumentSetAlias(documentSetId)
       there was one(searchIndex).deleteDocuments(documentSetId)
     }
@@ -75,6 +77,11 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
+    "delete document set related data" in new DeleteContext {
+      deleteHandler ! DeleteDocumentSet(documentSetId)
+
+      there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
+    }
   }
 }
 

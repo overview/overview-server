@@ -43,9 +43,12 @@ trait DeleteHandler extends Actor with SearcherComponents {
   import DeleteHandlerProtocol._
   import context.dispatcher
 
+  val documentSetDeleter: DocumentSetDeleter
+  
   def receive = {
     case DeleteDocumentSet(documentSetId) => {
-
+    	
+      documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
       // delete alias first, so no new documents can be inserted.
       // creating futures inside for comprehension ensures the calls
       // are run sequentially

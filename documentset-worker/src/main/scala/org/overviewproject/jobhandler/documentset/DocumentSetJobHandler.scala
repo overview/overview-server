@@ -109,7 +109,9 @@ trait SearchComponentImpl extends SearchComponent {
   class ActorCreatorImpl extends ActorCreator {
     override def produceSearchHandler: Actor = new SearchHandler with SearchIndexAndSearchStorage
 
-    override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {}
+    override def produceDeleteHandler: Actor = new DeleteHandler with ElasticSearchComponents {
+      override val documentSetDeleter = DocumentSetDeleter()
+    }
   }
 }
 
