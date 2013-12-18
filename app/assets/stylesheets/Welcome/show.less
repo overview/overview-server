@@ -1,5 +1,15 @@
 body.welcome-show {
   height: 100%;
+  overflow: hidden;
+
+  div.container {
+    margin-top: 10px;
+    padding-bottom: 360px;
+    overflow: auto;
+    display: table;
+    height: 100%;
+    -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+  }
 
   .centering-cell {
     display: table-cell;
@@ -30,14 +40,6 @@ body.welcome-show {
   .intro-video-container {
     text-align: center;
     width: 500px;
-  }
-
-  div.container {
-    margin-top: 10px;
-    padding-bottom: 360px;
-    overflow: auto;
-    display: table;
-    height: 100%;
   }
 
   div.bottom-bar {
@@ -108,6 +110,8 @@ body.welcome-show {
   }
 
   @media all and (max-width: 1065px) {
+    overflow: auto;
+
     div.container {
       padding-bottom: 0;
       overflow: visible;
