@@ -14,6 +14,7 @@ define [
           <li class="empty-upload">
             <i class='icon-cloud-upload'></i>
             <div><%- t('drop_target') %></div>
+            <div class='secondary-prompt'><%- t('minimum_files') %></div>
           </li>
         </ul>
 
