@@ -29,3 +29,8 @@ class BaseStore[A](protected val table: Table[A]) {
     table.delete(k)
   }
 }
+
+
+object BaseStore {
+  def apply[A](table: Table[A]) = new BaseStore(table)
+}
