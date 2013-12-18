@@ -17,7 +17,6 @@ trait DocumentSetDeleter {
 }
 
 object DocumentSetDeleter {
-  import scala.language.reflectiveCalls
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.database.Database
   import org.overviewproject.database.orm.finders._
