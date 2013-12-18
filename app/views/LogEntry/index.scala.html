@@ -1,7 +1,7 @@
 @(
   user: OverviewUser,
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  logEntries: Iterable[(models.orm.LogEntry,models.orm.User)]
+  logEntries: Iterable[(org.overviewproject.tree.orm.LogEntry,models.orm.User)]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @main(optionalUser=Some(user), title="Log", h1="Log") {

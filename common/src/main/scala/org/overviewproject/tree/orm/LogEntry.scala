@@ -1,4 +1,4 @@
-package models.orm
+package org.overviewproject.tree.orm
 
 import java.sql.Timestamp
 import org.squeryl.KeyedEntity
@@ -11,4 +11,4 @@ case class LogEntry(
     val component: String,
     val action: String = "",
     val details: String = ""
-    ) extends KeyedEntity[Long]
+    ) extends KeyedEntity[Long] 
