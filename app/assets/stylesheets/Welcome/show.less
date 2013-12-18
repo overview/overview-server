@@ -54,7 +54,7 @@ body.welcome-show {
     background: url('/assets/images/dark_stripes.png');
 
     &>.row-fluid {
-      margin-top: 10px;
+      margin-top: 4px;
     }
   }
 
@@ -82,10 +82,12 @@ body.welcome-show {
 
     p.help-block {
       font-size: 12px;
+      margin: 0;
+      width: 300px;
     }
 
     .control-group {
-      margin-bottom: 13px;
+      margin-bottom: 4px;
     }
   }
 
@@ -128,6 +130,11 @@ body.welcome-show {
       border: 0;
       width: 520px;
     }
+
+    .form-horizontal .controls p.help-block {
+      width: 260px;
+    }
+
   }
 
   @media all and (max-width: 500px) {
