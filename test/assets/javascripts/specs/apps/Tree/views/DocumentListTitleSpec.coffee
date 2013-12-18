@@ -14,11 +14,16 @@ define [
 
     find_by_id: (id) -> { id: id, query: "Search #{id}" }
 
+  class IdTree
+    observable(this)
+
   class OnDemandTree
     constructor: ->
       @nodes =
         '1': { id: 1, description: 'Node 1' }
         '2': { id: 2, description: 'Node 2' }
+
+      @id_tree = new IdTree()
 
   cache =
     tag_store: new TagStore()
@@ -118,6 +123,11 @@ define [
         view.on('edit-node', -> args = _.toArray(arguments))
         view.$('a.node-edit').click()
         expect(args).toEqual([ 1 ])
+
+      it 'should adjust title after changed', ->
+        cache.on_demand_tree.nodes[1].description = 'Edited'
+        cache.on_demand_tree.id_tree._notify('change')
+        expect(view.$('h4').text()).toEqual('node.title_html,num_documents,4,Edited')
 
     describe 'with a SearchResult', ->
       searchResult = undefined

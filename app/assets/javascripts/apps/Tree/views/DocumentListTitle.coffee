@@ -114,6 +114,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         if @$(".search-result[data-id=#{searchResult.id}]")
           @render()
 
+      @_onNodeChanged = =>
+        # There's no telling whether the current node changed
+        @render()
+
       @_onDocumentListChanged = => @render()
 
       @documentList?.observe(@_onDocumentListChanged)
@@ -121,6 +125,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @tagStore.observe('changed', @_onTagChanged)
       @searchResultStore.observe('id-changed', @_onSearchResultIdChanged)
       @searchResultStore.observe('changed', @_onSearchResultChanged)
+      @onDemandTree.id_tree.observe('change', @_onNodeChanged)
 
       @render()
 
@@ -130,6 +135,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @tagStore.unobserve('changed', @_onTagChanged)
       @searchResultStore.unobserve('id-changed', @_onSearchResultIdChanged)
       @searchResultStore.unobserve('changed', @_onSearchResultChanged)
+      @onDemandTree.id_tree.unobserve('change', @_onNodeChanged)
       Backbone.View.prototype.remove.call(this)
 
     render: ->
