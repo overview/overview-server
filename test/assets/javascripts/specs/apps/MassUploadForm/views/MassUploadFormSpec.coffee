@@ -62,8 +62,8 @@ define [
     describe 'init', ->
       it 'cancels previous uploads', ->
         # remove this when we add resumable uploads
-        expect(mostRecentAjaxRequest().url).toEqual('/files')
-        expect(mostRecentAjaxRequest().method).toEqual('DELETE')
+        # expect(mostRecentAjaxRequest().url).toEqual('/files')
+        # expect(mostRecentAjaxRequest().method).toEqual('DELETE')
 
     describe 'render', ->
       beforeEach ->
@@ -82,40 +82,48 @@ define [
       beforeEach ->
         view.render()
         model.uploads.add(new Backbone.Model())
+
+      it 'does not yet enable the submit button', ->
         waits(0) # We defer the add, as it seems more responsive that way
+        expect(view.$('.choose-options')).toBeDisabled()
 
-      it 'adds an uploadView when a file is added', ->
-        runs ->
-          expect(uploadViewRenderSpy).toHaveBeenCalled()
-          expect(view.$el.find('.files li').length).toEqual(1)
+      describe 'with 3 or more uploads', ->
+        beforeEach ->
+          model.uploads.add(new Backbone.Model())
+          model.uploads.add(new Backbone.Model())
+          waits(0) # We defer the add, as it seems more responsive that way
 
-      it 'renders a progress bar', ->
-        runs ->
-          expect(view.$el).toContain('progress')
+        it 'adds an uploadView when a file is added', ->
+          runs ->
+            expect(uploadViewRenderSpy).toHaveBeenCalled()
+            expect(view.$el.find('.files li').length).toEqual(3)
 
-      describe 'submit button', ->
-        it 'enables the submit button', ->
-          expect(view.$('.choose-options')).not.toBeDisabled()
+        it 'renders a progress bar', ->
+          runs ->
+            expect(view.$el).toContain('progress')
 
-        it 'shows a modal with the import options app', ->
-          spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog')
-          view.$('.choose-options').click()
-          expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
-            jasmine.any(HTMLElement),
-            supportedLanguages: jasmine.any(Array)
-            defaultLanguageCode: 'en'
-            excludeOptions: ['split_documents']
-            callback: jasmine.any(Function)
-          )
+        describe 'submit button', ->
+          it 'enables the submit button', ->
+            expect(view.$('.choose-options')).not.toBeDisabled()
 
-        describe 'after selecting options', ->
-          it 'disables the "set options" button', ->
-            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+          it 'shows a modal with the import options app', ->
+            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog')
             view.$('.choose-options').click()
-            expect(view.$('button.choose-options')).toBeDisabled()
-            expect(view.$('button.select-files')).toBeDisabled()
-            expect(view.$(':file')).toBeDisabled()
+            expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
+              jasmine.any(HTMLElement),
+              supportedLanguages: jasmine.any(Array)
+              defaultLanguageCode: 'en'
+              excludeOptions: ['split_documents']
+              callback: jasmine.any(Function)
+            )
 
+          describe 'after selecting options', ->
+            it 'disables the "set options" button', ->
+              spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+              view.$('.choose-options').click()
+              expect(view.$('button.choose-options')).toBeDisabled()
+              expect(view.$('button.select-files')).toBeDisabled()
+              expect(view.$(':file')).toBeDisabled()
 
     describe 'dom events', ->
       it 'changes the button hover state when the invisible input is hovered', ->
@@ -160,7 +168,9 @@ define [
 
         describe 'after selecting options', ->
           beforeEach ->
-            # add a finished upload
+            # add some finished uploads
+            model.uploads.add(new Backbone.Model)
+            model.uploads.add(new Backbone.Model)
             model.uploads.add(new Backbone.Model)
             model.set(status: 'waiting')
 
@@ -255,9 +265,13 @@ define [
         submitSpy = spyOn($.fn, 'submit')
         view.render()
 
-      it 'submits the form when uploading is finished and options are chosen', ->
-        # add a finished upload
+        # add 3 uploads
         model.uploads.add(new Backbone.Model)
+        model.uploads.add(new Backbone.Model)
+        model.uploads.add(new Backbone.Model)
+
+      it 'submits the form when uploading is finished and options are chosen', ->
+        # finish the uploads
         model.set(status: 'waiting')
 
         # choose options
@@ -267,8 +281,7 @@ define [
         expect(submitSpy).toHaveBeenCalled()
 
       it 'submits the form when options are set before the upload is done', ->
-        # add an upload
-        model.uploads.add(new Backbone.Model)
+        # uploads are in progress
         model.set(status: 'uploading')
 
         # choose options
@@ -281,22 +294,19 @@ define [
         expect(submitSpy).toHaveBeenCalled()
 
       it 'does not submit the form until the upload is finished', ->
-        model.uploads.add(new Backbone.Model)
         spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
         view.$('.choose-options').click()
 
         expect(submitSpy).not.toHaveBeenCalled()
 
       it 'hides the progress bar when the upload finishes', ->
-        # add a finished upload
-        model.uploads.add(new Backbone.Model)
+        # finish uploads
         model.set(status: 'waiting')
 
         expect(view.$el.find('.progress-bar').css('display')).toEqual('none')
 
       it 'shows the progress bar when adding another file', ->
-        # finished upload
-        model.uploads.add(new Backbone.Model)
+        # finish uploads
         model.set(status: 'waiting')
 
         # now, add an unfinished upload

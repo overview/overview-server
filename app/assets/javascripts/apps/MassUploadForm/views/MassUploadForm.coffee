@@ -113,7 +113,7 @@ define [
       uploadView = new @uploadViewClass(model: model)
       uploadView.render()
 
-      if ! @finishEnabled
+      if ! @finishEnabled && @collection.length > 2
         @$('button.choose-options').prop('disabled', false)
         @finishEnabled = true
 
