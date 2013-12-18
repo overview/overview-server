@@ -5,6 +5,7 @@ import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.search.{ SearchResponse, SearchType }
 import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.index.query.QueryStringQueryBuilder.Operator._
 import org.overviewproject.jobhandler.documentset.SearchIndexComponent
 import org.overviewproject.jobhandler.documentset.SearcherComponents
 import org.overviewproject.util.Logger
@@ -43,7 +44,8 @@ trait ElasticSearchComponents extends SearcherComponents {
 
       val query = SearchableFields.foldLeft(QueryBuilders.queryString(queryString)) { (q, f) =>
         q.field(f)  
-      }
+      }.defaultOperator(AND)
+      
       val listener = new ActionResult[SearchResponse]()
 
       client.prepareSearch(index)
