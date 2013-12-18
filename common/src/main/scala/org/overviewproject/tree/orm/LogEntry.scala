@@ -11,4 +11,4 @@ case class LogEntry(
     val component: String,
     val action: String = "",
     val details: String = ""
-    ) extends KeyedEntity[Long] 
+    ) extends KeyedEntity[Long] with DocumentSetComponent
