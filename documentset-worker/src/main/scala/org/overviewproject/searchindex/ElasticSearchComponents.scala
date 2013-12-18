@@ -40,8 +40,10 @@ trait ElasticSearchComponents extends SearcherComponents {
     private val client = ElasticSearchClient.client
 
     override def startSearch(index: String, queryString: String): Future[SearchResponse] = {
-      val query = QueryBuilders.multiMatchQuery(queryString, SearchableFields: _*)
 
+      val query = SearchableFields.foldLeft(QueryBuilders.queryString(queryString)) { (q, f) =>
+        q.field(f)  
+      }
       val listener = new ActionResult[SearchResponse]()
 
       client.prepareSearch(index)
