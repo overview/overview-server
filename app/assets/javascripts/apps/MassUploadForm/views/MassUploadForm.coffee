@@ -81,7 +81,7 @@ define [
       @optionsSet = false
 
       # remove this when we add resumable uploads
-      $.ajax('/files', type: 'DELETE')
+      #$.ajax('/files', type: 'DELETE')
 
       $('div.nav-buttons a.back').click (e) =>
         if(@getHash() == '#import-from-mass-upload')

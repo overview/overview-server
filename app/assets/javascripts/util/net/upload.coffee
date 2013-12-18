@@ -262,7 +262,6 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
 
       filename = @_filename()
       if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
-      #if /[^ !#$%&´\*\+\-\.0-9A-Z\^_`a-z\|~]/.test(filename)
         # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
         headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
       else

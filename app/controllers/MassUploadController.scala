@@ -129,7 +129,9 @@ trait MassUploadController extends Controller {
 
     Seq(
       (CONTENT_LENGTH, s"${upload.uploadedSize}"),
-      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"))
+      (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
+      (CONTENT_DISPOSITION, upload.contentDisposition)
+    )
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String, options: (String, String, Option[String])): Result = {

@@ -5,7 +5,7 @@ import scala.util.control.Exception._
 import scala.util.parsing.combinator.RegexParsers
 
 case class ContentDisposition(contentDisposition: String) {
-  val parseResult : Option[Map[String,String]] = Rfc5987Parser.parse(contentDisposition)
+  lazy val parseResult : Option[Map[String,String]] = Rfc5987Parser.parse(contentDisposition)
   def filename: Option[String] = parseResult.flatMap(_.get("filename"))
   def modificationDate: Option[String] = parseResult.flatMap(_.get("modification-date"))
 
@@ -94,5 +94,23 @@ case class ContentDisposition(contentDisposition: String) {
       def disposition : Parser[Map[String,String]]
         = phrase(regex("""(inline|attachment)""".r) ~> parameters)
     }
+  }
+}
+
+object ContentDisposition {
+  private val BadCharRegex = """[^!#$&+\-\.^_`|~0-9a-zA-Z]""".r // one char at a time...
+
+  def fromFilename(filename: String) : ContentDisposition = {
+    val encoded = BadCharRegex.replaceAllIn(filename, (m) => {
+      m.matched.getBytes("UTF-8").map((b: Byte) => "%%%02X".format(b & 0xff)).mkString
+    })
+
+    val s = if (encoded != filename) {
+      s"""attachment; filename*=UTF-8''$encoded"""
+    } else {
+      s"""attachment; filename="$filename""""
+    }
+
+    ContentDisposition(s)
   }
 }

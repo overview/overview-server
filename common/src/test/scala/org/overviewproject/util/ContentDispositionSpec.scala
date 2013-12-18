@@ -8,6 +8,13 @@ class ContentDispositionSpec extends Specification {
   "OverviewUploadedFile contentDisposition" should {
     // http://greenbytes.de/tech/tc2231/
 
+    trait EncodingScope extends Scope {
+      def check(filename: String, expectedResult: String) = {
+        val cd = ContentDisposition.fromFilename(filename)
+        cd.contentDisposition must beEqualTo(expectedResult)
+      }
+    }
+
     trait DispositionParameter {
       val name: String
       lazy val dispParams: String = "filename=%s".format(name)
@@ -129,6 +136,23 @@ class ContentDispositionSpec extends Specification {
       override lazy val dispParams: String = """attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf"""
 
       ContentDisposition(contentDisposition).filename must beSome(name)
+    }
+
+    // Encoding tests are from test/assets/javascripts/specs/util/net/upload-spec.coffee
+    "Encode a filename" in new EncodingScope {
+      check("filename.txt", "attachment; filename=\"filename.txt\"")
+    }
+
+    "Encode a UTF-8 filename" in new EncodingScope {
+      check("元気なですか？.pdf", "attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
+    }
+
+    "Encode an even slightly not-HTTP-friendly filename" in new EncodingScope {
+      check("file,name.txt", "attachment; filename*=UTF-8''file%2Cname.txt")
+    }
+
+    "Encode pipe, caret or backtick as-is" in new EncodingScope {
+      check("file*|^`name.txt", "attachment; filename*=UTF-8''file%2A|^`name.txt")
     }
   }
 
