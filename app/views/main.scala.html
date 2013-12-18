@@ -39,6 +39,12 @@
     }
   </head>
   <body class="@bodyClass">
+    <!--[if lte IE 9]>
+      <div id="ie9-not-supported" style="padding: 2em 10%; background: white; border: 1em solid #ed1c24; font-size: 1.75em; line-height: 1.75;">
+        @Html(Messages("views.main.ie_not_supported_html"))
+      </div>
+    <![endif]-->
+
     @views.html.components.navbar(optionalUser)
 
     @if(flash.data.nonEmpty) {

@@ -353,6 +353,8 @@ views.DocumentSetExport.index.formats.documentsWithStringTags=All tags in one co
 views.DocumentSetExport.index.formats.documentsWithColumnTags=Each tag in its own column.
 views.DocumentSetExport.index.download=Download
 
+views.main.ie_not_supported_html=<p>Overview does not support your version of Internet Explorer.</p><p>Please <a href="http://browsehappy.com/">upgrade to a newer web browser</a> and return here.</p><p style="font-size: small;">In 2013, four per cent of all visits to Overview came from outdated versions of Internet Explorer (like yours).</p><p style="font-size: small;">We used to support Internet Explorer 9, even though only two per cent of visitors used that particular version.</p><p style="font-size: small;">It takes much longer to develop and debug each Overview feature when we support outdated web browsers.</p><p style="font-size: small;">We choose to create more features. We hope you will return once you have installed a faster, more secure and more intuitive web browser.</p>
+
 views.Node._form.h3=Edit folder
 views.Node._form.labels.description=Description
 views.Node._form.close=Close without saving
