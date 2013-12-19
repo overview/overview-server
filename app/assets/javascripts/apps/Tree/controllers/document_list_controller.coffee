@@ -134,11 +134,13 @@ define [
         documentList = @get('documentList')
         if documentList
           documentListProxy = new DocumentListProxy(documentList)
-          @set('documentListProxy', documentListProxy)
-          @set('documentCollection', documentListProxy.model.documents)
+          @set
+            documentListProxy: documentListProxy
+            documentCollection: documentListProxy.model.documents
         else
-          @set('documentListProxy', undefined)
-          @set('documentCollection', new Backbone.Collection([]))
+          @set
+            documentListProxy: undefined
+            documentCollection: new Backbone.Collection([])
 
       @on('change:documentList', refresh)
       refresh()
@@ -168,11 +170,14 @@ define [
         cursorIndex = listSelection.get('cursorIndex')
         docId = cursorIndex? && collection.at(cursorIndex)?.id || null
 
-        @get('state').set
+        @get('state').set({
           documentId: docId
           oneDocumentSelected: cursorIndex?
+        }, { fromDocumentListController: true })
 
-      setListSelectionFromStateSelection = =>
+      setListSelectionFromStateSelection = (__, ___, options) =>
+        return if options?.fromDocumentListController
+
         # If we're navigating individual documents and we change selection, go
         # to the top of the new document list.
         #
