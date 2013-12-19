@@ -14,10 +14,11 @@ class SearchResultFinderSpec extends DbSpecification {
   "SearchResultFinder" should {
 
     trait SearchResultContext extends DbTestContext {
+      val searchResultFinder = SearchResultFinder()
       val query: String = "query terms"
       var documentSetId: Long = _
       var searchResult: SearchResult = _
-
+      
       override def setupWithDb = {
         documentSetId = insertDocumentSet("SearchResultFinderSpec")
         searchResult = SearchResult(InProgress, documentSetId, query)
@@ -27,13 +28,13 @@ class SearchResultFinderSpec extends DbSpecification {
     }
 
     "find SearchResults by DocumentSet" in new SearchResultContext {
-      val foundResult = SearchResultFinder.byDocumentSet(documentSetId).headOption
+      val foundResult = searchResultFinder.byDocumentSet(documentSetId).headOption
 
       foundResult must beSome(searchResult)
     }
 
     "find SearchResults by DocumentSet and Query" in new SearchResultContext {
-      val foundResult = SearchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption
+      val foundResult = searchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption
 
       foundResult must beSome(searchResult)
     }

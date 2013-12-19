@@ -18,7 +18,7 @@ case class SearchResult (
   query: String,
   createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime),
   override val id: Long = 0
-) extends KeyedEntity[Long] {
+) extends KeyedEntity[Long] with DocumentSetComponent {
   override def isPersisted(): Boolean = (id > 0)
   
   def this() = this(state = SearchResultState.Error, documentSetId = 0l, query = "")

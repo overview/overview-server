@@ -145,7 +145,7 @@ trait SearchIndexAndSearchStorage extends SearchHandlerComponents {
     override def queryForProject(documentSetId: Long, searchTerms: String): String = searchTerms
 
     override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
-      SearchResultFinder.byDocumentSetAndQuery(documentSetId, searchTerms).headOption.isDefined
+      SearchResultFinder().byDocumentSetAndQuery(documentSetId, searchTerms).headOption.isDefined
     }
 
     override def createSearchResult(documentSetId: Long, searchTerms: String): Long = Database.inTransaction {
