@@ -8,13 +8,14 @@ import org.apache.pdfbox.util.PDFTextStripper
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.FileText
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.database.orm.stores.FileTextStore
 import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
+import org.overviewproject.database.orm.Schema
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.GroupedProcessedFile
+import org.overviewproject.tree.orm.stores.BaseStore
 
 object TextExtractorProtocol {
   case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
@@ -92,7 +93,7 @@ class TextExtractorImpl extends TextExtractor with TextExtractorComponents {
 
     override def storeText(fileId: Long, text: String): Unit = Database.inTransaction {
       val fileText = FileText(fileId, text)
-      FileTextStore.insertOrUpdate(fileText)
+      BaseStore(Schema.fileTexts).insertOrUpdate(fileText)
     }
   }
   class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor
