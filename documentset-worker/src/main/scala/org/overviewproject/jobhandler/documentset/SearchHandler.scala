@@ -5,7 +5,6 @@ import akka.actor._
 import akka.actor.SupervisorStrategy._
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.SearchResultFinder
-import org.overviewproject.database.orm.stores.SearchResultStore
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Logger
@@ -137,8 +136,12 @@ trait SearchIndexAndSearchStorage extends SearchHandlerComponents {
   override val actorCreator: ActorCreator = new DocumentSearcherCreator
 
   class SearchResultStorage extends Storage {
+    import org.overviewproject.database.orm.Schema
     import org.overviewproject.tree.orm.{ SearchResult, SearchResultState }
-
+    import org.overviewproject.tree.orm.stores.BaseStore
+    
+    private val searchResultStore = BaseStore(Schema.searchResults)
+    
     override def queryForProject(documentSetId: Long, searchTerms: String): String = searchTerms
 
     override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
@@ -146,18 +149,18 @@ trait SearchIndexAndSearchStorage extends SearchHandlerComponents {
     }
 
     override def createSearchResult(documentSetId: Long, searchTerms: String): Long = Database.inTransaction {
-      val searchResult = SearchResultStore.insertOrUpdate(
+      val searchResult = searchResultStore.insertOrUpdate(
         SearchResult(SearchResultState.InProgress, documentSetId, searchTerms))
 
       searchResult.id
     }
 
     override def completeSearch(searchId: Long, documentSetId: Long, query: String): Unit = Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, id = searchId))
+      searchResultStore.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSetId, query, id = searchId))
     }
 
     override def failSearch(searchId: Long, documentSetId: Long, query: String): Unit = Database.inTransaction {
-      SearchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, id = searchId))
+      searchResultStore.insertOrUpdate(SearchResult(SearchResultState.Error, documentSetId, query, id = searchId))
     }
   }
 

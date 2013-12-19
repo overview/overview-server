@@ -1,11 +1,11 @@
 package org.overviewproject.database.orm.finders
 
-import org.overviewproject.tree.orm.SearchResult
-import org.overviewproject.tree.orm.SearchResultState.InProgress
-import org.overviewproject.database.orm.stores.SearchResultStore
+import org.overviewproject.database.orm.Schema
 import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import org.specs2.mutable.Before
+import org.overviewproject.tree.orm.SearchResult
+import org.overviewproject.tree.orm.SearchResultState.InProgress
+import org.overviewproject.tree.orm.stores.BaseStore
 
 class SearchResultFinderSpec extends DbSpecification {
 
@@ -22,19 +22,19 @@ class SearchResultFinderSpec extends DbSpecification {
         documentSetId = insertDocumentSet("SearchResultFinderSpec")
         searchResult = SearchResult(InProgress, documentSetId, query)
 
-        SearchResultStore.insertOrUpdate(searchResult)
+        BaseStore(Schema.searchResults).insertOrUpdate(searchResult)
       }
     }
-    
+
     "find SearchResults by DocumentSet" in new SearchResultContext {
       val foundResult = SearchResultFinder.byDocumentSet(documentSetId).headOption
 
       foundResult must beSome(searchResult)
     }
-    
+
     "find SearchResults by DocumentSet and Query" in new SearchResultContext {
       val foundResult = SearchResultFinder.byDocumentSetAndQuery(documentSetId, query).headOption
-      
+
       foundResult must beSome(searchResult)
     }
   }
