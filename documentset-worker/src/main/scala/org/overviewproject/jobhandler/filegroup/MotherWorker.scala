@@ -178,6 +178,8 @@ object MotherWorker {
     class StorageImpl extends Storage {
 
       private val documentSetCreationJobStore = BaseStore(Schema.documentSetCreationJobs)
+      private val documentSetStore = BaseStore(Schema.documentSets)
+      
       override def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
         GroupedFileUploadFinder.countsByFileGroup(fileGroupId)
       }
@@ -204,7 +206,7 @@ object MotherWorker {
         val documentSetId = documentSetCreationJob.documentSetId
         documentSetCreationJobStore.delete(documentSetCreationJob.id)
         DocumentSetUserStore.delete(DocumentSetUserFinder.byDocumentSet(documentSetId).toQuery)
-        DocumentSetStore.delete(documentSetId)
+        documentSetStore.delete(documentSetId)
       }
 
       override def deleteFileGroupData(fileGroupId: Long): Unit = Database.inTransaction {
