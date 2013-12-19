@@ -1,11 +1,11 @@
 package org.overviewproject.jobhandler.documentset
 
 import akka.actor.Actor
-
 import org.overviewproject.database.Database
-import org.overviewproject.database.orm.stores.DocumentSearchResultStore
+import org.overviewproject.database.orm.Schema
 import org.overviewproject.documentcloud.Document
 import org.overviewproject.tree.orm.DocumentSearchResult
+import org.overviewproject.tree.orm.stores.BaseStore
 
 object SearchSaverProtocol {
   case class Save(searchResultId: Long, documentSetId: Long, documents: Iterable[Document])
@@ -21,7 +21,7 @@ trait SearchSaverComponents {
       Database.inTransaction {
         val documentSearchResults = documentIds.map(docId => DocumentSearchResult(docId, searchId))
 
-        DocumentSearchResultStore.insertBatch(documentSearchResults)
+        BaseStore(Schema.documentSearchResults).insertBatch(documentSearchResults)
       }
     }
   }
