@@ -168,6 +168,7 @@ object MotherWorker {
   import org.overviewproject.database.orm.Schema
   import org.overviewproject.postgres.SquerylEntrypoint._
   import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+  import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
   import org.overviewproject.tree.orm.stores.BaseStore
   
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
@@ -181,6 +182,7 @@ object MotherWorker {
       private val documentSetStore = BaseStore(Schema.documentSets)
       private val documentSetUserStore = BaseStore(Schema.documentSetUsers)
       private val fileGroupStore = BaseStore(Schema.fileGroups)
+      private val documentSetUserFinder = DocumentSetComponentFinder(Schema.documentSetUsers)
       
       override def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
         GroupedFileUploadFinder.countsByFileGroup(fileGroupId)
@@ -207,7 +209,7 @@ object MotherWorker {
       override def deleteDocumentSetData(documentSetCreationJob: DocumentSetCreationJob): Unit = Database.inTransaction {
         val documentSetId = documentSetCreationJob.documentSetId
         documentSetCreationJobStore.delete(documentSetCreationJob.id)
-        documentSetUserStore.delete(DocumentSetUserFinder.byDocumentSet(documentSetId).toQuery)
+        documentSetUserStore.delete(documentSetUserFinder.byDocumentSet(documentSetId).toQuery)
         documentSetStore.delete(documentSetId)
       }
 

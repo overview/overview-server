@@ -11,7 +11,7 @@ case class DocumentSetUser(
   documentSetId: Long, 
   userEmail: String, 
   role: Ownership.Value
-  ) extends KeyedEntity[CompositeKey2[Long, String]] {
+  ) extends KeyedEntity[CompositeKey2[Long, String]]  with DocumentSetComponent {
 
   def this() = this(0L, "", Ownership.Owner)
 
