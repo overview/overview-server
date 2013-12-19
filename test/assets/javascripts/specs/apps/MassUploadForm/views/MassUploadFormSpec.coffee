@@ -29,6 +29,7 @@ define [
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
         'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
+        'views.DocumentSet._massUploadForm.minimum_files': 'minimum_files'
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
