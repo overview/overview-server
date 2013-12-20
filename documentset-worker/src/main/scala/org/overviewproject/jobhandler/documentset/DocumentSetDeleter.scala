@@ -48,6 +48,7 @@ object DocumentSetDeleter {
       
       BaseStore(nodeDocuments).delete(NodeDocumentFinder.byDocumentSet(documentSetId).toQuery)
       delete(nodes)
+      delete(documentProcessingErrors)
     }
     
     def deleteUserRelatedInformation(documentSetId: Long): Unit = ???

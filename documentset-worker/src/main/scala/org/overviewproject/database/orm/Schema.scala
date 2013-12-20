@@ -23,4 +23,5 @@ object Schema extends org.squeryl.Schema {
   val tags = table[Tag]
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
+  val documentProcessingErrors = table[DocumentProcessingError]
 }

@@ -9,6 +9,6 @@ case class DocumentProcessingError(
     message: String,
     @Column("status_code") statusCode: Option[Int] = None,
     headers: Option[String] = None,
-    id: Long = 0l) extends KeyedEntity[Long] {
+    id: Long = 0l) extends KeyedEntity[Long] with DocumentSetComponent {
 
 }
