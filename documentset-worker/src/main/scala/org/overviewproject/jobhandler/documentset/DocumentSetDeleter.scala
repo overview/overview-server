@@ -33,6 +33,7 @@ object DocumentSetDeleter {
       implicit val id = documentSetId 
       
       delete(logEntries)
+      delete(tags)
     }
 
     def deleteSearchGeneratedInformation(documentSetId: Long): Unit = ???
