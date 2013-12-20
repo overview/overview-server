@@ -1,9 +1,8 @@
 package org.overviewproject.tree.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.squeryl.Table
 import org.overviewproject.tree.orm.{ DocumentTag, Tag }
-import org.squeryl.Query
+import org.squeryl.{ Query, Table }
 
 class BaseDocumentTagFinder(table: Table[DocumentTag], tagsTable: Table[Tag]) extends Finder {
 

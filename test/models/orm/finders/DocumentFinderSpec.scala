@@ -6,7 +6,8 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import helpers.DbTestContext
 import org.overviewproject.tree.orm._
-import models.orm.{ TestSchema, NodeDocument }
+import models.orm.{ TestSchema }
+import org.overviewproject.tree.orm.NodeDocument
 import models.Selection
 
 class DocumentFinderSpec extends Specification {

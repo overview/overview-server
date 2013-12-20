@@ -7,7 +7,7 @@ import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
 import helpers.DbTestContext
 import org.overviewproject.tree.orm._
-import models.orm.NodeDocument
+import org.overviewproject.tree.orm.NodeDocument
 
 class NodeDocumentFinderSpec extends Specification {
 

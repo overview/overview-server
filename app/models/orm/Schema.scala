@@ -2,6 +2,7 @@ package models.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._
+import org.overviewproject.tree.orm.NodeDocument
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName(propertyName: String) =

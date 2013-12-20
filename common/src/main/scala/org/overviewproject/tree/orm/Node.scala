@@ -10,7 +10,7 @@ case class Node(
   val description: String,
   val cachedSize: Int,
   val cachedDocumentIds: Array[Long],
-  val isLeaf: Boolean) extends KeyedEntity[Long] {
+  val isLeaf: Boolean) extends KeyedEntity[Long] with DocumentSetComponent {
 
   override def isPersisted(): Boolean = true // use Schema's insert() to insert
 }

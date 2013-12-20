@@ -46,8 +46,10 @@ object DocumentSetDeleter {
     def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = {
       implicit val id = documentSetId
       
-      
+      BaseStore(nodeDocuments).delete(NodeDocumentFinder.byDocumentSet(documentSetId).toQuery)
+      delete(nodes)
     }
+    
     def deleteUserRelatedInformation(documentSetId: Long): Unit = ???
     def deleteDocuments(documentSetId: Long): Unit = ???
     def deleteDocumentSet(documentSetId: Long): Unit = ???
