@@ -33,11 +33,21 @@ object DocumentSetDeleter {
       implicit val id = documentSetId 
       
       delete(logEntries)
+      BaseStore(documentTags).delete(DocumentTagFinder.byDocumentSet(documentSetId).toQuery)
       delete(tags)
     }
 
-    def deleteSearchGeneratedInformation(documentSetId: Long): Unit = ???
-    def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = ???
+    def deleteSearchGeneratedInformation(documentSetId: Long): Unit = {
+      implicit val id = documentSetId
+      
+
+    }
+    
+    def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = {
+      implicit val id = documentSetId
+      
+      
+    }
     def deleteUserRelatedInformation(documentSetId: Long): Unit = ???
     def deleteDocuments(documentSetId: Long): Unit = ???
     def deleteDocumentSet(documentSetId: Long): Unit = ???

@@ -19,5 +19,6 @@ object Schema extends org.squeryl.Schema {
   val documentSetCreationJobs = table[DocumentSetCreationJob]
   val documentSetUsers = table[DocumentSetUser]
   val logEntries = table[LogEntry]
+  val documentTags = table[DocumentTag]
   val tags = table[Tag]
 }
