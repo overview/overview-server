@@ -40,7 +40,7 @@ object DocumentSetDeleter {
     def deleteSearchGeneratedInformation(documentSetId: Long): Unit = {
       implicit val id = documentSetId
       
-
+      delete(searchResults)
     }
     
     def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = {
