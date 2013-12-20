@@ -50,8 +50,18 @@ object DocumentSetDeleter {
       delete(documentProcessingErrors)
     }
 
-    def deleteUserRelatedInformation(documentSetId: Long): Unit = ???
-    def deleteDocuments(documentSetId: Long): Unit = ???
+    def deleteUserRelatedInformation(documentSetId: Long): Unit = Database.inTransaction {
+      implicit val id = documentSetId 
+      
+      delete(documentSetUsers)
+    }
+    
+    def deleteDocuments(documentSetId: Long): Unit = Database.inTransaction {
+      implicit val id = documentSetId
+      
+      delete(documents)
+    }
+    
     def deleteDocumentSet(documentSetId: Long): Unit = ???
   }
 
