@@ -4,14 +4,14 @@ import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentTag
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import org.overviewproject.tree.orm.finders.{ BaseDocumentTagFinder, FinderResult }
 
 import org.squeryl.Query
 
 import models.Selection
 import models.orm.Schema
 
-object DocumentTagFinder extends Finder {
+object DocumentTagFinder extends BaseDocumentTagFinder(Schema.documentTags, Schema.tags) {
   class DocumentTagFinderResult(query: Query[DocumentTag]) extends FinderResult[DocumentTag](query) {
     def toDocumentIds: Query[Long] = {
       from(query)(q => select(q.documentId))
@@ -24,17 +24,8 @@ object DocumentTagFinder extends Finder {
 
   implicit def queryToDocumentTagFinderResult(query: Query[DocumentTag]) : DocumentTagFinderResult = new DocumentTagFinderResult(query)
 
-  def byDocumentSet(documentSet: Long) : DocumentTagFinderResult = {
-    // Join through tags should be faster: there are usually fewer tags than documents
-    // Select as WHERE with a subquery, to circumvent Squeryl delete() missing the join
-    val tagIds = from(Schema.tags)(t =>
-      where(t.documentSetId === documentSet)
-      select(t.id)
-    )
-
-    Schema.documentTags.where(_.tagId in tagIds)
-  }
-
+  def byDocumentSet(documentSet: Long) : DocumentTagFinderResult = byDocumentSetQuery(documentSet)
+  
   def byTag(tag: Long) : DocumentTagFinderResult = {
     Schema.documentTags.where(_.tagId === tag)
   }
