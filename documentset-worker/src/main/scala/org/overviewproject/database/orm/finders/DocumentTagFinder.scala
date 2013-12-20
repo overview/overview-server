@@ -4,7 +4,7 @@ import org.overviewproject.database.orm.Schema.{documentTags, tags}
 import org.overviewproject.tree.orm.finders.{ BaseDocumentTagFinder, FinderResult }
 import org.overviewproject.tree.orm.DocumentTag
 
-object DocumentTagFinder extends BaseDocumentTagFinder(documentTags, tags) {
+object DocumentTagFinder extends BaseDocumentTagFinder(documentTags, tags) with FindableByDocumentSet[DocumentTag] {
 
   type DocumentTagFinderResult = FinderResult[DocumentTag]
   
