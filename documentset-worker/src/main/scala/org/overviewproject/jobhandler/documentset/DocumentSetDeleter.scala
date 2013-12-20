@@ -36,13 +36,13 @@ object DocumentSetDeleter {
       delete(tags)
     }
 
-    def deleteSearchGeneratedInformation(documentSetId: Long): Unit = {
+    def deleteSearchGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
 
       delete(searchResults)
     }
 
-    def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = {
+    def deleteClusteringGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
 
       delete(nodeDocuments, NodeDocumentFinder)
