@@ -4,16 +4,10 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.{ DocumentTag, Tag }
 import org.squeryl.{ Query, Table }
 
-class BaseDocumentTagFinder(table: Table[DocumentTag], tagsTable: Table[Tag]) extends Finder {
+class BaseDocumentTagFinder(table: Table[DocumentTag], tagsTable: Table[Tag]) extends DocumentSetRelationFinder(table, tagsTable) {
 
-  def byDocumentSetQuery(documentSetId: Long): Query[DocumentTag] = {
-    // Join through tags should be faster: there are usually fewer tags than documents
-    // Select as WHERE with a subquery, to circumvent Squeryl delete() missing the join
-    val tagIds = from(tagsTable)(t =>
-      where(t.documentSetId === documentSetId)
-        select (t.id))
-
-    table.where(_.tagId in tagIds)
-
-  }
+  def byDocumentSetQuery(documentSetId: Long): Query[DocumentTag] =
+    relationByDocumentSetComponent(t => t.documentSetId === documentSetId,
+        t => t.id, dt => dt.tagId)
+    
 }
