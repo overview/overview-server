@@ -60,6 +60,11 @@ class DocumentSetDeleterSpec extends DbSpecification {
 
       def findAllWithFinder[A](finder: FindableByDocumentSet[A]): Seq[A] =
         finder.byDocumentSet(documentSet.id).toSeq
+        
+      def findDocumentSet: Option[DocumentSet] = 
+        from(documentSets)(ds =>
+          where(ds.id === documentSet.id)
+          select (ds)).headOption
     }
 
     "delete client generated information" in new DocumentSetContext {
@@ -81,8 +86,12 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findAll(documentProcessingErrors) must beEmpty
     }
 
-    "delete document set" in new DbTestContext {
-      todo
+    "delete document set" in new DocumentSetContext {
+      DocumentSetDeleter().deleteDocumentSet(documentSet.id)
+      
+      findAll(documents) must beEmpty
+      findAll(documentSetUsers) must beEmpty
+      findDocumentSet must beNone
     }
 
     "delete document set with CSV upload" in new DbTestContext {

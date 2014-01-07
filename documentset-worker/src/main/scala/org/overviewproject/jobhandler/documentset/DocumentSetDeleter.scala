@@ -56,9 +56,20 @@ object DocumentSetDeleter {
       delete(documents)
     }
 
-    def deleteDocumentSet(documentSetId: Long): Unit = ???
+    def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
+      implicit val id = documentSetId
+
+      delete(documents)
+      delete(documentSetUsers)
+      deleteDocumentSetById(documentSetId)
+    }
   }
 
+  private def deleteDocumentSetById(documentSetId: Long) = {
+    val documentSetFinder = new FinderById(documentSets)
+    BaseStore(documentSets).delete(documentSetFinder.byId(documentSetId).toQuery)
+  }
+  
   private def delete[A <: DocumentSetComponent](table: Table[A])(implicit documentSetId: Long) =
     BaseStore(table).delete(DocumentSetComponentFinder(table).byDocumentSet(documentSetId).toQuery)
 
