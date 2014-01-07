@@ -60,6 +60,13 @@ object ApplicationBuild extends Build with ProjectSettings {
         },
        printClasspath)
 
+  val runner = Project(
+      "runner",
+      file("runner"),
+      settings = Defaults.defaultSettings)
+    .settings(libraryDependencies ++= runnerDependencies)
+    .settings(com.typesafe.sbt.SbtNativePackager.packageArchetype.java_application: _*)
+
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {
     def apply(name: String, dependencies: Seq[ModuleID],
