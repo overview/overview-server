@@ -8,7 +8,6 @@ import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
  */
 trait DocumentSetDeleter {
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
-  def deleteSearchGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
   def deleteUserRelatedInformation(documentSetId: Long): Unit
   def deleteDocuments(documentSetId: Long): Unit
@@ -34,11 +33,6 @@ object DocumentSetDeleter {
       delete(logEntries)
       delete(documentTags, DocumentTagFinder)
       delete(tags)
-    }
-
-    def deleteSearchGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
-      implicit val id = documentSetId
-
       delete(searchResults)
     }
 
@@ -51,17 +45,17 @@ object DocumentSetDeleter {
     }
 
     def deleteUserRelatedInformation(documentSetId: Long): Unit = Database.inTransaction {
-      implicit val id = documentSetId 
-      
+      implicit val id = documentSetId
+
       delete(documentSetUsers)
     }
-    
+
     def deleteDocuments(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
-      
+
       delete(documents)
     }
-    
+
     def deleteDocumentSet(documentSetId: Long): Unit = ???
   }
 
