@@ -37,6 +37,18 @@ trait MessageHandling[T] {
 
 import AcknowledgingMessageReceiverFSM._
 
+/**
+ * An AcknowledgingMessageReceiver is a message queue client that creates a message handler, converts and 
+ * forwards incoming messages to the handler, and waits for a response from the handler before
+ * acknowledging the message.
+ * If the message queue is setup to use message groups, the AcknowledgingMessageReceiver ensures that
+ * messages for a specific document set are sent sequentially to the same message handler.
+ * If the connection fails while the message handler is processing a message,
+ * the receiver ignores any status from the message handler, and starts forwarding messages when the 
+ * connection is re-established and the message handler has completed processing the previous message.
+ * The message queue will resend the message, so the message handler must be prepared to receive
+ * the same message multiple times.
+ */
 abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) extends Actor with FSM[State, Data] with MessageHandling[T] {
   import AcknowledgingMessageReceiverProtocol._
   import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
@@ -79,7 +91,7 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
       goto(MessageHandlerIsIdle) using messageHandler
     } 
     case Event(MessageHandled, Reconnected(messageHandler, connection)) => {
-      self! ConnectedTo(connection)
+      self ! ConnectedTo(connection)
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
     case Event(ConnectedTo(connection), MessageHandler(messageHandler)) => {

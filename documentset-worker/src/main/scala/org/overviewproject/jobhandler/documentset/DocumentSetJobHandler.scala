@@ -59,6 +59,11 @@ trait SearchComponent {
 
 import DocumentSetJobHandlerFSM._
 
+/**
+ * The DocumentSetMessageHandler receives document set related commands
+ * and forwards them to command specific actors. When the command actors 
+ * are done, an acknowledgment is sent to the requesting parent actor.
+ */
 class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
   this: SearchComponent =>
 
