@@ -154,18 +154,13 @@ body.document-set-index {
 
   #sharing-options-modal {
     li {
-      line-height: 30px;
+      line-height: 1.5em;
       font-weight: bold;
     }
 
     li a {
-      opacity: 0.1;
-      .transition(opacity .35s ease);
-      margin-left: 0.5em;
-    }
-
-    li:hover a {
-      opacity: 1;
+      .faded-link();
+      font-weight: normal;
       text-decoration: none;
       margin-left: 0.5em;
     }

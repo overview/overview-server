@@ -59,3 +59,13 @@
       1px -1px 0 @shadow;
   }
 }
+
+.faded-link() {
+  color: @linkColor;
+  opacity: 0.4;
+  .transition(opacity .15s ease);
+
+  &:hover {
+    opacity: 1;
+  }
+}

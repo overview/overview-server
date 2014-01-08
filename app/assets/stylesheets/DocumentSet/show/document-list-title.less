@@ -9,7 +9,7 @@
   background: inherit;
 
   h4 {
-    margin: 0;
+    margin: 0 5em 0 0;
     height: 1.5em;
     line-height: 1.5;
     white-space: nowrap;
@@ -26,18 +26,15 @@
   }
 
   a {
-    position: relative; // otherwise users can't click, in Chrome 22
-    cursor: pointer; // dunno why this doesn't happen
-    display: none;
-    float: right;
-    color: @linkColor;
+    .faded-link();
+    display: inline-block;
+    position: absolute;
+    cursor: pointer; // Why? Chrome 32.0.1700.68 beta still requires this...
+    top: 0;
+    right: 0;
     height: 2.25em;
-    padding: 0 .5em;
+    text-align: right;
+    padding: .25em .5em 0 0;
     line-height: 2.25em;
-  }
-
-  &:hover a {
-    display: block;
-    background: inherit; // IE9 won't detect the change in the h4 text's width, but we can at least hide the text. Issue #193.
   }
 }
