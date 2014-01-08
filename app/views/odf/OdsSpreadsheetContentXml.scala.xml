@@ -1,0 +1,31 @@
+@(spreadsheet: models.odf.OdsSpreadsheet
+)<?xml version="1.0" encoding="utf-8"?>
+<office:document-content
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  office:mimetype="application/vnd.oasis.opendocument.spreadsheet"
+  office:version="1.0"
+  >
+  <office:body>
+    <office:spreadsheet>
+      <table:table>
+        <table:table-header-rows>
+          <table:table-row>
+            @for(heading: Any <- spreadsheet.headers.productIterator) {
+              <table:table-cell><text:h>@heading</text:h></table:table-cell>
+            }
+          </table:table-row>
+        </table:table-header-rows>
+
+        @for(row: Product <- spreadsheet.rows) {
+          <table:table-row>
+            @for(value: Any <- row.productIterator) {
+              <table:table-cell><text:p>@value</text:p><table:table-cell>
+            }
+          </table:table-row>
+        }
+      <table:table>
+    </office:spreadsheet>
+  </office:body>
+</office:document-content>
