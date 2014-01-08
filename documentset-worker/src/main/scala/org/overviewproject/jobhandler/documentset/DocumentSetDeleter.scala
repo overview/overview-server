@@ -60,6 +60,7 @@ object DocumentSetDeleter {
     def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
 
+      deleteDocumentContents
       delete(documents)
       delete(documentSetUsers)
 
@@ -72,6 +73,11 @@ object DocumentSetDeleter {
     }
   }
 
+  private def deleteDocumentContents(implicit documentSetId: Long): Unit = {
+    val documentFinder = DocumentSetComponentFinder(documents)
+    DocumentStore.deleteContents(documentFinder.byDocumentSet(documentSetId)) 
+  }
+  
   private def findUploadedFile(implicit documentSetId: Long): Option[UploadedFile] =
     UploadedFileFinder.byDocumentSet(documentSetId).headOption
 

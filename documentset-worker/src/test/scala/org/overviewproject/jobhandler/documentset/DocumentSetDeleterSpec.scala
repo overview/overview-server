@@ -14,6 +14,7 @@ import org.overviewproject.database.orm.finders.NodeDocumentFinder
 import org.overviewproject.postgres.LO
 import org.overviewproject.database.DB
 import org.overviewproject.database.orm.finders.FinderById
+import scala.util.Try
 
 class DocumentSetDeleterSpec extends DbSpecification {
 
@@ -88,6 +89,29 @@ class DocumentSetDeleterSpec extends DbSpecification {
         finder.byId(uploadedFile.id).headOption
       }
     }
+    
+    trait PdfUploadContext extends DocumentSetContext {
+      
+      override protected def createDocumentSet = {
+        documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
+        val contentsOid = createContents
+        document = Document(documentSet.id, contentsOid = Some(contentsOid), contentLength = Some(100l))
+        documents.insert(document)
+      }
+      
+      private def createContents: Long = {
+        implicit val pgConnection = DB.pgConnection
+        
+        LO.withLargeObject(_.oid)
+      }
+      
+      def contentIsRemoved(oid: Long): Boolean = {
+        implicit val pgConnection = DB.pgConnection
+        
+        val findOid = Try( LO.withLargeObject(oid)( lo => lo.oid))
+        findOid.isFailure
+      }
+    }
 
     "delete client generated information" in new DocumentSetContext {
       addClientGeneratedInformation
@@ -122,8 +146,10 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findUploadedFile must beNone
     }
 
-    "delete document set with uploaded PDFs" in new DbTestContext {
-      todo
+    "delete document set with uploaded PDFs" in new PdfUploadContext {
+      DocumentSetDeleter().deleteDocumentSet(documentSet.id)
+      
+      contentIsRemoved(document.contentsOid.get) must beTrue
     }
   }
 
