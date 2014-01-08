@@ -11,6 +11,9 @@ import org.overviewproject.database.orm.finders.DocumentTagFinder
 import org.squeryl.Table
 import org.overviewproject.database.orm.finders.FindableByDocumentSet
 import org.overviewproject.database.orm.finders.NodeDocumentFinder
+import org.overviewproject.postgres.LO
+import org.overviewproject.database.DB
+import org.overviewproject.database.orm.finders.FinderById
 
 class DocumentSetDeleterSpec extends DbSpecification {
 
@@ -27,7 +30,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
         createDocumentSet
       }
 
-      protected def createDocumentSet = {
+      protected def createDocumentSet: Unit = {
         documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
         document = Document(documentSet.id, documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id))
         documents.insert(document)
@@ -60,11 +63,30 @@ class DocumentSetDeleterSpec extends DbSpecification {
 
       def findAllWithFinder[A](finder: FindableByDocumentSet[A]): Seq[A] =
         finder.byDocumentSet(documentSet.id).toSeq
-        
-      def findDocumentSet: Option[DocumentSet] = 
+
+      def findDocumentSet: Option[DocumentSet] =
         from(documentSets)(ds =>
           where(ds.id === documentSet.id)
-          select (ds)).headOption
+            select (ds)).headOption
+    }
+
+    trait CsvUploadContext extends DocumentSetContext {
+      var uploadedFile: UploadedFile = _
+
+      override protected def createDocumentSet = {
+        uploadedFile = uploadedFiles.insertOrUpdate(
+          UploadedFile(contentDisposition = "disp", contentType = "type", size = 100l))
+
+        documentSet = documentSets.insertOrUpdate(
+          DocumentSet(title = "document set", uploadedFileId = Some(uploadedFile.id)))
+        document = Document(documentSet.id, documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id))
+        documents.insert(document)
+      }
+      
+      def findUploadedFile: Option[UploadedFile] = {
+        val finder = new FinderById(uploadedFiles)
+        finder.byId(uploadedFile.id).headOption
+      }
     }
 
     "delete client generated information" in new DocumentSetContext {
@@ -88,14 +110,16 @@ class DocumentSetDeleterSpec extends DbSpecification {
 
     "delete document set" in new DocumentSetContext {
       DocumentSetDeleter().deleteDocumentSet(documentSet.id)
-      
+
       findAll(documents) must beEmpty
       findAll(documentSetUsers) must beEmpty
       findDocumentSet must beNone
     }
 
-    "delete document set with CSV upload" in new DbTestContext {
-      todo
+    "delete document set with CSV upload" in new CsvUploadContext {
+      DocumentSetDeleter().deleteDocumentSet(documentSet.id)
+
+      findUploadedFile must beNone
     }
 
     "delete document set with uploaded PDFs" in new DbTestContext {

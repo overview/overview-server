@@ -24,6 +24,7 @@ object Schema extends org.squeryl.Schema {
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
   val documentProcessingErrors = table[DocumentProcessingError]
+  val uploadedFiles = table[UploadedFile]
   
   on(documents)(d => declare(d.id is(primaryKey)))  
   on(nodes)(n => declare(n.id is(primaryKey)))

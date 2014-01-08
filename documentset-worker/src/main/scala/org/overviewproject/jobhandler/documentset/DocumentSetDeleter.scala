@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.documentset
 
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import org.overviewproject.tree.orm.UploadedFile
 
 /**
  * Methods for deleting all the data associated with document sets in the database
@@ -61,15 +62,27 @@ object DocumentSetDeleter {
 
       delete(documents)
       delete(documentSetUsers)
+
+      val uploadedFile = findUploadedFile
+
       deleteDocumentSetById(documentSetId)
+
+      deleteUploadedFile(uploadedFile)
+
     }
   }
+
+  private def findUploadedFile(implicit documentSetId: Long): Option[UploadedFile] =
+    UploadedFileFinder.byDocumentSet(documentSetId).headOption
+
+  private def deleteUploadedFile(uploadedFile: Option[UploadedFile]): Unit =
+    uploadedFile.foreach(uf => BaseStore(uploadedFiles).delete(uf.id))
 
   private def deleteDocumentSetById(documentSetId: Long) = {
     val documentSetFinder = new FinderById(documentSets)
     BaseStore(documentSets).delete(documentSetFinder.byId(documentSetId).toQuery)
   }
-  
+
   private def delete[A <: DocumentSetComponent](table: Table[A])(implicit documentSetId: Long) =
     BaseStore(table).delete(DocumentSetComponentFinder(table).byDocumentSet(documentSetId).toQuery)
 
