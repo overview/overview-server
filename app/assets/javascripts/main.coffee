@@ -64,6 +64,7 @@ requirejs.config({
     jquery: 'vendor/jquery-1-8-1'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
+    'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
