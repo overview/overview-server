@@ -49,6 +49,9 @@ trait DeleteHandler extends Actor with SearcherComponents {
     case DeleteDocumentSet(documentSetId) => {
     	
       documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
+      documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
+      documentSetDeleter.deleteDocumentSet(documentSetId)
+      
       // delete alias first, so no new documents can be inserted.
       // creating futures inside for comprehension ensures the calls
       // are run sequentially

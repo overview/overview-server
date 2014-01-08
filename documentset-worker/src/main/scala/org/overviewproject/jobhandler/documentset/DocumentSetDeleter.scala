@@ -10,8 +10,6 @@ import org.overviewproject.tree.orm.UploadedFile
 trait DocumentSetDeleter {
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
-  def deleteUserRelatedInformation(documentSetId: Long): Unit
-  def deleteDocuments(documentSetId: Long): Unit
   def deleteDocumentSet(documentSetId: Long): Unit
 
 }
@@ -51,11 +49,6 @@ object DocumentSetDeleter {
       delete(documentSetUsers)
     }
 
-    def deleteDocuments(documentSetId: Long): Unit = Database.inTransaction {
-      implicit val id = documentSetId
-
-      delete(documents)
-    }
 
     def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
