@@ -8,7 +8,7 @@
 #
 # Usage:
 #
-# 1. `COMPILE_LESS=false play run`
+# 1. `COMPILE_LESS=false ./sbt run`
 # 2. `auto/compile-less-on-linux.sh`
 # 3. Edit stylesheets as you normally would
 #
