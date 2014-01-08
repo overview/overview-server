@@ -86,11 +86,16 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
       dialogHtml = DialogTemplate(t: t)
       $dialog = $(dialogHtml)
       $dialog.find('.modal-body').append(app.el)
+
+      focus = -> $dialog.find(':input:visible:eq(0)').focus()
+
       $dialog
         .on('reset', -> $dialog.modal('hide'))
         .on('hidden', -> $dialog.remove())
         .appendTo('body')
         .modal()
+        .on('show', focus) # might work -- and it's as early as possible
+        .on('shown', focus) # will certainly work
 
       $dialog.validate
         submitHandler: (form) ->
