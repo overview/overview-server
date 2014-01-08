@@ -69,7 +69,7 @@ define [ 'jquery' ], ($) ->
         else
           if $("li[data-document-set-id=#{json_id}]", @jobs_div).length
             # The $li we're looking at isn't in the JSON. That means the job
-            # it represents is finished.
+            # it represents is finished or deleted.
             @_fetch_document_set(dom_id)
             $li = $li.next()
           else
@@ -90,7 +90,8 @@ define [ 'jquery' ], ($) ->
         # Don't alter $li. It's an empty element now, and we want that
 
       while $li.length
-        # There are more items at the bottom fo the DOM
+        # There are more items at the bottom of the DOM. They're either
+        # finished or deleted.
         dom_id = parseFloat($li.attr('data-document-set-id'))
         @_fetch_document_set(dom_id)
         $li = $li.next()
@@ -103,9 +104,39 @@ define [ 'jquery' ], ($) ->
       url = @document_set_url_pattern.replace('0', "#{id}")
 
       $.getJSON(url)
-        .success(@_receive_document_set.bind(this))
-        .error =>
-          setTimeout((=> @_fetch_document_set(id)), RETRY_DELAY)
+        .done(@_receive_document_set.bind(this))
+        .fail (jqxhr) =>
+          if (jqxhr.status == 403 || jqxhr.status == 404)
+            # The document set is gone!
+            # (403 Forbidden, 404 Not Found are semantically identical.)
+            #
+            # This means the docset was deleted.
+            @_remove_document_set(id)
+          else
+            # Some other HTTP error occurred; let's retry
+            setTimeout((=> @_fetch_document_set(id)), RETRY_DELAY)
+
+    _remove_document_set: (id) ->
+      $div = $(@jobs_div)
+      $job_li = $div.find("li[data-document-set-id=#{id}]")
+
+      done = =>
+        @document_sets_to_receive -= 1
+        @restart() if !@document_sets_to_receive
+
+      # 1. Shrink @job_li to 0. Or, if it's the last job, shrink the entire
+      #    div to 0.
+      # 2. Delete the job (or the div)
+      $job_li.slideUp ->
+        nOtherJobs = $job_li.siblings().length
+        if nOtherJobs
+          $job_li.remove()
+          done()
+        else
+          $div.slideUp ->
+            $job_li.remove() # So we don't try and refresh it
+            $div.remove()
+            done()
 
     _receive_document_set: (json) ->
       $job_li = $("li[data-document-set-id=#{json.id}]", @jobs_div)
