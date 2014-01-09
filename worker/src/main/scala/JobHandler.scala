@@ -204,7 +204,7 @@ object JobHandler {
         Map[String,TermWeight]()
       } else {
         val extraWeight:TermWeight = 5
-        "[ \t\n\r\u00A0]+".r.replaceAllIn(s.get, " ").split(' ').map(w => (w, extraWeight)).toMap
+        "[ \t\n\r\u00A0]+".r.replaceAllIn(s.get, " ").split(' ').filter(!_.isEmpty).map(w => (w, extraWeight)).toMap
       }
     }
 

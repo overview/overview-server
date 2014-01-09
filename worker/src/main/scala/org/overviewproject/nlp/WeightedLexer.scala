@@ -62,7 +62,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
 
     if (matched) {
       // Got a match, return unprocessed term (case sensitive etc.)
-      Some(WeightedTermString(strippedTerm.filter(_ != '"'), weight))   // $$$ strip " as we problems writing it to json
+      Some(WeightedTermString(strippedTerm, weight))
     } else {
       // lose case, allow only alphanum, dash, apostrophe
       var term = strippedTerm.toLowerCase.filter(c => c.isDigit || c.isLetter || "-'".contains(c))

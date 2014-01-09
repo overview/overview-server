@@ -16,7 +16,6 @@ package org.overviewproject.nlp
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
 import scala.collection.mutable.{Map, IndexedSeq}
-import play.api.libs.json._
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
 
@@ -32,7 +31,8 @@ object BigramKey {
 // This is a hash map from BigramKey -> VocabRecord that is "flat",
 // that is, heavily optimized to use as little memory as possible
 object FlatBigrams {
-  // Basic flattener for Int->Long map
+  // flattener object tells FlatteningHashMap how to go from Pair[BigramKey,VocabRecord] 
+  // to and from a series of 4 Ints (flatSize = 4) 
   implicit object BigramFlattener extends KeyValueFlattener[BigramKey,VocabRecord] {
     def flatSize = 4
     
@@ -92,10 +92,6 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
   type WeightedBigramKey = (BigramKey,TermWeight)
 
-  // needed to write/read json
-  implicit val WeightedTermStringFormat = Json.format[WeightedTermString]
-
-
   // --- Config ---
   var minBigramOccurrences:Int   = 5                // throw out bigram if it has less than this many occurrences
   var minBigramLikelihood:Double = 30               // ...or if not this many times more likely than chance to be a colocation
@@ -105,7 +101,6 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // ---- state ----
   private val docSpool = new TempFile
   private val spoolWriter = new CSVWriter(new BufferedWriter(new OutputStreamWriter(docSpool.outputStream, "utf-8")))
-  spoolWriter.writeNext(Array("id","text"))             // write csv file header
  
   // -- Vocabulary tables --
   
@@ -223,10 +218,11 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // saves document terms to a temp file
   def spoolDocToDisk(docId: DocumentID, terms: Seq[WeightedTermString]) : Unit = {   
     
-    // write docid,terms to disk (terms as JSON)
-    val idStr = docId.toString
-    val termsStr = Json.stringify(Json.toJson(terms))
-    spoolWriter.writeNext(Array(idStr, termsStr))
+    // write docid,terms to disk. Simple format:
+    //  docid,numterms
+    //  terms,weight    <-- repeated numterms times
+    spoolWriter.writeNext(Array(docId.toString, terms.length.toString))
+    terms.foreach { tw => spoolWriter.writeNext(Array(tw.term.toString, tw.weight.toString)) }
   }
   
   // --- Processing during copmputeDocumentVectors ---
@@ -247,13 +243,25 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
       
       spoolWriter.close()              // flushes, so we can read all we've written
       val spoolReader = new CSVReader(new BufferedReader(new InputStreamReader(docSpool.inputStream, "utf-8")))
-      spoolReader.readNext()           // eat header
+      
       var line = spoolReader.readNext()
       
       def hasNext = line != null
+
       def next = {
+
+        // Read document header: docID, numTerms 
         val id = line(0).toLong.asInstanceOf[DocumentID]
-        val terms = Json.parse(line(1)).as[Seq[WeightedTermString]]
+        var numTerms = line(1).toLong
+
+        // Read each term, weight pair (there must be a more elegant way...)
+        var terms = Seq[WeightedTermString]()
+        while (numTerms > 0) {
+          var termAndWeight = spoolReader.readNext()
+          terms = terms :+ WeightedTermString(termAndWeight(0),termAndWeight(1).toDouble.asInstanceOf[TermWeight])
+          numTerms -= 1
+        }
+
         val docVec = countBigramTerms(terms)
           
         line = spoolReader.readNext()
