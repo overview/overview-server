@@ -182,7 +182,9 @@ class Main(conf: Conf) {
 
     val sbtRun = new Daemon(sublogger.toProcessLogger, Seq(),
       Seq(
-        "-Dsbt.log.format=false"
+        "-Dsbt.log.format=false",
+        "-XX:MaxPermSize=512M",
+        "-Xmx2g"
       ),
       Seq(
         "-jar", new File(sbtLaunchUrl.toURI()).getAbsolutePath(),
