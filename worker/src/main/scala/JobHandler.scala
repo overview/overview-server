@@ -165,10 +165,6 @@ object JobHandler {
       SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
       SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
 
-      job.fileGroupId.map { fileGroupId =>
-        SQL("SELECT lo_unlink(contents_oid) FROM grouped_file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)
-      }
-
       deleteFileGroupData(job)
     }
   }
