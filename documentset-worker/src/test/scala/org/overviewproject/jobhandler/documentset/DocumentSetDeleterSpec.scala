@@ -45,7 +45,8 @@ class DocumentSetDeleterSpec extends DbSpecification {
             component = ""))
         val tag = tags.insertOrUpdate(Tag(documentSetId = documentSet.id, name = "", color = "ffffff"))
         documentTags.insert(DocumentTag(document.id, tag.id))
-        searchResults.insert(SearchResult(SearchResultState.Complete, documentSet.id, "query"))
+        val searchResult = searchResults.insertOrUpdate(SearchResult(SearchResultState.Complete, documentSet.id, "query"))
+        documentSearchResults.insert(DocumentSearchResult(document.id, searchResult.id))
       }
 
       def addClusteringGeneratedInformation = {

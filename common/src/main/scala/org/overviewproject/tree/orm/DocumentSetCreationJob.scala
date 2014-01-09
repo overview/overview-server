@@ -35,7 +35,7 @@ case class DocumentSetCreationJob(
   fileGroupId: Option[Long] = None,
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double = 0.0,
-  statusDescription: String = "") extends KeyedEntity[Long] {
+  statusDescription: String = "") extends KeyedEntity[Long] with DocumentSetComponent {
 
   def this() = this(jobType = DocumentSetCreationJobType.DocumentCloud, state = NotStarted)
 

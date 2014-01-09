@@ -32,6 +32,7 @@ object DocumentSetDeleter {
       delete(logEntries)
       delete(documentTags, DocumentTagFinder)
       delete(tags)
+      delete(documentSearchResults, DocumentSearchResultFinder)
       delete(searchResults)
     }
 

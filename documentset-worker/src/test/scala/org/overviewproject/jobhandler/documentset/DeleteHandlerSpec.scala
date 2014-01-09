@@ -20,6 +20,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     trait MockComponents {
       val searchIndex = mock[SearchIndexComponent]
       val documentSetDeleter = smartMock[DocumentSetDeleter]
+      val jobStatusChecker = smartMock[JobStatusChecker]
+      
       val deleteResultPromise = Promise[DeleteByQueryResponse]
       val deleteAliasResultPromise = Promise[IndicesAliasesResponse]
 
@@ -30,6 +32,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     abstract class DeleteContext extends ActorSystemContext with Before {
       // need lazy val or def to avoid compiler crash
       protected lazy val aliasResult: IndicesAliasesResponse = smartMock[IndicesAliasesResponse]
+      protected lazy val documentResult = smartMock[DeleteByQueryResponse]
+      
       protected val documentSetId = 2l
 
       protected var parentProbe: TestProbe = _
@@ -40,12 +44,21 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       protected def deleteDocumentsResult = deleteHandler.underlyingActor.deleteResultPromise
       protected def documentSetDeleter = deleteHandler.underlyingActor.documentSetDeleter
       
+      protected def setJobStatus: Unit = 
+        deleteHandler.underlyingActor.jobStatusChecker isJobRunning(documentSetId) returns false
+        
       override def before = {
         parentProbe = TestProbe()
         deleteHandler = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
+        setJobStatus
       }
     }
 
+    abstract class DeleteWhileJobIsRunning extends DeleteContext {
+    	override protected def setJobStatus: Unit =
+    	  deleteHandler.underlyingActor.jobStatusChecker isJobRunning(documentSetId) returns true thenReturns false
+    }
+    
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId)
       deleteAliasResult.success(aliasResult)
@@ -55,8 +68,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "notify parent when deletion of documents and alias completes successfully" in new DeleteContext {
-      val documentResult = mock[DeleteByQueryResponse]
-
       deleteHandler ! DeleteDocumentSet(documentSetId)
       deleteDocumentsResult.success(documentResult)
 
@@ -81,6 +92,17 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       deleteHandler ! DeleteDocumentSet(documentSetId)
 
       there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
+    }
+    
+    "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
+      deleteHandler ! DeleteDocumentSet(documentSetId)
+      
+      deleteDocumentsResult.success(documentResult)
+      deleteAliasResult.success(aliasResult)
+      
+      parentProbe.expectNoMsg(50 millis)
+      // deleteHandler retries here
+      parentProbe.expectMsg(JobDone(documentSetId))
     }
   }
 }
