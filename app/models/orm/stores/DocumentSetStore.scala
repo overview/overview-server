@@ -23,12 +23,6 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
     FinderResult(query).foreach(deleteOrCancelJob(_))
   }
 
-  private def deleteAssumingJobDoesNotExist(documentSet: Long): Unit = {
-    deleteClientGeneratedInformation(documentSet)
-    deleteSearchGeneratedInformation(documentSet)
-    deleteClusteringGeneratedInformation(documentSet)
-    deleteDocumentSetAfterMostReferencesAreDeleted(documentSet)
-  }
 
   /**
    * Deletes a DocumentSet, or tells the worker to do so.
@@ -52,10 +46,8 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
           deleteClientGeneratedInformation(documentSet)
         } else if (job.state != DocumentSetCreationJobState.Preparing) { // Preparing state handled by worker
           DocumentSetCreationJobStore.deletePending(job)
-          deleteAssumingJobDoesNotExist(documentSet)
         }
       case None =>
-        deleteAssumingJobDoesNotExist(documentSet)
     }
   }
 

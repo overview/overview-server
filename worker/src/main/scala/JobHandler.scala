@@ -164,18 +164,6 @@ object JobHandler {
       val id = job.documentSetId
       SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
       SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-      val uploadedFileId = SQL("SELECT uploaded_file_id FROM document_set WHERE id = {id}").on('id -> id).as(scalar[Option[Long]].single)
-
-      SQL("DELETE FROM node_document WHERE node_id IN (SELECT id FROM node WHERE document_set_id = {id})").on('id -> id).executeUpdate()
-      SQL("DELETE FROM node WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-      SQL("DELETE FROM document WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-      SQL("DELETE FROM document_processing_error WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-
-      SQL("DELETE FROM document_set WHERE id = {id}").on('id -> id).executeUpdate()
-
-      uploadedFileId.map { u =>
-        SQL("DELETE FROM uploaded_file WHERE id = {id}").on('id -> u).executeUpdate()
-      }
 
       job.fileGroupId.map { fileGroupId =>
         SQL("SELECT lo_unlink(contents_oid) FROM grouped_file_upload WHERE file_group_id = {id} AND contents_oid IS NOT NULL").on('id -> fileGroupId).as(scalar[Int] *)
