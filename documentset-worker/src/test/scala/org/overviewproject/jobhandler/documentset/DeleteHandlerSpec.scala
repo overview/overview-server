@@ -92,6 +92,9 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       deleteHandler ! DeleteDocumentSet(documentSetId)
 
       there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
+      there was one(documentSetDeleter).deleteClusteringGeneratedInformation(documentSetId)
+      there was one(documentSetDeleter).deleteDocumentSet(documentSetId)
+      
     }
     
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
