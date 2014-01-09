@@ -36,12 +36,15 @@ import java.io._
 class TempFile {
   private def createWriterAndReaderStreams : (FileOutputStream, FileInputStream) = {
     val file = java.io.File.createTempFile("overview-", ".tmp")
-
+     
     try {
       (new FileOutputStream(file), new FileInputStream(file))
     } finally {
       file.delete()
     }
+
+    // Uncomment if you want to look at the generated tempfile
+    //(new FileOutputStream("/tmp/overview-tmp"), new FileInputStream("/tmp/overview-tmp"))
   }
 
   val (outputStream : FileOutputStream, inputStream : FileInputStream) = createWriterAndReaderStreams
