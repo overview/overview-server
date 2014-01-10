@@ -113,74 +113,6 @@ class DocumentSetStoreSpec extends Specification {
       DocumentSet().isPublic must beFalse
     }
 
-    "delete document_set_user entries" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, "user@example.org", Ownership.Viewer))
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      DocumentSetUserFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete log_entry entries" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      insertLogEntry(documentSet)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      LogEntryFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete tags" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      insertTag(documentSet)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      TagFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete documents" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      insertDocument(documentSet)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      DocumentFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete document_tag entries" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      val tag = insertTag(documentSet)
-      val document = insertDocument(documentSet)
-      insertDocumentTag(document, tag)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      DocumentTagFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete nodes" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      insertNode(documentSet)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      NodeFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
-    "delete node_document entries" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      val document = insertDocument(documentSet)
-      val node = insertNode(documentSet)
-      insertNodeDocument(node, document)
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      NodeDocumentFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-      NodeFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
     "delete document_set_creation_job entries" in new DocumentSetContext {
       val documentSet = insertDocumentSet
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
@@ -194,13 +126,6 @@ class DocumentSetStoreSpec extends Specification {
       DocumentSetCreationJobFinder.byDocumentSet(documentSet).count must beEqualTo(0)
     }
 
-    "delete uploadedFile for CsvUpload document sets" in new DocumentSetContext {
-      val (uploadedFile, documentSet) = insertUploadedFileAndDocumentSet
-
-      DocumentSetStore.deleteOrCancelJob(documentSet.id)
-
-      UploadedFileFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
 
     "delete an uploaded LargeObject when there is a NotStarted job" in new DocumentSetContext {
       val (uploadedFile, documentSet) = insertUploadedFileAndDocumentSet
@@ -220,18 +145,7 @@ class DocumentSetStoreSpec extends Specification {
       LO.withLargeObject(oid) { lo => } must throwA[java.sql.SQLException]
     }
     
-    "delete SearchResults and DocumentSearchResults" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      val document = insertDocument(documentSet)
-      val searchResult = insertSearchResult(documentSet)
-      insertDocumentSearchResult(document, searchResult)
-      
-      DocumentSetStore.deleteOrCancelJob(documentSet.id)
-      val searchResultSelection = Selection(documentSet.id, Nil, Nil, Nil, Seq(searchResult.id), false)
-      DocumentFinder.bySelection(searchResultSelection).count must be equalTo(0)
-      SearchResultFinder.byDocumentSet(documentSet.id).count must be equalTo(0)
-    }
-
+    
     "cancel in-progress clone jobs when deleting a document set" in new DocumentSetContext {
       val documentSet = insertDocumentSet
       val cloneDocumentSet = CloneImportJobStore.insertCloneOf(documentSet)
@@ -248,16 +162,8 @@ class DocumentSetStoreSpec extends Specification {
       cancelledJob must beSome like { case Some(job) => job.state must beEqualTo(DocumentSetCreationJobState.Cancelled) }
     }
 
-    "cancel a job and delete client-generated information if a job is in progress" in new DocumentSetContext {
+    "cancel job if in progress" in new DocumentSetContext {
       val documentSet = insertDocumentSet
-      val tag = insertTag(documentSet)
-      val document = insertDocument(documentSet)
-      val node = insertNode(documentSet)
-      insertLogEntry(documentSet)
-      insertViewer(documentSet, "user@example.org")
-      insertDocumentTag(document, tag)
-      insertNodeDocument(node, document)
-      insertDocumentProcessingError(documentSet)
       val job = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId=documentSet.id,
         jobType=DocumentSetCreationJobType.DocumentCloud,
@@ -266,16 +172,6 @@ class DocumentSetStoreSpec extends Specification {
 
       DocumentSetStore.deleteOrCancelJob(documentSet)
 
-      // These should be deleted
-      LogEntryFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-      DocumentSetUserFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-      TagFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-      DocumentTagFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-      // These shouldn't
-      DocumentFinder.byDocumentSet(documentSet).count must beEqualTo(1)
-      NodeFinder.byDocumentSet(documentSet).count must beEqualTo(1)
-      NodeDocumentFinder.byDocumentSet(documentSet).count must beEqualTo(1)
-      DocumentProcessingErrorFinder.byDocumentSet(documentSet).count must beEqualTo(1)
       // The job must exist, cancelled
       val cancelledJob = DocumentSetCreationJobFinder.byDocumentSet(documentSet).headOption
       cancelledJob must beSome like { case Some(job) => job.state must beEqualTo(DocumentSetCreationJobState.Cancelled) }
