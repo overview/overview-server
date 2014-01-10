@@ -70,6 +70,7 @@ object DocumentSetFinder extends Finder {
       where(
         ds.id in documentSetIdsForUser(user, role)
         and (ds.id notIn documentSetIdsWithCreationJobs)
+        and (ds.deleted === false)
       )
       select(ds)
       orderBy(ds.createdAt desc)
