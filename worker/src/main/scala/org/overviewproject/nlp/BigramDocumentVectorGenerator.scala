@@ -15,7 +15,7 @@ package org.overviewproject.nlp
 
 import au.com.bytecode.opencsv.{CSVReader, CSVWriter}
 import java.io.{BufferedReader, BufferedWriter, InputStreamReader, OutputStreamWriter}
-import scala.collection.mutable.{Map, IndexedSeq}
+import scala.collection.mutable.{Map, IndexedSeq, ArrayBuffer}
 import org.overviewproject.nlp.DocumentVectorTypes._
 import org.overviewproject.util.{TempFile, FlatteningHashMap, KeyValueFlattener, Logger}
 
@@ -252,13 +252,13 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
 
         // Read document header: docID, numTerms 
         val id = line(0).toLong.asInstanceOf[DocumentID]
-        var numTerms = line(1).toLong
+        var numTerms = line(1).toInt
 
         // Read each term, weight pair (there must be a more elegant way...)
-        var terms = Seq[WeightedTermString]()
+        val terms = new ArrayBuffer[WeightedTermString](numTerms)
         while (numTerms > 0) {
           var termAndWeight = spoolReader.readNext()
-          terms = terms :+ WeightedTermString(termAndWeight(0),termAndWeight(1).toDouble.asInstanceOf[TermWeight])
+          terms += WeightedTermString(termAndWeight(0),termAndWeight(1).toDouble.asInstanceOf[TermWeight])
           numTerms -= 1
         }
 
