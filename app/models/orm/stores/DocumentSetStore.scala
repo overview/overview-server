@@ -49,6 +49,13 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
       case None =>
     }
   }
+  
+  /**
+   * Set the deleted flag to true
+   */
+  def markDeleted(documentSet: DocumentSet): Unit = {
+    Schema.documentSets.insertOrUpdate(documentSet.copy(deleted = true))
+  }
 
   /**
    * Calls deleteOrCancel() on all DocumentSets that are clones of the given

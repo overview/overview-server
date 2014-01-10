@@ -116,6 +116,7 @@ object DocumentSetController extends DocumentSetController {
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {
       DocumentSetStore.deleteOrCancelJob(documentSet)
+      DocumentSetStore.markDeleted(documentSet)
     }
   }
 

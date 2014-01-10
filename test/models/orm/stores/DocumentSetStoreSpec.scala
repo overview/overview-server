@@ -113,6 +113,10 @@ class DocumentSetStoreSpec extends Specification {
       DocumentSet().isPublic must beFalse
     }
 
+    "set deleted to false by default" in new DocumentSetContext {
+      DocumentSet().deleted must beFalse
+    }
+    
     "delete document_set_creation_job entries" in new DocumentSetContext {
       val documentSet = insertDocumentSet
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
@@ -127,6 +131,16 @@ class DocumentSetStoreSpec extends Specification {
     }
 
 
+    "set document set deleted flag to true on delete" in new DocumentSetContext {
+      val documentSet = insertDocumentSet
+      
+      DocumentSetStore.markDeleted(documentSet)
+      
+      val deletedDocumentSet = DocumentSetFinder.byDocumentSet(documentSet.id).headOption
+      
+      deletedDocumentSet must beSome.like { case ds => ds.deleted must beTrue }
+    }
+    
     "delete an uploaded LargeObject when there is a NotStarted job" in new DocumentSetContext {
       val (uploadedFile, documentSet) = insertUploadedFileAndDocumentSet
 
