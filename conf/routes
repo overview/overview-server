@@ -52,9 +52,9 @@ DELETE /documentsets/:id/users/:email controllers.DocumentSetUserController.dele
 
 GET    /documentsets/:id/documents controllers.DocumentListController.index(id: Long, nodes: String ?= "", tags: String ?= "", documents: String ?= "", searchResults: String ?= "", pageSize: Int ?= 20, page: Int ?= 1)
 
-GET    /documentsets/:id/export                                controllers.DocumentSetExportController.index(id: Long)
-GET    /documentsets/:id/export/documents-with-string-tags.csv controllers.DocumentSetExportController.documentsWithStringTags(id: Long)
-GET    /documentsets/:id/export/documents-with-column-tags.csv controllers.DocumentSetExportController.documentsWithColumnTags(id: Long)
+GET    /documentsets/:id/export                                          controllers.DocumentSetExportController.index(id: Long)
+GET    /documentsets/:id/export/documents-with-string-tags/csv/*filename controllers.DocumentSetExportController.documentsWithStringTags(filename: String, id: Long)
+GET    /documentsets/:id/export/documents-with-column-tags/csv/*filename controllers.DocumentSetExportController.documentsWithColumnTags(filename: String, id: Long)
 
 GET    /documentsets/:id/tree/nodes         controllers.NodeController.index(id: Long)
 GET    /documentsets/:id/tree/nodes/:nodeId controllers.NodeController.show(id: Long, nodeId: Long)
