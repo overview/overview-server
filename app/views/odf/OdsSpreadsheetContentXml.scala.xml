@@ -12,20 +12,20 @@
       <table:table>
         <table:table-header-rows>
           <table:table-row>
-            @for(heading: Any <- spreadsheet.headers.productIterator) {
-              <table:table-cell><text:h>@heading</text:h></table:table-cell>
+            @for(heading: String <- spreadsheet.headers) {
+              <table:table-cell><text:p>@heading</text:p></table:table-cell>
             }
           </table:table-row>
         </table:table-header-rows>
 
-        @for(row: Product <- spreadsheet.rows) {
+        @for(row: Iterable[Any] <- spreadsheet.rows) {
           <table:table-row>
-            @for(value: Any <- row.productIterator) {
-              <table:table-cell><text:p>@value</text:p><table:table-cell>
+            @for(value: Any <- row) {
+              <table:table-cell><text:p>@value</text:p></table:table-cell>
             }
           </table:table-row>
         }
-      <table:table>
+      </table:table>
     </office:spreadsheet>
   </office:body>
 </office:document-content>

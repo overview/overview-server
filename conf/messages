@@ -350,10 +350,13 @@ views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to 
 views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
-views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet (CSV file). How would you like your tags?
-views.DocumentSetExport.index.formats.documentsWithStringTags=All tags in one column.
-views.DocumentSetExport.index.formats.documentsWithColumnTags=Each tag in its own column.
+views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. How would you like your tags?
+views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=All tags in one column (CSV, UTF-8: widely compatible)
+views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=All tags in one column (XLSX: opens in Microsoft Excel)
+views.DocumentSetExport.index.formats.DocumentsWithColumnTags.csv=Each tag in its own column (CSV, UTF-8: widely compatible)
+views.DocumentSetExport.index.formats.DocumentsWithColumnTags.xlsx=Each tag in its own column (XLSX: opens in Microsoft Excel)
 views.DocumentSetExport.index.download=Download
+views.DocumentSetExport.index.postamble_html=Note: Microsoft Excel for Mac 2011 <a href="http://answers.microsoft.com/en-us/mac/forum/macoffice2011-macexcel/mac-excel-converts-utf-8-characters-to-underlines/7c4cdaa7-bfa3-41a2-8482-554ae235227b">does not support UTF-8 CSV files</a>, even though its prompts suggest it does. Use XLSX instead.
 
 views.main.ie_not_supported_html=<p>Overview does not support your version of Internet Explorer.</p><p>Please <a href="http://browsehappy.com/">upgrade to a newer web browser</a> and return here.</p><p style="font-size: small;">In 2013, four per cent of all visits to Overview came from outdated versions of Internet Explorer (like yours).</p><p style="font-size: small;">We used to support Internet Explorer 9, even though only two per cent of visitors used that particular version.</p><p style="font-size: small;">It takes much longer to develop and debug each Overview feature when we support outdated web browsers.</p><p style="font-size: small;">We choose to create more features. We hope you will return once you have installed a faster, more secure and more intuitive web browser.</p>
 

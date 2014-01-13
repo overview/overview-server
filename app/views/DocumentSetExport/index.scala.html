@@ -3,15 +3,14 @@
 @import models.export.format._
 
 @defining(scopedMessages("views.DocumentSetExport.index")) { m =>
-  <p class="preamble">@m("preamble")</p>
-  <ul class="formats">
-    <li>
-      @m("formats.documentsWithStringTags")
-      <a href="@routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapeFilename(documentSet.title + ".csv"), documentSet.id)">@m("download")</a>
-    </li>
-    <li>
-      @m("formats.documentsWithColumnTags")
-      <a href="@routes.DocumentSetExportController.documentsWithColumnTags(CsvFormat, escapeFilename(documentSet.title + ".csv"), documentSet.id)">@m("download")</a>
-    </li>
-  </ul>
+  @defining(escapeFilename(documentSet.title + ".")) { escapedFilenamePart =>
+    <p class="preamble">@m("preamble")</p>
+    <ul class="formats">
+      <li>@m("formats.DocumentsWithStringTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
+      <li>@m("formats.DocumentsWithStringTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
+      <li>@m("formats.DocumentsWithColumnTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
+      <li>@m("formats.DocumentsWithColumnTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
+    </ul>
+    <p class="postamble">@Html(m("postamble_html"))</p>
+  }
 }

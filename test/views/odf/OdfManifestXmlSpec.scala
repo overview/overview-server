@@ -5,10 +5,10 @@ import org.specs2.specification.Scope
 
 class OdfManifestXmlSpec extends Specification {
   trait SpreadsheetScope extends Scope {
-    val headers : Product = ("header 1", "header 2", "header 3")
-    val rows : Iterable[Product] = Seq(
-      ("one", "two", "three"),
-      ("four", "five", "six")
+    val headers : Iterable[String] = Seq("header 1", "header 2", "header 3")
+    val rows : Iterable[Iterable[Any]] = Seq(
+      Seq("one", "two", "three"),
+      Seq("four", "five", "six")
     )
 
     def spreadsheet = models.odf.OdsSpreadsheet(headers, rows)

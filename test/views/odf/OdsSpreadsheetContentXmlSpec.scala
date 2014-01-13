@@ -5,10 +5,10 @@ import org.specs2.specification.Scope
 
 class OdsSpreadsheetContentXmlSpec extends Specification {
   trait SpreadsheetScope extends Scope {
-    val headers : Product = ("header 1", "header 2", "header 3")
-    val rows : Iterable[Product] = Seq(
-      ("one", "two", "three"),
-      ("four", "five", "six")
+    val headers : Iterable[String] = Seq("header 1", "header 2", "header 3")
+    val rows : Iterable[Iterable[Any]] = Seq(
+      Seq("one", "two", "three"),
+      Seq("four", "five", "six")
     )
 
     def spreadsheet = models.odf.OdsSpreadsheet(headers, rows)
@@ -32,7 +32,7 @@ class OdsSpreadsheetContentXmlSpec extends Specification {
     "convert anything into a string" in new SpreadsheetScope {
       trait X extends Any
       trait Y extends Any
-      override val rows = Seq((new X { override def toString = "foo" }, new Y { override def toString = "bar" }))
+      override val rows = Seq(Seq(new X { override def toString = "foo" }), Seq(new Y { override def toString = "bar" }))
       text must contain("foo")
       text must contain("bar")
     }

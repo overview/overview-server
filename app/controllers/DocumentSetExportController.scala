@@ -13,7 +13,7 @@ import controllers.auth.{ AuthorizedAction, Authorities }
 import models.OverviewDatabase
 import models.export.Export
 import models.export.rows._
-import models.export.format._
+import models.export.format.Format
 import models.orm.finders.{ DocumentFinder, DocumentSetFinder, TagFinder }
 
 
@@ -75,7 +75,7 @@ trait DocumentSetExportController extends Controller {
   def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val documents = storage.loadDocumentsWithStringTags(documentSetId)
     val rows = rowsCreator.documentsWithStringTags(documents)
-    val export = createExport(rows, CsvFormat)
+    val export = createExport(rows, format)
 
     serveExport(export, encodedFilename)
   }
@@ -84,7 +84,7 @@ trait DocumentSetExportController extends Controller {
     val tags = storage.loadTags(documentSetId)
     val documents = storage.loadDocumentsWithTagIds(documentSetId)
     val rows = rowsCreator.documentsWithColumnTags(documents, tags)
-    val export = createExport(rows, CsvFormat)
+    val export = createExport(rows, format)
 
     serveExport(export, encodedFilename)
   }
