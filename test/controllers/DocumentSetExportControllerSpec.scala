@@ -18,7 +18,7 @@ import controllers.auth.AuthorizedRequest
 import models.OverviewUser
 import models.export.Export
 import models.export.rows.Rows
-import models.export.format.Format
+import models.export.format.{CsvFormat,Format}
 
 class DocumentSetExportControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))
@@ -61,7 +61,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     mockExport.asFileInputStream returns makeFileInputStream(contents)
     mockRowsCreator.documentsWithStringTags(any[FinderResult[(Document,Option[String])]]) returns mock[Rows]
 
-    lazy val result = controller.documentsWithStringTags("foobar.csv", documentSetId)(request)
+    lazy val result = controller.documentsWithStringTags(CsvFormat, "foobar.csv", documentSetId)(request)
   }
 
   trait DocumentsWithColumnTagsScope extends BaseScope {
@@ -76,13 +76,33 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     mockExport.asFileInputStream returns makeFileInputStream(contents)
     mockRowsCreator.documentsWithColumnTags(any[FinderResult[(Document,Option[String])]], any[FinderResult[Tag]]) returns mock[Rows]
 
-    lazy val result = controller.documentsWithColumnTags("foobar.csv", documentSetId)(request)
+    lazy val result = controller.documentsWithColumnTags(CsvFormat, "foobar.csv", documentSetId)(request)
   }
 
   "DocumentSetExportController" should {
     "use the title in output filenames" in new IndexScope {
       // Icky: tests the view, really
       contentAsString(result) must contain("foobar.csv")
+    }
+
+    "HTTP-path-encode question marks in output filenames" in new IndexScope {
+      // Icky: tests the view, really
+      // The problem: somebody requests "what?.csv", then HTTP servers like
+      // Play will treat everything after the ? as a path. 
+      mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo?bar"))
+      contentAsString(result) must contain("foo_bar.csv")
+    }
+
+    "encode filename characters" in new IndexScope {
+      // Icky: tests the view, really
+      // The problem: the server serves up a file with Content-Disposition
+      // "foo/bar.csv", and the client is not allowed to save it because "/"
+      // is a reserved character.
+
+      // List from http://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+      // When in doubt, escape it!
+      mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo/\n\\?%*:|\"<>bar"))
+      contentAsString(result) must contain("foo___________bar.csv")
     }
 
     "set Content-Type header in documentsWithStringTags" in new DocumentsWithStringTagsScope {

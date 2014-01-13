@@ -61,7 +61,7 @@ trait DocumentSetExportController extends Controller {
     } }
   }
 
-  def documentsWithStringTags(filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def documentsWithStringTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val documents = storage.loadDocumentsWithStringTags(documentSetId)
     val rows = rowsCreator.documentsWithStringTags(documents)
     val export = createExport(rows, CsvFormat)
@@ -69,7 +69,7 @@ trait DocumentSetExportController extends Controller {
     serveExport(export, filename)
   }
 
-  def documentsWithColumnTags(filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def documentsWithColumnTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val tags = storage.loadTags(documentSetId)
     val documents = storage.loadDocumentsWithTagIds(documentSetId)
     val rows = rowsCreator.documentsWithColumnTags(documents, tags)

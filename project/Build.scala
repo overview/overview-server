@@ -122,6 +122,7 @@ object ApplicationBuild extends Build with ProjectSettings {
           Defaults.itSettings: _*).settings(
             scalacOptions ++= ourScalacOptions,
             templatesImport += "views.Magic._",
+            routesImport += "extensions.Binders._",
             requireJs ++= Seq(
               "bundle/DocumentCloudImportJob/new.js",
               "bundle/DocumentSet/index.js",

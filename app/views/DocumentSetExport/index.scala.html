@@ -1,15 +1,17 @@
 @(documentSet: org.overviewproject.tree.orm.DocumentSet)(implicit lang: Lang)
 
+@import models.export.format._
+
 @defining(scopedMessages("views.DocumentSetExport.index")) { m =>
   <p class="preamble">@m("preamble")</p>
   <ul class="formats">
     <li>
       @m("formats.documentsWithStringTags")
-      <a href="@routes.DocumentSetExportController.documentsWithStringTags(documentSet.title + ".csv", documentSet.id)">@m("download")</a>
+      <a href="@routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapeFilename(documentSet.title + ".csv"), documentSet.id)">@m("download")</a>
     </li>
     <li>
       @m("formats.documentsWithColumnTags")
-      <a href="@routes.DocumentSetExportController.documentsWithColumnTags(documentSet.title + ".csv", documentSet.id)">@m("download")</a>
+      <a href="@routes.DocumentSetExportController.documentsWithColumnTags(CsvFormat, escapeFilename(documentSet.title + ".csv"), documentSet.id)">@m("download")</a>
     </li>
   </ul>
 }

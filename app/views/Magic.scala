@@ -87,4 +87,13 @@ object Magic {
     val path = bundlePath("javascripts", bundleKey, ".js")
     Html(<script type="text/javascript" src={path}></script>.toString)
   }
+
+  /** Lossy filename escape: takes a String and returns a similar String.
+   *
+   * "?" will be replaced with "_", so we can include the character in URLs.
+   */
+  def escapeFilename(filename: String) = {
+    val InvalidCharRegex = """[\x00-\x1f\\\?/%*:|"<>]""".r
+    InvalidCharRegex.replaceAllIn(filename, "_")
+  }
 }
