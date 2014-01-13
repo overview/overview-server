@@ -4,8 +4,6 @@ import java.io.{ FileInputStream, OutputStream }
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import org.overviewproject.util.TempFile
-
 class ExportSpec extends Specification {
   trait BaseScope extends Scope {
     val contents : Array[Byte] = "foobar".getBytes
