@@ -20,6 +20,16 @@ import models.orm.finders.{ DocumentFinder, DocumentSetFinder, TagFinder }
 trait DocumentSetExportController extends Controller {
   import Authorities._
 
+  /** Decode escaped path patameter.
+    *
+    * Play will not do this for us. See
+    * https://github.com/playframework/playframework/issues/1228.
+    */
+  private def decodeStarPathParameter(encodedString: String) : String = {
+    val uri = new java.net.URI(s"https://localhost:9999/${encodedString}")
+    uri.getPath().drop(1) // drop the leading "/"
+  }
+
   trait Storage {
     def findDocumentSet(id: Long): Option[DocumentSet]
     def loadDocumentsWithStringTags(documentSetId: Long): FinderResult[(Document,Option[String])]
@@ -43,12 +53,13 @@ trait DocumentSetExportController extends Controller {
     }
   }
 
-  private def serveExport(export: Export, filename: String) = {
+  private def serveExport(export: Export, encodedFilename: String) = {
     Async { Future {
       val inputStream = OverviewDatabase.inTransaction {
         export.asFileInputStream
       }
 
+      val filename = decodeStarPathParameter(encodedFilename)
       val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
       Ok.feed(Enumerator.fromStream(inputStream))
@@ -61,21 +72,21 @@ trait DocumentSetExportController extends Controller {
     } }
   }
 
-  def documentsWithStringTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val documents = storage.loadDocumentsWithStringTags(documentSetId)
     val rows = rowsCreator.documentsWithStringTags(documents)
     val export = createExport(rows, CsvFormat)
 
-    serveExport(export, filename)
+    serveExport(export, encodedFilename)
   }
 
-  def documentsWithColumnTags(format: Format, filename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
+  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
     val tags = storage.loadTags(documentSetId)
     val documents = storage.loadDocumentsWithTagIds(documentSetId)
     val rows = rowsCreator.documentsWithColumnTags(documents, tags)
     val export = createExport(rows, CsvFormat)
 
-    serveExport(export, filename)
+    serveExport(export, encodedFilename)
   }
 
   protected val storage: DocumentSetExportController.Storage

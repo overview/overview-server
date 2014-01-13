@@ -61,7 +61,9 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     mockExport.asFileInputStream returns makeFileInputStream(contents)
     mockRowsCreator.documentsWithStringTags(any[FinderResult[(Document,Option[String])]]) returns mock[Rows]
 
-    lazy val result = controller.documentsWithStringTags(CsvFormat, "foobar.csv", documentSetId)(request)
+    val filename = "foobar.csv"
+
+    lazy val result = controller.documentsWithStringTags(CsvFormat, filename, documentSetId)(request)
   }
 
   trait DocumentsWithColumnTagsScope extends BaseScope {
@@ -76,7 +78,9 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
     mockExport.asFileInputStream returns makeFileInputStream(contents)
     mockRowsCreator.documentsWithColumnTags(any[FinderResult[(Document,Option[String])]], any[FinderResult[Tag]]) returns mock[Rows]
 
-    lazy val result = controller.documentsWithColumnTags(CsvFormat, "foobar.csv", documentSetId)(request)
+    val filename = "foobar.csv"
+
+    lazy val result = controller.documentsWithColumnTags(CsvFormat, filename, documentSetId)(request)
   }
 
   "DocumentSetExportController" should {
@@ -131,6 +135,12 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
 
     "set the proper Content-Disposition" in new DocumentsWithColumnTagsScope {
       header(CONTENT_DISPOSITION, result) must beSome("""attachment; filename="foobar.csv"""")
+    }
+
+    "set a Content-Disposition with unencoded HTTP paths" in new DocumentsWithColumnTagsScope {
+      // Play will not decode path parameters. See https://github.com/playframework/playframework/issues/1228
+      override val filename = "foo%20bar.csv"
+      header(CONTENT_DISPOSITION, result) must beSome("attachment; filename*=UTF-8''foo%20bar.csv")
     }
 
     "set contents of documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
