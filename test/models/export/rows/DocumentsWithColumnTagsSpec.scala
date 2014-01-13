@@ -37,35 +37,35 @@ class DocumentsWithColumnTagsSpec extends Specification with Mockito {
 
     "export the tag names" in new OneDocumentScope {
       override def documentTagIds = None
-      outHeaders.length must beEqualTo(5)
-      outHeaders(3).toString must beEqualTo("tag1")
-      outHeaders(4).toString must beEqualTo("tag2")
+      outHeaders.length must beEqualTo(6)
+      outHeaders(4).toString must beEqualTo("tag1")
+      outHeaders(5).toString must beEqualTo("tag2")
     }
 
     "export when the document has no tags (NULL)" in new OneDocumentScope {
       override def documentTagIds = None
-      outRow1.length must beEqualTo(5)
-      outRow1(3).toString must beEqualTo("")
+      outRow1.length must beEqualTo(6)
       outRow1(4).toString must beEqualTo("")
+      outRow1(5).toString must beEqualTo("")
     }
 
     "export when the document has no tags (empty string)" in new OneDocumentScope {
       override def documentTagIds = Some("")
-      outRow1.length must beEqualTo(5)
-      outRow1(3).toString must beEqualTo("")
+      outRow1.length must beEqualTo(6)
       outRow1(4).toString must beEqualTo("")
+      outRow1(5).toString must beEqualTo("")
     }
 
     "export a document with a tag" in new OneDocumentScope {
       override def documentTagIds = Some("1")
-      outRow1(3).toString must beEqualTo("1")
-      outRow1(4).toString must beEqualTo("")
+      outRow1(4).toString must beEqualTo("1")
+      outRow1(5).toString must beEqualTo("")
     }
 
     "export a document with multiple tags" in new OneDocumentScope {
       override def documentTagIds = Some("1,2")
-      outRow1(3).toString must beEqualTo("1")
       outRow1(4).toString must beEqualTo("1")
+      outRow1(5).toString must beEqualTo("1")
     }
 
     "export Some(String) documentcloudId as suppliedId" in new OneDocumentScope {
@@ -78,19 +78,29 @@ class DocumentsWithColumnTagsSpec extends Specification with Mockito {
       outRow1(0).toString must beEqualTo("supplied-id")
     }
 
+    "export Some(String) title" in new OneDocumentScope {
+      override def document = super.document.copy(title=Some("title"))
+      outRow1(1).toString must beEqualTo("title")
+    }
+
+    "export None title" in new OneDocumentScope {
+      override def document = super.document.copy(title=None)
+      outRow1(1).toString must beEqualTo("")
+    }
+
     "export Some(String) text" in new OneDocumentScope {
       override def document = super.document.copy(text=Some("text"))
-      outRow1(1).toString must beEqualTo("text")
+      outRow1(2).toString must beEqualTo("text")
     }
 
     "export Some(String) url" in new OneDocumentScope {
       override def document = super.document.copy(url=Some("http://example.org"))
-      outRow1(2).toString must beEqualTo("http://example.org")
+      outRow1(3).toString must beEqualTo("http://example.org")
     }
 
     "export Some(String) url from a DocumentCloud ID" in new OneDocumentScope {
       override def document = super.document.copy(documentcloudId=Some("documentcloud-id"))
-      outRow1(2).toString must contain("documentcloud-id")
+      outRow1(3).toString must contain("documentcloud-id")
     }
   }
 }

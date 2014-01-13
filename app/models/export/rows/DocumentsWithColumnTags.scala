@@ -8,7 +8,7 @@ import models.OverviewDocument
 class DocumentsWithColumnTags(finderResult: FinderResult[(Document,Option[String])], tagFinderResult: FinderResult[Tag]) extends Rows {
   override def headers : Iterable[String] = {
     val tagNames = tagFinderResult.map(_.name).toIterable
-    Seq("id", "text", "url") ++ tagNames
+    Seq("id", "title", "text", "url") ++ tagNames
   }
 
   override def rows : Iterable[Iterable[Any]] = {
@@ -22,6 +22,7 @@ class DocumentsWithColumnTags(finderResult: FinderResult[(Document,Option[String
       (
         Array[Any](
           document.suppliedId.getOrElse(""),
+          document.title.getOrElse(""),
           document.text.getOrElse(""),
           document.url.getOrElse("")
         )

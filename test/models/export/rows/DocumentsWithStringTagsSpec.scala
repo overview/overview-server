@@ -27,7 +27,7 @@ class DocumentsWithStringTagsSpec extends Specification with Mockito {
   "ExportDocumentsWithStringTags" should {
     "export Some(String) tags" in new OneDocumentScope {
       override def tags = Some("tag1,tag2")
-      outRow(3) must beEqualTo("tag1,tag2")
+      outRow(4) must beEqualTo("tag1,tag2")
     }
 
     "export Some(String) suppliedId" in new OneDocumentScope {
@@ -40,19 +40,29 @@ class DocumentsWithStringTagsSpec extends Specification with Mockito {
       outRow(0) must beEqualTo("documentcloud-id")
     }
 
+    "export Some(String) title" in new OneDocumentScope {
+      override def document = super.document.copy(title=Some("title"))
+      outRow(1).toString must beEqualTo("title")
+    }
+
+    "export None title" in new OneDocumentScope {
+      override def document = super.document.copy(title=None)
+      outRow(1).toString must beEqualTo("")
+    }
+
     "export Some(String) url" in new OneDocumentScope {
       override def document = super.document.copy(url=Some("http://example.org"))
-      outRow(2) must beEqualTo("http://example.org")
+      outRow(3) must beEqualTo("http://example.org")
     }
 
     "export Some(String) URL when there is only a DocumentCloud ID" in new OneDocumentScope {
       override def document = super.document.copy(documentcloudId=Some("documentcloud-id"))
-      outRow(2) must contain("documentcloud-id")
+      outRow(3) must contain("documentcloud-id")
     }
 
     "export Some(String) text" in new OneDocumentScope {
       override def document = super.document.copy(text=Some("text"))
-      outRow(1) must beEqualTo("text")
+      outRow(2) must beEqualTo("text")
     }
   }
 }
