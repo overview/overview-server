@@ -29,13 +29,8 @@ class XlsxSpreadsheetContentSpec extends Specification {
       text must contain("<sheetData>")
     }
 
-    "put contents in a <text:p>" in new SpreadsheetScope {
-      text must contain("""<c t="s"><v>five</v></c>""")
-    }
-
-    "add a row number" in new SpreadsheetScope {
-      text must contain("""<row r="3">""")
-      text must not contain("""<row r="4">""")
+    "put contents in a inlineStr cells" in new SpreadsheetScope {
+      text must contain("""<c t="inlineStr"><is><t>five</t></is></c>""")
     }
 
     "convert anything into a string" in new SpreadsheetScope {

@@ -21,8 +21,8 @@ class OdsSpreadsheetContentXmlSpec extends Specification {
       text must contain("""office:mimetype="application/vnd.oasis.opendocument.spreadsheet"""")
     }
 
-    "put headers in a <text:h>" in new SpreadsheetScope {
-      text must contain("<text:h>header 1</text:h>")
+    "put headers in a <text:p>" in new SpreadsheetScope {
+      text must contain("<text:p>header 1</text:p>")
     }
 
     "put contents in a <text:p>" in new SpreadsheetScope {
