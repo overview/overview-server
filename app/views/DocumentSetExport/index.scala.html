@@ -3,7 +3,7 @@
 @import models.export.format._
 
 @defining(scopedMessages("views.DocumentSetExport.index")) { m =>
-  @defining(escapeFilename(documentSet.title + ".")) { escapedFilenamePart =>
+  @defining(escapeFilename(documentSet.title.replace('.', '_') + ".")) { escapedFilenamePart =>
     <p class="preamble">@m("preamble")</p>
     <ul class="formats">
       <li>@m("formats.DocumentsWithStringTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>

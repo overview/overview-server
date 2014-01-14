@@ -97,7 +97,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       contentAsString(result) must contain("foo_bar.csv")
     }
 
-    "encode filename characters" in new IndexScope {
+    "replace icky filename characters with underscores" in new IndexScope {
       // Icky: tests the view, really
       // The problem: the server serves up a file with Content-Disposition
       // "foo/bar.csv", and the client is not allowed to save it because "/"
@@ -107,6 +107,14 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       // When in doubt, escape it!
       mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo/\n\\?%*:|\"<>bar"))
       contentAsString(result) must contain("foo___________bar.csv")
+    }
+
+    "replace dots with underscores" in new IndexScope {
+      // Icky: tests the view, really
+      // The problem: if the server serves up foobar.csv.xlsx, virus scanners
+      // will complain that the file is masquerading as something else.
+      mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo.bar"))
+      contentAsString(result) must contain("foo_bar.csv")
     }
 
     "set Content-Type header in documentsWithStringTags" in new DocumentsWithStringTagsScope {
