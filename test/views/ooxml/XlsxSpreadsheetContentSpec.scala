@@ -33,6 +33,18 @@ class XlsxSpreadsheetContentSpec extends Specification {
       text must contain("""<c t="inlineStr"><is><t>five</t></is></c>""")
     }
 
+    "not put an <is> for an empty string" in new SpreadsheetScope {
+      override val vRows = Seq(Seq(""))
+      text must contain("""<c t="inlineStr"/>""")
+    }
+
+    "truncate cells to 32767 characters" in new SpreadsheetScope {
+      // http://office.microsoft.com/en-ca/excel-help/excel-specifications-and-limits-HP005199291.aspx
+      override val vRows = Seq(Seq("x" * 32768))
+      text must contain("x" * 32767)
+      text must not(contain("x" * 32768))
+    }
+
     "use ST_Xstring escaping for C0 control characters" in new SpreadsheetScope {
       // See http://www.robweir.com/blog/2008/03/ooxmls-out-of-control-characters.html
       // TODO: ban non-text characters?

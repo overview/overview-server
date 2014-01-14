@@ -8,16 +8,24 @@
     """[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x84\x86-\x9f]""".r.replaceAllIn(s1, (m => "_x%04X_".format(m.matched.codePointAt(0))))
   }
 
+  @inlineStringCell(text: String) = @{
+    if (text.length == 0) {
+      <c t="inlineStr"/>
+    } else {
+      <c t="inlineStr"><is><t>{ST_XstringEscape(text).take(32767)}</t></is></c>
+    }
+  }
+
   <sheetData>
     <row>
       @for(heading: String <- spreadsheet.headers) {
-        <c t="inlineStr"><is><t>@heading</t></is></c>
+        @Xml(inlineStringCell(heading).toString)
       }
     </row>
     @for(row: Iterable[Any] <- spreadsheet.rows) {
       <row>
         @for(value: Any <- row) {
-        <c t="inlineStr"><is><t>@ST_XstringEscape(value.toString)</t></is></c>
+          @Xml(inlineStringCell(value.toString).toString)
         }
       </row>
     }
