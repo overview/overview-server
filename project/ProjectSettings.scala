@@ -52,6 +52,7 @@ trait ProjectSettings {
     "com.typesafe" %% "play-plugins-util" % "2.1.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
+    "org.owasp.encoder" % "encoder" % "1.1",
     "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
     "play" %% "play-test" % play.core.PlayVersion.current % "it,test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "it",
