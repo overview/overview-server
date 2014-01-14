@@ -32,7 +32,7 @@ case class XlsxFile(spreadsheet: Rows) {
       |<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
       |  <Relationship Id="rId1"
       |                Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"
-      |                Target="workbook.xml"/>
+      |                Target="xl/workbook.xml"/>
       |</Relationships>""".stripMargin)
   }
 
@@ -40,22 +40,22 @@ case class XlsxFile(spreadsheet: Rows) {
     writeStringContent("[Content_Types].xml", zipStream, """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       |<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
       |  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-      |  <Override PartName="/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-      |  <Override PartName="/worksheet.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+      |  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+      |  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
       |</Types>""".stripMargin)
   }
 
   private def writeXlRelTo(zipStream: ZipOutputStream) : Unit = {
-    writeStringContent("_rels/workbook.xml.rels", zipStream, """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    writeStringContent("xl/_rels/workbook.xml.rels", zipStream, """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       |<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
       |  <Relationship Id="rId1"
       |                Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
-      |                Target="worksheet.xml"/>
+      |                Target="worksheets/sheet1.xml"/>
       |</Relationships>""".stripMargin)
   }
 
   private def writeWorkbookTo(zipStream: ZipOutputStream) : Unit = {
-    writeStringContent("workbook.xml", zipStream, """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    writeStringContent("xl/workbook.xml", zipStream, """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       |<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
       |          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
       |  <sheets>
@@ -66,6 +66,6 @@ case class XlsxFile(spreadsheet: Rows) {
 
   private def writeWorksheetTo(zipStream: ZipOutputStream) : Unit = {
     val xml = XlsxSpreadsheetContent(spreadsheet)
-    writeStringContent("worksheet.xml", zipStream, xml.toString)
+    writeStringContent("xl/worksheets/sheet1.xml", zipStream, xml.toString)
   }
 }
