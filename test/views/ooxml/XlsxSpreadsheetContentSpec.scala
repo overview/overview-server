@@ -29,6 +29,10 @@ class XlsxSpreadsheetContentSpec extends Specification {
       text must contain("<sheetData>")
     }
 
+    "put headers in inlineStr cells" in new SpreadsheetScope {
+      text must contain("""<c t="inlineStr"><is><t>header 1</t></is></c>""")
+    }
+
     "put contents in a inlineStr cells" in new SpreadsheetScope {
       text must contain("""<c t="inlineStr"><is><t>five</t></is></c>""")
     }

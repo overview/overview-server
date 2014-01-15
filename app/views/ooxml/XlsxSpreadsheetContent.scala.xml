@@ -24,7 +24,11 @@
   <sheetData>
     <row>
       @for(heading: String <- spreadsheet.headers) {
-        @Xml(ST_XstringEscape(heading).toString)
+        @if(heading.isEmpty) {
+          <c t="inlineStr"/>
+        } else {
+          <c t="inlineStr"><is><t>@Xml(ST_XstringEscape(heading).toString)</t></is></c>
+        }
       }
     </row>
     @for(row: Iterable[Any] <- spreadsheet.rows) {
