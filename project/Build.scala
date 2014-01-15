@@ -66,6 +66,7 @@ object ApplicationBuild extends Build with ProjectSettings {
       settings = Defaults.defaultSettings)
     .settings(libraryDependencies ++= runnerDependencies)
     .settings(com.typesafe.sbt.SbtNativePackager.packageArchetype.java_application: _*)
+    .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {

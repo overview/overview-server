@@ -1,8 +1,7 @@
 package org.overviewproject.runner
 
-import java.io.{ByteArrayOutputStream,File,FilterOutputStream,OutputStream}
-import org.rogach.scallop.{ArgType,ScallopConf,ValueConverter}
-import scala.reflect.runtime.universe.typeTag
+import java.io.{ByteArrayOutputStream,File}
+import java.util.concurrent.TimeoutException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -13,25 +12,39 @@ object Flags {
   val SearchCluster = "DevSearchIndex"
 }
 
-case class DaemonSpec(
-    key: String,
+case class DaemonInfo(
+    id: String,
     colorCode: String,
     env: Seq[(String,String)], 
     jvmArgs: Seq[String],
     args: Seq[String]) {
 }
 
-object DaemonSpecs {
+trait DaemonInfoRepository {
+  val allDaemonInfos : Seq[DaemonInfo]
+
+  lazy val validKeys : Set[String] = allDaemonInfos.map(_.id).toSet
+
+  def daemonInfosExcept(keys: Set[String]) : Seq[DaemonInfo] = {
+    allDaemonInfos.filter(ds => !keys.contains(ds.id))
+  }
+
+  def daemonInfosOnly(keys: Set[String]) : Seq[DaemonInfo] = {
+    allDaemonInfos.filter(ds => keys.contains(ds.id))
+  }
+}
+
+object DaemonInfoRepository extends DaemonInfoRepository {
   private val sbtLaunchUri = getClass.getResource("/sbt-launch.jar").toURI()
   val sbtLaunchPath = new File(sbtLaunchUri).getAbsolutePath()
 
-  val allDaemonSpecs = Seq[DaemonSpec](
+  val allDaemonInfos = Seq[DaemonInfo](
     // Seq so we won't start them in a quasi-random order. (You never know if
     // we'll hit a terrible bug that only affects one developer....)
     //
     // In theory, the order should not matter: all daemons should eventually
     // do their jobs if all are running.
-    DaemonSpec(
+    DaemonInfo(
       "search-index",
       Console.BLUE,
       Seq(),
@@ -40,7 +53,7 @@ object DaemonSpecs {
         "-Des.foreground=yes", "-Des.path.home=./search-index"),
       Seq("org.elasticsearch.bootstrap.ElasticSearch")
     ),
-    DaemonSpec(
+    DaemonInfo(
       "message-broker",
       Console.YELLOW,
       Seq(),
@@ -52,7 +65,7 @@ object DaemonSpecs {
         "run"
       )
     ),
-    DaemonSpec(
+    DaemonInfo(
       "overview-server",
       // We run "overview-server/run" through sbt. That lets it reload files
       // as they're edited.
@@ -65,17 +78,17 @@ object DaemonSpecs {
       ),
       Seq(
         "-jar", sbtLaunchPath,
-        "overview-server/run"
+        "run"
       )
     ),
-    DaemonSpec(
+    DaemonInfo(
       "documentset-worker",
       Console.CYAN,
       Seq(),
       Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
       Seq("org.overviewproject.DocumentSetWorker")
     ),
-    DaemonSpec(
+    DaemonInfo(
       "worker",
       Console.MAGENTA,
       Seq(),
@@ -83,104 +96,15 @@ object DaemonSpecs {
       Seq("JobHandler")
     )
   )
-
-  val validKeys : Set[String] = allDaemonSpecs.map(_.key).toSet
-
-  def daemonSpecsExcept(keys: Set[String]) : Seq[DaemonSpec] = {
-    allDaemonSpecs.filter(ds => !keys.contains(ds.key))
-  }
-
-  def daemonSpecsOnly(keys: Set[String]) : Seq[DaemonSpec] = {
-    allDaemonSpecs.filter(ds => keys.contains(ds.key))
-  }
-}
-
-/** Command-line argument parser.
-  *
-  * Usage:
-  *
-  *   val conf = new Conf(arguments)
-  *   val daemonSpecs = conf.daemonSpecs
-  */
-class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-  version("Overview Development Version Runner")
-  banner(s"""Usage: run [OPTION]
-            |By default, runs all servers. You may specify --only-servers or
-            |--except-servers if you want to avoid some.
-            |
-            |Servers: ${DaemonSpecs.allDaemonSpecs.map(_.key).mkString(",")}
-            |
-            |Options:
-            |""".stripMargin)
-
-  def daemonSpecListConverter = new ValueConverter[Seq[DaemonSpec]] {
-    def parse(s: List[(String, List[String])]) : Either[String, Option[Seq[DaemonSpec]]] = {
-      if (s.isEmpty) {
-        Right(None)
-      } else {
-        val isOnly = s(0)._1 == "only-servers"
-        val keys = s.map(_._2).flatten.mkString(",").split(',').toSet
-        val invalidKeys = keys -- DaemonSpecs.validKeys
-
-        if (invalidKeys.isEmpty) {
-          val specs = if (isOnly) DaemonSpecs.daemonSpecsOnly(keys) else DaemonSpecs.daemonSpecsExcept(keys)
-          Right(Some(specs))
-        } else {
-          Left(s"Please specify a comma-separated list of valid servers, among these: ${DaemonSpecs.validKeys.mkString(",")}")
-        }
-      }
-    }
-
-    val tag = typeTag[Seq[DaemonSpec]]
-    val argType = ArgType.SINGLE
-  }
-
-  val onlyServers = opt[Seq[DaemonSpec]]("only-servers", descr="Only start this comma-separated list of servers")(daemonSpecListConverter)
-  val exceptServers = opt[Seq[DaemonSpec]]("except-servers", descr="Start all but this comma-separated list of servers")(daemonSpecListConverter)
-
-  mutuallyExclusive(onlyServers, exceptServers)
-
-  def daemonSpecs : Seq[DaemonSpec] = {
-    onlyServers.get
-      .orElse(exceptServers.get)
-      .getOrElse(DaemonSpecs.allDaemonSpecs)
-  }
-}
-
-class BiOutputStream(out1: OutputStream, out2: OutputStream) extends FilterOutputStream(out1) {
-  override def write(b: Int): Unit = {
-    super.write(b)
-    out2.write(b)
-  }
-
-  override def write(b: Array[Byte]): Unit = {
-    super.write(b)
-    out2.write(b)
-  }
-
-  override def write(b: Array[Byte], off: Int, len: Int) : Unit = {
-    super.write(b, off, len)
-    out2.write(b, off, len)
-  }
-
-  override def flush(): Unit = {
-    super.flush()
-    out2.flush()
-  }
-
-  override def close(): Unit = {
-    super.close()
-    out2.close()
-  }
 }
 
 class Main(conf: Conf) {
   lazy val logger = new Logger(System.out, System.err)
 
-  val daemonSpecs = conf.daemonSpecs
-  logger.out.println(s"Preparing to start ${daemonSpecs.map(_.key).mkString(", ")}")
+  val daemonInfos = conf.daemonInfos
+  logger.out.println(s"Preparing to start ${daemonInfos.map(_.id).mkString(", ")}")
 
-  /** Returns classpaths, one per daemonSpec, in the same order as daemonSpecs.
+  /** Returns classpaths, one per daemonInfo, in the same order as daemonInfos.
    */
   def getClasspaths() : Seq[String] = {
     logger.out.println("Compiling and fetching...")
@@ -189,7 +113,7 @@ class Main(conf: Conf) {
     val cpLogger = new Logger(new BiOutputStream(System.out, cpStream), System.err)
     val sublogger = cpLogger.sublogger("sbt", Some(Console.BLUE.getBytes()))
 
-    val sbtTasks = daemonSpecs.map((spec: DaemonSpec) => s"show ${spec.key}/full-classpath")
+    val sbtTasks = daemonInfos.map((spec: DaemonInfo) => s"show ${spec.id}/full-classpath")
     val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
 
     val sbtRun = new Daemon(sublogger.toProcessLogger, Seq(),
@@ -199,7 +123,7 @@ class Main(conf: Conf) {
         "-Xmx2g"
       ),
       Seq(
-        "-jar", DaemonSpecs.sbtLaunchPath,
+        "-jar", DaemonInfoRepository.sbtLaunchPath,
         sbtCommand
       )
     )
@@ -223,11 +147,11 @@ class Main(conf: Conf) {
   }
 
   def run() = {
-    def makeDaemon(spec: DaemonSpec, classpath: String) : Daemon = {
+    def makeDaemon(spec: DaemonInfo, classpath: String) : Daemon = {
       new Daemon(
-        logger.sublogger(spec.key, Some(spec.colorCode.getBytes())).toProcessLogger,
+        logger.sublogger(spec.id, Some(spec.colorCode.getBytes())).toProcessLogger,
         spec.env,
-        spec.jvmArgs ++ Seq("-cp", classpath),
+        spec.jvmArgs ++ (if (spec.id == "overview-server") Seq() else Seq("-cp", classpath)),
         spec.args
       )
     }
@@ -235,7 +159,7 @@ class Main(conf: Conf) {
     val classpaths = getClasspaths()
 
     // Start all the daemons
-    val daemons = daemonSpecs.zip(classpaths).map {
+    val daemons = daemonInfos.zip(classpaths).map {
       case (spec, classpath) => makeDaemon(spec, classpath)
     }
 
@@ -248,19 +172,49 @@ class Main(conf: Conf) {
     // Note that we only listen for one status code at a time: these tasks
     // block a lot, so if we listened for them all at once we'd exhaust the
     // thread pool.
-    import scala.concurrent.ExecutionContext.Implicits.global
-    for (daemon <- daemons) {
-      val statusCode = Await.result(daemon.statusCodeFuture, Duration.Inf)
-      daemon.logger.out("This process exited with status code ${statusCode}\n")
+    //
+    // Also: we have to support Ctrl+D, because Play outputs a log message
+    // suggesting users should use it.
+
+    var shuttingDown = false
+
+    def waitForDaemonToExitOrCtrlD(daemon: Daemon) : Unit = {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      while (true) {
+        // Spin through input looking for Ctrl+D
+        if (!shuttingDown) {
+          def isEOF(b: Int) : Boolean = (b == -1 || b == 4)
+          while (System.in.available() > 0) {
+            if (isEOF(System.in.read())) {
+              System.out.println("Ctrl+D pressed. Killing processes...")
+              shuttingDown = true
+            }
+          }
+        }
+
+        if (shuttingDown) daemon.process.destroy()
+
+        // Is the daemon dead? If so, break so we get to the next daemon
+        try {
+          val duration = Duration(100, "ms")
+          val statusCode = Await.result(daemon.statusCodeFuture, duration)
+          daemon.logger.out(s"Process exited with status code ${statusCode}\n")
+          return
+        } catch {
+          case _: TimeoutException => Unit // Daemon's still up. Go back to reading inputs.
+        }
+      }
     }
 
-    logger.out.println(s"All processes exited. Shutting down.")
+    daemons.foreach(waitForDaemonToExitOrCtrlD)
+
+    logger.out.println("All processes exited. Shutting down.")
   }
 }
 
 object Main {
   def main(args: Array[String]) : Unit = {
-    val conf = new Conf(args)
+    val conf = new Conf(DaemonInfoRepository, args)
     new Main(conf).run()
   }
 }
