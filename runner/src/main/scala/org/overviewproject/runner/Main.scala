@@ -22,6 +22,9 @@ case class DaemonSpec(
 }
 
 object DaemonSpecs {
+  private val sbtLaunchUri = getClass.getResource("/sbt-launch.jar").toURI()
+  val sbtLaunchPath = new File(sbtLaunchUri).getAbsolutePath()
+
   val allDaemonSpecs = Seq[DaemonSpec](
     // Seq so we won't start them in a quasi-random order. (You never know if
     // we'll hit a terrible bug that only affects one developer....)
@@ -46,13 +49,19 @@ object DaemonSpecs {
     ),
     DaemonSpec(
       "overview-server",
+      // We run "overview-server/run" through sbt. That lets it reload files
+      // as they're edited.
       Console.GREEN,
       Seq(),
       Seq(
+        "-XX:MaxPermSize=512M",
         "-Dpidfile.enabled=false",
         "-DapplyEvolutions.default=true" // So overview-worker works on first launch
       ),
-      Seq("play.core.server.NettyServer", ".")
+      Seq(
+        "-jar", sbtLaunchPath,
+        "overview-server/run"
+      )
     ),
     DaemonSpec(
       "documentset-worker",
@@ -178,8 +187,6 @@ class Main(conf: Conf) {
     val sbtTasks = daemonSpecs.map((spec: DaemonSpec) => s"show ${spec.key}/full-classpath")
     val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
 
-    val sbtLaunchUrl = getClass.getResource("/sbt-launch.jar")
-
     val sbtRun = new Daemon(sublogger.toProcessLogger, Seq(),
       Seq(
         "-Dsbt.log.format=false",
@@ -187,7 +194,7 @@ class Main(conf: Conf) {
         "-Xmx2g"
       ),
       Seq(
-        "-jar", new File(sbtLaunchUrl.toURI()).getAbsolutePath(),
+        "-jar", DaemonSpecs.sbtLaunchPath,
         sbtCommand
       )
     )
