@@ -45,7 +45,12 @@ object DaemonSpecs {
       Console.YELLOW,
       Seq(),
       Seq(Flags.ApolloBase),
-      Seq("org.apache.activemq.apollo.boot.Apollo", "documentset-worker/lib", "org.apache.activemq.apollo.cli.Apollo", "run")
+      Seq(
+        "org.apache.activemq.apollo.boot.Apollo",
+        "documentset-worker/lib",
+        "org.apache.activemq.apollo.cli.Apollo",
+        "run"
+      )
     ),
     DaemonSpec(
       "overview-server",
