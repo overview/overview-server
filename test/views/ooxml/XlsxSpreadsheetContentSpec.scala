@@ -22,7 +22,7 @@ class XlsxSpreadsheetContentSpec extends Specification {
 
   "XlsxWorksheetContentSpec" should {
     "have the correct XMLNS" in new SpreadsheetScope {
-      text must contain("""xmlns="http://purl.oclc.org/ooxml/spreadsheetml/main"""")
+      text must contain("""xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"""")
     }
 
     "start with a <sheetData>" in new SpreadsheetScope {

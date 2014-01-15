@@ -1,11 +1,24 @@
 @(spreadsheet: models.export.rows.Rows
 )<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet
-    xmlns="http://purl.oclc.org/ooxml/spreadsheetml/main"
-    xmlns:r="http://purl.oclc.org/ooxml/officeDocument/relationships">
+    xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   @ST_XstringEscape(text: String) = @{
-    val s1 = """_x[0-9a-fA-F]{4}_""".r.replaceAllIn(text, (m => s"_x005F${m.matched}"))
-    org.owasp.encoder.Encode.forXml(s1).take(32767)
+    // Excel translates "_x0001_" to a control character. Then it crashes when
+    // it tries to _open_ a file with a control character. So let's avoid its
+    // stupid escaping mechanism.
+    // "_x0003_" -> "_x005F_x0003_" -- escape the escape
+    val xstring = """_x[0-9a-fA-F]{4}_""".r.replaceAllIn(text, (m => s"_x005F${m.matched}"))
+
+    // See http://www.w3.org/TR/xml/#charsets
+    // Why not just use org.owasp.encoder.Encode.forXml(xstring)? Because
+    // https://code.google.com/p/owasp-java-encoder/issues/detail?id=4
+    val writer = new java.io.StringWriter
+    org.owasp.encoder.Encode.forXml(writer, xstring)
+    val valid = writer.toString
+
+    // Truncate. Excel only allows 32767 characters per cell.
+    valid.take(32767)
   }
 
   <sheetData>
