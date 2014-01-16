@@ -111,6 +111,11 @@ class DocumentSetDeleterSpec extends DbSpecification {
         LO.withLargeObject(_.oid)
       }
       
+      def findFile: Option[File] = {
+        val finder = new FinderById(files)
+        finder.byId(file.id).headOption
+      }
+      
       def contentIsRemoved(oid: Long): Boolean = {
         implicit val pgConnection = DB.pgConnection
         
@@ -155,6 +160,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     "delete document set with uploaded PDFs" in new PdfUploadContext {
       DocumentSetDeleter().deleteDocumentSet(documentSet.id)
       
+      findFile must beNone
       contentIsRemoved(file.contentsOid) must beTrue
     }
   }
