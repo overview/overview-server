@@ -70,30 +70,6 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
     jobs.foreach((dscj: DocumentSetCreationJob) => deleteOrCancelJob(dscj.documentSetId))
   }
 
-  private def deleteClientGeneratedInformation(documentSet: Long): Unit = {
-    LogEntryStore.delete(LogEntryFinder.byDocumentSet(documentSet).toQuery)
-    DocumentTagStore.delete(DocumentTagFinder.byDocumentSet(documentSet).toQuery)
-    TagStore.delete(TagFinder.byDocumentSet(documentSet).toQuery)
-    DocumentSetUserStore.delete(DocumentSetUserFinder.byDocumentSet(documentSet).toQuery)
-  }
-
-  private def deleteClusteringGeneratedInformation(documentSet: Long): Unit = {
-    DocumentSetCreationJobFinder.byDocumentSet(documentSet).forUpdate.headOption.map(DocumentSetCreationJobStore.deletePending)
-    NodeDocumentStore.delete(NodeDocumentFinder.byDocumentSet(documentSet).toQuery)
-    NodeStore.delete(NodeFinder.byDocumentSet(documentSet).toQuery)
-    DocumentStore.delete(DocumentFinder.byDocumentSet(documentSet).toQuery)
-    DocumentProcessingErrorStore.delete(DocumentProcessingErrorFinder.byDocumentSet(documentSet).toQuery)
-  }
-
-  private def deleteSearchGeneratedInformation(documentSet: Long): Unit = {
-    val searchResults = SearchResultFinder.byDocumentSet(documentSet)
-    searchResults.foreach { searchResult =>
-      DocumentSearchResultStore.delete(DocumentSearchResultFinder.bySearchResult(searchResult.id).toQuery)
-    }
-    SearchResultStore.delete(searchResults.toQuery)
-  }
-  
-
   private def deleteDocumentSetAfterMostReferencesAreDeleted(documentSet: Long): Unit = {
     import org.overviewproject.postgres.SquerylEntrypoint._
 

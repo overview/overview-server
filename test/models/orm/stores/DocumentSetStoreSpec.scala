@@ -11,6 +11,7 @@ import play.api.test.FakeApplication
 import org.overviewproject.tree.orm.SearchResultState._
 import org.overviewproject.postgres.LO
 import org.overviewproject.tree.orm._
+import org.overviewproject.tree.orm.stores.{ BaseStore, NoInsertOrUpdate }
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import helpers.{DbTestContext, PgConnectionContext}
 import models.Selection
@@ -20,6 +21,8 @@ import models.orm.finders._
 class DocumentSetStoreSpec extends Specification {
 
   trait DocumentSetContext extends PgConnectionContext {
+    private val documentStore = new BaseStore(models.orm.Schema.documents) with NoInsertOrUpdate[Document]
+    
     def insertDocumentSet = {
       DocumentSetStore.insertOrUpdate(DocumentSet(title="title", query=Some("query")))
     }
@@ -31,7 +34,7 @@ class DocumentSetStoreSpec extends Specification {
     }
 
     def insertDocument(documentSet : DocumentSet) = {
-      DocumentStore.insert(Document(
+      documentStore.insert(Document(
         id=1L,
         documentSetId=documentSet.id,
         documentcloudId=Some("1-hello"),
