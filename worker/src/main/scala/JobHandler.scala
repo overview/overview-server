@@ -229,7 +229,7 @@ object JobHandler {
 
   private def failOnUploadedDocumentSets(documentSetId: Long): Boolean = Database.inTransaction {
     DocumentFinder.byDocumentSet(documentSetId).headOption.map { document =>
-      document.contentsOid.isDefined
+      document.fileId.isDefined
     }.getOrElse(false)
   }
 

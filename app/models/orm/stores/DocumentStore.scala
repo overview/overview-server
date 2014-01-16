@@ -6,11 +6,6 @@ import org.overviewproject.tree.orm.stores.{ BaseStore, NoInsertOrUpdate }
 import org.squeryl.Query
 
 object DocumentStore extends BaseStore(models.orm.Schema.documents) with NoInsertOrUpdate[Document] {
-  
-  def deleteContents(query: Query[Document]) = {
-    from(query)(d =>
-      select(&(lo_unlink(d.contentsOid)))  
-    ).toIterable
-    
-  }
+
+
 }

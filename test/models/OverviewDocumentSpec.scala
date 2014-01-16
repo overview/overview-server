@@ -52,12 +52,12 @@ class OverviewDocumentSpec extends DbSpecification {
     
     trait UploadedDocumentScope extends Scope with OneDocument {
       val ormDocumentId: Long = 1L
-      val contentsOid = 12345L
+      val fileId = 12345L
       val contentLength = 22000L
       
       override def ormDocument = Document(
         id = ormDocumentId,
-        contentsOid = Some(contentsOid),
+        fileId = Some(fileId),
         contentLength = Some(contentLength)
       )
     }
@@ -97,7 +97,7 @@ class OverviewDocumentSpec extends DbSpecification {
     }
     
     "give the proper url for an uploaded document" in new UploadedDocumentScope {
-      document.url must beSome(s"/documents/$ormDocumentId/contents/$contentsOid")
+      document.url must beSome(s"/documents/$ormDocumentId/contents/$fileId")
     }
     "give a title for a Document if there is one" in new CsvImportDocumentScope {
       document.title must be equalTo title

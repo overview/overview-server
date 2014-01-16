@@ -28,7 +28,8 @@ object Schema extends org.squeryl.Schema {
   val uploadedFiles = table[UploadedFile]
   val uploads = table[Upload]
   val users = table[User]
+  val files = table[File]
 
-  on(documents)(d => declare(d.id is(primaryKey)))
-  on(nodes)(n => declare(n.id is(primaryKey)))
+  on(documents)(d => declare(d.id is (primaryKey)))
+  on(nodes)(n => declare(n.id is (primaryKey)))
 }

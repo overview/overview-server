@@ -93,10 +93,15 @@ class DocumentSetDeleterSpec extends DbSpecification {
     
     trait PdfUploadContext extends DocumentSetContext {
       
+      var file: File = _
+      
       override protected def createDocumentSet = {
         documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
         val contentsOid = createContents
-        document = Document(documentSet.id, contentsOid = Some(contentsOid), contentLength = Some(100l))
+        file = files.insertOrUpdate(File(1, contentsOid))
+        
+        document =
+          Document(documentSet.id, fileId = Some(file.id), contentLength = Some(100l))
         documents.insert(document)
       }
       
@@ -150,7 +155,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     "delete document set with uploaded PDFs" in new PdfUploadContext {
       DocumentSetDeleter().deleteDocumentSet(documentSet.id)
       
-      contentIsRemoved(document.contentsOid.get) must beTrue
+      contentIsRemoved(file.contentsOid) must beTrue
     }
   }
 

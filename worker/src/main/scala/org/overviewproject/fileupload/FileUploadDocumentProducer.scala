@@ -6,8 +6,10 @@ import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence._
 import org.overviewproject.persistence.orm.finders.FileFinder
-import org.overviewproject.tree.orm.{ Document, GroupedProcessedFile }
+import org.overviewproject.persistence.orm.Schema.files
+import org.overviewproject.tree.orm.{ Document, File, GroupedProcessedFile }
 import org.overviewproject.tree.orm.FileJobState._
+import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn }
@@ -19,7 +21,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     with PersistentDocumentSet {
 
   private val IndexingTimeout = 3 minutes
-
+  private val fileStore = new BaseStore(files)
   private val UpdateInterval = 1000l
   private val PreparingFraction = 0.25
   private val FetchingFraction = 0.25
@@ -83,9 +85,16 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     } else lastUpdateTime
   }
 
-  private def writeAndCommitDocument(documentSetId: Long, file: GroupedProcessedFile): Long = Database.inTransaction {
-    val document = Document(documentSetId, id = ids.next, title = Some(file.name), text = file.text,
-      contentsOid = Some(file.contentsOid), contentLength = Some(file.size))
+  private def writeAndCommitDocument(documentSetId: Long, processedFile: GroupedProcessedFile): Long = Database.inTransaction {
+    val file = fileStore.insertOrUpdate(File(1, processedFile.contentsOid))
+
+    val document = Document(
+      documentSetId,
+      id = ids.next,
+      title = Some(processedFile.name),
+      text = processedFile.text,
+      contentLength = Some(processedFile.size),
+      fileId = Some(file.id))
 
     DocumentWriter.write(document)
 

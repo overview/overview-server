@@ -41,7 +41,7 @@ sealed trait OverviewDocument {
 }
 
 object OverviewDocument {
-  private def uploadedDocumentUrl(documentId: Long, oid: Long) = s"/documents/${documentId}/contents/${oid}"
+  private def uploadedDocumentUrl(documentId: Long, fileId: Long) = s"/documents/${documentId}/contents/${fileId}"
 
   private def idToDocumentCloudUrl(documentcloudId: String) = {
     val prefix = play.api.Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org")
@@ -59,7 +59,7 @@ object OverviewDocument {
     override val url : Option[String] = {
       ormDocument.url.orElse(
         ormDocument.documentcloudId.map(idToDocumentCloudUrl)).orElse(
-          ormDocument.contentsOid.map(oid => uploadedDocumentUrl(ormDocument.id, oid)))
+          ormDocument.fileId.map(fileId => uploadedDocumentUrl(ormDocument.id, fileId)))
     }
   }
 
