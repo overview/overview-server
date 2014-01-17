@@ -71,7 +71,7 @@ trait PdfBoxPdfProcessor {
   def extractText(fileStream: InputStream): String = {
     val document = PDDocument.load(fileStream)
     val text = ultimately(document.close) {
-      pdfTextStripper.getText(document)
+      pdfTextStripper.getText(document).replaceAll("\0", "")
     }
 
     text
