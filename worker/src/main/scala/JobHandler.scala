@@ -13,7 +13,7 @@ import scala.util._
 
 import org.elasticsearch.ElasticSearchException
 import org.overviewproject.clone.CloneDocumentSet
-import org.overviewproject.clustering.{DocumentSetIndexer, DocumentSetIndexerOptions}
+import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
 import org.overviewproject.persistence._
 import org.overviewproject.persistence.orm.finders.{ DocumentFinder, FileFinder, FileGroupFinder, GroupedFileUploadFinder }
@@ -183,11 +183,11 @@ object JobHandler {
 
     // Converts "important words" options string into a map of regex->weight
     // splits on runs of spaces, fixed weight
-    def makeEmphasizedWords(s:Option[String]) : Map[String, TermWeight] = {
+    def makeEmphasizedWords(s: Option[String]): Map[String, TermWeight] = {
       if (s.isEmpty) {
-        Map[String,TermWeight]()
+        Map[String, TermWeight]()
       } else {
-        val extraWeight:TermWeight = 5
+        val extraWeight: TermWeight = 5
         "[ \t\n\r\u00A0]+".r.replaceAllIn(s.get, " ").split(' ').filter(!_.isEmpty).map(w => (w, extraWeight)).toMap
       }
     }
@@ -218,12 +218,8 @@ object JobHandler {
       JobProgressLogger.apply(job.documentSetId, _: Progress))
 
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
-      if (failOnUploadedDocumentSets(sourceDocumentSetId)) {
-        throw new DisplayedError("not_implemented_error")
-      } else {
-        Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
-        CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
-      }
+      Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
+      CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
     }
   }
 

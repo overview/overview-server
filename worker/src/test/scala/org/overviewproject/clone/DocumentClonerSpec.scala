@@ -5,8 +5,9 @@ import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.DbSetup._
-import org.overviewproject.tree.orm.Document
-
+import org.overviewproject.tree.orm.{ Document, DocumentSet, File }
+import org.overviewproject.database.DB
+import org.overviewproject.postgres.LO
 
 class DocumentClonerSpec extends DbSpecification {
   step(setupDb)
@@ -21,20 +22,20 @@ class DocumentClonerSpec extends DbSpecification {
       var sourceDocuments: Seq[Document] = _
       var clonedDocuments: Seq[Document] = _
       var ids: DocumentSetIdGenerator = _
-      
+
       def createCsvImportDocumentSet: Long = {
         val uploadedFileId = insertUploadedFile("contentDisp", "contentType", 100)
         insertCsvImportDocumentSet(uploadedFileId)
       }
 
       def documents: Seq[Document] = Seq.tabulate(10)(i =>
-          Document(documentSetId, text = Some("text-" + i), id = ids.next))
+        Document(documentSetId, text = Some("text-" + i), id = ids.next))
 
       override def setupWithDb = {
         documentSetId = createCsvImportDocumentSet
         documentSetCloneId = createCsvImportDocumentSet
         ids = new DocumentSetIdGenerator(documentSetId)
-        
+
         Schema.documents.insert(documents)
         sourceDocuments = Schema.documents.where(d => d.documentSetId === documentSetId).toSeq
 
@@ -45,27 +46,91 @@ class DocumentClonerSpec extends DbSpecification {
 
       }
     }
-    
+
     trait DocumentsWithLargeIds extends CloneContext {
       override def documents: Seq[Document] = Seq(Document(documentSetId, text = Some("text"), id = ids.next + 0xFFFFFFFAl))
+    }
+
+    trait PdfUploadContext extends DbTestContext {
+      var documentSetId: Long = _
+      var documentSetCloneId: Long = _
+
+      protected val ContentLength = 100l
+      
+      override def setupWithDb = {
+        val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "PDF upload"))
+        val documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "Clone"))
+
+        val ids = new DocumentSetIdGenerator(documentSet.id)
+        val oid = createContents
+        val file = Schema.files.insertOrUpdate(File(1, oid))
+        Schema.documents.insert(
+          Document(documentSet.id, text = Some("text"),
+            fileId = Some(file.id), contentLength = Some(ContentLength),
+            id = ids.next))
+
+        documentSetId = documentSet.id
+        documentSetCloneId = documentSetClone.id
+      }
+
+      private def createContents: Long = {
+        implicit val pgConnection = DB.pgConnection
+
+        LO.withLargeObject(_.oid)
+      }
+
+      protected def findFiles: Iterable[File] = {
+        val clonedDocumentFileIds = from(Schema.documents)(d =>
+          where(d.documentSetId === documentSetCloneId)
+            select ())
+
+        from(Schema.files)(f =>
+          where(f.id in
+            from(Schema.documents)(d =>
+              where(d.documentSetId === documentSetCloneId)
+                select (d.fileId)))
+            select (f))
+      }
+      
+      protected def findClonedDocuments: Iterable[Document] = 
+        from(Schema.documents)(d => 
+          where (d.documentSetId === documentSetCloneId)
+          select (d)
+        )
     }
 
     "Create document clones" in new CloneContext {
       val clonedData = clonedDocuments.map(d => (d.documentSetId, d.text.get))
       clonedData must haveTheSameElementsAs(expectedCloneData)
     }
-    
+
     "Create clones with ids matching source ids" in new CloneContext {
       val sourceIndeces = sourceDocuments.map(d => (d.id << 32) >> 32)
       val cloneIndeces = clonedDocuments.map(d => (d.id << 32) >> 32)
-      
+
       sourceIndeces must haveTheSameElementsAs(cloneIndeces)
     }
 
     "create clones with documentSetId encoded in id" in new DocumentsWithLargeIds {
       val highOrderBits = clonedDocuments.map(_.id >> 32)
-      
+
       highOrderBits.distinct must contain(documentSetCloneId).only
+    }
+
+    inExample("increase refcount on files") in new PdfUploadContext {
+      DocumentCloner.clone(documentSetId, documentSetCloneId)
+
+      val file = findFiles.headOption
+
+      file must beSome.like {
+        case f => f.referenceCount must be equalTo (2)
+      }
+      
+      val document = findClonedDocuments.headOption
+      
+      document must beSome.like {
+        case d => d.contentLength must beSome(ContentLength)
+      }
     }
   }
   step(shutdownDb)
