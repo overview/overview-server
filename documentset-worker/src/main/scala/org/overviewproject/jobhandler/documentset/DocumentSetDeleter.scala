@@ -54,7 +54,6 @@ object DocumentSetDeleter {
     def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
       
-      deleteDocumentContents
       val fileIds = findFileIds
 
       delete(documents)
@@ -74,9 +73,8 @@ object DocumentSetDeleter {
   private def findFileIds(implicit documentSetId: Long): Iterable[Long] = 
     DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten
     
-  private def deleteFiles(fileIds: Iterable[Long]): Unit = {
-	fileIds.foreach(f => FileStore.delete(f))
-  }
+  private def deleteFiles(fileIds: Iterable[Long]): Unit = FileStore.removeReference(fileIds)
+  
   
   private def deleteDocumentContents(implicit documentSetId: Long): Unit = {
     FileStore.deleteLargeObjectsByDocumentSet(documentSetId)
