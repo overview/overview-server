@@ -14,7 +14,7 @@ package org.overviewproject.nlp
 import org.overviewproject.util.{Logger, LoopedIterator}
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-
+import scala.util.Random
 
 // T is element type, C is centroid type
 abstract class IterativeKMeans[T : ClassTag, C : ClassTag] 
@@ -133,17 +133,27 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Generalized centroid addition, bumps K up one
-  // Create a new centroid from the first element of the cluster with the worst fit (sum sq distance to all elems)
+  // Choose seed randomly with probability proportional to distance from closest center
   def AddCentroid(elements:IndexedSeq[T], k:Int) : Unit = {
     if (debugInfo)
       Logger.debug("-- -- distortions: " + distortions.mkString(","))
       
-    val clusterToSplit = distortions.indexOf(distortions.max)
-    val elementsInClusterToSplit = elementsInCluster(clusterToSplit, elements, clusters)
-    val newCentroid = mean(subSampleSeq(elementsInClusterToSplit, 0, newCentroidSkip, numSamples(elements)))
+    // Pick a random cumulative squared distance: rand in 0..1 * total squared distance  
+    var randChoice = Random.nextDouble * distortions.sum  
+      
+    // Loop over all elements until cumulative squared distance >= randChoice
+    // index starting with i=-1 so i=chosen element when the loop exits
+    var i = -1
+    while ((i < elements.length-1) && (randChoice > 0)) {
+      i += 1
+      val elemDist = distance(elements(i), centroids(clusters(i)))
+      randChoice -= elemDist*elemDist
+    }
 
-    centroids = centroids :+ newCentroid
+    if (debugInfo)
+      Logger.debug(s"-- -- chose element $i with distance ${distance(elements(i), centroids(clusters(i)))}")
 
+    centroids = centroids :+ mean(Seq(elements(i)))
     iterateAssignments(elements, maxIterationsPerK)    
   }
     
@@ -179,7 +189,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       
     k match {
       case 1 => InitializeCentroid(elements)
-      case 2 => SplitCentroid(elements)
+//      case 2 => SplitCentroid(elements)
       case _ => AddCentroid(elements, k) 
     }
 
@@ -207,7 +217,8 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     totalDistortionPerK = Array.fill(maxK+1)(0.0)
     bestFit = Double.MaxValue 
     
-    //debugInfo = elements.size > 10000
+    debugInfo = true
+
     if (debugInfo)
       Logger.info("---- Starting KMI with " + elements.size + " elements ----")
       
