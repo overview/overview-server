@@ -38,6 +38,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   var maxIterationsPerK = 15
   var maxIterationsKis2 = 15      // special case as we have rapid convergence here
 
+  var minDistortion = 0.00001     // stop iterating if we hit this distortion
   var minChangePerIter = 0.001    // distortion must change at least this fraction or we stop iterating 
   
   var newCentroidSkip = 11        // subsample existing cluster by this factor...
@@ -97,10 +98,10 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       val dis = distortions.sum
       val dis2 = distortions2.sum
       val disChange = (dis-dis2)/dis
-      distortions = distortions2
-      if ((dis2 < 1e-5) || (math.abs(disChange) < minChangePerIter))
+      if ((dis2 < minDistortion) || (math.abs(disChange) < minChangePerIter))
         stopNow = true
 
+      distortions = distortions2
       iter+=1
 
       if (debugInfo)
@@ -137,9 +138,10 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
     if (debugInfo)
       Logger.debug("-- -- distortions: " + distortions.mkString(","))
       
-    val splitIdx = distortions.indexOf(distortions.max)
-    val splitElem = elementsInCluster(splitIdx, elements, clusters)
-    val newCentroid = mean(subSampleSeq(splitElem, 0, newCentroidSkip, numSamples(elements)))
+    val clusterToSplit = distortions.indexOf(distortions.max)
+    val elementsInClusterToSplit = elementsInCluster(clusterToSplit, elements, clusters)
+    val newCentroid = mean(subSampleSeq(elementsInClusterToSplit, 0, newCentroidSkip, numSamples(elements)))
+
     centroids = centroids :+ newCentroid
 
     iterateAssignments(elements, maxIterationsPerK)    
@@ -198,7 +200,7 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
       return new Array[Int](1)  // will assign the only element to cluster 0
     }
     if (maxK == 1) {
-      return new Array[Int](elements.size) // assign all elements ot cluster 0
+      return new Array[Int](elements.size) // assign all elements to cluster 0
     }
     
     // reset best fit trackers

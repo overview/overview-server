@@ -70,7 +70,7 @@ abstract class KMeansBase[T : ClassTag, C : ClassTag] {
     require(elements.size == clusters.size)
     for (k <- (0 until elements.size).view
         if clusters(k) == clusterIdx)
-      yield elements(k)
+          yield elements(k)
   }
 
   // Handle case where no elements assigned to a centroid. Returns new centroid to use
