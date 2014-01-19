@@ -47,8 +47,11 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   // Debug info?
   var debugInfo = false
   
-  // How many samples should we take? Not less than 1 or more than 25% of docset
-  def numSamples(elements:IndexedSeq[T]) = Ranges.clip(1.0, Math.sqrt(elements.size).toInt, elements.size/4.0).toInt
+  // How many samples should we take? Not less than 1 or more than 25% of docset. 
+  // Otherwise take square root of docset size. Why? Intuition that we don't need to scale linearly,
+  // and that ~10 works for ~100 while ~1000 should work for ~1M
+  def numSamples(elements:IndexedSeq[T]) = 
+    Math.max(1.0, Math.min(Math.sqrt(elements.size).toInt, elements.size/4.0)).toInt
   
   // Select n samples from a seq, at regular intervals. Set skip to a prime to prevent repetition when we wrap past the end of input.
   def subSampleIndexed(elements:IndexedSeq[T], start:Int, skip:Int, n:Int) : Seq[T] = {
@@ -217,32 +220,39 @@ abstract class IterativeKMeans[T : ClassTag, C : ClassTag]
   }
   
   // Not reentrant, because of all the internal state.
-  def apply(elements:IndexedSeq[T], maxK:Int) : Array[Int] = {
-
-    // Boundary cases: no elements, one element, one cluster
-    require(elements.size > 0)
-    if (elements.size == 1) {
-      return new Array[Int](1)  // will assign the only element to cluster 0
-    }
-    if (maxK == 1) {
-      return new Array[Int](elements.size) // assign all elements to cluster 0
-    }
-    
-    // reset best fit trackers
-    totalDistortionPerK = Array.fill(maxK+1)(0.0)
-    bestFit = Double.MaxValue 
-    
-    // debugInfo = true
+  def apply(elements:IndexedSeq[T], maxClusters:Int) : Array[Int] = {
 
     if (debugInfo)
       Logger.info("---- Starting KMI with " + elements.size + " elements ----")
       
+    require(maxClusters > 0)
+    require(elements.size > 0)
+
+    // Boundary cases: one cluster, one element, two elements
+    if (maxClusters == 1) {
+      return new Array[Int](elements.size) // assign all elements to cluster 0
+    }
+    if (elements.size == 1) {
+      return Array(0)  
+    } else if (elements.size == 2) {
+      // maxClusters>1 here so two elements always go into two different clusters
+      // (but for three or more elements we always need clustering, even if maxClusters >= 3)
+      return Array(0,1)
+    }
+
+    // Can't have more clusters than elements
+    val maxK = Math.min(maxClusters, elements.size)
+
+    // reset best fit trackers
+    totalDistortionPerK = Array.fill(maxK+1)(0.0)
+    bestFit = Double.MaxValue 
+    
     for (i <- 1 to maxK) {
       cluster(elements, i, maxK)
     }
 
     if (debugInfo)
-      Logger.info("---- Finished KMI, goodness of fits: " + (1 to maxK).map(goodnessOfFit).mkString(","))
+      Logger.info(s"---- Finished KMI, $bestFitK clusters, goodness of fits: ${(1 to maxK).map(goodnessOfFit).mkString(",")}")
     
     require(bestClusters.size == elements.size) // minor sanity check
     bestClusters
