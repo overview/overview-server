@@ -37,10 +37,13 @@ trait ProjectSettings {
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
-  val guavaDep = "com.google.guava" % "guava" % "15.0"
+  val guavaDep = "com.google.guava" % "guava" % "16.0"
+  // guavaDep, unfortunately, breaks BoneCP
+  val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
   
   // Project dependencies
   val serverProjectDependencies = Seq(
+    boneCpDep,
     jdbc,
     filters,
     geronimoJmsDep,
@@ -62,6 +65,7 @@ trait ProjectSettings {
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonProjectDependencies = Seq(
+    boneCpDep,
     jdbc,
     anorm,
     postgresqlDep,
@@ -74,6 +78,7 @@ trait ProjectSettings {
 
   val workerProjectDependencies = Seq(
     javaxMailDep, 
+    boneCpDep,
     jdbc,
     openCsvDep,
     squerylDep,
@@ -88,6 +93,7 @@ trait ProjectSettings {
   )
 
   val workerCommonProjectDependencies = Seq(
+    boneCpDep,
     jdbc, //  this brings out Play components used in worker: asynchttpclient and json parsing
     akkaTestkit,
     specs2Dep,    
@@ -101,6 +107,7 @@ trait ProjectSettings {
     elasticSearchDep,
     elasticSearchCloudAwsDep,
     javaxMailDep,
+    boneCpDep,
     jdbc,
     geronimoJmsDep,
     stompDep,
