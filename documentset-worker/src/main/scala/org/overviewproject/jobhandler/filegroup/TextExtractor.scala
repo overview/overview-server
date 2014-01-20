@@ -16,6 +16,7 @@ import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.GroupedProcessedFile
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.util.Textify
 
 object TextExtractorProtocol {
   case class ExtractText(fileGroupId: Long, uploadedFileId: Long)
@@ -34,7 +35,7 @@ trait TextExtractorComponents {
   }
 
   trait PdfProcessor {
-    def extractText(fileStream: InputStream): String
+    def extractText(inputStream: InputStream): String
   }
 }
 
@@ -46,8 +47,8 @@ class TextExtractor extends Actor {
   def receive = {
     case ExtractText(fileGroupId, fileUploadId) => {
       dataStore.findFileUpload(fileUploadId).map { fileUpload =>
-        val fileStream = dataStore.fileContentStream(fileUpload.contentsOid)
-        val text = pdfProcessor.extractText(fileStream)
+        val inputStream = dataStore.fileContentStream(fileUpload.contentsOid)
+        val text = pdfProcessor.extractText(inputStream)
         val file = GroupedProcessedFile(
           fileGroupId,
           fileUpload.contentType,
@@ -65,16 +66,21 @@ class TextExtractor extends Actor {
 }
 
 trait PdfBoxPdfProcessor {
+  private val pdfTextStripper = new PDFTextStripper
 
-  val pdfTextStripper = new PDFTextStripper
+  /** See org.overviewproject.util.Textify */
+  protected def textify(s: String) : String
 
-  def extractText(fileStream: InputStream): String = {
-    val document = PDDocument.load(fileStream)
-    val text = ultimately(document.close) {
+  protected def inputStreamToRawText(inputStream: InputStream) : String = {
+    val document = PDDocument.load(inputStream)
+    ultimately(document.close) {
       pdfTextStripper.getText(document)
     }
+  }
 
-    text
+  def extractText(inputStream: InputStream): String = {
+    val rawText = inputStreamToRawText(inputStream)
+    textify(rawText)
   }
 
 }
@@ -96,7 +102,9 @@ class TextExtractorImpl extends TextExtractor with TextExtractorComponents {
       BaseStore(Schema.fileTexts).insertOrUpdate(fileText)
     }
   }
-  class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor
+  class PdfProcessorImpl extends PdfProcessor with PdfBoxPdfProcessor {
+    override def textify(s: String) : String = Textify(s)
+  }
 
   override val dataStore = new DataStoreImpl
   override val pdfProcessor = new PdfProcessorImpl
