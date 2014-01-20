@@ -9,6 +9,7 @@ import akka.actor._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 
 
+
 object AcknowledgingMessageReceiverFSM {
   sealed trait State
   case object MessageHandlerIsIdle extends State
@@ -34,7 +35,6 @@ trait MessageHandling[T] {
   def convertMessage(message: String): T
 }
 
-
 import AcknowledgingMessageReceiverFSM._
 
 /**
@@ -53,6 +53,10 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
   import AcknowledgingMessageReceiverProtocol._
   import org.overviewproject.messagequeue.ConnectionMonitorProtocol._
 
+  // FIXME: instead of queuing messages that come in while the handler is busy,
+  // ensure that only one message is received at a time.
+  val queuedMessages = new scala.collection.mutable.Queue[MessageContainer]()
+  
   startWith(MessageHandlerIsIdle, MessageHandler(context.actorOf(createMessageHandler)))
 
   when(MessageHandlerIsIdle) {
@@ -78,11 +82,21 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
     case Event(MessageHandled, Task(messageHandler, message)) => {
       messageService.acknowledge(message)
       
+     if (!queuedMessages.isEmpty) {
+       val m = queuedMessages.dequeue
+       self ! m
+     }
+
       goto(MessageHandlerIsIdle) using MessageHandler(messageHandler)
     }
     case Event(ConnectionFailed, Task(messageHandler, _)) => {
       messageService.stopListening
+      queuedMessages.clear()
       goto(IgnoreMessageHandler) using MessageHandler(messageHandler)
+    }
+    case Event(message: MessageContainer, _) => {
+      queuedMessages += message
+      stay
     }
   }
   

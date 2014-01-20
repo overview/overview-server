@@ -98,6 +98,19 @@ class AcknowledgingMessageReceiverSpec extends Specification with Mockito {
 
       messageService.lastAcknowledged must beSome(message)
     }
+    
+    "queue incoming messages when listener is busy" in new MessageQueueActorSetup with FakeMessageService {
+      messageQueueActor ! ConnectedTo(connection)
+      testMessageService.deliverMessage(message)
+      
+      messageHandler.expectMsg(s"CONVERTED$messageText")
+      
+      testMessageService.deliverMessage(message)
+      
+      messageQueueActor ! MessageHandled
+      messageHandler.expectMsg(s"CONVERTED$messageText")
+      
+    }
 
     "ignore message handled from listener when connection has failed" in new MessageQueueActorSetup with FakeMessageService {
       messageQueueActor ! ConnectedTo(connection)
