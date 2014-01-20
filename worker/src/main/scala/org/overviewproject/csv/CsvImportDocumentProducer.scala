@@ -47,7 +47,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
       EncodedUploadFile.load(uploadedFileId)(Database.currentConnection)
     }
     val reader = uploadReader.reader(contentsOid, uploadedFile)
-    val documentSource = new CsvImportSource(reader)
+    val documentSource = new CsvImportSource(org.overviewproject.util.Textify.apply, reader)
 
     val iterator = documentSource.iterator
 

@@ -12,13 +12,17 @@ import scala.collection.Iterable
 import au.com.bytecode.opencsv.CSVReader
 
 /**
- * Takes a Reader attached to a stream representing CSV data and provides
- * an iterator that returns each row as a CsvImportDocument.
- * The first row must have header labels for the columns. One column
- * must be labelled text. If a column is labelled id, its values will
- * be stored in the CsvImportDocument.suppliedId field.
- */
-class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
+  * Takes a Reader attached to a stream representing CSV data and provides
+  * an iterator that returns each row as a CsvImportDocument.
+  * The first row must have header labels for the columns. One column
+  * must be labelled text. If a column is labelled id, its values will
+  * be stored in the CsvImportDocument.suppliedId field.
+  *
+  * Arguments:
+  * * textify: see org.overviewproject.util.Textify
+  * * reader: a Reader
+  */
+class CsvImportSource(textify: (String) => String, reader: Reader) extends Iterable[CsvImportDocument] {
   private val TextColumn: String = "text"
   private val SuppliedIdColumn: String = "id"
   private val UrlColumn: String = "url"
@@ -92,7 +96,10 @@ class CsvImportSource(reader: Reader) extends Iterable[CsvImportDocument] {
     // Read ahead and return current row
     private def readRow: Array[String] = {
       val row = nextLine
+      Option(row).map(_.transform(textify))
+
       nextLine = csvParser.readNext()
+
       row
     }
 

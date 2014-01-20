@@ -21,7 +21,6 @@ import org.overviewproject.postgres.{ LO, LargeObjectInputStream }
  */
 class UploadReader() {
   private val Utf8: String = "UTF-8"
-  private val Utf8Bom: Array[Byte] = Array[Byte](0xEF.toByte, 0xBB.toByte, 0xBF.toByte)
   private val DefaultCharSet: String = Utf8
 
   private var countingInputStream: CountingInputStream = _
@@ -32,29 +31,8 @@ class UploadReader() {
     val largeObjectInputStream = new LargeObjectInputStream(contentsOid)
     countingInputStream = new CountingInputStream(largeObjectInputStream)
 
-    maybeSkipUnicodeByteOrderMarker(countingInputStream, fileDecoder.charset.name)
-
     val inputStreamReader = new InputStreamReader(countingInputStream, fileDecoder)
     new BufferedReader(inputStreamReader)
-  }
-
-  /** Circumvents Java but http://bugs.sun.com/view_bug.do?bug_id=4508058
-    *
-    * Java's InputStreamReader will produce a U+FEFF, even when it's supposed
-    * to drop it. So we'll drop it before passing it to the decoder.
-    */
-  private def maybeSkipUnicodeByteOrderMarker(stream: InputStream, charsetName: String) : Unit = {
-    if (charsetName == Utf8) {
-      val buf : Array[Byte] = Array(0, 0, 0)
-      countingInputStream.mark(3)
-      countingInputStream.read(buf)
-
-      if (buf(0) == Utf8Bom(0) && buf(1) == Utf8Bom(1) && buf(2) == Utf8Bom(2)) {
-        // drop the characters before they reach the decoder
-      } else {
-        stream.reset() // present them
-      }
-    }
   }
 
   /** @return the number of bytes read from the uploaded file */

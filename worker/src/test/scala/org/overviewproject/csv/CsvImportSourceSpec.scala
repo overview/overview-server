@@ -10,8 +10,9 @@ class CsvImportSourceSpec extends Specification {
 
     trait CsvImportContext extends Scope {
       def input: String
+      def textify(s: String) = """[\u0000\ufffe]""".r.replaceAllIn(s, "")
       val reader = new StringReader(input)
-      val csvImportSource = new CsvImportSource(reader)
+      val csvImportSource = new CsvImportSource(textify, reader)
     }
 
     trait ValidInput extends CsvImportContext {
@@ -45,6 +46,12 @@ class CsvImportSourceSpec extends Specification {
     trait ValidInputWithTitle extends CsvImportContext {
       def input = """|text,title
     	               |this is line0,title""".stripMargin
+    }
+
+    trait ValidInputWithControlCharacters extends CsvImportContext {
+      // As a side-effect, this tests that the byte-order marker is stripped
+      def input = """|\ufffetext,title\u0000
+                     |foo\u0000bar,foo\ufffebar""".stripMargin
     }
 
     trait MissingHeader extends CsvImportContext {
@@ -152,6 +159,12 @@ class CsvImportSourceSpec extends Specification {
     "leave id empty no header found" in new ValidInput {
       val ids = csvImportSource.map(_.suppliedId)
       ids.head must beNone
+    }
+
+    "textify all fields" in new ValidInputWithControlCharacters {
+      val doc = csvImportSource.head
+      doc.title must beSome("foobar")
+      doc.text must beEqualTo("foobar")
     }
 
     "leave id empty for rows with no id set" in new MissingIdColumn {
