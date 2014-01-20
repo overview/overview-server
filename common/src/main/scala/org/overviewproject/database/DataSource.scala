@@ -9,6 +9,7 @@ package org.overviewproject.database
 
 
 import java.sql.Connection
+import org.slf4j.LoggerFactory
 import com.jolbox.bonecp._
 
 /**
@@ -29,7 +30,7 @@ class DataSource(configuration: DatabaseConfiguration) {
   dataSource.setAcquireIncrement(1)
   dataSource.setPartitionCount(1)
   dataSource.setDisableJMX(true)
-  dataSource.setLogStatementsEnabled(true)
+  dataSource.setLogStatementsEnabled(LoggerFactory.getLogger(classOf[BoneCPConfig]).isDebugEnabled())
 
   def getConnection(): Connection = {
     dataSource.getConnection()
