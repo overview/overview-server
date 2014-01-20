@@ -10,6 +10,7 @@ CREATE TABLE file (
 );
 
 ALTER TABLE document ADD COLUMN file_id BIGINT REFERENCES file (id);
+CREATE INDEX document_file_id ON document (file_id);
 
 INSERT INTO file (reference_count, contents_oid)
   SELECT 1, contents_oid FROM document WHERE contents_oid IS NOT NULL;
