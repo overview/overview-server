@@ -37,6 +37,7 @@ trait ProjectSettings {
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
   val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
+  val guavaDep = "com.google.guava" % "guava" % "15.0"
   
   // Project dependencies
   val serverProjectDependencies = Seq(
@@ -65,6 +66,7 @@ trait ProjectSettings {
     anorm,
     postgresqlDep,
     squerylDep,
+    guavaDep,
     specs2Dep, // FIXME add % "test"
     junitInterfaceDep, // FIXME add % "test"
     junitDep // FIXME add % "test"
