@@ -27,10 +27,11 @@ case class DocumentRetrievalError(url: String, message: String, statusCode: Opti
  * 
  * @todo Handle exceptions in callback
  * 
+ * @param textify Callback to convert "raw text" to text. See org.overviewproject.util.Textify
  * @param processDocument The callback function that does the actual processing of the documents.
  * @param finished To be completed with information about the document retrievals
  */
-class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Promise[RetrievalResult]) extends Actor {
+class DocumentReceiver(textify: (String) => String, processDocument: (Document, String) => Unit, finished: Promise[RetrievalResult]) extends Actor {
   import DocumentReceiverProtocol._
   
   var receivedDocuments: Int = 0 
@@ -39,8 +40,8 @@ class DocumentReceiver(processDocument: (Document, String) => Unit, finished: Pr
   private case class Result(failedRetrievals: Seq[DocumentRetrievalError], numberOfDocumentsRetrieved: Int, totalDocumentsInQuery: Int) extends RetrievalResult
   
   def receive = {
-    case GetTextSucceeded(document, text) => {
-      failOnError { processDocument(document, text) }
+    case GetTextSucceeded(document, rawText) => {
+      failOnError { processDocument(document, textify(rawText)) }
     }
     case GetTextFailed(url, text, maybeStatus, maybeHeaders) => {
       failedRetrievals = failedRetrievals :+ DocumentRetrievalError(url, text, maybeStatus, maybeHeaders)

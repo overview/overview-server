@@ -4,6 +4,7 @@ import scala.concurrent.Promise
 
 import org.overviewproject.documentcloud.DocumentReceiverProtocol._
 import org.overviewproject.documentcloud.DocumentRetrieverProtocol._
+import org.overviewproject.util.Textify
 
 import akka.actor._
 
@@ -52,7 +53,7 @@ class DocumentRetrieverManager(
   private def findOrCreateDocumentReceiver(): akka.actor.ActorRef = {
     context.actorFor(ReceiverActorName) match {
       case ref if ref.isTerminated =>
-        context.actorOf(Props(new DocumentReceiver(processDocument, retrievalResult)), ReceiverActorName)
+        context.actorOf(Props(new DocumentReceiver(Textify.apply, processDocument, retrievalResult)), ReceiverActorName)
       case existingReceiver => existingReceiver
     }
   }

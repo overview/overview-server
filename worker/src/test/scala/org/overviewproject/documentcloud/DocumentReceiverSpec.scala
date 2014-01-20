@@ -25,12 +25,14 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       
       var retrievalDone: Promise[RetrievalResult] = _
       var receiver: TestActorRef[DocumentReceiver] = _
+
+      def textify(s: String) = s"textified $s"
   
       def  callback(d: Document, t: String): Unit = testActor ! t
       
       def before = {
     	retrievalDone = Promise[RetrievalResult]
-    	receiver = TestActorRef(new DocumentReceiver(callback, retrievalDone))
+    	receiver = TestActorRef(new DocumentReceiver(textify, callback, retrievalDone))
       }
     }
     
@@ -39,11 +41,10 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       override def callback(d: Document, t: String): Unit = throw error
     }
 
-    
     "call callback when receiving documents" in new ReceiverContext {
       receiver ! GetTextSucceeded(document, text)
 
-      expectMsg(text)
+      expectMsg("textified " + text)
     }
     
     "not call callback when retrieval failed" in new ReceiverContext {

@@ -11,8 +11,12 @@ object DocumentRetrieverProtocol {
   case class Start()
   
   trait CompletionMessage
-  /** Retrieval request succeeded, with resulting text */
-  case class GetTextSucceeded(d: Document, text: String) extends CompletionMessage
+  /** Retrieval request succeeded, with resulting text.
+    *
+    * The text may contain control characters, null characters, and other
+    * invalid stuff.
+    **/
+  case class GetTextSucceeded(d: Document, rawText: String) extends CompletionMessage
   /** Retrieval request completed but failed with the specified message */
   case class GetTextFailed(url: String, message: String, statusCode: Option[Int] = None, headers: Option[String] = None) extends CompletionMessage
   /** An error occurred when trying to retrieve the document */
@@ -70,7 +74,7 @@ class DocumentRetriever(document: Document, recipient: ActorRef, requestQueue: A
   private def isRedirect(r: SimpleResponse): Boolean = r.status == RedirectStatus
   private def isOk(r: SimpleResponse): Boolean = r.status == OkStatus
 
-  private def forwardResult(text: String): Unit = completeRetrieval(GetTextSucceeded(document, text))
+  private def forwardResult(rawText: String): Unit = completeRetrieval(GetTextSucceeded(document, rawText))
 
   private def failRequest(r: SimpleResponse): Unit = {
     Logger.warn(s"Unable to retrieve document from ${document.url} ) access: ${document.access} status: ${r.status}\n${r.headersToString}\n${r.body}")
