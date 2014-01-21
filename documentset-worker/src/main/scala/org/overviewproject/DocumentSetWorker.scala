@@ -33,7 +33,7 @@ import ActorCareTakerProtocol._
  * process starts.
  */
 object DocumentSetWorker extends App {
-  private val NumberOfJobHandlers = 4
+  private val NumberOfJobHandlers = 8
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
 
