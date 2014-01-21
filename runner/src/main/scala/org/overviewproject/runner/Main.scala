@@ -5,6 +5,8 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+import org.overviewproject.runner.commands.JvmCommand
+
 object Flags {
   val DatabaseUrl = "-Ddatasource.default.url=postgres://overview:overview@localhost/overview-dev"
   val DatabaseDriver = "-Ddatasource.default.driver=org.postgresql.Driver"
@@ -12,13 +14,7 @@ object Flags {
   val SearchCluster = "DevSearchIndex"
 }
 
-case class DaemonInfo(
-    id: String,
-    colorCode: String,
-    env: Seq[(String,String)], 
-    jvmArgs: Seq[String],
-    args: Seq[String]) {
-}
+case class DaemonInfo(id: String, colorCode: String, command: JvmCommand)
 
 trait DaemonInfoRepository {
   val allDaemonInfos : Seq[DaemonInfo]
@@ -47,22 +43,26 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo(
       "search-index",
       Console.BLUE,
-      Seq(),
-      Seq("-Xms1g", "-Xmx1g", "-Xss256k", "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
-        "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly", "-Djava.awt.headless=true", "-Delasticsearch",
-        "-Des.foreground=yes", "-Des.path.home=./search-index"),
-      Seq("org.elasticsearch.bootstrap.ElasticSearch")
+      new JvmCommand(
+        Seq(),
+        Seq("-Xms1g", "-Xmx1g", "-Xss256k", "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
+          "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly", "-Djava.awt.headless=true", "-Delasticsearch",
+          "-Des.foreground=yes", "-Des.path.home=./search-index"),
+        Seq("org.elasticsearch.bootstrap.ElasticSearch")
+      )
     ),
     DaemonInfo(
       "message-broker",
       Console.YELLOW,
-      Seq(),
-      Seq(Flags.ApolloBase),
-      Seq(
-        "org.apache.activemq.apollo.boot.Apollo",
-        "documentset-worker/lib",
-        "org.apache.activemq.apollo.cli.Apollo",
-        "run"
+      new JvmCommand(
+        Seq(),
+        Seq(Flags.ApolloBase),
+        Seq(
+          "org.apache.activemq.apollo.boot.Apollo",
+          "documentset-worker/lib",
+          "org.apache.activemq.apollo.cli.Apollo",
+          "run"
+        )
       )
     ),
     DaemonInfo(
@@ -70,30 +70,36 @@ object DaemonInfoRepository extends DaemonInfoRepository {
       // We run "overview-server/run" through sbt. That lets it reload files
       // as they're edited.
       Console.GREEN,
-      Seq(),
-      Seq(
-        "-XX:MaxPermSize=512M",
-        "-Dpidfile.enabled=false",
-        "-DapplyEvolutions.default=true" // So overview-worker works on first launch
-      ),
-      Seq(
-        "-jar", sbtLaunchPath,
-        "run"
+      new JvmCommand(
+        Seq(),
+        Seq(
+          "-XX:MaxPermSize=512M",
+          "-Dpidfile.enabled=false",
+          "-DapplyEvolutions.default=true" // So overview-worker works on first launch
+        ),
+        Seq(
+          "-jar", sbtLaunchPath,
+          "run"
+        )
       )
     ),
     DaemonInfo(
       "documentset-worker",
       Console.CYAN,
-      Seq(),
-      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
-      Seq("org.overviewproject.DocumentSetWorker")
+      new JvmCommand(
+        Seq(),
+        Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
+        Seq("org.overviewproject.DocumentSetWorker")
+      )
     ),
     DaemonInfo(
       "worker",
       Console.MAGENTA,
-      Seq(),
-      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
-      Seq("JobHandler")
+      new JvmCommand(
+        Seq(),
+        Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+        Seq("JobHandler")
+      )
     )
   )
 }
@@ -116,15 +122,19 @@ class Main(conf: Conf) {
     val sbtTasks = daemonInfos.map((spec: DaemonInfo) => s"show ${spec.id}/full-classpath")
     val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
 
-    val sbtRun = new Daemon(sublogger.toProcessLogger, Seq(),
-      Seq(
-        "-Dsbt.log.format=false",
-        "-XX:MaxPermSize=512M",
-        "-Xmx2g"
-      ),
-      Seq(
-        "-jar", DaemonInfoRepository.sbtLaunchPath,
-        sbtCommand
+    val sbtRun = new Daemon(
+      sublogger.toProcessLogger,
+      new JvmCommand(
+        Seq(),
+        Seq(
+          "-Dsbt.log.format=false",
+          "-XX:MaxPermSize=512M",
+          "-Xmx2g"
+        ),
+        Seq(
+          "-jar", DaemonInfoRepository.sbtLaunchPath,
+          sbtCommand
+        )
       )
     )
     val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
@@ -150,9 +160,11 @@ class Main(conf: Conf) {
     def makeDaemon(spec: DaemonInfo, classpath: String) : Daemon = {
       new Daemon(
         logger.sublogger(spec.id, Some(spec.colorCode.getBytes())).toProcessLogger,
-        spec.env,
-        spec.jvmArgs ++ (if (spec.id == "overview-server") Seq() else Seq("-cp", classpath)),
-        spec.args
+        new JvmCommand(
+          spec.command.env,
+          spec.command.jvmArgs ++ (if (spec.id == "overview-server") Seq() else Seq("-cp", classpath)),
+          spec.command.args
+        )
       )
     }
 

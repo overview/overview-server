@@ -8,6 +8,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.sys.process.{ Process, ProcessBuilder, ProcessLogger }
 
+import org.overviewproject.runner.commands.{ Command, JvmCommand }
+
 class DaemonSpec extends Specification with Mockito {
   lazy val TestAppJar : File = { // lazy so the error message is nicer
     val url = Thread.currentThread().getContextClassLoader().getResource("TestApp.jar")
@@ -27,10 +29,11 @@ class DaemonSpec extends Specification with Mockito {
       def err(s: => String) { log.err(s) }
     }
 
-    def daemonEnv : Seq[(String,String)] = Seq()
-    def daemonJvmArgs : Seq[String] = Seq()
-    def daemonCommand : Seq[String] = Seq("-jar", TestAppJar.getAbsolutePath)
-    def buildDaemon : Daemon = new Daemon(processLogger, daemonEnv, daemonJvmArgs, daemonCommand)
+    def daemonCommandEnv : Seq[(String,String)] = Seq()
+    def daemonCommandJvmArgs : Seq[String] = Seq()
+    def daemonCommandArgs : Seq[String] = Seq("-jar", TestAppJar.getAbsolutePath)
+    def daemonCommand : Command = new JvmCommand(daemonCommandEnv, daemonCommandJvmArgs, daemonCommandArgs)
+    def buildDaemon : Daemon = new Daemon(processLogger, daemonCommand)
 
     lazy val daemon = buildDaemon
 
@@ -64,19 +67,19 @@ class DaemonSpec extends Specification with Mockito {
     }
 
     "set environment variables" in new Base {
-      override def daemonEnv = Seq("FOO" -> "bar")
+      override def daemonCommandEnv = Seq("FOO" -> "bar")
       run()
       there was one(log).out("ENV: FOO=bar")
     }
 
     "set JVM args" in new Base {
-      override def daemonJvmArgs = Seq("-Xmx128m")
+      override def daemonCommandJvmArgs = Seq("-Xmx128m")
       run()
       there was one(log).out("VMARG: -Xmx128m")
     }
 
     "set args" in new Base {
-      override def daemonCommand = super.daemonCommand ++ Seq("arg1", "arg2")
+      override def daemonCommandArgs = super.daemonCommandArgs ++ Seq("arg1", "arg2")
       run()
       there was one(log).out("ARG: arg1")
       there was one(log).out("ARG: arg2")
