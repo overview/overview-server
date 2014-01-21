@@ -1,5 +1,6 @@
 package org.overviewproject.runner
 
+import java.io.File
 import org.rogach.scallop.{ArgType,ScallopConf,ValueConverter}
 import scala.reflect.runtime.universe.typeTag
 
@@ -47,6 +48,10 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
   val exceptServers = opt[Seq[DaemonInfo]]("except-servers", descr="Start all but this comma-separated list of servers")(daemonInfoListConverter)
 
   mutuallyExclusive(onlyServers, exceptServers)
+
+  def databasePath : String = {
+    new File("database").getAbsolutePath()
+  }
 
   def daemonInfos : Seq[DaemonInfo] = {
     onlyServers.get

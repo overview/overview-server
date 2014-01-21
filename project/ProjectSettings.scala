@@ -8,8 +8,8 @@ trait ProjectSettings {
   val ourScalaVersion = "2.10.0"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature")
 
-  val appDatabaseUrl = "postgres://overview:overview@localhost/overview-dev"
-  val testDatabaseUrl	= "postgres://overview:overview@localhost/overview-test"
+  val appDatabaseUrl = "postgres://overview:overview@localhost:9010/overview-dev"
+  val testDatabaseUrl	= "postgres://overview:overview@localhost:9010/overview-test"
     
     
 
@@ -135,6 +135,7 @@ trait ProjectSettings {
     akkaTestkit % "test",
     specs2Dep % "test",
     mockitoDep % "test",
+    postgresqlDep,
     "org.rogach" %% "scallop" % "0.9.4"
   )
 }

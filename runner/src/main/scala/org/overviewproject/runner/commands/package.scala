@@ -74,4 +74,13 @@ package object commands {
       task
     )
   )
+
+  val PostgresServerCommand: Command = {
+    val dataDir = new File("database").getAbsolutePath()
+    PostgresCommand(
+      "postgres",
+      "-D", dataDir,
+      "-k", dataDir
+    )
+  }
 }

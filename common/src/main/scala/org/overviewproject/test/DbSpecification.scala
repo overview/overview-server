@@ -22,7 +22,7 @@ import org.overviewproject.database.{DB, DataSource, SystemPropertiesDatabaseCon
  */
 class DbSpecification extends Specification {
   private val DatabaseProperty = "datasource.default.url"
-  private val TestDatabase = "postgres://overview:overview@localhost/overview-test"
+  private val TestDatabase = "postgres://overview:overview@localhost:9010/overview-test"
 
   /**
    * Context for test accessing the database. All tests are run inside a transaction
