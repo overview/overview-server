@@ -12,7 +12,7 @@ import java.io.File
   * on the current JVM's system properties.
   */
 class JvmCommand(
-    env: Seq[(String,String)],
+    override val env: Seq[(String,String)],
     val jvmArgs: Seq[String],
     val args: Seq[String]
   ) extends Command(env, Seq(JvmCommand.javaPath) ++ jvmArgs ++ args)

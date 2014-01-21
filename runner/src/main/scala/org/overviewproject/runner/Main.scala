@@ -5,7 +5,7 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-import org.overviewproject.runner.commands.JvmCommand
+import org.overviewproject.runner.commands.{Command,JvmCommand,JvmCommandWithAppendableClasspath}
 
 object Flags {
   val DatabaseUrl = "-Ddatasource.default.url=postgres://overview:overview@localhost/overview-dev"
@@ -14,7 +14,7 @@ object Flags {
   val SearchCluster = "DevSearchIndex"
 }
 
-case class DaemonInfo(id: String, colorCode: String, command: JvmCommand)
+case class DaemonInfo(id: String, colorCode: String, command: Command)
 
 trait DaemonInfoRepository {
   val allDaemonInfos : Seq[DaemonInfo]
@@ -43,7 +43,7 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo(
       "search-index",
       Console.BLUE,
-      new JvmCommand(
+      new JvmCommandWithAppendableClasspath(
         Seq(),
         Seq("-Xms1g", "-Xmx1g", "-Xss256k", "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
           "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly", "-Djava.awt.headless=true", "-Delasticsearch",
@@ -54,7 +54,7 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo(
       "message-broker",
       Console.YELLOW,
-      new JvmCommand(
+      new JvmCommandWithAppendableClasspath(
         Seq(),
         Seq(Flags.ApolloBase),
         Seq(
@@ -86,7 +86,7 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo(
       "documentset-worker",
       Console.CYAN,
-      new JvmCommand(
+      new JvmCommandWithAppendableClasspath(
         Seq(),
         Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
         Seq("org.overviewproject.DocumentSetWorker")
@@ -95,7 +95,7 @@ object DaemonInfoRepository extends DaemonInfoRepository {
     DaemonInfo(
       "worker",
       Console.MAGENTA,
-      new JvmCommand(
+      new JvmCommandWithAppendableClasspath(
         Seq(),
         Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
         Seq("JobHandler")
@@ -108,11 +108,12 @@ class Main(conf: Conf) {
   lazy val logger = new Logger(System.out, System.err)
 
   val daemonInfos = conf.daemonInfos
+
   logger.out.println(s"Preparing to start ${daemonInfos.map(_.id).mkString(", ")}")
 
   /** Returns classpaths, one per daemonInfo, in the same order as daemonInfos.
    */
-  def getClasspaths() : Seq[String] = {
+  def getClasspaths() : Seq[Seq[String]] = {
     logger.out.println("Compiling and fetching...")
 
     val cpStream = new ByteArrayOutputStream()
@@ -150,21 +151,20 @@ class Main(conf: Conf) {
     val LinePattern = """\[info\] List\((.*)\)""".r
     val PathPattern = """Attributed\(([^\)]+)\)""".r
     val outputString = new String(cpStream.toByteArray())
-    System.out.println("OUTPUT: " + outputString)
     LinePattern.findAllMatchIn(outputString).map(_.group(1))
-      .map { line => PathPattern.findAllMatchIn(line).map(_.group(1)).mkString(":") }
+      .map { line => PathPattern.findAllMatchIn(line).map(_.group(1)).toSeq }
       .toSeq
   }
 
   def run() = {
-    def makeDaemon(spec: DaemonInfo, classpath: String) : Daemon = {
+    def makeDaemon(spec: DaemonInfo, classpath: Seq[String]) : Daemon = {
+      val command = spec.command match {
+        case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath)
+        case c: Command => c
+      }
       new Daemon(
         logger.sublogger(spec.id, Some(spec.colorCode.getBytes())).toProcessLogger,
-        new JvmCommand(
-          spec.command.env,
-          spec.command.jvmArgs ++ (if (spec.id == "overview-server") Seq() else Seq("-cp", classpath)),
-          spec.command.args
-        )
+        command
       )
     }
 
