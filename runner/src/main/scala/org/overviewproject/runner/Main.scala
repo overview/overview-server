@@ -31,76 +31,18 @@ trait DaemonInfoRepository {
 }
 
 object DaemonInfoRepository extends DaemonInfoRepository {
-  private val sbtLaunchUri = getClass.getResource("/sbt-launch.jar").toURI()
-  val sbtLaunchPath = new File(sbtLaunchUri).getAbsolutePath()
-
   val allDaemonInfos = Seq[DaemonInfo](
     // Seq so we won't start them in a quasi-random order. (You never know if
     // we'll hit a terrible bug that only affects one developer....)
     //
     // In theory, the order should not matter: all daemons should eventually
     // do their jobs if all are running.
-    DaemonInfo(
-      "search-index",
-      Console.BLUE,
-      new JvmCommandWithAppendableClasspath(
-        Seq(),
-        Seq("-Xms1g", "-Xmx1g", "-Xss256k", "-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC",
-          "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly", "-Djava.awt.headless=true", "-Delasticsearch",
-          "-Des.foreground=yes", "-Des.path.home=./search-index"),
-        Seq("org.elasticsearch.bootstrap.ElasticSearch")
-      )
-    ),
-    DaemonInfo(
-      "message-broker",
-      Console.YELLOW,
-      new JvmCommandWithAppendableClasspath(
-        Seq(),
-        Seq(Flags.ApolloBase),
-        Seq(
-          "org.apache.activemq.apollo.boot.Apollo",
-          "documentset-worker/lib",
-          "org.apache.activemq.apollo.cli.Apollo",
-          "run"
-        )
-      )
-    ),
-    DaemonInfo(
-      "overview-server",
-      // We run "overview-server/run" through sbt. That lets it reload files
-      // as they're edited.
-      Console.GREEN,
-      new JvmCommand(
-        Seq(),
-        Seq(
-          "-XX:MaxPermSize=512M",
-          "-Dpidfile.enabled=false",
-          "-DapplyEvolutions.default=true" // So overview-worker works on first launch
-        ),
-        Seq(
-          "-jar", sbtLaunchPath,
-          "run"
-        )
-      )
-    ),
-    DaemonInfo(
-      "documentset-worker",
-      Console.CYAN,
-      new JvmCommandWithAppendableClasspath(
-        Seq(),
-        Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
-        Seq("org.overviewproject.DocumentSetWorker")
-      )
-    ),
-    DaemonInfo(
-      "worker",
-      Console.MAGENTA,
-      new JvmCommandWithAppendableClasspath(
-        Seq(),
-        Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
-        Seq("JobHandler")
-      )
-    )
+
+    DaemonInfo("search-index", Console.BLUE, commands.SearchIndex),
+    DaemonInfo("message-broker", Console.YELLOW, commands.MessageBroker),
+    DaemonInfo("overview-server", Console.GREEN, commands.OverviewServer),
+    DaemonInfo("documentset-worker", Console.CYAN, commands.DocumentSetWorker),
+    DaemonInfo("worker", Console.MAGENTA, commands.Worker)
   )
 }
 
@@ -123,21 +65,7 @@ class Main(conf: Conf) {
     val sbtTasks = daemonInfos.map((spec: DaemonInfo) => s"show ${spec.id}/full-classpath")
     val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
 
-    val sbtRun = new Daemon(
-      sublogger.toProcessLogger,
-      new JvmCommand(
-        Seq(),
-        Seq(
-          "-Dsbt.log.format=false",
-          "-XX:MaxPermSize=512M",
-          "-Xmx2g"
-        ),
-        Seq(
-          "-jar", DaemonInfoRepository.sbtLaunchPath,
-          sbtCommand
-        )
-      )
-    )
+    val sbtRun = new Daemon(sublogger.toProcessLogger, commands.sbt(sbtCommand))
     val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
 
     if (statusCode != 0) {
