@@ -27,34 +27,82 @@ import org.overviewproject.util.SearchIndex
 import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
 
 object JobHandler {
+
+  def main(args: Array[String]) {
+    val config = new SystemPropertiesDatabaseConfiguration()
+    val dataSource = new DataSource(config)
+
+    DB.connect(dataSource)
+
+    connectToSearchIndex
+    Logger.info("Starting to scan for jobs")
+    startHandlingJobs
+  }
+
+  private def startHandlingJobs: Unit = {
+    val pollingInterval = 500 //milliseconds
+
+    DB.withConnection { implicit connection =>
+      restartInterruptedJobs
+    }
+
+    while (true) {
+      // Exit when the user enters Ctrl-D
+      while (System.in.available > 0) {
+        val EOF = 4
+        val next = System.in.read
+        if (next == EOF) {
+          System.exit(0)
+        }
+      }
+      scanForJobs
+      Thread.sleep(pollingInterval)
+    }
+  }
+
+  // Run each job currently listed in the database
+  private def scanForJobs: Unit = {
+
+    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = Database.inTransaction {
+      PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
+    }
+
+    firstSubmittedJob.map { j =>
+      Logger.info(s"Processing job: ${j.documentSetId}")
+      handleSingleJob(j)
+      System.gc()
+    }
+  }
+
   // Run a single job
-  def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
+  private def handleSingleJob(j: PersistentDocumentSetCreationJob): Unit = {
+    // Helper functions used to track progress and monitor/update job state
+
+    def checkCancellation(progress: Progress): Unit = Database.inTransaction(j.checkForCancellation)
+
+    def updateJobState(progress: Progress): Unit = {
+      j.fractionComplete = progress.fraction
+      j.statusDescription = Some(progress.status.toString)
+      Database.inTransaction { j.update }
+    }
+
+    def logProgress(progress: Progress): Unit = {
+      val logLabel = if (j.state == Cancelled) "CANCELLED"
+      else "PROGRESS"
+
+      Logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
+    }
+
+    val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
+    def progFn(progress: Progress): Boolean = {
+      progressReporter.update(progress)
+      j.state == Cancelled
+    }
+
     try {
       j.state = InProgress
       Database.inTransaction { j.update }
       j.observeCancellation(deleteCancelledJob)
-
-      def checkCancellation(progress: Progress): Unit = Database.inTransaction(j.checkForCancellation)
-
-      def updateJobState(progress: Progress): Unit = {
-        j.fractionComplete = progress.fraction
-        j.statusDescription = Some(progress.status.toString)
-        Database.inTransaction { j.update }
-      }
-
-      def logProgress(progress: Progress): Unit = {
-        val logLabel = if (j.state == Cancelled) "CANCELLED"
-        else "PROGRESS"
-
-        Logger.info(s"[${j.documentSetId}] $logLabel: ${progress.fraction * 100}% done. ${progress.status}, ${if (progress.hasError) "ERROR" else "OK"}")
-      }
-
-      val progressReporter = new ThrottledProgressReporter(stateChange = Seq(updateJobState, logProgress), interval = Seq(checkCancellation))
-
-      def progFn(progress: Progress): Boolean = {
-        progressReporter.update(progress)
-        j.state == Cancelled
-      }
 
       j.jobType match {
         case DocumentSetCreationJobType.Clone => handleCloneJob(j)
@@ -77,99 +125,7 @@ object JobHandler {
     }
   }
 
-  // Run each job currently listed in the database
-  def scanForJobs: Unit = {
-
-    val firstSubmittedJob: Option[PersistentDocumentSetCreationJob] = Database.inTransaction {
-      PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)
-    }
-
-    firstSubmittedJob.map { j =>
-      Logger.info(s"Processing job: ${j.documentSetId}")
-      handleSingleJob(j)
-      System.gc()
-    }
-  }
-
-  def restartInterruptedJobs(implicit c: Connection) {
-    Database.inTransaction {
-      val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
-      val restarter = new JobRestarter(new DocumentSetCleaner)
-
-      restarter.restart(interruptedJobs)
-    }
-  }
-
-  def main(args: Array[String]) {
-    val config = new SystemPropertiesDatabaseConfiguration()
-    val dataSource = new DataSource(config)
-
-    DB.connect(dataSource)
-
-    connectToSearchIndex
-    Logger.info("Starting to scan for jobs")
-    startHandlingJobs
-  }
-
-  @tailrec
-  private def connectToSearchIndex: Unit = {
-    val SearchIndexRetryInterval = 5000
-
-    Logger.info("Looking for Search Index")
-    val attempt = Try {
-      SearchIndex.createIndexIfNotExisting
-    }
-
-    attempt match {
-      case Success(v) => Logger.info("Found Search Index")
-      case Failure(e) => {
-        Logger.error("Unable to create Search Index", e)
-        Thread.sleep(SearchIndexRetryInterval)
-        connectToSearchIndex
-      }
-    }
-  }
-  private def startHandlingJobs: Unit = {
-    val pollingInterval = 500 //milliseconds
-
-    DB.withConnection { implicit connection =>
-      restartInterruptedJobs
-    }
-
-    while (true) {
-      // Exit when the user enters Ctrl-D
-      while (System.in.available > 0) {
-        val EOF = 4
-        val next = System.in.read
-        if (next == EOF) {
-          System.exit(0)
-        }
-      }
-      scanForJobs
-      Thread.sleep(pollingInterval)
-    }
-  }
-
-  def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
-    import scala.language.postfixOps
-    import anorm._
-    import anorm.SqlParser._
-    import org.overviewproject.persistence.orm.Schema._
-    import org.squeryl.PrimitiveTypeMode._
-
-    Logger.info(s"[${job.documentSetId}] Deleting cancelled job")
-    Database.inTransaction {
-      implicit val connection = Database.currentConnection
-
-      val id = job.documentSetId
-      SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
-      SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
-
-      deleteFileGroupData(job)
-    }
-  }
-
-  private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn) {
+  private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn): Unit = {
     val documentSet = DB.withConnection { implicit connection =>
       DocumentSetLoader.load(job.documentSetId)
     }
@@ -223,11 +179,53 @@ object JobHandler {
     }
   }
 
-  private def failOnUploadedDocumentSets(documentSetId: Long): Boolean = Database.inTransaction {
-    DocumentFinder.byDocumentSet(documentSetId).headOption.map { document =>
-      document.fileId.isDefined
-    }.getOrElse(false)
+  private def restartInterruptedJobs(implicit c: Connection) {
+    Database.inTransaction {
+      val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
+      val restarter = new JobRestarter(new DocumentSetCleaner)
+
+      restarter.restart(interruptedJobs)
+    }
   }
+
+  @tailrec
+  private def connectToSearchIndex: Unit = {
+    val SearchIndexRetryInterval = 5000
+
+    Logger.info("Looking for Search Index")
+    val attempt = Try {
+      SearchIndex.createIndexIfNotExisting
+    }
+
+    attempt match {
+      case Success(v) => Logger.info("Found Search Index")
+      case Failure(e) => {
+        Logger.error("Unable to create Search Index", e)
+        Thread.sleep(SearchIndexRetryInterval)
+        connectToSearchIndex
+      }
+    }
+  }
+
+  private def deleteCancelledJob(job: PersistentDocumentSetCreationJob) {
+    import scala.language.postfixOps
+    import anorm._
+    import anorm.SqlParser._
+    import org.overviewproject.persistence.orm.Schema._
+    import org.squeryl.PrimitiveTypeMode._
+
+    Logger.info(s"[${job.documentSetId}] Deleting cancelled job")
+    Database.inTransaction {
+      implicit val connection = Database.currentConnection
+
+      val id = job.documentSetId
+      SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
+      SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+
+      deleteFileGroupData(job)
+    }
+  }
+
 
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
