@@ -117,52 +117,58 @@ object ApplicationBuild extends Build with ProjectSettings {
     javaOptions in run ++=  workerJavaOpts,
     javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml").dependsOn(workerCommon, common)
 
-  val main = play.Project(appName, appVersion, serverProjectDependencies).settings(
-    resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/").settings(
-      CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration: _*).configs(
-        IntegrationTest).settings(
-          Defaults.itSettings: _*).settings(
-            scalacOptions ++= ourScalacOptions,
-            templatesImport += "views.Magic._",
-            routesImport += "extensions.Binders._",
-            requireJs ++= Seq(
-              "bundle/DocumentCloudImportJob/new.js",
-              "bundle/DocumentSet/index.js",
-              "bundle/DocumentSet/show.js",
-              "bundle/Document/show.js",
-              "bundle/Welcome/show.js",
-              "bundle/admin/ImportJob/index.js",
-              "bundle/admin/User/index.js"),
-            requireJsShim += "main.js",
-            aggregate in Compile := true,
-            parallelExecution in IntegrationTest := false,
-            javaOptions in Test ++= Seq(
-              "-Dconfig.file=conf/application-test.conf",
-              "-Dlogger.resource=logback-test.xml",
-              "-Ddb.default.url=" + testDatabaseUrl,
-              "-XX:MaxPermSize=256m"),
-            javaOptions in IntegrationTest ++= Seq(
-              "-Dconfig.file=conf/application-it.conf",
-              "-Dlogger.resource=logback-test.xml",
-              "-Ddb.default.url=" + testDatabaseUrl,
-              "-Dsbt.ivy.home=" + sys.props("sbt.ivy.home"),
-              "-Dsbt.boot.properties=" + sys.props("sbt.boot.properties"),
-              "-Dplay.home=" + sys.props("play.home"),
-              "-Ddatasource.default.url=" + testDatabaseUrl),
-            Keys.fork in Test := true,
-            aggregate in Test := false,
-            testOptions in Test ++= ourTestOptions,
-            logBuffered := false,
-            Keys.fork in IntegrationTest := true,
-            sources in doc in Compile := List(),
-            printClasspath,
-            aggregate in printClasspathTask := false
-          ).settings(
-            if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false")
-              lessEntryPoints := Nil
-            else
-              lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
-          ).dependsOn(common)
+  val main = (
+    play.Project(appName, appVersion, serverProjectDependencies)
+      .settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
+      .settings(CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration: _*)
+      .configs(IntegrationTest)
+      .settings(Defaults.itSettings: _*)
+      .settings(
+        scalacOptions ++= ourScalacOptions,
+        templatesImport += "views.Magic._",
+        routesImport += "extensions.Binders._",
+        requireJs ++= Seq(
+          "bundle/DocumentCloudImportJob/new.js",
+          "bundle/DocumentSet/index.js",
+          "bundle/DocumentSet/show.js",
+          "bundle/Document/show.js",
+          "bundle/Welcome/show.js",
+          "bundle/admin/ImportJob/index.js",
+          "bundle/admin/User/index.js"),
+        requireJsShim += "main.js",
+        aggregate in Compile := true,
+        parallelExecution in IntegrationTest := false,
+        javaOptions in Test ++= Seq(
+          "-Dconfig.file=conf/application-test.conf",
+          "-Dlogger.resource=logback-test.xml",
+          "-Ddb.default.url=" + testDatabaseUrl,
+          "-XX:MaxPermSize=256m"),
+        javaOptions in IntegrationTest ++= Seq(
+          "-Dconfig.file=conf/application-it.conf",
+          "-Dlogger.resource=logback-test.xml",
+          "-Ddb.default.url=" + testDatabaseUrl,
+          "-Dsbt.ivy.home=" + sys.props("sbt.ivy.home"),
+          "-Dsbt.boot.properties=" + sys.props("sbt.boot.properties"),
+          "-Dplay.home=" + sys.props("play.home"),
+          "-Ddatasource.default.url=" + testDatabaseUrl),
+        Keys.fork in Test := true,
+        aggregate in Test := false,
+        testOptions in Test ++= ourTestOptions,
+        logBuffered := false,
+        Keys.fork in IntegrationTest := true,
+        sources in doc in Compile := List(),
+        printClasspath,
+        aggregate in printClasspathTask := false
+      )
+      .settings(
+        if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false") {
+          lessEntryPoints := Nil
+        } else {
+          lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
+        }
+      )
+      .dependsOn(common)
+    )
 
   val all = Project("all", file("all"))
     .aggregate(main, worker, documentSetWorker, workerCommon, common)
