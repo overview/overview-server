@@ -69,6 +69,14 @@ object ApplicationBuild extends Build with ProjectSettings {
     .settings(com.typesafe.sbt.SbtNativePackager.packageArchetype.java_application: _*)
     .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
+  val dbEvolutionApplier = (Project(
+      "db-evolution-applier",
+      file("db-evolution-applier"),
+      settings = Defaults.defaultSettings)
+    .settings(libraryDependencies ++= dbEvolutionApplierDependencies)
+    .settings(scalacOptions ++= ourScalacOptions)
+  )
+
   // Create a subProject with our common settings
   object OverviewProject extends OverviewCommands with OverviewKeys {
     def apply(name: String, dependencies: Seq[ModuleID],

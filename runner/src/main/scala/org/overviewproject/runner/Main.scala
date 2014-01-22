@@ -50,7 +50,6 @@ object DaemonInfoRepository extends DaemonInfoRepository {
 }
 
 class Main(conf: Conf) {
-
   def using[T <: { def close() }](resource: T)(block: T => Unit) {
     // http://stackoverflow.com/questions/2207425/what-automatic-resource-management-alternatives-exists-for-scala
     try {
@@ -108,8 +107,11 @@ class Main(conf: Conf) {
   val daemonInfos = conf.daemonInfos
 
   /** Returns classpaths, one per daemonInfo, in the same order as daemonInfos.
-   */
-  def getClasspaths(daemonIds: Seq[String]) : Seq[Seq[String]] = {
+    *
+    * Side-effect: connects to Postgres and runs database evolutions. (Why
+    * here? Because sbt takes ages to load, so we only want to load it once.)
+    */
+  def getClasspathsAndRunEvolutionsAsASideEffect(daemonIds: Seq[String]) : Seq[Seq[String]] = {
     if (daemonIds.isEmpty) {
       Seq()
     } else {
@@ -120,7 +122,7 @@ class Main(conf: Conf) {
       val sublogger = cpLogger.sublogger("sbt", Some(Console.BLUE.getBytes()))
 
       val sbtTasks = daemonIds.map { s: String => s"show ${s}/full-classpath" }
-      val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
+      val sbtCommand = (Seq("", "all/compile", "db-evolution-applier/run") ++ sbtTasks).mkString("; ")
 
       val sbtRun = new Daemon(sublogger, commands.sbt(sbtCommand))
       val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
@@ -235,12 +237,21 @@ class Main(conf: Conf) {
       ensureDatabaseClusterExists()
     }
 
-    // Start all the daemons
+    // Start all the daemons at once.
+    //
+    // (There's no good reason not to start them simultaneously. Our system
+    // needs to recover gracefully in each component.)
+    //
+    // Note that we asynchronously A) start the database server and B) run
+    // evolutions on it. This is fine: starting the database is much faster
+    // than running sbt (sbt runs the db-evolution-applier). And even if it
+    // weren't fast enough, db-evolution-applier will retry the database a
+    // few times to make sure.
     val (jvmDaemons, rawDaemons) = daemonInfos.partition(_.command.isInstanceOf[JvmCommand])
-
     val daemons =
-      jvmDaemons.zip(getClasspaths(jvmDaemons.map(_.id))).map { case (info, classpath) => makeDaemon(info, classpath) } ++
-      rawDaemons.map(makeDaemon(_, Seq()))
+      rawDaemons.map(makeDaemon(_, Seq())) ++ // start Postgres before getClasspaths...
+      (jvmDaemons.zip(getClasspathsAndRunEvolutionsAsASideEffect(jvmDaemons.map(_.id)))
+        .map { case (info, classpath) => makeDaemon(info, classpath) })
 
     // Block and wait for status codes.
     //

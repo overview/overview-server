@@ -63,6 +63,12 @@ trait ProjectSettings {
     "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
   )
 
+  val dbEvolutionApplierDependencies = Seq(
+    boneCpDep,
+    jdbc,
+    postgresqlDep
+  )
+
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonProjectDependencies = Seq(
     boneCpDep,
