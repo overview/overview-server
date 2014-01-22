@@ -5,6 +5,7 @@ import java.sql.{Connection,DriverManager,ResultSet}
 import java.util.concurrent.TimeoutException
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.language.reflectiveCalls
 
 import org.overviewproject.runner.commands.{Command,JvmCommand,JvmCommandWithAppendableClasspath,PostgresCommand}
 
@@ -90,15 +91,14 @@ class Main(conf: Conf) {
     *
     * When the block ends, Postgres will shut down.
     */
-  def withPostgresServerRunning[T](logger: Logger)(block: (Connection) => T) {
-    val daemon = new Daemon(logger.toProcessLogger, commands.PostgresServerCommand)
+  def withPostgresServerRunning[T](logger: StdLogger)(block: (Connection) => T) {
+    val daemon = new Daemon(logger, commands.PostgresServerCommand)
     try {
       using(getPostgresConnection) { conn =>
         block(conn)
       }
     } finally {
-      daemon.process.destroy()
-      logger.out.println("Seeing a stack trace here? Please ignore it! This is a Java bug -- see http://bugs.sun.com/view_bug.do?bug_id=5101298")
+      daemon.destroyAsynchronously()
       val statusCode = Await.result(daemon.statusCodeFuture, Duration.Inf)
     }
   }
@@ -122,7 +122,7 @@ class Main(conf: Conf) {
       val sbtTasks = daemonIds.map { s: String => s"show ${s}/full-classpath" }
       val sbtCommand = (Seq("", "all/compile") ++ sbtTasks).mkString("; ")
 
-      val sbtRun = new Daemon(sublogger.toProcessLogger, commands.sbt(sbtCommand))
+      val sbtRun = new Daemon(sublogger, commands.sbt(sbtCommand))
       val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
 
       if (statusCode != 0) {
@@ -157,7 +157,7 @@ class Main(conf: Conf) {
   }
 
   private def ensureDatabaseClusterExists() : Unit = {
-    val subLogger = logger.sublogger("database", Some(Console.BLACK.getBytes()))
+    val subLogger = logger.sublogger("database", Some(Console.BLACK.getBytes())).treatingErrorsAsInfo
 
     val databaseDir = new File(conf.databasePath)
     if (databaseDir.isDirectory) {
@@ -169,7 +169,7 @@ class Main(conf: Conf) {
       subLogger.out.println(s"No database found at ${databaseDir.getAbsolutePath}. Invoking initdb.")
 
       val daemon = new Daemon(
-        subLogger.toProcessLogger,
+        subLogger,
         PostgresCommand("initdb", "-D", databaseDir.getAbsolutePath, "-E", "UTF8", "--no-locale", "-U", "postgres")
       )
       val statusCode = Await.result(daemon.statusCodeFuture, Duration.Inf)
@@ -221,10 +221,12 @@ class Main(conf: Conf) {
         case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath)
         case c: Command => c
       }
-      new Daemon(
-        logger.sublogger(spec.id, Some(spec.colorCode.getBytes())).toProcessLogger,
-        command
-      )
+      val sublogger = if (spec.id == "database") {
+        logger.sublogger(spec.id, Some(spec.colorCode.getBytes())).treatingErrorsAsInfo
+      } else {
+        logger.sublogger(spec.id, Some(spec.colorCode.getBytes()))
+      }
+      new Daemon(sublogger, command)
     }
 
     logger.out.println(s"Preparing to start ${daemonInfos.map(_.id).mkString(", ")}")
@@ -269,13 +271,13 @@ class Main(conf: Conf) {
           }
         }
 
-        if (shuttingDown) daemon.process.destroy()
+        if (shuttingDown) daemon.destroyAsynchronously()
 
         // Is the daemon dead? If so, break so we get to the next daemon
         try {
           val duration = Duration(100, "ms")
           val statusCode = Await.result(daemon.statusCodeFuture, duration)
-          daemon.logger.out(s"Process exited with status code ${statusCode}\n")
+          daemon.logger.out.println(s"Process exited with status code ${statusCode}\n")
           return
         } catch {
           case _: TimeoutException => Unit // Daemon's still up. Go back to reading inputs.

@@ -3,12 +3,22 @@ package org.overviewproject.runner
 import java.io.{ FilterOutputStream, OutputStream, PrintStream }
 import scala.sys.process.ProcessLogger
 
-class Logger(private val baseOut: OutputStream, private val baseErr: OutputStream, val prefixAnsi: Option[Array[Byte]] = None) {
+/** Provides a simple logging interface:
+  *
+  *     logger.out.println("String")
+  *     logger.err.println("String")
+  */
+trait StdLogger {
+  val out: PrintStream
+  val err: PrintStream
+}
+
+class Logger(private val baseOut: OutputStream, private val baseErr: OutputStream, val prefixAnsi: Option[Array[Byte]] = None) extends StdLogger {
   val outAnsiPrefix = prefixAnsi.getOrElse(Array[Byte]())
   val errAnsiPrefix = Array.concat("\033[31;1mERROR - \033[0m".getBytes(), prefixAnsi.getOrElse(Array[Byte]()))
 
-  val out = Logger.wrapOutputStream(baseOut, outAnsiPrefix)
-  val err = Logger.wrapOutputStream(baseErr, errAnsiPrefix)
+  override val out = Logger.wrapOutputStream(baseOut, outAnsiPrefix)
+  override val err = Logger.wrapOutputStream(baseErr, errAnsiPrefix)
 
   def sublogger(newPrefix : String, newPrefixAnsiCode : Option[Array[Byte]]): Logger = {
     val newPrefixAnsi = newPrefixAnsiCode match {
@@ -19,7 +29,13 @@ class Logger(private val baseOut: OutputStream, private val baseErr: OutputStrea
     new Logger(baseOut, baseErr, Some(newPrefixAnsi))
   }
 
-  def toProcessLogger : ProcessLogger = ProcessLogger(out.println, err.println)
+  def treatingErrorsAsInfo: StdLogger = {
+    val self = this
+    new StdLogger {
+      override val out = self.out
+      override val err = self.out
+    }
+  }
 }
 
 object Logger {

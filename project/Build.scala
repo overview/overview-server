@@ -65,6 +65,7 @@ object ApplicationBuild extends Build with ProjectSettings {
       file("runner"),
       settings = Defaults.defaultSettings)
     .settings(libraryDependencies ++= runnerDependencies)
+    .settings(scalacOptions ++= ourScalacOptions)
     .settings(com.typesafe.sbt.SbtNativePackager.packageArchetype.java_application: _*)
     .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 

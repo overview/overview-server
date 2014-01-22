@@ -38,10 +38,12 @@ class LoggerSpec extends Specification {
       errStream.toByteArray must beEqualTo("\033[31;1mERROR - \033[0m\033[33m[source] \033[0mfoo\n".getBytes())
     }
 
-    "become a ProcessLogger" in new Base {
-      val pl : ProcessLogger = logger.toProcessLogger
-      pl.out("foo")
-      outStream.toByteArray must beEqualTo("foo\n".getBytes())
+    "let you treat errors as info" in new Base {
+      val sublogger = logger.treatingErrorsAsInfo
+      sublogger.out.println("out")
+      sublogger.err.println("err")
+      new String(errStream.toByteArray) must beEqualTo("")
+      new String(outStream.toByteArray) must beEqualTo("out\nerr\n")
     }
   }
 }

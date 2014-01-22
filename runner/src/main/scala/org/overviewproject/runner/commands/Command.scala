@@ -15,8 +15,4 @@ class Command(val env: Seq[(String,String)], val argv: Seq[String]) {
     * shell the user is using. Glitches are allowed.
     */
   override def toString: String = (env.map { case (k: String, v: String) => s"$k='$v'" } ++ argv.map(x => s"'$x'")).mkString(" ")
-
-  /** The ProcessBuilder to run.
-    */
-  val processBuilder : ProcessBuilder = Process(argv, None, env: _*)
 }
