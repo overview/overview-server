@@ -21,7 +21,9 @@ object Schema extends org.squeryl.Schema {
   val fileGroups = table[FileGroup]
   val groupedFileUploads = table[GroupedFileUpload]
   val files = table[File]
+  val trees = table[Tree]
   
   on(documents)(d => declare(d.id is(primaryKey)))
   on(nodes)(n => declare(n.id is(primaryKey)))
+  on(trees)(t => declare(t.id is(primaryKey)))
 }

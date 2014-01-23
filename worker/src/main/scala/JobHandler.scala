@@ -7,10 +7,8 @@
  */
 
 import java.sql.Connection
-
 import scala.annotation.tailrec
 import scala.util._
-
 import org.elasticsearch.ElasticSearchException
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
@@ -25,6 +23,10 @@ import org.overviewproject.util.Progress._
 import com.jolbox.bonecp._
 import org.overviewproject.util.SearchIndex
 import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
+import org.overviewproject.tree.orm.Tree
+import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.tree.orm.stores.NoInsertOrUpdate
 
 object JobHandler {
 
@@ -140,6 +142,9 @@ object JobHandler {
     Logger.info(documentSetInfo(documentSet))
 
     documentSet.map { ds =>
+      
+      val tree = createTree(ds, job)
+      
       val nodeWriter = new NodeWriter(job.documentSetId)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
@@ -231,7 +236,18 @@ object JobHandler {
 
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
     }
-
+  }
+  
+  private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
+    val ids = new DocumentSetIdGenerator(job.documentSetId)
+    val treeStore = new BaseStore(Schema.trees) with NoInsertOrUpdate[Tree]
+    val tree = Tree(ids.next, job.documentSetId, documentSet.title, 0,
+          job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
+    Database.inTransaction {
+      treeStore.insert(tree)
+    }
+    
+    tree
   }
 }
 
