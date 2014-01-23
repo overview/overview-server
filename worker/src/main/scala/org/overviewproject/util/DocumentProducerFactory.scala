@@ -20,8 +20,10 @@ trait DocumentProducer {
    * Produce the documents. There should probably be some restrictions
    * here to indicate that we're producing documents and feeding them
    * to DocumentConsumers.
+   * 
+   * @return the number of documents produced.
    */
-  def produce()
+  def produce(): Int
 }
 
 /** A consumer of documents */

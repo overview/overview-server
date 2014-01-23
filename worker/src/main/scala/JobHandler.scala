@@ -27,6 +27,7 @@ import org.overviewproject.tree.orm.Tree
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.stores.NoInsertOrUpdate
+import org.overviewproject.persistence.orm.stores.TreeStore
 
 object JobHandler {
 
@@ -142,9 +143,9 @@ object JobHandler {
     Logger.info(documentSetInfo(documentSet))
 
     documentSet.map { ds =>
-      
+
       val tree = createTree(ds, job)
-      
+
       val nodeWriter = new NodeWriter(job.documentSetId)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
@@ -152,7 +153,9 @@ object JobHandler {
       val indexer = new DocumentSetIndexer(nodeWriter, opts, progressFn)
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
-      producer.produce()
+      val numberOfDocuments = producer.produce()
+      
+      updateTreeDocumentCount(tree, numberOfDocuments)
     }
 
   }
@@ -218,7 +221,6 @@ object JobHandler {
     }
   }
 
-
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
     Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
     job.state = Error
@@ -237,17 +239,20 @@ object JobHandler {
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
     }
   }
-  
+
   private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
     val ids = new DocumentSetIdGenerator(job.documentSetId)
-    val treeStore = new BaseStore(Schema.trees) with NoInsertOrUpdate[Tree]
     val tree = Tree(ids.next, job.documentSetId, documentSet.title, 0,
-          job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
+      job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
     Database.inTransaction {
-      treeStore.insert(tree)
+      TreeStore.insert(tree)
     }
-    
+
     tree
+  }
+
+  private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Tree = Database.inTransaction {
+    TreeStore.update(tree.copy(documentCount = documentCount))
   }
 }
 

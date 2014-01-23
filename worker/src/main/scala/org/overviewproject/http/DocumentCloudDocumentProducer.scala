@@ -40,7 +40,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private var totalDocs: Option[Int] = None
   private var indexingSession: DocumentSetIndexingSession = _ 
 
-  def produce() {
+  override def produce() = {
     val t0 = System.nanoTime()
 
     // First step to partitioning work into actors.
@@ -116,6 +116,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
     
     val overflowCount = result.totalDocumentsInQuery - result.numberOfDocumentsRetrieved
     updateDocumentSetCounts(documentSetId, numDocs, overflowCount)
+    
+    numDocs
   }
 
   private def updateRetrievalProgress(retrieved: Int, total: Int): Unit =

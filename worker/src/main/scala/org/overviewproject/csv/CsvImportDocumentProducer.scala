@@ -39,7 +39,7 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
   private var indexingSession: DocumentSetIndexingSession = _
   
   /** Start parsing the CSV upload and feeding the result to the consumer */
-  def produce() {
+  override def produce(): Int = {
     
     indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
     
@@ -75,6 +75,8 @@ class CsvImportDocumentProducer(documentSetId: Long, contentsOid: Long, uploaded
     Logger.info("Indexing complete")
     
     updateDocumentSetCounts(documentSetId, numberOfParsedDocuments, numberOfSkippedDocuments)
+    
+    numberOfParsedDocuments
   }
 
   private def reportProgress(n: Long, size: Long) {

@@ -31,7 +31,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
   var numberOfDocumentsRead = 0
 
-  def produce(): Unit = {
+  override def produce(): Int = {
 
     indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
 
@@ -72,6 +72,8 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     Database.inTransaction {
       DocRetrievalErrorWriter.write(documentSetId, fileErrors)
     }
+    
+    numberOfDocumentsRead
   }
 
   private def reportProgress(numberOfDocumentsRead: Long, fileCount: Long, lastUpdateTime: Long): Long = {
