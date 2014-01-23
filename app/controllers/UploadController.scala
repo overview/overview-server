@@ -126,10 +126,7 @@ object UploadController extends UploadController with PgConnection {
     UserFinder.byId(upload.userId).headOption.map { u: User =>
       val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(
         title = upload.uploadedFile.filename,
-        uploadedFileId = Some(upload.uploadedFile.id),
-        lang = documentSetLanguage,
-        suppliedStopWords = suppliedStopWords,
-        importantWords = importantWords))
+        uploadedFileId = Some(upload.uploadedFile.id)))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, u.email, Ownership.Owner))
       DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
         documentSetId = documentSet.id,

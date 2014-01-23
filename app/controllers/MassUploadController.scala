@@ -175,7 +175,7 @@ object MassUploadController extends MassUploadController {
 
     override def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet = {
       val documentSet = DocumentSetStore.insertOrUpdate(
-        DocumentSet(title = title, lang = lang, suppliedStopWords = suppliedStopWords))
+        DocumentSet(title = title))
 
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
 

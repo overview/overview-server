@@ -19,8 +19,8 @@ object DbSetup {
 
   def insertCsvImportDocumentSet(uploadedFileId: Long)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words, important_words, deleted, version)
-      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '', '', 'false', {version})
+      INSERT INTO document_set (public, title, uploaded_file_id, created_at, document_count, document_processing_error_count, import_overflow_count, deleted, version)
+      VALUES ('false', {title}, {uploadedFileId}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'false', {version})
       """).on(
       'title -> "Csv Import",
       'uploadedFileId -> uploadedFileId,
@@ -29,8 +29,8 @@ object DbSetup {
 
   def insertDocumentSet(query: String)(implicit c: Connection): Long = {
     SQL("""
-      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count, lang, supplied_stop_words, important_words, deleted, version)
-      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'en', '', '', 'false', {version})
+      INSERT INTO document_set (public, title, query, created_at, document_count, document_processing_error_count, import_overflow_count, deleted, version)
+      VALUES ('false', {title}, {query}, TIMESTAMP '1970-01-01 00:00:00', 100, 0, 0, 'false', {version})
       """).on(
       'title -> ("From query: " + query),
       'query -> query,
