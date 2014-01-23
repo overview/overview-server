@@ -41,6 +41,7 @@ object DocumentSetDeleter {
 
       delete(nodeDocuments, NodeDocumentFinder)
       delete(nodes)
+      delete(trees)
       delete(documentProcessingErrors)
     }
 

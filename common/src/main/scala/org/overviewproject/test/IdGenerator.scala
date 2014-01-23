@@ -9,6 +9,7 @@ package org.overviewproject.test
 object IdGenerator {
   private var nodeIndex = 0
   private var documentIndex = 0
+  private var treeIndex = 0
   
   private def makeId(documentSetId: Long, index: Int): Long = (documentSetId << 32) | index
   
@@ -20,5 +21,10 @@ object IdGenerator {
   def nextDocumentId(documentSetId: Long): Long = {
     documentIndex += 1
     makeId(documentSetId, documentIndex)
+  }
+  
+  def nextTreeId(documentSetId: Long): Long = {
+    treeIndex += 1
+    makeId(documentSetId, treeIndex)
   }
 }
