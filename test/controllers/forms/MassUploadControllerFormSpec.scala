@@ -13,16 +13,18 @@ class MassUploadControllerFormSpec extends Specification {
       val Name = "name"
       val Lang = "lang"
       val SuppliedStopWords = "supplied_stop_words"
+      val ImportantWords = "important_words"
 
       val name = "file group name"
       val lang = "sv"
       val stopWords = "these words will be ignored"
+      val importantWords = "important word regex(es)?"
 
       val data: Map[String, String]
     }
 
     trait FormScope extends Scope with FormData {
-      def filledForm: Form[(String, String, Option[String])] = {
+      def filledForm: Form[(String, String, Option[String], Option[String])] = {
         val form = MassUploadControllerForm()
         form.bind(data)
       }
@@ -32,7 +34,8 @@ class MassUploadControllerFormSpec extends Specification {
       override val data: Map[String, String] = Map(
         Name -> name,
         Lang -> lang,
-        SuppliedStopWords -> stopWords)
+        SuppliedStopWords -> stopWords,
+        ImportantWords -> importantWords)
     }
 
     trait InvalidLanguage extends FormData {
@@ -54,7 +57,7 @@ class MassUploadControllerFormSpec extends Specification {
         Lang -> lang,
         SuppliedStopWords -> stopWords)
     }
-    trait NoSuppliedStopWords extends FormData {
+    trait MissingOptionalValues extends FormData {
       override val data: Map[String, String] = Map(
         Name -> name,
         Lang -> lang)
@@ -62,7 +65,7 @@ class MassUploadControllerFormSpec extends Specification {
 
 
     "return all the feels" in new FormScope with ValidForm {
-      filledForm.value must beSome(name, lang, Some(stopWords))
+      filledForm.value must beSome(name, lang, Some(stopWords), Some(importantWords))
     }
 
     "fail on unsupported language" in new FormScope with InvalidLanguage {
@@ -77,8 +80,8 @@ class MassUploadControllerFormSpec extends Specification {
       filledForm.error(Name) must beSome
     }
     
-    "allow missing stop words" in new FormScope with NoSuppliedStopWords {
-      filledForm.value must beSome(name, lang, None)
+    "allow missing optional values" in new FormScope with MissingOptionalValues {
+      filledForm.value must beSome(name, lang, None, None)
     }
   }
 }

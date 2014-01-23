@@ -185,10 +185,12 @@ class MassUploadControllerSpec extends Specification with Mockito {
       val fileGroupName = "This becomes the Document Set Name"
       val lang = "sv"
       val stopWords = "ignore these words"
+      val importantWords = "important words?"
       val formData = Seq(
         ("name" -> fileGroupName),
         ("lang" -> lang),
-        ("supplied_stop_words" -> stopWords))
+        ("supplied_stop_words" -> stopWords),
+        ("important_words") -> importantWords)
      val documentSetId = 11l
 
       override def executeRequest: Result = {
@@ -208,7 +210,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
     "create job and send startClustering command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       status(result) must be equalTo(SEE_OTHER)
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang, stopWords)
-      there was one(controller.storage).createMassUploadDocumentSetCreationJob(documentSetId, fileGroupId, lang, stopWords)
+      there was one(controller.storage).createMassUploadDocumentSetCreationJob(
+          documentSetId, fileGroupId, lang, stopWords, importantWords)
       there was one(controller.messageQueue).startClustering(fileGroupId, fileGroupName, lang, stopWords)
     }
     

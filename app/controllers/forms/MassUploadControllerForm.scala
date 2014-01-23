@@ -9,5 +9,6 @@ object MassUploadControllerForm {
     tuple(
       "name" -> text.verifying(validation.notWhitespaceOnly),
       "lang" -> text.verifying(validation.supportedLang),
-      "supplied_stop_words" -> optional(text)))
+      "supplied_stop_words" -> optional(text),
+      "important_words" -> optional(text)))
 }

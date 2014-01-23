@@ -15,7 +15,6 @@ import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
 
-
 trait MassUploadController extends Controller {
 
   /**
@@ -56,16 +55,16 @@ trait MassUploadController extends Controller {
       e => BadRequest,
       startClusteringFileGroupWithOptions(request.user.email, _))
   }
-  
+
   /**
    * Cancel the upload and notify the worker to delete all uploaded files
    */
   def cancelUpload = AuthorizedAction(anyUser) { implicit request =>
     storage.findCurrentFileGroup(request.user.email).map { fileGroup =>
       messageQueue.cancelUpload(fileGroup.id)
-      
+
       Ok
-    }.getOrElse(NotFound)  
+    }.getOrElse(NotFound)
   }
 
   // method to create the MassUploadFileIteratee
@@ -88,7 +87,8 @@ trait MassUploadController extends Controller {
     def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet
 
     /** @returns a newly created DocumentSetCreationJob */
-    def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob
+    def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String,
+                                               suppliedStopWords: String, importantWords: String): DocumentSetCreationJob
 
     /** @returns a FileGroup with state set to Complete */
     def completeFileGroup(fileGroup: FileGroup): FileGroup
@@ -100,7 +100,7 @@ trait MassUploadController extends Controller {
 
     /** Notify the worker that clustering can start */
     def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit
-    
+
     /** Tell worker to delete all processing for the FileGroup and delete all associated files */
     def cancelUpload(fileGroupId: Long): Unit
   }
@@ -130,20 +130,21 @@ trait MassUploadController extends Controller {
     Seq(
       (CONTENT_LENGTH, s"${upload.uploadedSize}"),
       (CONTENT_RANGE, s"0-${computeEnd(upload.uploadedSize)}/${upload.size}"),
-      (CONTENT_DISPOSITION, upload.contentDisposition)
-    )
+      (CONTENT_DISPOSITION, upload.contentDisposition))
   }
 
-  private def startClusteringFileGroupWithOptions(userEmail: String, options: (String, String, Option[String])): Result = {
+  private def startClusteringFileGroupWithOptions(userEmail: String,
+                                                  options: (String, String, Option[String], Option[String])): Result = {
     storage.findCurrentFileGroup(userEmail) match {
       case Some(fileGroup) => {
-        val (name, lang, optionalStopWords) = options
+        val (name, lang, optionalStopWords, optionalImportantWords) = options
         val suppliedStopWords = optionalStopWords.getOrElse("")
-
+        val importantWords = optionalImportantWords.getOrElse("")
         storage.completeFileGroup(fileGroup)
-        
+
         val documentSet = storage.createDocumentSet(userEmail, name, lang, suppliedStopWords)
-        storage.createMassUploadDocumentSetCreationJob(documentSet.id, fileGroup.id, lang, suppliedStopWords)
+        storage.createMassUploadDocumentSetCreationJob(
+          documentSet.id, fileGroup.id, lang, suppliedStopWords, importantWords)
         messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
 
         Redirect(routes.DocumentSetController.index())
@@ -182,18 +183,21 @@ object MassUploadController extends MassUploadController {
       documentSet
     }
 
-    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, suppliedStopWords: String): DocumentSetCreationJob = {
+    override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long,
+                                                        lang: String, suppliedStopWords: String,
+                                                        importantWords: String): DocumentSetCreationJob = {
       DocumentSetCreationJobStore.insertOrUpdate(
         DocumentSetCreationJob(
           documentSetId = documentSetId,
           fileGroupId = Some(fileGroupId),
           lang = lang,
           suppliedStopWords = suppliedStopWords,
+          importantWords = importantWords,
           state = Preparing,
           jobType = FileUpload))
     }
 
-    override def completeFileGroup(fileGroup: FileGroup): FileGroup = 
+    override def completeFileGroup(fileGroup: FileGroup): FileGroup =
       FileGroupStore.insertOrUpdate(fileGroup.copy(state = Complete))
   }
 
@@ -201,20 +205,20 @@ object MassUploadController extends MassUploadController {
 
     override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit = {
       val command = ProcessGroupedFileUpload(fileGroupId, groupedFileUploadId)
-      if (JobQueueSender.send(command).isLeft) 
+      if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
     }
 
     override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit = {
       val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
 
-      if (JobQueueSender.send(command).isLeft) 
+      if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")
     }
-    
+
     override def cancelUpload(fileGroupId: Long): Unit = {
       val command = CancelUpload(fileGroupId)
-      
+
       if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Cound not send CancelUpload($fileGroupId)")
     }
