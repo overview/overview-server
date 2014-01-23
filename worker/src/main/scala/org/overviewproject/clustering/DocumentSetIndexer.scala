@@ -26,20 +26,21 @@ import org.overviewproject.nlp.StopWordSet
 
 // Home for all indexing and clustering options. 
 // Instantiate this to pass down call chain, plus it contains our defaults
-class DocumentSetIndexerOptions {
+// Ignore suppliedStopWords
+// multiply weight of any word matching emphasizedWordsRegex
+class DocumentSetIndexerOptions(
+    val lang: String = "en",
+    val suppliedStopWords: Option[String] = None,
+    val emphasizedWordsRegex: Map[String, TermWeight] = Map.empty) {
   // Tokenization
-  var lang = "en"
-  var suppliedStopWords: Option[String] = None // ignore these words
 
   // Bigram detection. Use different sets for "small" and otherwise
-  var minDocsToKeepTerm = 3
-  var minBigramOccurrences = 5
-  var smallDocsetSize = 200
-  var minDocsToKeepTermSmall = 2
-  var minBigramOccurrencesSmall = 3
+  val minDocsToKeepTerm = 3
+  val minBigramOccurrences = 5
+  val smallDocsetSize = 200
+  val minDocsToKeepTermSmall = 2
+  val minBigramOccurrencesSmall = 3
 
-  // Custom term weighting
-  var emphasizedWordsRegex = Map[String, TermWeight]() // multiply weight of any word matching regex
 }
 
 object DocumentSetIndexerOptions {
@@ -55,13 +56,9 @@ object DocumentSetIndexerOptions {
   }
 
   def apply(lang: String, suppliedStopWords: Option[String], importantWords: Option[String]): DocumentSetIndexerOptions = {
-    val options = new DocumentSetIndexerOptions
-    options.lang = lang
-    options.suppliedStopWords = suppliedStopWords
-    options.emphasizedWordsRegex = makeEmphasizedWords(importantWords)
-    
+    val options = new DocumentSetIndexerOptions(lang, suppliedStopWords, makeEmphasizedWords(importantWords))
     options
-  } 
+  }
 }
 
 class DocumentSetIndexer(nodeWriter: NodeWriter, options: DocumentSetIndexerOptions, progAbort: ProgressAbortFn) extends DocumentConsumer {
