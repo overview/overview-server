@@ -112,6 +112,7 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
 
   val cloneDocumentProcessingErrors: (Long, Long) => Unit
 
+  val cloneTrees: (Long, Long) => Boolean
   val cloneNodeDocuments: (Long, Long) => Boolean
   val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
   
@@ -137,6 +138,7 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
       cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     }
     stepInTransaction(0.95, Saving) {
+      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
       cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
     }
     stepInTransaction(1.00, Done) {
@@ -166,6 +168,7 @@ object CloneDocumentSet {
       override val cloneTags = TagCloner.clone _
 
       override val cloneDocumentProcessingErrors = DocumentProcessingErrorCloner.clone _
+      override val cloneTrees = TreeCloner.clone _
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
       
