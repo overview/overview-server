@@ -7,28 +7,22 @@
  */
 
 import java.sql.Connection
+
 import scala.annotation.tailrec
 import scala.util._
-import org.elasticsearch.ElasticSearchException
+
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
-import org.overviewproject.persistence._
-import org.overviewproject.persistence.orm.finders.{ DocumentFinder, FileFinder, FileGroupFinder, GroupedFileUploadFinder }
-import org.overviewproject.persistence.orm.stores.{ FileStore, FileGroupStore, GroupedFileUploadStore }
+import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob}
+import org.overviewproject.persistence.orm.finders.{FileFinder, FileGroupFinder, GroupedFileUploadFinder}
+import org.overviewproject.persistence.orm.stores.{ FileStore, FileGroupStore, GroupedFileUploadStore, TreeStore }
 import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.orm.{ DocumentSet, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
-import com.jolbox.bonecp._
-import org.overviewproject.util.SearchIndex
-import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
-import org.overviewproject.tree.orm.Tree
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.stores.NoInsertOrUpdate
-import org.overviewproject.persistence.orm.stores.TreeStore
-import org.overviewproject.tree.orm.DocumentSet
+
 
 object JobHandler {
 
