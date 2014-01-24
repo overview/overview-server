@@ -6,7 +6,6 @@
  * @author Jonas Karlsson
  */
 
-import java.sql.Connection
 
 import scala.annotation.tailrec
 import scala.util._
@@ -14,15 +13,14 @@ import scala.util._
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
-import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob}
-import org.overviewproject.persistence.orm.finders.{FileFinder, FileGroupFinder, GroupedFileUploadFinder}
+import org.overviewproject.persistence.{ DocumentSetCleaner, DocumentSetIdGenerator, NodeWriter, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.orm.finders.{ FileFinder, FileGroupFinder, GroupedFileUploadFinder }
 import org.overviewproject.persistence.orm.stores.{ FileStore, FileGroupStore, GroupedFileUploadStore, TreeStore }
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.{ DocumentSet, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
-
 
 object JobHandler {
 
@@ -125,7 +123,7 @@ object JobHandler {
 
   private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn): Unit = {
     val documentSet = findDocumentSet(job.documentSetId)
-    
+
     def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
       val query = ds.query.map(q => s"Query: $q").getOrElse("")
       val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
@@ -147,7 +145,7 @@ object JobHandler {
       val producer = DocumentProducerFactory.create(job, ds, indexer, progressFn)
 
       val numberOfDocuments = producer.produce()
-      
+
       updateTreeDocumentCount(tree, numberOfDocuments)
     }
 
@@ -167,13 +165,11 @@ object JobHandler {
     }
   }
 
-  private def restartInterruptedJobs(implicit c: Connection) {
-    Database.inTransaction {
-      val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
-      val restarter = new JobRestarter(new DocumentSetCleaner)
+  private def restartInterruptedJobs: Unit = Database.inTransaction {
+    val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
+    val restarter = new JobRestarter(new DocumentSetCleaner)
 
-      restarter.restart(interruptedJobs)
-    }
+    restarter.restart(interruptedJobs)
   }
 
   @tailrec
@@ -247,17 +243,15 @@ object JobHandler {
   private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Tree = Database.inTransaction {
     TreeStore.update(tree.copy(documentCount = documentCount))
   }
-  
+
   private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = Database.inTransaction {
     import org.overviewproject.postgres.SquerylEntrypoint._
     import org.overviewproject.persistence.orm.Schema.documentSets
-    
+
     from(documentSets)(ds =>
       where(ds.id === documentSetId)
-      select(ds)
-    ).headOption
-  } 
-    
-    
+        select (ds)).headOption
+  }
+
 }
 

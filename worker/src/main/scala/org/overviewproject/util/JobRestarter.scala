@@ -6,7 +6,7 @@
  */
 package org.overviewproject.util
 
-import java.sql.Connection
+
 import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentSetCreationJob }
 
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
@@ -16,12 +16,12 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
  */
 class JobRestarter(cleaner: DocumentSetCleaner) {
 
-  def restart(jobs: Seq[PersistentDocumentSetCreationJob])(implicit c: Connection) {
+  def restart(jobs: Seq[PersistentDocumentSetCreationJob]): Unit = 
     jobs.map { j => 
       cleaner.clean(j.documentSetId)
       j.state = NotStarted
       j.update
       
-    }
+
   }
 }
