@@ -18,7 +18,9 @@ object TestSchema extends org.squeryl.Schema {
   val tags = table[Tag]
   val documentTags = table[DocumentTag]
   val nodeDocuments = table[NodeDocument]
+  val trees = table[Tree]
+  
   on(documents)(d => declare(d.id is (primaryKey)))
   on(nodes)(n => declare(n.id is (primaryKey)))
-
+  on(trees)(t => declare(t.id is (primaryKey)))
 }

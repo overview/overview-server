@@ -11,35 +11,52 @@ import anorm._
 import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
 import java.sql.Connection
-import org.overviewproject.test.DbSetup._
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.persistence.orm.NodeDocument
-import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.persistence.orm.Schema._
+import org.overviewproject.test.IdGenerator._
+import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
 
 class NodeDocumentBatchInserterSpec extends DbSpecification {
 
   step(setupDb)
 
   trait DocumentsSetup extends DbTestContext {
-    lazy val documentSetId = insertDocumentSet("NodeDocumentBatchInserterSpec")
-    lazy val nodeId = insertNode(documentSetId, None, "description")
+    var documentSet: DocumentSet = _
+    var node: Node = _
+
     val threshold = 5
-    val inserter = new BatchInserter[NodeDocument](threshold, Schema.nodeDocuments)
+    val inserter = new BatchInserter[NodeDocument](threshold, nodeDocuments)
 
-    def insertDocumentIds(documentIds: Iterable[Long]): Unit = 
-      documentIds.foreach(docId => inserter.insert(NodeDocument(nodeId, docId)))
-  }
+    def insertDocumentIds(documentIds: Iterable[Long]): Unit =
+      documentIds.foreach(docId => inserter.insert(NodeDocument(node.id, docId)))
 
-  def findNodeDocumentIds: Seq[(Long, Long)] = {
-    import org.overviewproject.persistence.orm.Schema.nodeDocuments
+    override def setupWithDb = {
+      documentSet = documentSets.insert(DocumentSet(title = "NodeDocumentBatchInserterSpec"))
+      val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+      node = Node(nextNodeId(documentSet.id), tree.id, documentSet.id, None, "description", 1, Array.empty, false)
 
-    from(nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
+      trees.insert(tree)
+      nodes.insert(node)
+    }
+
+    protected def findNodeDocumentIds: Seq[(Long, Long)] =
+      from(nodeDocuments)(select(_)).iterator.map(nd => (nd.nodeId, nd.documentId)).toSeq
+
+    protected def insertDocuments(documentSetId: Long, numDocuments: Int): Seq[Long] = {
+      val ids = Seq.fill(numDocuments)(nextDocumentId(documentSetId))
+
+      val docs = ids.map { id => Document(id = id, documentSetId = documentSetId) }
+      documents.insert(docs)
+
+      ids
+    }
+
   }
 
   "NodeDocumentBatchInserter" should {
 
     "insert data after threshold is reached" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSetId, 5)
+      val documentIds = insertDocuments(documentSet.id, 5)
 
       insertDocumentIds(documentIds.take(threshold - 1))
 
@@ -49,13 +66,13 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       insertDocumentIds(documentIds.slice(threshold - 1, threshold))
 
       val afterThreshold = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((nodeId, _))
+      val expectedNodeDocuments = documentIds.map((node.id, _))
 
       afterThreshold must haveTheSameElementsAs(expectedNodeDocuments)
     }
 
     "reset count after inserting data" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSetId, 10)
+      val documentIds = insertDocuments(documentSet.id, 10)
       val firstBatch = documentIds.take(5)
       val secondBatch = documentIds.drop(5)
 
@@ -68,20 +85,20 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       insertDocumentIds(secondBatch.drop(2))
 
       val allInserted = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((nodeId, _))
+      val expectedNodeDocuments = documentIds.map((node.id, _))
 
       allInserted must haveTheSameElementsAs(expectedNodeDocuments)
 
     }
 
     "flush remaining data when instructed to" in new DocumentsSetup {
-      val documentIds = insertDocuments(documentSetId, 4)
+      val documentIds = insertDocuments(documentSet.id, 4)
 
       insertDocumentIds(documentIds)
       inserter.flush
 
       val flushedDocuments = findNodeDocumentIds
-      val expectedNodeDocuments = documentIds.map((nodeId, _))
+      val expectedNodeDocuments = documentIds.map((node.id, _))
 
       flushedDocuments must haveTheSameElementsAs(expectedNodeDocuments)
     }

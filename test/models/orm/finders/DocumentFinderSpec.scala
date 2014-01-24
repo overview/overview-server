@@ -27,8 +27,10 @@ class DocumentFinderSpec extends Specification {
         documentSet = TestSchema.documentSets.insertOrUpdate(DocumentSet())
 
         Seq.tabulate(10)(n => TestSchema.documents.insert(Document(id = n, documentSetId = documentSet.id)))
+        TestSchema.trees.insert(Tree(1, documentSet.id,"tree", 100, "en", "", "" ))
         TestSchema.nodes.insert(
           Node(id = 1,
+            treeId = 1,
             documentSetId = documentSet.id,
             parentId = None,
             description = "",

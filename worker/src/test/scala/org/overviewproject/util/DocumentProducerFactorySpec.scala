@@ -5,7 +5,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 
 import org.overviewproject.http.DocumentCloudDocumentProducer 
-import org.overviewproject.persistence.{ DocumentSet, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.{ DocumentSetInfo, PersistentDocumentSetCreationJob }
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.tree.DocumentSetCreationJobType
 
@@ -40,7 +40,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
 
     "create a DocumentCloudDocumentProducer" in new DocumentCloudJobContext {
-      val documentSet = DocumentSet(title="title", query=Some("query"))
+      val documentSet = DocumentSetInfo(title="title", query=Some("query"))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, { _ => true })
 
       producer match {
@@ -50,7 +50,7 @@ class DocumentProducerFactorySpec extends Specification with Mockito {
     }
 
     "create a CsvImportDocumentProducer" in new CsvImportJobContext {
-      val documentSet = DocumentSet(title="title", uploadedFileId = Some(100l))
+      val documentSet = DocumentSetInfo(title="title", uploadedFileId = Some(100l))
       val producer: DocumentProducer = DocumentProducerFactory.create(documentSetCreationJob, documentSet, consumer, {_ => true })
 
       producer match {

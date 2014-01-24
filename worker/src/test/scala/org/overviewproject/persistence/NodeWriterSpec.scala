@@ -8,13 +8,13 @@
 package org.overviewproject.persistence
 
 import scala.collection.mutable.Set
-import anorm.{ sqlToSimple, toParameterValue }
-import anorm.SQL
-import anorm.SqlParser.{ flatten, get, long, str }
 import org.overviewproject.clustering.{ DocTreeNode, DocumentIdCache }
-import org.overviewproject.test.DbSetup.{ insertDocument, insertDocumentSet }
 import org.overviewproject.test.DbSpecification
 import org.specs2.execute.PendingUntilFixed
+import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
+import org.overviewproject.persistence.orm.Schema.{ documents, documentSets, nodes, nodeDocuments, trees }
+import org.overviewproject.test.IdGenerator._
+import org.overviewproject.postgres.SquerylEntrypoint._
 
 class NodeWriterSpec extends DbSpecification {
 
@@ -34,19 +34,38 @@ class NodeWriterSpec extends DbSpecification {
     node.documentIdCache = new DocumentIdCache(10, Array[Long](1l, 2l, 3l, 4l))
   }
 
-  private val nodeDataParser = long("id") ~ str("description") ~
-    get[Option[Long]]("parent_id") ~ long("document_set_id")
-
   "NodeWriter" should {
-    
+
     trait NodeWriterContext extends DbTestContext {
-      var documentSetId: Long = _
+      var documentSet: DocumentSet = _
+      var tree: Tree = _
       var writer: NodeWriter = _
-      
+
       override def setupWithDb = {
-        documentSetId = insertDocumentSet("NodeWriterSpec")
-        writer = new NodeWriter(documentSetId)
+        documentSet = documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
+        tree = trees.insert(Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", ""))
+
+        writer = new NodeWriter(documentSet.id, tree.id)
       }
+
+      protected def findRootNode: Option[Node] =
+        from(nodes)(n =>
+          where(n.parentId isNull)
+            select (n)).headOption
+
+      protected def findChildNodes(parentIds: Iterable[Long]): Seq[Node] =
+        from(nodes)(n =>
+          where(n.parentId in parentIds)
+            select (n)).toSeq
+
+      protected def findNodeDocuments(nodeId: Long): Seq[NodeDocument] =
+        from(nodeDocuments)(nd =>
+          where(nd.nodeId === nodeId)
+            select (nd)).toSeq
+
+      protected def insertDocument(documentSetId: Long): Document =
+        documents.insert(Document(documentSetId = documentSetId, title = Some("title"),
+          documentcloudId = Some("documentCloud ID"), id = nextDocumentId(documentSetId)))
     }
 
     "insert root node with description, document set, and no parent" in new NodeWriterContext {
@@ -57,16 +76,14 @@ class NodeWriterSpec extends DbSpecification {
 
       writer.write(root)
 
-      val result =
-        SQL("SELECT id, description, parent_id, document_set_id FROM node").
-          as(nodeDataParser map (flatten) singleOpt)
-
-      result must beSome
-      val (id, rootDescription, parentId, rootDocumentSetId) = result.get
-
-      rootDescription must be equalTo (description)
-      parentId must beNone
-      rootDocumentSetId must be equalTo (documentSetId)
+      val node = findRootNode
+      node must beSome.like {
+        case n =>
+          n.treeId must beEqualTo(tree.id)
+          n.description must be equalTo (description)
+          n.documentSetId must be equalTo (documentSet.id)
+          n.parentId must beNone
+      }
     }
 
     "insert child nodes" in new NodeWriterContext {
@@ -78,36 +95,22 @@ class NodeWriterSpec extends DbSpecification {
 
       writer.write(root)
 
-      val savedRoot = SQL("""
-                          SELECT id, description, parent_id, document_set_id FROM node
-                          WHERE description = 'root'
-                          """).as(nodeDataParser map (flatten) singleOpt)
-
+      val savedRoot = findRootNode
       savedRoot must beSome
-      val (rootId, _, _, _) = savedRoot.get
 
-      val savedChildren =
-        SQL("""
-    	    SELECT id, description, parent_id, document_set_id FROM node
-            WHERE parent_id = {rootId} AND description = 'child'
-    		""").on("rootId" -> rootId).as(nodeDataParser map (flatten) *)
+      val savedChildren = findChildNodes(Seq(savedRoot.get.id))
+      savedChildren must have size (2)
+      savedChildren.map(_.description must be equalTo ("child"))
 
-      val childIds = savedChildren.map(_._1)
-      childIds must have size (2)
-
-      val savedGrandChildren =
-        SQL("""
-    	    SELECT id, description, parent_id, document_set_id FROM node
-            WHERE parent_id IN """ + childIds.mkString("(", ",", ")") + """ 
-            AND description = 'grandchild'
-    		""").on("rootId" -> rootId).as(nodeDataParser map (flatten) *)
+      val childIds = savedChildren.map(_.id)
+      val savedGrandChildren = findChildNodes(childIds)
 
       savedGrandChildren must have size (4)
     }
 
     "insert document into node_document table" in new NodeWriterContext {
-      val documentIds = for (i <- 1 to 5) yield insertDocument(documentSetId, "title", "documentCloudId")
-      val idSet = Set(documentIds: _*)
+      val documents = Seq.fill(5)(insertDocument(documentSet.id))
+      val idSet = Set(documents.map(_.id): _*)
 
       val node = new DocTreeNode(idSet)
       node.description = "node"
@@ -115,30 +118,27 @@ class NodeWriterSpec extends DbSpecification {
 
       writer.write(node)
 
-      val savedNode = SQL("SELECT id FROM node WHERE description = 'node'").
-        as(long("id") singleOpt)
+      val savedNode = findRootNode
 
       savedNode must beSome
-      val nodeId = savedNode.get
+      val nodeId = savedNode.get.id
 
-      val nodeDocuments =
-        SQL("""
-            SELECT node_id, document_id FROM node_document
-            """).as(long("node_id") ~ long("document_id") map (flatten) *)
+      val nodeDocuments = findNodeDocuments(nodeId)
 
-      val expectedNodeDocuments = documentIds.map((nodeId, _))
+      val expectedNodeDocuments = documents.map(d => NodeDocument(nodeId, d.id))
 
       nodeDocuments must haveTheSameElementsAs(expectedNodeDocuments)
     }
-    
+
     "write nodes with ids generated from documentSetId" in new NodeWriterContext {
       val node = new DocTreeNode(Set())
       addCache(node)
       writer.write(node)
-      val nodeId = SQL("SELECT id FROM node").as(long("id") singleOpt)
-      
-      nodeId must beSome
-      (nodeId.get >> 32) must be equalTo(documentSetId) 
+      val savedNode = findRootNode
+
+      savedNode must beSome.like {
+        case n => (n.id >> 32) must be equalTo (documentSet.id)
+      }
     }
   }
 

@@ -7,8 +7,12 @@
 
 package org.overviewproject.persistence
 
-import anorm._
-import java.sql.Connection
+import org.overviewproject.persistence.orm.stores.NodeDocumentStore
+import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.persistence.orm.Schema.{ documents, nodes, trees }
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import org.squeryl.Table
+import org.overviewproject.tree.orm.DocumentSetComponent
 
 /**
  * Deletes all data associated with a document set in the database
@@ -17,28 +21,21 @@ import java.sql.Connection
 class DocumentSetCleaner {
 
   /** remove node and document data associated with specified documentSetId */
-  def clean(documentSetId: Long)(implicit c: Connection) {
+  def clean(documentSetId: Long) {
     removeNodeData(documentSetId)
     removeDocumentData(documentSetId)
   }
 
-  private def removeNodeData(documentSetId: Long)(implicit c: Connection) {
-    val nodeDocumentUpdate = SQL("""
-      DELETE FROM node_document WHERE node_id IN
-        (SELECT id FROM node WHERE document_set_id = {id})
-      """)
-    val nodeUpdate = SQL("DELETE FROM node WHERE document_set_id = {id}")
-
-    updateOnDocumentSet(nodeDocumentUpdate, documentSetId)
-    updateOnDocumentSet(nodeUpdate, documentSetId)
+  private def removeNodeData(documentSetId: Long): Unit = {
+    NodeDocumentStore.deleteByDocumentSetId(documentSetId)
+    deleteByDocumentSetId(nodes, documentSetId)
+    deleteByDocumentSetId(trees, documentSetId)
   }
 
-  private def removeDocumentData(documentSetId: Long)(implicit c: Connection) {
-    val update = SQL("DELETE FROM document WHERE document_set_id = {id}")
-    updateOnDocumentSet(update, documentSetId)
+  private def removeDocumentData(documentSetId: Long): Unit = {
+    deleteByDocumentSetId(documents, documentSetId)
   }
 
-  // Assumes query wants to bind "id" to documentSetId
-  private def updateOnDocumentSet(query: anorm.SqlQuery, documentSetId: Long)(implicit c: Connection): Long =
-    query.on("id" -> documentSetId).executeUpdate
+  private def deleteByDocumentSetId[A <: DocumentSetComponent](table: Table[A], documentSetId: Long): Int =
+    BaseStore(table).delete(DocumentSetComponentFinder(table).byDocumentSet(documentSetId))
 }

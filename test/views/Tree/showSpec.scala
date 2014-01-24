@@ -9,6 +9,7 @@ class showSpec extends Specification {
   def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
     Node(
       id=id,
+      treeId = 1L,
       documentSetId=1L,
       parentId=parentId,
       description="description",

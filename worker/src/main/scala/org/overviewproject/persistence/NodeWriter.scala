@@ -10,8 +10,7 @@ package org.overviewproject.persistence
 import java.sql.Connection
 import org.overviewproject.clustering.DocTreeNode
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.Node
-import org.overviewproject.persistence.orm.NodeDocument
+import org.overviewproject.tree.orm.{ Node, NodeDocument }
 
 
 /**
@@ -19,7 +18,7 @@ import org.overviewproject.persistence.orm.NodeDocument
  * Inserts entries into document and node_document tables. Documents contained by
  * the nodes must already exist in the database.
  */
-class NodeWriter(documentSetId: Long) {
+class NodeWriter(documentSetId: Long, treeId: Long) {
   val batchInserter = new BatchInserter[NodeDocument](500, Schema.nodeDocuments)
   val ids = new DocumentSetIdGenerator(documentSetId)
   
@@ -31,6 +30,7 @@ class NodeWriter(documentSetId: Long) {
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val n = Node(
       id=ids.next,
+      treeId = treeId,
       documentSetId=documentSetId,
       parentId=parentId,
       description=node.description,

@@ -30,6 +30,7 @@ class NodeControllerSpec extends Specification with Mockito {
 
     val sampleNode = Node(
       id=1L,
+      treeId = 1L,
       documentSetId=1L,
       parentId=None,
       description="description",

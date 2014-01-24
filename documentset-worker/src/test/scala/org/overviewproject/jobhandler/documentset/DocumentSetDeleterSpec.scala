@@ -53,7 +53,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
         val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "title", 100, "en", "", "")
         trees.insert(tree)
         val node = Node(nextNodeId(documentSet.id),
-          documentSet.id, None, "", 1, Array(document.id), true)
+          tree.id, documentSet.id, None, "", 1, Array(document.id), true)
 
         nodes.insert(node)
         nodeDocuments.insert(NodeDocument(node.id, document.id))

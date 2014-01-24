@@ -133,7 +133,7 @@ object JobHandler {
       DocumentSetLoader.load(job.documentSetId)
     }
 
-    def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
+    def documentSetInfo(documentSet: Option[DocumentSetInfo]): String = documentSet.map { ds =>
       val query = ds.query.map(q => s"Query: $q").getOrElse("")
       val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
 
@@ -146,7 +146,7 @@ object JobHandler {
 
       val tree = createTree(ds, job)
 
-      val nodeWriter = new NodeWriter(job.documentSetId)
+      val nodeWriter = new NodeWriter(job.documentSetId, tree.id)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
 
@@ -240,7 +240,7 @@ object JobHandler {
     }
   }
 
-  private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
+  private def createTree(documentSet: DocumentSetInfo, job: PersistentDocumentSetCreationJob): Tree = {
     val ids = new DocumentSetIdGenerator(job.documentSetId)
     val tree = Tree(ids.next, job.documentSetId, documentSet.title, 0,
       job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))

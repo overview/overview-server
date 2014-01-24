@@ -9,7 +9,7 @@ package org.overviewproject.util
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
-import org.overviewproject.persistence.{DocumentSet, PersistentDocumentSetCreationJob}
+import org.overviewproject.persistence.{DocumentSetInfo, PersistentDocumentSetCreationJob}
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.fileupload.FileUploadDocumentProducer
 
@@ -45,7 +45,7 @@ object DocumentProducerFactory {
   private val MaxDocuments = Configuration.getInt("max_documents")
   
   /** Return a DocumentProducer based on the DocumentSet type */
-  def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
+  def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSetInfo, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn): DocumentProducer = {
 
     documentSetCreationJob.jobType match {
