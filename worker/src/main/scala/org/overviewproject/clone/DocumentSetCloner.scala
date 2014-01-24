@@ -40,7 +40,6 @@ trait Procedure {
 
   def stepInTransaction[T](fraction: Double, state: DocumentSetCreationJobStateDescription)(block: => T): Either[T, Boolean] =
     Database.inTransaction(step(fraction, state)(block))
-    
 
   /**
    * Set observers to be notified at the completion of each step.
@@ -115,7 +114,7 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
   val cloneTrees: (Long, Long) => Boolean
   val cloneNodeDocuments: (Long, Long) => Boolean
   val cloneDocumentTags: (Long, Long, TagIdMap) => Unit
-  
+
   val indexDocuments: (Long) => Future[Unit]
 
   def clone(sourceDocumentSetId: Long, cloneDocumentSetId: Long) {
@@ -127,7 +126,10 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
 
     stepInTransaction(0.15, Saving)(cloneDocuments(sourceDocumentSetId, cloneDocumentSetId))
     val indexing = stepInTransaction(0.20, Saving)(indexDocuments(cloneDocumentSetId))
-    stepInTransaction(0.40, Saving)(cloneNodes(sourceDocumentSetId, cloneDocumentSetId))
+    stepInTransaction(0.40, Saving) {
+      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
+      cloneNodes(sourceDocumentSetId, cloneDocumentSetId)
+    }
 
     for (tagIdMapping <- stepInTransaction(0.50, Saving)(cloneTags(sourceDocumentSetId, cloneDocumentSetId)).left)
       stepInTransaction(0.60, Saving) {
@@ -138,7 +140,6 @@ trait DocumentSetCloner extends DocumentSetCreationJobProcedure {
       cloneDocumentProcessingErrors(sourceDocumentSetId, cloneDocumentSetId)
     }
     stepInTransaction(0.95, Saving) {
-      cloneTrees(sourceDocumentSetId, cloneDocumentSetId)
       cloneNodeDocuments(sourceDocumentSetId, cloneDocumentSetId)
     }
     stepInTransaction(1.00, Done) {
@@ -171,7 +172,7 @@ object CloneDocumentSet {
       override val cloneTrees = TreeCloner.clone _
       override val cloneNodeDocuments = NodeDocumentCloner.clone _
       override val cloneDocumentTags = DocumentTagCloner.clone _
-      
+
       override val indexDocuments = DocumentSetIndexer.indexDocuments _
     }
     cloner.observeSteps(progressObservers)
