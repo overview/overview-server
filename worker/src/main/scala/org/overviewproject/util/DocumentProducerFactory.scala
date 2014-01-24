@@ -12,6 +12,7 @@ import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
 import org.overviewproject.persistence.{DocumentSetInfo, PersistentDocumentSetCreationJob}
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.fileupload.FileUploadDocumentProducer
+import org.overviewproject.tree.orm.DocumentSet
 
 
 /** Common functionality for DocumentProducers */
@@ -45,7 +46,7 @@ object DocumentProducerFactory {
   private val MaxDocuments = Configuration.getInt("max_documents")
   
   /** Return a DocumentProducer based on the DocumentSet type */
-  def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSetInfo, consumer: DocumentConsumer,
+  def create(documentSetCreationJob: PersistentDocumentSetCreationJob, documentSet: DocumentSet, consumer: DocumentConsumer,
     progAbort: ProgressAbortFn): DocumentProducer = {
 
     documentSetCreationJob.jobType match {

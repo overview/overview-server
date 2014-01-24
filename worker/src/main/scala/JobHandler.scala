@@ -28,6 +28,7 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.tree.orm.stores.NoInsertOrUpdate
 import org.overviewproject.persistence.orm.stores.TreeStore
+import org.overviewproject.tree.orm.DocumentSet
 
 object JobHandler {
 
@@ -129,11 +130,9 @@ object JobHandler {
   }
 
   private def handleCreationJob(job: PersistentDocumentSetCreationJob, progressFn: ProgressAbortFn): Unit = {
-    val documentSet = DB.withConnection { implicit connection =>
-      DocumentSetLoader.load(job.documentSetId)
-    }
-
-    def documentSetInfo(documentSet: Option[DocumentSetInfo]): String = documentSet.map { ds =>
+    val documentSet = findDocumentSet(job.documentSetId)
+    
+    def documentSetInfo(documentSet: Option[DocumentSet]): String = documentSet.map { ds =>
       val query = ds.query.map(q => s"Query: $q").getOrElse("")
       val uploadId = ds.uploadedFileId.map(u => s"UploadId: $u").getOrElse("")
 
@@ -240,7 +239,7 @@ object JobHandler {
     }
   }
 
-  private def createTree(documentSet: DocumentSetInfo, job: PersistentDocumentSetCreationJob): Tree = {
+  private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
     val ids = new DocumentSetIdGenerator(job.documentSetId)
     val tree = Tree(ids.next, job.documentSetId, documentSet.title, 0,
       job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
@@ -254,5 +253,17 @@ object JobHandler {
   private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Tree = Database.inTransaction {
     TreeStore.update(tree.copy(documentCount = documentCount))
   }
+  
+  private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = Database.inTransaction {
+    import org.overviewproject.postgres.SquerylEntrypoint._
+    import org.overviewproject.persistence.orm.Schema.documentSets
+    
+    from(documentSets)(ds =>
+      where(ds.id === documentSetId)
+      select(ds)
+    ).headOption
+  } 
+    
+    
 }
 
