@@ -13,6 +13,7 @@ import java.io.File
 import org.specs2.mutable.Specification
 import scala.Int.int2long
 import DocumentVectorTypes._
+import scala.util.Random
 
 class KMeansDocumentsSpec extends Specification {
 
@@ -40,15 +41,18 @@ class KMeansDocumentsSpec extends Specification {
       clusterSizes should haveTheSameElementsAs (Seq(4,2,3))
     }
   
-    // Unfortunately iterative k-means is sensitive to document ordering, so changes in DocumentVectorGenerator can
-    // change the output. On current test docs we seem to get either (4,3,2) or (5,4,0)
+    // This is a randomized algorithm, and we don't do restarts so we often end local minima
+    // In practice this is not too bad, but it makes testing hard, so we reset the random seed 
+    // here to get consistent results. 
     "find clusters using iterative algorithm" in {
+      Random.setSeed(1) // always start form the same place
+
       val docVecs = getSampleDocumentVectors
       val km = new IterativeKMeansDocuments(docVecs)
       
       val clusters = km(docVecs.keys.toArray, 3)
       val clusterSizes = (0 until 3).map(i => clusters.count(_ == i))
-      clusterSizes should haveTheSameElementsAs (Seq(4,5,0))
+      clusterSizes should haveTheSameElementsAs (Seq(5,2,2))
     }
   }
 }

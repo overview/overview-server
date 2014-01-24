@@ -12,6 +12,7 @@ package org.overviewproject.nlp
 
 import org.specs2.mutable.Specification
 import scala.collection.mutable.Set
+import scala.util.Random
 
 class KMeansSpec extends Specification {
 
@@ -36,7 +37,7 @@ class KMeansSpec extends Specification {
   // This test case is challenging because of variable spacing. Iterative finds a better result, in sum sq dist sense 
   val threeClusters = Vector[Int](1,2,3,9,10,11,30,40,50)
   val threeClustersResult = Array[Int](0,0,0,1,1,1,2,2,2)
-  val threeClustersVariableKResult = Array[Int](1,1,1,1,1,1,0,0,0)
+  val threeClustersVariableKResult = Array[Int](0,0,0,0,0,0,1,1,1)
   val simpleSet = List[Int](1,2,3,4,5)
   
   "centroidSeedSets" should {
@@ -98,6 +99,7 @@ class KMeansSpec extends Specification {
     }
 
     "find two clusters using variable k algorithm" in {
+      Random.setSeed(1) // we could end up with clusters permuted, so make sure we always get same result
       val km = new IntIterativeKMeans
       km.newCentroidN    = 1 
       km.newCentroidSkip = 3
