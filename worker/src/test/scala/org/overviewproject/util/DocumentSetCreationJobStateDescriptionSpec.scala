@@ -1,5 +1,5 @@
 
-package overview.util
+package org.overviewproject.util
 
 import org.specs2.mutable.Specification
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
