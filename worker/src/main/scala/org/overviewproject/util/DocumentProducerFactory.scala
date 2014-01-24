@@ -9,7 +9,7 @@ package org.overviewproject.util
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.http.{Credentials, DocumentCloudDocumentProducer}
-import org.overviewproject.persistence.{DocumentSetInfo, PersistentDocumentSetCreationJob}
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.fileupload.FileUploadDocumentProducer
 import org.overviewproject.tree.orm.DocumentSet

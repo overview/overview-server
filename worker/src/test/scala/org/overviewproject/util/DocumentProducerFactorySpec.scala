@@ -4,7 +4,7 @@ import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.overviewproject.http.DocumentCloudDocumentProducer
-import org.overviewproject.persistence.{ DocumentSetInfo, PersistentDocumentSetCreationJob }
+import org.overviewproject.persistence.PersistentDocumentSetCreationJob 
 import org.overviewproject.csv.CsvImportDocumentProducer
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm.DocumentSet
