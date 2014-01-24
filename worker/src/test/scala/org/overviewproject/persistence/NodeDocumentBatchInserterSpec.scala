@@ -1,5 +1,5 @@
 /*
- * NodeDocumentBatchInserter.scala
+ * NodeDocumentBatchInserterSpec.scala
  * 
  * Overview Project
  * Created by Jonas Karlsson, Aug 2012
@@ -7,12 +7,9 @@
 
 package org.overviewproject.persistence
 
-import anorm._
-import anorm.SqlParser._
-import org.overviewproject.test.DbSpecification
-import java.sql.Connection
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.persistence.orm.Schema._
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
 
