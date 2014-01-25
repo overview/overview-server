@@ -1,13 +1,13 @@
 package org.overviewproject.clone
 
+import org.overviewproject.database.DB
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.postgres.LO
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.DbSetup._
-import org.overviewproject.tree.orm.{ Document, DocumentSet, File }
-import org.overviewproject.database.DB
-import org.overviewproject.postgres.LO
+import org.overviewproject.tree.orm.{ Document, DocumentSet, File, UploadedFile }
+
 
 class DocumentClonerSpec extends DbSpecification {
   step(setupDb)
@@ -24,8 +24,10 @@ class DocumentClonerSpec extends DbSpecification {
       var ids: DocumentSetIdGenerator = _
 
       def createCsvImportDocumentSet: Long = {
-        val uploadedFileId = insertUploadedFile("contentDisp", "contentType", 100)
-        insertCsvImportDocumentSet(uploadedFileId)
+        val uploadedFile = Schema.uploadedFiles.insert(UploadedFile("content-disposition", "content-type", 100))
+        val documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentClonerSpec", uploadedFileId = Some(uploadedFile.id)))
+        
+        documentSet.id
       }
 
       def documents: Seq[Document] = Seq.tabulate(10)(i =>

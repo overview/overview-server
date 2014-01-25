@@ -2,8 +2,8 @@ package org.overviewproject.clone
 
 import org.overviewproject.persistence.orm.{ Schema, Tag }
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.DbSpecification
+import org.overviewproject.tree.orm.DocumentSet
 
 class TagClonerSpec extends DbSpecification {
 
@@ -19,8 +19,8 @@ class TagClonerSpec extends DbSpecification {
       var tagIdMapping: Map[Long, Long] = _
       
       override def setupWithDb = {
-        sourceDocumentSetId = insertDocumentSet("TagClonerSpec")
-        cloneDocumentSetId = insertDocumentSet("CloneTagClonerSpec")
+        sourceDocumentSetId = Schema.documentSets.insert(DocumentSet(title = "TagClonerSpec"))
+        cloneDocumentSetId = Schema.documentSets.insert(DocumentSet(title = "CloneTagClonerSpec"))
 
         val tags = Seq.tabulate(10)(i => Tag(sourceDocumentSetId, "tag-" + i, "ffffff"))
         Schema.tags.insert(tags)

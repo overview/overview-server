@@ -11,10 +11,9 @@ import org.overviewproject.database.DB
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.postgres.LO
-import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._ 
 import org.overviewproject.tree.DocumentSetCreationJobType
 
 class PersistentDocumentSetCreationJobSpec extends DbSpecification {
@@ -69,7 +68,11 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
 
   trait DocumentSetContext extends DbTestContext {
-    lazy val documentSetId = insertDocumentSet("PersistentDocumentSetCreationJobSpec")
+    var documentSetId: Long = _
+    
+    override def setupWithDb = {
+      documentSetId = Schema.documentSets.insert(DocumentSet(title = "PersistentDocumentSetCreationJobSpec")).id
+    }
   }
 
   trait JobSetup extends DocumentSetContext {
@@ -77,6 +80,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var jobId: Long = _
 
     override def setupWithDb = {
+      super.setupWithDb
       jobId = insertDocumentSetCreationJob(documentSetId, NotStarted)
       notStartedJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
@@ -84,6 +88,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
 
   trait JobQueueSetup extends DocumentSetContext {
     override def setupWithDb = {
+      super.setupWithDb
       insertJobsWithState(documentSetId, Seq(NotStarted, InProgress, NotStarted, InProgress))
     }
   }
@@ -94,6 +99,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var dcJob: PersistentDocumentSetCreationJob = _
 
     override def setupWithDb = {
+      super.setupWithDb
       insertDocumentCloudJob(documentSetId, NotStarted, dcUsername, dcPassword)
       dcJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
@@ -104,6 +110,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var csvImportJob: PersistentDocumentSetCreationJob = _
 
     override def setupWithDb = {
+      super.setupWithDb
       implicit val pgc = DB.pgConnection
       LO.withLargeObject { lo =>
         contentsOid = lo.oid
@@ -118,6 +125,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var cloneJob: PersistentDocumentSetCreationJob = _
 
     override def setupWithDb = {
+      super.setupWithDb
       insertCloneJob(documentSetId, NotStarted, sourceDocumentSetId)
       cloneJob = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted).head
     }
@@ -128,6 +136,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     var cancelNotificationReceived: Boolean = false
 
     override def setupWithDb = {
+      super.setupWithDb
       insertDocumentSetCreationJob(documentSetId, Cancelled)
       cancelledJob = PersistentDocumentSetCreationJob.findJobsWithState(Cancelled).head
       cancelledJob.observeCancellation(j => cancelNotificationReceived = true)
@@ -229,7 +238,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
     }
     
     "find first job with a state, ordered by id" in new DocumentSetContext {
-      val documentSetId2 = insertDocumentSet("DocumentSet2")
+      val documentSetId2 = Schema.documentSets.insert(DocumentSet(title = "DocumentSet2")).id
       val jobIds = Seq(documentSetId2, documentSetId).map(insertDocumentSetCreationJob(_, NotStarted))
      
       val firstNotStartedJob = PersistentDocumentSetCreationJob.findFirstJobWithState(NotStarted)

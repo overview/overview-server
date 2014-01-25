@@ -1,10 +1,10 @@
 package org.overviewproject.persistence
 
+import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.documentcloud.DocumentRetrievalError
+import org.overviewproject.tree.orm.DocumentSet
 
 
 class DocRetrievalErrorWriterSpec extends DbSpecification {
@@ -15,7 +15,7 @@ class DocRetrievalErrorWriterSpec extends DbSpecification {
     var errors: Seq[DocumentRetrievalError] = _
     
     override def setupWithDb = {
-      documentSetId = insertDocumentSet("DocRetrievalErrorWriterSpec")
+      documentSetId = Schema.documentSets.insert(DocumentSet())
       errors = Seq.tabulate(10)(i => DocumentRetrievalError("url" + i, "error: " + i, Some(i), Some("header")))
     }
   }

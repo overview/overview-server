@@ -6,8 +6,9 @@ import scala.Array.canBuildFrom
 import org.overviewproject.database.DB
 import org.overviewproject.persistence.EncodedUploadFile
 import org.overviewproject.postgres.LO
-import org.overviewproject.test.DbSetup.insertUploadedFile
 import org.overviewproject.test.DbSpecification
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.tree.orm.UploadedFile
 
 class UploadReaderSpec extends DbSpecification {
 
@@ -20,7 +21,6 @@ class UploadReaderSpec extends DbSpecification {
       def data: Array[Byte]
       def contentType: String
 
-      var uploadId: Long = _
       var uploadReader: UploadReader = _
       var reader: Reader = _
 
@@ -30,8 +30,8 @@ class UploadReaderSpec extends DbSpecification {
           lo.add(data)
           lo.oid
         }
-        uploadId = insertUploadedFile("content-disposition", contentType, uploadSize)
-        val uploadedFile = EncodedUploadFile.load(uploadId)
+        val upload = Schema.uploadedFiles.insert(UploadedFile("contentDisposition", contentType, uploadSize))
+        val uploadedFile = EncodedUploadFile.load(upload.id)
         
         uploadReader = new UploadReader
         

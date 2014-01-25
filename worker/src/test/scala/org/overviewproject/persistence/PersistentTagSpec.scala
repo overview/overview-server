@@ -2,8 +2,8 @@ package org.overviewproject.persistence
 
 import org.overviewproject.persistence.orm.{Schema, Tag}
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.test.DbSetup.insertDocumentSet
 import org.overviewproject.test.DbSpecification
+import org.overviewproject.tree.orm.DocumentSet
 
 class PersistentTagSpec extends DbSpecification {
 
@@ -17,7 +17,7 @@ class PersistentTagSpec extends DbSpecification {
       var documentSetId: Long = _
 
       override def setupWithDb = {
-        documentSetId = insertDocumentSet("PersistentTagSpec")
+        documentSetId = Schema.documentSets.insert(DocumentSet())
       }
     }
 

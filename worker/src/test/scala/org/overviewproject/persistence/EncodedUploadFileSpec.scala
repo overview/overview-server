@@ -1,10 +1,8 @@
 package org.overviewproject.persistence
 
-import org.overviewproject.postgres.LO
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.DbSetup._
-import org.overviewproject.database.DB
-import java.sql.Connection
+import org.overviewproject.tree.orm.UploadedFile
 
 class EncodedUploadFileSpec extends DbSpecification {
 
@@ -16,20 +14,17 @@ class EncodedUploadFileSpec extends DbSpecification {
       val size = 1999l
       val contentType = "application/octet-stream"
 
-      var uploadedFileId: Long = _
+      var uploadedFile: UploadedFile = _
 
-      override def setupWithDb {
-        implicit val pgc = DB.pgConnection
-        LO.withLargeObject { lo =>
-          uploadedFileId = insertUploadedFile("content-disposition", contentType, size)
-        }
+      override def setupWithDb = {
+        uploadedFile = Schema.uploadedFiles.insert(UploadedFile("content-disposition", contentType, size))
       }
     }
 
     "load uploaded file values" in new UploadedFileContext {
-      val uploadedFile = EncodedUploadFile.load(uploadedFileId)
-      uploadedFile.contentType must be equalTo contentType
-      uploadedFile.size must be equalTo size
+      val encodedUploadedFile = EncodedUploadFile.load(uploadedFile.id)
+      encodedUploadedFile.contentType must be equalTo contentType
+      encodedUploadedFile.size must be equalTo size
     }
 
   }
