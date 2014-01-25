@@ -1,7 +1,6 @@
 package org.overviewproject.tree.orm
 
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.DbSetup._
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.postgres.SquerylEntrypoint._
 
@@ -11,27 +10,27 @@ class DocumentSpec extends DbSpecification {
   "Document" should {
     
     trait DocumentContext extends DbTestContext {
-      var documentSetId: Long = _ 
+      var documentSet: DocumentSet = _ 
       var document: Document = _
       
       override def setupWithDb = {
-        documentSetId = insertDocumentSet("DocumentSpec")
+        documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentSpec"))
         document = createDocument
       }
       
-      def createDocument: Document = Document(documentSetId, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      def createDocument: Document = Document(documentSet.id , documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id ))
     } 
     
     trait DocumentWithDescription extends DocumentContext {
       val documentDescription = "description"
         
-      override def createDocument: Document = Document(documentSetId, documentDescription, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      override def createDocument: Document = Document(documentSet.id , documentDescription, documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id ))
     }
     
     trait DocumentWithTitle extends DocumentContext {
       val documentTitle = Some("title")
       
-      override def createDocument: Document = Document(documentSetId, title = documentTitle, documentcloudId = Some("dcId"), id = nextDocumentId(documentSetId))
+      override def createDocument: Document = Document(documentSet.id , title = documentTitle, documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id ))
     }
     
     "read and write description" in new DocumentWithDescription {

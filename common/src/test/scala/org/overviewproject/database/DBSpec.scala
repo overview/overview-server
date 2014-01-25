@@ -10,11 +10,16 @@ package org.overviewproject.database
 import anorm._
 import anorm.SqlParser._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.test.DbSetup._
 import java.sql.{ Connection, SQLException }
 
 class DBSpec extends DbSpecification {
   step(setupDb)
+
+  private def insertFileGroup(implicit connection: Connection): Unit =
+    SQL("""
+          INSERT INTO file_group (user_email, state)
+          VALUES ('user@host', 1)
+        """).executeInsert()
 
   "DB object" should {
 
@@ -27,13 +32,13 @@ class DBSpec extends DbSpecification {
 
     "provide scope with transaction" in {
       DB.withTransaction { implicit connection =>
-        insertDocumentSet("DBSpec")
+        insertFileGroup
         connection.rollback()
       }
 
       DB.withConnection { implicit connection =>
-        val id = SQL("SELECT id FROM document_set").as(long("id") singleOpt)
-        id must beNone
+        val email = SQL("""SELECT user_email FROM file_group""").as(str("user_email") singleOpt)
+        email must beNone
       }
     }
 
@@ -41,7 +46,7 @@ class DBSpec extends DbSpecification {
       val exceptionMessage = "trigger rollback"
 
       def throwInsideTransaction: Unit = DB.withTransaction { implicit connection =>
-        insertDocumentSet("DBSpec")
+        insertFileGroup
         throw new Exception(exceptionMessage)
       }
 

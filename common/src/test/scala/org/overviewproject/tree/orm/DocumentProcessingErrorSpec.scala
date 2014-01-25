@@ -1,8 +1,7 @@
 package org.overviewproject.tree.orm
 
-import org.overviewproject.test.DbSetup._
-import org.overviewproject.test.DbSpecification
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.test.DbSpecification
 
 class DocumentProcessingErrorSpec extends DbSpecification {
   step(setupDb)
@@ -10,10 +9,10 @@ class DocumentProcessingErrorSpec extends DbSpecification {
   "DocumentProcessingError" should {
 
     "write and read from the database" in new DbTestContext {
-      val documentSetId = insertDocumentSet("DocumentProcessingErrorSpec")
+      val documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentProcessingErrorSpec"))
       
       val documentProcessingError = 
-        DocumentProcessingError(documentSetId, "url", "message", Some(404), Some("header"))
+        DocumentProcessingError(documentSet.id, "url", "message", Some(404), Some("header"))
         
       Schema.documentProcessingErrors.insert(documentProcessingError)
       
