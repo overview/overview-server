@@ -10,15 +10,11 @@ import scala.language.postfixOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.overviewproject.database.{ Database, DB }
-import org.overviewproject.persistence.{ DocumentSetIdGenerator, DocumentWriter, EncodedUploadFile, PersistentDocumentSet }
+import org.overviewproject.persistence._
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.util.{ DocumentConsumer, DocumentProducer }
+import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession, Logger, SearchIndex }
 import org.overviewproject.util.DocumentSetCreationJobStateDescription._
 import org.overviewproject.util.Progress._
-import org.overviewproject.persistence.DocumentTagWriter
-import org.overviewproject.persistence.orm.Tag
-import org.overviewproject.persistence.PersistentTag
-import org.overviewproject.util.{ DocumentSetIndexingSession, Logger, SearchIndex }
 
 
 /**

@@ -1,9 +1,9 @@
 package org.overviewproject.clone
 
-import org.overviewproject.persistence.orm.{ Schema, Tag }
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.DocumentSet
+import org.overviewproject.tree.orm.{ DocumentSet, Tag }
 
 class TagClonerSpec extends DbSpecification {
 

@@ -1,10 +1,10 @@
 package org.overviewproject.persistence
 
 
-import org.overviewproject.persistence.orm.{ Schema, Tag }
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
-import org.overviewproject.tree.orm.{ Document, DocumentSet}
+import org.overviewproject.tree.orm.{ Document, DocumentSet, Tag }
 
 class DocumentTagWriterSpec extends DbSpecification {
 
@@ -21,7 +21,7 @@ class DocumentTagWriterSpec extends DbSpecification {
       
       val tagNames = Seq("tag1", "tag2", "tag3")
       
-      val savedTags = tagNames.map(n => Schema.tags.insert(Tag(documentSetId = documentSet.id, name = n, color = "ffffff")))
+      val savedTags = tagNames.map(n => Schema.tags.insert(Tag(documentSet.id,  n, "ffffff")))
       
       documentTagWriter.write(document, savedTags)
       

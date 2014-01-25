@@ -1,8 +1,8 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.tree.orm.Document
-import org.overviewproject.persistence.orm.{ Schema, Tag }
-import org.overviewproject.tree.orm.DocumentTag
+import org.overviewproject.persistence.orm.Schema
+import org.overviewproject.tree.orm.{ DocumentTag, Tag }
 
 class DocumentTagWriter(documentSetId: Long) {
    val BatchSize: Int = 500
