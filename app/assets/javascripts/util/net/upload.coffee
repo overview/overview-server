@@ -134,7 +134,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _generate_uuid: () ->
       # UUID v3: xxxxxxxx-xxxx-3xxx-yxxx-xxxxxxxxxxxx
       # where x is any hexadecimal digit and y is one of 8, 9, A, or B
-      hash = md5("#{@_filename()}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
+      hash = md5("#{@file.name}::#{@file.lastModifiedDate.toString()}::#{@file.size}").toString()
       parts = []
       parts.push(hash[0...8])
       parts.push(hash[8...12])
@@ -260,7 +260,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
 
       headers = { 'Content-Range': "#{@uploaded_offset}-#{sendOffset}/#{@file.size}" }
 
-      filename = @_filename()
+      filename = @file.name
       if /[^ !#$&+\-\.^_`|~0-9a-zA-Z]/.test(filename)
         # There's a non-"token", as defined in http://tools.ietf.org/html/rfc2616#section-2.2
         headers['Content-Disposition'] = "attachment; filename*=UTF-8''#{encodeRfc5987ValueChars(filename)}"
@@ -334,6 +334,3 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
     _uploading_to_failed: () ->
       this._from_uploading()
       this._to_failed()
-
-    _filename: () ->
-      @file.name.replace(/"/g, '')
