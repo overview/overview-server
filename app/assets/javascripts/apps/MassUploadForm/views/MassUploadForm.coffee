@@ -98,6 +98,7 @@ define [
     render: ->
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
+      @$ulEmptyUpload = @$ul.find('.empty-upload')
 
     setHash: (hash) ->
       window.location.hash = hash  #for testability
@@ -111,21 +112,20 @@ define [
       fileInput.value = ''
 
     _onCollectionAdd: (model) ->
-      uploadView = new @uploadViewClass(model: model)
-      uploadView.render()
-
       if ! @finishEnabled && @collection.length > 2
         @$('button.choose-options').prop('disabled', false)
         @finishEnabled = true
 
-      @$ul.find('.empty-upload').remove()
+      @$ulEmptyUpload.remove()
 
       _.defer => # it seems more responsive when we defer this
+        uploadView = new @uploadViewClass(model: model)
+        uploadView.render()
         @$ul.append(uploadView.el)
 
-      if(@collection.length > 0)
-        progressView = new UploadProgressView({model: @model, el: @$el.find('.progress-bar')})
-        progressView.render()
+      if !@_progressView?
+        @_progressView = new UploadProgressView({model: @model, el: @$el.find('.progress-bar')})
+        @_progressView.render()
 
     _addButtonHover: ->
       @$el.find('button.select-files').addClass('hover')
