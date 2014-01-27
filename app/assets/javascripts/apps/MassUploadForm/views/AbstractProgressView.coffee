@@ -33,7 +33,7 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
         <%- preamble() %>
       </div>
       <div class="progress">
-        <progress value="<%= progress.loaded %>" max="<%= progress.total %>"></progress>
+        <progress value="<%= progress.loaded / progress.total * 100 %>" max="100"></progress>
         <span class="text"><%= humanReadableSize(progress.loaded) %> / <%= humanReadableSize(progress.total) %></span>
       </div>
     """)
@@ -55,14 +55,23 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
 
       @$el.html(html)
       @progressEl = @$el.find('progress')[0]
-      @textEl = @$el.find('.text')[0]
+      @textNode = @$el.find('.text')[0].childNodes[0]
       @errorEl = @$el.find('.message')[0]
 
     _updateProgress: ->
       progress = @getProgress()
-      @progressEl.value = progress.loaded
-      @progressEl.max = progress.total
-      Backbone.$(@textEl).text("#{humanReadableSize(progress.loaded)} / #{humanReadableSize(progress.total)}")
+
+      @_setIfChanged('progress numerator', @progressEl, 'value', Math.round(progress.loaded / progress.total * 10000) / 100)
+      @_setIfChanged('progress text', @textNode, 'data', "#{humanReadableSize(progress.loaded)} / #{humanReadableSize(progress.total)}")
+
+      undefined
+
+    # Caches the last-set value, to avoid spurious sets.
+    _setIfChanged: (key, node, prop, value) ->
+      nodeValueCache = (@_nodeValueCache ||= {})
+      if key not of nodeValueCache or nodeValueCache[key] != value
+        nodeValueCache[key] = value
+        node[prop] = value
       undefined
 
     _updateError: ->

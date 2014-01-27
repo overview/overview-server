@@ -78,7 +78,7 @@ define [
       @uploadViewClass = @options.uploadViewClass
       @finishEnabled = false
       @listenTo(@model, 'change', @_shouldSubmit)
-      @listenTo(@model, 'change', @_hideProgress)
+      @listenTo(@model, 'change', @_refreshProgressVisibility)
       @optionsSet = false
 
       # remove this when we add resumable uploads
@@ -99,6 +99,7 @@ define [
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
       @$ulEmptyUpload = @$ul.find('.empty-upload')
+      @$progressBar = @$('.progress-bar')
 
     setHash: (hash) ->
       window.location.hash = hash  #for testability
@@ -124,7 +125,7 @@ define [
         @$ul.append(uploadView.el)
 
       if !@_progressView?
-        @_progressView = new UploadProgressView({model: @model, el: @$el.find('.progress-bar')})
+        @_progressView = new UploadProgressView(model: @model, el: @$progressBar)
         @_progressView.render()
 
     _addButtonHover: ->
@@ -154,15 +155,17 @@ define [
       if(@_uploadDone() && @optionsSet)
         @$el.closest('form').submit()
 
-    _hideProgress: ->
-      if(@_uploadDone())
-        @$el.find('.progress-bar').css('display', 'none')
-      else
-        @$el.find('.progress-bar').css('display', 'block')
+    _refreshProgressVisibility: ->
+      @_progressIsVisible ?= true
+      newIsVisible = !@_uploadDone()
+
+      if newIsVisible != @_progressIsVisible
+        @_progressIsVisible = newIsVisible
+        cssDisplay = if @_progressIsVisible then 'block' else 'none'
+        @$progressBar.css('display', cssDisplay)
 
     _uploadDone: ->
-      @model.uploads.length > 0 &&
-      @model.get('status') == 'waiting'
+      @model.uploads.length > 0 && @model.get('status') == 'waiting'
 
     _confirmNav: (e) ->
       if(@collection.length > 0 && e.currentTarget.target != '_blank')
