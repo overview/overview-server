@@ -420,12 +420,17 @@ define('MassUpload/UploadProgress',['backbone'], function(Backbone) {
       total: 0
     },
     initialize: function() {
-      var add, adjust, callback, change, cidToLastKnownProgress, collection, eventName, events, remove, reset,
-        _this = this;
+      var collection;
       collection = this.get('collection');
       if (collection == null) {
         throw 'Must initialize UploadProgress with `collection`, an UploadCollection';
       }
+      return this._updateAndStartListening();
+    },
+    _updateAndStartListening: function() {
+      var add, adjust, callback, change, cidToLastKnownProgress, collection, eventName, events, remove, reset,
+        _this = this;
+      collection = this.get('collection');
       adjust = function(dLoaded, dTotal) {
         _this.set({
           loaded: _this.get('loaded') + dLoaded,
@@ -483,6 +488,14 @@ define('MassUpload/UploadProgress',['backbone'], function(Backbone) {
       }
       reset();
       return void 0;
+    },
+    inBatch: function(callback) {
+      this.stopListening(this.get('collection'));
+      try {
+        return callback();
+      } finally {
+        this._updateAndStartListening();
+      }
     }
   });
 });
@@ -522,7 +535,7 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
       return this.prepare();
     },
     prepare: function() {
-      var options, resetUploadProgress, uploadProgress, _ref, _ref1, _ref2,
+      var options, resetUploadProgress, _ref, _ref1, _ref2,
         _this = this;
       options = this._options;
       this.lister = (_ref = options != null ? options.lister : void 0) != null ? _ref : new FileLister(options.doListFiles);
@@ -576,15 +589,15 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
           return _this._onDeleterStop(fileInfo);
         }
       };
-      uploadProgress = new UploadProgress({
+      this._uploadProgress = new UploadProgress({
         collection: this.uploads
       });
       resetUploadProgress = function() {
         return _this.set({
-          uploadProgress: uploadProgress.pick('loaded', 'total')
+          uploadProgress: _this._uploadProgress.pick('loaded', 'total')
         });
       };
-      this.listenTo(uploadProgress, 'change', resetUploadProgress);
+      this.listenTo(this._uploadProgress, 'change', resetUploadProgress);
       return resetUploadProgress();
     },
     fetchFileInfosFromServer: function() {
@@ -602,7 +615,10 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
       });
     },
     addFiles: function(files) {
-      return this.uploads.addFiles(files);
+      var _this = this;
+      return this._uploadProgress.inBatch(function() {
+        return _this.uploads.addFiles(files);
+      });
     },
     removeUpload: function(upload) {
       return upload.set('deleting', true);
