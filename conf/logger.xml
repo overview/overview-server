@@ -15,11 +15,12 @@
     </encoder>
   </appender>
 
-  <logger name="play" level="TRACE" />
-  <logger name="application" level="TRACE" />
+  <logger name="play" level="DEBUG" />
+  <logger name="application" level="DEBUG" />
   <logger name="com.jolbox.bonecp" level="DEBUG" />
+  <logger name="javax.management" level="INFO" />
 
-  <root level="TRACE">
+  <root level="DEBUG">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
   </root>
