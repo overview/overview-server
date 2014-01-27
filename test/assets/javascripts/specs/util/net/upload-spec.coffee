@@ -92,7 +92,7 @@ define [
         expect(mostRecentAjaxRequest().url).toMatch(/^\/upload\//)
 
       it 'computes a correct guid for the file', ->
-        expect(mostRecentAjaxRequest().url).toMatch(makeUUID('foo bar baz.pdf::last-modified-date::1000'))
+        expect(mostRecentAjaxRequest().url).toMatch(makeUUID('foo bar "baz".pdf::last-modified-date::1000'))
 
       it 'attempts to find the file before uploading', ->
         expect(mostRecentAjaxRequest().method).toEqual('HEAD')
@@ -101,12 +101,11 @@ define [
         beforeEach ->
           mostRecentAjaxRequest().response(status: 404)  # not found, go ahead and upload
 
-        it 'starts the upload, and filters quotes from the filename', ->
+        it 'starts the upload', ->
           request = mostRecentAjaxRequest()
 
           expect(upload.state).toEqual(3)
           expect(request.method).toEqual('POST')
-          expect(request.requestHeaders['Content-Disposition']).toEqual('attachment; filename="foo bar baz.pdf"')
 
         it 'correctly specifies the content-range', ->
           expect(mostRecentAjaxRequest().requestHeaders['Content-Range']).toEqual('0-999/1000')
