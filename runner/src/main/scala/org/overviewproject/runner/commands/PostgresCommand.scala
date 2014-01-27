@@ -32,6 +32,7 @@ object PostgresCommand {
     "/opt/local/lib/postgresql90/bin",
     // Postgres.app, as per http://postgresapp.com/documentation
     "/Applications/Postgres.app/Contents/MacOS/bin",
+    "/Applications/Postgres93.app/Contents/MacOS/bin",
     // Fink, according to http://pdb.finkproject.org/pdb/package.php/postgresql92
     "/sw/opt/postgresql-9.3/bin",
     "/sw/opt/postgresql-9.2/bin",
