@@ -3,20 +3,15 @@ define [
   'backbone'
   'i18n'
   'apps/ImportOptions/app'
+  'apps/MassUploadForm/views/UploadView'
   'apps/MassUploadForm/views/UploadProgressView'
-], (_, Backbone, i18n, ImportOptionsApp, UploadProgressView) ->
+], (_, Backbone, i18n, ImportOptionsApp, UploadView, UploadProgressView) ->
   t = i18n.namespaced('views.DocumentSet._massUploadForm')
 
-  Backbone.View.extend
+  class MassUploadForm extends Backbone.View
     template: _.template('''
       <div>
-        <ul class='files'>
-          <li class="empty-upload">
-            <i class='icon-cloud-upload'></i>
-            <div><%- t('drop_target') %></div>
-            <div class='secondary-prompt'><%- t('minimum_files') %></div>
-          </li>
-        </ul>
+        <div class='uploads'></div>
 
         <div class='progress-bar'></div>
 
@@ -69,13 +64,12 @@ define [
       'click .cancel': '_confirmCancel'
 
     initialize: ->
-      throw 'Must set uploadViewClass, a Backbone.View' if !@options.uploadViewClass?
+      throw 'Must set uploadCollectionViewClass, a Backbone.View' if !@options.uploadCollectionViewClass?
       throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages?
       throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode?
 
       @collection = @model.uploads
       @listenTo(@collection, 'add', (model) => @_onCollectionAdd(model))
-      @uploadViewClass = @options.uploadViewClass
       @finishEnabled = false
       @listenTo(@model, 'change', @_shouldSubmit)
       @listenTo(@model, 'change', @_refreshProgressVisibility)
@@ -101,6 +95,22 @@ define [
       @$ulEmptyUpload = @$ul.find('.empty-upload')
       @$progressBar = @$('.progress-bar')
 
+      @_refreshProgressVisibility()
+      @_progressView = new UploadProgressView(model: @model, el: @$progressBar)
+      @_progressView.render()
+
+      @_uploadCollectionView = new @options.uploadCollectionViewClass(
+        collection: @collection,
+        uploadViewClass: UploadView
+        el: @$('.uploads')
+      )
+      @_uploadCollectionView.render()
+
+    remove: ->
+      @_progressView?.remove()
+      @_uploadCollectionView?.remove()
+      super()
+
     setHash: (hash) ->
       window.location.hash = hash  #for testability
 
@@ -117,16 +127,7 @@ define [
         @$('button.choose-options').prop('disabled', false)
         @finishEnabled = true
 
-      @$ulEmptyUpload.remove()
-
-      _.defer => # it seems more responsive when we defer this
-        uploadView = new @uploadViewClass(model: model)
-        uploadView.render()
-        @$ul.append(uploadView.el)
-
-      if !@_progressView?
-        @_progressView = new UploadProgressView(model: @model, el: @$progressBar)
-        @_progressView.render()
+      @_refreshProgressVisibility()
 
     _addButtonHover: ->
       @$el.find('button.select-files').addClass('hover')
@@ -157,7 +158,7 @@ define [
 
     _refreshProgressVisibility: ->
       @_progressIsVisible ?= true
-      newIsVisible = !@_uploadDone()
+      newIsVisible = @model.uploads.length && !@_uploadDone()
 
       if newIsVisible != @_progressIsVisible
         @_progressIsVisible = newIsVisible

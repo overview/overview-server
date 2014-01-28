@@ -1,55 +1,58 @@
 @import-once "../../mixins.less";
 
 #import-from-mass-upload {
-  ul.files {
-    padding: 0;
-    list-style: none;
-    max-height: 20em;
+  div.uploads {
     overflow: auto;
+    height: 23em;
     margin: 1em 0;
     background: @darkBodyBackground;
     box-shadow: inset 0 -18px 40px -30px black;
     border: 1px solid @mutedShadeColor;
-    display: inline-block;
     padding: 0.5em;
     width: 35em;
-    min-height: 23em;
     float: left;
     margin-right: 60px;
+  }
 
-    li {
-      line-height: 1.4em;
-      height: 1.4em;
-      margin: .1em 1em;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
 
-      i {
-        margin-right: 1em;
-        margin-top: 3px;
-        float: left;
-      }
+  li {
+    line-height: 1.4em;
+    height: 1.4em;
+    margin: .1em 1em;
+    padding: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+
+    i {
+      margin-right: 1em;
+      margin-top: 3px;
+      float: left;
+    }
+  }
+
+  li.empty-upload {
+    color: @mutedShadeColor;
+    height: inherit;
+    text-align: center;
+    margin: 0;
+    font-size: 2em;
+
+    i {
+      display: block;
+      margin: 0 0 -22px 0;
+      float: none;
+      font-size: 9em;
+      color: #e1e0e0;
     }
 
-    li.empty-upload {
-      color: @mutedShadeColor;
-      height: inherit;
-      text-align: center;
-      margin: 0;
-      font-size: 2em;
-
-      i {
-        display: block;
-        margin: 0 0 -22px 0;
-        float: none;
-        font-size: 9em;
-        color: #e1e0e0;
-      }
-
-      .secondary-prompt {
-        font-size: 0.5em;
-      }
+    .secondary-prompt {
+      font-size: 0.5em;
     }
   }
 

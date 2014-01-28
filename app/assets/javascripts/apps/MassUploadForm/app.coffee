@@ -2,15 +2,15 @@ define [
   'jquery'
   './views/MassUploadForm'
   './models/MassUploadTransport'
-  './views/UploadView'
+  './views/UploadCollectionView'
   'mass-upload'
-], ($, MassUploadForm, MassUploadTransport, UploadView, MassUpload) ->
+], ($, MassUploadForm, MassUploadTransport, UploadCollectionView, MassUpload) ->
   class App
     constructor: (options) ->
       model = new MassUpload( MassUploadTransport({url: options.baseUrl, csrfToken: options.csrfToken}) )
       view = new MassUploadForm(
         model: model,
-        uploadViewClass: UploadView,
+        uploadCollectionViewClass: UploadCollectionView,
         supportedLanguages: options.supportedLanguages,
         defaultLanguageCode: options.defaultLanguageCode
       )

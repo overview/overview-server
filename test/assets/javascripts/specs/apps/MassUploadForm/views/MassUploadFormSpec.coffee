@@ -8,7 +8,7 @@ define [
   describe 'apps/MassUploadForm/views/MassUploadForm', ->
     model = undefined
     view = undefined
-    uploadViewRenderSpy = undefined
+    uploadCollectionViewRenderSpy = undefined
 
     MockUpload = Backbone.Model.extend(
       isFullyUploaded: ->
@@ -28,8 +28,6 @@ define [
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
-        'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
-        'views.DocumentSet._massUploadForm.minimum_files': 'minimum_files'
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
@@ -40,8 +38,9 @@ define [
 
       clearAjaxRequests()
 
-      uploadViewClass = Backbone.View.extend(tagName: 'li')
-      uploadViewRenderSpy = spyOn(uploadViewClass.prototype, 'render').andCallThrough()
+      uploadCollectionViewClass = Backbone.View
+      uploadCollectionViewRenderSpy = spyOn(uploadCollectionViewClass.prototype, 'render').andCallThrough()
+
       model = new Backbone.Model
       model.uploads = new Backbone.Collection
       model.abort = jasmine.createSpy()
@@ -51,13 +50,14 @@ define [
 
       view = new MassUploadForm
         model: model
-        uploadViewClass: uploadViewClass
+        uploadCollectionViewClass: uploadCollectionViewClass
         supportedLanguages: [ {code: "en", name: "English"} ]
         defaultLanguageCode: 'en'
       $.extend model,
         addFiles: jasmine.createSpy()
 
     afterEach ->
+      view.remove()
       $('div.nav-buttons').remove()
 
     describe 'init', ->
@@ -71,13 +71,16 @@ define [
         view.render()
 
       it 'has a file input', ->
-        expect(view.$el.find('input[type=file]').length).toEqual(1)
+        expect(view.$('input[type=file]').length).toEqual(1)
 
       it 'only shows pdf files by default', ->
-        expect(view.$el.find('input[type=file]').attr('accept')).toEqual('application/pdf')
+        expect(view.$('input[type=file]').attr('accept')).toEqual('application/pdf')
 
-      it 'has an empty state', ->
-        expect(view.$el.text()).toMatch('drop_target')
+      it 'renders uploadCollectionView', ->
+        expect(uploadCollectionViewRenderSpy).toHaveBeenCalled()
+
+      it 'hides the progress bar when there are no uploads', ->
+        expect(view.$('.progress-bar').css('display')).toEqual('none')
 
     describe 'model add event', ->
       beforeEach ->
@@ -85,23 +88,15 @@ define [
         model.uploads.add(new Backbone.Model())
 
       it 'does not yet enable the submit button', ->
-        waits(0) # We defer the add, as it seems more responsive that way
         expect(view.$('.choose-options')).toBeDisabled()
+
+      it 'shows the progress bar', ->
+        expect(view.$('.progress-bar').css('display')).toEqual('block')
 
       describe 'with 3 or more uploads', ->
         beforeEach ->
           model.uploads.add(new Backbone.Model())
           model.uploads.add(new Backbone.Model())
-          waits(0) # We defer the add, as it seems more responsive that way
-
-        it 'adds an uploadView when a file is added', ->
-          runs ->
-            expect(uploadViewRenderSpy).toHaveBeenCalled()
-            expect(view.$el.find('.files li').length).toEqual(3)
-
-        it 'renders a progress bar', ->
-          runs ->
-            expect(view.$el).toContain('progress')
 
         describe 'submit button', ->
           it 'enables the submit button', ->
