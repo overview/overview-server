@@ -4,7 +4,7 @@ module.exports = function(config) {
     basePath: '.',
     browsers: [ 'PhantomJS' ],
     frameworks: [ 'jasmine', 'requirejs' ],
-    reporters: [ 'dots', 'growl', 'html' ],
+    reporters: [ 'dots', 'growl' ],
 
     htmlReporter: {
       outputDir: 'karma_html',
