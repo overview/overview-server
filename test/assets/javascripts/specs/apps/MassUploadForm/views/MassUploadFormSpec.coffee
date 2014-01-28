@@ -86,6 +86,7 @@ define [
       beforeEach ->
         view.render()
         model.uploads.add(new Backbone.Model())
+        model.uploads.trigger('add-batch', model.uploads.models)
 
       it 'does not yet enable the submit button', ->
         expect(view.$('.choose-options')).toBeDisabled()

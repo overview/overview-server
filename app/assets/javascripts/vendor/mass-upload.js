@@ -91,11 +91,15 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
   var UploadCollection, UploadPriorityQueue, _ref;
   UploadPriorityQueue = (function() {
     function UploadPriorityQueue() {
+      this._clear();
+    }
+
+    UploadPriorityQueue.prototype._clear = function() {
       this.deleting = [];
       this.uploading = [];
       this.unfinished = [];
-      this.unstarted = [];
-    }
+      return this.unstarted = [];
+    };
 
     UploadPriorityQueue.prototype.uploadAttributesToState = function(uploadAttributes) {
       var ret;
@@ -103,12 +107,19 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
       return ret;
     };
 
-    UploadPriorityQueue.prototype.add = function(upload) {
-      var state;
-      state = this.uploadAttributesToState(upload.attributes);
-      if (state != null) {
-        return this[state].push(upload);
+    UploadPriorityQueue.prototype.addBatch = function(uploads) {
+      var state, upload, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
+        state = this.uploadAttributesToState(upload.attributes);
+        if (state != null) {
+          _results.push(this[state].push(upload));
+        } else {
+          _results.push(void 0);
+        }
       }
+      return _results;
     };
 
     UploadPriorityQueue.prototype._removeUploadFromArray = function(upload, array) {
@@ -142,7 +153,8 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     };
 
     UploadPriorityQueue.prototype.reset = function(collection) {
-      return collection.each(this.add, this);
+      this._clear();
+      return this.addBatch(collection.models);
     };
 
     UploadPriorityQueue.prototype.next = function() {
@@ -166,7 +178,8 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     UploadCollection.prototype.initialize = function() {
       var event, _i, _len, _ref1;
       this._priorityQueue = new UploadPriorityQueue();
-      _ref1 = ['change', 'add', 'remove', 'reset'];
+      this.on('add-batch', this._priorityQueue.addBatch, this._priorityQueue);
+      _ref1 = ['change', 'remove', 'reset'];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         event = _ref1[_i];
         this.on(event, this._priorityQueue[event], this._priorityQueue);
