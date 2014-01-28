@@ -26,10 +26,10 @@ define [
     it 'updates the progress bar', ->
       $progressEl = view.$el.find('progress')
       expect($progressEl.attr('value')).toEqual(0)
-      expect($progressEl.attr('max')).toEqual('0')
+      expect($progressEl.attr('max')).toEqual('100')
       model.set('progress', {loaded: 1024, total: 2048})
-      expect($progressEl.attr('value')).toEqual(1024)
-      expect($progressEl.attr('max')).toEqual('2048')
+      expect($progressEl.attr('value')).toEqual(50)
+      expect($progressEl.attr('max')).toEqual('100')
 
     it 'shows errors', ->
       model.set('error', 'an error')
