@@ -234,6 +234,7 @@ define [
             expect(request.url).toEqual('/files')
 
           it 'returns to the document sets pane', ->
+            spyOn($, 'ajax').andReturn(new $.Deferred().resolve())
             spyOn(view, 'setHash')
             view.$('.cancel').click()
             jasmine.Clock.tick(100)
@@ -247,6 +248,7 @@ define [
           spyOn(view, 'getHash').andReturn('#import-from-mass-upload')
 
         it 'goes to the correct place', ->
+          spyOn($, 'ajax').andReturn(new $.Deferred().resolve())
           spyOn(view, 'setHash')
           $('div.nav-buttons li a').click()
           jasmine.Clock.tick(100)

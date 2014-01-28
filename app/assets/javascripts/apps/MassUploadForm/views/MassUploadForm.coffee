@@ -16,9 +16,7 @@ define [
         <div class='progress-bar'></div>
 
         <div class='controls'>
-          <button type='button' class='cancel btn'>
-            <%- t('cancel') %>
-          </button>
+          <a href="#" class="btn cancel"><%- t('cancel') %></a>
 
           <div class='right-controls'>
             <div class="upload-prompt">
@@ -153,7 +151,7 @@ define [
       @_shouldSubmit()
 
     _shouldSubmit: ->
-      if(@_uploadDone() && @optionsSet)
+      if @_uploadDone() && @optionsSet
         @$el.closest('form').submit()
 
     _refreshProgressVisibility: ->
@@ -169,7 +167,7 @@ define [
       @model.uploads.length > 0 && @model.get('status') == 'waiting'
 
     _confirmNav: (e) ->
-      if(@collection.length > 0 && e.currentTarget.target != '_blank')
+      if @collection.length > 0 && e.currentTarget.target != '_blank'
         e.preventDefault()
         e.stopPropagation()
         targetUrl = e.currentTarget.href
@@ -181,9 +179,10 @@ define [
     _confirmCancel: (e) ->
       e.stopPropagation()
       e.preventDefault()
+
       target = e.currentTarget.hash
 
-      if(@collection.length > 0)
+      if @collection.length > 0
         @$el.find('#cancel-modal').modal('show')
         @$el.find('#cancel-modal .cancel-upload').click =>
           @_cancel(target)
@@ -193,7 +192,7 @@ define [
     _cancel: (target) ->
       @$el.find('#cancel-modal').modal('hide')
       @model.abort()
-      $.ajax('/files', type: 'DELETE')
-      @render()
-      @finishEnabled = false
-      @setHash(target || '')
+      $.ajax('/files', type: 'DELETE').done =>
+        @render()
+        @finishEnabled = false
+        @setHash(target || '')
