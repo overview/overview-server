@@ -9,6 +9,9 @@ define [
     view = undefined
     class MockUploadView extends Backbone.View
       tagName: 'li'
+      attributes:
+        style: 'height: 30px'
+
     uploadViewRenderSpy = undefined
 
     beforeEach ->
@@ -38,3 +41,40 @@ define [
       collection.add(new Backbone.Model)
       expect(view.$('li').text()).not.toMatch('drop_target')
       expect(view.$('li').length).toEqual(1)
+
+    it 'should not crash when the collection emits a "change" event for an upload before an "add" event', ->
+      collection.trigger('change', new Backbone.Model)
+      expect(uploadViewRenderSpy).not.toHaveBeenCalled()
+
+    describe 'with lots of files', ->
+      beforeEach ->
+        # 20 files; 30px per file; 200px visible
+        view.$el.css
+          height: '200px'
+          overflow: 'auto'
+
+        $('body').append(view.$el)
+        for i in [ 0 ... 20 ]
+          collection.add(new Backbone.Model)
+
+      afterEach ->
+        view.$el.remove()
+
+      it 'should set the <ul> height appropriately', ->
+        expect(view.$('ul').css('height')).toEqual('600px')
+
+      it 'should only render() the visible uploads', ->
+        # The intent is that we don't initialize the view at all; testing
+        # whether it's rendered is a quick hack so we don't need to mock
+        # the constructor.
+        expect(uploadViewRenderSpy.calls.length).toEqual(7)
+
+      it 'should render() more uploads as the user scrolls', ->
+        view.$el.scrollTop(100)
+        view.$el.scroll() # call the event
+        expect(uploadViewRenderSpy.calls.length).toEqual(10)
+
+      it 'should scroll to the most-recently-changed element', ->
+        collection.at(11).set(foo: 'bar')
+        expect(view.$el.scrollTop()).toEqual(190)
+        expect(uploadViewRenderSpy.calls.length).toEqual(13)
