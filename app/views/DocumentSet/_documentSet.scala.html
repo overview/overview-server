@@ -1,5 +1,6 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
+  treeId: Long,
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
@@ -29,7 +30,7 @@
         >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>
     </div>
-    <h3><a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a></h3>
+    <h3><a href="@routes.DocumentSetController.show(documentSet.id, treeId)">@documentSet.title</a></h3>
     <h4>
       <span class="description">
         @(documentSet.query match {

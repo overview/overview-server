@@ -2,7 +2,10 @@ define [ 'jquery' ], ($) ->
   class Log
     constructor: () ->
       @entries = []
-
+      if match = /documentsets\/(\d+)\/.*$/.exec(window.location.pathname)
+        @document_set_id = +match[1]
+        @base_url = "/documentsets/#{@document_set_id}"
+        
     add_entry: (entry) ->
       @entries.push({
         date: (new Date()).toISOString(),
@@ -21,7 +24,7 @@ define [ 'jquery' ], ($) ->
         this.clear_entries()
 
         $.ajax({
-          url: "#{window.location.pathname}/log-entries/create-many?#{window.csrfTokenQueryString || ''}"
+          url: "#{@base_url}/log-entries/create-many?#{window.csrfTokenQueryString || ''}"
           type: 'POST'
           data: data
           contentType: 'application/json'

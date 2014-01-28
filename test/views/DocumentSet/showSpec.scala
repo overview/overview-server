@@ -20,7 +20,7 @@ class showSpec extends Specification {
       val user = mock[OverviewUser].smart
       user.isAdministrator returns false
       
-      lazy val documentSetJson = show(user, documentSet).toString
+      lazy val documentSetJson = show(user, documentSet, 1L).toString
     }
 
     "contain id and html" in new DocumentSetContext {

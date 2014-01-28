@@ -25,7 +25,7 @@ class indexSpec extends Specification {
     val jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
     implicit lazy val jobsPage = ResultPage(jobs, 10, 1)
 
-    val documentSets: Seq[DocumentSet] = Seq()
+    val documentSets: Seq[(DocumentSet, Long)] = Seq()
     implicit lazy val documentSetsPage = ResultPage(documentSets, 10, 1)
 
     implicit lazy val j = jerry(index(user, documentSetsPage, jobsPage, form).body)
@@ -54,7 +54,7 @@ class indexSpec extends Specification {
     }
 
     "Show DocumentSets if there are some" in new ViewContext {
-      override val documentSets = Seq(DocumentSet())
+      override val documentSets = Seq((DocumentSet(), 1L))
       $(".document-sets").length must beEqualTo(1)
     }
 
@@ -76,8 +76,8 @@ class indexSpec extends Specification {
 
     "Show links to DocumentSets if there are some" in new ViewContext {
       override val documentSets = Seq(
-        DocumentSet(id=1, title="title1", query=Some("query1")),
-        DocumentSet(id=2, title="title2", query=Some("query2"))
+        (DocumentSet(id=1, title="title1", query=Some("query1")), 1L),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), 2L)
       )
       $(".document-sets").length must equalTo(1)
       $(".document-sets li#document-set-1 h3 a").attr("href") must endWith("/1")
@@ -86,8 +86,8 @@ class indexSpec extends Specification {
     
     "Define error-list popup if there are DocumentSets" in new ViewContext {
       override val documentSets = Seq(
-        DocumentSet(id=1, title="title1", query=Some("query1")),
-        DocumentSet(id=2, title="title2", query=Some("query2"))
+        (DocumentSet(id=1, title="title1", query=Some("query1")), 1L),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), 2L)
       )
       $("#error-list-modal").length must beEqualTo(1)
     }

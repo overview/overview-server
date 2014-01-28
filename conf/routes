@@ -40,11 +40,11 @@ GET    /imports/documentcloud/new/:query    controllers.DocumentCloudImportJobCo
 POST   /imports/clone/:sourceDocumentSetId controllers.CloneImportJobController.create(sourceDocumentSetId: Long)
 
 # Routes that relate to a DocumentSet
-GET    /documentsets                  controllers.DocumentSetController.index(page: Int ?= 1)
-GET    /documentsets/:id.json         controllers.DocumentSetController.showJson(id: Long)
-GET    /documentsets/:id              controllers.DocumentSetController.show(id: Long)
-DELETE /documentsets/:id              controllers.DocumentSetController.delete(id: Long)
-PUT    /documentsets/:id              controllers.DocumentSetController.update(id: Long)
+GET    /documentsets                      controllers.DocumentSetController.index(page: Int ?= 1)
+GET    /documentsets/:id.json             controllers.DocumentSetController.showJson(id: Long)
+GET    /documentsets/:id/trees/:treeId    controllers.DocumentSetController.show(id: Long, treeId: Long)
+DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
+PUT    /documentsets/:id                  controllers.DocumentSetController.update(id: Long)
 
 GET    /documentsets/:id/users.json   controllers.DocumentSetUserController.indexJson(id: Long)
 POST   /documentsets/:id/users        controllers.DocumentSetUserController.create(id: Long)

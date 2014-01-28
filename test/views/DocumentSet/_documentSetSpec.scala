@@ -16,10 +16,11 @@ class _documentSetSpec extends Specification {
   trait ViewContext extends Scope with Mockito {
     implicit val request = FakeRequest()
     val documentSet: DocumentSet
+    val treeId = 1L
     val user = mock[OverviewUser]
     user.isAdministrator returns false
     
-    lazy val body = _documentSet(documentSet, user).body
+    lazy val body = _documentSet(documentSet, treeId, user).body
     lazy val j = jerry(body)
     def $(selector: java.lang.String) = j.$(selector)
   }
@@ -46,7 +47,7 @@ class _documentSetSpec extends Specification {
       $("a[href]").get()
         .filter(n => n.hasAttribute("href"))
         .map(n => n.getAttribute("href"))
-        .filter(href => href.matches(".*/" + documentSet.id + "\\b"))
+        .filter(href => href.matches(s".*/${documentSet.id}/trees/$treeId\\b"))
         .length must be_>=(1)
     }
 

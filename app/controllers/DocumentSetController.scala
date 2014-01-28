@@ -18,6 +18,9 @@ trait DocumentSetController extends Controller {
 
   trait Storage {
     def findDocumentSet(id: Long): Option[DocumentSet]
+    // FIXME: handle multiple trees properly
+    def findDocumentSetWithTreeId(id: Long): Option[(DocumentSet, Long)]
+    def findDocumentSetsWithTreeId(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSet, Long)] 
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
     def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
 
@@ -40,26 +43,27 @@ trait DocumentSetController extends Controller {
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = storage.findDocumentSets(request.user.email, pageSize, realPage)
+    val documentSetsWithTreeId = storage.findDocumentSetsWithTreeId(request.user.email, pageSize, realPage)
     val jobs = storage.findDocumentSetCreationJobs(request.user.email, jobPageSize, 1)
 
-    Ok(views.html.DocumentSet.index(request.user, documentSets, jobs, form))
+    Ok(views.html.DocumentSet.index(request.user, documentSetsWithTreeId, jobs, form))
   }
 
-  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+  def show(id: Long, treeId: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case Some(documentSet) =>
         Ok(views.html.DocumentSet.show(
           request.user,
           documentSet,
+          treeId,
           storage.isDocumentSetSearchable(documentSet)))
       case None => NotFound
     }
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSet(id) match {
-      case Some(documentSet) => Ok(views.json.DocumentSet.show(request.user, documentSet))
+    storage.findDocumentSetWithTreeId(id) match {
+      case Some((documentSet, treeId)) => Ok(views.json.DocumentSet.show(request.user, documentSet, treeId))
       case None => NotFound
     }
   }
@@ -97,6 +101,14 @@ object DocumentSetController extends DocumentSetController {
       DocumentSetFinder.byDocumentSet(id).headOption
     }
 
+    override def findDocumentSetWithTreeId(id: Long): Option[(DocumentSet, Long)] = 
+      DocumentSetFinder.byDocumentSet(id).withTreeIds.headOption
+      
+    override def findDocumentSetsWithTreeId(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSet, Long)] = { 
+      val query = DocumentSetFinder.byOwner(userEmail).withTreeIds
+      ResultPage(query, pageSize, page)
+    }
+      
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
       val query = DocumentSetFinder.byOwner(userEmail)
       ResultPage(query, pageSize, page)

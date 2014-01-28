@@ -6,10 +6,11 @@ define [
   './tag_store'
   './TagLikeApi'
   './search_result_store'
+  './server'
   './needs_resolver'
   './transaction_queue'
   'i18n'
-], ($, Selection, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, NeedsResolver, TransactionQueue, i18n) ->
+], ($, Selection, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, Server, NeedsResolver, TransactionQueue, i18n) ->
   t = i18n.namespaced('views.DocumentSet.show.cache')
 
   Deferred = $.Deferred
@@ -32,14 +33,15 @@ define [
   # rethinking and splitting-up.
   class Cache
     constructor: () ->
+      @server = new Server
+      @router = @server.router
       @document_store = new DocumentStore()
       @tag_store = new TagStore()
-      @search_result_store = new SearchResultStore("#{window.location.pathname}/search-results")
-      @needs_resolver = new NeedsResolver(@tag_store, @search_result_store)
+      @search_result_store = new SearchResultStore(@router.route_to_path("search_result_base"))
+      @needs_resolver = new NeedsResolver(@tag_store, @search_result_store, @server)
       @transaction_queue = new TransactionQueue()
-      @server = @needs_resolver.server
-      @tag_api = new TagLikeApi(@tag_store, @transaction_queue, "#{window.location.pathname}/tags")
-      @search_result_api = new TagLikeApi(@search_result_store, @transaction_queue, "#{window.location.pathname}/searches")
+      @tag_api = new TagLikeApi(@tag_store, @transaction_queue, @router.route_to_path("tag_base"))
+      @search_result_api = new TagLikeApi(@search_result_store, @transaction_queue, @router.route_to_path("searches_base"))
       @on_demand_tree = new OnDemandTree(this) # FIXME this is ugly
 
     load_root: () ->

@@ -21,6 +21,12 @@ define [
     </div>
   """)
 
+  base_url = () ->
+    if match = /documentsets\/(\d+)\/.*$/.exec(window.location.pathname)
+      document_set_id = +match[1]
+      "/documentsets/#{document_set_id}"
+        
+
   # Opens a dialog showing the tags in the tag store.
   #
   # This dialog allows edits. It will be closed when the user clicks "close".
@@ -47,6 +53,7 @@ define [
       @_createView()
       @_attachView()
 
+
     _createView: ->
       # Create a view, unless one was supplied in the constructor (for testing)
       @view = if @options.view?
@@ -54,7 +61,7 @@ define [
       else
         new TagListView
           collection: @options.tagStoreProxy.collection,
-          exportUrl: window.location.pathname + "/tags.csv" # TODO routing in JS
+          exportUrl: base_url() + "/tags.csv" # TODO routing in JS
 
     _attachView: ->
       cache = @options.cache
@@ -98,7 +105,7 @@ define [
 
       # Refresh tag counts
       cache.transaction_queue.queue ->
-        $.getJSON(window.location.pathname + "/tags.json") # TODO routing in JS
+        $.getJSON(base_url() + "/tags.json") # TODO routing in JS
           .done (json) ->
             # The fresh data from the server will only be set in the proxy. It
             # won't be set in the underlying tag store.

@@ -8,10 +8,10 @@ import models.OverviewUser
 import org.overviewproject.tree.orm.DocumentSet
 
 object show {
-  def apply(user: OverviewUser, documentSet: DocumentSet)(implicit lang: Lang, request: RequestHeader): JsValue = {
+  def apply(user: OverviewUser, documentSet: DocumentSet, treeId: Long)(implicit lang: Lang, request: RequestHeader): JsValue = {
     toJson(Map(
       "id" -> toJson(documentSet.id),
-      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet, user).toString)
+      "html" -> toJson(views.html.DocumentSet._documentSet(documentSet, treeId, user).toString)
     ))
   }
 }
