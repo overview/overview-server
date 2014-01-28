@@ -27,7 +27,7 @@ define [
       @_scrollTop = 0
       @_cidToIndex = {}
 
-      @listenTo(@collection, 'add', @_onAdd)
+      @listenTo(@collection, 'add-batch', @_onAddBatch)
       @listenTo(@collection, 'change', @_onChange)
 
     remove: ->
@@ -37,13 +37,17 @@ define [
     _removeAll: ->
       @_views.forEach((v) -> v.remove()) # Ends up calling stopListening()
 
-    _onAdd: (upload) ->
+    _onAddBatch: (uploads) ->
+      return if !uploads.length
+
       if @_emptyUploadIsPresent
         @_emptyUploadIsPresent = false
         @_$emptyUpload.remove()
 
-      @_cidToIndex[upload.cid] = @_views.length + @_pendingViews.length
-      @_pendingViews.push(upload)
+      for upload in uploads
+        @_cidToIndex[upload.cid] = @_views.length + @_pendingViews.length
+        @_pendingViews.push(upload)
+
       @_materializeVisiblePendingViews()
 
     _onChange: (upload) ->
@@ -85,7 +89,7 @@ define [
       nNeeded = nVisible - @_views.length
 
       if nNeeded > 0
-        for upload in  @_pendingViews.splice(0, nNeeded)
+        for upload in @_pendingViews.splice(0, nNeeded)
           @_createRenderAndAddViewFor(upload)
 
       @_$ul.height(@_liHeight * (@_views.length + @_pendingViews.length))
@@ -96,7 +100,9 @@ define [
 
     _onReset: ->
       @_removeAll()
-      @collection.each(@_onAdd, @)
+      @_views = []
+      @_pendingViews = []
+      @_onAddBatch(@collection.models)
 
     render: ->
       html = @template(t: t)

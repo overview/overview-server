@@ -7,12 +7,12 @@ define [
   describe 'apps/MassUploadForm/views/UploadCollectionView', ->
     collection = undefined
     view = undefined
+    uploadViewRenderSpy = undefined
+
     class MockUploadView extends Backbone.View
       tagName: 'li'
       attributes:
         style: 'height: 30px'
-
-    uploadViewRenderSpy = undefined
 
     beforeEach ->
       i18n.reset_messages
@@ -35,10 +35,12 @@ define [
 
     it 'renders an uploadView when a file is added', ->
       collection.add(new Backbone.Model)
+      collection.trigger('add-batch', collection.models)
       expect(uploadViewRenderSpy).toHaveBeenCalled()
 
     it 'deletes the drop target when another li is added', ->
       collection.add(new Backbone.Model)
+      collection.trigger('add-batch', collection.models)
       expect(view.$('li').text()).not.toMatch('drop_target')
       expect(view.$('li').length).toEqual(1)
 
@@ -56,6 +58,7 @@ define [
         $('body').append(view.$el)
         for i in [ 0 ... 20 ]
           collection.add(new Backbone.Model)
+        collection.trigger('add-batch', collection.models)
 
       afterEach ->
         view.$el.remove()
