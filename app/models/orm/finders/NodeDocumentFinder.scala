@@ -74,10 +74,10 @@ object NodeDocumentFinder extends BaseNodeDocumentFinder(Schema.nodeDocuments, S
     Schema.nodeDocuments.where(_.nodeId in nodeIds)
   }
 
-  /** @ return All NodeDocuments with the given Node IDs in the given DocumentSet. */
-  def byNodeIdsInDocumentSet(nodeIds: Traversable[Long], documentSetId: Long): NodeDocumentFinderResult = {
+  /** @ return All NodeDocuments with the given Node IDs in the given Tree. */
+  def byNodeIdsInTree(nodeIds: Traversable[Long], treeId: Long): NodeDocumentFinderResult = {
     from(Schema.nodeDocuments, Schema.nodes)((nd, n) =>
-      where((nd.nodeId in nodeIds) and (nd.nodeId === n.id) and (n.documentSetId === documentSetId))
+      where((nd.nodeId in nodeIds) and (nd.nodeId === n.id) and (n.treeId === treeId))
       select(nd)
     )
   }

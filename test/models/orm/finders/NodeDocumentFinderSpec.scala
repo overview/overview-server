@@ -63,6 +63,7 @@ class NodeDocumentFinderSpec extends Specification {
     trait NodesInTwoDocumentSets extends DbTestContext with NodeSetup {
       var documentSet1: DocumentSet = _
       var documentSet2: DocumentSet = _
+      var tree1: Tree = _
       val documentIds1 = 100l to 109l
       val documentIds2 = 200l to 209l
       val nodeId1 = 100
@@ -71,7 +72,7 @@ class NodeDocumentFinderSpec extends Specification {
       override def setupWithDb = {
         documentSet1 = documentSets.insertOrUpdate(DocumentSet())
         documentSet2 = documentSets.insertOrUpdate(DocumentSet())
-        val tree1 = createTree(documentSet1.id)
+        tree1 = createTree(documentSet1.id)
         val tree2 = createTree(documentSet2.id)
         
         documentIds1.foreach(n => createDocument(n, documentSet1.id))
@@ -93,8 +94,8 @@ class NodeDocumentFinderSpec extends Specification {
       counts.get(2) must beSome(3)
     }
 
-    "find NodeDocuments in DocumentSet only" in new NodesInTwoDocumentSets {
-      val nodeDocuments = NodeDocumentFinder.byNodeIdsInDocumentSet(documentIds1 ++ documentIds2, documentSet1.id)
+    "find NodeDocuments in Tree only" in new NodesInTwoDocumentSets {
+      val nodeDocuments = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id)
 
       nodeDocuments.toSeq must haveTheSameElementsAs(documentIds1.map(NodeDocument(nodeId1, _)))
 

@@ -56,7 +56,7 @@ define ->
       "/documentsets/#{@document_set_id}/tags/#{id}/node-counts"
 
     _untagged_node_counts: () ->
-      "/documentsets/#{@document_set_id}/tags/untagged-node-counts"
+      "/trees/#{@tree_id}/tags/untagged-node-counts"
 
     _searches_base: () ->
       "/documentsets/#{@document_set_id}/searches"
