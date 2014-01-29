@@ -23,6 +23,11 @@
     .overview-toplevel-box;
     padding: .5em 1em;
     line-height: 1.5;
+    background: @bodyBackground;
+    transition-property: background-color, border-color;
+    transition-duration: .5s;
+    transition-delay: .5s;
+    border: 1px solid @bodyBackground;
 
     &.placeholder, &.loading {
       color: @gray;
@@ -31,15 +36,38 @@
     &:hover {
       background: @darkBodyBackground;
     }
+
+    &.cursor {
+      font-weight: bold;
+    }
+
+    &.selected {
+      // we transition slowly _from_ selected _to_ unselected, but not the reverse
+      transition-duration: 0;
+      transition-delay: 0;
+      color: @black;
+      font-weight: bold;
+      background: @darkBodyBackground;
+      border-color: @highlightColor;
+    }
   }
 
-  li.document.cursor {
-    font-weight: bold;
+  ul:hover li.document {
+    // When hovering over the list, we may be:
+    // A) hovering onto a new element (in which case we should be fast)
+    // B) switching from &.document-selected (in which case we want to see
+    //    the previous selection fade away slowly).
+    // Pick a good compromise.
+    transition-delay: 0;
+    transition-duration: .2s;
   }
 
-  li.document.selected, ul.documents.all-selected li.document {
-    color: @black;
-    font-weight: bold;
+  &.document-selected li.document {
+    // don't animate in the background: if user does this very quickly:
+    // 1. (100ms) Iterate through several documents via j/k keys
+    // 2. (200ms) Exit document-selected through Ctrl+A
+    // Expected behavior: only the most recently selected document animates
+    transition: none;
   }
 
   h3 {
