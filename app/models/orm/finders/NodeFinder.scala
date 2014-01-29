@@ -49,7 +49,15 @@ object NodeFinder extends Finder {
       orderBy(n.cachedSize desc)
     )
   }
-
+  
+  /** @return All Nodes with the given ID in the given Tree */
+  def byTreeAndId(treeId: Long, id: Long): NodeFinderResult = {
+    from(Schema.nodes)(n =>
+      where(n.treeId === treeId and n.id === id)
+      select(n)
+    )
+  }
+    
   /** @return All Nodes with the given ID in the given DocumentSet. */
   def byDocumentSetAndId(documentSet: Long, id: Long) : NodeFinderResult = {
     from(Schema.nodes)(n =>

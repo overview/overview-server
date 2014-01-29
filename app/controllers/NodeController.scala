@@ -52,8 +52,8 @@ trait NodeController extends Controller {
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  def update(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    storage.findNode(documentSetId, id).headOption match {
+  def update(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+    storage.findNode(treeId, id).headOption match {
       case None => NotFound
       case Some(node) =>
         val form = forms.NodeForm(node)
@@ -111,8 +111,8 @@ object NodeController extends NodeController {
       SearchResultFinder.byDocumentSet(documentSetId)
     }
 
-    override def findNode(documentSetId: Long, nodeId: Long) = {
-      NodeFinder.byDocumentSetAndId(documentSetId, nodeId)
+    override def findNode(treeId: Long, nodeId: Long) = {
+      NodeFinder.byTreeAndId(treeId, nodeId)
     }
 
     override def updateNode(node: Node) = {
