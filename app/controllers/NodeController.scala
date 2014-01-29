@@ -4,7 +4,7 @@ import play.api.mvc.Controller
 import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.userOwningDocumentSet
+import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree }
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
@@ -19,7 +19,7 @@ trait NodeController extends Controller {
       * Node refers to a parentId, the Node corresponding to that parentId has
       * already appeared in the return value.
       */
-    def findRootNodes(documentSetId: Long, depth: Int) : Iterable[Node]
+    def findRootNodes(treeId: Long, depth: Int) : Iterable[Node]
 
     /** The direct descendents of the given parent Node ID. */
     def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
@@ -32,8 +32,8 @@ trait NodeController extends Controller {
   }
   val storage : NodeController.Storage
 
-  def index(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val nodes = storage.findRootNodes(documentSetId, rootChildLevels)
+  def index(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningDocumentSetAndTree(documentSetId, treeId)) { implicit request =>
+    val nodes = storage.findRootNodes(treeId, rootChildLevels)
 
     if (nodes.isEmpty) {
       NotFound
@@ -92,8 +92,8 @@ object NodeController extends NodeController {
       }
     }
 
-    override def findRootNodes(documentSetId: Long, depth: Int) = {
-      val root : Iterable[Node] = NodeFinder.byDocumentSetAndParent(documentSetId, None)
+    override def findRootNodes(treeId: Long, depth: Int) = {
+      val root : Iterable[Node] = NodeFinder.byTreeAndParent(treeId, None)
         .map(_.copy()) // Squeryl bug
       addChildNodes(Seq(), root, depth)
     }

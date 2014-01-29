@@ -32,6 +32,15 @@ object NodeFinder extends Finder {
     )
   }
 
+  /** @return All Nodes in the given tree with the specified parent. */
+  def byTreeAndParent(treeId: Long, parentId: Option[Long]): NodeFinderResult = {
+    from(Schema.nodes)(n =>
+      where(n.treeId === treeId and n.parentId === parentId)
+      select(n)
+      orderBy(n.cachedSize desc)
+    )
+  }
+
   /** @return All Nodes with the given parent IDs. */
   def byParentIds(parentIds: Traversable[Long]) : NodeFinderResult = {
     from(Schema.nodes)(n =>

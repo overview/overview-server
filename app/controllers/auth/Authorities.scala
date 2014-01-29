@@ -17,7 +17,17 @@ object Authorities {
   def userOwningDocumentSet(id: Long) = new Authority {
     def apply(user: OverviewUser) = user.ownsDocumentSet(id)
   }
+  
+  /** Allows any user who is owner of the DocumentSet associated with the given Tree ID */
+  def userOwningTree(id: Long) = new Authority {
+    def apply(user: OverviewUser) = user.isAllowedTree(id)
+  }
 
+  /** Allows any user who is owner of the given DocumentSet ID and Tree ID  */
+  def userOwningDocumentSetAndTree(documentSetId: Long, treeId: Long) = new Authority {
+    def apply(user: OverviewUser) = user.ownsDocumentSet(documentSetId) && user.isAllowedTree(treeId)
+  }
+  
   /** Allows any user who is a viewer of the given DocumentSet ID. */
   def userViewingDocumentSet(id: Long) = new Authority {
     def apply(user: OverviewUser) = user.canViewDocumentSet(id)

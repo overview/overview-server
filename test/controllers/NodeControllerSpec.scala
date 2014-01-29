@@ -24,7 +24,7 @@ class NodeControllerSpec extends Specification with Mockito {
     def getRequest = new AuthorizedRequest(FakeRequest(), user)
     def postRequest = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
 
-    def index(documentSetId: Long) = controller.index(documentSetId)(getRequest)
+    def index(documentSetId: Long, treeId: Long) = controller.index(documentSetId, treeId)(getRequest)
     def show(documentSetId: Long, nodeId: Long) = controller.show(documentSetId, nodeId)(getRequest)
     def update(documentSetId: Long, nodeId: Long) = controller.update(documentSetId, nodeId)(postRequest)
 
@@ -96,7 +96,7 @@ class NodeControllerSpec extends Specification with Mockito {
       mockStorage.findSearchResults(1L) returns Seq(sampleSearchResult)
       mockStorage.findTags(1L) returns Seq(sampleTag)
 
-      val result = index(1L)
+      val result = index(1L, 1L)
       status(result) must beEqualTo(OK)
 
       val resultJson = contentAsString(result)
@@ -108,7 +108,7 @@ class NodeControllerSpec extends Specification with Mockito {
     "returns a 404 when no nodes were found" in new TestScope {
       mockStorage.findRootNodes(1L, 2) returns Seq()
 
-      val result = index(1L)
+      val result = index(1L, 1L)
       status(result) must beEqualTo(NOT_FOUND)
     }
   }
