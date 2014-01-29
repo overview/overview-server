@@ -32,7 +32,7 @@ define ->
 
     _node_path: (id) ->
       throw new Error("Must have positive id") if id <= 0
-      "/documentsets/#{@document_set_id}/tree/nodes/#{id}"
+      "/trees/#{@tree_id}/nodes/#{id}"
 
     _documents_path: () ->
       "/documentsets/#{@document_set_id}/documents"

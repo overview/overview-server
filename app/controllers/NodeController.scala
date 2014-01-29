@@ -4,7 +4,7 @@ import play.api.mvc.Controller
 import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree }
+import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree, userOwningTree }
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder}
 import models.orm.stores.NodeStore
@@ -45,8 +45,8 @@ trait NodeController extends Controller {
     }
   }
 
-  def show(documentSetId: Long, id: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
-    val nodes = storage.findChildNodes(documentSetId, id)
+  def show(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+    val nodes = storage.findChildNodes(treeId, id)
 
     Ok(views.json.Tree.show(nodes))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
@@ -98,8 +98,8 @@ object NodeController extends NodeController {
       addChildNodes(Seq(), root, depth)
     }
 
-    override def findChildNodes(documentSetId: Long, parentNodeId: Long) = {
-      NodeFinder.byDocumentSetAndParent(documentSetId, Some(parentNodeId))
+    override def findChildNodes(treeId: Long, parentNodeId: Long) = {
+      NodeFinder.byTreeAndParent(treeId, Some(parentNodeId))
         .map(_.copy()) // Squeryl bug
     }
 
