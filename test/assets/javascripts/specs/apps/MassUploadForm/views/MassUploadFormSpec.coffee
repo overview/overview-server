@@ -10,10 +10,12 @@ define [
     view = undefined
     uploadCollectionViewRenderSpy = undefined
 
-    MockUpload = Backbone.Model.extend(
+    class MockUpload extends Backbone.Model
+      initialize: ->
+        @id = @cid
+
       isFullyUploaded: ->
         @get('isFullyUploaded')
-    )
 
     mockFileInput = ->
       # A file input can't have its "files" attribute set. But we need
@@ -85,7 +87,7 @@ define [
     describe 'model add event', ->
       beforeEach ->
         view.render()
-        model.uploads.add(new Backbone.Model())
+        model.uploads.add(new MockUpload)
         model.uploads.trigger('add-batch', model.uploads.models)
 
       it 'does not yet enable the submit button', ->
@@ -96,11 +98,12 @@ define [
 
       describe 'with 3 or more uploads', ->
         beforeEach ->
-          model.uploads.add(new Backbone.Model())
-          model.uploads.add(new Backbone.Model())
+          model.uploads.add(new MockUpload)
+          model.uploads.add(new MockUpload)
+          model.uploads.trigger('add-batch', model.uploads.tail(1))
 
         describe 'submit button', ->
-          it 'enables the submit button', ->
+          it 'is enabled', ->
             expect(view.$('.choose-options')).not.toBeDisabled()
 
           it 'shows a modal with the import options app', ->
@@ -166,9 +169,10 @@ define [
         describe 'after selecting options', ->
           beforeEach ->
             # add some finished uploads
-            model.uploads.add(new Backbone.Model)
-            model.uploads.add(new Backbone.Model)
-            model.uploads.add(new Backbone.Model)
+            model.uploads.add(new MockUpload)
+            model.uploads.add(new MockUpload)
+            model.uploads.add(new MockUpload)
+            model.uploads.trigger('add-batch', model.uploads.models)
             model.set(status: 'waiting')
 
             spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
@@ -200,6 +204,7 @@ define [
         describe 'with an upload', ->
           beforeEach ->
             model.uploads.add(new MockUpload(status: 'uploading'))
+            model.uploads.trigger('add-batch', model.uploads.models)
 
           it 'asks for confirmation', ->
             modalSpy = spyOn($.fn, 'modal')
@@ -219,6 +224,7 @@ define [
             model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
             model.uploads.add(new MockUpload(status: 'uploading'))
             model.uploads.add(new MockUpload(status: 'waiting'))
+            model.uploads.trigger('add-batch', model.uploads.tail(1))
             view.$('.cancel').click()
             jasmine.Clock.tick(100)
             view.$('.cancel-upload').click()
@@ -264,10 +270,10 @@ define [
         submitSpy = spyOn($.fn, 'submit')
         view.render()
 
-        # add 3 uploads
-        model.uploads.add(new Backbone.Model)
-        model.uploads.add(new Backbone.Model)
-        model.uploads.add(new Backbone.Model)
+        model.uploads.add(new MockUpload)
+        model.uploads.add(new MockUpload)
+        model.uploads.add(new MockUpload)
+        model.uploads.trigger('add-batch', model.uploads.models)
 
       it 'submits the form when uploading is finished and options are chosen', ->
         # finish the uploads
@@ -309,7 +315,8 @@ define [
         model.set(status: 'waiting')
 
         # now, add an unfinished upload
-        model.uploads.add(new Backbone.Model)
+        model.uploads.add(new MockUpload)
+        model.uploads.trigger('add-batch', model.uploads.last(1))
         model.set(status: 'uploading')
 
         expect(view.$el.find('.progress-bar').css('display')).toEqual('block')

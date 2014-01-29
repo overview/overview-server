@@ -22,73 +22,95 @@ define('MassUpload/FileInfo',[],function() {
 });
 
 define('MassUpload/Upload',['backbone', './FileInfo'], function(Backbone, FileInfo) {
-  return Backbone.Model.extend({
-    defaults: {
+  var Upload;
+  return Upload = (function() {
+    Upload.prototype = Object.create(Backbone.Events);
+
+    Upload.prototype.defaults = {
       file: null,
       fileInfo: null,
       error: null,
       uploading: false,
       deleting: false
-    },
-    initialize: function(attributes) {
-      var fileLike, id, _ref;
-      fileLike = (_ref = attributes.file) != null ? _ref : attributes.fileInfo;
-      id = fileLike.name;
-      return this.set({
-        id: id
-      });
-    },
-    updateWithProgress: function(progressEvent) {
+    };
+
+    function Upload(attributes) {
+      var _ref, _ref1, _ref2, _ref3;
+      this.file = (_ref = attributes.file) != null ? _ref : null;
+      this.fileInfo = (_ref1 = attributes.fileInfo) != null ? _ref1 : null;
+      this.error = (_ref2 = attributes.error) != null ? _ref2 : null;
+      this.uploading = attributes.uploading || false;
+      this.deleting = attributes.deleting || false;
+      this.id = ((_ref3 = this.fileInfo) != null ? _ref3 : this.file).name;
+      this.attributes = this;
+    }
+
+    Upload.prototype.get = function(attr) {
+      return this[attr];
+    };
+
+    Upload.prototype.set = function(attrs) {
+      var k, v;
+      this._previousAttributes = new Upload(this);
+      for (k in attrs) {
+        v = attrs[k];
+        this[k] = v;
+      }
+      this.trigger('change', this);
+      return this._previousAttributes = null;
+    };
+
+    Upload.prototype.previousAttributes = function() {
+      return this._previousAttributes;
+    };
+
+    Upload.prototype.size = function() {
+      var _ref;
+      return this._size != null ? this._size : this._size = (_ref = this.file) != null ? _ref.size : void 0;
+    };
+
+    Upload.prototype.lastModifiedDate = function() {
+      var _ref;
+      return this._lastModifiedDate != null ? this._lastModifiedDate : this._lastModifiedDate = (_ref = this.file) != null ? _ref.lastModifiedDate : void 0;
+    };
+
+    Upload.prototype.updateWithProgress = function(progressEvent) {
       var fileInfo;
-      fileInfo = FileInfo.fromFile(this.get('file'));
-      fileInfo.loaded = progressEvent.loaded;
-      fileInfo.total = progressEvent.total;
-      return this.set('fileInfo', fileInfo);
-    },
-    getProgress: function() {
-      var file, fileInfo;
-      if (((fileInfo = this.get('fileInfo')) != null) && !this.hasConflict()) {
+      fileInfo = new FileInfo(this.id, this.lastModifiedDate(), progressEvent.total, progressEvent.loaded);
+      return this.set({
+        fileInfo: fileInfo
+      });
+    };
+
+    Upload.prototype.getProgress = function() {
+      if ((this.fileInfo != null) && !this.hasConflict()) {
         return {
-          loaded: fileInfo.loaded,
-          total: fileInfo.total
+          loaded: this.fileInfo.loaded,
+          total: this.fileInfo.total
         };
-      } else if ((file = this.get('file')) != null) {
+      } else if (this.file != null) {
         return {
           loaded: 0,
-          total: this.fstatSync().size
+          total: this.size()
         };
       }
-    },
-    fstatSync: function() {
-      var file;
-      file = this.get('file');
-      if (file != null) {
-        return this._fstat != null ? this._fstat : this._fstat = {
-          size: file.size,
-          lastModifiedDate: file.lastModifiedDate
-        };
-      }
-    },
-    isFullyUploaded: function() {
-      var error, fileInfo;
-      fileInfo = this.get('fileInfo');
-      error = this.get('error');
-      return !this.get('uploading') && !this.get('deleting') && (this.get('error') == null) && (fileInfo != null) && fileInfo.loaded === fileInfo.total;
-    },
-    hasConflict: function() {
-      var file, fileInfo;
-      fileInfo = this.get('fileInfo');
-      file = this.get('file');
-      return (fileInfo != null) && (file != null) && (fileInfo.name !== file.name || fileInfo.lastModifiedDate.getTime() !== this.fstatSync().lastModifiedDate.getTime() || fileInfo.total !== this.fstatSync().size);
-    }
-  });
+    };
+
+    Upload.prototype.isFullyUploaded = function() {
+      return (this.fileInfo != null) && (this.error == null) && !this.uploading && !this.deleting && this.fileInfo.loaded === this.fileInfo.total;
+    };
+
+    Upload.prototype.hasConflict = function() {
+      return (this.fileInfo != null) && (this.file != null) && (this.fileInfo.name !== this.id || this.fileInfo.total !== this.size() || this.fileInfo.lastModifiedDate.getTime() !== this.lastModifiedDate().getTime());
+    };
+
+    return Upload;
+
+  })();
 });
 
-var __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
 define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone, Upload) {
-  var UploadCollection, UploadPriorityQueue, _ref;
+  var UploadCollection, UploadPriorityQueue;
   UploadPriorityQueue = (function() {
     function UploadPriorityQueue() {
       this._clear();
@@ -108,18 +130,15 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     };
 
     UploadPriorityQueue.prototype.addBatch = function(uploads) {
-      var state, upload, _i, _len, _results;
-      _results = [];
+      var state, upload, _i, _len;
       for (_i = 0, _len = uploads.length; _i < _len; _i++) {
         upload = uploads[_i];
         state = this.uploadAttributesToState(upload.attributes);
         if (state != null) {
-          _results.push(this[state].push(upload));
-        } else {
-          _results.push(void 0);
+          this[state].push(upload);
         }
       }
-      return _results;
+      return void 0;
     };
 
     UploadPriorityQueue.prototype._removeUploadFromArray = function(upload, array) {
@@ -152,9 +171,12 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
       }
     };
 
-    UploadPriorityQueue.prototype.reset = function(collection) {
+    UploadPriorityQueue.prototype.reset = function(uploads) {
+      if (uploads == null) {
+        uploads = [];
+      }
       this._clear();
-      return this.addBatch(collection.models);
+      return this.addBatch(uploads);
     };
 
     UploadPriorityQueue.prototype.next = function() {
@@ -165,26 +187,62 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
     return UploadPriorityQueue;
 
   })();
-  return UploadCollection = (function(_super) {
-    __extends(UploadCollection, _super);
+  return UploadCollection = (function() {
+    UploadCollection.prototype = Object.create(Backbone.Events);
 
     function UploadCollection() {
-      _ref = UploadCollection.__super__.constructor.apply(this, arguments);
-      return _ref;
+      this.models = [];
+      this._priorityQueue = new UploadPriorityQueue();
+      this.reset([]);
     }
 
-    UploadCollection.prototype.model = Upload;
+    UploadCollection.prototype.each = function(func, context) {
+      return this.models.forEach(func, context);
+    };
 
-    UploadCollection.prototype.initialize = function() {
-      var event, _i, _len, _ref1;
-      this._priorityQueue = new UploadPriorityQueue();
-      this.on('add-batch', this._priorityQueue.addBatch, this._priorityQueue);
-      _ref1 = ['change', 'remove', 'reset'];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        event = _ref1[_i];
-        this.on(event, this._priorityQueue[event], this._priorityQueue);
+    UploadCollection.prototype.map = function(func, context) {
+      return this.models.map(func, context);
+    };
+
+    UploadCollection.prototype._prepareModel = function(upload) {
+      if (upload instanceof Upload) {
+        return upload;
+      } else {
+        return new Upload(upload);
       }
-      return this._priorityQueue.reset(this);
+    };
+
+    UploadCollection.prototype.reset = function(uploads) {
+      var upload, _i, _j, _len, _len1, _ref, _ref1;
+      _ref = this.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        upload = _ref[_i];
+        upload.off('all', this._onUploadEvent, this);
+      }
+      this.models = (function() {
+        var _j, _len1, _results;
+        _results = [];
+        for (_j = 0, _len1 = uploads.length; _j < _len1; _j++) {
+          upload = uploads[_j];
+          _results.push(this._prepareModel(upload));
+        }
+        return _results;
+      }).call(this);
+      this.length = this.models.length;
+      this._idToModel = {};
+      _ref1 = this.models;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        upload = _ref1[_j];
+        upload.on('all', this._onUploadEvent, this);
+        this._idToModel[upload.id] = upload;
+      }
+      this._priorityQueue.reset(this.models);
+      return this.trigger('reset', uploads);
+    };
+
+    UploadCollection.prototype.get = function(id) {
+      var _ref;
+      return (_ref = this._idToModel[id]) != null ? _ref : null;
     };
 
     UploadCollection.prototype.addFiles = function(files) {
@@ -223,6 +281,40 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
       return this._priorityQueue.next();
     };
 
+    UploadCollection.prototype.add = function(uploadOrUploads) {
+      if (uploadOrUploads.length != null) {
+        return this.addBatch(uploadOrUploads);
+      } else {
+        return this.addBatch([uploadOrUploads]);
+      }
+    };
+
+    UploadCollection.prototype.addBatch = function(uploads) {
+      var upload, _i, _j, _len, _len1;
+      for (_i = 0, _len = uploads.length; _i < _len; _i++) {
+        upload = uploads[_i];
+        this._idToModel[upload.id] = upload;
+        upload.on('all', this._onUploadEvent, this);
+        this.models.push(upload);
+      }
+      this.length += uploads.length;
+      this._priorityQueue.addBatch(uploads);
+      for (_j = 0, _len1 = uploads.length; _j < _len1; _j++) {
+        upload = uploads[_j];
+        this.trigger('add', upload);
+      }
+      return this.trigger('add-batch', uploads);
+    };
+
+    UploadCollection.prototype._onUploadEvent = function(event, model, collection, options) {
+      if (event !== 'add' && event !== 'remove') {
+        this.trigger.apply(this, arguments);
+      }
+      if (event === 'change') {
+        return this._priorityQueue.change(model);
+      }
+    };
+
     UploadCollection.prototype._addWithMerge = function(uploads) {
       var existingUpload, file, fileInfo, toAdd, upload, _i, _len;
       toAdd = [];
@@ -247,13 +339,13 @@ define('MassUpload/UploadCollection',['backbone', './Upload'], function(Backbone
       }
       if (toAdd.length) {
         this.add(toAdd);
-        return this.trigger('add-batch', toAdd);
       }
+      return void 0;
     };
 
     return UploadCollection;
 
-  })(Backbone.Collection);
+  })();
 });
 
 define('MassUpload/FileLister',[],function() {
@@ -516,76 +608,71 @@ define('MassUpload/UploadProgress',['backbone'], function(Backbone) {
     },
     initialize: function() {
       var collection;
-      collection = this.get('collection');
+      collection = this.get('uploadCollection');
       if (collection == null) {
-        throw 'Must initialize UploadProgress with `collection`, an UploadCollection';
+        throw 'Must initialize UploadProgress with `uploadCollection`, an UploadCollection';
       }
+      this._idToLastKnownProgress = {};
       return this._updateAndStartListening();
     },
-    _updateAndStartListening: function() {
-      var add, adjust, callback, change, cidToLastKnownProgress, collection, eventName, events, remove, reset,
-        _this = this;
-      collection = this.get('collection');
-      adjust = function(dLoaded, dTotal) {
-        _this.set({
-          loaded: _this.get('loaded') + dLoaded,
-          total: _this.get('total') + dTotal
-        });
-        return void 0;
-      };
-      cidToLastKnownProgress = {};
-      add = function(model) {
-        var progress;
+    _adjust: function(dLoaded, dTotal) {
+      return this.set({
+        loaded: this.get('loaded') + dLoaded,
+        total: this.get('total') + dTotal
+      });
+    },
+    add: function(model) {
+      var progress;
+      progress = model.getProgress();
+      this._adjust(progress.loaded, progress.total);
+      return this._idToLastKnownProgress[model.id] = progress;
+    },
+    reset: function(collection) {
+      var idToLastKnownProgress, loaded, model, progress, total, _i, _len, _ref;
+      idToLastKnownProgress = this._idToLastKnownProgress = {};
+      loaded = 0;
+      total = 0;
+      _ref = collection.models;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        model = _ref[_i];
         progress = model.getProgress();
-        adjust(progress.loaded, progress.total);
-        return cidToLastKnownProgress[model.cid] = progress;
-      };
-      remove = function(model) {
-        var progress;
-        progress = cidToLastKnownProgress[model.cid];
-        adjust(-progress.loaded, -progress.total);
-        return delete cidToLastKnownProgress[model.cid];
-      };
-      change = function(model) {
-        var newProgress, oldProgress;
-        oldProgress = cidToLastKnownProgress[model.cid];
-        if (oldProgress != null) {
-          newProgress = model.getProgress();
-          adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
-          return cidToLastKnownProgress[model.cid] = newProgress;
-        }
-      };
-      reset = function() {
-        var progress;
-        cidToLastKnownProgress = {};
-        progress = {
-          loaded: 0,
-          total: 0
-        };
-        _this.get('collection').each(function(model) {
-          var modelProgress;
-          modelProgress = model.getProgress();
-          cidToLastKnownProgress[model.cid] = modelProgress;
-          progress.loaded += modelProgress.loaded;
-          return progress.total += modelProgress.total;
-        });
-        return _this.set(progress);
-      };
-      events = {
-        add: add,
-        remove: remove,
-        change: change,
-        reset: reset
-      };
-      for (eventName in events) {
-        callback = events[eventName];
-        this.listenTo(collection, eventName, callback);
+        idToLastKnownProgress[model.id] = progress;
+        loaded += progress.loaded;
+        total += progress.total;
       }
-      reset();
+      return this.set({
+        loaded: loaded,
+        total: total
+      });
+    },
+    remove: function(model) {
+      var progress;
+      progress = model.getProgress();
+      this._adjust(-progress.loaded, -progress.total);
+      return this._idToLastKnownProgress[model.id] = progress;
+    },
+    change: function(model) {
+      var newProgress, oldProgress;
+      oldProgress = this._idToLastKnownProgress[model.id];
+      if (oldProgress != null) {
+        newProgress = model.getProgress();
+        this._adjust(newProgress.loaded - oldProgress.loaded, newProgress.total - oldProgress.total);
+        return this._idToLastKnownProgress[model.id] = newProgress;
+      }
+    },
+    _updateAndStartListening: function() {
+      var collection, event, _i, _len, _ref;
+      collection = this.get('uploadCollection');
+      _ref = ['add', 'remove', 'change', 'reset'];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        event = _ref[_i];
+        this.listenTo(collection, event, this[event]);
+      }
+      this.reset(collection);
       return void 0;
     },
     inBatch: function(callback) {
-      this.stopListening(this.get('collection'));
+      this.stopListening(this.get('uploadCollection'));
       try {
         return callback();
       } finally {
@@ -595,9 +682,15 @@ define('MassUpload/UploadProgress',['backbone'], function(Backbone) {
   });
 });
 
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
 define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'MassUpload/FileLister', 'MassUpload/FileUploader', 'MassUpload/FileDeleter', 'MassUpload/State', 'MassUpload/UploadProgress'], function(Backbone, _, UploadCollection, FileLister, FileUploader, FileDeleter, State, UploadProgress) {
-  return Backbone.Model.extend({
-    defaults: function() {
+  var MassUpload;
+  return MassUpload = (function(_super) {
+    __extends(MassUpload, _super);
+
+    MassUpload.prototype.defaults = function() {
       return {
         status: 'waiting',
         listFilesProgress: null,
@@ -605,33 +698,40 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
         uploadProgress: null,
         uploadErrors: []
       };
-    },
-    constructor: function(options) {
+    };
+
+    function MassUpload(options) {
       this._removedUploads = [];
-      return Backbone.Model.call(this, {}, options);
-    },
-    initialize: function(attributes, options) {
-      var _ref,
+      MassUpload.__super__.constructor.call(this, {}, options);
+    }
+
+    MassUpload.prototype.initialize = function(attributes, options) {
+      var resetUploadProgress, _ref,
         _this = this;
       this._options = options;
       this.uploads = (_ref = options != null ? options.uploads : void 0) != null ? _ref : new UploadCollection();
+      this._uploadProgress = new UploadProgress({
+        uploadCollection: this.uploads
+      });
+      resetUploadProgress = function() {
+        return _this.set({
+          uploadProgress: _this._uploadProgress.pick('loaded', 'total')
+        });
+      };
+      this.listenTo(this._uploadProgress, 'change', resetUploadProgress);
+      resetUploadProgress();
       this.listenTo(this.uploads, 'add-batch', this._onUploadBatchAdded);
-      this.listenTo(this.uploads, 'change:file change:error', function(upload) {
+      this.listenTo(this.uploads, 'change', function(upload) {
         return _this._onUploadChanged(upload);
-      });
-      this.listenTo(this.uploads, 'change:deleting', function(upload) {
-        return _this._onUploadDeleted(upload);
-      });
-      this.listenTo(this.uploads, 'remove', function(upload) {
-        return _this._onUploadRemoved(upload);
       });
       this.listenTo(this.uploads, 'reset', function() {
         return _this._onUploadsReset();
       });
       return this.prepare();
-    },
-    prepare: function() {
-      var options, resetUploadProgress, _ref, _ref1, _ref2,
+    };
+
+    MassUpload.prototype.prepare = function() {
+      var options, _ref, _ref1, _ref2,
         _this = this;
       options = this._options;
       this.lister = (_ref = options != null ? options.lister : void 0) != null ? _ref : new FileLister(options.doListFiles);
@@ -671,7 +771,7 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
         }
       };
       this.deleter = (_ref2 = options != null ? options.deleter : void 0) != null ? _ref2 : new FileDeleter(options.doDeleteFile);
-      this.deleter.callbacks = {
+      return this.deleter.callbacks = {
         onStart: function(fileInfo) {
           return _this._onDeleterStart(fileInfo);
         },
@@ -685,65 +785,80 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
           return _this._onDeleterStop(fileInfo);
         }
       };
-      this._uploadProgress = new UploadProgress({
-        collection: this.uploads
-      });
-      resetUploadProgress = function() {
-        return _this.set({
-          uploadProgress: _this._uploadProgress.pick('loaded', 'total')
-        });
-      };
-      this.listenTo(this._uploadProgress, 'change', resetUploadProgress);
-      return resetUploadProgress();
-    },
-    fetchFileInfosFromServer: function() {
+    };
+
+    MassUpload.prototype.fetchFileInfosFromServer = function() {
       return this.lister.run();
-    },
-    retryListFiles: function() {
+    };
+
+    MassUpload.prototype.retryListFiles = function() {
       return this.fetchFileInfosFromServer();
-    },
-    retryUpload: function(upload) {
-      return upload.set('error', null);
-    },
-    retryAllUploads: function() {
-      return this.uploads.each(function(upload) {
-        return upload.set('error', null);
+    };
+
+    MassUpload.prototype.retryUpload = function(upload) {
+      return upload.set({
+        error: null
       });
-    },
-    addFiles: function(files) {
+    };
+
+    MassUpload.prototype.retryAllUploads = function() {
+      return this.uploads.each(function(upload) {
+        return upload.set({
+          error: null
+        });
+      });
+    };
+
+    MassUpload.prototype.addFiles = function(files) {
       var _this = this;
       return this._uploadProgress.inBatch(function() {
         return _this.uploads.addFiles(files);
       });
-    },
-    removeUpload: function(upload) {
-      return upload.set('deleting', true);
-    },
-    abort: function() {
+    };
+
+    MassUpload.prototype.removeUpload = function(upload) {
+      return upload.set({
+        deleting: true
+      });
+    };
+
+    MassUpload.prototype.abort = function() {
       var _this = this;
       this.uploads.each(function(upload) {
         return _this.removeUpload(upload);
       });
       this.uploads.reset();
       return this.prepare();
-    },
-    _onListerStart: function() {
-      this.set('status', 'listing-files');
-      return this.set('listFilesError', null);
-    },
-    _onListerProgress: function(progressEvent) {
-      return this.set('listFilesProgress', progressEvent);
-    },
-    _onListerSuccess: function(fileInfos) {
+    };
+
+    MassUpload.prototype._onListerStart = function() {
+      return this.set({
+        status: 'listing-files',
+        listFilesError: null
+      });
+    };
+
+    MassUpload.prototype._onListerProgress = function(progressEvent) {
+      return this.set({
+        listFilesProgress: progressEvent
+      });
+    };
+
+    MassUpload.prototype._onListerSuccess = function(fileInfos) {
       this.uploads.addFileInfos(fileInfos);
       return this._tick();
-    },
-    _onListerError: function(errorDetail) {
-      this.set('listFilesError', errorDetail);
-      return this.set('status', 'listing-files-error');
-    },
-    _onListerStop: function() {},
-    _mergeUploadError: function(upload, prevError, curError) {
+    };
+
+    MassUpload.prototype._onListerError = function(errorDetail) {
+      return this.set({
+        listFilesError: errorDetail,
+        status: 'listing-files-error'
+      });
+    };
+
+    MassUpload.prototype._onListerStop = function() {};
+
+    MassUpload.prototype._mergeUploadError = function(upload, prevError, curError) {
       var index, newErrors;
       newErrors = this.get('uploadErrors').slice(0);
       index = _.sortedIndex(newErrors, {
@@ -761,9 +876,12 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
       } else {
         newErrors[index].error = curError;
       }
-      return this.set('uploadErrors', newErrors);
-    },
-    _onUploadBatchAdded: function(uploads) {
+      return this.set({
+        uploadErrors: newErrors
+      });
+    };
+
+    MassUpload.prototype._onUploadBatchAdded = function(uploads) {
       var error, upload, _i, _len;
       for (_i = 0, _len = uploads.length; _i < _len; _i++) {
         upload = uploads[_i];
@@ -773,95 +891,107 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
         }
       }
       return this._forceBestTick();
-    },
-    _onUploadChanged: function(upload) {
-      var error1, error2;
-      error1 = upload.previous('error');
+    };
+
+    MassUpload.prototype._onUploadChanged = function(upload) {
+      var deleting1, deleting2, error1, error2;
+      error1 = upload.previousAttributes().error;
       error2 = upload.get('error');
       if (error1 !== error2) {
         this._mergeUploadError(upload, error1, error2);
       }
+      deleting1 = upload.previousAttributes().deleting;
+      deleting2 = upload.get('deleting');
+      if (deleting2 && !deleting1) {
+        this._removedUploads.push(upload);
+      }
       return this._forceBestTick();
-    },
-    _onUploadRemoved: function(upload) {},
-    _onUploadDeleted: function(upload) {
-      this._removedUploads.push(upload);
-      return this._forceBestTick();
-    },
-    _onUploadsReset: function() {
-      var newErrors, progress;
+    };
+
+    MassUpload.prototype._onUploadsReset = function() {
+      var newErrors;
       newErrors = [];
-      progress = {
-        loaded: 0,
-        total: 0
-      };
       this.uploads.each(function(upload) {
-        var error, uploadProgress;
+        var error;
         if ((error = upload.get('error'))) {
-          newErrors.push({
+          return newErrors.push({
             upload: upload,
             error: error
           });
         }
-        uploadProgress = upload.getProgress();
-        progress.loaded += uploadProgress.loaded;
-        return progress.total += uploadProgress.total;
       });
       this.set({
-        uploadErrors: newErrors,
-        uploadProgress: progress
+        uploadErrors: newErrors
       });
       return this._tick();
-    },
-    _onUploaderStart: function(file) {
+    };
+
+    MassUpload.prototype._onUploaderStart = function(file) {
       var upload;
       upload = this.uploads.get(file.name);
       return upload.set({
         uploading: true,
         error: null
       });
-    },
-    _onUploaderStop: function(file) {
+    };
+
+    MassUpload.prototype._onUploaderStop = function(file) {
       var upload;
       upload = this.uploads.get(file.name);
-      upload.set('uploading', false);
+      upload.set({
+        uploading: false
+      });
       return this._tick();
-    },
-    _onUploaderProgress: function(file, progressEvent) {
+    };
+
+    MassUpload.prototype._onUploaderProgress = function(file, progressEvent) {
       var upload;
       upload = this.uploads.get(file.name);
       return upload.updateWithProgress(progressEvent);
-    },
-    _onUploaderError: function(file, errorDetail) {
+    };
+
+    MassUpload.prototype._onUploaderError = function(file, errorDetail) {
       var upload;
       upload = this.uploads.get(file.name);
-      return upload.set('error', errorDetail);
-    },
-    _onUploaderSuccess: function(file) {
+      return upload.set({
+        error: errorDetail
+      });
+    };
+
+    MassUpload.prototype._onUploaderSuccess = function(file) {
       var upload;
       upload = this.uploads.get(file.name);
       return upload.updateWithProgress({
-        loaded: upload.fstatSync().size,
-        total: upload.fstatSync().size
+        loaded: upload.size(),
+        total: upload.size()
       });
-    },
-    _onDeleterStart: function(fileInfo) {
-      return this.set('status', 'uploading');
-    },
-    _onDeleterSuccess: function(fileInfo) {
+    };
+
+    MassUpload.prototype._onDeleterStart = function(fileInfo) {
+      return this.set({
+        status: 'uploading'
+      });
+    };
+
+    MassUpload.prototype._onDeleterSuccess = function(fileInfo) {
       var upload;
       upload = this.uploads.get(fileInfo.name);
       return this.uploads.remove(upload);
-    },
-    _onDeleterError: function(fileInfo, errorDetail) {
+    };
+
+    MassUpload.prototype._onDeleterError = function(fileInfo, errorDetail) {
       var upload;
       upload = this.uploads.get(fileInfo.name);
-      return upload.set('error', errorDetail);
-    },
-    _onDeleterStop: function(fileInfo) {
+      return upload.set({
+        error: errorDetail
+      });
+    };
+
+    MassUpload.prototype._onDeleterStop = function(fileInfo) {
       return this._tick();
-    },
-    _tick: function() {
+    };
+
+    MassUpload.prototype._tick = function() {
       var progress, status, upload;
       upload = this.uploads.next();
       this._currentUpload = upload;
@@ -873,9 +1003,12 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
         }
       }
       status = this.get('uploadErrors').length ? 'uploading-error' : upload != null ? 'uploading' : (progress = this.get('uploadProgress'), progress.loaded === progress.total ? 'waiting' : 'waiting-error');
-      return this.set('status', status);
-    },
-    _forceBestTick: function() {
+      return this.set({
+        status: status
+      });
+    };
+
+    MassUpload.prototype._forceBestTick = function() {
       var upload;
       upload = this.uploads.next();
       if (upload !== this._currentUpload) {
@@ -885,8 +1018,11 @@ define('MassUpload',['backbone', 'underscore', 'MassUpload/UploadCollection', 'M
           return this._tick();
         }
       }
-    }
-  });
+    };
+
+    return MassUpload;
+
+  })(Backbone.Model);
 });
 
 define('mass-upload',['MassUpload'], function(MassUpload) {

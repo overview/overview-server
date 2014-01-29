@@ -9,6 +9,10 @@ define [
     view = undefined
     uploadViewRenderSpy = undefined
 
+    class MockUpload extends Backbone.Model
+      initialize: ->
+        @id = @cid
+
     class MockUploadView extends Backbone.View
       tagName: 'li'
       attributes:
@@ -34,18 +38,18 @@ define [
       expect(view.$('li').text()).toMatch('drop_target')
 
     it 'renders an uploadView when a file is added', ->
-      collection.add(new Backbone.Model)
+      collection.add(new MockUpload())
       collection.trigger('add-batch', collection.models)
       expect(uploadViewRenderSpy).toHaveBeenCalled()
 
     it 'deletes the drop target when another li is added', ->
-      collection.add(new Backbone.Model)
+      collection.add(new MockUpload())
       collection.trigger('add-batch', collection.models)
       expect(view.$('li').text()).not.toMatch('drop_target')
       expect(view.$('li').length).toEqual(1)
 
     it 'should not crash when the collection emits a "change" event for an upload before an "add" event', ->
-      collection.trigger('change', new Backbone.Model)
+      collection.trigger('change', new MockUpload())
       expect(uploadViewRenderSpy).not.toHaveBeenCalled()
 
     describe 'with lots of files', ->
@@ -57,7 +61,7 @@ define [
 
         $('body').append(view.$el)
         for i in [ 0 ... 20 ]
-          collection.add(new Backbone.Model)
+          collection.add(new MockUpload())
         collection.trigger('add-batch', collection.models)
 
       afterEach ->

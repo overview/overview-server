@@ -25,7 +25,7 @@ define [
       @_pendingViews = [] # keep track of uploads: views that haven't been instantiated yet
 
       @_scrollTop = 0
-      @_cidToIndex = {}
+      @_idToIndex = {}
 
       @listenTo(@collection, 'add-batch', @_onAddBatch)
       @listenTo(@collection, 'change', @_onChange)
@@ -45,13 +45,13 @@ define [
         @_$emptyUpload.remove()
 
       for upload in uploads
-        @_cidToIndex[upload.cid] = @_views.length + @_pendingViews.length
+        @_idToIndex[upload.id] = @_views.length + @_pendingViews.length
         @_pendingViews.push(upload)
 
       @_materializeVisiblePendingViews()
 
     _onChange: (upload) ->
-      idx = @_cidToIndex[upload.cid]
+      idx = @_idToIndex[upload.id]
 
       return if !idx? || !@_liHeight?
 
@@ -59,8 +59,9 @@ define [
       bottom = @_liHeight * (idx + 2)
       top = Math.max(0, bottom - @_elHeight)
 
-      @$el.scrollTop(top)
-      @$el.scroll()
+      if top != @_scrollTop
+        @$el.scrollTop(top)
+        @$el.scroll()
 
     _createRenderAndAddViewFor: (upload) ->
       view = new @options.uploadViewClass(model: upload)
