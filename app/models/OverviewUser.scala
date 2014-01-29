@@ -10,13 +10,14 @@ package models
 import java.sql.Timestamp
 import java.util.Date
 import com.github.t3hnar.bcrypt._
-
 import models.orm.User
 import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
 import models.orm.UserRole
 import models.orm.UserRole._
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import models.orm.finders.TreeFinder
 
 /**
  * A user that exists in the database
@@ -68,6 +69,9 @@ trait OverviewUser {
   /** @return True if the user has permission to read/write the Document */
   def isAllowedDocument(documentId: Long): Boolean
 
+  /** @return True if the user owns the DocumentSet that owns the Tree */
+  def isAllowedTree(treeId: Long): Boolean
+  
   /** @return True if the user has permission to administer the website */
   def isAdministrator: Boolean
 
@@ -289,6 +293,12 @@ object OverviewUser {
       DocumentSetUserFinder.byDocumentSetAndUserAndRole(id, email, Ownership.Owner).nonEmpty
     }
 
+    def isAllowedTree(treeId: Long): Boolean = {
+      val tree = TreeFinder.byId(treeId).headOption
+      
+      tree.map {t => ownsDocumentSet(t.documentSetId) } getOrElse(false)
+    }
+    
     def isAllowedDocument(id: Long) = {
       import models.orm.Schema
       val documentQuery = Schema.documents.where(d => d.id === id)

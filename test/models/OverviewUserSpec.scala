@@ -6,8 +6,10 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.test.FakeApplication
 import play.api.Play.{ start, stop }
-
 import helpers.DbTestContext
+import org.overviewproject.tree.Ownership._
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetUser, Tree }
+import models.orm.Schema
 
 class OverviewUserSpec  extends Specification {
   
@@ -31,6 +33,15 @@ class OverviewUserSpec  extends Specification {
     lazy val user : OverviewUser with ResetPasswordRequest = OverviewUser.findById(id).get.withResetPasswordRequest
   }
 
+  trait TreeContext extends LoadedUserContext {
+    val treeId = 1l
+    
+    override def setupWithDb = {
+      val documentSet = Schema.documentSets.insert(DocumentSet(title = "OverviewUserSpec"))
+      Schema.trees.insert(Tree(treeId, documentSet.id, "title", 100, "en", "", ""))
+      Schema.documentSetUsers.insert(DocumentSetUser(documentSet.id, email, Owner))
+    }
+  }
   step(start(FakeApplication()))
   
   "OverviewUser" should {
@@ -109,6 +120,13 @@ class OverviewUserSpec  extends Specification {
       ormUser.resetPasswordSentAt must beNone
     }
     
+    "not allow access to trees that don't belong to user" in new LoadedUserContext {
+       user.isAllowedTree(1l) must beFalse 
+    }
+    
+    "allow access to trees that belong to the user" in new TreeContext {
+      user.isAllowedTree(treeId) must beTrue
+    }
   }
 
   "OverviewUser with ConfirmationRequest" should {
