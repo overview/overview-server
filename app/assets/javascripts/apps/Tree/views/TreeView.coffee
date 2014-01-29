@@ -115,7 +115,7 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:documentListParams change:taglike', update)
+      @tree.state.on('change:documentListParams change:documentId change:taglike', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
       @cache.tag_store.observe('changed', update)
