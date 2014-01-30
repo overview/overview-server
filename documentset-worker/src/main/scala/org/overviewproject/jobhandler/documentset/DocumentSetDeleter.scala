@@ -40,7 +40,7 @@ object DocumentSetDeleter {
       implicit val id = documentSetId
 
       delete(nodeDocuments, NodeDocumentFinder)
-      delete(nodes)
+      deleteNodes
       delete(trees)
       delete(documentProcessingErrors)
     }
@@ -71,6 +71,10 @@ object DocumentSetDeleter {
     }
   }
 
+  private def deleteNodes(implicit documentSetId: Long): Unit = {
+    NodeStore.deleteByDocumentSet(documentSetId)
+  }
+  
   private def findFileIds(implicit documentSetId: Long): Iterable[Long] = 
     DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten
     
