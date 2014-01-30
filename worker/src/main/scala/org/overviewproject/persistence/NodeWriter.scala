@@ -31,7 +31,6 @@ class NodeWriter(documentSetId: Long, treeId: Long) {
     val n = Node(
       id=ids.next,
       treeId = treeId,
-      documentSetId=documentSetId,
       parentId=parentId,
       description=node.description,
       cachedSize=node.documentIdCache.numberOfDocuments,

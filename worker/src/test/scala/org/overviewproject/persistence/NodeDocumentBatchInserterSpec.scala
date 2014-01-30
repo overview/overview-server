@@ -30,7 +30,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
     override def setupWithDb = {
       documentSet = documentSets.insert(DocumentSet(title = "NodeDocumentBatchInserterSpec"))
       val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
-      node = Node(nextNodeId(documentSet.id), tree.id, documentSet.id, None, "description", 1, Array.empty, false)
+      node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 1, Array.empty, false)
 
       trees.insert(tree)
       nodes.insert(node)

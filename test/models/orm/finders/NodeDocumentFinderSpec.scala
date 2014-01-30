@@ -19,7 +19,6 @@ class NodeDocumentFinderSpec extends Specification {
       def createNode(nodeId: Long, documentSetId: Long, treeId: Long): Unit = nodes.insert(
         Node(id = nodeId,
           treeId = treeId,
-          documentSetId = documentSetId,
           parentId = None, description = "", cachedSize = 0, cachedDocumentIds = Array.empty, isLeaf = true))
 
       def addDocumentsToNode(documentIds: Seq[Long], nodeId: Int): Unit =

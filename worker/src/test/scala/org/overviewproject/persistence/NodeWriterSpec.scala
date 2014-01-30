@@ -81,7 +81,6 @@ class NodeWriterSpec extends DbSpecification {
         case n =>
           n.treeId must beEqualTo(tree.id)
           n.description must be equalTo (description)
-          n.documentSetId must be equalTo (documentSet.id)
           n.parentId must beNone
       }
     }

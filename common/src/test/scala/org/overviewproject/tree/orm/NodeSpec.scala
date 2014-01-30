@@ -14,7 +14,6 @@ class NodeSpec extends DbSpecification {
       Schema.trees.insert(tree)
       val node = Node(
         id=nextNodeId(documentSet.id),
-        documentSetId = documentSet.id,
         treeId=tree.id,
         parentId=None,
         description="description",

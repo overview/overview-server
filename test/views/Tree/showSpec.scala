@@ -10,7 +10,6 @@ class showSpec extends Specification {
     Node(
       id=id,
       treeId = 1L,
-      documentSetId=1L,
       parentId=parentId,
       description="description",
       cachedSize=cachedSize,

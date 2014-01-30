@@ -21,6 +21,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
     trait DocumentSetContext extends DbTestContext {
       var documentSet: DocumentSet = _
+      var tree: Tree = _
       var node: Node = _
       var document: Document = _
 
@@ -28,8 +29,8 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
-        val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
-        node = Node(nextNodeId(documentSet.id), tree.id, documentSet.id, None, "description", 0, Array.empty, false)
+        tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+        node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
         document = Document(documentSet.id, "description")
         val nodeDocument = NodeDocument(node.id, document.id)
 
@@ -41,9 +42,9 @@ class DocumentSetCleanerSpec extends DbSpecification {
       }
     }
 
-    def findNodeWithDocument(documentSetId: Long): Option[NodeDocument] = {
+    def findNodeWithTree(treeId: Long): Option[NodeDocument] = {
       val nodeIdQuery = from(nodes)(n =>
-        where(n.documentSetId === documentSetId)
+        where(n.treeId === treeId)
           select (n.id))
 
       from(nodeDocuments)(nd =>
@@ -65,7 +66,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
     "delete node related data" in new DocumentSetContext {
       cleaner.clean(documentSet.id)
 
-      findNodeWithDocument(documentSet.id) must beNone
+      findNodeWithTree(tree.id) must beNone
       findNode(node.id) must beNone
       findTree(documentSet.id) must beNone
      

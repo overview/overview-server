@@ -53,7 +53,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
         val tree = Tree(nextTreeId(documentSet.id), documentSet.id, "title", 100, "en", "", "")
         trees.insert(tree)
         val node = Node(nextNodeId(documentSet.id),
-          tree.id, documentSet.id, None, "", 1, Array(document.id), true)
+          tree.id, None, "", 1, Array(document.id), true)
 
         nodes.insert(node)
         nodeDocuments.insert(NodeDocument(node.id, document.id))
@@ -68,6 +68,9 @@ class DocumentSetDeleterSpec extends DbSpecification {
       def findAllWithFinder[A](finder: FindableByDocumentSet[A]): Seq[A] =
         finder.byDocumentSet(documentSet.id).toSeq
 
+      def findAllNodes: Seq[Node] =
+        from(nodes)(select(_)).toSeq
+        
       def findDocumentSet: Option[DocumentSet] =
         from(documentSets)(ds =>
           where(ds.id === documentSet.id)
@@ -136,12 +139,12 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findAll(searchResults) must beEmpty
     }
 
-    "delete clustering generated information" in new DocumentSetContext {
+    inExample("delete clustering generated information") in new DocumentSetContext {
       addClusteringGeneratedInformation
       DocumentSetDeleter().deleteClusteringGeneratedInformation(documentSet.id)
 
       findAll(trees) must beEmpty
-      findAll(nodes) must beEmpty
+      findAllNodes must beEmpty
       findAllWithFinder(NodeDocumentFinder) must beEmpty
       findAll(documentProcessingErrors) must beEmpty
     }

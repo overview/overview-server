@@ -6,12 +6,11 @@ import org.squeryl.PrimitiveTypeMode._
 case class Node(
   val id: Long = 0L,
   val treeId: Long,
-  val documentSetId: Long,
   val parentId: Option[Long],
   val description: String,
   val cachedSize: Int,
   val cachedDocumentIds: Array[Long],
-  val isLeaf: Boolean) extends KeyedEntity[Long] with DocumentSetComponent {
+  val isLeaf: Boolean) extends KeyedEntity[Long] {
 
   override def isPersisted(): Boolean = true // use Schema's insert() to insert
 }

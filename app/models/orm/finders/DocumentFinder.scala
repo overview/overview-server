@@ -124,8 +124,12 @@ object DocumentFinder extends Finder {
     }
 
     if (selection.untagged) {
+      val treesInDocumentSet = from(Schema.trees)(t =>
+        where(t.documentSetId === selection.documentSetId)
+        select(t.id))
+        
       val parentNode = from(Schema.nodes)(n =>
-        where((n.documentSetId === selection.documentSetId) and (n.parentId isNull))
+        where((n.treeId in treesInDocumentSet) and (n.parentId isNull))
           select (n.id))
       val documentsInNodes = from(Schema.nodeDocuments)(nd =>
         where(nd.nodeId in parentNode)

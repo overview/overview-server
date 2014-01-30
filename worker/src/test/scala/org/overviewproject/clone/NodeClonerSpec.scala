@@ -14,13 +14,12 @@ class NodeClonerSpec extends DbSpecification {
   trait CloneContext extends DbTestContext {
     val documentCache: Array[Long] = Seq.tabulate[Long](10)(identity).toArray
 
-    def createTreeNodes(documentSetId: Long, treeId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
+    def createTreeNodes(treeId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
       if (depth == 0) Nil
       else {
         val child = Node(
           id=ids.next,
           treeId = treeId,
-          documentSetId=documentSetId,
           parentId=parentId,
           description="node height: " + depth,
           cachedSize=100,
@@ -29,7 +28,7 @@ class NodeClonerSpec extends DbSpecification {
         )
 
         Schema.nodes.insert(child)
-        child +: createTreeNodes(documentSetId, treeId, Some(child.id), depth - 1)
+        child +: createTreeNodes(treeId, Some(child.id), depth - 1)
       }
     }
 
@@ -53,10 +52,10 @@ class NodeClonerSpec extends DbSpecification {
       
       ids = new DocumentSetIdGenerator(documentSet.id)
 
-      sourceNodes = createTreeNodes(documentSet.id, tree.id, None, 10)
+      sourceNodes = createTreeNodes(tree.id, None, 10)
 
       NodeCloner.clone(documentSet.id, documentSetClone.id)
-      cloneNodes = Schema.nodes.where(n => n.documentSetId === documentSetClone.id).toSeq
+      cloneNodes = Schema.nodes.where(n => n.treeId === cloneTree.id).toSeq
     }
   }
 

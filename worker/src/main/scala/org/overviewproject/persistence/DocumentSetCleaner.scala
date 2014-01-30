@@ -7,7 +7,7 @@
 
 package org.overviewproject.persistence
 
-import org.overviewproject.persistence.orm.stores.NodeDocumentStore
+import org.overviewproject.persistence.orm.stores.{ NodeDocumentStore, NodeStore }
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.Schema.{ documents, nodes, trees }
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
@@ -28,7 +28,7 @@ class DocumentSetCleaner {
 
   private def removeNodeData(documentSetId: Long): Unit = {
     NodeDocumentStore.deleteByDocumentSetId(documentSetId)
-    deleteByDocumentSetId(nodes, documentSetId)
+    NodeStore.deleteByDocumentSetId(documentSetId)
     deleteByDocumentSetId(trees, documentSetId)
   }
 

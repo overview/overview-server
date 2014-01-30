@@ -31,7 +31,6 @@ class DocumentFinderSpec extends Specification {
         TestSchema.nodes.insert(
           Node(id = 1,
             treeId = 1,
-            documentSetId = documentSet.id,
             parentId = None,
             description = "",
             cachedSize = 0,

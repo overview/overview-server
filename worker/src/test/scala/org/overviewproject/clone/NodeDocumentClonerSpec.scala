@@ -51,7 +51,6 @@ class NodeDocumentClonerSpec extends DbSpecification {
       val sourceNodes = Seq.tabulate(10)(i => Node(
         id=nodeIds.next,
         treeId = treeId,
-        documentSetId=documentSetId,
         parentId=None,
         description="node-" + i,
         cachedSize=100,
@@ -64,7 +63,7 @@ class NodeDocumentClonerSpec extends DbSpecification {
         text=Some("text-" + i)
       ))
       val cloneNodes = sourceNodes.map(_.copy(
-          treeId = cloneTreeId, documentSetId = cloneDocumentSetId, id = cloneNodeIds.next))
+          treeId = cloneTreeId, id = cloneNodeIds.next))
       val cloneDocuments = sourceDocuments.map(_.copy(documentSetId = cloneDocumentSetId, id = cloneDocumentIds.next))
 
       val sourceNodeDocuments = createNodeDocuments(sourceNodes, sourceDocuments)

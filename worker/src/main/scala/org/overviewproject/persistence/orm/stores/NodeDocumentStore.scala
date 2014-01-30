@@ -2,15 +2,20 @@ package org.overviewproject.persistence.orm.stores
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.persistence.orm.Schema.{ nodeDocuments, nodes }
+import org.overviewproject.persistence.orm.Schema.{ nodeDocuments, nodes, trees }
 
 object NodeDocumentStore extends BaseStore(nodeDocuments) {
 
   def deleteByDocumentSetId(documentSetId: Long): Int = {
-    val nodesInDocumentSet = from(nodes)(n =>
-      where(n.documentSetId === documentSetId)
+    val treesInDocumentSet = from(trees)(t => 
+      where(t.documentSetId === documentSetId)
+      select (t.id))
+      
+    val nodesInTrees = from(nodes)(n =>
+      where(n.treeId in treesInDocumentSet)
         select (n.id))
+        
     nodeDocuments.deleteWhere(nd =>
-      (nd.nodeId in nodesInDocumentSet))
+      (nd.nodeId in nodesInTrees))
   }
 }
