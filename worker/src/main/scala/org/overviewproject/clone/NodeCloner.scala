@@ -8,7 +8,8 @@ object NodeCloner extends InDatabaseCloner {
     SQL("""
         WITH 
           cached_document_ids AS 
-            (SELECT id AS node_id, unnest(cached_document_ids) AS document_id FROM node WHERE document_set_id = {sourceDocumentSetId}),
+            (SELECT id AS node_id, unnest(cached_document_ids) AS document_id FROM node WHERE 
+               tree_id IN (SELECT id FROM tree WHERE document_set_id = {sourceDocumentSetId})),
           cloned_document_ids AS
             (SELECT node_id, ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & document_id) AS clone_id FROM cached_document_ids),
           cloned_cache AS
