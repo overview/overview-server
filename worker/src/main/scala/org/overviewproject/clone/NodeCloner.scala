@@ -7,9 +7,11 @@ object NodeCloner extends InDatabaseCloner {
 	override def cloneQuery: SqlQuery = 
     SQL("""
         WITH 
+          source_tree_ids AS 
+            (SELECT id FROM tree WHERE document_set_id = {sourceDocumentSetId}),
           cached_document_ids AS 
             (SELECT id AS node_id, unnest(cached_document_ids) AS document_id FROM node WHERE 
-               tree_id IN (SELECT id FROM tree WHERE document_set_id = {sourceDocumentSetId})),
+               tree_id IN (SELECT id FROM source_tree_ids)),
           cloned_document_ids AS
             (SELECT node_id, ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & document_id) AS clone_id FROM cached_document_ids),
           cloned_cache AS
@@ -24,8 +26,7 @@ object NodeCloner extends InDatabaseCloner {
             cloned_cache.cached_document_ids,
             cached_size,
             is_leaf
-          FROM node, cloned_cache WHERE tree_id IN 
-            (SELECT id FROM tree WHERE document_set_id = {sourceDocumentSetId})
+          FROM node, cloned_cache WHERE tree_id IN (SELECT id FROM source_tree_ids)
             AND node.id = node_id
         """)
 
