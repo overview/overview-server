@@ -7,12 +7,13 @@
 
 package org.overviewproject.persistence
 
-import org.overviewproject.persistence.orm.stores.{ NodeDocumentStore, NodeStore }
+import org.overviewproject.persistence.orm.stores.NodeDocumentStore
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.Schema.{ documents, nodes, trees }
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.squeryl.Table
 import org.overviewproject.tree.orm.DocumentSetComponent
+import org.overviewproject.tree.orm.stores.BaseNodeStore
 
 /**
  * Deletes all data associated with a document set in the database
@@ -27,8 +28,9 @@ class DocumentSetCleaner {
   }
 
   private def removeNodeData(documentSetId: Long): Unit = {
-    NodeDocumentStore.deleteByDocumentSetId(documentSetId)
-    NodeStore.deleteByDocumentSetId(documentSetId)
+    val nodeStore = BaseNodeStore(nodes, trees)
+    NodeDocumentStore.deleteByDocumentSet(documentSetId)
+    nodeStore.deleteByDocumentSet(documentSetId)
     deleteByDocumentSetId(trees, documentSetId)
   }
 

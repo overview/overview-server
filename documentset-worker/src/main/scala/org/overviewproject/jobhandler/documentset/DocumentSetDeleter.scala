@@ -1,7 +1,8 @@
 package org.overviewproject.jobhandler.documentset
 
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.UploadedFile
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
+import org.overviewproject.tree.orm.stores.BaseNodeStore
 
 /**
  * Methods for deleting all the data associated with document sets in the database
@@ -72,7 +73,8 @@ object DocumentSetDeleter {
   }
 
   private def deleteNodes(implicit documentSetId: Long): Unit = {
-    NodeStore.deleteByDocumentSet(documentSetId)
+    val nodeStore = BaseNodeStore(nodes, trees)
+    nodeStore.deleteByDocumentSet(documentSetId)
   }
   
   private def findFileIds(implicit documentSetId: Long): Iterable[Long] = 

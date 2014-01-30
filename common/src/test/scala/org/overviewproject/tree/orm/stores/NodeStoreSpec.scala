@@ -1,11 +1,12 @@
-package org.overviewproject.database.orm.stores
+package org.overviewproject.tree.orm.stores
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ DocumentSet, Node, Tree }
-import org.overviewproject.database.orm.Schema._
+import org.overviewproject.tree.orm.Schema._
 
 class NodeStoreSpec extends DbSpecification {
+
   step(setupDb)
   
   
@@ -13,6 +14,7 @@ class NodeStoreSpec extends DbSpecification {
     
     trait NodeSetup extends DbTestContext {
       var documentSet: DocumentSet = _
+      val nodeStore = BaseNodeStore(nodes, trees)
       
       override def setupWithDb = {
         documentSet = documentSets.insert(new DocumentSet(title = "NodeFinderSpec"))
@@ -28,7 +30,7 @@ class NodeStoreSpec extends DbSpecification {
     }
     
     "delete nodes by documentSet" in new NodeSetup {
-      NodeStore.deleteByDocumentSet(documentSet.id)
+      nodeStore.deleteByDocumentSet(documentSet.id)
       from(nodes)(n => select(n)).toSeq must beEmpty
     }
   }
