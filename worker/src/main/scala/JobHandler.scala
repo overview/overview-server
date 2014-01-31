@@ -9,7 +9,6 @@
 
 import scala.annotation.tailrec
 import scala.util._
-
 import org.overviewproject.clone.CloneDocumentSet
 import org.overviewproject.clustering.{ DocumentSetIndexer, DocumentSetIndexerOptions }
 import org.overviewproject.database.{ SystemPropertiesDatabaseConfiguration, Database, DataSource, DB }
@@ -21,6 +20,7 @@ import org.overviewproject.tree.orm.{ DocumentSet, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
+import org.overviewproject.persistence.TreeIdGenerator
 
 object JobHandler {
 
@@ -230,8 +230,7 @@ object JobHandler {
   }
 
   private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
-    val ids = new DocumentSetIdGenerator(job.documentSetId)
-    val tree = Tree(ids.next, job.documentSetId, documentSet.title, 0,
+    val tree = Tree(TreeIdGenerator.next(documentSet.id), job.documentSetId, documentSet.title, 0,
       job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
     Database.inTransaction {
       TreeStore.insert(tree)
