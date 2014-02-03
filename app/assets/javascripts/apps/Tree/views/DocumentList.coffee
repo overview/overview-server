@@ -181,11 +181,13 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           $lis.eq(index).before(html)
 
     _changeModel: (model) ->
-      html = @_renderModelHtml(model)
       $li = @$("li.document[data-cid=#{model.cid}]")
-      className = $li[0].className # selected/cursor
+
+      html = @_renderModelHtml(model)
       $newLi = $(html)
-      $newLi[0].className = className
+      $newLi.addClass('selected') if $li.hasClass('selected')
+      $newLi.addClass('cursor') if $li.hasClass('cursor')
+
       $li.replaceWith($newLi)
 
     _renderTag: (tag) ->

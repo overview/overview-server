@@ -247,14 +247,22 @@ define [
         makeCollections([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], true)
 
       it 'should show a loading indicator', ->
-        expect(view.$('ul.documents>li:eq(10) h3').text()).toEqual('loading')
+        $loadingLi = view.$('ul.documents>li:eq(10)')
+        expect($loadingLi.find('h3').text()).toEqual('loading')
+        expect($loadingLi).toHaveClass('loading')
 
     describe 'with a DocumentCollection that has a middle dummy', ->
       beforeEach ->
         makeCollections([0, 1, 2, 3, 5, 6, 7])
 
       it 'should show a placeholder', ->
-        expect(view.$('ul.documents>li:eq(4) h3').text()).toEqual('placeholder')
+        $placeholderLi = view.$('ul.documents>li:eq(4)')
+        expect($placeholderLi.find('h3').text()).toEqual('placeholder')
+        expect($placeholderLi).toHaveClass('placeholder')
+
+      it 'should remove the placeholder document when the document shows up', ->
+        documents.at(4).set(makeDocument(4).attributes)
+        expect(view.$('ul.documents li.placeholder').length).toEqual(0)
 
     describe 'with a long DocumentCollection', ->
       beforeEach ->
