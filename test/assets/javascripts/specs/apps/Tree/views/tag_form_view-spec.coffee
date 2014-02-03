@@ -26,8 +26,8 @@ define [
 
       afterEach ->
         remove_view()
-        delete window.i18n
         $.fx = old_fx
+        $(document).off('.modal')
 
       remove_view = () ->
         $div = $('#tag-form-view-dialog')

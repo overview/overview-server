@@ -61,7 +61,7 @@ define [ 'backbone', 'underscore', 'util/humanReadableSize' ], (Backbone, _, hum
     _updateProgress: ->
       progress = @getProgress()
 
-      @_setIfChanged('progress numerator', @progressEl, 'value', Math.round(progress.loaded / progress.total * 10000) / 100)
+      @_setIfChanged('progress numerator', @progressEl, 'value', Math.round(progress.loaded / (progress.total || 1) * 10000) / 100)
       @_setIfChanged('progress text', @textNode, 'data', "#{humanReadableSize(progress.loaded)} / #{humanReadableSize(progress.total)}")
 
       undefined

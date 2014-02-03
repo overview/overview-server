@@ -38,20 +38,6 @@ define [
       <div class="wait-for-import">
         <%- t('wait_for_import') %>
       </div>
-
-      <div id="cancel-modal" class="modal hide fade" role="dialog">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h3 id="myModalLabel"><%- t('confirm_cancel.title') %></h3>
-        </div>
-        <div class="modal-body">
-          <p><%- t('confirm_cancel.prompt') %></p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" data-dismiss="modal" aria-hidden="true"><%- t('confirm_cancel.back_button') %></button>
-          <button class="btn btn-primary cancel-upload"><%- t('confirm_cancel.confirm_button') %></button>
-        </div>
-      </div>
       ''')
 
     events:
@@ -76,17 +62,6 @@ define [
       # remove this when we add resumable uploads
       #$.ajax('/files', type: 'DELETE')
 
-      $('div.nav-buttons a.back').click (e) =>
-        if(@getHash() == '#import-from-mass-upload')
-          @_confirmCancel(e)
-
-      $('div.nav-buttons li a').click (e) =>
-        if(@getHash() == '#import-from-mass-upload')
-          @_confirmCancel(e)
-
-      $('nav a').click (e) =>
-        @_confirmNav(e)
-
     render: ->
       @$el.html(@template(t: t))
       @$ul = @$el.find('.files')
@@ -108,12 +83,6 @@ define [
       @_progressView?.remove()
       @_uploadCollectionView?.remove()
       super()
-
-    setHash: (hash) ->
-      window.location.hash = hash  #for testability
-
-    getHash: ->
-      window.location.hash #for testability
 
     _addFiles: ->
       fileInput = @$el.find('.invisible-file-input')[0]
@@ -166,33 +135,5 @@ define [
     _uploadDone: ->
       @model.uploads.length > 0 && @model.get('status') == 'waiting'
 
-    _confirmNav: (e) ->
-      if @collection.length > 0 && e.currentTarget.target != '_blank'
-        e.preventDefault()
-        e.stopPropagation()
-        targetUrl = e.currentTarget.href
-        @$el.find('#cancel-modal').modal('show')
-        @$el.find('#cancel-modal .cancel-upload').click =>
-          window.location = targetUrl
-          @_cancel()
-
-    _confirmCancel: (e) ->
-      e.stopPropagation()
-      e.preventDefault()
-
-      target = e.currentTarget.hash
-
-      if @collection.length > 0
-        @$el.find('#cancel-modal').modal('show')
-        @$el.find('#cancel-modal .cancel-upload').click =>
-          @_cancel(target)
-      else
-        @_cancel(target)
-
-    _cancel: (target) ->
-      @$el.find('#cancel-modal').modal('hide')
-      @model.abort()
-      $.ajax('/files', type: 'DELETE').done =>
-        @render()
-        @finishEnabled = false
-        @setHash(target || '')
+    _confirmCancel: ->
+      @trigger('cancel')

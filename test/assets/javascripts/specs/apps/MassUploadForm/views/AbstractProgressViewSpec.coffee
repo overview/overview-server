@@ -25,11 +25,18 @@ define [
 
     it 'updates the progress bar', ->
       $progressEl = view.$el.find('progress')
-      expect($progressEl.attr('value')).toEqual(0)
-      expect($progressEl.attr('max')).toEqual('100')
+      expect($progressEl.prop('value')).toEqual(0)
+      expect($progressEl.prop('max')).toEqual(100)
       model.set('progress', {loaded: 1024, total: 2048})
-      expect($progressEl.attr('value')).toEqual(50)
-      expect($progressEl.attr('max')).toEqual('100')
+      expect($progressEl.prop('value')).toEqual(50)
+      expect($progressEl.prop('max')).toEqual(100)
+
+    it 'does not divide by zero when showing 0/0 uploaded', ->
+      model.set('progress', loaded: 0, total: 1)
+      model.set('progress', loaded: 0, total: 0)
+      $progress = view.$('progress')
+      expect($progress.prop('value')).toEqual(0)
+      expect($progress.prop('max')).toEqual(100)
 
     it 'shows errors', ->
       model.set('error', 'an error')

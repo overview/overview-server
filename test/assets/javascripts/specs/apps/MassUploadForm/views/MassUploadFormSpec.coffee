@@ -33,10 +33,6 @@ define [
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
-        'views.DocumentSet._massUploadForm.confirm_cancel.title': 'title'
-        'views.DocumentSet._massUploadForm.confirm_cancel.prompt': 'prompt'
-        'views.DocumentSet._massUploadForm.confirm_cancel.back_button': 'back_button'
-        'views.DocumentSet._massUploadForm.confirm_cancel.confirm_button': 'confirm_button'
 
       clearAjaxRequests()
 
@@ -187,81 +183,15 @@ define [
             expect(view.$('.wait-for-import')).toHaveCss(display: 'block')
 
       describe 'cancel button', ->
-        beforeEach ->
-          jasmine.Clock.useMock()
-          spyOn(view, 'getHash').andReturn('#import-from-mass-upload')
-
         it 'has a cancel button with the correct message', ->
           expect(view.$('.cancel').length).toEqual(1)
           expect(view.$el.text()).toMatch(/cancel/)
 
-        describe 'without an upload', ->
-          it 'does not ask for confirmation', ->
-            modalSpy = spyOn($.fn, 'modal')
-            view.$('.cancel').click()
-            expect(modalSpy).not.toHaveBeenCalledWith('show')
-
-        describe 'with an upload', ->
-          beforeEach ->
-            model.uploads.add(new MockUpload(status: 'uploading'))
-            model.uploads.trigger('add-batch', model.uploads.models)
-
-          it 'asks for confirmation', ->
-            modalSpy = spyOn($.fn, 'modal')
-            view.$('.cancel').click()
-            expect(modalSpy).toHaveBeenCalledWith('show')
-            expect(modalSpy.mostRecentCall.object.selector).toEqual('#cancel-modal')
-
-          it 'closes the modal', ->
-            view.$('.cancel').click()
-            jasmine.Clock.tick(100)
-            modalSpy = spyOn($.fn, 'modal')
-            view.$('.cancel-upload').click()
-            expect(modalSpy).toHaveBeenCalledWith('hide')
-            expect(modalSpy.mostRecentCall.object.selector).toEqual('#cancel-modal')
-
-          it 'removes files in the "correct" way', ->
-            model.uploads.add(new MockUpload(status: 'waiting', isFullyUploaded: true))
-            model.uploads.add(new MockUpload(status: 'uploading'))
-            model.uploads.add(new MockUpload(status: 'waiting'))
-            model.uploads.trigger('add-batch', model.uploads.tail(1))
-            view.$('.cancel').click()
-            jasmine.Clock.tick(100)
-            view.$('.cancel-upload').click()
-            expect(model.abort).toHaveBeenCalled()
-
-          it 'sends a cancel message to the server', ->
-            clearAjaxRequests()
-            view.$('.cancel').click()
-            jasmine.Clock.tick(100)
-            view.$('.cancel-upload').click()
-
-            request = mostRecentAjaxRequest()
-            expect(request.method).toEqual('DELETE')
-            expect(request.url).toEqual('/files')
-
-          it 'returns to the document sets pane', ->
-            spyOn($, 'ajax').andReturn(new $.Deferred().resolve())
-            spyOn(view, 'setHash')
-            view.$('.cancel').click()
-            jasmine.Clock.tick(100)
-            view.$('.cancel-upload').click()
-
-            expect(view.setHash).toHaveBeenCalledWith('')
-
-      describe 'cancelling with the import options menu', ->
-        beforeEach ->
-          jasmine.Clock.useMock()
-          spyOn(view, 'getHash').andReturn('#import-from-mass-upload')
-
-        it 'goes to the correct place', ->
-          spyOn($, 'ajax').andReturn(new $.Deferred().resolve())
-          spyOn(view, 'setHash')
-          $('div.nav-buttons li a').click()
-          jasmine.Clock.tick(100)
-          view.$('.cancel-upload').click()
-
-          expect(view.setHash).toHaveBeenCalledWith('#foo')
+        it 'triggers "cancel"', ->
+          spy = jasmine.createSpy('cancel callback')
+          view.on('cancel', spy)
+          view.$('.cancel').click()
+          expect(spy).toHaveBeenCalled()
 
     describe 'finishing upload', ->
       submitSpy = undefined
