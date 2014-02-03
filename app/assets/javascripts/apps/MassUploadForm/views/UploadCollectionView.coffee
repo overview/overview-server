@@ -29,6 +29,7 @@ define [
 
       @listenTo(@collection, 'add-batch', @_onAddBatch)
       @listenTo(@collection, 'change', @_onChange)
+      @listenTo(@collection, 'reset', @_onReset)
 
     remove: ->
       @_removeAll()
@@ -93,7 +94,7 @@ define [
         for upload in @_pendingViews.splice(0, nNeeded)
           @_createRenderAndAddViewFor(upload)
 
-      @_$ul.height(@_liHeight * (@_views.length + @_pendingViews.length))
+      @_$ul.css('min-height', "#{@_liHeight * (@_views.length + @_pendingViews.length)}px")
 
     _onScroll: ->
       @_scrollTop = @$el.scrollTop()
@@ -101,6 +102,8 @@ define [
 
     _onReset: ->
       @_removeAll()
+      @_$ul.append(@_$emptyUpload)
+      @_emptyUploadIsPresent = true
       @_views = []
       @_pendingViews = []
       @_onAddBatch(@collection.models)

@@ -43,7 +43,7 @@ define [
       $(document).on 'click.mass-upload-redirect-confirmer', 'a[href]', (e) =>
         if @_shouldIntercept()
           e.preventDefault()
-          @tryPromptAndRedirect(href: e.target.getAttribute('href'))
+          @tryPromptAndRedirect(href: e.currentTarget.getAttribute('href'))
         else
           # do nothing
 

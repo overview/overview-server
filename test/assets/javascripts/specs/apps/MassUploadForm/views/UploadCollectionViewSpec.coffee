@@ -67,8 +67,8 @@ define [
       afterEach ->
         view.$el.remove()
 
-      it 'should set the <ul> height appropriately', ->
-        expect(view.$('ul').css('height')).toEqual('600px')
+      it 'should set the <ul> min-height appropriately', ->
+        expect(view.$('ul').css('min-height')).toEqual('600px')
 
       it 'should only render() the visible uploads', ->
         # The intent is that we don't initialize the view at all; testing
@@ -85,3 +85,14 @@ define [
         collection.at(11).set(foo: 'bar')
         expect(view.$el.scrollTop()).toEqual(190)
         expect(uploadViewRenderSpy.calls.length).toEqual(13)
+
+      it 'should empty on reset', ->
+        collection.reset()
+        $li = view.$('li')
+        expect($li.length).toEqual(1)
+        expect($li.text()).toMatch('drop_target')
+
+      it 'should remove the drop target after a non-empty reset', ->
+        collection.reset([ new MockUpload, new MockUpload ])
+        expect(view.$('li').length).toEqual(2)
+        expect(view.$('ul').text()).not.toMatch('drop_target')
