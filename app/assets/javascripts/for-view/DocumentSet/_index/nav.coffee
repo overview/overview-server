@@ -19,10 +19,11 @@ define [ 'jquery' ], ($) ->
         $('#jobs-and-document-sets').css(opacity: 1).css(filter: '~"alpha(opacity=@{opacity})"')
 
     $buttonsDiv.on 'click', 'a', (e) ->
-      e.preventDefault() # We want to scroll ourselves
       href = $(this).attr('href')
-      window.history?.replaceState?({}, '', href)
-      setHref(href)
+      if href == window.location.href
+        e.preventDefault() # don't scroll down
+      else
+        # pass the click through
 
     $(window).on 'hashchange', ->
       setHref(window.location.hash)
