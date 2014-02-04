@@ -13,7 +13,9 @@ object WelcomeController extends Controller {
     request.user.map(user =>
       Redirect(routes.DocumentSetController.index())
     ).getOrElse(
-      Ok(views.html.Welcome.show(loginForm, userForm))
+      Ok(views.html.Welcome.show(loginForm, userForm, is32BitJava))
     )
   }
+
+  lazy val is32BitJava = sys.props.get("overview.is32BitJava").isDefined
 }

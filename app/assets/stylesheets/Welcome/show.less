@@ -9,6 +9,12 @@ body.welcome-show {
     display: table;
     height: 100%;
     box-sizing: border-box;
+    position: relative;
+  }
+
+  .java-is-32-bit {
+    position: absolute;
+    top: 0;
   }
 
   .centering-cell {
@@ -38,8 +44,8 @@ body.welcome-show {
   }
 
   .intro-video-container {
-    text-align: center;
-    width: 500px;
+    text-align: right;
+    min-width: 500px;
   }
 
   div.bottom-bar {
@@ -138,6 +144,10 @@ body.welcome-show {
   }
 
   @media all and (max-width: 500px) {
+    .intro-video-container {
+      min-width: auto;
+    }
+
     iframe.intro-video {
       width: 320px;
     }

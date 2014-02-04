@@ -46,13 +46,21 @@ class JvmCommand(
     }
   }
 
+  private def is32BitMarker(is32Bit: Boolean) : Seq[String] = {
+    if (is32Bit) {
+      Seq("-Doverview.is32BitJava=true")
+    } else {
+      Seq()
+    }
+  }
+
   private[commands] def with32BitSafe(is64Bit: Boolean): JvmCommand = {
     if (is64Bit) {
       this
     } else {
       new JvmCommand(
         env,
-        jvmArgs.map(reduceArgumentHeapSizeTo32BitSafe(_)),
+        jvmArgs.map(reduceArgumentHeapSizeTo32BitSafe(_)) ++ is32BitMarker(!is64Bit),
         args
       )
     }

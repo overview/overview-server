@@ -37,17 +37,27 @@ class JvmCommandSpec extends Specification {
 
     "decrease heap sizes in with32BitSafe(false)" in {
       val cmd = new JvmCommand(Seq(), Seq("-Xms3g", "-Xmx4000m", "-Xmn2000000k", "-Xint"), Seq())
-      cmd.with32BitSafe(false).jvmArgs must beEqualTo(Seq("-Xms1536m", "-Xmx1536m", "-Xmn1536m", "-Xint"))
+      cmd.with32BitSafe(false).jvmArgs.take(4) must beEqualTo(Seq("-Xms1536m", "-Xmx1536m", "-Xmn1536m", "-Xint"))
+    }
+
+    "add -Doverview.is32BitJava=true in with32BitSafe(false)" in {
+      val cmd = new JvmCommand(Seq(), Seq("-Xfoo"), Seq())
+      cmd.with32BitSafe(false).jvmArgs must beEqualTo(Seq("-Xfoo", "-Doverview.is32BitJava=true"))
     }
 
     "not decrease heap sizes in with32BitSafe(true)" in {
       val cmd = new JvmCommand(Seq(), Seq("-Xms3g", "-Xmx4000m", "-Xmn2000000k", "-Xint"), Seq())
-      cmd.with32BitSafe(true).jvmArgs must beEqualTo(cmd.jvmArgs)
+      cmd.with32BitSafe(true).jvmArgs.take(4) must beEqualTo(cmd.jvmArgs)
+    }
+
+    "not add -Doverview.is32BitJava=true in with32BitSafe(true)" in {
+      val cmd = new JvmCommand(Seq(), Seq("-Xfoo"), Seq())
+      cmd.with32BitSafe(true).jvmArgs must beEqualTo(Seq("-Xfoo"))
     }
 
     "not decrease heap sizes when they are small enough already" in {
       val cmd = new JvmCommand(Seq(), Seq("-Xms1024m", "-Xmx1500m", "-Xmn200k", "-Xint"), Seq())
-      cmd.with32BitSafe(false).jvmArgs must beEqualTo(cmd.jvmArgs)
+      cmd.with32BitSafe(false).jvmArgs.take(4) must beEqualTo(cmd.jvmArgs)
     }
   }
 }

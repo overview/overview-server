@@ -1,6 +1,7 @@
 @(
   loginForm: Form[OverviewUser],
-  userForm: Form[PotentialNewUser]
+  userForm: Form[PotentialNewUser],
+  is32BitJava: Boolean
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -9,6 +10,10 @@
 
 @defining(scopedMessages("views.Welcome.show")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="welcome-show", javascripts=javascripts) {
+    @if(is32BitJava) {
+      <div class="alert alert-error java-is-32-bit">@Html(m("warning_32bit_html"))</div>
+    }
+
     <div class="centering-cell">
       <div class="row-fluid">
         <div class="span6 blurb">
