@@ -5,12 +5,12 @@ import org.specs2.mutable.Specification
 
 class PostgresCommandSpec extends Specification {
   case class MockFile(path: String, isExecutable: Boolean)
-  class MockFilesystem(val files: Iterable[MockFile], val path: Seq[String] = Seq(), val envProgramFiles: Option[String] = None) extends PostgresCommand.Filesystem {
+  class MockFilesystem(val files: Iterable[MockFile], val path: Seq[String] = Seq(), val envProgramFilesPaths: Seq[String] = Seq()) extends PostgresCommand.Filesystem {
     def isFileExecutable(path: String) : Boolean = {
       files.find(_.path == path).map(_.isExecutable).getOrElse(false)
     }
 
-    def programFilesPath = envProgramFiles
+    def programFilesPaths = envProgramFilesPaths
 
     def envPaths = path
   }
@@ -70,20 +70,20 @@ class PostgresCommandSpec extends Specification {
       PostgresCommand(fs, "initdb").argv(0) must beEqualTo("/weird/place/initdb")
     }
 
-    "find initdb/postgres if they are in %PROGRAM_FILES%" in {
+    "find initdb/postgres if they are in %ProgramFiles%" in {
       val fs = new MockFilesystem(Seq(
         MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb", true),
         MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "postgres", true)
-      ), Seq(), Some("c:\\Program Files"))
+      ), Seq(), Seq("c:\\Program Files"))
 
       PostgresCommand(fs, "initdb").argv(0) must beEqualTo("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb")
     }
 
-    "find initdb/postgres if they are in %PROGRAM_FILES% and end with .exe" in {
+    "find initdb/postgres if they are in %ProgramFiles% and end with .exe" in {
       val fs = new MockFilesystem(Seq(
         MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb.exe", true),
         MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "postgres.exe", true)
-      ), Seq(), Some("c:\\Program Files"))
+      ), Seq(), Seq("c:\\Program Files"))
 
       PostgresCommand(fs, "initdb").argv(0) must beEqualTo("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb.exe")
     }

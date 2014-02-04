@@ -54,13 +54,13 @@ object PostgresCommand {
 
   trait Filesystem {
     def isFileExecutable(path: String) : Boolean
-    def programFilesPath: Option[String]
+    def programFilesPaths: Seq[String]
     def envPaths: Seq[String]
   }
 
   object Filesystem extends Filesystem {
     override def isFileExecutable(path: String) : Boolean = new File(path).canExecute
-    override def programFilesPath = sys.env.get("ProgramFiles")
+    override def programFilesPaths = Seq() ++ sys.env.get("PROGRAMFILES") ++ sys.env.get("PROGRAMFILES(X86)")
     override def envPaths: Seq[String] = {
       sys.env.getOrElse("PATH", "")
         .split(File.pathSeparator)
@@ -69,7 +69,7 @@ object PostgresCommand {
   }
 
   def windowsSearchPaths(filesystem: Filesystem) : Iterable[String] = {
-    filesystem.programFilesPath.toSeq.flatMap({ (s: String) => Seq(
+    filesystem.programFilesPaths.flatMap({ (s: String) => Seq(
       // EnterpriseDB, according to http://www.enterprisedb.com/resources-community/pginst-guide
       s"$s\\PostgreSQL\\9.3\\bin",
       s"$s\\PostgreSQL\\9.2\\bin",
