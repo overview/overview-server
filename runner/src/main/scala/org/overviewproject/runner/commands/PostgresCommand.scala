@@ -60,7 +60,7 @@ object PostgresCommand {
 
   object Filesystem extends Filesystem {
     override def isFileExecutable(path: String) : Boolean = new File(path).canExecute
-    override def programFilesPaths = Seq() ++ sys.env.get("PROGRAMFILES") ++ sys.env.get("PROGRAMFILES(X86)")
+    override def programFilesPaths : Seq[String] = Seq() ++ sys.env.get("ProgramFiles") ++ sys.env.get("ProgramW6432") ++ sys.env.get("ProgramFiles(x86)")
     override def envPaths: Seq[String] = {
       sys.env.getOrElse("PATH", "")
         .split(File.pathSeparator)
