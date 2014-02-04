@@ -6,7 +6,7 @@ package object commands {
   private val sbtLaunchUri = getClass.getResource("/sbt-launch.jar").toURI()
   private val sbtLaunchPath = new File(sbtLaunchUri).getAbsolutePath()
 
-  val SearchIndex: Command = new JvmCommandWithAppendableClasspath(
+  val SearchIndex: JvmCommand = new JvmCommandWithAppendableClasspath(
     Seq(),
     Seq(
       "-Xmx1g",
@@ -23,7 +23,7 @@ package object commands {
     Seq("org.elasticsearch.bootstrap.ElasticSearch")
   )
 
-  val MessageBroker: Command = new JvmCommandWithAppendableClasspath(
+  val MessageBroker: JvmCommand = new JvmCommandWithAppendableClasspath(
     Seq(),
     Seq(Flags.ApolloBase),
     Seq(
@@ -34,7 +34,7 @@ package object commands {
     )
   )
 
-  val OverviewServer: Command = new JvmCommand(
+  val OverviewServer: JvmCommand = new JvmCommand(
     // We run "overview-server/run" through sbt. That lets it reload files
     // as they're edited.
     Seq(),
@@ -49,20 +49,20 @@ package object commands {
     )
   )
 
-  val DocumentSetWorker: Command = new JvmCommandWithAppendableClasspath(
+  val DocumentSetWorker: JvmCommand = new JvmCommandWithAppendableClasspath(
     Seq(),
     Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
     Seq("org.overviewproject.DocumentSetWorker")
   )
 
-  val Worker: Command = new JvmCommandWithAppendableClasspath(
+  val Worker: JvmCommand = new JvmCommandWithAppendableClasspath(
     Seq(),
     Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
     Seq("JobHandler")
   )
 
   /** A Command for "sbt [task]" */
-  def sbt(task: String) : Command = new JvmCommand(
+  def sbt(task: String) : JvmCommand = new JvmCommand(
     Seq(),
     Seq(
       "-Dsbt.log.format=false",

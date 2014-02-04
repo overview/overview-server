@@ -124,7 +124,7 @@ class Main(conf: Conf) {
       val sbtTasks = daemonIds.map { s: String => s"show ${s}/full-classpath" }
       val sbtCommand = (Seq("", "all/compile", "db-evolution-applier/run") ++ sbtTasks).mkString("; ")
 
-      val sbtRun = new Daemon(sublogger, commands.sbt(sbtCommand))
+      val sbtRun = new Daemon(sublogger, commands.sbt(sbtCommand).with32BitSafe)
       val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
 
       if (statusCode != 0) {
@@ -220,7 +220,8 @@ class Main(conf: Conf) {
   def run() = {
     def makeDaemon(spec: DaemonInfo, classpath: Seq[String]) : Daemon = {
       val command = spec.command match {
-        case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath)
+        case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath).with32BitSafe
+        case c: JvmCommand => c.with32BitSafe
         case c: Command => c
       }
       val sublogger = if (spec.id == "database") {
