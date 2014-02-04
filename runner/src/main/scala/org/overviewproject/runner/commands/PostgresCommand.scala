@@ -50,6 +50,7 @@ object PostgresCommand {
   )
 
   val RequiredCommands : Seq[String] = Seq("initdb", "postgres")
+  val RequiredExeCommands : Seq[String] = RequiredCommands.map(_ + ".exe")
 
   trait Filesystem {
     def isFileExecutable(path: String) : Boolean
@@ -59,7 +60,7 @@ object PostgresCommand {
 
   object Filesystem extends Filesystem {
     override def isFileExecutable(path: String) : Boolean = new File(path).canExecute
-    override def programFilesPath = sys.env.get("PROGRAM_FILES")
+    override def programFilesPath = sys.env.get("PROGRAMFILES")
     override def envPaths: Seq[String] = {
       sys.env.getOrElse("PATH", "")
         .split(File.pathSeparator)
@@ -77,14 +78,14 @@ object PostgresCommand {
     )})
   }
 
-  private def findAbsoluteSbinPath(filesystem: Filesystem) : String = {
+  private def findAbsoluteSbinPath(commands: Seq[String], filesystem: Filesystem) : Either[String,String] = {
     def isPostgresHere(path: String) : Boolean = {
-      RequiredCommands.forall(c => filesystem.isFileExecutable(new File(path, c).toString))
+      commands.forall(c => filesystem.isFileExecutable(new File(path, c).toString))
     }
     val allPaths = filesystem.envPaths ++ windowsSearchPaths(filesystem) ++ UnixStandardSearchPaths
     allPaths
       .find(isPostgresHere(_))
-      .getOrElse(throw new Exception(s"Could not find Postgres 9.0-9.3. Please install ${RequiredCommands.mkString(", ")} (which must be executable) in one of: ${allPaths.mkString(", ")}"))
+      .toRight(s"Could not find Postgres 9.0-9.3. Please install ${commands.mkString(", ")} (which must be executable) in one of: ${allPaths.mkString(", ")}")
   }
 
   def apply(basename: String, args: String*) : PostgresCommand = {
@@ -92,7 +93,17 @@ object PostgresCommand {
   }
 
   def apply(filesystem: Filesystem, basename: String, args: String*) : PostgresCommand = {
-    val path = new File(findAbsoluteSbinPath(filesystem), basename).toString
-    new PostgresCommand(Seq(path) ++ args)
+    val maybeFile : Either[String,File] = findAbsoluteSbinPath(RequiredCommands, filesystem).fold(
+      err => findAbsoluteSbinPath(RequiredExeCommands, filesystem).fold(
+        err2 => Left(err),
+        path => Right(new File(path, basename + ".exe"))
+      ),
+      path => Right(new File(path, basename))
+    )
+
+    maybeFile.fold(
+      err => throw new Exception(err),
+      file => new PostgresCommand(Seq(file.toString) ++ args)
+    )
   }
 }

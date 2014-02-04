@@ -78,5 +78,14 @@ class PostgresCommandSpec extends Specification {
 
       PostgresCommand(fs, "initdb").argv(0) must beEqualTo("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb")
     }
+
+    "find initdb/postgres if they are in %PROGRAM_FILES% and end with .exe" in {
+      val fs = new MockFilesystem(Seq(
+        MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb.exe", true),
+        MockFile("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "postgres.exe", true)
+      ), Seq(), Some("c:\\Program Files"))
+
+      PostgresCommand(fs, "initdb").argv(0) must beEqualTo("c:\\Program Files\\PostgreSQL\\9.3\\bin" + File.separator + "initdb.exe")
+    }
   }
 }
