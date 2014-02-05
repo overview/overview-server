@@ -2,7 +2,7 @@ package controllers.auth
 
 import play.api.Play
 import play.api.Play.current
-import play.api.mvc.{RequestHeader,PlainResult,Results}
+import play.api.mvc.{RequestHeader,SimpleResult,Results}
 import scala.util.control.Exception.catching
 
 import models.OverviewUser
@@ -23,15 +23,15 @@ import models.OverviewUser
   * * The given user is authorized according to the given authority
   *
   * If any of these conditions aren't satisfied, UserFactory will return an
-  * appropriate Left[PlainResult] instead.
+  * appropriate Left[SimpleResult] instead.
   *
   * This object does not require that requests be over HTTPS.
   */
 trait UserFactory {
   private[auth] val UserIdKey = AuthResults.UserIdKey // TODO find a sensible class for this constant
 
-  /** Returns either a Result (no access) or an OverviewUser (access) recorded in the database. */
-  def loadUser(request: RequestHeader, authority: Authority) : Either[PlainResult, OverviewUser] = {
+  /** Returns either a SimpleResult (no access) or an OverviewUser (access) recorded in the database. */
+  def loadUser(request: RequestHeader, authority: Authority) : Either[SimpleResult, OverviewUser] = {
     recordedUserIfAuthorized(request, authority)
   }
 

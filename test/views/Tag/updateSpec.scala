@@ -1,10 +1,11 @@
 package views.json.Tag
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.orm.Tag
 
-class updateSpec extends Specification {
+class updateSpec extends Specification with JsonMatchers {
   "Json for update tag result" should {
     "contain tag attributed" in {
       val id = 34l

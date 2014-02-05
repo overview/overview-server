@@ -1,11 +1,12 @@
 package views.json.DocumentList
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.orm.Document
 import models.{ResultPage,ResultPageDetails}
 
-class showSpec extends Specification {
+class showSpec extends Specification with JsonMatchers {
 
   "DocumentList view generated Json" should {
 

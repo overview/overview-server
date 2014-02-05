@@ -4,7 +4,7 @@
 #
 # Requirements:
 # * `sudo apt-get install inotify-tools nodejs`
-# * `sudo npm install less`
+# * `npm install -g less@1.4.2`
 #
 # Usage:
 #

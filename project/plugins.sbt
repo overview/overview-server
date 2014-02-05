@@ -6,10 +6,6 @@ resolvers += "Templemore Repository" at "http://templemore.co.uk/repo"
 
 resolvers += Resolver.url("community", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases/"))(Resolver.ivyStylePatterns)
 
-addSbtPlugin("templemore" % "sbt-cucumber-plugin" % "0.7.2")
+addSbtPlugin("templemore" % "sbt-cucumber-plugin" % "0.8.0")
 
-addSbtPlugin("play" % "sbt-plugin" % "2.1.5")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-start-script" % "0.6.0")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "0.6.4")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.2-RC2")

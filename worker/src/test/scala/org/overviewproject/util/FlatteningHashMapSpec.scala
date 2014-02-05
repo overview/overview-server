@@ -3,10 +3,9 @@ package org.overviewproject.util
 import scala.collection.mutable.{Map,IndexedSeq}
 import scala.util.Random
 import org.specs2.mutable.Specification
-import org.specs2.specification._
+import org.specs2.specification.Scope
 
 class FlatteningHashMapSpec extends Specification {
-  
   // Basic flattener for Int->Long map
   implicit object IntLongFlattener extends KeyValueFlattener[Int,Long] {
     def flatSize = 3
@@ -35,116 +34,74 @@ class FlatteningHashMapSpec extends Specification {
 
     def flatKeyEquals(k:Int, s:IndexedSeq[Int], i:Int) : Boolean = { k == s(i) }   
   }
-  
   "FlatteningHashMap" should {
-    
-    "small test set" in {
-      // Must start empty
-      val m = new FlatteningHashMap[Int, Long]()
-      
+    trait EmptyTestSet extends Scope {
+      var m = new FlatteningHashMap[Int, Long]()
+    }
+
+    "start empty" in new EmptyTestSet {
       m.size should beEqualTo(0)
       m.isEmpty should beTrue
-            
+    }
+
+    trait SmallTestSet extends EmptyTestSet {
       // Add some test data. Note use of negative numbers, and full 32 bit range
       val data = Map(1->1L,2->999L,999->(-10000L),-65536->(1L<<40), 100000->(12345678L*78910112L))
-      data foreach { m += _ }
-      
-      // Check element storage and retrieval via several different access methods
-      m.size must beEqualTo(data.size)                                // size
-      m.contains(data.head._1) must beTrue
-      
-      data foreach { case (k,v) => m.contains(k) must beTrue }        // contains
-      data foreach { case (k,v) => m.get(k) must beEqualTo(Some(v)) } // get
-      data foreach { case (k,v) => m(k) must beEqualTo(v) }           // apply
-      m must haveTheSameElementsAs(data)                              // matcher (whatever that uses...)
+      data.foreach( m += _)
+    }
 
-      // Now test element removal
+    "have .size" in new SmallTestSet {
+      m.size must beEqualTo(data.size)
+    }
+
+    "have .contains" in new SmallTestSet {
+      forall(data.keys) { m.contains(_) must beTrue }
+      m.contains(12) must beFalse
+    }
+
+    "have .get" in new SmallTestSet {
+      forall(data.keys) { k => m.get(k) must beEqualTo(data.get(k)) }
+      data.get(12) must beNone
+    }
+
+    "have .apply" in new SmallTestSet {
+      forall(data.keys) { k => m.get(k) must beEqualTo(data.get(k)) }
+      data(12) must throwA[NoSuchElementException]
+    }
+
+    "remove elements" in new SmallTestSet {
       val delKey = data.head._1 
       m -= delKey
       m.contains(delKey) must beFalse
       m.size must beEqualTo(data.size - 1)
       m.get(delKey) must beEqualTo(None)
       m(delKey) must throwA[NoSuchElementException]
+    }
 
-      // empty must return a new map
+    "have .empty" in new SmallTestSet {
       val m2 = m.empty
       m2 mustNotEqual(m)
-      m2.isEmpty should beTrue
-      
-      // foreach
-      var cnt = 0
-      m foreach { case (k,v) =>
-        data(k) must beEqualTo(v)
-        cnt += 1
-      }
-      cnt must beEqualTo(m.size)
-      
-      // iterator
-      cnt = 0
+      m2.isEmpty must beTrue
+    }
+
+    "have .foreach" in new SmallTestSet {
+      var out = Map[Int,Long]()
+      m.foreach(out += _)
+      out must beEqualTo(data)
+    }
+
+    "have .iterator" in new SmallTestSet {
+      var out = Map[Int,Long]()
       val i = m.iterator
       while (i.hasNext) {
-        val (k,v) = i.next
-        data(k) must beEqualTo(v)
-        cnt += 1
+        out += i.next
       }
-      cnt must beEqualTo(m.size)
+      out must beEqualTo(data)
     }
-    
-    
-    "large test set" in {
-      val m = new FlatteningHashMap[Int, Long]()
-      val ref = Map[Int,Long]()
-      
-      val r = new Random(555) // arbitrary seed
-      
-      // Add 100k random elements
-      val sz = 100000
-      for (i <- 0 until sz) {
-        val elem = (r.nextInt, r.nextLong) 
-        m += elem
-        m.contains(elem._1) should beTrue
-        ref += elem
-      }
-      
-      m.size should beEqualTo(ref.size)
-      ref foreach { e => m.contains(e._1) should beTrue }           // got all of that?
-      m foreach { e => ref.contains(e._1) should beTrue }           // don't make up elements, okay?
-      
-      // delete 30%
-      var delThresh = 0.3
-      m foreach { case (k,v) =>
-        m.contains(k) should beTrue
-        if (r.nextFloat < delThresh) {
-          m -= k
-          m.contains(k) should beFalse
-          ref -= k
-        }
-      }
 
-      m.size should beEqualTo(ref.size)
-      ref foreach { e => m.contains(e._1) should beTrue }
-      m foreach { e => ref.contains(e._1) should beTrue }
-
-      // now do a mixed sequence of adds and deletes
-      var addThresh = 0.2
-      m foreach { case (k,v) =>
-        m.contains(k) should beTrue
-        if (r.nextFloat < delThresh) {
-          m -= k
-          m.contains(k) should beFalse
-          ref -= k
-        }
-        if (r.nextFloat < addThresh) {
-          val elem = (r.nextInt, r.nextLong) 
-          m += elem
-          m.contains(elem._1) should beTrue
-          ref += elem
-        }
-      }
-      
-      m.size should beEqualTo(ref.size)
-      ref foreach { e => m.contains(e._1) should beTrue }
-      m foreach { e => ref.contains(e._1) should beTrue }
+    "have -=" in new SmallTestSet {
+      m -= 1
+      m.toMap must beEqualTo(data - 1)
     }
   }
 }

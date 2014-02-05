@@ -146,7 +146,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
       messages.foreach { msg => motherWorker ! msg }
 
-      daughters.flatMap(_.receiveN(1)) must haveTheSameElementsAs(messages.take(2))
+      daughters.flatMap(_.receiveN(1)) must containTheSameElementsAs(messages.take(2))
       daughters.map(_.expectNoMsg(Pause))
     }
 

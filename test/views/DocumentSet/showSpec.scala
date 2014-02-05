@@ -1,5 +1,6 @@
 package views.json.DocumentSet
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
@@ -10,7 +11,7 @@ import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.test.Specification
 import models.OverviewUser
 
-class showSpec extends Specification {
+class showSpec extends Specification with JsonMatchers {
   step(start(FakeApplication()))
 
   "DocumentSet view generated Json" should {

@@ -1,12 +1,12 @@
 package views.json.Tag
 
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
-class addSpec extends Specification {
+class addSpec extends Specification with JsonMatchers {
   "Json for tag add result" should {
     "contain added count" in {
-      // specs2 bug: this doesn't work
-      //views.json.Tag.add(50L) must /("added" -> 50L)
+      views.json.Tag.add(50L).toString must /("added" -> 50L)
     }
   }
 }

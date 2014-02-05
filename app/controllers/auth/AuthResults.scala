@@ -2,7 +2,7 @@ package controllers.auth
 
 import play.api.Play
 import play.api.Play.current
-import play.api.mvc.{RequestHeader,PlainResult,Results}
+import play.api.mvc.{RequestHeader,SimpleResult,Results}
 import scala.util.control.Exception.catching
 
 import models.OverviewUser
@@ -15,7 +15,7 @@ object AuthResults {
     *
     * We redirect to the login page in this case.
     */
-  def authenticationFailed(request: RequestHeader): PlainResult = {
+  def authenticationFailed(request: RequestHeader): SimpleResult = {
     Results.Redirect(controllers.routes.SessionController.new_).withSession(RequestedUriKey -> request.uri)
   }
 
@@ -23,7 +23,7 @@ object AuthResults {
     *
     * We return "Forbidden" in this case.
     */
-  def authorizationFailed(request: RequestHeader): PlainResult = {
+  def authorizationFailed(request: RequestHeader): SimpleResult = {
     Results.Forbidden(views.html.http.forbidden())
   }
 
@@ -31,7 +31,7 @@ object AuthResults {
     *
     * This is a Redirect to the page the user requested.
     */
-  def loginSucceeded(request: RequestHeader, user: OverviewUser): PlainResult = {
+  def loginSucceeded(request: RequestHeader, user: OverviewUser): SimpleResult = {
     val uri = request.session.get(RequestedUriKey).getOrElse(controllers.routes.DocumentSetController.index().url)
     val newSession = request.session - RequestedUriKey + (UserIdKey -> user.id.toString)
     Results.Redirect(uri).withSession(newSession)

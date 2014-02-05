@@ -18,22 +18,14 @@ trait OverviewCommands  {
     val structure: Load.BuildStructure = Project structure state
     val dependencies = Project.getProject(project, structure).toList.flatMap { p => p.dependencies.map(_.project) }
     val allProjects = project +: dependencies
-    
+
     val packageProjectTasks: Seq[Task[Map[Artifact, File]]] = allProjects.flatMap { p =>
       packagedArtifacts.task in p get structure.data
     }
 
-    val jars: Task[Seq[File]] =  for {
-      projectPackage: Seq[Map[Artifact, File]] <- packageProjectTasks.join
-    } yield {
-      val allJars: Seq[Iterable[File]] = for {
-        artifacts: Map[Artifact, File] <- projectPackage
-      } yield {
-        artifacts.filter { case (artifact, _) =>  artifact.extension == "jar" }
-          .map { case (_, path) => path }
-      }
-      allJars.flatten.distinct
-    }
+    def artifactMapToJarFiles(m: Map[Artifact,File]) = m.filterKeys(_.extension == "jar").values
+
+    val jars: Task[Seq[File]] = packageProjectTasks.join.map(_.flatMap(artifactMapToJarFiles).distinct)
 
     jars
   }

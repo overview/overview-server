@@ -6,6 +6,7 @@ import play.api.mvc.{Controller,ResponseHeader,SimpleResult}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.ws.WS
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.anyUser
@@ -26,27 +27,25 @@ trait DocumentCloudProxyController extends Controller {
   val DocumentCloudUrl = play.api.Play.maybeApplication.flatMap(_.configuration.getString("overview.documentcloud_url")).getOrElse("https://www.documentcloud.org/api/projects.json")
   val DocumentCloudApiProjectsUrl = s"$DocumentCloudUrl/$DocumentCloudApiProjectsPath"
 
-  def projects() = AuthorizedAction(anyUser) { implicit request =>
+  def projects() = AuthorizedAction(anyUser).async { implicit request =>
     val form = Form(Forms.tuple(
       "email" -> Forms.text,
       "password" -> Forms.text
     ))
     form.bindFromRequest.fold(
-      formWithErrors => BadRequest, // won't happen if the client is using our JS
+      formWithErrors => Future(BadRequest), // won't happen if the client is using our JS
       (tuple) => {
         val (email, password) = tuple // Perform NO validation--we want to be transaprent
-        Async {
-          WS.url(DocumentCloudApiProjectsUrl)
-            .withAuth(email, password, com.ning.http.client.Realm.AuthScheme.BASIC)
-            .get()
-            .map({ wsResponse =>
-              import collection.JavaConversions._
-              val headerListsJava: java.util.Map[String,java.util.List[String]] = wsResponse.getAHCResponse.getHeaders
-              val headerLists: Map[String,java.util.List[String]] = headerListsJava.iterator.toMap
-              val headers: Map[String,String] = headerLists.mapValues(item => Option(item.get(0)).getOrElse(""))
-              SimpleResult(ResponseHeader(wsResponse.status, headers), Enumerator(wsResponse.body))
-            })
-        }
+        WS.url(DocumentCloudApiProjectsUrl)
+          .withAuth(email, password, com.ning.http.client.Realm.AuthScheme.BASIC)
+          .get() // Returns a Future
+          .map({ wsResponse =>
+            import collection.JavaConversions._
+            val headerListsJava: java.util.Map[String,java.util.List[String]] = wsResponse.getAHCResponse.getHeaders
+            val headerLists: Map[String,java.util.List[String]] = headerListsJava.iterator.toMap
+            val headers: Map[String,String] = headerLists.mapValues(item => Option(item.get(0)).getOrElse(""))
+            SimpleResult(ResponseHeader(wsResponse.status, headers), Enumerator(wsResponse.getAHCResponse.getResponseBodyAsBytes()))
+          })
       }
     )
   }

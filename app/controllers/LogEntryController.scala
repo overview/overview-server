@@ -40,7 +40,7 @@ trait LogEntryController extends Controller {
     }
   }
 
-  def createMany(id: Long) = AuthorizedAction(BodyParsers.parse.tolerantJson, userOwningDocumentSet(id)) { implicit request =>
+  def createMany(id: Long) = AuthorizedAction(userOwningDocumentSet(id))(BodyParsers.parse.tolerantJson) { implicit request =>
     request.body match {
       case jsArray: JsArray =>
         val parsed : Iterable[Either[String,LogEntry]] = jsArray.as[List[JsValue]].map(parseLogEntry(id, request.user, _))

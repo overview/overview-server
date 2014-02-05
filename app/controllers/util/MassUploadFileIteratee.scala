@@ -4,12 +4,13 @@ import scala.util.control.Exception._
 import scala.util.{ Failure, Success, Try }
 import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.GroupedFileUpload
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results._
 import play.api.http.HeaderNames._
 import org.overviewproject.util.ContentDisposition
-import play.api.mvc.Result
+import play.api.mvc.SimpleResult
 import java.util.UUID
 import models.orm.finders.FileGroupFinder
 import org.overviewproject.postgres.LO
@@ -23,7 +24,7 @@ trait MassUploadFileIteratee {
 
   val storage: Storage
 
-  def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] = {
+  def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] = {
     val fileGroup = storage.findCurrentFileGroup(userEmail)
       .getOrElse(storage.createFileGroup(userEmail))
 
@@ -43,7 +44,7 @@ trait MassUploadFileIteratee {
 
     var buffer = Array[Byte]()
 
-    Iteratee.fold[Array[Byte], Either[Result, GroupedFileUpload]](validUploadStart) { (upload, data) =>
+    Iteratee.fold[Array[Byte], Either[SimpleResult, GroupedFileUpload]](validUploadStart) { (upload, data) =>
       buffer ++= data
       if (buffer.size >= bufferSize) {
         val update = flushBuffer(upload, buffer)
@@ -64,13 +65,13 @@ trait MassUploadFileIteratee {
     def appendData(upload: GroupedFileUpload, data: Iterable[Byte]): GroupedFileUpload
   }
 
-  private def flushBuffer(upload: Either[Result, GroupedFileUpload], buffer: Array[Byte]): Either[Result, GroupedFileUpload] =
+  private def flushBuffer(upload: Either[SimpleResult, GroupedFileUpload], buffer: Array[Byte]): Either[SimpleResult, GroupedFileUpload] =
     for {
       u <- upload.right
       update <- attemptAppend(u, buffer).right
     } yield update
 
-  private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[Result, GroupedFileUpload] = {
+  private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[SimpleResult, GroupedFileUpload] = {
     val appendResult = allCatch either storage.appendData(upload, buffer)
 
     for (_ <- appendResult.left) yield InternalServerError

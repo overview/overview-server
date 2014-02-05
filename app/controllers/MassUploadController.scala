@@ -2,7 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
 import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload, StartClustering }
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
@@ -36,7 +36,7 @@ trait MassUploadController extends Controller {
    * content_range and content_length are provided.
    */
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
-    def resultWithHeaders(status: Status, upload: GroupedFileUpload): Result =
+    def resultWithHeaders(status: Status, upload: GroupedFileUpload): SimpleResult =
       status.withHeaders(showRequestHeaders(upload): _*)
 
     findUploadInCurrentFileGroup(request.user.email, guid) match {
@@ -68,7 +68,7 @@ trait MassUploadController extends Controller {
   }
 
   // method to create the MassUploadFileIteratee
-  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
+  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]]
 
   /** interface to database related methods */
   val storage: Storage
@@ -134,7 +134,7 @@ trait MassUploadController extends Controller {
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Option[String], Option[String])): Result = {
+                                                  options: (String, String, Option[String], Option[String])): SimpleResult = {
     storage.findCurrentFileGroup(userEmail) match {
       case Some(fileGroup) => {
         val (name, lang, optionalStopWords, optionalImportantWords) = options
@@ -157,7 +157,7 @@ trait MassUploadController extends Controller {
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
 
-  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] =
     MassUploadFileIteratee(userEmail, request, guid)
 
   override val storage = new DatabaseStorage

@@ -1,7 +1,6 @@
 package org.overviewproject.clone
 
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ DocumentSet, Tag }
 
@@ -12,6 +11,8 @@ class TagClonerSpec extends DbSpecification {
   "TagCloner" should {
 
     trait TagContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
       var sourceDocumentSetId: Long = _
       var cloneDocumentSetId: Long = _
       var sourceTags: Seq[Tag] = _
@@ -36,13 +37,13 @@ class TagClonerSpec extends DbSpecification {
       val cloneData = cloneTags.map(t => (t.name, t.color))
       val expectedTagData = sourceTags.map(t => (t.name, t.color))
 
-      cloneData must haveTheSameElementsAs(expectedTagData)
+      cloneData must containTheSameElementsAs(expectedTagData)
     }
 
     "map source tag ids to clone tag ids" in new TagContext {
       val mappedIds = sourceTags.flatMap(t => tagIdMapping.get(t.id))
       
-      mappedIds must haveTheSameElementsAs(cloneTags.map(_.id))
+      mappedIds must containTheSameElementsAs(cloneTags.map(_.id))
     }
   }
 

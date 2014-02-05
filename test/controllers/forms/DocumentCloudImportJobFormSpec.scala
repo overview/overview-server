@@ -51,7 +51,7 @@ class DocumentCloudImportJobFormSpec extends Specification {
     "fail if query is only whitespace" in new FormScope {
       override def data = Map("title" -> "title", "query" -> "   ")
       form.bind(data).error("query") must (beSome)
-    }.pendingUntilFixed("This will work in Play 2.1.2. See https://github.com/playframework/Play20/pull/910")
+    }
 
     "fail if there is no lang" in new FormScope {
       override def data = Map(

@@ -32,7 +32,7 @@ class DocumentTagWriterSpec extends DbSpecification {
       documentTagWriter.flush()
       
       val savedTagIds = from(Schema.documentTags)(dt => where(dt.documentId === document.id) select(dt.tagId))
-      savedTagIds.toSeq must haveTheSameElementsAs(savedTags.map(_.id))
+      savedTagIds.toSeq must containTheSameElementsAs(savedTags.map(_.id))
     }
 
     

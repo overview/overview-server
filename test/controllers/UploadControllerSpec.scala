@@ -2,22 +2,21 @@ package controllers
 
 import java.util.UUID
 import org.junit.runner.RunWith
-import org.specs2.runner.JUnitRunner
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
+import org.specs2.runner.JUnitRunner
+import org.specs2.specification.Scope
 import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.Request
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
+import play.api.mvc.AnyContent
+import play.api.mvc.{ Request, RequestHeader, SimpleResult }
+import play.api.mvc.SimpleResult
 import play.api.Play.{start, stop}
 import play.api.test.{FakeHeaders, FakeRequest, FakeApplication}
 import play.api.test.Helpers._
-import org.specs2.specification.Scope
-import play.api.mvc.AnyContent
-import play.api.mvc.SimpleResult
 import play.api.test.Helpers._
+import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import models.upload.{OverviewUpload,OverviewUploadedFile}
@@ -35,7 +34,7 @@ class UploadControllerSpec extends Specification with Mockito {
     var stopWords: Option[String] = _
     var importantWords: Option[String] = _
 
-    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
@@ -54,7 +53,7 @@ class UploadControllerSpec extends Specification with Mockito {
     def upload: OverviewUpload
     val controller: TestUploadController
     val request: Request[A]
-    val result: Result
+    val result: Future[SimpleResult]
   }
 
   trait CreateRequest extends UploadContext[OverviewUpload] {

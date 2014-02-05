@@ -38,7 +38,7 @@ trait DocumentController extends Controller {
       document <- storage.find(documentId)
       data <- storage.contentStream(fileId)
     } yield {
-      val dataContent = Enumerator.fromStream(data)
+      val dataContent = Enumerator.fromStream(data)(play.api.libs.concurrent.Execution.Implicits.defaultContext)
       val filename = document.title.getOrElse("UploadedFile.pdf")
       SimpleResult(
         header = ResponseHeader(OK, Map(

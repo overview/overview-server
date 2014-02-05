@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.Controller
+import play.api.mvc.{Controller,SimpleResult}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
@@ -53,40 +53,42 @@ trait DocumentSetExportController extends Controller {
     }
   }
 
-  private def serveExport(export: Export, encodedFilename: String) = {
-    Async { Future {
-      val inputStream = OverviewDatabase.inTransaction {
-        export.asFileInputStream
-      }
+  private def serveExport(export: Export, encodedFilename: String) : SimpleResult = {
+    val inputStream = OverviewDatabase.inTransaction {
+      export.asFileInputStream
+    }
 
-      val filename = decodeStarPathParameter(encodedFilename)
-      val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
+    val filename = decodeStarPathParameter(encodedFilename)
+    val contentDisposition = ContentDisposition.fromFilename(filename).contentDisposition
 
-      Ok.feed(Enumerator.fromStream(inputStream))
-        .withHeaders(
-          CONTENT_TYPE -> export.contentType,
-          CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API makes no guarantee
-          CACHE_CONTROL -> "max-age=0",
-          CONTENT_DISPOSITION -> contentDisposition
-        )
-    } }
+    Ok.feed(Enumerator.fromStream(inputStream))
+      .withHeaders(
+        CONTENT_TYPE -> export.contentType,
+        CONTENT_LENGTH -> inputStream.getChannel.size.toString, // The InputStream.available API makes no guarantee
+        CACHE_CONTROL -> "max-age=0",
+        CONTENT_DISPOSITION -> contentDisposition
+      )
   }
 
-  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
-    val documents = storage.loadDocumentsWithStringTags(documentSetId)
-    val rows = rowsCreator.documentsWithStringTags(documents)
-    val export = createExport(rows, format)
+  def documentsWithStringTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    Future(OverviewDatabase.inTransaction {
+      val documents = storage.loadDocumentsWithStringTags(documentSetId)
+      val rows = rowsCreator.documentsWithStringTags(documents)
+      val export = createExport(rows, format)
 
-    serveExport(export, encodedFilename)
+      serveExport(export, encodedFilename)
+    })
   }
 
-  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)) { implicit request =>
-    val tags = storage.loadTags(documentSetId)
-    val documents = storage.loadDocumentsWithTagIds(documentSetId)
-    val rows = rowsCreator.documentsWithColumnTags(documents, tags)
-    val export = createExport(rows, format)
+  def documentsWithColumnTags(format: Format, encodedFilename: String, documentSetId: Long) = AuthorizedAction(userViewingDocumentSet(documentSetId)).async { implicit request =>
+    Future(OverviewDatabase.inTransaction {
+      val tags = storage.loadTags(documentSetId)
+      val documents = storage.loadDocumentsWithTagIds(documentSetId)
+      val rows = rowsCreator.documentsWithColumnTags(documents, tags)
+      val export = createExport(rows, format)
 
-    serveExport(export, encodedFilename)
+      serveExport(export, encodedFilename)
+    })
   }
 
   protected val storage: DocumentSetExportController.Storage

@@ -8,7 +8,6 @@
 package org.overviewproject.persistence
 
 import org.overviewproject.persistence.orm.Schema._
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.test.IdGenerator._
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
@@ -18,6 +17,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
   step(setupDb)
 
   trait DocumentsSetup extends DbTestContext {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     var documentSet: DocumentSet = _
     var node: Node = _
 
@@ -65,7 +65,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       val afterThreshold = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((node.id, _))
 
-      afterThreshold must haveTheSameElementsAs(expectedNodeDocuments)
+      afterThreshold must containTheSameElementsAs(expectedNodeDocuments)
     }
 
     "reset count after inserting data" in new DocumentsSetup {
@@ -84,7 +84,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       val allInserted = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((node.id, _))
 
-      allInserted must haveTheSameElementsAs(expectedNodeDocuments)
+      allInserted must containTheSameElementsAs(expectedNodeDocuments)
 
     }
 
@@ -97,7 +97,7 @@ class NodeDocumentBatchInserterSpec extends DbSpecification {
       val flushedDocuments = findNodeDocumentIds
       val expectedNodeDocuments = documentIds.map((node.id, _))
 
-      flushedDocuments must haveTheSameElementsAs(expectedNodeDocuments)
+      flushedDocuments must containTheSameElementsAs(expectedNodeDocuments)
     }
 
     "flush with no queued inserts doesn't fail" in new DocumentsSetup {

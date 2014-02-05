@@ -21,7 +21,7 @@
     <title>@title</title>
     <link rel="shortcut icon" type="image/x-icon" href="@routes.Assets.at("images/favicon.ico")" />
     <link rel="stylesheet" type="text/css" href="@routes.Assets.at("stylesheets/main.css")" />
-    @defining(play.filters.csrf.CSRF.Conf.TOKEN_NAME) { csrfTokenName =>
+    @defining(play.filters.csrf.CSRF.TokenName) { csrfTokenName =>
       @for(csrfToken <- play.filters.csrf.CSRF.getToken(request).map(_.value)) {
         <script>
           window.csrfTokenName = "@csrfTokenName";

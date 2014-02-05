@@ -69,7 +69,7 @@ class DocumentReceiverSpec extends Specification with NoTimeConversions {
       
       retrievalDone.isCompleted must beTrue
       val retrievalResult: RetrievalResult = Await.result(retrievalDone.future, 1 millis)
-      retrievalResult.failedRetrievals must haveTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
+      retrievalResult.failedRetrievals must containTheSameElementsAs(Seq(DocumentRetrievalError(url, text)))
       retrievalResult.numberOfDocumentsRetrieved must be equalTo(r)
       retrievalResult.totalDocumentsInQuery must be equalTo(t)
     }

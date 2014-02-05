@@ -4,7 +4,6 @@ import org.overviewproject.database.DB
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.LO
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, File, UploadedFile }
 
@@ -15,6 +14,7 @@ class DocumentClonerSpec extends DbSpecification {
   "DocumentCloner" should {
 
     trait CloneContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var documentSetId: Long = _
       var documentSetCloneId: Long = _
       var expectedCloneData: Seq[(Long, String)] = _
@@ -54,6 +54,7 @@ class DocumentClonerSpec extends DbSpecification {
     }
 
     trait PdfUploadContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var documentSetId: Long = _
       var documentSetCloneId: Long = _
 
@@ -103,20 +104,20 @@ class DocumentClonerSpec extends DbSpecification {
 
     "Create document clones" in new CloneContext {
       val clonedData = clonedDocuments.map(d => (d.documentSetId, d.text.get))
-      clonedData must haveTheSameElementsAs(expectedCloneData)
+      clonedData must containTheSameElementsAs(expectedCloneData)
     }
 
     "Create clones with ids matching source ids" in new CloneContext {
       val sourceIndeces = sourceDocuments.map(d => (d.id << 32) >> 32)
       val cloneIndeces = clonedDocuments.map(d => (d.id << 32) >> 32)
 
-      sourceIndeces must haveTheSameElementsAs(cloneIndeces)
+      sourceIndeces must containTheSameElementsAs(cloneIndeces)
     }
 
     "create clones with documentSetId encoded in id" in new DocumentsWithLargeIds {
       val highOrderBits = clonedDocuments.map(_.id >> 32)
 
-      highOrderBits.distinct must contain(documentSetCloneId).only
+      highOrderBits.distinct must beEqualTo(Seq(documentSetCloneId))
     }
 
     inExample("increase refcount on files") in new PdfUploadContext {

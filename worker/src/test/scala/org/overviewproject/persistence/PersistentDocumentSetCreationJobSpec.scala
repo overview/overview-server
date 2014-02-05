@@ -9,7 +9,6 @@ package org.overviewproject.persistence
 
 import org.overviewproject.database.DB
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
@@ -21,6 +20,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   step(setupDb)
 
   def insertDocumentSetCreationJob(documentSetId: Long, state: DocumentSetCreationJobState): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val job = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.DocumentCloud,
@@ -30,6 +30,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
 
   def insertDocumentCloudJob(documentSetId: Long, state: DocumentSetCreationJobState, dcUserName: String, dcPassword: String): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val job = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.DocumentCloud,
@@ -40,6 +41,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
 
   def insertCsvImportJob(documentSetId: Long, state: DocumentSetCreationJobState, contentsOid: Long): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val job = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.CsvUpload,
@@ -50,6 +52,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
 
   def insertCloneJob(documentSetId: Long, state: DocumentSetCreationJobState, sourceDocumentSetId: Long): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val job = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.Clone,
@@ -64,6 +67,7 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
   }
   
   def updateJobState(jobId: Long, state: DocumentSetCreationJobState) {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     update(Schema.documentSetCreationJobs)(j => where(j.id === jobId) set(j.state := state))
   }
 
@@ -149,15 +153,15 @@ class PersistentDocumentSetCreationJobSpec extends DbSpecification {
       val notStarted = PersistentDocumentSetCreationJob.findJobsWithState(NotStarted)
 
       notStarted must have size (2)
-      notStarted.map(_.state).distinct must contain(NotStarted).only
-      notStarted.map(_.documentSetId).distinct must contain(documentSetId).only
+      notStarted.map(_.state).distinct must beEqualTo(Seq(NotStarted))
+      notStarted.map(_.documentSetId).distinct must beEqualTo(Seq(documentSetId))
     }
 
     "find all in progress jobs" in new JobQueueSetup {
       val inProgress = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
 
       inProgress must have size (2)
-      inProgress.map(_.state).distinct must contain(InProgress).only
+      inProgress.map(_.state).distinct must beEqualTo(Seq(InProgress))
     }
 
     "update job state" in new JobSetup {

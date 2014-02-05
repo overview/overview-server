@@ -1,5 +1,6 @@
 package controllers
 
+import akka.util.Timeout
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -15,6 +16,8 @@ import models.{OverviewUser, ResetPasswordRequest}
 
 class PasswordControllerSpec extends Specification {
   step(start(FakeApplication()))
+
+  implicit val timeout : Timeout = Timeout(999999)
 
   trait OurScope extends Scope with Mockito {
     // We need DbTestContext for the "implicit Connection", even though we never use it

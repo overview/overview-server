@@ -55,7 +55,7 @@ class DocumentSplitterSpec extends Specification with NoTimeConversions {
     "create retriever actors for each page in the document" in new DocumentSplitterContext {
       documentSplitter ! Start()
       val documents = documentRecorder.receiveN(2)
-      documents must haveTheSameElementsAs(pages)
+      documents must containTheSameElementsAs(pages)
     }
 
     "send JobComplete() to parent when page retrievers are finished" in new DocumentSplitterContext {

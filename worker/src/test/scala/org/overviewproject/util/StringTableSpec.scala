@@ -29,7 +29,7 @@ class CompactStringToIntMapSpec extends Specification {
       strs foreach { case (k,v) => m.contains(k) must beTrue }        // contains
       strs foreach { case (k,v) => m.get(k) must beEqualTo(Some(v)) } // get
       strs foreach { case (k,v) => m(k) must beEqualTo(v) }           // apply
-      m must haveTheSameElementsAs(strs)                              // matcher (whatever that uses...)
+      m must beEqualTo(strs)                                          // matcher (whatever that uses...)
       
       // Now test element removal
       val delKey = strs.head._1 

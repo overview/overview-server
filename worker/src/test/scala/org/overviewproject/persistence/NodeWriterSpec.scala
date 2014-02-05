@@ -14,7 +14,6 @@ import org.specs2.execute.PendingUntilFixed
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
 import org.overviewproject.persistence.orm.Schema.{ documents, documentSets, nodes, nodeDocuments, trees }
 import org.overviewproject.test.IdGenerator._
-import org.overviewproject.postgres.SquerylEntrypoint._
 
 class NodeWriterSpec extends DbSpecification {
 
@@ -37,9 +36,18 @@ class NodeWriterSpec extends DbSpecification {
   "NodeWriter" should {
 
     trait NodeWriterContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
       var documentSet: DocumentSet = _
       var tree: Tree = _
       var writer: NodeWriter = _
+
+      implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
+        override def compare(a: NodeDocument, b: NodeDocument) = {
+          val c1 = a.documentId compare b.documentId
+          if (c1 == 0) a.nodeId compare b.nodeId else c1
+        }
+      }
 
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
@@ -126,7 +134,7 @@ class NodeWriterSpec extends DbSpecification {
 
       val expectedNodeDocuments = documents.map(d => NodeDocument(nodeId, d.id))
 
-      nodeDocuments must haveTheSameElementsAs(expectedNodeDocuments)
+      nodeDocuments.sorted must beEqualTo(expectedNodeDocuments.sorted)
     }
 
     "write nodes with ids generated from documentSetId" in new NodeWriterContext {

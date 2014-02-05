@@ -1,20 +1,16 @@
 package models.orm.finders
 
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.specs2.mutable.Specification
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+
 import helpers.DbTestContext
-import org.overviewproject.tree.orm._
 import models.orm.{ TestSchema }
-import org.overviewproject.tree.orm.NodeDocument
 import models.Selection
+import org.overviewproject.tree.orm._
 
 class DocumentFinderSpec extends Specification {
-
   step(start(FakeApplication()))
-
-
 
   "DocumentFinder" should {
 
@@ -24,6 +20,8 @@ class DocumentFinderSpec extends Specification {
       var untaggedDocumentIds: Seq[Int] = _
 
       override def setupWithDb = {
+        import org.overviewproject.postgres.SquerylEntrypoint._
+
         documentSet = TestSchema.documentSets.insertOrUpdate(DocumentSet())
 
         Seq.tabulate(10)(n => TestSchema.documents.insert(Document(id = n, documentSetId = documentSet.id)))
@@ -50,8 +48,8 @@ class DocumentFinderSpec extends Specification {
 
     "find untagged documents in nodes" in new TaggedDocumentsContext {
       val untagged = DocumentFinder.bySelection(Selection(documentSet.id, Nil, Nil, Nil, Nil, true)).toSeq
-      
-      untagged.map(_.id) must haveTheSameElementsAs(untaggedDocumentIds)
+
+      untagged.map(_.id) must beEqualTo(untaggedDocumentIds)
     }
   }
   step(stop)

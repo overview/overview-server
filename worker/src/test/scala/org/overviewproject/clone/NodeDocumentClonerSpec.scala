@@ -1,7 +1,6 @@
 package org.overviewproject.clone
 
 import org.overviewproject.persistence.orm.Schema 
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument, Tree }
 import org.squeryl.KeyedEntity
@@ -12,7 +11,15 @@ class NodeDocumentClonerSpec extends DbSpecification {
 
   step(setupDb)
 
+  implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
+    override def compare(a: NodeDocument, b: NodeDocument) = {
+      val c1 = a.documentId compare b.documentId
+      if (c1 == 0) a.nodeId compare b.nodeId else c1
+    }
+  }
+
   def createNodeDocuments(nodes: Seq[Node], documents: Seq[Document]): Seq[NodeDocument] = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     nodes.zip(documents).map { nd =>
       Schema.nodes.insert(nd._1)
       Schema.documents.insert(nd._2)
@@ -25,11 +32,13 @@ class NodeDocumentClonerSpec extends DbSpecification {
     source.map(_.id).zip(clone.map(_.id)).toMap
 
   def insertDocumentSet(title: String): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val documentSet = documentSets.insertOrUpdate(DocumentSet(title = title))
     documentSet.id
   }
   
   def insertTree(documentSetId: Long, title: String): Long = {
+    import org.overviewproject.postgres.SquerylEntrypoint._
     val tree = Tree(documentSetId, documentSetId, title, 100, "en", "", "")
     trees.insert(tree)
     
@@ -39,6 +48,7 @@ class NodeDocumentClonerSpec extends DbSpecification {
   "NodeDocumentCloner" should {
 
     "clone the node_document table" in new DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       val documentSetId = insertDocumentSet("NodeDocumentClonerSpec")
       val cloneDocumentSetId = insertDocumentSet("ClonedNodeDocumentClonerSpec")
       val treeId = insertTree(documentSetId, "source tree")
@@ -73,8 +83,8 @@ class NodeDocumentClonerSpec extends DbSpecification {
       
       NodeDocumentCloner.clone(documentSetId, cloneDocumentSetId)
       val allNodeDocuments = Schema.nodeDocuments.allRows.toSeq
-      
-      allNodeDocuments must haveTheSameElementsAs(sourceNodeDocuments ++ cloneNodeDocuments)
+
+      allNodeDocuments.sorted must beEqualTo((sourceNodeDocuments ++ cloneNodeDocuments).sorted)
     }
   }
 

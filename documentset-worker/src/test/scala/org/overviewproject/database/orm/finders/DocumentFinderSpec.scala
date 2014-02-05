@@ -25,7 +25,7 @@ class DocumentFinderSpec extends DbSpecification {
       val documentCloudIds = Seq.tabulate(5)(n => s"documentCloudId-${n + 1}")
       val foundDocuments = DocumentFinder.byDocumentSetAndDocumentCloudIds(documentSetId, documentCloudIds)
 
-      foundDocuments.map(_.id) must haveTheSameElementsAs(allDocumentIds.take(5))
+      foundDocuments.map(_.id) must containTheSameElementsAs(allDocumentIds.take(5))
     }
 
     "return empty list if documentCloudIds list is empty" in new DocumentSetup {

@@ -1,5 +1,6 @@
 package controllers
 
+import akka.util.Timeout
 import java.sql.SQLException
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -16,6 +17,8 @@ import models.{PotentialNewUser, OverviewUser, ConfirmationRequest}
 
 class UserControllerSpec extends Specification {
   step(start(FakeApplication()))
+
+  implicit val timeout : Timeout = Timeout(999999)
 
   trait OurScope extends Scope with Mockito {
     val validEmail = "user@example.org"

@@ -1,7 +1,6 @@
 package org.overviewproject.clone
 
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.Node
 import org.overviewproject.persistence.DocumentSetIdGenerator
@@ -15,6 +14,7 @@ class NodeClonerSpec extends DbSpecification {
     val documentCache: Array[Long] = Seq.tabulate[Long](10)(identity).toArray
 
     def createTreeNodes(treeId: Long, parentId: Option[Long], depth: Int): Seq[Node] = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       if (depth == 0) Nil
       else {
         val child = Node(
@@ -38,6 +38,7 @@ class NodeClonerSpec extends DbSpecification {
     var ids: DocumentSetIdGenerator = _
 
     override def setupWithDb = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "NodeClonerSpec"))
       documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "clone"))
       
@@ -69,13 +70,13 @@ class NodeClonerSpec extends DbSpecification {
       val sourceIndeces = sourceNodes.map(n => (n.id << 32) >> 32)
       val cloneIndeces = cloneNodes.map(n => (n.id << 32) >> 32)
 
-      cloneIndeces must haveTheSameElementsAs(sourceIndeces)
+      cloneIndeces must containTheSameElementsAs(sourceIndeces)
     }
 
     "map document id cache" in new CloneContext {
       val cloneCache = documentCache.map((documentSetClone.id << 32) | _)
 
-      cloneNodes.head.cachedDocumentIds.toSeq must haveTheSameElementsAs(cloneCache)
+      cloneNodes.head.cachedDocumentIds.toSeq must containTheSameElementsAs(cloneCache)
     }
   }
 

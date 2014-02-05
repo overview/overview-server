@@ -1,24 +1,22 @@
 package controllers
 
-import play.api.Play.{ start, stop }
-import org.specs2.mutable.Specification
-import play.api.test.FakeApplication
-import org.specs2.mock.Mockito
-import org.overviewproject.tree.orm.GroupedFileUpload
-import java.util.UUID
-import play.api.libs.iteratee.Iteratee
-import play.api.mvc.Result
-import models.OverviewUser
-import models.orm.User
 import controllers.auth.AuthorizedRequest
-import play.api.test.FakeRequest
-import play.api.test.Helpers._
-import play.api.mvc.RequestHeader
+import java.util.UUID
+import models.orm.User
+import models.OverviewUser
 import org.overviewproject.tree.orm.FileGroup
-import org.specs2.specification.Scope
+import org.overviewproject.tree.orm.GroupedFileUpload
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
-import play.api.test.FakeHeaders
-import org.specs2.execute.PendingUntilFixed
+import org.specs2.mutable.Specification
+import org.specs2.specification.Scope
+import play.api.libs.iteratee.Iteratee
+import play.api.mvc.{ RequestHeader, SimpleResult }
+import play.api.Play.{ start, stop }
+import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
+import play.api.test.Helpers._
+import scala.concurrent.Future
+
 import org.overviewproject.tree.orm.DocumentSet
 
 class MassUploadControllerSpec extends Specification with Mockito {
@@ -27,7 +25,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
   class TestMassUploadController extends MassUploadController {
     // We can leave this undefined, since it will not be called.
-    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
+    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] =
       ???
 
     override val storage = smartMock[Storage]
@@ -61,9 +59,9 @@ class MassUploadControllerSpec extends Specification with Mockito {
       foundUpload map { u => u.fileGroupId returns fileGroupId }
     }
 
-    def executeRequest: Result
+    def executeRequest: Future[SimpleResult]
 
-    lazy val result: Result = executeRequest
+    lazy val result = executeRequest
   }
 
   trait NoFileGroup extends FileGroupProvider {
@@ -130,7 +128,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
   "MassUploadController.create" should {
 
     trait CreateRequest extends UploadContext {
-      override def executeRequest: Result = {
+      override def executeRequest = {
         val baseRequest = FakeRequest[GroupedFileUpload]("POST", s"/files/$guid", FakeHeaders(), foundUpload.get)
         val request = new AuthorizedRequest(baseRequest, user)
 
@@ -147,7 +145,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
   "MassUploadController.show" should {
 
     trait ShowRequest extends UploadContext {
-      override def executeRequest: Result = {
+      override def executeRequest = {
         val request = new AuthorizedRequest(FakeRequest(), user)
 
         controller.show(guid)(request)
@@ -193,7 +191,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
         ("important_words") -> importantWords)
      val documentSetId = 11l
 
-      override def executeRequest: Result = {
+      override def executeRequest = {
         val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), user)
         controller.startClustering(request)
       }

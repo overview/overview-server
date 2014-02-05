@@ -2,7 +2,6 @@ package org.overviewproject.clone
 
 import org.overviewproject.persistence.DocumentSetIdGenerator
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, DocumentTag, Tag }
 import org.squeryl.KeyedEntity
@@ -12,9 +11,17 @@ class DocumentTagClonerSpec extends DbSpecification {
 
   step(setupDb)
 
+  implicit object DocumentTagOrdering extends math.Ordering[DocumentTag] {
+    override def compare(a: DocumentTag, b: DocumentTag) = {
+      val c1 = a.documentId compare b.documentId
+      if (c1 == 0) a.tagId compare b.tagId else c1
+    }
+  }
+
   "DocumentTagCloner" should {
 
     trait DocumentTagContext extends DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
       var sourceDocumentSet: DocumentSet = _
       var cloneDocumentSet: DocumentSet = _
       var sourceDocumentTags: Seq[DocumentTag] = _
@@ -58,9 +65,10 @@ class DocumentTagClonerSpec extends DbSpecification {
     "clone DocumentTags" in new DocumentTagContext {
       DocumentTagCloner.clone(sourceDocumentSet.id, cloneDocumentSet.id, tagMapping)
 
+      import org.overviewproject.postgres.SquerylEntrypoint._
       val documentTags = Schema.documentTags.allRows.toSeq
 
-      documentTags must haveTheSameElementsAs(sourceDocumentTags ++ cloneDocumentTags)
+      documentTags.sorted must beEqualTo((sourceDocumentTags ++ cloneDocumentTags).sorted)
     }
     
     "don't try to clone if there are no tags" in new DocumentTagContext {

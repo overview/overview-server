@@ -1,22 +1,24 @@
 package controllers.util
 
 import java.io.ByteArrayInputStream
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util.Random
-import play.api.libs.iteratee.Enumerator
-import play.api.mvc.Results._
-import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
+import java.net.URLEncoder
+import java.util.UUID
+import org.mockito.ArgumentCaptor
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.libs.concurrent.Execution
+import play.api.libs.iteratee.Enumerator
 import play.api.mvc.RequestHeader
+import play.api.mvc.Results._
 import play.api.test.FakeHeaders
 import play.api.test.Helpers._
-import java.util.UUID
-import java.net.URLEncoder
-import org.mockito.ArgumentCaptor
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.util.Random
+
 import views.html.defaultpages.badRequest
+import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
 
 class MassUploadFileIterateeSpec extends Specification with Mockito {
 
@@ -97,7 +99,7 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     trait FailingUploadContext extends UploadContext {
       override lazy val iteratee: TestMassUploadFileIteratee = new FailingMassUploadFileIteratee
       override val bufferSize = total
-      override val enumerator = Enumerator.fromStream(input)
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
       override val createFileGroup = false
     }
 
@@ -158,29 +160,29 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
 
     trait SingleChunkUpload extends UploadContext with GoodHeaders {
       override val bufferSize = total
-      override val enumerator = Enumerator.fromStream(input)
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
     }
 
     trait MultipleChunksUpload extends UploadContext with GoodHeaders {
       val chunkSize = 100
       override val bufferSize = chunkSize
-      override val enumerator = Enumerator.fromStream(input, chunkSize)
+      override val enumerator = Enumerator.fromStream(input, chunkSize)(Execution.defaultContext)
     }
 
     trait BufferedUpload extends UploadContext with GoodHeaders {
       val chunkSize = 64
       override val bufferSize = 150
-      override val enumerator = Enumerator.fromStream(input, chunkSize)
+      override val enumerator = Enumerator.fromStream(input, chunkSize)(Execution.defaultContext)
     }
 
     trait UploadWithMissingHeaders extends UploadContext with MissingOptionalHeaders {
       override val bufferSize = total
-      override val enumerator = Enumerator.fromStream(input)
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
     }
 
     trait RestartContext extends RestartingUploadContext with RestartHeaders {
       override val bufferSize = total
-      override val enumerator = Enumerator.fromStream(input)
+      override val enumerator = Enumerator.fromStream(input)(Execution.defaultContext)
     }
 
     "create a FileGroup if there is none" in new SingleChunkUpload with NoFileGroup {

@@ -4,7 +4,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.Play.{start, stop}
-import play.api.mvc.{PlainResult, RequestHeader}
+import play.api.mvc.{SimpleResult, RequestHeader}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers.{FORBIDDEN, SEE_OTHER, status}
 
@@ -48,7 +48,7 @@ class UserFactorySpec extends Specification {
       override protected lazy val isMultiUser = true
     }
 
-    def result: Either[PlainResult, OverviewUser] = userFactory.loadUser(request, authority)
+    def result: Either[SimpleResult, OverviewUser] = userFactory.loadUser(request, authority)
   }
 
   trait AuthorizedMultiUserScope extends MultiUserScope {
@@ -71,27 +71,27 @@ class UserFactorySpec extends Specification {
   "UserFactory" should {
     "loadUser() should return Redirect when session is empty" in new MultiUserScope() {
       override val request = FakeRequest()
-      result must beLeft.like({case r: PlainResult => status(r) must beEqualTo(SEE_OTHER)})
+      result must beLeft.like({case r: SimpleResult => r.header.status must beEqualTo(SEE_OTHER)})
     }
 
     "loadUser() should return Redirect when the session does not contain a user-id value" in new MultiUserScope() {
       override val request = FakeRequest().withSession("SomeOtherKey" -> "SomeValueWeIgnore")
-      result must beLeft.like({case r: PlainResult => status(r) must beEqualTo(SEE_OTHER)})
+      result must beLeft.like({case r: SimpleResult => r.header.status must beEqualTo(SEE_OTHER)})
     }
 
     "loadUser() should return Redirect when the user-id is not an integer" in new MultiUserScope() {
       override val request = FakeRequest().withSession(UserIdKey -> "123... oops")
-      result must beLeft.like({case r: PlainResult => status(r) must beEqualTo(SEE_OTHER)})
+      result must beLeft.like({case r: SimpleResult => r.header.status must beEqualTo(SEE_OTHER)})
     }
 
     "loadUser() should return Redirect when the user-id is not a valid user" in new MultiUserScope() {
       override val request = FakeRequest().withSession(UserIdKey -> nonexistentUserId.toString)
-      result must beLeft.like({case r: PlainResult => status(r) must beEqualTo(SEE_OTHER)})
+      result must beLeft.like({case r: SimpleResult => r.header.status must beEqualTo(SEE_OTHER)})
     }
 
     "loadUser() should return Forbidden when the user is not authorized" in new MultiUserScope() {
       override val request = FakeRequest().withSession(UserIdKey -> unauthorizedUserId.toString)
-      result must beLeft.like({case r: PlainResult => status(r) must beEqualTo(FORBIDDEN)})
+      result must beLeft.like({case r: SimpleResult => r.header.status must beEqualTo(FORBIDDEN)})
     }
 
     "loadUser() should return an OverviewUser when the user is authorized" in new AuthorizedMultiUserScope() {

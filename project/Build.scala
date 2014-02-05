@@ -3,7 +3,6 @@ import Keys._
 import play.Project._
 import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
-import com.typesafe.sbt.SbtStartScript
 
 object ApplicationBuild extends Build with ProjectSettings {
   override def settings = super.settings ++ Seq(
@@ -17,21 +16,22 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   val ourTestWithNoDbOptions = Seq(
-    Tests.Argument("xonly"),
+    Tests.Argument("xonly")/*,
     Tests.Setup { loader =>
       // Load Logger so configurations happen in the right order
       loader.loadClass("org.slf4j.LoggerFactory")
         .getMethod("getLogger", loader.loadClass("java.lang.String"))
         .invoke(null, "ROOT")
     }
+    */
   )
 
   val ourTestOptions = ourTestWithNoDbOptions ++ Seq(
     Tests.Setup { () =>
       System.setProperty("datasource.default.url", testDatabaseUrl)
       System.setProperty("logback.configurationFile", "logback-test.xml")
-    },
-    Tests.Setup(loader => ClearTestDatabase(loader)))
+    }/*,
+    Tests.Setup(loader => ClearTestDatabase(loader))*/)
 
   val printClasspathTask = TaskKey[Unit]("print-classpath")
   val printClasspath = printClasspathTask <<= (fullClasspath in Runtime) map { classpath =>
@@ -39,13 +39,13 @@ object ApplicationBuild extends Build with ProjectSettings {
   }
 
   val messageBroker = Project("message-broker", file("message-broker"), settings =
-    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings ++
+    Defaults.defaultSettings ++ OverviewCommands.defaultSettings ++
       Seq(
         libraryDependencies ++= messageBrokerDependencies,
         printClasspath))
 
   val searchIndex = Project("search-index", file("search-index"), settings =
-    Defaults.defaultSettings ++ SbtStartScript.startScriptForClassesSettings ++ OverviewCommands.defaultSettings).settings(
+    Defaults.defaultSettings ++ OverviewCommands.defaultSettings).settings(
         libraryDependencies ++= searchIndexDependencies,
         Keys.fork := true,
         javaOptions in run <++= (baseDirectory) map { (d) =>
@@ -85,7 +85,6 @@ object ApplicationBuild extends Build with ProjectSettings {
       Project(name, file(name), settings =
         Defaults.defaultSettings ++
           defaultSettings ++
-          SbtStartScript.startScriptForClassesSettings ++
           Seq(printClasspath) ++
           addUnmanagedResourceDirectory(useSharedConfig) ++
           Seq(
@@ -170,9 +169,9 @@ object ApplicationBuild extends Build with ProjectSettings {
       )
       .settings(
         if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false") {
-          lessEntryPoints := Nil
+          play.Keys.lessEntryPoints := Nil
         } else {
-          lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
+          play.Keys.lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
         }
       )
       .dependsOn(common)

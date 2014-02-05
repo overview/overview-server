@@ -1,11 +1,11 @@
 package views.json.Tree
 
-import play.api.libs.json.Json.toJson
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.orm.{ Node, Document, Tag }
 
-class showSpec extends Specification {
+class showSpec extends Specification with JsonMatchers {
   def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
     Node(
       id=id,

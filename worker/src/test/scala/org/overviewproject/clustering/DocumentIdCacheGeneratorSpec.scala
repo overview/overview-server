@@ -82,7 +82,7 @@ class DocumentIdCacheGeneratorSpec extends Specification {
       val childCaches = idsWithDescriptions.grouped(50).map(_.sortBy(_._2).map(_._1)).map(_.take(10)).toSeq
       
       val caches = root.children.map(_.documentIdCache.documentIds.toSeq)
-      caches must haveTheSameElementsAs(childCaches)
+      caches must containTheSameElementsAs(childCaches)
     }
     
     "sort by id if descriptions are the same" in new EqualDescriptions {

@@ -138,12 +138,14 @@ class BigramDocumentVectorGeneratorSpec extends Specification {
       
       // these bigrams we must have ("mat_mat" because it appears twice in "mat mat mat")
       val bigrams = Seq("the_cat", "sat_on", "on_the", "the_mat", "the_rat", "mat_mat")
-      bigrams should haveAllElementsLike { case b => strs.stringToIdFailIfMissing(b) should beGreaterThanOrEqualTo(0) }
+      forall(bigrams) { bigram => strs.stringToIdFailIfMissing(bigram) must be_>=(0) }
       
       // these must not be detected as bigrams, because they occur only once
       val notBigrams = Seq("cat_sat", "sat_sat", "cat_ate", "ate_the", "rat_sat",  
                            "rat_doesn't", "doesn't_really", "really_care", "care_about", "about_the", "cat_cat")
-      notBigrams should haveAllElementsLike { case b => strs.stringToIdFailIfMissing(b) should throwA[java.util.NoSuchElementException] } 
+      forall(notBigrams) { notBigram =>
+        strs.stringToIdFailIfMissing(notBigram) must throwA[java.util.NoSuchElementException]
+      }
     }
   }
 

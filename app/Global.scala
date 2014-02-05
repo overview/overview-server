@@ -1,24 +1,21 @@
 import play.api.{GlobalSettings,Logger}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 import play.filters.csrf.CSRFFilter
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-object LoggingFilter extends Filter {
-  /* Straight from http://www.playframework.com/documentation/2.1.1/ScalaHttpFilters */
-  def apply(next: (RequestHeader) => Result)(rh: RequestHeader) = {
-    val start = System.currentTimeMillis
-
-    def logTime(result: PlainResult): Result = {
-      val time = System.currentTimeMillis - start
-      Logger.info(s"${rh.method} ${rh.uri} took ${time}ms and returned ${result.header.status}")
-      result.withHeaders("Request-Time" -> time.toString)
-    }
-
-    Logger.info(s"${rh.method} ${rh.uri} ...")
-
-    next(rh) match {
-      case plain: PlainResult => logTime(plain)
-      case async: AsyncResult => async.transform(logTime)
+object LoggingFilter extends EssentialFilter {
+  // Copy/paste of http://www.playframework.com/documentation/2.2.1/ScalaHttpFilters
+  def apply(nextFilter: EssentialAction) = new EssentialAction {
+    def apply(requestHeader: RequestHeader) = {
+      val startTime = System.currentTimeMillis
+      Logger.info(s"${requestHeader.method} ${requestHeader.uri}...")
+      nextFilter(requestHeader).map { result =>
+        val endTime = System.currentTimeMillis
+        val requestTime = endTime - startTime
+        Logger.info(s"${requestHeader.method} ${requestHeader.uri} took ${requestTime}ms and returned ${result.header.status}")
+        result.withHeaders("Request-Time" -> requestTime.toString)
+      }
     }
   }
 }

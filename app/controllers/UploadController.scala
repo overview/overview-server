@@ -2,8 +2,10 @@ package controllers
 
 import java.util.UUID
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
+import scala.concurrent.Future
 
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, DocumentSetUser }
@@ -23,14 +25,13 @@ import models.upload.OverviewUpload
  * in FileUploadIteratee.
  */
 trait UploadController extends Controller {
-
   // authorizedBodyParser doesn't belong here.
   // Should move into BaseController and/or TransactionAction, but it's not
   // clear how, since the usage here flips the dependency
   def authorizedBodyParser[A](authority: Authority)(f: OverviewUser => BodyParser[A]) = parse.using { implicit request =>
-    val user: Either[Result, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
+    val user: Either[SimpleResult, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
     user match {
-      case Left(e) => parse.error(e)
+      case Left(e) => parse.error(Future(e))
       case Right(user) => f(user)
     }
   }
@@ -102,7 +103,7 @@ trait UploadController extends Controller {
     fileUploadIteratee(user.id, guid, request)
   }
 
-  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
+  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload): Unit
   protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String, importantWords: String): Unit
@@ -113,7 +114,7 @@ trait UploadController extends Controller {
  */
 object UploadController extends UploadController with PgConnection {
 
-  def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
+  def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)

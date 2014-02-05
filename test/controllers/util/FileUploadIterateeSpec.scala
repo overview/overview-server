@@ -8,8 +8,9 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
+import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
-import play.api.mvc.{RequestHeader, Result}
+import play.api.mvc.{RequestHeader, SimpleResult}
 import play.api.test.{FakeHeaders, FakeRequest}
 import play.api.test.Helpers._
 import scala.concurrent.Await
@@ -104,12 +105,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def request: RequestHeader
       // Drive the iteratee with the enumerator to generate a result
-      def result: Either[Result, OverviewUpload] = {
+      def result: Either[SimpleResult, OverviewUpload] = {
         implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
 
         val resultFuture = for {
           doneIt <- enumerator(uploadIteratee.store(userId, guid, request, 15))
-          result: Either[Result, OverviewUpload] <- doneIt.run
+          result: Either[SimpleResult, OverviewUpload] <- doneIt.run
         } yield result
 
         Await.result(resultFuture, scala.concurrent.duration.Duration.Inf)
@@ -195,17 +196,17 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     // Enumerators
     trait SingleChunk {
       self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)
+      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input)(Execution.defaultContext)
     }
 
     trait MultipleChunks {
       self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)
+      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 10)(Execution.defaultContext)
     }
 
     trait LastChunkWillNotFillBuffer {
       self: UploadContext =>
-      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 8)
+      def enumerator: Enumerator[Array[Byte]] = Enumerator.fromStream(input, 8)(Execution.defaultContext)
     }
 
     "process Enumerator with one chunk only" in new GoodUpload with SingleChunk with GoodHeader {
@@ -255,13 +256,13 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return BAD_REQUEST if headers are bad" in new GoodUpload with SingleChunk with BadHeader {
-      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
     }
 
     "return BAD_REQUEST and cancel upload if CONTENT_RANGE starts at the wrong byte" in new GoodUpload with SingleChunk with InProgressHeader {
       uploadIteratee.createUpload(userId, guid, "foo", "bar", 1000)
 
-      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
       uploadIteratee.uploadCancelled must beTrue
     }
 
@@ -279,11 +280,11 @@ class FileUploadIterateeSpec extends Specification with Mockito {
     }
 
     "return BAD_REQUEST if headers can't be parsed" in new GoodUpload with SingleChunk with MalformedHeader {
-      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
     }
 
     "return BAD_REQUEST if upload is longer than expected" in new GoodUpload with SingleChunk with ShortUploadHeader {
-      result must beLeft.like { case r => status(r) must be equalTo (BAD_REQUEST) }
+      result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
     }
   }
 }

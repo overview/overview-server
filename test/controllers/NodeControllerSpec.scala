@@ -3,6 +3,7 @@ package controllers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.specs2.matcher.JsonMatchers
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{start,stop}
@@ -12,7 +13,7 @@ import org.overviewproject.tree.orm.{Node, Tag, SearchResult, SearchResultState}
 import models.OverviewUser
 import models.orm.User
 
-class NodeControllerSpec extends Specification with Mockito {
+class NodeControllerSpec extends Specification with Mockito with JsonMatchers {
   step(start(FakeApplication()))
 
   trait TestScope extends Scope {

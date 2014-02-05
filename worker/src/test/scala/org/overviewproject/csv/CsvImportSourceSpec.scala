@@ -190,7 +190,7 @@ class CsvImportSourceSpec extends Specification {
 
     "create documents with empty text if no text is found" in new MissingText {
       val texts = csvImportSource.map(_.text)
-      texts must haveTheSameElementsAs(Seq.fill(5)(""))
+      texts must containTheSameElementsAs(Seq.fill(5)(""))
     }
 
     "leave url empty if no header found" in new ValidInput {
@@ -205,7 +205,7 @@ class CsvImportSourceSpec extends Specification {
     }
 
     "add tags to Documents" in new ValidInputWithTags {
-      csvImportSource.map(d => (d.text, d.tags.toList)) must haveTheSameElementsAs(tags)
+      csvImportSource.map(d => (d.text -> d.tags.toList)).toMap must beEqualTo(tags)
     }
   }
 }

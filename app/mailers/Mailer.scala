@@ -11,8 +11,7 @@ trait Mailer {
   val recipients: Seq[String]
   val text: String
   val html: Node
-  val from: Seq[String] = Seq(configuration.getString("mail.from").getOrElse(throw new Exception("You must set the 'mail.from' property to send mail.")))
-    
+  val from: String = configuration.getString("mail.from").getOrElse(throw new Exception("You must set the 'mail.from' property to send mail."))
 
   private def wordWrapLine(line: String) : String = {
     if (line.length <= WrapWidth) {
@@ -37,8 +36,8 @@ trait Mailer {
 
     val mail = use[MailerPlugin].email
     mail.setSubject(subject)
-    recipients.map(mail.addRecipient(_))
-    from.map(mail.addFrom(_))
+    mail.setRecipient(recipients: _*)
+    mail.setFrom(from)
     mail.send(wordWrappedText, htmlString)
   }
 }

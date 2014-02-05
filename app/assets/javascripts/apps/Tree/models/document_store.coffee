@@ -44,7 +44,7 @@ define [ 'underscore', './observable' ], (_, observable) ->
       undefined
 
     rewrite_tag_id: (old_tagid, new_tagid) ->
-      for _, document of @documents
+      for __, document of @documents
         tagids = document.tagids
         index = tagids?.indexOf(old_tagid)
         if index? && index != -1

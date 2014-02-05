@@ -35,7 +35,7 @@ class KMeansDocumentComponentsSpec extends Specification {
       val component = new DocumentComponent(docs, docVecs)
       
       component.nDocs should beEqualTo(3)
-      docs should haveTheSameElementsAs(component.docs)
+      docs should containTheSameElementsAs(component.docs)
       
       // The centroid should be equal to (word1->1, word2->2, word3->2, word4->1) normalized, so divided by sqrt(10)
       val id1 = strs.stringToId("word1")

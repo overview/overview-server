@@ -3,8 +3,9 @@ package controllers.util
 import java.util.UUID
 import scala.util.control.Exception._
 import play.api.http.HeaderNames._
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.{ Done, Input, Iteratee }
-import play.api.mvc.{ RequestHeader, Result }
+import play.api.mvc.{ RequestHeader, SimpleResult }
 import play.api.mvc.Results.BadRequest
 import org.overviewproject.postgres.LO
 import models.upload.OverviewUpload
@@ -41,7 +42,7 @@ trait FileUploadIteratee {
   /**
    * Checks the validity of the requests and processes the upload.
    */
-  def store(userId: Long, guid: UUID, requestHeader: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+  def store(userId: Long, guid: UUID, requestHeader: RequestHeader, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] = {
 
     val uploadRequest = UploadRequest(requestHeader).toRight(BadRequest)
 
@@ -56,13 +57,13 @@ trait FileUploadIteratee {
    * error is encountered, but will not ignore the data received after the
    * error occurs.
    */
-  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[Result, OverviewUpload]] = {
+  private def handleUploadRequest(userId: Long, guid: UUID, request: UploadRequest, bufferSize: Int): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] = {
     val initialUpload = findValidUploadRestart(userId, guid, request)
       .getOrElse(Right(createUpload(userId, guid, request.contentDisposition, request.contentType, request.contentLength)))
 
     var buffer = Array[Byte]()
 
-    Iteratee.fold[Array[Byte], Either[Result, OverviewUpload]](initialUpload) { (upload, chunk) =>
+    Iteratee.fold[Array[Byte], Either[SimpleResult, OverviewUpload]](initialUpload) { (upload, chunk) =>
       val validUpload = upload.right.flatMap(validUploadWithChunk(_, chunk).toRight(BadRequest))
       validUpload.right.flatMap { u =>
         if ((buffer.size + chunk.size) >= bufferSize) {
@@ -93,7 +94,7 @@ trait FileUploadIteratee {
    * an error status if request is invalid or the valid OverviewUpload.
    * If start is 0, any previously uploaded data is truncated.
    */
-  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[Result, OverviewUpload]] =
+  private def findValidUploadRestart(userId: Long, guid: UUID, info: UploadRequest): Option[Either[SimpleResult, OverviewUpload]] =
     findUpload(userId, guid).map(u =>
       info.start match {
         case 0 => Right(truncateUpload(u))

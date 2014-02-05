@@ -28,8 +28,8 @@ class BuildDocTreeSpec extends Specification {
             
       val (nonEmpty, empty) = BuildDocTree.gatherEmptyDocs(docVecs)
             
-      nonEmpty.docs should haveTheSameElementsAs(Set(1,3,4))
-      empty.docs should haveTheSameElementsAs(Set(2))
+      nonEmpty.docs should containTheSameElementsAs(Seq(1,3,4))
+      empty.docs should containTheSameElementsAs(Seq(2))
     }
   }
   

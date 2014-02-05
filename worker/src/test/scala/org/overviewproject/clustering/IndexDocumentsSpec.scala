@@ -48,7 +48,7 @@ class IndexDocumentsSpec extends Specification {
       val vectorGen = new UnigramDocumentVectorGenerator()
 
       // load every doc in the test directory, generate terms and load into vector generator
-      val filenames = new File("worker/src/test/resources/docs").listFiles
+      val filenames = new File("src/test/resources/docs").listFiles
       val docterms = filenames.map(filename => (filename,
         Lexer.makeTerms(io.Source.fromFile(filename).mkString, stopWords)))
       for ((filename, terms) <- docterms) {

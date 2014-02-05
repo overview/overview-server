@@ -1,13 +1,12 @@
 package models.orm.finders
 
-import org.overviewproject.postgres.SquerylEntrypoint._
 import org.specs2.mutable.Specification
-import models.orm.TestSchema._
 import play.api.Play.{ start, stop }
 import play.api.test.FakeApplication
+
 import helpers.DbTestContext
+import models.orm.TestSchema._
 import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.NodeDocument
 
 class NodeDocumentFinderSpec extends Specification {
 
@@ -16,6 +15,8 @@ class NodeDocumentFinderSpec extends Specification {
   "NodeDocumentFinder" should {
 
     trait NodeSetup {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
       def createNode(nodeId: Long, documentSetId: Long, treeId: Long): Unit = nodes.insert(
         Node(id = nodeId,
           treeId = treeId,
@@ -43,6 +44,8 @@ class NodeDocumentFinderSpec extends Specification {
       var documentSet: DocumentSet = _
 
       override def setupWithDb = {
+        import org.overviewproject.postgres.SquerylEntrypoint._
+
         documentSet = documentSets.insertOrUpdate(DocumentSet())
         val tree = createTree(documentSet.id)
         
@@ -69,6 +72,8 @@ class NodeDocumentFinderSpec extends Specification {
       val nodeId2 = 200
 
       override def setupWithDb = {
+        import org.overviewproject.postgres.SquerylEntrypoint._
+
         documentSet1 = documentSets.insertOrUpdate(DocumentSet())
         documentSet2 = documentSets.insertOrUpdate(DocumentSet())
         tree1 = createTree(documentSet1.id)
@@ -94,9 +99,9 @@ class NodeDocumentFinderSpec extends Specification {
     }
 
     "find NodeDocuments in Tree only" in new NodesInTwoDocumentSets {
-      val nodeDocuments = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id)
+      val nd = NodeDocumentFinder.byNodeIdsInTree(documentIds1 ++ documentIds2, tree1.id)
 
-      nodeDocuments.toSeq must haveTheSameElementsAs(documentIds1.map(NodeDocument(nodeId1, _)))
+      nd.toSeq must beEqualTo(documentIds1.map(NodeDocument(nodeId1, _)))
 
     }
   }
