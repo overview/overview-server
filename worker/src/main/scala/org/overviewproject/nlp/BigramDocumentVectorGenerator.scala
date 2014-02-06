@@ -280,11 +280,10 @@ class BigramDocumentVectorGenerator extends TFIDFDocumentVectorGenerator {
   // (otherwise we'd use a ton of memory, as most bigrams will be discarded during colocation detection)
   def addDocumentWithWeightedTerms(docId: DocumentID, terms: Seq[WeightedTermString]) = {
   
-    if (terms.size > 0) {
-      val docVec = countBigramTerms(terms)
-      vocab.addDocument(docVec)
-      spoolDocToDisk(docId, terms)
-    }
+    val docVec = countBigramTerms(terms)
+    vocab.addDocument(docVec)
+    spoolDocToDisk(docId, terms)
+
     _numDocs += 1
   }
 
