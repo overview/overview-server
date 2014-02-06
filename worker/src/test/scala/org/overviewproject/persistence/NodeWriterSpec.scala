@@ -39,8 +39,8 @@ class NodeWriterSpec extends DbSpecification {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
       var documentSet: DocumentSet = _
-      var tree: Tree = _
       var writer: NodeWriter = _
+      var tree: Tree = _
 
       implicit object NodeDocumentOrdering extends math.Ordering[NodeDocument] {
         override def compare(a: NodeDocument, b: NodeDocument) = {
@@ -51,15 +51,16 @@ class NodeWriterSpec extends DbSpecification {
 
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
-        tree = trees.insert(Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", ""))
-
-        writer = new NodeWriter(documentSet.id, tree.id)
+        tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+        writer = new NodeWriter(tree)
       }
 
-      protected def findRootNode: Option[Node] =
+      protected def findAllRootNodes: Iterable[Node] =
         from(nodes)(n =>
           where(n.parentId isNull)
-            select (n)).headOption
+            select (n))
+
+      protected def findRootNode: Option[Node] = findAllRootNodes.headOption
 
       protected def findChildNodes(parentIds: Iterable[Long]): Seq[Node] =
         from(nodes)(n =>
@@ -76,6 +77,17 @@ class NodeWriterSpec extends DbSpecification {
           documentcloudId = Some("documentCloud ID"), id = nextDocumentId(documentSetId)))
     }
 
+    trait MultipleTreeContext extends NodeWriterContext {
+      var writer2: NodeWriter = _
+      var tree2: Tree = _
+      
+      override def setupWithDb = {
+        super.setupWithDb
+        tree2 = Tree(nextTreeId(documentSet.id), documentSet.id, "tree2", 100, "en", "", "")
+        writer2 = new NodeWriter(tree2)
+      }
+    }
+
     "insert root node with description, document set, and no parent" in new NodeWriterContext {
       val root = new DocTreeNode(Set())
       val description = "description"
@@ -87,7 +99,6 @@ class NodeWriterSpec extends DbSpecification {
       val node = findRootNode
       node must beSome.like {
         case n =>
-          n.treeId must beEqualTo(tree.id)
           n.description must be equalTo (description)
           n.parentId must beNone
       }
@@ -146,6 +157,18 @@ class NodeWriterSpec extends DbSpecification {
       savedNode must beSome.like {
         case n => (n.id >> 32) must be equalTo (documentSet.id)
       }
+    }
+
+    "write nodes into second tree for the same document set" in new MultipleTreeContext {
+      val root1 = new DocTreeNode(Set())
+      addCache(root1)
+      writer.write(root1)
+
+      val root2 = new DocTreeNode(Set())
+      addCache(root2)
+      writer2.write(root2)
+
+      findAllRootNodes must haveSize(2)
     }
   }
 

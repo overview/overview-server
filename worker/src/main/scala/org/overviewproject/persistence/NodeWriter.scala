@@ -10,7 +10,8 @@ package org.overviewproject.persistence
 import java.sql.Connection
 import org.overviewproject.clustering.DocTreeNode
 import org.overviewproject.persistence.orm.Schema
-import org.overviewproject.tree.orm.{ Node, NodeDocument }
+import org.overviewproject.tree.orm.{ Node, NodeDocument, Tree }
+import org.overviewproject.persistence.orm.stores.TreeStore
 
 
 /**
@@ -18,11 +19,13 @@ import org.overviewproject.tree.orm.{ Node, NodeDocument }
  * Inserts entries into document and node_document tables. Documents contained by
  * the nodes must already exist in the database.
  */
-class NodeWriter(documentSetId: Long, treeId: Long) {
+class NodeWriter(tree: Tree) {
   val batchInserter = new BatchInserter[NodeDocument](500, Schema.nodeDocuments)
-  val ids = new DocumentSetIdGenerator(documentSetId)
+  val ids = new NodeIdGenerator(tree.id)
+
   
   def write(root: DocTreeNode)(implicit c: Connection) {
+    TreeStore.insert(tree)
     writeSubTree(root, None)
     batchInserter.flush
   }
@@ -30,7 +33,7 @@ class NodeWriter(documentSetId: Long, treeId: Long) {
   private def writeSubTree(node: DocTreeNode, parentId: Option[Long])(implicit c: Connection) {
     val n = Node(
       id=ids.next,
-      treeId = treeId,
+      treeId = tree.id,
       parentId=parentId,
       description=node.description,
       cachedSize=node.documentIdCache.numberOfDocuments,
@@ -44,4 +47,5 @@ class NodeWriter(documentSetId: Long, treeId: Long) {
 
     node.children.foreach(writeSubTree(_, Some(n.id)))
   }
+  
 }

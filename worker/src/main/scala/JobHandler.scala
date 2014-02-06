@@ -137,7 +137,7 @@ object JobHandler {
 
       val tree = createTree(ds, job)
 
-      val nodeWriter = new NodeWriter(job.documentSetId, tree.id)
+      val nodeWriter = new NodeWriter(tree)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
 
@@ -232,9 +232,6 @@ object JobHandler {
   private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
     val tree = Tree(TreeIdGenerator.next(documentSet.id), job.documentSetId, documentSet.title, 0,
       job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
-    Database.inTransaction {
-      TreeStore.insert(tree)
-    }
 
     tree
   }
