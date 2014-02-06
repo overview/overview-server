@@ -13,7 +13,7 @@ class NodeIdGeneratorSpec extends Specification {
       val treeId = (documentSetId << 32) | treeIndex
       val expectedNodeId = (documentSetId << 32) | (treeIndex << 20) | 1
       
-      val nodeIdGenerator = new NodeIdGenerator(documentSetId, treeId)
+      val nodeIdGenerator = new NodeIdGenerator(treeId)
       
       nodeIdGenerator.next must be equalTo(expectedNodeId)
       
