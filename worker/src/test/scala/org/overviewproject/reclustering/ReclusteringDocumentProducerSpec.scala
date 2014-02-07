@@ -53,35 +53,41 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
         progAbort.apply(any) returns false thenReturn true
     }
 
-        "read documents by page" in new ReclusteringContext {
-          val numberOfDocumentsProduced = documentProducer.produce
+    "read documents by page" in new ReclusteringContext {
+      val numberOfDocumentsProduced = documentProducer.produce
+
+      numberOfDocumentsProduced must be equalTo (numberOfDocuments)
+      there was one(documentFinder).findDocuments(1)
+      there was one(documentFinder).findDocuments(2)
+    }
+
+    "pass documents to consumer" in new ReclusteringContext {
+      documentProducer.produce
+
+      for { n <- 0 until numberOfDocuments } yield {
+        there was one(consumer).processDocument(n, s"text-$n")
+      }
+    }
+
+    "report progress" in new ReclusteringContext {
+      documentProducer.produce
+      val status = Seq.tabulate(numberOfDocuments)(n =>
+        Progress(0.5 * (1.0 + n) / numberOfDocuments, Retrieving(n + 1, numberOfDocuments)))
+
+      there was
+        one(progAbort).apply(status(0)) andThen
+        one(progAbort).apply(status(1)) andThen
+        one(progAbort).apply(status(2)) andThen
+        one(progAbort).apply(status(3)) andThen
+        one(progAbort).apply(status(4))
+
+    }
     
-          numberOfDocumentsProduced must be equalTo (numberOfDocuments)
-          there was one(documentFinder).findDocuments(1)
-          there was one(documentFinder).findDocuments(2)
-        }
-    
-        "pass documents to consumer" in new ReclusteringContext {
-          documentProducer.produce
-    
-          for { n <- 0 until numberOfDocuments } yield {
-            there was one(consumer).processDocument(n, s"text-$n")
-          }
-        }
-    
-        "report progress" in new ReclusteringContext {
-          documentProducer.produce
-          val status = Seq.tabulate(numberOfDocuments)(n =>
-            Progress(0.5 * (1.0 + n) / numberOfDocuments, Retrieving(n + 1, numberOfDocuments)))
-    
-          there was
-            one(progAbort).apply(status(0)) andThen
-            one(progAbort).apply(status(1)) andThen
-            one(progAbort).apply(status(2)) andThen
-            one(progAbort).apply(status(3)) andThen
-            one(progAbort).apply(status(4))
-    
-        }
+    "tells consumer when all documents have been found" in new ReclusteringContext {
+      documentProducer.produce
+      
+      there was one(consumer).productionComplete
+    }
 
     "stop processing when cancelled" in new CancelledClustering {
       documentProducer.produce

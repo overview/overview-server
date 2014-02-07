@@ -7,6 +7,7 @@ import org.overviewproject.persistence.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.Document
 import scala.annotation.tailrec
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
+import org.overviewproject.util.Logger
 
 trait ReclusteringDocumentProducer extends DocumentProducer {
   protected val FetchingFraction: Double = 0.5
@@ -16,23 +17,26 @@ trait ReclusteringDocumentProducer extends DocumentProducer {
   protected lazy val totalNumberOfDocuments = pagedDocumentFinder.numberOfDocuments
 
   override def produce(): Int = {
-    produceDocuments(1, 0)
+    val numberOfDocumentsProduced = produceDocuments(1, 0)
+    consumer.productionComplete()
+    
+    numberOfDocumentsProduced
   }
 
   @tailrec
   private def produceDocuments(currentPage: Int, numberOfDocumentsProcessed: Int): Int = {
     val documents = pagedDocumentFinder.findDocuments(currentPage)
-
+    
     if (documents.isEmpty) numberOfDocumentsProcessed
     else {
-      val numberOfDocumentsInPage = processDocuments(documents)
-      produceDocuments(currentPage + 1, numberOfDocumentsProcessed + numberOfDocumentsInPage)
+      val updatedNumberOfDocumentsProcessed = processDocuments(documents, numberOfDocumentsProcessed)
+      produceDocuments(currentPage + 1, updatedNumberOfDocumentsProcessed)
     }
   }
 
-  private def processDocuments(documents: Iterable[Document]): Int = {
+  private def processDocuments(documents: Iterable[Document], numberOfDocumentsProcessed: Int): Int = {
     case class State(numberOfDocuments: Int, cancelled: Boolean)
-    val result = documents.foldLeft(State(0, false)) { (s, document) =>
+    val result = documents.foldLeft(State(numberOfDocumentsProcessed, false)) { (s, document) =>
       if (!s.cancelled) document.text.map { text =>
         consumer.processDocument(document.id, text)
         State(s.numberOfDocuments + 1, reportProgress(s.numberOfDocuments + 1))
