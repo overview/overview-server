@@ -17,7 +17,8 @@ import org.overviewproject.tree.orm.DocumentSet
 import controllers.auth.AuthorizedRequest
 import models.orm.{ User }
 import org.overviewproject.tree.orm.LogEntry
-import models.{ OverviewUser, ResultPage }
+import org.overviewproject.tree.orm.finders.ResultPage
+import models.OverviewUser
 
 class LogEntryControllerSpec extends Specification with Mockito {
   import helpers.DbTestContext

@@ -1,4 +1,4 @@
-package models
+package org.overviewproject.tree.orm.finders
 
 import org.squeryl.Query
 

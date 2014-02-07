@@ -4,9 +4,10 @@ import play.api.mvc.{AnyContent, Controller, Request}
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
-import models.{ResultPage,Selection,IdList}
+import models.{ Selection,IdList }
 import models.orm.finders.DocumentFinder
 import org.overviewproject.tree.orm.Document
+import org.overviewproject.tree.orm.finders.ResultPage
 
 trait DocumentListController extends Controller {
   val MaxPageSize = 100

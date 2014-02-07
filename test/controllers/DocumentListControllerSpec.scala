@@ -3,12 +3,13 @@ package controllers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import org.overviewproject.tree.orm.finders.ResultPage
 import play.api.Play.{start, stop}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.test.Helpers._
 
 import controllers.auth.AuthorizedRequest
-import models.{OverviewUser,Selection,ResultPage}
+import models.{ OverviewUser, Selection }
 
 class DocumentListControllerSpec extends Specification with Mockito {
   step(start(FakeApplication()))

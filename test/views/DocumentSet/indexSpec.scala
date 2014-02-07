@@ -3,8 +3,9 @@ package views.html.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Tree }
 import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.orm.finders.ResultPage
 
-import models.{ OverviewUser, ResultPage }
+import models.OverviewUser
 
 class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {

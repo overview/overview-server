@@ -7,9 +7,9 @@ import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.util.JobQueueSender
 import models.orm.finders.{DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder}
 import models.orm.stores.DocumentSetStore
-import models.ResultPage
 import org.overviewproject.jobs.models.{CancelUploadWithDocumentSet,Delete}
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Tree }
+import org.overviewproject.tree.orm.finders.ResultPage
 
 trait DocumentSetController extends Controller {
   import Authorities._

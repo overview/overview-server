@@ -2,7 +2,7 @@ package views.html.helper
 
 import play.api.templates.Html
 
-import models.ResultPageDetails
+import org.overviewproject.tree.orm.finders.ResultPageDetails
 
 object Pagination {
   /** Draws navigation links, a la http://twitter.github.com/bootstrap/components.html#pagination

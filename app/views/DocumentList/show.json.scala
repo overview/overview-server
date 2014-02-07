@@ -4,7 +4,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json.toJson
 
 import org.overviewproject.tree.orm.Document
-import models.ResultPage
+import org.overviewproject.tree.orm.finders.ResultPage
 
 object show {
   private[DocumentList] def documentToJson(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {

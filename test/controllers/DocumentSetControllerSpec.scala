@@ -12,7 +12,11 @@ import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree}
 import org.overviewproject.tree.DocumentSetCreationJobType
 import controllers.auth.AuthorizedRequest
-import models.{ OverviewUser, ResultPage }
+import controllers.forms.DocumentSetForm.Credentials
+import org.overviewproject.tree.orm.DocumentSetUser
+import org.overviewproject.tree.orm.finders.ResultPage
+import models.OverviewUser
+
 
 class DocumentSetControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {

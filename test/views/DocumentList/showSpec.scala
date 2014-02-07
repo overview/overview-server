@@ -4,7 +4,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.orm.Document
-import models.{ResultPage,ResultPageDetails}
+import org.overviewproject.tree.orm.finders.{ResultPage,ResultPageDetails}
 
 class showSpec extends Specification with JsonMatchers {
 
