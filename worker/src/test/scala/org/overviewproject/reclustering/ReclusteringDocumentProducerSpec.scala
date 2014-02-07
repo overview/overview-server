@@ -14,7 +14,6 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
   "ReclusteringDocumentProducer" should {
 
     class TestReclusteringDocumentProducer(
-      override protected val documentSetId: Long,
       override protected val pagedDocumentFinder: PagedDocumentFinder,
       override protected val consumer: DocumentConsumer,
       override protected val progAbort: ProgressAbortFn) extends ReclusteringDocumentProducer
@@ -26,13 +25,12 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
       val progAbort = mock[ProgressAbortFn] // smartMock triggers bug https://code.google.com/p/mockito/issues/detail?id=107
       val numberOfDocuments = 5
 
-      val documentProducer = new TestReclusteringDocumentProducer(
-        documentSetId, documentFinder, consumer, progAbort)
+      val documentProducer = new TestReclusteringDocumentProducer(documentFinder, consumer, progAbort)
 
       override def before = {
-        documentFinder.numberOfDocuments(documentSetId) returns numberOfDocuments
-        documentFinder.findDocuments(documentSetId, 0) returns createMockDocuments
-        documentFinder.findDocuments(documentSetId, 1) returns Seq.empty
+        documentFinder.numberOfDocuments returns numberOfDocuments
+        documentFinder.findDocuments(1) returns createMockDocuments
+        documentFinder.findDocuments(2) returns Seq.empty
 
         setupProgAbort
       }
@@ -59,8 +57,8 @@ class ReclusteringDocumentProducerSpec extends Specification with Mockito {
           val numberOfDocumentsProduced = documentProducer.produce
     
           numberOfDocumentsProduced must be equalTo (numberOfDocuments)
-          there was one(documentFinder).findDocuments(documentSetId, 0)
-          there was one(documentFinder).findDocuments(documentSetId, 1)
+          there was one(documentFinder).findDocuments(1)
+          there was one(documentFinder).findDocuments(2)
         }
     
         "pass documents to consumer" in new ReclusteringContext {

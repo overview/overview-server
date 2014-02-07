@@ -8,30 +8,28 @@ import org.overviewproject.tree.orm.Document
 import scala.annotation.tailrec
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 
-
 trait ReclusteringDocumentProducer extends DocumentProducer {
   protected val FetchingFraction: Double = 0.5
-  protected val documentSetId: Long
   protected val consumer: DocumentConsumer
   protected val progAbort: ProgressAbortFn
   protected val pagedDocumentFinder: PagedDocumentFinder
-  protected lazy val totalNumberOfDocuments = pagedDocumentFinder.numberOfDocuments(documentSetId)
-    
+  protected lazy val totalNumberOfDocuments = pagedDocumentFinder.numberOfDocuments
+
   override def produce(): Int = {
-    produceDocuments(0, 0)
+    produceDocuments(1, 0)
   }
-  
+
   @tailrec
-  private def produceDocuments(page: Int, numberOfDocumentsProcessed: Int): Int = {
-    val documents = pagedDocumentFinder.findDocuments(documentSetId, page)
-    
+  private def produceDocuments(currentPage: Int, numberOfDocumentsProcessed: Int): Int = {
+    val documents = pagedDocumentFinder.findDocuments(currentPage)
+
     if (documents.isEmpty) numberOfDocumentsProcessed
     else {
-      val numberOfDocumentsInPage = processDocuments(documents) 
-      produceDocuments(page + 1, numberOfDocumentsProcessed + numberOfDocumentsInPage)
+      val numberOfDocumentsInPage = processDocuments(documents)
+      produceDocuments(currentPage + 1, numberOfDocumentsProcessed + numberOfDocumentsInPage)
     }
   }
-  
+
   private def processDocuments(documents: Iterable[Document]): Int = {
     case class State(numberOfDocuments: Int, cancelled: Boolean)
     val result = documents.foldLeft(State(0, false)) { (s, document) =>
@@ -41,13 +39,25 @@ trait ReclusteringDocumentProducer extends DocumentProducer {
       }.getOrElse(State(s.numberOfDocuments, reportProgress(s.numberOfDocuments)))
       else s
     }
-    
+
     result.numberOfDocuments
   }
-  
+
   private def reportProgress(documentIndex: Int): Boolean = {
-    val completionFraction =  FetchingFraction * documentIndex / totalNumberOfDocuments
-    val status = Retrieving(documentIndex, totalNumberOfDocuments)
+    val completionFraction = FetchingFraction * documentIndex / totalNumberOfDocuments
+    val status = Retrieving(documentIndex, totalNumberOfDocuments.toInt)
     progAbort(Progress(completionFraction, status))
   }
+}
+
+object ReclusteringDocumentProducer {
+  private val PageSize = 100
+  def apply(documentSetId: Long, aConsumer: DocumentConsumer, aProgAbort: ProgressAbortFn): ReclusteringDocumentProducer =
+    new ReclusteringDocumentProducer {
+      override protected val consumer: DocumentConsumer = aConsumer
+      override protected val progAbort: ProgressAbortFn = aProgAbort
+      override protected val pagedDocumentFinder: PagedDocumentFinder = 
+        PagedDocumentFinder(documentSetId, PageSize)
+
+    }
 }
