@@ -97,10 +97,10 @@ trait MotherWorker extends Actor {
 
     case command: ProcessFileCommand => {
       if (!freeWorkers.isEmpty) {
-        Logger.info(s"Starting ProcessFile ${command.fileGroupId}")
+        Logger.info(s"Starting ProcessFile ${command.fileGroupId}: ${command.uploadedFileId}")
         startWork(command)
       } else {
-        Logger.info(s"Adding to queue, Processfile ${command.fileGroupId}")
+        Logger.info(s"Adding to queue, Processfile ${command.fileGroupId}: ${command.uploadedFileId}")
         workQueue.enqueue(command)
       }
 

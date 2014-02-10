@@ -59,7 +59,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
 
   when(Idle) {
     case Event(ProcessFileCommand(fileGroupId, uploadedFileId), _) => {
-      Logger.info(s"Starting extracting for $fileGroupId")
+      Logger.info(s"Starting extracting for $fileGroupId: $uploadedFileId")
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       context.watch(fileHandler)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
@@ -70,7 +70,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
 
   when(Working) {
     case Event(JobDone(fileGroupId), job: Job) => {
-      Logger.info(s"Completed extraction for $fileGroupId")
+      Logger.info(s"Completed extraction for $fileGroupId: ${job.uploadedFileId}")
       jobMonitor ! JobDone(fileGroupId)
       context.unwatch(job.worker)
 
@@ -83,7 +83,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
       goto(Idle)
     }
     case Event(ProcessFileCommand(fileGroupId, uploadedFileId), job: Job) => {
-      Logger.error(s"Received ProcessFile command for $fileGroupId while busy with ${job.fileGroupId}")
+      Logger.error(s"Received ProcessFile command for $fileGroupId: $uploadedFileId while busy with ${job.fileGroupId}: ${job.uploadedFileId}")
       stop
     }
 
