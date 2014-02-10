@@ -73,8 +73,10 @@ trait MotherWorker extends Actor {
     }
 
   def receive = {
-    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) =>
+    case StartClusteringCommand(fileGroupId, title, lang, suppliedStopWords) => {
+      Logger.info(s"Received start clustering $fileGroupId")
       submitCompleteJob(fileGroupId)
+    }
 
     case CancelUploadWithDocumentSetCommand(documentSetId) => {
       Logger.info(s"Cancelling document set ${documentSetId}")
@@ -87,18 +89,25 @@ trait MotherWorker extends Actor {
         cancelUpload(fileGroupId)
       }
     }
-    
+
     case CancelUploadCommand(fileGroupId) => {
       Logger.info(s"Cancelling upload with file group $fileGroupId")
       cancelUpload(fileGroupId)
     }
 
     case command: ProcessFileCommand => {
-      if (!freeWorkers.isEmpty) startWork(command)
-      else workQueue.enqueue(command)
+      if (!freeWorkers.isEmpty) {
+        Logger.info(s"Starting ProcessFile ${command.fileGroupId}")
+        startWork(command)
+      } else {
+        Logger.info(s"Adding to queue, Processfile ${command.fileGroupId}")
+        workQueue.enqueue(command)
+      }
+
     }
 
     case JobDone(fileGroupId) => {
+      Logger.info(s"Job complete: $fileGroupId")
       setFree(sender)
 
       if (cancelledJobs.exists(_ == fileGroupId)) {
@@ -170,7 +179,7 @@ object MotherWorker {
   import org.overviewproject.tree.orm.DocumentSetCreationJobState._
   import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
   import org.overviewproject.tree.orm.stores.BaseStore
-  
+
   private class MotherWorkerImpl extends MotherWorker with FileGroupJobHandlerComponent {
     override def createFileGroupMessageHandler(jobMonitor: ActorRef): Props = FileGroupMessageHandler(jobMonitor)
 
@@ -183,7 +192,7 @@ object MotherWorker {
       private val documentSetUserStore = BaseStore(Schema.documentSetUsers)
       private val fileGroupStore = BaseStore(Schema.fileGroups)
       private val documentSetUserFinder = DocumentSetComponentFinder(Schema.documentSetUsers)
-      
+
       override def countFileUploads(fileGroupId: Long): Long = Database.inTransaction {
         GroupedFileUploadFinder.countsByFileGroup(fileGroupId)
       }

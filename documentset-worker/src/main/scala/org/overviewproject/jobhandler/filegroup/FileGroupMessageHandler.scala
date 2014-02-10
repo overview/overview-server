@@ -1,10 +1,8 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.concurrent.duration.Duration
-
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.{ GroupedFileUploadFinder, GroupedProcessedFileFinder }
 import org.overviewproject.database.orm.stores.GroupedProcessedFileStore
@@ -12,8 +10,8 @@ import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.filegroup.TextExtractorProtocol._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.tree.orm.GroupedProcessedFile
-
 import FileGroupMessageHandlerFSM._
+import org.overviewproject.util.Logger
 
 trait FileGroupMessageHandlerComponent {
   val actorCreator: ActorCreator
@@ -61,6 +59,7 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
 
   when(Idle) {
     case Event(ProcessFileCommand(fileGroupId, uploadedFileId), _) => {
+      Logger.info(s"Starting extracting for $fileGroupId")
       val fileHandler = context.actorOf(actorCreator.produceTextExtractor)
       context.watch(fileHandler)
       fileHandler ! ExtractText(fileGroupId, uploadedFileId)
@@ -71,15 +70,21 @@ class FileGroupMessageHandler(jobMonitor: ActorRef) extends Actor with FSM[State
 
   when(Working) {
     case Event(JobDone(fileGroupId), job: Job) => {
+      Logger.info(s"Completed extraction for $fileGroupId")
       jobMonitor ! JobDone(fileGroupId)
       context.unwatch(job.worker)
 
       goto(Idle)
     }
     case Event(Terminated(worker), job: Job) => {
+      Logger.info("Extraction failed for ${job.fileGroupId}")
       storage.writeFileInErrorState(job.fileGroupId, job.uploadedFileId)
       jobMonitor ! JobDone(job.fileGroupId)
       goto(Idle)
+    }
+    case Event(ProcessFileCommand(fileGroupId, uploadedFileId), job: Job) => {
+      Logger.error(s"Received ProcessFile command for $fileGroupId while busy with ${job.fileGroupId}")
+      stop
     }
 
   }
@@ -103,7 +108,7 @@ trait FileGroupMessageHandlerComponentImpl extends FileGroupMessageHandlerCompon
       GroupedFileUploadFinder.byId(uploadedFileId).headOption map { u =>
         val file = GroupedProcessedFileFinder.byContentsOid(u.contentsOid).headOption.getOrElse(
           GroupedProcessedFile(fileGroupId, u.contentType, u.name, Some(ErrorMessage), None, u.contentsOid, u.size))
-          
+
         GroupedProcessedFileStore.insertOrUpdate(file)
       }
 
