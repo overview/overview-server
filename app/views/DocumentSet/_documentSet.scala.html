@@ -1,13 +1,13 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  treeId: Long,
+  trees: Iterable[org.overviewproject.tree.orm.Tree],
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
 @import views.helper.DocumentSetHelper
 
 @defining(scopedMessages("views.DocumentSet._documentSet")) { m =>
-  <li id="document-set-@documentSet.id">
+  <li data-document-set-id="@documentSet.id">
     <div class="actions">
       <a class="btn show-sharing-settings"
         href="@routes.DocumentSetUserController.indexJson(documentSet.id)"
@@ -30,7 +30,7 @@
         >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>
     </div>
-    <h3><a href="@routes.TreeController.show(documentSet.id, treeId)">@documentSet.title</a></h3>
+    <h3><a href="@routes.TreeController.show(documentSet.id, trees.headOption.map(_.id).getOrElse(-1L))">@documentSet.title</a></h3>
     <h4>
       <span class="description">
         @(documentSet.query match {
@@ -50,5 +50,10 @@
         <span class="overflow-count" title="@m("nOverflow.title")">@m("nOverflow", documentSet.importOverflowCount)</span>
       }
     </h4>
+    <ul class="trees" style="display:none;">
+      @for(tree <- trees) {
+        <li data-tree-id="@tree.id"></li>
+      }
+    </ul>
   </li>
 }

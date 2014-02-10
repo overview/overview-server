@@ -1,28 +1,34 @@
 package controllers
 
 import play.api.mvc.Controller
-import org.overviewproject.jobs.models.Delete
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
+
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
 import controllers.util.JobQueueSender
-import models.ResultPage
-import models.orm.finders.{DocumentSetCreationJobFinder, DocumentSetFinder}
+import models.orm.finders.{DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder}
 import models.orm.stores.DocumentSetStore
-import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
-
-
+import models.ResultPage
+import org.overviewproject.jobs.models.{CancelUploadWithDocumentSet,Delete}
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Tree }
 
 trait DocumentSetController extends Controller {
   import Authorities._
 
   trait Storage {
+    /** Returns a DocumentSet from an ID */
     def findDocumentSet(id: Long): Option[DocumentSet]
-    // FIXME: handle multiple trees properly
-    def findDocumentSetWithTreeId(id: Long): Option[(DocumentSet, Long)]
-    def findDocumentSetsWithTreeId(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSet, Long)] 
+
+    /** Returns all Trees in the given DocumentSets */
+    def findTreesByDocumentSets(documentSetIds: Iterable[Long]) : Iterable[Tree]
+
+    /** Returns all Trees in the given DocumentSet */
+    def findTreesByDocumentSet(documentSetId: Long) : Iterable[Tree]
+
+    /** Returns a page of DocumentSets */
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
-    def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
+
+    /** Returns all active DocumentSetCreationJobs (job, documentSet, queuePosition) */
+    def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
 
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
@@ -31,20 +37,28 @@ trait DocumentSetController extends Controller {
 
   private val form = DocumentSetForm()
   private val pageSize = 10
-  private val jobPageSize = 50 // show them "all", but don't crash if something's wrong
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSetsWithTreeId = storage.findDocumentSetsWithTreeId(request.user.email, pageSize, realPage)
-    val jobs = storage.findDocumentSetCreationJobs(request.user.email, jobPageSize, 1)
+    val documentSets = storage.findDocumentSets(request.user.email, pageSize, realPage)
+    val trees = storage
+      .findTreesByDocumentSets(documentSets.items.map(_.id))
+      .groupBy(_.documentSetId)
 
-    Ok(views.html.DocumentSet.index(request.user, documentSetsWithTreeId, jobs, form))
+    val documentSetsWithTrees = documentSets.map { ds: DocumentSet => (ds -> trees.getOrElse(ds.id, Seq())) }
+
+    val jobs = storage.findDocumentSetCreationJobs(request.user.email)
+
+    Ok(views.html.DocumentSet.index(request.user, documentSetsWithTrees, jobs, form))
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSetWithTreeId(id) match {
-      case Some((documentSet, treeId)) => Ok(views.json.DocumentSet.show(request.user, documentSet, treeId))
+    storage.findDocumentSet(id) match {
       case None => NotFound
+      case Some(documentSet) => {
+        val trees = storage.findTreesByDocumentSet(id).toSeq
+        Ok(views.json.DocumentSet.show(request.user, documentSet, trees))
+      }
     }
   }
 
@@ -75,26 +89,20 @@ trait DocumentSetController extends Controller {
 
 object DocumentSetController extends DocumentSetController {
   object DatabaseStorage extends Storage {
-    override def findDocumentSet(id: Long): Option[DocumentSet] = {
-      DocumentSetFinder.byDocumentSet(id).headOption
-    }
+    override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
+    override def findTreesByDocumentSets(documentSetIds: Iterable[Long]) = TreeFinder.byDocumentSets(documentSetIds)
+    override def findTreesByDocumentSet(documentSetId: Long) = TreeFinder.byDocumentSet(documentSetId)
 
-    override def findDocumentSetWithTreeId(id: Long): Option[(DocumentSet, Long)] = 
-      DocumentSetFinder.byDocumentSet(id).withTreeIds.headOption
-      
-    override def findDocumentSetsWithTreeId(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSet, Long)] = { 
-      val query = DocumentSetFinder.byOwner(userEmail).withTreeIds
-      ResultPage(query, pageSize, page)
-    }
-      
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
       val query = DocumentSetFinder.byOwner(userEmail)
       ResultPage(query, pageSize, page)
     }
 
-    override def findDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int): ResultPage[(DocumentSetCreationJob, DocumentSet, Long)] = {
-      val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
-      ResultPage(query, pageSize, page)
+    override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)] = {
+      DocumentSetCreationJobFinder
+        .byUser(userEmail)
+        .withDocumentSetsAndQueuePositions
+        .toSeq
     }
 
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {

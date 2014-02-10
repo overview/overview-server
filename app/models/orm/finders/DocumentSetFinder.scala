@@ -26,16 +26,8 @@ object DocumentSetFinder extends Finder {
         )
       )
     }
-    
-    def withTreeIds: FinderResult[(DocumentSet, Long)] = {
-      join(toQuery, Schema.trees)((ds, t) => 
-        select(ds, t.id)
-        orderBy(ds.createdAt desc)
-        on(t.documentSetId === ds.id)
-      )
-    }
   }
-  
+
   object DocumentSetResult {
     implicit def fromQuery(query: Query[DocumentSet]) = new DocumentSetResult(query)
   }

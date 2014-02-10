@@ -9,8 +9,8 @@ case class Tree(
     title: String,
     documentCount: Int,
     lang: String,
-    suppliedStopWords: String,
-    importantWords: String,
+    suppliedStopWords: String = "",
+    importantWords: String = "",
     createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)) extends KeyedEntity[Long] with DocumentSetComponent {
 
   override def isPersisted(): Boolean = (id > 0)

@@ -60,7 +60,7 @@ trait ProjectSettings {
     "com.typesafe" %% "play-plugins-mailer" % "2.2.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
     "org.owasp.encoder" % "encoder" % "1.1",
-    "org.jodd" % "jodd-wot" % "3.3.1" % "it,test",
+    "org.jodd" % "jodd-wot" % "3.3.8" % "it,test",
     "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "it,test",
     "com.icegreen" % "greenmail" % "1.3.1b" % "it",
     "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "it" // Play 2.1.0's is too old, doesn't work with newer Firefox
