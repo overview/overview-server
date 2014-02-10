@@ -16,6 +16,7 @@ object Main {
     val config = ConfigFactory.parseFile(new File("./conf/application.conf")).resolve()
     val extraConfig = ConfigFactory.parseString("""
       |applyEvolutions.default=true
+      |applyDownEvolutions.default=true
       |db.default.partitionCount=1
       |db.default.maxConnectionsPerPartition=2 # not 1. rrgh, Play. rrgh.
       |db.default.minConnectionsPerPartition=1
