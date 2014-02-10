@@ -1,11 +1,11 @@
-package views.json.Tree
+package views.json.Node
 
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.tree.orm.{ Node, Document, Tag }
 
-class showSpec extends Specification with JsonMatchers {
+class indexSpec extends Specification with JsonMatchers {
   def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
     Node(
       id=id,
@@ -27,7 +27,7 @@ class showSpec extends Specification with JsonMatchers {
         buildNode(3, Some(1L), 1, Array(2L))
       )
 
-      val treeJson = show(nodes, Seq(), Seq()).toString
+      val treeJson = index(nodes, Seq(), Seq()).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -43,7 +43,7 @@ class showSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = show(nodes, tags, Seq()).toString
+      val treeJson = index(nodes, tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")

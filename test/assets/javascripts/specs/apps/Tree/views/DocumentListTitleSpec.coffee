@@ -42,18 +42,18 @@ define [
 
     beforeEach ->
       i18n.reset_messages
-        'views.DocumentSet.show.DocumentListTitle.num_documents': 'num_documents,{0}'
-        'views.DocumentSet.show.DocumentListTitle.loading': 'loading'
-        'views.DocumentSet.show.DocumentListTitle.searching.title_html': 'searching.title_html,{0}'
-        'views.DocumentSet.show.DocumentListTitle.searchError.title_html': 'searchError.title_html,{0}'
-        'views.DocumentSet.show.DocumentListTitle.all.title_html': 'all.title_html,{0}'
-        'views.DocumentSet.show.DocumentListTitle.tag.title_html': 'tag.title_html,{0},{1}'
-        'views.DocumentSet.show.DocumentListTitle.tag.edit': 'tag.edit'
-        'views.DocumentSet.show.DocumentListTitle.untagged.title_html': 'untagged.title_html,{0}'
-        'views.DocumentSet.show.DocumentListTitle.node.title_html': 'node.title_html,{0},{1}'
-        'views.DocumentSet.show.DocumentListTitle.node.edit': 'node.edit'
-        'views.DocumentSet.show.DocumentListTitle.searchResult.title_html': 'searchResult.title_html,{0},{1}'
-        'views.DocumentSet.show.DocumentListTitle.searchResult.edit': 'searchResult.edit'
+        'views.Tree.show.DocumentListTitle.num_documents': 'num_documents,{0}'
+        'views.Tree.show.DocumentListTitle.loading': 'loading'
+        'views.Tree.show.DocumentListTitle.searching.title_html': 'searching.title_html,{0}'
+        'views.Tree.show.DocumentListTitle.searchError.title_html': 'searchError.title_html,{0}'
+        'views.Tree.show.DocumentListTitle.all.title_html': 'all.title_html,{0}'
+        'views.Tree.show.DocumentListTitle.tag.title_html': 'tag.title_html,{0},{1}'
+        'views.Tree.show.DocumentListTitle.tag.edit': 'tag.edit'
+        'views.Tree.show.DocumentListTitle.untagged.title_html': 'untagged.title_html,{0}'
+        'views.Tree.show.DocumentListTitle.node.title_html': 'node.title_html,{0},{1}'
+        'views.Tree.show.DocumentListTitle.node.edit': 'node.edit'
+        'views.Tree.show.DocumentListTitle.searchResult.title_html': 'searchResult.title_html,{0},{1}'
+        'views.Tree.show.DocumentListTitle.searchResult.edit': 'searchResult.edit'
 
     afterEach ->
       view?.off()

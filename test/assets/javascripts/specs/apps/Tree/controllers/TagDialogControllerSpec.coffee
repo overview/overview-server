@@ -14,7 +14,7 @@ define [
 
     beforeEach ->
       i18n.reset_messages
-        'views.DocumentSet.show.tag_list.header': 'header'
+        'views.Tree.show.tag_list.header': 'header'
       view = new Backbone.View
       state = new Backbone.Model
       tagStoreProxy =

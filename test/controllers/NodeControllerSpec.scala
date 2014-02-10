@@ -1,33 +1,34 @@
 package controllers
 
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import org.specs2.matcher.JsonMatchers
-import play.api.test.{FakeApplication, FakeRequest}
-import play.api.test.Helpers._
-import play.api.Play.{start,stop}
 
 import controllers.auth.AuthorizedRequest
-import org.overviewproject.tree.orm.{Node, Tag, SearchResult, SearchResultState}
+import org.overviewproject.tree.orm.{Node, Tag, SearchResult, SearchResultState, Tree}
 import models.OverviewUser
 import models.orm.User
 
-class NodeControllerSpec extends Specification with Mockito with JsonMatchers {
-  step(start(FakeApplication()))
-
+class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
   trait TestScope extends Scope {
     val mockStorage = mock[NodeController.Storage]
     val controller = new NodeController {
       override val storage = mockStorage
     }
-    val user = mock[OverviewUser]
-    def getRequest = new AuthorizedRequest(FakeRequest(), user)
-    def postRequest = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody("description" -> "new description"), user)
+    def postRequest = new AuthorizedRequest(fakeRequest.withFormUrlEncodedBody("description" -> "new description"), fakeUser)
 
-    def index(documentSetId: Long, treeId: Long) = controller.index(documentSetId, treeId)(getRequest)
-    def show(documentSetId: Long, nodeId: Long) = controller.show(documentSetId, nodeId)(getRequest)
-    def update(documentSetId: Long, nodeId: Long) = controller.update(documentSetId, nodeId)(postRequest)
+    def index(treeId: Long) = controller.index(treeId)(fakeAuthorizedRequest)
+    def show(treeId: Long, nodeId: Long) = controller.show(treeId, nodeId)(fakeAuthorizedRequest)
+    def update(treeId: Long, nodeId: Long) = controller.update(treeId, nodeId)(postRequest)
+
+    val sampleTree = Tree(
+      id = 1L,
+      documentSetId = 1L,
+      title = "Tree title",
+      documentCount = 10,
+      lang = "en",
+      suppliedStopWords = "",
+      importantWords = ""
+    )
 
     val sampleNode = Node(
       id=1L,
@@ -66,7 +67,7 @@ class NodeControllerSpec extends Specification with Mockito with JsonMatchers {
     "return NotFound when a node isn't found" in new TestScope {
       mockStorage.findNode(1L, 1L) returns Seq()
       val result = update(1L, 1L)
-      status(result) must beEqualTo(NOT_FOUND)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
     }
   }
 
@@ -75,43 +76,43 @@ class NodeControllerSpec extends Specification with Mockito with JsonMatchers {
       mockStorage.findChildNodes(1L, 1L) returns Seq(sampleNode.copy(description="some stuff"))
 
       val result = show(1L, 1L)
-      status(result) must beEqualTo(OK)
-      contentAsString(result) must beMatching(""".*"some stuff".*""")
-      header(CACHE_CONTROL, result) must beSome("max-age=0")
+      h.status(result) must beEqualTo(h.OK)
+      h.contentAsString(result) must beMatching(""".*"some stuff".*""")
+      h.header(h.CACHE_CONTROL, result) must beSome("max-age=0")
     }
 
     "renders an empty list when no nodes are found" in new TestScope {
       mockStorage.findChildNodes(1L, 1L) returns Seq()
 
       val result = show(1L, 1L)
-      status(result) must beEqualTo(OK)
-      contentAsString(result) must beEqualTo("""{"nodes":[]}""")
-      header(CACHE_CONTROL, result) must beSome("max-age=0")
+      h.status(result) must beEqualTo(h.OK)
+      h.contentAsString(result) must beEqualTo("""{"nodes":[]}""")
+      h.header(h.CACHE_CONTROL, result) must beSome("max-age=0")
     }
   }
 
   "index" should {
     "encodes the nodes, tags, and search results into the json result" in new TestScope {
+      mockStorage.findTree(1L) returns Some(sampleTree)
       mockStorage.findRootNodes(1L, 2) returns Seq(sampleNode)
       mockStorage.findSearchResults(1L) returns Seq(sampleSearchResult)
       mockStorage.findTags(1L) returns Seq(sampleTag)
 
-      val result = index(1L, 1L)
-      status(result) must beEqualTo(OK)
+      val result = index(1L)
+      h.status(result) must beEqualTo(h.OK)
 
-      val resultJson = contentAsString(result)
+      val resultJson = h.contentAsString(result)
       resultJson must /("nodes") */("description" -> "description")
       resultJson must /("tags") */("name" -> "a tag")
       resultJson must /("searchResults") */("query" -> "a search query")
     }
 
     "returns a 404 when no nodes were found" in new TestScope {
+      mockStorage.findTree(1L) returns Some(sampleTree)
       mockStorage.findRootNodes(1L, 2) returns Seq()
 
-      val result = index(1L, 1L)
-      status(result) must beEqualTo(NOT_FOUND)
+      val result = index(1L)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
     }
   }
-
-  step(stop)
 }

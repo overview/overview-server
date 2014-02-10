@@ -1,5 +1,5 @@
 define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
-  t = i18n.namespaced('views.DocumentSet.show.DocumentList')
+  t = i18n.namespaced('views.Tree.show.DocumentList')
 
   templates =
     # We put < and > at the exact beginning and end of screen so we can iterate

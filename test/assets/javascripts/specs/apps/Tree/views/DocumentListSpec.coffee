@@ -88,15 +88,15 @@ define [
       $div = $("<div id=\"views-DocumentListSpec\" style=\"overflow:hidden;height:#{HEIGHT}px\"></div>")
       $div.appendTo('body')
       i18n.reset_messages({
-        'views.DocumentSet.show.DocumentList.title': 'title,{0}'
-        'views.DocumentSet.show.DocumentList.title.empty': 'title.empty'
-        'views.DocumentSet.show.DocumentList.description': 'description,{0}'
-        'views.DocumentSet.show.DocumentList.description.empty': 'description.empty'
-        'views.DocumentSet.show.DocumentList.placeholder': 'placeholder'
-        'views.DocumentSet.show.DocumentList.loading': 'loading'
-        'views.DocumentSet.show.DocumentList.terms.label': 'terms.label'
-        'views.DocumentSet.show.DocumentList.tag.remove': 'tag.remove'
-        'views.DocumentSet.show.DocumentList.tag.remove.title': 'tag.remove'
+        'views.Tree.show.DocumentList.title': 'title,{0}'
+        'views.Tree.show.DocumentList.title.empty': 'title.empty'
+        'views.Tree.show.DocumentList.description': 'description,{0}'
+        'views.Tree.show.DocumentList.description.empty': 'description.empty'
+        'views.Tree.show.DocumentList.placeholder': 'placeholder'
+        'views.Tree.show.DocumentList.loading': 'loading'
+        'views.Tree.show.DocumentList.terms.label': 'terms.label'
+        'views.Tree.show.DocumentList.tag.remove': 'tag.remove'
+        'views.Tree.show.DocumentList.tag.remove.title': 'tag.remove'
       })
 
     afterEach ->

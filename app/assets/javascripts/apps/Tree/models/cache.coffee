@@ -11,7 +11,7 @@ define [
   './transaction_queue'
   'i18n'
 ], ($, Selection, DocumentStore, OnDemandTree, TagStore, TagLikeApi, SearchResultStore, Server, NeedsResolver, TransactionQueue, i18n) ->
-  t = i18n.namespaced('views.DocumentSet.show.cache')
+  t = i18n.namespaced('views.Tree.show.cache')
 
   Deferred = $.Deferred
 

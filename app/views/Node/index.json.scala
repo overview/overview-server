@@ -1,12 +1,12 @@
-package views.json.Tree
+package views.json.Node
 
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 
-object show {
-  private[Tree] def writeNode(node: Node) : JsValue = {
+object index {
+  private[Node] def writeNode(node: Node) : JsValue = {
     Json.obj(
       "id" -> node.id,
       "parentId" -> node.parentId,
@@ -16,7 +16,7 @@ object show {
     )
   }
 
-  private[Tree] def writeTag(tag: Tag) : JsValue = {
+  private[Node] def writeTag(tag: Tag) : JsValue = {
     Json.obj(
       "id" -> tag.id,
       "name" -> tag.name,

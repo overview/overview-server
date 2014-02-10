@@ -26,14 +26,6 @@ trait DocumentSetController extends Controller {
 
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
-    /**
-     * Returns true iff we can search the document set.
-     *
-     * This is a '''hack'''. All document sets ''should'' be searchable, but
-     * document sets imported before indexing was implemented are not.
-     */
-    def isDocumentSetSearchable(documentSet: DocumentSet): Boolean
-
     def deleteDocumentSet(documentSet: DocumentSet): Unit
   }
 
@@ -47,18 +39,6 @@ trait DocumentSetController extends Controller {
     val jobs = storage.findDocumentSetCreationJobs(request.user.email, jobPageSize, 1)
 
     Ok(views.html.DocumentSet.index(request.user, documentSetsWithTreeId, jobs, form))
-  }
-
-  def show(id: Long, treeId: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
-    storage.findDocumentSet(id) match {
-      case Some(documentSet) =>
-        Ok(views.html.DocumentSet.show(
-          request.user,
-          documentSet,
-          treeId,
-          storage.isDocumentSetSearchable(documentSet)))
-      case None => NotFound
-    }
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
@@ -94,8 +74,6 @@ trait DocumentSetController extends Controller {
 }
 
 object DocumentSetController extends DocumentSetController {
-  private val FirstSearchableDocumentSetVersion = 2
-
   object DatabaseStorage extends Storage {
     override def findDocumentSet(id: Long): Option[DocumentSet] = {
       DocumentSetFinder.byDocumentSet(id).headOption
@@ -122,9 +100,6 @@ object DocumentSetController extends DocumentSetController {
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
       DocumentSetStore.insertOrUpdate(documentSet)
     }
-
-
-    override def isDocumentSetSearchable(documentSet: DocumentSet): Boolean = documentSet.version >= FirstSearchableDocumentSetVersion
 
     override def deleteDocumentSet(documentSet: DocumentSet): Unit = {
       DocumentSetStore.deleteOrCancelJob(documentSet)

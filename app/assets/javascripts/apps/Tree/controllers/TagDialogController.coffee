@@ -6,7 +6,7 @@ define [
   '../views/TagList'
   'i18n'
 ], ($, _, Backbone, DocumentListParams, TagListView, i18n) ->
-  t = i18n.namespaced('views.DocumentSet.show.tag_list')
+  t = i18n.namespaced('views.Tree.show.tag_list')
 
   template = _.template("""
     <div class="modal fade">

@@ -5,8 +5,8 @@ import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree, userOwningTree }
-import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
-import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder}
+import org.overviewproject.tree.orm.{Node,SearchResult,Tag,Tree}
+import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder,TreeFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
@@ -24,7 +24,8 @@ trait NodeController extends Controller {
     /** The direct descendents of the given parent Node ID. */
     def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
 
-    def findNode(documentSetId: Long, nodeId: Long) : Iterable[Node]
+    def findTree(treeId: Long) : Option[Tree]
+    def findNode(treeId: Long, nodeId: Long) : Iterable[Node]
     def findTags(documentSetId: Long) : Iterable[Tag]
     def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
 
@@ -32,23 +33,28 @@ trait NodeController extends Controller {
   }
   val storage : NodeController.Storage
 
-  def index(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningDocumentSetAndTree(documentSetId, treeId)) { implicit request =>
-    val nodes = storage.findRootNodes(treeId, rootChildLevels)
+  def index(treeId: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
+    storage.findTree(treeId) match {
+      case None => NotFound
+      case Some(tree) => {
+        val nodes = storage.findRootNodes(treeId, rootChildLevels)
 
-    if (nodes.isEmpty) {
-      NotFound
-    } else {
-      val tags = storage.findTags(documentSetId)
-      val searchResults = storage.findSearchResults(documentSetId)
-      Ok(views.json.Tree.show(nodes, tags, searchResults))
-        .withHeaders(CACHE_CONTROL -> "max-age=0")
+        if (nodes.isEmpty) {
+          NotFound
+        } else {
+          val tags = storage.findTags(tree.documentSetId)
+          val searchResults = storage.findSearchResults(tree.documentSetId)
+          Ok(views.json.Node.index(nodes, tags, searchResults))
+            .withHeaders(CACHE_CONTROL -> "max-age=0")
+        }
+      }
     }
   }
 
   def show(treeId: Long, id: Long) = AuthorizedAction(userOwningTree(treeId)) { implicit request =>
     val nodes = storage.findChildNodes(treeId, id)
 
-    Ok(views.json.Tree.show(nodes))
+    Ok(views.json.Node.index(nodes))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
@@ -109,6 +115,10 @@ object NodeController extends NodeController {
 
     override def findSearchResults(documentSetId: Long) = {
       SearchResultFinder.byDocumentSet(documentSetId)
+    }
+
+    override def findTree(treeId: Long) = {
+      TreeFinder.byId(treeId).headOption
     }
 
     override def findNode(treeId: Long, nodeId: Long) = {

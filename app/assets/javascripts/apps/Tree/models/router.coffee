@@ -28,7 +28,7 @@ define ->
       "/documents/#{id}"
 
     _root_path: () ->
-      "/documentsets/#{@document_set_id}/tree/#{@tree_id}.json"
+      "/trees/#{@tree_id}/nodes"
 
     _node_path: (id) ->
       throw new Error("Must have positive id") if id <= 0

@@ -36,19 +36,19 @@ define [
 
     beforeEach ->
       i18n.reset_messages
-        'views.DocumentSet.show.DocumentListCursor.position_html': 'position_html,{0},{1}'
-        'views.DocumentSet.show.DocumentListCursor.next': 'next'
-        'views.DocumentSet.show.DocumentListCursor.previous': 'previous'
-        'views.DocumentSet.show.DocumentListCursor.list': 'list'
-        'views.DocumentSet.show.DocumentListCursor.selection.all_html': 'selection.all_html'
-        'views.DocumentSet.show.DocumentListCursor.selection.node_html': 'selection.node_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
-        'views.DocumentSet.show.DocumentListCursor.title': 'title,{0}'
-        'views.DocumentSet.show.DocumentListCursor.title.empty': 'title.empty'
-        'views.DocumentSet.show.DocumentListCursor.description': 'description,{0}'
-        'views.DocumentSet.show.DocumentListCursor.description.empty': 'description.empty'
+        'views.Tree.show.DocumentListCursor.position_html': 'position_html,{0},{1}'
+        'views.Tree.show.DocumentListCursor.next': 'next'
+        'views.Tree.show.DocumentListCursor.previous': 'previous'
+        'views.Tree.show.DocumentListCursor.list': 'list'
+        'views.Tree.show.DocumentListCursor.selection.all_html': 'selection.all_html'
+        'views.Tree.show.DocumentListCursor.selection.node_html': 'selection.node_html,{0}'
+        'views.Tree.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
+        'views.Tree.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
+        'views.Tree.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
+        'views.Tree.show.DocumentListCursor.title': 'title,{0}'
+        'views.Tree.show.DocumentListCursor.title.empty': 'title.empty'
+        'views.Tree.show.DocumentListCursor.description': 'description,{0}'
+        'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
 
     describe 'starting with a full list at no index', ->
       beforeEach ->

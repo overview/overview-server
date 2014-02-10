@@ -14,13 +14,13 @@ define [
 
     beforeEach ->
       i18n.reset_messages({
-        'views.DocumentSet.show.tag_list.preamble': 'preamble'
-        'views.DocumentSet.show.tag_list.export': 'export'
-        'views.DocumentSet.show.tag_list.remove': 'remove'
-        'views.DocumentSet.show.tag_list.remove.confirm': 'remove.confirm,{0},{1}'
-        'views.DocumentSet.show.tag_list.submit': 'submit'
-        'views.DocumentSet.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
-        'views.DocumentSet.show.tag_list.n_documents': 'n_documents,{0}'
+        'views.Tree.show.tag_list.preamble': 'preamble'
+        'views.Tree.show.tag_list.export': 'export'
+        'views.Tree.show.tag_list.remove': 'remove'
+        'views.Tree.show.tag_list.remove.confirm': 'remove.confirm,{0},{1}'
+        'views.Tree.show.tag_list.submit': 'submit'
+        'views.Tree.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
+        'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
       })
 
     afterEach ->

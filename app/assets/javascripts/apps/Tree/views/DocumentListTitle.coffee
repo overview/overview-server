@@ -1,5 +1,5 @@
 define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
-  t = i18n.namespaced('views.DocumentSet.show.DocumentListTitle')
+  t = i18n.namespaced('views.Tree.show.DocumentListTitle')
 
   templates =
     # Loading...
