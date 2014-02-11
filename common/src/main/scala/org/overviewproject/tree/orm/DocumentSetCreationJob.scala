@@ -1,12 +1,13 @@
 package org.overviewproject.tree.orm
 
-import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.postgres.PostgresqlEnum
-
-import org.overviewproject.tree.DocumentSetCreationJobType
 import org.squeryl.annotations.Column
-import org.squeryl.KeyedEntity
 import org.squeryl.dsl.ManyToOne
+import org.squeryl.KeyedEntity
+import scala.runtime.ScalaRunTime
+
+import org.overviewproject.postgres.PostgresqlEnum
+import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.DocumentSetCreationJobType
 
 object DocumentSetCreationJobState extends Enumeration {
   type DocumentSetCreationJobState = Value
@@ -38,6 +39,11 @@ case class DocumentSetCreationJob(
   statusDescription: String = "") extends KeyedEntity[Long] with DocumentSetComponent {
 
   def this() = this(jobType = DocumentSetCreationJobType.DocumentCloud, state = NotStarted)
+
+  /** Override Squeryl's silly equals() method */
+  override def equals(other: Any) : Boolean = {
+    ScalaRunTime._equals(this, other)
+  }
 
   override def isPersisted(): Boolean = (id > 0)
 }
