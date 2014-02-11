@@ -62,6 +62,7 @@ requirejs.config({
 
 require [
   'for-view/DocumentSet/_index/nav',
+  'for-view/DocumentSet/_index/recluster',
   'for-view/DocumentSet/_index/import-dc-query',
   'for-view/DocumentSet/_index/import-public-document-sets',
   'for-view/DocumentSet/_index/import-shared-document-sets',

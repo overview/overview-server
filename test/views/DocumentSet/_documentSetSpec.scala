@@ -62,6 +62,10 @@ class _documentSetSpec extends views.html.ViewSpecification {
       $("div.trees li[data-tree-id='11'] a[href]").attr("href") must beEqualTo("/documentsets/1/trees/11")
     }
 
+    "should have a create-tree button" in new BaseScope {
+      $("form.create-tree").length must beEqualTo(1)
+    }
+
     "should include a delete button" in new BaseScope {
       $("form.delete").length must be_>=(1)
     }

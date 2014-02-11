@@ -65,6 +65,13 @@
           </li>
         }
       </ul>
+      <form class="create-tree" method="post" action="@routes.TreeController.create(documentSet.id)">
+        @helper.Form.csrfToken
+        <button type="submit">
+          <i class="icon-repeat"></i>
+          @m("recluster")
+        </button>
+      </form>
     </div>
   </li>
 }
