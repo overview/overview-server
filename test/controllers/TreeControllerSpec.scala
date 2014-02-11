@@ -1,8 +1,10 @@
 package controllers
 
+import play.api.mvc.Flash
 import org.specs2.specification.Scope
+import org.specs2.matcher.Matcher
 
-import org.overviewproject.tree.orm.{DocumentSet, Tree}
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tree}
 
 class TreeControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -14,17 +16,46 @@ class TreeControllerSpec extends ControllerSpecification {
     def show(documentSetId: Long, treeId: Long) = controller.show(documentSetId, treeId)(fakeAuthorizedRequest)
   }
 
-  trait ValidShowScope extends BaseScope {
-    val mockTree = mock[Tree]
-    mockTree.documentSetId returns 1
+  "TreeController.create" should {
+    trait CreateScope extends BaseScope {
+      val documentSetId = 1L
+      def formBody : Seq[(String,String)] = Seq("lang" -> "en", "supplied_stop_words" -> "", "important_words" -> "")
+      def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
+      def create(documentSetId: Long) = controller.create(documentSetId)(request)
+      def result = create(documentSetId)
+    }
 
-    mockStorage.findDocumentSet(1) returns Some(mock[DocumentSet])
-    mockStorage.findTree(2) returns Some(mockTree)
+    "store a DocumentSetCreationJob" in new CreateScope {
+      h.status(result) // store result
+      def beJobWithDocumentSetId(id: Long) : Matcher[DocumentSetCreationJob] = beLike{ case (j: DocumentSetCreationJob) => j.documentSetId must beEqualTo(id) }
+      there was one(mockStorage).insertJob(argThat(beJobWithDocumentSetId(documentSetId)))
+    }
 
-    lazy val result = show(1, 2)
+    "redirect to /documentsets" in new CreateScope {
+      h.redirectLocation(result) must beSome("/documentsets")
+    }
+
+    "flash event -> tree-create" in new CreateScope {
+      h.flash(result) must beLike { case f: Flash => f.get("event") must beSome("tree-create") }
+    }
+
+    "return a BAD_REQUEST if the form is filled in badly" in new CreateScope {
+      override def formBody = Seq()
+      h.status(result) must beEqualTo(h.BAD_REQUEST)
+    }
   }
 
   "TreeController.show" should {
+    trait ValidShowScope extends BaseScope {
+      val mockTree = mock[Tree]
+      mockTree.documentSetId returns 1
+
+      mockStorage.findDocumentSet(1) returns Some(mock[DocumentSet])
+      mockStorage.findTree(2) returns Some(mockTree)
+
+      lazy val result = show(1, 2)
+    }
+
     "return NotFound when the DocumentSet is not present" in new BaseScope {
       mockStorage.findDocumentSet(1) returns None
       mockStorage.findTree(2) returns Some(mock[Tree])
