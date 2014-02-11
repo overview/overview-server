@@ -21,9 +21,10 @@ define ->
     'Up': 'TreeController.go_up'
     'a': 'TreeController.go_left'
     'd': 'TreeController.go_right'
-    'j': 'DocumentListController.go_down'
-    'k': 'DocumentListController.go_up'
+    'j': 'DocumentListController.go_down' # GMail
+    'k': 'DocumentListController.go_up' #GMail
     's': 'TreeController.go_down'
+    'u': 'DocumentListController.select_all' # GMail
     'w': 'TreeController.go_up'
   }
 
