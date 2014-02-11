@@ -137,7 +137,7 @@ object JobHandler {
 
       val tree = createTree(ds, job)
 
-      val nodeWriter = new NodeWriter(tree)
+      val nodeWriter = new NodeWriter(job.id, tree)
 
       val opts = DocumentSetIndexerOptions(job.lang, job.suppliedStopWords, job.importantWords)
 

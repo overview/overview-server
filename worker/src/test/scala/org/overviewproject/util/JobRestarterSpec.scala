@@ -11,6 +11,7 @@ class JobRestarterSpec extends Specification with Mockito {
   implicit val unusedConnection: Connection = null
 
   class TestJob extends PersistentDocumentSetCreationJob {
+    val id = 1l
     val jobType = CsvUpload
     val lang = "se"
     val suppliedStopWords = None

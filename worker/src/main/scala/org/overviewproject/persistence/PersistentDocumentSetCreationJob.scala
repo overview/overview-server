@@ -21,6 +21,7 @@ import org.overviewproject.database.Database
  */
 trait PersistentDocumentSetCreationJob {
 
+  val id: Long
   val documentSetId: Long
 
   val jobType: DocumentSetCreationJobType.Value
@@ -82,6 +83,7 @@ object PersistentDocumentSetCreationJob {
 
   private class PersistentDocumentSetCreationJobImpl(documentSetCreationJob: DocumentSetCreationJob)
     extends PersistentDocumentSetCreationJob {
+    val id: Long = documentSetCreationJob.id
     val documentSetId: Long = documentSetCreationJob.documentSetId
     val jobType: DocumentSetCreationJobType.Value = documentSetCreationJob.jobType
     val lang: String = documentSetCreationJob.lang
