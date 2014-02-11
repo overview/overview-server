@@ -10,7 +10,7 @@ class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     val form = controllers.forms.DocumentSetForm()
     def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
-    def documentSets: Seq[(DocumentSet, Iterable[Tree])] = Seq()
+    def documentSets: Seq[(DocumentSet, Seq[Tree])] = Seq()
     def documentSetsPage = ResultPage(documentSets, 10, 1)
 
     def result = index(fakeUser, documentSetsPage, jobs, form)

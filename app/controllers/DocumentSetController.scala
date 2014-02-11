@@ -36,20 +36,24 @@ trait DocumentSetController extends Controller {
   }
 
   private val form = DocumentSetForm()
-  private val pageSize = 10
+  protected val indexPageSize = 10
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
     val realPage = if (page <= 0) 1 else page
-    val documentSets = storage.findDocumentSets(request.user.email, pageSize, realPage)
+    val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
+    val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
     val trees = storage
-      .findTreesByDocumentSets(documentSets.items.map(_.id))
+      .findTreesByDocumentSets(documentSets.map(_.id))
+      .toSeq
       .groupBy(_.documentSetId)
 
     val documentSetsWithTrees = documentSets.map { ds: DocumentSet => (ds -> trees.getOrElse(ds.id, Seq())) }
 
+    val resultPage = ResultPage(documentSetsWithTrees, documentSetsPage.pageDetails)
+
     val jobs = storage.findDocumentSetCreationJobs(request.user.email)
 
-    Ok(views.html.DocumentSet.index(request.user, documentSetsWithTrees, jobs, form))
+    Ok(views.html.DocumentSet.index(request.user, resultPage, jobs, form))
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>

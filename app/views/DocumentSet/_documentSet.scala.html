@@ -1,6 +1,6 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  trees: Iterable[org.overviewproject.tree.orm.Tree],
+  trees: Seq[org.overviewproject.tree.orm.Tree],
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
@@ -30,7 +30,13 @@
         >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>
     </div>
-    <h3><a href="@routes.TreeController.show(documentSet.id, trees.headOption.map(_.id).getOrElse(-1L))">@documentSet.title</a></h3>
+    <h3>
+      @if(trees.length == 1) {
+        <a href="@routes.TreeController.show(documentSet.id, trees.head.id)">@documentSet.title</a>
+      } else {
+        @documentSet.title
+      }
+    </h3>
     <h4>
       <span class="description">
         @(documentSet.query match {
@@ -50,10 +56,15 @@
         <span class="overflow-count" title="@m("nOverflow.title")">@m("nOverflow", documentSet.importOverflowCount)</span>
       }
     </h4>
-    <ul class="trees" style="display:none;">
-      @for(tree <- trees) {
-        <li data-tree-id="@tree.id"></li>
-      }
-    </ul>
+    <div class="trees@{ if (trees.length == 1) " single" else "" }">
+      <h5>@m("nTrees", trees.length)</h5>
+      <ul>
+        @for(tree <- trees) {
+          <li data-tree-id="@tree.id">
+            <a href="@routes.TreeController.show(documentSet.id, tree.id)">@tree.title</a>
+          </li>
+        }
+      </ul>
+    </div>
   </li>
 }

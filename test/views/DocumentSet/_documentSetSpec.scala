@@ -5,10 +5,18 @@ import models.OverviewUser
 
 class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
-    def documentSet: DocumentSet = DocumentSet()
+    def documentSet: DocumentSet = DocumentSet(id=1L)
     def trees : Seq[Tree] = Seq()
 
     def result = _documentSet(documentSet, trees, fakeUser)
+
+    def fakeTree(documentSetId: Long, id: Long) = Tree(
+      id=id,
+      documentSetId=documentSetId,
+      title="title",
+      documentCount=10,
+      lang="en"
+    )
   }
 
   trait DocumentSetWithErrorsContext extends BaseScope {
@@ -25,16 +33,33 @@ class _documentSetSpec extends views.html.ViewSpecification {
       $("li:first").attr("data-document-set-id") must equalTo(documentSet.id.toString)
     }
 
-    "should include a link to the DocumentSet" in new BaseScope {
-      val mockTree = mock[Tree]
-      mockTree.id returns 123L
-      override def trees = Seq(mockTree)
+    "should link to the Tree from the h3 if there is one tree" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10))
 
-      $("a[href]").get()
-        .filter(n => n.hasAttribute("href"))
-        .map(n => n.getAttribute("href"))
-        .filter(href => href.matches(s".*/${documentSet.id}/trees/123\\b"))
-        .length must be_>=(1)
+      val href = $("h3 a[href]").get().headOption.map(_.getAttribute("href"))
+      href must beSome(contain(s"/${documentSet.id}/trees/10"))
+    }
+
+    "should not link to the Tree from the h3 if there are several" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10), fakeTree(documentSet.id, 11))
+      $("h3 a[href]").length must beEqualTo(0)
+    }
+
+    "should set div.trees.single if there is one tree" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10))
+      $("div.trees.single").length must beEqualTo(1)
+    }
+
+    "should not set div.trees.single if there are many trees" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10), fakeTree(documentSet.id, 11))
+      $("div.trees").length must beEqualTo(1)
+      $("div.trees.single").length must beEqualTo(0)
+    }
+
+    "should link to each tree in div.trees" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10), fakeTree(documentSet.id, 11))
+      $("div.trees li[data-tree-id='10'] a[href]").attr("href") must beEqualTo("/documentsets/1/trees/10")
+      $("div.trees li[data-tree-id='11'] a[href]").attr("href") must beEqualTo("/documentsets/1/trees/11")
     }
 
     "should include a delete button" in new BaseScope {

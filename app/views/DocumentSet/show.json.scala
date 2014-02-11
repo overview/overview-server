@@ -8,7 +8,7 @@ import models.OverviewUser
 import org.overviewproject.tree.orm.{DocumentSet, Tree}
 
 object show {
-  def apply(user: OverviewUser, documentSet: DocumentSet, trees: Iterable[Tree])(implicit lang: Lang, request: RequestHeader): JsValue = {
+  def apply(user: OverviewUser, documentSet: DocumentSet, trees: Seq[Tree])(implicit lang: Lang, request: RequestHeader): JsValue = {
     Json.obj(
       "id" -> documentSet.id,
       "html" -> views.html.DocumentSet._documentSet(documentSet, trees, user).toString

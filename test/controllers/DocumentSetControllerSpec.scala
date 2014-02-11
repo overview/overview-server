@@ -16,8 +16,10 @@ import models.{ OverviewUser, ResultPage }
 
 class DocumentSetControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
+    val IndexPageSize = 10
     val mockStorage = mock[DocumentSetController.Storage]
     val controller = new DocumentSetController {
+      override val indexPageSize = IndexPageSize
       override val storage = mockStorage
     }
 
@@ -97,11 +99,10 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
     "index" should {
       trait IndexScope extends BaseScope {
-        val PageSize = 10
         def pageNumber = 1
 
         def fakeDocumentSets : Seq[DocumentSet] = Seq(fakeDocumentSet(1L))
-        mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, PageSize, pageNumber) }
+        mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, IndexPageSize, pageNumber) }
         def fakeTrees : Seq[Tree] = Seq(fakeTree(1L, 2L), fakeTree(1L, 3L))
         mockStorage.findTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeTrees }
         def fakeJobs : Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
@@ -119,6 +120,16 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         override def pageNumber = 0
         h.status(result) must beEqualTo(h.OK) // load page
         there was one(mockStorage).findDocumentSets(anyString, anyInt, org.mockito.Matchers.eq[java.lang.Integer](1))
+      }
+
+      "show multiple pages" in new IndexScope {
+        override def fakeDocumentSets = (1 until IndexPageSize * 2).map(fakeDocumentSet(_))
+        h.contentAsString(result) must contain("/documentsets?page=2")
+      }
+
+      "show multiple document sets per page" in new IndexScope {
+        override def fakeDocumentSets = (1 until IndexPageSize).map(fakeDocumentSet(_))
+        h.contentAsString(result) must not contain("/documentsets?page=2")
       }
 
       "bind trees to their document sets" in new IndexScope {
