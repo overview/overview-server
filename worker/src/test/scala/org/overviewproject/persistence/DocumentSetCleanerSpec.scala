@@ -27,7 +27,6 @@ class DocumentSetCleanerSpec extends DbSpecification {
       var documentSet: DocumentSet = _
       var job: DocumentSetCreationJob = _
       var tree: Tree = _
-      var otherTree: Tree = _
       var node: Node = _
       var document: Document = _
 
@@ -36,20 +35,28 @@ class DocumentSetCleanerSpec extends DbSpecification {
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
         job = documentSetCreationJobs.insert(DocumentSetCreationJob(documentSetId = documentSet.id,
-            jobType = Recluster, state = InProgress  
-        ))
+          jobType = Recluster, state = InProgress))
         tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
-        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, "other tree", 100, "en", "", "")
         node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
         document = Document(documentSet.id, "description")
         val nodeDocument = NodeDocument(node.id, document.id)
         val jobTree = DocumentSetCreationJobTree(job.id, tree.id)
         trees.insert(tree)
-        trees.insert(otherTree)
         nodes.insert(node)
         documents.insert(document)
         nodeDocuments.insert(nodeDocument)
         documentSetCreationJobTrees.insert(jobTree)
+      }
+    }
+
+    trait MultipleTreeContext extends DocumentSetContext {
+      var otherTree: Tree = _
+
+      override def setupWithDb = {
+        super.setupWithDb
+        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, "other tree", 100, "en", "", "")
+        trees.insert(otherTree)
+
       }
     }
 
@@ -74,7 +81,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
     def findTree(id: Long): Option[Tree] =
       from(trees)(t =>
         where(t.id === id)
-        select (t)).headOption
+          select (t)).headOption
 
     "delete node related data" in new DocumentSetContext {
       cleaner.clean(job.id, documentSet.id)
@@ -83,12 +90,18 @@ class DocumentSetCleanerSpec extends DbSpecification {
       findNode(node.id) must beNone
       findTree(tree.id) must beNone
     }
-    
-    "only delete specified tree" in new DocumentSetContext {
+
+    "only delete specified tree" in new MultipleTreeContext {
       cleaner.clean(job.id, documentSet.id)
-      
+
       findTree(otherTree.id) must beSome
-          
+
+    }
+
+    "don't delete document related data if there are multiple trees" in new MultipleTreeContext {
+      cleaner.clean(job.id, documentSet.id)
+
+      findDocument(documentSet.id) must beSome
     }
 
     "delete document related data" in new DocumentSetContext {

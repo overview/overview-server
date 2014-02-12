@@ -30,11 +30,15 @@ class DocumentSetCleaner {
     val tree = findTreeId(jobId)
     tree.foreach(removeNodeData)
     
-    removeDocumentData(documentSetId)
+    if (noRemainingTrees(documentSetId))
+      removeDocumentData(documentSetId)
   }
 
   private def findTreeId(jobId: Long): Option[Long] = 
     DocumentSetCreationJobTreeFinder.byJob(jobId).headOption.map(_.treeId)
+    
+  private def noRemainingTrees(documentSetId: Long): Boolean =
+    TreeFinder.byDocumentSet(documentSetId).count == 0
     
   private def removeNodeData(treeId: Long): Unit = {
     val nodeStore = BaseNodeStore(nodes, trees)
