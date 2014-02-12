@@ -19,7 +19,6 @@ requirejs.config({
       exports: 'jQuery.fn.tab'
     'bootstrap-transition':
       deps: [ 'jquery' ]
-      exports: -> 'jQuery.fn' # doesn't export anything
     jquery: { exports: '$' }
     underscore: { exports: '_' }
 

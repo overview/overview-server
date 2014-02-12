@@ -37,7 +37,6 @@ requirejs.config({
     }
     'bootstrap-transition': {
       deps: [ 'jquery' ]
-      exports: -> 'jQuery.fn' # doesn't export anything
     }
     'jquery.validate': {
       deps: [ 'jquery' ]

@@ -31,7 +31,6 @@ requirejs.config({
     }
     'bootstrap-transition': {
       deps: [ 'jquery' ]
-      exports: -> 'jQuery.fn' # doesn't export anything
     }
     spectrum: {
       deps: [ 'jquery', 'tinycolor' ]
