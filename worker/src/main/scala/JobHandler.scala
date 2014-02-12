@@ -23,6 +23,7 @@ import org.overviewproject.util.Progress._
 import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.finders.DocumentSetCreationJobTreeFinder
+import org.overviewproject.persistence.orm.finders.TreeFinder
 
 object JobHandler {
 
@@ -246,8 +247,10 @@ object JobHandler {
     tree
   }
 
-  private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Tree = Database.inTransaction {
-    TreeStore.update(tree.copy(documentCount = documentCount))
+  private def updateTreeDocumentCount(tree: Tree, documentCount: Int): Option[Tree] = Database.inTransaction {
+    TreeFinder.byId(tree.id).headOption.map { t =>
+      TreeStore.update(t.copy(documentCount = documentCount))
+    }
   }
 
   private def findDocumentSet(documentSetId: Long): Option[DocumentSet] = Database.inTransaction {
