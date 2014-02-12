@@ -1,6 +1,45 @@
 @import "../../variables.less";
 @import "../../mixins.less";
 
+.document-set-tree-list-container {
+  &.single {
+    display: none;
+  }
+
+  ul {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: block;
+    margin: 1em 0;
+    padding: 0;
+  }
+
+  h6 {
+    font-weight: bold;
+    display: inline;
+  }
+
+  h6, span {
+    font-size: 1em;
+  }
+
+  span {
+    .muted;
+
+    &::before {
+      // Add a space after the content. That's because the HTML will contain
+      // a space _before_ each span anyway; this evens the spaces out.
+      content: "– ";
+      padding: 0 .5em;
+    }
+  }
+}
+
 .document-set-list {
   &>li {
     padding: 1em;
@@ -53,6 +92,10 @@
     form {
       display: inline;
     }
+  }
+
+  .trees {
+    .document-set-tree-list-container();
   }
 }
 

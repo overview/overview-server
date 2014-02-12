@@ -59,11 +59,7 @@
     <div class="trees@{ if (trees.length == 1) " single" else "" }">
       <h5>@m("nTrees", trees.length)</h5>
       <ul>
-        @for(tree <- trees) {
-          <li data-tree-id="@tree.id">
-            <a href="@routes.TreeController.show(documentSet.id, tree.id)">@tree.title</a>
-          </li>
-        }
+        @trees.map(_tree.apply(_))
       </ul>
       <form class="create-tree" method="post" action="@routes.TreeController.create(documentSet.id)">
         @helper.Form.csrfToken

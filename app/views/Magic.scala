@@ -1,5 +1,6 @@
 package views
 
+import java.util.Locale
 import play.api.i18n.{Lang,Messages}
 import play.api.templates.Html
 import play.api.Play
@@ -95,5 +96,11 @@ object Magic {
   def escapeFilename(filename: String) = {
     val InvalidCharRegex = """[\x00-\x1f\\\?/%*:|"<>]""".r
     InvalidCharRegex.replaceAllIn(filename, "_")
+  }
+
+  /** Returns "French" when code is "fr", for instance. */
+  def displayLanguageCode(code: String)(implicit lang: Lang) = {
+    val locale = Locale.forLanguageTag(code)
+    locale.getDisplayLanguage(lang.toLocale)
   }
 }

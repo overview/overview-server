@@ -13,6 +13,7 @@ import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import models.OverviewUser
 
 class ViewSpecification extends Specification with Mockito with JsonMatchers {
+  // Need fake application, because some views show CSRF tokens
   override def map(fs: => Fragments) = {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }

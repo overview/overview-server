@@ -1,0 +1,21 @@
+@(
+  tree: org.overviewproject.tree.orm.Tree
+)(implicit lang: play.api.i18n.Lang)
+
+@defining(scopedMessages("views.DocumentSet._tree")) { m =>
+  <li data-tree-id="@tree.id">
+    <h6><a href="@routes.TreeController.show(tree.documentSetId, tree.id)">@tree.title</a></h6>
+    <span class="created-at">@m("createdAt", tree.createdAt)</span>
+    <span class="lang" data-lang="@tree.lang">@displayLanguageCode(tree.lang)</span>
+    @defining(tree.importantWords.split("""\s+""").filter(!_.isEmpty)) { importantWords =>
+      @if(importantWords.length > 0) {
+        <span class="important-words" title="@importantWords.mkString("\n")">@m("nImportantWords", importantWords.length)</span>
+      }
+    }
+    @defining(tree.suppliedStopWords.split("""\s+""").filter(!_.isEmpty)) { suppliedStopWords =>
+      @if(suppliedStopWords.length > 0) {
+        <span class="supplied-stop-words" title="@suppliedStopWords.mkString("\n")">@m("nSuppliedStopWords", suppliedStopWords.length)</span>
+      }
+    }
+  </li>
+}
