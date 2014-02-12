@@ -18,7 +18,7 @@ class JobRestarter(cleaner: DocumentSetCleaner) {
 
   def restart(jobs: Seq[PersistentDocumentSetCreationJob]): Unit = 
     jobs.map { j => 
-      cleaner.clean(j.documentSetId)
+      cleaner.clean(j.id, j.documentSetId)
       j.state = NotStarted
       j.update
       

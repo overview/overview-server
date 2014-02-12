@@ -6,16 +6,13 @@ import org.overviewproject.persistence.orm.Schema.{ nodeDocuments, nodes, trees 
 
 object NodeDocumentStore extends BaseStore(nodeDocuments) {
 
-  def deleteByDocumentSet(documentSetId: Long): Int = {
-    val treesInDocumentSet = from(trees)(t => 
-      where(t.documentSetId === documentSetId)
-      select (t.id))
-      
+  def deleteByTree(treeId: Long): Int = {
     val nodesInTrees = from(nodes)(n =>
-      where(n.treeId in treesInDocumentSet)
+      where(n.treeId === treeId)
         select (n.id))
         
     nodeDocuments.deleteWhere(nd =>
       (nd.nodeId in nodesInTrees))
+    
   }
 }

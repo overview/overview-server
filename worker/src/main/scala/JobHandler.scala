@@ -21,6 +21,8 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util._
 import org.overviewproject.util.Progress._
 import org.overviewproject.persistence.TreeIdGenerator
+import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.persistence.orm.finders.DocumentSetCreationJobTreeFinder
 
 object JobHandler {
 
@@ -107,6 +109,7 @@ object JobHandler {
 
       Logger.info(s"Cleaning up job ${j.documentSetId}")
       Database.inTransaction {
+        deleteJobTreeEntry(j.id)
         j.delete
         deleteFileGroupData(j)
       }
@@ -220,6 +223,13 @@ object JobHandler {
     }
   }
 
+  private def deleteJobTreeEntry(jobId: Long): Unit = {
+    import org.overviewproject.persistence.orm.Schema.documentSetCreationJobTrees
+    val jobTreeStore = BaseStore(documentSetCreationJobTrees)
+
+    jobTreeStore.delete(DocumentSetCreationJobTreeFinder.byJob(jobId).toQuery)
+  }
+  
   private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
     job.fileGroupId.map { fileGroupId =>
       FileStore.delete(FileFinder.byFileGroup(fileGroupId).toQuery)

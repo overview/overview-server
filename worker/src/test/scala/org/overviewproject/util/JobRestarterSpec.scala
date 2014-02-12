@@ -52,7 +52,7 @@ class JobRestarterSpec extends Specification with Mockito {
       job.state must be equalTo (NotStarted)
       job.updateCalled must beTrue 
 
-      there was one(cleaner).clean(job.documentSetId)
+      there was one(cleaner).clean(job.id, job.documentSetId)
     }
   }
 }

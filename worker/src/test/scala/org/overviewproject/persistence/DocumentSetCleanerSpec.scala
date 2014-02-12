@@ -13,6 +13,10 @@ import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument,
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.persistence.orm.DocumentSetCreationJobTree
 
 class DocumentSetCleanerSpec extends DbSpecification {
   step(setupDb)
@@ -21,7 +25,9 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
     trait DocumentSetContext extends DbTestContext {
       var documentSet: DocumentSet = _
+      var job: DocumentSetCreationJob = _
       var tree: Tree = _
+      var otherTree: Tree = _
       var node: Node = _
       var document: Document = _
 
@@ -29,16 +35,21 @@ class DocumentSetCleanerSpec extends DbSpecification {
 
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
+        job = documentSetCreationJobs.insert(DocumentSetCreationJob(documentSetId = documentSet.id,
+            jobType = Recluster, state = InProgress  
+        ))
         tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
+        otherTree = Tree(nextTreeId(documentSet.id), documentSet.id, "other tree", 100, "en", "", "")
         node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
         document = Document(documentSet.id, "description")
         val nodeDocument = NodeDocument(node.id, document.id)
-
+        val jobTree = DocumentSetCreationJobTree(job.id, tree.id)
         trees.insert(tree)
+        trees.insert(otherTree)
         nodes.insert(node)
         documents.insert(document)
         nodeDocuments.insert(nodeDocument)
-
+        documentSetCreationJobTrees.insert(jobTree)
       }
     }
 
@@ -60,20 +71,28 @@ class DocumentSetCleanerSpec extends DbSpecification {
     def findDocument(documentSetId: Long): Option[Document] =
       DocumentSetComponentFinder(documents).byDocumentSet(documentSetId).headOption
 
-    def findTree(documentSetId: Long): Option[Tree] =
-      DocumentSetComponentFinder(trees).byDocumentSet(documentSetId).headOption
+    def findTree(id: Long): Option[Tree] =
+      from(trees)(t =>
+        where(t.id === id)
+        select (t)).headOption
 
     "delete node related data" in new DocumentSetContext {
-      cleaner.clean(documentSet.id)
+      cleaner.clean(job.id, documentSet.id)
 
       findNodeWithTree(tree.id) must beNone
       findNode(node.id) must beNone
-      findTree(documentSet.id) must beNone
-     
+      findTree(tree.id) must beNone
+    }
+    
+    "only delete specified tree" in new DocumentSetContext {
+      cleaner.clean(job.id, documentSet.id)
+      
+      findTree(otherTree.id) must beSome
+          
     }
 
     "delete document related data" in new DocumentSetContext {
-      cleaner.clean(documentSet.id)
+      cleaner.clean(job.id, documentSet.id)
 
       val noDocument = findDocument(documentSet.id)
 
