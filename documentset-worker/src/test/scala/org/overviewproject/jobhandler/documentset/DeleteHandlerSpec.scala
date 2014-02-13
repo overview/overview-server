@@ -12,6 +12,9 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import org.specs2.time.NoTimeConversions
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 
@@ -21,7 +24,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       val searchIndex = mock[SearchIndexComponent]
       val documentSetDeleter = smartMock[DocumentSetDeleter]
       val jobStatusChecker = smartMock[JobStatusChecker]
-      
+
       val deleteResultPromise = Promise[DeleteByQueryResponse]
       val deleteAliasResultPromise = Promise[IndicesAliasesResponse]
 
@@ -33,20 +36,20 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       // need lazy val or def to avoid compiler crash
       protected lazy val aliasResult: IndicesAliasesResponse = smartMock[IndicesAliasesResponse]
       protected lazy val documentResult = smartMock[DeleteByQueryResponse]
-      
+
       protected val documentSetId = 2l
 
       protected var parentProbe: TestProbe = _
       protected var deleteHandler: TestActorRef[DeleteHandler with MockComponents] = _
-      
+
       protected def searchIndex = deleteHandler.underlyingActor.searchIndex
       protected def deleteAliasResult = deleteHandler.underlyingActor.deleteAliasResultPromise
       protected def deleteDocumentsResult = deleteHandler.underlyingActor.deleteResultPromise
       protected def documentSetDeleter = deleteHandler.underlyingActor.documentSetDeleter
-      
-      protected def setJobStatus: Unit = 
-        deleteHandler.underlyingActor.jobStatusChecker isJobRunning(documentSetId) returns false
-        
+
+      protected def setJobStatus: Unit =
+        deleteHandler.underlyingActor.jobStatusChecker runningJob (documentSetId) returns None
+
       override def before = {
         parentProbe = TestProbe()
         deleteHandler = TestActorRef(Props(new DeleteHandler with MockComponents), parentProbe.ref, "DeleteHandler")
@@ -55,10 +58,21 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     abstract class DeleteWhileJobIsRunning extends DeleteContext {
-    	override protected def setJobStatus: Unit =
-    	  deleteHandler.underlyingActor.jobStatusChecker isJobRunning(documentSetId) returns true thenReturns false
+      override protected def setJobStatus: Unit = {
+        val job = smartMock[DocumentSetCreationJob]
+        job.jobType returns (jobType)
+        deleteHandler.underlyingActor.jobStatusChecker runningJob (documentSetId) returns
+          Some(job) thenReturns None
+      }
+
+      protected def jobType = DocumentCloud
+
     }
-    
+
+    abstract class CancelReclusteringJob extends DeleteWhileJobIsRunning {
+      override protected def jobType = Recluster
+    }
+
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId)
       deleteAliasResult.success(aliasResult)
@@ -94,18 +108,34 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
       there was one(documentSetDeleter).deleteClusteringGeneratedInformation(documentSetId)
       there was one(documentSetDeleter).deleteDocumentSet(documentSetId)
-      
+
     }
-    
+
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
+      val deleter = documentSetDeleter
       deleteHandler ! DeleteDocumentSet(documentSetId)
-      
+
       deleteDocumentsResult.success(documentResult)
       deleteAliasResult.success(aliasResult)
-      
+
       parentProbe.expectNoMsg(50 millis)
       // deleteHandler retries here
       parentProbe.expectMsg(JobDone(documentSetId))
+      there was one(deleter).deleteClientGeneratedInformation(documentSetId)
+      there was one(deleter).deleteClusteringGeneratedInformation(documentSetId)
+      there was one(deleter).deleteDocumentSet(documentSetId)
+      
+    }
+
+    "Don't delete anything if reclustering job is running" in new CancelReclusteringJob {
+      val deleter = documentSetDeleter
+      deleteHandler ! DeleteDocumentSet(documentSetId)
+
+      parentProbe.expectMsg(JobDone(documentSetId))
+      there was no(deleter).deleteClientGeneratedInformation(documentSetId)
+      there was no(deleter).deleteClusteringGeneratedInformation(documentSetId)
+      there was no(deleter).deleteDocumentSet(documentSetId)
+
     }
   }
 }
