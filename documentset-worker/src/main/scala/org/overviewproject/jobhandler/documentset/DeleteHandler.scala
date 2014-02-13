@@ -8,7 +8,6 @@ import akka.actor.Actor
 
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
-import org.overviewproject.tree.DocumentSetCreationJobType.Recluster
 
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after
@@ -53,40 +52,31 @@ trait DeleteHandler extends Actor with SearcherComponents {
   def receive = {
     case DeleteDocumentSet(documentSetId) => {
 
-      jobStatusChecker.runningJob(documentSetId) match {
-        case Some(job) if job.jobType == Recluster => {
-          context.parent ! JobDone(documentSetId)
-          context.stop(self)
-        }
-        case Some(job) => context.system.scheduler.scheduleOnce(JobWaitDelay) {
-          self ! DeleteDocumentSet(documentSetId)
-        }
-        case None => {
-          context.parent ! JobDone(documentSetId)
-          context.stop(self)
+      if (jobStatusChecker.isJobRunning(documentSetId)) context.system.scheduler.scheduleOnce(JobWaitDelay) {
+        self ! DeleteDocumentSet(documentSetId)
+      }
+      else {
+        documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
+        documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
+        documentSetDeleter.deleteDocumentSet(documentSetId)
 
-          documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
-          documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
-          documentSetDeleter.deleteDocumentSet(documentSetId)
+        // delete alias first, so no new documents can be inserted.
+        // creating futures inside for comprehension ensures the calls
+        // are run sequentially
+        val combinedResponse = for {
+          aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
+          documentsResponse <- searchIndex.deleteDocuments(documentSetId)
+        } yield documentsResponse
 
-          // delete alias first, so no new documents can be inserted.
-          // creating futures inside for comprehension ensures the calls
-          // are run sequentially
-          val combinedResponse = for {
-            aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
-            documentsResponse <- searchIndex.deleteDocuments(documentSetId)
-          } yield documentsResponse
-
-          combinedResponse onComplete {
-            case Success(r) => {
-              context.parent ! JobDone(documentSetId)
-              context.stop(self)
-            }
-            case Failure(t) => {
-              Logger.error("Deleting indexed documents failed", t)
-              context.parent ! JobDone(documentSetId)
-              context.stop(self)
-            }
+        combinedResponse onComplete {
+          case Success(r) => {
+            context.parent ! JobDone(documentSetId)
+            context.stop(self)
+          }
+          case Failure(t) => {
+            Logger.error("Deleting indexed documents failed", t)
+            context.parent ! JobDone(documentSetId)
+            context.stop(self)
           }
         }
       }
