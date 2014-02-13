@@ -1,6 +1,8 @@
 package org.overviewproject.tree
 
 object DocumentSetCreationJobType extends Enumeration {
+  type DocumentSetCreationJobType = Value
+  
   // Constants copied from "document_set_creation_job_type" table
   val DocumentCloud = Value(1, "DocumentCloud")
   val CsvUpload = Value(2, "CsvUpload")

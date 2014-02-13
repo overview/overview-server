@@ -62,6 +62,9 @@ trait DeleteHandler extends Actor with SearcherComponents {
           self ! DeleteDocumentSet(documentSetId)
         }
         case None => {
+          context.parent ! JobDone(documentSetId)
+          context.stop(self)
+
           documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
           documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
           documentSetDeleter.deleteDocumentSet(documentSetId)
