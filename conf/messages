@@ -53,6 +53,8 @@ mailers.Password.createErrorUserDoesNotExist.case2=If you are an Overview user a
 mailers.Password.createErrorUserDoesNotExist.signoff=Happy analyzing,
 mailers.Password.createErrorUserDoesNotExist.signature=The Overview Project developers
 
+
+models.DocumentSetCreationJob.state.CANCELLED=canceling
 models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
