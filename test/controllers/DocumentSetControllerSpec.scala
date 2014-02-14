@@ -96,7 +96,8 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
       "return Ok if the document set exists with trees" in new ShowJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        mockStorage.findTreesByDocumentSet(documentSetId) returns Seq(mock[Tree], mock[Tree])
+        val fakeTrees : Seq[Tree] = Seq(fakeTree(1L, 2L), fakeTree(1L, 3L))
+        mockStorage.findTreesByDocumentSet(documentSetId) returns fakeTrees
         h.status(result) must beEqualTo(h.OK)
       }
     }
