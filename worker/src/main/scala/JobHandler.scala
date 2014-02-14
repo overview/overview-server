@@ -241,8 +241,10 @@ object JobHandler {
   }
 
   private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
-    val tree = Tree(TreeIdGenerator.next(documentSet.id), job.documentSetId, documentSet.title, 0,
-      job.lang, job.suppliedStopWords.getOrElse(""), job.importantWords.getOrElse(""))
+    val tree = Tree(TreeIdGenerator.next(documentSet.id), job.documentSetId, 
+      job.treeTitle.getOrElse(documentSet.title), 0, job.lang, 
+      job.suppliedStopWords.getOrElse(""), 
+      job.importantWords.getOrElse(""))
 
     tree
   }
