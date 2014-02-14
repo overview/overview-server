@@ -27,7 +27,7 @@ object PagedDocumentFinder {
       }
 
       override def numberOfDocuments: Long = Database.inTransaction {
-        DocumentFinder.byDocumentSet(documentSetId).count
+       query.count
       }
 
     }

@@ -62,7 +62,7 @@ class PagedDocumentFinderSpec extends DbSpecification {
       pagedDocumentFinder.numberOfDocuments must be equalTo (documentIds.size)
     }
 
-    inExample("return only tagged documents when given tag") in new TaggedDocumentContext {
+    "return only tagged documents when given tag" in new TaggedDocumentContext {
       def getResults(page: Int): Seq[Document] = {
         val pageDocs: Seq[Document] = pagedDocumentFinder.findDocuments(page)
 
@@ -71,6 +71,10 @@ class PagedDocumentFinderSpec extends DbSpecification {
       }
 
       getResults(1).map(_.id) must containTheSameElementsAs(documentIds.take(5))
+    }
+    
+    "count only tagged documents when given tag" in new TaggedDocumentContext {
+      pagedDocumentFinder.numberOfDocuments must be equalTo(5)
     }
   }
 
