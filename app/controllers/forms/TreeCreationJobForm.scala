@@ -15,6 +15,7 @@ object TreeCreationJobForm {
   ) = DocumentSetCreationJob(
     documentSetId = documentSetId,
     jobType = DocumentSetCreationJobType.Recluster,
+    treeTitle = Some(""),
     lang = lang,
     suppliedStopWords = suppliedStopWords,
     importantWords = importantWords,
