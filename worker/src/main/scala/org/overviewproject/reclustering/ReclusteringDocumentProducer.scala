@@ -56,12 +56,12 @@ trait ReclusteringDocumentProducer extends DocumentProducer {
 
 object ReclusteringDocumentProducer {
   private val PageSize = 100
-  def apply(documentSetId: Long, aConsumer: DocumentConsumer, aProgAbort: ProgressAbortFn): ReclusteringDocumentProducer =
+  def apply(documentSetId: Long, tagId: Option[Long], aConsumer: DocumentConsumer, aProgAbort: ProgressAbortFn): ReclusteringDocumentProducer =
     new ReclusteringDocumentProducer {
       override protected val consumer: DocumentConsumer = aConsumer
       override protected val progAbort: ProgressAbortFn = aProgAbort
       override protected val pagedDocumentFinder: PagedDocumentFinder = 
-        PagedDocumentFinder(documentSetId, None, PageSize)
+        PagedDocumentFinder(documentSetId, tagId, PageSize)
 
     }
 }

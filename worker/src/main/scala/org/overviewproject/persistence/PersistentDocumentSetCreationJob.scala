@@ -43,8 +43,9 @@ trait PersistentDocumentSetCreationJob {
   // Only FileUpload jobs require fileGroupId
   val fileGroupId: Option[Long]
   
-  // Only Recluster jobs require tree_title
+  // Only Recluster jobs require tree_title or tag_id
   val treeTitle: Option[String]
+  val tagId: Option[Long]
   
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
@@ -99,6 +100,7 @@ object PersistentDocumentSetCreationJob {
     val sourceDocumentSetId: Option[Long] = documentSetCreationJob.sourceDocumentSetId
     val fileGroupId: Option[Long] = documentSetCreationJob.fileGroupId
     val treeTitle: Option[String] = documentSetCreationJob.treeTitle
+    val tagId: Option[Long] = documentSetCreationJob.tagId
     
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete

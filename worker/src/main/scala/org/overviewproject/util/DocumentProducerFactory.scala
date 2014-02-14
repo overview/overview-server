@@ -63,7 +63,7 @@ object DocumentProducerFactory {
       case FileUpload =>
         new FileUploadDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.fileGroupId.get, consumer, progAbort )
       case Recluster =>
-        ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, consumer, progAbort)
+        ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.tagId, consumer, progAbort)
     }
   }
 }
