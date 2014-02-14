@@ -35,6 +35,7 @@ case class DocumentSetCreationJob(
   sourceDocumentSetId: Option[Long] = None,
   fileGroupId: Option[Long] = None,
   treeTitle: Option[String] = None,
+  tagId: Option[Long] = None,
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double = 0.0,
   statusDescription: String = "") extends KeyedEntity[Long] with DocumentSetComponent {
