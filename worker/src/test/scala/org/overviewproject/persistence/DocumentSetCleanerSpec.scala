@@ -35,7 +35,7 @@ class DocumentSetCleanerSpec extends DbSpecification {
       override def setupWithDb = {
         documentSet = documentSets.insert(DocumentSet(title = "DocumentSetCleanerSpec"))
         job = documentSetCreationJobs.insert(DocumentSetCreationJob(documentSetId = documentSet.id,
-          jobType = Recluster, state = InProgress))
+          jobType = Recluster, treeTitle = Some("cluster"), state = InProgress))
         tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
         node = Node(nextNodeId(documentSet.id), tree.id, None, "description", 0, Array.empty, false)
         document = Document(documentSet.id, "description")

@@ -31,6 +31,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
     def expectedValue = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.Recluster,
+      treeTitle = Some(""),
       lang = validLang,
       suppliedStopWords = validSuppliedStopWords,
       importantWords = validImportantWords,

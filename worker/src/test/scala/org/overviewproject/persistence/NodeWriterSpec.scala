@@ -58,7 +58,7 @@ class NodeWriterSpec extends DbSpecification {
         documentSet = documentSets.insert(DocumentSet(title = "NodeWriterSpec"))
         job = documentSetCreationJobs.insert(
             DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
-                state = NotStarted))
+                treeTitle = Some("title"), state = NotStarted))
         tree = Tree(nextTreeId(documentSet.id), documentSet.id, "tree", 100, "en", "", "")
         writer = new NodeWriter(job.id, tree)
       }
@@ -107,7 +107,7 @@ class NodeWriterSpec extends DbSpecification {
         tree2 = Tree(nextTreeId(documentSet.id), documentSet.id, "tree2", 100, "en", "", "")
         val job2 = documentSetCreationJobs.insert(
             DocumentSetCreationJob(documentSetId = documentSet.id, jobType = Recluster,
-                state = NotStarted))
+                treeTitle = Some("title"), state = NotStarted))
         
         writer2 = new NodeWriter(job2.id, tree2)
       }
