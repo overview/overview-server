@@ -61,7 +61,7 @@ object ReclusteringDocumentProducer {
       override protected val consumer: DocumentConsumer = aConsumer
       override protected val progAbort: ProgressAbortFn = aProgAbort
       override protected val pagedDocumentFinder: PagedDocumentFinder = 
-        PagedDocumentFinder(documentSetId, PageSize)
+        PagedDocumentFinder(documentSetId, None, PageSize)
 
     }
 }

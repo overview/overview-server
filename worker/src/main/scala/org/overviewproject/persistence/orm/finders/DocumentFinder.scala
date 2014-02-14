@@ -17,8 +17,16 @@ object DocumentFinder extends Finder {
   }
   implicit private def queryToDocumentFinderResult(query: Query[Document]): DocumentFinderResult = new DocumentFinderResult(query)
   
-  def byDocumentSet(documentSet: Long): DocumentFinderResult = {
+  def byDocumentSet(documentSet: Long): DocumentFinderResult = 
     Schema.documents.where(d => d.documentSetId === documentSet)
-  }
+
+  
+  def byDocumentSetAndTag(documentSet: Long, tagId: Long): DocumentFinderResult = 
+    from(Schema.documents, Schema.documentTags)((d, dt) =>
+      where (d.documentSetId === documentSet and 
+             dt.documentId === d.id and
+             dt.tagId === tagId)
+             select (d))
+
 
 }

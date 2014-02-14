@@ -7,16 +7,20 @@ import org.overviewproject.tree.orm.finders.ResultPage
 import org.overviewproject.util.Logger
 
 trait PagedDocumentFinder {
-  def findDocuments(page: Int): Iterable[Document]
+  def findDocuments(page: Int): Seq[Document]
   def numberOfDocuments: Long
 }
 
 object PagedDocumentFinder {
-  def apply(documentSetId: Long, pageSize: Int): PagedDocumentFinder =
+  def apply(documentSetId: Long, tagId: Option[Long], pageSize: Int): PagedDocumentFinder =
     new PagedDocumentFinder {
 
+      private val query = tagId.map {
+        t => DocumentFinder.byDocumentSetAndTag(documentSetId, t).orderedById
+      }
+      .getOrElse { DocumentFinder.byDocumentSet(documentSetId).orderedById }
+
       override def findDocuments(page: Int): Seq[Document] = Database.inTransaction {
-        val query = DocumentFinder.byDocumentSet(documentSetId).orderedById
         val d = ResultPage(query, pageSize, page).toSeq
         d.size
         d
