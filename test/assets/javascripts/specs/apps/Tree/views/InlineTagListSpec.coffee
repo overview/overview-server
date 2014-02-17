@@ -81,6 +81,13 @@ define [
           view.$('form').submit()
           expect(spy).not.toHaveBeenCalled()
 
+        it 'should focus the input when trying to add just spaces', ->
+          spy = jasmine.createSpy()
+          $('body').append(view.$el) # to make focusing work
+          $input = view.$('input[type=text]')
+          view.$('form').submit()
+          expect($input).toBeFocused()
+
         it 'should reset the form after :create-submitted', ->
           view.$('input[type=text]').val('   foo ')
           view.$('form').submit()

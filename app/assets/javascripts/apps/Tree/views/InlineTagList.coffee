@@ -112,7 +112,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       $input = @$('input[type=text]')
       name = $input.val().replace(/^\s*(.*?)\s*$/, '$1')
 
-      if name
+      if !name
+        $input.focus()
+      else
         existing = @collection.findWhere({ name: name })
 
         if existing?
