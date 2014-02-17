@@ -139,15 +139,23 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
 
     _onSubmitNewTag: (e) ->
       e.preventDefault()
-      $form = $(e.currentTarget).closest('form')
 
-      tag = {
-        name: $form.find('input[name=name]').val()
-        color: $form.find('input[name=color]').val()
-      }
+      $form = $(e.currentTarget)
+      $name = $form.find('input[name=name]')
+      $color = $form.find('input[name=color]')
 
-      @trigger('add', tag)
-      $form[0].reset()
+      name = $name.val().replace(/^\s*(.*?)\s*$/, '$1')
+      color = $color.val()
+
+      if !name
+        $name.focus()
+      else
+        tag =
+          name: name
+          color: color
+
+        @trigger('add', tag)
+        $form[0].reset()
 
     _onSubmitExistingTag: (e) ->
       e.preventDefault()

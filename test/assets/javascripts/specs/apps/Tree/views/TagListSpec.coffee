@@ -52,6 +52,36 @@ define [
         $form.submit()
         expect(val).toEqual({ name: 'new tag' })
 
+      it 'should strip spaces from tag names', ->
+        spy = jasmine.createSpy()
+        view.on('add', spy)
+        view.$('input[name=name]').val(' new tag ')
+        view.$('form').submit()
+        expect(spy).toHaveBeenCalledWith({ name: 'new tag' })
+
+      describe 'adding empty tags', ->
+        # XXX these tests mimic tests in InlineTagListSpec
+        it 'should not trigger add for an empty tag name', ->
+          spy = jasmine.createSpy()
+          view.on('add', spy)
+          view.$('input[name=name]').val('')
+          view.$('form').submit()
+          expect(spy).not.toHaveBeenCalled()
+
+        it 'should not trigger add for an only-spaces tag name', ->
+          spy = jasmine.createSpy()
+          view.on('add', spy)
+          view.$('input[name=name]').val(' ')
+          view.$('form').submit()
+          expect(spy).not.toHaveBeenCalled()
+
+        it 'should focus the input field', ->
+          $input = view.$('input[name=name]')
+          $input.val('')
+          $('body').append(view.el) # make focusing work
+          view.$('form').submit()
+          expect($input).toBeFocused()
+
       it 'should not show an export link', ->
         view?.remove()
         view?.off()
