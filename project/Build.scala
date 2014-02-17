@@ -10,7 +10,9 @@ object ApplicationBuild extends Build with ProjectSettings {
     scalaVersion := ourScalaVersion,
     resolvers ++= ourResolvers)
 
-  val workerJavaOpts = "-Dlogback.configurationFile=workerdevlog.xml" +: {
+  val allJavaOpts = Seq("-Duser.timezone=UTC")
+
+  val workerJavaOpts = Seq("-Dlogback.configurationFile=workerdevlog.xml") ++: {
     if (System.getProperty("datasource.default.url") == null) Seq("-Ddatasource.default.url=" + appDatabaseUrl)
     else Nil
   }
@@ -115,13 +117,13 @@ object ApplicationBuild extends Build with ProjectSettings {
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
     .settings(
       Keys.fork := true,
-      javaOptions in run ++= workerJavaOpts,
+      javaOptions in run ++= allJavaOpts ++ workerJavaOpts,
       javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml")
     .dependsOn(common, workerCommon)
 
   val worker = OverviewProject("worker", workerProjectDependencies).settings(
     Keys.fork := true,
-    javaOptions in run ++=  workerJavaOpts,
+    javaOptions in run ++=  allJavaOpts ++ workerJavaOpts,
     javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml").dependsOn(workerCommon, common)
 
   val main = (
@@ -145,12 +147,13 @@ object ApplicationBuild extends Build with ProjectSettings {
         requireJsShim += "main.js",
         aggregate in Compile := true,
         parallelExecution in IntegrationTest := false,
-        javaOptions in Test ++= Seq(
+        javaOptions in run ++= allJavaOpts,
+        javaOptions in Test ++= allJavaOpts ++ Seq(
           "-Dconfig.file=conf/application-test.conf",
           "-Dlogger.resource=logback-test.xml",
           "-Ddb.default.url=" + testDatabaseUrl,
           "-XX:MaxPermSize=256m"),
-        javaOptions in IntegrationTest ++= Seq(
+        javaOptions in IntegrationTest ++= allJavaOpts ++ Seq(
           "-Dconfig.file=conf/application-it.conf",
           "-Dlogger.resource=logback-test.xml",
           "-Ddb.default.url=" + testDatabaseUrl,
