@@ -52,7 +52,7 @@ define [ 'underscore', './observable' ], (_, observable) ->
       undefined
 
     remove_tag_id: (tagid) ->
-      for _, document of @documents
+      for __, document of @documents
         tagids = document.tagids
         index = tagids?.indexOf(tagid)
         if index? && index != -1
