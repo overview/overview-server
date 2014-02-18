@@ -25,6 +25,14 @@ object UserFinder extends Finder {
     )
   }
 
+  /** @return All Users, sorted by email */
+  def all : FinderResult[User] = {
+    from(Schema.users)(u =>
+      select(u)
+      orderBy(u.email)
+    )
+  }
+
   /** @return All Users with the given email address.
     *
     * The result will have length 0 or 1.

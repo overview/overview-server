@@ -80,6 +80,9 @@ trait OverviewUser {
 
   /** Deletes the user from the database. */
   def delete: Unit
+
+  /** Returns a User for storage in the database. */
+  def toUser: User
 }
 
 /**
@@ -183,7 +186,7 @@ object PotentialNewUser {
  */
 object OverviewUser {
   private val TokenLength = 26
-  private val BcryptRounds = 7
+  val BcryptRounds = 7
 
   private def generateToken = scala.util.Random.alphanumeric.take(TokenLength).mkString
   private def generateTimestamp = new Timestamp(new Date().getTime())
@@ -227,6 +230,7 @@ object OverviewUser {
    * passed along
    */
   private case class OverviewUserImpl(user: User) extends OverviewUser {
+    override def toUser = user
     override val id = user.id
     override val email = user.email
     override val requestedEmailSubscription = user.emailSubscriber

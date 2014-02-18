@@ -1,50 +1,103 @@
 package controllers.admin
 
 import play.api.mvc.Controller
+
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
-import controllers.forms.AdminUserForm
-import models.OverviewUser
+import controllers.forms.admin.{NewUserForm, UserRoleForm}
 import models.orm.User
-import models.orm.finders.{ UserFinder, DocumentSetFinder }
+import models.orm.finders.{ UserFinder, DocumentSetUserFinder }
 import models.orm.stores.UserStore
+import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.orm.finders.ResultPage
 
-object UserController extends Controller {
+trait UserController extends Controller {
+  trait Storage {
+    def findUser(email: String) : Option[User]
+    def findUsers(page: Int) : ResultPage[User]
+    def countDocumentSetsForEmail(email: String) : Long
+    def storeUser(user: User) : User // FIXME differentiate between INSERT and UPDATE
+    def deleteUser(user: User) : Unit
+  }
+
+  private[admin] val PageSize = 50
   private val m = views.Magic.scopedMessages("controllers.admin.UserController")
 
   def index() = AuthorizedAction(adminUser) { implicit request =>
-    val users = OverviewUser.all.toSeq
-    Ok(views.html.admin.User.index(request.user, users))
+    Ok(views.html.admin.User.index(request.user))
   }
 
-  def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
-    UserFinder.byId(id).headOption.map({ otherUser =>
-      AdminUserForm(OverviewUser(otherUser)).bindFromRequest().fold(
-        formWithErrors => BadRequest,
-        updatedUser => {
-          updatedUser.save
-          Redirect(routes.UserController.index()).
-            flashing("success" -> m("update.success", otherUser.email))
-        })
-    }).getOrElse(NotFound)
+  def indexJson(page: Int) = AuthorizedAction(adminUser) { implicit request =>
+    val users = storage.findUsers(page)
+    Ok(views.json.admin.User.index(users))
   }
 
-  def delete(id: Long) = AuthorizedAction(adminUser) { implicit request =>
-    UserFinder.byId(id).headOption.map({ otherUser =>
-      if (otherUser.id == request.user.id) {
-        BadRequest
-      } else {
-        if (DocumentSetFinder.byOwner(otherUser.email).count == 0) {
-          import org.overviewproject.postgres.SquerylEntrypoint._
-          UserStore.delete(otherUser.id)
-          Redirect(routes.UserController.index())
-            .flashing("success" -> m("delete.success", otherUser.email))
-        }
-        else {
-          Redirect(routes.UserController.index())
-            .flashing("error" -> m("delete.failure", otherUser.email))
+  def create() = AuthorizedAction(adminUser) { implicit request =>
+    NewUserForm().bindFromRequest().fold(
+      formWithErrors => BadRequest,
+      newUser => {
+        storage.findUser(newUser.email) match {
+          case Some(_) => BadRequest
+          case None => {
+            val storedUser = storage.storeUser(newUser)
+            Ok(views.json.admin.User.show(storedUser))
+          }
         }
       }
-    }).getOrElse(NotFound)
+    )
   }
+
+  def update(email: String) = AuthorizedAction(adminUser) { implicit request =>
+    if (email == request.user.email) {
+      BadRequest
+    } else {
+      storage.findUser(email) match {
+        case None => NotFound
+        case Some(otherUser) => {
+          UserRoleForm(otherUser).bindFromRequest().fold(
+            formWithErrors => BadRequest,
+            updatedUser => {
+              storage.storeUser(updatedUser)
+              Ok
+            }
+          )
+        }
+      }
+    }
+  }
+
+  def delete(email: String) = AuthorizedAction(adminUser) { implicit request =>
+    if (email == request.user.email) {
+      BadRequest
+    } else {
+      storage.findUser(email) match {
+        case None => NotFound
+        case Some(otherUser) => {
+          if (storage.countDocumentSetsForEmail(email) == 0) {
+            storage.deleteUser(otherUser)
+            Ok
+          } else {
+            BadRequest(m("delete.failure", email))
+          }
+        }
+      }
+    }
+  }
+
+  val storage : UserController.Storage
+}
+
+object UserController extends UserController {
+  object DatabaseStorage extends Storage {
+    override def findUser(email: String) = UserFinder.byEmail(email).headOption
+    override def findUsers(page: Int) = ResultPage(UserFinder.all, PageSize, page)
+    override def storeUser(user: User) = UserStore.insertOrUpdate(user)
+    override def deleteUser(user: User) = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+      UserStore.delete(user.id)
+    }
+    override def countDocumentSetsForEmail(email: String) = DocumentSetUserFinder.byUserAndRole(email, Ownership.Owner).count
+  }
+
+  override val storage = DatabaseStorage
 }

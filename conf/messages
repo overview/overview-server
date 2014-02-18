@@ -2,9 +2,7 @@ brand.name=Overview
 
 password.secure=Please use a password at least seven characters long.
 
-controllers.admin.UserController.update.success=User {0} updated
-controllers.admin.UserController.delete.success=User {0} deleted
-controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before user can be deleted.
+controllers.admin.UserController.delete.failure=Document sets owned by {0} must be removed before the user can be deleted.
 
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
@@ -75,20 +73,23 @@ views.admin.ImportJob.index.td.created_at={0,date,medium} at {0,time,short}
 
 views.admin.User.index.title=Users
 views.admin.User.index.h1=Users
-views.admin.User.index.current_time_sentence=The current time is {0,time,long} on {0,date,medium}.
 views.admin.User.index.th.email=Email
 views.admin.User.index.th.admin=Admin?
 views.admin.User.index.th.confirmed_at=Confirmed
-views.admin.User.index.th.activity_at=Last activity
+views.admin.User.index.th.last_activity_at=Last activity
 views.admin.User.index.th.actions=Actions
-views.admin.User.index.td.admin={0,choice,0#no|1#yes}
+views.admin.User.index.td.is_admin.true=yes
+views.admin.User.index.td.is_admin.false=no
 views.admin.User.index.td.confirmed_at={0,date,medium}
-views.admin.User.index.td.confirmed_at_time={0,time,long}
-views.admin.User.index.td.activity_at={0,date,medium} at {0,time,short}
-views.admin.User.index.action.promote=Promote to administrator
-views.admin.User.index.action.demote=Demote to normal user
+views.admin.User.index.td.last_activity_at={0,date,medium} at {0,time,short}
+views.admin.User.index.action.promote=promote
+views.admin.User.index.action.demote=demote
 views.admin.User.index.action.delete=Delete
 views.admin.User.index.confirm.delete=Are you sure you want to delete {0}? You cannot undo this.
+views.admin.User.index.new.title=Create new user
+views.admin.User.index.new.email=Email
+views.admin.User.index.new.password=Password
+views.admin.User.index.new.submit=Create
 
 views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs

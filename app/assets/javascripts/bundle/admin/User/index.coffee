@@ -2,6 +2,9 @@ requirejs.config({
   baseUrl: '/assets/javascripts'
 
   shim:
+    'backbone':
+      deps: [ 'jquery', 'underscore' ]
+      exports: 'Backbone'
     'bootstrap-alert':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.alert'
@@ -23,6 +26,7 @@ requirejs.config({
     underscore: { exports: '_' }
 
   paths:
+    'backbone': 'vendor/backbone'
     'bootstrap-alert': 'vendor/bootstrap-alert'
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
     'bootstrap-dropdown': 'vendor/bootstrap-dropdown'
@@ -36,4 +40,5 @@ requirejs.config({
 require [
   'elements/form-with-confirm'
   'elements/twitter-bootstrap'
+  'for-view/admin/User/index'
 ], ->

@@ -1,0 +1,38 @@
+define [ 'jquery', 'backbone', 'apps/UserAdmin/App', 'i18n' ], ($, Backbone, App, i18n) ->
+  describe 'apps/UserAdmin/App', ->
+    $el = undefined
+    app = undefined
+
+    beforeEach ->
+      i18n.reset_messages
+        'views.admin.User.index.th.email': 'th.email'
+        'views.admin.User.index.th.admin': 'th.admin'
+        'views.admin.User.index.th.confirmed_at': 'th.confirmed_at'
+        'views.admin.User.index.th.last_activity_at': 'th.last_activity_at'
+        'views.admin.User.index.th.actions': 'th.actions'
+        'views.admin.User.index.new.title': 'new.title'
+        'views.admin.User.index.new.email': 'new.email'
+        'views.admin.User.index.new.password': 'new.password'
+        'views.admin.User.index.new.submit': 'new.submit'
+
+      spyOn(Backbone, 'sync')
+      $el = $('<div id="user-admin-app"></div>').appendTo($('body'))
+      app = new App
+        el: $el.get(0)
+        adminEmail: 'admin@example.org'
+
+    afterEach ->
+      $el?.remove()
+      app?.remove()
+
+    it 'should use an existing element', ->
+      expect(app.el.getAttribute('id')).toEqual('user-admin-app')
+
+    it 'should have a controller', ->
+      expect(app.controller).toBeDefined()
+
+    it 'should sync the users collection', ->
+      expect(Backbone.sync).toHaveBeenCalled()
+
+    it 'should create a MainView with @el', ->
+      expect($(app.el).find('table.users').length).toEqual(1)

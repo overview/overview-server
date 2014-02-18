@@ -1,6 +1,5 @@
 @(
-  user: OverviewUser,
-  users: Seq[OverviewUser]
+  user: OverviewUser
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @import models.orm.UserRole
@@ -8,53 +7,30 @@
 @javascripts = {
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/User/index").url)
 }
+@jsMessageKeys = @{Seq(
+  "views.admin.User.index.h1",
+  "views.admin.User.index.th.email",
+  "views.admin.User.index.th.admin",
+  "views.admin.User.index.th.confirmed_at",
+  "views.admin.User.index.th.last_activity_at",
+  "views.admin.User.index.th.actions",
+  "views.admin.User.index.td.is_admin.true",
+  "views.admin.User.index.td.is_admin.false",
+  "views.admin.User.index.td.confirmed_at",
+  "views.admin.User.index.td.last_activity_at",
+  "views.admin.User.index.action.promote",
+  "views.admin.User.index.action.demote",
+  "views.admin.User.index.action.delete",
+  "views.admin.User.index.confirm.delete",
+  "views.admin.User.index.new.title",
+  "views.admin.User.index.new.email",
+  "views.admin.User.index.new.password",
+  "views.admin.User.index.new.submit"
+)}
 
 @defining(scopedMessages("views.admin.User.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1"), javascripts=javascripts) {
-    <p class="current-time">@m("current_time_sentence", new java.util.Date())</p>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th class="email">@m("th.email")</th>
-          <th class="admin">@m("th.admin")</th>
-          <th class="confirmed-at">@m("th.confirmed_at")</th>
-          <th class="activity-at">@m("th.activity_at")</th>
-          <th class="actions">@m("th.actions")</th>
-        </tr>
-      </thead>
-      <tbody>
-        @users.map { otherUser =>
-          <tr>
-            <td class="email">@otherUser.email</td>
-            <td class="admin">@m("td.admin", if(otherUser.isAdministrator) 1 else 0)</td>
-            <td class="confirmed-at" title="@(otherUser.asConfirmed.map(u => m("td.confirmed_at_time", u.confirmedAt)).getOrElse(""))">
-              @otherUser.asConfirmed.map(u => m("td.confirmed_at", u.confirmedAt))
-            </td>
-            <td class="activity-at">
-              @otherUser.lastActivityAt.map(m("td.activity_at", _))
-            </td>
-            <td class="actions">
-              @if(otherUser.id != user.id) {
-                <form method="post" action="@controllers.admin.routes.UserController.update(otherUser.id)">
-                  @helper.Form.csrfToken
-                  <input type="hidden" name="email" value="@otherUser.email"/>
-                  @if(otherUser.isAdministrator) {
-                    <input type="hidden" name="role" value="@UserRole.NormalUser.id"/>
-                    <input type="submit" value="@m("action.demote")"/>
-                  } else {
-                    <input type="hidden" name="role" value="@UserRole.Administrator.id"/>
-                    <input type="submit" value="@m("action.promote")"/>
-                  }
-                </form>
-                <form method="post" class="delete" data-confirm="@m("confirm.delete", otherUser.email)" action="@controllers.admin.routes.UserController.delete(otherUser.id)?X-HTTP-Method-Override=DELETE">
-                  @helper.Form.csrfToken
-                  <input type="submit" value="@m("action.delete")" />
-                </form>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="admin-user-index", h1=m("h1"), javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <p>All times are in <em>your</em> local time zone.</p>
+    <div class="app" data-admin-email="@user.email"></div>
   }
 }
