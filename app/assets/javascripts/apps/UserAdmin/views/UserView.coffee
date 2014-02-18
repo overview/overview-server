@@ -22,6 +22,15 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         <% if (model.get('email') != adminEmail) { %>
           <a href="#" class="delete"><%- t('action.delete') %></a>
         <% } %>
+        <a href="#" class="change-password"><%- t('action.changePassword') %></a>
+        <form class="change-password form-inline" style="display: none;">
+          <label>
+            <%- t('changePassword.label') %>
+            <input name="password" type="password" required="required"/>
+          </label>
+          <input type="submit" class="btn btn-primary" value="<%- t('changePassword.submit') %>"/>
+          <input type="reset" class="btn" value="<%- t('changePassword.reset') %>"/>
+        </form>
       </td>
       """)
 
@@ -29,6 +38,9 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       'click .demote': '_onDemote'
       'click .promote': '_onPromote'
       'click .delete': '_onDelete'
+      'click a.change-password': '_onStartChangePassword'
+      'submit form.change-password': '_onSubmitChangePassword'
+      'reset form.change-password': '_onResetChangePassword'
 
     initialize: (options) ->
       @adminEmail = options.adminEmail
@@ -60,3 +72,21 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       e.preventDefault()
       if window.confirm(t('confirm.delete', @model.get('email')))
         @model.set(deleting: true)
+
+    _onStartChangePassword: (e) ->
+      e.preventDefault()
+      @$('a.change-password').hide()
+      @$('form.change-password').show()
+      @$('form.change-password input[name=password]').focus()
+
+    _onSubmitChangePassword: (e) ->
+      e.preventDefault()
+      $form = @$('form.change-password')
+      newPassword = $form.find('input[name=password]').val()
+      $form.get(0).reset()
+      @model.set(password: newPassword)
+
+    _onResetChangePassword: (e) ->
+      # do not preventDefault()
+      @$('form.change-password').hide()
+      @$('a.change-password').show()

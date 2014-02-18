@@ -141,6 +141,20 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
         there was one(mockStorage).storeUser(beLike[User] { case (u: User) => u.role must beEqualTo(UserRole.NormalUser) })
       }
 
+      "not change password when not given" in new UpdateScope {
+        mockStorage.findUser(email) returns Some(User(email=email, passwordHash="hash"))
+        override def data = Seq("is_admin" -> "false")
+        h.status(result) // finish request
+        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => u.passwordHash must beEqualTo("hash") })
+      }
+
+      "change password when one is given" in new UpdateScope {
+        mockStorage.findUser(email) returns Some(User(email=email, passwordHash="hash"))
+        override def data = Seq("password" -> "as;dj#$xfF")
+        h.status(result) // finish request
+        there was one(mockStorage).storeUser(beLike[User] { case (u: User) => "as;dj#$xfF".isBcrypted(u.passwordHash) must beTrue })
+      }
+
       "return Ok" in new UpdateScope {
         mockStorage.findUser(email) returns Some(User(email=email))
         override def data = Seq("is_admin"-> "false")

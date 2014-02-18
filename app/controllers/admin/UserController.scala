@@ -4,7 +4,7 @@ import play.api.mvc.Controller
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
-import controllers.forms.admin.{NewUserForm, UserRoleForm}
+import controllers.forms.admin.{NewUserForm, EditUserForm}
 import models.orm.User
 import models.orm.finders.{ UserFinder, DocumentSetUserFinder }
 import models.orm.stores.UserStore
@@ -54,7 +54,7 @@ trait UserController extends Controller {
       storage.findUser(email) match {
         case None => NotFound
         case Some(otherUser) => {
-          UserRoleForm(otherUser).bindFromRequest().fold(
+          EditUserForm(otherUser).bindFromRequest().fold(
             formWithErrors => BadRequest,
             updatedUser => {
               storage.storeUser(updatedUser)

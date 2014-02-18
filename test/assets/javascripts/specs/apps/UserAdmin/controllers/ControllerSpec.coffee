@@ -31,6 +31,15 @@ define [ 'backbone', 'apps/UserAdmin/controllers/Controller' ], (Backbone, Contr
       user.set({ is_admin: true })
       expect(user.save).toHaveBeenCalled()
 
+    it 'should clear the password after syncing a user', ->
+      user = new MockUser({ email: 'user@example.org', is_admin: false })
+      spyOn(user, 'save')
+      users.add(user)
+      user.set(password: 'as;dj#$xfF')
+      expect(user.save).toHaveBeenCalled()
+      expect(user.save.callCount).toEqual(1)
+      expect(user.has('password')).toBe(false)
+
     it 'should destroy a user when it is deleting, but not remove it from the collection', ->
       spyOn(Backbone, 'sync')
       user = new MockUser(email: 'user@example.org', is_admin: false)

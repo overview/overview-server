@@ -16,7 +16,7 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
       @_attachMainView()
 
     _attachUsers: ->
-      @listenTo(@users, 'change:is_admin', @_onIsAdminChanged)
+      @listenTo(@users, 'change:is_admin change:password', @_onUserChanged)
       @listenTo(@users, 'change:deleting', @_onDeletingChanged)
       @listenTo(@users, 'parse-pagination', @_onParsePagination)
 
@@ -26,8 +26,10 @@ define [ 'underscore', 'backbone' ], (_, Backbone) ->
     _attachMainView: ->
       @listenTo(@mainView, 'create', @create)
 
-    _onIsAdminChanged: (user) ->
-      user.save()
+    _onUserChanged: (user, __, options) ->
+      if !options.resettingPassword
+        user.save()
+        user.unset('password', resettingPassword: true)
 
     _onDeletingChanged: (user) ->
       user.destroy
