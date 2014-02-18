@@ -112,6 +112,25 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
         # Doesn't handle currency or percent
         digits = node.format_style.split('.')[1].length
         floatToString(parseFloat(value), digits) # doesn't handle number format
+    else if node.format_type == 'date'
+      if value
+        # assume format_style == 'medium'
+        [
+          value.getFullYear()
+          (value.getMonth() + 101).toString(10).substring(1)
+          (value.getDate() + 100).toString(10).substring(1)
+        ].join('-')
+      else
+        ''
+    else if node.format_type == 'time'
+      if value
+        # assume format_style == 'short'
+        [
+          (value.getHours() + 100).toString(10).substring(1)
+          (value.getMinutes() + 100).toString(10).substring(1)
+        ].join(':')
+      else
+        ''
     else if node.format_type == 'choice'
       _choice_to_string(node.format_style, parseFloat(value), args)
     else
