@@ -19,6 +19,10 @@ define [
         'views.DocumentSet.index.ImportOptions.important_words.label': 'important_words.label'
         'views.DocumentSet.index.ImportOptions.important_words.help': 'important_words.help'
         'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
+        'views.DocumentSet.index.ImportOptions.tag_id.label': 'tag_id.label'
+        'views.DocumentSet.index.ImportOptions.tag.loading': 'tag.loading'
+        'views.DocumentSet.index.ImportOptions.tag.error': 'tag.error'
+        'views.DocumentSet.index.ImportOptions.tag.allDocuments': 'tag.allDocuments'
 
     afterEach ->
       view?.remove()
@@ -34,6 +38,8 @@ define [
         expect(view.$('[name=split_documents]').length).toEqual(0)
         expect(view.$('[name=important_words]').length).toEqual(0)
         expect(view.$('[name=name]').length).toEqual(0)
+        expect(view.$('[name=tree_title]').length).toEqual(0)
+        expect(view.$('[name=tag_id]').length).toEqual(0)
 
     describe 'with all options', ->
       beforeEach ->
@@ -44,8 +50,11 @@ define [
           lang: 'en'
           supplied_stop_words: ''
           important_words: ''
+          tag_id: ''
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
-        view = new OptionsView({ model: model })
+        view = new OptionsView
+          model: model
+          tagListUrl: '/tags'
 
       it 'should start with the checkbox matching split_documents', ->
         expect(view.$('[name=split_documents]').prop('checked')).toEqual(model.get('split_documents'))
@@ -100,3 +109,6 @@ define [
         $input.val('a fine title')
         $input.change()
         expect(model.get('tree_title')).toEqual('a fine title')
+
+      it 'should add a tag-id dropdown', ->
+        expect(view.$('.tag-id .dropdown-toggle').length).toEqual(1)

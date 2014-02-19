@@ -6,6 +6,7 @@ define [ 'backbone' ], (Backbone) ->
       important_words: ''
       lang: ''
       name: ''
+      tag_id: ''
       tree_title: ''
 
     initialize: (attributes, options) ->

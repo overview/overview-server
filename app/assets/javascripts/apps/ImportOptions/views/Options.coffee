@@ -1,11 +1,16 @@
-define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
+define [
+  'underscore'
+  'backbone'
+  './TagIdInput'
+  'i18n'
+], (_, Backbone, TagIdInput, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   # Presents an Options in a write-only manner.
   #
   # This is a view/controller mishmash. As the user clicks here, the model will
   # change. If the model changes, this view will not change.
-  Backbone.View.extend
+  class OptionsView extends Backbone.View
     tagName: 'fieldset'
     className: 'import-options'
 
@@ -32,6 +37,15 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
           <label class="control-label" for="import-options-name"><%- t('name.label') %></label>
           <div class="controls">
             <input required="required" type="text" id="import-options-name" name="name" value="<%- options.name %>" />
+          </div>
+        </div>
+      <% } %>
+
+      <% if ('tag_id' in options) { %>
+        <div class="control-group">
+          <label class="control-label"><%- t('tag_id.label') %></label>
+          <div class="controls">
+            <div class="tag-id"></div>
           </div>
         </div>
       <% } %>
@@ -86,7 +100,13 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     initialize: ->
       throw 'Must pass model, an Options model' if !@model
 
+      @childViews = []
       @initialRender()
+
+    remove: ->
+      for v in @childViews
+        v.remove()
+      super()
 
     initialRender: ->
       html = @template({
@@ -95,6 +115,15 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         options: @model.attributes
       })
       @$el.html(html)
+
+      $tagId = @$('.tag-id')
+      if $tagId.length
+        childView = new TagIdInput
+          model: @model
+          el: $tagId.get(0)
+          tagListUrl: @options.tagListUrl
+        @childViews.push(childView)
+        childView.render()
 
     _onChangeSplitDocuments: (e) ->
       @model.set('split_documents', Backbone.$(e.target).prop('checked'))

@@ -68,6 +68,9 @@ define [
       describe 'tree_title', ->
         it 'should begin empty', -> expect(subject.get('tree_title')).toBe('')
 
+      describe 'tag_id', ->
+        it 'should begin as the empty string', -> expect(subject.get('tag_id')).toBe('')
+
       describe 'split_documents', ->
         it 'should begin false', -> expect(subject.get('split_documents')).toBe(false)
 

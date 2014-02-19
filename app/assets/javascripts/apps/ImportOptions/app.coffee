@@ -64,13 +64,16 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   #
   # * `onlyOptions`: An Array of options to include, such as `split_documents`.
   # * `excludeOptions`: An Array of options to exclude, such as `split_documents`.
+  # * `tagListUrl`: a URL that returns JSON { tags: [ { ... } ] }, used for `tag_id` option
   class App
     constructor: (@options) ->
       throw 'Must pass supportedLanguages, an Array of { code: "en", name: "English" } values' if !@options.supportedLanguages?
       throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode?
 
       @model = new Options({}, @options)
-      view = new OptionsView({ model: @model })
+      view = new OptionsView
+        model: @model
+        tagListUrl: @options.tagListUrl
       @el = view.el
 
     @addHiddenInputsThroughDialog: (form, options) ->
