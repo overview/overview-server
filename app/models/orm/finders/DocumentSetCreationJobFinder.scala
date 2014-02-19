@@ -4,7 +4,7 @@ import scala.language.implicitConversions
 import scala.language.postfixOps
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.Ownership
+import org.overviewproject.tree.{DocumentSetCreationJobType, Ownership}
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState }
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
 
@@ -17,7 +17,15 @@ object DocumentSetCreationJobFinder extends Finder {
     def byState(states: DocumentSetCreationJobState.Value*): DocumentSetCreationJobFinderResult = {
       from(toQuery)(dscj =>
         where(dscj.state in states)
-          select (dscj))
+        select(dscj)
+      )
+    }
+
+    def excludeFailedTreeCreationJobs: DocumentSetCreationJobFinderResult = {
+      toQuery.where(dscj =>
+        (dscj.jobType === DocumentSetCreationJobType.Recluster) and
+        (dscj.state in Seq(DocumentSetCreationJobState.Cancelled, DocumentSetCreationJobState.Error))
+      )
     }
 
     def withDocumentSets: FinderResult[(DocumentSetCreationJob, DocumentSet)] = {
