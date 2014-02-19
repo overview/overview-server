@@ -10,13 +10,23 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     className: 'import-options'
 
     events:
+      'change [name=name]': '_onChangeName'
+      'change [name=tree_title]': '_onChangeTreeTitle'
       'change [name=split_documents]': '_onChangeSplitDocuments'
       'change [name=lang]': '_onChangeLang'
       'change [name=supplied_stop_words]': '_onChangeSuppliedStopWords'
-      'change [name=name]': '_onChangeName'
       'change [name=important_words]': '_onChangeImportantWords'
 
     template: _.template("""
+      <% if ('tree_title' in options) { %>
+        <div class="control-group">
+          <label class="control-label" for="import-options-tree-title"><%- t('tree_title.label') %></label>
+          <div class="controls">
+            <input required="required" type="text" id="import-options-tree-title" name="tree_title" value="<%- options.tree_title %>" />
+          </div>
+        </div>
+      <% } %>
+
       <% if ('name' in options) { %>
         <div class="control-group">
           <label class="control-label" for="import-options-name"><%- t('name.label') %></label>
@@ -97,6 +107,9 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
 
     _onChangeName: (e) ->
       @model.set('name', Backbone.$(e.target).val())
+
+    _onChangeTreeTitle: (e) ->
+      @model.set('tree_title', Backbone.$(e.target).val())
 
     _onChangeImportantWords: (e) ->
       @model.set('important_words', Backbone.$(e.target).val())

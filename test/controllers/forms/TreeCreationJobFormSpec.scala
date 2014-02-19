@@ -12,7 +12,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
   }
 
   trait ValidScope extends JobApplyScope {
-    val validTitle = "title"
+    val validTreeTitle = "title"
     val requiredQuery = ""
     val validLang = "en"
     val requiredUsername = None
@@ -22,7 +22,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
     val validImportantWords = ""
 
     override def args = Map(
-      "title" -> validTitle,
+      "tree_title" -> validTreeTitle,
       "lang" -> validLang,
       "supplied_stop_words" -> validSuppliedStopWords,
       "important_words" -> validImportantWords
@@ -31,7 +31,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
     def expectedValue = DocumentSetCreationJob(
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.Recluster,
-      treeTitle = Some(""),
+      treeTitle = Some(validTreeTitle),
       lang = validLang,
       suppliedStopWords = validSuppliedStopWords,
       importantWords = validImportantWords,
@@ -67,6 +67,26 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
     "disallow if important_words is missing" in new ValidScope {
       override def args = super.args - "important_words"
       error("important_words") must beSome(FormError("important_words", "error.required", Seq()))
+    }
+
+    "disallow if title is missing" in new ValidScope {
+      override def args = super.args - "tree_title"
+      error("tree_title") must beSome(FormError("tree_title", "error.required", Seq()))
+    }
+
+    "disallow if title is empty" in new ValidScope {
+      override def args = super.args + ("tree_title" -> "")
+      error("tree_title") must beSome(FormError("tree_title", "error.required", Seq()))
+    }
+
+    "trim the title" in new ValidScope {
+      override def args = super.args + ("tree_title" -> " title ")
+      value must beSome(expectedValue)
+    }
+
+    "disallow if title is just spaces" in new ValidScope {
+      override def args = super.args + ("tree_title" -> "  ")
+      error("tree_title") must beSome(FormError("tree_title", "error.required", Seq()))
     }
   }
 }

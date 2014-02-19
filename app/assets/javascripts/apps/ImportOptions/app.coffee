@@ -62,6 +62,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   #
   # Optional:
   #
+  # * `onlyOptions`: An Array of options to include, such as `split_documents`.
   # * `excludeOptions`: An Array of options to exclude, such as `split_documents`.
   class App
     constructor: (@options) ->

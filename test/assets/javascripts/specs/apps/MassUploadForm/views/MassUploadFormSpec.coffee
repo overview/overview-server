@@ -107,9 +107,9 @@ define [
             view.$('.choose-options').click()
             expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
               jasmine.any(HTMLElement),
+              onlyOptions: [ 'name', 'lang', 'supplied_stop_words', 'important_words' ]
               supportedLanguages: jasmine.any(Array)
               defaultLanguageCode: 'en'
-              excludeOptions: ['split_documents']
               callback: jasmine.any(Function)
             )
 

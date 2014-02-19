@@ -8,14 +8,14 @@ import org.overviewproject.tree.DocumentSetCreationJobType
 
 object TreeCreationJobForm {
   private def buildJob(documentSetId: Long)(
-    /*title: String,*/
+    title: String,
     lang: String,
     suppliedStopWords: String,
     importantWords: String
   ) = DocumentSetCreationJob(
     documentSetId = documentSetId,
     jobType = DocumentSetCreationJobType.Recluster,
-    treeTitle = Some(""),
+    treeTitle = Some(title),
     lang = lang,
     suppliedStopWords = suppliedStopWords,
     importantWords = importantWords,
@@ -24,12 +24,12 @@ object TreeCreationJobForm {
 
   def apply(documentSetId: Long) : Form[DocumentSetCreationJob] = Form(
     Forms.mapping(
-      /*"title" -> Forms.text,*/
+      "tree_title" -> Forms.text.transform(_.trim, identity[String]).verifying(Constraints.nonEmpty),
       "lang" -> Forms.nonEmptyText.verifying(validation.supportedLang),
       "supplied_stop_words" -> Forms.text,
       "important_words" -> Forms.text
     )
     (buildJob(documentSetId))
-    ((job) => Some((/*job.title, */job.lang, job.suppliedStopWords, job.importantWords)))
+    ((job) => Some((job.treeTitle.getOrElse(""), job.lang, job.suppliedStopWords, job.importantWords)))
   )
 }

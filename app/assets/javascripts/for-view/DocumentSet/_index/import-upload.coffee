@@ -22,9 +22,9 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
   make_csv_upload_form = ($form, $modal) ->
     importOptionsApp = new ImportOptionsApp
+      onlyOptions: [ 'lang', 'important_words', 'supplied_stop_words' ]
       supportedLanguages: window.supportedLanguages
       defaultLanguageCode: window.defaultLanguageCode
-      excludeOptions: [ 'split_documents', 'name' ]
     $form.find('.ok').prepend(importOptionsApp.el)
     given_url = $form.attr('action')
     url_prefix = given_url.split(/\//)[0..-2].join('/') + '/'

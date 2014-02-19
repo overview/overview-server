@@ -285,6 +285,7 @@ views.DocumentSet.index.import_from_mass_upload=Upload PDF files
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.lang.label=Language of documents
 views.DocumentSet.index.ImportOptions.name.label=Document set name
+views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 views.DocumentSet.index.ImportOptions.split_documents.label=Split each page into its own document in Overview
 views.DocumentSet.index.ImportOptions.supplied_stop_words.label=Words to ignore (optional)
 views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.

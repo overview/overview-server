@@ -13,6 +13,7 @@ define [
         'views.DocumentSet.index.ImportOptions.split_documents.label': 'split_documents.label'
         'views.DocumentSet.index.ImportOptions.lang.label': 'lang.label'
         'views.DocumentSet.index.ImportOptions.name.label': 'name.label'
+        'views.DocumentSet.index.ImportOptions.tree_title.label': 'tree_title.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
         'views.DocumentSet.index.ImportOptions.important_words.label': 'important_words.label'
@@ -36,7 +37,13 @@ define [
 
     describe 'with all options', ->
       beforeEach ->
-        model = new Backbone.Model({ split_documents: false, lang: 'en', supplied_stop_words: '', important_words: '', name: '' })
+        model = new Backbone.Model
+          name: ''
+          tree_title: ''
+          split_documents: false
+          lang: 'en'
+          supplied_stop_words: ''
+          important_words: ''
         model.supportedLanguages = [{code:'en',name:'English'},{code:'fr',name:'French'},{code:'de',name:'German'},{code:'es',name:'Spanish'},{code:'sv',name:'Swedish'}]
         view = new OptionsView({ model: model })
 
@@ -82,3 +89,14 @@ define [
         $input.change()
         expect(model.get('name')).toEqual('a fine set of documents')
 
+      it 'should start with tree_title matching tree_title', ->
+        expect(view.$('[name=tree_title]').val()).toEqual(model.get('tree_title'))
+
+      it 'should make tree_title required', ->
+        expect(view.$('[name=tree_title]').prop('required')).toBeTruthy()
+
+      it 'should change tree_title on the model', ->
+        $input = view.$('[name=tree_title]')
+        $input.val('a fine title')
+        $input.change()
+        expect(model.get('tree_title')).toEqual('a fine title')

@@ -107,9 +107,9 @@ define [
       e.preventDefault()
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
+        onlyOptions: [ 'name', 'lang', 'supplied_stop_words', 'important_words' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
-        excludeOptions: ['split_documents']
         callback: => @_optionsSetDone()
       )
 
