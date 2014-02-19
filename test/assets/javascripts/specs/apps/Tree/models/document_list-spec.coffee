@@ -11,6 +11,7 @@ define [
   class MockCache
     constructor: () ->
       @document_store = new MockDocumentStore()
+      @on_demand_tree = { id_tree: { root: 1 } }
       @deferreds = []
 
     resolve_deferred: (key, obj) ->
@@ -19,7 +20,7 @@ define [
 
   class MockParams
     constructor: (@apiParams) ->
-    toApiParams: -> @apiParams
+    toApiParams: (@filter) -> @apiParams
 
   describe 'models/document_list', ->
     describe 'DocumentList', ->
@@ -47,6 +48,13 @@ define [
           arr = undefined
           deferred.done((x) -> arr = x)
           expect(arr).toEqual(doclist(1, 4).documents)
+
+        it 'should filter for the given document set', ->
+          params = new MockParams({})
+          spyOn(params, 'toApiParams').andReturn({ nodes: 1 })
+          dl = new DocumentList(cache, params)
+          dl.slice(0, 2)
+          expect(params.toApiParams).toHaveBeenCalledWith(nodes: 1)
 
         it 'should call Cache.resolve_deferred(selection_documents_slice)', ->
           dl = new DocumentList(cache, new MockParams(nodes: '2'))

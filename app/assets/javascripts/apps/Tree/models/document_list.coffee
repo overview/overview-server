@@ -39,7 +39,7 @@ define [ 'jquery', './observable' ], ($, observable) ->
 
         searchResultId = @params.type == 'searchResult' && @params.searchResultId || null
 
-        params = @params.toApiParams()
+        params = @params.toApiParams(nodes: @cache.on_demand_tree.id_tree.root)
         params.pageSize = pageSize
         params.page = page
 

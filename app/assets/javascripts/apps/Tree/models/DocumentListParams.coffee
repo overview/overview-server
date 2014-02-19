@@ -75,10 +75,20 @@ define [ 'underscore' ], (_) ->
     #
     # Overview's servers expect each ID array to be a single String, with
     # commas delimiting each ID.
-    toApiParams: ->
+    #
+    # You must pass baseParams, a filter that describes the app the user is
+    # looking at. For instance, the Tree app is always rooted at a node; set a
+    # filter of `{ nodes: rootNodeId }` and that will be added to the API iff
+    # there is no node in the selection already. (If there _is_ a node in the
+    # selection, then presumably it is a child of the one you're passing in the
+    # filter, meaning it's okay to omit it.)
+    toApiParams: (filter) ->
       ret = {}
       for k, v of @toJSON()
         ret[k] = v.map(String).join(',')
+      for k, v of (filter ? {})
+        if k not of ret
+          ret[k] = v
       ret
 
   MagicUntaggedTagId = 0

@@ -190,8 +190,8 @@ define [
     #
     # This leaves our document_store unaffected.
     addTagToDocumentListRemote: (tag, documentList) ->
-      postData = documentList.toApiParams()
       @transaction_queue.queue(=>
+        postData = documentList.toApiParams(nodes: @on_demand_tree.id_tree.root)
         @server.post('tag_add', postData, { path_argument: tag.id })
       , 'Cache.addTagToDocumentListRemote')
 
@@ -219,8 +219,8 @@ define [
     #
     # This leaves our document_store unaffected.
     removeTagFromDocumentListRemote: (tag, documentList) ->
-      postData = documentList.toApiParams()
       @transaction_queue.queue =>
+        postData = documentList.toApiParams(nodes: @on_demand_tree.id_tree.root)
         @server.post('tag_remove', postData, { path_argument: tag.id })
 
     # Removes the given Tag to all documents specified by the DocumentList.

@@ -67,7 +67,7 @@ define [
       it 'should have one param', -> expect(params.params).toEqual([2])
       it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(node:2)')
       it 'should have a JSON param', -> expect(params.toJSON()).toEqual({ nodes: [2] })
-      it 'should have an API param', -> expect(params.toApiParams()).toEqual({ nodes: '2' })
+      it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).toEqual({ nodes: '2' })
       it 'should equals() another', -> expect(params.equals(DocumentListParams.byNodeId(2))).toBe(true)
       it 'should not equals() something else', -> expect(params.equals(DocumentListParams.byNodeId(3))).toBe(false)
 
@@ -82,7 +82,7 @@ define [
       it 'should have one param', -> expect(params.params).toEqual([1])
       it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(tag:1)')
       it 'should have a JSON param', -> expect(params.toJSON()).toEqual({ tags: [1] })
-      it 'should have an API param', -> expect(params.toApiParams()).toEqual({ tags: '1' })
+      it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).toEqual({ nodes: 1, tags: '1' })
 
       it 'should find all documents from cache, sorted', ->
         result = params.findDocumentsFromCache(cache)
@@ -95,7 +95,7 @@ define [
       it 'should have one param', -> expect(params.params).toEqual([1])
       it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(document:1)')
       it 'should have a JSON param', -> expect(params.toJSON()).toEqual({ documents: [1] })
-      it 'should have an API param', -> expect(params.toApiParams()).toEqual({ documents: '1' })
+      it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).toEqual({ nodes: 1, documents: '1' })
 
       it 'should find a document when it is in the cache', ->
         result = params.findDocumentsFromCache(cache)
@@ -117,7 +117,7 @@ define [
         it 'should have params', -> expect(params.params).toEqual([['document', [1]], ['node', [2]]])
         it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(document:1) ∩ DocumentListParams(node:2)')
         it 'should have two JSON params', -> expect(params.toJSON()).toEqual({ documents: [1], nodes: [2] })
-        it 'should have two API params', -> expect(params.toApiParams()).toEqual({ documents: '1', nodes: '2' })
+        it 'should have two API params', -> expect(params.toApiParams(nodes: 1)).toEqual({ documents: '1', nodes: '2' })
 
         it 'should find the document when it is in the cache', ->
           result = params.findDocumentsFromCache(cache)
@@ -144,7 +144,7 @@ define [
       it 'should have no params', -> expect(params.params).toEqual([])
       it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(untagged)')
       it 'should have a JSON param', -> expect(params.toJSON()).toEqual({ tags: [0] })
-      it 'should have an API param', -> expect(params.toApiParams()).toEqual({ tags: '0' })
+      it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).toEqual({ nodes: 1, tags: '0' })
 
       it 'should find all untagged documents from cache, sorted', ->
         result = params.findDocumentsFromCache(cache)
@@ -157,7 +157,7 @@ define [
       it 'should have one param', -> expect(params.params).toEqual([3])
       it 'should have toString', -> expect(params.toString()).toEqual('DocumentListParams(searchResult:3)')
       it 'should have a JSON param', -> expect(params.toJSON()).toEqual({ searchResults: [3] })
-      it 'should have an API param', -> expect(params.toApiParams()).toEqual({ searchResults: '3' })
+      it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).toEqual({ nodes: 1, searchResults: '3' })
 
       it 'should find no documents from the cache', ->
         expect(params.findDocumentsFromCache(cache)).toEqual([])

@@ -30,23 +30,7 @@ define [
       _.find(@tags, (o) -> o.name == name)
 
   class MockDocumentStore
-    constructor: () ->
-      @documents = {}
-      @added_doclists = []
-      @removed_doclists = []
-      @changes = []
-
-    add_doclist: (doclist, documents) ->
-      @documents = _.union(@documents, documents)
-      @added_doclists.push([ doclist, documents ])
-      undefined
-
-    remove_doclist: (doclist) ->
-      @removed_doclists.push(doclist)
-
-    change: (document) ->
-      @changes.push(document)
-
+    constructor: () -> @documents = {}
     remove_tag_id: () ->
 
   class MockTransactionQueue
