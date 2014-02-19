@@ -19,7 +19,7 @@ class TreeControllerSpec extends ControllerSpecification {
   "TreeController.create" should {
     trait CreateScope extends BaseScope {
       val documentSetId = 1L
-      def formBody : Seq[(String,String)] = Seq("lang" -> "en", "supplied_stop_words" -> "", "important_words" -> "")
+      def formBody : Seq[(String,String)] = Seq("tree_title" -> "tree title", "lang" -> "en", "supplied_stop_words" -> "", "important_words" -> "")
       def request = fakeAuthorizedRequest.withFormUrlEncodedBody(formBody: _*)
       def create(documentSetId: Long) = controller.create(documentSetId)(request)
       def result = create(documentSetId)
