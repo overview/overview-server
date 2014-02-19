@@ -44,27 +44,10 @@ define [ 'jquery', './observable' ], ($, observable) ->
         params.page = page
 
         @cache.resolve_deferred('selection_documents_slice', params).done((ret) =>
-          document_store_input = {
-            doclist: { docids: [] },
-            documents: {},
-          }
-
-          for document, i in ret.documents
-            if searchResultId?
-              # when we tag a search result, recognize it as a search result
-              (document.searchResultIds ?= []).push(searchResultId)
-            document_store_input.doclist.docids.push(document.id)
-            document_store_input.documents[document.id] = document
           @n = ret.total_items
-          @cache.document_store.add_doclist(
-            document_store_input.doclist,
-            document_store_input.documents
-          )
           for document, i in ret.documents
-            # FIXME make document_list a bunch of IDs, not actual documents
-            docid = document.id
-            real_document = @cache.document_store.documents[docid]
-            @documents[start+i] = real_document
+            @documents[start+i] = document
+          @cache.document_store.reset(@documents.filter((d) -> d?))
           this._notify()
         ).pipe((ret) -> ret.documents)
 
@@ -93,5 +76,4 @@ define [ 'jquery', './observable' ], ($, observable) ->
       ret
 
     destroy: () ->
-      docids = (document.id for document in @documents when document?)
-      @cache.document_store.remove_doclist({ docids: docids })
+      @cache.document_store.reset([])

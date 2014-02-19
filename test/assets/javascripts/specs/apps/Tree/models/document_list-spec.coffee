@@ -4,18 +4,9 @@ define [
 ], ($, DocumentList) ->
   class MockDocumentStore
     constructor: () ->
-      @adds = []
-      @removes = []
-      @documents = {}
+      @documents = []
 
-    add_doclist: (doclist, documents) ->
-      @adds.push({ doclist: doclist, documents: documents })
-      for docid in doclist.docids
-        @documents[docid] = documents[docid]
-      undefined
-
-    remove_doclist: (doclist) ->
-      @removes.push(doclist)
+    reset: (@documents) ->
 
   class MockCache
     constructor: () ->
@@ -114,11 +105,11 @@ define [
           cache.deferreds[0].resolve(doclist(1, 3))
           expect(called).toBeTruthy()
 
-        it 'should call DocumentStore.add_doclist()', ->
+        it 'should call DocumentStore.reset()', ->
           dl = new DocumentList(cache, new MockParams({}))
           dl.slice(0, 2)
           cache.deferreds[0].resolve(doclist(1, 3))
-          expect(document_store.adds).toEqual([{ doclist: { docids: [ 1, 2 ] }, documents: { '1': doc(1), '2': doc(2) }}])
+          expect(document_store.documents).toEqual([ doc(1), doc(2) ])
 
       describe 'n', ->
         it 'should begin undefined', ->
@@ -126,12 +117,12 @@ define [
           expect(dl.n).toBeUndefined()
 
       describe 'destroy', ->
-        it 'should call DocumentStore.remove_doclist()', ->
+        it 'should call DocumentStore.reset()', ->
           dl = new DocumentList(cache, new MockParams({}))
           dl.slice(0, 2)
           cache.deferreds[0].resolve(doclist(1, 3))
           dl.destroy()
-          expect(document_store.removes).toEqual([{ docids: [ 1, 2 ] }])
+          expect(document_store.documents).toEqual([])
 
     describe 'describeParameters', ->
       it 'should describe all', ->
