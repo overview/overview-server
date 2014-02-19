@@ -7,9 +7,9 @@ import controllers.util.JobQueueSender
 import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder }
 import models.orm.stores.DocumentSetStore
 import org.overviewproject.jobs.models.{ CancelUploadWithDocumentSet, Delete }
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, Tree }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
 import org.overviewproject.tree.orm.finders.ResultPage
-import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
 
 trait DocumentSetController extends Controller {
@@ -25,6 +25,12 @@ trait DocumentSetController extends Controller {
     /** Returns all Trees in the given DocumentSet */
     def findTreesByDocumentSet(documentSetId: Long): Iterable[Tree]
 
+    /** Returns all DocumentSetCreationJobs of failed tree-clustering jobs */
+    def findTreeErrorJobsByDocumentSets(documentSetIds: Iterable[Long]): Iterable[DocumentSetCreationJob]
+
+    /** Returns all DocumentSetCreationJobs of failed tree-clustering jobs */
+    def findTreeErrorJobsByDocumentSet(documentSetId: Long): Iterable[DocumentSetCreationJob]
+
     /** Returns a page of DocumentSets */
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
 
@@ -32,7 +38,7 @@ trait DocumentSetController extends Controller {
     def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
 
     /** Returns type of the job running for the document set, if any exist */
-    def findRunningJobType(documentSetId: Long): Option[DocumentSetCreationJobType]
+    def findRunningJobType(documentSetId: Long): Option[DocumentSetCreationJobType.Value]
 
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
@@ -48,12 +54,20 @@ trait DocumentSetController extends Controller {
     val realPage = if (page <= 0) 1 else page
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
+
     val trees = storage
       .findTreesByDocumentSets(documentSets.map(_.id))
       .toSeq
       .groupBy(_.documentSetId)
 
-    val documentSetsWithTrees = documentSets.map { ds: DocumentSet => (ds -> trees.getOrElse(ds.id, Seq())) }
+    val treeErrorJobs = storage
+      .findTreeErrorJobsByDocumentSets(documentSets.map(_.id))
+      .toSeq
+      .groupBy(_.documentSetId)
+
+    val documentSetsWithTrees = documentSets.map { ds: DocumentSet =>
+      (ds, trees.getOrElse(ds.id, Seq()), treeErrorJobs.getOrElse(ds.id, Seq()))
+    }
 
     val resultPage = ResultPage(documentSetsWithTrees, documentSetsPage.pageDetails)
 
@@ -67,7 +81,8 @@ trait DocumentSetController extends Controller {
       case None => NotFound
       case Some(documentSet) => {
         val trees = storage.findTreesByDocumentSet(id).toSeq
-        Ok(views.json.DocumentSet.show(request.user, documentSet, trees))
+        val treeErrorJobs = storage.findTreeErrorJobsByDocumentSet(id).toSeq
+        Ok(views.json.DocumentSet.show(request.user, documentSet, trees, treeErrorJobs))
       }
     }
   }
@@ -82,23 +97,27 @@ trait DocumentSetController extends Controller {
     def onDocumentSet(f: DocumentSet => Unit): Unit =
       documentSet.map(f)
 
+    def done(message: String, event: String) = Redirect(routes.DocumentSetController.index()).flashing(
+      "success" -> m(message),
+      "event" -> event
+    )
+
     storage.findRunningJobType(id) match {
-      case Some(Recluster) =>
+      case Some(DocumentSetCreationJobType.Recluster) =>
         onDocumentSet(storage.cancelJob)
+        done("deleteTree.success", "tree-delete")
       case Some(jobType) =>
         onDocumentSet(storage.cancelJob)
         onDocumentSet(storage.deleteDocumentSet)
 
-        if (jobType == FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
+        if (jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
         JobQueueSender.send(Delete(id))
+        done("deleteJob.success", "document-set-delete")
       case None =>
         onDocumentSet(storage.deleteDocumentSet)
         JobQueueSender.send(Delete(id))
+        done("deleteDocumentSet.success", "document-set-delete")
     }
-
-    Redirect(routes.DocumentSetController.index()).flashing(
-      "success" -> m("delete.success"),
-      "event" -> "document-set-delete")
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
@@ -120,6 +139,20 @@ object DocumentSetController extends DocumentSetController {
     override def findTreesByDocumentSets(documentSetIds: Iterable[Long]) = TreeFinder.byDocumentSets(documentSetIds)
     override def findTreesByDocumentSet(documentSetId: Long) = TreeFinder.byDocumentSet(documentSetId)
 
+    override def findTreeErrorJobsByDocumentSet(documentSetId: Long) = {
+      DocumentSetCreationJobFinder
+        .byDocumentSet(documentSetId)
+        .byState(DocumentSetCreationJobState.Error)
+        .byJobType(DocumentSetCreationJobType.Recluster)
+    }
+
+    override def findTreeErrorJobsByDocumentSets(documentSetIds: Iterable[Long]) = {
+      DocumentSetCreationJobFinder
+        .byDocumentSets(documentSetIds)
+        .byState(DocumentSetCreationJobState.Error)
+        .byJobType(DocumentSetCreationJobType.Recluster)
+    }
+
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
       val query = DocumentSetFinder.byOwner(userEmail)
       ResultPage(query, pageSize, page)
@@ -128,6 +161,7 @@ object DocumentSetController extends DocumentSetController {
     override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)] = {
       DocumentSetCreationJobFinder
         .byUser(userEmail)
+        .excludeFailedTreeCreationJobs
         .withDocumentSetsAndQueuePositions
         .toSeq
     }
@@ -142,7 +176,7 @@ object DocumentSetController extends DocumentSetController {
     override def cancelJob(documentSet: DocumentSet): Unit =
       DocumentSetStore.deleteOrCancelJob(documentSet)
 
-    override def findRunningJobType(documentSetId: Long): Option[DocumentSetCreationJobType] =
+    override def findRunningJobType(documentSetId: Long) =
       DocumentSetCreationJobFinder.byDocumentSet(documentSetId).headOption.map(_.jobType)
 
   }

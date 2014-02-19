@@ -1,0 +1,10 @@
+@(
+  job: org.overviewproject.tree.orm.DocumentSetCreationJob
+)(implicit lang: play.api.i18n.Lang)
+
+@defining(scopedMessages("views.DocumentSet._treeErrorJob")) { m =>
+  <li class="error" data-job-id="@job.id">
+    <h6>@job.treeTitle.getOrElse("")</h6>
+    <span class="error">@views.helper.DocumentSetHelper.jobDescriptionKeyToMessage(job.statusDescription)</span>
+  </li>
+}

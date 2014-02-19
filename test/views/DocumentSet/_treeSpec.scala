@@ -16,8 +16,7 @@ class _treeSpec extends views.html.ViewSpecification {
       importantWords="",
       createdAt=new java.sql.Timestamp(1392218269486L) // Wed Feb 12 10:17:49 EST 2014
     )
-    def lang = Lang("en")
-    override def result = _tree(tree)(lang)
+    override def result = _tree(tree)
   }
 
   "views.html.DocumentSet._tree" should {
@@ -51,7 +50,7 @@ class _treeSpec extends views.html.ViewSpecification {
     "display the language name, localized" in new BaseScope {
       // XXX this should be a Magic test, not a test on this view
       override def tree = super.tree.copy(lang="fr")
-      override def lang = Lang("fr")
+      override implicit def lang = Lang("fr")
       $(".lang").text() must beEqualTo("français")
     }
 

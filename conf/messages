@@ -7,7 +7,9 @@ controllers.admin.UserController.delete.failure=Document sets owned by {0} must 
 controllers.ConfirmationController.show.success=Welcome! To get started, try cloning one of the example document sets.
 
 controllers.DocumentSetController.clone.failure=We were not able to clone the document set.
-controllers.DocumentSetController.delete.success=You have deleted your document set.
+controllers.DocumentSetController.deleteJob.success=You have cancelled your document set import.
+controllers.DocumentSetController.deleteDocumentSet.success=You have deleted your document set.
+controllers.DocumentSetController.deleteTree.success=You have cancelled your document set reclustering.
 
 controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.

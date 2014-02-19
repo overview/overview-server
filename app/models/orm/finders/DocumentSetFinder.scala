@@ -5,9 +5,9 @@ import scala.language.postfixOps
 import scala.language.implicitConversions
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.Ownership
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import org.overviewproject.tree.{DocumentSetCreationJobType, Ownership}
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJobState}
+import org.overviewproject.tree.orm.finders.{Finder, FinderResult}
 
 import org.squeryl.Query
 
@@ -122,6 +122,10 @@ object DocumentSetFinder extends Finder {
     */
   protected[finders] def documentSetIdsWithCreationJobs = {
     from(Schema.documentSetCreationJobs)(dscj =>
+      where(not(
+        (dscj.jobType === DocumentSetCreationJobType.Recluster) and
+        (dscj.state in Seq(DocumentSetCreationJobState.Error, DocumentSetCreationJobState.Cancelled))
+      ))
       select(dscj.documentSetId)
     )
   }

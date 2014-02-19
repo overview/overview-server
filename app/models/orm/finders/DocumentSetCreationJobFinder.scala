@@ -21,10 +21,20 @@ object DocumentSetCreationJobFinder extends Finder {
       )
     }
 
+    def byJobType(jobTypes: DocumentSetCreationJobType.Value*): DocumentSetCreationJobFinderResult = {
+      from(toQuery)(dscj =>
+        where(dscj.jobType in jobTypes)
+        select(dscj)
+      )
+    }
+
     def excludeFailedTreeCreationJobs: DocumentSetCreationJobFinderResult = {
-      toQuery.where(dscj =>
-        (dscj.jobType === DocumentSetCreationJobType.Recluster) and
-        (dscj.state in Seq(DocumentSetCreationJobState.Cancelled, DocumentSetCreationJobState.Error))
+      from(toQuery)(dscj =>
+        where(not(
+          (dscj.jobType === DocumentSetCreationJobType.Recluster) and
+          (dscj.state in Seq(DocumentSetCreationJobState.Cancelled, DocumentSetCreationJobState.Error))
+        ))
+        select(dscj)
       )
     }
 
@@ -71,13 +81,14 @@ object DocumentSetCreationJobFinder extends Finder {
     implicit def fromQuery(query: Query[DocumentSetCreationJob]): DocumentSetCreationJobFinderResult = new DocumentSetCreationJobFinderResult(query)
   }
 
-  /**
-   * @return All DocumentSetCreationJobs with the given ID.
-   *
-   * Since ID is a unique key, the return value can only have 0 or 1 row.
-   */
+  /** All DocumentSetCreationJobs with the given ID. */
   def byDocumentSet(documentSet: Long): DocumentSetCreationJobFinderResult = {
     Schema.documentSetCreationJobs.where(_.documentSetId === documentSet)
+  }
+
+  /** All DocumentSetCreationJobs for the given document sets. */
+  def byDocumentSets(documentSets: Iterable[Long]): DocumentSetCreationJobFinderResult = {
+    Schema.documentSetCreationJobs.where(_.documentSetId in documentSets)
   }
 
   /** @return All DocumentSetCreationJobs for the given user. */

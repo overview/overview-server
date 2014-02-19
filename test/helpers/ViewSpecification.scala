@@ -6,6 +6,7 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.{Fragments, Scope, Step}
 import play.api.Play.{start,stop}
+import play.api.i18n.Lang
 import play.api.mvc.Flash
 import play.api.templates.Html
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
@@ -28,6 +29,7 @@ class ViewSpecification extends Specification with Mockito with JsonMatchers {
   trait ViewSpecificationScope[Result] extends Scope {
     implicit def request = FakeRequest()
     implicit def flash = Flash()
+    implicit def lang = Lang("en")
     def result: Result
   }
 

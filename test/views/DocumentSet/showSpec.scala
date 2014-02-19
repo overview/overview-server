@@ -21,7 +21,7 @@ class showSpec extends Specification with JsonMatchers {
       val user = mock[OverviewUser].smart
       user.isAdministrator returns false
       
-      lazy val documentSetJson = show(user, documentSet, Seq()).toString
+      lazy val documentSetJson = show(user, documentSet, Seq(), Seq()).toString
     }
 
     "contain id and html" in new DocumentSetContext {

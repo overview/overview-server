@@ -1,6 +1,10 @@
 @(
   user: OverviewUser,
-  documentSets: org.overviewproject.tree.orm.finders.ResultPage[(org.overviewproject.tree.orm.DocumentSet, Seq[org.overviewproject.tree.orm.Tree])],
+  documentSets: org.overviewproject.tree.orm.finders.ResultPage[(
+    org.overviewproject.tree.orm.DocumentSet,
+    Seq[org.overviewproject.tree.orm.Tree],
+    Seq[org.overviewproject.tree.orm.DocumentSetCreationJob]
+  )],
   jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)],
   form: controllers.forms.DocumentSetForm.FormType
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
@@ -73,8 +77,17 @@
 )}
 
 @**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
-@displayDocumentSet(documentSetWithTrees: (org.overviewproject.tree.orm.DocumentSet, Seq[org.overviewproject.tree.orm.Tree])) = {
-  @views.html.DocumentSet._documentSet(documentSetWithTrees._1, documentSetWithTrees._2, user)
+@displayDocumentSet(documentSetWithTrees: (
+    org.overviewproject.tree.orm.DocumentSet,
+    Seq[org.overviewproject.tree.orm.Tree],
+    Seq[org.overviewproject.tree.orm.DocumentSetCreationJob]
+  )) = {
+  @views.html.DocumentSet._documentSet(
+    documentSetWithTrees._1,
+    documentSetWithTrees._2,
+    documentSetWithTrees._3,
+    user
+  )
 }
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>

@@ -1,14 +1,16 @@
 package views.html.DocumentSet
 
-import org.overviewproject.tree.orm.{DocumentSet, Tree}
+import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree}
+import org.overviewproject.tree.DocumentSetCreationJobType
 import models.OverviewUser
 
 class _documentSetSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     def documentSet: DocumentSet = DocumentSet(id=1L)
-    def trees : Seq[Tree] = Seq()
+    def trees: Seq[Tree] = Seq()
+    def treeErrorJobs: Seq[DocumentSetCreationJob] = Seq()
 
-    def result = _documentSet(documentSet, trees, fakeUser)
+    def result = _documentSet(documentSet, trees, treeErrorJobs, fakeUser)
 
     def fakeTree(documentSetId: Long, id: Long) = Tree(
       id=id,
@@ -16,6 +18,14 @@ class _documentSetSpec extends views.html.ViewSpecification {
       title="title",
       documentCount=10,
       lang="en"
+    )
+
+    def fakeTreeErrorJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
+      id=id,
+      documentSetId=documentSetId,
+      treeTitle=Some("tree title"),
+      state=DocumentSetCreationJobState.Error,
+      jobType=DocumentSetCreationJobType.Recluster
     )
   }
 
@@ -56,10 +66,23 @@ class _documentSetSpec extends views.html.ViewSpecification {
       $("div.trees.single").length must beEqualTo(0)
     }
 
+    "should not set div.trees.single if there are error jobs" in new BaseScope {
+      override def trees = Seq(fakeTree(documentSet.id, 10))
+      override def treeErrorJobs = Seq(fakeTreeErrorJob(documentSet.id, 11))
+      $("div.trees").length must beEqualTo(1)
+      $("div.trees.single").length must beEqualTo(0)
+    }
+
     "should link to each tree in div.trees" in new BaseScope {
       override def trees = Seq(fakeTree(documentSet.id, 10), fakeTree(documentSet.id, 11))
       $("div.trees li[data-tree-id='10'] a[href]").attr("href") must beEqualTo("/documentsets/1/trees/10")
       $("div.trees li[data-tree-id='11'] a[href]").attr("href") must beEqualTo("/documentsets/1/trees/11")
+    }
+
+    "should show each error job in div.trees" in new BaseScope {
+      override def treeErrorJobs = Seq(fakeTreeErrorJob(documentSet.id, 11), fakeTreeErrorJob(documentSet.id, 12))
+      $("div.trees li.error[data-job-id='11']").text() must contain("tree title")
+      $("div.trees li.error[data-job-id='12']").text() must contain("tree title")
     }
 
     "should have a create-tree button" in new BaseScope {

@@ -3,29 +3,28 @@ package controllers
 import play.api.mvc.Controller
 
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob }
-import org.overviewproject.tree.orm.finders.ResultPage
 import controllers.auth.{AuthorizedAction,Authorities}
 import models.orm.finders.DocumentSetCreationJobFinder
 
 trait ImportJobController extends Controller {
   import Authorities._
 
-  private val pageSize = 50 // we'll only show page 1, so pageSize is a guard against DoS
-
   def index() = AuthorizedAction(anyUser) { implicit request =>
-    val tuples = loadDocumentSetCreationJobs(request.user.email, pageSize, 1)
+    val tuples = loadDocumentSetCreationJobs(request.user.email)
 
     Ok(views.json.ImportJob.index(tuples))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
-  protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int)
-    : ResultPage[(DocumentSetCreationJob, DocumentSet, Long)]
+  protected def loadDocumentSetCreationJobs(userEmail: String) : Seq[(DocumentSetCreationJob, DocumentSet, Long)]
 }
 
 object ImportJobController extends ImportJobController {
-  override protected def loadDocumentSetCreationJobs(userEmail: String, pageSize: Int, page: Int) = {
-    val query = DocumentSetCreationJobFinder.byUser(userEmail).withDocumentSetsAndQueuePositions
-    ResultPage(query, pageSize, page)
+  override protected def loadDocumentSetCreationJobs(userEmail: String) = {
+    DocumentSetCreationJobFinder
+      .byUser(userEmail)
+      .excludeFailedTreeCreationJobs
+      .withDocumentSetsAndQueuePositions
+      .toSeq
   }
 }

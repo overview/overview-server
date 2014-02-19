@@ -11,7 +11,7 @@ class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     val form = controllers.forms.DocumentSetForm()
     def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
-    def documentSets: Seq[(DocumentSet, Seq[Tree])] = Seq()
+    def documentSets: Seq[(DocumentSet, Seq[Tree], Seq[DocumentSetCreationJob])] = Seq()
     def documentSetsPage = ResultPage(documentSets, 10, 1)
 
     def result = index(fakeUser, documentSetsPage, jobs, form)
@@ -35,7 +35,7 @@ class indexSpec extends views.html.ViewSpecification {
     }
 
     "Show DocumentSets if there are some" in new BaseScope {
-      override def documentSets = Seq((DocumentSet(), Seq()))
+      override def documentSets = Seq((DocumentSet(), Seq(), Seq()))
       $(".document-sets").length must beEqualTo(1)
     }
 
@@ -57,8 +57,8 @@ class indexSpec extends views.html.ViewSpecification {
 
     "render DocumentSets if there are some" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq()),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq())
+        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq(), Seq()),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq(), Seq())
       )
       $(".document-sets").length must equalTo(1)
       $(".document-sets li[data-document-set-id='1']").length must beEqualTo(1)
@@ -67,8 +67,8 @@ class indexSpec extends views.html.ViewSpecification {
     
     "Define error-list popup if there are DocumentSets" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq()),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq())
+        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq(), Seq()),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq(), Seq())
       )
       $("#error-list-modal").length must beEqualTo(1)
     }
