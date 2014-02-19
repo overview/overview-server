@@ -17,8 +17,7 @@ define [
   # The following options must be passed:
   #
   # * documentList: a Backbone.Model with an "n" attribute and
-  #   describeSelection() method. (See
-  #   Cache.describeSelectionWithoutDocuments().) documentList.documents must be
+  #   describeSelection() method. `documentList.documents` must be
   #   a Backbone.Collection of Backbone.Model instances, with attributes
   #   such as would be passed to DocumentDisplay/App.setDocument()
   # * selection: A Backbone.Model with "cursorIndex" (maybe undefined integer)
