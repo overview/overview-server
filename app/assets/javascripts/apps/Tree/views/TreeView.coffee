@@ -25,6 +25,10 @@ define [
         lineWidth: 2
       }
       {
+        type: 'leaf'
+        lineWidth: 1
+      }
+      {
         type: 'highlighted'
         strokeStyle: '#6ab9e9'
       }
@@ -36,10 +40,6 @@ define [
         type: 'selected'
         fillStyle: '#f4f4f4'
         lineWidth: 4
-      }
-      {
-        type: 'leaf'
-        lineWidth: 1
       }
     ]
     maxNodeBorderWidth: 4 # px
