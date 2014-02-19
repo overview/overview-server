@@ -96,5 +96,10 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
       override def args = super.args + ("tag_id" -> "1125899906842624")
       value must beSome(expectedValue.copy(tagId=Some(1125899906842624L)))
     }
+
+    "not set tagId when it is empty" in new ValidScope {
+      override def args = super.args + ("tag_id" -> "")
+      value must beSome(expectedValue)
+    }
   }
 }
