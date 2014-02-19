@@ -38,7 +38,9 @@ case class DocumentSetCreationJob(
   tagId: Option[Long] = None,
   state: DocumentSetCreationJobState.Value,
   fractionComplete: Double = 0.0,
-  statusDescription: String = "") extends KeyedEntity[Long] with DocumentSetComponent {
+  statusDescription: String = "",
+  treeDescription: Option[String] = None
+  ) extends KeyedEntity[Long] with DocumentSetComponent {
 
   def this() = this(jobType = DocumentSetCreationJobType.DocumentCloud, state = NotStarted)
 

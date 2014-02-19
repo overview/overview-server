@@ -13,6 +13,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
 
   trait ValidScope extends JobApplyScope {
     val validTreeTitle = "title"
+    val validTagId = None
     val requiredQuery = ""
     val validLang = "en"
     val requiredUsername = None
@@ -23,6 +24,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
 
     override def args = Map(
       "tree_title" -> validTreeTitle,
+      "tag_id" -> validTagId.map(_.toString).getOrElse(""),
       "lang" -> validLang,
       "supplied_stop_words" -> validSuppliedStopWords,
       "important_words" -> validImportantWords
@@ -32,6 +34,7 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.Recluster,
       treeTitle = Some(validTreeTitle),
+      tagId = None,
       lang = validLang,
       suppliedStopWords = validSuppliedStopWords,
       importantWords = validImportantWords,
@@ -87,6 +90,11 @@ class TreeCreationJobFormSpec extends test.helpers.FormSpecification {
     "disallow if title is just spaces" in new ValidScope {
       override def args = super.args + ("tree_title" -> "  ")
       error("tree_title") must beSome(FormError("tree_title", "error.required", Seq()))
+    }
+
+    "set tagId" in new ValidScope {
+      override def args = super.args + ("tag_id" -> "1125899906842624")
+      value must beSome(expectedValue.copy(tagId=Some(1125899906842624L)))
     }
   }
 }

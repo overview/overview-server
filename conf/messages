@@ -16,6 +16,8 @@ controllers.PasswordController.update.success=You have updated your password, an
 
 controllers.SessionController.delete.success=You have logged out. We hope you’ll log in again sometime.
 
+controllers.TreeController.treeDescription.fromTag=documents with tag “{0}”
+
 controllers.UserController.create.success=Thank you for registering. There’s one more step: please check your email and click the confirmation link.
 
 forms.Confirmation.token.not_found=Nothing happened. Did you click a confirmation link sometime in the past? If so, please log in. Otherwise, please click the link the confirmation email we sent you.
