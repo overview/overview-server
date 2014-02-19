@@ -48,19 +48,14 @@ define [ 'backbone', './DocumentListParams' ], (Backbone, DocumentListParams) ->
         taglike: taglike
       )
 
-    # Returns the parameters for an API call to the server.
-    #
-    # For instance, a hypothetical server API might accept a `POST` to
-    # ".../tag?nodes=2". This method would return `{ nodes: 2 }` to help
-    # generate that URL.
+    # Return a DocumentList that describes all documents that will be affected
+    # by tagging.
     #
     # Returns { documents: [ -1 ] } if documentId is null and
     # oneDocumentSelected is true>
-    getApiSelection: ->
+    getSelection: ->
       if @get('oneDocumentSelected')
-        if (documentId = @get('documentId'))?
-          { documents: [ documentId ] }
-        else
-          { documents: [ -1 ] }
+        documentId = @get('documentId') || -1
+        DocumentListParams.byDocumentId(documentId)
       else
-        @get('documentListParams').toApiParams()
+        @get('documentListParams')

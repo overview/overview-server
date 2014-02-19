@@ -39,7 +39,11 @@ define [ 'jquery', './observable' ], ($, observable) ->
 
         searchResultId = @params.type == 'searchResult' && @params.searchResultId || null
 
-        @cache.resolve_deferred('selection_documents_slice', { selection: @params.toApiParams(), pageSize: pageSize, page: page }).done((ret) =>
+        params = @params.toApiParams()
+        params.pageSize = pageSize
+        params.page = page
+
+        @cache.resolve_deferred('selection_documents_slice', params).done((ret) =>
           document_store_input = {
             doclist: { docids: [] },
             documents: {},

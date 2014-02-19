@@ -37,21 +37,21 @@ define [
           documentId: null,
           oneDocumentSelected: false,
           documentListParams:
-            toApiParams: -> { nodes: [ 1 ] }
+            toJSON: -> { nodes: [ 1 ] }
         )
 
       it 'should give empty selection when documentId is null and oneDocumentSelected is true', ->
         state.set(documentId: null, oneDocumentSelected: true)
-        expect(state.getApiSelection()).toEqual({ documents: [-1] })
+        expect(state.getSelection().toJSON()).toEqual({ documents: [-1] })
 
       it 'should give document selection when documentId is set and oneDocumentSelected is true', ->
         state.set(documentId: 5, oneDocumentSelected: true)
-        expect(state.getApiSelection()).toEqual({ documents: [5] })
+        expect(state.getSelection().toJSON()).toEqual({ documents: [5] })
 
       it 'should give doclist selection when documentId is null and oneDocumentSelected is false', ->
         state.set(documentId: null, oneDocumentSelected: false)
-        expect(state.getApiSelection()).toEqual({ nodes: [ 1 ] })
+        expect(state.getSelection().toJSON()).toEqual({ nodes: [ 1 ] })
 
       it 'should give doclist selection when documentId is set and oneDocumentSelected is false', ->
         state.set(documentId: 5, oneDocumentSelected: false)
-        expect(state.getApiSelection()).toEqual({ nodes: [ 1 ] })
+        expect(state.getSelection().toJSON()).toEqual({ nodes: [ 1 ] })

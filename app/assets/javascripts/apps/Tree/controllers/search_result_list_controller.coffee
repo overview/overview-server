@@ -57,7 +57,7 @@ define [
       log('created tag', tag.name)
       tag = cache.add_tag(tag)
       cache.create_tag(tag)
-      cache.addTagToSelection(tag, DocumentListParams.bySearchResultId(searchResultModel.id).toApiParams())
+      cache.addTagToDocumentList(tag, DocumentListParams.bySearchResultId(searchResultModel.id))
         .done ->
           cache.refresh_tagcounts(tag)
           # This shouldn't be done on "done": it should be done right away.

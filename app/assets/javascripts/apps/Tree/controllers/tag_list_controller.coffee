@@ -28,15 +28,15 @@ define [
 
     view.on 'add-clicked', (tag) ->
       tag = proxy.unmap(tag)
-      log('added tag', "#{tag_to_short_string(tag)} to #{JSON.stringify(state.getApiSelection())}")
-      cache.addTagToSelection(tag, state.getApiSelection())
+      log('added tag', "#{tag_to_short_string(tag)} to #{JSON.stringify(state.getSelection())}")
+      cache.addTagToDocumentList(tag, state.getSelection())
         .done(-> cache.refresh_tagcounts(tag))
       state.set(taglike: { tagId: tag.id })
 
     view.on 'remove-clicked', (tag) ->
       tag = proxy.unmap(tag)
-      log('removed tag', "#{tag_to_short_string(tag)} from #{JSON.stringify(state.getApiSelection())}")
-      cache.removeTagFromSelection(tag, state.getApiSelection())
+      log('removed tag', "#{tag_to_short_string(tag)} from #{JSON.stringify(state.getSelection())}")
+      cache.removeTagFromDocumentList(tag, state.getSelection())
         .done(-> cache.refresh_tagcounts(tag))
       state.set(taglike: { tagId: tag.id })
 
@@ -48,10 +48,10 @@ define [
 
     view.on 'create-submitted', (name) ->
       tag = { name: name }
-      log('created tag', "#{tag_to_short_string(tag)} on #{JSON.stringify(state.getApiSelection())}")
+      log('created tag', "#{tag_to_short_string(tag)} on #{JSON.stringify(state.getSelection())}")
       tag = cache.add_tag(tag)
       cache.create_tag(tag)
-      cache.addTagToSelection(tag, state.getApiSelection())
+      cache.addTagToDocumentList(tag, state.getSelection())
         .done(-> cache.refresh_tagcounts(tag))
       state.set(taglike: { tagId: tag.id })
 

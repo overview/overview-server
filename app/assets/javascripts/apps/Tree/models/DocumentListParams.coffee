@@ -1,4 +1,4 @@
-define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
+define [ 'underscore' ], (_) ->
   # Describes a document list
   #
   # For instance:
@@ -20,8 +20,6 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
   #     params.equals(params2) # false -- unless node 2 is the root node
   #
   #     params.toApiParams() # Params for the public client/server API
-  #
-  #     params.deprecated_toSelection() # goes back to The Old Way of doing things, with a Selection.
   #
   # Here are all the possibilities:
   #
@@ -63,14 +61,25 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
     # The default result, `null`, must work in all cases.
     findTagCountsFromCache: (cache) -> null
 
-    # Returns the parameters for an API call to the server.
+    # Returns the parameters in pure JSON format.
     #
     # For instance, a hypothetical server API might accept a `POST` to
-    # ".../tag?nodes=2". This method would return `{ nodes: 2 }` to help
+    # ".../tag?nodes[]=2". This method would return `{ nodes: 2 }` to help
     # generate that URL.
-    toApiParams: -> throw new Error('not implemented')
+    toJSON: -> throw new Error('not implemented')
 
-    deprecated_toSelection: -> new Selection(@toApiParams())
+    # Returns the parameters such that Overview servers can understand them.
+    #
+    # For instance, if we want ".../tag/34/add?nodes=2", then this method
+    # should return `{ nodes: '2' }`.
+    #
+    # Overview's servers expect each ID array to be a single String, with
+    # commas delimiting each ID.
+    toApiParams: ->
+      ret = {}
+      for k, v of @toJSON()
+        ret[k] = v.map(String).join(',')
+      ret
 
   MagicUntaggedTagId = 0
 
@@ -88,7 +97,16 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
       ret = (document for __, document of cache.document_store.documents)
       sortDocumentsArray(ret)
 
-    toApiParams: -> {}
+    toJSON: -> {}
+
+  class DocumentDocumentListParams extends AbstractDocumentListParams
+    constructor: (@documentId) -> super('document', @documentId)
+
+    findDocumentsFromCache: (cache) ->
+      d = cache.document_store.documents[@documentId]
+      d? && [d] || []
+
+    toJSON: -> { documents: [ @documentId ] }
 
   class NodeDocumentListParams extends AbstractDocumentListParams
     constructor: (@nodeId) -> super('node', @nodeId)
@@ -97,7 +115,7 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
       ret = (d for __, d of cache.document_store.documents when @nodeId in d.nodeids)
       sortDocumentsArray(ret)
 
-    toApiParams: -> { nodes: [ @nodeId ] }
+    toJSON: -> { nodes: [ @nodeId ] }
 
   class TagDocumentListParams extends AbstractDocumentListParams
     constructor: (@tagId) -> super('tag', @tagId)
@@ -106,7 +124,7 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
       ret = (d for __, d of cache.document_store.documents when @tagId in d.tagids)
       sortDocumentsArray(ret)
 
-    toApiParams: -> { tags: [ @tagId ] }
+    toJSON: -> { tags: [ @tagId ] }
 
   class UntaggedDocumentListParams extends AbstractDocumentListParams
     constructor: -> super('untagged')
@@ -115,15 +133,34 @@ define [ 'underscore', 'apps/Tree/models/selection' ], (_, Selection) ->
       ret = (d for __, d of cache.document_store.documents when d.tagids.length == 0)
       sortDocumentsArray(ret)
 
-    toApiParams: -> { tags: [ MagicUntaggedTagId ] }
+    toJSON: -> { tags: [ MagicUntaggedTagId ] }
+
+  class IntersectionDocumentListParams extends AbstractDocumentListParams
+    constructor: (@list1, @list2) ->
+      throw 'Intersection only works when components are of different types' if @list1.type == @list2.type
+
+      super('intersection', [@list1.type, @list1.params], [@list2.type, @list2.params])
+
+    toString: -> "#{@list1.toString()} ∩ #{@list2.toString()}"
+
+    toJSON: -> _.extend({}, @list1.toJSON(), @list2.toJSON())
+
+    findDocumentsFromCache: (cache) ->
+      # Not terribly efficient...
+      ret1 = @list1.findDocumentsFromCache(cache)
+      ret2 = @list2.findDocumentsFromCache(cache)
+      ret = _.intersection(ret1, ret2)
+      sortDocumentsArray(ret)
 
   class SearchResultDocumentListParams extends AbstractDocumentListParams
     constructor: (@searchResultId) -> super('searchResult', @searchResultId)
 
-    toApiParams: -> { searchResults: [ @searchResultId ] }
+    toJSON: -> { searchResults: [ @searchResultId ] }
 
   {
     all: -> new AllDocumentListParams()
+    intersect: (a, b) -> new IntersectionDocumentListParams(a, b)
+    byDocumentId: (documentId) -> new DocumentDocumentListParams(documentId)
     byNodeId: (nodeId) -> new NodeDocumentListParams(nodeId)
     byTagId: (tagId) -> new TagDocumentListParams(tagId)
     untagged: (tagId) -> new UntaggedDocumentListParams()

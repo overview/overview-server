@@ -58,10 +58,10 @@ define [
           expect(arr).toEqual(doclist(1, 4).documents)
 
         it 'should call Cache.resolve_deferred(selection_documents_slice)', ->
-          dl = new DocumentList(cache, new MockParams(nodes: [2]))
+          dl = new DocumentList(cache, new MockParams(nodes: '2'))
           spyOn(cache, 'resolve_deferred').andCallThrough()
           deferred = dl.slice(0, 2)
-          expect(cache.resolve_deferred).toHaveBeenCalledWith('selection_documents_slice', { selection: { nodes: [2] }, pageSize: 2, page: 1 })
+          expect(cache.resolve_deferred).toHaveBeenCalledWith('selection_documents_slice', { nodes: '2', pageSize: 2, page: 1 })
 
         it 'should give the return value of get_selection_documents_slice', ->
           dl = new DocumentList(cache, new MockParams({}))

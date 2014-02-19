@@ -16,19 +16,7 @@ define [ './server' ], (Server) ->
     needs_resolver.server.get('node', { path_argument: id })
 
   resolve_selection_documents_slice = (needs_resolver, obj) ->
-    list_to_param = (list) ->
-      (item.id? && item.id || item for item in list).join(',')
-
-    params = {
-      pageSize: obj.pageSize,
-      page: obj.page,
-    }
-    for key in [ 'nodes', 'tags', 'documents', 'searchResults' ]
-      list = obj.selection[key]
-      if list?.length
-        params[key] = list_to_param(obj.selection[key])
-
-    needs_resolver.server.get('documents', { data: params })
+    needs_resolver.server.get('documents', { data: obj })
 
   RESOLVERS = {
     root: resolve_root,
