@@ -88,7 +88,7 @@ define [
 
       <% if ('important_words' in options) { %>
         <div class="control-group">
-          <label class="control-label" for="import-options-important-words"><%- t('important_words.label') %> </label>
+          <label class="control-label" for="import-options-important-words"><%- t('important_words.label') %> (<a href="http://overview.ap.org/blog/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="<%- t('click_for_help') %>">?</a>)</label>
           <div class="controls">
             <textarea id="import-options-important-words" name="important_words"><%- options.important_words %></textarea>
             <p class="help-block"><%- t('important_words.help') %></p>
