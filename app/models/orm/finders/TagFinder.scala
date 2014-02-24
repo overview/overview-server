@@ -1,5 +1,6 @@
 package models.orm.finders
 
+import org.squeryl.dsl.GroupWithMeasures
 import scala.language.implicitConversions
 import scala.language.postfixOps
 
@@ -15,15 +16,15 @@ object TagFinder extends Finder {
   class TagResult(query: Query[Tag]) extends FinderResult(query) {
     def withCounts : FinderResult[(Tag,Long)] = {
       join(toQuery, tagCounts.toQuery.leftOuter)((tags, counts) =>
-        select((tags, &(nvl(counts.map(_._2), 0L))))
-        on(tags.id === counts.map(_._1))
+        select((tags, &(nvl(counts.map(_.measures), 0L))))
+        on(tags.id === counts.map(_.key))
       )
     }
 
     def withCountsForDocumentSetAndTree(tree: Long) : FinderResult[(Tag,Long,Long)] = {
       join(toQuery, tagCounts.toQuery.leftOuter, tagCountsInTree(tree).toQuery.leftOuter)((t, dsc, tc) =>
-        select((t, &(nvl(dsc.map(_._2), 0L)), &(nvl(tc.map(_._2), 0L))))
-        on(t.id === dsc.map(_._1), t.id === tc.map(_._1))
+        select((t, &(nvl(dsc.map(_.measures), 0L)), &(nvl(tc.map(_.measures), 0L))))
+        on(t.id === dsc.map(_.key), t.id === tc.map(_.key))
       )
     }
   }
@@ -32,29 +33,15 @@ object TagFinder extends Finder {
   }
 
   /** @return A mapping from Tag ID to document count */
-  def tagCounts : FinderResult[(Long,Long)] = {
+  def tagCounts : FinderResult[GroupWithMeasures[Long,Long]] = {
     from(Schema.documentTags)(dt =>
       groupBy(dt.tagId)
       compute(count)
     )
   }
 
-  /** @return A mapping from Tag ID to count for the given DocumentSet */
-  def tagCountsInDocumentSet(documentSet: Long) : FinderResult[(Long,Long)] = {
-    /*
-     * Assume there are fewer tags than documents. We'll count document_tag
-     * rows where the tags are in the given document set.
-     */
-    join(Schema.documentTags, Schema.tags)((dt, t) =>
-      where(t.documentSetId === documentSet)
-      groupBy(dt.tagId)
-      compute(count)
-      on(dt.tagId === t.id)
-    )
-  }
-
   /** @return A mapping from Tag ID to count for the given Tree.  */
-  def tagCountsInTree(tree: Long) : FinderResult[(Long,Long)] = {
+  def tagCountsInTree(tree: Long) : FinderResult[GroupWithMeasures[Long,Long]] = {
     /*
      * node (1) -> node_document (many) -> document_tag (many).
      *
@@ -63,7 +50,7 @@ object TagFinder extends Finder {
     join(Schema.documentTags, Schema.nodeDocuments, Schema.nodes)((dt, nd, n) =>
       where((n.treeId === tree) and n.parentId.isNull)
       groupBy(dt.tagId)
-      compute(count)
+      compute(count(dt.documentId))
       on(
         dt.documentId === nd.documentId,
         nd.nodeId === n.id

@@ -19,6 +19,25 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     $els.filter('.spectrum').each ->
       $(this).spectrum('set', $(this).val())
 
+  # Returns something like:
+  #   <abbr title="4 documents visible in this tree">4</abbr>
+  #   /
+  #   <abbr title="10 documents in this document set (including this tree)">10</abbr>
+  #   documents
+  tTagCountsHtml = (tag) ->
+    treeCount = tag.get('sizeInTree') || 0
+    docsetCount = tag.get('size') || 0
+    if treeCount == docsetCount
+      _.escape(t('n_documents', docsetCount))
+    else
+      t(
+        'compound_n_documents_html',
+        treeCount,
+        docsetCount,
+        """<abbr title="#{_.escape(t('n_documents_in_tree', treeCount))}">#{_.escape(t('n_documents_in_tree_abbr', treeCount))}</abbr>""",
+        """<abbr title="#{_.escape(t('n_documents_in_docset', docsetCount))}">#{_.escape(t('n_documents_in_docset_abbr', docsetCount))}</abbr>""",
+      )
+
   # Represents a list of tags
   #
   # Usage:
@@ -49,7 +68,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
           <input type="hidden" name="id" value="<%- tag.id || '' %>" />
           <input type="color" name="color" value="<%- tag.get('color') %>"
           /><input type="text" name="name" value="<%- tag.get('name') %>" />
-          <div class="count"><%- t('n_documents', tag.get('size') || 0) %></div>
+          <div class="count"><%= countHtml %></div>
         </form>
         <a class="remove" href="#"><%- t('remove') %></a>
       </li>
@@ -88,7 +107,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         t: t
         tags: @collection
         exportUrl: @options.exportUrl
-        renderTag: (tag) => @tagTemplate({ tag: tag, t: t })
+        renderTag: (tag) => @tagTemplate({ tag: tag, t: t, countHtml: tTagCountsHtml(tag) })
       })
       @$el.html(html)
       addSpectrum(@$('input[type=color]'))
@@ -105,6 +124,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       html = @tagTemplate({
         t: t
         tag: tag
+        countHtml: tTagCountsHtml(tag)
       })
 
       index = @collection.indexOf(tag)
@@ -119,7 +139,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     _changeTag: (tag, options) ->
       $li = @_$liForTag(tag)
       $li.find('input[name=id]').val(tag.id)
-      $li.find('.count').text(t('n_documents', tag.get('size') || 0))
+      countHtml = tTagCountsHtml(tag)
+      $li.find('.count').html(countHtml)
 
       if !options? || !options.interacting
         $li.find('input[name=name]').val(tag.get('name'))

@@ -20,6 +20,11 @@ define [
         'views.Tree.show.tag_list.remove.confirm': 'remove.confirm,{0},{1}'
         'views.Tree.show.tag_list.submit': 'submit'
         'views.Tree.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
+        'views.Tree.show.tag_list.compound_n_documents_html': 'compound_n_documents_html,{0},{1},{2},{3}'
+        'views.Tree.show.tag_list.n_documents_in_tree': 'n_documents_in_tree,{0}'
+        'views.Tree.show.tag_list.n_documents_in_tree_abbr': 'n_documents_in_tree_abbr,{0}'
+        'views.Tree.show.tag_list.n_documents_in_docset': 'n_documents_in_docset,{0}'
+        'views.Tree.show.tag_list.n_documents_in_docset_abbr': 'n_documents_in_docset_abbr,{0}'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
       })
 
@@ -93,7 +98,7 @@ define [
 
     describe 'starting with two tags', ->
       beforeEach ->
-        collection = new Backbone.Collection([ makeModel('tag10', { color: '#abcdef', size: 10 }), makeModel('tag20') ])
+        collection = new Backbone.Collection([ makeModel('tag10', { color: '#abcdef', size: 10, sizeInTree: 10 }), makeModel('tag20') ])
         view = new TagList({
           collection: collection
           exportUrl: 'https://example.org'
@@ -139,8 +144,12 @@ define [
 
       it 'should render a tag without size as size 0 on change', ->
         # https://github.com/overview/overview-server/issues/568
-        collection.first().set({ size: null })
+        collection.first().set(size: null, sizeInTree: null)
         expect(view.$('li:eq(0)').find('.count').text()).toEqual('n_documents,0')
+
+      it 'should render a tag with different tag counts for tree and docset as two', ->
+        collection.first().set(size: 10, sizeInTree: 5)
+        expect(view.$('li:eq(0)').find('.count').html()).toEqual('compound_n_documents_html,5,10,<abbr title="n_documents_in_tree,5">n_documents_in_tree_abbr,5</abbr>,<abbr title="n_documents_in_docset,10">n_documents_in_docset_abbr,10</abbr>')
 
       it 'should not change a tag when interacting', ->
         collection.first().set(

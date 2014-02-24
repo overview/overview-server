@@ -25,6 +25,13 @@ define [
     if match = /documentsets\/(\d+)\/.*$/.exec(window.location.pathname)
       document_set_id = +match[1]
       "/documentsets/#{document_set_id}"
+
+  tags_url = () ->
+    if match = /documentsets\/(\d+)\/trees\/(\d+).*$/.exec(window.location.pathname)
+      document_set_id = +match[1]
+      tree_id = +match[2]
+      "/documentsets/#{document_set_id}/trees/#{tree_id}/tags.json"
+
         
 
   # Opens a dialog showing the tags in the tag store.
@@ -105,7 +112,7 @@ define [
 
       # Refresh tag counts
       cache.transaction_queue.queue ->
-        $.getJSON(base_url() + "/tags.json") # TODO routing in JS
+        $.getJSON(tags_url()) # TODO routing in JS
           .done (json) ->
             # The fresh data from the server will only be set in the proxy. It
             # won't be set in the underlying tag store.
