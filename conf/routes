@@ -68,6 +68,7 @@ PUT    /documentsets/:id/tags/:tagId             controllers.TagController.updat
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)
 GET    /documentsets/:id/tags.json               controllers.TagController.indexJson(id: Long)
+GET    /documentsets/:id/trees/:treeId/tags.json controllers.TagController.indexJsonWithTree(id: Long, treeId: Long)
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)

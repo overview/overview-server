@@ -52,8 +52,11 @@ trait TagController extends Controller {
     /** @return a Tag if it exists */
     def findTag(documentSetId: Long, tagId: Long) : Option[Tag]
 
-    /** @return (Tag, count) pairs. */
-    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Int)]
+    /** @return (Tag, docset-count) pairs.  */
+    def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)]
+
+    /** @return (Tag, docset-count, tree-count) tuples. */
+    def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)]
 
     /** Returns an Iterable of (nodeId, count) pairs.
       *
@@ -84,6 +87,12 @@ trait TagController extends Controller {
         Ok(views.json.Tag.create(tag))
       }
     )
+  }
+
+  def indexJsonWithTree(documentSetId: Long, treeId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
+    val tagsWithCounts = storage.findTagsWithCounts(documentSetId, treeId)
+    Ok(views.json.Tag.index(tagsWithCounts))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
   def indexJson(documentSetId: Long) = AuthorizedAction(userOwningDocumentSet(documentSetId)) { implicit request =>
@@ -203,11 +212,16 @@ object TagController extends TagController {
       TagFinder.byDocumentSetAndId(documentSetId, tagId).headOption
     }
 
-    override def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Int)] = {
+    override def findTagsWithCounts(documentSetId: Long) : Iterable[(Tag,Long)] = {
       TagFinder
         .byDocumentSet(documentSetId)
         .withCounts
-        .map(Function.tupled((tag: Tag, count: Long) => (tag, count.toInt)))
+    }
+
+    override def findTagsWithCounts(documentSetId: Long, treeId: Long) : Iterable[(Tag,Long,Long)] = {
+      TagFinder
+        .byDocumentSet(documentSetId)
+        .withCountsForDocumentSetAndTree(treeId)
     }
 
     override def tagCountsByNodeId(tagId: Long, nodeIds: Iterable[Long]) : Iterable[(Long,Int)] = {
