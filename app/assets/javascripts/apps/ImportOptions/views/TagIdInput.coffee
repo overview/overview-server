@@ -3,26 +3,25 @@ define [
   'underscore'
   'backbone'
   'i18n'
-  'bootstrap-dropdown'
 ], ($, _, Backbone, i18n) ->
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
+  MinDocumentSetSize = 3
+
   class TagIdInput extends Backbone.View
     template: _.template("""
-      <div class="dropdown">
-        <a class="dropdown-toggle" id="tag-id-select" data-toggle="dropdown" href="#"><%- t('tag.allDocuments') %></a>
-        <ul class="dropdown-menu" role="menu" aria-labelledby="tag-id-select">
-          <li class="loading" role="presentation"><%- t('tag.loading') %></li>
-        </ul>
-      </div>
+      <select id="import-options-tag-id" name="tag_id">
+        <option selected="selected" value=""><%- t('tag.allDocuments') %></option>
+        <option disabled="disabled"><%- t('tag.loading') %></option>
+      </select>
       """)
 
     tagTemplate: _.template("""
-      <li role="presentation"><a data-tag-id="<%- id %>" href="#"><%- t('tag.name', name, size) %></a></li>
+      <option value="<%- id %>"<%= (size < #{MinDocumentSetSize}) ? ' disabled="disabled"' : '' %>><%- t('tag.name', name, size) %></option>
       """)
 
     events:
-      'click a[data-tag-id]': '_onClick'
+      'change select': '_onChange'
 
     initialize: (options) ->
       @tagListUrl = options.tagListUrl
@@ -32,30 +31,34 @@ define [
       @model.set(tag_id: '')
 
     render: ->
-      html = @template(t: t, tag: @tag, allTags: @allTags)
+      html = @template(t: t)
       @$el.html(html)
-      @$('.dropdown-toggle')
-        .dropdown()
-        .one 'click', (=> @_loadTags())
+      @$('select').one 'focus', (=> @_loadTags())
 
     _loadTags: ->
+      @$el.attr('class', 'loading')
       $.get(@tagListUrl)
         .done((json) => @_renderTags(json.tags))
         .fail(=> @_renderTagLoadFailure())
 
     _renderTagLoadFailure: ->
-      @$('ul').html("""<li class="error" role="presentation">#{t('tag.error')}</li>""")
+      @$el.attr('class', 'error')
+      @$('option:disabled').text(t('tag.error'))
 
     _renderTags: (@tags) ->
-      $ul = @$('ul')
-      html = """<li role="presentation"><a data-tag-id="" href="#">#{t('tag.allDocuments')}</a></li>"""
-      for tag in tags
-        html += @tagTemplate(t: t, id: tag.id, name: tag.name, size: tag.size)
-      $ul.html(html)
+      @$el.attr('class', '')
+      $select = @$('select')
+      $select.find('option:disabled').remove()
+      @tags.sort((a, b) -> a.name.localeCompare(b.name))
+      for tag in @tags
+        # Append elements, don't do $select.html(). We don't want to deselect
+        # the original element.
+        $select.append($(@tagTemplate(t: t, id: tag.id, name: tag.name, size: tag.size)))
+      undefined
 
-    _onClick: (e) ->
+    _onChange: (e) ->
       e.preventDefault()
-      id = e.currentTarget.getAttribute('data-tag-id')
+      id = @$('select').val()
       @model.set(tag_id: id)
       tag = _.findWhere(@tags, id: parseInt(id, 10))
       @$('.dropdown-toggle').text(t('tag.name', tag?.name || '', tag?.size || -1))

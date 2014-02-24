@@ -43,9 +43,8 @@ define [
 
       <% if ('tag_id' in options) { %>
         <div class="control-group">
-          <label class="control-label"><%- t('tag_id.label') %></label>
-          <div class="controls">
-            <div class="tag-id"></div>
+          <label class="control-label" for="import-options-tag-id"><%- t('tag_id.label') %></label>
+          <div class="controls tag-id">
           </div>
         </div>
       <% } %>

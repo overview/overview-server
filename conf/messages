@@ -297,11 +297,11 @@ views.DocumentSet.index.ImportOptions.name.label=Document set name
 views.DocumentSet.index.ImportOptions.split_documents.label=Split each page into its own document in Overview
 views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
 views.DocumentSet.index.ImportOptions.supplied_stop_words.label=Words to ignore (optional)
-views.DocumentSet.index.ImportOptions.tag_id.label=Filter by tag
+views.DocumentSet.index.ImportOptions.tag_id.label=Only include documents with tag
 views.DocumentSet.index.ImportOptions.tag.loading=Loading tags…
 views.DocumentSet.index.ImportOptions.tag.error=Error loading tags
-views.DocumentSet.index.ImportOptions.tag.allDocuments=Entire document set
-views.DocumentSet.index.ImportOptions.tag.name=Just the {1,choice,0#0 documents|1#1 document|1<{1,number,integer} documents} with tag “{0}”
+views.DocumentSet.index.ImportOptions.tag.allDocuments=All documents
+views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 documents|1#1 document|1<{1,number,integer} documents})
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 

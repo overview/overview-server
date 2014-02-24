@@ -111,4 +111,6 @@ define [
         expect(model.get('tree_title')).toEqual('a fine title')
 
       it 'should add a tag-id dropdown', ->
-        expect(view.$('.tag-id .dropdown-toggle').length).toEqual(1)
+        $input = view.$('select[name=tag_id]')
+        expect($input.length).toEqual(1)
+        expect($input.val()).toEqual('')
