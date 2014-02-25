@@ -241,13 +241,16 @@ object JobHandler {
   }
 
   private def createTree(documentSet: DocumentSet, job: PersistentDocumentSetCreationJob): Tree = {
-    // FIXME: remove when client provides a title
-    val suppliedTitle: Option[String] = for (j <- job.treeTitle if j != "") yield j
-    
-    val tree = Tree(TreeIdGenerator.next(documentSet.id), job.documentSetId, 
-      suppliedTitle.getOrElse(documentSet.title), 0, job.lang, 
-      job.suppliedStopWords.getOrElse(""), 
-      job.importantWords.getOrElse(""))
+    val tree = Tree(
+      id=TreeIdGenerator.next(documentSet.id),
+      documentSetId=job.documentSetId, 
+      title=job.treeTitle.getOrElse(documentSet.title),
+      documentCount=0,
+      lang=job.lang, 
+      description=job.treeDescription.getOrElse(""),
+      suppliedStopWords=job.suppliedStopWords.getOrElse(""), 
+      importantWords=job.importantWords.getOrElse("")
+    )
 
     tree
   }
