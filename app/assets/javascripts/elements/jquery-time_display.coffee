@@ -12,11 +12,11 @@ define [ 'jquery', 'i18n' ], ($, i18n) ->
     text = if format
       t(format, date)
     else
-      date.toLocaleString()
+      date.toString()
 
     @childNodes[0].nodeValue = text
 
     if !@getAttribute('title')
-      @setAttribute('title', date.toLocaleString())
+      @setAttribute('title', date.toString())
 
     undefined

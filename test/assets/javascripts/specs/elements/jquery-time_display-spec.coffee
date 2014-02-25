@@ -13,14 +13,14 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
 
     describe 'with no other options', ->
       beforeEach -> applyWithAttrs({})
-      it 'should display the datetime', -> expect($el.text()).toEqual(date.toLocaleString())
-      it 'should set the title', -> expect($el.attr('title')).toEqual(date.toLocaleString())
+      it 'should display the datetime', -> expect($el.text()).toEqual(date.toString())
+      it 'should set the title', -> expect($el.attr('title')).toEqual(date.toString())
 
     describe 'with format', ->
       beforeEach -> applyWithAttrs('data-format': 'datetime.medium')
       it 'should call i18n()', -> expect(i18n.translate).toHaveBeenCalledWith('time_display.datetime.medium', date)
       it 'should display the result', -> expect($el.text()).toEqual('translated time')
-      it 'should set the title', -> expect($el.attr('title')).toEqual(date.toLocaleString())
+      it 'should set the title', -> expect($el.attr('title')).toEqual(date.toString())
 
     describe 'with a title already set', ->
       beforeEach -> applyWithAttrs(title: 'title')

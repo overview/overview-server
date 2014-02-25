@@ -1,4 +1,4 @@
-define [ 'jquery' ], ($) ->
+define [ 'jquery', 'elements/jquery-time_display' ], ($) ->
   POLL_DELAY = 500 # ms between requests. Shorter makes the progress bar smoother.
   RETRY_DELAY = 2000 # ms before a failed request is retried.
 
@@ -58,6 +58,7 @@ define [ 'jquery' ], ($) ->
         if json_id == dom_id
           # Update the DOM
           $new_li = $(json_html)
+          $new_li.find('time').time_display()
           # Don't replace the entire element. That would replace the form; the
           # user's "Cancel import" clicks would sparodically disappear.
           #
@@ -141,10 +142,12 @@ define [ 'jquery' ], ($) ->
     _receive_document_set: (json) ->
       $job_li = $("li[data-document-set-id=#{json.id}]", @jobs_div)
       $new_li = $(json.html)
+      $new_li.find('time').time_display()
       $ul = $(@document_sets_ul)
 
       # Update $job_li with the latest HTML
       $new_job_li = $(json.html)
+      $new_job_li.find('time').time_display()
       $job_li.replaceWith($new_job_li)
       $job_li = $new_job_li
 

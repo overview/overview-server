@@ -62,6 +62,8 @@ models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
 models.DocumentSetCreationJob.state.PREPARING=processing uploaded files
 
+time_display.datetime.medium={0,date,medium} at {0,time,medium}
+
 views.admin.ImportJob.index.title=Jobs
 views.admin.ImportJob.index.h1=Jobs
 views.admin.ImportJob.index.current_time_sentence=The current time is {0,time,long} on {0,date,medium}.
@@ -231,7 +233,7 @@ views.DocumentSet._share.example_document_set.checkbox_label=Set as example docu
 
 views.DocumentSet._smallDocumentSet.nDocuments={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
 
-views.DocumentSet._tree.createdAt={0,date,yyyy-MM-dd HH:mm z}
+views.DocumentSet._tree.iso8601={0,date,yyyy-MM-dd'T'HH:mm:ssXX}
 views.DocumentSet._tree.nImportantWords={0,choice,1#one important word|1<{0,number,integer} important words}
 views.DocumentSet._tree.nSuppliedStopWords={0,choice,1#one ignored word|1<{0,number,integer} ignored words}
 
