@@ -38,7 +38,7 @@ class _treeSpec extends views.html.ViewSpecification {
     "display the date" in new BaseScope {
       // Wed Feb 12 10:17:49 EST 2014
       override def tree = super.tree.copy(createdAt=new java.sql.Timestamp(1392218269486L))
-      $(".created-at").text() must beEqualTo("2014-02-12 15:17 UTC")
+      $(".created-at").attr("datetime") must beEqualTo("2014-02-12T15:17:49Z")
     }
 
     "display the language" in new BaseScope {
