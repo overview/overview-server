@@ -161,6 +161,9 @@ define [ 'parsers/message_format' ], (MessageFormatParser) ->
   cache = new MessageCache(window.messages || {})
 
   i18n = (key, args...) ->
+    i18n.translate.apply(this, arguments)
+
+  i18n.translate = (key, args...) ->
     ast = cache.get_ast(key)
     _walk_ast(ast, args)
 
