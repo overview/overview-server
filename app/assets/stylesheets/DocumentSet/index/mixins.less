@@ -28,7 +28,7 @@
     font-size: 1em;
   }
 
-  span, time {
+  span {
     .muted;
 
     &::before {
@@ -36,6 +36,15 @@
       // a space _before_ each span anyway; this evens the spaces out.
       content: "– ";
       padding: 0 .5em;
+    }
+  }
+
+  time {
+    .muted;
+
+    &::before {
+      content: "\A";
+      white-space: pre-wrap;
     }
   }
 }

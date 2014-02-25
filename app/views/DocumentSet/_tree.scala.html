@@ -5,6 +5,9 @@
 @defining(scopedMessages("views.DocumentSet._tree")) { m =>
   <li data-tree-id="@tree.id">
     <h6><a href="@routes.TreeController.show(tree.documentSetId, tree.id)">@tree.title</a></h6>
+    @if(tree.description != "") {
+      <span class="description">@tree.description</span>
+    }
     <time class="created-at" datetime="@m("iso8601", tree.createdAt)" data-format="datetime.medium">@m("iso8601", tree.createdAt)</time>
     <span class="lang" data-lang="@tree.lang">@displayLanguageCode(tree.lang)</span>
     @defining(tree.importantWords.split("""\s+""").filter(!_.isEmpty)) { importantWords =>

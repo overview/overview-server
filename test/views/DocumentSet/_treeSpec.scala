@@ -35,6 +35,16 @@ class _treeSpec extends views.html.ViewSpecification {
       $("h6 a").attr("href") must beEqualTo("/documentsets/2/trees/1")
     }
 
+    "display the description if there is one" in new BaseScope {
+      override def tree = super.tree.copy(description="description")
+      $(".description").text() must beEqualTo("description")
+    }
+
+    "not display an empty description" in new BaseScope {
+      override def tree = super.tree.copy(description="")
+      $(".description").length must beEqualTo(0)
+    }
+
     "display the date" in new BaseScope {
       // Wed Feb 12 10:17:49 EST 2014
       override def tree = super.tree.copy(createdAt=new java.sql.Timestamp(1392218269486L))
