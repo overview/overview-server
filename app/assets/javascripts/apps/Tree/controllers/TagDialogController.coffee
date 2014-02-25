@@ -106,6 +106,7 @@ define [
         .modal()
         .on 'hidden', =>
           view.remove()
+          view = undefined
           $dialog.remove()
           @$dialog = undefined
           @stopListening()
@@ -119,5 +120,6 @@ define [
             #
             # TODO remove proxying altogether and just use a Backbone.Collection.
             tagStoreProxy.collection.set(json?.tags || [])
+            view?.render() # tag counts have changed; render that
 
     _.extend(@::, Backbone.Events)

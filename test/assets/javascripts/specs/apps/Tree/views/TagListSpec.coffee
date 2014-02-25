@@ -21,10 +21,10 @@ define [
         'views.Tree.show.tag_list.submit': 'submit'
         'views.Tree.show.tag_list.tag_name.placeholder': 'tag_name.placeholder'
         'views.Tree.show.tag_list.compound_n_documents_html': 'compound_n_documents_html,{0},{1},{2},{3}'
-        'views.Tree.show.tag_list.n_documents_in_tree': 'n_documents_in_tree,{0}'
-        'views.Tree.show.tag_list.n_documents_in_tree_abbr': 'n_documents_in_tree_abbr,{0}'
-        'views.Tree.show.tag_list.n_documents_in_docset': 'n_documents_in_docset,{0}'
-        'views.Tree.show.tag_list.n_documents_in_docset_abbr': 'n_documents_in_docset_abbr,{0}'
+        'views.Tree.show.tag_list.th.count_in_tree': 'th.count_in_tree'
+        'views.Tree.show.tag_list.th.count_in_docset': 'th.count_in_docset'
+        'views.Tree.show.tag_list.th.count': 'th.count'
+        'views.Tree.show.tag_list.th.name': 'th.name'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
       })
 
@@ -40,28 +40,28 @@ define [
         })
 
       it 'should render an empty list', ->
-        expect(view.$('ul').children().length).toEqual(1)
+        expect(view.$('tbody').length).toEqual(1)
 
       it 'should render a "new" form', ->
-        expect(view.$('li.new form').length).toEqual(1)
+        expect(view.$('tfoot form').length).toEqual(1)
 
       it 'should render list items on reset', ->
         collection.reset([ makeModel() ])
-        expect(view.$('ul').children().length).toEqual(2)
+        expect(view.$('tbody tr').length).toEqual(1)
 
       it 'should trigger add', ->
-        val = undefined
-        view.once('add', (v) -> val = v)
-        $form = view.$('form')
+        spy = jasmine.createSpy()
+        view.on('add', spy)
+        $form = view.$('tfoot form')
         $form.find('input[name=name]').val('new tag')
         $form.submit()
-        expect(val).toEqual({ name: 'new tag' })
+        expect(spy).toHaveBeenCalledWith({ name: 'new tag' })
 
       it 'should strip spaces from tag names', ->
         spy = jasmine.createSpy()
         view.on('add', spy)
-        view.$('input[name=name]').val(' new tag ')
-        view.$('form').submit()
+        view.$('tfoot input[name=name]').val(' new tag ')
+        view.$('tfoot form').submit()
         expect(spy).toHaveBeenCalledWith({ name: 'new tag' })
 
       describe 'adding empty tags', ->
@@ -69,22 +69,22 @@ define [
         it 'should not trigger add for an empty tag name', ->
           spy = jasmine.createSpy()
           view.on('add', spy)
-          view.$('input[name=name]').val('')
-          view.$('form').submit()
+          view.$('tfoot input[name=name]').val('')
+          view.$('tfoot form').submit()
           expect(spy).not.toHaveBeenCalled()
 
         it 'should not trigger add for an only-spaces tag name', ->
           spy = jasmine.createSpy()
           view.on('add', spy)
-          view.$('input[name=name]').val(' ')
-          view.$('form').submit()
+          view.$('tfoot input[name=name]').val(' ')
+          view.$('tfoot form').submit()
           expect(spy).not.toHaveBeenCalled()
 
         it 'should focus the input field', ->
-          $input = view.$('input[name=name]')
+          $input = view.$('tfoot input[name=name]')
           $input.val('')
           $('body').append(view.el) # make focusing work
-          view.$('form').submit()
+          view.$('tfoot form').submit()
           expect($input).toBeFocused()
 
       it 'should not show an export link', ->
@@ -106,19 +106,19 @@ define [
 
       it 'should add a tag to the end of the list', ->
         collection.add(makeModel('tag30'))
-        expect(view.$('ul>li:eq(2)').html()).toContain('tag30')
+        expect(view.$('tbody tr:eq(2)').html()).toContain('tag30')
 
       it 'should add a tag to the beginning of the list', ->
         collection.add([makeModel('tag05')], { at: 0 })
-        expect(view.$('ul>li:eq(0)').html()).toContain('tag05')
+        expect(view.$('tbody tr:eq(0)').html()).toContain('tag05')
 
       it 'should add a tag to the middle of the list', ->
         collection.add([makeModel('tag15')], { at: 1 })
-        expect(view.$('ul>li:eq(1)').html()).toContain('tag15')
+        expect(view.$('tbody tr:eq(1)').html()).toContain('tag15')
 
       it 'should remove a tag', ->
         collection.remove(collection.first())
-        expect(view.$('ul>li:eq(0)').html()).toContain('tag20')
+        expect(view.$('tbody tr:eq(0)').html()).toContain('tag20')
 
       it 'should remove Spectrum when deleting a tag', ->
         # This will be 0 if we remove Spectrum; remove this test if that happens
@@ -138,35 +138,44 @@ define [
           name: 'tag11'
           color: '#111111'
         })
-        $li = view.$('li:eq(0)')
-        expect($li.find('input[name=name]').val()).toEqual('tag11')
-        expect($li.find('input[name=color]').val()).toEqual('#111111')
+        $tr = view.$('tbody tr:eq(0)')
+        expect($tr.find('input[name=name]').val()).toEqual('tag11')
+        expect($tr.find('input[name=color]').val()).toEqual('#111111')
 
-      it 'should render a tag without size as size 0 on change', ->
+      it 'should render a tag without size as size 0', ->
         # https://github.com/overview/overview-server/issues/568
         collection.first().set(size: null, sizeInTree: null)
-        expect(view.$('li:eq(0)').find('.count').text()).toEqual('n_documents,0')
+        view.render()
+        expect(view.$('tbody tr:eq(0) td.count').text()).toEqual('n_documents,0')
 
-      it 'should render a tag with different tag counts for tree and docset as two', ->
+      it 'should not render a separate count for just the tree', ->
+        expect(view.$('th.tree-count').length).toEqual(0)
+        expect(view.$('th.count').text()).toEqual('th.count')
+        expect(view.$('td.tree-count').length).toEqual(0)
+
+      it 'should render a separate tree-count when at least one tag has a different value', ->
         collection.first().set(size: 10, sizeInTree: 5)
-        expect(view.$('li:eq(0)').find('.count').html()).toEqual('compound_n_documents_html,5,10,<abbr title="n_documents_in_tree,5">n_documents_in_tree_abbr,5</abbr>,<abbr title="n_documents_in_docset,10">n_documents_in_docset_abbr,10</abbr>')
+        view.render()
+        expect(view.$('th.tree-count').text()).toEqual('th.count_in_tree')
+        expect(view.$('th.count').text()).toEqual('th.count_in_docset')
+        expect(view.$('td.tree-count').length).toEqual(2)
 
       it 'should not change a tag when interacting', ->
         collection.first().set(
           { name: 'tag11', color: '#111111' },
           { interacting: true }
         )
-        $li = view.$('li:eq(0)')
-        expect($li.find('input[name=name]').val()).toEqual('tag10')
-        expect($li.find('input[name=color]').val()).toEqual('#abcdef')
+        $tr = view.$('tbody tr:eq(0)')
+        expect($tr.find('input[name=name]').val()).toEqual('tag10')
+        expect($tr.find('input[name=color]').val()).toEqual('#abcdef')
 
       it 'should change a tag ID', ->
         collection.first().set({ id: 3 })
-        expect(view.$('li:eq(0) input[name=id]').val()).toEqual('3')
+        expect(view.$('tbody tr:eq(0) input[name=id]').val()).toEqual('3')
 
       it 'should change a tag id even when interacting', ->
         collection.first().set({ id: 3 }, { interacting: true })
-        expect(view.$('li:eq(0) input[name=id]').val()).toEqual('3')
+        expect(view.$('tbody tr:eq(0) input[name=id]').val()).toEqual('3')
 
       it 'should show an export link', ->
         view?.remove()
@@ -198,20 +207,20 @@ define [
         expect(1).toEqual(1)
 
       it 'should trigger remove', ->
-        tag = undefined
-        view.once('remove', (v) -> tag = v)
+        spy = jasmine.createSpy()
+        view.on('remove', spy)
         spyOn(window, 'confirm').andReturn(true)
-        view.$('li:eq(0) a.remove').click()
-        expect(tag).toBeDefined()
+        view.$('tbody tr:eq(0) a.remove').click()
+        expect(spy).toHaveBeenCalled()
 
       it 'should not trigger remove if not confirmed', ->
-        tag = undefined
-        view.once('remove', (v) -> tag = v)
+        spy = jasmine.createSpy()
+        view.on('remove', spy)
         spyOn(window, 'confirm').andReturn(false)
-        view.$('li:eq(0) a.remove').click()
-        expect(tag).toBeUndefined()
+        view.$('tbody tr:eq(0) a.remove').click()
+        expect(spy).not.toHaveBeenCalled()
 
       it 'should confirm remove with the tag name and count', ->
         spyOn(window, 'confirm').andReturn(false)
-        view.$('li:eq(0) a.remove').click()
+        view.$('tbody tr:eq(0) a.remove').click()
         expect(window.confirm).toHaveBeenCalledWith("remove.confirm,tag10,10")

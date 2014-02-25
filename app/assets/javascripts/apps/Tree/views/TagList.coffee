@@ -19,25 +19,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
     $els.filter('.spectrum').each ->
       $(this).spectrum('set', $(this).val())
 
-  # Returns something like:
-  #   <abbr title="4 documents visible in this tree">4</abbr>
-  #   /
-  #   <abbr title="10 documents in this document set (including this tree)">10</abbr>
-  #   documents
-  tTagCountsHtml = (tag) ->
-    treeCount = tag.get('sizeInTree') || 0
-    docsetCount = tag.get('size') || 0
-    if treeCount == docsetCount
-      _.escape(t('n_documents', docsetCount))
-    else
-      t(
-        'compound_n_documents_html',
-        treeCount,
-        docsetCount,
-        """<abbr title="#{_.escape(t('n_documents_in_tree', treeCount))}">#{_.escape(t('n_documents_in_tree_abbr', treeCount))}</abbr>""",
-        """<abbr title="#{_.escape(t('n_documents_in_docset', docsetCount))}">#{_.escape(t('n_documents_in_docset_abbr', docsetCount))}</abbr>""",
-      )
-
   # Represents a list of tags
   #
   # Usage:
@@ -57,21 +38,27 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
 
     events:
       'click a.remove': '_onClickRemove'
-      'submit li.new form': '_onSubmitNewTag'
-      'submit li.existing form': '_onSubmitExistingTag'
-      'change li.existing form': '_onChange'
+      'submit tfoot form': '_onSubmitNewTag'
+      'submit tbody form': '_onSubmitExistingTag'
+      'change tbody form': '_onChange'
 
     tagTemplate: _.template("""
-      <li class="existing" data-cid="<%= tag.cid %>">
-        <form method="post" action="#" class="form-horizontal">
-          <%= window.csrfTokenHtml %>
-          <input type="hidden" name="id" value="<%- tag.id || '' %>" />
-          <input type="color" name="color" value="<%- tag.get('color') %>"
-          /><input type="text" name="name" value="<%- tag.get('name') %>" />
-          <div class="count"><%= countHtml %></div>
-        </form>
-        <a class="remove" href="#"><%- t('remove') %></a>
-      </li>
+      <tr class="existing" data-cid="<%= tag.cid %>">
+        <td class="name">
+          <span class="name" style="display:none;"><%- tag.get('name') %></span>
+          <form method="post" action="#" class="form-horizontal">
+            <%= window.csrfTokenHtml %>
+            <input type="hidden" name="id" value="<%- tag.id || '' %>" />
+            <input type="color" name="color" value="<%- tag.get('color') %>"
+            /><input type="text" name="name" value="<%- tag.get('name') %>" />
+          </form>
+        </td>
+        <% if (hasSeparateTreeCount) { %>
+          <td class="tree-count"><%- t('n_documents', tag.get('sizeInTree') || 0) %></td>
+        <% } %>
+        <td class="count"><%- t('n_documents', tag.get('size') || 0) %></td>
+        <td class="actions"><a class="remove" href="#"><%- t('remove') %></a></td>
+      </tr>
     """)
 
     template: _.template("""
@@ -81,34 +68,66 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
           <a class="export" href="<%- exportUrl %>"><%- t('export') %></a>
         <% } %>
       </p>
-      <ul class="unstyled">
-        <%= tags.map(renderTag).join('') %>
-        <li class="new">
-          <form method="post" action="#" class="form-horizontal">
-            <input type="text" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
-            <button type="submit" class="btn"><%- t('submit') %></button>
-          </form>
-        </li>
-      </ul>
+      <table>
+        <thead>
+          <% if (hasSeparateTreeCount) { %>
+            <tr>
+              <th rowspan="2" class="name"><%- t('th.name') %></th>
+              <th colspan="2" class="count-top"><%- t('th.count') %></th>
+              <th rowspan="2"/>
+            </tr>
+            <tr>
+              <th class="tree-count"><%- t('th.count_in_tree') %></th>
+              <th class="count"><%- t('th.count_in_docset') %></th>
+            </tr>
+          <% } else { %>
+            <tr>
+              <th class="name"><%- t('th.name') %></th>
+              <th class="count"><%- t('th.count') %></th>
+              <th/>
+            </tr>
+          <% } %>
+        </thead>
+        <tbody>
+          <%= tags.map(renderTag).join('') %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="<%- hasSeparateTreeCount ? 4 : 3 %>">
+              <form method="post" action="#" class="form-horizontal">
+                <input type="text" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
+                <button type="submit" class="btn"><%- t('submit') %></button>
+              </form>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     """)
 
     initialize: ->
       throw 'must set options.collection' if !@options.collection
 
-      @listenTo(@collection, 'add', (tag) => @_addTag(tag))
-      @listenTo(@collection, 'remove', (tag) => @_removeTag(tag))
-      @listenTo(@collection, 'change', (tag, options) => @_changeTag(tag, options))
-      @listenTo(@collection, 'reset', => @render())
+      @listenTo(@collection, 'add', @_addTag)
+      @listenTo(@collection, 'remove', @_removeTag)
+      @listenTo(@collection, 'change', @_changeTag)
+      @listenTo(@collection, 'reset', @render)
       @render()
+
+    _shouldHaveSeparateTreeCount: ->
+      @collection.find((t) -> t.get('sizeInTree') != t.get('size'))?
 
     render: ->
       removeSpectrum(@$('input[type=color]'))
-      html = @template({
+      @hasSeparateTreeCount = @_shouldHaveSeparateTreeCount()
+      html = @template
         t: t
         tags: @collection
         exportUrl: @options.exportUrl
-        renderTag: (tag) => @tagTemplate({ tag: tag, t: t, countHtml: tTagCountsHtml(tag) })
-      })
+        hasSeparateTreeCount: @hasSeparateTreeCount
+        renderTag: (tag) => @tagTemplate
+          tag: tag
+          t: t
+          hasSeparateTreeCount: @hasSeparateTreeCount
       @$el.html(html)
       addSpectrum(@$('input[type=color]'))
       this
@@ -117,34 +136,36 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       removeSpectrum(@$('input[type=color]'))
       Backbone.View.prototype.remove.call(this)
 
-    _$liForTag: (tag) ->
+    _$trForTag: (tag) ->
       @$("[data-cid=#{tag.cid}]")
 
     _addTag: (tag) ->
-      html = @tagTemplate({
+      html = @tagTemplate
         t: t
         tag: tag
-        countHtml: tTagCountsHtml(tag)
-      })
+        hasSeparateTreeCount: @hasSeparateTreeCount
 
       index = @collection.indexOf(tag)
-      @$("ul>li:eq(#{index})").before(html)
+      if index == 0
+        @$('tbody').prepend(html)
+      else
+        @$("tbody tr:eq(#{index - 1})").after(html)
       addSpectrum(@$('input[type=color]'))
 
     _removeTag: (tag) ->
-      $li = @_$liForTag(tag)
-      removeSpectrum($li.find('input[type=color]'))
-      $li.remove()
+      $tr = @_$trForTag(tag)
+      removeSpectrum($tr.find('input[type=color]'))
+      $tr.remove()
 
     _changeTag: (tag, options) ->
-      $li = @_$liForTag(tag)
-      $li.find('input[name=id]').val(tag.id)
-      countHtml = tTagCountsHtml(tag)
-      $li.find('.count').html(countHtml)
+      $tr = @_$trForTag(tag)
+      $tr.find('input[name=id]').val(tag.id)
+      $tr.find('.count').html(t('n_documents', tag.get('size') || 0))
+      $tr.find('.tree-count').html(t('n_documents', tag.get('sizeInTree') || 0))
 
       if !options? || !options.interacting
-        $li.find('input[name=name]').val(tag.get('name'))
-        $color = $li.find('input[name=color]')
+        $tr.find('input[name=name]').val(tag.get('name'))
+        $color = $tr.find('input[name=color]')
         $color.val(tag.get('color'))
         updateSpectrum($color)
 
@@ -182,8 +203,8 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       e.preventDefault()
       $form = $(e.currentTarget).closest('form')
 
-      $li = $(e.currentTarget).closest('[data-cid]')
-      cid = $li.attr('data-cid')
+      $tr = $(e.currentTarget).closest('[data-cid]')
+      cid = $tr.attr('data-cid')
       tag = @collection.get(cid)
 
       attrs = {

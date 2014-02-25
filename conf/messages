@@ -348,12 +348,11 @@ views.Tree.show.InlineSearchResultList.create_tag=Create tag from search results
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 
 views.Tree.show.tag_list.header=Tags
-views.Tree.show.tag_list.n_documents={0,choice,0#no documents|1#one document|1<{0,number,integer} documents}
-views.Tree.show.tag_list.compound_n_documents_html={2} / {3} {1,choice,1#document|1<documents}
-views.Tree.show.tag_list.n_documents_in_tree_abbr={0}
-views.Tree.show.tag_list.n_documents_in_tree={0,choice,0#no documents|1#one document|1<{0,number,integer} documents} in this tree
-views.Tree.show.tag_list.n_documents_in_docset_abbr={0}
-views.Tree.show.tag_list.n_documents_in_docset={0,choice,0#no documents|1#one document|1<{0,number,integer} documents} in this entire document set
+views.Tree.show.tag_list.n_documents={0,number,integer}
+views.Tree.show.tag_list.th.count=documents
+views.Tree.show.tag_list.th.count_in_tree=in tree
+views.Tree.show.tag_list.th.count_in_docset=total
+views.Tree.show.tag_list.th.name=Tag
 views.Tree.show.tag_list.preamble=These are all the tags you have created in this document set.
 views.Tree.show.tag_list.export=Export this list as a spreadsheet
 views.Tree.show.tag_list.tag_name.placeholder=New tag

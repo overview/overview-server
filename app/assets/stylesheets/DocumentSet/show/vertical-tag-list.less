@@ -9,13 +9,62 @@
     width: 24px;
   }
 
-  li.existing {
-    &:hover {
-      background-color: @tableBackgroundHover;
+  .sp-replacer { /* color from Spectrum color picker */
+    // make it line up with Bootstrap's input
+    padding: 3px;
+    border-radius: @inputBorderRadius;
+    border-color: transparent;
+    background: transparent;
+
+    .sp-preview {
+      border-color: @inputBorder;
+      width: 20px;
+      height: 20px;
+      margin: 0;
     }
 
-    form.form-horizontal {
-      margin-bottom: 5px;
+    .sp-dd {
+      // This doesn't copy/paste very well, and it leaves a huge gap in the
+      // table. Hopefully it's clear that this is an input because it
+      // gets highlighted when you hover/click, just like the text input.
+      display: none;
+    }
+
+    &:hover {
+      border-color: @inputBorder;
+      background: @inputBackground;
+
+      .sp-dd {
+        opacity: 1;
+      }
+    }
+
+    // Copied from Bootstrap
+    .transition(~"border linear .2s, box-shadow linear .2s");
+    &.sp-active {
+      border-color: rgba(82,168,236,.8);
+      .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
+    }
+  }
+
+  table {
+    .table();
+    .table-condensed();
+    width: 100%;
+  }
+
+  form {
+    margin: 0;
+  }
+
+  th.name {
+    // put it over the tag name, not the color picker
+    padding-left: 42px; // got this number from trial-and-error
+  }
+
+  tr.existing {
+    &:hover {
+      background-color: @tableBackgroundHover;
     }
 
     input {
@@ -40,28 +89,28 @@
     }
   }
 
-  li {
-    position: relative;
+  table th, table td { // specificity: override Bootstrap
+    vertical-align: middle;
   }
 
-  li.new {
-    margin-top: 10px;
+  th.count-top, th.count, th.tree-count {
+    white-space: nowrap;
+    text-align: center;
+    width: 1px;
   }
 
-  .count, a.remove {
-    display: block;
-    position: absolute;
-    top: 0;
-    padding: 5px; // mimic inputs
-  }
-
-  .count {
+  td.count, td.tree-count {
+    text-align: right;
+    width: 1px;
     .muted;
-    right: 5em;
   }
 
   a.remove {
-    right: 0;
     .faded-link();
+  }
+
+  tfoot form {
+    // line up the form input with the tag names above
+    margin-left: 30px; // trial and error
   }
 }
