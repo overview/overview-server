@@ -8,4 +8,4 @@ resolvers += Resolver.url("community", url("http://scalasbt.artifactoryonline.co
 
 addSbtPlugin("templemore" % "sbt-cucumber-plugin" % "0.8.0")
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.2-RC2")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.2-RC4")
