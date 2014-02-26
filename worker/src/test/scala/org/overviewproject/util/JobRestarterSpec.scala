@@ -25,6 +25,7 @@ class JobRestarterSpec extends Specification with Mockito {
     val fileGroupId: Option[Long] = None
     val treeTitle: Option[String] = None
     val tagId: Option[Long] = None
+    val treeDescription: Option[String] = None
     
     var state = InProgress
     var fractionComplete = 0.98
