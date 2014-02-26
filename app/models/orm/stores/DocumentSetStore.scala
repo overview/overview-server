@@ -50,6 +50,11 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
     }
   }
   
+  def cancelReclusteringJob(documentSetId: Long, job: DocumentSetCreationJob): Unit = {
+    deleteOrCancelPendingClones(documentSetId)
+    DocumentSetCreationJobStore.cancel(job)
+  }
+  
   /**
    * Set the deleted flag to true
    */

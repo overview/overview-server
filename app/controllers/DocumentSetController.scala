@@ -40,11 +40,16 @@ trait DocumentSetController extends Controller {
     /** Returns type of the job running for the document set, if any exist */
     def findRunningJobType(documentSetId: Long): Option[DocumentSetCreationJobType.Value]
 
+    /** find all jobs for the document set */
+    def findAllJobs(documentSetId: Long): Seq[DocumentSetCreationJob]
+
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
 
     def cancelJob(documentSet: DocumentSet): Unit
+
+    def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit
   }
 
   private val form = DocumentSetForm()
@@ -99,24 +104,33 @@ trait DocumentSetController extends Controller {
 
     def done(message: String, event: String) = Redirect(routes.DocumentSetController.index()).flashing(
       "success" -> m(message),
-      "event" -> event
-    )
+      "event" -> event)
 
-    storage.findRunningJobType(id) match {
-      case Some(DocumentSetCreationJobType.Recluster) =>
-        onDocumentSet(storage.cancelJob)
-        done("deleteTree.success", "tree-delete")
-      case Some(jobType) =>
-        onDocumentSet(storage.cancelJob)
-        onDocumentSet(storage.deleteDocumentSet)
+    // FIXME: If a reclustering job is running, but there are failed jobs, we assume
+    // that the delete refers to canceling the running job.
+    // It would be better for the client to explicitly tell us what job to cancel, rather
+    // than trying to guess.
+    val jobs = storage.findAllJobs(id)
+    val runningReclusteringJob: Option[DocumentSetCreationJob] =
+      jobs.find(j => j.jobType == DocumentSetCreationJobType.Recluster && j.state != DocumentSetCreationJobState.Error)
 
-        if (jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
-        JobQueueSender.send(Delete(id))
-        done("deleteJob.success", "document-set-delete")
-      case None =>
-        onDocumentSet(storage.deleteDocumentSet)
-        JobQueueSender.send(Delete(id))
-        done("deleteDocumentSet.success", "document-set-delete")
+    runningReclusteringJob.map { j =>
+      onDocumentSet(storage.cancelReclusteringJob(_, j))
+      done("deleteTree.success", "tree-delete")
+    }.getOrElse {
+      storage.findRunningJobType(id) match {
+        case Some(jobType) =>
+          onDocumentSet(storage.cancelJob)
+          onDocumentSet(storage.deleteDocumentSet)
+
+          if (jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
+          JobQueueSender.send(Delete(id))
+          done("deleteJob.success", "document-set-delete")
+        case None =>
+          onDocumentSet(storage.deleteDocumentSet)
+          JobQueueSender.send(Delete(id))
+          done("deleteDocumentSet.success", "document-set-delete")
+      }
     }
   }
 
@@ -166,6 +180,9 @@ object DocumentSetController extends DocumentSetController {
         .toSeq
     }
 
+    override def findAllJobs(documentSetId: Long): Seq[DocumentSetCreationJob] =
+      DocumentSetCreationJobFinder.byDocumentSet(documentSetId).toSeq
+
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
       DocumentSetStore.insertOrUpdate(documentSet)
     }
@@ -175,6 +192,9 @@ object DocumentSetController extends DocumentSetController {
 
     override def cancelJob(documentSet: DocumentSet): Unit =
       DocumentSetStore.deleteOrCancelJob(documentSet)
+
+    override def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit =
+      DocumentSetStore.cancelReclusteringJob(documentSet, job)
 
     override def findRunningJobType(documentSetId: Long) =
       DocumentSetCreationJobFinder.byDocumentSet(documentSetId).headOption.map(_.jobType)

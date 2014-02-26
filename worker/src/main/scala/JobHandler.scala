@@ -208,7 +208,7 @@ object JobHandler {
 
       val id = job.documentSetId
       SQL("SELECT lo_unlink(contents_oid) FROM document_set_creation_job WHERE document_set_id = {id} AND contents_oid IS NOT NULL").on('id -> id).as(scalar[Int] *)
-      SQL("DELETE FROM document_set_creation_job WHERE document_set_id = {id}").on('id -> id).executeUpdate()
+      SQL("DELETE FROM document_set_creation_job WHERE id = {jobId}").on('jobId -> job.id).executeUpdate()
 
       deleteFileGroupData(job)
     }
