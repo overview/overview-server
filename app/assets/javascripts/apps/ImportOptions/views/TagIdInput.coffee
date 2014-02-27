@@ -30,10 +30,12 @@ define [
       throw 'Must pass tagListUrl, a URL that gives a JSON { tags: [ ... ] } response' if !@tagListUrl
       @model.set(tag_id: '')
 
+      @render()
+      @_loadTags()
+
     render: ->
       html = @template(t: t)
       @$el.html(html)
-      @$('select').one 'focus', (=> @_loadTags())
 
     _loadTags: ->
       @$el.attr('class', 'loading')
