@@ -1,9 +1,8 @@
 define [ 'backbone', 'base64' ], (Backbone, Base64) ->
-  Backbone.Model.extend({
-    defaults: {
+  class Credentials extends Backbone.Model
+    defaults:
       email: undefined
       password: undefined
-    }
 
     toAuthHeaders: ->
       email = @get('email')
@@ -26,4 +25,3 @@ define [ 'backbone', 'base64' ], (Backbone, Base64) ->
       email = @get('email')
       password = @get('password')
       !!(email && password)
-  })
