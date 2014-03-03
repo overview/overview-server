@@ -2,11 +2,11 @@ package org.overviewproject.runner
 
 import java.io.{BufferedReader,IOException,InputStream,InputStreamReader,PrintStream}
 import java.lang.Process
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
 import org.overviewproject.runner.commands.Command
 
-class Daemon(val logger: StdLogger, val command: Command) {
+class Daemon(val logger: StdLogger, val command: Command) extends DaemonProcess {
   logger.out.println("Running " + command)
 
   private val cmdArray : Array[String] = command.argv.toArray
@@ -35,17 +35,21 @@ class Daemon(val logger: StdLogger, val command: Command) {
   }
 
   val process: Process = Runtime.getRuntime().exec(cmdArray, envArray)
+
   val outLogger = createLoggingThread(process.getInputStream(), logger.out)
   val errLogger = createLoggingThread(process.getErrorStream(), logger.err)
   outLogger.start()
   errLogger.start()
 
-  def destroyAsynchronously(): Unit = process.destroy()
+  override def destroy(): Unit = process.destroy()
 
-  val statusCodeFuture : Future[Int] = Future({
-    val result = process.waitFor()
-    outLogger.join()
-    errLogger.join()
-    result
-  })(ExecutionContext.global)
+  override def waitFor = {
+    import ExecutionContext.Implicits.global
+
+    Future(blocking { process.waitFor() }).andThen({
+      case _ =>
+        outLogger.join()
+        errLogger.join()
+    })
+  }
 }

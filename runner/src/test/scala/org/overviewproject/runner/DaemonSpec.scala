@@ -45,7 +45,7 @@ class DaemonSpec extends Specification {
 
     // Waits for process to complete and returns status code
     def run() : Int = {
-      Await.result(daemon.statusCodeFuture, TestDuration)
+      Await.result(daemon.waitFor, TestDuration)
     }
   }
 
@@ -58,7 +58,7 @@ class DaemonSpec extends Specification {
     "start asynchronously" in new Base {
       // If there is no return value after the daemon was started, then we're
       // async.
-      daemon.statusCodeFuture.isCompleted must beEqualTo(false)
+      daemon.waitFor.isCompleted must beEqualTo(false)
       run() // reap the process
     }
 
@@ -102,7 +102,6 @@ class DaemonSpec extends Specification {
         }
       }
 
-      daemon.process // resolve lazy val
       daemon.outLogger.setUncaughtExceptionHandler(exceptionHandler)
       Thread.sleep(100) // give time for logging threads to start up
 
@@ -110,7 +109,7 @@ class DaemonSpec extends Specification {
       // BufferedReader.readLine().
       //
       // Now, let's cause an IOException!
-      daemon.destroyAsynchronously
+      daemon.destroy
 
       run() // wait for the kill to finish
 

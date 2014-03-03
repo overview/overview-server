@@ -3,7 +3,7 @@ package org.overviewproject.runner
 import java.io.{ByteArrayOutputStream,File,FileOutputStream}
 import java.sql.{Connection,DriverManager,ResultSet}
 import java.util.concurrent.TimeoutException
-import scala.concurrent.Await
+import scala.concurrent.{Await,Future,blocking}
 import scala.concurrent.duration.Duration
 import scala.language.reflectiveCalls
 
@@ -97,8 +97,8 @@ class Main(conf: Conf) {
         block(conn)
       }
     } finally {
-      daemon.destroyAsynchronously()
-      val statusCode = Await.result(daemon.statusCodeFuture, Duration.Inf)
+      daemon.destroy()
+      val statusCode = Await.result(daemon.waitFor, Duration.Inf)
     }
   }
 
@@ -125,7 +125,7 @@ class Main(conf: Conf) {
       val sbtCommand = (Seq("", "all/compile", "db-evolution-applier/run") ++ sbtTasks).mkString("; ")
 
       val sbtRun = new Daemon(sublogger, commands.sbt(sbtCommand).with32BitSafe)
-      val statusCode = Await.result(sbtRun.statusCodeFuture, Duration.Inf)
+      val statusCode = Await.result(sbtRun.waitFor, Duration.Inf)
 
       if (statusCode != 0) {
         cpLogger.err.println(s"sbt exited with code ${statusCode}. Please fix the error.")
@@ -174,7 +174,7 @@ class Main(conf: Conf) {
         subLogger,
         PostgresCommand("initdb", "-D", databaseDir.getAbsolutePath, "-E", "UTF8", "--no-locale", "-U", "postgres")
       )
-      val statusCode = Await.result(daemon.statusCodeFuture, Duration.Inf)
+      val statusCode = Await.result(daemon.waitFor, Duration.Inf)
 
       if (statusCode != 0) {
         subLogger.err.println(s"initdb failed with status code ${statusCode}. Please delete ${databaseDir.getAbsolutePath} and try again.")
@@ -217,6 +217,52 @@ class Main(conf: Conf) {
     }
   }
 
+  private def manageDaemons(daemons: Seq[Daemon]) : Unit = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+
+    // Block and wait for status codes.
+    //
+    // Usually the user uses Ctrl-C to kill the process group (which will
+    // automatically signal all children to exit). We wait for that to happen
+    // here -- this loop blocks.
+    //
+    // Also: we have to support Ctrl+D, because Play outputs a log message
+    // suggesting users should use it.
+
+    val superServer = new SuperServer(daemons.toSet)
+
+    val userPressedCtrlD = Future[Unit] { blocking {
+      def isEOF(b: Int) : Boolean = (b == -1 || b == 4)
+      while (!isEOF(System.in.read())) {
+        // keep reading...
+      }
+      logger.out.println("Ctrl+D pressed.")
+    }}
+
+    val logExit = (daemon: Daemon, statusCode: Int) => {
+      daemon.logger.out.println(s"Exited with status code ${statusCode}.")
+      Unit
+    }
+
+    val all = Future.firstCompletedOf(
+      Seq(
+        superServer.waitForFirst.map((_) => Unit),
+        userPressedCtrlD
+      )
+    ).flatMap { case _ =>
+      logger.out.println("Killing processes...")
+      superServer.notCompleted.map { (daemon: Daemon) => 
+        daemon.logger.out.println("Sending kill signal")
+        daemon.destroy()
+      }
+      superServer.waitForAll
+    }
+
+    val allDone = Await.result(all, Duration.Inf)
+
+    allDone.foreach(logExit.tupled)
+  }
+
   def run() = {
     def makeDaemon(spec: DaemonInfo, classpath: Seq[String]) : Daemon = {
       val command = spec.command match {
@@ -248,56 +294,15 @@ class Main(conf: Conf) {
     // than running sbt (sbt runs the db-evolution-applier). And even if it
     // weren't fast enough, db-evolution-applier will retry the database a
     // few times to make sure.
-    val (jvmDaemons, rawDaemons) = daemonInfos.partition(_.command.isInstanceOf[JvmCommand])
+    val (jvmDaemons, rawDaemons) = daemonInfos.partition {
+      (info: DaemonInfo) => !Set("database", "sbt-task").contains(info.id)
+    }
     val daemons =
       rawDaemons.map(makeDaemon(_, Seq())) ++ // start Postgres before getClasspaths...
       (jvmDaemons.zip(getClasspathsAndRunEvolutionsAsASideEffect(jvmDaemons.map(_.id)))
         .map { case (info, classpath) => makeDaemon(info, classpath) })
 
-    // Block and wait for status codes.
-    //
-    // Usually the user uses Ctrl-C to kill the process; that will happen
-    // here, before any status codes are returned. That's the real purpose
-    // of this loop: to block, not to inform.
-    //
-    // Note that we only listen for one status code at a time: these tasks
-    // block a lot, so if we listened for them all at once we'd exhaust the
-    // thread pool.
-    //
-    // Also: we have to support Ctrl+D, because Play outputs a log message
-    // suggesting users should use it.
-
-    var shuttingDown = false
-
-    def waitForDaemonToExitOrCtrlD(daemon: Daemon) : Unit = {
-      import scala.concurrent.ExecutionContext.Implicits.global
-      while (true) {
-        // Spin through input looking for Ctrl+D
-        if (!shuttingDown) {
-          def isEOF(b: Int) : Boolean = (b == -1 || b == 4)
-          while (System.in.available() > 0) {
-            if (isEOF(System.in.read())) {
-              System.out.println("Ctrl+D pressed. Killing processes...")
-              shuttingDown = true
-            }
-          }
-        }
-
-        if (shuttingDown) daemon.destroyAsynchronously()
-
-        // Is the daemon dead? If so, break so we get to the next daemon
-        try {
-          val duration = Duration(100, "ms")
-          val statusCode = Await.result(daemon.statusCodeFuture, duration)
-          daemon.logger.out.println(s"Process exited with status code ${statusCode}\n")
-          return
-        } catch {
-          case _: TimeoutException => Unit // Daemon's still up. Go back to reading inputs.
-        }
-      }
-    }
-
-    daemons.foreach(waitForDaemonToExitOrCtrlD)
+    manageDaemons(daemons)
 
     logger.out.println("All processes exited. Shutting down.")
   }
