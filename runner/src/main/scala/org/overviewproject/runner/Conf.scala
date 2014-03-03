@@ -23,7 +23,7 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
             |""".stripMargin)
 
   def daemonInfoListConverter = new ValueConverter[Seq[DaemonInfo]] {
-    def parse(s: List[(String, List[String])]) : Either[String, Option[Seq[DaemonInfo]]] = {
+    override def parse(s: List[(String, List[String])]) : Either[String, Option[Seq[DaemonInfo]]] = {
       if (s.isEmpty) {
         Right(None)
       } else {
@@ -40,12 +40,13 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
       }
     }
 
-    val tag = typeTag[Seq[DaemonInfo]]
-    val argType = ArgType.SINGLE
+    override val tag = typeTag[Seq[DaemonInfo]]
+    override val argType = ArgType.SINGLE
   }
 
   val onlyServers = opt[Seq[DaemonInfo]]("only-servers", descr="Only start this comma-separated list of servers")(daemonInfoListConverter)
   val exceptServers = opt[Seq[DaemonInfo]]("except-servers", descr="Start all but this comma-separated list of servers")(daemonInfoListConverter)
+  val sbtTask = opt[String]("sbt", descr="Also run this sbt task")
 
   mutuallyExclusive(onlyServers, exceptServers)
 
@@ -54,8 +55,14 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
   }
 
   def daemonInfos : Seq[DaemonInfo] = {
-    onlyServers.get
+    val servers = onlyServers.get
       .orElse(exceptServers.get)
       .getOrElse(daemonInfoRepository.allDaemonInfos)
+
+    val sbt = sbtTask.get.map { task =>
+      DaemonInfo("sbt-task", Console.YELLOW, commands.sbt(task))
+    }.toSeq
+
+    servers ++ sbt
   }
 }

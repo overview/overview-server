@@ -77,5 +77,13 @@ class ConfSpec extends Specification with Mockito {
       override val arguments = Seq("--only-servers", "id1", "--except-servers", "id2")
       conf.daemonInfos must throwA[Throwable]("There should be only one or zero of the following options: only-servers, except-servers")
     }
+
+    "add arbitrary sbt commands" in new ThreeDaemons {
+      override val arguments = Seq("--only-servers", "id1", "--sbt", "all/test")
+      repository.daemonInfosOnly(Set("id1")) returns Seq(allDaemonInfos(0))
+      conf.daemonInfos.length must beEqualTo(2)
+      conf.daemonInfos(0) must beEqualTo(allDaemonInfos(0))
+      conf.daemonInfos(1) must beLike { case di: DaemonInfo => di.command.argv.lastOption must beSome("all/test") }
+    }
   }
 }
