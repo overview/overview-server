@@ -9,9 +9,9 @@ package org.overviewproject.persistence
 
 import java.sql.Connection
 import org.overviewproject.clustering.DocTreeNode
-import org.overviewproject.persistence.orm.{ DocumentSetCreationJobTree, Schema }
+import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.persistence.orm.stores.TreeStore
-import org.overviewproject.tree.orm.{ Node, NodeDocument, Tree }
+import org.overviewproject.tree.orm.{ DocumentSetCreationJobTree, Node, NodeDocument, Tree }
 import org.overviewproject.tree.orm.stores.BaseStore
 
 

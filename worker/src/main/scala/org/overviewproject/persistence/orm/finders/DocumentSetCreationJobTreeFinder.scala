@@ -1,19 +1,17 @@
 package org.overviewproject.persistence.orm.finders
 
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.persistence.orm.DocumentSetCreationJobTree
 import org.overviewproject.persistence.orm.Schema.documentSetCreationJobTrees
-import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
+import org.overviewproject.tree.orm.DocumentSetCreationJobTree
+import org.overviewproject.tree.orm.finders.{ BaseDocumentSetCreationJobTreeFinder, FinderResult }
 
-object DocumentSetCreationJobTreeFinder extends Finder {
+object DocumentSetCreationJobTreeFinder extends BaseDocumentSetCreationJobTreeFinder(documentSetCreationJobTrees) {
 
   type DocumentSetCreationJobTreeFinderResult = FinderResult[DocumentSetCreationJobTree]
 
   def byJob(jobId: Long): DocumentSetCreationJobTreeFinderResult =
-    from(documentSetCreationJobTrees)(jt =>
-      where(jt.documentSetCreationJobId === jobId)
-        select (jt))
-
+   byJobQuery(jobId)
+   
   def byTree(treeId: Long): DocumentSetCreationJobTreeFinderResult =
     from(documentSetCreationJobTrees)(jt =>
       where(jt.treeId === treeId)

@@ -1,4 +1,4 @@
-package org.overviewproject.persistence.orm
+package org.overviewproject.tree.orm
 
 
 import org.overviewproject.postgres.SquerylEntrypoint.compositeKey

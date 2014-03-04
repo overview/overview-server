@@ -14,7 +14,6 @@ import org.specs2.execute.PendingUntilFixed
 import org.overviewproject.tree.orm._
 import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.test.IdGenerator._
-import org.overviewproject.persistence.orm.DocumentSetCreationJobTree
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 

@@ -13,10 +13,9 @@ import org.overviewproject.tree.orm.{ Document, DocumentSet, Node, NodeDocument,
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.persistence.orm.Schema._
 import org.overviewproject.postgres.SquerylEntrypoint._
-import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.{ DocumentSetCreationJob, DocumentSetCreationJobTree }
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.persistence.orm.DocumentSetCreationJobTree
 
 class DocumentSetCleanerSpec extends DbSpecification {
   step(setupDb)
