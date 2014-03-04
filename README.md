@@ -1,6 +1,8 @@
 overview-server
 ===============
 
+[![Build Status](https://travis-ci.org/overview/overview-server.png?branch=master)](https://travis-ci.org/overview/overview-server)
+
 The Overview Project is a visual document mining system designed for journalists.
 Important links:
 
