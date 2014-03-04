@@ -13,44 +13,50 @@ class DocumentFinderSpec extends Specification {
   step(start(FakeApplication()))
 
   "DocumentFinder" should {
+    "find untagged documents" in new DbTestContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
 
-    trait TaggedDocumentsContext extends DbTestContext {
-      var documentSet: DocumentSet = _
-      var documents: Seq[Document] = _
-      var untaggedDocumentIds: Seq[Int] = _
+      val documentSet = TestSchema.documentSets.insertOrUpdate(DocumentSet())
+      val documents = Seq.tabulate(10)(n => TestSchema.documents.insert(Document(id=n, documentSetId=documentSet.id)))
+      val tree = TestSchema.trees.insert(Tree(
+        id=0L,
+        documentSetId=documentSet.id,
+        title="tree",
+        documentCount=documents.length,
+        lang="en"
+      ))
+      val node = TestSchema.nodes.insert(Node(
+        treeId=tree.id,
+        parentId=None,
+        description="node",
+        cachedSize=documents.length,
+        cachedDocumentIds=documents.map(_.id).toArray,
+        isLeaf=true
+      ))
+      val tag = TestSchema.tags.insertOrUpdate(Tag(
+        documentSetId=documentSet.id,
+        name="tag",
+        color="000000"
+      ))
 
-      override def setupWithDb = {
-        import org.overviewproject.postgres.SquerylEntrypoint._
+      val taggedDocuments = documents.take(5)
+      val untaggedDocuments = documents.takeRight(5)
 
-        documentSet = TestSchema.documentSets.insertOrUpdate(DocumentSet())
-
-        Seq.tabulate(10)(n => TestSchema.documents.insert(Document(id = n, documentSetId = documentSet.id)))
-        TestSchema.trees.insert(Tree(1, documentSet.id,"tree", 100, "en", "", "" ))
-        TestSchema.nodes.insert(
-          Node(id = 1,
-            treeId = 1,
-            parentId = None,
-            description = "",
-            cachedSize = 0,
-            cachedDocumentIds = Array.empty,
-            isLeaf = true))
-        val tag = TestSchema.tags.insertOrUpdate(Tag(documentSetId = documentSet.id, name = "tag", color = "000000"))
-        val taggedIds = 0 to 4
-        val unTaggedIds = 5 to 9
-
-        TestSchema.documentTags.insert(taggedIds.map(id => DocumentTag(id, tag.id)))
-        TestSchema.nodeDocuments.insert((taggedIds ++ unTaggedIds.take(3)).map(id =>
-          NodeDocument(1, id)))
-
-        untaggedDocumentIds = unTaggedIds.take(3)
+      documents.foreach { d =>
+        TestSchema.nodeDocuments.insertOrUpdate(NodeDocument(nodeId=node.id, documentId=d.id))
       }
-    }
 
-    "find untagged documents in nodes" in new TaggedDocumentsContext {
-      val untagged = DocumentFinder.bySelection(Selection(documentSet.id, Nil, Nil, Nil, Nil, true)).toSeq
+      taggedDocuments.foreach { d =>
+        TestSchema.documentTags.insertOrUpdate(DocumentTag(documentId=d.id, tagId=tag.id))
+      }
 
-      untagged.map(_.id) must beEqualTo(untaggedDocumentIds)
+      val selection = Selection(documentSet.id, Nil, Nil, Nil, Nil, true)
+
+      val result = DocumentFinder.bySelection(selection).toSeq
+
+      result.map(_.id).toSet must beEqualTo(untaggedDocuments.map(_.id).toSet)
     }
   }
+
   step(stop)
 }
