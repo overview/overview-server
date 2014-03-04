@@ -217,7 +217,11 @@ class Main(conf: Conf) {
     }
   }
 
-  private def manageDaemons(daemons: Seq[Daemon]) : Unit = {
+  /** Waits for all daemons to finish.
+    *
+    * @return Status code of the first daemon to finish.
+    */
+  private def waitForDaemons(daemons: Seq[Daemon]) : Int = {
     import scala.concurrent.ExecutionContext.Implicits.global
 
     // Block and wait for status codes.
@@ -261,6 +265,8 @@ class Main(conf: Conf) {
     val allDone = Await.result(all, Duration.Inf)
 
     allDone.foreach(logExit.tupled)
+
+    superServer.waitForFirst.value.get.get._2
   }
 
   def run() = {
@@ -302,9 +308,10 @@ class Main(conf: Conf) {
       (jvmDaemons.zip(getClasspathsAndRunEvolutionsAsASideEffect(jvmDaemons.map(_.id)))
         .map { case (info, classpath) => makeDaemon(info, classpath) })
 
-    manageDaemons(daemons)
+    val statusCode = waitForDaemons(daemons)
 
-    logger.out.println("All processes exited. Shutting down.")
+    logger.out.println(s"All processes exited. (First exit status code was ${statusCode}. Shutting down.")
+    System.exit(statusCode)
   }
 }
 
