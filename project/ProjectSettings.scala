@@ -23,7 +23,7 @@ trait ProjectSettings {
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
-  val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-SNAPSHOT"
+  val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
   val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
   val junitDep = "junit" % "junit-dep" % "4.11"
