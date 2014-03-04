@@ -79,6 +79,13 @@ module.exports = (grunt) ->
     else if filepath.indexOf(jsTest) == 0
       grunt.config('coffee.test.src', filepath.replace(jsTest, '.'))
 
+  grunt.registerTask('test', [
+    'clean'
+    'copy'
+    'coffee'
+    'karma:continuous'
+  ])
+
   grunt.registerTask('default', [
     'karma:unit' # spin up PhantomJS early, so it'll be ready later
     'clean'
