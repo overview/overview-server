@@ -31,6 +31,8 @@ define [
       abort: ->
 
     beforeEach ->
+      clearAjaxRequests()
+
       $otherLink = $('<a href="#other-link">other link</a>').appendTo($('body'))
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.confirm_cancel.title': 'title'

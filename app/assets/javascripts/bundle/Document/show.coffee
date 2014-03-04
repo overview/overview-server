@@ -9,7 +9,7 @@ requirejs.config
 
   paths:
     backbone: 'vendor/backbone'
-    jquery: 'vendor/jquery-1-8-1'
+    jquery: 'vendor/jquery-2-1-0'
     underscore: 'vendor/underscore'
 
 require [

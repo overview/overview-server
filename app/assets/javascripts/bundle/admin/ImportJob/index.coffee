@@ -29,7 +29,7 @@ requirejs.config({
     'bootstrap-modal': 'vendor/bootstrap-modal'
     'bootstrap-tab': 'vendor/bootstrap-tab'
     'bootstrap-transition': 'vendor/bootstrap-transition'
-    jquery: 'vendor/jquery-1-8-1'
+    jquery: 'vendor/jquery-2-1-0'
     underscore: 'vendor/underscore'
 })
 

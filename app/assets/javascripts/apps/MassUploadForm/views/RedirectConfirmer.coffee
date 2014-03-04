@@ -86,7 +86,8 @@ define [
     _onCancelUpload: ->
       @model.abort()
       @$('button').attr('disabled', 'disabled')
-      $.ajax('/files', type: 'DELETE')
-        .done =>
+      $.ajax '/files',
+        type: 'DELETE'
+        complete: =>
           @$el.modal('hide')
           @_doRedirect()

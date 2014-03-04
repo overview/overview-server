@@ -12,7 +12,7 @@ module.exports = function(config) {
     },
 
     files: [
-      'src-js/vendor/jquery-1-8-1.js',
+      'src-js/vendor/jquery-2-1-0.js',
       {pattern: 'src-js/**/*.js', included: false},
       {pattern: 'test-js/**/*.js', included: false},
       'framework-js/timecop-0.1.1.js',

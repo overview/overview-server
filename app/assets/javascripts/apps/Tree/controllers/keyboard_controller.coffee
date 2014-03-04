@@ -1,4 +1,10 @@
 define ->
+  INPUTS = # jQuery's :input, a zillion times faster
+    INPUT: null
+    SELECT: null
+    TEXTAREA: null
+    BUTTON: null
+
   # Each event looks like: "key": "controller.method" ]
   #
   # Key looks like: 'a' or 'Control+a' or 'Control+Shift+a' (only one key
@@ -37,25 +43,29 @@ define ->
   #
   # Use the KeyboardController like this:
   #
-  # keyboardController = new KeyboardController($('body'))
+  # keyboardController = new KeyboardController(document.body)
   # otherController = new OtherController(...)
   # keyboardController.add_controller('OtherController', otherController)
   #
   # The KeyboardController holds the logic for each controller. This is so we
   # don't write conflicting rules.
   class KeyboardController
-    constructor: (el) ->
+    constructor: (@el) ->
       @controllers = {}
-      @$el = $(el)
-      @$el.on('keydown', (e) => @handle_keydown(e))
+      @listener = @handle_keydown.bind(this)
+
+      @el.addEventListener('keydown', @listener, false)
+
+    remove: ->
+      @el.removeEventListener('keydown', @listener, false)
 
     add_controller: (spec, controller) ->
       @controllers[spec] = controller
 
     handle_keydown: (e) ->
-      return if $(e.target).is(':input')
+      return if e.target.tagName of INPUTS
 
-      i = e.which
+      i = e.keyCode || e.keyCodeX # keyCodeX is a hack for unit tests
 
       A = 'A'.charCodeAt(0)
       Z = 'Z'.charCodeAt(0)
@@ -81,9 +91,9 @@ define ->
         when i == 45 then 'Insert'
         when i == 46 then 'Delete'
         when i == 191 then 'Slash'
-        else undefined
+        else null
 
-      if key
+      if key?
         meta = e.metaKey || e.ctrlKey || false
         full_key = "#{meta && 'Control+' || ''}#{e.shiftKey && 'Shift+' || ''}#{key}"
 
@@ -94,9 +104,7 @@ define ->
           controller = @controllers[controller_spec]
 
           if controller?
-            method = controller[method_spec]
-            throw "MethodNotFound" if !method
-
-            method.call({}, e)
+            throw 'MethodNotFound' if method_spec not of controller
+            controller[method_spec].call({}, e)
             e.stopPropagation()
             e.preventDefault()
