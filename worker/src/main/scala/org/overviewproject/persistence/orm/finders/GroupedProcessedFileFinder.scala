@@ -7,17 +7,17 @@ import org.overviewproject.tree.orm.GroupedProcessedFile
 import org.overviewproject.persistence.orm.Schema
 import org.squeryl.Query
 
-object FileFinder extends Finder {
+object GroupedProcessedFileFinder extends Finder {
 
-  class FileFinderResult(query: Query[GroupedProcessedFile]) extends FinderResult(query) {
-    def orderedById: FileFinderResult = 
+  class GroupedProcessedFileFinderResult(query: Query[GroupedProcessedFile]) extends FinderResult(query) {
+    def orderedById: GroupedProcessedFileFinderResult = 
       from(query)(f =>
         select(f)
         orderBy(f.id asc))
   }
-  implicit private def queryToFileFinderResult(query: Query[GroupedProcessedFile]): FileFinderResult = 
-    new FileFinderResult(query)
+  implicit private def queryToGroupedProcessedFileFinderResult(query: Query[GroupedProcessedFile]): GroupedProcessedFileFinderResult = 
+    new GroupedProcessedFileFinderResult(query)
   
-  def byFileGroup(fileGroupId: Long): FileFinderResult = 
+  def byFileGroup(fileGroupId: Long): GroupedProcessedFileFinderResult = 
     Schema.groupedProcessedFiles.where(f => f.fileGroupId === fileGroupId)
 }

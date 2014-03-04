@@ -5,7 +5,7 @@ import scala.concurrent.duration._
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence._
-import org.overviewproject.persistence.orm.finders.FileFinder
+import org.overviewproject.persistence.orm.finders.GroupedProcessedFileFinder
 import org.overviewproject.persistence.orm.Schema.files
 import org.overviewproject.tree.orm.{ Document, File, GroupedProcessedFile }
 import org.overviewproject.tree.orm.FileJobState._
@@ -23,7 +23,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     extends PagedDocumentSourceDocumentProducer[GroupedProcessedFile] with PersistentDocumentSet {
 
   override protected lazy val totalNumberOfDocuments = Database.inTransaction {
-    FileFinder.byFileGroup(fileGroupId).count
+    GroupedProcessedFileFinder.byFileGroup(fileGroupId).count
   }
   
   private val IndexingTimeout = 3 minutes
@@ -54,7 +54,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   }
 
   protected def runQueryForPage(pageNumber: Int)(processDocuments: Iterable[GroupedProcessedFile] => Int): Int = Database.inTransaction {
-    val query =  FileFinder.byFileGroup(fileGroupId).orderedById
+    val query =  GroupedProcessedFileFinder.byFileGroup(fileGroupId).orderedById
     val result = ResultPage(query, PageSize, pageNumber)
     
     processDocuments(result)
