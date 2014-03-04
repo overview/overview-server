@@ -15,56 +15,33 @@ import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
 import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn }
 import org.overviewproject.util.SearchIndex
 import scala.concurrent.Await
+import org.overviewproject.tree.orm.finders.ResultPage
 
-class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
-                                 consumer: DocumentConsumer, progAbort: ProgressAbortFn) extends DocumentProducer
-    with PersistentDocumentSet {
+class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, 
+    override protected val consumer: DocumentConsumer, 
+    override protected val progAbort: ProgressAbortFn)
+    extends PagedDocumentSourceDocumentProducer[GroupedProcessedFile] with PersistentDocumentSet {
 
+  override protected lazy val totalNumberOfDocuments = Database.inTransaction {
+    FileFinder.byFileGroup(fileGroupId).count
+  }
+  
   private val IndexingTimeout = 3 minutes
   private val fileStore = new BaseStore(files)
-  private val UpdateInterval = 1000l
-  private val PreparingFraction = 0.25
-  private val FetchingFraction = 0.25
-  private var jobCancelled: Boolean = false
+  override protected val PreparingFraction = 0.25
+  override protected val FetchingFraction = 0.25
+  private val PageSize = 100
   private val ids = new DocumentSetIdGenerator(documentSetId)
   private var indexingSession: DocumentSetIndexingSession = _
-
-  var numberOfDocumentsRead = 0
+  private var fileErrors: Seq[DocumentRetrievalError] = Seq()
 
   override def produce(): Int = {
-
     indexingSession = SearchIndex.startDocumentSetIndexingSession(documentSetId)
 
-    var lastUpdateTime = 0l
-    var fileErrors: Seq[DocumentRetrievalError] = Seq()
-
-    Database.inTransaction {
-      val fileCount: Long = FileFinder.byFileGroup(fileGroupId).count
-      val files: Iterable[GroupedProcessedFile] = FileFinder.byFileGroup(fileGroupId)
-      val iterator = files.iterator
-
-      while (!jobCancelled && iterator.hasNext) {
-        val file = iterator.next
-
-        file.text.map { text =>
-          val documentId = writeAndCommitDocument(documentSetId, file)
-          indexingSession.indexDocument(documentSetId, documentId, text, Some(file.name), None)
-
-          consumer.processDocument(documentId, text)
-        } getOrElse {
-          val error = file.errorMessage.getOrElse(s"Inconsistent GroupedProcessFile in Database: ${file.id}")
-          fileErrors = DocumentRetrievalError(file.name, error) +: fileErrors
-        }
-
-        numberOfDocumentsRead += 1
-
-        lastUpdateTime = reportProgress(numberOfDocumentsRead, fileCount, lastUpdateTime)
-      }
-    }
+    val numberOfDocumentsRead = super.produce()
+    
     indexingSession.complete
-
-    consumer.productionComplete()
-
+    
     Await.result(indexingSession.requestsComplete, IndexingTimeout)
 
     updateDocumentSetCounts(documentSetId, numberOfDocumentsRead, 0)
@@ -72,22 +49,30 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
     Database.inTransaction {
       DocRetrievalErrorWriter.write(documentSetId, fileErrors)
     }
-    
+
     numberOfDocumentsRead
   }
 
-  private def reportProgress(numberOfDocumentsRead: Long, fileCount: Long, lastUpdateTime: Long): Long = {
-    val now = scala.compat.Platform.currentTime
+  protected def runQueryForPage(pageNumber: Int)(processDocuments: Iterable[GroupedProcessedFile] => Int): Int = Database.inTransaction {
+    val query =  FileFinder.byFileGroup(fileGroupId).orderedById
+    val result = ResultPage(query, PageSize, pageNumber)
+    
+    processDocuments(result)
+  }
+  
+  override protected def processDocumentSource(file: GroupedProcessedFile): Unit = {
+    file.text.map { text =>
+      val documentId = writeAndCommitDocument(documentSetId, file)
+      indexingSession.indexDocument(documentSetId, documentId, text, Some(file.name), None)
 
-    if (now - lastUpdateTime > UpdateInterval) {
-      val fractionComplete = PreparingFraction + FetchingFraction * numberOfDocumentsRead / fileCount
-      jobCancelled = progAbort(Progress(fractionComplete, Parsing(numberOfDocumentsRead, fileCount)))
-
-      now
-    } else lastUpdateTime
+      consumer.processDocument(documentId, text)
+    }.getOrElse {
+      val error = file.errorMessage.getOrElse(s"Inconsistent GroupedProcessFile in Database: ${file.id}")
+      fileErrors = DocumentRetrievalError(file.name, error) +: fileErrors
+    }
   }
 
-  private def writeAndCommitDocument(documentSetId: Long, processedFile: GroupedProcessedFile): Long = Database.inTransaction {
+  private def writeAndCommitDocument(documentSetId: Long, processedFile: GroupedProcessedFile): Long = {
     val file = fileStore.insertOrUpdate(File(1, processedFile.contentsOid))
 
     val document = Document(
@@ -104,3 +89,4 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   }
 
 }
+
