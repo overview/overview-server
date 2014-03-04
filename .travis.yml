@@ -1,0 +1,11 @@
+language: scala
+branches:
+  only:
+    - master
+    - /^deploy.*$/
+before_install:
+  - sudo apt-get update -qq
+install:
+  - sudo apt-get install -qq postgresql openjdk-7-jdk
+script:
+  - ./run --only-servers database --sbt 'all/test'
