@@ -1,1 +1,18 @@
-runner/src/main/resources/sbt "runner/run $*"
+#!/bin/bash
+
+# SBT needs to run ./sbt 'runner/run "$1" "$2" "$3"...' -- i.e., there is
+# always exactly one parameter.
+#
+# Oh, and SBT needs DOUBLE QUOTES surrounding those other arguments.
+# Otherwise it passes them as-is.
+
+QQ='"'
+EQ='\"'
+QUOTES_ESCAPED=("${@/$QQ/$EQ}")
+QUOTES_AT_START=("${QUOTES_ESCAPED[@]/#/$QQ}")
+QUOTES_AT_END=("${QUOTES_AT_START[@]/%/$QQ}")
+ALL_TOGETHER="${QUOTES_AT_END[@]}"
+
+# how long do you think _that_ took to figure out? :)
+
+./sbt "runner/run $ALL_TOGETHER"
