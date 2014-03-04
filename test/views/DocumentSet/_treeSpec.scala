@@ -77,6 +77,11 @@ class _treeSpec extends views.html.ViewSpecification {
       $el.attr("title") must beEqualTo("one\ntwo\nthree")
     }
 
+    "display document count" in new BaseScope {
+      override def tree = super.tree.copy(documentCount=10)
+      $(".document-count").text() must beEqualTo("10 documents")
+    }
+
     "not display supplied stop words when there are none" in new BaseScope {
       override def tree = super.tree.copy(suppliedStopWords="")
       $(".supplied-stop-words").length must beEqualTo(0)

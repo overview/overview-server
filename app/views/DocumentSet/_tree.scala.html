@@ -9,6 +9,7 @@
       <span class="description">@tree.description</span>
     }
     <time class="created-at" datetime="@m("iso8601", tree.createdAt)" data-format="datetime.medium">@m("iso8601", tree.createdAt)</time>
+    <span class="document-count">@m("nDocuments", tree.documentCount)</span>
     <span class="lang" data-lang="@tree.lang">@displayLanguageCode(tree.lang)</span>
     @defining(tree.importantWords.split("""\s+""").filter(!_.isEmpty)) { importantWords =>
       @if(importantWords.length > 0) {
