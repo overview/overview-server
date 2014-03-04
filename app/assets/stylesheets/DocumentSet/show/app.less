@@ -50,6 +50,10 @@
   width: 100%;
   bottom: 0;
   height: auto;
+  max-height: 50%; // for huge tag list
+  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   // top is automatic, JS will modify #tree-app-left-top's bottom
 }
 
@@ -70,8 +74,6 @@
 }
 
 #tree-app-tags {
-  // NOT absolute
-  margin: 0 -5px -5px;
 }
 
 #tree-app-search {
