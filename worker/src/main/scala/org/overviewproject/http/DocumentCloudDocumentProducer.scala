@@ -39,7 +39,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   private var numDocs = 0
   private var totalDocs: Option[Int] = None
   private var indexingSession: DocumentSetIndexingSession = _ 
-
+  private var importer: ActorRef = _
+  
   override def produce() = {
     val t0 = System.nanoTime()
 
@@ -87,7 +88,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
         new DocumentRetrieverGenerator(retrieverFactory, maxDocuments)
       }
 
-      val importer = context.actorOf(Props(
+      importer = context.actorOf(Props(
         new Importer(query, credentials,
           retrieverGenerator, notify, maxDocuments,
           updateRetrievalProgress,
@@ -143,9 +144,7 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
   }
 
   private def shutdownActors(implicit context: ActorSystem): Unit = {
-    val importerActor: ActorRef = context.actorFor(s"user/$ImporterName")
-
-    context.stop(importerActor)
+    context.stop(importer)
   }
 
   
