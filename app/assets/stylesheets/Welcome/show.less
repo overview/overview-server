@@ -113,8 +113,12 @@ body.welcome-show {
   }
 
   div#flash {
-    // the flash message is not useful on this page.
-    display: none;
+    position: absolute;
+    left: 50%;
+
+    .alert {
+      left: -50%;
+    }
   }
 
   @media all and (max-width: 1065px) {
