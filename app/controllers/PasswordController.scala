@@ -2,7 +2,7 @@ package controllers
 
 import java.util.Date
 import java.sql.Connection
-import play.api.mvc.{AnyContent,Controller,Request}
+import play.api.mvc.{AnyContent,Controller,Request,RequestHeader}
 
 import controllers.auth.{AuthResults,OptionallyAuthorizedAction}
 import controllers.auth.Authorities.anyUser
@@ -27,17 +27,22 @@ trait PasswordController extends Controller {
   private lazy val m = views.Magic.scopedMessages("controllers.PasswordController")
 
   def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
-    request.user.map(userAlreadyLoggedIn => doRedirect).getOrElse({
-      Ok(views.html.Password.new_(newForm))
-    })
+    request.user match {
+      case None => Ok(views.html.Password.new_(newForm))
+      case Some(_) => doRedirect
+    }
   }
 
   def edit(token: String) = OptionallyAuthorizedAction(anyUser) { implicit request =>
-    request.user.map(userAlreadyLoggedIn => doRedirect).getOrElse({
-      tokenToUser(token).map({ user =>
-        Ok(views.html.Password.edit(user, editForm))
-      }).getOrElse(showInvalidToken)
-    })
+    request.user match {
+      case Some(_) => doRedirect
+      case None => {
+        storage.findUserByResetToken(token) match {
+          case None => showInvalidToken
+          case Some(u) => Ok(views.html.Password.edit(u, editForm))
+        }
+      }
+    }
   }
 
   private def doRedirect = Redirect(routes.WelcomeController.show)
@@ -49,15 +54,15 @@ trait PasswordController extends Controller {
       email => {
         // We got a valid email address, but that doesn't mean this is a real
         // user. We need to send an email to the address either way.
-        emailToUser(email).map({ user =>
-          // Success: generate a token and send an email
-          val userWithRequest = user.withResetPasswordRequest
-          userWithRequest.save
-          sendMail(mailers.Password.create(userWithRequest))
-        }).getOrElse({
-          // Failure: notify the email address
-          sendMail(mailers.Password.createErrorUserDoesNotExist(email))
-        })
+        storage.findUserByEmail(email) match {
+          case None => mail.sendCreateErrorUserDoesNotExist(email)
+          case Some(user) => {
+            // Success: generate a token and send an email
+            val userWithRequest = user.withResetPasswordRequest
+            userWithRequest.save
+            mail.sendCreated(userWithRequest)
+          }
+        }
 
         // Fake success either way
         doRedirect.flashing(
@@ -69,41 +74,65 @@ trait PasswordController extends Controller {
   }
 
   def update(token: String) = TransactionAction { implicit request =>
-    tokenToUser(token).map({ user =>
-      editForm.bindFromRequest.fold(
-        formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
-        newPassword => {
-          val userWithNewPassword = user
-            .withNewPassword(newPassword)
-            .withLoginRecorded(request.remoteAddress, new java.util.Date())
-            .save
-          AuthResults.loginSucceeded(request, userWithNewPassword).flashing(
-            "success" -> m("update.success"),
-            "event" -> "password-update"
-          )
-        }
-      )
-    }).getOrElse(showInvalidToken)
+    storage.findUserByResetToken(token) match {
+      case None => showInvalidToken
+      case Some(user) => {
+        editForm.bindFromRequest.fold(
+          formWithErrors => BadRequest(views.html.Password.edit(user, formWithErrors)),
+          newPassword => {
+            val userWithNewPassword = user
+              .withNewPassword(newPassword)
+              .withLoginRecorded(request.remoteAddress, new java.util.Date())
+              .save
+            AuthResults.loginSucceeded(request, userWithNewPassword).flashing(
+              "success" -> m("update.success"),
+              "event" -> "password-update"
+            )
+          }
+        )
+      }
+    }
   }
 
-  protected def sendMail(mail: Mailer): Unit
-  protected def emailToUser(email: String): Option[OverviewUser]
-  protected def tokenToUser(token: String): Option[OverviewUser with ResetPasswordRequest]
+  trait Storage {
+    def findUserByEmail(email: String) : Option[OverviewUser]
+    def findUserByResetToken(token: String) : Option[OverviewUser with ResetPasswordRequest]
+  }
+
+  trait Mail {
+    def sendCreated(user: OverviewUser with ResetPasswordRequest)(implicit request: RequestHeader) : Unit
+    def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) : Unit
+  }
+
+  protected val storage : PasswordController.Storage
+  protected val mail : PasswordController.Mail
 }
 
 object PasswordController extends PasswordController {
   val SecondsResetTokenIsValid = 14400 // 4 hours
 
-  override protected def emailToUser(email: String) = {
-    OverviewUser.findByEmail(email)
+  override protected val storage = new Storage {
+    override def findUserByEmail(email: String) = {
+      OverviewUser.findByEmail(email)
+    }
+
+    override def findUserByResetToken(token: String) = {
+      OverviewUser.findByResetPasswordTokenAndMinDate(
+        token,
+        new Date((new Date()).getTime - SecondsResetTokenIsValid * 1000)
+      )
+    }
   }
 
-  override protected def tokenToUser(token: String) = {
-    OverviewUser.findByResetPasswordTokenAndMinDate(
-      token,
-      new Date((new Date()).getTime - SecondsResetTokenIsValid * 1000)
-    )
-  }
+  override protected val mail = new Mail {
+    override def sendCreated(userWithRequest: OverviewUser with ResetPasswordRequest)(implicit request: RequestHeader) = {
+      val mail = mailers.Password.create(userWithRequest)
+      mail.send
+    }
 
-  override protected def sendMail(mail: Mailer) = mail.send
+    override def sendCreateErrorUserDoesNotExist(email: String)(implicit request: RequestHeader) = {
+      val mail = mailers.Password.createErrorUserDoesNotExist(email)
+      mail.send
+    }
+  }
 }

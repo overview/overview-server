@@ -3,7 +3,7 @@ package controllers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.{Fragments, Step}
-import play.api.mvc.{AnyContent,AnyContentAsFormUrlEncoded,Headers}
+import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, Headers, Request}
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import play.api.Play.{start,stop}
 
@@ -17,29 +17,34 @@ trait ControllerSpecification extends Specification with Mockito {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }
 
-  class AugmentedAuthorizedRequest[A](authorizedRequest: AuthorizedRequest[A]) {
+  class AugmentedRequest[T, A <: Request[T], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
+    request: A,
+    ctorWithFormBody: (FakeRequest[AnyContentAsFormUrlEncoded]) => AWithFormBody
+  ) {
+
     implicit def headersToFakeHeaders(headers: Headers) : FakeHeaders = {
       FakeHeaders(headers.toMap.toSeq)
     }
 
-    def toFakeRequest : FakeRequest[A] = FakeRequest(
-      method=authorizedRequest.method,
-      uri=authorizedRequest.uri,
-      headers=authorizedRequest.headers,
-      body=authorizedRequest.body,
-      remoteAddress=authorizedRequest.remoteAddress,
-      version=authorizedRequest.version,
-      id=authorizedRequest.id,
-      tags=authorizedRequest.tags)
+    def toFakeRequest : FakeRequest[T] = FakeRequest(
+      method=request.method,
+      uri=request.uri,
+      headers=request.headers,
+      body=request.body,
+      remoteAddress=request.remoteAddress,
+      version=request.version,
+      id=request.id,
+      tags=request.tags
+    )
 
-    def withFormUrlEncodedBody(data: (String,String)*) : AuthorizedRequest[AnyContentAsFormUrlEncoded] = {
-      new AuthorizedRequest(
-        toFakeRequest.withFormUrlEncodedBody(data: _*),
-        authorizedRequest.user
-      )
+    def withFormUrlEncodedBody(data: (String,String)*) : AWithFormBody = {
+      val fakeRequestWithBody = toFakeRequest.withFormUrlEncodedBody(data: _*)
+      ctorWithFormBody(fakeRequestWithBody)
     }
   }
-  implicit def authorizedRequestToAugmentedAuthorizedRequest[A](r: AuthorizedRequest[A]) = new AugmentedAuthorizedRequest(r)
+
+  implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsFormUrlEncoded]](r, (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user))
+  implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](r, (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user))
 
   def fakeUser : OverviewUser = {
     val ret = mock[OverviewUser]
