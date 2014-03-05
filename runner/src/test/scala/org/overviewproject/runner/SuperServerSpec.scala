@@ -62,7 +62,7 @@ class SuperServerSpec extends Specification {
       daemonProcesses(1).statusCode.success(1)
       daemonProcesses(2).statusCode.success(2)
       daemonProcesses(0).statusCode.success(0)
-      val result = Await.result(subject.waitForAll, Duration(10, "milliseconds"))
+      val result = Await.result(subject.waitForAll, Duration(100, "milliseconds"))
       result must beEqualTo(Seq(
         daemonProcesses(0) -> 0,
         daemonProcesses(1) -> 1,
