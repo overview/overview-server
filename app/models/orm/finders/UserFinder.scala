@@ -29,7 +29,7 @@ object UserFinder extends Finder {
   def all : FinderResult[User] = {
     from(Schema.users)(u =>
       select(u)
-      orderBy(u.email)
+      orderBy(u.lastActivityAt.isNull, u.lastActivityAt desc, u.email)
     )
   }
 
