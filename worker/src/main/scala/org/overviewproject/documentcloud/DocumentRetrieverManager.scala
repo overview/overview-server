@@ -35,10 +35,10 @@ class DocumentRetrieverManager(
   import DocumentRetrieverManagerProtocol._
   import DocumentRetrieverProtocol._
 
-  private val ReceiverActorName: String = "receiver"
-
   private var requestsCompleted: Int = 0
-
+  private lazy val receiver: ActorRef = 
+    context.actorOf(Props(new DocumentReceiver(Textify.apply, processDocument, retrievalResult)))
+  
   def receive = {
     case Retrieve(searchResult) if (searchResult.total == 0) => endRetrieval
     case Retrieve(searchResult) => processSearchResult(searchResult)
@@ -46,16 +46,8 @@ class DocumentRetrieverManager(
   }
 
   private def processSearchResult(result: SearchResult): Unit = {
-    retrieverGenerator.createRetrievers(result, findOrCreateDocumentReceiver())
+    retrieverGenerator.createRetrievers(result, receiver)
     if (retrieverGenerator.morePagesAvailable) context.parent ! GetSearchResultPage(result.page + 1)
-  }
-
-  private def findOrCreateDocumentReceiver(): akka.actor.ActorRef = {
-    context.actorFor(ReceiverActorName) match {
-      case ref if ref.isTerminated =>
-        context.actorOf(Props(new DocumentReceiver(Textify.apply, processDocument, retrievalResult)), ReceiverActorName)
-      case existingReceiver => existingReceiver
-    }
   }
 
   private def updateProgress: Unit = {
@@ -66,7 +58,7 @@ class DocumentRetrieverManager(
     if (requestsCompleted == r) endRetrieval
   }
   
-  private def endRetrieval: Unit = findOrCreateDocumentReceiver() ! Done(requestsCompleted, retrieverGenerator.totalDocuments)
+  private def endRetrieval: Unit = receiver ! Done(requestsCompleted, retrieverGenerator.totalDocuments)
   
 
   
