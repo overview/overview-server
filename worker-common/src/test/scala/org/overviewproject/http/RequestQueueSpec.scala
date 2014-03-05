@@ -111,7 +111,6 @@ class RequestQueueSpec extends Specification with Mockito with NoTimeConversions
       val requestQueue = createRequestQueue()
       
       requestQueue.stop()
-      awaitCond(requestQueue.isTerminated)
       
       client.isShutdown must beTrue
     }
