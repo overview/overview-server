@@ -61,6 +61,12 @@ class ConfSpec extends Specification with Mockito {
       conf.daemonInfos must beEqualTo(Seq(allDaemonInfos(1)))
     }
 
+    "not run just one daemon with short argument" in new ThreeDaemons {
+      // https://www.pivotaltracker.com/story/show/63669988
+      override val arguments = Seq("-o", "id2")
+      conf.daemonInfos must throwA[Throwable]("Unknown option 'o'")
+    }
+
     "ignore two daemons" in new ThreeDaemons {
       override val arguments = Seq("--except-servers", "id1,id2")
       repository.daemonInfosExcept(Set("id1", "id2")) returns Seq(allDaemonInfos(2))
@@ -94,6 +100,11 @@ class ConfSpec extends Specification with Mockito {
       conf.daemonInfos.length must beEqualTo(2)
       conf.daemonInfos(0) must beEqualTo(allDaemonInfos(0))
       conf.daemonInfos(1) must beLike { case di: DaemonInfo => di.command.argv.lastOption must beSome("all/test") }
+    }
+
+    "not use a short option for sbt commands" in new ThreeDaemons {
+      override val arguments = Seq("--s", "all/test")
+      conf.daemonInfos must throwA[Throwable]("Unknown option 's'")
     }
 
     "include spaces in sbt commands" in new ThreeDaemons {

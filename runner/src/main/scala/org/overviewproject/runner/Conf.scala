@@ -44,9 +44,9 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
     override val argType = ArgType.SINGLE
   }
 
-  val onlyServers = opt[Seq[DaemonInfo]]("only-servers", descr="Only start this comma-separated list of servers")(daemonInfoListConverter)
-  val exceptServers = opt[Seq[DaemonInfo]]("except-servers", descr="Start all but this comma-separated list of servers")(daemonInfoListConverter)
-  val sbtTask = opt[String]("sbt", descr="Also run this sbt task")
+  val onlyServers = opt[Seq[DaemonInfo]]("only-servers", descr="Only start this comma-separated list of servers", noshort=true)(daemonInfoListConverter)
+  val exceptServers = opt[Seq[DaemonInfo]]("except-servers", descr="Start all but this comma-separated list of servers", noshort=true)(daemonInfoListConverter)
+  val sbtTask = opt[String]("sbt", descr="Also run this sbt task", noshort=true)
 
   mutuallyExclusive(onlyServers, exceptServers)
 
