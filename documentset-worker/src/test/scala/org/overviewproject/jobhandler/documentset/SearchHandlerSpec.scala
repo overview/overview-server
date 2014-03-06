@@ -86,19 +86,21 @@ class SearchHandlerSpec extends Specification with Mockito {
     abstract class MonitoredSearchHandler extends ActorSystemContext with SearchInfo with Before {
       var searchHandler: TestActorRef[MockStorageSearchHandler] = _
       var monitor: TestProbe = _
+      var documentSearcher: TestProbe = _
 
       var storage: MockStorageSearchHandler#Storage = _
 
       def before = {
-        searchHandler = TestActorRef(createSearchHandler)
-        storage = searchHandler.underlyingActor.storage
         monitor = TestProbe()
+
+        searchHandler = TestActorRef(Props(createSearchHandler), monitor.ref, "SearchHandler")
+        storage = searchHandler.underlyingActor.storage
 
         monitor watch searchHandler
       }
 
       protected def createSearchHandler: MockStorageSearchHandler = {
-        val documentSearcher = TestProbe()
+        documentSearcher = TestProbe()
 
         new TestSearchHandler(searchExists = false, documentSearcher.ref)
       }
@@ -124,6 +126,8 @@ class SearchHandlerSpec extends Specification with Mockito {
 
     "send JobDone to parent when receiving SearchComplete from Searcher" in new SearchHandlerWithParent with NoExistingSearch {
       parent ! SearchDocumentSet(documentSetId, searchTerms)
+      documentSearcher.expectMsgType[StartSearch]
+
       parent ! SearchComplete
 
       expectMsg(JobDone(documentSetId))
@@ -131,8 +135,11 @@ class SearchHandlerSpec extends Specification with Mockito {
 
     "set SearchResult state to Complete when receiving SearchComplete from Searcher" in new MonitoredSearchHandler {
       searchHandler ! SearchDocumentSet(documentSetId, searchTerms)
+      documentSearcher.expectMsgType[StartSearch]
+
       searchHandler ! SearchComplete
 
+      monitor.expectMsg(JobDone(documentSetId))
       monitor.expectMsgType[Terminated]
       there was one(storage).completeSearch(1l, documentSetId, searchTerms)
     }
@@ -141,8 +148,11 @@ class SearchHandlerSpec extends Specification with Mockito {
       val error = new Exception("exception from RequestQueue")
 
       searchHandler ! SearchDocumentSet(documentSetId, searchTerms)
+      documentSearcher.expectMsgType[StartSearch]
+
       searchHandler ! SearchFailure(error)
 
+      monitor.expectMsg(JobDone(documentSetId))
       monitor.expectMsgType[Terminated]
       there was one(storage).failSearch(1l, documentSetId, searchTerms)
     }
@@ -150,8 +160,9 @@ class SearchHandlerSpec extends Specification with Mockito {
     "set SearchResultState to Error if Searcher dies unexpectedly" in new MonitoredFailingSearchHandler {
       searchHandler ! SearchDocumentSet(1l, "search terms")
 
-      monitor.expectMsgType[Terminated]
+      monitor.expectMsg(JobDone(1l))
       there was one(storage).failSearch(1l, 1l, "search terms")
+      monitor.expectTerminated(searchHandler)
     }
   }
 
