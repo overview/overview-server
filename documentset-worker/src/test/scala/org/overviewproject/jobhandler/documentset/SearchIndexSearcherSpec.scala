@@ -2,13 +2,13 @@ package org.overviewproject.jobhandler.documentset
 import scala.concurrent.Promise
 
 import akka.actor._
-import akka.testkit.{TestActorRef, TestProbe}
+import akka.testkit.{ TestActorRef, TestProbe }
 
 import org.elasticsearch.action.search.SearchResponse
-import org.elasticsearch.search.{SearchHit, SearchHits}
+import org.elasticsearch.search.{ SearchHit, SearchHits }
 import org.overviewproject.jobhandler.documentset.SearchIndexSearcherProtocol._
 import org.overviewproject.jobhandler.documentset.SearchSaverProtocol.SaveIds
-import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
+import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
@@ -37,7 +37,7 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
     }
 
     class ParentActor(parentProbe: ActorRef, childProps: Props) extends Actor {
-      val child = context.actorOf(childProps)
+      val child = context.actorOf(childProps, "child")
 
       def receive = {
         case msg if sender == child => parentProbe forward msg
@@ -46,8 +46,14 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
 
     }
 
+    class FakeSearchSaver(msgMonitor: ActorRef) extends Actor {
+      def receive = {
+        case SaveIds(searchId, ids) => msgMonitor ! SaveIds(searchId, ids)
+      }
+    }
+
     class TestSearchIndexSearcher(override val searchIndex: SearchIndexComponent, searchSaver: ActorRef) extends SearchIndexSearcher with SearcherComponents {
-      override def produceSearchSaver: Actor = new ForwardingActor(searchSaver)
+      override def produceSearchSaver: Actor = new FakeSearchSaver(searchSaver)
     }
 
     "start search" in new ActorSystemContext with MockComponents {
@@ -62,10 +68,14 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
 
     "retrieve all results" in new ActorSystemContext with MockComponents {
       val parentProbe = TestProbe()
+      val parentMonitor = TestProbe()
+
       val searchSaverProbe = TestProbe()
       val ids = Array[Long](1, 2, 3)
 
-      val parent = system.actorOf(Props(new ParentActor(parentProbe.ref, Props(new TestSearchIndexSearcher(searchIndex, searchSaverProbe.ref)))))
+      val parent = system.actorOf(
+        Props(new ParentActor(parentProbe.ref,
+          Props(new TestSearchIndexSearcher(searchIndex, searchSaverProbe.ref)))), "Parent")
 
       parent ! StartSearch(searchId, documentSetId, query)
 
@@ -78,6 +88,7 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
         one(searchIndex).getNextSearchResultPage(nextScrollId)
 
       searchSaverProbe.expectMsg(SaveIds(searchId, ids))
+
       parentProbe.expectMsg(SearchComplete)
     }
 
@@ -87,7 +98,7 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
       val searcherWatcher = TestProbe()
 
       val error = new Exception("start search failed")
-      
+
       val searcher = TestActorRef(Props(new TestSearchIndexSearcher(searchIndex, searchSaverProbe.ref)), parentProbe.ref, "Searcher")
       searcherWatcher watch searcher
 
