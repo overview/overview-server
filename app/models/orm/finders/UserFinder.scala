@@ -1,5 +1,6 @@
 package models.orm.finders
 
+import scala.language.postfixOps
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.finders.{ Finder, FinderResult }
