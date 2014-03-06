@@ -253,8 +253,8 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
     "remove queued commands when cancelling job" in new ActorSystemContext {
       val jobMonitorProbe = TestProbe()
-      val daughters = Seq.fill(2)(system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref))))
-      val motherWorker = TestActorRef(new TestMotherWorker(daughters))
+      val daughters = Seq.tabulate(2)(n => system.actorOf(Props(new WaitingDaughter(jobMonitorProbe.ref)), s"daughter-$n"))
+      val motherWorker = TestActorRef(new TestMotherWorker(daughters), "MotherWorker")
       val storage = motherWorker.underlyingActor.storage
       val runningFileGroupId = 1l
       val cancelledFileGroupId = 2l
@@ -277,8 +277,12 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       motherWorker ! CancelUploadWithDocumentSetCommand(documentSetId)
 
       daughters(0) ! "finish running job"
+      daughters(1) ! "finish running job" 
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
       jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
       daughters(0) ! "finish job sent after cancellation"
+      daughters(1) ! "finish job sent after cancellation"      
+      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
       jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
 
     }
