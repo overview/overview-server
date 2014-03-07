@@ -75,7 +75,7 @@ trait FileUploadIteratee {
           Right(u)
         }
       }
-    } mapDone { u =>
+    } map { u =>
       if (buffer.size > 0) u.right.map(appendChunk(_, buffer))
       else u
     }
