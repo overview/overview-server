@@ -51,7 +51,7 @@ trait MassUploadFileIteratee {
         buffer = Array[Byte]()
         update
       } else upload
-    } mapDone { output =>
+    } map { output =>
       if (buffer.size > 0) flushBuffer(output, buffer)
       else output
     }
