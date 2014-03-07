@@ -135,6 +135,7 @@ class SearchHandlerSpec extends Specification {
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
       
       parentProbe.expectMsg(JobDone(documentSetId))
+      parentProbe.expectTerminated(searchHandlerParent)
     }
 
     "create a new SearchResult and start Searcher if SearchResult doesn't exist" in new SearchHandlerWithDocumentSearcherContext {

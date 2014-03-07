@@ -86,7 +86,7 @@ trait SearchHandler extends Actor with FSM[State, Data] {
     case Event(SearchDocumentSet(documentSetId, query), _) =>
       if (storage.searchExists(documentSetId, query)) {
         context.parent ! JobDone(documentSetId)
-        goto(Idle) using Uninitialized
+        stop()
       } else {
         Logger.info(s"Starting search [$documentSetId]: $query")
         val searchId = storage.createSearchResult(documentSetId, query)
