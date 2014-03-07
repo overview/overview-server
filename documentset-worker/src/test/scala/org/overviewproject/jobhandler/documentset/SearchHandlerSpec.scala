@@ -86,44 +86,35 @@ class SearchHandlerSpec extends Specification {
       val searchTerms = "search terms"
     }
 
-    abstract class SearchHandlerWithParentContext extends ActorSystemContext with SearchInfo with Before {
-      self: SearchExistence =>
-
+    abstract class MonitoredSearchHandlerContext extends ActorSystemContext with SearchInfo with Before {
       var searchHandlerParent: ActorRef = _
       var searchHandlerProbe: TestProbe = _
       var storageProbe: TestProbe = _
       var parentProbe: TestProbe = _
-      var documentSearcherProbe: TestProbe = _
 
-      def before = {
+      def before: Unit = {
         searchHandlerProbe = TestProbe()
         storageProbe = TestProbe()
         parentProbe = TestProbe()
-        documentSearcherProbe = TestProbe()
-        val parentProps = Props(new TestSearchHandlerParent(searchExists, parentProbe.ref, storageProbe.ref, documentSearcherProbe.ref))
 
         searchHandlerParent = system.actorOf(parentProps, "SearchHandlerParent")
 
         parentProbe watch searchHandlerParent
       }
 
+      protected def parentProps: Props
     }
-    
-    abstract class FailingSearchHandlerContext extends ActorSystemContext with SearchInfo with Before {
-      var searchHandlerParent: ActorRef = _
-      var searchHandlerProbe: TestProbe = _
-      var storageProbe: TestProbe = _
-      var parentProbe: TestProbe = _
 
-      def before = {
-        searchHandlerProbe = TestProbe()
-        storageProbe = TestProbe()
-        parentProbe = TestProbe()
-        searchHandlerParent = system.actorOf(Props(new FailingSearchHandlerParent(parentProbe.ref, storageProbe.ref)))
+    abstract class SearchHandlerWithParentContext extends MonitoredSearchHandlerContext {
+      self: SearchExistence =>
 
-        parentProbe watch searchHandlerParent
-      }
+      lazy val documentSearcherProbe: TestProbe = TestProbe()
+      override protected def parentProps = Props(new TestSearchHandlerParent(searchExists, parentProbe.ref, storageProbe.ref, documentSearcherProbe.ref))
 
+    }
+
+    abstract class FailingSearchHandlerContext extends MonitoredSearchHandlerContext {
+      override protected def parentProps = Props(new FailingSearchHandlerParent(parentProbe.ref, storageProbe.ref))
     }
 
     "send JobDone to parent if SearchResult already exists" in new SearchHandlerWithParentContext with ExistingSearch {
