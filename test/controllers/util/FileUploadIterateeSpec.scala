@@ -11,8 +11,9 @@ import org.specs2.specification.Scope
 import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{RequestHeader, SimpleResult}
-import play.api.test.{FakeHeaders, FakeRequest}
+import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import play.api.test.Helpers._
+import play.api.Play.{ start, stop }
 import scala.concurrent.Await
 import scala.util.Random
 
@@ -20,6 +21,8 @@ import models.upload.{OverviewUpload, OverviewUploadedFile}
 
 @RunWith(classOf[JUnitRunner])
 class FileUploadIterateeSpec extends Specification with Mockito {
+  step(start(FakeApplication()))
+  
   "FileUploadIteratee" should {
 
     /** OverviewUpload implementation that stores data in an attribute */
@@ -287,4 +290,6 @@ class FileUploadIterateeSpec extends Specification with Mockito {
       result must beLeft.like { case r => r.header.status must be equalTo (BAD_REQUEST) }
     }
   }
+  
+  step(stop)
 }
