@@ -11,17 +11,19 @@ import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.RequestHeader
 import play.api.mvc.Results._
-import play.api.test.FakeHeaders
+import play.api.test.{ FakeApplication, FakeHeaders }
 import play.api.test.Helpers._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Random
+import play.api.Play.{ start, stop }
 
 import views.html.defaultpages.badRequest
 import org.overviewproject.tree.orm.{ FileGroup, GroupedFileUpload }
 
 class MassUploadFileIterateeSpec extends Specification with Mockito {
-
+  step(start(FakeApplication()))
+  
   "MassUploadFileIteratee" should {
     val start = 0
     val end = 255
@@ -281,4 +283,6 @@ class MassUploadFileIterateeSpec extends Specification with Mockito {
     }
 
   }
+  
+  step(stop)
 }
