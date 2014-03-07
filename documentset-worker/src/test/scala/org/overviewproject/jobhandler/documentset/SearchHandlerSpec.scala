@@ -29,8 +29,19 @@ class SearchHandlerSpec extends Specification {
       override val storage = new ReportingStorage
     }
 
-    class TestSearchHandler(searchExistence: Boolean, documentSearcherProbe: ActorRef, storageProbe: ActorRef) extends SearchHandlerWithStorageReporting(searchExistence, storageProbe) {
-      override val actorCreator = new ActorCreator { // can't mock creation of actors
+    class TestSearchHandler(searchExistence: Boolean, storageProbe: ActorRef) extends SearchHandlerWithStorageReporting(searchExistence, storageProbe) {
+      override val actorCreator = new ActorCreator {
+        override def produceDocumentSearcher(documentSetId: Long, query: String): Actor =
+          new Actor {
+            def receive = {
+              case _ =>
+            }
+          }
+      }
+    }
+
+    class SearchHandlerWithDocumentSearcherProbe(searchExistence: Boolean, storageProbe: ActorRef, documentSearcherProbe: ActorRef) extends SearchHandlerWithStorageReporting(searchExistence, storageProbe) {
+      override val actorCreator = new ActorCreator {
         override def produceDocumentSearcher(documentSetId: Long, query: String): Actor =
           new ForwardingActor(documentSearcherProbe)
       }
@@ -38,9 +49,9 @@ class SearchHandlerSpec extends Specification {
 
     // A SearchHandler where the documentSearcher stops when receiving any message
     // simulating a failure
-    class SearchHandlerWithSearchFailure(storageProbe: ActorRef, searchExistence: Boolean) extends SearchHandlerWithStorageReporting(searchExistence, storageProbe) {
+    class SearchHandlerWithSearchFailure(searchExistence: Boolean, storageProbe: ActorRef) extends SearchHandlerWithStorageReporting(searchExistence, storageProbe) {
 
-      override val actorCreator = new ActorCreator { // can't mock creation of actors
+      override val actorCreator = new ActorCreator {
         override def produceDocumentSearcher(documentSetId: Long, query: String): Actor =
           new Actor {
             def receive = {
@@ -63,10 +74,6 @@ class SearchHandlerSpec extends Specification {
       }
 
     }
-
-    class TestSearchHandlerParent(searchExists: Boolean, parentProbe: ActorRef, storageProbe: ActorRef, documentSearcherProbe: ActorRef) extends SearchHandlerParent(Props(new TestSearchHandler(searchExists, documentSearcherProbe, storageProbe)), parentProbe)
-
-    class FailingSearchHandlerParent(parentProbe: ActorRef, storageProbe: ActorRef) extends SearchHandlerParent(Props(new SearchHandlerWithSearchFailure(storageProbe, false)), parentProbe)
 
     // Mixin traits, determining how the mock storage responds to searchExists
     trait SearchExistence {
@@ -102,34 +109,41 @@ class SearchHandlerSpec extends Specification {
         parentProbe watch searchHandlerParent
       }
 
-      protected def parentProps: Props
+      protected def searchHandlerProps: Props
+      private def parentProps = Props(new SearchHandlerParent(searchHandlerProps, parentProbe.ref))
     }
 
-    abstract class SearchHandlerWithParentContext extends MonitoredSearchHandlerContext {
+    // FIXME: SearchHandlerContext and SearchHandlerWithDocumentSearcherContext are the same
+    // because we have to make sure we receive StartSearch to avoid warnings.
+    abstract class SearchHandlerContext extends MonitoredSearchHandlerContext {
       self: SearchExistence =>
-
+      //override protected def searchHandlerProps = Props(new TestSearchHandler(searchExists, storageProbe.ref))
       lazy val documentSearcherProbe: TestProbe = TestProbe()
-      override protected def parentProps = Props(new TestSearchHandlerParent(searchExists, parentProbe.ref, storageProbe.ref, documentSearcherProbe.ref))
+      override protected def searchHandlerProps = Props(new SearchHandlerWithDocumentSearcherProbe(searchExists, storageProbe.ref, documentSearcherProbe.ref))
+    }
 
+    abstract class SearchHandlerWithDocumentSearcherContext extends MonitoredSearchHandlerContext {
+      lazy val documentSearcherProbe: TestProbe = TestProbe()
+      override protected def searchHandlerProps = Props(new SearchHandlerWithDocumentSearcherProbe(false, storageProbe.ref, documentSearcherProbe.ref))
     }
 
     abstract class FailingSearchHandlerContext extends MonitoredSearchHandlerContext {
-      override protected def parentProps = Props(new FailingSearchHandlerParent(parentProbe.ref, storageProbe.ref))
+      override protected def searchHandlerProps = Props(new SearchHandlerWithSearchFailure(false, storageProbe.ref))
     }
 
-    "send JobDone to parent if SearchResult already exists" in new SearchHandlerWithParentContext with ExistingSearch {
+    "send JobDone to parent if SearchResult already exists" in new SearchHandlerContext with ExistingSearch {
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
-
+      
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
-    "create a new SearchResult and start Searcher if SearchResult doesn't exist" in new SearchHandlerWithParentContext with NoExistingSearch {
+    "create a new SearchResult and start Searcher if SearchResult doesn't exist" in new SearchHandlerWithDocumentSearcherContext {
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
 
       documentSearcherProbe.expectMsg(StartSearch(1l, documentSetId, searchTerms))
     }
 
-    "send JobDone to parent when receiving SearchComplete from Searcher" in new SearchHandlerWithParentContext with NoExistingSearch {
+    "send JobDone to parent when receiving SearchComplete from Searcher" in new SearchHandlerContext with NoExistingSearch {
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
       documentSearcherProbe.expectMsgType[StartSearch]
 
@@ -139,7 +153,7 @@ class SearchHandlerSpec extends Specification {
       parentProbe.expectTerminated(searchHandlerParent)
     }
 
-    "set SearchResult state to Complete when receiving SearchComplete from Searcher" in new SearchHandlerWithParentContext with NoExistingSearch {
+    "set SearchResult state to Complete when receiving SearchComplete from Searcher" in new SearchHandlerContext with NoExistingSearch {
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
       documentSearcherProbe.expectMsgType[StartSearch]
 
@@ -150,7 +164,7 @@ class SearchHandlerSpec extends Specification {
       storageProbe.expectMsg(s"completeSearch(1, $documentSetId, $searchTerms)")
     }
 
-    "set SearchResultState to Error when receiving SearchFailure from Searcher" in new SearchHandlerWithParentContext with NoExistingSearch {
+    "set SearchResultState to Error when receiving SearchFailure from Searcher" in new SearchHandlerContext with NoExistingSearch {
       val error = new Exception("exception from RequestQueue")
 
       searchHandlerParent ! SearchDocumentSet(documentSetId, searchTerms)
