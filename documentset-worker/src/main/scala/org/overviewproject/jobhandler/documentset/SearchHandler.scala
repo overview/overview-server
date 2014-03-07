@@ -100,12 +100,14 @@ trait SearchHandler extends Actor with FSM[State, Data] {
       Logger.info(s"Search complete [$documentSetId]: $query")
       context.parent ! JobDone(documentSetId)
       storage.completeSearch(searchId, documentSetId, query)
+      context.unwatch(sender)
       stop()
     }
     case Event(SearchFailure(e), SearchInfo(searchId, documentSetId, query)) => {
       Logger.info(s"Search failed $query", e)
       context.parent ! JobDone(documentSetId)
       storage.failSearch(searchId, documentSetId, query)
+      context.unwatch(sender)
       stop()
     }
     case Event(Terminated(searcher), SearchInfo(searchId, documentSetId, query)) => {
@@ -139,9 +141,9 @@ trait SearchIndexAndSearchStorage extends SearchHandlerComponents {
     import org.overviewproject.database.orm.Schema
     import org.overviewproject.tree.orm.{ SearchResult, SearchResultState }
     import org.overviewproject.tree.orm.stores.BaseStore
-    
+
     private val searchResultStore = BaseStore(Schema.searchResults)
-    
+
     override def queryForProject(documentSetId: Long, searchTerms: String): String = searchTerms
 
     override def searchExists(documentSetId: Long, searchTerms: String): Boolean = Database.inTransaction {
