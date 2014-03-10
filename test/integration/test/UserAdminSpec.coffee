@@ -40,5 +40,5 @@ describe 'UserAdmin', ->
       it 'should show the new user', ->
         adminBrowser
           .elementByCss('table.users tbody').text().should.eventually.contain(randomEmail)
+          .acceptingNextAlert()
           .elementByXPath("//tr[contains(td[@class='email'], '#{randomEmail}')]//a[@class='delete']").click()
-          .acceptAlert()
