@@ -3,6 +3,7 @@ child_process = require('child_process')
 jar = require('selenium-server-standalone-jar')
 phantomjs = require('phantomjs')
 net = require('net')
+request = require('request')
 
 java = 'java'
 
@@ -16,6 +17,20 @@ waitForConnect = (port, done) ->
   socket.on('connect', -> socket.end(); done())
   socket.connect(port)
   undefined
+
+waitForStringInUrl = (string, url, done) ->
+  retry = -> waitForStringInUrl(string, url, done)
+
+  request url, (error, response, body) ->
+    #console.log("Inspecting #{url} for #{string}")
+    if error?
+      throw error
+
+    if body?.indexOf(string) != -1
+      #console.log("Found #{string}")
+      done()
+    else
+      setTimeout(retry, 100)
 
 # Runs child process for selenium-server-standalone
 #
@@ -56,11 +71,9 @@ startPhantomjs = (port, cb) ->
   child.stdout.pipe(process.stdout)
   child.stderr.pipe(process.stderr)
 
-  # There's a race condition. PhantomJS starts listening before Selenium can
-  # route to it. I saw an error once in ~30 calls. 250ms should be plenty.
-  done = -> setTimeout((-> cb(child)), 250)
+  done = -> process.nextTick -> cb(child)
 
-  waitForConnect(9011, done)
+  waitForStringInUrl("http://127.0.0.1:#{port}", "http://localhost:4444/grid/console", done)
 
 before (done) ->
   startSelenium (selenium) ->
