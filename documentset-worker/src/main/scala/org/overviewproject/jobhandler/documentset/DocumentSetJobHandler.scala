@@ -1,10 +1,8 @@
 package org.overviewproject.jobhandler.documentset
 
 import scala.concurrent.duration._
-
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
@@ -13,6 +11,7 @@ import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageService
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
+import org.overviewproject.util.Logger
 
 import javax.jms._
 
@@ -57,6 +56,7 @@ trait SearchComponent {
   }
 }
 
+
 import DocumentSetJobHandlerFSM._
 
 /**
@@ -79,6 +79,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 
   when(Ready) {
     case Event(SearchCommand(documentSetId, query), _) => {
+      Logger.info(s"Received Search($documentSetId, $query)")
       val searchHandler = context.actorOf(Props(actorCreator.produceSearchHandler))
       context.watch(searchHandler)
 
@@ -86,6 +87,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
       goto(WaitingForCompletion)
     }
     case Event(DeleteCommand(documentSetId), _) => {
+      Logger.info(s"Received Delete($documentSetId)")
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
       context.watch(deleteHandler)
 
@@ -96,11 +98,13 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
 
   when(WaitingForCompletion) {
     case Event(JobDone(documentSetId), _) => {
+      Logger.info(s"DocumentSetJobHandler completed job $documentSetId")
       context.unwatch(sender)
       context.parent ! MessageHandled
       goto(Ready)
     }
     case Event(Terminated(a), _) => {
+      Logger.info(s"DocumentSetJobHandler handler terminated")
       context.parent ! MessageHandled
       goto(Ready)
     }

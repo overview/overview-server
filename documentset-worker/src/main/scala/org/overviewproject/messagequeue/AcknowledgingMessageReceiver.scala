@@ -1,13 +1,11 @@
 package org.overviewproject.messagequeue
 
-import javax.jms.Connection
-import scala.language.postfixOps
-import scala.concurrent.{ Promise, Future }
+
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
+import javax.jms.Connection
 import akka.actor._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
-
+import org.overviewproject.util.Logger
 
 
 object AcknowledgingMessageReceiverFSM {
@@ -119,6 +117,7 @@ abstract class AcknowledgingMessageReceiver[T](messageService: MessageService) e
   initialize
 
   private def deliverMessage(message: MessageContainer): Unit = {
+    Logger.info(s"Received message from Queue: $message")
     self ! message
   }
 }
