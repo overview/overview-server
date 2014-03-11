@@ -47,9 +47,9 @@ class SuperServerSpec extends Specification {
     }
 
     "return from waitForFirst when a status code is available" in new BaseScope {
-      val x = subject.waitForFirst
       daemonProcesses(2).statusCode.success(0)
-      x.value.get.get must beEqualTo((daemonProcesses(2) -> 0))
+      val result = Await.result(subject.waitForFirst, Duration(100, "milliseconds"))
+      result must beEqualTo((daemonProcesses(2) -> 0))
     }
 
     "not complete waitForAll before all status codes are available" in new BaseScope {
