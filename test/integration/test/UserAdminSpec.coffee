@@ -1,7 +1,6 @@
-expect = require('chai').expect
 browser = require('../lib/browser')
 Faker = require('Faker')
-wd = require('wd')
+testMethods = require('../support/testMethods')
 
 Url =
   index: '/admin/users'
@@ -9,26 +8,22 @@ Url =
 
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
-Methods =
-  waitForUserLoaded: (email) ->
-    @
-      .waitForElementByXPath(userToTrXPath(email))
-
-  deleteUser: (email) ->
-    @
-      .waitForUserLoaded(email)
-      .listenForJqueryAjaxComplete()
-      .acceptingNextAlert()
-      .elementByXPath("#{userToTrXPath(email)}//a[@class='delete']").click()
-      .waitForJqueryAjaxComplete()
-
 describe 'UserAdmin', ->
-  adminBrowser = null
+  testMethods.usingPromiseChainMethods
+    waitForUserLoaded: (email) ->
+      @
+        .waitForElementByXPath(userToTrXPath(email))
+
+    deleteUser: (email) ->
+      @
+        .waitForUserLoaded(email)
+        .listenForJqueryAjaxComplete()
+        .acceptingNextAlert()
+        .elementByXPath("#{userToTrXPath(email)}//a[@class='delete']").click()
+        .waitForJqueryAjaxComplete()
 
   before ->
-    wd.addPromiseChainMethod(key, func) for key, func of Methods
-
-    adminBrowser = browser.create()
+    @adminBrowser = browser.create()
       .get(Url.index) # log in. XXX make this more generic
       .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
       .elementByCss('.session-form [name=password]').type(browser.adminLogin.password)
@@ -36,8 +31,8 @@ describe 'UserAdmin', ->
       .waitForUserLoaded(browser.adminLogin.email)
 
   after ->
-    adminBrowser.quit().done()
-    wd.removeMethod(key) for key, __ of Methods
+    @adminBrowser
+      .quit()
 
   describe 'index', ->
     describe 'creating a new user', ->
@@ -49,18 +44,18 @@ describe 'UserAdmin', ->
         userEmail = Faker.Internet.email()
         trXPath = "//tr[contains(td[@class='email'], '#{userEmail}')]"
 
-        adminBrowser
+        @adminBrowser
           .elementByCss('.new-user input[name=email]').type(userEmail)
           .elementByCss('.new-user input[name=password]').type(userPassword)
           .elementByCss('.new-user input[type=submit]').click()
 
       it 'should show the user', ->
-        adminBrowser
+        @adminBrowser
           .waitForUserLoaded(userEmail)
           .deleteUser(userEmail)
 
       it 'should delete the user', ->
-        adminBrowser
+        @adminBrowser
           .waitForUserLoaded(userEmail)
           .deleteUser(userEmail)
           .elementByXPathOrNull(trXPath).should.eventually.be.null
@@ -69,7 +64,7 @@ describe 'UserAdmin', ->
           .elementByXPathOrNull("#{trXPath}").should.eventually.be.null
 
       it 'should promote and demote the user', ->
-        adminBrowser
+        @adminBrowser
           .waitForUserLoaded(userEmail)
           .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('no')
           .listenForJqueryAjaxComplete()
@@ -90,12 +85,13 @@ describe 'UserAdmin', ->
 
       it 'should create a user who can log in', ->
         userBrowser = browser.create()
+        userBrowser
           .get(Url.login)
           .elementByCss('.session-form [name=email]').type(userEmail)
           .elementByCss('.session-form [name=password]').type(userPassword)
           .elementByCss('.session-form [type=submit]').click()
           .title().should.become('Your document sets')
           .quit()
-          .then ->
-            adminBrowser
+          .then =>
+            @adminBrowser
               .deleteUser(userEmail)
