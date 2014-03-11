@@ -43,11 +43,11 @@ startSelenium = (cb) ->
 # See https://github.com/detro/ghostdriver
 #
 # Calls the callback with the child process.
-startPhantomjs = (cb) ->
+startPhantomjs = (port, cb) ->
   child = child_process.spawn(
     phantomjs.path,
     [
-      '--webdriver=9011'
+      "--webdriver=#{port}"
       '--webdriver-loglevel=WARN'
       '--webdriver-selenium-grid-hub=http://localhost:4444'
     ]
@@ -65,6 +65,9 @@ startPhantomjs = (cb) ->
 before (done) ->
   startSelenium (selenium) ->
     process.on('exit', -> selenium.kill())
-    startPhantomjs (phantomjs) ->
-      process.on('exit', -> phantomjs.kill())
-      process.nextTick(done)
+    # We need more than one PhantomJS. Each PhantomJS instance allows one require('browser').create() chain
+    startPhantomjs 9011, (phantomjs1) ->
+      process.on('exit', -> phantomjs1.kill())
+      startPhantomjs 9012, (phantomjs2) ->
+        process.on('exit', -> phantomjs2.kill())
+        process.nextTick(done)
