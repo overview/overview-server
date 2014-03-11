@@ -23,7 +23,6 @@ Methods =
       .waitForJqueryAjaxComplete()
 
 describe 'UserAdmin', ->
-  @timeout(5000)
   adminBrowser = null
 
   before ->
