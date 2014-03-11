@@ -4,12 +4,7 @@ module.exports = function(config) {
     basePath: '.',
     browsers: [ 'PhantomJS' ],
     frameworks: [ 'jasmine', 'requirejs' ],
-    reporters: [ 'dots', 'growl' ],
-
-    htmlReporter: {
-      outputDir: 'karma_html',
-      templatePath: __dirname+'/jasmine_template.html'
-    },
+    reporters: [ 'dots' ],
 
     files: [
       'src-js/vendor/jquery-2-1-0.js',
