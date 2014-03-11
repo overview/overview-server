@@ -10,7 +10,8 @@ class Daemon(val logger: StdLogger, val command: Command) extends DaemonProcess 
   logger.out.println("Running " + command)
 
   private val cmdArray : Array[String] = command.argv.toArray
-  private val envArray : Array[String] = command.env.map { t: (String,String) => s"${t._1}=${t._2}" }.toArray
+  private val env: Map[String,String] = sys.env ++ Map(command.env: _*)
+  private val envArray : Array[String] = env.map { t: (String,String) => s"${t._1}=${t._2}" }.toArray
 
   private def createLoggingThread(inStream: InputStream, outStream: PrintStream) : Thread = {
     new Thread(new Runnable {

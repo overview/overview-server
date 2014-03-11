@@ -78,6 +78,18 @@ class DaemonSpec extends Specification {
       log.out.toString must contain("ENV: FOO=bar")
     }
 
+    "inherit environment variables" in new Base {
+      val path = sys.env("PATH")
+      run()
+      log.out.toString must contain(s"ENV: PATH=$path")
+    }
+
+    "override inherited environment variables" in new Base {
+      override def daemonCommandEnv = Seq("PATH" -> "/")
+      run()
+      log.out.toString must contain(s"ENV: PATH=/")
+    }
+
     "set JVM args" in new Base {
       override def daemonCommandJvmArgs = Seq("-Xmx128m")
       run()
