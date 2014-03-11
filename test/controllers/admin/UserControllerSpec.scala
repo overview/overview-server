@@ -155,10 +155,10 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
         there was one(mockStorage).storeUser(beLike[User] { case (u: User) => "as;dj#$xfF".isBcrypted(u.passwordHash) must beTrue })
       }
 
-      "return Ok" in new UpdateScope {
+      "return NoContent" in new UpdateScope {
         mockStorage.findUser(email) returns Some(User(email=email))
         override def data = Seq("is_admin"-> "false")
-        h.status(result) must beEqualTo(h.OK)
+        h.status(result) must beEqualTo(h.NO_CONTENT)
       }
 
       "return BadRequest for the current user" in new UpdateScope {
@@ -197,7 +197,7 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
         val userToDelete = User()
         mockStorage.findUser(email) returns Some(userToDelete)
         mockStorage.countDocumentSetsForEmail(email) returns 0
-        h.status(result) must beEqualTo(h.OK)
+        h.status(result) must beEqualTo(h.NO_CONTENT)
         there was one(mockStorage).deleteUser(any[User])
       }
     }

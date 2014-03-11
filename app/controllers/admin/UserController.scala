@@ -58,7 +58,7 @@ trait UserController extends Controller {
             formWithErrors => BadRequest,
             updatedUser => {
               storage.storeUser(updatedUser)
-              Ok
+              NoContent
             }
           )
         }
@@ -75,7 +75,7 @@ trait UserController extends Controller {
         case Some(otherUser) => {
           if (storage.countDocumentSetsForEmail(email) == 0) {
             storage.deleteUser(otherUser)
-            Ok
+            NoContent
           } else {
             BadRequest(m("delete.failure", email))
           }
