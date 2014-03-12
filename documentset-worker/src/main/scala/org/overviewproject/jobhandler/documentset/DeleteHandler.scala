@@ -53,6 +53,7 @@ trait DeleteHandler extends Actor with SearcherComponents {
     case DeleteDocumentSet(documentSetId) => {
 
       if (jobStatusChecker.isJobRunning(documentSetId)) context.system.scheduler.scheduleOnce(JobWaitDelay) {
+        Logger.info(s"Waiting for job to stop before deleting document set $documentSetId")
         self ! DeleteDocumentSet(documentSetId)
       }
       else {
