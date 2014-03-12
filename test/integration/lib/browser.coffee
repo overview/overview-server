@@ -69,6 +69,26 @@ wd.addAsyncMethod 'waitForJqueryAjaxComplete', ->
   @waitForConditionInBrowser 'window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total', Constants.ajaxTimeout, Constants.pollLength, =>
     @execute((-> window.listenForJqueryAjaxComplete.current += 1), cb)
 
+# Finds an element by lots of wonderful stuff.
+#
+# For instance:
+#
+#   .elementBy(tag: 'a', contains: 'Reset') # tag name a, text _contains_ 'Reset'
+wd.addAsyncMethod 'elementBy', (options) ->
+  cb = wd.findCallback(arguments)
+
+  tag = options.tag ? '*'
+
+  attrs = []
+  if options.contains
+    attrs.push("contains(., '#{options.contains.replace(/'/g, "\\'")}')")
+
+  xpath = "//#{tag}"
+  if attrs.length
+    xpath += "[#{attrs.join(',')}]"
+
+  @elementByXPath(xpath, cb)
+
 module.exports =
   baseUrl: 'http://localhost:9000'
   adminLogin:
