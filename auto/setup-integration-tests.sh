@@ -1,3 +1,3 @@
-#!/bin/sh
+#!/bin/bash
 
-((cd "$(dirname $0)/../test/integration" && npm install))
+(cd "$(dirname $0)/../test/integration" && npm install)
