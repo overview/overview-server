@@ -20,7 +20,7 @@ class DaemonSpec extends Specification {
     new File(url.getPath())
   }
 
-  val TestDuration = Duration(3, SECONDS)
+  val TestDuration = Duration(30, SECONDS)
 
   trait Base extends Scope {
     class ByteArrayPrintStream(val byteArrayOutputStream: ByteArrayOutputStream) extends PrintStream(byteArrayOutputStream) {
