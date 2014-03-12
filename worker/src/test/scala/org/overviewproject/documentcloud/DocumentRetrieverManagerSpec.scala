@@ -40,9 +40,9 @@ class DocumentRetrieverManagerSpec extends Specification with Mockito with NoTim
       var retrieverGenerator: DocumentRetrieverGenerator = _
 
       override def before = {
-        retrieverGenerator = mock[DocumentRetrieverGenerator]
-        document = mock[Document]
-        searchResult = mock[SearchResult].smart
+        retrieverGenerator = smartMock[DocumentRetrieverGenerator]
+        document = smartMock[Document]
+        searchResult = smartMock[SearchResult].smart
         searchResult.total returns totalDocuments
         searchResult.page returns 1
         searchResult.documents returns (Seq(document))
@@ -106,8 +106,8 @@ class DocumentRetrieverManagerSpec extends Specification with Mockito with NoTim
       manager ! Retrieve(searchResult)
       manager ! JobComplete()
       
-      awaitCond(importResult.isCompleted, 100 millis)
-      val r = Await.result(importResult.future, 100 millis)
+      awaitCond(importResult.isCompleted, 3 seconds)
+      val r = Await.result(importResult.future, 3 seconds)
       r.numberOfDocumentsRetrieved must be equalTo(1)
       r.totalDocumentsInQuery must be equalTo(1)
     }
