@@ -32,6 +32,7 @@ describe 'UserAdmin', ->
 
   after ->
     @adminBrowser
+      .deleteAllCookies()
       .quit()
 
   describe 'index', ->
@@ -91,6 +92,7 @@ describe 'UserAdmin', ->
           .elementByCss('.session-form [name=password]').type(userPassword)
           .elementByCss('.session-form [type=submit]').click()
           .title().should.become('Your document sets')
+          .deleteAllCookies()
           .quit()
           .then =>
             @adminBrowser
