@@ -82,9 +82,9 @@ module.exports =
       .init(options.desiredCapabilities)
       .configureHttp
         baseUrl: module.exports.baseUrl
-        timeout: 5000
+        timeout: 15000
         retries: 1
         retryDelay: 10
-      .setImplicitWaitTimeout(0)   # we only wait explicitly! It saves us from lots of race conditions
-      .setAsyncScriptTimeout(2000) # in case there are HTTP requests
-      .setPageLoadTimeout(5000)    # in case, on a slow computer, something slow happens
+      .setImplicitWaitTimeout(0)   # we only wait explicitly! We don't want to code race conditions
+      .setAsyncScriptTimeout(5000) # in case there are HTTP requests
+      .setPageLoadTimeout(15000)   # in case, on a slow computer, something slow happens
