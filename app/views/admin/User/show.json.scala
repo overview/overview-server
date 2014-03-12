@@ -15,7 +15,10 @@ object show {
     "id" -> user.id,
     "email" -> user.email,
     "is_admin" -> Json.toJson(user.role == UserRole.Administrator),
+    "confirmation_token" -> user.confirmationToken,
     "confirmation_sent_at" -> user.confirmationSentAt.map(formatDate),
+    "reset_password_token" -> user.resetPasswordToken,
+    "reset_password_sent_at" -> user.resetPasswordSentAt.map(formatDate),
     "confirmed_at" -> user.confirmedAt.map(formatDate),
     "last_activity_at" -> user.lastActivityAt.map(formatDate)
   )

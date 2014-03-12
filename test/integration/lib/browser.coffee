@@ -69,25 +69,39 @@ wd.addAsyncMethod 'waitForJqueryAjaxComplete', ->
   @waitForConditionInBrowser 'window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total', Constants.ajaxTimeout, Constants.pollLength, =>
     @execute((-> window.listenForJqueryAjaxComplete.current += 1), cb)
 
+argsToXPath = (args) ->
+  tag = args.tag ? '*'
+
+  attrs = []
+  if args.contains
+    attrs.push("contains(., '#{args.contains.replace(/'/g, "\\'")}')")
+
+  xpath = "//#{tag}"
+  if attrs.length
+    xpath += "[#{attrs.join(',')}]"
+  xpath
+
 # Finds an element by lots of wonderful stuff.
 #
 # For instance:
 #
 #   .elementBy(tag: 'a', contains: 'Reset') # tag name a, text _contains_ 'Reset'
-wd.addAsyncMethod 'elementBy', (options) ->
+wd.addAsyncMethod 'elementBy', (args) ->
+  xpath = argsToXPath(args)
   cb = wd.findCallback(arguments)
 
-  tag = options.tag ? '*'
-
-  attrs = []
-  if options.contains
-    attrs.push("contains(., '#{options.contains.replace(/'/g, "\\'")}')")
-
-  xpath = "//#{tag}"
-  if attrs.length
-    xpath += "[#{attrs.join(',')}]"
-
   @elementByXPath(xpath, cb)
+
+# Waits for an element by lots of wonderful stuff.
+#
+# For instance:
+#
+#   .waitForElementBy(tag: 'a', contains: 'Reset')
+wd.addAsyncMethod 'waitForElementBy', (args) ->
+  xpath = argsToXPath(args)
+  cb = wd.findCallback(arguments)
+
+  @waitForElementByXPath(xpath, cb)
 
 module.exports =
   baseUrl: 'http://localhost:9000'

@@ -12,7 +12,14 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
         <% } else { %>
           <%- t('td.is_admin.false') %> <a href="#" class="promote"><%- t('action.promote') %></a>
         <% } %>
-      <td class="confirmed-at" title="<%- model.has('confirmed_at') ? model.getDate('confirmed_at').toString() : '' %>">
+      <td
+        class="confirmed-at"
+        title="<%- model.has('confirmed_at') ? model.getDate('confirmed_at').toString() : '' %>"
+        <%= model.has('confirmation_token') ? (' data-confirmation-token="' + model.get('confirmation_token') + '"') : '' %>
+        <%= model.has('confirmation_sent_at') ? (' data-confirmation-sent-at="' + model.get('confirmation_sent_at') + '"') : '' %>
+        <%= model.has('reset_password_token') ? (' data-reset-password-token="' + model.get('reset_password_token') + '"') : '' %>
+        <%= model.has('reset_password_sent_at') ? (' data-reset-password-sent-at="' + model.get('reset_password_sent_at') + '"') : '' %>
+        >
         <%- t('td.confirmed_at', model.getDate('confirmed_at')) %>
       </td>
       <td class="last-activity-at" title="<%- model.has('last_activity_at') ? model.getDate('last_activity_at').toString() : '' %>">

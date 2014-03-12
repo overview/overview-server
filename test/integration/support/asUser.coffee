@@ -25,9 +25,11 @@ module.exports =
   #
   # Tests should make use of @userBrowser and @userEmail. The user's password
   # is always equal to @userEmail.
+  #
+  # Tests may also make use of @adminBrowser. Note that this framework expects
+  # @adminBrowser to stay on the same page, always, and it expects @userEmail
+  # to exist after the test is complete.
   usingTemporaryUser: ->
-    adminBrowser = null
-
     before ->
       @userEmail = Faker.Internet.email()
       @userBrowser = userBrowser = browser.create()
@@ -37,9 +39,9 @@ module.exports =
         .elementByCss('.session-form [name=password]').type(@userEmail)
         # Don't click yet: wait for the user to be created
 
-      adminBrowser = browser.create()
+      @adminBrowser = browser.create()
 
-      adminBrowser
+      @adminBrowser
         .get(Url.adminUserIndex)
         .waitForElementByCss('.session-form')
         .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
@@ -56,7 +58,7 @@ module.exports =
 
     after ->
       Q.all [
-        adminBrowser
+        @adminBrowser
           .listenForJqueryAjaxComplete()
           .elementByXPath("//tr[contains(td[@class='email'], '#{@userEmail}')]//a[@class='delete']").click()
           .waitForJqueryAjaxComplete()
