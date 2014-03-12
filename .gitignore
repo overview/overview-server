@@ -24,7 +24,7 @@ test/assets/javascripts/test-js
 .worksheet
 *.sc
 /database/
-
+bin
 
 
 test/assets/javascripts/autotest/karma_html/PhantomJS 1.9.2 (Mac OS X)/index.html
