@@ -1,11 +1,6 @@
 testMethods = require('../support/testMethods')
 asUser = require('../support/asUser')
 
-Url =
-  login: '/login'
-  welcome: '/'
-  documentsets: '/documentsets'
-
 # In order to let users store their own information
 # We need to let users identify themselves
 describe 'Login', ->
