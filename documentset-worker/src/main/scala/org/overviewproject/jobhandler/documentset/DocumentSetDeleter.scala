@@ -3,12 +3,15 @@ package org.overviewproject.jobhandler.documentset
 import org.overviewproject.tree.orm.UploadedFile
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.tree.orm.stores.BaseNodeStore
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 /**
  * Methods for deleting all the data associated with document sets in the database
  * Client code needs to manage the proper order of calls.
  */
 trait DocumentSetDeleter {
+  def deleteJobInformation(documentSetId: Long): Unit
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
   def deleteDocumentSet(documentSetId: Long): Unit
@@ -26,6 +29,12 @@ object DocumentSetDeleter {
   import org.squeryl.Table
 
   def apply() = new DocumentSetDeleter {
+
+    def deleteJobInformation(documentSetId: Long): Unit = Database.inTransaction {
+      implicit val id = documentSetId
+      
+      deleteNonRunningJobs
+    }
 
     def deleteClientGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
@@ -52,17 +61,16 @@ object DocumentSetDeleter {
       delete(documentSetUsers)
     }
 
-
     def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
-      
+
       val fileIds = findFileIds
 
       delete(documents)
       delete(documentSetUsers)
 
       deleteFiles(fileIds)
-      
+
       val uploadedFile = findUploadedFile
 
       deleteDocumentSetById(documentSetId)
@@ -76,17 +84,20 @@ object DocumentSetDeleter {
     val nodeStore = BaseNodeStore(nodes, trees)
     nodeStore.deleteByDocumentSet(documentSetId)
   }
-  
-  private def findFileIds(implicit documentSetId: Long): Iterable[Long] = 
+
+  private def findFileIds(implicit documentSetId: Long): Iterable[Long] =
     DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten
-    
+
+
+  private def deleteNonRunningJobs(implicit documentSetId: Long): Unit = 
+    DocumentSetCreationJobStore.deleteNonRunningJobs(documentSetId)
+  
   private def deleteFiles(fileIds: Iterable[Long]): Unit = FileStore.removeReference(fileIds)
-  
-  
+
   private def deleteDocumentContents(implicit documentSetId: Long): Unit = {
     FileStore.deleteLargeObjectsByDocumentSet(documentSetId)
   }
-  
+
   private def findUploadedFile(implicit documentSetId: Long): Option[UploadedFile] =
     UploadedFileFinder.byDocumentSet(documentSetId).headOption
 

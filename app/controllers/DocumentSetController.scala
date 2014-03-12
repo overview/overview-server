@@ -111,26 +111,29 @@ trait DocumentSetController extends Controller {
     // It would be better for the client to explicitly tell us what job to cancel, rather
     // than trying to guess.
     val jobs = storage.findAllJobs(id)
-    val runningReclusteringJob: Option[DocumentSetCreationJob] =
-      jobs.find(j => j.jobType == DocumentSetCreationJobType.Recluster && j.state != DocumentSetCreationJobState.Error)
+    val jobsRunningInWorker = jobs.find(j =>
+      j.state == DocumentSetCreationJobState.InProgress ||
+      j.state == DocumentSetCreationJobState.Preparing ||
+        j.state == DocumentSetCreationJobState.Cancelled)
 
-    runningReclusteringJob.map { j =>
-      onDocumentSet(storage.cancelReclusteringJob(_, j))
-      done("deleteTree.success", "tree-delete")
-    }.getOrElse {
-      storage.findRunningJobType(id) match {
-        case Some(jobType) =>
+    jobsRunningInWorker.headOption.map { j =>
+      j.jobType match {
+        case DocumentSetCreationJobType.Recluster => { 
+          onDocumentSet(storage.cancelReclusteringJob(_, j))
+          done("deleteTree.success", "tree-delete")
+        }
+        case _ => { 
           onDocumentSet(storage.cancelJob)
           onDocumentSet(storage.deleteDocumentSet)
-
-          if (jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
+          if (j.jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
           JobQueueSender.send(Delete(id))
           done("deleteJob.success", "document-set-delete")
-        case None =>
-          onDocumentSet(storage.deleteDocumentSet)
-          JobQueueSender.send(Delete(id))
-          done("deleteDocumentSet.success", "document-set-delete")
+        }
       }
+    }.getOrElse {
+      onDocumentSet(storage.deleteDocumentSet)
+      JobQueueSender.send(Delete(id))
+      done("deleteDocumentSet.success", "document-set-delete")
     }
   }
 

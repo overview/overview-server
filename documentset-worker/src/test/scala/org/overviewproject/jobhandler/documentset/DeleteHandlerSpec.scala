@@ -90,7 +90,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     "delete document set related data" in new DeleteContext {
       deleteHandler ! DeleteDocumentSet(documentSetId)
-
+      
+      there was one(documentSetDeleter).deleteJobInformation(documentSetId)
       there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
       there was one(documentSetDeleter).deleteClusteringGeneratedInformation(documentSetId)
       there was one(documentSetDeleter).deleteDocumentSet(documentSetId)

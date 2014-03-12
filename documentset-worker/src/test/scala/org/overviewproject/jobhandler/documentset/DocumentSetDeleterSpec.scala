@@ -3,6 +3,8 @@ package org.overviewproject.jobhandler.documentset
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.DocumentSetCreationJobType._
 import java.sql.Timestamp
 import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.test.IdGenerator._
@@ -35,6 +37,16 @@ class DocumentSetDeleterSpec extends DbSpecification {
         documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
         document = Document(documentSet.id, documentcloudId = Some("dcId"), id = nextDocumentId(documentSet.id))
         documents.insert(document)
+      }
+      
+      def addJobInformation = {
+        val jobs = Seq.fill(2)(DocumentSetCreationJob(
+          documentSetId = documentSet.id,
+          jobType = Recluster,
+          treeTitle = Some("failed reclustering"),
+          state = Error
+        ))
+        documentSetCreationJobs.insert(jobs)
       }
 
       def addClientGeneratedInformation = {
@@ -129,6 +141,13 @@ class DocumentSetDeleterSpec extends DbSpecification {
       }
     }
 
+    "delete job information" in new DocumentSetContext {
+      addJobInformation
+      DocumentSetDeleter().deleteJobInformation(documentSet.id)
+          
+      findAll(documentSetCreationJobs) must beEmpty
+    }
+    
     "delete client generated information" in new DocumentSetContext {
       addClientGeneratedInformation
       DocumentSetDeleter().deleteClientGeneratedInformation(documentSet.id)
@@ -139,7 +158,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findAll(searchResults) must beEmpty
     }
 
-    inExample("delete clustering generated information") in new DocumentSetContext {
+    "delete clustering generated information" in new DocumentSetContext {
       addClusteringGeneratedInformation
       DocumentSetDeleter().deleteClusteringGeneratedInformation(documentSet.id)
 
