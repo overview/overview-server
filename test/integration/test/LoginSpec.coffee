@@ -6,12 +6,19 @@ Url =
   welcome: '/'
   documentsets: '/documentsets'
 
+# In order to let users store their own information
+# We need to let users identify themselves
 describe 'Login', ->
   testMethods.usingPromiseChainMethods
     shouldBeLoggedInAs: (email) ->
       @elementByCss('.logged-in strong').text().should.eventually.equal(email)
 
-    shouldBeLoggedOut: () ->
+    shouldHaveFailedToLogIn: ->
+      @
+        .url().should.eventually.match(/\/login\b/)
+        .elementByCss('.session-form').text().should.eventually.contain('Wrong email address or password')
+
+    shouldBeLoggedOut: ->
       @elementByCss('.session-form').should.eventually.exist
 
     tryLogIn: (email, password) ->
@@ -41,3 +48,13 @@ describe 'Login', ->
     # This is easy -- we did this in the before hook ;)
     @userBrowser
       .shouldBeLoggedOut()
+
+  it 'should not log in with wrong password', ->
+    @userBrowser
+      .tryLogIn(@userEmail, 'bad-password')
+      .shouldHaveFailedToLogIn()
+
+  it 'should not log in with the wrong username', ->
+    @userBrowser
+      .tryLogIn('x-' + @userEmail, @userEmail)
+      .shouldHaveFailedToLogIn()
