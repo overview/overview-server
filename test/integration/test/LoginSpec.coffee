@@ -6,7 +6,7 @@ Url =
   welcome: '/'
   documentsets: '/documentsets'
 
-describe.only 'Login', ->
+describe 'Login', ->
   testMethods.usingPromiseChainMethods
     shouldBeLoggedInAs: (email) ->
       @elementByCss('.logged-in strong').text().should.eventually.equal(email)
