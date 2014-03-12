@@ -55,8 +55,14 @@ module.exports =
           userBrowser.elementByCss('.session-form [type=submit]').click()
 
     after ->
-      adminBrowser
-        .listenForJqueryAjaxComplete()
-        .elementByXPath("//tr[contains(td[@class='email'], '#{@userEmail}')]//a[@class='delete']").click()
-        .waitForJqueryAjaxComplete()
-        .quit()
+      Q.all [
+        adminBrowser
+          .listenForJqueryAjaxComplete()
+          .elementByXPath("//tr[contains(td[@class='email'], '#{@userEmail}')]//a[@class='delete']").click()
+          .waitForJqueryAjaxComplete()
+          .deleteAllCookies()
+          .quit()
+        @userBrowser
+          .deleteAllCookies()
+          .quit()
+      ]
