@@ -3,11 +3,11 @@ package org.overviewproject.jobhandler.documentset
 import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
-
 import akka.actor.Actor
-
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.util.Logger
+import DeleteHandlerFSM._
+import akka.actor.FSM
 
 /**
  * [[DeleteHandler]] deletes a document set and all associated data if deletion is requested after
@@ -40,23 +40,41 @@ object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long)
 }
 
-trait DeleteHandler extends Actor with SearcherComponents {
+object DeleteHandlerFSM {
+  sealed trait State
+  case object Idle extends State
+  case object WaitingForRunningJobRemoval extends State
+  case object Running extends State
+
+  sealed trait Data
+  case object NoData extends Data
+  case class RetryAttempts(n: Int) extends Data
+}
+
+trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents {
   import DeleteHandlerProtocol._
   import context.dispatcher
 
   val documentSetDeleter: DocumentSetDeleter
   val jobStatusChecker: JobStatusChecker
 
-  val JobWaitDelay = 100 milliseconds
+  protected val JobWaitDelay = 100 milliseconds
+  protected val MaxRetryAttempts = 600
 
-  def receive = {
-    case DeleteDocumentSet(documentSetId) => {
+  private object Message {
+    case class DeleteComplete(documentSetId: Long)
+    case class SearchIndexDeleteFailed(documentSetId: Long, error: Throwable)
+    case class DeleteFailed(documentSetId: Long)
+  }
 
-      if (jobStatusChecker.isJobRunning(documentSetId)) context.system.scheduler.scheduleOnce(JobWaitDelay) {
-        Logger.info(s"Waiting for job to stop before deleting document set $documentSetId")
-        self ! DeleteDocumentSet(documentSetId)
-      }
-      else {
+  startWith(Idle, NoData)
+
+  when(Idle) {
+    case Event(DeleteDocumentSet(documentSetId), _) => {
+      if (jobStatusChecker.isJobRunning(documentSetId)) {
+        setTimer("retry", DeleteDocumentSet(documentSetId), JobWaitDelay, false)
+        goto(WaitingForRunningJobRemoval) using (RetryAttempts(1))
+      } else {
         documentSetDeleter.deleteJobInformation(documentSetId)
         documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
         documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
@@ -71,17 +89,61 @@ trait DeleteHandler extends Actor with SearcherComponents {
         } yield documentsResponse
 
         combinedResponse onComplete {
-          case Success(r) => {
-            context.parent ! JobDone(documentSetId)
-            context.stop(self)
-          }
-          case Failure(t) => {
-            Logger.error("Deleting indexed documents failed", t)
-            context.parent ! JobDone(documentSetId)
-            context.stop(self)
-          }
+          case Success(r) => self ! Message.DeleteComplete(documentSetId) 
+          case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
         }
+
+        goto(Running) using (NoData)
       }
+    }
+  }
+
+  when(WaitingForRunningJobRemoval) {
+    case Event(DeleteDocumentSet(documentSetId), RetryAttempts(n)) => {
+      if (jobStatusChecker.isJobRunning(documentSetId)) {
+        setTimer("retry", DeleteDocumentSet(documentSetId), JobWaitDelay, false)
+        if (n >= MaxRetryAttempts) {
+          self ! Message.DeleteFailed(documentSetId) 
+          goto(Running) using (NoData)
+        } else goto(WaitingForRunningJobRemoval) using (RetryAttempts(n + 1))
+      } else {
+        documentSetDeleter.deleteJobInformation(documentSetId)
+        documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
+        documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
+        documentSetDeleter.deleteDocumentSet(documentSetId)
+
+        // delete alias first, so no new documents can be inserted.
+        // creating futures inside for comprehension ensures the calls
+        // are run sequentially
+        val combinedResponse = for {
+          aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
+          documentsResponse <- searchIndex.deleteDocuments(documentSetId)
+        } yield documentsResponse
+
+        combinedResponse onComplete {
+          case Success(r) => self ! Message.DeleteComplete(documentSetId) 
+          case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
+        }
+
+        goto(Running) using (NoData)
+      }
+    }
+  }
+
+  when(Running) {
+    case Event(Message.DeleteComplete(documentSetId), _) => {
+      context.parent ! JobDone(documentSetId)
+      stop
+    }
+    case Event(Message.SearchIndexDeleteFailed(documentSetId, t), _) => {
+      Logger.error(s"Deleting indexed documents failed for $documentSetId", t)
+      context.parent ! JobDone(documentSetId)
+      stop
+    }
+    case Event(Message.DeleteFailed(documentSetId), _) => {
+      Logger.error(s"Delete timed out waiting for job to cancel $documentSetId")
+      context.parent ! JobDone(documentSetId)
+      stop
     }
   }
 }
