@@ -48,6 +48,7 @@ object DeleteHandlerFSM {
 
   sealed trait Data
   case object NoData extends Data
+  case class DeleteTarget(documentSetId: Long) extends Data
   case class RetryAttempts(documentSetId: Long, n: Int) extends Data
 }
 
@@ -65,8 +66,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   private object Message {
     case object RetryDelete
-    case class DeleteComplete(documentSetId: Long)
-    case class SearchIndexDeleteFailed(documentSetId: Long, error: Throwable)
+    case object DeleteComplete
+    case class SearchIndexDeleteFailed(error: Throwable)
     case class DeleteFailed(documentSetId: Long)
   }
 
@@ -78,8 +79,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
         setTimer(RetryTimer, Message.RetryDelete, JobWaitDelay, true)
         goto(WaitingForRunningJobRemoval) using (RetryAttempts(documentSetId, 1))
       } else {
-        deleteDocumentSet(documentSetId)
-        goto(Running) using (NoData)
+        goto(Running) using (DeleteTarget(documentSetId))
       }
     }
   }
@@ -88,22 +88,20 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     case Event(Message.RetryDelete, RetryAttempts(documentSetId, n)) => {
       if (jobStatusChecker.isJobRunning(documentSetId)) {
         if (n >= MaxRetryAttempts) {
-          self ! Message.DeleteFailed(documentSetId)
-          goto(Running) using (NoData)
+          goto(Running) 
         } else stay using (RetryAttempts(documentSetId, n + 1))
       } else {
-        deleteDocumentSet(documentSetId)
-        goto(Running) using (NoData)
+        goto(Running) using (DeleteTarget(documentSetId))
       }
     }
   }
 
   when(Running) {
-    case Event(Message.DeleteComplete(documentSetId), _) => {
+    case Event(Message.DeleteComplete, DeleteTarget(documentSetId)) => {
       context.parent ! JobDone(documentSetId)
       stop
     }
-    case Event(Message.SearchIndexDeleteFailed(documentSetId, t), _) => {
+    case Event(Message.SearchIndexDeleteFailed(t), DeleteTarget(documentSetId)) => {
       Logger.error(s"Deleting indexed documents failed for $documentSetId", t)
       context.parent ! JobDone(documentSetId)
       stop
@@ -116,7 +114,13 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
 
   onTransition {
-    case WaitingForRunningJobRemoval -> _ => cancelTimer(RetryTimer)
+    case _ -> Running =>
+      cancelTimer(RetryTimer)
+      nextStateData match {
+        case DeleteTarget(documentSetId) => deleteDocumentSet(documentSetId)
+        case RetryAttempts(documentSetId, n) => self ! Message.DeleteFailed(documentSetId)
+        case _ =>
+      }
   }
 
   private def deleteDocumentSet(documentSetId: Long): Unit = {
@@ -134,8 +138,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     } yield documentsResponse
 
     combinedResponse onComplete {
-      case Success(r) => self ! Message.DeleteComplete(documentSetId)
-      case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
+      case Success(r) => self ! Message.DeleteComplete
+      case Failure(t) => self ! Message.SearchIndexDeleteFailed(t)
     }
 
   }
