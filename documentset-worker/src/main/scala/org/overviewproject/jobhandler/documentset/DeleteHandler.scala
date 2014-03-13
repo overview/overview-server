@@ -86,13 +86,11 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   when(WaitingForRunningJobRemoval) {
     case Event(Message.RetryDelete, RetryAttempts(documentSetId, n)) => {
-      if (jobStatusChecker.isJobRunning(documentSetId)) {
-        if (n >= MaxRetryAttempts) {
-          goto(Running) 
-        } else stay using (RetryAttempts(documentSetId, n + 1))
-      } else {
-        goto(Running) using (DeleteTarget(documentSetId))
-      }
+      val jobIsRunning = jobStatusChecker.isJobRunning(documentSetId)
+      
+      if (jobIsRunning && n >= MaxRetryAttempts) goto(Running)
+      else if (jobIsRunning) stay using (RetryAttempts(documentSetId, n + 1))
+      else goto(Running) using (DeleteTarget(documentSetId))
     }
   }
 
