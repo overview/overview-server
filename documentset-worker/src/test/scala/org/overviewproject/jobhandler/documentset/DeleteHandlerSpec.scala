@@ -33,7 +33,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       override protected val JobWaitDelay = 5 milliseconds
       override protected val MaxRetryAttempts = 3
     }
-    
+
     abstract class DeleteContext extends ActorSystemContext with Before {
       // need lazy val or def to avoid compiler crash
       protected lazy val aliasResult: IndicesAliasesResponse = smartMock[IndicesAliasesResponse]
@@ -119,8 +119,6 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       deleteDocumentsResult.success(documentResult)
       deleteAliasResult.success(aliasResult)
 
-      parentProbe.expectNoMsg(5 millis)
-      // deleteHandler retries here
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
