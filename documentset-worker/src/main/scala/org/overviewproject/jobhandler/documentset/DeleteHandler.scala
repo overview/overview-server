@@ -48,7 +48,7 @@ object DeleteHandlerFSM {
 
   sealed trait Data
   case object NoData extends Data
-  case class RetryAttempts(n: Int) extends Data
+  case class RetryAttempts(documentSetId: Long, n: Int) extends Data
 }
 
 trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents {
@@ -58,10 +58,13 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   val documentSetDeleter: DocumentSetDeleter
   val jobStatusChecker: JobStatusChecker
 
+  val RetryTimer = "retry"
+
   protected val JobWaitDelay = 100 milliseconds
   protected val MaxRetryAttempts = 600
 
   private object Message {
+    case object RetryDelete
     case class DeleteComplete(documentSetId: Long)
     case class SearchIndexDeleteFailed(documentSetId: Long, error: Throwable)
     case class DeleteFailed(documentSetId: Long)
@@ -72,59 +75,24 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   when(Idle) {
     case Event(DeleteDocumentSet(documentSetId), _) => {
       if (jobStatusChecker.isJobRunning(documentSetId)) {
-        setTimer("retry", DeleteDocumentSet(documentSetId), JobWaitDelay, false)
-        goto(WaitingForRunningJobRemoval) using (RetryAttempts(1))
+        setTimer(RetryTimer, Message.RetryDelete, JobWaitDelay, true)
+        goto(WaitingForRunningJobRemoval) using (RetryAttempts(documentSetId, 1))
       } else {
-        documentSetDeleter.deleteJobInformation(documentSetId)
-        documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
-        documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
-        documentSetDeleter.deleteDocumentSet(documentSetId)
-
-        // delete alias first, so no new documents can be inserted.
-        // creating futures inside for comprehension ensures the calls
-        // are run sequentially
-        val combinedResponse = for {
-          aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
-          documentsResponse <- searchIndex.deleteDocuments(documentSetId)
-        } yield documentsResponse
-
-        combinedResponse onComplete {
-          case Success(r) => self ! Message.DeleteComplete(documentSetId) 
-          case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
-        }
-
+        deleteDocumentSet(documentSetId)
         goto(Running) using (NoData)
       }
     }
   }
 
   when(WaitingForRunningJobRemoval) {
-    case Event(DeleteDocumentSet(documentSetId), RetryAttempts(n)) => {
+    case Event(Message.RetryDelete, RetryAttempts(documentSetId, n)) => {
       if (jobStatusChecker.isJobRunning(documentSetId)) {
-        setTimer("retry", DeleteDocumentSet(documentSetId), JobWaitDelay, false)
         if (n >= MaxRetryAttempts) {
-          self ! Message.DeleteFailed(documentSetId) 
+          self ! Message.DeleteFailed(documentSetId)
           goto(Running) using (NoData)
-        } else goto(WaitingForRunningJobRemoval) using (RetryAttempts(n + 1))
+        } else stay using (RetryAttempts(documentSetId, n + 1))
       } else {
-        documentSetDeleter.deleteJobInformation(documentSetId)
-        documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
-        documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
-        documentSetDeleter.deleteDocumentSet(documentSetId)
-
-        // delete alias first, so no new documents can be inserted.
-        // creating futures inside for comprehension ensures the calls
-        // are run sequentially
-        val combinedResponse = for {
-          aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
-          documentsResponse <- searchIndex.deleteDocuments(documentSetId)
-        } yield documentsResponse
-
-        combinedResponse onComplete {
-          case Success(r) => self ! Message.DeleteComplete(documentSetId) 
-          case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
-        }
-
+        deleteDocumentSet(documentSetId)
         goto(Running) using (NoData)
       }
     }
@@ -145,5 +113,30 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
       context.parent ! JobDone(documentSetId)
       stop
     }
+  }
+
+  onTransition {
+    case WaitingForRunningJobRemoval -> _ => cancelTimer(RetryTimer)
+  }
+
+  private def deleteDocumentSet(documentSetId: Long): Unit = {
+    documentSetDeleter.deleteJobInformation(documentSetId)
+    documentSetDeleter.deleteClientGeneratedInformation(documentSetId)
+    documentSetDeleter.deleteClusteringGeneratedInformation(documentSetId)
+    documentSetDeleter.deleteDocumentSet(documentSetId)
+
+    // delete alias first, so no new documents can be inserted.
+    // creating futures inside for comprehension ensures the calls
+    // are run sequentially
+    val combinedResponse = for {
+      aliasResponse <- searchIndex.deleteDocumentSetAlias(documentSetId)
+      documentsResponse <- searchIndex.deleteDocuments(documentSetId)
+    } yield documentsResponse
+
+    combinedResponse onComplete {
+      case Success(r) => self ! Message.DeleteComplete(documentSetId)
+      case Failure(t) => self ! Message.SearchIndexDeleteFailed(documentSetId, t)
+    }
+
   }
 }
