@@ -35,7 +35,7 @@ trait ElasticSearchComponents extends SearcherComponents {
     private val IndexName = Configuration.searchIndex.getString("index_name")
     
     private val PageSize = 100
-    private val ScrollTime = new TimeValue(60000)
+    private val ScrollTime = new TimeValue(300000)
     private val SearchableFields = Seq("text", "title", "supplied_id")
 
     private val client = ElasticSearchClient.client
