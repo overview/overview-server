@@ -171,7 +171,7 @@ object JobHandler {
 
   private def restartInterruptedJobs: Unit = Database.inTransaction {
     val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
-    val restarter = new JobRestarter(new DocumentSetCleaner)
+    val restarter = new JobRestarter(new DocumentSetCleaner, SearchIndex)
 
     restarter.restart(interruptedJobs)
   }

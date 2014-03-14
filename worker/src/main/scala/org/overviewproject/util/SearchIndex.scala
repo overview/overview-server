@@ -1,8 +1,7 @@
 package org.overviewproject.util
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, Promise}
-
+import scala.concurrent.{ Future, Promise }
 import org.elasticsearch.action.bulk.{ BulkProcessor, BulkRequest, BulkResponse }
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.Client
@@ -12,9 +11,10 @@ import org.elasticsearch.common.settings.ImmutableSettings
 import org.elasticsearch.common.transport.InetSocketTransportAddress
 import org.elasticsearch.common.xcontent.XContentBuilder
 import org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder
-import org.elasticsearch.index.query.FilterBuilders
+import org.elasticsearch.index.query.{ FilterBuilders, QueryBuilders }
 import org.elasticsearch.node.Node
 import org.elasticsearch.node.NodeBuilder.nodeBuilder
+
 
 trait DocumentSetIndexingSession {
   def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit
@@ -23,7 +23,15 @@ trait DocumentSetIndexingSession {
   def requestsComplete: Future[Unit]
 }
 
-object SearchIndex {
+trait SearchIndex {
+  def createIndexIfNotExisting: Unit
+  def startDocumentSetIndexingSession(documentSetId: Long): DocumentSetIndexingSession
+  def createDocumentSetAlias(documentSetId: Long): Unit
+  def deleteDocumentSetAliasAndDocuments(documentSetId: Long): Unit
+  def shutdown: Unit
+}
+
+object SearchIndex extends SearchIndex {
 
   private val IndexName = Configuration.searchIndex.getString("index_name")
   private val IndexAlias = "documents"
@@ -42,11 +50,11 @@ object SearchIndex {
   private val SearchIndexPort = Configuration.searchIndex.getInt("port")
 
   private val client: TransportClient = createTransportClient
-  
+
   private def admin = client.admin.indices
 
-  def createIndexIfNotExisting = {
-    
+  override def createIndexIfNotExisting = {
+
     if (!indexExists) {
       createIndex
       createMapping
@@ -54,46 +62,43 @@ object SearchIndex {
     if (!aliasExists) createAlias
   }
 
-  def startDocumentSetIndexingSession(documentSetId: Long): DocumentSetIndexingSession = {
+  override def startDocumentSetIndexingSession(documentSetId: Long): DocumentSetIndexingSession = {
     createDocumentSetAlias(documentSetId)
 
     new DocumentSetIndexingSessionImpl(client, documentSetId)
   }
 
-  def createDocumentSetAlias(documentSetId: Long): Unit = {
+  override def createDocumentSetAlias(documentSetId: Long): Unit = {
     val filter = FilterBuilders.termFilter(DocumentSetIdField, documentSetId)
     val alias = new AliasAction(AliasAction.Type.ADD, IndexName, DocumentSetAlias(documentSetId), filter.toString).routing(s"$documentSetId")
     admin.prepareAliases().addAliasAction(alias).execute.actionGet
   }
 
-  def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit = {
-    val indexRequest = client.prepareIndex(DocumentSetAlias(documentSetId), "document")
+  override def deleteDocumentSetAliasAndDocuments(documentSetId: Long): Unit = {
+    admin.prepareAliases
+      .removeAlias(IndexName, DocumentSetAlias(documentSetId))
+      .execute.actionGet
 
-    val source = addFields(jsonBuilder.startObject, Seq(
-      (DocumentSetIdField, documentSetId),
-      (IdField, id),
-      (TextField, text),
-      (TitleField, title),
-      (SuppliedIdField, suppliedId))).endObject
-
-    val r = indexRequest.setSource(source).execute.actionGet()
+    val query = QueryBuilders.termQuery("document_set_id", documentSetId)
+    client.prepareDeleteByQuery(IndexName)
+      .setQuery(query)
+      .execute.actionGet
   }
 
-  def shutdown: Unit = {
+  override def shutdown: Unit = {
     client.close
   }
 
   private def createTransportClient: TransportClient = {
-    val settings =  ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)
+    val settings = ImmutableSettings.settingsBuilder.loadFromClasspath(ConfigFile)
     new TransportClient(settings)
-    
-    Logger.info(s"Connecting to Search Index [${settings.get("cluster.name")}] at $SearchIndexHost:$SearchIndexPort")
-    
-    val transportClient =  new TransportClient(settings)
-    transportClient.addTransportAddress(new InetSocketTransportAddress(SearchIndexHost, SearchIndexPort))
-  }  
 
-  
+    Logger.info(s"Connecting to Search Index [${settings.get("cluster.name")}] at $SearchIndexHost:$SearchIndexPort")
+
+    val transportClient = new TransportClient(settings)
+    transportClient.addTransportAddress(new InetSocketTransportAddress(SearchIndexHost, SearchIndexPort))
+  }
+
   private def indexExists: Boolean = {
     val r = admin.prepareExists(IndexName).execute.actionGet()
 
@@ -123,21 +128,19 @@ object SearchIndex {
       builder.startObject(fieldInfo._1)
         .field("type", fieldInfo._2)
         .endObject
-        
+
     def fields = Seq(
       (DocumentSetIdField, LongType),
       (IdField, StringType),
       (TextField, StringType),
       (SuppliedIdField, StringType),
-      (TitleField, StringType)
-    ) 
-    
-    
+      (TitleField, StringType))
+
     val mapping = fields.foldLeft(jsonBuilder.startObject
-        .startObject(DocumentTypeName)
-          .startObject("properties"))(addField)
-          .endObject
-        .endObject
+      .startObject(DocumentTypeName)
+      .startObject("properties"))(addField)
+      .endObject
+      .endObject
 
     admin.preparePutMapping(IndexName)
       .setType(DocumentTypeName)
@@ -148,11 +151,11 @@ object SearchIndex {
   private class DocumentSetIndexingSessionImpl(client: Client, documentSetId: Long) extends DocumentSetIndexingSession with BulkProcessor.Listener {
     private val bulkProcessor = new BulkProcessor.Builder(client, this).build
     private val allRequestsComplete = Promise[Unit]
-    
+
     // Use mutable variables and locking to determine when all requests have been handled.
     private var requestInProgress: Boolean = false
     private var sessionComplete: Boolean = false
-    
+
     override def indexDocument(documentSetId: Long, id: Long, text: String, title: Option[String], suppliedId: Option[String]): Unit = {
       val indexRequest = client.prepareIndex(DocumentSetAlias(documentSetId), "document")
 

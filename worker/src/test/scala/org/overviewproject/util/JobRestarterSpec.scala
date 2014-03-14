@@ -7,6 +7,7 @@ import org.overviewproject.persistence.{ DocumentSetCleaner, PersistentDocumentS
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType.CsvUpload
 
+
 class JobRestarterSpec extends Specification with Mockito {
   implicit val unusedConnection: Connection = null
 
@@ -45,17 +46,20 @@ class JobRestarterSpec extends Specification with Mockito {
   "JobRestarter" should {
 
     "clean and restart jobs" in {
-      val cleaner = mock[DocumentSetCleaner]
+      val databaseCleaner = smartMock[DocumentSetCleaner]
+      val searchIndexCleaner = smartMock[SearchIndex]
+
       val job = new TestJob
 
-      val jobRestarter = new JobRestarter(cleaner)
+      val jobRestarter = new JobRestarter(databaseCleaner, searchIndexCleaner)
 
       jobRestarter.restart(Seq(job))
 
       job.state must be equalTo (NotStarted)
       job.updateCalled must beTrue 
 
-      there was one(cleaner).clean(job.id, job.documentSetId)
+      there was one(databaseCleaner).clean(job.id, job.documentSetId)
+      there was one(searchIndexCleaner).deleteDocumentSetAliasAndDocuments(job.documentSetId)
     }
   }
 }
