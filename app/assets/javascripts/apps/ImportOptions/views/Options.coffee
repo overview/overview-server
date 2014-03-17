@@ -51,10 +51,16 @@ define [
 
       <% if ('split_documents' in options) { %>
         <div class="control-group">
+          <label class="control-label"><%= t('split_documents.label_html') %></label>
           <div class="controls">
-            <label>
-              <input type="checkbox" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
-              <%- t('split_documents.label') %> (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="<%- t('click_for_help') %>">?</a>)
+            <p class="help-block too-few-documents"><%- t('split_documents.too_few_documents') %></p>
+            <label class="radio">
+              <input type="radio" name="split_documents" <%= options.split_documents ? '' : 'checked="checked"' %> value="false" />
+              <%- t('split_documents.false') %>
+            </label>
+            <label class="radio">
+              <input type="radio" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
+              <%- t('split_documents.true') %>
             </label>
           </div>
         </div>
@@ -77,7 +83,7 @@ define [
 
       <% if ('supplied_stop_words' in options) { %>
         <div class="control-group">
-          <label class="control-label" for="import-options-supplied-stop-words"><%- t('supplied_stop_words.label') %> (<a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="<%- t('click_for_help') %>">?</a>)</label>
+          <label class="control-label" for="import-options-supplied-stop-words"><%= t('supplied_stop_words.label_html') %></label>
           <div class="controls">
             <textarea id="import-options-supplied-stop-words" name="supplied_stop_words"><%- options.supplied_stop_words %></textarea>
             <p class="help-block"><%- t('supplied_stop_words.help') %></p>
@@ -87,7 +93,7 @@ define [
 
       <% if ('important_words' in options) { %>
         <div class="control-group">
-          <label class="control-label" for="import-options-important-words"><%- t('important_words.label') %> (<a href="http://overview.ap.org/blog/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="<%- t('click_for_help') %>">?</a>)</label>
+          <label class="control-label" for="import-options-important-words"><%= t('important_words.label_html') %></label>
           <div class="controls">
             <textarea id="import-options-important-words" name="important_words"><%- options.important_words %></textarea>
             <p class="help-block"><%- t('important_words.help') %></p>
@@ -100,6 +106,7 @@ define [
       throw 'Must pass model, an Options model' if !@model
 
       @childViews = []
+      @tooFewDocuments = @options.tooFewDocuments && true || false
       @initialRender()
 
     remove: ->
@@ -107,13 +114,26 @@ define [
         v.remove()
       super()
 
+    setTooFewDocuments: (@tooFewDocuments) ->
+      @_refreshTooFewDocuments()
+
+    _refreshTooFewDocuments: ->
+      if @tooFewDocuments
+        @model.set(split_documents: true)
+        @$('[name="split_documents"][value="true"]').prop('checked', true)
+
+      @$('p.too-few-documents').toggle(@tooFewDocuments)
+      @$('[name="split_documents"][value="false"]').prop('disabled', @tooFewDocuments)
+
+      this
+
     initialRender: ->
-      html = @template({
+      html = @template
         t: t
         supportedLanguages: @model.supportedLanguages
         options: @model.attributes
-      })
       @$el.html(html)
+      @_refreshTooFewDocuments()
 
       $tagId = @$('.tag-id')
       if $tagId.length
@@ -125,7 +145,8 @@ define [
         childView.render()
 
     _onChangeSplitDocuments: (e) ->
-      @model.set('split_documents', Backbone.$(e.target).prop('checked'))
+      val = @$("[name=split_documents]:checked").val()
+      @model.set('split_documents', val == 'true')
 
     _onChangeLang: (e) ->
       @model.set('lang', Backbone.$(e.target).val())

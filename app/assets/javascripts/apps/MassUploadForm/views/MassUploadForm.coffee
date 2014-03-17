@@ -13,8 +13,6 @@ define [
       <div>
         <div class='uploads'></div>
 
-        <div class='progress-bar'></div>
-
         <div class='controls'>
           <a href="#" class="btn cancel"><%- t('cancel') %></a>
 
@@ -33,6 +31,12 @@ define [
             </button>
           </div>
         </div>
+
+        <div class='progress-bar'></div>
+
+        <p class="minimum-files" style="display:none;">
+          You must import at least three documents to create a document set. There's no point asking Overview to sort only one or two documents.
+        </p>
       </div>
 
       <div class="wait-for-import">
@@ -57,6 +61,7 @@ define [
       @finishEnabled = false
       @listenTo(@model, 'change', @_shouldSubmit)
       @listenTo(@model, 'change', @_refreshProgressVisibility)
+      @listenTo(@model, 'change', @_refreshMinimumFilesVisibility)
       @optionsSet = false
 
       # remove this when we add resumable uploads
@@ -67,6 +72,8 @@ define [
       @$ul = @$el.find('.files')
       @$ulEmptyUpload = @$ul.find('.empty-upload')
       @$progressBar = @$('.progress-bar')
+      @_$minimumFiles = @$('.minimum-files')
+      @_minimumFilesVisible = false
 
       @_refreshProgressVisibility()
       @_progressView = new UploadProgressView(model: @model, el: @$progressBar)
@@ -79,6 +86,14 @@ define [
       )
       @_uploadCollectionView.render()
 
+    _refreshMinimumFilesVisibility: ->
+      minimumFilesVisible = 1 <= @collection.length <= 2
+      if minimumFilesVisible != @_minimumFilesVisible
+        @_minimumFilesVisible = minimumFilesVisible
+        display = @_minimumFilesVisible && 'block' || 'none'
+        @_$minimumFiles.css(display: display)
+      this
+
     remove: ->
       @_progressView?.remove()
       @_uploadCollectionView?.remove()
@@ -90,10 +105,11 @@ define [
       fileInput.value = ''
 
     _onCollectionAddBatch: ->
-      if ! @finishEnabled && @collection.length > 2
-        @$('button.choose-options').prop('disabled', false)
+      if !@finishEnabled && @collection.length > 2
         @finishEnabled = true
+        @$('button.choose-options').prop('disabled', false)
 
+      @_refreshMinimumFilesVisibility()
       @_refreshProgressVisibility()
 
     _addButtonHover: ->

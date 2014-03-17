@@ -71,10 +71,11 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
       throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode?
 
       @model = new Options({}, @options)
-      view = new OptionsView
+      @view = new OptionsView
         model: @model
         tagListUrl: @options.tagListUrl
-      @el = view.el
+        tooFewDocuments: @options.tooFewDocuments
+      @el = @view.el
 
     @addHiddenInputsThroughDialog: (form, options) ->
       app = new App(options)

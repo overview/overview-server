@@ -80,6 +80,9 @@ define [
       it 'hides the progress bar when there are no uploads', ->
         expect(view.$('.progress-bar').css('display')).toEqual('none')
 
+      it 'hides the minimum-files text when there are no uploads', ->
+        expect(view.$('.minimum-files').css('display')).toEqual('none')
+
     describe 'model add event', ->
       beforeEach ->
         view.render()
@@ -92,11 +95,17 @@ define [
       it 'shows the progress bar', ->
         expect(view.$('.progress-bar').css('display')).toEqual('block')
 
+      it 'shows the minimum-files text', ->
+        expect(view.$('.minimum-files').css('display')).not.toEqual('none')
+
       describe 'with 3 or more uploads', ->
         beforeEach ->
           model.uploads.add(new MockUpload)
           model.uploads.add(new MockUpload)
           model.uploads.trigger('add-batch', model.uploads.tail(1))
+
+        it 'hides the minimum-files text', ->
+          expect(view.$('.minimum-files').css('display')).toEqual('none')
 
         describe 'submit button', ->
           it 'is enabled', ->

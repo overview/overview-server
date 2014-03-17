@@ -10,13 +10,16 @@ define [
     beforeEach ->
       i18n.reset_messages
         'views.DocumentSet.index.ImportOptions.title': 'title'
-        'views.DocumentSet.index.ImportOptions.split_documents.label': 'split_documents.label'
+        'views.DocumentSet.index.ImportOptions.split_documents.label_html': 'split_documents.label_html'
+        'views.DocumentSet.index.ImportOptions.split_documents.false': 'split_documents.false'
+        'views.DocumentSet.index.ImportOptions.split_documents.true': 'split_documents.true'
+        'views.DocumentSet.index.ImportOptions.split_documents.too_few_documents': 'split_documents.too_few_documents'
         'views.DocumentSet.index.ImportOptions.lang.label': 'lang.label'
         'views.DocumentSet.index.ImportOptions.name.label': 'name.label'
         'views.DocumentSet.index.ImportOptions.tree_title.label': 'tree_title.label'
-        'views.DocumentSet.index.ImportOptions.supplied_stop_words.label': 'supplied_stop_words.label'
+        'views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html': 'supplied_stop_words.label_html'
         'views.DocumentSet.index.ImportOptions.supplied_stop_words.help': 'supplied_stop_words.help'
-        'views.DocumentSet.index.ImportOptions.important_words.label': 'important_words.label'
+        'views.DocumentSet.index.ImportOptions.important_words.label_html': 'important_words.label_html'
         'views.DocumentSet.index.ImportOptions.important_words.help': 'important_words.help'
         'views.DocumentSet.index.ImportOptions.click_for_help': 'click_for_help'
         'views.DocumentSet.index.ImportOptions.tag_id.label': 'tag_id.label'
@@ -56,12 +59,18 @@ define [
           model: model
           tagListUrl: '/tags'
 
-      it 'should start with the checkbox matching split_documents', ->
-        expect(view.$('[name=split_documents]').prop('checked')).toEqual(model.get('split_documents'))
+      it 'should start with the radio matching split_documents', ->
+        expect(view.$('[name=split_documents]:checked').val()).toEqual(model.get('split_documents') && 'true' || 'false')
+
+      describe 'when there are too few documents', ->
+        beforeEach -> view.setTooFewDocuments(true)
+        it 'should disable split_documents=false', -> expect(view.$('[name="split_documents"][value="false"]')).toBeDisabled()
+        it 'should check split_documents=true', -> expect(view.$('[name=split_documents][value="true"]')).toBeChecked()
+        it 'should set split_documents=true on the model', -> expect(model.get('split_documents')).toEqual(true)
 
       it 'should set split_documents to true on the model', ->
         $input = view.$('[name=split_documents]')
-        $input.prop('checked', true)
+        $input.val('true')
         $input.change()
         expect(model.get('split_documents')).toBe(true)
 

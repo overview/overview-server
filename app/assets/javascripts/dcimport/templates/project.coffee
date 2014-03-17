@@ -16,6 +16,6 @@ define [ 'underscore' ], (_) ->
       </form>
       <h3><%- project.title %></h3>
       <h4>
-        <span class="document-count"><%- i18n('views.DocumentSet._documentSet.nDocuments', project.document_count || (project.document_ids && project.document_ids.length)) %></span>
+        <span class="document-count" data-file-count="<%- project.document_count %>"><%- i18n('views.DocumentSet._dcimport.nFiles', project.document_count || (project.document_ids && project.document_ids.length)) %></span>
       </h4>
     </li>""")

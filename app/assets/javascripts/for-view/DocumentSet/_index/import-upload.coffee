@@ -1,6 +1,6 @@
 define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', 'apps/ImportOptions/app', 'util/shims/file' ], ($, _, CsvReader, Upload, i18n, ImportOptionsApp) ->
   FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
-  FILE_PREVIEW_SIZE = 20480 # 20kb
+  FILE_PREVIEW_SIZE = 204800 # 200kb
   TOLERATED_ENCODING_ERRORS = 0.01 # 1%: ratio of bad-chars : total-chars
 
   if !window.requestAnimationFrame
@@ -161,7 +161,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       #return false if !has_header()
       records = csv_reader.result.records
       min_length = minimum_row_length()
-      records.filter((r) -> r.length >= min_length).length > 0
+      records.filter((r) -> r.length >= min_length).length > 2
 
     refresh_preview = () ->
       if csv_reader?
