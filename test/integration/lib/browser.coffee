@@ -106,8 +106,8 @@ wd.addAsyncMethod 'waitForElementBy', (args) ->
 module.exports =
   baseUrl: 'http://localhost:9000'
   adminLogin:
-    email: 'admin@overview-project.org'
-    password: 'admin@overview-project.org'
+    email: 'admin@overviewproject.org'
+    password: 'admin@overviewproject.org'
 
   # Returns a promise of a browser.
   create: ->

@@ -21,8 +21,8 @@ class OverviewUserSpec  extends Specification {
 
   trait ExistingUserContext extends DbTestContext {
     val id = 1l
-    val email = "admin@overview-project.org"
-    val password = "admin@overview-project.org"
+    val email = "admin@overviewproject.org"
+    val password = "admin@overviewproject.org"
   }
 
   trait LoadedUserContext extends ExistingUserContext {

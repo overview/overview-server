@@ -32,7 +32,7 @@ object ClearTestDatabase {
     SQL("TRUNCATE TABLE upload CASCADE")
     SQL("TRUNCATE TABLE document_set CASCADE")
     SQL("TRUNCATE TABLE \"user\" CASCADE")
-    SQL("INSERT INTO \"user\" (id, email, role, password_hash, confirmed_at, email_subscriber) VALUES (1, 'admin@overview-project.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE)")
+    SQL("INSERT INTO \"user\" (id, email, role, password_hash, confirmed_at, email_subscriber) VALUES (1, 'admin@overviewproject.org', 2, '$2a$07$ZNI3MdA1MK7Td2w1EKpl5u38nll/MvlaRfZn0S8HLerNuP2hoD5JW', TIMESTAMP '1970-01-01 00:00:00', FALSE)")
     connection.close()
   }
 }
