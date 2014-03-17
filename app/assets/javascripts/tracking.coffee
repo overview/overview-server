@@ -48,12 +48,15 @@ run = ->
   #
   # Should these be here, or in another file?
   #
-  # We avoid jQuery, to remove a dependency.
-  tag_list = document.getElementById('tag-list')
-  # Submit events bubble in everything but IE8-
-  # http://www.quirksmode.org/dom/events/submit.html
-  tag_list?.addEventListener('submit', ->
-    trackEvent('Document set', 'Created tag')
+  # We avoid jQuery, to remove a dependency. Luckily, form submit events bubble
+  # in modern browsers (not IE8). http://www.quirksmode.org/dom/events/submit.html
+  document.addEventListener('submit', (e) ->
+    el = e.target
+    while el? && el.getAttribute? && (el.getAttribute('id') != 'tree-app-tags' && el.getAttribute('class') != 'vertical-tag-list')
+      el = el.parentNode
+
+    if el? && el.getAttribute?
+      trackEvent('Document set', 'Created tag')
   , false)
 
   undefined
