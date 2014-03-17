@@ -83,13 +83,13 @@ class SearchIndexSearcherSpec extends Specification with NoTimeConversions with 
       completeSearchRequest(searchResultPromise1, nextScrollId, ids)
       completeSearchRequest(searchResultPromise2, nextScrollId, Array.empty)
 
-      there was
-        one(searchIndex).getNextSearchResultPage(startScrollId) andThen
-        one(searchIndex).getNextSearchResultPage(nextScrollId)
-
       searchSaverProbe.expectMsg(SaveIds(searchId, ids))
 
       parentProbe.expectMsg(SearchComplete)
+      
+      there was
+        one(searchIndex).getNextSearchResultPage(startScrollId) andThen
+        one(searchIndex).getNextSearchResultPage(nextScrollId)
     }
 
     "notify parent if search fails and then stop" in new ActorSystemContext with MockComponents {

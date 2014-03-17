@@ -11,6 +11,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.TestConfiguration._
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
@@ -283,7 +284,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       daughters(0) ! "finish job sent after cancellation"
       daughters(1) ! "finish job sent after cancellation"      
       jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
-      jobMonitorProbe.expectMsg(JobDone(runningFileGroupId))
+      jobMonitorProbe.expectMsg(TravisTimeout, JobDone(runningFileGroupId))
 
     }
 
@@ -336,7 +337,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
 
       daughters(1) ! "Finish job"
       jobMonitorProbe.expectMsg(JobDone(cancelledFileGroupId))
-      Thread.sleep(10) // Mockito does not work well in a multi-threaded environment. We need to find a better way.
+      Thread.sleep(50) // Mockito does not work well in a multi-threaded environment. We need to find a better way.
       there was one(storage).deleteFileGroupData(cancelledFileGroupId)
     }
     
