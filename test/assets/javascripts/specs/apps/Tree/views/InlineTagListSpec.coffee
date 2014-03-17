@@ -3,12 +3,10 @@ define [
   'backbone'
   'i18n'
 ], (InlineTagListView, Backbone, i18n) ->
-  class MockSelection
-    constructor: (attributes = {}) ->
-      @nodes = attributes.nodes ? []
-      @tags = attributes.tags ? []
-      @documents = attributes.documents ? []
-      @searchResults = attributes.searchResults ? []
+  class MockTag extends Backbone.Model
+
+  class MockTagCollection extends Backbone.Collection
+    model: MockTag
 
   describe 'views/InlineTagList', ->
     beforeEach ->
@@ -27,7 +25,7 @@ define [
 
       beforeEach ->
         state = new Backbone.Model
-        collection = new Backbone.Collection
+        collection = new MockTagCollection
         placeholderTagIdToModel = -> { cid: 'c0' } # we'll stub it out later if needed
         view = new InlineTagListView
           collection: collection
@@ -48,8 +46,8 @@ define [
         tag2 = undefined
 
         beforeEach ->
-          tag1 = { position: 0, id: 1, name: 'AA', color: '#123456', doclist: { n: 10, docids: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] } }
-          tag2 = { position: 1, id: 2, name: 'BB', doclist: { n: 8, docids: [ 2, 4, 6, 8, 10, 12, 14, 16 ] } }
+          tag1 = new MockTag(position: 0, id: 1, name: 'AA', color: '#123456')
+          tag2 = new MockTag(position: 1, id: 2, name: 'BB')
           collection.reset([ tag1, tag2 ])
 
         it 'should show tags', ->
@@ -59,6 +57,24 @@ define [
         it 'should remove tags', ->
           collection.remove(tag1)
           expect(view.$('li:eq(0) .tag-name').text()).toEqual('BB')
+
+        it 'should add tags in the expected position', ->
+          collection.add(new MockTag(position: 1, id: 3, name: 'CC', color: '#cccccc'), at: 1)
+          expect(view.$('li:eq(1) .tag-name').text()).toEqual('CC')
+
+        it 'should not re-render the whole thing when a tag is added', ->
+          # If the whole thing did re-render, then the form.submit event would
+          # bubble up to the document but the form would no longer be a child
+          # of div#tag-list. That means the tracking code wouldn't be able to
+          # tell it's a "created tag" event.
+          #
+          # See https://www.pivotaltracker.com/story/show/67400952
+          el = view.$('form')[0]
+          collection.add(new MockTag(position: 1, id: 3, name: 'CC', color: '#cccccc'), at: 1)
+          while el? && el != view.el
+            el = el.parentNode
+
+          expect(el).toEqual(view.el)
 
         it 'should notify :create-submitted', ->
           spy = jasmine.createSpy()
@@ -129,10 +145,14 @@ define [
           expect(spy).toHaveBeenCalled()
 
         it 'should set "selected" on selected tags', ->
-          view.tagIdToModel = -> collection.at(0)
+          view.tagIdToModel = -> tag1
           state.set('documentListParams', { type: 'tag', tagId: 1 })
           expect(view.$('li:eq(0)').hasClass('selected')).toBe(true)
           expect(view.$('li:eq(1)').hasClass('selected')).toBe(false)
+
+        it 'should set "selected" on untagged', ->
+          state.set('documentListParams', { type: 'untagged' })
+          expect(view.$('li.untagged').hasClass('selected')).toBe(true)
 
         it 'should use the tag color when given', ->
           expect(view.$('li:eq(0)').css('background-color')).toEqual('rgb(18, 52, 86)')
@@ -150,5 +170,3 @@ define [
           view.on('untagged-clicked', spy)
           view.$('.untagged').click()
           expect(spy).toHaveBeenCalled()
-
-

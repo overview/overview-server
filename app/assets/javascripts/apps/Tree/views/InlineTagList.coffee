@@ -23,33 +23,36 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       'click a.untagged': '_onClickUntagged'
       'submit form': '_onSubmit'
 
-    template: _.template("""
-      <div class="label">Tags</div>
-      <ul class="btn-toolbar">
-        <% collection.each(function(tag) { %>
-          <li
-              class="btn-group <%- (selectedTag && tag.cid == selectedTag.cid) ? 'selected' : '' %>"
-              data-cid="<%- tag.cid %>"
-              style="background-color:<%- tag.get('color') %>">
-            <a class="btn tag-name"><%- tag.get('name') %></a>
-            <a class="btn tag-add" title="<%- t('add') %>"><i class="overview-icon-plus"></i></a>
-            <a class="btn tag-remove" title="<%- t('remove') %>"><i class="overview-icon-minus"></i></a>
+    templates:
+      model: _.template("""
+        <li
+            class="btn-group"
+            data-cid="<%- model.cid %>"
+            style="background-color:<%- model.get('color') %>">
+          <a class="btn tag-name"><%- model.get('name') %></a>
+          <a class="btn tag-add" title="<%- t('add') %>"><i class="overview-icon-plus"></i></a>
+          <a class="btn tag-remove" title="<%- t('remove') %>"><i class="overview-icon-minus"></i></a>
+        </li>
+      """)
+
+      collection: _.template("""
+        <div class="label">Tags</div>
+        <ul class="btn-toolbar">
+          <%= collection.map(renderModel).join('') %>
+          <li class="btn-group">
+            <form method="post" action="#" class="input-append">
+              <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
+              <input type="submit" value="<%- t('create') %>" class="btn" />
+            </form>
           </li>
-        <% }); %>
-        <li class="btn-group">
-          <form method="post" action="#" class="input-append">
-            <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
-            <input type="submit" value="<%- t('create') %>" class="btn" />
-          </form>
-        </li>
-        <li class="btn-group">
-          <a class="btn untagged" href="#"><%- t('show_untagged') %></a>
-        </li>
-        <li class="btn-group">
-          <a class="btn organize" href="#"><%- t('organize') %></a>
-        </li>
-      </ul>
-    """)
+          <li class="btn-group untagged">
+            <a class="btn untagged" href="#"><%- t('show_untagged') %></a>
+          </li>
+          <li class="btn-group">
+            <a class="btn organize" href="#"><%- t('organize') %></a>
+          </li>
+        </ul>
+      """)
 
     initialize: ->
       throw 'Must set collection, a Backbone.Collection of tag models' if !@collection
@@ -59,8 +62,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
       @tagIdToModel = @options.tagIdToModel
       @state = @options.state
 
-      @listenTo(@state, 'change:documentListParams', => @render())
-      @listenTo(@collection, 'change add remove reset', => @render())
+      @listenTo(@state, 'change:documentListParams', @_onChangeDocumentListParams)
+      for k, v of { change: @_onChange, add: @_onAdd, remove: @_onRemove, reset: @_onReset }
+        @listenTo(@collection, k, v)
       @render()
 
     remove: ->
@@ -68,22 +72,88 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         @state.unobserve(key, callback)
       Backbone.View.prototype.remove.apply(this)
 
-    render: ->
-      selectedTagId = if (params = @state.get('documentListParams'))? && params.type == 'tag'
-        params.tagId
-      selectedTag = undefined
-      if selectedTagId? && selectedTagId != 0
-        try
-          selectedTag = @tagIdToModel(selectedTagId)
-        catch e
-          console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
+    _onChangeDocumentListParams: ->
+      @_renderSelected()
 
-      html = @template
+    _documentListParamsToTagCid: (params) ->
+      return null if !params? || params.type != 'tag'
+
+      tag = null
+      try
+        tag = @tagIdToModel(params.tagId)
+      catch e
+        console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
+
+      return null if !tag?
+
+      tag.cid
+
+    # Adds a 'selected' class to the selection (either a tag or "untagged").
+    _renderSelected: ->
+      @_renderTagSelected()
+      @_renderUntaggedSelected()
+
+    # Adds a 'selected' class to the selected tag's <li>
+    _renderTagSelected: ->
+      oldCid = @$('li.selected').attr('data-cid') ? null
+      newCid = @_documentListParamsToTagCid(@state.get('documentListParams'))
+
+      return if oldCid == newCid
+
+      if oldCid?
+        @$('li.selected').removeClass('selected')
+
+      if newCid?
+        @$("li[data-cid='#{newCid}']").addClass('selected')
+
+      undefined
+
+    # Adds a 'selected' class to li.untagged
+    _renderUntaggedSelected: ->
+      oldUntagged = @$('li.untagged').hasClass('selected')
+      newUntagged = @state.get('documentListParams')?.type == 'untagged'
+
+      return if oldUntagged == newUntagged
+
+      @$('li.untagged').toggleClass('selected', newUntagged)
+
+    _onReset: ->
+      @render()
+
+    _onAdd: (model, collection, options) ->
+      html = @templates.model
+        model: model
         t: t
+
+      $li = $(html)
+
+      at = options.at ? @$('li[data-cid]').length
+
+      @$("li:eq(#{at})").before($li)
+      this
+
+    _onRemove: (model) ->
+      $li = @$("li[data-cid='#{model.cid}']")
+      $li.remove()
+
+    _onChange: (model) ->
+      $li = @$("li[data-cid='#{model.cid}']")
+      $li.css('background-color': model.get('color'))
+      $li.find('.tag-name').text(model.get('name'))
+      this
+
+    render: ->
+      renderModel = (model) => @templates.model(model: model, t: t)
+
+      html = @templates.collection
         collection: @collection
-        selectedTag: selectedTag
+        renderModel: renderModel
+        t: t
 
       @$el.html(html)
+      @_renderSelected()
+
+      this
 
     _eventToModel: (e) ->
       cid = $(e.currentTarget).closest('[data-cid]').attr('data-cid')
