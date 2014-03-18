@@ -66,6 +66,12 @@ describe 'Registration', ->
       .tryLogIn(browser.adminLogin.email, browser.adminLogin.password)
       # We don't actually want to do anything. We just keep this around for later.
 
+  after ->
+    Q.all([
+      @userBrowser.deleteAllCookies().quit()
+      @adminBrowser.deleteAllCookies().quit()
+    ])
+
   before ->
     @validPassword = 'icrucGofbap4'
 
