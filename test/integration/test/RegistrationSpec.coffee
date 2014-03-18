@@ -160,6 +160,18 @@ describe 'Registration', ->
     it 'should set a confirmation token on the user', ->
       @getConfirmationToken().should.eventually.match(/\w+/)
 
+    it 'should not let the user log in before confirming', ->
+      @userBrowser
+        .get('/login')
+        .tryLogIn(@userEmail, @validPassword)
+        .elementByCss('.control-group.error .help-block').text().should.eventually.contain('click the link in the confirmation email')
+
+    it 'should recognize the user if the password is incorrect', ->
+      @userBrowser
+        .get('/login')
+        .tryLogIn(@userEmail, @validPassword + '1')
+        .elementByCss('.control-group.error .help-block').text().should.eventually.contain('Wrong email address or password')
+
     describe 'after typing the token into the registration form', ->
       beforeEach ->
         @getConfirmationToken().then (token) =>
