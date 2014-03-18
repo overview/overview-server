@@ -9,6 +9,8 @@ Url =
 # We need to let users identify themselves
 # Even after they forget their passwords
 describe 'ResetPassword', ->
+  newPassword = 'pedEdcitVac8'
+
   testMethods.usingPromiseChainMethods
     shouldBeLoggedInAs: (email) ->
       @elementByCss('.logged-in strong').text().should.eventually.equal(email)
@@ -55,8 +57,6 @@ describe 'ResetPassword', ->
   # We'll start this test suite logged out
   before -> @userBrowser.logOut()
 
-  before -> @newPassword = 'pedEdcitVac8'
-
   getUserDataElement = (context) ->
     context.adminBrowser
       .refresh()
@@ -99,7 +99,7 @@ describe 'ResetPassword', ->
 
       it 'should not click through if the passwords do not match', ->
         @userBrowser
-          .fillPasswordsAndClickSubmit(@newPassword, @userEmail)
+          .fillPasswordsAndClickSubmit(newPassword, @userEmail)
           .shouldShowResetPasswordForm()
 
       it 'should not click through if the password is too short', ->
@@ -109,10 +109,10 @@ describe 'ResetPassword', ->
 
       it 'should flash success, log you in and reset the password', ->
         @userBrowser
-          .fillPasswordsAndClickSubmit(@newPassword, @newPassword)
+          .fillPasswordsAndClickSubmit(newPassword, newPassword)
           .elementByCss('.alert-success').text().should.eventually.contain('You have updated your password')
           .shouldBeLoggedInAs(@userEmail)
           .logOut()
           .tryLogIn(@userEmail, @userEmail).shouldBeLoggedOut() # old password doesn't work
-          .tryLogIn(@userEmail, @newPassword).shouldBeLoggedInAs(@userEmail) # new one does
+          .tryLogIn(@userEmail, newPassword).shouldBeLoggedInAs(@userEmail) # new one does
           .logOut()

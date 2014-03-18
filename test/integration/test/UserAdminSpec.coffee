@@ -71,6 +71,7 @@ describe 'UserAdmin', ->
           .listenForJqueryAjaxComplete()
           .elementByXPath("#{trXPath}//a[@class='promote']").click()
           .waitForJqueryAjaxComplete()
+          .sleep(10) # let ajax callbacks execute
           .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('yes')
           .get(Url.index) # refresh
           .waitForUserLoaded(userEmail)
@@ -78,6 +79,7 @@ describe 'UserAdmin', ->
           .listenForJqueryAjaxComplete()
           .elementByXPath("#{trXPath}//a[@class='demote']").click()
           .waitForJqueryAjaxComplete()
+          .sleep(10) # let ajax callbacks execute
           .elementByXPath("#{trXPath}//td[@class='is-admin']").text().should.eventually.contain('no')
           .get(Url.index) # refresh
           .waitForUserLoaded(userEmail)
