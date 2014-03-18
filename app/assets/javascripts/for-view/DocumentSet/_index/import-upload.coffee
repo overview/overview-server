@@ -138,7 +138,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       !csv_reader.error
 
     minimum_row_length = () ->
-      header = csv_reader.result.header
+      header = csv_reader.result.header.map($.trim)
       lower_header = header.map((s) -> s.toLowerCase())
 
       text_index = lower_header.indexOf('text')
