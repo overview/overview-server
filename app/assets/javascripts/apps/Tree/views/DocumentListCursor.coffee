@@ -1,7 +1,8 @@
 define [
   'backbone'
+  '../helpers/DocumentHelper'
   'i18n'
-], (Backbone, i18n) ->
+], (Backbone, DocumentHelper, i18n) ->
   t = i18n.namespaced('views.Tree.show.DocumentListCursor')
 
   # Shows the Document corresponding to the user's cursor.
@@ -45,7 +46,7 @@ define [
         <a href="#" class="next <%= cursorIndex + 1 < nDocuments ? '' : 'disabled' %>"><i class="overview-icon-chevron-right"></i><span><%- t('next') %></span></a>
         <div class="position"><%= t('position_html', cursorIndex + 1, nDocuments) %></div>
         <div class="selection"><%= selectionHtml %></div>
-        <h2><%- (document && document.get('title')) ? t('title', document.get('title')) : t('title.empty') %></h2>
+        <h2><%- title %></h2>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
             <li class="tag" data-cid="<%- tag.cid %>">
@@ -103,14 +104,14 @@ define [
       html = if !nDocuments || !cursorIndex? || cursorIndex >= nDocuments
         ''
       else
-        @templates.header({
+        @templates.header
           nDocuments: nDocuments
           cursorIndex: cursorIndex
           t: t
           tags: tags
           document: maybeDocument
+          title: DocumentHelper.title(maybeDocument?.attributes)
           selectionHtml: selectionHtml
-        })
 
       @$headerEl.html(html)
 

@@ -45,10 +45,10 @@ define [
         'views.Tree.show.DocumentListCursor.selection.searchResult_html': 'selection.searchResult_html,{0}'
         'views.Tree.show.DocumentListCursor.selection.tag_html': 'selection.tag_html,{0}'
         'views.Tree.show.DocumentListCursor.selection.untagged_html': 'selection.untagged_html,{0}'
-        'views.Tree.show.DocumentListCursor.title': 'title,{0}'
-        'views.Tree.show.DocumentListCursor.title.empty': 'title.empty'
         'views.Tree.show.DocumentListCursor.description': 'description,{0}'
         'views.Tree.show.DocumentListCursor.description.empty': 'description.empty'
+        'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
+        'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
 
     describe 'starting with a full list at no index', ->
       beforeEach ->

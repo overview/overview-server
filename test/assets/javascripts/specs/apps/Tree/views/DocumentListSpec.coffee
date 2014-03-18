@@ -9,24 +9,23 @@ define [
   HEIGHT = 100
   LI_HEIGHT = 10
 
-  Tag = Backbone.Model
+  class Tag extends Backbone.Model
 
-  Document = Backbone.Model
+  class Document extends Backbone.Model
 
-  TagCollection = Backbone.Collection.extend
+  class TagCollection extends Backbone.Collection
     model: Tag
 
-  DocumentCollection = Backbone.Collection.extend
+  class DocumentCollection extends Backbone.Collection
     model: Document
 
-  makeDummyDocument = () -> new Document({})
+  makeDummyDocument = -> new Document
   makeDocument = (id) ->
-    new Document({
+    new Document
       id: id
       title: "Title #{id}"
       description: "Description #{id}"
       tagids: [ id ]
-    })
 
   makeTag = (id) ->
     new Tag({
@@ -55,11 +54,11 @@ define [
           if _.indexOf(ids, id) != -1
             d.push(makeDocument(id))
           else
-            d.push(makeDummyDocument(id))
+            d.push(makeDummyDocument())
           t.push(makeTag(id))
 
       if addDummy
-        d.push(makeDummyDocument(lastId + 1))
+        d.push(makeDummyDocument())
 
       [ d, t ]
 
@@ -87,9 +86,7 @@ define [
     beforeEach ->
       $div = $("<div id=\"views-DocumentListSpec\" style=\"overflow:hidden;height:#{HEIGHT}px\"></div>")
       $div.appendTo('body')
-      i18n.reset_messages({
-        'views.Tree.show.DocumentList.title': 'title,{0}'
-        'views.Tree.show.DocumentList.title.empty': 'title.empty'
+      i18n.reset_messages
         'views.Tree.show.DocumentList.description': 'description,{0}'
         'views.Tree.show.DocumentList.description.empty': 'description.empty'
         'views.Tree.show.DocumentList.placeholder': 'placeholder'
@@ -97,7 +94,8 @@ define [
         'views.Tree.show.DocumentList.terms.label': 'terms.label'
         'views.Tree.show.DocumentList.tag.remove': 'tag.remove'
         'views.Tree.show.DocumentList.tag.remove.title': 'tag.remove'
-      })
+        'views.Tree.show.helpers.DocumentHelper.title': 'title,{0}'
+        'views.Tree.show.helpers.DocumentHelper.title.empty': 'title.empty'
 
     afterEach ->
       $('#views-DocumentListSpec').remove()

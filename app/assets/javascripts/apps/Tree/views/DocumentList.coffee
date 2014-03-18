@@ -1,4 +1,9 @@
-define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
+define [
+  'underscore'
+  'backbone'
+  '../helpers/DocumentHelper'
+  'i18n'
+], (_, Backbone, DocumentHelper, i18n) ->
   t = i18n.namespaced('views.Tree.show.DocumentList')
 
   templates =
@@ -6,7 +11,7 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     # over DOM children without bothering with text nodes
     model: _.template("""<li <%= liAttributes %>
       class="document" data-cid="<%- model.cid %>" data-docid="<%- model.id %>">
-        <h3><%- attrs.title ? t('title', attrs.title) : t('title.empty') %></h3>
+        <h3><%- title %></h3>
         <p class="description"><%- attrs.description ? t('description', attrs.description) : t('description.empty') %></p>
         <ul class="tags">
           <% _.each(tags, function(tag) { %>
@@ -113,13 +118,13 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       tags = (@tagIdToModel(tagid) for tagid in model.get('tagids') || [])
       tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
 
-      template({
+      template
+        title: DocumentHelper.title(model.attributes)
         model: model
         attrs: model.attributes
         tags: tags
         t: t
         liAttributes: @options.liAttributes || ''
-      })
 
     render: ->
       html = if @collection.length

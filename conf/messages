@@ -311,8 +311,6 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
-views.Tree.show.DocumentList.title={0}
-views.Tree.show.DocumentList.title.empty=(no title)
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}
 views.Tree.show.DocumentList.loading=…
@@ -329,8 +327,6 @@ views.Tree.show.DocumentListCursor.selection.untagged_html=without any tags
 views.Tree.show.DocumentListCursor.selection.node_html=in folder <strong>{0}</strong>
 views.Tree.show.DocumentListCursor.selection.tag_html=with tag <strong>{0}</strong>
 views.Tree.show.DocumentListCursor.selection.searchResult_html=for search <strong>{0}</strong>
-views.Tree.show.DocumentListCursor.title={0}
-views.Tree.show.DocumentListCursor.title.empty=(no title)
 views.Tree.show.DocumentListCursor.description.empty=(no key words)
 views.Tree.show.DocumentListCursor.description=Key words: {0}
 
@@ -352,6 +348,10 @@ views.Tree.show.InlineSearchResultList.search=Search
 views.Tree.show.InlineSearchResultList.create_tag=Create tag from search results
 
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
+
+views.Tree.show.helpers.DocumentHelper.title={0}
+views.Tree.show.helpers.DocumentHelper.title.empty=(no title)
+views.Tree.show.helpers.DocumentHelper.title.page={0} – page {1,number,integer}
 
 views.Tree.show.tag_list.header=Tags
 views.Tree.show.tag_list.n_documents={0,number,integer}
