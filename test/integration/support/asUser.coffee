@@ -3,6 +3,7 @@ Faker = require('Faker')
 
 Url =
   adminUserIndex: '/admin/users'
+  deleteUser: (email) -> "/admin/users/#{encodeURIComponent(email)}?X-HTTP-Method-Override=DELETE"
   login: '/login'
 
 module.exports =
@@ -57,14 +58,12 @@ module.exports =
           userBrowser.elementByCss('.session-form [type=submit]').click()
 
     after ->
-      Q.all [
+      Q.all([
         @adminBrowser
-          .listenForJqueryAjaxComplete()
-          .elementByXPath("//tr[contains(td[@class='email'], '#{@userEmail}')]//a[@class='delete']").click()
-          .waitForJqueryAjaxComplete()
+          .get(Url.deleteUser(@userEmail))
           .deleteAllCookies()
           .quit()
         @userBrowser
           .deleteAllCookies()
           .quit()
-      ]
+      ])
