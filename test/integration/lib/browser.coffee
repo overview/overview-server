@@ -76,9 +76,13 @@ argsToXPath = (args) ->
   if args.contains
     attrs.push("contains(., '#{args.contains.replace(/'/g, "\\'")}')")
 
+  for className in [ args.className, args['class'] ]
+    if className
+      attrs.push("contains(concat(' ', @class, ' '), ' #{className} ')")
+
   xpath = "//#{tag}"
-  if attrs.length
-    xpath += "[#{attrs.join(',')}]"
+  for attr in attrs
+    xpath += "[#{attr}]"
   xpath
 
 # Finds an element by lots of wonderful stuff.
