@@ -11,8 +11,8 @@ install:
   - sudo apt-get install -qq postgresql openjdk-7-jdk
 script:
   - ./auto/test-coffee-once.sh
-  - ./run --only-servers database --sbt '; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
-  - ./run --sbt 'eval if (("auto/test-integration.sh"!) != 0) { throw new Exception("integration tests failed") }'
+  - ./run --only-servers database --sbt '; message-broker/update; search-index/update; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
+  - ./run --sbt '; eval Thread.sleep(30000); eval if (("auto/test-integration.sh"!) != 0) { throw new Exception("integration tests failed") }'
 notifications:
   irc:
     - "irc.freenode.net#overviewproject"
