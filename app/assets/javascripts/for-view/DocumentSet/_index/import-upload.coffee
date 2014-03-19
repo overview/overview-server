@@ -284,7 +284,13 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
             .append(importOptionsApp.el)
             .append($form.find('[name=csrfToken]').clone())
             .appendTo('body')
-          $submitForm[0].submit()
+          window.setTimeout(->
+            # Firefox in Selenium sometimes triggers our beforeunload handler
+            # here, even though we removed it. Hopefully the window.setTimeout()
+            # will pull us out of the event loop and let Firefox actually
+            # detach the listener we just told it to detach.
+            $submitForm[0].submit()
+          , 10)
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
 
