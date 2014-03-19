@@ -18,20 +18,6 @@ waitForConnect = (port, done) ->
   socket.connect(port)
   undefined
 
-waitForStringInUrl = (string, url, done) ->
-  retry = -> waitForStringInUrl(string, url, done)
-
-  request url, (error, response, body) ->
-    #console.log("Inspecting #{url} for #{string}")
-    if error?
-      throw error
-
-    if body?.indexOf(string) != -1
-      #console.log("Found #{string}")
-      done()
-    else
-      setTimeout(retry, 100)
-
 # Runs child process for selenium-server-standalone
 #
 # Calls the callback with the child process once Selenium starts listening
@@ -41,8 +27,7 @@ startSelenium = (cb) ->
     java,
     [
       '-Dselenium.LOGGER.level=WARNING',
-      '-jar', jar.path,
-      '-role', 'hub'
+      '-jar', jar.path
     ]
   )
 
@@ -53,34 +38,7 @@ startSelenium = (cb) ->
 
   waitForConnect(4444, done)
 
-# Runs child processes for phantomjs with GhostDriver
-#
-# See https://github.com/detro/ghostdriver
-#
-# Calls the callback with the child process.
-startPhantomjs = (port, cb) ->
-  child = child_process.spawn(
-    phantomjs.path,
-    [
-      "--webdriver=#{port}"
-      '--webdriver-loglevel=WARN'
-      '--webdriver-selenium-grid-hub=http://localhost:4444'
-    ]
-  )
-
-  child.stdout.pipe(process.stdout)
-  child.stderr.pipe(process.stderr)
-
-  done = -> process.nextTick -> cb(child)
-
-  waitForStringInUrl("http://127.0.0.1:#{port}", "http://localhost:4444/grid/console", done)
-
 before (done) ->
   startSelenium (selenium) ->
     process.on('exit', -> selenium.kill())
-    # We need more than one PhantomJS. Each PhantomJS instance allows one require('browser').create() chain
-    startPhantomjs 9011, (phantomjs1) ->
-      process.on('exit', -> phantomjs1.kill())
-      startPhantomjs 9012, (phantomjs2) ->
-        process.on('exit', -> phantomjs2.kill())
-        process.nextTick(done)
+    process.nextTick(done)

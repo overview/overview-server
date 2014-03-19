@@ -6,7 +6,7 @@ Constants =
 
 options =
   desiredCapabilities:
-    browserName: 'phantomjs'
+    browserName: 'firefox'
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
@@ -122,6 +122,7 @@ module.exports =
         timeout: 15000
         retries: 1
         retryDelay: 10
+      .setWindowSize(1280, 800)
       .setImplicitWaitTimeout(0)   # we only wait explicitly! We don't want to code race conditions
       .setAsyncScriptTimeout(5000) # in case there are HTTP requests
       .setPageLoadTimeout(15000)   # in case, on a slow computer, something slow happens
