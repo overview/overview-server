@@ -29,8 +29,6 @@
     "wd": "~0.2.13",
     "q": "~1.0.0",
     "Faker": "~0.7.0",
-    "selenium-server-standalone-jar": "~2.40.0",
-    "phantomjs": "~1.9.7-1",
-    "request": "~2.34.0"
+    "selenium-server-standalone-jar": "~2.40.0"
   }
 }

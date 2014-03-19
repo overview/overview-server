@@ -1,9 +1,7 @@
 # This file ought to be in support/testSuite.coffee, but Mocha shuns it there
 child_process = require('child_process')
 jar = require('selenium-server-standalone-jar')
-phantomjs = require('phantomjs')
 net = require('net')
-request = require('request')
 
 java = 'java'
 
