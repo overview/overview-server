@@ -8,10 +8,8 @@ options =
   desiredCapabilities:
     browserName: 'phantomjs'
 
-wd.addAsyncMethod 'acceptingNextAlert', ->
-  cb = wd.findCallback(arguments)
-
-  js = ->
+wd.addPromiseChainMethod 'acceptingNextAlert', ->
+  @executeFunction ->
     window.acceptingNextAlert =
       alert: window.alert
       confirm: window.confirm
@@ -24,8 +22,6 @@ wd.addAsyncMethod 'acceptingNextAlert', ->
     window.alert = -> after(); undefined
     window.confirm = -> after(); true
 
-  @execute(js, cb)
-
 wd.addAsyncMethod 'dumpLog', ->
   cb = wd.findCallback(arguments)
 
@@ -35,10 +31,8 @@ wd.addAsyncMethod 'dumpLog', ->
     cb()
 
 # Call this, then do stuff, then call waitForJqueryAjaxComplete.
-wd.addAsyncMethod 'listenForJqueryAjaxComplete', ->
-  cb = wd.findCallback(arguments)
-
-  js = ->
+wd.addPromiseChainMethod 'listenForJqueryAjaxComplete', ->
+  @executeFunction ->
     if 'listenForJqueryAjaxComplete' not of window
       window.listenForJqueryAjaxComplete =
         current: 0 # number of times we've listened
@@ -51,8 +45,6 @@ wd.addAsyncMethod 'listenForJqueryAjaxComplete', ->
       x = window.listenForJqueryAjaxComplete
       x.current = x.total
 
-  @execute(js, cb)
-
 # Finishes when an $.ajaxComplete method is fired.
 #
 # Before calling this, you must call listenForJqueryAjaxComplete(). Starting at
@@ -63,11 +55,18 @@ wd.addAsyncMethod 'listenForJqueryAjaxComplete', ->
 # listenForJqueryAjaxComplete(), this method will finish once that pending ajax
 # method completes. To avoid races, call listenForJqueryAjaxComplete() when
 # there are no pending AJAX requests.
-wd.addAsyncMethod 'waitForJqueryAjaxComplete', ->
-  cb = wd.findCallback(arguments)
+wd.addPromiseChainMethod 'waitForJqueryAjaxComplete', ->
+  @
+    .waitForFunctionToReturnTrueInBrowser((-> window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total), Constants.ajaxTimeout, Constants.pollLength)
+    .executeFunction(-> window.listenForJqueryAjaxComplete.current += 1)
 
-  @waitForConditionInBrowser 'window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total', Constants.ajaxTimeout, Constants.pollLength, =>
-    @execute((-> window.listenForJqueryAjaxComplete.current += 1), cb)
+wrapJsFunction = (js) -> "(#{js})()"
+
+wd.addPromiseChainMethod 'executeFunction', (js) ->
+  @execute(wrapJsFunction(js))
+
+wd.addPromiseChainMethod 'waitForFunctionToReturnTrueInBrowser', (js, timeout, pollLength) ->
+  @waitForConditionInBrowser(wrapJsFunction(js), timeout, pollLength)
 
 argsToXPath = (args) ->
   tag = args.tag ? '*'

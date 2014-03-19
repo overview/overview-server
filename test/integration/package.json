@@ -26,7 +26,7 @@
     "mocha": "~1.18.0",
     "coffee-script": "~1.7.1",
     "chai-as-promised": "~4.1.1",
-    "wd": "~0.2.12",
+    "wd": "~0.2.13",
     "q": "~1.0.0",
     "Faker": "~0.7.0",
     "selenium-server-standalone-jar": "~2.40.0",
