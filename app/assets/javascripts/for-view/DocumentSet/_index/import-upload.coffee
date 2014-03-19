@@ -267,6 +267,9 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
         requestAnimationFrame(refresh_progress)
 
+        $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
+        $modal.modal('show')
+
         # There are *lots* of progress events with a fast connection. They become
         # a bottleneck. Hence the requestAnimationFrame...
         upload.progress (e) ->
@@ -284,8 +287,6 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
           $submitForm[0].submit()
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
-        $(window).on('beforeunload.document-set-index-upload', -> i18n('views.DocumentSet._uploadForm.leavePageWarning'))
-        $modal.modal('show')
 
       refresh_form_enabled()
 
