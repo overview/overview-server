@@ -1,6 +1,6 @@
 @(hasDocuments: Boolean)(implicit lang: Lang, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
-  @_importPane(h1 = m("h1"), hasDocuments = hasDocuments) {
+  @_importPane(h1 = m("h1")) {
     <form class="document-set-upload" method="post" action="@routes.MassUploadController.startClustering">
       @helper.Form.csrfToken
     </form>

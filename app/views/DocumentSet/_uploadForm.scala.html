@@ -1,6 +1,6 @@
 @(hasDocuments: Boolean)(implicit lang: Lang, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._uploadForm")) { m =>
-  @_importPane(h1 = m("h1"), hasDocuments = hasDocuments) {
+  @_importPane(h1 = m("h1")) {
     <form class="document-set-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
       <div>
         <p><label>@m("label.file") <input type="file" name="file" /></label></p>

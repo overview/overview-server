@@ -100,28 +100,31 @@
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <div id="jobs-and-document-sets">
+    <div class="nav-buttons">
+      @if(documentSets || jobs) {
+        <a class="btn btn-primary back" href="#jobs-and-document-sets"><i class="icon-arrow-left"></i> @m("back")</a>
+      }
+      <div class="dropdown">
+        <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+          @m("import_dropdown")
+          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
+          <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
+          <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
+          <li><a href="#import-shared">@m("import_from_shared")</a></li>
+          <li><a href="#import-public">@m("import_public")</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="jobs-and-document-sets" class="loading">
       <div class="page-header"><h1>@m("h1")</h1></div>
 
       @if(noDocuments) {
         <p class="preamble">@m("no_document_sets_or_jobs")</p>
       }
-
-      <div class="nav-buttons">
-        <div class="dropdown">
-          <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-            @m("import_dropdown")
-            <b class="caret"></b>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
-            <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
-            <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
-            <li><a href="#import-shared">@m("import_from_shared")</a></li>
-            <li><a href="#import-public">@m("import_public")</a></li>
-          </ul>
-        </div>
-      </div>
 
       @if(jobs) {
         <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">

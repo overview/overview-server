@@ -1,31 +1,7 @@
-@(
-  h1: String,
-  hasDocuments: Boolean
-)(content: Html)(implicit lang: Lang)
-@defining(scopedMessages("views.DocumentSet._importPane")) { m =>
-  <div class="nav-buttons">
-    @if(hasDocuments == true) {
-      <a class="btn btn-primary back" href="#jobs-and-document-sets"><i class="icon-arrow-left"></i> @m("back")</a>
-    }
+@(h1: String)(content: Html)
 
-    <div class="dropdown">
-      <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-        @m("import_dropdown")
-        <b class="caret"></b>
-      </a>
-      <ul class="dropdown-menu">
-        <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
-        <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
-        <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
-        <li><a href="#import-shared">@m("import_from_shared")</a></li>
-        <li><a href="#import-public">@m("import_public")</a></li>
-      </ul>
-    </div>
-  </div>
+<div class="page-header"><h1>@h1</h1></div>
 
-  <div class="page-header"><h1>@h1</h1></div>
-
-  <div class="import-pane-contents">
-    @content
-  </div>
-}
+<div class="import-pane-contents">
+  @content
+</div>

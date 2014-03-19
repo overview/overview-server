@@ -1,22 +1,25 @@
 define [ 'jquery' ], ($) ->
   $ ->
     $buttonsDiv = $('div.nav-buttons')
+    $container = $buttonsDiv.closest('.container')
 
     setHref = (href) ->
       $(window).scrollTop(0)
 
       if !href || href == '#' || href == '#jobs-and-document-sets'
-        if $('#jobs-and-document-sets .document-sets li').length == 0 && $('.document-set-creation-jobs li').length == 0
+        if $('#jobs-and-document-sets .document-sets li').length + $('.document-set-creation-jobs li').length == 0
           # no documents
-          window.location.hash = 'import-public'
-
-        window.setTimeout((-> $('#jobs-and-document-sets').css(opacity: 1).css(filter: '~"alpha(opacity=@{opacity})"')), .35) #skip the animation the first time
-
-        $buttonsDiv.closest('.container').removeAttr('data-import-pane')
+          window.location.hash = 'import-public' # and loop around again
+        else
+          $container.removeAttr('data-import-pane')
+          $('#jobs-and-document-sets').removeClass('loading')
       else
-        $buttonsDiv.closest('.container').attr('data-import-pane', href.substring('#import-'.length))
+        $container.attr('data-import-pane', href.substring('#import-'.length))
+        $('#jobs-and-document-sets').removeClass('loading')
         window.setTimeout((-> $(href).trigger('activate')), 0) # finish jQuery's document.ready() stuff first
-        $('#jobs-and-document-sets').css(opacity: 1).css(filter: '~"alpha(opacity=@{opacity})"')
+
+      # Trigger repaint for PhantomJS. See https://github.com/ariya/phantomjs/issues/12075
+      $container.addClass('blah').removeClass('blah')
 
     $buttonsDiv.on 'click', 'a', (e) ->
       href = $(this).attr('href')
@@ -28,4 +31,3 @@ define [ 'jquery' ], ($) ->
     $(window).on 'hashchange', ->
       setHref(window.location.hash)
     setHref(window.location.hash)
-
