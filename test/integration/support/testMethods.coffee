@@ -1,8 +1,5 @@
 wd = require('wd')
 
-# wd is a global variable. We'll prevent illegitimate access by keeping state
-# in an object.
-
 class Registerer
   constructor: (@wd) ->
     @methods = null
@@ -28,8 +25,6 @@ class Registerer
 
     undefined
 
-registerer = new Registerer(wd)
-
 module.exports =
   # Registers the given methods with the WD.js promise chain interface for
   # the duration of this describe block.
@@ -41,5 +36,6 @@ module.exports =
   #         executeMoo:
   #           @execute('window.x = "moo";')
   usingPromiseChainMethods: (methods) ->
+    registerer = new Registerer(wd)
     before -> registerer.register(methods)
     after -> registerer.unregister()

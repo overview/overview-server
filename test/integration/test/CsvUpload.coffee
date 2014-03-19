@@ -1,4 +1,5 @@
 asUser = require('../support/asUser')
+shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
 
@@ -22,7 +23,7 @@ describe 'CsvUpload', ->
 
     waitForRequirements: ->
       @
-        .waitForConditionInBrowser("$('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0")
+        .waitForFunctionToReturnTrueInBrowser(-> $('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0)
 
     doUpload: ->
       firstUrl = null
@@ -71,8 +72,13 @@ describe 'CsvUpload', ->
         .get(Url.index)
         .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
 
-    #describe 'in the default tree', ->
-    #  before ->
-    #    @userBrowser
-    #      .get(Url.index)
-    #      .waitForElementBy(tag: 'a', contains: 'basic.csv').click()
+    describe 'in the default tree', ->
+      before ->
+        @userBrowser
+          .get(Url.index)
+          .waitForElementBy(tag: 'a', contains: 'basic.csv', visible: true).click()
+
+      shouldBehaveLikeATree
+        documents: [
+          { type: 'text', title: 'Fourth', text: 'This is the fourth document.' }
+        ]

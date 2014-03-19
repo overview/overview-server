@@ -84,6 +84,12 @@ argsToXPath = (args) ->
     xpath += "[#{attr}]"
   xpath
 
+argsToAsserter = (args) ->
+  if args.visible
+    wd.asserters.isDisplayed
+  else
+    undefined
+
 # Finds an element by lots of wonderful stuff.
 #
 # For instance:
@@ -91,9 +97,10 @@ argsToXPath = (args) ->
 #   .elementBy(tag: 'a', contains: 'Reset') # tag name a, text _contains_ 'Reset'
 wd.addAsyncMethod 'elementBy', (args) ->
   xpath = argsToXPath(args)
+  asserter = argsToAsserter(args)
   cb = wd.findCallback(arguments)
 
-  @elementByXPath(xpath, cb)
+  @elementByXPath(xpath, asserter, cb)
 
 # Waits for an element by lots of wonderful stuff.
 #
@@ -102,9 +109,10 @@ wd.addAsyncMethod 'elementBy', (args) ->
 #   .waitForElementBy(tag: 'a', contains: 'Reset')
 wd.addAsyncMethod 'waitForElementBy', (args) ->
   xpath = argsToXPath(args)
+  asserter = argsToAsserter(args)
   cb = wd.findCallback(arguments)
 
-  @waitForElementByXPath(xpath, cb)
+  @waitForElementByXPath(xpath, asserter, cb)
 
 module.exports =
   baseUrl: 'http://localhost:9000'
