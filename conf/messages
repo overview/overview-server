@@ -196,8 +196,8 @@ views.DocumentSet._import.from_shared=Document sets shared with you
 views.DocumentSet._import.from_upload=CSV upload
 
 views.DocumentSet._importDocumentCloud.h1=Import a DocumentCloud project
+views.DocumentSet._importDocumentCloud.loading=Loading…
 
-views.DocumentSet._importPane.back=Document sets
 views.DocumentSet._importPane.import_public=Import an example document set
 views.DocumentSet._importPane.import_dropdown=Import documents
 views.DocumentSet._importPane.import_from_shared=Import documents shared with you
@@ -283,6 +283,7 @@ views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of doc
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
+views.DocumentSet.index.back=Document sets
 views.DocumentSet.index.import_public=Import an example document set
 views.DocumentSet.index.import_dropdown=Import documents
 views.DocumentSet.index.import_from_shared=Import documents shared with you
