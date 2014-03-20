@@ -58,18 +58,31 @@ object BuildDocTree {
       case "ConnectedComponents" => applyConnectedComponents(nonEmptyDocs, docVecs, progAbort)
       case _  => applyKMeansComponents(nonEmptyDocs, docVecs, progAbort)    
     }
-        
-    SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node
     
-    // If there are any empty documents, create a new root with all documents
-    // Add children of nonEmptyDocs, plus node containing emptyDocs
+    SuggestedTags.makeSuggestedTagsForTree(docVecs, nonEmptyDocs) // create a descriptive label for each node
+
+    // If there are any empty documents, create a node labelled "no meaningful words"
     var tree = nonEmptyDocs
     if (emptyDocs.docs.size>0) {
-      tree = new DocTreeNode(Set(docVecs.keys.toSeq:_*))  // all docs
-      tree.description = nonEmptyDocs.description
-      tree.children ++= nonEmptyDocs.children
       emptyDocs.description = "(no meaningful words)"
-      tree.children += emptyDocs
+
+      if (nonEmptyDocs.docs.isEmpty) {
+        // The tree is ONLY empty docs, so just one node
+        tree = emptyDocs
+      } else { 
+        // There are empty docs and non-empty docs. Make a new root, add both empty and non-empty to it.
+        tree = new DocTreeNode(Set(docVecs.keys.toSeq:_*))  // all docs
+        tree.description = nonEmptyDocs.description
+
+        // If nonEmptyDocs is the root of a tree, add its children to our new root with all docs
+        // Otherwise nonEmptyDocs is only a single node, so just add that node directly. Fixes #67871530 
+        if (nonEmptyDocs.children.size > 0)                 
+          tree.children = nonEmptyDocs.children
+        else
+          tree.children = Set(nonEmptyDocs)
+
+        tree.children += emptyDocs
+      }
     }
 
     DocumentIdCacheGenerator.createCache(tree)
