@@ -1,4 +1,9 @@
 language: scala
+addons:
+  sauce_connect:
+    username: overviewproject
+    access_key:
+      secure: "M6C/xQkOQt0M8T2CbDks1BEO1VkGh4jfVj4VePcq4n5+W8X9t7M7QCyuUflJU2pFF4cLOqPKedcH0S8U+YTLdw0q6l5heqkeF4OWTW0BfjMP53LgRITnl5xslaNoLrY80p0IEcrSAvc9r5LFug/IKniqI0xris/py3wJ2KHYYnQ="
 branches:
   only:
     - master
@@ -9,9 +14,6 @@ before_install:
   - ./auto/setup-integration-tests.sh
 install:
   - sudo apt-get install -qq postgresql openjdk-7-jdk
-before_script:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
 script:
   - ./auto/test-coffee-once.sh
   - ./run --only-servers database --sbt '; message-broker/update; search-index/update; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'

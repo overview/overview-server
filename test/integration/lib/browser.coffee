@@ -7,6 +7,15 @@ Constants =
 options =
   desiredCapabilities:
     browserName: 'firefox'
+    version: ''
+    platform: 'ANY'
+    handlesAlerts: true
+    takesScreenshot: true
+    cssSelectorsEnabled: true
+    javascriptEnabled: true
+    webStorageEnabled: true
+    build: process.env.TRAVIS_BUILD_NUMBER
+    'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
@@ -122,8 +131,8 @@ module.exports =
 
   # Returns a promise of a browser.
   create: ->
-    wd
-      .promiseChainRemote()
+    port = if 'SAUCE_USERNAME' of process.env then 4445 else 4444
+    wd.remote('localhost', port, 'promiseChain')
       .init(options.desiredCapabilities)
       .configureHttp
         baseUrl: module.exports.baseUrl

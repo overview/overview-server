@@ -37,6 +37,9 @@ startSelenium = (cb) ->
   waitForConnect(4444, done)
 
 before (done) ->
-  startSelenium (selenium) ->
-    process.on('exit', -> selenium.kill())
+  if 'SAUCE_USERNAME' of process.env
     process.nextTick(done)
+  else
+    startSelenium (selenium) ->
+      process.on('exit', -> selenium.kill())
+      process.nextTick(done)
