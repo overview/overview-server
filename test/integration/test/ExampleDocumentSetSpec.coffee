@@ -21,7 +21,7 @@ describe 'Example Document Sets', ->
       @
         .get(Url.index)
         .waitForFunctionToReturnTrueInBrowser(-> $?.fn?.dropdown? && $.isReady)
-        .elementBy(tag: 'a', contains: 'Import documents').click()
+        .waitForElementByCss('.dropdown .btn', wd.asserters.isDisplayed, 5000).click()
         .elementBy(tag: 'a', contains: 'Import from a CSV file').click()
         .waitForElementByCss('input[type=file]', wd.asserters.isDisplayed)
 
@@ -33,7 +33,7 @@ describe 'Example Document Sets', ->
     openCloneExamplePage: ->
       @
         .get(Url.index)
-        .elementBy(tag: 'a', contains: 'Import documents').click()
+        .waitForElementBy(tag: 'a', contains: 'Import documents').click()
         .elementBy(tag: 'a', contains: 'Import an example document set').click()
 
     cloneExample: ->
