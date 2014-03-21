@@ -1,5 +1,5 @@
 asUser = require('../support/asUser')
-browser = require('../lib/browser')
+shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
 
@@ -110,3 +110,20 @@ describe 'Example Document Sets', ->
         .cloneExample()
         .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
         
+    describe 'the cloned example', ->
+      before ->
+        @userBrowser
+          .waitForElementBy(tag: 'a', contains: 'basic.csv').click()
+          .waitForElementBy(tag: 'canvas')
+
+      shouldBehaveLikeATree
+        documents: [
+          { type: 'text', title: 'Fourth', text: 'This is the fourth document.' }
+        ]
+        
+      it 'should be searchable', ->
+        @userBrowser
+          .elementByCss('[name=query]').type('document')
+          .elementByCss('[value=Search]').click()
+          .waitForElementBy(tag: 'h4', contains: '4 documents').should.eventually.exist
+  
