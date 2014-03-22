@@ -97,10 +97,10 @@ describe 'Example Document Sets', ->
         .openCsvUploadPage()
         .chooseAndDoUpload('CsvUpload/basic.csv')
         .waitForJobsToComplete()
-        .setExampleDocument()        
+        .setExampleDocument()
+             
     after ->
       @adminBrowser
-        .deleteTopUpload()
         .deleteAllCookies()
         .quit()
 
@@ -126,4 +126,26 @@ describe 'Example Document Sets', ->
           .elementByCss('[name=query]').type('document')
           .elementByCss('[value=Search]').click()
           .waitForElementBy(tag: 'h4', contains: '4 documents').should.eventually.exist
-  
+
+    describe 'after being removed as an example', ->
+      before ->
+        @adminBrowser
+          .setExampleDocument()
+
+      it 'should not show up in example list', ->
+        @userBrowser
+          .openCloneExamplePage()
+          .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
+
+      describe 'after being deleted', ->
+        before ->
+          @adminBrowser
+            .deleteTopUpload()
+            
+        it 'should not have deleted cloned document set', ->
+          @userBrowser
+            .get(Url.index)
+            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist
+            
+            
+          
