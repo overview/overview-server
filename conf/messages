@@ -266,7 +266,7 @@ views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave
 
 views.DocumentSet._massUploadForm.h1=Upload PDF files
 views.DocumentSet._massUploadForm.help1=Overview can analyze and display your PDF files.
-views.DocumentSet._massUploadForm.help2=You must import at least three documents to create a document set. There’s no point asking Overview to sort only one or two documents.
+views.DocumentSet._massUploadForm.help2=You must import at least three documents.
 views.DocumentSet._massUploadForm.upload_prompt=Add files
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
