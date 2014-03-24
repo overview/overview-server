@@ -96,7 +96,12 @@ object UserController extends UserController {
       import org.overviewproject.postgres.SquerylEntrypoint._
       UserStore.delete(user.id)
     }
-    override def countDocumentSetsForEmail(email: String) = DocumentSetUserFinder.byUserAndRole(email, Ownership.Owner).count
+    override def countDocumentSetsForEmail(email: String) = {
+      DocumentSetUserFinder
+        .byUserAndRole(email, Ownership.Owner)
+        .exceptDeletedDocumentSets
+        .count
+    }
   }
 
   override val storage = DatabaseStorage
