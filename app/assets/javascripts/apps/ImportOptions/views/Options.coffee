@@ -53,7 +53,6 @@ define [
         <div class="control-group">
           <label class="control-label"><%= t('split_documents.label_html') %></label>
           <div class="controls">
-            <p class="help-block too-few-documents"><%- t('split_documents.too_few_documents') %></p>
             <label class="radio">
               <input type="radio" name="split_documents" <%= options.split_documents ? '' : 'checked="checked"' %> value="false" />
               <%- t('split_documents.false') %>
@@ -62,6 +61,7 @@ define [
               <input type="radio" name="split_documents" <%= options.split_documents ? 'checked="checked"' : '' %> value="true" />
               <%- t('split_documents.true') %>
             </label>
+            <p class="help-block too-few-documents"><%- t('split_documents.too_few_documents') %></p>
           </div>
         </div>
       <% } %>
@@ -124,6 +124,7 @@ define [
 
       @$('p.too-few-documents').toggle(@tooFewDocuments)
       @$('[name="split_documents"][value="false"]').prop('disabled', @tooFewDocuments)
+      @$('[name="split_documents"][value="false"]').closest('label').toggleClass('muted', @tooFewDocuments)
 
       this
 

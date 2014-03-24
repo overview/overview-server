@@ -65,6 +65,7 @@ define [
       describe 'when there are too few documents', ->
         beforeEach -> view.setTooFewDocuments(true)
         it 'should disable split_documents=false', -> expect(view.$('[name="split_documents"][value="false"]')).toBeDisabled()
+        it 'should mute the radio for split_documents=false', -> expect(view.$('[name="split_documents"][value="false"]').closest('label')).toHaveClass('muted')
         it 'should check split_documents=true', -> expect(view.$('[name=split_documents][value="true"]')).toBeChecked()
         it 'should set split_documents=true on the model', -> expect(model.get('split_documents')).toEqual(true)
 

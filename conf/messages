@@ -304,10 +304,10 @@ views.DocumentSet.index.ImportOptions.important_words.help=Use these words to or
 views.DocumentSet.index.ImportOptions.important_words.label_html=Important words (optional) (<a href="http://overview.ap.org/blog/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.lang.label=Language of documents
 views.DocumentSet.index.ImportOptions.name.label=Document set name
-views.DocumentSet.index.ImportOptions.split_documents.label_html=What becomes a document (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
-views.DocumentSet.index.ImportOptions.split_documents.false=Every file from DocumentCloud becomes a document in Overview
-views.DocumentSet.index.ImportOptions.split_documents.true=Every page from DocumentCloud becomes a document in Overview
-views.DocumentSet.index.ImportOptions.split_documents.too_few_documents=You must import at least three documents to create a document set. There’s no point asking Overview to sort only one or two documents.
+views.DocumentSet.index.ImportOptions.split_documents.label_html=What counts as a document (<a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
+views.DocumentSet.index.ImportOptions.split_documents.false=Each file is one document
+views.DocumentSet.index.ImportOptions.split_documents.true=Each page is one document
+views.DocumentSet.index.ImportOptions.split_documents.too_few_documents=This project contains fewer than three files, so Overview will split each file into pages. (There’s no point asking Overview to sort only one or two documents.)
 views.DocumentSet.index.ImportOptions.supplied_stop_words.help=Separate these words with spaces. Overview will always ignore words like “the” and “is” when analyzing documents.
 views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html=Words to ignore (optional) (<a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/" target="_blank" title="explain this feature (opens in separate tab)">?</a>)
 views.DocumentSet.index.ImportOptions.tag_id.label=Only include documents with tag
