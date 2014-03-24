@@ -9,11 +9,6 @@ options =
     browserName: 'firefox'
     version: ''
     platform: 'ANY'
-    handlesAlerts: true
-    takesScreenshot: true
-    cssSelectorsEnabled: true
-    javascriptEnabled: true
-    webStorageEnabled: true
     build: process.env.TRAVIS_BUILD_NUMBER
     'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER
 
