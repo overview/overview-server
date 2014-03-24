@@ -50,7 +50,7 @@ describe 'CsvUpload', ->
       @
         .get(Url.index)
         .acceptingNextAlert()
-        .elementBy(class: 'btn-danger', text: 'Delete').click()
+        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
     waitForJobsToComplete: ->
       @

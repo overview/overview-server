@@ -81,8 +81,21 @@ wd.addPromiseChainMethod 'executeFunction', (js) ->
 wd.addPromiseChainMethod 'waitForFunctionToReturnTrueInBrowser', (js, timeout, pollLength) ->
   @waitForConditionInBrowser(wrapJsFunction(js), timeout, pollLength)
 
+ValidArgs =
+  name: null
+  value: null
+  class: null
+  className: null
+  contains: null
+  tag: null
+  visible: true # handled outside argsToXPath()
+
 argsToXPath = (args) ->
   tag = args.tag ? '*'
+
+  for k, __ of args
+    if k not of ValidArgs
+      throw "Invalid option #{k} in elementBy() selector"
 
   attrs = []
   if args.contains
@@ -92,7 +105,7 @@ argsToXPath = (args) ->
     if className
       attrs.push("contains(concat(' ', @class, ' '), ' #{className} ')")
 
-  for attr in [ 'name' ]
+  for attr in [ 'name', 'value' ]
     if attr of args
       attrs.push("@#{attr}='#{args[attr]}'")
 
