@@ -27,43 +27,39 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       'input input[type=text]': '_onInput'
       'submit form': '_onSubmit'
 
-    template: _.template("""
-      <form method="post" action="#" class="input-append">
-        <%= window.csrfTokenHtml %>
-        <input
-          type="text"
-          name="query"
-          placeholder="<%- t('query_placeholder') %>"
-          <% if (selectedSearchResult) { %>
-            class="state-<%- (selectedSearchResult.get('state') || 'InProgress').toLowerCase() %>"
-          <% } %>
-          value="<%- selectedSearchResult ? selectedSearchResult.get('query') : '' %>"
-          />
-        <div class="btn-group">
-          <input type="submit" value="<%- t('search') %>" class="btn" />
-          <% if (collection.length) { %>
+    templates:
+      dropdownContents: _.template("""
+        <% _.each(searchResults, function(searchResult) { %>
+          <li
+              class="search-result state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>"
+              data-cid="<%- searchResult.cid %>">
+            <a href="#"><%- searchResult.get('query') %></a>
+          </li>
+        <% }); %>
+        """)
+
+      main: _.template("""
+        <form method="post" action="#" class="input-append">
+          <%= window.csrfTokenHtml %>
+          <input
+            type="text"
+            name="query"
+            placeholder="<%- t('query_placeholder') %>"
+            />
+          <div class="btn-group">
+            <input type="submit" value="<%- t('search') %>" class="btn" />
             <button class="btn dropdown-toggle" data-toggle="dropdown">
               <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-              <% _.each(collection.models.slice(-15), function(searchResult) { %>
-                <li
-                    class="search-result state-<%- (searchResult.get('state') || 'InProgress').toLowerCase() %>"
-                    data-cid="<%- searchResult.cid %>">
-                  <a href="#"><%- searchResult.get('query') %></a>
-                </li>
-              <% }); %>
             </ul>
-          <% } %>
-        </div>
-      </form>
-      <% if (canCreateTagFromSearchResult) { %>
+          </div>
+        </form>
         <a
           class="create-tag"
-          data-cid="<%- selectedSearchResult.cid %>"
+          style="display:none;"
           ><i class="overview-icon-tag"></i><%- t('create_tag') %></a>
-      <% } %>
-    """)
+        """)
 
     initialize: ->
       throw 'Must set collection, a Backbone.Collection of search-result models' if !@collection
@@ -73,34 +69,83 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @searchResultIdToModel = @options.searchResultIdToModel
       @state = @options.state
 
-      @listenTo(@state, 'change:documentListParams', => @render())
-      @listenTo(@collection, 'change add remove reset', => @render())
-      @render()
+      @listenTo(@state, 'change:documentListParams', @render)
+      @listenTo(@collection, 'change add remove reset', @render)
+
+      @initialRender()
 
     remove: ->
       for key, callback of @stateCallbacks
         @state.unobserve(key, callback)
       Backbone.View.prototype.remove.apply(this)
 
-    render: ->
-      selectedSearchResultId = if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
+    _getSelectedSearchResultId: ->
+      if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
         params.searchResultId
       else
         null
-      selectedSearchResult = selectedSearchResultId && @searchResultIdToModel(selectedSearchResultId)
+
+    _getSelectedSearchResult: ->
+      id = @_getSelectedSearchResultId()
+      id && @searchResultIdToModel(id)
+
+    _renderCreateTag: ->
+      model = @_getSelectedSearchResult()
+      enabled = model? && @options.canCreateTagFromSearchResult?(model)
+      @_$els.createTag
+        .attr('data-cid', model?.cid || '')
+        .prop('disabled', !enabled)
+        .toggleClass('disabled', !enabled)
+        .toggle(enabled)
+
+    _renderDropdown: ->
+      html = @templates.dropdownContents
+        searchResults: @collection.models.slice(-15)
+
+      @_$els.dropdown.html(html)
+      @_$els.dropdownButton.toggle(@collection.length > 0)
+
+    _renderInput: ->
+      model = @_getSelectedSearchResult()
+      if model
+        @_$els.input
+          .attr('class', "state-#{(model.get('state') || 'InProgress').toLowerCase()}")
+          .prop('value', model.get('query'))
+      else
+        @_$els.input
+          .removeAttr('class')
+          .prop('value', '')
+
+    initialRender: ->
+      selectedSearchResult = @_getSelectedSearchResult()
+
+      html = @templates.main
+        t: t
+
+      @$el.html(html)
+
+      @_$els =
+        createTag: @$('a.create-tag')
+        dropdownButton: @$('button.dropdown-toggle')
+        dropdown: @$('.dropdown-menu')
+        input: @$('input[name=query]')
+
+      @render()
+
+      this
+
+    render: ->
+      selectedSearchResultId = @_getSelectedSearchResultId()
+      selectedSearchResult = @_getSelectedSearchResult()
 
       # If the currently-selected search result ID is changing, the selection
       # might have an ID that isn't in the collection. In that case, don't
       # render: another event is about to come and cause a render anyway
       return if selectedSearchResultId? && !selectedSearchResult
 
-      html = @template
-        collection: @collection
-        selectedSearchResult: selectedSearchResult
-        canCreateTagFromSearchResult: @options.canCreateTagFromSearchResult?(selectedSearchResult)
-        t: t
-
-      @$el.html(html)
+      @_renderCreateTag()
+      @_renderDropdown()
+      @_renderInput()
 
     _eventToModel: (e) ->
       cid = $(e.currentTarget).closest('[data-cid]').attr('data-cid')
@@ -119,7 +164,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       model = @_eventToModel(e)
       $(e.target).closest('a')
         .addClass('disabled')
-        .fadeOut(-> $(e.target).remove())
+        .fadeOut()
       @trigger('create-tag-clicked', model)
 
     _onInput: (e) ->
