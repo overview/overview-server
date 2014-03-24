@@ -92,6 +92,10 @@ argsToXPath = (args) ->
     if className
       attrs.push("contains(concat(' ', @class, ' '), ' #{className} ')")
 
+  for attr in [ 'name' ]
+    if attr of args
+      attrs.push("@#{attr}='#{args[attr]}'")
+
   xpath = "//#{tag}"
   for attr in attrs
     xpath += "[#{attr}]"
