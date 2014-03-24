@@ -1,4 +1,5 @@
 testMethods = require('../testMethods')
+wd = require('wd')
 
 module.exports = (opts) ->
   testMethods.usingPromiseChainMethods
@@ -42,3 +43,13 @@ module.exports = (opts) ->
           .elementBy(tag: 'h3', contains: document.title).should.eventually.exist
           .elementBy(tag: 'h3', contains: 'Key words: ').should.eventually.exist
           .then(extra)
+
+  if 'searches' of opts
+    for search in opts.searches
+      it "should search for #{search.query}", ->
+        @userBrowser
+          .elementByCss('#tree-app-search [name=query]').type(search.query)
+          .listenForJqueryAjaxComplete()
+          .elementByCss('#tree-app-search input[type=submit]').click()
+          .waitForJqueryAjaxComplete() # wait for UI to clear previous search results
+          .waitForElementBy(tag: 'h4', contains: "#{search.nResults} document").should.eventually.exist

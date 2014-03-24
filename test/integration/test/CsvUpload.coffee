@@ -82,3 +82,6 @@ describe 'CsvUpload', ->
         documents: [
           { type: 'text', title: 'Fourth', text: 'This is the fourth document.' }
         ]
+        searches: [
+          { query: 'document', nResults: 4 }
+        ]

@@ -118,14 +118,11 @@ describe 'Example Document Sets', ->
 
       shouldBehaveLikeATree
         documents: [
-          { type: 'text', title: 'Fourth', text: 'This is the fourth document.' }
+          { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
         ]
-        
-      it 'should be searchable', ->
-        @userBrowser
-          .elementByCss('[name=query]').type('document')
-          .elementByCss('[value=Search]').click()
-          .waitForElementBy(tag: 'h4', contains: '4 documents').should.eventually.exist
+        searches: [
+          { query: 'document', nResults: 4 }
+        ]
 
     describe 'after being removed as an example', ->
       before ->
