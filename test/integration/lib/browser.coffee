@@ -11,6 +11,15 @@ options =
     platform: 'ANY'
     build: process.env.TRAVIS_BUILD_NUMBER
     'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER
+  seleniumLocation:
+    host: 'localhost'
+    port: 4444
+
+if 'SAUCE_USERNAME' of process.env
+  x = options.seleniumLocation
+  x.port = 4445
+  x.username = process.env['SAUCE_USERNAME']
+  x.pwd = process.env['SAUCE_ACCESS_KEY']
 
 wd.addPromiseChainMethod 'acceptingNextAlert', ->
   @executeFunction ->
@@ -126,8 +135,7 @@ module.exports =
 
   # Returns a promise of a browser.
   create: ->
-    port = if 'SAUCE_USERNAME' of process.env then 4445 else 4444
-    wd.remote('localhost', port, 'promiseChain')
+    wd.promiseChainRemote(options.seleniumLocation)
       .init(options.desiredCapabilities)
       .configureHttp
         baseUrl: module.exports.baseUrl
