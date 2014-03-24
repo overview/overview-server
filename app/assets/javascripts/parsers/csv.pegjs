@@ -16,7 +16,7 @@ file =
   header:header
   records:(CRLF+ record:record { return record; })*
   CRLF*
-  { return { header: header, records: records }; }
+  { return { header: header, records: records.filter(function(r) { return r.length > 1 || r[0].length > 0; }) }; }
 
 header =
   first:name

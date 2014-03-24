@@ -78,3 +78,11 @@ define [
       it 'should allow a truncated string at the end', ->
         expecting_result 'foo,bar\r\na,\"b', (result) ->
           expect(result.records).toEqual([[ 'a', 'b' ]])
+
+      it 'should ignore a middle newline', ->
+        expecting_result 'text\n\nfoo\n\nbar', (result) ->
+          expect(result.records).toEqual([[ 'foo' ], [ 'bar' ]])
+
+      it 'should ignore the final newline', ->
+        expecting_result 'text\nfoo\n', (result) ->
+          expect(result.records).toEqual([[ 'foo' ]])
