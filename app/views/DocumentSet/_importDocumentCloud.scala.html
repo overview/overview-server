@@ -1,7 +1,14 @@
-@(hasDocuments: Boolean)
+@(hasDocuments: Boolean)(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._importDocumentCloud")) { m =>
   @_importPane(h1 = m("h1")) {
-    <h2>@m("loading")</h2>
-    <!-- This content will be replaced in JavaScript -->
+    <div class="row-fluid">
+      <div class="import-documentcloud span9">
+        <h2>@m("loading")</h2>
+        <!-- This content will be replaced in JavaScript -->
+      </div>
+      <div class="instructions span3">
+        @views.html.components.helpBox(m("help1"), m("help2"))
+      </div>
+    </div>
   }
 }

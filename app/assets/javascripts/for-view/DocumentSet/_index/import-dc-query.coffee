@@ -2,7 +2,7 @@ define [ 'jquery', 'dcimport/import_project_with_login', 'apps/ImportOptions/app
   MinDocumentCount = 3
 
   $ ->
-    $dcImportDiv = $('#import-from-documentcloud-account .import-pane-contents')
+    $dcImportDiv = $('#import-from-documentcloud-account .import-documentcloud')
 
     show = -> import_project_with_login($dcImportDiv[0])
 

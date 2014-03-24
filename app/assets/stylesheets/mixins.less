@@ -30,6 +30,29 @@
   .border-radius(5px);
 }
 
+.overview-help-box() {
+  .border-radius(5px);
+  border: 1px solid @textColor;
+  font: 1em @serifFontFamily;
+  position: relative;
+  margin-top: 1.2em;
+  background-color: @helpColor;
+
+  h6 {
+    .muted;
+    position: absolute;
+    top: -1.2em;
+    left: 1em;
+    font: 1em normal @sansFontFamily; // headingsFontFamily is always bold
+    padding: 0;
+    margin: 0;
+  }
+
+  p {
+    margin: 1em;
+  }
+}
+
 // Set this on a ul.tags to make 2d-looking tags
 .tag-list-2d() {
   display: block;

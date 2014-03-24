@@ -101,6 +101,8 @@ views.admin.User.index.new.email=Email
 views.admin.User.index.new.password=Password
 views.admin.User.index.new.submit=Create
 
+views.components.helpBox.title=Help
+
 views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_blog=Blog
@@ -197,6 +199,8 @@ views.DocumentSet._import.from_upload=CSV upload
 
 views.DocumentSet._importDocumentCloud.h1=Import a DocumentCloud project
 views.DocumentSet._importDocumentCloud.loading=Loading…
+views.DocumentSet._importDocumentCloud.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
+views.DocumentSet._importDocumentCloud.help2=You must import at least three documents to create a document set. Overview can treat each page from DocumentCloud as a separate document.
 
 views.DocumentSet._importPane.import_public=Import an example document set
 views.DocumentSet._importPane.import_dropdown=Import documents
@@ -261,6 +265,8 @@ views.DocumentSet._uploadForm.progress.cancel=Cancel upload
 views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
 
 views.DocumentSet._massUploadForm.h1=Upload PDF files
+views.DocumentSet._massUploadForm.help1=Overview can analyze and display your PDF files.
+views.DocumentSet._massUploadForm.help2=You must import at least three documents to create a document set. There’s no point asking Overview to sort only one or two documents.
 views.DocumentSet._massUploadForm.upload_prompt=Add files
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
