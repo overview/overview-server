@@ -1,19 +1,12 @@
 language: scala
-# sauce_connect is waaay too verbose, and there seems no way to turn it off. Run it manually.
-# Commands are at:
-# https://github.com/travis-ci/travis-build/blob/master/lib/travis/build/script/addons/sauce_connect.rb
-#addons:
-#  sauce_connect:
-#    username: overviewproject
-#    access_key:
-#      secure: "M6C/xQkOQt0M8T2CbDks1BEO1VkGh4jfVj4VePcq4n5+W8X9t7M7QCyuUflJU2pFF4cLOqPKedcH0S8U+YTLdw0q6l5heqkeF4OWTW0BfjMP53LgRITnl5xslaNoLrY80p0IEcrSAvc9r5LFug/IKniqI0xris/py3wJ2KHYYnQ="
 env:
-  - SAUCE_USERNAME=overviewproject
-  - secure: "kRLoPRMkMM8zovhGXNv882toaYGhnDBeklfwbjcXcDxBl7uESBTbL6TrURl45aNVJVWEEDucK8mSKno5xNzhptIgAme94eb6RwsmdlSozL3O1xoDOnZIDjZXXkpV2hpeSsjS0q/SxZaz4LlBoXhruWRwDQZiWP/N7IFdogxwyJg="
+  global:
+    - SAUCE_USERNAME=overviewproject
+    - secure: JcgP+YZaAEsoA1NfKogsAUu/4FSIS1mSmMH0uy6sRk/bFR3F2/IOX2VSPy4LG/lUl+xBSXCItdQARPJXIIOXJ5PBVoCiNHtsMV9aeIwrPr0/gRdVamZ385CdP9bqTSNpZHs8VKLnjFPsSmgzYBY3LsKHnc+sJ3RJhyxX2KrP9uU=
 branches:
   only:
-    - master
-    - /^deploy.*$/
+  - master
+  - /^deploy.*$/
 before_install:
   - sudo apt-get update -qq
   - ./auto/setup-grunt.sh
@@ -24,11 +17,11 @@ before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
   # Suppress excessive output from Sbt (resolving / downloading). Either it works or it doesn't; all errors are the same to us.
-  - ./sbt '; set every logLevel := Level.Warn; message-broker/update; search-index/update; overview-server/update; worker-common/update; documentset-worker/update; runner/update; db-evolution-appler/update'
+  - ./sbt '; set every logLevel := Level.Warn; message-broker/update; search-index/update; overview-server/update; worker-common/update; documentset-worker/update; runner/update; db-evolution-applier/update'
 script:
   - ./auto/test-coffee-once.sh
   - ./run --only-servers database --sbt '; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
   - ./run --sbt '; eval Thread.sleep(60000); eval if (("auto/test-integration.sh"!) != 0) { throw new Exception("integration tests failed") }'
 notifications:
   irc:
-    - "irc.freenode.net#overviewproject"
+    - irc.freenode.net#overviewproject
