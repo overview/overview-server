@@ -17,7 +17,8 @@ before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
   # Suppress excessive output from Sbt (resolving / downloading). Either it works or it doesn't; all errors are the same to us.
-  - ./sbt '; set every logLevel := Level.Warn; message-broker/update; search-index/update; overview-server/update; worker-common/update; documentset-worker/update; worker/update; runner/update; db-evolution-applier/update'
+  # Add "show version" calls so Travis sees output; otherwise, if we exceed 10min Travis will bail
+  - ./sbt '; set every logLevel := Level.Warn; message-broker/update; show version; search-index/update; show version; overview-server/update; show version; worker-common/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update'
 script:
   - ./auto/test-coffee-once.sh
   - ./run --only-servers database --sbt '; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
