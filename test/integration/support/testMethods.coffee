@@ -37,5 +37,15 @@ module.exports =
   #           @execute('window.x = "moo";')
   usingPromiseChainMethods: (methods) ->
     registerer = new Registerer(wd)
-    before -> registerer.register(methods)
-    after -> registerer.unregister()
+    reloadAllPromisesInContext = (context) ->
+      for k, v of context
+        if v? && typeof(v.noop) == 'function'
+          context[k] = v.noop()
+
+    before ->
+      registerer.register(methods)
+      reloadAllPromisesInContext(@)
+
+    after ->
+      registerer.unregister()
+      reloadAllPromisesInContext(@)

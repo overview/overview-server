@@ -6,6 +6,8 @@ wd = require('wd')
 Url =
   index: '/documentsets'
 
+isSelected = new wd.asserters.Asserter((target, cb) -> target.isSelected(cb))
+
 describe 'CsvUpload', ->
   testMethods.usingPromiseChainMethods
     openCsvUploadPage: ->
@@ -57,6 +59,37 @@ describe 'CsvUpload', ->
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
 
   asUser.usingTemporaryUser()
+
+  describe 'finding a character set', ->
+    testMethods.usingPromiseChainMethods
+      loadCsvAndWaitForRequirements: (path) ->
+        @
+          .openCsvUploadPage()
+          .chooseFile(path)
+          .waitForRequirements()
+
+      shouldHaveLoadedCsvWithText: (text) ->
+        @
+          .elementByCss('.requirements li.text.ok').should.eventually.exist
+          .elementByCss('.requirements li.csv.ok').should.eventually.exist
+          .elementByCss('.requirements li.header.ok').should.eventually.exist
+          .elementByCss('.requirements li.data.ok').should.eventually.exist
+          .elementByCss('.preview table').text().should.eventually.contain(text)
+
+    it 'should load UTF-8', ->
+      @userBrowser
+        .loadCsvAndWaitForRequirements('CsvUpload/basic-utf8.csv')
+        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
+        .shouldHaveLoadedCsvWithText('achète avec des €')
+
+    it 'should load Windows-1252', ->
+      @userBrowser
+        .loadCsvAndWaitForRequirements('CsvUpload/basic-windows-1252.csv')
+        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
+        .elementByCss('.requirements li.text.bad').should.eventually.exist
+        .elementByCss('.preview table').text().should.eventually.contain('ach�te avec des �')
+        .elementByCss('select[name=charset] option[value=windows-1252]').click()
+        .shouldHaveLoadedCsvWithText('achète avec des €')
 
   describe 'after uploading a document set', ->
     before ->
