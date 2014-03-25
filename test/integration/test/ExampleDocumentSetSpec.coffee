@@ -6,7 +6,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
-  login: '/login'
+
 
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
@@ -45,7 +45,7 @@ describe 'Example Document Sets', ->
           cb(err, url)
 
       @
-        .elementBy(tag: 'button', contains: 'Clone').click()
+        .waitForElementBy(tag: 'button', contains: 'Clone').click()
         .waitFor(isAtNewUrl, 5000)
         
     toggleExampleDocumentSet: ->
@@ -116,6 +116,11 @@ describe 'Example Document Sets', ->
         .chooseAndDoUpload('CsvUpload/basic.csv')
         .waitForJobsToComplete()
         .toggleExampleDocumentSet()
+        .then((a) =>
+          @userBrowser
+            .openCloneExamplePage()
+            .cloneExample())
+
              
     after ->
       Q.all([
@@ -128,8 +133,7 @@ describe 'Example Document Sets', ->
 
     it 'should be cloneable',  ->
       @userBrowser
-        .openCloneExamplePage()
-        .cloneExample()
+        .get(Url.index)
         .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
         
     describe 'the cloned example', ->
