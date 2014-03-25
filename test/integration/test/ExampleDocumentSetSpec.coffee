@@ -85,7 +85,12 @@ describe 'Example Document Sets', ->
         .acceptingNextAlert()
         .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
+    findTopDeleteButton: ->
+      @
+        .get(Url.index)
+        .elementByCssOrNull('input[value="Delete"]')
 
+        
     waitForJobsToComplete: ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
@@ -102,8 +107,20 @@ describe 'Example Document Sets', ->
         .toggleExampleDocumentSet()
              
     after ->
-      @userBrowser
-        .deleteTopUpload()
+      Q.all([
+        @userBrowser
+          .deleteTopUpload()
+        @adminBrowser
+          .findTopDeleteButton().then((deleteButton) =>
+            if deleteButton?
+              deleteButton
+                .chain()
+                .acceptingNextAlert()
+                .click()
+            else
+              @adminBrowser)
+      ])
+
 
     it 'should be cloneable',  ->
       @userBrowser
