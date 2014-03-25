@@ -106,6 +106,11 @@ describe 'CsvUpload', ->
         .loadCsvAndWaitForRequirements('CsvUpload/basic-no-text.csv')
         .elementByCss('.requirements li.header.bad').should.eventually.exist
 
+    it 'should show an error when there are too few documents', ->
+      @userBrowser
+        .loadCsvAndWaitForRequirements('CsvUpload/basic-2docs.csv')
+        .elementByCss('.requirements li.data.bad').should.eventually.exist
+
   describe 'after uploading a document set', ->
     before ->
       @userBrowser
