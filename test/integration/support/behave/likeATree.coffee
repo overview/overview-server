@@ -52,4 +52,4 @@ module.exports = (opts) ->
           .listenForJqueryAjaxComplete()
           .elementByCss('#tree-app-search input[type=submit]').click()
           .waitForJqueryAjaxComplete() # wait for UI to clear previous search results
-          .waitForElementBy(tag: 'h4', contains: "#{search.nResults} document").should.eventually.exist
+          .waitForElementByCss('h4', wd.asserters.textInclude("#{search.nResults} document"), 20000).should.eventually.exist
