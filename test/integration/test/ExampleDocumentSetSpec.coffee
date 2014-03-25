@@ -50,8 +50,8 @@ describe 'Example Document Sets', ->
         
     toggleExampleDocumentSet: ->
       @
-        .waitForElementByCss('.show-sharing-settings', wd.asserters.isDisplayed).click()
-        .waitForElementByCss('input[type=checkbox]', wd.asserters.isDisplayed).click()
+        .waitForElementByCss('.show-sharing-settings', wd.asserters.isDisplayed, 10000).click()
+        .waitForElementByCss('input[type=checkbox]', wd.asserters.isDisplayed, 10000).click()
         .waitForElementBy(tag: 'a', contains: 'Close', visible: 'true').click()
 
     waitForRequirements: ->
@@ -85,22 +85,6 @@ describe 'Example Document Sets', ->
         .acceptingNextAlert()
         .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
-    deleteTopUploadIfExists: ->
-      @
-        .findTopDeleteButton().then((deleteButton) =>
-          if deleteButton?
-            deleteButton
-              .chain()
-              .acceptingNextAlert()
-              .click()
-          else
-            @adminBrowser)
-      
-    findTopDeleteButton: ->
-      @
-        .get(Url.index)
-        .elementByCssOrNull('input[value="Delete"]')
-
         
     waitForJobsToComplete: ->
       @
@@ -127,7 +111,7 @@ describe 'Example Document Sets', ->
         @userBrowser
           .deleteTopUpload()
         @adminBrowser
-          .deleteTopUploadIfExists()
+          .deleteTopUpload()
       ])
 
 
@@ -156,20 +140,40 @@ describe 'Example Document Sets', ->
           .get(Url.index)
           .toggleExampleDocumentSet()
 
+      after ->
+        @adminBrowser
+          .get(Url.index)
+          .toggleExampleDocumentSet()
+          
       it 'should not show up in example list', ->
         @userBrowser
           .openCloneExamplePage()
           .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
 
-      describe 'after being deleted', ->
-        before ->
+  describe 'after being deleted', ->
+
+    after ->
+      @userBrowser
+        .deleteTopUpload()
+
+        
+    it 'should not have deleted cloned document set', ->
+      @adminBrowser
+        .openCsvUploadPage()
+        .chooseAndDoUpload('CsvUpload/basic.csv')
+        .waitForJobsToComplete()
+        .toggleExampleDocumentSet()
+        .then((a) =>
+          @userBrowser
+            .openCloneExamplePage()
+            .cloneExample())
+        .then((u) =>
           @adminBrowser
-            .deleteTopUpload()
-            
-        it 'should not have deleted cloned document set', ->
+            .deleteTopUpload())
+        .then((a) =>
           @userBrowser
             .get(Url.index)
-            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist
+            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist)
             
             
           
