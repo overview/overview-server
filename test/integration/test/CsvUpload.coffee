@@ -91,6 +91,16 @@ describe 'CsvUpload', ->
         .elementByCss('select[name=charset] option[value=windows-1252]').click()
         .shouldHaveLoadedCsvWithText('achète avec des €')
 
+    it 'should reset the form, including encoding', ->
+      @userBrowser
+        .loadCsvAndWaitForRequirements('CsvUpload/basic-windows-1252.csv')
+        .elementByCss('select[name=charset] option[value=windows-1252]').click()
+        .elementBy(tag: 'button', contains: 'Reset').click()
+        .chooseFile('CsvUpload/basic-utf8.csv')
+        .waitForRequirements()
+        .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
+        .shouldHaveLoadedCsvWithText('achète avec des €')
+
   describe 'after uploading a document set', ->
     before ->
       @userBrowser
