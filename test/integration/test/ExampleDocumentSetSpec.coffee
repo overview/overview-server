@@ -85,6 +85,17 @@ describe 'Example Document Sets', ->
         .acceptingNextAlert()
         .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
+    deleteTopUploadIfExists: ->
+      @
+        .findTopDeleteButton().then((deleteButton) =>
+          if deleteButton?
+            deleteButton
+              .chain()
+              .acceptingNextAlert()
+              .click()
+          else
+            @adminBrowser)
+      
     findTopDeleteButton: ->
       @
         .get(Url.index)
@@ -111,14 +122,7 @@ describe 'Example Document Sets', ->
         @userBrowser
           .deleteTopUpload()
         @adminBrowser
-          .findTopDeleteButton().then((deleteButton) =>
-            if deleteButton?
-              deleteButton
-                .chain()
-                .acceptingNextAlert()
-                .click()
-            else
-              @adminBrowser)
+          .deleteTopUploadIfExists()
       ])
 
 
