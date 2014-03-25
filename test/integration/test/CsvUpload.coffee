@@ -101,6 +101,11 @@ describe 'CsvUpload', ->
         .elementByCss('select[name=charset] option', isSelected).text().should.eventually.equal('Unicode (UTF-8)')
         .shouldHaveLoadedCsvWithText('achète avec des €')
 
+    it 'should show an error when there is no text column', ->
+      @userBrowser
+        .loadCsvAndWaitForRequirements('CsvUpload/basic-no-text.csv')
+        .elementByCss('.requirements li.header.bad').should.eventually.exist
+
   describe 'after uploading a document set', ->
     before ->
       @userBrowser
