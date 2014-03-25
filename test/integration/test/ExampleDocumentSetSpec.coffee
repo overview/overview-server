@@ -48,12 +48,12 @@ describe 'Example Document Sets', ->
         .elementBy(tag: 'button', contains: 'Clone').click()
         .waitFor(isAtNewUrl, 5000)
         
-    setExampleDocument: ->
+    toggleExampleDocumentSet: ->
       @
         .waitForElementByCss('.show-sharing-settings', wd.asserters.isDisplayed).click()
         .waitForElementByCss('input[type=checkbox]', wd.asserters.isDisplayed).click()
-        .waitForElementByCss('a', wd.asserters.isDisplayed).click()
-        
+        .waitForElementBy(tag: 'a', contains: 'Close', visible: 'true').click()
+
     waitForRequirements: ->
       @
         .waitForFunctionToReturnTrueInBrowser(-> $('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0)
@@ -83,11 +83,13 @@ describe 'Example Document Sets', ->
       @
         .get(Url.index)
         .acceptingNextAlert()
-        .elementBy(class: 'btn-danger', text: 'Delete').click()
+        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
+
 
     waitForJobsToComplete: ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
+
 
   asUser.usingTemporaryUser()
   
@@ -97,12 +99,11 @@ describe 'Example Document Sets', ->
         .openCsvUploadPage()
         .chooseAndDoUpload('CsvUpload/basic.csv')
         .waitForJobsToComplete()
-        .setExampleDocument()
+        .toggleExampleDocumentSet()
              
     after ->
-      @adminBrowser
-        .deleteAllCookies()
-        .quit()
+      @userBrowser
+        .deleteTopUpload()
 
     it 'should be cloneable',  ->
       @userBrowser
@@ -127,7 +128,8 @@ describe 'Example Document Sets', ->
     describe 'after being removed as an example', ->
       before ->
         @adminBrowser
-          .setExampleDocument()
+          .get(Url.index)
+          .toggleExampleDocumentSet()
 
       it 'should not show up in example list', ->
         @userBrowser
