@@ -1,10 +1,11 @@
-tests = [];
+tests = []
+
 for file, __ of window.__karma__.files
-  if /spec\.js$/i.test(file)
+  if /spec\.js/i.test(file)
     tests.push(file)
 
-requirejs.config({
-  baseUrl: '/base/src-js'
+requirejs.config
+  baseUrl: '/base/app/assets/javascripts'
 
   shim: {
     jquery: { exports: '$' }
@@ -52,4 +53,3 @@ requirejs.config({
 
   # start test run, once Require.js is done
   callback: window.__karma__.start
-})

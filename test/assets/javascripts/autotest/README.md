@@ -3,19 +3,19 @@ Autotest
 
 Helps run JavaScript tests
 
-1. Install NodeJS
-2. Run `npm install -g grunt-cli`
-3. Run `npm install -g coffee-script` (see https://github.com/gruntjs/grunt/pull/767 to see why we can't just depend on it)
-4. Run `npm install` in this directory
-5. Run `grunt`
+1. Install [NodeJS](http://nodejs.org)
+2. `cd` to this directory
+3. Run `npm install`
+4. Run `npm test` or `npm test-continuously`
 
-You'll see test status (and, if Growl is running, notifications) every time
-a JavaScript or CoffeeScript file changes.
+`npm test` will run the tests once and give a status code of `0` if they all
+pass. `npm test-continuously` will stay open and re-run tests every time a
+JavaScript or CoffeeScript file changes.
 
 Editing the Framework
 =====================
 
-1. Turn off the running `grunt` process
+1. Turn off the running `npm` process
 2. Edit files in `../framework/`
-3. Edit `./karma.conf.js`
-4. Start `grunt` again
+3. Edit `./karma.conf.coffee`
+4. Start `npm` again

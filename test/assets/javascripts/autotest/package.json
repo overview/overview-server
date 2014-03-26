@@ -1,16 +1,16 @@
 {
   "name": "overview-server-js-autotest",
   "version": "0.0.1",
+  "scripts": {
+    "test": "node_modules/karma/bin/karma start --single-run",
+    "test-continuously": "node_modules/karma/bin/karma start"
+  },
   "devDependencies": {
-    "grunt": "~0.4.3",
-    "karma": "~0.12",
-    "grunt-karma": "~0.8",
+    "karma": "~0.12.1",
     "karma-phantomjs-launcher": "~0.1",
     "karma-requirejs": "~0.2",
     "karma-jasmine": "~0.1",
-    "grunt-contrib-clean": "~0.4.0",
-    "grunt-contrib-coffee": "~0.8.1",
-    "grunt-contrib-copy": "~0.4.1",
-    "grunt-contrib-watch": "~0.5.3"
+    "coffee-script": "~1.7.1",
+    "karma-coffee-preprocessor": "~0.2.1"
   }
 }

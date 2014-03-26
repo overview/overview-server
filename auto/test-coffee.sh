@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# Before running this script, follow instructions in
-# test/assets/javascripts/autotest/README.md to set up your test environment.
+# Before running this script, run ./setup-coffee-tests.sh
 
-(cd "$(dirname $0)/../test/assets/javascripts/autotest" && grunt)
+(cd "$(dirname $0)/../test/assets/javascripts/autotest" && npm run-script test-continuous)
