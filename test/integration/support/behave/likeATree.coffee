@@ -35,7 +35,7 @@ module.exports = (opts) ->
           switch document.type
             when 'text'
               @userBrowser
-                .elementBy(tag: 'pre', contains: document.contains).should.eventually.exist
+                .waitForElementBy({ tag: 'pre', contains: document.contains }, 10000).should.eventually.exist
 
         @userBrowser
           .waitForDocumentListToLoad()
