@@ -327,7 +327,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       # don't preventDefault()
       cancel()
 
-    $modal.on 'hidden', () ->
+    $modal.on 'hidden.bs.modal', () ->
       cancel()
       $form[0].reset()
 

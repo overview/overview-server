@@ -8,8 +8,9 @@
   border: 5px solid transparent;
 
   form {
+    float: left;
     margin: 0;
-    display: inline-block;
+    width: 20em;
   }
 
   input[type=submit] {
@@ -23,17 +24,17 @@
 
     &.state-inprogress {
       color: white;
-      text-shadow: 0 0 .1em @grayDark;
+      text-shadow: 0 0 .1em @gray-dark;
       background-color: @in-progress-color;
     }
     &.state-error {
       color: white;
-      text-shadow: 0 0 .1em @grayDark;
+      text-shadow: 0 0 .1em @gray-dark;
       background-color: @error-color;
     }
     &.state-complete {
       color: white;
-      text-shadow: 0 0 .1em @grayDark;
+      text-shadow: 0 0 .1em @gray-dark;
       background-color: @complete-color;
     }
   }

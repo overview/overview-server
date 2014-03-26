@@ -39,21 +39,22 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
         """)
 
       main: _.template("""
-        <form method="post" action="#" class="input-append">
-          <%= window.csrfTokenHtml %>
+        <form method="post" action="#" class="form-inline input-group">
           <input
+            class="input-sm form-control"
             type="text"
             name="query"
             placeholder="<%- t('query_placeholder') %>"
             />
-          <div class="btn-group">
+          <%= window.csrfTokenHtml %>
+          <span class="input-group-btn">
             <input type="submit" value="<%- t('search') %>" class="btn" />
             <button class="btn dropdown-toggle" data-toggle="dropdown">
               <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
             </ul>
-          </div>
+          </span>
         </form>
         <a
           class="create-tag"
@@ -105,15 +106,25 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @_$els.dropdown.html(html)
       @_$els.dropdownButton.toggle(@collection.length > 0)
 
+    _setInputClass: (newClass) ->
+      @lastClass ?= null
+      if newClass != @lastClass
+        if @lastClass?
+          @_$els.input.removeClass(@lastClass)
+        if newClass?
+          @_$els.input.addClass(newClass)
+        @lastClass = newClass
+
     _renderInput: ->
       model = @_getSelectedSearchResult()
+
       if model
+        @_setInputClass("state-#{(model.get('state') || 'InProgress').toLowerCase()}")
         @_$els.input
-          .attr('class', "state-#{(model.get('state') || 'InProgress').toLowerCase()}")
           .prop('value', model.get('query'))
       else
+        @_setInputClass(null)
         @_$els.input
-          .removeAttr('class')
           .prop('value', '')
 
     initialRender: ->
@@ -168,7 +179,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       @trigger('create-tag-clicked', model)
 
     _onInput: (e) ->
-      e.currentTarget.className = 'editing'
+      @_setInputClass('editing')
 
     _onSubmit: (e) ->
       e.preventDefault()

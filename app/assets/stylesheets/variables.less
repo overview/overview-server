@@ -1,35 +1,37 @@
 @import "vendor/bootstrap/less/variables.less";
 
 // And now we can override things
-@sansFontFamily: "Open Sans", Helvetica, Arial, sans-serif;
-@headingsFontFamily: "Montserrat", "Open Sans", Helvetica, Arial, sans-serif;
+@font-family-sans-serif: "Open Sans", Helvetica, Arial, sans-serif;
+@font-family-headings: "Montserrat", "Open Sans", Helvetica, Arial, sans-serif;
 
-@textColor: #0d1223;
-@mutedColor: #918f90;
-@lightMutedColor: #a7a6a6;
-@bodyBackground: #ffffff;
-@darkBodyBackground: #f4f4f4;
-@highlightColor: #50ade5;
-@mutedHighlightColor: #6ab9e9;
-@shadeColor: #a7a6a6;
-@mutedShadeColor: #b4b3b3;
-@errorColor: #ed1c24;
-@successColor: @green;
-@helpColor: #fef7df;
+@text-color: #0d1223;
+@text-muted: #918f90;
+@text-muted-light: #a7a6a6;
+@body-bg-dark: #f4f4f4;
+@brand-primary: #50ade5;
+@brand-primary-muted: #6ab9e9;
+@shade: #a7a6a6;
+@shade-muted: #b4b3b3;
+@brand-danger: #ed1c24;
+@help-bg: #fef7df;
 
-@invertedTextColor: #ffffff;
-@invertedBackground: #0d1223;
+@link-color: @brand-primary;
+@link-hover-color: @brand-primary-muted;
+
+@navbar-inverse-color: #ffffff;
+@navbar-inverse-bg: #0d1223;
+@navbar-inverse-border: darken(@navbar-inverse-bg, 10%);
 
 // Button colors. NOT for Twitter Bootstrap.
-@btnColor: @grayDark;
-@btnBackground1: #efefef;
-@btnBackground2: #f7f7f7;
-@btnBackground3: @white;
-@btnPrimaryColor: @white;
-@btnPrimaryBackground1: #50ade5;
-@btnPrimaryBackground2: #6ab9e9;
-@btnPrimaryBackground3: lighten(@btnPrimaryBackground2, 5%);
-@btnDangerColor: @white;
-@btnDangerBackground1: #bd362f;
-@btnDangerBackground2: lighten(@btnDangerBackground1, 10%);
-@btnDangerBackground3: lighten(@btnDangerBackground1, 20%);
+@btn-default-color: @gray-dark;
+@btn-default-bg: #efefef;
+@btn-default-bg2: #f7f7f7;
+@btn-default-bg3: white;
+@btn-primary-color: white;
+@btn-primary-bg: #50ade5;
+@btn-primary-bg2: #6ab9e9;
+@btn-primary-bg3: lighten(@btn-primary-bg2, 5%);
+@btn-danger-color: white;
+@btn-danger-bg: #bd362f;
+@btn-danger-bg2: lighten(@btn-danger-bg, 10%);
+@btn-danger-bg3: lighten(@btn-danger-bg, 20%);

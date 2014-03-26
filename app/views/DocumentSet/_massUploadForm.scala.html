@@ -1,13 +1,13 @@
 @(hasDocuments: Boolean)(implicit lang: Lang, request: RequestHeader)
 @defining(scopedMessages("views.DocumentSet._massUploadForm")) { m =>
   @_importPane(h1 = m("h1")) {
-    <div class="row-fluid">
-      <div class="span6 offset1">
+    <div class="row">
+      <div class="col-md-6 col-md-offset-1">
         <form class="document-set-upload" method="post" action="@routes.MassUploadController.startClustering">
           @helper.Form.csrfToken
         </form>
       </div>
-      <div class="instructions span3 offset1">
+      <div class="instructions col-md-3 col-md-offset-1">
         @views.html.components.helpBox(m("help1"), m("help2"))
       </div>
     </div>

@@ -22,7 +22,7 @@ define [
         $div.append(empty_html({ i18n: i18n }))
       else
         credentials = CredentialStore.get()
-        $ul = $('<ul class="unstyled projects"></ul>')
+        $ul = $('<ul class="list-unstyled projects"></ul>')
         for project in data.projects
           html = project_template({ i18n: i18n, url: PROJECT_URL, project: project, credentials: credentials })
           $ul.append(html)

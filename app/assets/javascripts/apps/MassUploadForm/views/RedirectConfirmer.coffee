@@ -6,7 +6,7 @@ define [
   t = i18n.namespaced('views.DocumentSet._massUploadForm')
 
   class RedirectConfirmer extends Backbone.View
-    className: 'modal hide fade'
+    className: 'modal fade'
     attributes:
       role: 'dialog'
 
@@ -14,16 +14,20 @@ define [
       'click .cancel-upload': '_onCancelUpload'
 
     template: _.template('''
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-        <h3 id="myModalLabel"><%- t('confirm_cancel.title') %></h3>
-      </div>
-      <div class="modal-body">
-        <p><%- t('confirm_cancel.prompt') %></p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn uncancel" data-dismiss="modal" aria-hidden="true"><%- t('confirm_cancel.back_button') %></button>
-        <button class="btn btn-primary cancel-upload"><%- t('confirm_cancel.confirm_button') %></button>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h4 class="modal-title"><%- t('confirm_cancel.title') %></h4>
+          </div>
+          <div class="modal-body">
+            <p><%- t('confirm_cancel.prompt') %></p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn uncancel" data-dismiss="modal" aria-hidden="true"><%- t('confirm_cancel.back_button') %></button>
+            <button class="btn btn-primary cancel-upload"><%- t('confirm_cancel.confirm_button') %></button>
+          </div>
+        </div>
       </div>
     ''')
 

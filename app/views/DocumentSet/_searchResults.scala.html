@@ -8,7 +8,7 @@
   @if(documentSets.isEmpty) {
     <p class="empty">@m("empty")</p>
   } else {
-    <ul class="unstyled shared-document-sets">
+    <ul class="list-unstyled shared-document-sets">
       @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
     </ul>
   }

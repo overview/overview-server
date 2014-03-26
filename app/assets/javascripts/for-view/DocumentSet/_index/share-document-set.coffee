@@ -14,27 +14,41 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
     <div id="manage-user-roles">
       <p class="list-header"><%- t('list_header', viewers.length) %></p>
         
-      <ul class="unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
+      <ul class="list-unstyled collaborators" remove_url_pattern="<%- remove_url_pattern %>">
         <% _.each(viewers, function(viewer) { %>
           <%= viewer_li_template({ t: t, viewer: viewer, remove_url_pattern: remove_url_pattern }) %>
         <% }) %>
       </ul>
     </div>
     <p><%- t('explanation') %></p>
-    <form method="post" class="input-append add-viewer" action="<%- create_url %>">
+    <form method="post" class="input-group add-viewer" action="<%- create_url %>">
       <%= window.csrfTokenHtml %>
       <input type="hidden" name="role" value="Viewer" />
-      <input type="email" class="span2" placeholder="<%- t('email_placeholder') %>" name="email" />
-      <button type="submit" class="btn add-viewer-button" disabled="true"><i class="overview-icon-plus"/> <%- t('add') %></button>
+      <input
+        type="email"
+        name="email"
+        class="input-sm form-control"
+        placeholder="<%- t('email_placeholder') %>"
+        />
+      <span class="input-group-btn">
+        <button type="submit" class="btn btn-primary add-viewer-button" disabled="disabled"><i class="overview-icon-plus"/> <%- t('add') %></button>
+      </span>
     </form>
     <% if (is_admin) { %>    
-      <form method="post" class="update form-inline" action="<%- update_url %>">
+      <form method="post" class="update" action="<%- update_url %>">
         <%= window.csrfTokenHtml %>
-        <input id="set-as-example-document-set" type="checkbox" name="public" value="true"<%= is_public && ' checked="checked"' || '' %> />
         <input type="hidden" name="public" value="false" />
-        <label for="set-as-example-document-set">
-          <%- t('example_document_set.checkbox_label') %>
-        </label>
+        <div class="checkbox">
+          <label>
+            <input
+              type="checkbox"
+              id="set-as-example-document-set"
+              name="public"
+              value="true"<%= is_public && ' checked="checked"' || '' %>
+              />
+            <%- t('example_document_set.checkbox_label') %>
+          </label>
+        </div>
       </form>
     <% } %>
   """)
@@ -83,11 +97,13 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
     set_viewers(viewers)
 
   $ ->
-    $('#sharing-options-modal').on 'shown', ->
+    $modal = $('#sharing-options-modal')
+
+    $modal.on 'shown', ->
       $('input[name=email]', this).focus()
 
-    $('#sharing-options-modal').one 'show', ->
-      $('#sharing-options-modal').on 'submit', 'form.add-viewer', (e) ->
+    $modal.one 'show.bs.modal', ->
+      $modal.on 'submit', 'form.add-viewer', (e) ->
         e.preventDefault()
         data = $(e.currentTarget).serialize()
         url = $(e.currentTarget).attr('action')
@@ -100,39 +116,32 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
 
         if (new_email && new_email not in emails)
           add_email_to_list(new_email, emails)
-          $.ajax({
+          $.ajax
             url: url
             type: 'POST'
             data: data
-          })
 
-      $('#sharing-options-modal').on 'click', 'a.remove', (e) ->
+      $modal.on 'click', 'a.remove', (e) ->
         e.preventDefault()
         url = $(e.currentTarget).attr('href')
         email = $(e.currentTarget).closest('li').attr('data-email')
         emails = get_email_list_from_dom()
         remove_email_from_list(email, emails)
 
-        $.ajax({
+        $.ajax
           url: url
           type: 'DELETE'
           data: window.csrfTokenData || {}
-        })
 
-      $('#sharing-options-modal').on 'input', (e) ->
-        text = $('input[name=email]').val()
-        $add_viewer_button = $('.add-viewer-button')
-  
-        if EMAIL_REGEX.test(text)
-          $add_viewer_button.removeAttr('disabled')
-        else
-          $add_viewer_button.attr('disabled', 'true')
+      $modal.on 'change input', 'input[name=email]', (e) ->
+        text = $(e.currentTarget).val()
+        $('.add-viewer-button').prop('disabled', !EMAIL_REGEX.test(text))
 
-      $('#sharing-options-modal').on 'change click', 'form.update input[type=checkbox]', (e) ->
+      $modal.on 'change click', 'form.update input[type=checkbox]', (e) ->
         $checkbox = $(e.currentTarget)
         $checkbox.closest('form').submit()
 
-      $('#sharing-options-modal').on 'submit', 'form.update', (e) ->
+      $modal.on 'submit', 'form.update', (e) ->
         $form = $(e.currentTarget)
         data = $form.serialize()
         old_data = $form.data('last-data')

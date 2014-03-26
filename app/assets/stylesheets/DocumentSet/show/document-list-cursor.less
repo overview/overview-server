@@ -21,7 +21,7 @@
     font-size: 1.5em;
     height: 2em;
     line-height: 2em;
-    background: @bodyBackground;
+    background: @body-bg;
     padding: 0;
     vertical-align: middle;
 
@@ -38,7 +38,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: @darkBodyBackground;
+    background: @body-bg-dark;
 
     i {
       display: block;
@@ -76,7 +76,7 @@
   }
 
   .disabled {
-    .muted;
+    .text-muted;
     cursor: default;
     text-decoration: none;
   }
@@ -95,7 +95,7 @@
   }
 
   div.selection {
-    color: @highlightColor;
+    color: @brand-primary;
   }
 
   h2 {
@@ -114,7 +114,7 @@
     line-height: 1.5em;
     margin: 0;
     padding: 0 0 .5em;
-    .muted;
+    .text-muted;
   }
 
   article {

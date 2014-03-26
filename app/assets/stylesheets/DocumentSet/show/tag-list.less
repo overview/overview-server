@@ -8,17 +8,17 @@
   a.organize {
     background-color: transparent;
     border-color: transparent;
-    color: @linkColor;
+    color: @link-color;
     .box-shadow(none);
-    #gradient > .vertical(@bodyBackground, @bodyBackground);
+    #gradient > .vertical(@body-bg, @body-bg);
 
     &:hover {
-      color: @linkColorHover;
+      color: @link-hover-color;
     }
   }
 
   .tag-name {
-    .border-radius(@inputBorderRadius);
+    .border-radius(@input-border-radius);
 
     #gradient > .vertical(fade(white, 10%), fade(white, 0%));
     background-color: transparent;
@@ -31,13 +31,17 @@
     text-align: left;
   }
 
+  .tag-new form {
+    width: 18em;
+  }
+
   .btn-group {
     .tag-add, .tag-remove {
       position: absolute;
-      background-color: whiteSmoke;
+      background-color: @gray-light;
       border-color: transparent;
       padding: 3px;
-      width: 12px;
+      width: (1.25 * @font-size-base) + 6px;
       top: 2px;
       right: 2px;
       overflow: hidden;
@@ -48,7 +52,7 @@
     }
 
     .tag-add {
-      right: 21px;
+      right: (1.25 * @font-size-base) + 6px + 3px;
     }
 
     .tag-remove {

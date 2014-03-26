@@ -1,7 +1,8 @@
 @import "fonts.less"; // first, because it refers to new downloads
 @import "icons.less"; // also refers to a new download
 
-@import "vendor/bootstrap/less/reset.less";
+@import "vendor/bootstrap/less/normalize.less";
+@import "vendor/bootstrap/less/print.less";
 
 @import "vendor/font-awesome/less/variables.less";
 @FontAwesomePath: "/assets/fonts";
@@ -14,36 +15,27 @@
 
 @import "variables.less"; // Modify this for custom colors, font-sizes, etc
 @import "buttons.less"; // (there's probably a reason it's this high)
-@import "vendor/bootstrap/less/mixins.less";
+@import "mixins.less";
 
 @import "vendor/bootstrap/less/scaffolding.less";
-@import "vendor/bootstrap/less/grid.less";
-@import "vendor/bootstrap/less/layouts.less";
 @import "vendor/bootstrap/less/type.less";
-@import "mixins.less";
 @import "vendor/bootstrap/less/code.less";
-@import "vendor/bootstrap/less/forms.less";
+@import "vendor/bootstrap/less/grid.less";
 @import "vendor/bootstrap/less/tables.less";
-@import "vendor/bootstrap/less/dropdowns.less";
-@import "vendor/bootstrap/less/wells.less";
+@import "vendor/bootstrap/less/forms.less";
 @import "vendor/bootstrap/less/component-animations.less";
-@import "vendor/bootstrap/less/close.less";
+@import "vendor/bootstrap/less/dropdowns.less";
 @import "vendor/bootstrap/less/button-groups.less";
-@import "vendor/bootstrap/less/alerts.less"; // Note: alerts share common CSS with buttons and thus have styles in buttons.less
+@import "vendor/bootstrap/less/input-groups.less";
+@import "vendor/bootstrap/less/navs.less";
+@import "vendor/bootstrap/less/navbar.less";
 @import "vendor/bootstrap/less/pagination.less";
+@import "vendor/bootstrap/less/wells.less";
+@import "vendor/bootstrap/less/close.less";
+@import "vendor/bootstrap/less/alerts.less";
 @import "vendor/bootstrap/less/modals.less";
-@import "vendor/bootstrap/less/hero-unit.less";
-@import "vendor/bootstrap/less/utilities.less"; // Has to be last to override when necessary
+@import "vendor/bootstrap/less/utilities.less";
 @import "vendor/bootstrap/less/responsive-utilities.less";
-@import "vendor/bootstrap/less/responsive-1200px-min.less";
-@import "vendor/bootstrap/less/responsive-768px-979px.less";
-@import "vendor/bootstrap/less/responsive-767px-max.less";
-
-@import "vendor/bootstrap/less/navs.less"; // for "Import a new document set" nav
-
-// Okay, on with the code
-
-@import 'bootstrap-fixes.less';
 
 @import 'vendor/progress-polyfill.less';
 @import 'vendor/spectrum.less';
@@ -103,35 +95,62 @@ html {
   background: transparent;
 }
 
-form.well.form-horizontal {
-  h3:first-child {
-    margin-top: 0;
+form.form-horizontal {
+  h3 {
+    .make-row()
   }
 
-  fieldset.form-actions:last-child {
-    padding-bottom: 0;
+  .control-group {
+    .make-row();
+    .form-group;
+
+    &.error .help-block {
+      color: @brand-danger;
+    }
   }
 
-  input[type=checkbox] {
-    margin: 0;
+  .control-label {
+    .make-sm-column(4);
   }
 
-  div.controls label {
-   cursor: pointer;
+  .controls {
+    .make-sm-column(8);
+
+    &:first-child {
+      .make-sm-column-offset(4);
+    }
+  }
+
+  .form-actions {
+    .make-row();
+
+    &>div {
+      .make-sm-column-offset(4);
+      .make-sm-column(8);
+    }
+  }
+}
+
+form.session-form, form.user-form {
+  h3 {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-left: 33.33333333%;
+    padding-left: @grid-gutter-width / 3;
   }
 }
 
 form {
   &.form-horizontal p.help-block { // specificity
-    .muted;
+    .text-muted;
     margin-top: 2px;
   }
 }
 
 label.error {
   // Assume this is in a form directly after an input...
-  color: @errorColor;
-  border: 1px solid @errorColor;
+  color: @brand-danger;
+  border: 1px solid @brand-danger;
   border-radius: 4px;
   padding: 4px 6px;
   position: relative;
@@ -148,6 +167,16 @@ label.error {
 
 #flash {
   margin-top: 1em;
+}
+
+.page-header {
+  .overview-page-header();
+}
+
+body.password-edit, body.password-new, body.confirmation-index {
+  .well {
+    max-width: 50em;
+  }
 }
 
 @import "common/nav.less";

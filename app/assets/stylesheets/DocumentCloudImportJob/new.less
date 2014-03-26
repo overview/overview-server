@@ -1,6 +1,6 @@
 body.document-cloud-import-job-new {
   p.help-block {
-    .muted;
+    .text-muted;
     max-width: 400px;
     margin-top: 0 !important;
   }
@@ -9,7 +9,7 @@ body.document-cloud-import-job-new {
     .documentcloud-login-failed {
       .well;
       margin: 0;
-      background-color: lighten(@yellow, 35%);
+      background-color: @help-bg;
 
       .preamble {
         margin: 0 0 20px;
@@ -36,7 +36,7 @@ body.document-cloud-import-job-new {
     .fetched {
       .well;
       margin: 0;
-      background-color: lighten(@green, 35%);
+      background-color: lighten(@brand-success, 35%);
     }
   }
 
@@ -62,20 +62,20 @@ body.document-cloud-import-job-new {
       }
 
       p.document-count {
-        .muted;
+        .text-muted;
         margin-bottom: 0;
       }
     }
   }
 
   .import-form {
+    max-width: 40em;
+
     .preamble {
       margin: 20px 0;
     }
 
     .prompt {
-      .well;
-      .form-horizontal;
       margin: 0;
 
       & > .control-group:last-child {

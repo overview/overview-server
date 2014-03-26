@@ -23,18 +23,18 @@
     .overview-toplevel-box;
     padding: .5em 1em;
     line-height: 1.5;
-    background: @bodyBackground;
+    background: @body-bg;
     transition-property: background-color, border-color;
     transition-duration: .5s;
     transition-delay: .5s;
-    border: 1px solid @bodyBackground;
+    border: 1px solid @body-bg;
 
     &.placeholder, &.loading {
       color: @gray;
     }
 
     &:hover {
-      background: @darkBodyBackground;
+      background: @body-bg-dark;
     }
 
     &.cursor {
@@ -45,10 +45,10 @@
       // we transition slowly _from_ selected _to_ unselected, but not the reverse
       transition-duration: 0;
       transition-delay: 0;
-      color: @black;
+      color: black;
       font-weight: bold;
-      background: @darkBodyBackground;
-      border-color: @highlightColor;
+      background: @body-bg-dark;
+      border-color: @brand-primary;
     }
   }
 
@@ -80,7 +80,7 @@
     margin: 0;
     padding: 0;
     .text-overflow();
-    .muted;
+    .text-muted;
   }
 
   ul.tags {
@@ -89,5 +89,5 @@
 }
 
 #document-list.hover li.cursor {
-  background: @wellBackground;
+  background: @well-bg;
 }

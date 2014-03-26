@@ -2,25 +2,25 @@
 @import "../mixins.less";
 
 nav {
-  @maxFontSize: @baseLineHeight * 1.75;
-  @lineHeight: @baseLineHeight * 2;
+  @maxFontSize: @line-height-base * 1.75;
+  @lineHeight: @line-height-base * 2;
 
   .styled-a() {
     display: block;
-    color: @invertedTextColor;
+    color: @navbar-inverse-color;
     text-decoration: none;
     height: @lineHeight;
     line-height: @lineHeight;
     padding: 0 .5em;
 
     &:hover {
-      color: @invertedTextColor;
+      color: @navbar-inverse-color;
       text-decoration: underline;
     }
   }
 
-  background: @invertedBackground;
-  color: @invertedTextColor;
+  background: @navbar-inverse-bg;
+  color: @navbar-inverse-color;
   margin: 0;
   padding: .5em 2em;
   line-height: @lineHeight;
@@ -76,12 +76,5 @@ nav {
   .navbar-text {
     float: left;
     margin: 0 2em;
-  }
-
-  .caret {
-    position: relative;
-    top: .75em;
-    border-top-color: @bodyBackground;
-    border-bottom-color: @bodyBackground;
   }
 }

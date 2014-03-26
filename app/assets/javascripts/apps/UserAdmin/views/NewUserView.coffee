@@ -9,10 +9,27 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
       <tr>
         <td colspan="5">
           <form class="form-inline">
-            <h3><%- t('new.title') %></h3>
-            <input name="email" required="required" type="email" placeholder="<%- t('new.email') %>" />
-            <input name="password" required="required" type="password" placeholder="<%- t('new.password') %>" />
-            <input type="submit" class="btn" value="<%- t('new.submit') %>" />
+            <label for="new-user-email"><%- t('new.title') %></label>
+            <input
+              name="email"
+              id="new-user-email"
+              class="form-control input-sm"
+              required="required"
+              type="email"
+              placeholder="<%- t('new.email') %>"
+              />
+            <input
+              name="password"
+              class="form-control input-sm"
+              required="required"
+              type="password"
+              placeholder="<%- t('new.password') %>"
+              />
+            <input
+              type="submit"
+              class="btn btn-primary"
+              value="<%- t('new.submit') %>"
+              />
           </form>
         </td>
       </tr>

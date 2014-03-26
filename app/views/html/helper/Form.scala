@@ -23,7 +23,7 @@ object Form {
     if (errors.length > 0) {
       Html(
         <div class="control-group error">
-          <ul class="unstyled controls">
+          <ul class="list-unstyled controls">
             {
               errors.map { error =>
                 <li class="help-block error">{ Messages(error.message, error.args: _*) }</li>
@@ -52,7 +52,7 @@ object Form {
     Html(<fieldset class={ fieldsetClassName }>
            { optionalLabel.map(label => <label for={ id } class="control-label">{ label }</label>).getOrElse("") }
            <div class="controls">
-             { (<input id={ id } type={ inputType } name={ name }/>) % attributes }
+             { (<input id={ id } type={ inputType } name={ name } class="form-control"/>) % attributes }
              {
                optionalHelpText.map({ helpText =>
                  <p class="help-block">{ helpText }</p>
@@ -86,10 +86,12 @@ object Form {
 
     Html(<fieldset class={ fieldsetClassName }>
            <div class="controls">
-             <label>
-               { (<input id={ id } type={ inputType } name={ name }/>) % attributes }
-               { optionalLabel.getOrElse("") }
-             </label>
+             <div class="checkbox">
+               <label>
+                 { (<input id={ id } type={ inputType } name={ name }/>) % attributes }
+                 { optionalLabel.getOrElse("") }
+               </label>
+             </div>
              {
                optionalHelpText.map({ helpText =>
                  <p class="help-block">{ helpText }</p>
@@ -130,7 +132,9 @@ object Form {
   def translatedSubmit(m: views.ScopedMessages, attributes: Map[Symbol, String] = Map())(implicit lang: Lang): Html = {
     Html(
       <fieldset class="form-actions">
-        { (<input type="submit" class="btn btn-primary" value={ m("submit") }/>) % attributes }
+        <div>
+          { (<input type="submit" class="btn btn-primary" value={ m("submit") }/>) % attributes }
+        </div>
       </fieldset>.buildString(false))
   }
 }

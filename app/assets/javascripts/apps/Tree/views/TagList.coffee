@@ -46,11 +46,15 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
       <tr class="existing" data-cid="<%= tag.cid %>">
         <td class="name">
           <span class="name" style="display:none;"><%- tag.get('name') %></span>
-          <form method="post" action="#" class="form-horizontal">
+          <form method="post" action="#">
             <%= window.csrfTokenHtml %>
             <input type="hidden" name="id" value="<%- tag.id || '' %>" />
-            <input type="color" name="color" value="<%- tag.get('color') %>"
-            /><input type="text" name="name" value="<%- tag.get('name') %>" />
+            <div class="input-group">
+              <span class="input-group-addon">
+                <input type="color" name="color" value="<%- tag.get('color') %>"/>
+              </span>
+              <input type="text" class="input-sm form-control" name="name" value="<%- tag.get('name') %>" />
+            </div>
           </form>
         </td>
         <% if (hasSeparateTreeCount) { %>
@@ -94,9 +98,13 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
         <tfoot>
           <tr>
             <td colspan="<%- hasSeparateTreeCount ? 4 : 3 %>">
-              <form method="post" action="#" class="form-horizontal">
-                <input type="text" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
-                <button type="submit" class="btn"><%- t('submit') %></button>
+              <form method="post" action="#" role="form">
+                <div class="input-group">
+                  <input type="text" class="form-control input-sm" name="name" required="required" placeholder="<%- t('tag_name.placeholder') %>" />
+                  <span class="input-group-btn">
+                    <button type="submit" class="btn"><%- t('submit') %></button>
+                  </span>
+                </div>
               </form>
             </td>
           </tr>

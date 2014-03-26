@@ -188,8 +188,6 @@ views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
 views.DocumentSet._errorList.h3=Documents with errors
 
-views.DocumentSet._export.h3=Export your document set
-views.DocumentSet._export.close=Close
 views.DocumentSet._import.title=Import a new document set…
 views.DocumentSet._import.label=From…
 views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
@@ -390,6 +388,8 @@ views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to 
 views.ImportJob._documentSetCreationJob.subtitle.query=Query: {0}
 views.ImportJob._documentSetCreationJob.subtitle.other=From uploaded file
 
+views.DocumentSetExport.index.h3=Export your document set
+views.DocumentSetExport.index.close=Close
 views.DocumentSetExport.index.preamble=Your document set will be exported as a spreadsheet. Please choose the format:
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.csv=CSV file, all tags in one column
 views.DocumentSetExport.index.formats.DocumentsWithStringTags.xlsx=Excel file, all tags in one column

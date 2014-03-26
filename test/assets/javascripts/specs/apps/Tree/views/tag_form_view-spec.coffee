@@ -66,11 +66,11 @@ define [
         expect($input.val()).toEqual('#0089ff')
 
       it 'should trigger "change" on change', ->
-        val = undefined
-        view.observe('change', (tag) -> val = tag)
+        spy = jasmine.createSpy('change')
+        view.observe('change', spy)
         actions.set_name('bar')
         actions.submit()
-        expect(val).toEqual({ id: 3, name: 'bar', color: '#abcdef' })
+        expect(spy).toHaveBeenCalledWith(id: 3, name: 'bar', color: '#abcdef')
 
       it 'should not change the existing tag on change', ->
         actions.set_name('bar')
@@ -78,27 +78,26 @@ define [
         expect(tag.name).toEqual('foo')
 
       it 'should hide after "change" and automatically trigger "closed"', ->
-        i = 1
-        val1 = undefined
-        val2 = undefined
-        view.observe('change', () -> val1 = i++)
-        view.observe('closed', () -> val2 = i++)
+        spy1 = jasmine.createSpy('change')
+        spy2 = jasmine.createSpy('closed')
+        view.observe('change', spy1)
+        view.observe('closed', spy2)
         actions.set_name('bar')
         actions.submit()
-        expect(val1).toEqual(1)
-        expect(val2).toEqual(2)
+        expect(spy1).toHaveBeenCalled()
+        expect(spy2).toHaveBeenCalled()
 
       it 'should trigger "change" when submit is clicked (as opposed to when the form is submitted)', ->
-        changed = false
-        view.observe('change', -> changed = true)
+        spy = jasmine.createSpy('change')
+        view.observe('change', spy)
         $('.btn-primary', view.div).click()
-        expect(changed).toBe(true)
+        expect(spy).toHaveBeenCalled()
 
       it 'should trigger "closed" when close is clicked', ->
-        closed = false
-        view.observe('closed', -> closed = true)
+        spy = jasmine.createSpy()
+        view.observe('closed', spy)
         actions.close()
-        expect(closed).toBe(true)
+        expect(spy).toHaveBeenCalled()
 
       it 'should trigger "delete" when delete is clicked', ->
         deleted = false

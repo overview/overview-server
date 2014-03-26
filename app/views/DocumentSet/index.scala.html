@@ -130,7 +130,7 @@
         <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
           <h2>@m("subtitle_jobs")</h2>
           <p class="description">@m("description_jobs")</p>
-          <ul class="unstyled">
+          <ul class="list-unstyled">
             @jobs.map(Function.tupled(views.html.ImportJob._documentSetCreationJob.apply))
           </ul>
         </div>
@@ -138,7 +138,7 @@
 
       @if(documentSets || jobs) {
         <div class="document-sets">
-          <ul class="unstyled">
+          <ul class="list-unstyled">
             @documentSets.map(displayDocumentSet(_))
           </ul>
           @if(documentSets) {

@@ -2,15 +2,19 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   DialogTemplate = _.template("""
-    <form class="modal fade hide" method="get" action="">
-      <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">×</a>
-        <h3><%- t('dialog.title') %></h3>
-      </div>
-      <div class="modal-body"></div>
-      <div class="modal-footer">
-        <button class="btn btn-default" type="reset"><%- t('dialog.cancel') %></button>
-        <button class="btn btn-primary" type="submit"><%- t('dialog.submit') %></button>
+    <form class="modal fade" method="get" action="">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">×</a>
+            <h4 class="modal-title"><%- t('dialog.title') %></h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button class="btn btn-default" type="reset"><%- t('dialog.cancel') %></button>
+            <button class="btn btn-primary" type="submit"><%- t('dialog.submit') %></button>
+          </div>
+        </div>
       </div>
     </form>
   """)
@@ -96,11 +100,11 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
       $dialog
         .on('reset', -> $dialog.modal('hide'))
-        .on('hidden', -> $dialog.remove())
+        .on('hidden.bs.modal', -> $dialog.remove())
         .appendTo('body')
         .modal()
-        .on('show', focus) # might work -- and it's as early as possible
-        .on('shown', focus) # will certainly work
+        .on('show.bs.modal', focus) # might work -- and it's as early as possible
+        .on('shown.bs.modal', focus) # will certainly work
 
       $dialog.validate
         submitHandler: (form) ->

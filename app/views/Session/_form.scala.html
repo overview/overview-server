@@ -9,9 +9,11 @@
     @helper.Form.translatedInput(form("email"), m, Map('type -> "email"))
     @helper.Form.translatedInput(form("password"), m, Map('type -> "password"))
     <fieldset class="form-actions">
-      @helper.Form.csrfToken
-      <input type="submit" class="btn btn-primary" value="@m("submit")" />
-      <p class="help-block muted forgot-password">@Html(m("forgot_password_html", routes.PasswordController.new_()))</p>
+      <div>
+        @helper.Form.csrfToken
+        <input type="submit" class="btn btn-primary" value="@m("submit")" />
+        <p class="help-block muted forgot-password">@Html(m("forgot_password_html", routes.PasswordController.new_()))</p>
+      </div>
     </fieldset>
   </form>
 }

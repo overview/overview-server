@@ -4,13 +4,22 @@
 
 @defining(scopedMessages("views.DocumentSetExport.index")) { m =>
   @defining(escapeFilename(documentSet.title.replace('.', '_') + ".")) { escapedFilenamePart =>
-    <p class="preamble">@m("preamble")</p>
-    <ul class="formats">
-      <li>@m("formats.DocumentsWithStringTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
-      <li>@m("formats.DocumentsWithStringTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
-      <li>@m("formats.DocumentsWithColumnTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
-      <li>@m("formats.DocumentsWithColumnTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
-    </ul>
-    <p class="postamble">@Html(m("postamble_html"))</p>
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h4 class="modal-title">@m("h3")</h4>
+    </div>
+    <div class="modal-body">
+      <p class="preamble">@m("preamble")</p>
+      <ul class="formats">
+        <li>@m("formats.DocumentsWithStringTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
+        <li>@m("formats.DocumentsWithStringTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithStringTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
+        <li>@m("formats.DocumentsWithColumnTags.csv") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(CsvFormat, escapedFilenamePart + "csv", documentSet.id))">@m("download")</a></li>
+        <li>@m("formats.DocumentsWithColumnTags.xlsx") <a href="@(routes.DocumentSetExportController.documentsWithColumnTags(XlsxFormat, escapedFilenamePart + "xlsx", documentSet.id))">@m("download")</a></li>
+      </ul>
+      <p class="postamble">@Html(m("postamble_html"))</p>
+    </div>
+    <div class="modal-footer">
+      <a href="#" data-dismiss="modal" class="btn">@m("close")</a>
+    </div>
   }
 }

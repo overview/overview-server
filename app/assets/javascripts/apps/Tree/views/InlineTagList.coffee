@@ -39,10 +39,12 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         <div class="label">Tags</div>
         <ul class="btn-toolbar">
           <%= collection.map(renderModel).join('') %>
-          <li class="btn-group">
-            <form method="post" action="#" class="input-append">
-              <input type="text" name="tag_name" placeholder="tag name" class="input-small" />
-              <input type="submit" value="<%- t('create') %>" class="btn" />
+          <li class="btn-group tag-new">
+            <form method="post" action="#" class="input-group form-inline">
+              <input type="text" name="tag_name" placeholder="tag name" class="input-sm form-control" />
+              <span class="input-group-btn">
+                <input type="submit" value="<%- t('create') %>" class="btn" />
+              </span>
             </form>
           </li>
           <li class="btn-group untagged">

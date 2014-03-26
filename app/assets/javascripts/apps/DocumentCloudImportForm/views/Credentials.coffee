@@ -7,21 +7,28 @@ define [ 'underscore', 'backbone', 'i18n' ], (_, Backbone, i18n) ->
     error: _.template("""
       <div class="documentcloud-login-failed">
         <p class="preamble"><%- t("credentials_preamble") %></p>
-        <div class="prompt form-horizontal">
-          <div class="control-group">
-            <label class="control-label" for="documentcloud-email"><%- t("email.label") %></label>
-            <div class="controls"><input type="email" id="documentcloud-email" name="documentcloud_username" placeholder="<%- t("email.placeholder") %>" /></div>
+        <div class="prompt">
+          <div class="form-group">
+            <label for="documentcloud-email"><%- t("email.label") %></label>
+            <input
+              type="email"
+              id="documentcloud-email"
+              name="documentcloud_username"
+              class="form-control"
+              placeholder="<%- t("email.placeholder") %>"
+              />
           </div>
-          <div class="control-group">
-            <label class="control-label" for="documentcloud-password"><%- t("password.label") %></label>
-            <div class="controls"><input type="password" id="documentcloud-password" name="documentcloud_password" /></div>
+          <div class="form-group">
+            <label for="documentcloud-password"><%- t("password.label") %></label>
+            <input
+              type="password"
+              id="documentcloud-password"
+              name="documentcloud_password"
+              class="form-control"
+              />
           </div>
-          <div class="control-group">
-            <div class="controls">
-              <button type="submit" class="btn"><%- t("submit_credentials.label") %></button>
-              <p class="help-block"><%- t("submit_credentials.preamble." + ($.support.cors ? "cors" : "no_cors")) %></p>
-            </div>
-          </div>
+          <button type="submit" class="btn btn-primary"><%- t("submit_credentials.label") %></button>
+          <p class="help-block"><%- t("submit_credentials.preamble." + ($.support.cors ? "cors" : "no_cors")) %></p>
         </div>
       </div>
     """)

@@ -10,13 +10,13 @@
 @defining(scopedMessages("views.Session.new_")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="session-new", h1=m("h1"), javascripts=javascripts) {
     <div class="row">
-      <div class="span6">
+      <div class="col-md-6">
         <div class="well">
           @views.html.Session._form(loginForm)
         </div>
       </div>
 
-      <div class="span6">
+      <div class="col-md-6">
         <div class="well">
           @views.html.User._form(registrationForm)
         </div>

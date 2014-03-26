@@ -1,12 +1,12 @@
 @(hasDocuments: Boolean)(implicit lang: Lang)
 @defining(scopedMessages("views.DocumentSet._importDocumentCloud")) { m =>
   @_importPane(h1 = m("h1")) {
-    <div class="row-fluid">
-      <div class="import-documentcloud span9">
+    <div class="row">
+      <div class="import-documentcloud col-md-9">
         <h2>@m("loading")</h2>
         <!-- This content will be replaced in JavaScript -->
       </div>
-      <div class="instructions span3">
+      <div class="instructions col-md-3">
         @views.html.components.helpBox(m("help1"), m("help2"))
       </div>
     </div>

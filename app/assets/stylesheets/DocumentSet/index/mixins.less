@@ -29,7 +29,7 @@
   }
 
   span {
-    .muted;
+    .text-muted;
 
     &::before {
       // Add a space after the content. That's because the HTML will contain
@@ -40,7 +40,7 @@
   }
 
   time {
-    .muted;
+    .text-muted;
 
     &::before {
       content: "\A";
@@ -53,9 +53,9 @@
   &>li {
     padding: 1em;
     margin: 1em 0;
-    background: @darkBodyBackground;
+    background: @body-bg-dark;
     .border-radius(10px);
-    .box-shadow(1px 1px 5px @mutedShadeColor);
+    .box-shadow(1px 1px 5px @shade-muted);
   }
 
   h3 {
@@ -72,7 +72,7 @@
   }
 
   h4 {
-    .muted;
+    .text-muted;
     margin: 0;
     font-family: inherit;
     font-weight: normal;
@@ -91,7 +91,7 @@
     }
 
     a.error-count {
-      color: @errorColor;
+      color: @brand-danger;
     }
   }
 
@@ -129,7 +129,7 @@
   }
 
   h3 {
-    .muted;
+    .text-muted;
     margin: 0;
     font-size: 1em;
     line-height: 1.6;
@@ -137,7 +137,7 @@
   }
 
   .state-description {
-    .muted;
+    .text-muted;
   }
 
   p.status {
@@ -180,7 +180,7 @@
     display: block;
     .clearfix;
     padding: .75em 1em;
-    border-top: 1px dashed @mutedShadeColor;
+    border-top: 1px dashed @shade-muted;
 
     &:first-child {
       border: none;
@@ -188,14 +188,14 @@
     }
 
     &:hover {
-      background: @darkBodyBackground;
+      background: @body-bg-dark;
     }
   }
 
   h3 {
     margin: 0;
     padding: 0;
-    font-family: @sansFontFamily;
+    font-family: @font-family-sans-serif;
     font-size: 1.25em;
     line-height: 1.6;
     font-weight: normal;
@@ -204,8 +204,8 @@
   h4 {
     margin: 0;
     padding: 0;
-    .muted;
-    font-family: @sansFontFamily;
+    .text-muted;
+    font-family: @font-family-sans-serif;
     font-weight: normal;
     font-size: 1em;
     line-height: 1;

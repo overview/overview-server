@@ -3,11 +3,12 @@
 
 @overviewPageHeaderMarginTop: 2em;
 @overviewPageHeaderLineHeight: 3em;
+@overviewPageHeaderMarginBottom: 1em;
 
 .overview-page-header() {
   // Undo Twitter Bootstrap styles
   // XXX remove this stuff when Twitter Bootstrap is removed
-  margin: @overviewPageHeaderMarginTop 0 0;
+  margin: @overviewPageHeaderMarginTop 0 @overviewPageHeaderMarginBottom;
   padding-bottom: 0;
   border: none;
 
@@ -15,35 +16,35 @@
   h1 {
     margin: 0;
     padding: 0;
-    font-family: @sansFontFamily;
+    font-family: @font-family-sans-serif;
     font-weight: normal;
     text-transform: uppercase;
     font-size: 2em;
     line-height: 1.5;
-    color: @highlightColor;
-    border-bottom: 1px solid @highlightColor;
+    color: @brand-primary;
+    border-bottom: 1px solid @brand-primary;
   }
 }
 
 .overview-toplevel-box() {
-  .box-shadow(1px 1px 3px 1px @shadeColor);
+  .box-shadow(1px 1px 3px 1px @shade);
   .border-radius(5px);
 }
 
 .overview-help-box() {
   .border-radius(5px);
-  border: 1px solid @textColor;
-  font: 1em @serifFontFamily;
+  border: 1px solid @text-color;
+  font: 1em @font-family-serif;
   position: relative;
   margin-top: 1.2em;
-  background-color: @helpColor;
+  background-color: @help-bg;
 
   h6 {
-    .muted;
+    .text-muted;
     position: absolute;
     top: -1.2em;
     left: 1em;
-    font: 1em normal @sansFontFamily; // headingsFontFamily is always bold
+    font: 1em normal @font-family-sans-serif; // headingsFontFamily is always bold
     padding: 0;
     margin: 0;
   }
@@ -62,7 +63,6 @@
 
   li {
     display: inline-block;
-    .ie7-inline-block();
     margin: .3em .5em .3em 0;
   }
 
@@ -84,7 +84,7 @@
 }
 
 .faded-link() {
-  color: @linkColor;
+  color: @link-color;
   opacity: 0.4;
   .transition(opacity .15s ease);
 

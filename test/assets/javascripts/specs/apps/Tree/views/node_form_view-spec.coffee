@@ -61,24 +61,23 @@ define [
         expect(node.description).toEqual('description')
 
       it 'should hide after "change" and automatically trigger "closed"', ->
-        i = 1
-        val1 = undefined
-        val2 = undefined
-        view.observe('change', () -> val1 = i++)
-        view.observe('closed', () -> val2 = i++)
+        spy1 = jasmine.createSpy('change')
+        spy2 = jasmine.createSpy('closed')
+        view.observe('change', spy1)
+        view.observe('closed', spy2)
         actions.set_description('description 2')
         actions.submit()
-        expect(val1).toEqual(1)
-        expect(val2).toEqual(2)
+        expect(spy1).toHaveBeenCalled()
+        expect(spy2).toHaveBeenCalled()
 
       it 'should trigger "closed" when close is clicked', ->
-        closed = false
-        view.observe('closed', -> closed = true)
+        spy = jasmine.createSpy('closed')
+        view.observe('closed', spy)
         actions.close()
-        expect(closed).toBe(true)
+        expect(spy).toHaveBeenCalled()
 
       it 'should not trigger "change" when close is clicked', ->
-        change = false
-        view.observe('change', -> changed = true)
+        spy = jasmine.createSpy('change')
+        view.observe('change', spy)
         actions.close()
-        expect(closed).toBe(false)
+        expect(spy).not.toHaveBeenCalled()

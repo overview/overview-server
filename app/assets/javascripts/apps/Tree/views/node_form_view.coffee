@@ -22,7 +22,7 @@ define [
       $form = $(this._create_form_string())
       $('body').append($form)
 
-      $form.modal()
+      $form.modal('show')
       $form.find('input[type=text]:eq(0)').focus()
 
       $form.on 'submit', (e) =>
@@ -31,7 +31,7 @@ define [
         this._notify('change', new_node)
         $form.modal('hide')
 
-      $form.on 'hidden', () =>
+      $form.on 'hidden.bs.modal', () =>
         $form.remove()
         this._notify('closed')
 
@@ -46,23 +46,29 @@ define [
     _create_form_string: () ->
       _.template("""
         <form id="node-form-view-dialog" class="modal" role="dialog" action="#" method="post">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">×</button>
-            <h3><%- i18n('views.Node._form.h3') %></h3>
-          </div>
-          <div class="modal-body">
-            <div class="form-horizontal">
-              <div class="control-group">
-                <label class="control-label" for="node-form-description"><%- i18n('views.Node._form.labels.description') %></label>
-                <div class="controls">
-                  <input type="text" name="description" id="node-form-description" required="required" value="<%- node.description %>" />
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h3><%- i18n('views.Node._form.h3') %></h3>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="node-form-description"><%- i18n('views.Node._form.labels.description') %></label>
+                  <input
+                    id="node-form-description"
+                    name="description"
+                    class="form-control"
+                    required="required"
+                    value="<%- node.description %>"
+                    />
                 </div>
               </div>
+              <div class="modal-footer">
+                <%= window.csrfTokenHtml %>
+                <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Node._form.close') %>" />
+                <input type="submit" class="btn btn-primary" value="<%- i18n('views.Node._form.submit') %>" />
+              </div>
             </div>
-          </div>
-          <div class="modal-footer">
-            <%= window.csrfTokenHtml %>
-            <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Node._form.close') %>" />
-            <input type="submit" class="btn btn-primary" value="<%- i18n('views.Node._form.submit') %>" />
           </div>
         </form>""")({ i18n: i18n, node: @node })

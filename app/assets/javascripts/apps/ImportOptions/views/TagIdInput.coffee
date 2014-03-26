@@ -10,7 +10,7 @@ define [
 
   class TagIdInput extends Backbone.View
     template: _.template("""
-      <select id="import-options-tag-id" name="tag_id">
+      <select id="import-options-tag-id" name="tag_id" class="form-control">
         <option selected="selected" value=""><%- t('tag.allDocuments') %></option>
         <option disabled="disabled"><%- t('tag.loading') %></option>
       </select>

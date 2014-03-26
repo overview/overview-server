@@ -52,7 +52,7 @@
   }
 
   &:disabled, &.disabled {
-    color: @btnColor;
+    color: @color;
     text-shadow: none;
   }
 }
@@ -61,16 +61,16 @@
   display: inline-block;
   padding: 4px 12px;
   margin-bottom: 0; // For input.btn
-  font-size: @baseFontSize;
-  line-height: @baseLineHeight;
-  *line-height: @baseLineHeight;
+  font-size: @font-size-base;
+  line-height: @line-height-base;
+  *line-height: @line-height-base;
   text-align: center;
   vertical-align: middle;
   cursor: pointer;
-  border: 1px solid @btnBorder;
+  border: 1px solid @btn-default-border;
   *border: 0; // Remove the border to prevent IE7's black border on input:focus
-  border-bottom-color: darken(@btnBorder, 10%);
-  border-radius: @baseBorderRadius;
+  border-bottom-color: darken(@btn-default-border, 10%);
+  border-radius: @border-radius-base;
   .box-shadow(~"inset 0 1px 0 rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.15)");
 
   // Focus state for keyboard and accessibility
@@ -89,7 +89,7 @@
   &.disabled,
   &[disabled] {
     cursor: default;
-    background-color: darken(@white, 10%);
+    background-color: darken(white, 10%);
     background-image: none;
     .opacity(65);
     .box-shadow(none);
@@ -101,15 +101,15 @@ a.btn:hover, a.btn.hover {
 }
 
 .btn {
-  .btnColor(@btnColor);
-  .btnBackground(@btnBackground1, @btnBackground2, @btnBackground3);
+  .btnColor(@btn-default-color);
+  .btnBackground(@btn-default-bg, @btn-default-bg2, @btn-default-bg3);
 }
 .btn-primary {
-  .btnColor(@btnPrimaryColor);
-  .btnBackground(@btnPrimaryBackground1, @btnPrimaryBackground2, @btnPrimaryBackground3);
+  .btnColor(@btn-primary-color);
+  .btnBackground(@btn-primary-bg, @btn-primary-bg2, @btn-primary-bg3);
 }
 // Danger and error appear as red
 .btn-danger {
-  .btnColor(@btnDangerColor);
-  .btnBackground(@btnDangerBackground1, @btnDangerBackground2, @btnDangerBackground3);
+  .btnColor(@btn-danger-color);
+  .btnBackground(@btn-danger-bg, @btn-danger-bg2, @btn-danger-bg3);
 }

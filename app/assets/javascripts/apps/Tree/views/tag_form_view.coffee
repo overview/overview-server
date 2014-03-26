@@ -37,7 +37,7 @@ define [
       $form.modal()
       $form.find('input[type=text]').focus()
 
-      $form.on 'hidden', () =>
+      $form.on 'hidden.bs.modal', () =>
         $color.spectrum('destroy')
         $form.remove()
         this._notify('closed')
@@ -74,29 +74,41 @@ define [
     _create_form_string: () ->
       _.template("""
         <form method="get" action="#" id="tag-form-view-dialog" class="modal" role="dialog">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">×</button>
-          <h3><%- i18n('views.Tag._form.h3') %></h3>
-        </div>
-        <div class="modal-body">
-          <div class="form-horizontal" method="post" action="#">
-          <div class="control-group">
-            <label class="control-label" for="tag-form-name"><%- i18n('views.Tag._form.labels.name') %></label>
-            <div class="controls">
-            <input type="text" name="name" id="tag-form-name" required="required" value="<%- tag.name %>" />
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">×</button>
+                <h4 class="modal-title"><%- i18n('views.Tag._form.h3') %></h4>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="tag-form-name"><%- i18n('views.Tag._form.labels.name') %></label>
+                  <input
+                    id="tag-form-name"
+                    name="name"
+                    class="form-control"
+                    required="required"
+                    value="<%- tag.name %>"
+                    />
+                </div>
+                <div class="form-group">
+                  <label for="tag-form-color"><%- i18n('views.Tag._form.labels.color') %></label>
+                  <div>
+                    <input
+                      type="color"
+                      id="tag-form-color"
+                      name="color"
+                      required="required"
+                      value="<%- tag.color || color_table.get(tag.name) %>"
+                      />
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete', tag.name) %>" value="<%- i18n('views.Tag._form.delete') %>" />
+                <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Tag._form.close') %>" />
+                <input type="submit" class="btn btn-primary" value="<%- i18n('views.Tag._form.submit') %>" />
+              </div>
             </div>
           </div>
-          <div class="control-group">
-            <label class="control-label" for="tag-form-color"><%- i18n('views.Tag._form.labels.color') %></label>
-            <div class="controls">
-            <input type="color" name="color" id="tag-form-color" required="required" value="<%- tag.color || color_table.get(tag.name) %>" />
-            </div>
-          </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete', tag.name) %>" value="<%- i18n('views.Tag._form.delete') %>" />
-          <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Tag._form.close') %>" />
-          <input type="submit" class="btn btn-primary" value="<%- i18n('views.Tag._form.submit') %>" />
-        </div>
         </form>""")({ i18n: i18n, tag: @tag, color_table: new ColorTable() })

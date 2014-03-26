@@ -5,9 +5,9 @@
     overflow: auto;
     height: 23em;
     margin: 1em 0;
-    background: @darkBodyBackground;
+    background: @body-bg-dark;
     box-shadow: inset 0 -18px 40px -30px black;
-    border: 1px solid @mutedShadeColor;
+    border: 1px solid @shade-muted;
     padding: 0.5em;
 
     ul {
@@ -30,7 +30,7 @@
     }
 
     li.empty-upload {
-      color: @mutedShadeColor;
+      color: @shade-muted;
       height: inherit;
       text-align: center;
       margin: 0;
@@ -100,7 +100,7 @@
   }
 
   .minimum-files {
-    .muted();
+    .text-muted;
     margin-top: 1em;
     clear: both;
   }
@@ -114,7 +114,7 @@
   }
 
   .waiting {
-    .muted;
+    .text-muted;
   }
 
   .uploading {
@@ -124,6 +124,6 @@
   }
 
   .uploaded {
-    color: @successColor;
+    color: @brand-success;
   }
 }

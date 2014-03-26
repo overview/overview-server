@@ -10,13 +10,17 @@ define [
 
   template = _.template("""
     <div class="modal fade">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3><%- t('header') %></h3>
-      </div>
-      <div class="modal-body"></div>
-      <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Close</a>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title"><%- t('header') %></h3>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <a href="#" class="btn" data-dismiss="modal">Close</a>
+          </div>
+        </div>
       </div>
     </div>
   """)
@@ -104,7 +108,7 @@ define [
       $dialog
         .appendTo('body')
         .modal()
-        .on 'hidden', =>
+        .on 'hidden.bs.modal', =>
           view.remove()
           view = undefined
           $dialog.remove()
