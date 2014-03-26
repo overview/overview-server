@@ -248,6 +248,10 @@ class UserControllerSpec extends controllers.ControllerSpecification with JsonMa
           user.map(_.confirmedAt) must beSome
         }
 
+        "set treeTooltipsEnabled=true" in new CreatedScope {
+          user.map(_.treeTooltipsEnabled) must beSome(true)
+        }
+
         "return the user" in new CreatedScope {
           val s = h.contentAsString(result)
           s must /("email" -> "user2@example.org")

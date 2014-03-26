@@ -33,6 +33,7 @@ trait OverviewUser {
   val lastSignInIp: Option[String]
   val lastActivityAt: Option[Date]
   val lastActivityIp: Option[String]
+  val treeTooltipsEnabled: Boolean
 
   def passwordMatches(password: String): Boolean
 
@@ -240,6 +241,7 @@ object OverviewUser {
     override val lastSignInIp = user.lastSignInIp
     override val lastActivityAt = user.lastActivityAt
     override val lastActivityIp = user.lastActivityIp
+    override val treeTooltipsEnabled = user.treeTooltipsEnabled
 
     def passwordMatches(password: String): Boolean = {
       password.isBcrypted(user.passwordHash)

@@ -27,6 +27,7 @@ class UserControllerSpec extends Specification {
     // XXX remove vars
     var existingUserMailed = false
     var newUserMailed = false
+    var savedUser : Option[OverviewUser] = None
     
     trait TestUserController extends UserController {
       override def mailExistingUser(user: OverviewUser)(implicit request: RequestHeader) = {
@@ -38,6 +39,7 @@ class UserControllerSpec extends Specification {
       }
 
       override protected def saveUser(user: OverviewUser with ConfirmationRequest) : OverviewUser with ConfirmationRequest = {
+        savedUser = Some(user)
         user
       }
     }
@@ -130,6 +132,12 @@ class UserControllerSpec extends Specification {
       run
       existingUserMailed must beFalse
       newUserMailed must beTrue
+    }
+
+    "create() should set a new user treeTooltipsEnabled=true" in new OurScopeWithNewUser {
+      savedUser = None
+      run
+      savedUser must beSome[OverviewUser].like { case u: OverviewUser => u.treeTooltipsEnabled must beEqualTo(true) }
     }
 
     "create() with a new user should redirect with 'success' flash" in new OurScopeWithNewUser {

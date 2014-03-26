@@ -25,7 +25,8 @@ case class User(
   var lastSignInIp: Option[String] = None,
   var lastActivityAt: Option[Timestamp] = None,
   var lastActivityIp: Option[String] = None,
-  val emailSubscriber: Boolean = false
+  val emailSubscriber: Boolean = false,
+  val treeTooltipsEnabled: Boolean = true
   ) extends KeyedEntity[Long] {
 
   def this() = this(role = UserRole.NormalUser)
