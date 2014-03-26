@@ -101,8 +101,6 @@ views.admin.User.index.new.email=Email
 views.admin.User.index.new.password=Password
 views.admin.User.index.new.submit=Create
 
-views.components.helpBox.title=Help
-
 views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_blog=Blog
