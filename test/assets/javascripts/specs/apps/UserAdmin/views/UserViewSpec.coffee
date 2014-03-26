@@ -93,13 +93,13 @@ define [
       expect(view.$('a.delete').length).toEqual(0)
 
     it 'should not delete when user does not confirm', ->
-      spyOn(window, 'confirm').andReturn(false)
+      spyOn(window, 'confirm').and.returnValue(false)
       view.$('a.delete').click()
       expect(window.confirm).toHaveBeenCalledWith('confirm.delete,user@example.org')
       expect(view.model.has('deleting')).toEqual(false)
 
     it 'should delete when user confirms', ->
-      spyOn(window, 'confirm').andReturn(true)
+      spyOn(window, 'confirm').and.returnValue(true)
       view.$('a.delete').click()
       expect(view.model.has('deleting')).toEqual(true)
 

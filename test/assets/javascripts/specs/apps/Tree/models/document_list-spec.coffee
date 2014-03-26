@@ -51,14 +51,14 @@ define [
 
         it 'should filter for the given document set', ->
           params = new MockParams({})
-          spyOn(params, 'toApiParams').andReturn({ nodes: 1 })
+          spyOn(params, 'toApiParams').and.returnValue({ nodes: 1 })
           dl = new DocumentList(cache, params)
           dl.slice(0, 2)
           expect(params.toApiParams).toHaveBeenCalledWith(nodes: 1)
 
         it 'should call Cache.resolve_deferred(selection_documents_slice)', ->
           dl = new DocumentList(cache, new MockParams(nodes: '2'))
-          spyOn(cache, 'resolve_deferred').andCallThrough()
+          spyOn(cache, 'resolve_deferred').and.callThrough()
           deferred = dl.slice(0, 2)
           expect(cache.resolve_deferred).toHaveBeenCalledWith('selection_documents_slice', { nodes: '2', pageSize: 2, page: 1 })
 
@@ -146,7 +146,7 @@ define [
         expect(dl.describeParameters()).toEqual([ 'node', 'foo' ])
 
       it 'should describe a search result', ->
-        searchResultStore = { find_by_id: jasmine.createSpy('find_by_id').andReturn({ query: 'foo' }) }
+        searchResultStore = { find_by_id: jasmine.createSpy('find_by_id').and.returnValue({ query: 'foo' }) }
         dl = new DocumentList(
           { search_result_store: searchResultStore },
           { type: 'searchResult', searchResultId: 1 }
@@ -155,7 +155,7 @@ define [
         expect(searchResultStore.find_by_id).toHaveBeenCalledWith(1)
 
       it 'should describe a tag', ->
-        tagStore = { find_by_id: jasmine.createSpy('find_by_id').andReturn({ name: 'foo' }) }
+        tagStore = { find_by_id: jasmine.createSpy('find_by_id').and.returnValue({ name: 'foo' }) }
         dl = new DocumentList({ tag_store: tagStore }, { type: 'tag', tagId: 1 })
         expect(dl.describeParameters()).toEqual([ 'tag', 'foo' ])
         expect(tagStore.find_by_id).toHaveBeenCalledWith(1)

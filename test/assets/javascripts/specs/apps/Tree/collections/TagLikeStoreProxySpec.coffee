@@ -92,7 +92,7 @@ define [
         proxy.setChangeOptions({ interacting: true })
         spyOn(tag, 'set')
         store._notify('changed', { id: 20, name: 'tag21', color: '#212121' })
-        expect(tag.set.mostRecentCall.args[1]).toEqual({ interacting: true })
+        expect(tag.set.calls.mostRecent().args[1]).toEqual({ interacting: true })
 
     describe 'with a TagLikeStore with an un-inserted tag', ->
       beforeEach ->
@@ -116,7 +116,7 @@ define [
         spyOn(tag, 'set')
         proxy.setChangeOptions({ interacting: true })
         store._notify('id-changed', -1, tag)
-        expect(tag.set.mostRecentCall.args[1]).toEqual({ interacting: true })
+        expect(tag.set.calls.mostRecent().args[1]).toEqual({ interacting: true })
 
       it 'should find the tagLike in a callback by either ID', ->
         found = {

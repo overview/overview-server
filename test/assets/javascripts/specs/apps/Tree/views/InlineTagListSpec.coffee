@@ -114,14 +114,14 @@ define [
           view.on('add-clicked', spy)
           view.$('.tag-add:eq(0)').click()
           expect(spy).toHaveBeenCalled()
-          expect(spy.mostRecentCall.args[0].id).toEqual(1)
+          expect(spy.calls.mostRecent().args[0].id).toEqual(1)
 
         it 'should notify :remove-clicked', ->
           spy = jasmine.createSpy()
           view.on('remove-clicked', spy)
           view.$('.tag-remove:eq(0)').click()
           expect(spy).toHaveBeenCalled()
-          expect(spy.mostRecentCall.args[0].id).toEqual(1)
+          expect(spy.calls.mostRecent().args[0].id).toEqual(1)
 
         it 'should notify :add-clicked when trying to create an existing tag', ->
           spy = jasmine.createSpy()
@@ -129,14 +129,14 @@ define [
           view.$('input[type=text]').val('AA')
           view.$('form').submit()
           expect(spy).toHaveBeenCalled()
-          expect(spy.mostRecentCall.args[0].id).toEqual(1)
+          expect(spy.calls.mostRecent().args[0].id).toEqual(1)
 
         it 'should notify :name-clicked when clicking a tag', ->
           spy = jasmine.createSpy()
           view.on('name-clicked', spy)
           view.$('.tag-name:eq(0)').click()
           expect(spy).toHaveBeenCalled()
-          expect(spy.mostRecentCall.args[0].id).toEqual(1)
+          expect(spy.calls.mostRecent().args[0].id).toEqual(1)
 
         it 'should notify :organize-clicked when clicking the organize link', ->
           spy = jasmine.createSpy()

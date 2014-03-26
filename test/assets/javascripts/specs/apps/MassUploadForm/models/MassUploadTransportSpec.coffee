@@ -10,20 +10,24 @@ define [
     transport = undefined
 
     beforeEach ->
+      jasmine.Ajax.install()
       progressSpy = jasmine.createSpy()
       successSpy = jasmine.createSpy()
       errorSpy = jasmine.createSpy()
       transport = MassUploadTransport( {url: '/files', csrfToken: 'a_token'} )
 
+    afterEach ->
+      jasmine.Ajax.uninstall()
+
     describe 'doListFiles', ->
       it 'makes an ajax request for the /files endpoint', ->
         transport.doListFiles()
-        expect(mostRecentAjaxRequest().url).toEqual('/files')
-        expect(mostRecentAjaxRequest().method).toEqual('GET')
+        expect(jasmine.Ajax.requests.mostRecent().url).toEqual('/files')
+        expect(jasmine.Ajax.requests.mostRecent().method).toEqual('GET')
 
       it 'calls the progress callback when it gets data', ->
         deferred = new $.Deferred
-        spyOn($, 'ajax').andReturn(deferred)
+        spyOn($, 'ajax').and.returnValue(deferred)
         transport.doListFiles(progressSpy)
         expect(progressSpy).not.toHaveBeenCalled()
         deferred.notify({ lengthComputable: true, total: 10, loaded: 5})
@@ -40,7 +44,7 @@ define [
           ]
 
         transport.doListFiles((() ->), successSpy)
-        mostRecentAjaxRequest().response
+        jasmine.Ajax.requests.mostRecent().response
           status: 200
           responseText: JSON.stringify(ajaxResponse)
 
@@ -53,7 +57,7 @@ define [
 
       it 'calls the error callback', ->
         transport.doListFiles((() ->), (() ->), errorSpy)
-        mostRecentAjaxRequest().response
+        jasmine.Ajax.requests.mostRecent().response
           status: 404
 
         expect(errorSpy).toHaveBeenCalled()
@@ -68,15 +72,15 @@ define [
           name: 'foo.pdf'
           lastModifiedDate: new Date('2013-10-01T12:00:00Z')
         }
-        uploadSpy = spyOn(Upload.prototype, 'start').andCallThrough()
+        uploadSpy = spyOn(Upload.prototype, 'start').and.callThrough()
 
         transport.doUploadFile(file, progressSpy, successSpy, errorSpy)
-        upload = uploadSpy.mostRecentCall.object
+        upload = uploadSpy.calls.mostRecent().object
 
       it 'uploads the file', ->
         transport.doUploadFile(file)
         expect(uploadSpy).toHaveBeenCalled()
-        upload = uploadSpy.mostRecentCall.object
+        upload = uploadSpy.calls.mostRecent().object
         expect(upload.url).toMatch(/\/files\/\w+/)
         expect(upload.file).toBe(file)
 
@@ -95,7 +99,7 @@ define [
       it 'includes the CSRF token in the url', ->
         transport.doUploadFile(file)
         expect(uploadSpy).toHaveBeenCalled()
-        upload = uploadSpy.mostRecentCall.object
+        upload = uploadSpy.calls.mostRecent().object
         expect(upload.url).toMatch(/[\?&]csrfToken=a_token/)
 
       it 'returns an abort callback', ->

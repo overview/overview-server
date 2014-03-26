@@ -32,7 +32,7 @@ define [
           queue: ->
       $dialog = $('<div></div>')
       oldFnModal = $.fn.modal
-      $.fn.modal = jasmine.createSpy('$.fn.modal').andReturn($dialog)
+      $.fn.modal = jasmine.createSpy('$.fn.modal').and.returnValue($dialog)
       controller = new TagDialogController
         view: view
         tagStoreProxy: tagStoreProxy
@@ -51,7 +51,7 @@ define [
       beforeEach ->
         model = new Backbone.Model(id: 1)
         tag = { id: 1 }
-        tagStoreProxy.unmap.andReturn(tag)
+        tagStoreProxy.unmap.and.returnValue(tag)
 
       it 'should call cache.delete_tag', ->
         view.trigger('remove', model)

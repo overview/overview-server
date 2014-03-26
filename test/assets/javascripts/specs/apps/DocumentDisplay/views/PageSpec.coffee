@@ -109,7 +109,7 @@ define [
             url: '//twitter.com'
         })
         twttrDeferred = new $.Deferred()
-        spyOn($, 'getScript').andReturn(twttrDeferred)
+        spyOn($, 'getScript').and.returnValue(twttrDeferred)
         state.set('document', document)
 
       it 'should render a blockquote', ->
@@ -214,7 +214,7 @@ define [
         expect(view.$('object')).toHaveText('missing-plugin')
 
       it 'does not have any preferences', ->
-        expect(view.$('page')).not.toContain('a.boolean-preference')
+        expect(view.$('page')).not.toContainElement('a.boolean-preference')
 
     describe 'with an insecure document', ->
       beforeEach ->

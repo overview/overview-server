@@ -8,6 +8,7 @@ define [
     model = undefined
 
     beforeEach ->
+      jasmine.Ajax.install() # for TagIdInput
       i18n.reset_messages
         'views.DocumentSet.index.ImportOptions.title': 'title'
         'views.DocumentSet.index.ImportOptions.split_documents.label_html': 'split_documents.label_html'
@@ -28,6 +29,7 @@ define [
         'views.DocumentSet.index.ImportOptions.tag.allDocuments': 'tag.allDocuments'
 
     afterEach ->
+      jasmine.Ajax.uninstall()
       view?.remove()
 
     describe 'with some options', ->

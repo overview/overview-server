@@ -25,7 +25,7 @@ define [
       it 'sets pan and zoom for a specific node', ->
         node = new AnimatedNode({id: 2, parentId: null, description: "some words", size: 10, isLeaf: true}, null)
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
-        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.calculateBounds.and.returnValue({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
 
         focus.animateNode(node)
@@ -40,7 +40,7 @@ define [
         node.narrow = true
         node.position = {xMiddle: 5}
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
-        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.calculateBounds.and.returnValue({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
 
         focus.animateNode(node)
@@ -55,7 +55,7 @@ define [
         node.narrow = true
         node.position = {xMiddle: 95}
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
-        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.calculateBounds.and.returnValue({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
 
         focus.animateNode(node)
@@ -70,7 +70,7 @@ define [
         node.narrow = true
         node.position = {xMiddle: -95}
         animatedTree = jasmine.createSpyObj('animatedTree', ['calculateBounds'])
-        animatedTree.calculateBounds.andReturn({right: 25, left: -75})
+        animatedTree.calculateBounds.and.returnValue({right: 25, left: -75})
         animatedTree.bounds = {right: 100, left: -100}
 
         focus.animateNode(node)

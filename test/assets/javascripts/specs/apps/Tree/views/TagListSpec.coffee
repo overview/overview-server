@@ -55,14 +55,14 @@ define [
         $form = view.$('tfoot form')
         $form.find('input[name=name]').val('new tag')
         $form.submit()
-        expect(spy).toHaveBeenCalledWith({ name: 'new tag' })
+        expect(spy).toHaveBeenCalledWith({ name: 'new tag', color: undefined })
 
       it 'should strip spaces from tag names', ->
         spy = jasmine.createSpy()
         view.on('add', spy)
         view.$('tfoot input[name=name]').val(' new tag ')
         view.$('tfoot form').submit()
-        expect(spy).toHaveBeenCalledWith({ name: 'new tag' })
+        expect(spy).toHaveBeenCalledWith({ name: 'new tag', color: undefined })
 
       describe 'adding empty tags', ->
         # XXX these tests mimic tests in InlineTagListSpec
@@ -209,18 +209,18 @@ define [
       it 'should trigger remove', ->
         spy = jasmine.createSpy()
         view.on('remove', spy)
-        spyOn(window, 'confirm').andReturn(true)
+        spyOn(window, 'confirm').and.returnValue(true)
         view.$('tbody tr:eq(0) a.remove').click()
         expect(spy).toHaveBeenCalled()
 
       it 'should not trigger remove if not confirmed', ->
         spy = jasmine.createSpy()
         view.on('remove', spy)
-        spyOn(window, 'confirm').andReturn(false)
+        spyOn(window, 'confirm').and.returnValue(false)
         view.$('tbody tr:eq(0) a.remove').click()
         expect(spy).not.toHaveBeenCalled()
 
       it 'should confirm remove with the tag name and count', ->
-        spyOn(window, 'confirm').andReturn(false)
+        spyOn(window, 'confirm').and.returnValue(false)
         view.$('tbody tr:eq(0) a.remove').click()
         expect(window.confirm).toHaveBeenCalledWith("remove.confirm,tag10,10")

@@ -24,7 +24,7 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
       model = new Fetcher({ query: query, credentials: dummyCredentials() })
       ajaxDeferred = new $.Deferred()
 
-      spyOn($, 'ajax').andReturn(ajaxDeferred)
+      spyOn($, 'ajax').and.returnValue(ajaxDeferred)
 
     describe 'fetchQuery', ->
       # We make all browsers test CORS and non-CORS, because our workflow
@@ -32,7 +32,7 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
       it 'should send a CORS AJAX request', ->
         withFakeCorsSupport(true, -> model.fetchQuery())
         expect($.ajax).toHaveBeenCalled()
-        options = $.ajax.mostRecentCall.args[0]
+        options = $.ajax.calls.mostRecent().args[0]
         expect(options.type).toEqual('GET')
         expect(options.timeout).toBeDefined()
         expect(options.headers?.Authorization).toBeDefined()
@@ -40,7 +40,7 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
       it 'should send a non-CORS AJAX request, via proxy', ->
         withFakeCorsSupport(false, -> model.fetchQuery())
         expect($.ajax).toHaveBeenCalled()
-        options = $.ajax.mostRecentCall.args[0]
+        options = $.ajax.calls.mostRecent().args[0]
         expect(options.type).toEqual('POST')
         expect(options.timeout).toBeDefined()
         expect(options.headers?.Authorization).toBeUndefined()
@@ -61,9 +61,9 @@ define [ 'jquery', 'backbone', PATH ], ($, Backbone, Fetcher) ->
 
       it 'should not abort an AJAX request after it is complete', ->
         model.set({ credentials: dummyCredentials({ dummyVariableToMakeEqualsReturnFalse: 1 }) })
-        $.ajax.mostRecentCall.args[0].complete()
+        $.ajax.calls.mostRecent().args[0].complete()
         model.set({ credentials: dummyCredentials({ dummyVariableToMakeEqualsReturnFalse: 2 }) })
-        expect($.ajax.callCount).toEqual(2)
+        expect($.ajax.calls.count()).toEqual(2)
         # If we're here and didn't crash, we know ajaxDeferred.abort() wasn't called.
 
       it 'should set status=error', ->

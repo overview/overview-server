@@ -23,7 +23,7 @@ define [
         'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
         'views.DocumentSet._massUploadForm.minimum_files': 'minimum_files'
 
-      uploadViewRenderSpy = spyOn(MockUploadView.prototype, 'render').andCallThrough()
+      uploadViewRenderSpy = spyOn(MockUploadView.prototype, 'render').and.callThrough()
       collection = new Backbone.Collection
       view = new UploadCollectionView(collection: collection, uploadViewClass: MockUploadView)
       view.render()
@@ -74,17 +74,17 @@ define [
         # The intent is that we don't initialize the view at all; testing
         # whether it's rendered is a quick hack so we don't need to mock
         # the constructor.
-        expect(uploadViewRenderSpy.calls.length).toEqual(7)
+        expect(uploadViewRenderSpy.calls.count()).toEqual(7)
 
       it 'should render() more uploads as the user scrolls', ->
         view.$el.scrollTop(100)
         view.$el.scroll() # call the event
-        expect(uploadViewRenderSpy.calls.length).toEqual(10)
+        expect(uploadViewRenderSpy.calls.count()).toEqual(10)
 
       it 'should scroll to the most-recently-changed element', ->
         collection.at(11).set(foo: 'bar')
         expect(view.$el.scrollTop()).toEqual(190)
-        expect(uploadViewRenderSpy.calls.length).toEqual(13)
+        expect(uploadViewRenderSpy.calls.count()).toEqual(13)
 
       it 'should empty on reset', ->
         collection.reset()

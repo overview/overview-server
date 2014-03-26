@@ -31,7 +31,7 @@ define [
 
       describe 'on click', ->
         beforeEach ->
-          selection.get_indices.andReturn([0])
+          selection.get_indices.and.returnValue([0])
           controller.onClick(0)
 
         it 'should call selection.set_index', ->
@@ -45,7 +45,7 @@ define [
 
       describe 'on down', ->
         beforeEach ->
-          selection.get_indices.andReturn([0])
+          selection.get_indices.and.returnValue([0])
           controller.onDown()
 
         it 'should call selection.set_index(0)', ->
@@ -103,7 +103,7 @@ define [
 
       describe 'on down', ->
         beforeEach ->
-          selection.get_indices.andReturn([6])
+          selection.get_indices.and.returnValue([6])
           controller.onDown()
 
         it 'should call selection.set_index', ->
@@ -117,7 +117,7 @@ define [
 
       describe 'on select-all', ->
         beforeEach ->
-          selection.get_indices.andReturn([])
+          selection.get_indices.and.returnValue([])
           controller.onSelectAll()
 
         it 'should call selection.unset', ->
@@ -131,7 +131,7 @@ define [
 
       describe 'on up', ->
         beforeEach ->
-          selection.get_indices.andReturn([4])
+          selection.get_indices.and.returnValue([4])
           controller.onUp()
 
         it 'should call selection.set_index', ->

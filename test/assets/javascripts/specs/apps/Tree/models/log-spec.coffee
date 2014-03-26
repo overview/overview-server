@@ -71,12 +71,12 @@ define [
 
         it 'should post to the proper path', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.mostRecentCall.args[0].url).toMatch(/\bcreate-many\b/)
+          expect($.ajax.calls.mostRecent().args[0].url).toMatch(/\bcreate-many\b/)
 
         it 'should post a JSON array', ->
           entry = log.entries[0]
           log.upload_entries_to_server_and_clear()
-          data = $.ajax.mostRecentCall.args[0].data
+          data = $.ajax.calls.mostRecent().args[0].data
           expect(data).toMatch(/^\[\{.*\}\]$/)
           expect(data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))
 
@@ -87,16 +87,16 @@ define [
 
         it 'should set contentType: "application/json" on the $.ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.mostRecentCall.args[0].contentType).toEqual('application/json')
+          expect($.ajax.calls.mostRecent().args[0].contentType).toEqual('application/json')
 
         it 'should set global: false on the $.ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.mostRecentCall.args[0].global).toBe(false)
+          expect($.ajax.calls.mostRecent().args[0].global).toBe(false)
 
       describe 'for_component()', ->
         it 'should return a function that can be used as a shortcut', ->
           log = new Log()
-          spyOn(log, 'add_entry').andCallThrough()
+          spyOn(log, 'add_entry').and.callThrough()
           log_shortcut = log.for_component('test')
           log_shortcut('action', 'details')
           expect(log.add_entry).toHaveBeenCalledWith({ component: 'test', action: 'action', details: 'details' })

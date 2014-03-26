@@ -87,7 +87,7 @@ define [
 
       @_listenToCollection(@collection)
 
-      @listenTo(@options.tags, 'change', (model) => @_renderTag(model))
+      @listenTo(@options.tags, 'change', @_renderTag)
       @listenTo(@options.selection, 'change:selectedIndices', (model, value) => @_renderSelectedIndices(value))
       @listenTo(@options.selection, 'change:cursorIndex', (model, value) => @_renderCursorIndex(value))
       @$el.on('scroll', => @_updateMaxViewedIndex())
@@ -96,8 +96,8 @@ define [
       @_renderCursorIndex(@options.selection.get('cursorIndex'))
 
     _listenToCollection: (collection) ->
-      @listenTo(collection, 'reset', => @render())
-      @listenTo(collection, 'change', (model) => @_changeModel(model))
+      @listenTo(collection, 'reset', @render)
+      @listenTo(collection, 'change', @_changeModel)
       @listenTo(collection, 'add', (model, collection, options) => @_addModel(model, options))
 
     setCollection: (collection) ->
@@ -139,6 +139,9 @@ define [
 
       @$el.html(html)
 
+      @_$els =
+        ul: @$('ul.documents')
+
       delete @maxViewedIndex
       @_updateMaxViewedIndex()
 
@@ -146,7 +149,7 @@ define [
     #
     # Assumes the ul.documents is entirely on-screen.
     _findMaxViewedIndex: (startAt) ->
-      ul = @$('ul.documents')[0]
+      ul = @_$els.ul[0]
 
       return undefined if !ul?
 
@@ -155,12 +158,23 @@ define [
       containerBottom = elBottom(@el)
 
       lis = ul.childNodes
-      i = startAt || 0
 
-      while i < lis.length && elBottom(lis[i]) < containerBottom
-        i += 1
+      return -1 if lis.length == 0
 
-      i
+      # Binary search
+      low = startAt || 0 # invariant: low is always fully visible
+      high = lis.length - 1 # invariant: high+1 is always invisible, at least partially
+
+      while low < high
+        mid = (low + high + 1) >>> 1 # low < mid <= high
+        if elBottom(lis[mid]) < containerBottom
+          low = mid
+        else
+          high = mid - 1
+
+      # low=high, so low is visible and low+1 is partially invisible
+
+      Math.min(low + 1, lis.length - 1)
 
     _updateMaxViewedIndex: ->
       maxViewedIndex = @_findMaxViewedIndex(@maxViewedIndex || 0)
@@ -169,7 +183,7 @@ define [
         @trigger('change:maxViewedIndex', this, maxViewedIndex)
 
     _addModel: (model, options) ->
-      $ul = @$('ul.documents')
+      $ul = @_$els.ul
 
       if !$ul.length
         @render()

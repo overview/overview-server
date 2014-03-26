@@ -137,7 +137,7 @@ define [
           id: 1
           query: 'Search 1'
           state: searchResultState
-        spyOn(cache.search_result_store, 'find_by_id').andReturn(searchResult)
+        spyOn(cache.search_result_store, 'find_by_id').and.returnValue(searchResult)
         init({ type: 'searchResult', searchResultId: 1 }, nDocuments)
 
       it 'should render search message when searching', ->

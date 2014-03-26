@@ -21,7 +21,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
       beforeEach ->
         lastDeferred = undefined
         transactionQueue = new MockTransactionQueue()
-        spyOn($, 'ajax').andCallFake(-> lastDeferred = $.Deferred())
+        spyOn($, 'ajax').and.callFake(-> lastDeferred = $.Deferred())
         spyOn(store, 'change')
         api = new TagLikeApi(store, transactionQueue, '/root')
 
@@ -46,7 +46,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
 
           beforeEach ->
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.mostRecentCall.args
+            lastAjaxArgs = $.ajax.calls.mostRecent().args
 
           it 'should not call beforeReceive', ->
             expect(beforeReceiveCalled).toBe(false)
@@ -90,7 +90,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
           beforeEach ->
             tagLike.id = 2 # we set it later, as happens in The Real World
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.mostRecentCall.args
+            lastAjaxArgs = $.ajax.calls.mostRecent().args
 
           it 'should send PUT', ->
             expect(lastAjaxArgs[0].type).toEqual('PUT')
@@ -114,7 +114,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
           beforeEach ->
             tagLike.id = 2 # we set it later, as happens in The Real World
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.mostRecentCall.args
+            lastAjaxArgs = $.ajax.calls.mostRecent().args
 
           it 'should send DELETE', ->
             expect(lastAjaxArgs[0].type).toEqual('DELETE')

@@ -8,7 +8,7 @@ define [ 'jquery', 'i18n', 'elements/jquery-time_display' ], ($, i18n) ->
       $el.time_display()
 
     beforeEach ->
-      spyOn(i18n, 'translate').andReturn('translated time')
+      spyOn(i18n, 'translate').and.returnValue('translated time')
       $el = $('<time datetime="2014-02-22T23:45:37Z">foo</time>')
 
     describe 'with no other options', ->

@@ -118,7 +118,7 @@ define [
       it 'should confirm when deleting and trigger delete if OK is pressed', ->
         deleted = false
         view.observe('delete', () -> deleted = true)
-        spyOn(window, 'confirm').andReturn(true)
+        spyOn(window, 'confirm').and.returnValue(true)
         actions.delete_with_prompt()
         expect(window.confirm).toHaveBeenCalledWith('Confirm delete')
         expect(deleted).toBe(true)
@@ -127,7 +127,7 @@ define [
         failed = false
         view.observe('delete', () -> failed = true)
         view.observe('change', () -> failed = true)
-        spyOn(window, 'confirm').andReturn(false)
+        spyOn(window, 'confirm').and.returnValue(false)
         actions.delete_with_prompt()
         expect(window.confirm).toHaveBeenCalledWith('Confirm delete')
         expect(failed).toBe(false)

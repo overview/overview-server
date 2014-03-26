@@ -93,7 +93,7 @@ define [
           mouse_event('left', 'mousedown', 2, 5)
           mouse_event('body', 'mousemove', 12, 5) # 10 pixels to the right
           expect(spy).toHaveBeenCalled()
-          zoomAndPan = spy.mostRecentCall.args[0]
+          zoomAndPan = spy.calls.mostRecent().args[0]
           expect(zoomAndPan.zoom).toBeCloseTo(0.4)
           expect(zoomAndPan.pan).toBeCloseTo(0.05)
 
@@ -103,7 +103,7 @@ define [
           mouse_event('right', 'mousedown', 62, 5)
           mouse_event('body', 'mousemove', 2, 5) # 60 pixels to the left
           # x1 15, x2 25
-          zoomAndPan = spy.mostRecentCall.args[0]
+          zoomAndPan = spy.calls.mostRecent().args[0]
           expect(zoomAndPan.zoom).toBeCloseTo(0.1)
           expect(zoomAndPan.pan).toBeCloseTo(-0.3)
 
@@ -112,6 +112,6 @@ define [
           view.on('zoom-pan', spy)
           mouse_event('middle', 'mousedown', 50, 5)
           mouse_event('body', 'mousemove', 45, 5) # 5 pixels to the left -- 5% of the view
-          zoomAndPan = spy.mostRecentCall.args[0]
+          zoomAndPan = spy.calls.mostRecent().args[0]
           expect(zoomAndPan.zoom).toBeCloseTo(0.5) # unchanged
           expect(zoomAndPan.pan).toBeCloseTo(-0.05)

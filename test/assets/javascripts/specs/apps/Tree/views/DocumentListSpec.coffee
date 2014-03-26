@@ -221,9 +221,9 @@ define [
         view.on('click-document', callback)
         view.$('ul.documents>li:eq(1)').click()
         expect(callback).toHaveBeenCalled()
-        expect(callback.mostRecentCall.args[0]).toBe(documents.at(1))
-        expect(callback.mostRecentCall.args[1]).toBe(1)
-        expect(callback.mostRecentCall.args[2]).toEqual({ meta: false, shift: false })
+        expect(callback.calls.mostRecent().args[0]).toBe(documents.at(1))
+        expect(callback.calls.mostRecent().args[1]).toBe(1)
+        expect(callback.calls.mostRecent().args[2]).toEqual({ meta: false, shift: false })
 
       it 'should render a new collection on setCollection()', ->
         view.setCollection(new DocumentCollection([]))
@@ -264,17 +264,18 @@ define [
 
     describe 'with a long DocumentCollection', ->
       beforeEach ->
-        makeCollections(_.range(0, 100))
+        makeCollections(_.range(0, 50))
 
       it 'should return the max viewed index', ->
         expect(view.maxViewedIndex).toEqual(9) # that is, 10 are viewed
 
       it 'should trigger the max viewed index', ->
-        callback = jasmine.createSpy()
-        view.on('change:maxViewedIndex', callback)
-        view.$el.scrollTop(101)
+        spy = jasmine.createSpy('change:maxViewedIndex')
+        view.on('change:maxViewedIndex', spy)
+        view.$el.scrollTop(105) # viewing [10,20] (base 0)
         view.$el.trigger('scroll')
-        expect(callback).toHaveBeenCalledWith(view, 20)
+        expect(spy).toHaveBeenCalled()
+        expect(spy.calls.argsFor(0)[1]).toEqual(20)
 
       it 'should adjust scroll to fit the cursorIndex', ->
         selection.set('cursorIndex', 20) # 21st; top: 200px bottom: 210px

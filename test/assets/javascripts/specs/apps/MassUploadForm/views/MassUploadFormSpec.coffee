@@ -27,6 +27,8 @@ define [
       $fileInput
 
     beforeEach ->
+      jasmine.Ajax.install()
+
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
@@ -34,10 +36,8 @@ define [
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
 
-      clearAjaxRequests()
-
       uploadCollectionViewClass = Backbone.View
-      uploadCollectionViewRenderSpy = spyOn(uploadCollectionViewClass.prototype, 'render').andCallThrough()
+      uploadCollectionViewRenderSpy = spyOn(uploadCollectionViewClass.prototype, 'render').and.callThrough()
 
       model = new Backbone.Model
       model.uploads = new Backbone.Collection
@@ -55,14 +55,15 @@ define [
         addFiles: jasmine.createSpy()
 
     afterEach ->
+      jasmine.Ajax.uninstall()
       view.remove()
       $('div.nav-buttons').remove()
 
     describe 'init', ->
       it 'cancels previous uploads', ->
         # remove this when we add resumable uploads
-        # expect(mostRecentAjaxRequest().url).toEqual('/files')
-        # expect(mostRecentAjaxRequest().method).toEqual('DELETE')
+        # expect(jasmine.Ajax.requests.mostRecent().url).toEqual('/files')
+        # expect(jasmine.Ajax.requests.mostRecent().method).toEqual('DELETE')
 
     describe 'render', ->
       beforeEach ->
@@ -124,7 +125,7 @@ define [
 
           describe 'after selecting options', ->
             it 'disables the "set options" button', ->
-              spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+              spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
               view.$('.choose-options').click()
               expect(view.$('button.choose-options')).toBeDisabled()
               expect(view.$('button.select-files')).toBeDisabled()
@@ -180,7 +181,7 @@ define [
             model.uploads.trigger('add-batch', model.uploads.models)
             model.set(status: 'waiting')
 
-            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
             view.$('.choose-options').click()
 
           it 'disables itself and the select files button', ->
@@ -219,7 +220,7 @@ define [
         model.set(status: 'waiting')
 
         # choose options
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
         view.$('.choose-options').click()
 
         expect(submitSpy).toHaveBeenCalled()
@@ -229,7 +230,7 @@ define [
         model.set(status: 'uploading')
 
         # choose options
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
         view.$('.choose-options').click()
 
         # finish uploading
@@ -238,7 +239,7 @@ define [
         expect(submitSpy).toHaveBeenCalled()
 
       it 'does not submit the form until the upload is finished', ->
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').andCallFake( (el, options) -> options.callback() )
+        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
         view.$('.choose-options').click()
 
         expect(submitSpy).not.toHaveBeenCalled()

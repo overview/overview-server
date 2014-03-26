@@ -10,6 +10,7 @@ define [
     deferred = undefined
 
     beforeEach ->
+      jasmine.Ajax.install()
       i18n.reset_messages
         'views.DocumentSet.index.ImportOptions.tag.loading': 'tag.loading'
         'views.DocumentSet.index.ImportOptions.tag.error': 'tag.error'
@@ -17,7 +18,7 @@ define [
         'views.DocumentSet.index.ImportOptions.tag.name': 'tag.name,{0},{1}'
         'views.DocumentSet.index.ImportOptions.tag.allDocuments': 'tag.allDocuments'
 
-      spyOn($, 'ajax').andCallFake(-> deferred = $.Deferred())
+      spyOn($, 'ajax').and.callFake(-> deferred = $.Deferred())
 
       el = document.createElement('div')
       document.body.appendChild(el)
@@ -26,6 +27,7 @@ define [
       view.render()
 
     afterEach ->
+      jasmine.Ajax.uninstall()
       view.remove()
 
     it 'should select all documents', -> expect(view.$('select option:selected').text()).toEqual('tag.allDocuments')

@@ -142,7 +142,7 @@ define [
       describe 'with a tag DocumentList', ->
         beforeEach ->
           init([], 10, { tags: [ 1 ] })
-          spyOn(documentList, 'describeParameters').andReturn([ 'tag', 'name' ])
+          spyOn(documentList, 'describeParameters').and.returnValue([ 'tag', 'name' ])
 
         it 'should describe the tag', ->
           expect(model.describeSelection()).toEqual([ 'tag', 'name' ])

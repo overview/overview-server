@@ -43,7 +43,7 @@ define [
         ds[0].resolve()
         expect(runs).toEqual(1)
         expect(window.setTimeout).toHaveBeenCalled()
-        window.setTimeout.mostRecentCall.args[0].call()
+        window.setTimeout.calls.mostRecent().args[0].call()
         expect(ds.length).toEqual(2)
         ds[1].resolve()
         expect(runs).toEqual(2)

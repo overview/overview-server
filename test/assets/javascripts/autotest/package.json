@@ -9,7 +9,7 @@
     "karma": "~0.12.1",
     "karma-phantomjs-launcher": "~0.1",
     "karma-requirejs": "~0.2",
-    "karma-jasmine": "~0.1",
+    "karma-jasmine": "~0.2",
     "coffee-script": "~1.7.1",
     "karma-coffee-preprocessor": "~0.2.1"
   }

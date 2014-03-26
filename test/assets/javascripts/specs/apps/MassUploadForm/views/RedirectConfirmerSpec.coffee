@@ -31,8 +31,7 @@ define [
       abort: ->
 
     beforeEach ->
-      clearAjaxRequests()
-
+      jasmine.Ajax.install()
       $otherLink = $('<a href="#other-link">other link</a>').appendTo($('body'))
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.confirm_cancel.title': 'title'
@@ -52,6 +51,7 @@ define [
       view.$el.removeClass('fade') # make bootstrap synchronous
 
     afterEach ->
+      jasmine.Ajax.uninstall()
       $otherLink.remove()
       view.remove()
 
@@ -84,12 +84,11 @@ define [
 
       describe 'after clicking the cancel button', ->
         beforeEach ->
-          clearAjaxRequests()
           view.$('.cancel-upload').click()
 
         it 'should abort', -> expect(model.abort).toHaveBeenCalled()
         it 'should DELETE /files', ->
-          xhr = mostRecentAjaxRequest()
+          xhr = jasmine.Ajax.requests.mostRecent()
           expect(xhr.method).toEqual('DELETE')
           expect(xhr.url).toEqual('/files')
         it 'should disable the buttons', ->
@@ -101,7 +100,7 @@ define [
 
         describe 'when DELETE succeeds', ->
           beforeEach ->
-            mostRecentAjaxRequest().response(status: 200, responseText: '')
+            jasmine.Ajax.requests.mostRecent().response(status: 200, responseText: '')
 
           it 'should redirect', -> expect(redirectFunctions.href).toHaveBeenCalledWith('http://example.org')
           it 'should hide the dialog', -> expect(view.$el).not.toHaveClass('in')
@@ -116,7 +115,7 @@ define [
         describe 'on cancel with successful DELETE', ->
           beforeEach ->
             view.$('.cancel-upload').click()
-            mostRecentAjaxRequest().response(status: 200, responseText: '')
+            jasmine.Ajax.requests.mostRecent().response(status: 200, responseText: '')
 
           it 'should redirect to the link href when cancelling', ->
             expect(redirectFunctions.href).toHaveBeenCalledWith('#other-link')

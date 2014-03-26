@@ -194,7 +194,7 @@ define [
 
         describe 'update_node', ->
           beforeEach ->
-            spyOn(cache, 'edit_node').andCallThrough()
+            spyOn(cache, 'edit_node').and.callThrough()
             cache.update_node(node, { id: 1, description: 'description 2' })
 
           it 'should call edit_node', ->
@@ -274,7 +274,7 @@ define [
           beforeEach ->
             deferred = $.Deferred()
             cache.tag_api =
-              destroy: jasmine.createSpy('destroy').andReturn(deferred)
+              destroy: jasmine.createSpy('destroy').and.returnValue(deferred)
 
           it 'should call tag_api.destroy(tag)', ->
             cache.delete_tag(tag)

@@ -130,24 +130,24 @@ define [
           spy = jasmine.createSpy()
           tree.id_tree.observe('change', spy)
           add_node_through_deferred(120, [124, 125, 126])
-          expect(spy.calls[0].args[0]).toEqual({ added: [ 124, 125, 126 ] })
-          expect(spy.calls[1].args[0].removed.length).toBeGreaterThan(2)
+          expect(spy.calls.argsFor(0)[0]).toEqual({ added: [ 124, 125, 126 ] })
+          expect(spy.calls.argsFor(1)[0].removed.length).toBeGreaterThan(2)
 
         it 'should not remove an important node when adding a new node', ->
           spy = jasmine.createSpy()
           tree.id_tree.observe('change', spy)
           add_node_through_deferred(120, [124, 125, 126])
-          r = spy.calls[1].args[0].removed[0]
-          expect(r).toNotEqual(14) # parent
-          expect(r).toNotEqual(15) # uncle
-          expect(r).toNotEqual(16) # uncle
-          expect(r).toNotEqual(5) # grandparent
-          expect(r).toNotEqual(6) # great-uncle
-          expect(r).toNotEqual(7) # great-uncle
-          expect(r).toNotEqual(2)
-          expect(r).toNotEqual(3)
-          expect(r).toNotEqual(4)
-          expect(r).toNotEqual(1) # root
+          r = spy.calls.argsFor(1)[0].removed[0]
+          expect(r).not.toEqual(14) # parent
+          expect(r).not.toEqual(15) # uncle
+          expect(r).not.toEqual(16) # uncle
+          expect(r).not.toEqual(5) # grandparent
+          expect(r).not.toEqual(6) # great-uncle
+          expect(r).not.toEqual(7) # great-uncle
+          expect(r).not.toEqual(2)
+          expect(r).not.toEqual(3)
+          expect(r).not.toEqual(4)
+          expect(r).not.toEqual(1) # root
 
         it 'should add as many nodes as possible without throwing AllPagesFrozen', ->
           # Tree size is 1+3+9+27+81 = 121 nodes

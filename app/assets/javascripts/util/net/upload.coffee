@@ -118,7 +118,7 @@ define [ 'jquery', 'md5', 'util/shims/file' ], ($, md5) ->
       @options = extend({
         xhr_factory: (callback) ->
           xhr = new XMLHttpRequest()
-          xhr.upload.addEventListener 'progress', (e) ->
+          xhr.upload?.addEventListener 'progress', (e) ->
             callback(e.loaded, e.total)
           xhr
 

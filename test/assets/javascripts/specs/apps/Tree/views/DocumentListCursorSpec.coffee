@@ -32,7 +32,7 @@ define [
       spy = jasmine.createSpy()
       view.on(trigger, spy)
       view.$(selector).click()
-      expect(spy.callCount).toEqual(shouldBeCalled && 1 || 0)
+      expect(spy.calls.count()).toEqual(shouldBeCalled && 1 || 0)
 
     beforeEach ->
       i18n.reset_messages
