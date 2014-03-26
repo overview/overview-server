@@ -123,7 +123,7 @@ describe 'CsvUpload', ->
     it 'should show the document set', ->
       @userBrowser
         .get(Url.index)
-        .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
+        .elementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
 
     describe 'in the default tree', ->
       before ->
