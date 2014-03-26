@@ -140,9 +140,14 @@ wd.addAsyncMethod 'elementBy', (args) ->
 wd.addAsyncMethod 'waitForElementBy', (args) ->
   xpath = argsToXPath(args)
   asserter = argsToAsserter(args)
-  cb = wd.findCallback(arguments)
 
-  @waitForElementByXPath(xpath, asserter, cb)
+  newArgs = [ 'xpath', xpath ]
+  if asserter?
+    newArgs.push(asserter)
+
+  newArgs = newArgs.concat(Array.prototype.slice.call(arguments, 1))
+
+  @waitForElement.apply(@, newArgs) # finds callback itself
 
 module.exports =
   baseUrl: 'http://localhost:9000'
