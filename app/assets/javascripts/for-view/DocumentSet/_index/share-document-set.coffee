@@ -37,7 +37,6 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
     <% if (is_admin) { %>    
       <form method="post" class="update" action="<%- update_url %>">
         <%= window.csrfTokenHtml %>
-        <input type="hidden" name="public" value="false" />
         <div class="checkbox">
           <label>
             <input
@@ -49,6 +48,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
             <%- t('example_document_set.checkbox_label') %>
           </label>
         </div>
+        <input type="hidden" name="public" value="false" />
       </form>
     <% } %>
   """)
