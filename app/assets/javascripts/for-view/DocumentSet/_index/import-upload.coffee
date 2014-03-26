@@ -278,7 +278,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
             # Outside of Firefox, this will never happen. Even in Firefox, it's
             # rare in test code and unfathomable for even the most
             # fleet-of-finger users.
-            false # do nothing
+            undefined # do nothing
         $modal.modal('show')
 
         # There are *lots* of progress events with a fast connection. They become
