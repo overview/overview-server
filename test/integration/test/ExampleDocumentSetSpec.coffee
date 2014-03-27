@@ -47,7 +47,12 @@ describe 'Example Document Sets', ->
       @
         .waitForElementBy(tag: 'button', contains: 'Clone').click()
         .waitFor(isAtNewUrl, 5000)
-        
+
+    waitForExampleToAppear: ->
+      @
+        .waitForElementBy({ tag: 'ul', class: 'shared-document-sets' }, 10000)
+
+      
     toggleExampleDocumentSet: ->
       @
         .waitForElementByCss('.show-sharing-settings', wd.asserters.isDisplayed, 10000).click()
@@ -103,6 +108,7 @@ describe 'Example Document Sets', ->
         .then((a) =>
           @userBrowser
             .openCloneExamplePage()
+            .waitForExampleToAppear()
             .cloneExample())
 
              
