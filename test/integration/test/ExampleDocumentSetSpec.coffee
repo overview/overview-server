@@ -45,6 +45,7 @@ describe 'Example Document Sets', ->
           cb(err, url)
 
       @
+        .waitForExampleToAppear()
         .waitForElementBy(tag: 'button', contains: 'Clone').click()
         .waitFor(isAtNewUrl, 5000)
 
@@ -108,7 +109,6 @@ describe 'Example Document Sets', ->
         .then((a) =>
           @userBrowser
             .openCloneExamplePage()
-            .waitForExampleToAppear()
             .cloneExample())
 
              
