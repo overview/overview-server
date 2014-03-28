@@ -36,6 +36,9 @@ module.exports = (opts) ->
             when 'text'
               @userBrowser
                 .waitForElementBy({ tag: 'pre', contains: document.contains }, 10000).should.eventually.exist
+            when 'pdf'
+              @userBrowser
+                .waitForElementBy({ tag: 'object', type: 'application/pdf'}, 10000).should.eventually.exists
 
         @userBrowser
           .waitForDocumentListToLoad()
