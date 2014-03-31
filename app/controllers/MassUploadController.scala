@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import play.api.libs.iteratee.Iteratee
+import play.api.Logger
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
 import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload, StartClustering }
 import org.overviewproject.tree.Ownership
@@ -14,6 +15,7 @@ import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAct
 import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
+
 
 trait MassUploadController extends Controller {
 
@@ -28,7 +30,11 @@ trait MassUploadController extends Controller {
     if (isUploadComplete(upload)) {
       messageQueue.sendProcessFile(upload.fileGroupId, upload.id)
       Ok
-    } else BadRequest
+    } 
+    else {
+      Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
+      BadRequest
+    }
   }
 
   /**
