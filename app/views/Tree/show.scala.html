@@ -45,6 +45,17 @@
   "views.Tree.show.InlineSearchResultList.search",
   "views.Tree.show.InlineSearchResultList.create_tag",
   "views.Tree.show.SearchResultList.tag_name",
+  "views.Tree.show.Tour.documentList.title",
+  "views.Tree.show.Tour.documentList.body_html",
+  "views.Tree.show.Tour.folders.title",
+  "views.Tree.show.Tour.folders.body_html",
+  "views.Tree.show.Tour.tags.title",
+  "views.Tree.show.Tour.tags.body_html",
+  "views.Tree.show.Tour.tipNumber",
+  "views.Tree.show.Tour.next",
+  "views.Tree.show.Tour.previous",
+  "views.Tree.show.Tour.done",
+  "views.Tree.show.Tour.skip",
   "views.Tree.show.helpers.DocumentHelper.title",
   "views.Tree.show.helpers.DocumentHelper.title.empty",
   "views.Tree.show.helpers.DocumentHelper.title.page",
@@ -90,5 +101,5 @@
   "views.InlineTagList.organize"
 )}
 @main(optionalUser=Some(user), title=documentSet.title, bodyClass="document-set-show", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-  <div id="main" data-is-searchable="@isSearchable"></div>
+  <div id="main" data-is-searchable="@isSearchable" data-tooltips-enabled="@user.treeTooltipsEnabled"></div>
 }

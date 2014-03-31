@@ -13,12 +13,14 @@ define [
   './controllers/tree_controller'
   './controllers/document_list_controller'
   './controllers/document_contents_controller'
+  './controllers/TourController'
   './views/Mode'
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, World, DocumentListParams, \
     KeyboardController, Logger, \
     tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, \
+    TourController, \
     ModeView) ->
 
   class App
@@ -28,6 +30,7 @@ define [
 
       # TODO remove searchDisabled entirely
       searchDisabled = $(options.mainEl).attr('data-is-searchable') == 'false'
+      tourEnabled = $(options.mainEl).attr('data-tooltips-enabled') == 'true'
 
       els = (->
         html = """
@@ -165,6 +168,9 @@ define [
           state: world.state
           el: els.search
         })
+
+      if tourEnabled
+        TourController()
 
       for store in [ world.cache.tag_store, world.cache.search_result_store ]
         for event in [ 'added', 'removed', 'changed' ]

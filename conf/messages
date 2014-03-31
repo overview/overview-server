@@ -350,6 +350,18 @@ views.Tree.show.InlineSearchResultList.query_placeholder=Search all documents
 views.Tree.show.InlineSearchResultList.search=Search
 views.Tree.show.InlineSearchResultList.create_tag=Create tag from search results
 
+views.Tree.show.Tour.documentList.title=Document list
+views.Tree.show.Tour.documentList.body_html=<p>The <strong>document list</strong> shows the documents you’ve selected.</p><p>Click a document to read it.</p><p>You can change this list by searching, clicking a folder or choosing a tag.</p>
+views.Tree.show.Tour.folders.title=Folders
+views.Tree.show.Tour.folders.body_html=<p>Overview organized your documents by topic and arranged them into <strong>folders</strong>.</p><p>All your documents are in the top folder. One level down, that folder has been broken into sub-folders with more specific topics.</p><p>Wider folders contain more documents.</p><p>Each folder is labeled with words and phrases that occur in “ALL”, “MOST” (at least 70 per cent) or “SOME” of its documents.</p>
+views.Tree.show.Tour.tags.title=Tags
+views.Tree.show.Tour.tags.body_html=<p>Create <strong>tags</strong> to keep track of what you find or where you’ve looked.</p><p>You can tag individual documents, entire folders, search results, or even documents containing some other tag — whatever you see in the document list.</p><p>You can click “Show untagged” to list documents that have no tags.</p>
+views.Tree.show.Tour.tipNumber=Tip {0,number,integer} of {1,number,integer}
+views.Tree.show.Tour.next=Next
+views.Tree.show.Tour.previous=Previous
+views.Tree.show.Tour.done=Done
+views.Tree.show.Tour.skip=Don’t show any more tips
+
 views.Tree.show.SearchResultList.tag_name=contains “{0}”
 
 views.Tree.show.helpers.DocumentHelper.title={0}

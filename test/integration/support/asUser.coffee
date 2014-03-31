@@ -30,7 +30,12 @@ module.exports =
   # Tests may also make use of @adminBrowser. Note that this framework expects
   # @adminBrowser to stay on the same page, always, and it expects @userEmail
   # to exist after the test is complete.
-  usingTemporaryUser: ->
+  #
+  # You may also pass an "options" parameter. It 'before' and 'after' blocks.
+  # The 'before' block will be called at the end of usingTemporaryUser()'s
+  # 'before' block; the 'after' block will be called at the beginning of
+  # usingTemporaryUser()'s 'after' block.
+  usingTemporaryUser: (options={}) ->
     before ->
       @userEmail = Faker.Internet.email()
       @userBrowser = userBrowser = browser.create()
@@ -56,14 +61,18 @@ module.exports =
         .waitForJqueryAjaxComplete()
         .then ->
           userBrowser.elementByCss('.session-form [type=submit]').click()
+        .then =>
+          options.before?.apply(@)
 
     after ->
-      Q.all([
-        @adminBrowser
-          .get(Url.deleteUser(@userEmail))
-          .deleteAllCookies()
-          .quit()
-        @userBrowser
-          .deleteAllCookies()
-          .quit()
-      ])
+      Q(options.after?.apply(@)) # promise or undefined -- both work
+        .then =>
+          Q.all([
+            @adminBrowser
+              .get(Url.deleteUser(@userEmail))
+              .deleteAllCookies()
+              .quit()
+            @userBrowser
+              .deleteAllCookies()
+              .quit()
+          ])

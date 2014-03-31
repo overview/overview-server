@@ -133,6 +133,13 @@ wd.addAsyncMethod 'elementBy', (args) ->
 
   @elementByXPath(xpath, asserter, cb)
 
+wd.addAsyncMethod 'elementByOrNull', (args) ->
+  xpath = argsToXPath(args)
+  asserter = argsToAsserter(args)
+  cb = wd.findCallback(arguments)
+
+  @elementByXPathOrNull(xpath, asserter, cb)
+
 # Waits for an element by lots of wonderful stuff.
 #
 # For instance:

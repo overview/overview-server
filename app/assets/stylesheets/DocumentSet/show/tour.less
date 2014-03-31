@@ -1,0 +1,97 @@
+@import "../../variables.less";
+
+.popover {
+  @border-color: @brand-primary;
+
+  box-shadow: 0 0 20px 10px @help-bg;
+  border-color: @border-color;
+
+  .popover-title {
+    padding: .6em 1em;
+    font-weight: bold;
+  }
+
+  .tip-number {
+    .text-muted();
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  a.previous {
+    float: left;
+  }
+
+  a.next, a.done {
+    float: right;
+  }
+
+  a.skip {
+    display: block;
+    clear: both;
+    text-align: center;
+  }
+
+  .popover-content {
+    padding: 0;
+  }
+
+  .content {
+    padding: .6em 1em;
+    background: @body-bg;
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .actions {
+    .clearfix();
+    position: relative;
+    border-top: 1px solid black;
+
+    a {
+      position: relative; // go above .tip-number
+    }
+
+    a.skip {
+      // Make it harder to click by mistake
+      padding-top: 0;
+      margin-top: .6em;
+    }
+  }
+
+  .popover-title, .actions {
+    background: @help-bg;
+    border-color: @border-color;
+  }
+
+  .actions {
+    padding: 0;
+
+    a, span {
+      padding: .6em 1em;
+    }
+  }
+
+  // The arrow should be the same color as what it's next to.
+  // But that can change, and the popover's 1px padding will show no matter
+  // what.
+  &.top, &.bottom {
+    background: @help-bg;
+  }
+  &.left, &.right {
+    background: @body-bg;
+  }
+
+  &.top > .arrow { border-top-color: @border-color; }
+  &.bottom > .arrow { border-bottom-color: @border-color; }
+  &.right > .arrow { border-right-color: @border-color; }
+  &.left > .arrow { border-left-color: @border-color; }
+  &.top > .arrow:after { border-top-color: @help-bg; }
+  &.bottom > .arrow:after { border-bottom-color: @help-bg; }
+  &.right > .arrow:after { border-right-color: @popover-arrow-color; }
+  &.left > .arrow:after { border-left-color: @popover-arrow-color; }
+}

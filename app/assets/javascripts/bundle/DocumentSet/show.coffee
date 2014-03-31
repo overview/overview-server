@@ -25,10 +25,16 @@ requirejs.config({
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.modal'
     }
+    'bootstrap-popover':
+      deps: [ 'jquery', 'bootstrap-tooltip' ]
+      exports: 'jQuery.fn.popover'
     'bootstrap-tab': {
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.tab'
     }
+    'bootstrap-tooltip':
+      deps: [ 'jquery' ]
+      exports: 'jQuery.fn.tooltip'
     'bootstrap-transition': {
       deps: [ 'jquery' ]
     }
@@ -48,7 +54,9 @@ requirejs.config({
     'bootstrap-collapse': 'vendor/bootstrap-collapse'
     'bootstrap-dropdown': 'vendor/bootstrap-dropdown'
     'bootstrap-modal': 'vendor/bootstrap-modal'
+    'bootstrap-popover': 'vendor/bootstrap-popover'
     'bootstrap-tab': 'vendor/bootstrap-tab'
+    'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
@@ -56,6 +64,7 @@ requirejs.config({
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
+    vow: 'vendor/vow'
   }
 })
 
