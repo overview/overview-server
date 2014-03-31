@@ -3,7 +3,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
     tagName: 'div'
 
     template: _.template("""
-      <ul>
+      <ul class="pagination">
         <li class="<%- (page == 1) ? "disabled" : "" %>"><a href="#page-<%- page - 1 %>" class="previous">«</a></li>
         <% _.range(1, Math.floor(total / pageSize) + 2).forEach(function(i) { %>
           <li class="<%- (i == page) ? 'active' : '' %>"><a href="#page=<%- i %>"><%- i %></a></li>
@@ -22,7 +22,7 @@ define [ 'jquery', 'underscore', 'backbone' ], ($, _, Backbone) ->
 
     render: ->
       className = @_className()
-      @el.className = "pagination #{className}"
+      @el.className = "paginator #{className}"
 
       if className != 'multiple'
         @$el.empty()

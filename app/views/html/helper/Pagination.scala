@@ -50,8 +50,8 @@ object Pagination {
       }
 
       Html(
-        <div class="pagination">
-          <ul>
+        <div class="pagination-outer">
+          <ul class="pagination">
             {prevLi}
             {(1 until pageDetails.lastPageNum + 1).map { pageNum =>
               liFor(pageNum)

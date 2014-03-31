@@ -12,8 +12,8 @@ define [ 'backbone', 'apps/UserAdmin/views/PaginatorView' ], (Backbone, Paginato
 
     afterEach -> view.remove()
 
-    it 'should be a div.pagination', ->
-      expect(view.$el).toBeMatchedBy('div.pagination')
+    it 'should be a div.paginator', ->
+      expect(view.$el).toBeMatchedBy('div.paginator')
 
     describe 'before knowing how many pages there are', ->
       it 'should have class=loading', -> expect(view.$el).toHaveClass('loading')

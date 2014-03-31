@@ -30,7 +30,7 @@ define [ 'apps/UserAdmin/views/MainView', 'i18n' ], (MainView, i18n) ->
       expect(view.$('table.users tbody').length).toEqual(1)
 
     it 'should render pagination', ->
-      expect(view.$('div.pagination').length).toEqual(1)
+      expect(view.$('div.paginator').length).toEqual(1)
 
     it 'should render a new-user form', ->
       expect(view.$('table.users tfoot.new-user').length).toEqual(1)
