@@ -123,12 +123,12 @@ class TreeControllerSpec extends ControllerSpecification {
 
     "return data-is-searchable=false when it is not" in new ValidShowScope {
       mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns false
-      h.contentAsString(result) must contain("""<div id="main" data-is-searchable="false"></div>""")
+      h.contentAsString(result) must contain("""<div id="main" data-is-searchable="false"""")
     }
 
     "return data-is-searchable=true when it is" in new ValidShowScope {
       mockStorage.isDocumentSetSearchable(any[DocumentSet]) returns true
-      h.contentAsString(result) must contain("""<div id="main" data-is-searchable="true"></div>""")
+      h.contentAsString(result) must contain("""<div id="main" data-is-searchable="true"""")
     }
   }
 }
