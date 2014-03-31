@@ -8,13 +8,14 @@ describe 'TreeTour', ->
     it 'should show a tooltip on first load', ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy({ class: 'popover', contains: 'document list' }, 10000).should.eventually.exist
+        .waitForElementBy({ class: 'popover', contains: 'folders' }, 10000).should.eventually.exist
 
     it 'should show a second tooltip after clicking the first one', ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy({ class: 'popover', contains: 'document list' }, 10000).elementByCss('>', 'a.next').click()
-        .waitForElementBy({ class: 'popover', contains: 'folders' }, 10000).should.eventually.exist
+        .waitForElementBy({ class: 'popover', contains: 'folders' }, 10000).elementByCss('>', 'a.next').click()
+        .waitForElementBy({ class: 'popover', contains: 'folders' }, 10000).elementByCss('>', 'a.next').click()
+        .waitForElementBy({ class: 'popover', contains: 'document list' }, 10000).should.eventually.exist
 
   describe 'after reading through all the tooltips', ->
     asUserWithDocumentSet('TreeTooltips/documents.csv')
@@ -22,7 +23,7 @@ describe 'TreeTour', ->
     it 'should only show the tooltips the first time', ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy({ class: 'popover', contains: 'document list' }, 10000).elementByCss('>', 'a.skip').click()
+        .waitForElementBy({ class: 'popover', contains: 'folders' }, 10000).elementByCss('>', 'a.skip').click()
         .elementByOrNull(class: 'popover', contains: 'folders').should.not.eventually.exist
         .goToFirstDocumentSet()
-        .elementByOrNull(class: 'popover', contains: 'document list').should.not.eventually.exist
+        .elementByOrNull(class: 'popover', contains: 'folders').should.not.eventually.exist
