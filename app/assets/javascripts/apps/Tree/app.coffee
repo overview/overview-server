@@ -169,9 +169,6 @@ define [
           el: els.search
         })
 
-      if tourEnabled
-        TourController()
-
       for store in [ world.cache.tag_store, world.cache.search_result_store ]
         for event in [ 'added', 'removed', 'changed' ]
           store.observe(event, refreshHeight)
@@ -179,6 +176,9 @@ define [
       throttledRefreshHeight = _.throttle(refreshHeight, 100)
       $(window).resize(throttledRefreshHeight)
       refreshHeight()
+
+      if tourEnabled
+        TourController()
 
       refocus_body_on_leave_window()
       refocus_body_on_event()

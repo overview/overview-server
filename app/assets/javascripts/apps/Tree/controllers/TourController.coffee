@@ -6,16 +6,22 @@ define [
 
   tour = [
     {
-      find: '#tree-app-document-list'
-      placement: 'auto left'
-      title: t('documentList.title')
-      bodyHtml: t('documentList.body_html')
+      find: '#tree-app-tree'
+      placement: 'auto right'
+      title: t('folders1.title')
+      bodyHtml: t('folders1.body_html')
     }
     {
       find: '#tree-app-tree'
       placement: 'auto right'
-      title: t('folders.title')
-      bodyHtml: t('folders.body_html')
+      title: t('folders2.title')
+      bodyHtml: t('folders2.body_html')
+    }
+    {
+      find: '#tree-app-document-list'
+      placement: 'auto left'
+      title: t('documentList.title')
+      bodyHtml: t('documentList.body_html')
     }
     {
       find: '#tree-app-tags'
