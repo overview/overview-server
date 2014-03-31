@@ -11,6 +11,7 @@ options =
     platform: 'ANY'
     build: process.env.TRAVIS_BUILD_NUMBER
     'tunnel-identifier': process.env.TRAVIS_JOB_NUMBER
+    'idle-timeout': 600 # @adminBrowser often waits for the duration of a test file
   seleniumLocation:
     host: 'localhost'
     port: 4444
