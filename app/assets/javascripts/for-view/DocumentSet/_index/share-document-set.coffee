@@ -4,7 +4,7 @@ define [ 'jquery', 'underscore', 'i18n' ], ($, _, i18n) ->
   EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ # http://www.w3.org/TR/html-markup/datatypes.html#form.data.emailaddress
 
   loading_html = _.template('<p><%- message %></p>', { message: t('loading') })
-  error_html = _.template('<p class="errpr"><%- message %></p>', { message: t('error') })
+  error_html = _.template('<p class="error"><%- message %></p>', { message: t('error') })
   viewer_li_template = _.template("""
     <li data-email="<%- viewer.email %>">
       <%- viewer.email %><a class="remove" href="<%- remove_url_pattern.replace('VIEWER_EMAIL', encodeURIComponent(viewer.email)) %>"><%- t('remove') %></a>
