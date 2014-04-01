@@ -296,7 +296,9 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
             .append(importOptionsApp.el)
             .append($form.find('[name=csrfToken]').clone())
             .appendTo('body')
-          $submitForm[0].submit()
+          # Even that Firefox workaround isn't enough. WHY?
+          # Let's just give Firefox a while to think about what it's done.
+          window.setTimeout((-> $submitForm[0].submit()), 200)
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
 
