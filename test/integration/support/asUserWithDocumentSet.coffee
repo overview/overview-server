@@ -10,7 +10,7 @@ module.exports = (csvPath) ->
     goToFirstDocumentSet: ->
       @
         .get(Url.index)
-        .elementByCss('.document-sets h3 a, .document-sets h6 a').click()
+        .waitForElementByCss('.document-sets h3 a, .document-sets h6 a').click()
         .waitForElementByCss('canvas')
 
     wds_openCsvUploadPage: ->
@@ -53,7 +53,7 @@ module.exports = (csvPath) ->
 
     wds_waitForJobsToComplete: ->
       @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
   asUser.usingTemporaryUser
     before: ->
@@ -66,4 +66,4 @@ module.exports = (csvPath) ->
       @userBrowser
         .get(Url.index)
         .acceptingNextAlert()
-        .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
+        .waitForElementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()

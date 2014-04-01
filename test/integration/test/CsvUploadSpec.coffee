@@ -56,7 +56,7 @@ describe 'CsvUpload', ->
 
     waitForJobsToComplete: ->
       @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
   asUser.usingTemporaryUser()
 
@@ -123,7 +123,7 @@ describe 'CsvUpload', ->
     it 'should show the document set', ->
       @userBrowser
         .get(Url.index)
-        .elementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
+        .waitForElementBy(tag: 'h3', contains: 'basic.csv').should.eventually.exist
 
     describe 'in the default tree', ->
       before ->
