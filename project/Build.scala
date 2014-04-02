@@ -174,7 +174,7 @@ object ApplicationBuild extends Build with ProjectSettings {
         if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false") {
           play.Keys.lessEntryPoints := Nil
         } else {
-          play.Keys.lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" * "*.less") // only compile .less files that aren't in subdirs
+          play.Keys.lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" / "main.less")
         }
       )
       .dependsOn(common)
