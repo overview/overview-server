@@ -51,7 +51,7 @@ class DocumentSetHelperSpec extends Specification with Mockito {
       job.state returns state.InProgress
       job.statusDescription returns "retrieving_documents:2:4"
 
-      message must beEqualTo("Storing file 2/4")
+      message must beEqualTo("Reading file 2/4")
     }
 
     "show clustering when clustering" in new BaseScope {
