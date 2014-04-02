@@ -29,27 +29,11 @@ describe 'Example Document Sets', ->
         .elementByCss('input[type=file]').sendKeys(fullPath)
 
     cloneExample: ->
-      firstUrl = null
-
-      isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
-        browser.url (err, url) ->
-          if !err && url == firstUrl
-            err = "Expected URL to change, but it is still #{firstUrl}"
-          url = null if err
-          cb(err, url)
-
       @
-        .url((u) -> firstUrl = u)
         .waitForJqueryReady()
-        .waitForExampleToAppear()
         .waitForElementBy(tag: 'button', contains: 'Clone').click()
-        .waitFor(isAtNewUrl, 5000)
+        .waitForUrl(Url.index)
 
-    waitForExampleToAppear: ->
-      @
-        .waitForElementBy({ tag: 'ul', class: 'public-document-sets' }, 10000)
-
-      
     toggleExampleDocumentSet: ->
       checkbox = { tag: 'label', contains: 'Set as example document set', visible: true }
 

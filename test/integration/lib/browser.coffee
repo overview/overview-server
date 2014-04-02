@@ -1,8 +1,10 @@
 wd = require('wd')
+Q = require('q')
 
 Constants =
-  ajaxTimeout: 2000 # timeout waiting for AJAX requests
-  pollLength: 50 # milliseconds between condition checks
+  ajaxTimeout: 5000 # timeout waiting for AJAX requests
+  redirectTimeout: 5000 # timeout waiting for a redirect
+  pollLength: 100 # milliseconds between condition checks
 
 options =
   desiredCapabilities:
@@ -159,6 +161,19 @@ wd.addAsyncMethod 'waitForElementBy', (args) ->
   newArgs = newArgs.concat(Array.prototype.slice.call(arguments, 1))
 
   @waitForElement.apply(@, newArgs) # finds callback itself
+
+wd.addPromiseChainMethod 'waitForUrl', (expectUrl, args...) ->
+  asserter = new wd.asserters.Asserter (browser) ->
+    browser
+      .url (currentUrl) ->
+        if currentUrl == expectUrl
+          Q(currentUrl)
+        else
+          err = new Error("Expected URL to be #{expectUrl} but it is #{currentUrl}")
+          err.retriable = true
+          Q.reject(err)
+
+  @waitFor(asserter, args...)
 
 module.exports =
   baseUrl: 'http://localhost:9000'

@@ -22,19 +22,9 @@ describe 'PdfUpload', ->
         .elementByCss('.invisible-file-input').sendKeys(fullPath)
 
     doImport: ->
-      firstUrl = null
-
-      isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
-        browser.url (err, url) ->
-          if !err && url == originalUrl
-            err = "Expected URL to change, but it is still #{originalUrl}"
-          url = null if err
-          cb(err, url)
-
       @
-        .url((u) -> firstUrl = url)
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitFor(isAtNewUrl, 10000)
+        .waitForUrl(Url.index, 10000)
 
     waitForJobsToComplete: ->
       @

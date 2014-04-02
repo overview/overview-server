@@ -29,19 +29,9 @@ module.exports = (csvPath) ->
         .waitForFunctionToReturnTrueInBrowser(-> $('.requirements li.ok').length == 4 || $('.requirements li.bad').length > 0)
 
     wds_doUpload: ->
-      firstUrl = null
-
-      isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
-        browser.url (err, url) ->
-          if !err && url == firstUrl
-            err = "Expected URL to change, but it is still #{firstUrl}"
-          url = null if err
-          cb(err, url)
-
       @
-        .url((u) -> firstUrl = url)
         .elementBy(tag: 'button', contains: 'Upload').click()
-        .waitFor(isAtNewUrl, 10000)
+        .waitForUrl(Url.index, 10000)
 
     wds_chooseAndDoUpload: (path) ->
       @
