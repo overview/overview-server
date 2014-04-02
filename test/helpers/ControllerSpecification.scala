@@ -19,6 +19,7 @@ trait ControllerSpecification extends Specification with Mockito {
 
   class AugmentedRequest[T, A <: Request[T], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
     request: A,
+    ctor: (FakeRequest[T] => A),
     ctorWithFormBody: (FakeRequest[AnyContentAsFormUrlEncoded]) => AWithFormBody
   ) {
 
@@ -37,14 +38,27 @@ trait ControllerSpecification extends Specification with Mockito {
       tags=request.tags
     )
 
+    def withFlash(data: (String,String)*) : A = {
+      val fake = toFakeRequest.withFlash(data: _*)
+      ctor(fake)
+    }
+
     def withFormUrlEncodedBody(data: (String,String)*) : AWithFormBody = {
-      val fakeRequestWithBody = toFakeRequest.withFormUrlEncodedBody(data: _*)
-      ctorWithFormBody(fakeRequestWithBody)
+      val fake = toFakeRequest.withFormUrlEncodedBody(data: _*)
+      ctorWithFormBody(fake)
     }
   }
 
-  implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsFormUrlEncoded]](r, (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user))
-  implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](r, (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user))
+  implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsFormUrlEncoded]](
+    r,
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user),
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user)
+  )
+  implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](
+    r,
+    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user),
+    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user)
+  )
 
   def fakeUser : OverviewUser = {
     val ret = mock[OverviewUser]

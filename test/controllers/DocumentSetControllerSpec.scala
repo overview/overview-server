@@ -124,7 +124,9 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         def fakeJobs : Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
         mockStorage.findDocumentSetCreationJobs(anyString) answers { (_) => fakeJobs }
 
-        lazy val result = controller.index(pageNumber)(fakeAuthorizedRequest)
+        def request = fakeAuthorizedRequest
+
+        lazy val result = controller.index(pageNumber)(request)
         lazy val j = jodd.lagarto.dom.jerry.Jerry.jerry(h.contentAsString(result))
       }
 
@@ -150,6 +152,14 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         override def fakeJobs = Seq()
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
+      }
+
+      "flash when redirecting" in new IndexScope {
+        override def fakeDocumentSets = Seq()
+        override def fakeJobs = Seq()
+
+        override def request = super.request.withFlash("foo" -> "bar")
+        h.flash(result).data must beEqualTo(Map("foo" -> "bar"))
       }
 
       "show page 1 if the page number is too low" in new IndexScope {

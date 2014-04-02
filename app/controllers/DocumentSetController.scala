@@ -78,7 +78,7 @@ trait DocumentSetController extends Controller {
     val jobs = storage.findDocumentSetCreationJobs(request.user.email).toSeq
 
     if (resultPage.pageDetails.totalLength == 0 && jobs.length == 0) {
-      Redirect(routes.PublicDocumentSetController.index)
+      Redirect(routes.PublicDocumentSetController.index).flashing(flash)
     } else {
       Ok(views.html.DocumentSet.index(request.user, resultPage, jobs))
     }
