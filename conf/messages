@@ -272,7 +272,7 @@ views.DocumentSet._smallDocumentSet.import=Clone
 
 views.DocumentSet.index.title=Your document sets
 views.DocumentSet.index.h1=Your document sets
-views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of documents called Document Sets. If you don’t have your own documents right now, click “Import an example document set”.
+views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of documents called Document Sets. If you don’t have your own documents right now, click “Copy an example document set”.
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.

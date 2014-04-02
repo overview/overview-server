@@ -17,10 +17,14 @@
 @defining(scopedMessages("views.components.importNav")) { m =>
   <div class="import-nav">
     @if(request.path != routes.DocumentSetController.index().toString) {
-      <a href="@routes.DocumentSetController.index()">
-        <span class="link">@m("documentSets")</span>
-        <span class="document-set-count">@m("documentSetCount", nOwnedDocumentSets)</span>
-      </a>
+      @if(nOwnedDocumentSets > 0) {
+        <a href="@routes.DocumentSetController.index()">
+          <span class="link">@m("documentSets")</span>
+          <span class="document-set-count">@m("documentSetCount", nOwnedDocumentSets)</span>
+        </a>
+      } else {
+        <span class="inactive document-set-count">@m("documentSetCount", nOwnedDocumentSets)</span>
+      }
     } else {
       <span class="active">@m("documentSets")</span>
     }

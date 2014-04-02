@@ -75,9 +75,13 @@ trait DocumentSetController extends Controller {
 
     val resultPage = ResultPage(documentSetsWithTrees, documentSetsPage.pageDetails)
 
-    val jobs = storage.findDocumentSetCreationJobs(request.user.email)
+    val jobs = storage.findDocumentSetCreationJobs(request.user.email).toSeq
 
-    Ok(views.html.DocumentSet.index(request.user, resultPage, jobs))
+    if (resultPage.pageDetails.totalLength == 0 && jobs.length == 0) {
+      Redirect(routes.PublicDocumentSetController.index)
+    } else {
+      Ok(views.html.DocumentSet.index(request.user, resultPage, jobs))
+    }
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>

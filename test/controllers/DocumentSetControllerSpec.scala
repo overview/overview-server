@@ -132,6 +132,26 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.OK)
       }
 
+      "return Ok if there are only jobs" in new IndexScope {
+        override def fakeDocumentSets = Seq()
+        override def fakeJobs = Seq((fakeJob(2, 2), fakeDocumentSet(2), 0))
+
+        h.status(result) must beEqualTo(h.OK)
+      }
+
+      "return Ok if there are only document sets" in new IndexScope {
+        override def fakeJobs = Seq()
+
+        h.status(result) must beEqualTo(h.OK)
+      }
+
+      "redirect to examples if there are no document sets or jobs" in new IndexScope {
+        override def fakeDocumentSets = Seq()
+        override def fakeJobs = Seq()
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+      }
+
       "show page 1 if the page number is too low" in new IndexScope {
         override def pageNumber = 0
         h.status(result) must beEqualTo(h.OK) // load page
