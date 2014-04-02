@@ -5,17 +5,10 @@
     Seq[org.overviewproject.tree.orm.Tree],
     Seq[org.overviewproject.tree.orm.DocumentSetCreationJob]
   )],
-  jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)],
-  form: controllers.forms.DocumentSetForm.FormType
+  jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  <!--[if lte IE 9]>
-    <script src="@routes.Assets.at("javascripts/vendor/progress-polyfill.js").url"></script>
-    <script src="@routes.Assets.at("javascripts/vendor/Silverlight.debug.js").url"></script>
-    <script src="@routes.Assets.at("javascripts/ext/silverlight-upload-request.js").url"></script>
-  <![endif]-->
-
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/index").url)
 
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
@@ -51,18 +44,6 @@
   "views.DocumentSet.index.ImportOptions.dialog.title",
   "views.DocumentSet.index.ImportOptions.dialog.cancel",
   "views.DocumentSet.index.ImportOptions.dialog.submit",
-  "views.DocumentSet._dcimport.preamble_html",
-  "views.DocumentSet._dcimport.error",
-  "views.DocumentSet._dcimport.labels.email",
-  "views.DocumentSet._dcimport.labels.password",
-  "views.DocumentSet._dcimport.placeholders.email",
-  "views.DocumentSet._dcimport.submit",
-  "views.DocumentSet._dcimport.explanation",
-  "views.DocumentSet._dcimport.explanation_no_cors",
-  "views.DocumentSet._uploadForm.error.SyntaxError",
-  "views.DocumentSet._uploadForm.leavePageWarning",
-  "views.DocumentSet._documentSet.action_import",
-  "views.DocumentSet._dcimport.nFiles",
   "views.DocumentSet._share.loading",
   "views.DocumentSet._share.error",
   "views.DocumentSet._share.explanation",
@@ -70,18 +51,7 @@
   "views.DocumentSet._share.list_header",
   "views.DocumentSet._share.add",
   "views.DocumentSet._share.email_placeholder",
-  "views.DocumentSet._share.example_document_set.checkbox_label",
-  "views.DocumentSet._massUploadForm.upload_prompt",
-  "views.DocumentSet._massUploadForm.choose_options",
-  "views.DocumentSet._massUploadForm.cancel",
-  "views.DocumentSet._massUploadForm.drop_target",
-  "views.DocumentSet._massUploadForm.minimum_files",
-  "views.DocumentSet._massUploadForm.wait_for_import",
-  "views.DocumentSet._massUploadForm.confirm_cancel.title",
-  "views.DocumentSet._massUploadForm.confirm_cancel.prompt",
-  "views.DocumentSet._massUploadForm.confirm_cancel.back_button",
-  "views.DocumentSet._massUploadForm.confirm_cancel.confirm_button",
-  "views.DocumentSet._uploadProgress.uploading"
+  "views.DocumentSet._share.example_document_set.checkbox_label"
 )}
 
 @**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
@@ -100,79 +70,46 @@
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @main(optionalUser=Some(user), title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <div class="nav-buttons">
-      @if(documentSets || jobs) {
-        <a class="btn btn-primary back" href="#jobs-and-document-sets"><i class="icon-arrow-left"></i> @m("back")</a>
-      }
-      <div class="dropdown">
-        <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
-          @m("import_dropdown")
-          <b class="caret"></b>
-        </a>
-        <ul class="dropdown-menu">
-          <li><a href="#import-from-mass-upload">@m("import_from_mass_upload")</a></li>
-          <li><a href="#import-from-documentcloud-account">@Html(m("import_from_documentcloud_account_html"))</a></li>
-          <li><a href="#import-from-upload">@m("import_from_upload")</a></li>
-          <li><a href="#import-shared">@m("import_from_shared")</a></li>
-          <li><a href="#import-public">@m("import_public")</a></li>
-        </ul>
+    <div class="row">
+      <div class="sidebar col-sm-3">
+        @views.html.components.importNav(hasDocumentSets=true)
       </div>
-    </div>
+      <div class="col-sm-9">
+        <div id="jobs-and-document-sets">
+          <div class="page-header"><h1>@m("h1")</h1></div>
 
-    <div id="jobs-and-document-sets" class="loading">
-      <div class="page-header"><h1>@m("h1")</h1></div>
+          @if(noDocuments) {
+            <p class="preamble">@m("no_document_sets_or_jobs")</p>
+          }
 
-      @if(noDocuments) {
-        <p class="preamble">@m("no_document_sets_or_jobs")</p>
-      }
+          @if(jobs) {
+            <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
+              <h2>@m("subtitle_jobs")</h2>
+              <p class="description">@m("description_jobs")</p>
+              <ul class="list-unstyled">
+                @jobs.map(Function.tupled(views.html.ImportJob._documentSetCreationJob.apply))
+              </ul>
+            </div>
+          }
 
-      @if(jobs) {
-        <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
-          <h2>@m("subtitle_jobs")</h2>
-          <p class="description">@m("description_jobs")</p>
-          <ul class="list-unstyled">
-            @jobs.map(Function.tupled(views.html.ImportJob._documentSetCreationJob.apply))
-          </ul>
-        </div>
-      }
+          @if(documentSets || jobs) {
+            <div class="document-sets">
+              <ul class="list-unstyled">
+                @documentSets.map(displayDocumentSet(_))
+              </ul>
+              @if(documentSets) {
+                @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
+              } else {
+                <p class="no-document-sets">@m("no_document_sets")</p>
+              }
+            </div>
 
-      @if(documentSets || jobs) {
-        <div class="document-sets">
-          <ul class="list-unstyled">
-            @documentSets.map(displayDocumentSet(_))
-          </ul>
-          @if(documentSets) {
-            @helper.Pagination.links(documentSets.pageDetails, (pageNum: Int) => routes.DocumentSetController.index(pageNum).url)
-          } else {
-            <p class="no-document-sets">@m("no_document_sets")</p>
+            @views.html.DocumentSet._errorList()
+            @views.html.DocumentSet._sharingOptions()
+            @views.html.DocumentSet._exportOptions()
           }
         </div>
-
-
-        @views.html.DocumentSet._errorList()
-        @views.html.DocumentSet._sharingOptions()
-        @views.html.DocumentSet._exportOptions()
-      }
-    </div>
-
-    <div class="import-pane" id="import-public">
-      @views.html.DocumentSet._importPublic(! (noDocuments))
-    </div>
-
-    <div class="import-pane" id="import-shared">
-      @views.html.DocumentSet._importShared(! (noDocuments))
-    </div>
-
-    <div class="import-pane" id="import-from-documentcloud-account">
-      @views.html.DocumentSet._importDocumentCloud(! (noDocuments))
-    </div>
-
-    <div class="import-pane" id="import-from-upload">
-      @views.html.DocumentSet._uploadForm(! (noDocuments))
-    </div>
-
-    <div class="import-pane" id="import-from-mass-upload">
-      @views.html.DocumentSet._massUploadForm(! (noDocuments))
+      </div>
     </div>
   }
 }

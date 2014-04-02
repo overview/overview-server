@@ -4,7 +4,6 @@ define [
   'bootstrap-collapse',
   'bootstrap-dropdown',
   'bootstrap-modal',
-  'bootstrap-tab',
   'bootstrap-transition'
 ], ($) ->
   $ ->

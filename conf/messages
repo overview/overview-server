@@ -101,6 +101,15 @@ views.admin.User.index.new.email=Email
 views.admin.User.index.new.password=Password
 views.admin.User.index.new.submit=Create
 
+views.components.importNav.documentSets=Your document sets
+views.components.importNav.create=Create a document set:
+views.components.importNav.create.csv=Upload a CSV file
+views.components.importNav.create.pdf=Upload PDF files
+views.components.importNav.create.documentCloud_html=Import from <span class="documentcloud-logo">DocumentCloud</span>
+views.components.importNav.copy=Copy a document set:
+views.components.importNav.copy.public=Import an example document set
+views.components.importNav.copy.shared=Import document sets shared with you
+
 views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_blog=Blog
@@ -120,6 +129,30 @@ views.Confirmation.index.intro=Have you received your confirmation email yet? If
 views.Confirmation.index.label.token=Token from email
 views.Confirmation.index.placeholder.token=1234567890qwertyuiopASDFGHJKL
 views.Confirmation.index.submit=Finish registering and log in
+
+views.CsvUpload.new.title=Upload a CSV file
+views.CsvUpload.new.h1=Upload a CSV file
+views.CsvUpload.new.label.file=Select a CSV file from your computer:
+views.CsvUpload.new.label.charset=Specify an encoding:
+views.CsvUpload.new.preview.h4=Preview
+views.CsvUpload.new.submit=Upload
+views.CsvUpload.new.reset=Reset
+views.CsvUpload.new.charset.utf8=Unicode (UTF-8)
+views.CsvUpload.new.charset.windows1252=Western (Windows-1252, ISO-8859-1)
+views.CsvUpload.new.help1=Many programs can write CSV files; Overview can read those files.
+views.CsvUpload.new.help2=Each row in the CSV file becomes one document in Overview.
+views.CsvUpload.new.help.requirements_html=Overview can load CSV files exported from Radian 6 and Sysomos. Or, your file must meet these requirements (<a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/" target="_blank" title="(opens in new window)">help and example files</a>)
+views.CsvUpload.new.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
+views.CsvUpload.new.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
+views.CsvUpload.new.requirements.header=The first line of the file must list the column names. The text must be in a column named “text”, “snippet”, or “contents”.
+views.CsvUpload.new.requirements.data=Each row must describe a single document, and there must be at least three.
+views.CsvUpload.new.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
+views.CsvUpload.new.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
+views.CsvUpload.new.progress.header=Uploading…
+views.CsvUpload.new.progress.description=The upload will stop if you leave this page.
+views.CsvUpload.new.progress.prompt=Meanwhile, you can open Overview in another window and work on a different document set.
+views.CsvUpload.new.progress.cancel=Cancel upload
+views.CsvUpload.new.leavePageWarning=The upload will stop if you leave this page.
 
 views.Document.show.heading.empty=(document without text)
 views.Document.show.iframe.enable=(offline view)
@@ -154,6 +187,12 @@ views.DocumentCloudImportJob.new.submit_credentials.preamble.cors=This will send
 views.DocumentCloudImportJob.new.submit_credentials.preamble.no_cors=This will send your DocumentCloud email and password to Overview’s servers, which will immediately forget them.
 views.DocumentCloudImportJob.new.submit_credentials.label=Verify DocumentCloud email and password
 
+views.DocumentCloudProject.index.title=DocumentCloud projects
+views.DocumentCloudProject.index.h1=DocumentCloud projects
+views.DocumentCloudProject.index.loading=Loading… 
+views.DocumentCloudProject.index.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
+views.DocumentCloudProject.index.help2=You must import at least three documents to create a document set. Overview can treat each page from DocumentCloud as a separate document.
+
 views.DocumentProcessingError.index.failed_because=Failed with error “{0}”
 
 views.DocumentSet._dcimport.preamble_html=Enter your <span class="documentcloud-logo">DocumentCloud</span> email and password to access your projects.
@@ -186,31 +225,6 @@ views.DocumentSet._documentSet.toggle_public=Share with all Overview users
 
 views.DocumentSet._errorList.h3=Documents with errors
 
-views.DocumentSet._import.title=Import a new document set…
-views.DocumentSet._import.label=From…
-views.DocumentSet._import.from_documentcloud_account=Your DocumentCloud account
-views.DocumentSet._import.from_public=Example document set
-views.DocumentSet._import.from_shared=Document sets shared with you
-views.DocumentSet._import.from_upload=CSV upload
-
-views.DocumentSet._importDocumentCloud.h1=Import a DocumentCloud project
-views.DocumentSet._importDocumentCloud.loading=Loading…
-views.DocumentSet._importDocumentCloud.help1=Overview can analyze and display your files from DocumentCloud. Import a project from this page.
-views.DocumentSet._importDocumentCloud.help2=You must import at least three documents to create a document set. Overview can treat each page from DocumentCloud as a separate document.
-
-views.DocumentSet._importPane.import_public=Import an example document set
-views.DocumentSet._importPane.import_dropdown=Import documents
-views.DocumentSet._importPane.import_from_shared=Import documents shared with you
-views.DocumentSet._importPane.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
-views.DocumentSet._importPane.import_from_upload=Import from a CSV file
-views.DocumentSet._importPane.import_from_mass_upload=Upload PDF files
-
-views.DocumentSet._importPublic.h1=Import an example document set
-views.DocumentSet._importPublic.loading=Loading document sets…
-
-views.DocumentSet._importShared.h1=Import a document set shared with you
-views.DocumentSet._importShared.loading=Loading document sets…
-
 views.DocumentSet._manualForm.title=Import a DocumentCloud project
 views.DocumentSet._manualForm.label.title=Title
 views.DocumentSet._manualForm.placeholder.title=My document set
@@ -239,30 +253,6 @@ views.DocumentSet._tree.nDocuments={0,choice,0#no documents|1#one document|1<{0,
 views.DocumentSet._tree.nImportantWords={0,choice,1#one important word|1<{0,number,integer} important words}
 views.DocumentSet._tree.nSuppliedStopWords={0,choice,1#one ignored word|1<{0,number,integer} ignored words}
 
-views.DocumentSet._uploadForm.h1=Upload a document set
-views.DocumentSet._uploadForm.label.file=Select a CSV file from your computer:
-views.DocumentSet._uploadForm.label.charset=Specify an encoding:
-views.DocumentSet._uploadForm.preview.h4=Preview
-views.DocumentSet._uploadForm.submit=Upload
-views.DocumentSet._uploadForm.reset=Reset
-views.DocumentSet._uploadForm.charset.utf8=Unicode (UTF-8)
-views.DocumentSet._uploadForm.charset.windows1252=Western (Windows-1252, ISO-8859-1)
-views.DocumentSet._uploadForm.help.requirements_html=Overview can load CSV files exported from Radian 6 and Sysomos. Or, your file must meet these requirements (<a href="http://overview.ap.org/blog/2012/12/using-overview-without-documentcloud-and-how-to-import-text-from-a-csv/" target="_blank" title="(opens in new window)">help and example files</a>)
-views.DocumentSet._uploadForm.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
-views.DocumentSet._uploadForm.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
-views.DocumentSet._uploadForm.requirements.header=The first line of the file must list the column names. The text must be in a column named “text”, “snippet”, or “contents”.
-views.DocumentSet._uploadForm.requirements.data=Each row must describe a single document, and there must be at least three.
-views.DocumentSet._uploadForm.error.requirements=Use a spreadsheet program’s “Export to CSV” option to create such a file.
-views.DocumentSet._uploadForm.error.SyntaxError=Error on line {0}, column {1}: “{2}” is not allowed here, so this is an invalid CSV file.
-views.DocumentSet._uploadForm.progress.header=Uploading…
-views.DocumentSet._uploadForm.progress.description=The upload will stop if you leave this page.
-views.DocumentSet._uploadForm.progress.prompt=Meanwhile, you can open Overview in another window and work on a different document set.
-views.DocumentSet._uploadForm.progress.cancel=Cancel upload
-views.DocumentSet._uploadForm.leavePageWarning=The upload will stop if you leave this page.
-
-views.DocumentSet._massUploadForm.h1=Upload PDF files
-views.DocumentSet._massUploadForm.help1=Overview can analyze and display your PDF files.
-views.DocumentSet._massUploadForm.help2=You must import at least three documents.
 views.DocumentSet._massUploadForm.upload_prompt=Add files
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
@@ -285,13 +275,6 @@ views.DocumentSet.index.no_document_sets_or_jobs=Overview analyzes groups of doc
 views.DocumentSet.index.no_document_sets=You have no document sets ready for viewing.
 views.DocumentSet.index.subtitle_jobs=Imports in progress
 views.DocumentSet.index.description_jobs=We’re importing and analyzing your documents. You can wait, or you can leave this page and come back later.
-views.DocumentSet.index.back=Document sets
-views.DocumentSet.index.import_public=Import an example document set
-views.DocumentSet.index.import_dropdown=Import documents
-views.DocumentSet.index.import_from_shared=Import documents shared with you
-views.DocumentSet.index.import_from_documentcloud_account_html=Import your <span class="documentcloud-logo">DocumentCloud</span> project
-views.DocumentSet.index.import_from_upload=Import from a CSV file
-views.DocumentSet.index.import_from_mass_upload=Upload PDF files
 
 views.DocumentSet.index.ImportOptions.dialog.cancel=Cancel
 views.DocumentSet.index.ImportOptions.dialog.submit=Import documents
@@ -313,6 +296,11 @@ views.DocumentSet.index.ImportOptions.tag.allDocuments=All documents
 views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 documents|1#1 document|1<{1,number,integer} documents})
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
+
+views.PdfUpload.new.title=Upload PDF files
+views.PdfUpload.new.h1=Upload PDF files
+views.PdfUpload.new.help1=Overview can analyze and display your PDF files.
+views.PdfUpload.new.help2=You must import at least three documents.
 
 views.Tree.show.DocumentList.description.empty=(no key words)
 views.Tree.show.DocumentList.description=Key words: {0}
@@ -440,7 +428,10 @@ views.Password.new_.h1=Reset your password
 views.Password.new_.p=We can help you reset your password. All you need to know is the email address you registered with.
 
 views.PublicDocumentSet.index.title=Example document sets
+views.PublicDocumentSet.index.h1=Example document sets
 views.PublicDocumentSet.index.preamble=Get started with Overview by exploring the following example document sets.
+views.PublicDocumentSet.index.help1=Overview analyzes document sets. These example document sets can give you a feel for how it works.
+views.PublicDocumentSet.index.help2=If you have your own document set, upload it using one of the links above.
 views.PublicDocumentSet.index.empty=There are currently no example document sets.
 
 views.Session._form.h3=Log in to your account
@@ -454,7 +445,8 @@ views.Session.new_.title=Log in
 views.Session.new_.h1=Log in
 
 views.SharedDocumentSet.index.title=Document sets shared with you
-views.SharedDocumentSet.index.preamble=When other Overview users share documents with you, they appear here.
+views.SharedDocumentSet.index.h1=Document sets shared with you
+views.SharedDocumentSet.index.help1=If somebody has shared a document set with you, it will appear in this list.
 views.SharedDocumentSet.index.empty=Nobody is sharing a document set with you right now.
 
 views.Tag._form.h3=Edit tag

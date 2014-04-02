@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.Controller
 import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.forms.{ DocumentSetForm, DocumentSetUpdateForm }
+import controllers.forms.DocumentSetUpdateForm
 import controllers.util.JobQueueSender
 import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder }
 import models.orm.stores.DocumentSetStore
@@ -52,7 +52,6 @@ trait DocumentSetController extends Controller {
     def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit
   }
 
-  private val form = DocumentSetForm()
   protected val indexPageSize = 10
 
   def index(page: Int) = AuthorizedAction(anyUser) { implicit request =>
@@ -78,7 +77,7 @@ trait DocumentSetController extends Controller {
 
     val jobs = storage.findDocumentSetCreationJobs(request.user.email)
 
-    Ok(views.html.DocumentSet.index(request.user, resultPage, jobs, form))
+    Ok(views.html.DocumentSet.index(request.user, resultPage, jobs))
   }
 
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>

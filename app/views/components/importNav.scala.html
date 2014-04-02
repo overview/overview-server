@@ -1,0 +1,34 @@
+@(
+  hasDocumentSets: Boolean
+)(implicit lang: Lang, request: RequestHeader)
+
+@linkToHtml(name: Html, route: Call) = {
+  @if(route.toString == request.path) {
+    <span class="active">@name</span>
+  } else {
+    <a href="@route">@name</a>
+  }
+}
+
+@linkTo(name: String, route: Call) = {
+  @linkToHtml(HtmlFormat.escape(name), route)
+}
+
+@defining(scopedMessages("views.components.importNav")) { m =>
+  <div class="import-nav">
+    @linkTo(m("documentSets"), routes.DocumentSetController.index())
+
+    <h6>@m("create")</h6>
+    <ul class="import-nav">
+      <li>@linkTo(m("create.csv"), routes.CsvUploadController.new_())</li>
+      <li>@linkTo(m("create.pdf"), routes.PdfUploadController.new_())</li>
+      <li>@linkToHtml(Html(m("create.documentCloud_html")), routes.DocumentCloudProjectController.index())</li>
+    </ul>
+
+    <h6>@m("copy")</h6>
+    <ul class="import-nav">
+      <li>@linkTo(m("copy.shared"), routes.SharedDocumentSetController.index())</li>
+      <li>@linkTo(m("copy.public"), routes.PublicDocumentSetController.index())</li>
+    </ul>
+  </div>
+}

@@ -6,24 +6,20 @@ wd = require('wd')
 #  @userBrowser.waitForWhatever().executeCallback(-> $('.invisible-file-input').css(opacity: 1)).elementByCss('.invisible-file-input').click()
 Url =
   index: '/documentsets'
+  pdfUpload: '/imports/pdf'
 
-
-describe 'Pdf upload', ->
+describe 'PdfUpload', ->
   testMethods.usingPromiseChainMethods
     openPdfUploadPage: ->
       @
-        .get(Url.index)
-        .waitForFunctionToReturnTrueInBrowser(-> $?.fn?.dropdown? && $.isReady)
-        .elementBy(tag: 'a', contains: 'Import documents').click()
-        .elementBy(tag: 'a', contains: 'Upload PDF files').click()
-        .waitForElementByCss('input[type=file]')
+        .get(Url.pdfUpload)
+        .waitForJqueryReady()
 
     chooseFile: (path) ->
       fullPath = "#{__dirname}/../files/#{path}"
       @
         .executeFunction(-> $('.invisible-file-input').css(opacity: 1))
         .elementByCss('.invisible-file-input').sendKeys(fullPath)
-
 
     doImport: ->
       firstUrl = null
@@ -36,9 +32,13 @@ describe 'Pdf upload', ->
           cb(err, url)
 
       @
-        .url (u) -> firstUrl = url
+        .url((u) -> firstUrl = url)
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitFor(isAtNewUrl, 5000)
+        .waitFor(isAtNewUrl, 10000)
+
+    waitForJobsToComplete: ->
+      @
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
 
     deleteTopUpload: ->
       @
@@ -61,9 +61,11 @@ describe 'Pdf upload', ->
         .chooseFile('PdfUpload/Jules1.pdf')
         .chooseFile('PdfUpload/Jules2.pdf')
         .chooseFile('PdfUpload/Jules3.pdf')
-        .waitForElementBy(tag: 'button', contains: 'Done adding files').click()
-        .waitForElementBy(name: 'name', visible: true)
-        .type('Pdf Upload\n')
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
+        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
+        .doImport()
+        .sleep(5000) # async requests can time out; this won't
+        .waitForJobsToComplete()
 
     after ->
       @userBrowser

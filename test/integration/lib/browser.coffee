@@ -74,6 +74,9 @@ wd.addPromiseChainMethod 'waitForJqueryAjaxComplete', ->
     .waitForFunctionToReturnTrueInBrowser((-> window.listenForJqueryAjaxComplete.current < window.listenForJqueryAjaxComplete.total), Constants.ajaxTimeout, Constants.pollLength)
     .executeFunction(-> window.listenForJqueryAjaxComplete.current += 1)
 
+wd.addPromiseChainMethod 'waitForJqueryReady', ->
+  @.waitForFunctionToReturnTrueInBrowser(-> $?.isReady)
+
 wrapJsFunction = (js) -> "(#{js})()"
 
 wd.addPromiseChainMethod 'executeFunction', (js) ->

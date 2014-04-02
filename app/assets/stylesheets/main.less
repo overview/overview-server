@@ -167,7 +167,7 @@ label.error {
   }
 }
 
-#flash {
+#flash .alert {
   margin-top: 1em;
 }
 
@@ -181,10 +181,21 @@ body.password-edit, body.password-new, body.confirmation-index {
   }
 }
 
+.help-block.error {
+  color: @brand-danger;
+}
+
 @import "common/nav.less";
+@import "sidebar.less";
+@import "import-options.less";
+@import "CsvUpload/new.less";
 @import "DocumentSet/index.less";
 @import "DocumentSet/show.less";
 @import "DocumentCloudImportJob/new.less";
+@import "DocumentCloudProject/index.less";
+@import "PdfUpload/new.less";
+@import "PublicDocumentSet/index.less";
+@import "SharedDocumentSet/index.less";
 @import "Welcome/show.less";
 @import "logos.less";
 @import "admin/Users/index.less";

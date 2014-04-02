@@ -5,6 +5,7 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
+  csvUpload: '/imports/csv'
 
 isSelected = new wd.asserters.Asserter((target, cb) -> target.isSelected(cb))
 
@@ -12,11 +13,8 @@ describe 'CsvUpload', ->
   testMethods.usingPromiseChainMethods
     openCsvUploadPage: ->
       @
-        .get(Url.index)
-        .waitForFunctionToReturnTrueInBrowser(-> $?.fn?.dropdown? && $.isReady)
-        .elementBy(tag: 'a', contains: 'Import documents').click()
-        .elementBy(tag: 'a', contains: 'Import from a CSV file').click()
-        .waitForElementByCss('input[type=file]', wd.asserters.isDisplayed)
+        .get(Url.csvUpload)
+        .waitForJqueryReady()
 
     chooseFile: (path) ->
       fullPath = "#{__dirname}/../files/#{path}"
@@ -32,8 +30,8 @@ describe 'CsvUpload', ->
 
       isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
         browser.url (err, url) ->
-          if !err && url == originalUrl
-            err = "Expected URL to change, but it is still #{originalUrl}"
+          if !err && url == firstUrl
+            err = "Expected URL to change, but it is still #{firstUrl}"
           url = null if err
           cb(err, url)
 

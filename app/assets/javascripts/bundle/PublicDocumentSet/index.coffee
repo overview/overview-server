@@ -22,7 +22,8 @@ requirejs.config
     'jquery.validate':
       deps: [ 'jquery' ]
       exports: 'jQuery.fn.validate'
-    underscore: { exports: '_' }
+    underscore:
+      exports: '_'
 
   paths:
     'backbone': 'vendor/backbone'
@@ -36,11 +37,6 @@ requirejs.config
     underscore: 'vendor/underscore'
 
 require [
-  'for-view/DocumentSet/_index/recluster',
-  'for-view/DocumentSet/_index/share-document-set',
-  'for-view/DocumentSet/_index/watch-jobs',
-  'for-view/DocumentSet/index',
-  'elements/form-submit-with-feedback',
-  'elements/form-with-confirm',
+  'for-view/PublicDocumentSet/index'
   'elements/twitter-bootstrap'
 ], ->

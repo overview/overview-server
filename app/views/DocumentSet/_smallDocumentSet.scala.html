@@ -4,7 +4,7 @@
 )(implicit lang: Lang, request: RequestHeader)
 
 @defining(scopedMessages("views.DocumentSet._smallDocumentSet")) { m =>
-  <li>
+  <li class="document-set">
     <form method="POST" action="@routes.CloneImportJobController.create(documentSet.id)" class="form-inline"
       >@helper.Form.csrfToken<button class="btn btn-primary">@m("import")</button
     ></form>

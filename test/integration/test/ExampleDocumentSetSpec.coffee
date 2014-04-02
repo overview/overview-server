@@ -6,7 +6,8 @@ wd = require('wd')
 
 Url =
   index: '/documentsets'
-
+  csvUpload: '/imports/csv'
+  publicDocumentSets: '/public-document-sets'
 
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
@@ -19,46 +20,45 @@ describe 'Example Document Sets', ->
 
     openCsvUploadPage: ->
       @
-        .get(Url.index)
-        .waitForFunctionToReturnTrueInBrowser(-> $?.fn?.dropdown? && $.isReady)
-        .waitForElementByCss('.dropdown .btn', wd.asserters.isDisplayed, 5000).click()
-        .elementBy(tag: 'a', contains: 'Import from a CSV file').click()
-        .waitForElementByCss('input[type=file]', wd.asserters.isDisplayed)
+        .get(Url.csvUpload)
+        .waitForElementByCss('input[type=file]')
 
     chooseFile: (path) ->
       fullPath = "#{__dirname}/../files/#{path}"
       @
         .elementByCss('input[type=file]').sendKeys(fullPath)
 
-    openCloneExamplePage: ->
-      @
-        .get(Url.index)
-        .waitForElementBy(tag: 'a', contains: 'Import documents').click()
-        .elementBy(tag: 'a', contains: 'Import an example document set').click()
-
     cloneExample: ->
+      firstUrl = null
+
       isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
         browser.url (err, url) ->
-          if !err && url == originalUrl
-            err = "Expected URL to change, but it is still #{originalUrl}"
+          if !err && url == firstUrl
+            err = "Expected URL to change, but it is still #{firstUrl}"
           url = null if err
           cb(err, url)
 
       @
+        .url((u) -> firstUrl = u)
+        .waitForJqueryReady()
         .waitForExampleToAppear()
         .waitForElementBy(tag: 'button', contains: 'Clone').click()
         .waitFor(isAtNewUrl, 5000)
 
     waitForExampleToAppear: ->
       @
-        .waitForElementBy({ tag: 'ul', class: 'shared-document-sets' }, 10000)
+        .waitForElementBy({ tag: 'ul', class: 'public-document-sets' }, 10000)
 
       
     toggleExampleDocumentSet: ->
+      checkbox = { tag: 'label', contains: 'Set as example document set', visible: true }
+
       @
-        .waitForElementByCss('.show-sharing-settings', wd.asserters.isDisplayed, 10000).click()
-        .waitForElementByCss('input[type=checkbox]', wd.asserters.isDisplayed, 10000).click()
-        .waitForElementBy(tag: 'a', contains: 'Close', visible: 'true').click()
+        .elementBy(tag: 'a', contains: 'Share').click()
+        .waitForElementBy(checkbox, 10000)
+        .listenForJqueryAjaxComplete()
+        .elementBy(checkbox).click()
+        .waitForElementBy(tag: 'a', contains: 'Close', visible: true).click()
 
     waitForRequirements: ->
       @
@@ -69,8 +69,8 @@ describe 'Example Document Sets', ->
 
       isAtNewUrl = new wd.asserters.Asserter (browser, cb) ->
         browser.url (err, url) ->
-          if !err && url == originalUrl
-            err = "Expected URL to change, but it is still #{originalUrl}"
+          if !err && url == firstUrl
+            err = "Expected URL to change, but it is still #{firstUrl}"
           url = null if err
           cb(err, url)
 
@@ -94,8 +94,8 @@ describe 'Example Document Sets', ->
         
     waitForJobsToComplete: ->
       @
-        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 5000)
-
+        .waitForJqueryReady()
+        .waitForFunctionToReturnTrueInBrowser((-> $('.document-set-creation-jobs').length == 0), 10000)
 
   asUser.usingTemporaryUser()
   
@@ -106,10 +106,10 @@ describe 'Example Document Sets', ->
         .chooseAndDoUpload('CsvUpload/basic.csv')
         .waitForJobsToComplete()
         .toggleExampleDocumentSet()
-        .then((a) =>
+        .then =>
           @userBrowser
-            .openCloneExamplePage()
-            .cloneExample())
+            .get(Url.publicDocumentSets)
+            .cloneExample()
 
              
     after ->
@@ -153,33 +153,24 @@ describe 'Example Document Sets', ->
           
       it 'should not show up in example list', ->
         @userBrowser
-          .openCloneExamplePage()
+          .get(Url.publicDocumentSets)
           .waitForElementBy(tag: 'p', contains: 'There are currently no example document sets.').should.eventually.exist
 
-  describe 'after being deleted', ->
-
-    after ->
-      @userBrowser
-        .deleteTopUpload()
-
-        
-    it 'should not have deleted cloned document set', ->
+    it 'should keep clone after original is deleted', ->
       @adminBrowser
         .openCsvUploadPage()
         .chooseAndDoUpload('CsvUpload/basic.csv')
         .waitForJobsToComplete()
         .toggleExampleDocumentSet()
-        .then((a) =>
+        .then =>
           @userBrowser
-            .openCloneExamplePage()
-            .cloneExample())
-        .then((u) =>
+            .get(Url.publicDocumentSets)
+            .cloneExample()
+        .then =>
           @adminBrowser
-            .deleteTopUpload())
-        .then((a) =>
+            .deleteTopUpload()
+        .then =>
           @userBrowser
             .get(Url.index)
-            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist)
-            
-            
-          
+            .waitForElementBy(tag: 'a', contains: 'basic.csv').should.eventually.exist
+            .deleteTopUpload()

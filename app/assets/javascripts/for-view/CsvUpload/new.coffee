@@ -1,3 +1,4 @@
+# This file is a mess. Sorry.
 define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', 'apps/ImportOptions/app', 'util/shims/file' ], ($, _, CsvReader, Upload, i18n, ImportOptionsApp) ->
   FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
   FILE_PREVIEW_SIZE = 204800 # 200kb
@@ -228,7 +229,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
     refresh_preview_error = ($error, error) ->
       text = if error.name == 'SyntaxError'
-        i18n('views.DocumentSet._uploadForm.error.SyntaxError', error.line, error.column, show_hidden_characters(error.found))
+        i18n('views.CsvUpload.new.error.SyntaxError', error.line, error.column, show_hidden_characters(error.found))
       else
         error.name
 
@@ -267,18 +268,8 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
 
         requestAnimationFrame(refresh_progress)
 
-        # Firefox seems to call our beforeunload callback even after we have
-        # removed it, on Travis-CI. That makes our tests fail. So let's create
-        # a variable that valid code can only possibly evaluate as true.
-        onBeforeUnloadIsSet = true
         $(window).on 'beforeunload.document-set-index-upload', ->
-          if onBeforeUnloadIsSet
-            i18n('views.DocumentSet._uploadForm.leavePageWarning')
-          else
-            # Outside of Firefox, this will never happen. Even in Firefox, it's
-            # rare in test code and unfathomable for even the most
-            # fleet-of-finger users.
-            undefined # do nothing
+          i18n('views.DocumentSet._uploadForm.leavePageWarning')
         $modal.modal('show')
 
         # There are *lots* of progress events with a fast connection. They become
@@ -290,15 +281,12 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
         upload.done ->
           # POST to .../finish with the options
           $(window).off('beforeunload.document-set-index-upload')
-          onBeforeUnloadIsSet = false # work around Firefox bug
           $submitForm = $('<form method="post" style="display:none;"><input type="submit" value="submit"/></form>')
             .attr('action', "#{upload.url}/finish")
             .append(importOptionsApp.el)
             .append($form.find('[name=csrfToken]').clone())
             .appendTo('body')
-          # Even that Firefox workaround isn't enough. WHY?
-          # Let's just give Firefox a while to think about what it's done.
-          window.setTimeout((-> $submitForm[0].submit()), 200)
+          $submitForm[0].submit()
         upload.fail -> console?.log('Upload failed', arguments)
         upload.start()
 
@@ -388,7 +376,6 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
     refresh_from_csv_reader()
 
   $ ->
-    $('#import-from-upload').one 'activate', ->
-      $form = $('#import-from-upload').find('form')
-      $modal = $('#document-set-upload-progress').modal({ show: false })
-      make_csv_upload_form($form, $modal)
+    $form = $('form.csv-upload')
+    $modal = $('#document-set-upload-progress').modal({ show: false })
+    make_csv_upload_form($form, $modal)

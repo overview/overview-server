@@ -9,12 +9,11 @@ import models.OverviewUser
 
 class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
-    val form = controllers.forms.DocumentSetForm()
     def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
     def documentSets: Seq[(DocumentSet, Seq[Tree], Seq[DocumentSetCreationJob])] = Seq()
     def documentSetsPage = ResultPage(documentSets, 10, 1)
 
-    def result = index(fakeUser, documentSetsPage, jobs, form)
+    def result = index(fakeUser, documentSetsPage, jobs)
   }
 
   trait BaseScopeWithJob extends BaseScope {
@@ -49,10 +48,6 @@ class indexSpec extends views.html.ViewSpecification {
 
     "Show DocumentSets UL if there are none, but there are Jobs" in new BaseScopeWithJob {
       $(".document-sets ul").length must equalTo(1)
-    }
-
-    "Show forms for adding new document sets" in new BaseScope {
-      $("form").length must equalTo(2)
     }
 
     "render DocumentSets if there are some" in new BaseScope {

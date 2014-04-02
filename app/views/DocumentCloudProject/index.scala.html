@@ -1,0 +1,63 @@
+@(
+  user: OverviewUser
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+
+@javascripts = {
+  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentCloudProject/index").url)
+
+  @* Let's hope there is no end-script tag in _supportedLanguages.... *@
+  <script>
+    window.supportedLanguages = @Html(views.DocumentSet._supportedLanguages().toString());
+    window.defaultLanguageCode = "@org.overviewproject.util.SupportedLanguages.defaultLanguage.languageCode";
+  </script>
+}
+
+@jsMessageKeys = @{Seq(
+  "views.DocumentSet.index.ImportOptions.title",
+  "views.DocumentSet.index.ImportOptions.lang.label",
+  "views.DocumentSet.index.ImportOptions.name.label",
+  "views.DocumentSet.index.ImportOptions.tree_title.label",
+  "views.DocumentSet.index.ImportOptions.tag_id.label",
+  "views.DocumentSet.index.ImportOptions.tag.loading",
+  "views.DocumentSet.index.ImportOptions.tag.error",
+  "views.DocumentSet.index.ImportOptions.tag.allDocuments",
+  "views.DocumentSet.index.ImportOptions.tag.name",
+  "views.DocumentSet.index.ImportOptions.split_documents.label_html",
+  "views.DocumentSet.index.ImportOptions.split_documents.true",
+  "views.DocumentSet.index.ImportOptions.split_documents.false",
+  "views.DocumentSet.index.ImportOptions.split_documents.too_few_documents",
+  "views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html",
+  "views.DocumentSet.index.ImportOptions.supplied_stop_words.help",
+  "views.DocumentSet.index.ImportOptions.important_words.label_html",
+  "views.DocumentSet.index.ImportOptions.important_words.help",
+  "views.DocumentSet.index.ImportOptions.dialog.title",
+  "views.DocumentSet.index.ImportOptions.dialog.cancel",
+  "views.DocumentSet.index.ImportOptions.dialog.submit",
+  "views.DocumentSet._documentSet.action_import",
+  "views.DocumentSet._dcimport.preamble_html",
+  "views.DocumentSet._dcimport.error",
+  "views.DocumentSet._dcimport.labels.email",
+  "views.DocumentSet._dcimport.labels.password",
+  "views.DocumentSet._dcimport.placeholders.email",
+  "views.DocumentSet._dcimport.submit",
+  "views.DocumentSet._dcimport.explanation",
+  "views.DocumentSet._dcimport.explanation_no_cors",
+  "views.DocumentSet._dcimport.nFiles"
+)}
+
+@defining(scopedMessages("views.DocumentCloudProject.index")) { m =>
+  @main(optionalUser=Some(user), title=m("title"), bodyClass="documentcloud-project-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    <div class="row">
+      <div class="col-sm-3 sidebar">
+        @views.html.components.importNav(hasDocumentSets=true)
+        @views.html.components.helpBox(m("help1"), m("help2"))
+      </div>
+      <div class="col-sm-9">
+        <div class="page-header">
+          <h1>@m("h1")</h1>
+        </div>
+        <div class="documentcloud-projects"><!-- JavaScript will replace this --></div>
+      </div>
+    </div>
+  }
+}

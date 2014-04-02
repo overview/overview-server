@@ -16,7 +16,7 @@ trait PublicDocumentSetController extends Controller {
   def index = AuthorizedAction(anyUser) { implicit request =>
     val documentSets = storage.findDocumentSets
 
-    Ok(views.html.PublicDocumentSet.index(documentSets))
+    Ok(views.html.PublicDocumentSet.index(request.user, documentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 

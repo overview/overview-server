@@ -18,7 +18,7 @@ trait SharedDocumentSetController extends Controller {
   def index = AuthorizedAction(anyUser) { implicit request =>
     val sharedDocumentSets = storage.findDocumentSets(request.user.email).toSeq
 
-    Ok(views.html.SharedDocumentSet.index(sharedDocumentSets))
+    Ok(views.html.SharedDocumentSet.index(request.user, sharedDocumentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 

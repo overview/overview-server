@@ -2,7 +2,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
   t = i18n.namespaced('views.DocumentSet.index.ImportOptions')
 
   DialogTemplate = _.template("""
-    <form class="modal fade" method="get" action="">
+    <form class="import-options modal fade" method="get" action="">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
