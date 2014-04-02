@@ -4,6 +4,14 @@
 // Started with Twitter Bootstrap, then went nuts
 // Only supports class="btn", "btn btn-danger", "btn btn-primary"
 
+.btn-disabled() {
+  cursor: default;
+  background-color: darken(white, 10%);
+  background-image: none;
+  .opacity(65);
+  .box-shadow(none);
+}
+
 .btnBackground(@color1, @color2, @color3) {
   // +---+
   // |1 /|
@@ -31,13 +39,17 @@
   background-position: 0 0;
   .transition(background-position .15s linear);
 
+  &:active, &.active {
+    background-color: @color1;
+    background-image: none;
+  }
+
   &:hover, &.hover, &:active, &.active, &.disabled, &[disabled] {
     background-position: 100% 100%;
   }
 
-  &:active, &.active {
-    background-color: @color1;
-    background-image: none;
+  &.disabled, &:disabled, &[disabled] {
+    .btn-disabled();
   }
 }
 
@@ -51,7 +63,8 @@
     text-shadow: 0 0 2px @shadowColor, 0 0 2px @shadowColor; // up contrast
   }
 
-  &:disabled, &.disabled {
+  &:disabled, &.disabled, &[disabled] {
+    .btn-disabled();
     color: @color;
     text-shadow: none;
   }
@@ -87,12 +100,9 @@
 
   // Disabled state
   &.disabled,
+  &:disabled,
   &[disabled] {
-    cursor: default;
-    background-color: darken(white, 10%);
-    background-image: none;
-    .opacity(65);
-    .box-shadow(none);
+    .btn-disabled();
   }
 }
 
