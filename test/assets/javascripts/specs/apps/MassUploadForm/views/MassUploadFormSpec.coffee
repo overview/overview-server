@@ -10,6 +10,12 @@ define [
     view = undefined
     uploadCollectionViewRenderSpy = undefined
 
+    addSomeFiles = ->
+      model.uploads.add(new MockUpload)
+      model.uploads.add(new MockUpload)
+      model.uploads.add(new MockUpload)
+      model.uploads.trigger('add-batch', model.uploads.models)
+
     class MockUpload extends Backbone.Model
       initialize: ->
         @id = @cid
@@ -172,13 +178,23 @@ define [
         it 'is disabled with no files selected', ->
           expect(view.$('.choose-options')).toBeDisabled()
 
+        it 'is disabled after reset', ->
+          addSomeFiles()
+          model.uploads.reset([])
+
+          expect(view.$('button.choose-options')).toBeDisabled()
+
+        it 'is enabled after reset and then selecting options', ->
+          addSomeFiles()
+          model.uploads.reset([])
+          addSomeFiles()
+
+          expect(view.$('button.choose-options')).not.toBeDisabled()
+
         describe 'after selecting options', ->
           beforeEach ->
             # add some finished uploads
-            model.uploads.add(new MockUpload)
-            model.uploads.add(new MockUpload)
-            model.uploads.add(new MockUpload)
-            model.uploads.trigger('add-batch', model.uploads.models)
+            addSomeFiles()
             model.set(status: 'waiting')
 
             spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )

@@ -57,6 +57,7 @@ define [
       throw 'Must pass defaultLanguageCode, a language code like "en"' if !@options.defaultLanguageCode?
 
       @collection = @model.uploads
+      @listenTo(@collection, 'reset', @_onCollectionReset)
       @listenTo(@collection, 'add-batch', @_onCollectionAddBatch)
       @finishEnabled = false
       @listenTo(@model, 'change', @_shouldSubmit)
@@ -103,6 +104,10 @@ define [
       fileInput = @$el.find('.invisible-file-input')[0]
       @model.addFiles(fileInput.files)
       fileInput.value = ''
+
+    _onCollectionReset: ->
+      @finishEnabled = false
+      @$('button.choose-options').prop('disabled', true)
 
     _onCollectionAddBatch: ->
       if !@finishEnabled && @collection.length > 2
