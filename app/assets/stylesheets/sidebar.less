@@ -6,6 +6,21 @@
   box-shadow: 0 5px 5px @shade;
 
   .import-nav {
+    &>a {
+      text-decoration: none;
+
+      &:hover span.link {
+        text-decoration: underline;
+      }
+
+      span.document-set-count {
+        .text-muted();
+        display: block;
+        font-size: .9em;
+        text-decoration: none;
+      }
+    }
+
     h6 {
       font: inherit;
       margin-bottom: 0;

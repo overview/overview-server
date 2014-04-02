@@ -102,6 +102,7 @@ views.admin.User.index.new.password=Password
 views.admin.User.index.new.submit=Create
 
 views.components.importNav.documentSets=Your document sets
+views.components.importNav.documentSetCount=You have {0,choice,0#no document sets|1#one document set|1<{0,number,integer} document sets}
 views.components.importNav.create=Create a document set:
 views.components.importNav.create.csv=Upload a CSV file
 views.components.importNav.create.pdf=Upload PDF files

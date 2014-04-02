@@ -1,5 +1,6 @@
 @(
-  user: OverviewUser
+  user: OverviewUser,
+  nOwnedDocumentSets: Long
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
@@ -40,7 +41,7 @@
 
 @defining(scopedMessages("views.CsvUpload.new")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="csv-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))
   } {
     <form class="csv-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">

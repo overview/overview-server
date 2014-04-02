@@ -70,7 +70,7 @@
 
 @defining(scopedMessages("views.DocumentSet.index")) { m =>
   @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="document-set-index", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.importNav(nOwnedDocumentSets=documentSets.pageDetails.totalLength)
   } {
       @if(noDocuments) {
         <p class="preamble">@m("no_document_sets_or_jobs")</p>

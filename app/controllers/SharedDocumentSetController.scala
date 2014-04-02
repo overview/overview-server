@@ -13,12 +13,14 @@ import models.orm.finders.DocumentSetFinder
 trait SharedDocumentSetController extends Controller {
   trait Storage {
     def findDocumentSets(userEmail: String) : Iterable[(DocumentSet,User)]
+    def countUserOwnedDocumentSets(user: String) : Long
   }
 
   def index = AuthorizedAction(anyUser) { implicit request =>
     val sharedDocumentSets = storage.findDocumentSets(request.user.email).toSeq
+    val count = storage.countUserOwnedDocumentSets(request.user.email)
 
-    Ok(views.html.SharedDocumentSet.index(request.user, sharedDocumentSets))
+    Ok(views.html.SharedDocumentSet.index(request.user, count, sharedDocumentSets))
       .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
@@ -29,6 +31,10 @@ object SharedDocumentSetController extends SharedDocumentSetController {
   object DatabaseStorage extends SharedDocumentSetController.Storage {
     override def findDocumentSets(userEmail: String) = {
       DocumentSetFinder.byViewer(userEmail).withOwners
+    }
+
+    override def countUserOwnedDocumentSets(owner: String) = {
+      DocumentSetFinder.byOwner(owner).count
     }
   }
 

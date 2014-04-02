@@ -1,5 +1,5 @@
 @(
-  hasDocumentSets: Boolean
+  nOwnedDocumentSets: Long
 )(implicit lang: Lang, request: RequestHeader)
 
 @linkToHtml(name: Html, route: Call) = {
@@ -16,7 +16,14 @@
 
 @defining(scopedMessages("views.components.importNav")) { m =>
   <div class="import-nav">
-    @linkTo(m("documentSets"), routes.DocumentSetController.index())
+    @if(request.path != routes.DocumentSetController.index().toString) {
+      <a href="@routes.DocumentSetController.index()">
+        <span class="link">@m("documentSets")</span>
+        <span class="document-set-count">@m("documentSetCount", nOwnedDocumentSets)</span>
+      </a>
+    } else {
+      <span class="active">@m("documentSets")</span>
+    }
 
     <h6>@m("create")</h6>
     <ul class="import-nav">

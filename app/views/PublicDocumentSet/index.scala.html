@@ -1,5 +1,6 @@
 @(
   user: OverviewUser,
+  nOwnedDocumentSets: Long,
   documentSets: Iterable[(org.overviewproject.tree.orm.DocumentSet,models.orm.User)]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
@@ -9,7 +10,7 @@
 
 @defining(scopedMessages("views.PublicDocumentSet.index")) { m =>
   @layouts.mainWithSidebar(user, m("title"), "public-document-set-index", javascripts) {
-    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.importNav(nOwnedDocumentSets=nOwnedDocumentSets)
     @views.html.components.helpBox(m("help1"), m("help2"))
   } {
     <p class="preamble">@m("preamble")</p>
