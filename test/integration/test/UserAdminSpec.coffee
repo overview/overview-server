@@ -93,7 +93,7 @@ describe 'UserAdmin', ->
           .elementByCss('.session-form [name=email]').type(userEmail)
           .elementByCss('.session-form [name=password]').type(userPassword)
           .elementByCss('.session-form [type=submit]').click()
-          .title().should.become('Your document sets')
+          .title().should.eventually.equal('Example document sets')
           .deleteAllCookies()
           .quit()
           .then =>
