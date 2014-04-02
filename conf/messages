@@ -107,8 +107,8 @@ views.components.importNav.create.csv=Upload a CSV file
 views.components.importNav.create.pdf=Upload PDF files
 views.components.importNav.create.documentCloud_html=Import from <span class="documentcloud-logo">DocumentCloud</span>
 views.components.importNav.copy=Copy a document set:
-views.components.importNav.copy.public=Import an example document set
-views.components.importNav.copy.shared=Import document sets shared with you
+views.components.importNav.copy.public=Copy an example document set
+views.components.importNav.copy.shared=Copy document sets shared with you
 
 views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
