@@ -47,20 +47,12 @@
 )}
 
 @defining(scopedMessages("views.PdfUpload.new")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="pdf-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <div class="row">
-      <div class="col-sm-3 sidebar">
-        @views.html.components.importNav(hasDocumentSets=true)
-        @views.html.components.helpBox(m("help1"), m("help2"))
-      </div>
-      <div class="col-sm-9">
-        <div class="page-header">
-          <h1>@m("h1")</h1>
-        </div>
-        <form class="pdf-upload" method="post" action="@routes.MassUploadController.startClustering">
-          @helper.Form.csrfToken
-        </form>
-      </div>
-    </div>
+  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="pdf-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.helpBox(m("help1"), m("help2"))
+  } {
+    <form class="pdf-upload" method="post" action="@routes.MassUploadController.startClustering">
+      @helper.Form.csrfToken
+    </form>
   }
 }

@@ -8,34 +8,26 @@
 }
 
 @defining(scopedMessages("views.PublicDocumentSet.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="public-document-set-index", javascripts=javascripts) {
-    <div class="row">
-      <div class="col-sm-3 sidebar">
-        @views.html.components.importNav(hasDocumentSets=true)
-        @views.html.components.helpBox(m("help1"), m("help2"))
-      </div>
-      <div class="col-sm-9">
-        <div class="page-header">
-          <h1>@m("h1")</h1>
-        </div>
-        <p class="preamble">@m("preamble")</p>
-        @if(documentSets.isEmpty) {
-          <p class="empty">@m("empty")</p>
-        } else {
-          <ul class="public-document-sets">
-            @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
-          </ul>
-        }
-        <div class="quick-start-container">
-          <!-- set src in script, to make page onload come sooner -->
-          <iframe id="quick-start-video" class="quick-start-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-          <script>
-            window.addEventListener('load', function() {
-              document.getElementById('quick-start-video').setAttribute('src', 'https://player.vimeo.com/video/77729177?byline=0&portrait=0&color=ffffff');
-            }, false);
-          </script>
-        </div>
-      </div>
+  @layouts.mainWithSidebar(user, m("title"), "public-document-set-index", javascripts) {
+    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.helpBox(m("help1"), m("help2"))
+  } {
+    <p class="preamble">@m("preamble")</p>
+    @if(documentSets.isEmpty) {
+      <p class="empty">@m("empty")</p>
+    } else {
+      <ul class="public-document-sets">
+        @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
+      </ul>
+    }
+    <div class="quick-start-container">
+      <!-- set src in script, to make page onload come sooner -->
+      <iframe id="quick-start-video" class="quick-start-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+      <script>
+        window.addEventListener('load', function() {
+          document.getElementById('quick-start-video').setAttribute('src', 'https://player.vimeo.com/video/77729177?byline=0&portrait=0&color=ffffff');
+        }, false);
+      </script>
     </div>
   }
 }

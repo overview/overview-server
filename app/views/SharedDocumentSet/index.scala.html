@@ -8,24 +8,16 @@
 }
 
 @defining(scopedMessages("views.SharedDocumentSet.index")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="shared-document-set-index", javascripts=javascripts) {
-    <div class="row">
-      <div class="col-sm-3 sidebar">
-        @views.html.components.importNav(hasDocumentSets=true)
-        @views.html.components.helpBox(m("help1"))
-      </div>
-      <div class="col-sm-9">
-        <div class="page-header">
-          <h1>@m("h1")</h1>
-        </div>
-        @if(documentSets.isEmpty) {
-          <p class="empty">@m("empty")</p>
-        } else {
-          <ul class="shared-document-sets">
-            @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
-          </ul>
-        }
-      </div>
-    </div>
+  @layouts.mainWithSidebar(user, m("title"), "shared-document-set-index", javascripts) {
+    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.helpBox(m("help1"))
+  } {
+    @if(documentSets.isEmpty) {
+      <p class="empty">@m("empty")</p>
+    } else {
+      <ul class="shared-document-sets">
+        @documentSets.map(Function.tupled(views.html.DocumentSet._smallDocumentSet.apply))
+      </ul>
+    }
   }
 }

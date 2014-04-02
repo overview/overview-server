@@ -1,0 +1,25 @@
+@(
+  user: OverviewUser,
+  title: String,
+  bodyClass: String,
+  javascripts: Html=Html(""),
+  jsMessageKeys: Seq[String]=Seq()
+)(
+  sidebar: Html
+)(
+  content: Html
+)(implicit lang: Lang, flash: Flash, request: RequestHeader)
+@main(optionalUser=Some(user), title=title, bodyClass=bodyClass, javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+  <div class="row">
+    <div class="sidebar col-sm-3">
+      @sidebar
+    </div>
+    <div class="content col-sm-8 col-sm-offset-1">
+      <div class="page-header">
+        <h1>@title</h1>
+      </div>
+
+      @content
+    </div>
+  </div>
+}

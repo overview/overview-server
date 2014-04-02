@@ -39,75 +39,67 @@
 )}
 
 @defining(scopedMessages("views.CsvUpload.new")) { m =>
-  @main(optionalUser=Some(user), title=m("title"), bodyClass="csv-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
-    <div class="row">
-      <div class="col-sm-3 sidebar">
-        @views.html.components.importNav(hasDocumentSets=true)
-        @views.html.components.helpBox(m("help1"), m("help2"))
-      </div>
-      <div class="col-sm-9">
-        <div class="page-header">
-          <h1>@m("h1")</h1>
+  @layouts.mainWithSidebar(user=user, title=m("title"), bodyClass="csv-upload-new", javascripts=javascripts, jsMessageKeys=jsMessageKeys) {
+    @views.html.components.importNav(hasDocumentSets=true)
+    @views.html.components.helpBox(m("help1"), m("help2"))
+  } {
+    <form class="csv-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
+      <div>
+        <p><label>@m("label.file") <input type="file" name="file" /></label></p>
+        <p class="charset">
+          <label>
+            @m("label.charset")
+            <select name="charset">
+              <option value="UTF-8" selected="selected">@m("charset.utf8")</option>
+              <option value="windows-1252">@m("charset.windows1252")</option>
+            </select>
+          </label>
+        </p>
+        <div class="requirements">
+          <p class="help">@Html(m("help.requirements_html"))</p>
+          <ul>
+            <li class="text">@m("requirements.text")</li>
+            <li class="csv">@m("requirements.csv")</li>
+            <li class="header">@m("requirements.header")</li>
+            <li class="data">@m("requirements.data")</li>
+          </ul>
+          <p class="error" style="display:none;">@m("error.requirements")</p>
+          <div class="ok"><button type="submit" class="btn btn-primary"><i class="overview-icon-upload"></i>@m("submit")</button></div>
         </div>
-        <form class="csv-upload" method="post" enctype="multipart/form-data" action="@routes.UploadController.create(new java.util.UUID(0, 0))">
-          <div>
-            <p><label>@m("label.file") <input type="file" name="file" /></label></p>
-            <p class="charset">
-              <label>
-                @m("label.charset")
-                <select name="charset">
-                  <option value="UTF-8" selected="selected">@m("charset.utf8")</option>
-                  <option value="windows-1252">@m("charset.windows1252")</option>
-                </select>
-              </label>
-            </p>
-            <div class="requirements">
-              <p class="help">@Html(m("help.requirements_html"))</p>
-              <ul>
-                <li class="text">@m("requirements.text")</li>
-                <li class="csv">@m("requirements.csv")</li>
-                <li class="header">@m("requirements.header")</li>
-                <li class="data">@m("requirements.data")</li>
-              </ul>
-              <p class="error" style="display:none;">@m("error.requirements")</p>
-              <div class="ok"><button type="submit" class="btn btn-primary"><i class="overview-icon-upload"></i>@m("submit")</button></div>
-            </div>
-            <div class="preview" style="display:none;">
-              <h4>@m("preview.h4")</h4>
-              <div class="error"></div>
-              <pre></pre>
-              <table>
-                <thead>
-                  <tr><th/></tr>
-                </thead>
-                <tbody>
-                  <tr><td/></tr>
-                </tbody>
-              </table>
-            </div>
+        <div class="preview" style="display:none;">
+          <h4>@m("preview.h4")</h4>
+          <div class="error"></div>
+          <pre></pre>
+          <table>
+            <thead>
+              <tr><th/></tr>
+            </thead>
+            <tbody>
+              <tr><td/></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        @helper.Form.csrfToken
+        <button type="reset" class="btn">@m("reset")</button>
+        <button type="submit" class="btn btn-primary"><i class="overview-icon-upload"></i>@m("submit")</button>
+      </div>
+    </form>
+    <div id="document-set-upload-progress" class="modal fade">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">@m("progress.header")</h4>
           </div>
-          <div>
-            @helper.Form.csrfToken
-            <button type="reset" class="btn">@m("reset")</button>
-            <button type="submit" class="btn btn-primary"><i class="overview-icon-upload"></i>@m("submit")</button>
+          <div class="modal-body">
+            <progress min="0" max="100" value="0"></progress>
+            <p class="description">@m("progress.description")</p>
+            <p class="prompt">@m("progress.prompt")</p>
           </div>
-        </form>
-        <div id="document-set-upload-progress" class="modal fade">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">@m("progress.header")</h4>
-              </div>
-              <div class="modal-body">
-                <progress min="0" max="100" value="0"></progress>
-                <p class="description">@m("progress.description")</p>
-                <p class="prompt">@m("progress.prompt")</p>
-              </div>
-              <div class="modal-footer">
-                <button type="reset" class="btn btn-danger">@m("progress.cancel")</button>
-              </div>
-            </div>
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-danger">@m("progress.cancel")</button>
           </div>
         </div>
       </div>
