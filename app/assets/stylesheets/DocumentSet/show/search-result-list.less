@@ -6,6 +6,7 @@
 #tree-app-search {
   clear: both;
   border: 5px solid transparent;
+  .clearfix();
 
   form {
     float: left;
@@ -13,15 +14,16 @@
     width: 20em;
   }
 
+  input, button {
+    // so tree hover box shows up above: https://www.pivotaltracker.com/story/show/68629192
+    z-index: 0;
+  }
+
   input[type=submit] {
     .border-right-radius(0);
   }
 
   input[type=text] {
-    &:focus {
-      z-index: auto; // Bootstrap rrgh, on-node-hover should come above <input type="text">
-    }
-
     &.state-inprogress {
       color: white;
       text-shadow: 0 0 .1em @gray-dark;
