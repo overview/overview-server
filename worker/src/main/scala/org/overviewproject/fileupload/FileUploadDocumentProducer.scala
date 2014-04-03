@@ -73,7 +73,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
   }
 
   private def writeAndCommitDocument(documentSetId: Long, processedFile: GroupedProcessedFile): Long = {
-    val file = fileStore.insertOrUpdate(File(1, processedFile.contentsOid))
+    val file = fileStore.insertOrUpdate(File(1, processedFile.contentsOid, processedFile.name))
 
     val document = Document(
       documentSetId,
