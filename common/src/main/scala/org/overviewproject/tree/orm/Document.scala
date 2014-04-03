@@ -5,13 +5,13 @@ import org.squeryl.annotations.Column
 import org.overviewproject.postgres.PostgresqlEnum
 
 case class Document(
-  @Column("document_set_id") val documentSetId: Long = 0L,
+  val documentSetId: Long = 0L,
   val description: String = "",
   val title: Option[String] = None,
-  @Column("supplied_id") val suppliedId: Option[String] = None,
+  val suppliedId: Option[String] = None,
   val text: Option[String] = None,
   val url: Option[String] = None,
-  @Column("documentcloud_id") val documentcloudId: Option[String] = None,
+  val documentcloudId: Option[String] = None,
   val contentLength: Option[Long] = None,
   val fileId: Option[Long] = None,
   override val id: Long = 0L) extends KeyedEntity[Long] with DocumentSetComponent {
