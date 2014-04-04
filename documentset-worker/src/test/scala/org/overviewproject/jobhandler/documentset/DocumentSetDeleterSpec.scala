@@ -83,6 +83,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
       def findAllNodes: Seq[Node] =
         from(nodes)(select(_)).toSeq
         
+
       def findDocumentSet: Option[DocumentSet] =
         from(documentSets)(ds =>
           where(ds.id === documentSet.id)
@@ -111,14 +112,18 @@ class DocumentSetDeleterSpec extends DbSpecification {
     trait PdfUploadContext extends DocumentSetContext {
       
       var file: File = _
+      var page: Page = _
       
       override protected def createDocumentSet = {
         documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
         val contentsOid = createContents
         file = files.insertOrUpdate(File(1, contentsOid, "name"))
+        val pageData: Array[Byte] = Array.fill(128)(0xfe.toByte)
+        page = pages.insertOrUpdate(Page(file.id, 1, pageData, 1))
         
         document =
-          Document(documentSet.id, fileId = Some(file.id), contentLength = Some(100l))
+          Document(documentSet.id, fileId = Some(file.id), contentLength = Some(100l), 
+              pageId = Some(page.id), pageContentLength = Some(128))
         documents.insert(document)
       }
       
@@ -133,6 +138,16 @@ class DocumentSetDeleterSpec extends DbSpecification {
         finder.byId(file.id).headOption
       }
       
+      
+      def findPages: Iterable[Page] = {
+        from(pages)(p => 
+          where (p.fileId === file.id)
+          select (p)
+        )
+      }
+
+      // Generates an exception which aborts the transaction, so no further database access is possible
+      // Use this assertion at the end of the test only
       def contentIsRemoved(oid: Long): Boolean = {
         implicit val pgConnection = DB.pgConnection
         
@@ -141,7 +156,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
       }
     }
 
-    "delete job information" in new DocumentSetContext {
+   "delete job information" in new DocumentSetContext {
       addJobInformation
       DocumentSetDeleter().deleteJobInformation(documentSet.id)
           
@@ -185,6 +200,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     "delete document set with uploaded PDFs" in new PdfUploadContext {
       DocumentSetDeleter().deleteDocumentSet(documentSet.id)
       
+      findPages must beEmpty
       findFile must beNone
       contentIsRemoved(file.contentsOid) must beTrue
     }

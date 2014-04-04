@@ -69,6 +69,7 @@ object DocumentSetDeleter {
       delete(documents)
       delete(documentSetUsers)
 
+      deletePages(fileIds)
       deleteFiles(fileIds)
 
       val uploadedFile = findUploadedFile
@@ -85,15 +86,17 @@ object DocumentSetDeleter {
     nodeStore.deleteByDocumentSet(documentSetId)
   }
 
-  private def findFileIds(implicit documentSetId: Long): Iterable[Long] =
-    DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten
+  private def findFileIds(implicit documentSetId: Long): Seq[Long] =
+    DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten.toSeq
 
 
   private def deleteNonRunningJobs(implicit documentSetId: Long): Unit = 
     DocumentSetCreationJobStore.deleteNonRunningJobs(documentSetId)
   
-  private def deleteFiles(fileIds: Iterable[Long]): Unit = FileStore.removeReference(fileIds)
+  private def deleteFiles(fileIds: Seq[Long]): Unit = FileStore.removeReference(fileIds)
 
+  private def deletePages(fileIds: Seq[Long]): Unit = PageStore.removeReferenceByFile(fileIds)
+  
   private def deleteDocumentContents(implicit documentSetId: Long): Unit = {
     FileStore.deleteLargeObjectsByDocumentSet(documentSetId)
   }
