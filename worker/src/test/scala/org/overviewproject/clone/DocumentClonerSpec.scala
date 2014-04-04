@@ -6,7 +6,7 @@ import org.overviewproject.persistence.orm.Schema
 import org.overviewproject.postgres.LO
 import org.overviewproject.test.DbSpecification
 import org.overviewproject.tree.orm.{ Document, DocumentSet, File, UploadedFile }
-
+import org.overviewproject.tree.orm.Page
 
 class DocumentClonerSpec extends DbSpecification {
   step(setupDb)
@@ -26,7 +26,7 @@ class DocumentClonerSpec extends DbSpecification {
       def createCsvImportDocumentSet: Long = {
         val uploadedFile = Schema.uploadedFiles.insert(UploadedFile("content-disposition", "content-type", 100))
         val documentSet = Schema.documentSets.insert(DocumentSet(title = "DocumentClonerSpec", uploadedFileId = Some(uploadedFile.id)))
-        
+
         documentSet.id
       }
 
@@ -59,7 +59,7 @@ class DocumentClonerSpec extends DbSpecification {
       var documentSetCloneId: Long = _
 
       protected val ContentLength = 100l
-      
+
       override def setupWithDb = {
         val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "PDF upload"))
         val documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "Clone"))
@@ -68,13 +68,19 @@ class DocumentClonerSpec extends DbSpecification {
         val oid = createContents
         val file = Schema.files.insertOrUpdate(File(1, oid, "name"))
         Schema.documents.insert(
-          Document(documentSet.id, text = Some("text"),
-            fileId = Some(file.id), contentLength = Some(ContentLength),
+          Document(
+            documentSet.id,
+            text = Some("text"),
+            fileId = Some(file.id),
+            pageId = createPage,
+            contentLength = Some(ContentLength),
             id = ids.next))
 
         documentSetId = documentSet.id
         documentSetCloneId = documentSetClone.id
       }
+
+      protected def createPage: Option[Long] = None
 
       private def createContents: Long = {
         implicit val pgConnection = DB.pgConnection
@@ -83,10 +89,6 @@ class DocumentClonerSpec extends DbSpecification {
       }
 
       protected def findFiles: Iterable[File] = {
-        val clonedDocumentFileIds = from(Schema.documents)(d =>
-          where(d.documentSetId === documentSetCloneId)
-            select ())
-
         from(Schema.files)(f =>
           where(f.id in
             from(Schema.documents)(d =>
@@ -94,12 +96,31 @@ class DocumentClonerSpec extends DbSpecification {
                 select (d.fileId)))
             select (f))
       }
+
+
+      protected def findClonedDocuments: Iterable[Document] =
+        from(Schema.documents)(d =>
+          where(d.documentSetId === documentSetCloneId)
+            select (d))
+    }
+
+    trait SplitPdfUploadContext extends PdfUploadContext {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      override def createPage: Option[Long] = {
+        val pageData = Array.fill[Byte](128)(0xFF.toByte)
+        val page = Schema.pages.insertOrUpdate(Page(pageData, 1))
+        Some(page.id)
+      }
       
-      protected def findClonedDocuments: Iterable[Document] = 
-        from(Schema.documents)(d => 
-          where (d.documentSetId === documentSetCloneId)
-          select (d)
-        )
+      protected def findPages: Iterable[Page] = {
+        from(Schema.pages)(p =>
+          where(p.id in
+            from(Schema.documents)(d =>
+              where(d.documentSetId === documentSetCloneId)
+                select (d.pageId)))
+            select (p))
+      }
     }
 
     "Create document clones" in new CloneContext {
@@ -120,7 +141,7 @@ class DocumentClonerSpec extends DbSpecification {
       highOrderBits.distinct must beEqualTo(Seq(documentSetCloneId))
     }
 
-    inExample("increase refcount on files") in new PdfUploadContext {
+    "increase refcount on files" in new PdfUploadContext {
       DocumentCloner.clone(documentSetId, documentSetCloneId)
 
       val file = findFiles.headOption
@@ -128,11 +149,20 @@ class DocumentClonerSpec extends DbSpecification {
       file must beSome.like {
         case f => f.referenceCount must be equalTo (2)
       }
-      
+
       val document = findClonedDocuments.headOption
-      
+
       document must beSome.like {
         case d => d.contentLength must beSome(ContentLength)
+      }
+    }
+
+    "increase refcount on pages" in new SplitPdfUploadContext {
+      DocumentCloner.clone(documentSetId, documentSetCloneId)
+
+      val page = findPages.headOption
+      page must beSome.like {
+        case p => p.referenceCount must be equalTo (2)
       }
     }
   }

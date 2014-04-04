@@ -22,11 +22,11 @@ object DocumentCloner extends InDatabaseCloner {
     SQL("""
           INSERT INTO document 
             (id, document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id, content_length)
+             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id, content_length)
            SELECT 
              ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & id) AS clone_id, 
              {cloneDocumentSetId} AS clone_document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id , content_length
+             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id, content_length
              FROM document WHERE document_set_id = {sourceDocumentSetId}    	
         """)
 
@@ -48,5 +48,11 @@ object DocumentCloner extends InDatabaseCloner {
           WHERE id IN 
             (SELECT file_id FROM document WHERE document_set_id = {documentSetId})
     	    """).on("documentSetId" -> sourceDocumentSetId).executeUpdate
+    	    
+    SQL("""
+        UPDATE page SET reference_count = reference_count + 1
+          WHERE id IN
+            (SELECT page_id FROM document WHERE document_set_id = {documentSetId})
+        """).on("documentSetId" -> sourceDocumentSetId).executeUpdate
   }
 }
