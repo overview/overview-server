@@ -72,7 +72,7 @@ class DocumentClonerSpec extends DbSpecification {
             documentSet.id,
             text = Some("text"),
             fileId = Some(file.id),
-            pageId = createPage,
+            pageId = createPage(file.id),
             contentLength = Some(ContentLength),
             id = ids.next))
 
@@ -80,7 +80,7 @@ class DocumentClonerSpec extends DbSpecification {
         documentSetCloneId = documentSetClone.id
       }
 
-      protected def createPage: Option[Long] = None
+      protected def createPage(fileId: Long): Option[Long] = None
 
       private def createContents: Long = {
         implicit val pgConnection = DB.pgConnection
@@ -107,9 +107,9 @@ class DocumentClonerSpec extends DbSpecification {
     trait SplitPdfUploadContext extends PdfUploadContext {
       import org.overviewproject.postgres.SquerylEntrypoint._
 
-      override def createPage: Option[Long] = {
+      override def createPage(fileId: Long): Option[Long] = {
         val pageData = Array.fill[Byte](128)(0xFF.toByte)
-        val page = Schema.pages.insertOrUpdate(Page(pageData, 1))
+        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, pageData, 1))
         Some(page.id)
       }
       
