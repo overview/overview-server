@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.GroupedProcessedFile
 import org.overviewproject.persistence.orm.Schema
 import org.squeryl.Query
 
-object FileStore extends BaseStore(Schema.groupedProcessedFiles) {
+object GroupedProcessedFileStore extends BaseStore(Schema.groupedProcessedFiles) {
   
   /**
    * Delete large objects associated with failed pdf extraction, otherwise
