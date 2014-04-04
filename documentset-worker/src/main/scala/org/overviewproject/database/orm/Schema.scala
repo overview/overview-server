@@ -27,6 +27,7 @@ object Schema extends org.squeryl.Schema {
   val uploadedFiles = table[UploadedFile]
   val files = table[File]
   val trees = table[Tree]
+  val pages = table[Page]
   
   on(documents)(d => declare(d.id is(primaryKey)))  
   on(nodes)(n => declare(n.id is(primaryKey)))
