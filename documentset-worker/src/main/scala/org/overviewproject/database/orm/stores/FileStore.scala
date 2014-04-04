@@ -13,7 +13,7 @@ object FileStore extends BaseStore(files) {
       where(d.documentSetId === documentSetId and d.fileId === f.id)
         select (&(lo_unlink(Some(f.contentsOid))))).toIterable
 
-  def removeReference(fileIds: Iterable[Long]): Unit = {
+  def removeReference(fileIds: Seq[Long]): Unit = {
     val filesToUpdate = from(files)(f =>
       where(f.id in fileIds)
         select (f)

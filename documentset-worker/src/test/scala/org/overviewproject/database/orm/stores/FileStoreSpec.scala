@@ -35,25 +35,33 @@ class FileStoreSpec extends DbSpecification {
         LO.withLargeObject(_.oid)
       }
 
-      protected def findSingleRefFileIds: Iterable[Long] =
+      protected def findSingleRefFileIds: Seq[Long] =
         from(files)(f =>
           where(f.referenceCount === 1)
             select (f.id)).toSeq
 
-      protected def findMultipleRefFileIds: Iterable[Long] =
+      protected def findMultipleRefFileIds: Seq[Long] =
         from(files)(f =>
           where(f.referenceCount gt 1)
             select (f.id)).toSeq
 
-      protected def findByIds(ids: Iterable[Long]): Iterable[File] =
+      protected def findZeroRefFileIds: Seq[Long] =
+        from(files)(f =>
+          where(f.referenceCount === 0)
+            select (f.id)).toSeq
+
+      protected def findByIds(ids: Iterable[Long]): Seq[File] =
         from(files)(f =>
           where(f.id in ids)
             select (f)).toSeq
 
-      protected def contentIsRemoved(oid: Long): Boolean =  {
+      // This test generates an exception which aborts the transaction
+      // No further database access is possible, so make this the last 
+      // assertion in the test
+      protected def contentIsRemoved(oid: Long): Boolean = {
         implicit val pgConnection = DB.pgConnection
-        
-        val findOid = Try( LO.withLargeObject(oid)( lo => lo.oid))
+
+        val findOid = Try(LO.withLargeObject(oid)(lo => lo.oid))
         findOid.isFailure
       }
     }
@@ -77,7 +85,8 @@ class FileStoreSpec extends DbSpecification {
       val updatedFiles = findByIds(fileIds)
 
       updatedFiles must beEmpty
-      
+      findZeroRefFileIds must beEmpty
+
       singleRefOids.map(oid => contentIsRemoved(oid) must beTrue)
     }
   }
