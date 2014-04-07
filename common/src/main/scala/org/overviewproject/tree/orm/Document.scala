@@ -16,7 +16,6 @@ case class Document(
   val fileId: Option[Long] = None,
   val pageId: Option[Long] = None,
   val pageNumber: Option[Int] = None,
-  val pageContentLength: Option[Long] = None,
   override val id: Long = 0L) extends KeyedEntity[Long] with DocumentSetComponent {
 
   // https://www.assembla.com/spaces/squeryl/tickets/68-add-support-for-full-updates-on-immutable-case-classes#/followers/ticket:68
