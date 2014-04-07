@@ -113,6 +113,10 @@ form.form-horizontal {
   }
 }
 
+label.error {
+  color: @brand-danger;
+}
+
 form.session-form, form.user-form {
   h3 {
     font-size: 1.25em;
@@ -126,24 +130,6 @@ form {
   &.form-horizontal p.help-block { // specificity
     .text-muted;
     margin-top: 2px;
-  }
-}
-
-label.error {
-  // Assume this is in a form directly after an input...
-  color: @brand-danger;
-  border: 1px solid @brand-danger;
-  border-radius: 4px;
-  padding: 4px 6px;
-  position: relative;
-  top: -4px;
-  display: inline-block;
-  height: 20px;
-  line-height: 20px;
-  margin-left: 5px;
-
-  &::before {
-    content: "◄ ";
   }
 }
 
