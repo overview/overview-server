@@ -130,7 +130,8 @@ class DocumentCloudDocumentProducer(job: PersistentDocumentSetCreationJob, query
           id = ids.next, 
           title = Some(doc.title), 
           text = Some(text),
-          documentcloudId = Some(doc.id))
+          documentcloudId = Some(doc.id),
+          pageNumber = doc.pageNumber)
       DocumentWriter.write(document)
       document.id
     }

@@ -10,4 +10,5 @@ Document(
   private val PagePattern = "{page}"
     
   override val url: String = document.pageUrlTemplate.replace(PagePattern, s"$pageNum")
+  override val pageNumber = Some(pageNum)
 }
