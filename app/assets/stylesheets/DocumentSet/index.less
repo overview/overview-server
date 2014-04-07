@@ -9,105 +9,6 @@ body.document-set-index {
     .overview-help-box();
   }
 
-  .nav-buttons {
-    margin: (@overviewPageHeaderMarginTop + (@overviewPageHeaderLineHeight - 2em) / 2) 0 1em;
-    float: right;
-
-    .dropdown {
-      display: inline-block;
-    }
-
-    a.back {
-      display: none;
-    }
-
-    // Pilfered from https://github.com/twitter/bootstrap/issues/2045
-    .dropdown-menu:after {
-      left: auto;
-      right: 13px;
-    }
-    .dropdown-menu {
-      left: auto;
-      right: 0;
-    }
-  }
-
-  .container[data-import-pane] .nav-buttons .back {
-    display: inline-block;
-  }
-
-  #jobs-and-document-sets .nav-buttons {
-    margin: 1.5em 0;
-    display: block;
-    text-align: right;
-
-    a {
-      text-align: left;
-    }
-  }
-
-  .document-sets {
-    clear: both;
-  }
-
-  p.preamble {
-    margin: 2em 0;
-  }
-
-  // Navigation...
-  &>.container {
-    position: relative;
-
-    .import-pane {
-      display: none;
-    }
-
-    #jobs-and-document-sets {
-      display: block;
-    }
-
-    &[data-import-pane]>#jobs-and-document-sets, #jobs-and-document-sets.loading {
-      display: none;
-    }
-
-    &[data-import-pane="public"]>#import-public,
-    &[data-import-pane="shared"]>#import-shared,
-    &[data-import-pane="from-documentcloud-account"]>#import-from-documentcloud-account,
-    &[data-import-pane="from-upload"]>#import-from-upload,
-    &[data-import-pane="from-mass-upload"]>#import-from-mass-upload {
-      display: block;
-    }
-  }
-
-  .dropdown-menu {
-    .border-radius(0);
-    border: 1px solid @shade-muted;
-    padding: 0;
-    overflow: hidden;
-
-    li {
-      padding: 0 1em;
-      margin-top: -1px; // so top looks same as bottom on hover
-
-      &:hover {
-        background: @body-bg-dark;
-      }
-    }
-
-    a {
-      padding: .75em 0;
-      background: transparent;
-      border-bottom: 1px solid @body-bg-dark;
-      line-height: 1;
-      vertical-align: bottom;
-
-      &:hover {
-        background: transparent;
-        color: inherit;
-      }
-    }
-  }
-
   .document-set-creation-jobs {
     clear: both;
     margin-top: 20px;
@@ -155,9 +56,5 @@ body.document-set-index {
       text-decoration: none;
       margin-left: 0.5em;
     }
-  }
-
-  .dclogin {
-    max-width: 40em;
   }
 }
