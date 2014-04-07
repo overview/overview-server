@@ -1,7 +1,6 @@
 import sbt._
 import Keys._
 import play.Project._
-import templemore.sbt.cucumber.CucumberPlugin
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build with ProjectSettings {
@@ -129,9 +128,6 @@ object ApplicationBuild extends Build with ProjectSettings {
   val main = (
     play.Project(appName, appVersion, serverProjectDependencies)
       .settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
-      .settings(CucumberPlugin.cucumberSettingsWithIntegrationTestPhaseIntegration: _*)
-      .configs(IntegrationTest)
-      .settings(Defaults.itSettings: _*)
       .settings(
         scalacOptions ++= ourScalacOptions,
         templatesImport += "views.Magic._",
@@ -153,19 +149,10 @@ object ApplicationBuild extends Build with ProjectSettings {
           "-Dlogger.resource=logback-test.xml",
           "-Ddb.default.url=" + testDatabaseUrl,
           "-XX:MaxPermSize=256m"),
-        javaOptions in IntegrationTest ++= allJavaOpts ++ Seq(
-          "-Dconfig.file=conf/application-it.conf",
-          "-Dlogger.resource=logback-test.xml",
-          "-Ddb.default.url=" + testDatabaseUrl,
-          "-Dsbt.ivy.home=" + sys.props("sbt.ivy.home"),
-          "-Dsbt.boot.properties=" + sys.props("sbt.boot.properties"),
-          "-Dplay.home=" + sys.props("play.home"),
-          "-Ddatasource.default.url=" + testDatabaseUrl),
         Keys.fork in Test := true,
         aggregate in Test := false,
         testOptions in Test ++= ourTestOptions,
         logBuffered := false,
-        Keys.fork in IntegrationTest := true,
         sources in doc in Compile := List(),
         printClasspath,
         aggregate in printClasspathTask := false

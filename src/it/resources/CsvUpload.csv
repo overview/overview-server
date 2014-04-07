@@ -1,7 +1,0 @@
-id,title,text,url
-twitter1,twitter1,Twitter text,https://twitter.com/adamhooper/status/317041719847813120
-facebook1,facebook1,Facebook text,https://facebook.com/adam.hooper/posts/10101122388042297
-documentcloud1,documentcloud1,DocumentCloud text,https://www.documentcloud.org/documents/675478-letter-from-glen-burnie-high-school-principal.html
-secure1,secure1,Secure text,https://example.org
-insecure1,insecure1,Insecure text,http://example.org
-empty1,empty1,,
