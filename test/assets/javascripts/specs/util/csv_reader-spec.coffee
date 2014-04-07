@@ -37,6 +37,10 @@ define [
           expect(reader.error.name).toEqual('SyntaxError')
           callback(reader.error, reader)
 
+      test_records = (s, records) ->
+        expecting_result s, (result) ->
+          expect(result.records).toEqual(records)
+
       it 'should set "text" when CSV is invalid', ->
         expecting_syntax_error "a\"b", (error, reader) ->
           expect(reader.text).toEqual("a\"b")
@@ -86,3 +90,27 @@ define [
       it 'should ignore the final newline', ->
         expecting_result 'text\nfoo\n', (result) ->
           expect(result.records).toEqual([[ 'foo' ]])
+
+      it 'should parse newlines', ->
+        test_records('text\n1\r2\r\n3\u00854', [['1'], ['2'], ['3'], ['4']])
+
+      it 'should pass through tabs', ->
+        test_records('text\n1\t2', [['1\t2']])
+
+      it 'should ignore NULL', ->
+        test_records('text\n1\x002', [['12']])
+
+      it 'should ignore Unicode BOM', ->
+        test_records('text\n1\ufffe2', [['12']])
+
+      it 'should replace ISO control characters with spaces', ->
+        test_records('text\n1\f2\x023\x7f4', [['1 2 3 4']])
+
+      it 'should ignore NULL in quotes', ->
+        test_records('text\n"1\x002"', [['12']])
+
+      it 'should ignore Unicode BOM in quotes', ->
+        test_records('text\n"1\ufffe2"', [['12']])
+
+      it 'should replace ISO control characters with spaces in quotes', ->
+        test_records('text\n"1\f2\x023\x7f4"', [['1 2 3 4']])

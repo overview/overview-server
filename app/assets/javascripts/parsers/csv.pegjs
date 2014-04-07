@@ -41,7 +41,7 @@ escaped =
 
 non_escaped = TEXTDATA
 
-CRLF = "\r" / "\n" / "\r\n"
+CRLF = "\r" / "\n" / "\r\n" / "\u0085"
 
 COMMA = ","
 
@@ -49,6 +49,6 @@ DQUOTE = '"'
 
 _2DQUOTE = '""' { return '"'; }
 
-TEXTDATA = c:[\x20\x21\x23-\x2b\u002d-\uffff]* { return c.join(''); }
+TEXTDATA = c:[^",\r\n\u0085]* { return c.join('').replace(/[\x00\ufffe\uffff]+/g, '').replace(/[\x01-\x08\x0b\x0c\x0e-\x1f\x7f-\x84\x86-\x9f]+/g, ' '); }
 
-ESCAPED_TEXTDATA = c:[\t-\r\x20\x21\u0023-\uffff]+ { return c.join(''); }
+ESCAPED_TEXTDATA = c:[^"]+ { return c.join('').replace(/[\x00\ufffe\uffff]+/g, '').replace(/[\x01-\x08\x0b\x0c\x0e-\x1f\x7f-\x84\x86-\x9f]+/g, ' '); }
