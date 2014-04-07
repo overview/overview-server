@@ -1,25 +1,63 @@
-body.welcome-show {
-  height: 100%;
-  overflow: hidden;
+.display-flex() {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+}
 
-  div.container {
-    margin-top: 10px;
-    padding-bottom: 360px;
-    overflow: auto;
-    display: table;
-    height: 100%;
-    box-sizing: border-box;
-    position: relative;
+.flex(@values) {
+  -webkit-box-flex: @values;
+  -moz-box-flex: @values;
+  -webkit-flex: @values;
+  -ms-flex: @values;
+  flex: @values;
+}
+
+.flex-direction-column() {
+  -webkit-box-direction: normal;
+  -moz-box-direction: normal;
+  -webkit-box-orient: vertical;
+  -moz-box-orient: vertical;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+body.welcome-show {
+  height: 100%; // really this ought to be min-height, but IE11 doesn't stretch in that case
+                // since overflow is auto, this should cause no harm
+  .display-flex();
+  .flex-direction-column();
+
+  nav {
+    .flex(0 0 auto);
+  }
+
+  &>.container {
+    // We'd like to pretend this .container isn't here at all
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    .flex(1 0 auto);
+    .display-flex();
+    .flex-direction-column();
+
+    &#flash {
+      // abort! abort!
+      .container();
+      .flex(0 0 auto);
+    }
+  }
+
+  article {
+    margin-top: auto;
+    margin-bottom: auto;
   }
 
   .java-is-32-bit {
     position: absolute;
     top: 0;
-  }
-
-  .centering-cell {
-    display: table-cell;
-    vertical-align: middle;
   }
 
   img.logo {
@@ -30,55 +68,57 @@ body.welcome-show {
     width: 100%;
   }
 
-  .blurb {
-    h3 {
-      font-size: 21px;
-    }
-  }
-
   p.learn {
     text-align: center;
     font-weight: 150;
-    font-size: 30px;
-    margin-top: 30px;
+    font-size: 2em;
+    margin-top: 2em;
   }
 
-  .intro-video-container {
-    text-align: right;
-    min-width: 500px;
+  .splash>* {
+    text-align: left;
   }
 
-  div.bottom-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    height: 310px;
+  article .col-md-6 {
+    // in case they wrap, they should have space between them
+    margin-top: 2em;
+    margin-bottom: 2em;
+  }
+
+  .intro-video-wrapper {
+    position: relative;
     width: 100%;
+    height: 0;
+    padding-bottom: 100% * (281 / 500);
+
+    iframe {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  footer {
     background-color: black;
+    padding: 1em 0;
     color: white;
     // image credit: subtlepatterns.com
     background: url('/assets/images/dark_stripes.png');
-
-    &>.row-fluid {
-      margin-top: 4px;
-    }
+    text-align: center;
   }
 
   .form-horizontal {
-    display: inline-block;
-    width: 40em;
     text-align: left;
+    display: inline-block;
+    width: 35em;
     margin: 0;
+
+    h3 {
+      margin-top: 0;
+    }
 
     .btn {
       border: 0;
-    }
-
-    .form-actions {
-      margin-top: 0;
-      padding-top: 0;
-      border: 0;
-      background: 0;
     }
 
     p.help-block {
@@ -86,63 +126,23 @@ body.welcome-show {
       margin: 0;
     }
 
-    .control-group {
-      margin-bottom: 4px;
+    .control-group, .btn {
+      margin-bottom: .5em;
     }
   }
 
-  .form-container {
-    text-align: center;
+  .col-lg-6:last-child {
+    margin-top: 1em;
+    border-top: 1px solid white;
+    padding-top: 1em;
   }
 
-  .session-form {
-    margin-left: 50px;
-    height: 100%;
-  }
-
-  .fluid-divider {
-    padding-left: 50px;
-    margin-left: 0;
-    border-left: 1px solid #636266;
-  }
-
-  div#flash {
-    position: absolute;
-    left: 50%;
-
-    .alert {
-      left: -50%;
-    }
-  }
-
-  @media all and (max-width: 1065px) {
-    overflow: auto;
-
-    div.container {
-      padding-bottom: 0;
-      overflow: visible;
-      display: block;
-      height: inherit;
-    }
-
-    div.bottom-bar {
-      position: relative;
-      height: 100%;
-    }
-
-    .fluid-divider {
-      border: 0;
-      width: 520px;
-    }
-  }
-
-  @media all and (max-width: 500px) {
-    .intro-video-container {
-      min-width: auto;
-    }
-
-    iframe.intro-video {
-      width: 320px;
+  @media (min-width: @screen-lg-min) {
+    .col-lg-6:last-child {
+      border-top: none;
+      border-left: 1px solid white;
+      margin-top: 0;
+      padding-top: 0;
     }
   }
 }

@@ -14,29 +14,37 @@
       <div class="alert alert-error java-is-32-bit">@Html(m("warning_32bit_html"))</div>
     }
 
-    <div class="centering-cell">
-      <div class="row">
-        <div class="col-md-6 blurb">
-          <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
-          <p class="text">@m("p1")</p>
-          <p class="learn"><a href="/help">@m("learn")</a></p>
-        </div>
-        <div class="col-md-6 intro-video-container">
-          <iframe class="intro-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-        </div>
-      </div>
-    </div>
-
-    <div class="bottom-bar">
-      <div class="row">
-        <div class="col-md-6 form-container">
-          @views.html.Session._form(loginForm)
-        </div>
-
-        <div class="col-md-6 fluid-divider form-container">
-          @views.html.User._form(userForm)
+    <article>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="splash">
+              <img class="big-logo" src="@routes.Assets.at("images/logo-large.png")" alt="@m("title")" />
+              <p class="text">@m("p1")</p>
+              <p class="learn"><a href="/help">@m("learn")</a></p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="intro-video-wrapper">
+              <iframe class="intro-video" src="" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </article>
+
+    <footer>
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-lg-6">
+            @views.html.Session._form(loginForm)
+          </div>
+
+          <div class="col-lg-6">
+            @views.html.User._form(userForm)
+          </div>
+        </div>
+      </div>
+    </footer>
   }
 }
