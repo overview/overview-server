@@ -30,6 +30,6 @@
     "q": "~1.0.0",
     "Faker": "~0.7.0",
     "selenium-server-standalone-jar": "~2.40.0",
-    "stack-trace": "0.0.9"
+    "escape-regexp": "0.0.1"
   }
 }

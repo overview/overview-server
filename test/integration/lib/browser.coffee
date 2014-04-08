@@ -1,5 +1,6 @@
 wd = require('wd')
 Q = require('q')
+escapeRegexp = require('escape-regexp')
 
 Constants =
   ajaxTimeout: 5000 # timeout waiting for AJAX requests
@@ -163,10 +164,12 @@ wd.addAsyncMethod 'waitForElementBy', (args) ->
   @waitForElement.apply(@, newArgs) # finds callback itself
 
 wd.addPromiseChainMethod 'waitForUrl', (expectUrl, args...) ->
+  regex = new RegExp("^https?:\\/\\/[^\\/]+#{escapeRegexp(expectUrl)}$")
+
   asserter = new wd.asserters.Asserter (browser) ->
     browser
-      .url (currentUrl) ->
-        if currentUrl == expectUrl
+      .url().then (currentUrl) ->
+        if regex.test(currentUrl)
           Q(currentUrl)
         else
           err = new Error("Expected URL to be #{expectUrl} but it is #{currentUrl}")

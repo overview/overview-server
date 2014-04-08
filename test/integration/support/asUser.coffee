@@ -38,18 +38,17 @@ module.exports =
   # * title: title of the block (very useful for debugging).
   usingTemporaryUser: (options={}) ->
     title = options.title || 'usingTemporaryUser'
-    blockTitle = if options.title then "usingTemporaryUser - #{options.title}" else 'usingTemporaryUser'
 
-    before blockTitle, ->
+    before ->
       @userEmail = Faker.Internet.email()
-      @userBrowser = userBrowser = browser.create("#{title} - user")
+      @userBrowser = userBrowser = browser.create("#{title} - #{@userEmail}")
         .get(Url.login)
         .waitForElementByCss('.session-form')
         .elementByCss('.session-form [name=email]').type(@userEmail)
         .elementByCss('.session-form [name=password]').type(@userEmail)
         # Don't click yet: wait for the user to be created
 
-      @adminBrowser = browser.create("#{title} - admin")
+      @adminBrowser = browser.create("#{title} - #{browser.adminLogin.email}")
 
       @adminBrowser
         .get(Url.adminUserIndex)
@@ -68,7 +67,7 @@ module.exports =
         .then =>
           options.before?.apply(@)
 
-    after blockTitle, ->
+    after ->
       Q(options.after?.apply(@)) # promise or undefined -- both work
         .then =>
           Q.all([
