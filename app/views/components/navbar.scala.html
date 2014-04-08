@@ -12,7 +12,16 @@
       <ul>
         <li><a href="http://overview.ap.org/help" target="_blank">@m("link_help")</a></li>
         <li><a href="http://overview.ap.org/" target="_blank">@m("link_blog")</a></li>
-        <li><a href="http://overview.ap.org/contact/" target="_blank">@m("link_contact")</a></li>
+        <li class="contact-link">
+        @optionalUser.map(_.toUser).flatMap(IntercomConfiguration.settingsForUser) match {
+          case Some(intercom) => {
+            <a id="Intercom" href="mailto:@(intercom.appId)@@incoming.intercom.io">@m("link_intercom")</a>
+          }
+          case None => {
+            <a href="http://overview.ap.org/contact/" target="_blank">@m("link_contact")</a>
+          }
+        }
+        </li>
       </ul>
     </div>
     @optionalUser.map { user =>

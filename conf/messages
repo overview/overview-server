@@ -115,6 +115,7 @@ views.components.navbar.link_admin_users=Users
 views.components.navbar.link_admin_jobs=Jobs
 views.components.navbar.link_blog=Blog
 views.components.navbar.link_contact=Contact us
+views.components.navbar.link_intercom=Talk to us
 views.components.navbar.link_help=Help
 views.components.navbar.logged_in={0}
 views.components.navbar.link_document_sets=Your document sets

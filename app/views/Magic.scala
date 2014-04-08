@@ -1,10 +1,12 @@
 package views
 
 import java.util.Locale
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 import play.api.i18n.{Lang,Messages}
-import play.api.templates.Html
 import play.api.Play
 import play.api.Play.current
+import play.api.templates.Html
+
 
 /**
  * A convenience class on top of Messages.
@@ -49,7 +51,6 @@ object Magic {
 
   private def streamToHash(stream: java.io.InputStream) : String = {
     import java.security.MessageDigest
-    import javax.xml.bind.annotation.adapters.HexBinaryAdapter
 
     val md5 = MessageDigest.getInstance("MD5")
     val digestStream = new java.security.DigestInputStream(stream, md5)
