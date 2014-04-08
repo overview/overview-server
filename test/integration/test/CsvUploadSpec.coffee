@@ -46,7 +46,7 @@ describe 'CsvUpload', ->
       @
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
-  asUser.usingTemporaryUser()
+  asUser.usingTemporaryUser('CsvUpload')
 
   describe 'finding a character set', ->
     testMethods.usingPromiseChainMethods

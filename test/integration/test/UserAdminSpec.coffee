@@ -23,7 +23,7 @@ describe 'UserAdmin', ->
         .waitForJqueryAjaxComplete()
 
   before ->
-    @adminBrowser = browser.create()
+    @adminBrowser = browser.create('UserAdmin')
       .get(Url.index) # log in. XXX make this more generic
       .elementByCss('.session-form [name=email]').type(browser.adminLogin.email)
       .elementByCss('.session-form [name=password]').type(browser.adminLogin.password)
@@ -87,8 +87,7 @@ describe 'UserAdmin', ->
           .deleteUser(userEmail)
 
       it 'should create a user who can log in', ->
-        userBrowser = browser.create()
-        userBrowser
+        browser.create('UserAdmin - user')
           .get(Url.login)
           .elementByCss('.session-form [name=email]').type(userEmail)
           .elementByCss('.session-form [name=password]').type(userPassword)

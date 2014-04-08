@@ -6,7 +6,7 @@ Url =
   index: '/documentsets'
   csvUpload: '/imports/csv'
 
-module.exports = (csvPath) ->
+module.exports = (title, csvPath) ->
   testMethods.usingPromiseChainMethods
     goToFirstDocumentSet: ->
       @
@@ -44,6 +44,8 @@ module.exports = (csvPath) ->
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 10000)
 
   asUser.usingTemporaryUser
+    title: title
+
     before: ->
       @userBrowser
         .wds_openCsvUploadPage()

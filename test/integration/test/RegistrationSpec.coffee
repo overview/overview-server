@@ -60,8 +60,8 @@ describe 'Registration', ->
 
   before ->
     @userEmail = Faker.Internet.email()
-    @userBrowser = browser.create()
-    @adminBrowser = browser.create()
+    @userBrowser = browser.create('Registration - user')
+    @adminBrowser = browser.create('Registration - admin')
       .get(Url.adminUserIndex)
       .tryLogIn(browser.adminLogin.email, browser.adminLogin.password)
       # We don't actually want to do anything. We just keep this around for later.

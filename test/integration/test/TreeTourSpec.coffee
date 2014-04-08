@@ -3,7 +3,7 @@ wd = require('wd')
 
 describe 'TreeTour', ->
   describe 'with tooltips enabled', ->
-    asUserWithDocumentSet('TreeTooltips/documents.csv')
+    asUserWithDocumentSet('TreeTour with tooltips enabled', 'TreeTooltips/documents.csv')
 
     it 'should show a tooltip on first load', ->
       @userBrowser
@@ -18,7 +18,7 @@ describe 'TreeTour', ->
         .waitForElementBy({ class: 'popover', contains: 'document list' }, 10000).should.eventually.exist
 
   describe 'after reading through all the tooltips', ->
-    asUserWithDocumentSet('TreeTooltips/documents.csv')
+    asUserWithDocumentSet('TreeTour after reading through all the tooltips', 'TreeTooltips/documents.csv')
 
     it 'should only show the tooltips the first time', ->
       @userBrowser

@@ -11,7 +11,7 @@ Url =
 
 userToTrXPath = (email) -> "//tr[contains(td[@class='email'], '#{email}')]"
 
-describe 'Example Document Sets', ->
+describe 'ExampleDocumentSets', ->
 
   testMethods.usingPromiseChainMethods
     waitForUserLoaded: (email) ->
@@ -81,7 +81,7 @@ describe 'Example Document Sets', ->
         .waitForJqueryReady()
         .waitForFunctionToReturnTrueInBrowser((-> $('.document-set-creation-jobs').length == 0), 10000)
 
-  asUser.usingTemporaryUser()
+  asUser.usingTemporaryUser('ExampleDocumentSets')
   
   describe 'after being set as an example', ->
     before ->

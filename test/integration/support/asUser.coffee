@@ -31,21 +31,25 @@ module.exports =
   # @adminBrowser to stay on the same page, always, and it expects @userEmail
   # to exist after the test is complete.
   #
-  # You may also pass an "options" parameter. It 'before' and 'after' blocks.
-  # The 'before' block will be called at the end of usingTemporaryUser()'s
-  # 'before' block; the 'after' block will be called at the beginning of
-  # usingTemporaryUser()'s 'after' block.
+  # You may also pass an "options" parameter. It's an Object with any of:
+  #
+  # * before: block called once the variables are set up.
+  # * after: block called before the variables are torn down.
+  # * title: title of the block (very useful for debugging).
   usingTemporaryUser: (options={}) ->
-    before ->
+    title = options.title || 'usingTemporaryUser'
+    blockTitle = if options.title then "usingTemporaryUser - #{options.title}" else 'usingTemporaryUser'
+
+    before blockTitle, ->
       @userEmail = Faker.Internet.email()
-      @userBrowser = userBrowser = browser.create()
+      @userBrowser = userBrowser = browser.create("#{title} - user")
         .get(Url.login)
         .waitForElementByCss('.session-form')
         .elementByCss('.session-form [name=email]').type(@userEmail)
         .elementByCss('.session-form [name=password]').type(@userEmail)
         # Don't click yet: wait for the user to be created
 
-      @adminBrowser = browser.create()
+      @adminBrowser = browser.create("#{title} - admin")
 
       @adminBrowser
         .get(Url.adminUserIndex)
@@ -64,7 +68,7 @@ module.exports =
         .then =>
           options.before?.apply(@)
 
-    after ->
+    after blockTitle, ->
       Q(options.after?.apply(@)) # promise or undefined -- both work
         .then =>
           Q.all([

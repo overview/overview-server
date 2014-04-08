@@ -26,7 +26,7 @@ describe 'Login', ->
       @elementByXPath("//a[@href='/logout']").click()
         .waitForElementByCss('.session-form')
 
-  asUser.usingTemporaryUser()
+  asUser.usingTemporaryUser('Login')
 
   before ->
     # We'll start this test suite logged out.

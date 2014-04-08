@@ -182,9 +182,12 @@ module.exports =
     password: 'admin@overviewproject.org'
 
   # Returns a promise of a browser.
-  create: ->
+  create: (title) ->
+    desiredCapabilities = { name: title }
+    desiredCapabilities[k] = v for k, v of options.desiredCapabilities
+
     wd.promiseChainRemote(options.seleniumLocation)
-      .init(options.desiredCapabilities)
+      .init(desiredCapabilities)
       .configureHttp
         baseUrl: module.exports.baseUrl
         timeout: 15000
