@@ -9,6 +9,7 @@ define [
     model = undefined
     view = undefined
     uploadCollectionViewRenderSpy = undefined
+    isFolderUploadSupported = 'webkitdirectory' of document.createElement('input')
 
     addSomeFiles = ->
       model.uploads.add(new MockUpload)
@@ -23,13 +24,14 @@ define [
       isFullyUploaded: ->
         @get('isFullyUploaded')
 
-    mockFileInput = ->
+    mockFileInput = (selector) ->
       # A file input can't have its "files" attribute set. But we need
       # to mock that, so we'll replace it with a div.
       #
       # Returns the mock file input
-      $fileInput = $('<div class="invisible-file-input"></div>')
-      view.$el.find('.invisible-file-input').replaceWith($fileInput)
+      $original = view.$(selector)
+      $fileInput = $("<div class='invisible-file-input' accept='#{$original.attr('accept')}'></div>")
+      $original.replaceWith($fileInput)
       $fileInput
 
     beforeEach ->
@@ -37,6 +39,7 @@ define [
 
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
+        'views.DocumentSet._massUploadForm.upload_folder_prompt': 'upload_folder_prompt'
         'views.DocumentSet._massUploadForm.choose_options': 'choose_options'
         'views.DocumentSet._massUploadForm.wait_for_import': 'wait_for_import'
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
@@ -49,9 +52,6 @@ define [
       model.uploads = new Backbone.Collection
       model.abort = jasmine.createSpy()
 
-      # fake the import options menu
-      $('body').append('<div class="nav-buttons"><ul><li><a href="#foo">foo</a></li></ul></div>')
-
       view = new MassUploadForm
         model: model
         uploadCollectionViewClass: uploadCollectionViewClass
@@ -63,7 +63,6 @@ define [
     afterEach ->
       jasmine.Ajax.uninstall()
       view.remove()
-      $('div.nav-buttons').remove()
 
     describe 'init', ->
       it 'cancels previous uploads', ->
@@ -76,10 +75,13 @@ define [
         view.render()
 
       it 'has a file input', ->
-        expect(view.$('input[type=file]').length).toEqual(1)
+        expect(view.$('.upload-prompt input[type=file]').length).toEqual(1)
 
       it 'only shows pdf files by default', ->
-        expect(view.$('input[type=file]').attr('accept')).toEqual('application/pdf')
+        expect(view.$('.upload-prompt input[type=file]').attr('accept')).toEqual('application/pdf')
+
+      it 'has a folder input iff folder upload is supported', ->
+        expect(view.$('.upload-folder-prompt').length).toEqual(isFolderUploadSupported && 1 || 0)
 
       it 'renders uploadCollectionView', ->
         expect(uploadCollectionViewRenderSpy).toHaveBeenCalled()
@@ -135,25 +137,39 @@ define [
               view.$('.choose-options').click()
               expect(view.$('button.choose-options')).toBeDisabled()
               expect(view.$('button.select-files')).toBeDisabled()
-              expect(view.$(':file')).toBeDisabled()
+              expect(view.$('.upload-prompt :file')).toBeDisabled()
+              if isFolderUploadSupported
+                expect(view.$('.upload-folder-prompt :file')).toBeDisabled()
 
     describe 'dom events', ->
       it 'changes the button hover state when the invisible input is hovered', ->
         view.render()
-        view.$(':file').trigger('mouseenter')
-        expect(view.$('button')).toHaveClass('hover')
-        view.$(':file').trigger('mouseleave')
-        expect(view.$('button')).not.toHaveClass('hover')
+        $input = view.$('.upload-prompt :file')
+        $button = view.$('.upload-prompt button')
+        $input.trigger('mouseenter')
+        expect($button).toHaveClass('hover')
+        $input.trigger('mouseleave')
+        expect($button).not.toHaveClass('hover')
 
-    describe 'uploading', ->
+      if isFolderUploadSupported
+        it 'changes the upload-folder button hover state when the invisible input is hovered', ->
+          view.render()
+          $input = view.$('.upload-folder-prompt :file')
+          $button = view.$('.upload-folder-prompt button')
+          $input.trigger('mouseenter')
+          expect($button).toHaveClass('hover')
+          $input.trigger('mouseleave')
+          expect($button).not.toHaveClass('hover')
+
+    describe 'uploading files', ->
       fileList = undefined
       $fileInput = undefined
 
       beforeEach ->
         view.render()
 
-        fileList = [ {}, {} ]  # two things
-        $fileInput = mockFileInput()
+        fileList = [ { type: 'application/pdf' }, { type: 'application/pdf' } ]  # two things
+        $fileInput = mockFileInput('.upload-prompt :file')
         $fileInput[0].files = fileList
         $fileInput.trigger('change')
 
@@ -162,6 +178,33 @@ define [
 
       it 'clears the file input once files have been queued', ->
         expect($fileInput[0].value).toEqual('')
+
+    if isFolderUploadSupported
+      describe 'uploading folders', ->
+        fileList = undefined
+        $fileInput = undefined
+
+        beforeEach ->
+          view.render()
+
+          fileList = [
+            { name: '.', type: '', webkitRelativePath: 'x/.' }
+            { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
+            { name: 'b.exe', type: 'application/octet-stream', webkitRelativePath: 'x/foo/b.exe' }
+            { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
+          ]
+          $fileInput = mockFileInput('.upload-folder-prompt :file')
+          $fileInput[0].files = fileList
+          $fileInput.trigger('change')
+
+        it 'queues files for uploading', ->
+          expect(model.addFiles).toHaveBeenCalledWith([
+            { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
+            { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
+          ])
+
+        it 'clears the file input once files have been queued', ->
+          expect($fileInput[0].value).toEqual('')
 
     describe 'buttons', ->
       beforeEach ->
@@ -203,7 +246,7 @@ define [
           it 'disables itself and the select files button', ->
             expect(view.$('button.choose-options')).toBeDisabled()
             expect(view.$('button.select-files')).toBeDisabled()
-            expect(view.$(':file')).toBeDisabled()
+            expect(view.$('.upload-prompt :file')).toBeDisabled()
 
           it 'shows the finished importing text', ->
             expect(view.$('.wait-for-import')).toHaveCss(display: 'block')

@@ -238,7 +238,7 @@ views.DocumentSet._manualForm.submit_html=Import from DocumentCloud query for �
 
 views.DocumentSet._share.h3=Sharing settings
 views.DocumentSet._share.close=Close
-views.DocumentSet._share.loading=Loading...
+views.DocumentSet._share.loading=Loading…
 views.DocumentSet._share.error=There was an error loading the sharing settings for this document set. Please refresh the page and try again.
 views.DocumentSet._share.explanation=Share this document set with other Overview users by entering their email addresses. They can clone the document set from the Import section.
 views.DocumentSet._share.list_header={0,choice,0#This document set is not shared with anybody|0< This document set is shared with:}
@@ -255,7 +255,8 @@ views.DocumentSet._tree.nDocuments={0,choice,0#no documents|1#one document|1<{0,
 views.DocumentSet._tree.nImportantWords={0,choice,1#one important word|1<{0,number,integer} important words}
 views.DocumentSet._tree.nSuppliedStopWords={0,choice,1#one ignored word|1<{0,number,integer} ignored words}
 
-views.DocumentSet._massUploadForm.upload_prompt=Add files
+views.DocumentSet._massUploadForm.upload_prompt=Add files…
+views.DocumentSet._massUploadForm.upload_folder_prompt=Add all files in a folder…
 views.DocumentSet._massUploadForm.choose_options=Done adding files
 views.DocumentSet._massUploadForm.cancel=Cancel upload
 views.DocumentSet._massUploadForm.drop_target=Select files to upload
@@ -266,7 +267,7 @@ views.DocumentSet._massUploadForm.confirm_cancel.prompt=Are you sure you want to
 views.DocumentSet._massUploadForm.confirm_cancel.back_button=Keep uploading
 views.DocumentSet._massUploadForm.confirm_cancel.confirm_button=Cancel Upload
 
-views.DocumentSet._uploadProgress.uploading=Uploading...
+views.DocumentSet._uploadProgress.uploading=Uploading…
 
 views.DocumentSet._smallDocumentSet.shared_by=Shared by {0}
 views.DocumentSet._smallDocumentSet.import=Clone
@@ -473,7 +474,7 @@ views.User._form.help.email=We will send a confirmation email to this address
 views.User._form.label.password=Password
 views.User._form.label.password2=Password (again)
 views.User._form.submit=Register and send confirmation email
-views.User._form.submit_feedback=Registering...
+views.User._form.submit_feedback=Registering…
 views.User._form.error_password2_does_not_match=This password doesn’t match what you typed in above. Please correct it.
 views.User._form.label.subscribe=Email me tips and news about Overview
 views.User._form.help.subscribe=We will never share your email address

@@ -25,6 +25,16 @@ define [
               <input type="file" class="invisible-file-input" accept="application/pdf" multiple="multiple" />
             </div>
 
+            <% if (isFolderUploadSupported) { %>
+              <div class="upload-folder-prompt">
+                <button class="btn btn-primary select-folders" type="button">
+                  <i class="overview-icon-plus"></i>
+                  <%- t('upload_folder_prompt') %>
+                </button>
+                <input type="file" class="invisible-file-input" accept="application/pdf" multiple webkitdirectory />
+              </div>
+            <% } %>
+
             <button type='button' class="btn btn-primary choose-options" disabled="disabled">
               <i class="icon-play-circle"></i>
               <%- t('choose_options') %>
@@ -69,21 +79,25 @@ define [
       #$.ajax('/files', type: 'DELETE')
 
     render: ->
-      @$el.html(@template(t: t))
-      @$ul = @$el.find('.files')
-      @$ulEmptyUpload = @$ul.find('.empty-upload')
-      @$progressBar = @$('.progress-bar')
-      @_$minimumFiles = @$('.minimum-files')
+      isFolderUploadSupported = 'webkitdirectory' of document.createElement('input')
+
+      @$el.html(@template(t: t, isFolderUploadSupported: isFolderUploadSupported))
+
+      @_$els =
+        uploads: @$('.uploads')
+        progressBar: @$('.progress-bar')
+        minimumFiles: @$('.minimum-files')
+
       @_minimumFilesVisible = false
 
       @_refreshProgressVisibility()
-      @_progressView = new UploadProgressView(model: @model, el: @$progressBar)
+      @_progressView = new UploadProgressView(model: @model, el: @_$els.progressBar)
       @_progressView.render()
 
       @_uploadCollectionView = new @options.uploadCollectionViewClass(
         collection: @collection,
         uploadViewClass: UploadView
-        el: @$('.uploads')
+        el: @_$els.uploads
       )
       @_uploadCollectionView.render()
 
@@ -92,7 +106,7 @@ define [
       if minimumFilesVisible != @_minimumFilesVisible
         @_minimumFilesVisible = minimumFilesVisible
         display = @_minimumFilesVisible && 'block' || 'none'
-        @_$minimumFiles.css(display: display)
+        @_$els.minimumFiles.css(display: display)
       this
 
     remove: ->
@@ -100,10 +114,13 @@ define [
       @_uploadCollectionView?.remove()
       super()
 
-    _addFiles: ->
-      fileInput = @$el.find('.invisible-file-input')[0]
-      @model.addFiles(fileInput.files)
-      fileInput.value = ''
+    _addFiles: (e) ->
+      input = e.currentTarget
+      accept = input.getAttribute('accept')
+      goodFiles = (file for file in input.files when file.type == accept)
+      @model.addFiles(goodFiles)
+
+      input.value = '' # so the user can select files again
 
     _onCollectionReset: ->
       @finishEnabled = false
@@ -117,11 +134,14 @@ define [
       @_refreshMinimumFilesVisibility()
       @_refreshProgressVisibility()
 
-    _addButtonHover: ->
-      @$el.find('button.select-files').addClass('hover')
+    _setButtonHover: (event, isHovering) ->
+      $file = $(event.currentTarget)
+      $parent = $file.parent()
+      $button = $parent.children().eq(0)
+      $button.toggleClass('hover', isHovering)
 
-    _removeButtonHover: ->
-      @$el.find('button.select-files').removeClass('hover')
+    _addButtonHover: (e) -> @_setButtonHover(e, true)
+    _removeButtonHover: (e) -> @_setButtonHover(e, false)
 
     _requestOptions: (e) ->
       e.stopPropagation()
@@ -151,7 +171,7 @@ define [
       if newIsVisible != @_progressIsVisible
         @_progressIsVisible = newIsVisible
         cssDisplay = if @_progressIsVisible then 'block' else 'none'
-        @$progressBar.css('display', cssDisplay)
+        @_$els.progressBar.css('display', cssDisplay)
 
     _uploadDone: ->
       @model.uploads.length > 0 && @model.get('status') == 'waiting'
