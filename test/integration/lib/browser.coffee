@@ -3,9 +3,11 @@ Q = require('q')
 escapeRegexp = require('escape-regexp')
 
 Constants =
-  ajaxTimeout: 5000 # timeout waiting for AJAX requests
-  redirectTimeout: 5000 # timeout waiting for a redirect
-  pollLength: 100 # milliseconds between condition checks
+  ajaxTimeout: 7000 # timeout waiting for AJAX requests
+  asyncTimeout: 8000 # timeout waiting for JavaScript; might involve waiting for HTTP requests
+  pageLoadTimeout: 15000 # Travis+SauceLabs is slow
+  redirectTimeout: 8000 # timeout waiting for a redirect
+  pollLength: 200 # milliseconds between condition checks
 
 options =
   desiredCapabilities:
@@ -198,5 +200,5 @@ module.exports =
         retryDelay: 10
       .setWindowSize(1280, 800)
       .setImplicitWaitTimeout(0)   # we only wait explicitly! We don't want to code race conditions
-      .setAsyncScriptTimeout(5000) # in case there are HTTP requests
-      .setPageLoadTimeout(15000)   # in case, on a slow computer, something slow happens
+      .setAsyncScriptTimeout(Constants.asyncTimeout) # in case there are HTTP requests
+      .setPageLoadTimeout(Constants.pageLoadTimeout) # in case, on a slow computer, something slow happens
