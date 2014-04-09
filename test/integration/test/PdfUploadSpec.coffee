@@ -36,7 +36,7 @@ describe 'PdfUpload', ->
         .acceptingNextAlert()
         .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
-  asUser.usingTemporaryUser('PdfUpload')
+  asUser.usingTemporaryUser(title: 'PdfUpload')
 
   describe 'after uploading pdfs', ->
     before ->

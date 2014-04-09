@@ -81,7 +81,7 @@ describe 'ExampleDocumentSets', ->
         .waitForJqueryReady()
         .waitForFunctionToReturnTrueInBrowser((-> $('.document-set-creation-jobs').length == 0), 10000)
 
-  asUser.usingTemporaryUser('ExampleDocumentSets')
+  asUser.usingTemporaryUser(title: 'ExampleDocumentSets')
   
   describe 'after being set as an example', ->
     before ->

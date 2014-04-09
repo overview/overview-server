@@ -52,7 +52,7 @@ describe 'ResetPassword', ->
       @elementByXPath("//a[@href='/logout']").click()
         .waitForElementByCss('.session-form')
 
-  asUser.usingTemporaryUser('ResetPassword')
+  asUser.usingTemporaryUser(title: 'ResetPassword')
 
   # We'll start this test suite logged out
   before -> @userBrowser.logOut()
