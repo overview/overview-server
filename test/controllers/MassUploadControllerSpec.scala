@@ -182,11 +182,13 @@ class MassUploadControllerSpec extends Specification with Mockito {
     trait StartClusteringRequest extends UploadContext {
       val fileGroupName = "This becomes the Document Set Name"
       val lang = "sv"
+      val splitDocumentsString = "false"
       val stopWords = "ignore these words"
       val importantWords = "important words?"
-      val formData = Seq(
+      def formData = Seq(
         ("name" -> fileGroupName),
         ("lang" -> lang),
+        ("split_documents" -> splitDocumentsString),
         ("supplied_stop_words" -> stopWords),
         ("important_words") -> importantWords)
      val documentSetId = 11l
@@ -201,16 +203,23 @@ class MassUploadControllerSpec extends Specification with Mockito {
         val documentSet = mock[DocumentSet]
         documentSet.id returns documentSetId
         
-        controller.storage.createDocumentSet(user.email, fileGroupName, lang, stopWords) returns documentSet
+        controller.storage.createDocumentSet(user.email, fileGroupName, lang) returns documentSet
       }
     }
     
     "create job and send startClustering command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       status(result) must be equalTo(SEE_OTHER)
-      there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang, stopWords)
+      there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
-          documentSetId, fileGroupId, lang, stopWords, importantWords)
+          documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
       there was one(controller.messageQueue).startClustering(fileGroupId, fileGroupName, lang, stopWords)
+    }
+
+    "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
+      override val splitDocumentsString = "true"
+      result
+      there was one(controller.storage).createMassUploadDocumentSetCreationJob(
+          documentSetId, fileGroupId, lang, true, stopWords, importantWords)
     }
     
     "return NotFound if user has no FileGroup InProgress" in new StartClusteringRequest with NoUpload with NoFileGroup {

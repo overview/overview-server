@@ -90,10 +90,10 @@ trait MassUploadController extends Controller {
     def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload]
 
     /** @returns a newly created DocumentSet */
-    def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet
+    def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet
 
     /** @returns a newly created DocumentSetCreationJob */
-    def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String,
+    def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long, lang: String, splitDocuments: Boolean,
                                                suppliedStopWords: String, importantWords: String): DocumentSetCreationJob
 
     /** @returns a FileGroup with state set to Complete */
@@ -140,17 +140,15 @@ trait MassUploadController extends Controller {
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Option[String], Option[String])): SimpleResult = {
+                                                  options: (String, String, Boolean, String, String)): SimpleResult = {
     storage.findCurrentFileGroup(userEmail) match {
       case Some(fileGroup) => {
-        val (name, lang, optionalStopWords, optionalImportantWords) = options
-        val suppliedStopWords = optionalStopWords.getOrElse("")
-        val importantWords = optionalImportantWords.getOrElse("")
         storage.completeFileGroup(fileGroup)
 
-        val documentSet = storage.createDocumentSet(userEmail, name, lang, suppliedStopWords)
+        val (name, lang, splitDocuments, suppliedStopWords, importantWords) = options
+        val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
-          documentSet.id, fileGroup.id, lang, suppliedStopWords, importantWords)
+          documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
         messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
 
         Redirect(routes.DocumentSetController.index())
@@ -180,23 +178,23 @@ object MassUploadController extends MassUploadController {
     override def findGroupedFileUpload(fileGroupId: Long, guid: UUID): Option[GroupedFileUpload] =
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
 
-    override def createDocumentSet(userEmail: String, title: String, lang: String, suppliedStopWords: String): DocumentSet = {
-      val documentSet = DocumentSetStore.insertOrUpdate(
-        DocumentSet(title = title))
-
+    override def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet = {
+      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title)) 
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
 
       documentSet
     }
 
     override def createMassUploadDocumentSetCreationJob(documentSetId: Long, fileGroupId: Long,
-                                                        lang: String, suppliedStopWords: String,
+                                                        lang: String, splitDocuments: Boolean,
+                                                        suppliedStopWords: String,
                                                         importantWords: String): DocumentSetCreationJob = {
       DocumentSetCreationJobStore.insertOrUpdate(
         DocumentSetCreationJob(
           documentSetId = documentSetId,
           fileGroupId = Some(fileGroupId),
           lang = lang,
+          splitDocuments = splitDocuments,
           suppliedStopWords = suppliedStopWords,
           importantWords = importantWords,
           state = Preparing,

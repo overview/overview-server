@@ -2,86 +2,39 @@ package controllers.forms
 
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.data.Form
-import play.api.data.Forms._
+import play.api.data.FormError
 
 class MassUploadControllerFormSpec extends Specification {
-
   "MassUploadControllerForm" should {
-
-    trait FormData {
-      val Name = "name"
-      val Lang = "lang"
-      val SuppliedStopWords = "supplied_stop_words"
-      val ImportantWords = "important_words"
-
-      val name = "file group name"
-      val lang = "sv"
-      val stopWords = "these words will be ignored"
-      val importantWords = "important word regex(es)?"
-
-      val data: Map[String, String]
-    }
-
-    trait FormScope extends Scope with FormData {
-      def filledForm: Form[(String, String, Option[String], Option[String])] = {
-        val form = MassUploadControllerForm()
-        form.bind(data)
+    trait BaseScope extends Scope {
+      def parse(data: (String,String)*) = {
+        MassUploadControllerForm().bind(Map(data: _*))
       }
     }
 
-    trait ValidForm extends FormData {
-      override val data: Map[String, String] = Map(
-        Name -> name,
-        Lang -> lang,
-        SuppliedStopWords -> stopWords,
-        ImportantWords -> importantWords)
+    "return all the fields" in new BaseScope {
+      val form = parse("name" -> "foo", "lang" -> "en", "split_documents" -> "true", "supplied_stop_words" -> "x", "important_words" -> "y")
+      form.value must beSome("foo", "en", true, "x", "y")
     }
 
-    trait InvalidLanguage extends FormData {
-      override val data: Map[String, String] = Map(
-        Name -> name,
-        Lang -> "Unsupported Language",
-        SuppliedStopWords -> stopWords)
+    "fail on unsupported language" in new BaseScope {
+      val form = parse("name" -> "foo", "lang" -> "bar")
+      form.error("lang") must beSome(FormError("lang", "forms.validation.unsupportedLanguage", Seq("bar")))
     }
 
-    trait MissingName extends FormData {
-      override val data: Map[String, String] = Map(
-        Lang -> "Unsupported Language",
-        SuppliedStopWords -> stopWords)
+    "fail if name is missing" in new BaseScope {
+      val form = parse("lang" -> "en")
+      form.error("name") must beSome(FormError("name", "error.required"))
     }
 
-    trait BlankName extends FormData {
-      override val data: Map[String, String] = Map(
-        Name -> "    ",
-        Lang -> lang,
-        SuppliedStopWords -> stopWords)
-    }
-    trait MissingOptionalValues extends FormData {
-      override val data: Map[String, String] = Map(
-        Name -> name,
-        Lang -> lang)
+    "fail if name is blank" in new BaseScope {
+      val form = parse("name" -> "", "lang" -> "en")
+      form.error("name") must beSome(FormError("name", "forms.validation.blankText"))
     }
 
-
-    "return all the feels" in new FormScope with ValidForm {
-      filledForm.value must beSome(name, lang, Some(stopWords), Some(importantWords))
-    }
-
-    "fail on unsupported language" in new FormScope with InvalidLanguage {
-      filledForm.error(Lang) must beSome
-    }
-
-    "fail if name is missing" in new FormScope with MissingName {
-      filledForm.error(Name) must beSome
-    }
-    
-    "fail if name is blank" in new FormScope with BlankName {
-      filledForm.error(Name) must beSome
-    }
-    
-    "allow missing optional values" in new FormScope with MissingOptionalValues {
-      filledForm.value must beSome(name, lang, None, None)
+    "set defaults" in new BaseScope {
+      val form = parse("name" -> "foo", "lang" -> "en")
+      form.value must beSome("foo", "en", false, "", "")
     }
   }
 }
