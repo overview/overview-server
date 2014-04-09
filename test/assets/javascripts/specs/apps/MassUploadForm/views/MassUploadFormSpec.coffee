@@ -136,9 +136,10 @@ define [
               spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
               view.$('.choose-options').click()
               expect(view.$('button.choose-options')).toBeDisabled()
-              expect(view.$('button.select-files')).toBeDisabled()
+              expect(view.$('.upload-prompt button.select-files')).toBeDisabled()
               expect(view.$('.upload-prompt :file')).toBeDisabled()
               if isFolderUploadSupported
+                expect(view.$('.upload-folder-prompt button.select-folders')).toBeDisabled()
                 expect(view.$('.upload-folder-prompt :file')).toBeDisabled()
 
     describe 'dom events', ->
@@ -242,6 +243,7 @@ define [
 
             spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
             view.$('.choose-options').click()
+            $('body').append(view.el)
 
           it 'disables itself and the select files button', ->
             expect(view.$('button.choose-options')).toBeDisabled()
@@ -249,7 +251,11 @@ define [
             expect(view.$('.upload-prompt :file')).toBeDisabled()
 
           it 'shows the finished importing text', ->
-            expect(view.$('.wait-for-import')).toHaveCss(display: 'block')
+            expect(view.$('.wait-for-import')).toBeVisible()
+
+          it 'hides the finished importing text on cancel', ->
+            model.uploads.reset()
+            expect(view.$('.wait-for-import')).not.toBeVisible()
 
       describe 'cancel button', ->
         it 'has a cancel button with the correct message', ->

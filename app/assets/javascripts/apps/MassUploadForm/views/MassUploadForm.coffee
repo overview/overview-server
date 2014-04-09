@@ -70,7 +70,7 @@ define [
       @listenTo(@collection, 'reset', @_onCollectionReset)
       @listenTo(@collection, 'add-batch', @_onCollectionAddBatch)
       @finishEnabled = false
-      @listenTo(@model, 'change', @_shouldSubmit)
+      @listenTo(@model, 'change', @_maybeSubmit)
       @listenTo(@model, 'change', @_refreshProgressVisibility)
       @listenTo(@model, 'change', @_refreshMinimumFilesVisibility)
       @optionsSet = false
@@ -124,6 +124,7 @@ define [
 
     _onCollectionReset: ->
       @finishEnabled = false
+      @_optionsSetDone(false)
       @$('button.choose-options').prop('disabled', true)
 
     _onCollectionAddBatch: ->
@@ -151,17 +152,17 @@ define [
         onlyOptions: [ 'name', 'lang', 'supplied_stop_words', 'important_words' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
-        callback: => @_optionsSetDone()
+        callback: => @_optionsSetDone(true)
       )
 
-    _optionsSetDone: ->
-      @$('button.choose-options, button.select-files, :file').prop('disabled', true)
-      @$('.wait-for-import').css('display', 'block')
-      @optionsSet = true
-      @_shouldSubmit()
+    _optionsSetDone: (toggle) ->
+      @$('button.choose-options, button.select-files, button.select-folders, :file').prop('disabled', toggle)
+      @$('.wait-for-import').toggle(toggle)
+      @optionsSet = toggle
+      @_maybeSubmit()
 
-    _shouldSubmit: ->
-      if @_uploadDone() && @optionsSet
+    _maybeSubmit: ->
+      if @optionsSet && @_uploadDone()
         @$el.closest('form').submit()
 
     _refreshProgressVisibility: ->
