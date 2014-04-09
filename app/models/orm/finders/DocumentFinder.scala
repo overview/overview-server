@@ -47,7 +47,7 @@ object DocumentFinder extends Finder {
     def toIdsOrdered: FinderResult[Long] = {
       from(query)(d =>
         select(d.id)
-          orderBy (d.title, d.description, d.id))
+          orderBy (d.title, d.pageNumber, d.description, d.id))
     }
 
     /**
@@ -69,7 +69,7 @@ object DocumentFinder extends Finder {
 
       join(query, nodeIdStrings.leftOuter, tagIdStrings.leftOuter)((d, n, t) =>
         select(d, n.flatMap(_.measures), t.flatMap(_.measures))
-          orderBy (d.title, d.description, d.id)
+          orderBy (d.title, d.pageNumber, d.description, d.id)
           on (d.id === n.map(_.key), d.id === t.map(_.key)))
     }
   }
