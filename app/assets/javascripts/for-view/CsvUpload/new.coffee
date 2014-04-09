@@ -1,6 +1,5 @@
 # This file is a mess. Sorry.
 define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', 'apps/ImportOptions/app', 'util/shims/file' ], ($, _, CsvReader, Upload, i18n, ImportOptionsApp) ->
-  FILE_UPLOAD_XAP_URL = '/assets/silverlight/file-upload.xap'
   FILE_PREVIEW_SIZE = 204800 # 200kb
   TOLERATED_ENCODING_ERRORS = 0.01 # 1%: ratio of bad-chars : total-chars
 
@@ -325,52 +324,8 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
       e.preventDefault()
       $modal.modal('hide')
 
-    if window.File? # util.net.Upload will use HTML5
-      $form.find(':file').on 'change', (e) ->
-        select_file(e.target.files[0])
-
-    else if window.Silverlight && window.SilverlightFileUploadPlugin? # util.net.Upload will use IE9+Silverlight
-      file_upload_api = undefined
-
-      on_silverlight_load = (obj, __, sender) ->
-        host = sender.getHost()
-        file_upload_api = new window.SilverlightFileUploadPlugin host, (new_selected_file) ->
-          select_file(new_selected_file)
-
-        upload_options.xhr_factory = (callback) ->
-          file_upload_api.createXMLHttpUploadRequest (progress_obj) ->
-            callback(progress_obj.loaded, progress_obj.total)
-
-        csv_reader_options.file_reader_factory = file_upload_api.createFileReader
-
-      # Add the Silverlight HTML, which will call on_silverlight_load
-      silverlight_html = window.Silverlight.createObjectEx({
-        source: FILE_UPLOAD_XAP_URL
-        parentElement: null # to return HTML
-        properties: {
-          windowless: 'true'
-          background: 'transparent'
-        }
-        events: {
-          onLoad: on_silverlight_load
-        }
-      })
-      $file = $form.find(':file')
-      $silverlight_div = $('<div class="silverlight-file-upload"></div>')
-      $silverlight_div.css({
-        display: 'inline-block'
-        height: 30 # HACK -- we'd like to use :file's height, but we can't compute it here
-        width: 200
-        verticalAlign: 'middle'
-      })
-      $silverlight_div.append(silverlight_html)
-      $silverlight_div.children().css({
-        width: '100%'
-        height: '100%'
-        margin: 0
-        padding: 0
-      })
-      $file.replaceWith($silverlight_div)
+    $form.find(':file').on 'change', (e) ->
+      select_file(e.target.files[0])
 
     refresh_charset()
     refresh_from_csv_reader()

@@ -49,7 +49,6 @@ requirejs.config
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
-    silverlight: 'vendor/Silverlight.debug'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
