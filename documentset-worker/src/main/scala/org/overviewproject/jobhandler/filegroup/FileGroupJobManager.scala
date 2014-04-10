@@ -9,27 +9,25 @@ object FileGroupJobQueueProtocol {
 
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
-  
+
   protected val fileGroupJobQueue: ActorRef
-  
+
   protected val storage: Storage
-  
+
   trait Storage {
-    def createDocumentSet(title: String): Long
-    def createJob(documentSetId: Long, fileGroupId: Long, lang: String,
-                            suppliedStopWords: String, importantWords: String): Unit
+    def createDocumentSetWithJob(fileGroupId: Long, lang: String,
+                                 suppliedStopWords: String, importantWords: String): Long
 
   }
 
   def receive = {
 
-    case ClusterFileGroup(fileGroupId, name, lang, stopWords, importantWords) => { 
-      val documentSetId = storage.createDocumentSet(name)
-      storage.createJob(documentSetId, fileGroupId, lang, stopWords, importantWords)
-      
+    case ClusterFileGroup(fileGroupId, name, lang, stopWords, importantWords) => {
+      val documentSetId = storage.createDocumentSetWithJob(fileGroupId, lang, stopWords, importantWords)
+
       fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
     }
-      
+
   }
 
 }
