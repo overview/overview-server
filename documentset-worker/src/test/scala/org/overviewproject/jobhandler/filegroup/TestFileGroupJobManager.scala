@@ -45,5 +45,7 @@ trait StorageMonitor extends JobParameters {
 
 }
 
-class TestFileGroupJobManager(override protected val fileGroupJobQueue: ActorRef) extends FileGroupJobManager with StorageMonitor
+class TestFileGroupJobManager(
+  override protected val fileGroupJobQueue: ActorRef,
+  override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager with StorageMonitor
 

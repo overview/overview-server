@@ -5,13 +5,20 @@ import org.overviewproject.jobs.models.ClusterFileGroup
 
 object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(fileGroupId: Long, documentSetId: Long)
+  case class FileGroupDocumentsCreated(documentSetId: Long)
+}
+
+object ClusteringJobQueueProtocol {
+  case class ClusterDocumentSet(documentSetId: Long)
 }
 
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
+  import ClusteringJobQueueProtocol._
 
   protected val fileGroupJobQueue: ActorRef
-
+  protected val clusteringJobQueue: ActorRef
+  
   protected val storage: Storage
 
   trait Storage {
@@ -27,6 +34,9 @@ trait FileGroupJobManager extends Actor {
 
       fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
     }
+    
+    case FileGroupDocumentsCreated(documentSetId) =>
+      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
   }
 

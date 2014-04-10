@@ -1,30 +1,51 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import akka.testkit._
-import scala.collection.mutable.Queue
-import akka.agent.Agent
-import akka.testkit.CallingThreadDispatcher
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import org.overviewproject.jobs.models.ClusterFileGroup
 import akka.actor._
+import akka.testkit._
+
+import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mutable.{ Before, Specification }
+
 
 class FileGroupJobManagerSpec extends Specification {
 
   "FileGroupJobManager" should {
 
+    "create a job with a documentset" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+
+      createJobWasCalledWith(fileGroupId, lang, suppliedStopWords, importantWords)
+    }
+
+    "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(fileGroupId, documentSetId))
+    }
+
+    "start clustering job when text extraction is complete" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand  
+      
+      fileGroupJobQueue.expectMsgType[CreateDocumentsFromFileGroup]
+      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      
+      clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
+    }
+    
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 
       var fileGroupJobManager: TestActorRef[TestFileGroupJobManager] = _
       var fileGroupJobQueue: TestProbe = _
+      var clusteringJobQueue: TestProbe = _
 
       override def before = {
         fileGroupJobQueue = TestProbe()
-        fileGroupJobManager = TestActorRef(new TestFileGroupJobManager(fileGroupJobQueue.ref))
+        clusteringJobQueue = TestProbe()
+        
+        fileGroupJobManager = TestActorRef(
+            new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref))
       }
 
       def createJobWasCalledWith(fileGroupId: Long, lang: String,
@@ -39,17 +60,6 @@ class FileGroupJobManagerSpec extends Specification {
 
     }
 
-    "create a job with a documentset" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-
-      createJobWasCalledWith(fileGroupId, lang, suppliedStopWords, importantWords)
-    }
-
-    "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-
-      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(fileGroupId, documentSetId))
-    }
-
+    
   }
 }
