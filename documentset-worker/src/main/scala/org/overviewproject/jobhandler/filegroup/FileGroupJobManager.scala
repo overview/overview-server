@@ -3,15 +3,17 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.{ Actor, ActorRef }
 import org.overviewproject.jobs.models.ClusterFileGroup
 
-object FileGroupJobQueueProtocol {
-  case class CreateDocumentsFromFileGroup(fileGroupId: Long, documentSetId: Long)
-  case class FileGroupDocumentsCreated(documentSetId: Long)
-}
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
 }
 
+
+/**
+ * The `FileGroupJobManager` receives a request from the server to extract text from uploaded files
+ * and cluster them. It creates the needed sub-tasks and request that each task be performed by a specific
+ * job queue, in sequence.
+ */
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
   import ClusteringJobQueueProtocol._

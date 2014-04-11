@@ -34,6 +34,14 @@ class FileGroupJobManagerSpec extends Specification {
       clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
     }
     
+    "cancel text extraction when requested" in {
+      todo
+    }
+    
+    "don't start clustering cancelled job" in {
+      todo
+    }
+    
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 
       var fileGroupJobManager: TestActorRef[TestFileGroupJobManager] = _
