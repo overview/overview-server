@@ -9,70 +9,32 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import akka.testkit._
 import org.specs2.time.NoTimeConversions
 import akka.actor.ActorRef
-
-class TestFileGroupJobQueue(jobs: Seq[Long]) extends FileGroupJobQueue {
-
-  class TestStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Iterable[Long] = jobs
-  }
-
-  override protected val storage = new TestStorage
-}
+import akka.actor.ActorSystem
 
 class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
   "FileGroupJobQueue" should {
 
-    abstract class JobQueueContext extends ActorSystemContext with Before {
-      protected val documentSetId = 1l
-      protected val fileGroupId = 2l
-
-      protected var fileGroupJobQueue: TestActorRef[TestFileGroupJobQueue] = _
-      protected var worker: TestProbe = _
-
-      def before = {
-        fileGroupJobQueue = TestActorRef(new TestFileGroupJobQueue(preloadedJobs))
-        worker = TestProbe()
-      }
-
-      protected def preloadedJobs: Seq[Long] = Seq.empty
-    }
-
-    abstract class PreloadedJobQueueContext extends JobQueueContext {
-      protected val numberOfUploadedFiles = 10
-      protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
-
-      override def preloadedJobs: Seq[Long] = uploadedFileIds
-
-      protected def createNWorkers(numberOfWorkers: Int): Seq[TestProbe] = Seq.fill(numberOfWorkers)(TestProbe())
-
-    }
-
     "notify registered workers when tasks becomes available" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+      
+      submitJob
 
       worker.expectMsg(TaskAvailable)
     }
 
-    "send available tasks to workers that ask for them" in new PreloadedJobQueueContext {
+    "send available tasks to workers that ask for them" in new JobQueueContext {
       val workers = createNWorkers(numberOfUploadedFiles)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+      submitJob
 
-      for ((w, f) <- workers.zip(uploadedFileIds)) yield {
-        w.expectMsg(TaskAvailable)
-        w.reply(ReadyForTask)
-
-        w.expectMsg(Task(documentSetId, fileGroupId, f))
-
-      }
-
+      for ((w, f) <- workers.zip(uploadedFileIds))
+        yield w.expectTask(f)
     }
 
-    "notify worker if tasks are available when it registers" in new PreloadedJobQueueContext {
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+    "notify worker if tasks are available when it registers" in new JobQueueContext {
+      submitJob
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
       worker.expectMsg(TaskAvailable)
@@ -85,30 +47,69 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       worker.expectNoMsg(500 millis)
     }
 
-    "notify requester when all tasks for a fileGroupId are complete" in new PreloadedJobQueueContext {
-      worker.setAutoPilot(new TestActor.AutoPilot {
-        def run(sender: ActorRef, msg: Any): TestActor.AutoPilot = {
-          msg match {
-            case TaskAvailable => sender.tell(ReadyForTask, worker.ref)
-            case Task(ds, fg, uf) => { 
-              sender.tell(TaskDone(fg, uf), worker.ref)
-              sender.tell(ReadyForTask, worker.ref)
-            }
-          }
-          TestActor.KeepRunning
-        }
-      })
-
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+    "notify requester when all tasks for a fileGroupId are complete" in new JobQueueContext {
+      ActAsImmediateJobCompleter(worker)
+      submitJob
+      
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
       expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
 
-
     "handle cancellations" in {
       todo
     }
 
+    abstract class JobQueueContext extends ActorSystemContext with Before {
+      protected val documentSetId = 1l
+      protected val fileGroupId = 2l
+      protected val numberOfUploadedFiles = 10
+      protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
+
+      protected var fileGroupJobQueue: TestActorRef[TestFileGroupJobQueue] = _
+      protected var worker: TestProbe = _
+
+      def before = {
+        val x = system
+        fileGroupJobQueue = TestActorRef(new TestFileGroupJobQueue(uploadedFileIds))
+        worker = TestProbe()
+      }
+
+      protected def createNWorkers(numberOfWorkers: Int): Seq[WorkerTestProbe] = 
+        Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
+
+        protected def submitJob =
+          fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+    }
+
+    class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem) 
+    extends TestProbe(actorSystem) {
+      def expectTask(uploadedFileId: Long) = {
+        expectMsg(TaskAvailable)
+        reply(ReadyForTask)
+
+        expectMsg(Task(documentSetId, fileGroupId, uploadedFileId))
+      }
+    }
+    
+    class ImmediateJobCompleter(worker: ActorRef) extends TestActor.AutoPilot {
+      def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
+        message match {
+          case TaskAvailable => sender.tell(ReadyForTask, worker)
+          case Task(ds, fg, uf) => {
+            sender.tell(TaskDone(fg, uf), worker)
+            sender.tell(ReadyForTask, worker)
+          }
+        }
+        TestActor.KeepRunning
+      }
+    }
+
+    object ActAsImmediateJobCompleter {
+      def apply(probe: TestProbe): TestProbe = {
+        probe.setAutoPilot(new ImmediateJobCompleter(probe.ref))
+        probe
+      }
+    }
   }
 }
