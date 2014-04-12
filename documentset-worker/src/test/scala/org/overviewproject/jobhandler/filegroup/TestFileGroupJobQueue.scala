@@ -1,5 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
+import akka.actor.Props
+
 class TestFileGroupJobQueue(tasks: Seq[Long]) extends FileGroupJobQueue {
 
   class TestStorage extends Storage {
@@ -7,5 +9,9 @@ class TestFileGroupJobQueue(tasks: Seq[Long]) extends FileGroupJobQueue {
   }
 
   override protected val storage = new TestStorage
+}
+
+object TestFileGroupJobQueue {
+  def apply(tasks: Seq[Long]): Props = Props(new TestFileGroupJobQueue(tasks)) 
 }
 

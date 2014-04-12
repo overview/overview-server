@@ -65,12 +65,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected val numberOfUploadedFiles = 10
       protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
 
-      protected var fileGroupJobQueue: TestActorRef[TestFileGroupJobQueue] = _
+      protected var fileGroupJobQueue: ActorRef = _
       protected var worker: TestProbe = _
 
       def before = {
-        val x = system
-        fileGroupJobQueue = TestActorRef(new TestFileGroupJobQueue(uploadedFileIds))
+        fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds))
         worker = TestProbe()
       }
 
