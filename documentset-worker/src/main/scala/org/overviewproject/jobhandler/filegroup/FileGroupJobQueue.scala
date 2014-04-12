@@ -29,12 +29,12 @@ trait FileGroupJobQueue extends Actor {
 
   private case class AddTasks(tasks: Iterable[Task])
   private case class JobRequest(requester: ActorRef, documentSetId: Long)
-  
+
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[Task] = mutable.Queue.empty
   private val jobTasks: mutable.Map[Long, Set[Long]] = mutable.Map.empty
   private val jobRequests: mutable.Map[Long, JobRequest] = mutable.Map.empty
-  
+
   def receive = {
     case RegisterWorker(worker) => {
       workerPool += worker
@@ -42,11 +42,9 @@ trait FileGroupJobQueue extends Actor {
 
     }
     case CreateDocumentsFromFileGroup(fileGroupId, documentSetId) => {
-      val fileIds = storage.uploadedFileIds(fileGroupId).toSeq
-      val newTasks = fileIds.map(Task(documentSetId, fileGroupId, _))
-      taskQueue ++= newTasks
-      
-      jobTasks += (fileGroupId -> fileIds.toSet)
+      val fileIds = uploadedFilesInFileGroup(fileGroupId)
+
+      addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
       jobRequests += (fileGroupId -> JobRequest(sender, documentSetId))
 
       workerPool.map(_ ! TaskAvailable)
@@ -57,22 +55,36 @@ trait FileGroupJobQueue extends Actor {
         sender ! task
       }
     }
-    case TaskDone(fileGroupId: Long, uploadedFileId: Long) => {
-      for {
-        tasks <- jobTasks.get(fileGroupId)
-        request <- jobRequests.get(fileGroupId)
-        remainingTasks = tasks - uploadedFileId
-      } if (remainingTasks.isEmpty) {
-    	jobTasks -= fileGroupId
-    	jobRequests -= fileGroupId
-    	
-    	request.requester ! FileGroupDocumentsCreated(request.documentSetId)
+    case TaskDone(fileGroupId: Long, uploadedFileId: Long) => 
+      whenTaskIsComplete(fileGroupId, uploadedFileId) {
+        notifyRequesterIfJobIsDone
       }
-      else {
-    	jobTasks += (fileGroupId -> remainingTasks)
-      }
-    }
 
   }
+
+  private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId).toSet
+
+  private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
+    val newTasks = uploadedFileIds.map(Task(documentSetId, fileGroupId, _))
+    taskQueue ++= newTasks
+    jobTasks += (fileGroupId -> uploadedFileIds)
+  }
+
+  private def whenTaskIsComplete(fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Set[Long]) => Unit) =
+    for {
+      tasks <- jobTasks.get(fileGroupId)
+      request <- jobRequests.get(fileGroupId)
+      remainingTasks = tasks - uploadedFileId
+    } f(request, fileGroupId, remainingTasks)
+
+  private def notifyRequesterIfJobIsDone(request: JobRequest, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
+    if (remainingTasks.isEmpty) {
+      jobTasks -= fileGroupId
+      jobRequests -= fileGroupId
+
+      request.requester ! FileGroupDocumentsCreated(request.documentSetId)
+    } else {
+      jobTasks += (fileGroupId -> remainingTasks)
+    }
 
 }

@@ -17,7 +17,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
     "notify registered workers when tasks becomes available" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      
+
       submitJob
 
       worker.expectMsg(TaskAvailable)
@@ -28,9 +28,8 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
       submitJob
-
-      for ((w, f) <- workers.zip(uploadedFileIds))
-        yield w.expectTask(f)
+      val receivedTasks = expectTasks(workers)
+      mustMatchUploadedFileIds(receivedTasks, uploadedFileIds)
     }
 
     "notify worker if tasks are available when it registers" in new JobQueueContext {
@@ -50,7 +49,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     "notify requester when all tasks for a fileGroupId are complete" in new JobQueueContext {
       ActAsImmediateJobCompleter(worker)
       submitJob
-      
+
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
       expectMsg(FileGroupDocumentsCreated(documentSetId))
@@ -75,23 +74,28 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         worker = TestProbe()
       }
 
-      protected def createNWorkers(numberOfWorkers: Int): Seq[WorkerTestProbe] = 
+      protected def createNWorkers(numberOfWorkers: Int): Seq[WorkerTestProbe] =
         Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
 
-        protected def submitJob =
-          fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+      protected def submitJob =
+        fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+
+      protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
+      
+      protected def mustMatchUploadedFileIds(tasks: Seq[Task], uploadedFileIds: Seq[Long]) =
+    		  tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)        
     }
 
-    class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem) 
-    extends TestProbe(actorSystem) {
-      def expectTask(uploadedFileId: Long) = {
+    class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem)
+        extends TestProbe(actorSystem) {
+      def expectATask = {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
 
-        expectMsg(Task(documentSetId, fileGroupId, uploadedFileId))
+        expectMsgClass(classOf[Task])
       }
     }
-    
+
     class ImmediateJobCompleter(worker: ActorRef) extends TestActor.AutoPilot {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
