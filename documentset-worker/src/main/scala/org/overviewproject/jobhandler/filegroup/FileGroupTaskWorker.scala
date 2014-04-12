@@ -10,19 +10,22 @@ trait FileGroupTaskWorker extends Actor {
   
   protected val jobQueuePath: String
 
+  private val JobQueueId: String = "Job Queue"
+  private val RetryInterval: FiniteDuration = 1 second
+  
   private val jobQueueSelection = context.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
   
   lookForJobQueue
 
   def receive = {
-    case ActorIdentity(_, Some(jq)) => { 
+    case ActorIdentity(JobQueueId, Some(jq)) => { 
       jobQueue = jq
       jobQueue ! RegisterWorker(self)
     }
-    case ActorIdentity(_, None) => 
-      system.scheduler.scheduleOnce(1000 millis) { lookForJobQueue }
+    case ActorIdentity(JobQueueId, None) => 
+      system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
   }
   
-  private def lookForJobQueue = jobQueueSelection ! Identify(None)
+  private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
 }
