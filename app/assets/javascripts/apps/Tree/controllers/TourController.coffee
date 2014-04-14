@@ -29,6 +29,12 @@ define [
       title: t('tags.title')
       bodyHtml: t('tags.body_html')
     }
+    {
+      find: '#Intercom'
+      placement: 'auto bottom'
+      title: t('contact.title')
+      bodyHtml: t('contact.body_html')
+    }
   ]
 
   ->

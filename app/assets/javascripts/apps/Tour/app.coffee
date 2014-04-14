@@ -21,7 +21,9 @@ define [
   #
   #   done = app.donePromise() # resolved when user is done
   class TourApp
-    constructor: (@tour) ->
+    constructor: (tour) ->
+      @tour = @_parseTour(tour)
+
       @_doneDeferred = vow.defer()
       @_donePromise = @_doneDeferred
         .promise()
@@ -50,13 +52,28 @@ define [
     _disableTooltipsOnServer: ->
       vow.when($.ajax(type: 'DELETE', url: DoneUrl))
 
+    _parseTour: (input) ->
+      outputPlusNull = for item in input
+        throw 'Must supply `find`, a jQuery selector' if !item.find?
+        throw 'Must supply `title`, a String' if !item.title?
+        throw 'Must supply `bodyHtml`, an HTML String' if !item.bodyHtml?
+
+        el = $(item.find).get(0)
+
+        if el
+          el: el
+          title: item.title
+          bodyHtml: item.bodyHtml
+          placement: item.placement
+        else
+          null
+
+      for item in outputPlusNull when item?
+        item
+
     # Returns a jQuery object representing the thing _being_ popped over
     _buildPopover: ->
       options = @tour[@step]
-
-      throw 'Must supply `find`, a jQuery selector' if !options.find?
-      throw 'Must supply `title`, a String' if !options.title?
-      throw 'Must supply `bodyHtml`, an HTML String' if !options.bodyHtml?
 
       html = @template
         html: options.bodyHtml
@@ -66,7 +83,7 @@ define [
         nSteps: @tour.length
         t: t
 
-      $el = $(options.find)
+      $el = $(options.el)
         .popover
           html: true
           placement: 'auto'

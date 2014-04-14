@@ -157,3 +157,22 @@ define [
           _.defer ->
             expect(spy).toHaveBeenCalled()
             done()
+
+    describe 'when an element is missing', ->
+      beforeEach ->
+        @app.remove()
+        @$html.appendTo('body')
+        @$html.find('.p2').remove()
+        @app = new TourApp(tour)
+
+      it 'should set the proper tip total', -> expect($('.popover.in .tip-number')).toContainText('tipNumber,1,2')
+
+      describe 'after clicking next', ->
+        beforeEach ->
+          $('.popover.in a.next').click()
+
+        it 'should set the proper tip number', -> expect($('.popover.in .tip-number')).toContainText('tipNumber,2,2')
+        it 'should show the done button', -> expect($('.popover.in a.done')).toBeVisible()
+        it 'should show the proper tip', ->
+          expect($('.popover.in .popover-title')).toContainText('title3')
+          expect($('.popover.in .popover-content')).toContainText('html3')
