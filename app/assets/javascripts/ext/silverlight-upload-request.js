@@ -1,1 +1,0 @@
-../../../../ext/silverlight/file-upload/silverlight-upload-request.js
