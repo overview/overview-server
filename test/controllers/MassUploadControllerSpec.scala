@@ -1,11 +1,6 @@
 package controllers
 
-import controllers.auth.AuthorizedRequest
 import java.util.UUID
-import models.orm.User
-import models.OverviewUser
-import org.overviewproject.tree.orm.FileGroup
-import org.overviewproject.tree.orm.GroupedFileUpload
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
@@ -17,7 +12,12 @@ import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
 import play.api.test.Helpers._
 import scala.concurrent.Future
 
+import controllers.auth.AuthorizedRequest
+import models.OverviewUser
+import models.orm.{Session, User}
 import org.overviewproject.tree.orm.DocumentSet
+import org.overviewproject.tree.orm.FileGroup
+import org.overviewproject.tree.orm.GroupedFileUpload
 
 class MassUploadControllerSpec extends Specification with Mockito {
 
@@ -130,7 +130,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
     trait CreateRequest extends UploadContext {
       override def executeRequest = {
         val baseRequest = FakeRequest[GroupedFileUpload]("POST", s"/files/$guid", FakeHeaders(), foundUpload.get)
-        val request = new AuthorizedRequest(baseRequest, user)
+        val request = new AuthorizedRequest(baseRequest, Session(user.id, "127.0.0.1"), user.toUser)
 
         controller.create(guid)(request)
       }
@@ -146,7 +146,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
     trait ShowRequest extends UploadContext {
       override def executeRequest = {
-        val request = new AuthorizedRequest(FakeRequest(), user)
+        val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
 
         controller.show(guid)(request)
       }
@@ -194,7 +194,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
      val documentSetId = 11l
 
       override def executeRequest = {
-        val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), user)
+        val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user.toUser)
         controller.startClustering(request)
       }
       

@@ -3,12 +3,14 @@ package controllers
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.{Fragments, Step}
-import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, Headers, Request}
+import play.api.libs.json.JsValue
+import play.api.mvc.{AnyContent, AnyContentAsFormUrlEncoded, AnyContentAsJson, Headers, Request}
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import play.api.Play.{start,stop}
 
 import controllers.auth.{AuthorizedRequest, OptionallyAuthorizedRequest}
 import models.OverviewUser
+import models.orm.{Session, User}
 
 /** A test environment for controllers.
   */
@@ -17,9 +19,10 @@ trait ControllerSpecification extends Specification with Mockito {
     Step(start(FakeApplication())) ^ super.map(fs) ^ Step(stop)
   }
 
-  class AugmentedRequest[T, A <: Request[T], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
+  class AugmentedRequest[T, A <: Request[T], AWithJsonBody <: Request[AnyContentAsJson], AWithFormBody <: Request[AnyContentAsFormUrlEncoded]](
     request: A,
     ctor: (FakeRequest[T] => A),
+    ctorWithJsonBody: (FakeRequest[AnyContentAsJson]) => AWithJsonBody,
     ctorWithFormBody: (FakeRequest[AnyContentAsFormUrlEncoded]) => AWithFormBody
   ) {
 
@@ -38,9 +41,24 @@ trait ControllerSpecification extends Specification with Mockito {
       tags=request.tags
     )
 
+    def withHeaders(data: (String,String)*) : A = {
+      val fake = toFakeRequest.withHeaders(data: _*)
+      ctor(fake)
+    }
+
+    def withSession(data: (String,String)*) : A = {
+      val fake = toFakeRequest.withSession(data: _*)
+      ctor(fake)
+    }
+
     def withFlash(data: (String,String)*) : A = {
       val fake = toFakeRequest.withFlash(data: _*)
       ctor(fake)
+    }
+
+    def withJsonBody(json: JsValue) : AWithJsonBody = {
+      val fake = toFakeRequest.withJsonBody(json)
+      ctorWithJsonBody(fake)
     }
 
     def withFormUrlEncodedBody(data: (String,String)*) : AWithFormBody = {
@@ -49,27 +67,38 @@ trait ControllerSpecification extends Specification with Mockito {
     }
   }
 
-  implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsFormUrlEncoded]](
+  implicit def augmentRequest[T](r: AuthorizedRequest[T]) = new AugmentedRequest[T, AuthorizedRequest[T], AuthorizedRequest[AnyContentAsJson], AuthorizedRequest[AnyContentAsFormUrlEncoded]](
     r,
-    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user),
-    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.user)
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser),
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser),
+    (fakeRequest) => new AuthorizedRequest(fakeRequest, r.userSession, r.user.toUser)
   )
-  implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](
+  implicit def augmentRequest[T](r: OptionallyAuthorizedRequest[T]) = new AugmentedRequest[T, OptionallyAuthorizedRequest[T], OptionallyAuthorizedRequest[AnyContentAsJson], OptionallyAuthorizedRequest[AnyContentAsFormUrlEncoded]](
     r,
-    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user),
-    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.user)
+    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.sessionAndUser),
+    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.sessionAndUser),
+    (fakeRequest) => new OptionallyAuthorizedRequest(fakeRequest, r.sessionAndUser)
   )
 
   def fakeUser : OverviewUser = {
-    val ret = mock[OverviewUser]
-    ret.email returns "user@example.org"
-    ret.isAdministrator returns false
-    ret
+    val user = User(id=2L, email="user@example.org")
+    OverviewUser(user)
   }
   def fakeRequest = FakeRequest()
-  def fakeAuthorizedRequest(user: OverviewUser) : AuthorizedRequest[AnyContent] = new AuthorizedRequest(fakeRequest, user)
+  def fakeAuthorizedRequest(user: OverviewUser) : AuthorizedRequest[AnyContent] = {
+    new AuthorizedRequest(
+      fakeRequest,
+      Session(user.id, "127.0.0.1"),
+      user.toUser
+    )
+  }
   def fakeAuthorizedRequest() : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest(fakeUser)
-  def fakeOptionallyAuthorizedRequest(user: Option[OverviewUser]) = new OptionallyAuthorizedRequest(fakeRequest, user)
+  def fakeOptionallyAuthorizedRequest(user: Option[OverviewUser]) = {
+    new OptionallyAuthorizedRequest(
+      fakeRequest,
+      user.map((u: OverviewUser) => (Session(u.id, "127.0.0.1"), u.toUser))
+    )
+  }
 
   implicit val timeout = akka.util.Timeout(999999)
 

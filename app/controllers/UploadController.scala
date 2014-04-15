@@ -10,13 +10,13 @@ import scala.concurrent.Future
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, DocumentSetUser }
 import controllers.auth.Authorities.anyUser
-import controllers.auth.{ AuthorizedAction, Authority, UserFactory }
+import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser, Authority, SessionFactory }
 import controllers.forms.UploadControllerForm
 import controllers.util.{ FileUploadIteratee, PgConnection, TransactionAction }
-import models.orm.User
+import models.orm.{Session, User}
 import models.orm.finders.UserFinder
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.{ OverviewDatabase, OverviewUser }
+import models.OverviewDatabase
 import models.upload.OverviewUpload
 
 /**
@@ -25,17 +25,6 @@ import models.upload.OverviewUpload
  * in FileUploadIteratee.
  */
 trait UploadController extends Controller {
-  // authorizedBodyParser doesn't belong here.
-  // Should move into BaseController and/or TransactionAction, but it's not
-  // clear how, since the usage here flips the dependency
-  def authorizedBodyParser[A](authority: Authority)(f: OverviewUser => BodyParser[A]) = parse.using { implicit request =>
-    val user: Either[SimpleResult, OverviewUser] = OverviewDatabase.inTransaction { UserFactory.loadUser(request, authority) }
-    user match {
-      case Left(e) => parse.error(Future(e))
-      case Right(user) => f(user)
-    }
-  }
-
   /**
    * Handle file upload.
    */
@@ -97,9 +86,9 @@ trait UploadController extends Controller {
   }
 
   /** Gets the guid and user info to the body parser handling the file upload */
-  def authorizedFileUploadBodyParser(guid: UUID) = authorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
+  def authorizedFileUploadBodyParser(guid: UUID) = AuthorizedBodyParser(anyUser) { user => fileUploadBodyParser(user, guid) }
 
-  def fileUploadBodyParser(user: OverviewUser, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
+  def fileUploadBodyParser(user: User, guid: UUID): BodyParser[OverviewUpload] = BodyParser("File upload") { request =>
     fileUploadIteratee(user.id, guid, request)
   }
 

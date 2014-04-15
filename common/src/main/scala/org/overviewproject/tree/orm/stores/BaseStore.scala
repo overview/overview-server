@@ -25,6 +25,11 @@ class BaseStore[A](protected val table: Table[A]) {
     table.delete(query)
   }
 
+  /** Deletes the object by the given key.
+    *
+    * Warning: you _must_ import org.overviewproject.postgres.SquerylEntrypoint._
+    * before calling this method, or it will not compile.
+    */
   def delete[K](k: K)(implicit ked: KeyedEntityDef[A,K]) : Unit = {
     table.delete(k)
   }

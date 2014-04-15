@@ -2,7 +2,6 @@ package models.orm
 
 import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.NodeDocument
 
 object Schema extends org.squeryl.Schema {
   override def columnNameFromPropertyName(propertyName: String) =
@@ -28,11 +27,8 @@ object Schema extends org.squeryl.Schema {
   val uploadedFiles = table[UploadedFile]
   val uploads = table[Upload]
   val users = table[User]
+  val sessions = table[Session]
   val files = table[File]
   val trees = table[Tree]
   val documentSetCreationJobTrees = table[DocumentSetCreationJobTree]
-
-  on(documents)(d => declare(d.id is (primaryKey)))
-  on(nodes)(n => declare(n.id is (primaryKey)))
-  on(trees)(t => declare(t.id is (primaryKey)))
 }

@@ -27,10 +27,6 @@ trait OverviewUser {
   val email: String
   val requestedEmailSubscription: Boolean
 
-  val currentSignInAt: Option[Date]
-  val currentSignInIp: Option[String]
-  val lastSignInAt: Option[Date]
-  val lastSignInIp: Option[String]
   val lastActivityAt: Option[Date]
   val lastActivityIp: Option[String]
   val treeTooltipsEnabled: Boolean
@@ -45,9 +41,6 @@ trait OverviewUser {
 
   /** @return The same user, with a new reset-password token. Save to commit. */
   def withResetPasswordRequest: OverviewUser with ResetPasswordRequest
-
-  /** @return The same user, with new lastSignIn(At|Ip) */
-  def withLoginRecorded(ip: String, date: Date): OverviewUser
 
   /** @return The same user, with new lastActivity(At|Ip) */
   def withActivityRecorded(ip: String, date: Date): OverviewUser
@@ -235,10 +228,6 @@ object OverviewUser {
     override val id = user.id
     override val email = user.email
     override val requestedEmailSubscription = user.emailSubscriber
-    override val currentSignInAt = user.currentSignInAt
-    override val currentSignInIp = user.currentSignInIp
-    override val lastSignInAt = user.lastSignInAt
-    override val lastSignInIp = user.lastSignInIp
     override val lastActivityAt = user.lastActivityAt
     override val lastActivityIp = user.lastActivityIp
     override val treeTooltipsEnabled = user.treeTooltipsEnabled
@@ -260,14 +249,6 @@ object OverviewUser {
 
     def asConfirmed: Option[OverviewUser with Confirmation] = {
       user.confirmedAt.map(d => new ConfirmedUser(user, d))
-    }
-
-    override def withLoginRecorded(ip: String, date: java.util.Date): OverviewUser = {
-      new OverviewUserImpl(user.copy(
-        lastSignInAt = user.currentSignInAt,
-        lastSignInIp = user.currentSignInIp,
-        currentSignInAt = Some(new java.sql.Timestamp(date.getTime())),
-        currentSignInIp = Some(ip)))
     }
 
     override def withActivityRecorded(ip: String, date: java.util.Date): OverviewUser = {

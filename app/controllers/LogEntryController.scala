@@ -1,23 +1,24 @@
 package controllers
 
-import scala.collection.JavaConversions._
+import au.com.bytecode.opencsv.CSVWriter
 import java.io.StringWriter
 import java.sql.Timestamp
-import play.api.libs.json._
-import play.api.data.{Form,FormError}
-import play.api.data.Forms._
-import play.api.mvc.{Action,BodyParsers,Controller,Request,AnyContent}
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-import org.overviewproject.tree.orm.{ DocumentSet, LogEntry }
-import org.overviewproject.tree.orm.finders.ResultPage
-import au.com.bytecode.opencsv.CSVWriter
+import play.api.data.{Form,FormError}
+import play.api.data.Forms._
+import play.api.libs.json._
+import play.api.mvc.{Action,BodyParsers,Controller,Request,AnyContent}
+import scala.collection.JavaConversions._
+
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.userOwningDocumentSet
 import models.{ OverviewDatabase, OverviewUser }
 import models.orm.{ User }
 import models.orm.finders.{ DocumentSetFinder, LogEntryFinder }
 import models.orm.stores.LogEntryStore
+import org.overviewproject.tree.orm.{ DocumentSet, LogEntry }
+import org.overviewproject.tree.orm.finders.ResultPage
 
 trait LogEntryController extends Controller {
   trait Storage {

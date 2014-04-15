@@ -6,8 +6,8 @@ import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import controllers.forms.admin.{NewUserForm, EditUserForm}
 import models.orm.User
-import models.orm.finders.{ UserFinder, DocumentSetUserFinder }
-import models.orm.stores.UserStore
+import models.orm.finders.{ UserFinder, SessionFinder, DocumentSetUserFinder }
+import models.orm.stores.{SessionStore, UserStore}
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm.finders.ResultPage
 
@@ -94,6 +94,7 @@ object UserController extends UserController {
     override def storeUser(user: User) = UserStore.insertOrUpdate(user)
     override def deleteUser(user: User) = {
       import org.overviewproject.postgres.SquerylEntrypoint._
+      SessionStore.delete(SessionFinder.byUserId(user.id).toQuery)
       UserStore.delete(user.id)
     }
     override def countDocumentSetsForEmail(email: String) = {

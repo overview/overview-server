@@ -1,18 +1,25 @@
 package controllers
 
-import java.sql.Connection
 import play.api.mvc.{AnyContent,Controller,Request}
 
 import controllers.auth.{OptionallyAuthorizedAction,AuthResults}
 import controllers.auth.Authorities.anyUser
 import controllers.util.TransactionAction
-import models.OverviewUser
+import models.orm.Session
+import models.orm.stores.SessionStore
 
-object SessionController extends Controller {
+trait SessionController extends Controller {
   val loginForm = controllers.forms.LoginForm()
   val registrationForm = controllers.forms.UserForm()
 
   private val m = views.Magic.scopedMessages("controllers.SessionController")
+
+  trait Storage {
+    def createSession(session: Session) : Unit
+    def deleteSession(session: Session) : Unit
+  }
+
+  protected val storage : SessionController.Storage
 
   def new_() = OptionallyAuthorizedAction(anyUser) { implicit request =>
     request.user match {
@@ -21,7 +28,8 @@ object SessionController extends Controller {
     }
   }
 
-  def delete = TransactionAction { implicit request =>
+  def delete = OptionallyAuthorizedAction(anyUser) { implicit request =>
+    request.userSession.foreach(storage.deleteSession)
     AuthResults.logoutSucceeded(request).flashing(
       "success" -> m("delete.success"),
       "event" -> "session-delete"
@@ -32,11 +40,24 @@ object SessionController extends Controller {
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(views.html.Session.new_(formWithErrors, registrationForm)),
       user => {
-        val recordedUser = user.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
-        AuthResults.loginSucceeded(request, user).flashing(
+        val session = Session(user.id, request.remoteAddress)
+        storage.createSession(session)
+        AuthResults.loginSucceeded(request, session).flashing(
           "event" -> "session-create"
         )
       }
     )
   }
+}
+
+object SessionController extends SessionController {
+  object DatabaseStorage extends Storage {
+    override def createSession(session: Session) = SessionStore.insertOrUpdate(session)
+    override def deleteSession(session: Session) = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+      SessionStore.delete(session.id)
+    }
+  }
+
+  override val storage = DatabaseStorage
 }

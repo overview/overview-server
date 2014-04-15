@@ -1,9 +1,9 @@
 package controllers.auth
 
-import play.api.mvc._
+import play.api.mvc.{ ActionBuilder, Request, SimpleResult }
 import scala.concurrent.Future
 
-import models.{OverviewDatabase,OverviewUser}
+import models.OverviewDatabase
 
 object OptionallyAuthorizedAction {
   def apply(authority: Authority) : ActionBuilder[OptionallyAuthorizedRequest] = {
@@ -20,8 +20,9 @@ object OptionallyAuthorizedAction {
           if (request.isInstanceOf[OptionallyAuthorizedRequest[_]]) {
             block(request.asInstanceOf[OptionallyAuthorizedRequest[A]])
           } else {
-            val maybeUser = UserFactory.loadUser(request, authority).right.toOption
-            block(new OptionallyAuthorizedRequest(request, maybeUser))
+            val maybeSessionAndUser = SessionFactory.loadAuthorizedSession(request, authority).right.toOption
+            val newRequest = new OptionallyAuthorizedRequest(request, maybeSessionAndUser)
+            block(newRequest)
           }
         }
       }

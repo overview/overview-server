@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import controllers.auth.AuthorizedRequest
 import models.upload.{OverviewUpload,OverviewUploadedFile}
 import models.OverviewUser
-import models.orm.User
+import models.orm.{Session,User}
 
 @RunWith(classOf[JUnitRunner])
 class UploadControllerSpec extends Specification with Mockito {
@@ -65,7 +65,7 @@ class UploadControllerSpec extends Specification with Mockito {
   trait HeadRequest extends UploadContext[AnyContent] {
     val user = OverviewUser(User(1l))
     val controller = new TestUploadController(Option(upload))
-    val request = new AuthorizedRequest(FakeRequest(), user)
+    val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
     val result = controller.show(guid)(request)
   }
 
@@ -74,8 +74,11 @@ class UploadControllerSpec extends Specification with Mockito {
     val controller = new TestUploadController(Option(upload))
     val lang = "sv"
     val stopWords = "some stop words"
-    val request = new AuthorizedRequest(FakeRequest()
-        .withFormUrlEncodedBody(("lang" -> lang), ("supplied_stop_words" -> stopWords)), user)
+    val request = new AuthorizedRequest(
+      FakeRequest().withFormUrlEncodedBody(("lang" -> lang), ("supplied_stop_words" -> stopWords)),
+      Session(user.id, "127.0.0.1"),
+      user.toUser
+    )
 
     val result = controller.startClustering(guid)(request)
   }

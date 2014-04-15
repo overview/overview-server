@@ -1,14 +1,13 @@
 package controllers
 
-import java.sql.Connection
-import play.api.data.Form
-import play.api.data.Forms.{nonEmptyText, mapping, text, tuple}
 import play.api.Logger
-import play.api.mvc.{Action,AnyContent, Controller, Request}
+import play.api.mvc.Controller
+
 import controllers.auth.AuthResults
 import controllers.util.TransactionAction
-import models.{ MailChimp, OverviewUser }
-
+import models.MailChimp
+import models.orm.Session
+import models.orm.stores.SessionStore
 
 object ConfirmationController extends Controller {
   private val m = views.Magic.scopedMessages("controllers.ConfirmationController")
@@ -33,10 +32,13 @@ object ConfirmationController extends Controller {
         }
       },
       u => {
-        u.confirm.withLoginRecorded(request.remoteAddress, new java.util.Date()).save
+        val savedUser = u.confirm.save
+        val session = Session(savedUser.id, request.remoteAddress)
+        SessionStore.insertOrUpdate(session)
+
         if (u.requestedEmailSubscription) MailChimp.subscribe(u.email).getOrElse(Logger.info(s"Did not attempt requested subscription for ${u.email}"))
         
-        AuthResults.loginSucceeded(request, u).flashing(
+        AuthResults.loginSucceeded(request, session).flashing(
           "success" -> m("show.success"),
           "event" -> "confirmation-update"
         )
@@ -44,4 +46,3 @@ object ConfirmationController extends Controller {
     )
   }
 }
-

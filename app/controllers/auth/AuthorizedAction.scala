@@ -1,10 +1,12 @@
 package controllers.auth
 
+import java.util.Date
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 import scala.concurrent.Future
 
-import models.{OverviewDatabase,OverviewUser}
+import models.{OverviewDatabase, OverviewUser}
+import models.orm.stores.SessionStore
 
 object AuthorizedAction {
   def apply(authority: Authority) : ActionBuilder[AuthorizedRequest] = {
@@ -21,9 +23,14 @@ object AuthorizedAction {
           if (request.isInstanceOf[AuthorizedRequest[_]]) {
             block(request.asInstanceOf[AuthorizedRequest[A]])
           } else {
-            UserFactory.loadUser(request, authority) match {
+            SessionFactory.loadAuthorizedSession(request, authority) match {
               case Left(plainResult) => Future(plainResult)
-              case Right(user) => block(new AuthorizedRequest(request, user))
+              case Right((session,user)) => {
+                OverviewUser(user).withActivityRecorded(request.remoteAddress, new Date()).save
+                val updatedSession = session.update(request.remoteAddress)
+                SessionStore.insertOrUpdate(updatedSession)
+                block(new AuthorizedRequest(request, updatedSession, user))
+              }
             }
           }
         }

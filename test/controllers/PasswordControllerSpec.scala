@@ -5,7 +5,7 @@ import org.specs2.specification.Scope
 import play.api.mvc.RequestHeader
 
 import models.{OverviewUser, ResetPasswordRequest}
-import controllers.auth.OptionallyAuthorizedRequest
+import models.orm.Session
 
 class PasswordControllerSpec extends ControllerSpecification {
   trait OurScope extends Scope {
@@ -15,7 +15,6 @@ class PasswordControllerSpec extends ControllerSpecification {
     val user = mock[OverviewUser]
     user.email returns "user@example.org"
     user.passwordMatches("hash") returns true
-    user.withLoginRecorded(anyString, any[Date]) returns user
     user.save returns user
 
     val userWithRequest = mock[UserWithRequest]
@@ -33,6 +32,7 @@ class PasswordControllerSpec extends ControllerSpecification {
     mockStorage.findUserByEmail("user@example.org") returns Some(user)
     mockStorage.findUserByResetToken(any[String]) returns None
     mockStorage.findUserByResetToken("0123456789abcd") returns Some(userWithRequest)
+    mockStorage.insertOrUpdateSession(any[Session]) answers { x => x.asInstanceOf[Session] }
 
     val controller = new PasswordController {
       override val storage = mockStorage
@@ -48,7 +48,7 @@ class PasswordControllerSpec extends ControllerSpecification {
       }
 
       "redirect when the user is logged in" in new NewScope {
-        override def request = fakeOptionallyAuthorizedRequest(Some(user))
+        override def request = fakeOptionallyAuthorizedRequest(Some(fakeUser))
         h.status(result) must beEqualTo(h.SEE_OTHER)
       }
 
@@ -65,7 +65,7 @@ class PasswordControllerSpec extends ControllerSpecification {
       }
 
       "redirect when the user is logged in" in new EditScope {
-        override def request = fakeOptionallyAuthorizedRequest(Some(user))
+        override def request = fakeOptionallyAuthorizedRequest(Some(fakeUser))
         h.status(result) must beEqualTo(h.SEE_OTHER)
       }
 
@@ -176,12 +176,8 @@ class PasswordControllerSpec extends ControllerSpecification {
       }
 
       "log the user in" in new UpdateScope {
-        h.session(result).get("AUTH_USER_ID") must beSome
-      }
-
-      "log that the user logged in" in new UpdateScope {
-        h.status(result) // run
-        there was one(user).withLoginRecorded(any[String], any[Date])
+        h.session(result).get("AUTH_SESSION_ID") must beSome
+        there was one(mockStorage).insertOrUpdateSession(any[Session])
       }
 
       "redirect" in new UpdateScope {

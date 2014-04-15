@@ -1,36 +1,29 @@
 package controllers
 
 import au.com.bytecode.opencsv.CSVReader
+import controllers.auth.AuthorizedRequest
 import java.io.StringReader
 import java.sql.Timestamp
 import org.joda.time.{DateTime,DateTimeZone}
 import org.joda.time.format.ISODateTimeFormat
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
+import play.api.test.{FakeRequest,FakeHeaders}
 import play.api.libs.json._
-import play.api.mvc.{ AnyContent, AnyContentAsJson, Request }
-import play.api.Play.{ start, stop }
-import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
-import play.api.test.Helpers._
-import org.overviewproject.tree.orm.DocumentSet
-import controllers.auth.AuthorizedRequest
-import models.orm.{ User }
-import org.overviewproject.tree.orm.LogEntry
-import org.overviewproject.tree.orm.finders.ResultPage
+
+import models.orm.{ Session, User }
 import models.OverviewUser
+import org.overviewproject.tree.orm.DocumentSet
+import org.overviewproject.tree.orm.finders.ResultPage
+import org.overviewproject.tree.orm.LogEntry
 
-class LogEntryControllerSpec extends Specification with Mockito {
+class LogEntryControllerSpec extends ControllerSpecification {
   import helpers.DbTestContext
-
-  step(start(FakeApplication()))
 
   trait BaseScope extends Scope {
     val mockStorage = mock[LogEntryController.Storage]
     val controller = new LogEntryController {
       override val storage = mockStorage
     }
-    val user = mock[OverviewUser].smart
     val documentSetId = 1L
   }
 
@@ -44,25 +37,28 @@ class LogEntryControllerSpec extends Specification with Mockito {
       ))))
 
       def json : JsValue = validJson
+      //def request = fakeAuthorizedRequest.withJsonBody(json)
+      // sorry for the mess -- the above line led to compiler hell, not sure why
+      val user = fakeUser
       def fakeRequest = FakeRequest("POST", "/", FakeHeaders(Seq("Content-Type" -> Seq("application/json"))), json)
-      def request = new AuthorizedRequest(fakeRequest, user)
+      def request = new AuthorizedRequest(fakeRequest, Session(user.id, "127.0.0.1"), user.toUser)
 
       lazy val response = controller.createMany(documentSetId)(request)
     }
 
     "do nothing with empty JSON array" in new AuthorizedCreateManyContext {
       override def json = JsArray()
-      status(response) must beEqualTo(OK)
+      h.status(response) must beEqualTo(h.OK)
     }
 
     "return a 400 error when not given a JSON array" in new AuthorizedCreateManyContext {
       override def json = JsString("foo")
-      status(response).must(equalTo(BAD_REQUEST))
+      h.status(response).must(equalTo(h.BAD_REQUEST))
     }
 
     "return a 400 error when a JSON array element isn't a JSON object" in new AuthorizedCreateManyContext {
       override def json = JsArray(Seq(JsString("foo")))
-      status(response).must(equalTo(BAD_REQUEST))
+      h.status(response).must(equalTo(h.BAD_REQUEST))
     }
 
     "return a 400 error when date isn't ISO-8601" in new AuthorizedCreateManyContext {
@@ -71,7 +67,7 @@ class LogEntryControllerSpec extends Specification with Mockito {
         "action" -> JsString("bar"),
         "date" -> JsString("2012-07-03 11:51:03.320-04:00")
       ))))
-      status(response).must(equalTo(BAD_REQUEST)) // There's no "T"
+      h.status(response).must(equalTo(h.BAD_REQUEST)) // There's no "T"
     }
 
     "return a 400 error when component isn't specified" in new AuthorizedCreateManyContext {
@@ -79,7 +75,7 @@ class LogEntryControllerSpec extends Specification with Mockito {
         "action" -> JsString("bar"),
         "date" -> JsString("2012-07-03T11:51:03.320-04:00")
       ))))
-      status(response).must(equalTo(BAD_REQUEST))
+      h.status(response).must(equalTo(h.BAD_REQUEST))
     }
 
     "return a 400 error when action isn't specified" in new AuthorizedCreateManyContext {
@@ -87,7 +83,7 @@ class LogEntryControllerSpec extends Specification with Mockito {
         "component" -> JsString("foo"),
         "date" -> JsString("2012-07-03T11:51:03.320-04:00")
       ))))
-      status(response).must(equalTo(BAD_REQUEST))
+      h.status(response).must(equalTo(h.BAD_REQUEST))
     }
 
     "not crash if an extraneous property is specified" in new AuthorizedCreateManyContext {
@@ -97,18 +93,18 @@ class LogEntryControllerSpec extends Specification with Mockito {
         "date" -> JsString("2012-07-03T11:51:03.320-04:00"),
         "baz" -> JsString("oops")
       ))))
-      status(response) must beEqualTo(OK)
+      h.status(response) must beEqualTo(h.OK)
     }
 
     "return OK with valid JSON" in new AuthorizedCreateManyContext {
-      status(response).must(equalTo(OK))
+      h.status(response).must(equalTo(h.OK))
     }
 
     "update the database with valid JSON" in new AuthorizedCreateManyContext {
       val expectedLogEntry = LogEntry(
         id=0L,
         documentSetId=documentSetId,
-        userId=0L,
+        userId=user.id,
         component="foo",
         action="bar",
         details="details",
@@ -152,8 +148,7 @@ class LogEntryControllerSpec extends Specification with Mockito {
       def extension = ".html"
       def documentSet : Option[DocumentSet] = Some(DocumentSet(id=documentSetId))
       def logEntries : Seq[(LogEntry,User)] = Seq()
-      def fakeRequest = FakeRequest("GET", "/")
-      def request = new AuthorizedRequest(fakeRequest, user)
+      def request = fakeAuthorizedRequest()
       val baseLogEntry = LogEntry(documentSetId=documentSetId, userId=0L,date=new Timestamp(scala.compat.Platform.currentTime), component="component")
       val baseUser = User()
 
@@ -164,34 +159,34 @@ class LogEntryControllerSpec extends Specification with Mockito {
 
     "return 404 when there is no DocumentSet" in new AuthorizedIndexTrait {
       override def documentSet = None
-      status(response).must(equalTo(NOT_FOUND))
+      h.status(response).must(equalTo(h.NOT_FOUND))
     }
 
     "return 200 when there is a DocumentSet" in new AuthorizedIndexTrait {
-      status(response).must(equalTo(OK))
+      h.status(response).must(equalTo(h.OK))
     }
 
     "return HTML data by default" in new AuthorizedIndexTrait {
       override def extension = ""
-      contentType(response).must(beSome("text/html"))
+      h.contentType(response).must(beSome("text/html"))
     }
 
     "return CSV data when called with CSV format" in new AuthorizedIndexTrait {
       override def extension = ".csv"
-      contentType(response).must(beSome("text/csv"))
+      h.contentType(response).must(beSome("text/csv"))
     }
 
     "return CSV data that quotes a quotation mark" in new AuthorizedIndexTrait {
       // opencsv ALWAYS writes quotes, and its escape character is another quote.
       override def logEntries = Seq((baseLogEntry.copy(details="de't\"ails"), baseUser))
       override def extension = ".csv"
-      contentAsString(response).must(contain("\"de't\"\"ails\""))
+      h.contentAsString(response).must(contain("\"de't\"\"ails\""))
     }
 
     "return CSV dates in ISO8601 format" in new AuthorizedIndexTrait {
       override def logEntries = Seq((baseLogEntry, baseUser))
       override def extension = ".csv"
-      val csv = new CSVReader(new StringReader(contentAsString(response)))
+      val csv = new CSVReader(new StringReader(h.contentAsString(response)))
       val row : Array[String] = csv.readAll.get(1)
       val dateString : String = row.head
       ISODateTimeFormat.dateTime.parseDateTime(dateString) must not(throwA[IllegalArgumentException])
@@ -199,9 +194,7 @@ class LogEntryControllerSpec extends Specification with Mockito {
 
     "show log entries in the HTML" in new AuthorizedIndexTrait {
       override def logEntries = Seq((baseLogEntry.copy(details="de't\"ails"), baseUser))
-      contentAsString(response).must(contain("de&#x27;t"))
+      h.contentAsString(response).must(contain("de&#x27;t"))
     }
   }
-
-  step(stop)
 }

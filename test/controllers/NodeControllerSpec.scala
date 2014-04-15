@@ -14,7 +14,7 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
     val controller = new NodeController {
       override val storage = mockStorage
     }
-    def postRequest = new AuthorizedRequest(fakeRequest.withFormUrlEncodedBody("description" -> "new description"), fakeUser)
+    def postRequest = fakeAuthorizedRequest.withFormUrlEncodedBody("description" -> "new description")
 
     def index(treeId: Long) = controller.index(treeId)(fakeAuthorizedRequest)
     def show(treeId: Long, nodeId: Long) = controller.show(treeId, nodeId)(fakeAuthorizedRequest)

@@ -2,27 +2,16 @@ package controllers
 
 import java.io.FileInputStream
 
-import play.api.Play.{ start, stop }
-import play.api.mvc.{ AnyContent, Request }
-import play.api.test.{ FakeApplication, FakeRequest }
-import play.api.test.Helpers._
-
 import org.overviewproject.tree.orm.{Document,DocumentSet,Tag}
 import org.overviewproject.tree.orm.finders.FinderResult
 import org.overviewproject.util.TempFile
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-import controllers.auth.AuthorizedRequest
-import models.OverviewUser
 import models.export.Export
 import models.export.rows.Rows
 import models.export.format.{CsvFormat,Format}
 
-class DocumentSetExportControllerSpec extends Specification with Mockito {
-  step(start(FakeApplication()))
-
+class DocumentSetExportControllerSpec extends ControllerSpecification {
   def makeFileInputStream(contents: Array[Byte]) : FileInputStream = {
     val tempFile = new TempFile
     tempFile.outputStream.write(contents)
@@ -41,9 +30,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       override def createExport(rows: Rows, format: Format) = mockExport
     }
 
-    val user = mock[OverviewUser]
-    def fakeRequest : Request[AnyContent] = FakeRequest()
-    def request = new AuthorizedRequest(fakeRequest, user)
+    def request = fakeAuthorizedRequest
   }
 
   trait IndexScope extends BaseScope {
@@ -86,7 +73,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
   "DocumentSetExportController" should {
     "use the title in output filenames" in new IndexScope {
       // Icky: tests the view, really
-      contentAsString(result) must contain("foobar.csv")
+      h.contentAsString(result) must contain("foobar.csv")
     }
 
     "HTTP-path-encode question marks in output filenames" in new IndexScope {
@@ -94,7 +81,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       // The problem: somebody requests "what?.csv", then HTTP servers like
       // Play will treat everything after the ? as a path. 
       mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo?bar"))
-      contentAsString(result) must contain("foo_bar.csv")
+      h.contentAsString(result) must contain("foo_bar.csv")
     }
 
     "replace icky filename characters with underscores" in new IndexScope {
@@ -106,7 +93,7 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       // List from http://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
       // When in doubt, escape it!
       mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo/\n\\?%*:|\"<>bar"))
-      contentAsString(result) must contain("foo___________bar.csv")
+      h.contentAsString(result) must contain("foo___________bar.csv")
     }
 
     "replace dots with underscores" in new IndexScope {
@@ -114,51 +101,49 @@ class DocumentSetExportControllerSpec extends Specification with Mockito {
       // The problem: if the server serves up foobar.csv.xlsx, virus scanners
       // will complain that the file is masquerading as something else.
       mockStorage.findDocumentSet(45L) returns Some(DocumentSet(title="foo.bar"))
-      contentAsString(result) must contain("foo_bar.csv")
+      h.contentAsString(result) must contain("foo_bar.csv")
     }
 
     "set Content-Type header in documentsWithStringTags" in new DocumentsWithStringTagsScope {
-      header(CONTENT_TYPE, result) must beSome(mockExport.contentType)
+      h.header(h.CONTENT_TYPE, result) must beSome(mockExport.contentType)
     }
 
     "set Content-Length header in documentsWithStringTags" in new DocumentsWithStringTagsScope {
-      header(CONTENT_LENGTH, result) must beSome(contents.size.toString)
+      h.header(h.CONTENT_LENGTH, result) must beSome(contents.size.toString)
     }
 
     "set contents of documentsWithStringTags" in new DocumentsWithStringTagsScope {
-      contentAsBytes(result) must beEqualTo(contents)
+      h.contentAsBytes(result) must beEqualTo(contents)
     }
 
     "not send as chunked in documentsWithStringTags" in new DocumentsWithStringTagsScope {
-      header(TRANSFER_ENCODING, result) must beNone
+      h.header(h.TRANSFER_ENCODING, result) must beNone
     }
 
     "set Content-Type header in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
-      header(CONTENT_TYPE, result) must beSome(mockExport.contentType)
+      h.header(h.CONTENT_TYPE, result) must beSome(mockExport.contentType)
     }
 
     "set Content-Length header in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
-      header(CONTENT_LENGTH, result) must beSome(contents.size.toString)
+      h.header(h.CONTENT_LENGTH, result) must beSome(contents.size.toString)
     }
 
     "set the proper Content-Disposition" in new DocumentsWithColumnTagsScope {
-      header(CONTENT_DISPOSITION, result) must beSome("""attachment; filename="foobar.csv"""")
+      h.header(h.CONTENT_DISPOSITION, result) must beSome("""attachment; filename="foobar.csv"""")
     }
 
     "set a Content-Disposition with unencoded HTTP paths" in new DocumentsWithColumnTagsScope {
       // Play will not decode path parameters. See https://github.com/playframework/playframework/issues/1228
       override val filename = "foo%20bar.csv"
-      header(CONTENT_DISPOSITION, result) must beSome("attachment; filename*=UTF-8''foo%20bar.csv")
+      h.header(h.CONTENT_DISPOSITION, result) must beSome("attachment; filename*=UTF-8''foo%20bar.csv")
     }
 
     "set contents of documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
-      contentAsBytes(result) must beEqualTo(contents)
+      h.contentAsBytes(result) must beEqualTo(contents)
     }
 
     "not send as chunked in documentsWithColumnTags" in new DocumentsWithColumnTagsScope {
-      header(TRANSFER_ENCODING, result) must beNone
+      h.header(h.TRANSFER_ENCODING, result) must beNone
     }
   }
-
-  step(stop)
 }

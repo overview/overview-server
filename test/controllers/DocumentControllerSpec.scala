@@ -1,19 +1,13 @@
 package controllers
 
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.Play.{start, stop}
-import play.api.test.{FakeApplication, FakeRequest}
-import play.api.test.Helpers._
+import play.api.mvc.AnyContent
 
 import controllers.auth.AuthorizedRequest
-import models.{OverviewDocument,OverviewUser}
+import models.OverviewDocument
 import org.overviewproject.tree.orm.Document
 
-class DocumentControllerSpec extends Specification with Mockito {
-  step(start(FakeApplication()))
-
+class DocumentControllerSpec extends ControllerSpecification {
   trait DocumentScope extends Scope {
     val mockStorage = mock[DocumentController.Storage]
 
@@ -21,8 +15,7 @@ class DocumentControllerSpec extends Specification with Mockito {
       override val storage = mockStorage
     }
 
-    val user = mock[OverviewUser]
-    val request = new AuthorizedRequest(FakeRequest(), user)
+    val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest
 
     val requestedDocumentId = 1L
     lazy val result = controller.show(requestedDocumentId)(request)
@@ -46,13 +39,11 @@ class DocumentControllerSpec extends Specification with Mockito {
 
   "DocumentController" should {
     "show() should return NotFound when ID is invalid" in new InvalidDocumentScope {
-      status(result) must beEqualTo(NOT_FOUND)
+      h.status(result) must beEqualTo(h.NOT_FOUND)
     }
 
     "show() should return Ok when ID is valid" in new ValidDocumentScope {
-      status(result) must beEqualTo(OK)
+      h.status(result) must beEqualTo(h.OK)
     }
   }
-
-  step(stop)
 }

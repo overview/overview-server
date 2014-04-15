@@ -9,6 +9,8 @@ import controllers.auth.Authorities.anyUser
 import controllers.util.TransactionAction
 import mailers.Mailer
 import models.{OverviewUser,ResetPasswordRequest}
+import models.orm.Session
+import models.orm.stores.SessionStore
 
 /**
  * Handles reset-password.
@@ -82,9 +84,9 @@ trait PasswordController extends Controller {
           newPassword => {
             val userWithNewPassword = user
               .withNewPassword(newPassword)
-              .withLoginRecorded(request.remoteAddress, new java.util.Date())
               .save
-            AuthResults.loginSucceeded(request, userWithNewPassword).flashing(
+            val session = storage.insertOrUpdateSession(Session(user.id, request.remoteAddress))
+            AuthResults.loginSucceeded(request, session).flashing(
               "success" -> m("update.success"),
               "event" -> "password-update"
             )
@@ -97,6 +99,7 @@ trait PasswordController extends Controller {
   trait Storage {
     def findUserByEmail(email: String) : Option[OverviewUser]
     def findUserByResetToken(token: String) : Option[OverviewUser with ResetPasswordRequest]
+    def insertOrUpdateSession(session: Session) : Session
   }
 
   trait Mail {
@@ -122,6 +125,8 @@ object PasswordController extends PasswordController {
         new Date((new Date()).getTime - SecondsResetTokenIsValid * 1000)
       )
     }
+
+    override def insertOrUpdateSession(session: Session) = SessionStore.insertOrUpdate(session)
   }
 
   override protected val mail = new Mail {

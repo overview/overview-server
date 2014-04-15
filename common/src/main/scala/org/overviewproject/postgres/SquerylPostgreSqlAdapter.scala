@@ -24,6 +24,8 @@ class SquerylPostgreSqlAdapter extends PostgreSqlAdapter {
       if (fmd.isCustomType && v.isInstanceOf[PostgresqlEnum]) {
         // FIXME remove PostgresqlEnum (and this branch) in favor of Enumeration
         "? ::" + v.asInstanceOf[PostgresqlEnum].typeName
+      } else if (fmd.wrappedFieldType eq classOf[InetAddress]) {
+        "? ::cidr"
       } else {
         "?"
       }

@@ -1,19 +1,13 @@
 package controllers
 
-import org.specs2.mock.Mockito
-import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import org.overviewproject.tree.orm.finders.ResultPage
-import play.api.Play.{start, stop}
-import play.api.test.{FakeApplication, FakeRequest}
-import play.api.test.Helpers._
+import play.api.mvc.AnyContent
 
 import controllers.auth.AuthorizedRequest
-import models.{ OverviewUser, Selection }
+import models.Selection
+import org.overviewproject.tree.orm.finders.ResultPage
 
-class DocumentListControllerSpec extends Specification with Mockito {
-  step(start(FakeApplication()))
-
+class DocumentListControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val mockStorage = mock[DocumentListController.Storage]
 
@@ -39,8 +33,7 @@ class DocumentListControllerSpec extends Specification with Mockito {
       untagged=false
     )
 
-    val user = mock[OverviewUser]
-    val request = new AuthorizedRequest(FakeRequest(), user)
+    val request : AuthorizedRequest[AnyContent] = fakeAuthorizedRequest
     lazy val result = controller.index(documentSetId, nodes, tags, documents, searchResults, pageSize, page)(request)
   }
 
@@ -57,6 +50,4 @@ class DocumentListControllerSpec extends Specification with Mockito {
       there was one(mockStorage).findDocuments(expectedSelection, pageSize, page)
     }
   }
-
-  step(stop)
 }
