@@ -24,6 +24,7 @@ test/assets/javascripts/test-js
 .worksheet
 *.sc
 /database/
+/node_modules/
 bin
 
 

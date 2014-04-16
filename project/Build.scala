@@ -155,7 +155,17 @@ object ApplicationBuild extends Build with ProjectSettings {
         logBuffered := false,
         sources in doc in Compile := List(),
         printClasspath,
-        aggregate in printClasspathTask := false
+        aggregate in printClasspathTask := false,
+        // Use native RequireJS (at Play's version -- see package.json) if it exists
+        // Enable this huge speedup by running "npm install" in the base directory
+        requireNativePath <<= baseDirectory(_ / "node_modules" / "requirejs" / "bin" / "r.js")
+          .apply( (tryPath) =>
+            if (FileInfo.exists(tryPath).exists) {
+              Some(tryPath.toString)
+            } else {
+              None
+            }
+          )
       )
       .settings(
         if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false") {
