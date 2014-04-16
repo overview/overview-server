@@ -19,7 +19,7 @@ class SessionSpec extends Specification {
 
   "Session" should {
     "use InetAddress.getByName() in ctor" in new Scope {
-      Session(1L, "192.168.1.1").ip.getHostAddress() must beEqualTo("192.168.1.1")
+      Session(1L, "192.168.1.1").ip.getHostAddress must beEqualTo("192.168.1.1")
     }
 
     "generate a unique UUID" in new BaseScope {
@@ -57,11 +57,11 @@ class SessionSpec extends Specification {
 
     "update ip" in new BaseScope {
       val ip2 = InetAddress.getByName("192.168.1.103")
-      session.update(ip2).ip.getHostAddress() must beEqualTo("192.168.1.103")
+      session.update(ip2).ip.getHostAddress must beEqualTo("192.168.1.103")
     }
 
     "update ip from String" in new BaseScope {
-      session.update("192.168.1.103").ip.getHostAddress() must beEqualTo("192.168.1.103")
+      session.update("192.168.1.103").ip.getHostAddress must beEqualTo("192.168.1.103")
     }
 
     "set isPersisted=true on update" in new BaseScope {
