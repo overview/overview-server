@@ -4,18 +4,17 @@ import org.specs2.mutable.Specification
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
 import akka.testkit.TestProbe
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol.RegisterWorker
+import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
 import akka.actor.ActorRef
 import akka.actor.Props
 import org.overviewproject.test.ForwardingActor
+import akka.testkit.TestActorRef
+import akka.agent.Agent
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import akka.testkit.TestActor
+import akka.actor.ActorSystem
 
-class TestFileGroupTaskWorker(override protected val jobQueuePath: String) extends FileGroupTaskWorker {
-
-}
-
-object TestFileGroupTaskWorker {
-  def apply(jobQueuePath: String): Props = Props(new TestFileGroupTaskWorker(jobQueuePath))
-}
 
 class FileGroupTaskWorkerSpec extends Specification {
 
@@ -35,6 +34,24 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectMsg(RegisterWorker(worker))
     }
 
+    "request task when available" in new TaskWorkerContext {
+      createJobQueue.withTaskAvailable
+
+      createWorker
+
+      jobQueueProbe.expectReadyForTask
+    }
+
+    "step through task until done" in new TaskWorkerContext {
+      createJobQueue.handingOutTask(Task(documentSetId, fileGroupId, uploadedFileId))
+      
+      createWorker
+
+      jobQueueProbe.expectTaskDone(fileGroupId, uploadedFileId)
+
+      taskStepsWereExecuted
+    }
+
     "create page views" in {
       todo
     }
@@ -52,22 +69,91 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     abstract class TaskWorkerContext extends ActorSystemContext with Before {
-      var worker: ActorRef = _
+      protected val documentSetId: Long = 1l
+      protected val fileGroupId: Long = 2l
+      protected val uploadedFileId: Long = 10l
+
+      var worker: TestActorRef[TestFileGroupTaskWorker] = _
       var jobQueue: ActorRef = _
-      var jobQueueProbe: TestProbe = _
+      var jobQueueProbe: JobQueueTestProbe = _
 
       val JobQueueName = "jobQueue"
       val JobQueuePath: String = s"/user/$JobQueueName"
 
       def before = {} //necessary or tests can't create actors for some reason
 
-      protected def createJobQueue: Unit = {
-        jobQueueProbe = TestProbe()
+      protected def createJobQueue: JobQueueTestProbe = {
+        jobQueueProbe = new JobQueueTestProbe(system)
         jobQueue = system.actorOf(ForwardingActor(jobQueueProbe.ref), JobQueueName)
+
+        jobQueueProbe
       }
 
-      protected def createWorker: Unit = worker = system.actorOf(TestFileGroupTaskWorker(JobQueuePath))
+      protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath))
+
+      protected def taskStepsWereExecuted = {
+        val pendingCalls = worker.underlyingActor.startTaskCallsInProgress
+        awaitCond(pendingCalls.isCompleted)
+        worker.underlyingActor.numberOfStartTaskCalls must be equalTo (2)
+      }
+
     }
 
+    class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
+
+      def expectReadyForTask = {
+        expectMsgClass(classOf[RegisterWorker])
+        expectMsg(ReadyForTask)
+      }
+
+      def expectTaskDone(fileGroupId: Long, uploadedFileId: Long) = {
+        expectMsgClass(classOf[RegisterWorker])
+        expectMsg(ReadyForTask)
+        expectMsg(TaskDone(fileGroupId, uploadedFileId))
+      }
+
+      def withTaskAvailable: JobQueueTestProbe = {
+        this.setAutoPilot(new JobQueueWithTaskAvailable)
+        this
+      }
+
+      def handingOutTask(task: Task): JobQueueTestProbe = {
+        this.setAutoPilot(new JobQueueHandingOutTask(task))
+        this
+      }
+    }
+
+    abstract class JobQueueAutoPilot extends TestActor.AutoPilot {
+      protected def messageMatcherChain(): PartialFunction[Any, Any] = PartialFunction.empty
+
+      private def ignoreMessage: PartialFunction[Any, Any] = {
+        case _ =>
+      }
+
+      def run(sender: ActorRef, message: Any) = {
+        messageMatcherChain().orElse(ignoreMessage)(message)
+        TestActor.KeepRunning
+      }
+    }
+
+    class JobQueueWithTaskAvailable extends JobQueueAutoPilot {
+      override protected def messageMatcherChain(): PartialFunction[Any, Any] = {
+        super.messageMatcherChain.orElse {
+          case RegisterWorker(worker) => worker ! TaskAvailable
+        }
+      }
+
+    }
+
+    class JobQueueHandingOutTask(task: Task) extends TestActor.AutoPilot {
+      def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
+        message match {
+          case RegisterWorker(worker) => { worker ! TaskAvailable }
+          case ReadyForTask => sender ! task
+          case _ =>
+        }
+        TestActor.KeepRunning
+      }
+    }
   }
 }
