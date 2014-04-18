@@ -1,11 +1,12 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.overviewproject.jobs.models.ClusterFileGroup
+
 import akka.agent._
 import akka.actor._
 import scala.collection.mutable.Queue
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
 
 
 trait JobParameters {
@@ -16,7 +17,7 @@ trait JobParameters {
   protected val importantWords = "important words"
   protected val suppliedStopWords = "stop words"
 
-  protected val clusterCommand = ClusterFileGroup(fileGroupId, title, lang, suppliedStopWords, importantWords)
+  protected val clusterCommand = ClusterFileGroupCommand(fileGroupId, title, lang, suppliedStopWords, importantWords)
 }
 
 trait StorageMonitor extends JobParameters {

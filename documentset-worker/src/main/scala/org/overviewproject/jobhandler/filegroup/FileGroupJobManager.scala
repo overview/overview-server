@@ -2,7 +2,7 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.{ Actor, ActorRef }
 import org.overviewproject.jobs.models.ClusterFileGroup
-
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -31,7 +31,7 @@ trait FileGroupJobManager extends Actor {
 
   def receive = {
 
-    case ClusterFileGroup(fileGroupId, name, lang, stopWords, importantWords) => {
+    case ClusterFileGroupCommand(fileGroupId, name, lang, stopWords, importantWords) => {
       val documentSetId = storage.createDocumentSetWithJob(fileGroupId, lang, stopWords, importantWords)
 
       fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
