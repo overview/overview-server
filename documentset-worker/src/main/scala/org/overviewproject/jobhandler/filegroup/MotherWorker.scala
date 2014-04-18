@@ -25,6 +25,12 @@ object MotherWorkerProtocol {
     title: String,
     lang: String,
     suppliedStopWords: String) extends Command
+  case class ClusterFileGroupCommand(
+    fileGroupId: Long,
+    title: String,
+    lang: String,
+    suppliedStopWords: String,
+    importantWords: String) extends Command
   case class CancelUploadWithDocumentSetCommand(documentSetId: Long) extends Command
   case class CancelUploadCommand(fileGroupId: Long) extends Command
 }
