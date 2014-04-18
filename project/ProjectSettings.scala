@@ -112,7 +112,7 @@ trait ProjectSettings {
     geronimoJmsDep,
     stompDep,
     squerylDep,
-    "org.apache.pdfbox" % "pdfbox" % "1.8.2",
+    "org.apache.pdfbox" % "pdfbox" % "1.8.4",
     "org.bouncycastle" % "bcprov-jdk15" % "1.44",
     "org.bouncycastle" % "bcmail-jdk15" % "1.44",
     akkaTestkit % "test",
