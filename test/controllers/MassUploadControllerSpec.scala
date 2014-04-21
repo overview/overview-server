@@ -120,6 +120,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       upload.size returns 0
       upload.uploadedSize returns uploadSize
       upload.name returns filename
+      upload.contentDisposition returns contentDisposition
       
       Some(upload)
     }
@@ -170,9 +171,9 @@ class MassUploadControllerSpec extends Specification with Mockito {
       header(CONTENT_RANGE, result) must beSome(s"0-${uploadSize - 1}/$size")
     }
     
-    "return a valid content_range if uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
-      status(result) must be equalTo (PARTIAL_CONTENT)
-      header(CONTENT_RANGE, result) must beSome(s"0-0/0")
+    "return NoContent uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
+      status(result) must be equalTo (NO_CONTENT)
+      header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
     }
 
   }

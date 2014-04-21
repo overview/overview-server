@@ -16,7 +16,6 @@ import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
 
-
 trait MassUploadController extends Controller {
 
   /**
@@ -30,8 +29,7 @@ trait MassUploadController extends Controller {
     if (isUploadComplete(upload)) {
       messageQueue.sendProcessFile(upload.fileGroupId, upload.id)
       Ok
-    } 
-    else {
+    } else {
       Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
       BadRequest
     }
@@ -45,8 +43,12 @@ trait MassUploadController extends Controller {
     def resultWithHeaders(status: Status, upload: GroupedFileUpload): SimpleResult =
       status.withHeaders(showRequestHeaders(upload): _*)
 
+    def resultWithContentDisposition(status: SimpleResult, upload: GroupedFileUpload): SimpleResult =
+      status.withHeaders((CONTENT_DISPOSITION, upload.contentDisposition))
+
     findUploadInCurrentFileGroup(request.user.email, guid) match {
       case Some(u) if (isUploadComplete(u)) => resultWithHeaders(Ok, u)
+      case Some(u) if (isUploadEmpty(u)) => resultWithContentDisposition(NoContent, u)
       case Some(u) => resultWithHeaders(PartialContent, u)
       case None => NotFound
     }
@@ -128,6 +130,9 @@ trait MassUploadController extends Controller {
   private def isUploadComplete(upload: GroupedFileUpload): Boolean =
     (upload.uploadedSize == upload.size) && (upload.size > 0)
 
+  private def isUploadEmpty(upload: GroupedFileUpload): Boolean =
+    upload.uploadedSize == 0
+
   private def showRequestHeaders(upload: GroupedFileUpload): Seq[(String, String)] = {
     def computeEnd(uploadedSize: Long): Long =
       if (upload.uploadedSize == 0) 0
@@ -179,7 +184,7 @@ object MassUploadController extends MassUploadController {
       GroupedFileUploadFinder.byFileGroupAndGuid(fileGroupId, guid).headOption
 
     override def createDocumentSet(userEmail: String, title: String, lang: String): DocumentSet = {
-      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title)) 
+      val documentSet = DocumentSetStore.insertOrUpdate(DocumentSet(title = title))
       DocumentSetUserStore.insertOrUpdate(DocumentSetUser(documentSet.id, userEmail, Ownership.Owner))
 
       documentSet
