@@ -3,6 +3,9 @@ package org.overviewproject.jobhandler.filegroup
 import scala.collection.mutable
 import akka.actor.Actor
 import akka.actor.ActorRef
+import org.overviewproject.database.Database
+import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
+import akka.actor.Props
 
 object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(fileGroupId: Long, documentSetId: Long)
@@ -55,7 +58,7 @@ trait FileGroupJobQueue extends Actor {
         sender ! task
       }
     }
-    case TaskDone(fileGroupId: Long, uploadedFileId: Long) => 
+    case TaskDone(fileGroupId: Long, uploadedFileId: Long) =>
       whenTaskIsComplete(fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
@@ -86,5 +89,19 @@ trait FileGroupJobQueue extends Actor {
     } else {
       jobTasks += (fileGroupId -> remainingTasks)
     }
+}
 
+class FileGroupJobQueueImpl extends FileGroupJobQueue {
+  class DatabaseStorage extends Storage {
+    override def uploadedFileIds(fileGroupId: Long): Iterable[Long] = Database.inTransaction {
+      GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toIterable
+    }
+  }
+
+  override protected val storage: Storage = new DatabaseStorage
+
+}
+
+object FileGroupJobQueue {
+  def apply(): Props = Props[FileGroupJobQueueImpl]
 }
