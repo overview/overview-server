@@ -13,12 +13,15 @@ import org.overviewproject.messagequeue.MessageQueueConnection
 import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
+import ActorCareTakerProtocol._
+import org.overviewproject.jobhandler.filegroup.ClusteringCommandsMessageQueueBridge
+import org.overviewproject.jobhandler.filegroup.FileGroupJobManager
+import org.overviewproject.jobhandler.filegroup.FileGroupJobQueue
+import org.overviewproject.jobhandler.filegroup.ClusteringJobQueue
 
 object ActorCareTakerProtocol {
   case object StartListening
 }
-
-import ActorCareTakerProtocol._
 
 /**
  * Creates as many DocumentSetJobHandler actors as we think we can handle, with a shared
@@ -58,7 +61,10 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
-  val clusteringJobHandler = context.actorOf(ClusteringJobHandler())
+  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue())
+  val clusteringJobQueue = context.actorOf(ClusteringJobQueue())
+  val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue))
+  val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager))
 
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => Stop
@@ -66,7 +72,7 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
 
   def receive = {
     case StartListening => {
-      clusteringJobHandler ! RegisterWith(connectionMonitor)
+      uploadClusteringCommandBridge ! RegisterWith(connectionMonitor)
       jobHandlers.foreach(_ ! RegisterWith(connectionMonitor))
       connectionMonitor ! StartConnection
     }
