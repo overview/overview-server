@@ -74,7 +74,10 @@ trait MassUploadFileIteratee {
   private def attemptAppend(upload: GroupedFileUpload, buffer: Array[Byte]): Either[SimpleResult, GroupedFileUpload] = {
     val appendResult = allCatch either storage.appendData(upload, buffer)
 
-    for (_ <- appendResult.left) yield InternalServerError
+    for (error <- appendResult.left) yield {
+      Logger.error(s"Failed to append buffer during upload", error)
+      InternalServerError
+    }
   }
 
   private case class RequestInformation(filename: String, contentType: String,
