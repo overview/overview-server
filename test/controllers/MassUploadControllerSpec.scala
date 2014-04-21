@@ -137,9 +137,12 @@ class MassUploadControllerSpec extends Specification with Mockito {
       }
     }
 
-    "send a ProcessFile message when upload is complete" in new CreateRequest with CompleteUpload with InProgressFileGroup {
+    "return Ok when upload is complete" in new CreateRequest with CompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (OK)
-      there was one(controller.messageQueue).sendProcessFile(fileGroupId, uploadId)
+    }
+    
+    "return BadRequest if upload is not complete" in new CreateRequest with IncompleteUpload with InProgressFileGroup {
+      status(result) must be equalTo(BAD_REQUEST)
     }
   }
 
@@ -208,7 +211,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       }
     }
     
-    "create job and send startClustering command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
+    "create job and send ClusterFileGroup command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       status(result) must be equalTo(SEE_OTHER)
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(

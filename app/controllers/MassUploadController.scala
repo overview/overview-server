@@ -15,6 +15,7 @@ import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAct
 import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
+import org.overviewproject.jobs.models.ClusterFileGroup
 
 trait MassUploadController extends Controller {
 
@@ -26,13 +27,8 @@ trait MassUploadController extends Controller {
   def create(guid: UUID) = TransactionAction(authorizedUploadBodyParser(guid)) { implicit request: Request[GroupedFileUpload] =>
     val upload: GroupedFileUpload = request.body
 
-    if (isUploadComplete(upload)) {
-      messageQueue.sendProcessFile(upload.fileGroupId, upload.id)
-      Ok
-    } else {
-      Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
-      BadRequest
-    }
+    if (isUploadComplete(upload)) Ok
+    else uploadRequestFailed(request)
   }
 
   /**
@@ -161,6 +157,13 @@ trait MassUploadController extends Controller {
       case None => NotFound
     }
   }
+
+  private def uploadRequestFailed(request: Request[GroupedFileUpload]): SimpleResult = {
+    val upload = request.body
+    Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
+
+    BadRequest
+  }
 }
 
 /** Controller implementation */
@@ -218,9 +221,9 @@ object MassUploadController extends MassUploadController {
         throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
     }
 
-    override def startClustering(fileGroupId: Long, title: String, lang: String, 
-        suppliedStopWords: String, importantWords: String): Unit = {
-      val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
+    override def startClustering(fileGroupId: Long, title: String, lang: String,
+                                 suppliedStopWords: String, importantWords: String): Unit = {
+      val command = ClusterFileGroup(fileGroupId, title, lang, suppliedStopWords, importantWords)
 
       if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")

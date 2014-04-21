@@ -14,6 +14,7 @@ import org.overviewproject.jobs.models.StartClustering
 import org.overviewproject.jobs.models.StartClustering
 import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
 import org.overviewproject.jobs.models.CancelUpload
+import org.overviewproject.jobs.models.ClusterFileGroup
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.
@@ -67,19 +68,20 @@ object JobQueueSender {
   }
 
   /**
-   * Send a `StartClustering` message to the Clustering message queue.
+   * Send a `ClusterFileGroup` message to the Clustering message queue.
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
-  def send(startClustering: StartClustering): Either[Unit, Unit] = {
-    implicit val startClusteringWrites: Writes[StartClustering] = (
+  def send(clusterFileGroup: ClusterFileGroup): Either[Unit, Unit] = {
+    implicit val clusterFileGroupWrites: Writes[ClusterFileGroup] = (
       (__ \ "fileGroupId").write[Long] and
       (__ \ "title").write[String] and
       (__ \ "lang").write[String] and
-      (__ \ "suppliedStopWords").write[String])(unlift(StartClustering.unapply))
+      (__ \ "suppliedStopWords").write[String] and
+      (__ \ "importantWords").write[String])(unlift(ClusterFileGroup.unapply))
 
     val jsonMessage = toJson(Map(
-      "cmd" -> toJson("start_clustering"),
-      "args" -> toJson(startClustering)))
+      "cmd" -> toJson("cluster_file_group"),
+      "args" -> toJson(clusterFileGroup)))
 
     sendMessageToClusteringQueue(jsonMessage)
   }
