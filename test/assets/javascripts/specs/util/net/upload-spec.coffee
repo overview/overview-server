@@ -103,6 +103,21 @@ define [
         it 'correctly specifies the content-range', ->
           expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('0-999/1000')
 
+      describe 'when the server has 0 bytes of the file uploaded', ->
+        beforeEach ->
+          jasmine.Ajax.requests.mostRecent().response(
+            status: 204,
+            responseHeaders: { 'Content-Type': 'application/json' } # No content-range header
+          )
+
+        it 'should start the upload', ->
+          request = jasmine.Ajax.requests.mostRecent()
+          expect(upload.state).toEqual(3)
+          expect(request.method).toEqual('POST')
+
+        it 'should specify the correct content-range', ->
+          expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('0-999/1000')
+
       describe 'when part of the file has been uploaded already', ->
         beforeEach ->
           upload = new Upload(fakeFile, '/upload/')
