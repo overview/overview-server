@@ -1,20 +1,13 @@
 package controllers.util
 
-import org.overviewproject.jobs.models.Search
 import com.typesafe.plugin.use
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import plugins.StompPlugin
-import org.overviewproject.jobs.models.Delete
-import org.overviewproject.jobs.models.ProcessGroupedFileUpload
-import org.overviewproject.jobs.models.ProcessGroupedFileUpload
-import org.overviewproject.jobs.models.StartClustering
-import org.overviewproject.jobs.models.StartClustering
-import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
-import org.overviewproject.jobs.models.CancelUpload
-import org.overviewproject.jobs.models.ClusterFileGroup
+import org.overviewproject.jobs.models._
+
 
 /**
  * Converts a message to a search query and sends it to the message queue connection.

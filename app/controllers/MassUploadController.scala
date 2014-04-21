@@ -4,7 +4,7 @@ import java.util.UUID
 import play.api.libs.iteratee.Iteratee
 import play.api.Logger
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
-import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload, StartClustering }
+import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload }
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.FileJobState._
