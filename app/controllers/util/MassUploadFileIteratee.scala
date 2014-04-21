@@ -25,35 +25,43 @@ trait MassUploadFileIteratee {
   val storage: Storage
 
   def apply(userEmail: String, request: RequestHeader, guid: UUID, bufferSize: Int = DefaultBufferSize): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] = {
-    val fileGroup = storage.findCurrentFileGroup(userEmail)
-      .getOrElse(storage.createFileGroup(userEmail))
+    try {
+      val fileGroup = storage.findCurrentFileGroup(userEmail)
+        .getOrElse(storage.createFileGroup(userEmail))
 
-    val infoAttempt = Try(RequestInformation(request))
-    val validUploadStart = infoAttempt match {
-      case Success(info) => {
-        val initialUpload = storage.findUpload(fileGroup.id, guid)
-          .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
-        if (info.start > initialUpload.uploadedSize) Left(BadRequest)
-        else Right(initialUpload.copy(uploadedSize = info.start))
+      val infoAttempt = Try(RequestInformation(request))
+      val validUploadStart = infoAttempt match {
+        case Success(info) => {
+          val initialUpload = storage.findUpload(fileGroup.id, guid)
+            .getOrElse(storage.createUpload(fileGroup.id, info.contentType, info.filename, guid, info.total))
+          if (info.start > initialUpload.uploadedSize) Left(BadRequest)
+          else Right(initialUpload.copy(uploadedSize = info.start))
+        }
+        case Failure(e) => {
+          Logger.error(s"Failed to parse upload request headers ${request.headers}")
+          Left(BadRequest)
+        }
       }
-      case Failure(e) => {
-        Logger.error(s"Failed to parse upload request headers ${request.headers}")
-        Left(BadRequest)
+
+      var buffer = Array[Byte]()
+
+      Iteratee.fold[Array[Byte], Either[SimpleResult, GroupedFileUpload]](validUploadStart) { (upload, data) =>
+        buffer ++= data
+        if (buffer.size >= bufferSize) {
+          val update = flushBuffer(upload, buffer)
+          buffer = Array[Byte]()
+          update
+        } else upload
+      } map { output =>
+        if (buffer.size > 0) flushBuffer(output, buffer)
+        else output
       }
     }
-
-    var buffer = Array[Byte]()
-
-    Iteratee.fold[Array[Byte], Either[SimpleResult, GroupedFileUpload]](validUploadStart) { (upload, data) =>
-      buffer ++= data
-      if (buffer.size >= bufferSize) {
-        val update = flushBuffer(upload, buffer)
-        buffer = Array[Byte]()
-        update
-      } else upload
-    } map { output =>
-      if (buffer.size > 0) flushBuffer(output, buffer)
-      else output
+    catch {
+      case e: Throwable => {
+        Logger.error("MassUploadFileIteratee failure: ", e)
+        throw e
+      }
     }
   }
 
