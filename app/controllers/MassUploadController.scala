@@ -107,7 +107,7 @@ trait MassUploadController extends Controller {
     def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
-    def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit
+    def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String, importantWords: String): Unit
 
     /** Tell worker to delete all processing for the FileGroup and delete all associated files */
     def cancelUpload(fileGroupId: Long): Unit
@@ -154,7 +154,7 @@ trait MassUploadController extends Controller {
         val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
           documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-        messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords)
+        messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords, importantWords)
 
         Redirect(routes.DocumentSetController.index())
       }
@@ -218,7 +218,8 @@ object MassUploadController extends MassUploadController {
         throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
     }
 
-    override def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String): Unit = {
+    override def startClustering(fileGroupId: Long, title: String, lang: String, 
+        suppliedStopWords: String, importantWords: String): Unit = {
       val command = StartClustering(fileGroupId, title, lang, suppliedStopWords)
 
       if (JobQueueSender.send(command).isLeft)
