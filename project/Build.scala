@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import play.Project._
+import com.typesafe.sbt.SbtNativePackager.packageArchetype
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build with ProjectSettings {
@@ -39,43 +40,55 @@ object ApplicationBuild extends Build with ProjectSettings {
     println(classpath.map(_.data).mkString(":"))
   }
 
-  val messageBroker = Project("message-broker", file("message-broker"), settings =
-    Defaults.defaultSettings ++ OverviewCommands.defaultSettings ++
-      Seq(
-        libraryDependencies ++= messageBrokerDependencies,
-        printClasspath))
+  val messageBroker = Project("message-broker", file("message-broker"),
+                              settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      libraryDependencies ++= messageBrokerDependencies,
+      printClasspath
+    )
 
-  val searchIndex = Project("search-index", file("search-index"), settings =
-    Defaults.defaultSettings ++ OverviewCommands.defaultSettings).settings(
-        libraryDependencies ++= searchIndexDependencies,
-        Keys.fork := true,
-        javaOptions in run <++= (baseDirectory) map { (d) =>
-          Seq(
-            "-Des.path.home=" + d,
-            "-Xms1g", "-Xmx1g", "-Xss256k",
-            "-XX:+UseParNewGC",  "-XX:+UseConcMarkSweepGC", "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
-            "-Djava.awt.headless=true",
-            "-Delasticsearch",
-            "-Des.foreground=yes"
-          )
-        },
-       printClasspath)
+  val searchIndex = Project("search-index", file("search-index"),
+                            settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      libraryDependencies ++= searchIndexDependencies,
+      Keys.fork := true,
+      javaOptions in run <++= (baseDirectory) map { (d) =>
+        Seq(
+          "-Des.path.home=" + d,
+          "-Xms1g", "-Xmx1g", "-Xss256k",
+          "-XX:+UseParNewGC",  "-XX:+UseConcMarkSweepGC", "-XX:CMSInitiatingOccupancyFraction=75", "-XX:+UseCMSInitiatingOccupancyOnly",
+          "-Djava.awt.headless=true",
+          "-Delasticsearch",
+          "-Des.foreground=yes"
+        )
+      },
+      printClasspath
+    )
 
   val runner = Project(
       "runner",
       file("runner"),
       settings = Defaults.defaultSettings)
+    .settings(packageArchetype.java_application: _*)
     .settings(libraryDependencies ++= runnerDependencies)
     .settings(scalacOptions ++= ourScalacOptions)
-    .settings(com.typesafe.sbt.SbtNativePackager.packageArchetype.java_application: _*)
     .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
   val dbEvolutionApplier = (Project(
       "db-evolution-applier",
       file("db-evolution-applier"),
       settings = Defaults.defaultSettings)
-    .settings(libraryDependencies ++= dbEvolutionApplierDependencies)
-    .settings(scalacOptions ++= ourScalacOptions)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      libraryDependencies ++= dbEvolutionApplierDependencies,
+      scalacOptions ++= ourScalacOptions,
+      mappings in (Compile, packageBin) <++= baseDirectory map { base =>
+        val evolutions = ((base / ".." / "conf" / "evolutions") ** "*").get
+        evolutions pair relativeTo(base / ".." / "conf")
+      }
+    )
   )
 
   // Create a subProject with our common settings
@@ -114,16 +127,21 @@ object ApplicationBuild extends Build with ProjectSettings {
     .dependsOn(common)
 
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
+    .settings(packageArchetype.java_application: _*)
     .settings(
       Keys.fork := true,
       javaOptions in run ++= allJavaOpts ++ workerJavaOpts,
       javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml")
     .dependsOn(common, workerCommon)
 
-  val worker = OverviewProject("worker", workerProjectDependencies).settings(
-    Keys.fork := true,
-    javaOptions in run ++=  allJavaOpts ++ workerJavaOpts,
-    javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml").dependsOn(workerCommon, common)
+  val worker = OverviewProject("worker", workerProjectDependencies)
+    .settings(packageArchetype.java_application: _*)
+    .settings(
+      Keys.fork := true,
+      javaOptions in run ++=  allJavaOpts ++ workerJavaOpts,
+      javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml"
+    )
+    .dependsOn(workerCommon, common)
 
   val main = (
     play.Project(appName, appVersion, serverProjectDependencies)

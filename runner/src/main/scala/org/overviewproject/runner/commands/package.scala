@@ -3,84 +3,173 @@ package org.overviewproject.runner
 import java.io.File
 
 package object commands {
-  private val sbtLaunchUri = getClass.getResource("/sbt-launch.jar").toURI()
-  private val sbtLaunchPath = new File(sbtLaunchUri).getAbsolutePath()
+  trait UsefulCommands {
+    def documentSetWorker: Command
+    def messageBroker: Command
+    def searchIndex: Command
+    def webServer: Command
+    def worker: Command
+    def runEvolutions: Command
 
-  val SearchIndex: JvmCommand = new JvmCommandWithAppendableClasspath(
-    Seq(),
-    Seq(
-      "-Xmx1g",
-      "-Xss256k",
-      "-XX:+UseParNewGC",
-      "-XX:+UseConcMarkSweepGC",
-      "-XX:CMSInitiatingOccupancyFraction=75",
-      "-XX:+UseCMSInitiatingOccupancyOnly",
-      "-Djava.awt.headless=true",
-      "-Delasticsearch",
-      "-Des.foreground=yes",
-      "-Des.path.home=./search-index"
-    ),
-    Seq("org.elasticsearch.bootstrap.ElasticSearch")
-  )
+    /** Runs sbt. If not present, throws a run-time exception. */
+    def sbt(task: String): Command = ???
 
-  val MessageBroker: JvmCommand = new JvmCommandWithAppendableClasspath(
-    Seq(),
-    Seq(Flags.ApolloBase),
-    Seq(
-      "org.apache.activemq.apollo.boot.Apollo",
-      "documentset-worker/lib",
-      "org.apache.activemq.apollo.cli.Apollo",
-      "run"
+    def sh(task: String): Command = new Command(Seq(), task.split(' '))
+  }
+
+  object development extends UsefulCommands {
+    private lazy val sbtLaunchJar = getClass.getResource("/sbt-launch.jar")
+    private lazy val sbtLaunchPath = new File(sbtLaunchJar.toURI()).getAbsolutePath()
+
+    override def searchIndex = new JvmCommandWithAppendableClasspath(
+      Seq(),
+      Seq(
+        "-Xmx1g",
+        "-Xss256k",
+        "-XX:+UseParNewGC",
+        "-XX:+UseConcMarkSweepGC",
+        "-XX:CMSInitiatingOccupancyFraction=75",
+        "-XX:+UseCMSInitiatingOccupancyOnly",
+        "-Djava.awt.headless=true",
+        "-Delasticsearch",
+        "-Des.foreground=yes",
+        "-Des.path.home=./search-index"
+      ),
+      Seq("org.elasticsearch.bootstrap.ElasticSearch")
     )
-  )
 
-  val OverviewServer: JvmCommand = new JvmCommand(
-    // We run "overview-server/run" through sbt. That lets it reload files
-    // as they're edited.
-    Seq(),
-    Seq(
-      "-XX:MaxPermSize=512M",
-      "-Dpidfile.enabled=false",
-      "-DapplyEvolutions.default=true" // So overview-worker works on first launch
-    ),
-    Seq(
-      "-jar", sbtLaunchPath,
-      "run"
+    override def messageBroker = new JvmCommandWithAppendableClasspath(
+      Seq(),
+      Seq(Flags.ApolloBase),
+      Seq(
+        "org.apache.activemq.apollo.boot.Apollo",
+        "documentset-worker/lib",
+        "org.apache.activemq.apollo.cli.Apollo",
+        "run"
+      )
     )
-  )
 
-  val DocumentSetWorker: JvmCommand = new JvmCommandWithAppendableClasspath(
-    Seq(),
-    Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
-    Seq("org.overviewproject.DocumentSetWorker")
-  )
-
-  val Worker: JvmCommand = new JvmCommandWithAppendableClasspath(
-    Seq(),
-    Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
-    Seq("JobHandler")
-  )
-
-  /** A Command for "sbt [task]" */
-  def sbt(task: String) : JvmCommand = new JvmCommand(
-    Seq(),
-    Seq(
-      "-Dsbt.log.format=false",
-      "-XX:MaxPermSize=512M",
-      "-Xmx2g"
-    ),
-    Seq(
-      "-jar", sbtLaunchPath,
-      task
+    override def webServer = new JvmCommand(
+      // We run "overview-server/run" through sbt. That lets it reload files
+      // as they're edited.
+      Seq(),
+      Seq(
+        "-XX:MaxPermSize=512M",
+        "-Dpidfile.enabled=false"
+      ),
+      Seq(
+        "-jar", sbtLaunchPath,
+        "run"
+      )
     )
-  )
 
-  val PostgresServerCommand: Command = {
-    val dataDir = new File("database").getAbsolutePath()
-    PostgresCommand(
-      "postgres",
-      "-D", dataDir,
-      "-k", dataDir
+    override def documentSetWorker = new JvmCommandWithAppendableClasspath(
+      Seq(),
+      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml"),
+      Seq("org.overviewproject.DocumentSetWorker")
+    )
+
+    override def worker = new JvmCommandWithAppendableClasspath(
+      Seq(),
+      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+      Seq("JobHandler")
+    ).with32BitSafe
+
+    override def runEvolutions = new JvmCommand(
+      Seq(),
+      Seq(
+        Flags.DatabaseUrl,
+        "-Dsbt.log.format=false"
+      ),
+      Seq(
+        "-jar", sbtLaunchPath,
+        "db-evolution-applier/run"
+      )
+    )
+
+    /** A Command for "sbt [task]" */
+    override def sbt(task: String) = new JvmCommand(
+      Seq(),
+      Seq(
+        "-Dsbt.log.format=false",
+        "-XX:MaxPermSize=512M",
+        "-Xmx2g"
+      ),
+      Seq(
+        "-jar", sbtLaunchPath,
+        task
+      )
+    ).with32BitSafe
+  }
+
+  object production extends UsefulCommands {
+    private def cmd(prefix: String, jvmArgs: Seq[String], args: Seq[String]) = {
+      val fullJvmArgs = jvmArgs ++ Seq(
+        "-cp",
+        (if (prefix.isEmpty) "target/universal/stage/lib/*" else s"${prefix}/target/universal/stage/lib/*")
+      )
+      new JvmCommand(Seq(), fullJvmArgs, args)
+    }
+
+    override def documentSetWorker = cmd(
+      "documentset-worker",
+      Seq(
+        Flags.DatabaseUrl,
+        Flags.DatabaseDriver,
+        "-Dlogback.configurationFile=workerdevlog.xml"
+      ),
+      Seq("org.overviewproject.DocumentSetWorker")
+    )
+
+    override def messageBroker = cmd(
+      "message-broker",
+      Seq(Flags.ApolloBase),
+      Seq(
+        "org.apache.activemq.apollo.boot.Apollo",
+        "documentset-worker/lib",
+        "org.apache.activemq.apollo.cli.Apollo",
+        "run"
+      )
+    )
+
+    override def searchIndex = cmd(
+      "search-index",
+      Seq(
+        "-Xmx1g",
+        "-Xss256k",
+        "-XX:+UseParNewGC",
+        "-XX:+UseConcMarkSweepGC",
+        "-XX:CMSInitiatingOccupancyFraction=75",
+        "-XX:+UseCMSInitiatingOccupancyOnly",
+        "-Djava.awt.headless=true",
+        "-Delasticsearch",
+        "-Des.foreground=yes",
+        "-Des.path.home=./search-index"
+      ),
+      Seq("org.elasticsearch.bootstrap.ElasticSearch")
+    )
+
+    override def webServer = cmd(
+      "",
+      Seq(
+        Flags.DatabaseUrl,
+        "-Dpidfile.enabled=false"
+      ),
+      Seq(
+        "play.core.server.NettyServer"
+      )
+    )
+
+    override def worker = cmd(
+      "worker",
+      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+      Seq("JobHandler")
+    ).with32BitSafe
+
+    override def runEvolutions = cmd(
+      "db-evolution-applier",
+      Seq(Flags.DatabaseUrl),
+      Seq("org.overviewproject.db_evolution_applier.Main")
     )
   }
 }

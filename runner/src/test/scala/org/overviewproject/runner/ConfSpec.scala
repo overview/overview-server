@@ -94,12 +94,23 @@ class ConfSpec extends Specification with Mockito {
       conf.daemonInfos must throwA[Throwable]("There should be only one or zero of the following options: only-servers, except-servers")
     }
 
+    "enable database by default" in new ThreeDaemons {
+      conf.withDatabase() must beEqualTo(true)
+    }
+
+    "disable database" in new ThreeDaemons {
+      override val arguments = Seq("--no-database")
+      conf.withDatabase() must beEqualTo(false)
+    }
+
     "add arbitrary sbt commands" in new ThreeDaemons {
-      override val arguments = Seq("--only-servers", "id1", "--sbt", "all/test")
-      repository.daemonInfosOnly(Set("id1")) returns Seq(allDaemonInfos(0))
-      conf.daemonInfos.length must beEqualTo(2)
-      conf.daemonInfos(0) must beEqualTo(allDaemonInfos(0))
-      conf.daemonInfos(1) must beLike { case di: DaemonInfo => di.command.argv.lastOption must beSome("all/test") }
+      override val arguments = Seq("--sbt", "all/test")
+      conf.sbtTask() must beEqualTo("all/test")
+    }
+
+    "add arbitrary sh commands" in new ThreeDaemons {
+      override val arguments = Seq("--sh", "run something")
+      conf.shTask() must beEqualTo("run something")
     }
 
     "not use a short option for sbt commands" in new ThreeDaemons {
@@ -110,8 +121,7 @@ class ConfSpec extends Specification with Mockito {
     "include spaces in sbt commands" in new ThreeDaemons {
       override val arguments = Seq("--only-servers", "id1", "--sbt", "; project runner; test")
       repository.daemonInfosOnly(Set("id1")) returns Seq(allDaemonInfos(0))
-      conf.daemonInfos.length must beEqualTo(2)
-      conf.daemonInfos(1) must beLike { case di: DaemonInfo => di.command.argv.lastOption must beSome("; project runner; test") }
+      conf.sbtTask() must beEqualTo("; project runner; test")
     }
   }
 }

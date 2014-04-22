@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Usage: ./build overview-server.zip
+#
+# Runs the "stage" command for all important targets; then zips them into the
+# specified file, rooted in a directory of the same name as the zipfile.
+#
+# For instance: ./build overview-server.zip will create overview-server.zip
+# with all its contents in an "overview-server/" directory.
+#
+# To use the resulting zipfile:
+#
+# 1. Unzip it
+# 2. cd into its main directory
+# 3. Run ./run there
+
+ZIP=$(which zip)
+OVERVIEW_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute-ish path
+
+fail() {
+  echo "$@" >&2
+  echo >&2
+  echo "Usage: ./build overview-server.zip" >&2
+  exit 1
+}
+
+if [ -z "$ZIP" ]; then
+  fail "You must install the 'zip' command-line tool"
+fi
+
+OUTPUT_ZIP="$1"
+
+if [ -z "$OUTPUT_ZIP" ]; then
+  fail "You did not specify a zipfile to write to"
+fi
+
+OUTPUT_DIRECTORY=${OUTPUT_ZIP%.zip}
+
+if [ "$OUTPUT_ZIP" = "$OUTPUT_DIRECTORY" ]; then
+  fail "The zipfile you specify must end with '.zip'"
+fi
+
+./sbt '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; message-broker/stage; search-index/stage'
+
+TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
+BASE="$OUTPUT_DIRECTORY"
+STAGE="target/universal/stage"
+
+set -x
+
+ln -s "$OVERVIEW_DIR" "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
+
+rm -f "$OVERVIEW_DIR"/"$OUTPUT_ZIP"
+
+(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$BASE/runner/$STAGE"/* "$BASE/db-evolution-applier/$STAGE"/* "$BASE/$STAGE"/* "$BASE/worker/$STAGE"/* "$BASE/documentset-worker/$STAGE"/* "$BASE/message-broker/$STAGE"/* "$BASE"/message-broker/etc/* "$BASE/search-index/$STAGE"/* "$BASE"/README.md "$BASE"/LICENSE "$BASE"/run)
+
+rm "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
+rmdir "$TEMP_DIR"

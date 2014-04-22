@@ -21,9 +21,15 @@ before_script:
   # Put message-broker at the end, and log more for it: it seems to make Travis exceed 10min sometimes.
   - ./sbt '; set every logLevel := Level.Warn; common/update; show version; worker-common/update; show version; overview-server/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update; search-index/update; show version; set every logLevel := Level.Info; message-broker/update'
 script:
+  # CoffeeScript tests are the fastest, so we put them first
   - ./auto/test-coffee-once.sh
-  - ./run --only-servers database --sbt '; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
-  - ./run --sbt '; eval Thread.sleep(120000); eval if (("auto/test-integration.sh"!) != 0) { throw new Exception("integration tests failed") }'
+  # Unit tests next.
+  # We need the database to run for the duration of the test commands. So we run --only-servers search-index: we need at least one server running to make the database run.
+  - ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker-common/test; worker/test; documentset-worker/test; runner/test'
+  # The build must succeed
+  - ./build overview-server.zip
+  # Now that we've built, we can run integration tests with the resulting jars
+  - ./run --sh auto/wait-and-test-integration.sh
 notifications:
   irc:
     - irc.freenode.net#overviewproject

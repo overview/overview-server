@@ -46,7 +46,9 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
 
   val onlyServers = opt[Seq[DaemonInfo]]("only-servers", descr="Only start this comma-separated list of servers", noshort=true)(daemonInfoListConverter)
   val exceptServers = opt[Seq[DaemonInfo]]("except-servers", descr="Start all but this comma-separated list of servers", noshort=true)(daemonInfoListConverter)
-  val sbtTask = opt[String]("sbt", descr="Also run this sbt task", noshort=true)
+  val withDatabase = toggle("database", descrYes="Run Postgres (and evolutions) too", default=Some(true), prefix="no-", noshort=true)
+  val sbtTask = opt[String]("sbt", descr="Also run this sbt task", noshort=true, default=None)
+  val shTask = opt[String]("sh", descr="Also run this command on the shell", noshort=true, default=None)
 
   mutuallyExclusive(onlyServers, exceptServers)
 
@@ -55,14 +57,8 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
   }
 
   def daemonInfos : Seq[DaemonInfo] = {
-    val servers = onlyServers.get
+    onlyServers.get
       .orElse(exceptServers.get)
       .getOrElse(daemonInfoRepository.allDaemonInfos)
-
-    val sbt = sbtTask.get.map { task =>
-      DaemonInfo("sbt-task", Console.YELLOW, commands.sbt(task))
-    }.toSeq
-
-    servers ++ sbt
   }
 }

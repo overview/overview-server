@@ -86,7 +86,9 @@ describe 'ResetPassword', ->
         getUserDataElement(@)
           .getAttribute('data-reset-password-token')
           .then (token) =>
-            @userBrowser.get(Url.resetPassword(token))
+            @userBrowser
+              .get(Url.resetPassword(token))
+              .waitForJqueryReady()
 
       it 'should show a reset-password form', ->
         @userBrowser

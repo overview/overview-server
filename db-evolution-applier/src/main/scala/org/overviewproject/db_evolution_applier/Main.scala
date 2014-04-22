@@ -13,10 +13,12 @@ import play.api.{Configuration,DefaultApplication,Mode,Plugin,Play}
   */
 object Main {
   def main(args: Array[String]) : Unit = {
-    val config = ConfigFactory.parseFile(new File("./conf/application.conf")).resolve()
-    val extraConfig = ConfigFactory.parseString("""
+    val config = ConfigFactory.parseString(s"""
       |applyEvolutions.default=true
       |applyDownEvolutions.default=true
+      |db.default.driver=org.postgresql.Driver
+      |db.default.url="${sys.props("datasource.default.url")}"
+      |db.default.logStatements=false
       |db.default.partitionCount=1
       |db.default.maxConnectionsPerPartition=2 # not 1. rrgh, Play. rrgh.
       |db.default.minConnectionsPerPartition=1
@@ -28,7 +30,7 @@ object Main {
       None,
       Mode.Prod
     ) {
-      override lazy val configuration = Configuration(config) ++ Configuration(extraConfig)
+      override lazy val configuration = Configuration(config)
 
       override lazy val plugins : Seq[play.api.Plugin] = Seq(
         new play.api.db.BoneCPPlugin(this),

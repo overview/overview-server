@@ -6,7 +6,7 @@ import java.io.File
   *
   * If you were running this command from the shell, it would look like:
   *
-  *     ENV1=val1 ENV2=val2 $JAVA_HOME/bin/java $jvmArg1 $jvmArg2 $arg1 $arg2
+  *     ENV1=val1 ENV2=val2 \$JAVA_HOME/bin/java \$jvmArg1 \$jvmArg2 \$arg1 \$arg2
   *
   * The key feature of this class: it finds the Java executable for you, based
   * on the current JVM's system properties.

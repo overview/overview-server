@@ -20,22 +20,23 @@ trait ProjectSettings {
   )
     
   // shared dependencies
+  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
+  val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
+  val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
+  val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0"
+  val guavaDep = "com.google.guava" % "guava" % "16.0"
+  val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
+  val junitDep = "junit" % "junit-dep" % "4.11"
+  val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
+  val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
+  val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
   val openCsvDep =  "net.sf.opencsv" % "opencsv" % "2.3"
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
+  val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
+  val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
-  val mockitoDep = "org.mockito" % "mockito-all" % "1.9.5"
-  val junitInterfaceDep = "com.novocode" % "junit-interface" % "0.9"
-  val junitDep = "junit" % "junit-dep" % "4.11"
-  val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
-  val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
-  val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
-  val logbackDep = "ch.qos.logback" % "logback-classic" % "1.0.9"
-  val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
-  val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
-  val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
-  val guavaDep = "com.google.guava" % "guava" % "16.0"
 
   // WHY doesn't this work? I can't seem to refer to sbt.ModuleId here.
   // 
@@ -135,6 +136,7 @@ trait ProjectSettings {
     akkaTestkit % "test",
     specs2Dep % "test",
     mockitoDep % "test",
+    scalaArmDep,
     postgresqlDep,
     "org.rogach" %% "scallop" % "0.9.4"
   )
