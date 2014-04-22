@@ -20,6 +20,7 @@ trait ProjectSettings {
   )
     
   // shared dependencies
+  val akkaDep = "com.typesafe.akka" %% "akka-actor" % "2.2.0"
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
@@ -37,7 +38,6 @@ trait ProjectSettings {
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
   val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
-  val slf4jDep = "org.slf4j" % "slf4j-api" % "1.7.5"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
   val stompDep = "org.fusesource.stompjms" % "stompjms-client" % "1.15"
@@ -59,12 +59,12 @@ trait ProjectSettings {
     postgresqlDep,
     squerylDep,
     stompDep,
-    mockitoDep % "test",
     "com.typesafe" %% "play-plugins-util" % "2.2.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.2.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
     "org.owasp.encoder" % "encoder" % "1.1",
     "org.jodd" % "jodd-wot" % "3.3.8" % "test",
+    mockitoDep % "test",
     "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "test"
   )).map(_.exclude("com.google.guava", "guava"))
 
@@ -78,12 +78,13 @@ trait ProjectSettings {
     boneCpDep,
     postgresqlDep,
     squerylDep,
-    specs2Dep, // FIXME add % "test"
-    junitInterfaceDep, // FIXME add % "test"
-    junitDep // FIXME add % "test"
+    specs2Dep % "test",
+    junitInterfaceDep % "test",
+    junitDep % "test"
   )).map(_.exclude("com.google.guava", "guava"))
 
   val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
+    akkaDep,
     javaxMailDep, 
     openCsvDep,
     boneCpDep,
@@ -92,15 +93,16 @@ trait ProjectSettings {
     anorm,
     elasticSearchDep,
     elasticSearchCloudAwsDep,
+    saddleDep,
     akkaTestkit % "test",
     mockitoDep % "test",
     specs2Dep % "test",
-    junitInterfaceDep, // FIXME add % "test"
-    junitDep % "test",
-    saddleDep
+    junitInterfaceDep % "test",
+    junitDep % "test"
   )).map(_.exclude("com.google.guava", "guava"))
 
   val workerCommonProjectDependencies = Seq(guavaDep) ++ (Seq(
+    akkaDep,
     asyncHttpClientDep,
     playJsonDep,
     geronimoJmsDep,
@@ -108,13 +110,14 @@ trait ProjectSettings {
     postgresqlDep,
     squerylDep,
     stompDep,
-    specs2Dep,
-    akkaTestkit,
+    specs2Dep % "test",
+    akkaTestkit % "test",
     mockitoDep % "test"
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
-    slf4jDep,
+    akkaDep,
+    logbackDep,
     elasticSearchDep,
     elasticSearchCloudAwsDep,
     javaxMailDep,
@@ -143,7 +146,6 @@ trait ProjectSettings {
   )
 
   val runnerDependencies = Seq(
-    akkaTestkit % "test",
     specs2Dep % "test",
     mockitoDep % "test",
     scalaArmDep,
