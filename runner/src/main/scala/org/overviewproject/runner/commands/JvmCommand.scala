@@ -48,7 +48,7 @@ class JvmCommand(
 
   private def is32BitMarker(is32Bit: Boolean) : Seq[String] = {
     if (is32Bit) {
-      Seq("-Doverview.is32BitJava=true")
+      Seq("-server", "-Doverview.is32BitJava=true")
     } else {
       Seq()
     }
@@ -92,6 +92,6 @@ object JvmCommand {
     retval == 0
   }
 
-  private val Max32BitHeapSize : Long = 1610612736 // 1.5g
-  private val Max32BitHeapSizeString : String = "1536m"
+  private val Max32BitHeapSize : Long = 1468006400
+  private val Max32BitHeapSizeString : String = "1400m"
 }
