@@ -54,7 +54,7 @@ ln -s "$OVERVIEW_DIR" "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 
 rm -f "$OVERVIEW_DIR"/"$OUTPUT_ZIP"
 
-(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$BASE/runner/$STAGE"/* "$BASE/db-evolution-applier/$STAGE"/* "$BASE/$STAGE"/* "$BASE/worker/$STAGE"/* "$BASE/documentset-worker/$STAGE"/* "$BASE/message-broker/$STAGE"/* "$BASE"/message-broker/etc/* "$BASE/search-index/$STAGE"/* "$BASE"/search-index/config/* "$BASE"/README.md "$BASE"/LICENSE "$BASE"/run)
+(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$BASE/runner/$STAGE"/* "$BASE/db-evolution-applier/$STAGE"/* "$BASE/$STAGE"/* "$BASE/worker/$STAGE"/* "$BASE/documentset-worker/$STAGE"/* "$BASE/message-broker/$STAGE"/* "$BASE"/message-broker/etc/* "$BASE/search-index/$STAGE"/* "$BASE"/search-index/config/* "$BASE"/README.md "$BASE"/LICENSE "$BASE"/run "$BASE"/overview.desktop)
 
 rm "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 rmdir "$TEMP_DIR"

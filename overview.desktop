@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Terminal=true
+Exec=sh -c "(cd $(dirname '%k') && ./run)"
+Name=Overview
+GenericName=Document set analyzer
+Comment=Analyze your documents
