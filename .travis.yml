@@ -9,8 +9,8 @@ branches:
   - /^deploy.*$/
 before_install:
   - sudo apt-get update -qq
-  - ./auto/setup-coffee-tests.sh
-  - ./auto/setup-integration-tests.sh
+  #- ./auto/setup-coffee-tests.sh
+  #- ./auto/setup-integration-tests.sh
 install:
   - sudo apt-get install -qq postgresql openjdk-7-jdk
 before_script:
@@ -22,10 +22,10 @@ before_script:
   - ./sbt '; set every logLevel := Level.Warn; common/update; show version; version; overview-server/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update; search-index/update; show version; set every logLevel := Level.Info; message-broker/update'
 script:
   # CoffeeScript tests are the fastest, so we put them first
-  - ./auto/test-coffee-once.sh
+  #- ./auto/test-coffee-once.sh
   # Unit tests next.
   # We need the database to run for the duration of the test commands. So we run --only-servers search-index: we need at least one server running to make the database run.
-  - ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
+  #- ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
   # The build must succeed
   - ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
