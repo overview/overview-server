@@ -127,31 +127,13 @@ class OverviewUserSpec  extends Specification {
       user.confirmationToken must be matching("""[a-zA-Z0-9]{26}""")
       user.confirmationSentAt.getTime must be closeTo(now().getMillis(), 500)
     }
-    
+
     "confirm request" in new NewRegistration {
-      user.save
-      val confirmedUser = user.confirm
-      
-      confirmedUser.withConfirmationRequest must beNone
+      user.confirm.withConfirmationRequest must beNone
     }
-    
+
     "remove confirmation token when confirmed" in new NewRegistration {
-      val token = user.confirmationToken
-      user.save
-      
-      user.confirm
-      user.save
-      
-      user.withConfirmationRequest must beNone
-    }
-    
-    "remember unconfirmed state after confirmation" in new NewRegistration {
-      val token = user.confirmationToken
-      user.save
-      
-      user.confirm
-      user.save
-      user.confirmationToken must be equalTo(token)
+      user.confirm.toUser.confirmationToken must beNone
     }
   }
   

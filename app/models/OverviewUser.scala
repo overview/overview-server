@@ -311,10 +311,10 @@ object OverviewUser {
     override val confirmationSentAt = user.confirmationSentAt.get
 
     override def confirm: OverviewUser = {
-      user.confirmationToken = None
-      user.confirmedAt = Some(generateTimestamp)
-
-      this
+      OverviewUserImpl(user.copy(
+        confirmationToken = None,
+        confirmedAt = Some(generateTimestamp)
+      ))
     }
   }
 
