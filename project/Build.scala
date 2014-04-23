@@ -123,7 +123,14 @@ object ApplicationBuild extends Build with ProjectSettings {
   // Project definitions
   val common = OverviewProject("common", commonProjectDependencies, useSharedConfig = false)
 
-  val workerCommon = OverviewProject.withNoDbTests("worker-common", workerCommonProjectDependencies, useSharedConfig = false)
+  /*
+   * Ideally, common would depend on commonTest, which would mock out the
+   * database.
+   *
+   * Reality is the other way around. The test suite relies on the database,
+   * which common provides.
+   */
+  val commonTest = OverviewProject("common-test", commonTestProjectDependencies, useSharedConfig = false)
     .dependsOn(common)
 
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
@@ -132,16 +139,19 @@ object ApplicationBuild extends Build with ProjectSettings {
       Keys.fork := true,
       javaOptions in run ++= allJavaOpts ++ workerJavaOpts,
       javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml")
-    .dependsOn(common, workerCommon)
+    .dependsOn(common)
+    .dependsOn(commonTest % "test")
 
   val worker = OverviewProject("worker", workerProjectDependencies)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       Keys.fork := true,
       javaOptions in run ++=  allJavaOpts ++ workerJavaOpts,
       javaOptions in Test += "-Dlogback.configurationFile=logback-test.xml"
     )
-    .dependsOn(workerCommon, common)
+    .dependsOn(common)
+    .dependsOn(commonTest % "test")
 
   val main = (
     play.Project(appName, appVersion, serverProjectDependencies)
@@ -199,16 +209,16 @@ object ApplicationBuild extends Build with ProjectSettings {
         }
       )
       .dependsOn(common)
+      .dependsOn(commonTest % "test")
     )
 
   val all = Project("all", file("all"))
-    .aggregate(main, worker, documentSetWorker, workerCommon, common)
+    .aggregate(main, worker, documentSetWorker, common)
     .settings(
       aggregate in Test := false,
       test in Test <<= (test in Test in main)
         dependsOn (test in Test in worker)
         dependsOn (test in Test in documentSetWorker)
-        dependsOn (test in Test in workerCommon)
-        dependsOn (test in Test in common))
-
+        dependsOn (test in Test in common)
+    )
 }

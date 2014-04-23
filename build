@@ -14,6 +14,8 @@
 # 2. cd into its main directory
 # 3. Run ./run there
 
+set -e
+
 ZIP=$(which zip)
 OVERVIEW_DIR="$(cd "$(dirname "$0")"; pwd)" # absolute-ish path
 

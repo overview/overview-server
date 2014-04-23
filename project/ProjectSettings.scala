@@ -26,7 +26,7 @@ trait ProjectSettings {
   val boneCpDep = "com.jolbox" % "bonecp" % "0.8.0.RELEASE"
   val elasticSearchCloudAwsDep = "org.elasticsearch" % "elasticsearch-cloud-aws" % "1.12.0"
   val elasticSearchDep = "org.elasticsearch" % "elasticsearch" % "0.90.2"
-  val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0"
+  val geronimoJmsDep = "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.0" // javax.jms
   val guavaDep = "com.google.guava" % "guava" % "16.0"
   val javaxMailDep = "javax.mail" % "mail" % "1.4.1"
   val junitDep = "junit" % "junit-dep" % "4.11"
@@ -54,17 +54,12 @@ trait ProjectSettings {
   val serverProjectDependencies = Seq(guavaDep) ++ (Seq(
     jdbc,
     filters,
-    geronimoJmsDep,
     openCsvDep,
-    postgresqlDep,
-    squerylDep,
-    stompDep,
     "com.typesafe" %% "play-plugins-util" % "2.2.0",
     "com.typesafe" %% "play-plugins-mailer" % "2.2.0",
     "com.github.t3hnar" %% "scala-bcrypt" % "2.2",
     "org.owasp.encoder" % "encoder" % "1.1",
     "org.jodd" % "jodd-wot" % "3.3.8" % "test",
-    mockitoDep % "test",
     "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "test"
   )).map(_.exclude("com.google.guava", "guava"))
 
@@ -75,63 +70,51 @@ trait ProjectSettings {
 
   // Dependencies for the project named 'common'. Not dependencies common to all projects...
   val commonProjectDependencies = Seq(guavaDep) ++ (Seq(
-    boneCpDep,
-    postgresqlDep,
-    squerylDep,
-    specs2Dep % "test",
-    junitInterfaceDep % "test",
-    junitDep % "test"
-  )).map(_.exclude("com.google.guava", "guava"))
-
-  val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
-    akkaDep,
-    javaxMailDep, 
-    openCsvDep,
-    boneCpDep,
-    postgresqlDep,
-    squerylDep,
-    anorm,
-    elasticSearchDep,
-    elasticSearchCloudAwsDep,
-    saddleDep,
-    akkaTestkit % "test",
-    mockitoDep % "test",
-    specs2Dep % "test",
-    junitInterfaceDep % "test",
-    junitDep % "test"
-  )).map(_.exclude("com.google.guava", "guava"))
-
-  val workerCommonProjectDependencies = Seq(guavaDep) ++ (Seq(
     akkaDep,
     asyncHttpClientDep,
-    playJsonDep,
-    geronimoJmsDep,
     boneCpDep,
+    geronimoJmsDep,
+    logbackDep,
+    playJsonDep,
     postgresqlDep,
     squerylDep,
     stompDep,
+    anorm % "test",
     specs2Dep % "test",
+    junitInterfaceDep % "test",
     akkaTestkit % "test",
-    mockitoDep % "test"
+    mockitoDep % "test",
+    junitDep % "test"
+  )).map(_.exclude("com.google.guava", "guava"))
+
+  val commonTestProjectDependencies = Seq(guavaDep) ++ (Seq(
+    akkaDep,
+    akkaTestkit,
+    anorm,
+    logbackDep,
+    specs2Dep,
+    junitInterfaceDep,
+    junitDep,
+    mockitoDep
+  )).map(_.exclude("com.google.guava", "guava"))
+
+  val workerProjectDependencies = Seq(guavaDep) ++ (Seq(
+    javaxMailDep, 
+    openCsvDep,
+    anorm,
+    elasticSearchDep,
+    elasticSearchCloudAwsDep,
+    saddleDep
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
-    akkaDep,
     logbackDep,
     elasticSearchDep,
     elasticSearchCloudAwsDep,
     javaxMailDep,
-    geronimoJmsDep,
-    stompDep,
-    boneCpDep,
-    postgresqlDep,
-    squerylDep,
     "org.apache.pdfbox" % "pdfbox" % "1.8.4",
     "org.bouncycastle" % "bcprov-jdk15" % "1.44",
-    "org.bouncycastle" % "bcmail-jdk15" % "1.44",
-    akkaTestkit % "test",
-    specs2Dep % "test",
-    mockitoDep % "test"
+    "org.bouncycastle" % "bcmail-jdk15" % "1.44"
   )).map(_.exclude("com.google.guava", "guava"))
   
   val messageBrokerDependencies = Seq(
