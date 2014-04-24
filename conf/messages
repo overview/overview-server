@@ -487,7 +487,7 @@ views.User.new.h1=Register
 
 views.Welcome.show.title=The Overview Project
 views.Welcome.show.h1=
-views.Welcome.show.p1=Overview automatically sorts thousands of documents into topics and sub-topics, by reading the full text of each one.
+views.Welcome.show.p1=Read and analyze thousands of documents super quickly. Let the computer sort through them for you.
 views.Welcome.show.learn=Learn how
 views.Welcome.show.warning_32bit_html=You are running Overview with 32-bit Java. This Java version prevents Overview from handling large document sets. Please read about <a href="https://github.com/overview/overview-server/wiki/Handling-huge-document-sets">handling large document sets</a>.
 
