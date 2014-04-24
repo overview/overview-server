@@ -12,8 +12,8 @@ trait FileGroupTaskStep {
   def execute: FileGroupTaskStep
 }
 
-case class CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
-  override def execute: FileGroupTaskStep = return CreatePagesTaskDone.this
+case class CreatePagesProcessComplete(fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
+  override def execute: FileGroupTaskStep = return CreatePagesProcessComplete.this
 }
 
 trait FileGroupTaskWorker extends Actor {
@@ -44,8 +44,8 @@ trait FileGroupTaskWorker extends Actor {
       jobQueue ! ReadyForTask
     case CreatePagesTask(fileGroupId, uploadedFileId) => 
       	executeTaskStep(startCreatePagesTask(fileGroupId, uploadedFileId))
-    case CreatePagesTaskDone(fileGroupId, uploadedFileId) => {
-      jobQueue ! TaskDone(fileGroupId, uploadedFileId)
+    case CreatePagesProcessComplete(fileGroupId, uploadedFileId) => {
+      jobQueue ! CreatePagesTaskDone(fileGroupId, uploadedFileId)
       jobQueue ! ReadyForTask
     }
     case step: FileGroupTaskStep => executeTaskStep(step) 

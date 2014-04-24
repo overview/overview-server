@@ -85,7 +85,7 @@ trait CreatePagesProcess {
         pageStore.insertBatch(filePages.toIterable)
       }
       pdfDocument.close()
-      CreatePagesTaskDone(taskInformation.fileGroupId, taskInformation.uploadedFileId)
+      CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
     
     private def textify(rawText: String): String = Textify(rawText)

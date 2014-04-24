@@ -99,7 +99,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(fg, uf) => {
-            sender.tell(TaskDone(fg, uf), worker)
+            sender.tell(CreatePagesTaskDone(fg, uf), worker)
             sender.tell(ReadyForTask, worker)
           }
         }

@@ -18,7 +18,7 @@ object FileGroupTaskWorkerProtocol {
   case object TaskAvailable
   case object ReadyForTask
   case class CreatePagesTask(fileGroupId: Long, uploadedFileId: Long)
-  case class TaskDone(fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long)
 }
 
 trait FileGroupJobQueue extends Actor {
@@ -62,7 +62,7 @@ trait FileGroupJobQueue extends Actor {
         sender ! task
       }
     }
-    case TaskDone(fileGroupId: Long, uploadedFileId: Long) =>
+    case CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) =>
       Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
       whenTaskIsComplete(fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone

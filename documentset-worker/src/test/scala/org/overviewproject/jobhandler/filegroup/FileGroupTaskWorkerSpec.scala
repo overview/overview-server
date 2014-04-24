@@ -53,8 +53,6 @@ class FileGroupTaskWorkerSpec extends Specification {
       createPagesTaskStepsWereExecuted
     }
 
-
-
     "reconnect to job queue on failure" in {
       todo
     }
@@ -106,7 +104,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       def expectTaskDone(fileGroupId: Long, uploadedFileId: Long) = {
         expectMsgClass(classOf[RegisterWorker])
         expectMsg(ReadyForTask)
-        expectMsg(TaskDone(fileGroupId, uploadedFileId))
+        expectMsg(CreatePagesTaskDone(fileGroupId, uploadedFileId))
       }
 
       def withTaskAvailable: JobQueueTestProbe = {
