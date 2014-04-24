@@ -25,9 +25,9 @@ import org.apache.pdfbox.pdfwriter.COSWriter
  * 3. Save the pages
  * 4. Extract the text from each page
  */
-trait FileProcessing {
+trait CreatePagesProcess {
 
-  protected def startTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
+  protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     SaveFile(fileGroupId, uploadedFileId)
 
   private case class TaskInformation(fileGroupId: Long, uploadedFileId: Long)
@@ -61,7 +61,7 @@ trait FileProcessing {
     }
   }
 
-  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PDDocument,
+  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PDDocument, 
       pages: Seq[PDDocument]) extends FileGroupTaskStep {
     
     private val pageStore = new BaseStore(Schema.pages)
@@ -85,7 +85,7 @@ trait FileProcessing {
         pageStore.insertBatch(filePages.toIterable)
       }
       pdfDocument.close()
-      FileGroupTaskDone(taskInformation.fileGroupId, taskInformation.uploadedFileId)
+      CreatePagesTaskDone(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
     
     private def textify(rawText: String): String = Textify(rawText)

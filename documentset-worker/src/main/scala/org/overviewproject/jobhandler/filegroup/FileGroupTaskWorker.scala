@@ -12,8 +12,8 @@ trait FileGroupTaskStep {
   def execute: FileGroupTaskStep
 }
 
-case class FileGroupTaskDone(fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
-  override def execute: FileGroupTaskStep = return this
+case class CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
+  override def execute: FileGroupTaskStep = return CreatePagesTaskDone.this
 }
 
 trait FileGroupTaskWorker extends Actor {
@@ -27,7 +27,7 @@ trait FileGroupTaskWorker extends Actor {
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
   
-  protected def startTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
+  protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
   
   lookForJobQueue
 
@@ -43,8 +43,8 @@ trait FileGroupTaskWorker extends Actor {
     case TaskAvailable =>
       jobQueue ! ReadyForTask
     case CreatePagesTask(fileGroupId, uploadedFileId) => 
-      	executeTaskStep(startTask(fileGroupId, uploadedFileId))
-    case FileGroupTaskDone(fileGroupId, uploadedFileId) => {
+      	executeTaskStep(startCreatePagesTask(fileGroupId, uploadedFileId))
+    case CreatePagesTaskDone(fileGroupId, uploadedFileId) => {
       jobQueue ! TaskDone(fileGroupId, uploadedFileId)
       jobQueue ! ReadyForTask
     }
@@ -58,7 +58,7 @@ trait FileGroupTaskWorker extends Actor {
 
 
 object FileGroupTaskWorker {
-  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with FileProcessing {
+  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with CreatePagesProcess {
     override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
     
   })

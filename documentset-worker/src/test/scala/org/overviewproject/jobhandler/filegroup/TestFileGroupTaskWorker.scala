@@ -18,8 +18,8 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String) exten
     }
   }
 
-  override protected def startTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    StepInSequence(1, FileGroupTaskDone(fileGroupId, uploadedFileId))
+  override protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
+    StepInSequence(1, CreatePagesTaskDone(fileGroupId, uploadedFileId))
 
   def startTaskCallsInProgress: Future[Int] = timesStartTaskWasCalled.future
   def numberOfStartTaskCalls: Int = timesStartTaskWasCalled.get

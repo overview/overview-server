@@ -53,13 +53,6 @@ class FileGroupTaskWorkerSpec extends Specification {
       taskStepsWereExecuted
     }
 
-    "create page views" in {
-      todo
-    }
-
-    "create document" in {
-      todo
-    }
 
     "reconnect to job queue on failure" in {
       todo
