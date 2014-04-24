@@ -42,7 +42,7 @@ trait FileGroupTaskWorker extends Actor {
       system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
     case TaskAvailable =>
       jobQueue ! ReadyForTask
-    case Task(fileGroupId, uploadedFileId) => 
+    case CreatePagesTask(fileGroupId, uploadedFileId) => 
       	executeTaskStep(startTask(fileGroupId, uploadedFileId))
     case FileGroupTaskDone(fileGroupId, uploadedFileId) => {
       jobQueue ! TaskDone(fileGroupId, uploadedFileId)

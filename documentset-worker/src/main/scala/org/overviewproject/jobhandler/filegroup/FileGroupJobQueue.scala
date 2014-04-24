@@ -17,7 +17,7 @@ object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
-  case class Task(fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTask(fileGroupId: Long, uploadedFileId: Long)
   case class TaskDone(fileGroupId: Long, uploadedFileId: Long)
 }
 
@@ -31,11 +31,11 @@ trait FileGroupJobQueue extends Actor {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
 
-  private case class AddTasks(tasks: Iterable[Task])
+  private case class AddTasks(tasks: Iterable[CreatePagesTask])
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
-  private val taskQueue: mutable.Queue[Task] = mutable.Queue.empty
+  private val taskQueue: mutable.Queue[CreatePagesTask] = mutable.Queue.empty
   private val jobTasks: mutable.Map[Long, Set[Long]] = mutable.Map.empty
   private val jobRequests: mutable.Map[Long, JobRequest] = mutable.Map.empty
 
@@ -73,7 +73,7 @@ trait FileGroupJobQueue extends Actor {
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
   private def addNewTasksToQueue(fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
-    val newTasks = uploadedFileIds.map(Task(fileGroupId, _))
+    val newTasks = uploadedFileIds.map(CreatePagesTask(fileGroupId, _))
     taskQueue ++= newTasks
     jobTasks += (fileGroupId -> uploadedFileIds)
   }

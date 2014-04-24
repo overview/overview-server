@@ -43,7 +43,7 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "step through task until done" in new TaskWorkerContext {
-      createJobQueue.handingOutTask(Task(fileGroupId, uploadedFileId))
+      createJobQueue.handingOutTask(CreatePagesTask(fileGroupId, uploadedFileId))
       
       createWorker
 
@@ -120,7 +120,7 @@ class FileGroupTaskWorkerSpec extends Specification {
         this
       }
 
-      def handingOutTask(task: Task): JobQueueTestProbe = {
+      def handingOutTask(task: CreatePagesTask): JobQueueTestProbe = {
         this.setAutoPilot(new JobQueueHandingOutTask(task))
         this
       }
@@ -148,7 +148,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
     }
 
-    class JobQueueHandingOutTask(task: Task) extends TestActor.AutoPilot {
+    class JobQueueHandingOutTask(task: CreatePagesTask) extends TestActor.AutoPilot {
       private var numberOfTasksToHandOut = 1
       
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {

@@ -80,7 +80,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       
-      protected def mustMatchUploadedFileIds(tasks: Seq[Task], uploadedFileIds: Seq[Long]) =
+      protected def mustMatchUploadedFileIds(tasks: Seq[CreatePagesTask], uploadedFileIds: Seq[Long]) =
     		  tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)        
     }
 
@@ -90,7 +90,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
 
-        expectMsgClass(classOf[Task])
+        expectMsgClass(classOf[CreatePagesTask])
       }
     }
 
@@ -98,7 +98,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
-          case Task(fg, uf) => {
+          case CreatePagesTask(fg, uf) => {
             sender.tell(TaskDone(fg, uf), worker)
             sender.tell(ReadyForTask, worker)
           }
