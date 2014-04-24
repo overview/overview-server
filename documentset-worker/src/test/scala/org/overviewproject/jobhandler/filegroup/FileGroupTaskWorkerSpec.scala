@@ -50,8 +50,9 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectTaskDone(fileGroupId, uploadedFileId)
       jobQueueProbe.expectReadyForTask
       
-      taskStepsWereExecuted
+      createPagesTaskStepsWereExecuted
     }
+
 
 
     "reconnect to job queue on failure" in {
@@ -85,10 +86,10 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath))
 
-      protected def taskStepsWereExecuted = {
-        val pendingCalls = worker.underlyingActor.startTaskCallsInProgress
+      protected def createPagesTaskStepsWereExecuted = {
+        val pendingCalls = worker.underlyingActor.startCreatePagesTaskCallsInProgress
         awaitCond(pendingCalls.isCompleted)
-        worker.underlyingActor.numberOfStartTaskCalls must be equalTo (2)
+        worker.underlyingActor.numberOfStartCreatePagesTaskCalls must be equalTo (2)
       }
 
     }

@@ -8,11 +8,11 @@ import akka.actor.Props
 class TestFileGroupTaskWorker(override protected val jobQueuePath: String) extends FileGroupTaskWorker {
   import ExecutionContext.Implicits.global
 
-  private val timesStartTaskWasCalled: Agent[Int] = Agent(0)
+  private val timesStartCreatePagesTaskWasCalled: Agent[Int] = Agent(0)
 
   private case class StepInSequence(n: Int, finalStep: FileGroupTaskStep) extends FileGroupTaskStep {
     def execute: FileGroupTaskStep = {
-      timesStartTaskWasCalled send (_ + 1)
+      timesStartCreatePagesTaskWasCalled send (_ + 1)
       if (n > 0) StepInSequence(n - 1, finalStep)
       else finalStep
     }
@@ -21,8 +21,8 @@ class TestFileGroupTaskWorker(override protected val jobQueuePath: String) exten
   override protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     StepInSequence(1, CreatePagesTaskDone(fileGroupId, uploadedFileId))
 
-  def startTaskCallsInProgress: Future[Int] = timesStartTaskWasCalled.future
-  def numberOfStartTaskCalls: Int = timesStartTaskWasCalled.get
+  def startCreatePagesTaskCallsInProgress: Future[Int] = timesStartCreatePagesTaskWasCalled.future
+  def numberOfStartCreatePagesTaskCalls: Int = timesStartCreatePagesTaskWasCalled.get
 }
 
 object TestFileGroupTaskWorker {
