@@ -39,16 +39,17 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       createWorker
 
-      jobQueueProbe.expectReadyForTask
+      jobQueueProbe.expectInitialReadyForTask
     }
 
     "step through task until done" in new TaskWorkerContext {
-      createJobQueue.handingOutTask(Task(documentSetId, fileGroupId, uploadedFileId))
+      createJobQueue.handingOutTask(Task(fileGroupId, uploadedFileId))
       
       createWorker
 
       jobQueueProbe.expectTaskDone(fileGroupId, uploadedFileId)
-
+      jobQueueProbe.expectReadyForTask
+      
       taskStepsWereExecuted
     }
 
@@ -101,10 +102,12 @@ class FileGroupTaskWorkerSpec extends Specification {
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
 
-      def expectReadyForTask = {
-        expectMsgClass(classOf[RegisterWorker])
+      def expectInitialReadyForTask = {
+        expectMsgClass(classOf[org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol.RegisterWorker])
         expectMsg(ReadyForTask)
       }
+      
+      def expectReadyForTask = expectMsg(ReadyForTask)
 
       def expectTaskDone(fileGroupId: Long, uploadedFileId: Long) = {
         expectMsgClass(classOf[RegisterWorker])
@@ -146,10 +149,15 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     class JobQueueHandingOutTask(task: Task) extends TestActor.AutoPilot {
+      private var numberOfTasksToHandOut = 1
+      
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
-          case RegisterWorker(worker) => { worker ! TaskAvailable }
-          case ReadyForTask => sender ! task
+          case RegisterWorker(worker) => worker ! TaskAvailable
+          case ReadyForTask if numberOfTasksToHandOut > 0 => {
+            sender ! task
+            numberOfTasksToHandOut -= 1
+          }
           case _ =>
         }
         TestActor.KeepRunning

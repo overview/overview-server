@@ -6,9 +6,10 @@ import akka.actor.ActorRef
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import akka.actor.Props
+import org.overviewproject.util.Logger
 
 object FileGroupJobQueueProtocol {
-  case class CreateDocumentsFromFileGroup(fileGroupId: Long, documentSetId: Long)
+  case class CreateDocumentsFromFileGroup(fileGroupId: Long)
   case class FileGroupDocumentsCreated(documentSetId: Long)
 }
 
@@ -16,7 +17,7 @@ object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
-  case class Task(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  case class Task(fileGroupId: Long, uploadedFileId: Long)
   case class TaskDone(fileGroupId: Long, uploadedFileId: Long)
 }
 
@@ -27,11 +28,11 @@ trait FileGroupJobQueue extends Actor {
   protected val storage: Storage
 
   trait Storage {
-    def uploadedFileIds(fileGroupId: Long): Iterable[Long]
+    def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
 
   private case class AddTasks(tasks: Iterable[Task])
-  private case class JobRequest(requester: ActorRef, documentSetId: Long)
+  private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[Task] = mutable.Queue.empty
@@ -40,35 +41,39 @@ trait FileGroupJobQueue extends Actor {
 
   def receive = {
     case RegisterWorker(worker) => {
+      Logger.info(s"Registering worker ${worker.path.toString}")
       workerPool += worker
       if (!taskQueue.isEmpty) worker ! TaskAvailable
 
     }
-    case CreateDocumentsFromFileGroup(fileGroupId, documentSetId) => {
+    case CreateDocumentsFromFileGroup(fileGroupId) => {
+      Logger.info(s"Extact text task for FileGroup [$fileGroupId]")
       val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
-      addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
-      jobRequests += (fileGroupId -> JobRequest(sender, documentSetId))
+      addNewTasksToQueue(fileGroupId, fileIds)
+      jobRequests += (fileGroupId -> JobRequest(sender))
 
       workerPool.map(_ ! TaskAvailable)
     }
     case ReadyForTask => {
       if (!taskQueue.isEmpty) {
         val task = taskQueue.dequeue
+        Logger.info(s"Sending task ${task.uploadedFileId} to ${sender.path.toString}")
         sender ! task
       }
     }
     case TaskDone(fileGroupId: Long, uploadedFileId: Long) =>
+      Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
       whenTaskIsComplete(fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
 
   }
 
-  private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId).toSet
+  private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
-  private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
-    val newTasks = uploadedFileIds.map(Task(documentSetId, fileGroupId, _))
+  private def addNewTasksToQueue(fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
+    val newTasks = uploadedFileIds.map(Task(fileGroupId, _))
     taskQueue ++= newTasks
     jobTasks += (fileGroupId -> uploadedFileIds)
   }
@@ -85,7 +90,7 @@ trait FileGroupJobQueue extends Actor {
       jobTasks -= fileGroupId
       jobRequests -= fileGroupId
 
-      request.requester ! FileGroupDocumentsCreated(request.documentSetId)
+      request.requester ! FileGroupDocumentsCreated(fileGroupId)
     } else {
       jobTasks += (fileGroupId -> remainingTasks)
     }
@@ -93,8 +98,8 @@ trait FileGroupJobQueue extends Actor {
 
 class FileGroupJobQueueImpl extends FileGroupJobQueue {
   class DatabaseStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Iterable[Long] = Database.inTransaction {
-      GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toIterable
+    override def uploadedFileIds(fileGroupId: Long): Set[Long] = Database.inTransaction {
+      GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
     }
   }
 

@@ -13,11 +13,11 @@ trait ClusteringJobQueue extends Actor {
   protected val storage: Storage
 
   trait Storage {
-    def submitJob(documentSetId: Long): Unit
+    def submitJobWithFileGroup(fileGroupId: Long): Unit
   }
 
   def receive = {
-    case ClusterDocumentSet(documentSetId) => storage.submitJob(documentSetId)
+    case ClusterDocumentSet(fileGroupId) => storage.submitJobWithFileGroup(fileGroupId)
   }
 }
 
@@ -26,8 +26,8 @@ class ClusteringJobQueueImpl extends ClusteringJobQueue {
   override protected val storage: Storage = new DatabaseStorage
 
   class DatabaseStorage extends Storage {
-    override def submitJob(documentSetId: Long) = Database.inTransaction {
-      val job = DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, Preparing).headOption
+    override def submitJobWithFileGroup(fileGroupId: Long) = Database.inTransaction {
+      val job = DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption
       job.map { j =>
         DocumentSetCreationJobStore.insertOrUpdate(j.copy(state = NotStarted))
       }

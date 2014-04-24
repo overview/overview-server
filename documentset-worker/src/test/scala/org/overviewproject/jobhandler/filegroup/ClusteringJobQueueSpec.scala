@@ -16,8 +16,8 @@ class TestClusteringJobQueue extends ClusteringJobQueue {
   private val storedSubmitJobParameter: Agent[Option[Long]] = Agent(None)
 
   class MockStorage extends Storage {
-    override def submitJob(documentSetId: Long): Unit =
-      storedSubmitJobParameter send Some(documentSetId)
+    override def submitJobWithFileGroup(fileGroupId: Long): Unit =
+      storedSubmitJobParameter send Some(fileGroupId)
   }
 
   override protected val storage = new MockStorage
@@ -32,14 +32,14 @@ class ClusteringJobQueueSpec extends Specification {
 
     "set job state to NOT_STARTED when receiving a job" in new ClusteringJobQueueContext {
 
-      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+      clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
 
-      submitJobWasCalledWith(documentSetId)
+      submitJobWasCalledWith(fileGroupId)
     }
 
     trait ClusteringJobQueueContext extends ActorSystemContext with Before {
 
-      protected val documentSetId: Long = 1l
+      protected val fileGroupId: Long = 1l
 
       protected var clusteringJobQueue: TestActorRef[TestClusteringJobQueue] = _
 

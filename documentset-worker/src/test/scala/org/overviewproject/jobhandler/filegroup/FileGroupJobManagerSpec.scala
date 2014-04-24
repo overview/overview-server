@@ -22,16 +22,16 @@ class FileGroupJobManagerSpec extends Specification {
     "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
 
-      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(fileGroupId, documentSetId))
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(fileGroupId))
     }
 
     "start clustering job when text extraction is complete" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand  
       
       fileGroupJobQueue.expectMsgType[CreateDocumentsFromFileGroup]
-      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      fileGroupJobQueue.reply(FileGroupDocumentsCreated(fileGroupId))
       
-      clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
+      clusteringJobQueue.expectMsg(ClusterDocumentSet(fileGroupId))
     }
     
     "cancel text extraction when requested" in {

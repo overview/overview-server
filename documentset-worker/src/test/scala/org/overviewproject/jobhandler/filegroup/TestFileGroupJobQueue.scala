@@ -5,7 +5,7 @@ import akka.actor.Props
 class TestFileGroupJobQueue(tasks: Seq[Long]) extends FileGroupJobQueue {
 
   class TestStorage extends Storage {
-    override def uploadedFileIds(fileGroupId: Long): Iterable[Long] = tasks
+    override def uploadedFileIds(fileGroupId: Long): Set[Long] = tasks.toSet
   }
 
   override protected val storage = new TestStorage

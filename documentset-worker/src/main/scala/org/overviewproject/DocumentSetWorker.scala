@@ -18,6 +18,7 @@ import org.overviewproject.jobhandler.filegroup.ClusteringCommandsMessageQueueBr
 import org.overviewproject.jobhandler.filegroup.FileGroupJobManager
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueue
 import org.overviewproject.jobhandler.filegroup.ClusteringJobQueue
+import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorker
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -36,32 +37,47 @@ object ActorCareTakerProtocol {
  * process starts.
  */
 object DocumentSetWorker extends App {
+  private val WorkerActorSystemName = "WorkerActorSystem"
+  private val FileGroupJobQueueSupervisorName = "FileGroupJobQueueSupervisor"
+  private val FileGroupJobQueueName = "FileGroupJobQueue"
+    
   private val NumberOfJobHandlers = 8
+
+  private def fileGroupJobQueuePath = 
+    s"$WorkerActorSystemName/user/$FileGroupJobQueueSupervisorName/$FileGroupJobQueueName"
+    
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
 
   DB.connect(dataSource)
 
-  val system = ActorSystem("WorkerActorSystem")
-  val actorCareTaker = system.actorOf(Props(new ActorCareTaker(NumberOfJobHandlers)))
-  
+  implicit val system = ActorSystem(WorkerActorSystemName)
+  val actorCareTaker = system.actorOf(
+    ActorCareTaker(NumberOfJobHandlers, FileGroupJobQueueName),
+    FileGroupJobQueueSupervisorName)
+
   actorCareTaker ! StartListening
+
+  FileGroupTaskWorkerStartup(fileGroupJobQueuePath)
 }
+
+
 
 /**
  * Supervisor for the actors.
- * Creates the connection hosting the message queues, and tells 
+ * Creates the connection hosting the message queues, and tells
  * clients to register for connection status messages.
  * If an error occurs at this level, we assume that something catastrophic has occurred.
  * All actors get killed, and we die.
  */
-class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
+class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) extends Actor {
 
   val connectionMonitor = context.actorOf(ApolloMessageQueueConnection())
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
-  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue())
+  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(), fileGroupJobQueueName)
+  Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
   val clusteringJobQueue = context.actorOf(ClusteringJobQueue())
   val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue))
   val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager))
@@ -81,5 +97,10 @@ class ActorCareTaker(numberOfJobHandlers: Int) extends Actor {
       context.system.shutdown
     }
   }
-
 }
+
+object ActorCareTaker {
+  def apply(numberOfJobHandlers: Int, fileGroupJobQueueName: String): Props =
+    Props(new ActorCareTaker(numberOfJobHandlers, fileGroupJobQueueName))
+}
+

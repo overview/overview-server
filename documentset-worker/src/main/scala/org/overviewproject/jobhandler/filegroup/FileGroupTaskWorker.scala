@@ -6,6 +6,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.Future
+import org.overviewproject.util.Logger
 
 trait FileGroupTaskStep {
   def execute: FileGroupTaskStep
@@ -18,31 +19,35 @@ case class FileGroupTaskDone(fileGroupId: Long, uploadedFileId: Long) extends Fi
 trait FileGroupTaskWorker extends Actor {
   import context._
   
-  protected val jobQueuePath: String
-
+  protected def jobQueuePath: String
+ 
   private val JobQueueId: String = "Job Queue"
   private val RetryInterval: FiniteDuration = 1 second
   
-  private val jobQueueSelection = context.actorSelection(jobQueuePath)
+  private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
   
-  protected def startTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
+  protected def startTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
   
   lookForJobQueue
 
   def receive = {
     case ActorIdentity(JobQueueId, Some(jq)) => { 
+      Logger.info(s"[${self.path}] Found Job Queue at ${jq.path}")
       jobQueue = jq
       jobQueue ! RegisterWorker(self)
     }
     case ActorIdentity(JobQueueId, None) => 
+      Logger.info(s"[${self.path}] Looking for Job Queue at $jobQueuePath")
       system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
     case TaskAvailable =>
       jobQueue ! ReadyForTask
-    case Task(documentSetId, fileGroupId, uploadedFileId) =>
-      	executeTaskStep(startTask(documentSetId, fileGroupId, uploadedFileId))
-    case FileGroupTaskDone(fileGroupId, uploadedFileId) =>
+    case Task(fileGroupId, uploadedFileId) => 
+      	executeTaskStep(startTask(fileGroupId, uploadedFileId))
+    case FileGroupTaskDone(fileGroupId, uploadedFileId) => {
       jobQueue ! TaskDone(fileGroupId, uploadedFileId)
+      jobQueue ! ReadyForTask
+    }
     case step: FileGroupTaskStep => executeTaskStep(step) 
   }
   
@@ -51,3 +56,10 @@ trait FileGroupTaskWorker extends Actor {
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
 }
 
+
+object FileGroupTaskWorker {
+  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with FileProcessing {
+    override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
+    
+  })
+}

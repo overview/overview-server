@@ -42,11 +42,11 @@ trait FileGroupJobManager extends Actor {
     case ClusterFileGroupCommand(fileGroupId, name, lang, stopWords, importantWords) => {
       val documentSetId = storage.createDocumentSetWithJob(fileGroupId, name, lang, stopWords, importantWords)
 
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId, documentSetId)
+      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId)
     }
 
-    case FileGroupDocumentsCreated(documentSetId) =>
-      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+    case FileGroupDocumentsCreated(fileGroupId) => 
+      clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
 
   }
 
