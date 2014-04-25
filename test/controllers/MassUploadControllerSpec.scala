@@ -216,7 +216,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
           documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
-      there was one(controller.messageQueue).startClustering(fileGroupId, fileGroupName, lang, stopWords, importantWords)
+      there was one(controller.messageQueue).startClustering(documentSetId, fileGroupId, fileGroupName, lang, stopWords, importantWords)
     }
 
     "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {

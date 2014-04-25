@@ -43,7 +43,7 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "step through task until done" in new TaskWorkerContext {
-      createJobQueue.handingOutTask(CreatePagesTask(fileGroupId, uploadedFileId))
+      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
       
       createWorker
 

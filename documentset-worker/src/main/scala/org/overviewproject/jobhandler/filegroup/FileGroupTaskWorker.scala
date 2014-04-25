@@ -27,7 +27,7 @@ trait FileGroupTaskWorker extends Actor {
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
   
-  protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
+  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
   
   lookForJobQueue
 
@@ -42,8 +42,8 @@ trait FileGroupTaskWorker extends Actor {
       system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
     case TaskAvailable =>
       jobQueue ! ReadyForTask
-    case CreatePagesTask(fileGroupId, uploadedFileId) => 
-      	executeTaskStep(startCreatePagesTask(fileGroupId, uploadedFileId))
+    case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => 
+      	executeTaskStep(startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
     case CreatePagesProcessComplete(fileGroupId, uploadedFileId) => {
       jobQueue ! CreatePagesTaskDone(fileGroupId, uploadedFileId)
       jobQueue ! ReadyForTask

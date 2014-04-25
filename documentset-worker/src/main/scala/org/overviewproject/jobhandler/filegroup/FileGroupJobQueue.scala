@@ -9,7 +9,7 @@ import akka.actor.Props
 import org.overviewproject.util.Logger
 
 object FileGroupJobQueueProtocol {
-  case class CreateDocumentsFromFileGroup(fileGroupId: Long)
+  case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
   case class FileGroupDocumentsCreated(documentSetId: Long)
 }
 
@@ -17,7 +17,7 @@ object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
   case object TaskAvailable
   case object ReadyForTask
-  case class CreatePagesTask(fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
   case class CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long)
 }
 
@@ -46,11 +46,11 @@ trait FileGroupJobQueue extends Actor {
       if (!taskQueue.isEmpty) worker ! TaskAvailable
 
     }
-    case CreateDocumentsFromFileGroup(fileGroupId) => {
+    case CreateDocumentsFromFileGroup(documentSetId, fileGroupId) => {
       Logger.info(s"Extact text task for FileGroup [$fileGroupId]")
       val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
-      addNewTasksToQueue(fileGroupId, fileIds)
+      addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
       jobRequests += (fileGroupId -> JobRequest(sender))
 
       workerPool.map(_ ! TaskAvailable)
@@ -72,8 +72,8 @@ trait FileGroupJobQueue extends Actor {
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
-  private def addNewTasksToQueue(fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
-    val newTasks = uploadedFileIds.map(CreatePagesTask(fileGroupId, _))
+  private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
+    val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
     taskQueue ++= newTasks
     jobTasks += (fileGroupId -> uploadedFileIds)
   }

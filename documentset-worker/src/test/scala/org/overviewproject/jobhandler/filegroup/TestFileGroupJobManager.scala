@@ -17,7 +17,8 @@ trait JobParameters {
   protected val importantWords = "important words"
   protected val suppliedStopWords = "stop words"
 
-  protected val clusterCommand = ClusterFileGroupCommand(fileGroupId, title, lang, suppliedStopWords, importantWords)
+  protected val clusterCommand = 
+    ClusterFileGroupCommand(documentSetId, fileGroupId, title, lang, suppliedStopWords, importantWords)
 }
 
 trait StorageMonitor extends JobParameters {

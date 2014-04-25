@@ -92,22 +92,22 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
       pageText.fold(
         error => Left(text.left.getOrElse(Seq.empty) :+ error),
-        t => text.right.map(_ + t)
-      )
+        t => text.right.map(_ + t))
     })
-    
+
     documentText.fold(
       errors => Left(errors.mkString("\n")),
       text => Right(Document(
-          documentSetId,
-          title = Some(file.name),
-          text = Some(text), 
-          fileId = Some(file.id)) ))    
-    
+        documentSetId,
+        id = ids.next,
+        title = Some(file.name),
+        text = Some(text),
+        fileId = Some(file.id))))
+
   }
 
   private def produceDocument(document: Document): Unit = {
-    DocumentWriter.write(document)
+    Database.inTransaction { DocumentWriter.write(document) }
     val documentText = document.text.get
 
     indexingSession.indexDocument(documentSetId, document.id, documentText, Some(document.title.get), None)

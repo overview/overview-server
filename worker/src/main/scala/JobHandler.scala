@@ -233,7 +233,6 @@ object JobHandler {
   
   private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
     job.fileGroupId.map { fileGroupId =>
-      GroupedProcessedFileStore.delete(GroupedProcessedFileFinder.byFileGroup(fileGroupId).toQuery)
       GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
 
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)

@@ -30,8 +30,8 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
   @tailrec
   private def produceDocumentsFromPage(currentPage: Int, numberOfDocumentsProcessed: Int): Int = {
 
-    val numberOfDocumentsProcessedInPage = runQueryForPage(currentPage) { sources =>
-      sources.foldLeft(0) { (numberOfDocuments, source) =>
+    val numberOfDocumentsProcessedInPage = runQueryForPage(currentPage) { sources => 
+      sources.foldLeft(0) { (numberOfDocuments, source) => println("fooo")
         val cancel = reportProgress(numberOfDocumentsProcessed + numberOfDocuments + 1)
         if (!cancel) {
           processDocumentSource(source)
@@ -45,7 +45,7 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
     else produceDocumentsFromPage(currentPage + 1, numberOfDocumentsProcessedInPage + numberOfDocumentsProcessed)
   }
 
-  private def reportProgress(documentIndex: Int): Boolean = {
+  private def reportProgress(documentIndex: Int): Boolean = { 
     val completionFraction = PreparingFraction + FetchingFraction * documentIndex / totalNumberOfDocuments
     val status = Retrieving(documentIndex, totalNumberOfDocuments.toInt)
     progAbort(Progress(completionFraction, status))

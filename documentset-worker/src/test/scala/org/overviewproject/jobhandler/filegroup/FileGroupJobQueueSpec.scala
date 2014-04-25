@@ -60,6 +60,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
+      protected val documentSetId = 1l
       protected val fileGroupId = 2l
       protected val numberOfUploadedFiles = 10
       protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
@@ -76,7 +77,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         Seq.fill(numberOfWorkers)(new WorkerTestProbe(fileGroupId, system))
 
       protected def submitJob =
-        fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId)
+        fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       
@@ -98,7 +99,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
-          case CreatePagesTask(fg, uf) => {
+          case CreatePagesTask(ds, fg, uf) => {
             sender.tell(CreatePagesTaskDone(fg, uf), worker)
             sender.tell(ReadyForTask, worker)
           }

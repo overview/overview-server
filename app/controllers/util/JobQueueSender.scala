@@ -66,6 +66,7 @@ object JobQueueSender {
    */
   def send(clusterFileGroup: ClusterFileGroup): Either[Unit, Unit] = {
     implicit val clusterFileGroupWrites: Writes[ClusterFileGroup] = (
+      (__ \ "documentSetId").write[Long] and
       (__ \ "fileGroupId").write[Long] and
       (__ \ "title").write[String] and
       (__ \ "lang").write[String] and

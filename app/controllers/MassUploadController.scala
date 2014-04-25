@@ -103,7 +103,7 @@ trait MassUploadController extends Controller {
     def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
-    def startClustering(fileGroupId: Long, title: String, lang: String, suppliedStopWords: String, importantWords: String): Unit
+    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String, suppliedStopWords: String, importantWords: String): Unit
 
     /** Tell worker to delete all processing for the FileGroup and delete all associated files */
     def cancelUpload(fileGroupId: Long): Unit
@@ -150,7 +150,7 @@ trait MassUploadController extends Controller {
         val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
           documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-        messageQueue.startClustering(fileGroup.id, name, lang, suppliedStopWords, importantWords)
+        messageQueue.startClustering(documentSet.id, fileGroup.id, name, lang, suppliedStopWords, importantWords)
 
         Redirect(routes.DocumentSetController.index())
       }
@@ -221,9 +221,9 @@ object MassUploadController extends MassUploadController {
         throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
     }
 
-    override def startClustering(fileGroupId: Long, title: String, lang: String,
+    override def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
                                  suppliedStopWords: String, importantWords: String): Unit = {
-      val command = ClusterFileGroup(fileGroupId, title, lang, suppliedStopWords, importantWords)
+      val command = ClusterFileGroup(documentSetId, fileGroupId, title, lang, suppliedStopWords, importantWords)
 
       if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")

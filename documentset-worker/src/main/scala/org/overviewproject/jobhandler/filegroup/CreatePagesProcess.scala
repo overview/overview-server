@@ -17,6 +17,7 @@ import org.overviewproject.util.Textify
 import java.io.OutputStreamWriter
 import java.io.FileOutputStream
 import org.apache.pdfbox.pdfwriter.COSWriter
+import org.overviewproject.tree.orm.TempDocumentSetFile
 
 /*
  * Generates the steps needed to process uploaded files:
@@ -27,13 +28,13 @@ import org.apache.pdfbox.pdfwriter.COSWriter
  */
 trait CreatePagesProcess {
 
-  protected def startCreatePagesTask(fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    SaveFile(fileGroupId, uploadedFileId)
+  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
+    SaveFile(documentSetId, fileGroupId, uploadedFileId)
 
-  private case class TaskInformation(fileGroupId: Long, uploadedFileId: Long)
+  private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 
-  private case class SaveFile(fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
-    private val taskInformation = TaskInformation(fileGroupId, uploadedFileId)
+  private case class SaveFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
+    private val taskInformation = TaskInformation(documentSetId, fileGroupId, uploadedFileId)
 
     override def execute: FileGroupTaskStep = {
       Database.inTransaction {
@@ -65,6 +66,7 @@ trait CreatePagesProcess {
       pages: Seq[PDDocument]) extends FileGroupTaskStep {
     
     private val pageStore = new BaseStore(Schema.pages)
+    private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
     private val textStripper = new PDFTextStripper()
 
     
@@ -82,6 +84,7 @@ trait CreatePagesProcess {
           Page(fileId, i, 1, Some(data), Some(text))
       }
       Database.inTransaction {
+        tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(taskInformation.documentSetId, fileId))
         pageStore.insertBatch(filePages.toIterable)
       }
       pdfDocument.close()

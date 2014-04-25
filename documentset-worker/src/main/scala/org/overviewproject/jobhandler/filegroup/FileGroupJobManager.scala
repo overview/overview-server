@@ -39,10 +39,8 @@ trait FileGroupJobManager extends Actor {
 
   def receive = {
 
-    case ClusterFileGroupCommand(fileGroupId, name, lang, stopWords, importantWords) => {
-      val documentSetId = storage.createDocumentSetWithJob(fileGroupId, name, lang, stopWords, importantWords)
-
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(fileGroupId)
+    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
+      fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
     }
 
     case FileGroupDocumentsCreated(fileGroupId) => 
