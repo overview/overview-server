@@ -24,6 +24,7 @@ import org.overviewproject.persistence.TreeIdGenerator
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.finders.DocumentSetCreationJobTreeFinder
 import org.overviewproject.persistence.orm.finders.TreeFinder
+import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
 
 object JobHandler {
 
@@ -232,7 +233,12 @@ object JobHandler {
   }
   
   private def deleteFileGroupData(job: PersistentDocumentSetCreationJob): Unit = {
+    import org.overviewproject.persistence.orm.Schema._
+    
+    val tempDocumentSetFileStore = BaseStore(tempDocumentSetFiles)
+    
     job.fileGroupId.map { fileGroupId =>
+      tempDocumentSetFileStore.delete(TempDocumentSetFileFinder.byDocumentSet(job.documentSetId).toQuery)
       GroupedFileUploadStore.delete(GroupedFileUploadFinder.byFileGroup(fileGroupId).toQuery)
 
       FileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)

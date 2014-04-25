@@ -31,7 +31,7 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
   private def produceDocumentsFromPage(currentPage: Int, numberOfDocumentsProcessed: Int): Int = {
 
     val numberOfDocumentsProcessedInPage = runQueryForPage(currentPage) { sources => 
-      sources.foldLeft(0) { (numberOfDocuments, source) => println("fooo")
+      sources.foldLeft(0) { (numberOfDocuments, source) => 
         val cancel = reportProgress(numberOfDocumentsProcessed + numberOfDocuments + 1)
         if (!cancel) {
           processDocumentSource(source)
