@@ -42,7 +42,6 @@ trait DocumentController extends Controller {
       val filename = document.title.getOrElse("UploadedFile.pdf")
       SimpleResult(
         header = ResponseHeader(OK, Map(
-          CONTENT_LENGTH -> s"${document.contentLength.get}",
           CONTENT_TYPE -> "application/pdf",
           CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""")),
         body = dataContent)
