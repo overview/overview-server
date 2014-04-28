@@ -42,19 +42,55 @@ if [ "$OUTPUT_ZIP" = "$OUTPUT_DIRECTORY" ]; then
   fail "The zipfile you specify must end with '.zip'"
 fi
 
+# Remove the "dist" folder before building: otherwise sbt will find the jars
+# inside from a previous build and complain about "Duplicate mappings"
+rm -rf "$OVERVIEW_DIR"/dist
+
 ./sbt '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; message-broker/stage; search-index/stage'
 
-TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
 BASE="$OUTPUT_DIRECTORY"
 STAGE="target/universal/stage"
 
 set -x
 
-ln -s "$OVERVIEW_DIR" "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
+mkdir -p "$OVERVIEW_DIR"/dist
+pushd "$OVERVIEW_DIR"/dist
+
+# Copy over all jars
+#
+# We put these in a "lib" directory because the runner scripts that sbt
+# generates expect to be in a "bin" directory -- they look for "../lib" and
+# it's really easy if we just go with that.
+mkdir lib
+for project in runner db-evolution-applier worker documentset-worker message-broker search-index; do
+  mkdir $project
+  ls ../$project/$STAGE/lib > $project/classpath.txt
+  ln -f ../$project/$STAGE/lib/* lib/
+  [[ -d ../$project/$STAGE/bin ]] && cp -f ../$project/$STAGE/bin/* $project/
+done
+
+# The "frontend" project is special because of its path
+mkdir frontend
+ln -f ../$STAGE/lib/* lib/
+ls ../$STAGE/lib > frontend/classpath.txt
+cp -f ../$STAGE/bin/* frontend/
+
+# Two projects need extra files
+cp -a ../message-broker/etc message-broker
+cp -a ../search-index/config search-index
+
+# Add the other files
+for file in README.md LICENSE; do
+  cp ../$file .
+done
+cp ../dist-files/* .
+
+TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
+ln -s "$OVERVIEW_DIR"/dist "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 
 rm -f "$OVERVIEW_DIR"/"$OUTPUT_ZIP"
+(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$OUTPUT_DIRECTORY")
 
-(cd "$TEMP_DIR" && "$ZIP" --quiet -r "$OVERVIEW_DIR"/"$OUTPUT_ZIP" "$BASE/runner/$STAGE"/* "$BASE/db-evolution-applier/$STAGE"/* "$BASE/$STAGE"/* "$BASE/worker/$STAGE"/* "$BASE/documentset-worker/$STAGE"/* "$BASE/message-broker/$STAGE"/* "$BASE"/message-broker/etc/* "$BASE/search-index/$STAGE"/* "$BASE"/search-index/config/* "$BASE"/README.md "$BASE"/LICENSE "$BASE"/run "$BASE"/overview.desktop)
-
+popd # "$OVERVIEW_DIR"/dist
 rm "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 rmdir "$TEMP_DIR"

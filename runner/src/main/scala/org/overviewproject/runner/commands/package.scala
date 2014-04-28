@@ -1,6 +1,7 @@
 package org.overviewproject.runner
 
 import java.io.File
+import scala.io.Source
 
 package object commands {
   trait UsefulCommands {
@@ -104,10 +105,13 @@ package object commands {
 
   object production extends UsefulCommands {
     private def cmd(prefix: String, jvmArgs: Seq[String], args: Seq[String]) = {
-      val fullJvmArgs = jvmArgs ++ Seq(
-        "-cp",
-        (if (prefix.isEmpty) "target/universal/stage/lib/*" else s"${prefix}/target/universal/stage/lib/*")
-      )
+      val classPath = Source
+        .fromFile(s"${prefix}/classpath.txt")
+        .getLines
+        .map((s) => s"lib/${s}")
+        .mkString(":")
+
+      val fullJvmArgs = jvmArgs ++ Seq("-cp", classPath)
       new JvmCommand(Seq(), fullJvmArgs, args)
     }
 
@@ -150,7 +154,7 @@ package object commands {
     )
 
     override def webServer = cmd(
-      "",
+      "frontend",
       Seq(
         Flags.DatabaseUrl,
         "-Dpidfile.enabled=false"
