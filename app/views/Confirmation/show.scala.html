@@ -1,0 +1,14 @@
+@()(implicit lang: Lang, flash: Flash, request: RequestHeader)
+
+@defining(scopedMessages("views.Confirmation.show")) { m =>
+  @main(optionalUser=None, title=m("title"), bodyClass="confirmation-index", h1=m("h1")) {
+    <p>@{
+      Html(
+        m("body_html")
+          .replace("@register_url", HtmlFormat.escape(routes.SessionController.new_().toString).toString)
+          .replace("@login_url", HtmlFormat.escape(routes.SessionController.new_().toString).toString)
+          .replace("@reset_password_url", HtmlFormat.escape(routes.PasswordController.new_().toString).toString)
+      )
+    }</p>
+  }
+}

@@ -24,8 +24,7 @@ trait UserController extends Controller {
           case Some(u) => handleExistingUser(u)
           case None => handleNewUser(registration)
         }
-        Redirect(routes.ConfirmationController.show("")).flashing(
-          "success" -> m("create.success"),
+        Redirect(routes.ConfirmationController.index(registration.email)).flashing(
           "event" -> "user-create"
         )
       })

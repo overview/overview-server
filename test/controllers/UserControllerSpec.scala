@@ -9,7 +9,7 @@ import play.api.Play.{start,stop}
 import play.api.data.Form
 import play.api.mvc.{AnyContent,Request,RequestHeader}
 import play.api.test.{FakeApplication,FakeRequest}
-import play.api.test.Helpers.{BAD_REQUEST, SEE_OTHER, flash, status}
+import play.api.test.Helpers.{SEE_OTHER, status}
 import org.overviewproject.test.Specification
 import controllers.forms.UserForm
 import mailers.Mailer
@@ -120,9 +120,8 @@ class UserControllerSpec extends Specification {
       newUserMailed must beFalse
     }
 
-    "create() with an existing user should redirect with 'success' flash" in new OurScopeWithExistingUser {
+    "create() with an existing user should redirect" in new OurScopeWithExistingUser {
       val result = run
-      flash(result).get("success") must beSome
       status(result) must equalTo(SEE_OTHER)
     }
     
@@ -140,9 +139,8 @@ class UserControllerSpec extends Specification {
       savedUser must beSome[OverviewUser].like { case u: OverviewUser => u.treeTooltipsEnabled must beEqualTo(true) }
     }
 
-    "create() with a new user should redirect with 'success' flash" in new OurScopeWithNewUser {
+    "create() with a new user should redirect" in new OurScopeWithNewUser {
       val result = run
-      flash(result).get("success") must beSome
       status(result) must equalTo(SEE_OTHER)
     }
 
@@ -154,9 +152,8 @@ class UserControllerSpec extends Specification {
       newUserMailed must beFalse
     }
 
-    "create() with a new user and unique-key violation should redirect with 'success' flash" in new OurScopeWithUniqueKeyViolation {
+    "create() with a new user and unique-key violation should redirect" in new OurScopeWithUniqueKeyViolation {
       val result = run
-      flash(result).get("success") must beSome
       status(result) must equalTo(SEE_OTHER)
     }
   }

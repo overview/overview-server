@@ -20,8 +20,6 @@ controllers.TreeController.treeDescription.fromTag=documents with tag “{0}”
 
 controllers.UserController.create.success=Thank you for registering. There’s one more step: please check your email and click the confirmation link.
 
-forms.Confirmation.token.not_found=Nothing happened. Did you click a confirmation link sometime in the past? If so, please log in. Otherwise, please click the link the confirmation email we sent you.
-
 forms.LoginForm.error.invalid_credentials=Wrong email address or password
 forms.LoginForm.error.not_confirmed=Your email address and password are correct, but you can’t log in until you click the link in the confirmation email we sent you.
 
@@ -29,9 +27,10 @@ forms.validation.unsupportedLanguage=The requested languages is not supported
 forms.validation.blankText=The field must contain non-whitespace characters
 
 mailers.User.create.subject=Overview Project new account confirmation
-mailers.User.create.body=You have just registered to use the Overview Project. To complete your registration, click the following link:
-mailers.User.create.signoff_html=If you have questions or need help, try the <a href="{0}">help page</a>, or the <a href="{1}">user forum</a>. Happy document mining,
-mailers.User.create.signature=The Overview Project developers
+mailers.User.create.body1=You just registered to use the Overview Project. To start using Overview, click the following link:
+mailers.User.create.body2_html=If you have problems, please <a href="{0}">contact us</a>.
+mailers.User.create.signoff=See you soon,
+mailers.User.create.signature=The Overview team
 
 mailers.User.createErrorUserAlreadyExists.subject=Overview Project re-registration attempt
 mailers.User.createErrorUserAlreadyExists.intro=Somebody with this email address has tried to register to use the Overview Project. You already have an account, so your password has not changed.
@@ -121,16 +120,13 @@ views.components.navbar.logged_in={0}
 views.components.navbar.link_document_sets=Your document sets
 views.components.navbar.link_logout=Log out
 
-views.Confirmation.create.title=Confirmation sent
-views.Confirmation.create.h1=Confirmation sent
-views.Confirmation.create.body=An email was sent to @email. Please click on the link in that email to sign in.
+views.Confirmation.index.title=Check your email
+views.Confirmation.index.h1=Check your email
+views.Confirmation.index.body_html=<p>Thank you for registering. You’re almost done.</p><p>We’ve sent an email to you at <strong>@email</strong>. Click the link in your email to start using Overview.</p><p><small>Is the email missing? Remember to check your spam folder.</small></p>
 
-views.Confirmation.index.title=Enter confirmation code
-views.Confirmation.index.h1=Enter confirmation code
-views.Confirmation.index.intro=Have you received your confirmation email yet? If so, enter the token below or click the link in the email
-views.Confirmation.index.label.token=Token from email
-views.Confirmation.index.placeholder.token=1234567890qwertyuiopASDFGHJKL
-views.Confirmation.index.submit=Finish registering and log in
+views.Confirmation.show.title=Broken confirmation link
+views.Confirmation.show.h1=Broken confirmation link
+views.Confirmation.show.body_html=<p>You clicked a confirmation link and <strong>nothing happened</strong>. Sorry about this.</p><p>Here are a few things to try:</p><ul><li>Did you already click this link? If so, you’re already confirmed. <a href="@login_url">Log in</a> or <a href="@reset_password_url">reset your password</a>.</li><li>Otherwise, please <a href="http://overview.ap.org/contact">contact us</a> so we can help you out.</li></ul><p><small>Sorry: to protect our users’ privacy (and yours), we can’t get any more precise than this.</small></p>
 
 views.CsvUpload.new.title=Upload a CSV file
 views.CsvUpload.new.h1=Upload a CSV file

@@ -1,16 +1,9 @@
 @(
-  form: play.api.data.Form[OverviewUser with ConfirmationRequest]
+  email: String
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @defining(scopedMessages("views.Confirmation.index")) { m =>
   @main(optionalUser=None, title=m("title"), bodyClass="confirmation-index", h1=m("h1")) {
-    <p>@m("intro")</p>
-
-    <form method="get" action="@routes.ConfirmationController.show()" class="well form-horizontal">
-      @helper.Form.csrfToken
-      @helper.Form.errors(form.globalErrors)
-      @helper.Form.translatedInput(form("token"), m)
-      @helper.Form.translatedSubmit(m)
-    </form>
+    <p>@Html(m("body_html").replace("@email", HtmlFormat.escape(email).toString))</p>
   }
 }
