@@ -1,1 +1,1 @@
-start runner\target\universal\stage\bin\runner
+start runner\runner.bat

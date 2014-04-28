@@ -109,7 +109,7 @@ package object commands {
         .fromFile(s"${prefix}/classpath.txt")
         .getLines
         .map((s) => s"lib/${s}")
-        .mkString(":")
+        .mkString(File.pathSeparator)
 
       val fullJvmArgs = jvmArgs ++ Seq("-cp", classPath)
       new JvmCommand(Seq(), fullJvmArgs, args)
@@ -148,12 +148,17 @@ package object commands {
         "-Djava.awt.headless=true",
         "-Delasticsearch",
         "-Des.foreground=yes",
-        "-Des.path.home=./search-index"
+        "-Des.path.home=./search-index",
+        // Put the search index in the same directory as Postgres. That way
+        // all user data gets stored in one directory. (Yes, it's a bit of a
+        // hack.)
+        "-Des.path.data=database/search-index"
       ),
       Seq("org.elasticsearch.bootstrap.ElasticSearch")
     )
 
     override def webServer = cmd(
+      // In distribution mode, the web server is in the "frontend/" folder
       "frontend",
       Seq(
         Flags.DatabaseUrl,
@@ -166,7 +171,12 @@ package object commands {
 
     override def worker = cmd(
       "worker",
-      Seq(Flags.DatabaseUrl, Flags.DatabaseDriver, "-Dlogback.configurationFile=workerdevlog.xml", "-Xmx2g"),
+      Seq(
+        Flags.DatabaseUrl,
+        Flags.DatabaseDriver,
+        "-Dlogback.configurationFile=workerdevlog.xml",
+        "-Xmx2g"
+      ),
       Seq("JobHandler")
     ).with32BitSafe
 

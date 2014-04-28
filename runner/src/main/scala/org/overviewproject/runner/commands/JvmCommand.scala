@@ -48,7 +48,7 @@ class JvmCommand(
 
   private def is32BitMarker(is32Bit: Boolean) : Seq[String] = {
     if (is32Bit) {
-      Seq("-server", "-Doverview.is32BitJava=true")
+      Seq("-Doverview.is32BitJava=true")
     } else {
       Seq()
     }

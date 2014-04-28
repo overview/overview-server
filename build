@@ -85,6 +85,18 @@ for file in README.md LICENSE; do
 done
 cp ../dist-files/* .
 
+# Remove TOTALLY USELESS files.
+#
+# Each file here needs an explanation!
+#
+# A. what does it do?
+# B. why didn't it get removed sometime before this script?
+
+# A. Helps processed find the search-index instance on AWS.
+# B. Needed on AWS, therefore needed in Build.scala.
+# FIXME search-index crashes without aws-java-sdk; it doesn't even use it
+rm lib/com.amazonaws.aws-java-sdk-1.3.32.jar
+
 TEMP_DIR=$(mktemp -d --suffix=overview-server-build)
 ln -s "$OVERVIEW_DIR"/dist "$TEMP_DIR"/"$OUTPUT_DIRECTORY"
 
