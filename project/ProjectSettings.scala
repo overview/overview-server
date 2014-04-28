@@ -117,7 +117,12 @@ trait ProjectSettings {
   
   val messageBrokerDependencies = Seq(
     "org.apache.activemq" % "apache-apollo" % "1.6",
-    javaxMailDep
+    javaxMailDep,
+    // message-broker relies on scala-compiler, but a different version than
+    // Squeryl does. That means two huge, useless jars in the distribution
+    // instead of one. Require the latest version, so that the jars aren't
+    // duplicated.
+    "org.scala-lang" % "scala-compiler" % ourScalaVersion
   )
 
   val searchIndexDependencies = Seq(
