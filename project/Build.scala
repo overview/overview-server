@@ -42,6 +42,7 @@ object ApplicationBuild extends Build with ProjectSettings {
 
   val messageBroker = Project("message-broker", file("message-broker"),
                               settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       libraryDependencies ++= messageBrokerDependencies,
@@ -50,6 +51,7 @@ object ApplicationBuild extends Build with ProjectSettings {
 
   val searchIndex = Project("search-index", file("search-index"),
                             settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       libraryDependencies ++= searchIndexDependencies,
@@ -80,6 +82,7 @@ object ApplicationBuild extends Build with ProjectSettings {
       "db-evolution-applier",
       file("db-evolution-applier"),
       settings = Defaults.defaultSettings)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       libraryDependencies ++= dbEvolutionApplierDependencies,
@@ -134,6 +137,7 @@ object ApplicationBuild extends Build with ProjectSettings {
     .dependsOn(common)
 
   val documentSetWorker = OverviewProject.withNoDbTests("documentset-worker", documentSetWorkerProjectDependencies)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
       Keys.fork := true,
@@ -156,6 +160,7 @@ object ApplicationBuild extends Build with ProjectSettings {
   val main = (
     play.Project(appName, appVersion, serverProjectDependencies)
       .settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
+      .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
       .settings(
         scalacOptions ++= ourScalacOptions,
         templatesImport += "views.Magic._",
