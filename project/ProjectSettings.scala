@@ -36,7 +36,6 @@ trait ProjectSettings {
   val openCsvDep = "net.sf.opencsv" % "opencsv" % "2.3"
   val playJsonDep = "com.typesafe.play" %% "play-json" % play.core.PlayVersion.current
   val postgresqlDep = "postgresql" % "postgresql" % "9.1-901.jdbc4"
-  val saddleDep = "org.scala-saddle" %% "saddle" % "1.0.+"
   val scalaArmDep = "com.jsuereth" %% "scala-arm" % "1.3"
   val specs2Dep = "org.specs2" %% "specs2" % "2.3.4"
   val squerylDep = "org.squeryl" %% "squeryl" % "0.9.6-RC2"
@@ -103,8 +102,7 @@ trait ProjectSettings {
     openCsvDep,
     anorm,
     elasticSearchDep,
-    elasticSearchCloudAwsDep,
-    saddleDep
+    elasticSearchCloudAwsDep
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
