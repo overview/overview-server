@@ -29,7 +29,7 @@ script:
   # The build must succeed
   - ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
-  - runner/target/universal/stage/bin/runner --sh auto/wait-and-test-integration.sh
+  - (cd dist && ./run --sh ../auto/wait-and-test-integration.sh)
 notifications:
   irc:
     - irc.freenode.net#overviewproject
