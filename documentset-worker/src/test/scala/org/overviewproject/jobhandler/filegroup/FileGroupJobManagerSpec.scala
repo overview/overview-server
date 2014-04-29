@@ -13,11 +13,6 @@ class FileGroupJobManagerSpec extends Specification {
 
   "FileGroupJobManager" should {
 
-    "create a job with a documentset" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand
-
-      createJobWasCalledWith(fileGroupId, lang, suppliedStopWords, importantWords)
-    }
 
     "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
