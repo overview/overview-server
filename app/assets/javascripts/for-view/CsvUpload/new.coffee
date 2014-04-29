@@ -268,7 +268,7 @@ define [ 'jquery', 'underscore', 'util/csv_reader', 'util/net/upload', 'i18n', '
         requestAnimationFrame(refresh_progress)
 
         $(window).on 'beforeunload.document-set-index-upload', ->
-          i18n('views.DocumentSet._uploadForm.leavePageWarning')
+          i18n('views.CsvUpload.new.leavePageWarning')
         $modal.modal('show')
 
         # There are *lots* of progress events with a fast connection. They become
