@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Terminal=true
-Exec=sh -c "(cd $(dirname '%k') && ./run)"
-Name=Overview
+Exec=sh -c "(cd $(dirname '%k') && ./run -Doverview.multi_user=false)"
+Name=Overview for Linux
 GenericName=Document set analyzer
 Comment=Analyze your documents
