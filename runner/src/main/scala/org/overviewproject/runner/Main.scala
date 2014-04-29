@@ -222,6 +222,14 @@ class Main(conf: Conf) {
       // Now we can listen to them together. We'll exit when any one exits.
       val daemons = appendedDaemons ++ nonAppendedDaemons ++ cmdLineDaemons
 
+      // Let's open a browser window at the first opportunity
+      if ((appendableDaemonInfos ++ nonAppendableDaemonInfos).map(_.id).contains("overview-server")) {
+        val browserLauncher = BrowserLauncher("http://localhost:9000")
+        val browserThread = new Thread(browserLauncher.createRunnable)
+        browserThread.setDaemon(true)
+        browserThread.start()
+      }
+
       val statusCode = waitForDaemons(daemons)
 
       logger.out.println(s"All processes exited. (First exit status code was ${statusCode}. Shutting down.")
