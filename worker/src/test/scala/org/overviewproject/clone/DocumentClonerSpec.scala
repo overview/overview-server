@@ -72,7 +72,7 @@ class DocumentClonerSpec extends DbSpecification {
             documentSet.id,
             text = Some("text"),
             fileId = Some(file.id),
-            pageId = createPage(file.id),
+            pageId = documentPage(file.id),
             contentLength = Some(ContentLength),
             id = ids.next))
 
@@ -80,7 +80,10 @@ class DocumentClonerSpec extends DbSpecification {
         documentSetCloneId = documentSetClone.id
       }
 
-      protected def createPage(fileId: Long): Option[Long] = None
+      protected def documentPage(fileId: Long): Option[Long] = {
+        createPage(fileId)
+        None
+      }
 
       private def createContents: Long = {
         implicit val pgConnection = DB.pgConnection
@@ -97,30 +100,32 @@ class DocumentClonerSpec extends DbSpecification {
             select (f))
       }
 
-
       protected def findClonedDocuments: Iterable[Document] =
         from(Schema.documents)(d =>
           where(d.documentSetId === documentSetCloneId)
             select (d))
+
+      protected def findPages: Iterable[Page] =
+        from(Schema.pages)(p =>
+          where(p.fileId in
+            from(Schema.documents)(d =>
+              where(d.documentSetId === documentSetCloneId)
+                select (d.fileId)))
+            select (p))
+
+      protected def createPage(fileId: Long): Long = {
+        val pageData = Array.fill[Byte](128)(0xFF.toByte)
+        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, 1, Some(pageData), Some("Text")))
+        page.id
+      }
+
     }
 
     trait SplitPdfUploadContext extends PdfUploadContext {
       import org.overviewproject.postgres.SquerylEntrypoint._
-
-      override def createPage(fileId: Long): Option[Long] = {
-        val pageData = Array.fill[Byte](128)(0xFF.toByte)
-        val page = Schema.pages.insertOrUpdate(Page(fileId, 1, 1, Some(pageData), Some("Text")))
-        Some(page.id)
-      }
       
-      protected def findPages: Iterable[Page] = {
-        from(Schema.pages)(p =>
-          where(p.id in
-            from(Schema.documents)(d =>
-              where(d.documentSetId === documentSetCloneId)
-                select (d.pageId)))
-            select (p))
-      }
+      override protected def documentPage(fileId: Long): Option[Long] = Some(createPage(fileId))
+
     }
 
     "Create document clones" in new CloneContext {
@@ -165,6 +170,16 @@ class DocumentClonerSpec extends DbSpecification {
         case p => p.referenceCount must be equalTo (2)
       }
     }
+
+    "increase refcount on pages on non-split document sets" in new PdfUploadContext {
+      DocumentCloner.clone(documentSetId, documentSetCloneId)
+
+      val page = findPages.headOption
+      page must beSome.like {
+        case p => p.referenceCount must be equalTo (2)
+      }
+    }
+
   }
   step(shutdownDb)
 }
