@@ -56,6 +56,7 @@ package object commands {
       Seq(),
       Seq(
         "-XX:MaxPermSize=512M",
+        "-Duser.timezone=UTC",
         "-Dpidfile.enabled=false"
       ),
       Seq(
@@ -157,17 +158,25 @@ package object commands {
       Seq("org.elasticsearch.bootstrap.ElasticSearch")
     )
 
-    override def webServer = cmd(
-      // In distribution mode, the web server is in the "frontend/" folder
-      "frontend",
-      Seq(
-        Flags.DatabaseUrl,
-        "-Dpidfile.enabled=false"
-      ),
-      Seq(
-        "play.core.server.NettyServer"
+    override def webServer = {
+      val cmdLineFlags: Seq[String] = sys.props
+        .filterKeys(_.startsWith("overview."))
+        .toSeq
+        .map(Function.tupled((k: String, v: String) => s"-D${k}=${v}"))
+
+      cmd(
+        // In distribution mode, the web server is in the "frontend/" folder
+        "frontend",
+        cmdLineFlags ++ Seq(
+          Flags.DatabaseUrl,
+          "-Duser.timezone=UTC",
+          "-Dpidfile.enabled=false"
+        ),
+        Seq(
+          "play.core.server.NettyServer"
+        )
       )
-    )
+    }
 
     override def worker = cmd(
       "worker",
