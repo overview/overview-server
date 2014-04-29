@@ -18,6 +18,7 @@ import java.io.OutputStreamWriter
 import java.io.FileOutputStream
 import org.apache.pdfbox.pdfwriter.COSWriter
 import org.overviewproject.tree.orm.TempDocumentSetFile
+import org.overviewproject.database.orm.stores.GroupedFileUploadStore
 
 /*
  * Generates the steps needed to process uploaded files:
@@ -88,10 +89,20 @@ trait CreatePagesProcess {
         pageStore.insertBatch(filePages.toIterable)
       }
       pdfDocument.close()
-      CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
+      Cleanup(taskInformation)
     }
     
     private def textify(rawText: String): String = Textify(rawText)
+  }
+  
+  private case class Cleanup(taskInformation: TaskInformation) extends FileGroupTaskStep {
+    
+    override def execute: FileGroupTaskStep = {
+      Database.inTransaction {
+        GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(taskInformation.uploadedFileId).toQuery)
+      }
+      CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
+    }
   }
 }
 
