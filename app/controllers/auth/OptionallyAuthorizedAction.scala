@@ -1,11 +1,14 @@
 package controllers.auth
 
 import play.api.mvc.{ ActionBuilder, Request, SimpleResult }
+import play.api.Play
 import scala.concurrent.Future
 
 import models.OverviewDatabase
 
-object OptionallyAuthorizedAction {
+trait OptionallyAuthorizedAction {
+  protected val sessionFactory: SessionFactory
+
   def apply(authority: Authority) : ActionBuilder[OptionallyAuthorizedRequest] = {
     new ActionBuilder[OptionallyAuthorizedRequest] {
       override protected def invokeBlock[A](request: Request[A], block: (OptionallyAuthorizedRequest[A]) => Future[SimpleResult]) : Future[SimpleResult] = {
@@ -20,7 +23,7 @@ object OptionallyAuthorizedAction {
           if (request.isInstanceOf[OptionallyAuthorizedRequest[_]]) {
             block(request.asInstanceOf[OptionallyAuthorizedRequest[A]])
           } else {
-            val maybeSessionAndUser = SessionFactory.loadAuthorizedSession(request, authority).right.toOption
+            val maybeSessionAndUser = sessionFactory.loadAuthorizedSession(request, authority).right.toOption
             val newRequest = new OptionallyAuthorizedRequest(request, maybeSessionAndUser)
             block(newRequest)
           }
@@ -28,5 +31,16 @@ object OptionallyAuthorizedAction {
       }
     }
   }
+}
 
+object OptionallyAuthorizedAction extends OptionallyAuthorizedAction {
+  private val isMultiUser = Play.current.configuration.getBoolean("overview.multi_user").getOrElse(true)
+
+  override val sessionFactory = {
+    if (isMultiUser) {
+      SessionFactory
+    } else {
+      SingleUserSessionFactory
+    }
+  }
 }

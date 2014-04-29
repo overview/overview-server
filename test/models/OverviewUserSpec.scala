@@ -87,12 +87,6 @@ class OverviewUserSpec  extends Specification {
       OverviewUser.findByConfirmationToken("not a real token") must beNone
     }
 
-    "record login activity in withActivityRecorded()" in new LoadedUserContext {
-      val user2 = user.withActivityRecorded("1.1.1.1", new java.util.Date(5000))
-      user2.lastActivityAt must beSome(new java.sql.Timestamp(5000))
-      user2.lastActivityIp must beSome("1.1.1.1")
-    }
-
     "generate a reset-password token" in new LoadedUserContext {
       val user2 = user.withResetPasswordRequest
       user2.resetPasswordToken must_!= ""

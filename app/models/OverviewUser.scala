@@ -27,8 +27,6 @@ trait OverviewUser {
   val email: String
   val requestedEmailSubscription: Boolean
 
-  val lastActivityAt: Option[Date]
-  val lastActivityIp: Option[String]
   val treeTooltipsEnabled: Boolean
 
   def passwordMatches(password: String): Boolean
@@ -41,9 +39,6 @@ trait OverviewUser {
 
   /** @return The same user, with a new reset-password token. Save to commit. */
   def withResetPasswordRequest: OverviewUser with ResetPasswordRequest
-
-  /** @return The same user, with new lastActivity(At|Ip) */
-  def withActivityRecorded(ip: String, date: Date): OverviewUser
 
   /** @return The same user, with a different email */
   def withEmail(email: String): OverviewUser
@@ -228,8 +223,6 @@ object OverviewUser {
     override val id = user.id
     override val email = user.email
     override val requestedEmailSubscription = user.emailSubscriber
-    override val lastActivityAt = user.lastActivityAt
-    override val lastActivityIp = user.lastActivityIp
     override val treeTooltipsEnabled = user.treeTooltipsEnabled
 
     def passwordMatches(password: String): Boolean = {
@@ -249,12 +242,6 @@ object OverviewUser {
 
     def asConfirmed: Option[OverviewUser with Confirmation] = {
       user.confirmedAt.map(d => new ConfirmedUser(user, d))
-    }
-
-    override def withActivityRecorded(ip: String, date: java.util.Date): OverviewUser = {
-      new OverviewUserImpl(user.copy(
-        lastActivityAt = Some(new java.sql.Timestamp(date.getTime())),
-        lastActivityIp = Some(ip)))
     }
 
     def withEmail(email: String): OverviewUser = {

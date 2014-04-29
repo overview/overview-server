@@ -26,32 +26,22 @@ import org.overviewproject.postgres.InetAddress
   * We do _not_ check whether the user has been confirmed. We assume we checked
   * that in a previous request, before creating and storing the Session.
   *
-  * For single-user mode, we take a different approach. We always choose the
-  * User with ID 1L from the database, updated to be non-admin; and we always
-  * create a dummy Session with UUID 1L, marked as persisted in the database.
-  * That way the session will never get written (and surely won't get
-  * overwritten).
+  * For single-user mode, just stub out this trait.
   */
 trait SessionFactory {
   private[auth] val SessionIdKey = AuthResults.SessionIdKey // TODO find a sensible place for this constant
 
   trait Storage {
     def loadSessionAndUser(sessionId: UUID) : Option[(Session,User)]
-    def loadUser(userId: Long) : Option[User]
   }
   protected val storage : SessionFactory.Storage
-  protected val isMultiUser : Boolean
 
   /** Returns either a SimpleResult (no access) or a (Session,User) (access).
     *
     * See the class documentation for details.
     */
   def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Either[SimpleResult,(Session,User)] = {
-    if (isMultiUser) {
-      loadMultiUserAuthorizedSession(request, authority)
-    } else {
-      loadSingleUserAuthorizedSession(request, authority)
-    }
+    loadMultiUserAuthorizedSession(request, authority)
   }
 
   private def loadMultiUserAuthorizedSession(request: RequestHeader, authority: Authority) : Either[SimpleResult,(Session,User)] = {
@@ -63,22 +53,18 @@ trait SessionFactory {
       .right.flatMap((id: UUID) => storage.loadSessionAndUser(id).toRight(unauthenticated))
       .right.flatMap((x: (Session,User)) => Either.cond(authority(OverviewUser(x._2)), x, unauthorized))
   }
+}
 
-  private def loadSingleUserAuthorizedSession(request: RequestHeader, authority: Authority) : Either[SimpleResult,(Session,User)] = {
-    val userId = 1L
-    storage.loadUser(userId) match {
-      case Some(user) => {
-        val session = Session(
-          id=new UUID(0L, 1L),
-          userId=userId,
-          ip=InetAddress.getByName(request.remoteAddress),
-          createdAt=new Timestamp(new Date().getTime()),
-          updatedAt=new Timestamp(new Date().getTime()) // a different object than createdAt, for isPersisted=true
-        )
-        Right((session,user.copy(role=UserRole.NormalUser)))
-      }
-      case None => Left(AuthResults.authorizationFailed(request))
-    }
+object SingleUserSessionFactory extends SessionFactory {
+  object NullStorage extends SessionFactory.Storage {
+    override def loadSessionAndUser(sessionId: UUID) = None
+  }
+
+  override protected val storage = NullStorage
+  override def loadAuthorizedSession(request: RequestHeader, authority: Authority) = {
+    val session = Session(1L, request.remoteAddress)
+    val user = UserFinder.byId(1L).head
+    Right((session, user))
   }
 }
 
@@ -87,12 +73,7 @@ object SessionFactory extends SessionFactory {
     override def loadSessionAndUser(sessionId: UUID) = {
       SessionFinder.byId(sessionId).withUsers.headOption
     }
-
-    override def loadUser(userId: Long) = {
-      UserFinder.byId(userId).headOption
-    }
   }
 
   override protected val storage = DatabaseStorage
-  override protected lazy val isMultiUser = Play.configuration.getBoolean("overview.multi_user").getOrElse(true)
 }
