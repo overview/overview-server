@@ -21,6 +21,7 @@ trait ProjectSettings {
   )
     
   // shared dependencies
+  val akkaAgentDep = "com.typesafe.akka" %% "akka-agent" % "2.2.0"
   val akkaDep = "com.typesafe.akka" %% "akka-actor" % "2.2.0"
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit"  % "2.2.0"
   val asyncHttpClientDep = "com.ning" % "async-http-client" % "1.7.18"
@@ -107,6 +108,7 @@ trait ProjectSettings {
   )).map(_.exclude("com.google.guava", "guava"))
   
   val documentSetWorkerProjectDependencies = Seq(guavaDep) ++ (Seq(
+    akkaAgentDep,
     logbackDep,
     elasticSearchDep,
     elasticSearchCloudAwsDep,
