@@ -32,19 +32,21 @@ trait CreatePagesProcess {
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     SaveFile(documentSetId, fileGroupId, uploadedFileId)
 
+  protected val storage: Storage
+  protected trait Storage {
+    def createFileFromUpload(documentSetId: Long, uploadedFileId: Long): Option[File]
+    def savePagesAndCleanup(filePages: Seq[Page], uploadedFileId: Long): Unit
+  }
+
   private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 
   private case class SaveFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
     private val taskInformation = TaskInformation(documentSetId, fileGroupId, uploadedFileId)
 
     override def execute: FileGroupTaskStep = {
-      Database.inTransaction {
-        GroupedFileUploadFinder.byId(uploadedFileId).headOption.map { upload =>
-          val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.name))
+      val file = storage.createFileFromUpload(documentSetId, uploadedFileId).get // throws if not found. exception handled by actor
 
-          SplitPdf(taskInformation, file)
-        }.get
-      }
+      SplitPdf(taskInformation, file)
     }
   }
 
@@ -84,14 +86,10 @@ trait CreatePagesProcess {
           Page(fileId, i, 1, Some(data), Some(text))
       }
 
-      Database.inTransaction {
-        tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(taskInformation.documentSetId, fileId))
-        pageStore.insertBatch(filePages.toIterable)
-        GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(taskInformation.uploadedFileId).toQuery)
-      }
+      storage.savePagesAndCleanup(filePages.toSeq, taskInformation.uploadedFileId)
 
-      pdfDocument.close()      
-      
+      pdfDocument.close()
+
       CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
 

@@ -58,7 +58,7 @@ trait FileGroupTaskWorker extends Actor {
 
 
 object FileGroupTaskWorker {
-  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with CreatePagesProcess {
+  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
     override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
     
   })
