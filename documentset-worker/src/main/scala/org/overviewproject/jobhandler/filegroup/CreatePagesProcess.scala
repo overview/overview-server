@@ -63,14 +63,13 @@ trait CreatePagesProcess {
     }
   }
 
-  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PDDocument, 
-      pages: Seq[PDDocument]) extends FileGroupTaskStep {
-    
+  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PDDocument,
+                               pages: Seq[PDDocument]) extends FileGroupTaskStep {
+
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
     private val textStripper = new PDFTextStripper()
 
-    
     override def execute: FileGroupTaskStep = {
       val filePages = pages.iterator.zipWithIndex.map {
         case (p, i) =>
@@ -84,25 +83,20 @@ trait CreatePagesProcess {
           val text: String = textify(rawText)
           Page(fileId, i, 1, Some(data), Some(text))
       }
+
       Database.inTransaction {
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(taskInformation.documentSetId, fileId))
         pageStore.insertBatch(filePages.toIterable)
-      }
-      pdfDocument.close()
-      Cleanup(taskInformation)
-    }
-    
-    private def textify(rawText: String): String = Textify(rawText)
-  }
-  
-  private case class Cleanup(taskInformation: TaskInformation) extends FileGroupTaskStep {
-    
-    override def execute: FileGroupTaskStep = {
-      Database.inTransaction {
         GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(taskInformation.uploadedFileId).toQuery)
       }
+
+      pdfDocument.close()      
+      
       CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
+
+    private def textify(rawText: String): String = Textify(rawText)
   }
+
 }
 
