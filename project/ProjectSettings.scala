@@ -16,7 +16,8 @@ trait ProjectSettings {
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
     "Oracle Released Java Packages" at "http://download.oracle.com/maven",
     "FuseSource releases" at "http://repo.fusesource.com/nexus/content/groups/public",
-    "More FuseSource" at "http://repo.fusesource.com/maven2/"
+    "More FuseSource" at "http://repo.fusesource.com/maven2/",
+    "PDFBox Snapshot" at "https://repository.apache.org/content/groups/snapshots"
   )
     
   // shared dependencies
@@ -110,7 +111,7 @@ trait ProjectSettings {
     elasticSearchDep,
     elasticSearchCloudAwsDep,
     javaxMailDep,
-    "org.apache.pdfbox" % "pdfbox" % "1.8.4",
+    "org.apache.pdfbox" % "pdfbox" % "1.8.6-SNAPSHOT",
     "org.bouncycastle" % "bcprov-jdk15" % "1.44",
     "org.bouncycastle" % "bcmail-jdk15" % "1.44"
   )).map(_.exclude("com.google.guava", "guava"))
