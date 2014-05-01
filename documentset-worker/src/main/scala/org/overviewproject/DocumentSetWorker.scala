@@ -78,9 +78,9 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
 
   val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(), fileGroupJobQueueName)
   Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
-  val clusteringJobQueue = context.actorOf(ClusteringJobQueue())
-  val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue))
-  val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager))
+  val clusteringJobQueue = context.actorOf(ClusteringJobQueue(), "ClusteringJobQueue")
+  val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
+  val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 
   override def supervisorStrategy = AllForOneStrategy(0, Duration.Inf) {
     case _ => Stop
