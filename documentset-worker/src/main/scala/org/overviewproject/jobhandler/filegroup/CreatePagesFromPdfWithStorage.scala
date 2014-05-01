@@ -5,11 +5,11 @@ import org.overviewproject.database.orm.Schema
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.database.orm.stores.GroupedFileUploadStore
-
 import org.overviewproject.tree.orm.File
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.tree.orm.GroupedFileUpload
 
 trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
@@ -22,18 +22,17 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
     def apply(): Storage = new Storage {
 
-      def createFileFromUpload(documentSetId: Long, uploadedFileId: Long): Option[File] = Database.inTransaction {
-        GroupedFileUploadFinder.byId(uploadedFileId).headOption.map { u =>
-          val file = FileStore.insertOrUpdate(File(1, u.contentsOid, u.name))
-          tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
-          
-          file
-        }
+      def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload] = Database.inTransaction {
+        GroupedFileUploadFinder.byId(uploadedFileId).headOption
       }
-
-      def savePagesAndCleanup(filePages: Seq[Page], uploadedFileId: Long): Unit = Database.inTransaction {
-        pageStore.insertBatch(filePages)
-        GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(uploadedFileId).toQuery)
+      
+      def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit = Database.inTransaction {
+        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.name))
+        tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
+        
+        val pages = createPages(file.id)
+        pageStore.insertBatch(pages)
+        GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
       }
     }
   }

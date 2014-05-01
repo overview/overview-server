@@ -20,6 +20,7 @@ import java.io.FileOutputStream
 import org.apache.pdfbox.pdfwriter.COSWriter
 import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.database.orm.stores.GroupedFileUploadStore
+import org.overviewproject.tree.orm.GroupedFileUpload
 
 /*
  * Generates the steps needed to process uploaded files:
@@ -31,12 +32,13 @@ import org.overviewproject.database.orm.stores.GroupedFileUploadStore
 trait CreatePagesProcess {
 
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    SaveFile(documentSetId, fileGroupId, uploadedFileId)
+    LoudUploadedFile(documentSetId, fileGroupId, uploadedFileId)
 
   protected val storage: Storage
   protected trait Storage {
-    def createFileFromUpload(documentSetId: Long, uploadedFileId: Long): Option[File]
-    def savePagesAndCleanup(filePages: Seq[Page], uploadedFileId: Long): Unit
+    def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
+    
+    def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
   }
 
   protected val pdfProcessor: PdfProcessor
@@ -46,20 +48,20 @@ trait CreatePagesProcess {
 
   private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 
-  private case class SaveFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
+  private case class LoudUploadedFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
     private val taskInformation = TaskInformation(documentSetId, fileGroupId, uploadedFileId)
 
     override def execute: FileGroupTaskStep = {
-      val file = storage.createFileFromUpload(documentSetId, uploadedFileId).get // throws if not found. exception handled by actor
-
-      SplitPdf(taskInformation, file)
+      val upload = storage.loadUploadedFile(uploadedFileId).get // throws if not found. exception handled by actor
+      
+      LoadPdf(taskInformation, upload)
     }
   }
 
-  private case class SplitPdf(taskInformation: TaskInformation, file: File) extends FileGroupTaskStep {
+  private case class LoadPdf(taskInformation: TaskInformation, upload: GroupedFileUpload) extends FileGroupTaskStep {
     override def execute: FileGroupTaskStep = {
-      val pdfDocument = pdfProcessor.loadFromDatabase(file.contentsOid)
-      SavePages(taskInformation, file.id, pdfDocument)
+      val pdfDocument = pdfProcessor.loadFromDatabase(upload.contentsOid)
+      SavePages(taskInformation, upload, pdfDocument)
     }
 
     private def readPdfDocument(oid: Long): PDDocument = {
@@ -68,7 +70,7 @@ trait CreatePagesProcess {
     }
   }
 
-  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PdfDocument) extends FileGroupTaskStep {
+  private case class SavePages(taskInformation: TaskInformation, upload: GroupedFileUpload, pdfDocument: PdfDocument) extends FileGroupTaskStep {
 
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
@@ -76,21 +78,20 @@ trait CreatePagesProcess {
 
     override def execute: FileGroupTaskStep = {
       val pageContents = pdfDocument.pages
-      val pages = createPages(pageContents)
         
-      storage.savePagesAndCleanup(pages.toSeq, taskInformation.uploadedFileId)
+      storage.savePagesAndCleanup(createPages(pageContents, _: Long), upload, taskInformation.documentSetId)
 
       pdfDocument.close()
 
       CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
 
-    private def createPages(pageContents: Iterable[PdfPage]): Iterable[Page] =
-      pageContents.view.zipWithIndex.map {
-        createPageFromContent _ tupled
+    private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] =
+      pageContents.view.zipWithIndex.map { case (p, i) =>
+        createPageFromContent(fileId, p, i)
       }
 
-    private def createPageFromContent(content: PdfPage, pageNumber: Int): Page =
+    private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
       Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
 
   }
