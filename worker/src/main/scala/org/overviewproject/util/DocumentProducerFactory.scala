@@ -61,7 +61,8 @@ object DocumentProducerFactory {
       case CsvUpload =>
         new CsvImportDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.contentsOid.get, documentSet.uploadedFileId.get, consumer, MaxDocuments, progAbort)
       case FileUpload =>
-        new FileUploadDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.fileGroupId.get, consumer, progAbort )
+        new FileUploadDocumentProducer(documentSetCreationJob.documentSetId, 
+            documentSetCreationJob.fileGroupId.get, documentSetCreationJob.splitDocuments, consumer, progAbort )
       case Recluster =>
         ReclusteringDocumentProducer(documentSetCreationJob.documentSetId, documentSetCreationJob.tagId, consumer, progAbort)
     }

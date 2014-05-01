@@ -1,29 +1,25 @@
 package org.overviewproject.fileupload
 
 import scala.language.postfixOps
+import scala.concurrent.Await
 import scala.concurrent.duration._
+
 import org.overviewproject.database.Database
 import org.overviewproject.documentcloud.DocumentRetrievalError
 import org.overviewproject.persistence._
-import org.overviewproject.persistence.orm.finders.GroupedProcessedFileFinder
-import org.overviewproject.persistence.orm.Schema.tempDocumentSetFiles
+import org.overviewproject.persistence.orm.finders.FileFinder
+import org.overviewproject.persistence.orm.finders.PageFinder
+import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
 import org.overviewproject.tree.orm.{ Document, File, TempDocumentSetFile }
 import org.overviewproject.tree.orm.FileJobState._
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.util.{ DocumentConsumer, DocumentProducer, DocumentSetIndexingSession }
-import org.overviewproject.util.DocumentSetCreationJobStateDescription.Parsing
-import org.overviewproject.util.Progress.{ Progress, ProgressAbortFn }
-import org.overviewproject.util.SearchIndex
-import scala.concurrent.Await
-import org.overviewproject.tree.orm.finders.ResultPage
-import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.tree.orm.Page
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
-import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
-import org.overviewproject.persistence.orm.finders.PageFinder
-import org.overviewproject.persistence.orm.finders.FileFinder
+import org.overviewproject.tree.orm.TempDocumentSetFile
+import org.overviewproject.tree.orm.finders.ResultPage
+import org.overviewproject.util.{DocumentConsumer, DocumentSetIndexingSession}
+import org.overviewproject.util.Progress.ProgressAbortFn
+import org.overviewproject.util.SearchIndex
 
-class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
+class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean,
                                  override protected val consumer: DocumentConsumer,
                                  override protected val progAbort: ProgressAbortFn)
     extends PagedDocumentSourceDocumentProducer[TempDocumentSetFile] with PersistentDocumentSet {
@@ -68,9 +64,17 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
   override protected def processDocumentSource(documentSetFile: TempDocumentSetFile): Unit = {
     val (file, filePages) = findFileWithPages(documentSetFile.fileId)
-    val document = createDocumentFromPages(file, filePages)
 
-    document.fold(recordError(file.name, _), produceDocument)
+    if (!splitDocuments) {
+      val document = createDocumentFromPages(file, filePages)
+
+      document.fold(recordError(file.name, _), produceDocument)
+    }
+    else {
+      val documents = createDocumentsFromPages(file, filePages)
+      
+      documents.foreach { _.fold(recordError(file.name, _), produceDocument)}
+    }
   }
 
   private def findFileWithPages(fileId: Long): (File, Seq[Page]) = Database.inTransaction {
@@ -106,6 +110,17 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long,
 
   }
 
+  private def createDocumentsFromPages(file: File, pages: Seq[Page]): Seq[Either[String, Document]] = {
+    def pageError(page: Page): String =
+      page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
+
+      pages.map { p =>
+        p.text.toRight(pageError(p)).right.map { text =>
+          Document(documentSetId, id = ids.next, title = Some(file.name), text = Some(text), fileId = Some(file.id))    
+        }
+      }
+  }
+  
   private def produceDocument(document: Document): Unit = {
     Database.inTransaction { DocumentWriter.write(document) }
     val documentText = document.text.get
