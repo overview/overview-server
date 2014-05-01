@@ -103,7 +103,8 @@ trait MassUploadController extends Controller {
     def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
-    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String, suppliedStopWords: String, importantWords: String): Unit
+    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String, 
+        splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit
 
     /** Tell worker to delete all processing for the FileGroup and delete all associated files */
     def cancelUpload(fileGroupId: Long): Unit
@@ -150,7 +151,7 @@ trait MassUploadController extends Controller {
         val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
           documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-        messageQueue.startClustering(documentSet.id, fileGroup.id, name, lang, suppliedStopWords, importantWords)
+        messageQueue.startClustering(documentSet.id, fileGroup.id, name, lang, splitDocuments, suppliedStopWords, importantWords)
 
         Redirect(routes.DocumentSetController.index())
       }
@@ -222,11 +223,11 @@ object MassUploadController extends MassUploadController {
     }
 
     override def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
-                                 suppliedStopWords: String, importantWords: String): Unit = {
-      val command = ClusterFileGroup(documentSetId, fileGroupId, title, lang, suppliedStopWords, importantWords)
+                                 splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit = {
+      val command = ClusterFileGroup(documentSetId, fileGroupId, title, lang, splitDocuments, suppliedStopWords, importantWords)
 
       if (JobQueueSender.send(command).isLeft)
-        throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $suppliedStopWords)")
+        throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $splitDocuments, $suppliedStopWords, $importantWords)")
     }
 
     override def cancelUpload(fileGroupId: Long): Unit = {

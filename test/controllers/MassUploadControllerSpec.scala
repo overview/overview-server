@@ -186,7 +186,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
     trait StartClusteringRequest extends UploadContext {
       val fileGroupName = "This becomes the Document Set Name"
       val lang = "sv"
-      val splitDocumentsString = "false"
+      val splitDocuments = false
+      val splitDocumentsString = s"$splitDocuments"
       val stopWords = "ignore these words"
       val importantWords = "important words?"
       def formData = Seq(
@@ -216,7 +217,8 @@ class MassUploadControllerSpec extends Specification with Mockito {
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
           documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
-      there was one(controller.messageQueue).startClustering(documentSetId, fileGroupId, fileGroupName, lang, stopWords, importantWords)
+      there was one(controller.messageQueue)
+        .startClustering(documentSetId, fileGroupId, fileGroupName, lang, splitDocuments, stopWords, importantWords)
     }
 
     "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {

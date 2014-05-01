@@ -5,5 +5,6 @@ case class ClusterFileGroup(
     fileGroupId: Long,
     name: String,
     lang: String,
+    splitDocuments: Boolean,
     stopWords: String,
     importantWords: String)

@@ -70,6 +70,7 @@ object JobQueueSender {
       (__ \ "fileGroupId").write[Long] and
       (__ \ "title").write[String] and
       (__ \ "lang").write[String] and
+      (__ \ "splitDocuments").write[Boolean] and
       (__ \ "suppliedStopWords").write[String] and
       (__ \ "importantWords").write[String])(unlift(ClusterFileGroup.unapply))
 
