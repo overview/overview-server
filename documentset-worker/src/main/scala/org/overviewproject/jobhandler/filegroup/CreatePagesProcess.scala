@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.collection.JavaConverters._
+import scala.language.postfixOps
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import org.overviewproject.tree.orm.File
@@ -38,6 +39,11 @@ trait CreatePagesProcess {
     def savePagesAndCleanup(filePages: Seq[Page], uploadedFileId: Long): Unit
   }
 
+  protected val pdfProcessor: PdfProcessor
+  protected trait PdfProcessor {
+    def loadFromDatabase(oid: Long): PdfDocument
+  }
+
   private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 
   private case class SaveFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
@@ -52,11 +58,8 @@ trait CreatePagesProcess {
 
   private case class SplitPdf(taskInformation: TaskInformation, file: File) extends FileGroupTaskStep {
     override def execute: FileGroupTaskStep = {
-      val pdfDocument = readPdfDocument(file.contentsOid)
-      val splitter = new Splitter()
-      splitter.setSplitAtPage(1)
-      val pages: Seq[PDDocument] = splitter.split(pdfDocument).asScala
-      SavePages(taskInformation, file.id, pdfDocument, pages)
+      val pdfDocument = pdfProcessor.loadFromDatabase(file.contentsOid)
+      SavePages(taskInformation, file.id, pdfDocument)
     }
 
     private def readPdfDocument(oid: Long): PDDocument = {
@@ -65,35 +68,31 @@ trait CreatePagesProcess {
     }
   }
 
-  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PDDocument,
-                               pages: Seq[PDDocument]) extends FileGroupTaskStep {
+  private case class SavePages(taskInformation: TaskInformation, fileId: Long, pdfDocument: PdfDocument) extends FileGroupTaskStep {
 
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
     private val textStripper = new PDFTextStripper()
 
     override def execute: FileGroupTaskStep = {
-      val filePages = pages.iterator.zipWithIndex.map {
-        case (p, i) =>
-          val outputStream = new ByteArrayOutputStream()
-          p.save(outputStream)
-          outputStream.close()
-          val data: Array[Byte] = outputStream.toByteArray()
-
-          val rawText: String = textStripper.getText(p)
-          p.close()
-          val text: String = textify(rawText)
-          Page(fileId, i, 1, Some(data), Some(text))
-      }
-
-      storage.savePagesAndCleanup(filePages.toSeq, taskInformation.uploadedFileId)
+      val pageContents = pdfDocument.pages
+      val pages = createPages(pageContents)
+        
+      storage.savePagesAndCleanup(pages.toSeq, taskInformation.uploadedFileId)
 
       pdfDocument.close()
 
       CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
 
-    private def textify(rawText: String): String = Textify(rawText)
+    private def createPages(pageContents: Iterable[PdfPage]): Iterable[Page] =
+      pageContents.view.zipWithIndex.map {
+        createPageFromContent _ tupled
+      }
+
+    private def createPageFromContent(content: PdfPage, pageNumber: Int): Page =
+      Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
+
   }
 
 }
