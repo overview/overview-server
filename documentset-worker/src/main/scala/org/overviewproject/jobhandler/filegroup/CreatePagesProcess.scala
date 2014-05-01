@@ -20,7 +20,7 @@ import org.overviewproject.tree.orm.stores.BaseStore
 trait CreatePagesProcess {
 
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    LoudUploadedFile(documentSetId, fileGroupId, uploadedFileId)
+    LoadUploadedFile(documentSetId, fileGroupId, uploadedFileId)
 
   protected val storage: Storage
   protected trait Storage {
@@ -36,7 +36,7 @@ trait CreatePagesProcess {
 
   private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 
-  private case class LoudUploadedFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
+  private case class LoadUploadedFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
     private val taskInformation = TaskInformation(documentSetId, fileGroupId, uploadedFileId)
 
     override def execute: FileGroupTaskStep = {
