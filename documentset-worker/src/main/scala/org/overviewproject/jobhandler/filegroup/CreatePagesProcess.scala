@@ -1,26 +1,14 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.collection.JavaConverters._
-import scala.language.postfixOps
-import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
-import org.overviewproject.tree.orm.File
-import org.overviewproject.database.orm.stores.FileStore
+
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.util.PDFTextStripper
+import org.overviewproject.database.orm.Schema
 import org.overviewproject.postgres.LargeObjectInputStream
-import org.apache.pdfbox.util.Splitter
-import java.io.ByteArrayOutputStream
+import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.database.orm.Schema
-import org.apache.pdfbox.util.PDFTextStripper
-import org.overviewproject.util.Textify
-import java.io.OutputStreamWriter
-import java.io.FileOutputStream
-import org.apache.pdfbox.pdfwriter.COSWriter
-import org.overviewproject.tree.orm.TempDocumentSetFile
-import org.overviewproject.database.orm.stores.GroupedFileUploadStore
-import org.overviewproject.tree.orm.GroupedFileUpload
 
 /*
  * Generates the steps needed to process uploaded files:
