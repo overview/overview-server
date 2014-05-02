@@ -60,7 +60,7 @@ models.DocumentSetCreationJob.state.CANCELLED=canceling
 models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
-models.DocumentSetCreationJob.state.PREPARING=processing uploaded files
+models.DocumentSetCreationJob.state.FILES_UPLOADED=processing uploaded files
 
 time_display.datetime.medium={0,date,medium} at {0,time,medium}
 
