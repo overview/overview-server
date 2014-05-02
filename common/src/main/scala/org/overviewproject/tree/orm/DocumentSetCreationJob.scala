@@ -16,7 +16,7 @@ object DocumentSetCreationJobState extends Enumeration {
   val InProgress = Value(1, "IN_PROGRESS")
   val Error = Value(2, "ERROR")
   val Cancelled = Value(3, "CANCELLED")
-  val FilesUploaded = Value(4, "PREPARING")
+  val FilesUploaded = Value(4, "FILES_UPLOADED")
   val TextExtractionInProgress = Value(5, "TEXT_EXTRACTION_IN_PROGRESS")
 }
 

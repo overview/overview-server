@@ -10,7 +10,6 @@ case class Document(
   val text: Option[String] = None,
   val url: Option[String] = None,
   val documentcloudId: Option[String] = None,
-  val contentLength: Option[Long] = None,
   val fileId: Option[Long] = None,
   val pageId: Option[Long] = None,
   val pageNumber: Option[Int] = None,

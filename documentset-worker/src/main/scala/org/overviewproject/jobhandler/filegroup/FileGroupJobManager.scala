@@ -1,17 +1,13 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.{ Actor, ActorRef }
-import org.overviewproject.jobs.models.ClusterFileGroup
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
 import akka.actor.Props
 import org.overviewproject.database.Database
-import org.overviewproject.tree.orm.stores.BaseStore
-import org.overviewproject.database.orm.Schema
-import org.overviewproject.tree.orm.DocumentSet
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
 import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -54,7 +50,10 @@ class FileGroupJobManagerImpl(
     override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
   class DatabaseStorage extends Storage {
-    override def updateJobState(documentSetId: Long): Unit = ???
+    override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {
+      val job = DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, FilesUploaded).headOption.get
+      DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
+    }
   }
 
   override protected val storage = new DatabaseStorage

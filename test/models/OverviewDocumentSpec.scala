@@ -53,12 +53,10 @@ class OverviewDocumentSpec extends DbSpecification {
     trait UploadedDocumentScope extends Scope with OneDocument {
       val ormDocumentId: Long = 1L
       val fileId = 12345L
-      val contentLength = 22000L
       
       override def ormDocument = Document(
         id = ormDocumentId,
-        fileId = Some(fileId),
-        contentLength = Some(contentLength)
+        fileId = Some(fileId)
       )
     }
 

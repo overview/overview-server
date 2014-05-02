@@ -58,8 +58,6 @@ class DocumentClonerSpec extends DbSpecification {
       var documentSetId: Long = _
       var documentSetCloneId: Long = _
 
-      protected val ContentLength = 100l
-
       override def setupWithDb = {
         val documentSet = Schema.documentSets.insertOrUpdate(DocumentSet(title = "PDF upload"))
         val documentSetClone = Schema.documentSets.insertOrUpdate(DocumentSet(title = "Clone"))
@@ -73,7 +71,6 @@ class DocumentClonerSpec extends DbSpecification {
             text = Some("text"),
             fileId = Some(file.id),
             pageId = documentPage(file.id),
-            contentLength = Some(ContentLength),
             id = ids.next))
 
         documentSetId = documentSet.id
@@ -157,9 +154,7 @@ class DocumentClonerSpec extends DbSpecification {
 
       val document = findClonedDocuments.headOption
 
-      document must beSome.like {
-        case d => d.contentLength must beSome(ContentLength)
-      }
+      document must beSome
     }
 
     "increase refcount on pages" in new SplitPdfUploadContext {

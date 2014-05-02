@@ -22,11 +22,11 @@ object DocumentCloner extends InDatabaseCloner {
     SQL("""
           INSERT INTO document 
             (id, document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id, content_length)
+             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id)
            SELECT 
              ({cloneDocumentSetId} << 32) | ({documentSetIdMask} & id) AS clone_id, 
              {cloneDocumentSetId} AS clone_document_set_id, 
-             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id, content_length
+             description, documentcloud_id, text, url, supplied_id, title, file_id, page_id
              FROM document WHERE document_set_id = {sourceDocumentSetId}    	
         """)
 

@@ -43,7 +43,7 @@ object DocumentSetStore extends BaseStore(models.orm.Schema.documentSets) {
       case Some(job) =>
         if (job.state == DocumentSetCreationJobState.InProgress || job.state == DocumentSetCreationJobState.Cancelled) {
           DocumentSetCreationJobStore.cancel(job)
-        } else if ((job.state != DocumentSetCreationJobState.FilesUploaded) ||
+        } else if ((job.state != DocumentSetCreationJobState.FilesUploaded) &&
             (job.state != DocumentSetCreationJobState.TextExtractionInProgress)) { // state handled by worker
           BaseStore(Schema.documentSetCreationJobTrees).delete(DocumentSetCreationJobTreeFinder.byJob(job.id).toQuery)
           DocumentSetCreationJobStore.deletePending(job)

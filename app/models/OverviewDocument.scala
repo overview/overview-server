@@ -28,9 +28,6 @@ sealed trait OverviewDocument {
   /** Optional URL of the document */
   val url: Option[String]
   
-  /** Optional Content Length, for uploaded documents */
-  val contentLength: Option[Long]
-  
   /** URL to view the document.
     *
     * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
@@ -54,7 +51,6 @@ object OverviewDocument {
     override val title = ormDocument.title
     override val suppliedId = ormDocument.suppliedId.orElse(ormDocument.documentcloudId)
     override val text = ormDocument.text
-    override val contentLength = ormDocument.contentLength
     
     override val url : Option[String] = {
       ormDocument.url.orElse(
