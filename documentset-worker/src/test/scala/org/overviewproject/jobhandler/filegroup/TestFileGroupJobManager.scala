@@ -23,21 +23,18 @@ trait JobParameters {
 trait StorageMonitor extends JobParameters {
   self: FileGroupJobManager =>
 
-  type CreateJobParameterList = (Long, String, String, String)
   import ExecutionContext.Implicits.global
 
-  private val storedCreateJobParameters: Agent[Queue[CreateJobParameterList]] = Agent(Queue.empty)
-
+  private val storedUpdateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
+  
   class MockStorage extends Storage {
-
+    override def updateJobState(documentSetId: Long): Unit = storedUpdateJobStateParameters send (_ += documentSetId)
   }
 
   override protected val storage = new MockStorage
 
-  def createJobCallsInProgress: Future[Queue[CreateJobParameterList]] = storedCreateJobParameters.future
-
-  def storedCreateJobCalls: Iterable[CreateJobParameterList] = storedCreateJobParameters.get
-
+  def updateJobStateCallsInProgress: Future[Queue[Long]] = storedUpdateJobStateParameters.future
+  def storedUpdateJobStateCalls: Iterable[Long] = storedUpdateJobStateParameters.get
 }
 
 class TestFileGroupJobManager(

@@ -32,11 +32,13 @@ trait FileGroupJobManager extends Actor {
   protected val storage: Storage
 
   trait Storage {
+    def updateJobState(documentSetId: Long): Unit
   }
 
   def receive = {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
+      storage.updateJobState(documentSetId)
       fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
     }
 
@@ -52,6 +54,7 @@ class FileGroupJobManagerImpl(
     override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
   class DatabaseStorage extends Storage {
+    override def updateJobState(documentSetId: Long): Unit = ???
   }
 
   override protected val storage = new DatabaseStorage

@@ -8,35 +8,34 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.{ Before, Specification }
 
-
 class FileGroupJobManagerSpec extends Specification {
 
   "FileGroupJobManager" should {
-
 
     "start text extraction job at text extraction job queue" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
 
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
+      updateJobStateWasCalledWith(documentSetId)
     }
 
     "start clustering job when text extraction is complete" in new FileGroupJobManagerContext {
-      fileGroupJobManager ! clusterCommand  
-      
+      fileGroupJobManager ! clusterCommand
+
       fileGroupJobQueue.expectMsgType[CreateDocumentsFromFileGroup]
       fileGroupJobQueue.reply(FileGroupDocumentsCreated(fileGroupId))
-      
+
       clusteringJobQueue.expectMsg(ClusterDocumentSet(fileGroupId))
     }
-    
+
     "cancel text extraction when requested" in {
       todo
     }
-    
+
     "don't start clustering cancelled job" in {
       todo
     }
-    
+
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 
       var fileGroupJobManager: TestActorRef[TestFileGroupJobManager] = _
@@ -46,23 +45,21 @@ class FileGroupJobManagerSpec extends Specification {
       override def before = {
         fileGroupJobQueue = TestProbe()
         clusteringJobQueue = TestProbe()
-        
+
         fileGroupJobManager = TestActorRef(
-            new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref))
+          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref))
       }
 
-      def createJobWasCalledWith(fileGroupId: Long, lang: String,
-                                 suppliedStopWords: String, importantWords: String) = {
+      def updateJobStateWasCalledWith(documentSetId: Long) = {
 
         val pendingCalls = fileGroupJobManager.underlyingActor
-          .createJobCallsInProgress
+          .updateJobStateCallsInProgress
+
         awaitCond(pendingCalls.isCompleted)
+        
         fileGroupJobManager.underlyingActor
-          .storedCreateJobCalls must contain((fileGroupId, lang, suppliedStopWords, importantWords))
+          .storedUpdateJobStateCalls must contain(documentSetId)
       }
-
     }
-
-    
   }
 }
