@@ -47,13 +47,15 @@ trait FileGroupJobQueue extends Actor {
 
     }
     case CreateDocumentsFromFileGroup(documentSetId, fileGroupId) => {
-      Logger.info(s"Extact text task for FileGroup [$fileGroupId]")
-      val fileIds = uploadedFilesInFileGroup(fileGroupId)
+      Logger.info(s"Extract text task for FileGroup [$fileGroupId]")
+      if (isNewRequest(fileGroupId)) {
+        val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
-      addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
-      jobRequests += (fileGroupId -> JobRequest(sender))
+        addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
+        jobRequests += (fileGroupId -> JobRequest(sender))
 
-      workerPool.map(_ ! TaskAvailable)
+        workerPool.map(_ ! TaskAvailable)
+      }
     }
     case ReadyForTask => {
       if (!taskQueue.isEmpty) {
@@ -69,6 +71,8 @@ trait FileGroupJobQueue extends Actor {
       }
 
   }
+
+  private def isNewRequest(fileGroupId: Long): Boolean = !jobRequests.contains(fileGroupId)
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 

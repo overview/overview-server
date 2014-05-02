@@ -55,6 +55,17 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       expectMsg(FileGroupDocumentsCreated(fileGroupId))
     }
 
+    "ignore a second job for the same fileGroup" in new JobQueueContext {
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      
+      submitJob
+      worker.expectMsg(TaskAvailable)
+      
+      submitJob
+      worker.expectNoMsg(500 millis)
+      
+    }
+    
     "handle cancellations" in {
       todo
     }
