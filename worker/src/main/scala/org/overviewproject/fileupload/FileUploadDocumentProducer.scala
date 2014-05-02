@@ -89,9 +89,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
   }
 
   private def createDocumentFromPages(file: File, pages: Seq[Page]): Either[String, Document] = {
-    def pageError(page: Page): String =
-      page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
-
+    
     val documentText = pages.foldLeft[Either[Seq[String], String]](Right(""))((text, page) => {
       val pageText: Either[String, String] = page.text.toRight(pageError(page))
 
@@ -112,8 +110,6 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
   }
 
   private def createDocumentsFromPages(file: File, pages: Seq[Page]): Seq[Either[String, Document]] = {
-    def pageError(page: Page): String =
-      page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
 
     pages.map { p =>
       p.text.toRight(pageError(p)).right.map { text =>
@@ -122,6 +118,9 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
       }
     }
   }
+
+  private def pageError(page: Page): String =
+      page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
 
   private def produceDocument(document: Document): Unit = {
     Database.inTransaction { DocumentWriter.write(document) }
