@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
 
+
 trait JobParameters {
   protected val documentSetId = 1l
   protected val fileGroupId = 2l
@@ -21,23 +22,20 @@ trait JobParameters {
 }
 
 trait StorageMonitor extends JobParameters {
-  self: FileGroupJobManager =>
+  self: TestFileGroupJobManager =>
 
-  import ExecutionContext.Implicits.global
-
-  private val storedUpdateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
-  
   class MockStorage extends Storage {
-    override def updateJobState(documentSetId: Long): Unit = storedUpdateJobStateParameters send (_ += documentSetId)
+    override def findInProgressJobInformation: Iterable[(Long, Long)] = loadInterruptedJobs
   }
 
   override protected val storage = new MockStorage
-
-  def updateJobStateCallsInProgress: Future[Queue[Long]] = storedUpdateJobStateParameters.future
-  def storedUpdateJobStateCalls: Iterable[Long] = storedUpdateJobStateParameters.get
 }
 
 class TestFileGroupJobManager(
   override protected val fileGroupJobQueue: ActorRef,
-  override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager with StorageMonitor
+  override protected val clusteringJobQueue: ActorRef,
+  interruptedJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
+  
+  protected def loadInterruptedJobs: Seq[(Long, Long)] = interruptedJobs
+}
 

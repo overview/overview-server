@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
 import org.overviewproject.database.Database
@@ -8,6 +9,7 @@ import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFile
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -28,20 +30,27 @@ trait FileGroupJobManager extends Actor {
   protected val storage: Storage
 
   trait Storage {
-    def updateJobState(documentSetId: Long): Unit
+    def findInProgressJobInformation: Iterable[(Long, Long)]
+  }
+
+  override def preStart(): Unit = {
+    storage.findInProgressJobInformation.foreach {
+      queueJob _ tupled
+    }
   }
 
   def receive = {
 
-    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
-      storage.updateJobState(documentSetId)
-      fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
-    }
+    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => 
+      queueJob(documentSetId, fileGroupId)
 
     case FileGroupDocumentsCreated(fileGroupId) =>
       clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
 
   }
+
+  private def queueJob(documentSetId: Long, fileGroupId: Long): Unit = 
+    fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
 }
 
@@ -50,9 +59,14 @@ class FileGroupJobManagerImpl(
     override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
   class DatabaseStorage extends Storage {
-    override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {
-      val job = DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, FilesUploaded).headOption.get
-      DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
+
+    override def findInProgressJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
+      val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
+      
+      for {
+        j <- jobs
+        fileGroupId <- j.fileGroupId
+      } yield (j.documentSetId, fileGroupId)
     }
   }
 

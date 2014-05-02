@@ -16,7 +16,6 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobManager ! clusterCommand
 
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
-      updateJobStateWasCalledWith(documentSetId)
     }
 
     "start clustering job when text extraction is complete" in new FileGroupJobManagerContext {
@@ -26,6 +25,12 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.reply(FileGroupDocumentsCreated(fileGroupId))
 
       clusteringJobQueue.expectMsg(ClusterDocumentSet(fileGroupId))
+    }
+
+    "restart in progress jobs found during startup" in new RestartingFileGroupJobManagerContext {
+
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet1, fileGroup1))
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet2, fileGroup2))
     }
 
     "cancel text extraction when requested" in {
@@ -47,19 +52,25 @@ class FileGroupJobManagerSpec extends Specification {
         clusteringJobQueue = TestProbe()
 
         fileGroupJobManager = TestActorRef(
-          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref))
+        new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs))
+
       }
 
-      def updateJobStateWasCalledWith(documentSetId: Long) = {
+      protected def interruptedJobs: Seq[(Long, Long)] = Seq.empty
+    }
 
-        val pendingCalls = fileGroupJobManager.underlyingActor
-          .updateJobStateCallsInProgress
+    abstract class RestartingFileGroupJobManagerContext extends FileGroupJobManagerContext {
 
-        awaitCond(pendingCalls.isCompleted)
-        
-        fileGroupJobManager.underlyingActor
-          .storedUpdateJobStateCalls must contain(documentSetId)
-      }
+      val interruptedDocumentSet1: Long = 10l
+      val interruptedDocumentSet2: Long = 20l
+      val fileGroup1: Long = 15l
+      val fileGroup2: Long = 25l
+      
+      override protected def interruptedJobs: Seq[(Long, Long)] = Seq(
+        (interruptedDocumentSet1, fileGroup1),
+        (interruptedDocumentSet2, fileGroup2)
+      )
+
     }
   }
 }
