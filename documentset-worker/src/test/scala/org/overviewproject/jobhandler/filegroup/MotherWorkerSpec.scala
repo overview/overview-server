@@ -14,7 +14,7 @@ import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.test.TestConfiguration._
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
 import org.overviewproject.tree.orm.FileJobState._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Before
@@ -200,7 +200,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
         documentSetId = 10l,
         jobType = FileUpload,
         fileGroupId = Some(fileGroupId),
-        state = Preparing)
+        state = FilesUploaded)
 
       storage.findDocumentSetCreationJobByFileGroupId(fileGroupId) returns Some(documentSetCreationJob)
       storage.countFileUploads(fileGroupId) returns numberOfUploads
@@ -231,7 +231,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
         documentSetId = 10l,
         jobType = FileUpload,
         fileGroupId = Some(fileGroupId),
-        state = Preparing)
+        state = FilesUploaded)
 
       storage.countFileUploads(fileGroupId) returns numberOfUploads
       storage.countProcessedFiles(fileGroupId) returns numberOfUploads
@@ -262,7 +262,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val documentSetId = 10l
 
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
-      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.state returns FilesUploaded
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
 
       storage.countFileUploads(runningFileGroupId) returns 10
@@ -298,7 +298,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val cancelledFileGroupId = 2l
 
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
-      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.state returns FilesUploaded
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
 
       storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)
@@ -318,7 +318,7 @@ class MotherWorkerSpec extends Specification with Mockito with NoTimeConversions
       val cancelledFileGroupId = 2l
 
       val documentSetCreationJob = smartMock[DocumentSetCreationJob]
-      documentSetCreationJob.state returns Preparing
+      documentSetCreationJob.state returns FilesUploaded
       documentSetCreationJob.fileGroupId returns Some(cancelledFileGroupId)
 
       storage.findUploadingJobWithDocumentSet(documentSetId) returns Some(documentSetCreationJob)

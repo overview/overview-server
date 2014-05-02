@@ -120,8 +120,9 @@ trait DocumentSetController extends Controller {
     val jobs = storage.findAllJobs(id)
     val jobsRunningInWorker = jobs.find(j =>
       j.state == DocumentSetCreationJobState.InProgress ||
-        j.state == DocumentSetCreationJobState.Preparing ||
-        j.state == DocumentSetCreationJobState.Cancelled)
+      j.state == DocumentSetCreationJobState.FilesUploaded ||
+      j.state == DocumentSetCreationJobState.TextExtractionInProgress ||
+      j.state == DocumentSetCreationJobState.Cancelled)
 
     jobsRunningInWorker.headOption.map { j =>
       j.jobType match {

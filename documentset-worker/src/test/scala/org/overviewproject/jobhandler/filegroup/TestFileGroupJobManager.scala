@@ -29,12 +29,6 @@ trait StorageMonitor extends JobParameters {
   private val storedCreateJobParameters: Agent[Queue[CreateJobParameterList]] = Agent(Queue.empty)
 
   class MockStorage extends Storage {
-    override def createDocumentSetWithJob(fileGroupId: Long, name: String, lang: String,
-                                          suppliedStopWords: String, importantWords: String): Long = {
-      storedCreateJobParameters send (_ += ((fileGroupId, lang, suppliedStopWords, importantWords)))
-
-      documentSetId
-    }
 
   }
 

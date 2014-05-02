@@ -178,7 +178,7 @@ object MassUploadController extends MassUploadController {
 
   class DatabaseStorage extends Storage {
     import org.overviewproject.tree.orm.FileJobState._
-    import org.overviewproject.tree.orm.DocumentSetCreationJobState.Preparing
+    import org.overviewproject.tree.orm.DocumentSetCreationJobState.FilesUploaded
     import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 
     override def findCurrentFileGroup(userEmail: String): Option[FileGroup] =
@@ -206,7 +206,7 @@ object MassUploadController extends MassUploadController {
           splitDocuments = splitDocuments,
           suppliedStopWords = suppliedStopWords,
           importantWords = importantWords,
-          state = Preparing,
+          state = FilesUploaded,
           jobType = FileUpload))
     }
 

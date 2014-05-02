@@ -32,16 +32,16 @@ class DocumentSetHelperSpec extends Specification with Mockito {
       message must beEqualTo("Waiting for 2 jobs to complete before processing can begin")
     }
 
-    "show waiting when preparing other jobs" in new BaseScope {
-      job.state returns state.Preparing
+    "show waiting when file upload job is started" in new BaseScope {
+      job.state returns state.FilesUploaded
       job.statusDescription returns "file_processing_not_started"
       override val nAheadInQueue = 2
 
       message must beEqualTo("Waiting for 2 jobs to complete before processing can begin")
     }
 
-    "show processing when preparing" in new BaseScope {
-      job.state returns state.Preparing
+    "show processing when file upload job is extracting text" in new BaseScope {
+      job.state returns state.TextExtractionInProgress
       job.statusDescription returns "processing_files:2:4"
 
       message must beEqualTo("Extracting text from file 2/4")

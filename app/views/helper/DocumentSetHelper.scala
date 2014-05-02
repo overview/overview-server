@@ -28,7 +28,7 @@ object DocumentSetHelper {
   def jobDescriptionMessage(job: DocumentSetCreationJob, nAheadInQueue: Long)(implicit lang: Lang): String = {
     if (
         (job.state == DocumentSetCreationJobState.NotStarted && nAheadInQueue > 0) ||
-        (job.state == DocumentSetCreationJobState.Preparing && job.statusDescription == "file_processing_not_started")) {
+        (job.state == DocumentSetCreationJobState.FilesUploaded && job.statusDescription == "file_processing_not_started")) {
       views.Magic.t("views.ImportJob._documentSetCreationJob.jobs_to_process", nAheadInQueue)
     } else {
       jobDescriptionKeyToMessage(job.statusDescription)

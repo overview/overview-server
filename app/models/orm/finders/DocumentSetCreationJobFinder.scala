@@ -48,7 +48,8 @@ object DocumentSetCreationJobFinder extends Finder {
       val jobsInQueue = from(Schema.documentSetCreationJobs)(dscj =>
         where(dscj.state === DocumentSetCreationJobState.NotStarted or
           dscj.state === DocumentSetCreationJobState.InProgress or
-          dscj.state === DocumentSetCreationJobState.Preparing)
+          dscj.state === DocumentSetCreationJobState.FilesUploaded or
+          dscj.state === DocumentSetCreationJobState.TextExtractionInProgress)
           select (dscj))
 
       // XXX this is O(N^2), unless Postgres has some trick for optimizing it.

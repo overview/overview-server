@@ -11,7 +11,7 @@ import org.overviewproject.messagequeue.MessageHandlerProtocol._
 import org.overviewproject.tree.DocumentSetCreationJobType.FileUpload
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, Preparing }
+import org.overviewproject.tree.orm.DocumentSetCreationJobState.{ NotStarted, FilesUploaded }
 import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.util.Configuration
 import org.overviewproject.jobhandler.filegroup.FileGroupMessageHandlerProtocol.{ Command => FileGroupCommand, ProcessFileCommand }
@@ -209,7 +209,7 @@ object MotherWorker {
       }
 
       override def findUploadingJobWithDocumentSet(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
-        DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, Preparing).headOption
+        DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, FilesUploaded).headOption
       }
 
       override def findDocumentSetCreationJobByFileGroupId(fileGroupId: Long): Option[DocumentSetCreationJob] =

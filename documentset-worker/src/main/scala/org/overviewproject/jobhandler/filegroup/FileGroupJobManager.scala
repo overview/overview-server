@@ -32,9 +32,6 @@ trait FileGroupJobManager extends Actor {
   protected val storage: Storage
 
   trait Storage {
-    def createDocumentSetWithJob(fileGroupId: Long, name: String, lang: String,
-                                 suppliedStopWords: String, importantWords: String): Long
-
   }
 
   def receive = {
@@ -43,7 +40,7 @@ trait FileGroupJobManager extends Actor {
       fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
     }
 
-    case FileGroupDocumentsCreated(fileGroupId) => 
+    case FileGroupDocumentsCreated(fileGroupId) =>
       clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
 
   }
@@ -55,23 +52,6 @@ class FileGroupJobManagerImpl(
     override protected val clusteringJobQueue: ActorRef) extends FileGroupJobManager {
 
   class DatabaseStorage extends Storage {
-    override def createDocumentSetWithJob(fileGroupId: Long, name: String, lang: String,
-                                          suppliedStopWords: String, importantWords: String): Long = Database.inTransaction {
-
-      val documentSetStore = BaseStore(Schema.documentSets)
-
-      val documentSet = documentSetStore.insertOrUpdate(DocumentSet(title = name))
-      val documentSetCreationJob = DocumentSetCreationJobStore.insertOrUpdate(
-        DocumentSetCreationJob(
-          documentSetId = documentSet.id,
-          jobType = FileUpload,
-          fileGroupId = Some(fileGroupId),
-          lang = lang,
-          suppliedStopWords = suppliedStopWords,
-          importantWords = importantWords,
-          state = Preparing))
-      documentSet.id
-    }
   }
 
   override protected val storage = new DatabaseStorage
@@ -79,6 +59,6 @@ class FileGroupJobManagerImpl(
 
 object FileGroupJobManager {
 
-  def apply(fileGroupJobQueue: ActorRef, clusteringJobQueue: ActorRef): Props = 
+  def apply(fileGroupJobQueue: ActorRef, clusteringJobQueue: ActorRef): Props =
     Props(new FileGroupJobManagerImpl(fileGroupJobQueue, clusteringJobQueue))
 }
