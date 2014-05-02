@@ -15,7 +15,7 @@ import org.overviewproject.tree.orm.FileJobState._
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.tree.orm.finders.ResultPage
-import org.overviewproject.util.{DocumentConsumer, DocumentSetIndexingSession}
+import org.overviewproject.util.{ DocumentConsumer, DocumentSetIndexingSession }
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.util.SearchIndex
 
@@ -24,9 +24,9 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
                                  override protected val progAbort: ProgressAbortFn)
     extends PagedDocumentSourceDocumentProducer[TempDocumentSetFile] with PersistentDocumentSet {
 
-  override protected lazy val totalNumberOfDocuments = Database.inTransaction {
-    TempDocumentSetFileFinder.byDocumentSet(documentSetId).count
-  }
+  override protected lazy val totalNumberOfDocuments =
+    if (splitDocuments) countPages
+    else countFiles
 
   private val IndexingTimeout = 3 minutes
   override protected val PreparingFraction = 0.25
@@ -62,18 +62,19 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     processDocuments(result)
   }
 
-  override protected def processDocumentSource(documentSetFile: TempDocumentSetFile): Unit = {
+  override protected def processDocumentSource(documentSetFile: TempDocumentSetFile): Int = {
     val (file, filePages) = findFileWithPages(documentSetFile.fileId)
 
     if (!splitDocuments) {
       val document = createDocumentFromPages(file, filePages)
 
       document.fold(recordError(file.name, _), produceDocument)
-    }
-    else {
+      1
+    } else {
       val documents = createDocumentsFromPages(file, filePages)
-      
-      documents.foreach { _.fold(recordError(file.name, _), produceDocument)}
+
+      documents.foreach { _.fold(recordError(file.name, _), produceDocument) }
+      documents.count(_.isRight)
     }
   }
 
@@ -114,13 +115,14 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     def pageError(page: Page): String =
       page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
 
-      pages.map { p =>
-        p.text.toRight(pageError(p)).right.map { text =>
-          Document(documentSetId, id = ids.next, title = Some(file.name), text = Some(text), fileId = Some(file.id))    
-        }
+    pages.map { p =>
+      p.text.toRight(pageError(p)).right.map { text =>
+        Document(documentSetId, id = ids.next, title = Some(file.name), text = Some(text), fileId = Some(file.id),
+          pageNumber = Some(p.pageNumber), pageId = Some(p.id))
       }
+    }
   }
-  
+
   private def produceDocument(document: Document): Unit = {
     Database.inTransaction { DocumentWriter.write(document) }
     val documentText = document.text.get
@@ -130,5 +132,12 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     consumer.processDocument(document.id, documentText)
   }
 
+  private def countFiles: Long = Database.inTransaction {
+    TempDocumentSetFileFinder.byDocumentSet(documentSetId).count
+  }
+
+  private def countPages: Long = Database.inTransaction {
+    PageFinder.byDocumentSet(documentSetId).count
+  }
 }
 

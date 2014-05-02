@@ -17,7 +17,10 @@ class PagedDocumentSourceDocumentProducerSpec extends Specification with Mockito
     override protected val totalNumberOfDocuments = 100l
     
     var documentsProcessed: Int = 0
-    override def processDocumentSource(document: Int): Unit = documentsProcessed += 1
+    override def processDocumentSource(document: Int): Int = {
+      documentsProcessed += 1
+      1
+    }
     
     override def runQueryForPage(pageNumber: Int)(processDocuments: Iterable[Int] => Int): Int = {
       val pages = Seq(

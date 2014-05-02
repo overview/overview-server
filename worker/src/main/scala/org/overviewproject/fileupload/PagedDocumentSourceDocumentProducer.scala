@@ -15,7 +15,7 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
   protected val progAbort: ProgressAbortFn
   protected val totalNumberOfDocuments: Long
 
-  protected def processDocumentSource(documentSource: T): Unit
+  protected def processDocumentSource(documentSource: T): Int
   protected def runQueryForPage(pageNumber: Int)(processDocumentSources: Iterable[T] => Int): Int
 
   override def produce(): Int = {
@@ -34,8 +34,8 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
       sources.foldLeft(0) { (numberOfDocuments, source) => 
         val cancel = reportProgress(numberOfDocumentsProcessed + numberOfDocuments + 1)
         if (!cancel) {
-          processDocumentSource(source)
-          numberOfDocuments + 1
+          val numberOfNewDocuments =  processDocumentSource(source)
+          numberOfDocuments + numberOfNewDocuments
         } else numberOfDocuments
       }
     }
