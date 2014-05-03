@@ -31,7 +31,6 @@ trait FileGroupJobQueue extends Actor {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
 
-  private case class AddTasks(tasks: Iterable[CreatePagesTask])
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
