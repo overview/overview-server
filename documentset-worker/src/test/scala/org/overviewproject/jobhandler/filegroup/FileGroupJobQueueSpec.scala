@@ -79,6 +79,8 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       val expectedCompleteTask = uploadedFileIds.map { CompleteTask(fileGroupId, _) }
       
       progressMessages must containTheSameElementsAs(expectedStartTasks ++ expectedCompleteTask)
+      
+      progressReporter.expectMsg(CompleteJob(fileGroupId))
     }
     
     "handle cancellations" in {

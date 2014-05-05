@@ -32,8 +32,8 @@ trait FileGroupJobQueue extends Actor {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
 
-  protected val progressReporter: ActorRef 
-  
+  protected val progressReporter: ActorRef
+
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
@@ -54,7 +54,7 @@ trait FileGroupJobQueue extends Actor {
         val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
         progressReporter ! StartJob(fileGroupId, fileIds.size)
-        
+
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
         jobRequests += (fileGroupId -> JobRequest(sender))
 
@@ -72,7 +72,7 @@ trait FileGroupJobQueue extends Actor {
     case CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) =>
       Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
       progressReporter ! CompleteTask(fileGroupId, uploadedFileId)
-      
+
       whenTaskIsComplete(fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
@@ -100,6 +100,8 @@ trait FileGroupJobQueue extends Actor {
     if (remainingTasks.isEmpty) {
       jobTasks -= fileGroupId
       jobRequests -= fileGroupId
+
+      progressReporter ! CompleteJob(fileGroupId)
 
       request.requester ! FileGroupDocumentsCreated(fileGroupId)
     } else {
