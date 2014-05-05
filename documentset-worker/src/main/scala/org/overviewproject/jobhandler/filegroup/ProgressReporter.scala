@@ -5,6 +5,7 @@ import akka.actor.Props
 
 object ProgressReporterProtocol {
   case class StartJob(jobId: Long, numberOfTasks: Int)
+  case class CompleteJob(jobId: Long)
   case class StartTask(jobId: Long, taskId: Long)
   case class CompleteTask(jobId: Long, taskId: Long)
 }
@@ -27,6 +28,7 @@ trait ProgressReporter extends Actor {
 
   def receive = {
     case StartJob(jobId, numberOfTasks) => updateProgress(jobId, JobProgress(numberOfTasks))
+    case CompleteJob(jobId) => completeJob(jobId)
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
     case CompleteTask(jobId, taskId) => updateTaskForJob(jobId, _.completeTask)
   }
@@ -34,6 +36,8 @@ trait ProgressReporter extends Actor {
   private def description(progress: JobProgress): String =
     s"processing_files:${progress.tasksStarted}:${progress.numberOfTasks}"
 
+  private def completeJob(jobId: Long): Unit = jobProgress -= jobId
+  
   private def updateTaskForJob(jobId: Long, updateFunction: JobProgress => JobProgress): Unit =
     jobProgress.get(jobId).map { p => updateProgress(jobId, updateFunction(p)) } 
 

@@ -35,6 +35,17 @@ class ProgressReporterSpec extends Specification {
       lastProgressStatusMustBe(documentSetId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
+    "ignore updates after job is complete" in new ProgressReporterContext {
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      
+      progressReporter ! CompleteJob(documentSetId)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      
+      lastProgressStatusMustBe(documentSetId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
+      
+    }
     trait ProgressReporterContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
       protected val numberOfTasks = 5
