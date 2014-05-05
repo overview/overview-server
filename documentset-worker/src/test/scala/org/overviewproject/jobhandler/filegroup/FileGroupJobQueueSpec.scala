@@ -10,6 +10,7 @@ import akka.testkit._
 import org.specs2.time.NoTimeConversions
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
 class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
@@ -66,6 +67,20 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       
     }
     
+    "report progress" in new JobQueueContext {
+      ActAsImmediateJobCompleter(worker)
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      submitJob
+      
+      progressReporter.expectMsg(StartJob(fileGroupId, numberOfUploadedFiles))
+      val progressMessages = progressReporter.receiveN(2 * numberOfUploadedFiles)
+
+      val expectedStartTasks = uploadedFileIds.map { StartTask(fileGroupId, _) }
+      val expectedCompleteTask = uploadedFileIds.map { CompleteTask(fileGroupId, _) }
+      
+      progressMessages must containTheSameElementsAs(expectedStartTasks ++ expectedCompleteTask)
+    }
+    
     "handle cancellations" in {
       todo
     }
@@ -78,9 +93,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       protected var fileGroupJobQueue: ActorRef = _
       protected var worker: TestProbe = _
-
+      protected var progressReporter: TestProbe = _
+      
       def before = {
-        fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds))
+        progressReporter = TestProbe()
+        fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds, progressReporter.ref))
         worker = TestProbe()
       }
 

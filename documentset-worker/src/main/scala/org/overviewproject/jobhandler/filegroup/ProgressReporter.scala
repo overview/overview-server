@@ -1,6 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
+import akka.actor.Props
 
 object ProgressReporterProtocol {
   case class StartJob(jobId: Long, numberOfTasks: Int)
@@ -40,5 +41,15 @@ trait ProgressReporter extends Actor {
     jobProgress += (jobId -> progress)
     storage.updateProgress(jobId, progress.fraction, description(progress))
   }
+}
 
+class ProgressReporterImpl extends ProgressReporter {
+  class DatabaseStorage extends Storage {
+    override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = ???
+  }
+ override protected val storage = new DatabaseStorage
+}
+
+object ProgressReporter {
+  def apply(): Props = Props[ProgressReporterImpl]
 }

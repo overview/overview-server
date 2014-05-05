@@ -7,6 +7,7 @@ import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import akka.actor.Props
 import org.overviewproject.util.Logger
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 
 object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
@@ -31,6 +32,8 @@ trait FileGroupJobQueue extends Actor {
     def uploadedFileIds(fileGroupId: Long): Set[Long]
   }
 
+  protected val progressReporter: ActorRef 
+  
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
@@ -50,6 +53,8 @@ trait FileGroupJobQueue extends Actor {
       if (isNewRequest(fileGroupId)) {
         val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
+        progressReporter ! StartJob(fileGroupId, fileIds.size)
+        
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
         jobRequests += (fileGroupId -> JobRequest(sender))
 
@@ -60,11 +65,14 @@ trait FileGroupJobQueue extends Actor {
       if (!taskQueue.isEmpty) {
         val task = taskQueue.dequeue
         Logger.info(s"Sending task ${task.uploadedFileId} to ${sender.path.toString}")
+        progressReporter ! StartTask(task.fileGroupId, task.uploadedFileId)
         sender ! task
       }
     }
     case CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) =>
       Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
+      progressReporter ! CompleteTask(fileGroupId, uploadedFileId)
+      
       whenTaskIsComplete(fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
@@ -107,6 +115,7 @@ class FileGroupJobQueueImpl extends FileGroupJobQueue {
   }
 
   override protected val storage: Storage = new DatabaseStorage
+  override protected val progressReporter: ActorRef = context.actorOf(ProgressReporter())
 
 }
 
