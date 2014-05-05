@@ -3,24 +3,42 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.Actor
 
 object ProgressReporterProtocol {
-  case class StartJob(documentSetId: Long, numberOfTasks: Int)
+  case class StartJob(jobId: Long, numberOfTasks: Int)
+  case class StartTask(jobId: Long, taskId: Long)
+}
 
+case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, fraction: Double = 0.0) {
+  def startTask: JobProgress = this.copy(tasksStarted = tasksStarted + 1)
+  def completeTask: JobProgress = this.copy(fraction = tasksStarted.toDouble / numberOfTasks)
 }
 
 trait ProgressReporter extends Actor {
   import ProgressReporterProtocol._
 
-  protected val storage: Storage 
-  
+  private var jobProgress: Map[Long, JobProgress] = Map.empty
+
+  protected val storage: Storage
+
   protected trait Storage {
-    def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit  
+    def updateProgress(jobId: Long, fraction: Double, description: String): Unit
   }
-  
+
   def receive = {
-    case StartJob(documentSetId, numberOfTasks) => 
-      storage.updateProgress(documentSetId, 0, description(0, numberOfTasks)) 
+    case StartJob(jobId, numberOfTasks) => {
+      val initialProgress = JobProgress(numberOfTasks)
+      jobProgress += (jobId -> initialProgress)
+      storage.updateProgress(jobId, 0, description(initialProgress))
+    }
+    case StartTask(jobId, taskId) => {
+      jobProgress.get(jobId).map { p =>
+        val updatedProgress = p.startTask
+
+        jobProgress += (jobId -> updatedProgress)
+        storage.updateProgress(jobId, updatedProgress.fraction, description(updatedProgress))
+      }
+    }
   }
-  
-  private def description(tasksStarted: Int, numberOfTasks: Int): String = 
-    s"processing_files:$tasksStarted:$numberOfTasks"
+
+  private def description(progress: JobProgress): String =
+    s"processing_files:${progress.tasksStarted}:${progress.numberOfTasks}"
 }

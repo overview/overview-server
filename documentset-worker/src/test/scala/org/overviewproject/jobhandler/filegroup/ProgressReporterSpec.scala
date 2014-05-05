@@ -10,7 +10,6 @@ import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import scala.concurrent.Future
 
-
 class ProgressReporterSpec extends Specification {
 
   "ProgressReporter" should {
@@ -18,11 +17,14 @@ class ProgressReporterSpec extends Specification {
     "initialize progress when start received" in new ProgressReporterContext {
       progressReporter ! StartJob(documentSetId, numberOfTasks)
 
-      progressStatusMustBe(documentSetId, 0.0, s"processing_files:0:$numberOfTasks")
+      lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:0:$numberOfTasks")
     }
 
-    "update count on task start" in {
-      todo
+    "update count on task start" in new ProgressReporterContext {
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+
+      lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:1:$numberOfTasks")
     }
 
     "update fraction complete on task done" in {
@@ -32,16 +34,21 @@ class ProgressReporterSpec extends Specification {
     trait ProgressReporterContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
       protected val numberOfTasks = 5
+      protected val uploadedFileId = 10l
 
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 
-      protected def progressStatusMustBe(documentSetId: Long, fraction: Double, description: String) = {
+      protected def lastProgressStatusMustBe(documentSetId: Long, fraction: Double, description: String) = {
         val pendingCalls = progressReporter.underlyingActor.updateProgressCallsInProgress
         awaitCond(pendingCalls.isCompleted)
-        progressReporter.underlyingActor.updateProgressParemeters.headOption must 
-          beSome((documentSetId, fraction, description))
+        progressReporter.underlyingActor.updateProgressParemeters.lastOption must
+          beSome.like {
+            case p =>
+              p._1 must be equalTo (documentSetId)
+              p._2 must beCloseTo(fraction, 0.01)
+              p._3 must be equalTo (description)
+          }
       }
-        
 
       override def before = {
         progressReporter = TestActorRef(new TestProgressReporter)
@@ -52,17 +59,17 @@ class ProgressReporterSpec extends Specification {
 }
 
 class TestProgressReporter extends ProgressReporter {
- import ExecutionContext.Implicits.global
- 
+  import ExecutionContext.Implicits.global
+
   private val updateProgressParameters: Agent[Queue[(Long, Double, String)]] = Agent(Queue.empty)
-  
+
   def updateProgressCallsInProgress: Future[Queue[(Long, Double, String)]] = updateProgressParameters.future
   def updateProgressParemeters: Queue[(Long, Double, String)] = updateProgressParameters.get
-  
-  override protected val storage = new MockStorage 
-  
+
+  override protected val storage = new MockStorage
+
   class MockStorage extends Storage {
-   def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit = 
-     updateProgressParameters send (_.enqueue(documentSetId, fraction, description))
- }
+    def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit =
+      updateProgressParameters send (_.enqueue(documentSetId, fraction, description))
+  }
 }
