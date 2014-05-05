@@ -27,8 +27,12 @@ class ProgressReporterSpec extends Specification {
       lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:1:$numberOfTasks")
     }
 
-    "update fraction complete on task done" in {
-      todo
+    "update fraction complete on task done" in new ProgressReporterContext {
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      
+      lastProgressStatusMustBe(documentSetId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
     trait ProgressReporterContext extends ActorSystemContext with Before {
