@@ -1,41 +1,22 @@
 package org.overviewproject.jobhandler.filegroup
 
 import akka.actor.Actor
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
-import org.overviewproject.database.Database
-import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import akka.actor.ActorRef
 import akka.actor.Props
 
-trait ClusteringJobQueue extends Actor {
+import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartClustering
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
-  protected val storage: Storage
-
-  trait Storage {
-    def submitJobWithFileGroup(fileGroupId: Long): Unit
-  }
+class ClusteringJobQueue(progressReporter: ActorRef) extends Actor {
 
   def receive = {
-    case ClusterDocumentSet(documentSetId) => storage.submitJobWithFileGroup(documentSetId)
+    case ClusterDocumentSet(documentSetId) => progressReporter ! StartClustering(documentSetId)
   }
 }
 
-class ClusteringJobQueueImpl extends ClusteringJobQueue {
-
-  override protected val storage: Storage = new DatabaseStorage
-
-  class DatabaseStorage extends Storage {
-    override def submitJobWithFileGroup(documentSetId: Long) = Database.inTransaction {
-      val job = DocumentSetCreationJobFinder.byDocumentSet(documentSetId).headOption
-      job.map { j => 
-        DocumentSetCreationJobStore.insertOrUpdate(j.copy(state = NotStarted))
-      }
-    }
-  }
-}
 
 object ClusteringJobQueue {
 
-  def apply(): Props = Props[ClusteringJobQueueImpl]
+  def apply(progressReporter: ActorRef): Props = Props(new ClusteringJobQueue(progressReporter))
 }

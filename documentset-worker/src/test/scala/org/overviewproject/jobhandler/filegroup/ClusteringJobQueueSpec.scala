@@ -10,21 +10,8 @@ import akka.agent.Agent
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import akka.testkit.TestActorRef
-
-class TestClusteringJobQueue extends ClusteringJobQueue {
-  import ExecutionContext.Implicits.global
-  private val storedSubmitJobParameter: Agent[Option[Long]] = Agent(None)
-
-  class MockStorage extends Storage {
-    override def submitJobWithFileGroup(fileGroupId: Long): Unit =
-      storedSubmitJobParameter send Some(fileGroupId)
-  }
-
-  override protected val storage = new MockStorage
-
-  def submitJobCallsInProgress: Future[Option[Long]] = storedSubmitJobParameter.future
-  def submitJobParameter: Option[Long] = storedSubmitJobParameter()
-}
+import akka.testkit.TestProbe
+import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartClustering
 
 class ClusteringJobQueueSpec extends Specification {
 
@@ -34,25 +21,21 @@ class ClusteringJobQueueSpec extends Specification {
 
       clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
-      submitJobWasCalledWith(documentSetId)
+      progressReporter.expectMsg(StartClustering(documentSetId))
     }
 
     trait ClusteringJobQueueContext extends ActorSystemContext with Before {
 
       protected val documentSetId: Long = 1l
-
-      protected var clusteringJobQueue: TestActorRef[TestClusteringJobQueue] = _
+      
+      protected var progressReporter: TestProbe = _
+      protected var clusteringJobQueue: TestActorRef[ClusteringJobQueue] = _
 
       def before = {
-        clusteringJobQueue = TestActorRef[TestClusteringJobQueue]
+        progressReporter = TestProbe()
+        clusteringJobQueue = TestActorRef(ClusteringJobQueue(progressReporter.ref))
       }
 
-      def submitJobWasCalledWith(documentSetId: Long) = {
-        val submitJobParameters = clusteringJobQueue.underlyingActor.submitJobCallsInProgress
-        awaitCond(submitJobParameters.isCompleted)
-        
-        clusteringJobQueue.underlyingActor.submitJobParameter must beSome(documentSetId)
-      }
     }
 
   }

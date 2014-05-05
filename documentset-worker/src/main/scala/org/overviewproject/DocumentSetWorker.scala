@@ -80,7 +80,7 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
   val progressReporter = context.actorOf(ProgressReporter())
   val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
   Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
-  val clusteringJobQueue = context.actorOf(ClusteringJobQueue(), "ClusteringJobQueue")
+  val clusteringJobQueue = context.actorOf(ClusteringJobQueue(progressReporter), "ClusteringJobQueue")
   val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
   val uploadClusteringCommandBridge = context.actorOf(ClusteringCommandsMessageQueueBridge(fileGroupJobQueueManager), "ClusteringCommandsMessageQueueBridge")
 

@@ -14,6 +14,8 @@ object ProgressReporterProtocol {
   case class CompleteJob(jobId: Long)
   case class StartTask(jobId: Long, taskId: Long)
   case class CompleteTask(jobId: Long, taskId: Long)
+  
+  case class StartClustering(jobId: Long)
 }
 
 case class JobProgress(numberOfTasks: Int, tasksStarted: Int = 0, fraction: Double = 0.0) {
@@ -39,6 +41,8 @@ trait ProgressReporter extends Actor {
     case CompleteJob(jobId) => completeJob(jobId)
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
     case CompleteTask(jobId, taskId) => updateTaskForJob(jobId, _.completeTask)
+    
+    case StartClustering(jobId) => 
   }
 
   private def description(progress: JobProgress): String =
