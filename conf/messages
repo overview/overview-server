@@ -61,6 +61,7 @@ models.DocumentSetCreationJob.state.ERROR=stalled
 models.DocumentSetCreationJob.state.IN_PROGRESS=importing
 models.DocumentSetCreationJob.state.NOT_STARTED=queued
 models.DocumentSetCreationJob.state.FILES_UPLOADED=processing uploaded files
+models.DocumentSetCreationJob.state.TEXT_EXTRACTION_IN_PROGRESS=processing uploaded files
 
 time_display.datetime.medium={0,date,medium} at {0,time,medium}
 
