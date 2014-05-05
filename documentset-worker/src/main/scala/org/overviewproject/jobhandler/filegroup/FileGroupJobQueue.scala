@@ -102,13 +102,13 @@ trait FileGroupJobQueue extends Actor {
       jobRequests -= fileGroupId
 
       progressReporter ! CompleteJob(documentSetId)
-      request.requester ! FileGroupDocumentsCreated(fileGroupId)
+      request.requester ! FileGroupDocumentsCreated(documentSetId)
     } else {
       jobTasks += (fileGroupId -> remainingTasks)
     }
 }
 
-class FileGroupJobQueueImpl extends FileGroupJobQueue {
+class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {
   class DatabaseStorage extends Storage {
     override def uploadedFileIds(fileGroupId: Long): Set[Long] = Database.inTransaction {
       GroupedFileUploadFinder.byFileGroup(fileGroupId).toIds.toSet
@@ -116,10 +116,10 @@ class FileGroupJobQueueImpl extends FileGroupJobQueue {
   }
 
   override protected val storage: Storage = new DatabaseStorage
-  override protected val progressReporter: ActorRef = context.actorOf(ProgressReporter())
+  override protected val progressReporter: ActorRef = progressReporterActor
 
 }
 
 object FileGroupJobQueue {
-  def apply(): Props = Props[FileGroupJobQueueImpl]
+  def apply(progressReporter: ActorRef): Props = Props(new FileGroupJobQueueImpl(progressReporter))
 }

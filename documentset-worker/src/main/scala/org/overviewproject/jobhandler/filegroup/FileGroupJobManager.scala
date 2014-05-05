@@ -47,8 +47,8 @@ trait FileGroupJobManager extends Actor {
       queueJob(documentSetId, fileGroupId)
     }
 
-    case FileGroupDocumentsCreated(fileGroupId) =>
-      clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
+    case FileGroupDocumentsCreated(documentSetId) =>
+      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
   }
 

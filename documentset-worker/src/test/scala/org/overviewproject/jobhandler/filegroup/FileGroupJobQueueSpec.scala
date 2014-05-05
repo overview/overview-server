@@ -53,7 +53,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
-      expectMsg(FileGroupDocumentsCreated(fileGroupId))
+      expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
 
     "ignore a second job for the same fileGroup" in new JobQueueContext {

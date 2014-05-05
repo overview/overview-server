@@ -32,14 +32,14 @@ class ClusteringJobQueueSpec extends Specification {
 
     "set job state to NOT_STARTED when receiving a job" in new ClusteringJobQueueContext {
 
-      clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
+      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
-      submitJobWasCalledWith(fileGroupId)
+      submitJobWasCalledWith(documentSetId)
     }
 
     trait ClusteringJobQueueContext extends ActorSystemContext with Before {
 
-      protected val fileGroupId: Long = 1l
+      protected val documentSetId: Long = 1l
 
       protected var clusteringJobQueue: TestActorRef[TestClusteringJobQueue] = _
 

@@ -22,9 +22,9 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobManager ! clusterCommand
 
       fileGroupJobQueue.expectMsgType[CreateDocumentsFromFileGroup]
-      fileGroupJobQueue.reply(FileGroupDocumentsCreated(fileGroupId))
+      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
 
-      clusteringJobQueue.expectMsg(ClusterDocumentSet(fileGroupId))
+      clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
     }
     
     "update job state when clustering request is received" in new FileGroupJobManagerContext {

@@ -19,6 +19,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobManager
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueue
 import org.overviewproject.jobhandler.filegroup.ClusteringJobQueue
 import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorker
+import org.overviewproject.jobhandler.filegroup.ProgressReporter
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -76,7 +77,8 @@ class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) ex
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
 
-  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(), fileGroupJobQueueName)
+  val progressReporter = context.actorOf(ProgressReporter())
+  val fileGroupJobQueue = context.actorOf(FileGroupJobQueue(progressReporter), fileGroupJobQueueName)
   Logger.info(s"Job Queue path ${fileGroupJobQueue.path}")
   val clusteringJobQueue = context.actorOf(ClusteringJobQueue(), "ClusteringJobQueue")
   val fileGroupJobQueueManager = context.actorOf(FileGroupJobManager(fileGroupJobQueue, clusteringJobQueue), "FileGroupJobManager")
