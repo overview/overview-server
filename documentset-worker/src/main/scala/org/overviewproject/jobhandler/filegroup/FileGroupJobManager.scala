@@ -31,6 +31,7 @@ trait FileGroupJobManager extends Actor {
 
   trait Storage {
     def findInProgressJobInformation: Iterable[(Long, Long)]
+    def updateJobState(documentSetId: Long): Unit
   }
 
   override def preStart(): Unit = {
@@ -41,15 +42,17 @@ trait FileGroupJobManager extends Actor {
 
   def receive = {
 
-    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => 
+    case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
+      storage.updateJobState(documentSetId)
       queueJob(documentSetId, fileGroupId)
+    }
 
     case FileGroupDocumentsCreated(fileGroupId) =>
       clusteringJobQueue ! ClusterDocumentSet(fileGroupId)
 
   }
 
-  private def queueJob(documentSetId: Long, fileGroupId: Long): Unit = 
+  private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
     fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
 }
@@ -62,11 +65,17 @@ class FileGroupJobManagerImpl(
 
     override def findInProgressJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
       val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
-      
+
       for {
         j <- jobs
         fileGroupId <- j.fileGroupId
       } yield (j.documentSetId, fileGroupId)
+    }
+
+    override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {
+      DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, FilesUploaded).map { job =>
+        DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
+      }
     }
   }
 

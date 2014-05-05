@@ -10,6 +10,9 @@ object DocumentSetCreationJobFinder extends Finder {
 
   type DocumentSetCreationJobFinderResult = FinderResult[DocumentSetCreationJob]
 
+  def byDocumentSet(documentSetId: Long): DocumentSetCreationJobFinderResult = 
+    Schema.documentSetCreationJobs.where(dscj => dscj.documentSetId === documentSetId)
+    
   def byFileGroupId(fileGroupId: Long): DocumentSetCreationJobFinderResult =
     Schema.documentSetCreationJobs.where(dscj => dscj.fileGroupId === fileGroupId)
 

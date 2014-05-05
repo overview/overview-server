@@ -26,6 +26,12 @@ class FileGroupJobManagerSpec extends Specification {
 
       clusteringJobQueue.expectMsg(ClusterDocumentSet(fileGroupId))
     }
+    
+    "update job state when clustering request is received" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+      
+      updateJobStateWasCalled(documentSetId)
+    }
 
     "restart in progress jobs found during startup" in new RestartingFileGroupJobManagerContext {
 
@@ -57,6 +63,13 @@ class FileGroupJobManagerSpec extends Specification {
       }
 
       protected def interruptedJobs: Seq[(Long, Long)] = Seq.empty
+      
+      protected def updateJobStateWasCalled(documentSetId: Long) = {
+        val pendingCalls = fileGroupJobManager.underlyingActor.updateJobCallsInProgress
+        awaitCond(pendingCalls.isCompleted)
+        
+        fileGroupJobManager.underlyingActor.updateJobCallParameters.headOption must beSome(documentSetId)
+      }
     }
 
     abstract class RestartingFileGroupJobManagerContext extends FileGroupJobManagerContext {

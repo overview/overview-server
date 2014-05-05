@@ -28,7 +28,7 @@ class ClusteringJobQueueImpl extends ClusteringJobQueue {
   class DatabaseStorage extends Storage {
     override def submitJobWithFileGroup(fileGroupId: Long) = Database.inTransaction {
       val job = DocumentSetCreationJobFinder.byFileGroupId(fileGroupId).headOption
-      job.map { j =>
+      job.map { j => 
         DocumentSetCreationJobStore.insertOrUpdate(j.copy(state = NotStarted))
       }
     }

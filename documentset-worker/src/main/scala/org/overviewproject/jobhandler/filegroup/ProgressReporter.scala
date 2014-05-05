@@ -3,7 +3,11 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.Actor
 import akka.actor.Props
 
+
 import org.overviewproject.database.Database
+import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
+import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 object ProgressReporterProtocol {
   case class StartJob(jobId: Long, numberOfTasks: Int)
@@ -52,7 +56,10 @@ trait ProgressReporter extends Actor {
 class ProgressReporterImpl extends ProgressReporter {
   class DatabaseStorage extends Storage {
     override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = Database.inTransaction {
-      ???
+       DocumentSetCreationJobFinder.byDocumentSetAndState(jobId, TextExtractionInProgress).headOption.map { job =>
+       	 val update = job.copy(fractionComplete = fraction, statusDescription = description)
+       	 DocumentSetCreationJobStore.insertOrUpdate(update)
+       }
     }
   }
   

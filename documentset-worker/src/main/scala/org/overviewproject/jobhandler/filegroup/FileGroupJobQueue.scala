@@ -102,7 +102,6 @@ trait FileGroupJobQueue extends Actor {
       jobRequests -= fileGroupId
 
       progressReporter ! CompleteJob(documentSetId)
-
       request.requester ! FileGroupDocumentsCreated(fileGroupId)
     } else {
       jobTasks += (fileGroupId -> remainingTasks)

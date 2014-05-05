@@ -2,10 +2,10 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.agent._
 import akka.actor._
-import scala.collection.mutable.Queue
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
+import scala.collection.immutable.Queue
 
 
 trait JobParameters {
@@ -24,11 +24,19 @@ trait JobParameters {
 trait StorageMonitor extends JobParameters {
   self: TestFileGroupJobManager =>
 
+  import ExecutionContext.Implicits.global
+    
+  private val updateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
+  
   class MockStorage extends Storage {
     override def findInProgressJobInformation: Iterable[(Long, Long)] = loadInterruptedJobs
+    override def updateJobState(documentSetId: Long): Unit = updateJobStateParameters send (_.enqueue(documentSetId))
   }
 
   override protected val storage = new MockStorage
+  
+  def updateJobCallsInProgress = updateJobStateParameters.future
+  def updateJobCallParameters = updateJobStateParameters.get
 }
 
 class TestFileGroupJobManager(
