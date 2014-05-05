@@ -15,39 +15,39 @@ class ProgressReporterSpec extends Specification {
   "ProgressReporter" should {
 
     "initialize progress when start received" in new ProgressReporterContext {
-      progressReporter ! StartJob(fileGroupId, numberOfTasks)
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
 
-      lastProgressStatusMustBe(fileGroupId, 0.0, s"processing_files:0:$numberOfTasks")
+      lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:0:$numberOfTasks")
     }
 
     "update count on task start" in new ProgressReporterContext {
-      progressReporter ! StartJob(fileGroupId, numberOfTasks)
-      progressReporter ! StartTask(fileGroupId, uploadedFileId)
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
 
-      lastProgressStatusMustBe(fileGroupId, 0.0, s"processing_files:1:$numberOfTasks")
+      lastProgressStatusMustBe(documentSetId, 0.0, s"processing_files:1:$numberOfTasks")
     }
 
     "update fraction complete on task done" in new ProgressReporterContext {
-      progressReporter ! StartJob(fileGroupId, numberOfTasks)
-      progressReporter ! StartTask(fileGroupId, uploadedFileId)
-      progressReporter ! CompleteTask(fileGroupId, uploadedFileId)
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       
-      lastProgressStatusMustBe(fileGroupId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
+      lastProgressStatusMustBe(documentSetId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
 
     "ignore updates after job is complete" in new ProgressReporterContext {
-      progressReporter ! StartJob(fileGroupId, numberOfTasks)
-      progressReporter ! StartTask(fileGroupId, uploadedFileId)
-      progressReporter ! CompleteTask(fileGroupId, uploadedFileId)
+      progressReporter ! StartJob(documentSetId, numberOfTasks)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       
-      progressReporter ! CompleteJob(fileGroupId)
-      progressReporter ! StartTask(fileGroupId, uploadedFileId)
+      progressReporter ! CompleteJob(documentSetId)
+      progressReporter ! StartTask(documentSetId, uploadedFileId)
       
-      lastProgressStatusMustBe(fileGroupId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
+      lastProgressStatusMustBe(documentSetId, 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
       
     }
     trait ProgressReporterContext extends ActorSystemContext with Before {
-      protected val fileGroupId = 1l
+      protected val documentSetId = 1l
       protected val numberOfTasks = 5
       protected val uploadedFileId = 10l
 

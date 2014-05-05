@@ -72,15 +72,15 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       submitJob
       
-      progressReporter.expectMsg(StartJob(fileGroupId, numberOfUploadedFiles))
+      progressReporter.expectMsg(StartJob(documentSetId, numberOfUploadedFiles))
       val progressMessages = progressReporter.receiveN(2 * numberOfUploadedFiles)
 
-      val expectedStartTasks = uploadedFileIds.map { StartTask(fileGroupId, _) }
-      val expectedCompleteTask = uploadedFileIds.map { CompleteTask(fileGroupId, _) }
+      val expectedStartTasks = uploadedFileIds.map { StartTask(documentSetId, _) }
+      val expectedCompleteTask = uploadedFileIds.map { CompleteTask(documentSetId, _) }
       
       progressMessages must containTheSameElementsAs(expectedStartTasks ++ expectedCompleteTask)
       
-      progressReporter.expectMsg(CompleteJob(fileGroupId))
+      progressReporter.expectMsg(CompleteJob(documentSetId))
     }
     
     "handle cancellations" in {
@@ -130,7 +130,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         message match {
           case TaskAvailable => sender.tell(ReadyForTask, worker)
           case CreatePagesTask(ds, fg, uf) => {
-            sender.tell(CreatePagesTaskDone(fg, uf), worker)
+            sender.tell(CreatePagesTaskDone(ds, fg, uf), worker)
             sender.tell(ReadyForTask, worker)
           }
         }

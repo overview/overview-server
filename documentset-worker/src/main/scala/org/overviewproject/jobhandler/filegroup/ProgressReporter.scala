@@ -3,6 +3,8 @@ package org.overviewproject.jobhandler.filegroup
 import akka.actor.Actor
 import akka.actor.Props
 
+import org.overviewproject.database.Database
+
 object ProgressReporterProtocol {
   case class StartJob(jobId: Long, numberOfTasks: Int)
   case class CompleteJob(jobId: Long)
@@ -49,8 +51,11 @@ trait ProgressReporter extends Actor {
 
 class ProgressReporterImpl extends ProgressReporter {
   class DatabaseStorage extends Storage {
-    override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = ???
+    override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = Database.inTransaction {
+      ???
+    }
   }
+  
  override protected val storage = new DatabaseStorage
 }
 

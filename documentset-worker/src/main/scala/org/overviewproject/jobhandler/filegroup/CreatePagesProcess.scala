@@ -71,7 +71,7 @@ trait CreatePagesProcess {
 
       pdfDocument.close()
 
-      CreatePagesProcessComplete(taskInformation.fileGroupId, taskInformation.uploadedFileId)
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
 
     private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] =

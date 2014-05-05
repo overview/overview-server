@@ -19,7 +19,7 @@ object FileGroupTaskWorkerProtocol {
   case object TaskAvailable
   case object ReadyForTask
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
-  case class CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
 }
 
 trait FileGroupJobQueue extends Actor {
@@ -53,7 +53,7 @@ trait FileGroupJobQueue extends Actor {
       if (isNewRequest(fileGroupId)) {
         val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
-        progressReporter ! StartJob(fileGroupId, fileIds.size)
+        progressReporter ! StartJob(documentSetId, fileIds.size)
 
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
         jobRequests += (fileGroupId -> JobRequest(sender))
@@ -65,15 +65,15 @@ trait FileGroupJobQueue extends Actor {
       if (!taskQueue.isEmpty) {
         val task = taskQueue.dequeue
         Logger.info(s"Sending task ${task.uploadedFileId} to ${sender.path.toString}")
-        progressReporter ! StartTask(task.fileGroupId, task.uploadedFileId)
+        progressReporter ! StartTask(task.documentSetId, task.uploadedFileId)
         sender ! task
       }
     }
-    case CreatePagesTaskDone(fileGroupId: Long, uploadedFileId: Long) =>
+    case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) =>
       Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
-      progressReporter ! CompleteTask(fileGroupId, uploadedFileId)
+      progressReporter ! CompleteTask(documentSetId, uploadedFileId)
 
-      whenTaskIsComplete(fileGroupId, uploadedFileId) {
+      whenTaskIsComplete(documentSetId, fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
 
@@ -89,19 +89,19 @@ trait FileGroupJobQueue extends Actor {
     jobTasks += (fileGroupId -> uploadedFileIds)
   }
 
-  private def whenTaskIsComplete(fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Set[Long]) => Unit) =
+  private def whenTaskIsComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Long, Set[Long]) => Unit) =
     for {
       tasks <- jobTasks.get(fileGroupId)
       request <- jobRequests.get(fileGroupId)
       remainingTasks = tasks - uploadedFileId
-    } f(request, fileGroupId, remainingTasks)
+    } f(request, documentSetId, fileGroupId, remainingTasks)
 
-  private def notifyRequesterIfJobIsDone(request: JobRequest, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
+  private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
     if (remainingTasks.isEmpty) {
       jobTasks -= fileGroupId
       jobRequests -= fileGroupId
 
-      progressReporter ! CompleteJob(fileGroupId)
+      progressReporter ! CompleteJob(documentSetId)
 
       request.requester ! FileGroupDocumentsCreated(fileGroupId)
     } else {

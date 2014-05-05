@@ -47,7 +47,7 @@ class FileGroupTaskWorkerSpec extends Specification {
       
       createWorker
 
-      jobQueueProbe.expectTaskDone(fileGroupId, uploadedFileId)
+      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId)
       jobQueueProbe.expectReadyForTask
       
       createPagesTaskStepsWereExecuted
@@ -101,10 +101,10 @@ class FileGroupTaskWorkerSpec extends Specification {
       
       def expectReadyForTask = expectMsg(ReadyForTask)
 
-      def expectTaskDone(fileGroupId: Long, uploadedFileId: Long) = {
+      def expectTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) = {
         expectMsgClass(classOf[RegisterWorker])
         expectMsg(ReadyForTask)
-        expectMsg(CreatePagesTaskDone(fileGroupId, uploadedFileId))
+        expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
       }
 
       def withTaskAvailable: JobQueueTestProbe = {
