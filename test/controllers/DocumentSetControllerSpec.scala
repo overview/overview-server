@@ -211,6 +211,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         val documentSetId = 1l
         val documentSet = fakeDocumentSet(documentSetId)
         val failedJob = fakeJob(documentSetId, 10l, Error)
+        val cancelledJob = fakeJob(documentSetId, 20l, Cancelled)
         
         def request = fakeAuthorizedRequest
 
@@ -233,13 +234,21 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         mockStorage.findAllJobs(documentSetId) returns Seq(failedJob)
         
         h.status(result) must beEqualTo(h.SEE_OTHER)
+
         there was one(mockStorage).deleteDocumentSet(documentSet)
         there was one(mockStorage).cancelJob(documentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
-      "mark document set and job deleted and send delete request if job is cancelled" in {
-        todo
+      "mark document set and job deleted and send delete request if job is cancelled" in new DeleteScope {
+        mockStorage.findAllJobs(documentSetId) returns Seq(cancelledJob)
+        
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+        
+        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockJobQueue).send(Delete(documentSetId))
+        
       }
 
       "mark document set deleted and send delete request if job has not started clustering" in {
