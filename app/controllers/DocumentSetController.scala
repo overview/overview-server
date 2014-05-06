@@ -51,6 +51,10 @@ trait DocumentSetController extends Controller {
 
     def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit
   }
+  
+  trait JobMessageQueue {
+    def send(deleteCommand: Delete): Unit
+  }
 
   protected val indexPageSize = 10
 
@@ -139,17 +143,9 @@ trait DocumentSetController extends Controller {
         }
       }
     }.getOrElse {
-      val notStartedReclusteringJob = jobs.exists(j =>
-        j.state == DocumentSetCreationJobState.NotStarted &&
-          j.jobType == DocumentSetCreationJobType.Recluster)
-
-      if (notStartedReclusteringJob) {
-        doneWithError("deleteTree.failure", "tree-delete")
-      } else {
-        onDocumentSet(storage.deleteDocumentSet)
-        JobQueueSender.send(Delete(id))
-        done("deleteDocumentSet.success", "document-set-delete")
-      }
+      onDocumentSet(storage.deleteDocumentSet)
+      jobQueue.send(Delete(id))
+      done("deleteDocumentSet.success", "document-set-delete")
     }
   }
 
@@ -164,6 +160,7 @@ trait DocumentSetController extends Controller {
   }
 
   val storage: DocumentSetController.Storage
+  val jobQueue: DocumentSetController.JobMessageQueue
 }
 
 object DocumentSetController extends DocumentSetController {
@@ -220,5 +217,10 @@ object DocumentSetController extends DocumentSetController {
 
   }
 
+  object ApolloJobMessageQueue extends JobMessageQueue {
+    override def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)  
+  }
+  
   override val storage = DatabaseStorage
+  override val jobQueue = ApolloJobMessageQueue
 }
