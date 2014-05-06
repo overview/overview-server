@@ -10,8 +10,9 @@ import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.finders.ResultPage
-
 import org.specs2.specification.Scope
+import org.overviewproject.tree.orm.DocumentSetCreationJobState
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class DocumentSetControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -25,11 +26,11 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       override val jobQueue = mockJobQueue
     }
 
-    def fakeJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
+    def fakeJob(documentSetId: Long, id: Long, state: DocumentSetCreationJobState = InProgress) = DocumentSetCreationJob(
       id = id,
       documentSetId = documentSetId,
       jobType = DocumentSetCreationJobType.FileUpload,
-      state = DocumentSetCreationJobState.InProgress)
+      state = state)
     def fakeTreeErrorJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
       id = id,
       documentSetId = documentSetId,
@@ -209,15 +210,17 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       trait DeleteScope extends BaseScope {
         val documentSetId = 1l
         val documentSet = fakeDocumentSet(documentSetId)
-
+        val failedJob = fakeJob(documentSetId, 10l, Error)
+        
         def request = fakeAuthorizedRequest
 
         lazy val result = controller.delete(documentSetId)(request)
+        
+        mockStorage.findDocumentSet(documentSetId) returns Some(documentSet)
 
       }
 
       "mark document set deleted and send delete request if there is no job running" in new DeleteScope {
-        mockStorage.findDocumentSet(documentSetId) returns Some(documentSet)
         mockStorage.findAllJobs(documentSetId) returns Seq.empty
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
@@ -226,8 +229,13 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
-      "mark document set and job deleted and send delete request if job has failed" in {
-        todo
+      "mark document set and job deleted and send delete request if job has failed" in new DeleteScope {
+        mockStorage.findAllJobs(documentSetId) returns Seq(failedJob)
+        
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
       "mark document set and job deleted and send delete request if job is cancelled" in {

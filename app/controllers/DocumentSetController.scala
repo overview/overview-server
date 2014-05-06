@@ -144,6 +144,7 @@ trait DocumentSetController extends Controller {
       }
     }.getOrElse {
       onDocumentSet(storage.deleteDocumentSet)
+      onDocumentSet(storage.cancelJob)
       jobQueue.send(Delete(id))
       done("deleteDocumentSet.success", "document-set-delete")
     }
