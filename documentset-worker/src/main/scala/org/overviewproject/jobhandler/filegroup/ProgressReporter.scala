@@ -34,6 +34,7 @@ trait ProgressReporter extends Actor {
 
   protected trait Storage {
     def updateProgress(jobId: Long, fraction: Double, description: String): Unit
+    def updateJobState(jobId: Long, state: DocumentSetCreationJobState): Unit
   }
 
   def receive = {
@@ -42,7 +43,7 @@ trait ProgressReporter extends Actor {
     case StartTask(jobId, taskId) => updateTaskForJob(jobId, _.startTask)
     case CompleteTask(jobId, taskId) => updateTaskForJob(jobId, _.completeTask)
     
-    case StartClustering(jobId) => 
+    case StartClustering(jobId) => updateJobStateToStartClustering(jobId)
   }
 
   private def description(progress: JobProgress): String =
@@ -57,6 +58,9 @@ trait ProgressReporter extends Actor {
     jobProgress += (jobId -> progress)
     storage.updateProgress(jobId, progress.fraction, description(progress))
   }
+  
+  private def updateJobStateToStartClustering(jobId: Long): Unit = 
+    storage.updateJobState(jobId, NotStarted)
 }
 
 class ProgressReporterImpl extends ProgressReporter {
@@ -66,6 +70,13 @@ class ProgressReporterImpl extends ProgressReporter {
        	 val update = job.copy(fractionComplete = fraction, statusDescription = description)
        	 DocumentSetCreationJobStore.insertOrUpdate(update)
        }
+    }
+    
+    override def updateJobState(jobId: Long, state: DocumentSetCreationJobState): Unit = Database.inTransaction {
+      DocumentSetCreationJobFinder.byDocumentSetAndState(jobId, TextExtractionInProgress).headOption.map { job =>
+        val update = job.copy(state = state)
+        DocumentSetCreationJobStore.insertOrUpdate(update)
+      }
     }
   }
   

@@ -9,6 +9,8 @@ import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import scala.concurrent.Future
+import org.overviewproject.tree.orm.DocumentSetCreationJobState
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class ProgressReporterSpec extends Specification {
 
@@ -46,6 +48,12 @@ class ProgressReporterSpec extends Specification {
       lastProgressStatusMustBe(documentSetId, progressFraction * 1.0 / numberOfTasks, s"processing_files:1:$numberOfTasks")
     }
       
+    "set job state to start clustering" in new ProgressReporterContext {
+      progressReporter  ! StartClustering(documentSetId)
+      
+      updateJobStateWasCalled(documentSetId, NotStarted)
+    }
+    
     trait ProgressReporterContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
       protected val numberOfTasks = 5
@@ -66,6 +74,12 @@ class ProgressReporterSpec extends Specification {
           }
       }
 
+      protected def updateJobStateWasCalled(documentSetId: Long, state: DocumentSetCreationJobState) = {
+        val pendingCalls = progressReporter.underlyingActor.updateJobStateCallsInProgress
+        awaitCond(pendingCalls.isCompleted)
+        progressReporter.underlyingActor.updateJobStateCallParameters.headOption must beSome((documentSetId, state))
+      }
+      
       override def before = {
         progressReporter = TestActorRef(new TestProgressReporter)
       }
@@ -82,10 +96,18 @@ class TestProgressReporter extends ProgressReporter {
   def updateProgressCallsInProgress: Future[Queue[(Long, Double, String)]] = updateProgressParameters.future
   def updateProgressParemeters: Queue[(Long, Double, String)] = updateProgressParameters.get
 
+  private val updateJobStateParameters: Agent[Queue[(Long, DocumentSetCreationJobState)]] = Agent(Queue.empty)
+  
+  def updateJobStateCallsInProgress: Future[Queue[(Long, DocumentSetCreationJobState)]] = updateJobStateParameters.future
+  def updateJobStateCallParameters: Queue[(Long, DocumentSetCreationJobState)] = updateJobStateParameters.get
+  
   override protected val storage = new MockStorage
 
   class MockStorage extends Storage {
     def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit =
       updateProgressParameters send (_.enqueue(documentSetId, fraction, description))
+    
+    def updateJobState(documentSetId: Long, state: DocumentSetCreationJobState): Unit = 
+      updateJobStateParameters send (_.enqueue((documentSetId, state)))
   }
 }
