@@ -10,8 +10,11 @@ import org.overviewproject.jobs.models.{ CancelUploadWithDocumentSet, Delete }
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
 import org.overviewproject.tree.orm.finders.ResultPage
 import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
+import org.overviewproject.jobs.models.DeleteTreeJob
+import models.orm.stores.DocumentSetCreationJobStore
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -48,13 +51,15 @@ trait DocumentSetController extends Controller {
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
 
-    def cancelJob(documentSet: DocumentSet): Unit
+    def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
     def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit
   }
 
   trait JobMessageQueue {
     def send(deleteCommand: Delete): Unit
+    def send(deleteJobCommand: DeleteTreeJob): Unit
+    def send(cancelUploadCommand: CancelUploadWithDocumentSet): Unit
   }
 
   protected val indexPageSize = 10
@@ -122,54 +127,55 @@ trait DocumentSetController extends Controller {
     // that the delete refers to canceling the running job.
     // It would be better for the client to explicitly tell us what job to cancel, rather
     // than trying to guess.
-    val jobs = storage.findAllJobs(id)
 
-    jobs.headOption match {
+    val cancelledJob = storage.cancelJob(id)
+    
+    
+    cancelledJob match {
       case None => {
         onDocumentSet(storage.deleteDocumentSet)
         jobQueue.send(Delete(id))
         done("deleteDocumentSet.success", "document-set-delete")
       }
+      case Some(j) if (j.jobType == Recluster && j.state == NotStarted) => {
+        jobQueue.send(DeleteTreeJob(id))
+        
+        done("deleteTree.success", "tree-delete")
+      }
+      case Some(j) if j.state == NotStarted => {
+        jobQueue.send(Delete(id))
+        
+        done("deleteJob.success", "document-set-delete")
+      }
+      case Some(j) if j.state == FilesUploaded => {
+        jobQueue.send(CancelUploadWithDocumentSet(id))
+        
+        done("deleteJob.success", "document-set-delete")
+      }
+      case Some(j) if j.state == TextExtractionInProgress => {
+        jobQueue.send(CancelUploadWithDocumentSet(id))
+        
+        done("deleteJob.success", "document-set-delete")
+      }
       case Some(j) if j.state == Error => {
         onDocumentSet(storage.deleteDocumentSet)
-        onDocumentSet(storage.cancelJob)
         jobQueue.send(Delete(id))
-        done("deleteJob.success", "document-set-delete")        
+        done("deleteJob.success", "document-set-delete")
       }
       case Some(j) if j.state == Cancelled => {
         onDocumentSet(storage.deleteDocumentSet)
-        onDocumentSet(storage.cancelJob)
         jobQueue.send(Delete(id))
-        done("deleteJob.success", "document-set-delete")                
+        done("deleteJob.success", "document-set-delete")
+      }
+      case Some(j) if j.jobType == Recluster => { // InProgress
+        done("deleteTree.success", "tree-delete")
+      }
+      case Some(j) => {
+        onDocumentSet(storage.deleteDocumentSet)
+        jobQueue.send(Delete(id))
+        done("deleteJob,success", "document-set-delete")
       }
     }
-
-    //    val jobsRunningInWorker = jobs.find(j =>
-    //      j.state == DocumentSetCreationJobState.InProgress ||
-    //      j.state == DocumentSetCreationJobState.FilesUploaded ||
-    //      j.state == DocumentSetCreationJobState.TextExtractionInProgress ||
-    //      j.state == DocumentSetCreationJobState.Cancelled)
-
-    //    jobsRunningInWorker.headOption.map { j =>
-    //      j.jobType match {
-    //        case DocumentSetCreationJobType.Recluster => { 
-    //          onDocumentSet(storage.cancelReclusteringJob(_, j))
-    //          done("deleteTree.success", "tree-delete")
-    //        }
-    //        case _ => { 
-    //          onDocumentSet(storage.cancelJob)
-    //          onDocumentSet(storage.deleteDocumentSet)
-    //          if (j.jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
-    //          JobQueueSender.send(Delete(id))
-    //          done("deleteJob.success", "document-set-delete")
-    //        }
-    //      }
-    //    }.getOrElse {
-    //      onDocumentSet(storage.deleteDocumentSet)
-    //      onDocumentSet(storage.cancelJob)
-    //      jobQueue.send(Delete(id))
-    //      done("deleteDocumentSet.success", "document-set-delete")
-    //    }
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
@@ -182,6 +188,16 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
+  private def wasJobRunning(job: Option[DocumentSetCreationJob]): Boolean = job match {
+    case None => false
+    case Some(j) => (j.state == Error) && (j.state != Cancelled)
+  } 
+  
+  private def jobWasImportJob(job: Option[DocumentSetCreationJob]): Boolean = job match {
+    case None => false
+    case Some(j) => j.jobType != Recluster
+  }
+    
   val storage: DocumentSetController.Storage
   val jobQueue: DocumentSetController.JobMessageQueue
 }
@@ -229,8 +245,8 @@ object DocumentSetController extends DocumentSetController {
     override def deleteDocumentSet(documentSet: DocumentSet): Unit =
       DocumentSetStore.markDeleted(documentSet)
 
-    override def cancelJob(documentSet: DocumentSet): Unit =
-      DocumentSetStore.deleteOrCancelJob(documentSet)
+    override def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob] =
+      DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
 
     override def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit =
       DocumentSetStore.cancelReclusteringJob(documentSet, job)
@@ -242,6 +258,8 @@ object DocumentSetController extends DocumentSetController {
 
   object ApolloJobMessageQueue extends JobMessageQueue {
     override def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)
+    override def send(deleteJobCommand: DeleteTreeJob): Unit = JobQueueSender.send(deleteJobCommand)
+    override def send(cancelUploadCommand: CancelUploadWithDocumentSet): Unit = JobQueueSender.send(cancelUploadCommand)
   }
 
   override val storage = DatabaseStorage

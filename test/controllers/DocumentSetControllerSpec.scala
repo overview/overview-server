@@ -13,24 +13,31 @@ import org.overviewproject.tree.orm.finders.ResultPage
 import org.specs2.specification.Scope
 import org.overviewproject.tree.orm.DocumentSetCreationJobState
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.DocumentSetCreationJobType
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.jobs.models.DeleteTreeJob
+import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
 
 class DocumentSetControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
     val IndexPageSize = 10
     val mockStorage = mock[DocumentSetController.Storage]
     val mockJobQueue = mock[DocumentSetController.JobMessageQueue]
-    
+
     val controller = new DocumentSetController {
       override val indexPageSize = IndexPageSize
       override val storage = mockStorage
       override val jobQueue = mockJobQueue
     }
 
-    def fakeJob(documentSetId: Long, id: Long, state: DocumentSetCreationJobState = InProgress) = DocumentSetCreationJob(
-      id = id,
-      documentSetId = documentSetId,
-      jobType = DocumentSetCreationJobType.FileUpload,
-      state = state)
+    def fakeJob(documentSetId: Long, id: Long,
+                state: DocumentSetCreationJobState = InProgress,
+                jobType: DocumentSetCreationJobType = FileUpload) =
+      DocumentSetCreationJob(
+        id = id,
+        documentSetId = documentSetId,
+        jobType = jobType,
+        state = state)
     def fakeTreeErrorJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
       id = id,
       documentSetId = documentSetId,
@@ -210,19 +217,19 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       trait DeleteScope extends BaseScope {
         val documentSetId = 1l
         val documentSet = fakeDocumentSet(documentSetId)
-        val failedJob = fakeJob(documentSetId, 10l, Error)
-        val cancelledJob = fakeJob(documentSetId, 20l, Cancelled)
-        
+
         def request = fakeAuthorizedRequest
 
         lazy val result = controller.delete(documentSetId)(request)
-        
+
         mockStorage.findDocumentSet(documentSetId) returns Some(documentSet)
 
+        protected def setupJob(jobState: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType = FileUpload): Unit =
+          mockStorage.cancelJob(documentSetId) returns Some(fakeJob(documentSetId, 10l, jobState, jobType))
       }
 
       "mark document set deleted and send delete request if there is no job running" in new DeleteScope {
-        mockStorage.findAllJobs(documentSetId) returns Seq.empty
+        mockStorage.cancelJob(documentSetId) returns None
 
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
@@ -231,42 +238,79 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       }
 
       "mark document set and job deleted and send delete request if job has failed" in new DeleteScope {
-        mockStorage.findAllJobs(documentSetId) returns Seq(failedJob)
-        
+        setupJob(Error)
+
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
-        there was one(mockStorage).deleteDocumentSet(documentSet)
         there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockStorage).deleteDocumentSet(documentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
       "mark document set and job deleted and send delete request if job is cancelled" in new DeleteScope {
-        mockStorage.findAllJobs(documentSetId) returns Seq(cancelledJob)
-        
+        setupJob(Cancelled)
+
         h.status(result) must beEqualTo(h.SEE_OTHER)
-        
+
+        there was one(mockStorage).cancelJob(documentSet)
         there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockJobQueue).send(Delete(documentSetId))
+
+      }
+
+      "mark job deleted and send delete job request if reclustering job has not started clustering" in new DeleteScope {
+        setupJob(NotStarted, Recluster)
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockJobQueue).send(DeleteTreeJob(documentSetId))
+      }
+
+      "mark job deleted if reclustering job has started clustering" in new DeleteScope {
+        setupJob(InProgress, Recluster)
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+
+        there was one(mockStorage).cancelJob(documentSet)
+      }
+
+      "mark document set and job deleted and send delete request if import job has not started clustering" in new DeleteScope {
+        setupJob(NotStarted)
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+
         there was one(mockStorage).cancelJob(documentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
-        
       }
 
-      "mark document set deleted and send delete request if job has not started clustering" in {
-        todo
+      "mark document set and job deleted and send delete request if import job has started clustering" in new DeleteScope {
+        setupJob(InProgress)
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockStorage).deleteDocumentSet(documentSet)
+        there was one(mockJobQueue).send(Delete(documentSetId))
       }
 
-      "mark document set and job deleted and send cancel request if files have been uploaded" in {
-        todo
+      "mark document set and job deleted and send cancel request if files have been uploaded" in new DeleteScope {
+        setupJob(FilesUploaded)
+
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockJobQueue).send(CancelUploadWithDocumentSet(documentSetId))
       }
 
-      "mark document set and job deleted and send cancel request if text extraction in progress" in {
-        todo
-      }
+      "mark document set and job deleted and send cancel request if text extraction in progress" in new DeleteScope {
+        setupJob(TextExtractionInProgress)
 
-      "mark document set and job deleted if clustering in progress" in {
-        todo
-      }
+        h.status(result) must beEqualTo(h.SEE_OTHER)
 
+        there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockJobQueue).send(CancelUploadWithDocumentSet(documentSetId))
+      }
     }
   }
 }
