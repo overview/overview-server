@@ -281,6 +281,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
         there was one(mockStorage).cancelJob(documentSet)
+        there was one(mockStorage).deleteDocumentSet(documentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
       }
 

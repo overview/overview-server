@@ -128,54 +128,36 @@ trait DocumentSetController extends Controller {
     // It would be better for the client to explicitly tell us what job to cancel, rather
     // than trying to guess.
 
-    val cancelledJob = storage.cancelJob(id)
-    
-    
-    cancelledJob match {
-      case None => {
-        onDocumentSet(storage.deleteDocumentSet)
-        jobQueue.send(Delete(id))
-        done("deleteDocumentSet.success", "document-set-delete")
-      }
-      case Some(j) if (j.jobType == Recluster && j.state == NotStarted) => {
-        jobQueue.send(DeleteTreeJob(id))
-        
-        done("deleteTree.success", "tree-delete")
-      }
-      case Some(j) if j.state == NotStarted => {
-        jobQueue.send(Delete(id))
-        
-        done("deleteJob.success", "document-set-delete")
-      }
-      case Some(j) if j.state == FilesUploaded => {
-        jobQueue.send(CancelUploadWithDocumentSet(id))
-        
-        done("deleteJob.success", "document-set-delete")
-      }
-      case Some(j) if j.state == TextExtractionInProgress => {
-        jobQueue.send(CancelUploadWithDocumentSet(id))
-        
-        done("deleteJob.success", "document-set-delete")
-      }
-      case Some(j) if j.state == Error => {
-        onDocumentSet(storage.deleteDocumentSet)
-        jobQueue.send(Delete(id))
-        done("deleteJob.success", "document-set-delete")
-      }
-      case Some(j) if j.state == Cancelled => {
-        onDocumentSet(storage.deleteDocumentSet)
-        jobQueue.send(Delete(id))
-        done("deleteJob.success", "document-set-delete")
-      }
-      case Some(j) if j.jobType == Recluster => { // InProgress
-        done("deleteTree.success", "tree-delete")
-      }
-      case Some(j) => {
-        onDocumentSet(storage.deleteDocumentSet)
-        jobQueue.send(Delete(id))
-        done("deleteJob,success", "document-set-delete")
-      }
-    }
+    // FIXME: gratuitous use of implicit and big if statement should be refactored into a separate class
+    implicit val cancelledJob = storage.cancelJob(id) 
+
+    if (noJobCancelled) {
+      onDocumentSet(storage.deleteDocumentSet)
+      jobQueue.send(Delete(id))
+      
+      done("deleteDocumentSet.success", "document-set-delete")
+    } else if (notStartedTreeJob) {
+      jobQueue.send(DeleteTreeJob(id))
+      
+      done("deleteTree.success", "tree-delete")
+    } else if (runningTreeJob) {
+      
+      done("deleteTree.success", "tree-delete")
+    } else if (runningInWorker) {
+      onDocumentSet(storage.deleteDocumentSet)
+      jobQueue.send(Delete(id)) // wait for worker
+      
+      done("deleteJob.success", "document-set-delete")
+    } else if (notRunning) {
+      onDocumentSet(storage.deleteDocumentSet)
+      jobQueue.send(Delete(id)) // don't wait for worker
+      
+      done("deleteJob.success", "document-set-delete")
+    } else if (runningInTextExtractionWorker) {
+      jobQueue.send(CancelUploadWithDocumentSet(id))
+      
+      done("deleteJob.success", "document-set-delete")
+    } else BadRequest // all cases should be covered..
   }
 
   def update(id: Long) = AuthorizedAction(adminUser) { implicit request =>
@@ -188,16 +170,29 @@ trait DocumentSetController extends Controller {
     }.getOrElse(NotFound)
   }
 
-  private def wasJobRunning(job: Option[DocumentSetCreationJob]): Boolean = job match {
-    case None => false
-    case Some(j) => (j.state == Error) && (j.state != Cancelled)
-  } 
-  
-  private def jobWasImportJob(job: Option[DocumentSetCreationJob]): Boolean = job match {
-    case None => false
-    case Some(j) => j.jobType != Recluster
-  }
-    
+  private def jobTest(test: DocumentSetCreationJob => Boolean)(implicit job: Option[DocumentSetCreationJob]): Boolean = 
+    job.map(test)
+      .getOrElse(false)
+
+  private def noJobCancelled(implicit job: Option[DocumentSetCreationJob]): Boolean = job.isEmpty
+      
+  private def notStartedTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
+    jobTest { j => (j.jobType == Recluster && j.state == NotStarted) }
+
+
+  private def runningTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
+    jobTest { j => j.jobType == Recluster && j.state != NotStarted }
+
+  private def runningInWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
+    jobTest { j => j.jobType != Recluster && j.state == InProgress }
+      
+
+  private def notRunning(implicit job: Option[DocumentSetCreationJob]): Boolean =
+    jobTest { j => j.state == NotStarted || j.state == Error || j.state == Cancelled }
+
+  private def runningInTextExtractionWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
+    jobTest { j => j.state == FilesUploaded || j.state == TextExtractionInProgress }
+
   val storage: DocumentSetController.Storage
   val jobQueue: DocumentSetController.JobMessageQueue
 }
