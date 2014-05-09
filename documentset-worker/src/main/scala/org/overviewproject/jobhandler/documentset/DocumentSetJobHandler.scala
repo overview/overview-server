@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
 import org.overviewproject.jobhandler.JobProtocol._
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.messagequeue.{ AcknowledgingMessageReceiver, MessageService }
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
@@ -12,8 +12,10 @@ import org.overviewproject.messagequeue.apollo.ApolloMessageService
 import org.overviewproject.searchindex.ElasticSearchComponents
 import org.overviewproject.util.Configuration
 import org.overviewproject.util.Logger
-
 import javax.jms._
+import DocumentSetJobHandlerFSM._
+
+
 
 trait Command
 
@@ -57,9 +59,6 @@ trait SearchComponent {
   }
 }
 
-
-import DocumentSetJobHandlerFSM._
-
 /**
  * The DocumentSetMessageHandler receives document set related commands
  * and forwards them to command specific actors. When the command actors 
@@ -93,6 +92,14 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
       context.watch(deleteHandler)
 
       deleteHandler ! DeleteDocumentSet(documentSetId, waitForJobRemoval)
+      goto(WaitingForCompletion)
+    }
+    case Event(DeleteTreeJobCommand(documentSetId), _) => {
+      Logger.info(s"Received DeleteTreeJob($documentSetId)")
+      val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
+      context.watch(deleteHandler)
+      
+      deleteHandler ! DeleteReclusteringJobAndTree(documentSetId)
       goto(WaitingForCompletion)
     }
   }

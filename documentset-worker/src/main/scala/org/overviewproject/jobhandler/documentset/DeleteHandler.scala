@@ -38,6 +38,7 @@ import akka.actor.FSM
  */
 object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long, waitForJobRemoval: Boolean)
+  case class DeleteReclusteringJobAndTree(documentSetId: Long)
 }
 
 object DeleteHandlerFSM {
@@ -49,6 +50,7 @@ object DeleteHandlerFSM {
   sealed trait Data
   case object NoData extends Data
   case class DeleteTarget(documentSetId: Long) extends Data
+  case class DeleteTreeTarget(documentSetId: Long) extends Data
   case class RetryAttempts(documentSetId: Long, n: Int) extends Data
 }
 
@@ -84,6 +86,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     }
     case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => 
       goto(Running) using (DeleteTarget(documentSetId))
+    case Event(DeleteReclusteringJobAndTree(documentSetId), _) =>
+      goto(Running) using (DeleteTreeTarget(documentSetId))
   }
 
   when(WaitingForRunningJobRemoval) {

@@ -4,12 +4,13 @@ import akka.actor._
 import akka.testkit._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.messagequeue.MessageHandlerProtocol._
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 import org.overviewproject.jobhandler.documentset.SearchHandlerProtocol.SearchDocumentSet
 import org.overviewproject.test.{ ActorSystemContext, ForwardingActor }
 import org.specs2.mutable.Specification
 import org.specs2.mutable.Before
+
 
 class DocumentSetMessageHandlerSpec extends Specification {
 
@@ -105,6 +106,12 @@ class DocumentSetMessageHandlerSpec extends Specification {
       messageHandler ! deleteCommand
 
       deleteHandler.expectMsg(deleteMessage)
+    }
+    
+    "start delete handler and send delete tree job command" in new DeleteContext {
+      messageHandler ! DeleteTreeJobCommand(documentSetId)
+      
+      deleteHandler.expectMsg(DeleteReclusteringJobAndTree(documentSetId))
     }
 
     "tell parent MessageHandled when JobDone is received" in new DeleteWithParentContext {
