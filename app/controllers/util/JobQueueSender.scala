@@ -36,11 +36,14 @@ object JobQueueSender {
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
   def send(delete: Delete): Either[Unit, Unit] = {
+    implicit val deleteArgWrites: Writes[Delete] = (
+      (__ \ "documentSetId").write[Long] and
+      (__ \ "waitForJobRemoval").write[Boolean])(unlift(Delete.unapply))
+
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("delete"),
-      "args" -> toJson(Map(
-        "documentSetId" -> delete.documentSetId))))
-
+      "args" -> toJson(delete)))
+      
     sendMessageToGroup(jsonMessage, delete.documentSetId)
   }
 

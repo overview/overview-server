@@ -43,7 +43,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       protected var parentProbe: TestProbe = _
       protected var deleteHandler: TestActorRef[TestDeleteHandler] = _
-
+      protected var jobStatusChecker: JobStatusChecker = _
+      
       protected def searchIndex = deleteHandler.underlyingActor.searchIndex
       protected def deleteAliasResult = deleteHandler.underlyingActor.deleteAliasResultPromise
       protected def deleteDocumentsResult = deleteHandler.underlyingActor.deleteResultPromise
@@ -55,6 +56,8 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       override def before = {
         parentProbe = TestProbe()
         deleteHandler = TestActorRef(Props(new TestDeleteHandler), parentProbe.ref, "DeleteHandler")
+        jobStatusChecker =  deleteHandler.underlyingActor.jobStatusChecker
+        
         setJobStatus
       }
     }
@@ -66,7 +69,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
     abstract class TimeoutWhileWaitingForJob extends DeleteContext {
       override protected def setJobStatus: Unit =
-        deleteHandler.underlyingActor.jobStatusChecker isJobRunning (documentSetId) returns true
+        jobStatusChecker isJobRunning (documentSetId) returns true
 
       override def before = {
         super.before
@@ -122,6 +125,17 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
       parentProbe.expectMsg(JobDone(documentSetId))
     }
 
+    "don't wait until clustering job is no longer running if waitForJobRemoval is false" in new DeleteWhileJobIsRunning {
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
+      
+      deleteDocumentsResult.success(documentResult)
+      deleteAliasResult.success(aliasResult)
+      
+      parentProbe.expectMsg(JobDone(documentSetId))
+      
+      there was no(jobStatusChecker).isJobRunning(documentSetId)
+    }
+    
     "timeout while waiting for job that never gets cancelled" in new TimeoutWhileWaitingForJob {
       deleteHandler ! DeleteDocumentSet(documentSetId, true)
 
