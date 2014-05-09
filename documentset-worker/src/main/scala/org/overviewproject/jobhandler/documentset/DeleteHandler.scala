@@ -37,7 +37,7 @@ import akka.actor.FSM
  *   * SearchResults
  */
 object DeleteHandlerProtocol {
-  case class DeleteDocumentSet(documentSetId: Long)
+  case class DeleteDocumentSet(documentSetId: Long, waitForJobRemoval: Boolean)
 }
 
 object DeleteHandlerFSM {
@@ -74,7 +74,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   startWith(Idle, NoData)
 
   when(Idle) {
-    case Event(DeleteDocumentSet(documentSetId), _) => {
+    case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => {
       if (jobStatusChecker.isJobRunning(documentSetId)) {
         setTimer(RetryTimer, Message.RetryDelete, JobWaitDelay, true)
         goto(WaitingForRunningJobRemoval) using (RetryAttempts(documentSetId, 1))

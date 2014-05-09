@@ -24,7 +24,7 @@ object DocumentSetJobHandlerProtocol {
   // Internal messages that should really be private, but are 
   // public for easier testing. 
   case class SearchCommand(documentSetId: Long, query: String) extends Command
-  case class DeleteCommand(documentSetId: Long) extends Command
+  case class DeleteCommand(documentSetId: Long, waitForJobRemoval: Boolean) extends Command
 }
 
 /**
@@ -86,12 +86,12 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
       searchHandler ! SearchDocumentSet(documentSetId, query)
       goto(WaitingForCompletion)
     }
-    case Event(DeleteCommand(documentSetId), _) => {
+    case Event(DeleteCommand(documentSetId, waitForJobRemoval), _) => {
       Logger.info(s"Received Delete($documentSetId)")
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
       context.watch(deleteHandler)
 
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, waitForJobRemoval)
       goto(WaitingForCompletion)
     }
   }

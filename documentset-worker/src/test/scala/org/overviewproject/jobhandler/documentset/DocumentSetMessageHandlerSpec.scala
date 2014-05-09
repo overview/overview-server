@@ -57,8 +57,8 @@ class DocumentSetMessageHandlerSpec extends Specification {
     }
 
     trait DeleteInfo extends DocumentSetInfo {
-      val deleteCommand = DeleteCommand(documentSetId)
-      val deleteMessage = DeleteDocumentSet(documentSetId)
+      val deleteCommand = DeleteCommand(documentSetId, false)
+      val deleteMessage = DeleteDocumentSet(documentSetId, false)
 
       var deleteHandler: TestProbe = _
     }
@@ -117,7 +117,7 @@ class DocumentSetMessageHandlerSpec extends Specification {
     // TODO: We need proper error recovery
     // If we don't ack the message, it keeps getting resent, potentially causing the same error
     "tell parent MessageHandled if an message handler dies unexpectedly" in new FailingMessageHandlerWithParentContext {
-      messageHandler ! DeleteCommand(documentSetId)
+      messageHandler ! DeleteCommand(documentSetId, false)
 
       parent.expectMsg(MessageHandled)
     }

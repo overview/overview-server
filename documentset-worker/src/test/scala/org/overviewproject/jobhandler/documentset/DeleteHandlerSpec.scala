@@ -75,7 +75,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "delete documents and alias with the specified documentSetId from the index" in new DeleteContext {
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
       deleteAliasResult.success(aliasResult)
 
       there was one(searchIndex).deleteDocumentSetAlias(documentSetId)
@@ -83,7 +83,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "notify parent when deletion of documents and alias completes successfully" in new DeleteContext {
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
       deleteDocumentsResult.success(documentResult)
 
       parentProbe.expectNoMsg(10 millis)
@@ -95,7 +95,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     "notify parent when deletion fails" in new DeleteContext {
       val error = new Exception
 
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
       deleteDocumentsResult.failure(error)
       deleteAliasResult.success(aliasResult)
 
@@ -104,7 +104,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "delete document set related data" in new DeleteContext {
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, false)
 
       there was one(documentSetDeleter).deleteJobInformation(documentSetId)
       there was one(documentSetDeleter).deleteClientGeneratedInformation(documentSetId)
@@ -114,7 +114,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "wait until clustering job is no longer running before deleting" in new DeleteWhileJobIsRunning {
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, true)
 
       deleteDocumentsResult.success(documentResult)
       deleteAliasResult.success(aliasResult)
@@ -123,7 +123,7 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
     }
 
     "timeout while waiting for job that never gets cancelled" in new TimeoutWhileWaitingForJob {
-      deleteHandler ! DeleteDocumentSet(documentSetId)
+      deleteHandler ! DeleteDocumentSet(documentSetId, true)
 
       parentProbe.expectMsg(JobDone(documentSetId))
       parentProbe.expectTerminated(deleteHandler)

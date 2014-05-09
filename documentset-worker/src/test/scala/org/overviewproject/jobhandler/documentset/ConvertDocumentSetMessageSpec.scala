@@ -28,17 +28,19 @@ class ConvertMessageSpec extends Specification {
 
     "convert a delete command" in {
       val documentSetId = 123
-
+      val waitFlag = true
+      
       val messageString = s"""{
         "cmd": "delete",
         "args": {
-          "documentSetId": $documentSetId
+          "documentSetId": $documentSetId,
+          "waitForJobRemoval": $waitFlag
         }
       }"""
 
       val command = ConvertDocumentSetMessage(messageString)
       
-      command must beLike { case DeleteCommand(documentSetId) => ok}
+      command must beLike { case DeleteCommand(documentSetId, waitFlag) => ok}
     }
 
   }
