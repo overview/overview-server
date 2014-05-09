@@ -99,7 +99,7 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
       context.watch(deleteHandler)
       
-      deleteHandler ! DeleteReclusteringJobAndTree(documentSetId)
+      deleteHandler ! DeleteReclusteringJob(documentSetId)
       goto(WaitingForCompletion)
     }
   }

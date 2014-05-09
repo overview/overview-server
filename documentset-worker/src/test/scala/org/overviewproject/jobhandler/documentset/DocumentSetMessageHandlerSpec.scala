@@ -111,7 +111,7 @@ class DocumentSetMessageHandlerSpec extends Specification {
     "start delete handler and send delete tree job command" in new DeleteContext {
       messageHandler ! DeleteTreeJobCommand(documentSetId)
       
-      deleteHandler.expectMsg(DeleteReclusteringJobAndTree(documentSetId))
+      deleteHandler.expectMsg(DeleteReclusteringJob(documentSetId))
     }
 
     "tell parent MessageHandled when JobDone is received" in new DeleteWithParentContext {

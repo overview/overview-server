@@ -38,7 +38,7 @@ import akka.actor.FSM
  */
 object DeleteHandlerProtocol {
   case class DeleteDocumentSet(documentSetId: Long, waitForJobRemoval: Boolean)
-  case class DeleteReclusteringJobAndTree(documentSetId: Long)
+  case class DeleteReclusteringJob(documentSetId: Long)
 }
 
 object DeleteHandlerFSM {
@@ -69,6 +69,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   private object Message {
     case object RetryDelete
     case object DeleteComplete
+    case object DeleteReclusteringJobComplete
     case class SearchIndexDeleteFailed(error: Throwable)
     case class DeleteFailed(documentSetId: Long)
   }
@@ -86,7 +87,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
     }
     case Event(DeleteDocumentSet(documentSetId, waitForJobRemoval), _) => 
       goto(Running) using (DeleteTarget(documentSetId))
-    case Event(DeleteReclusteringJobAndTree(documentSetId), _) =>
+    case Event(DeleteReclusteringJob(documentSetId), _) =>
       goto(Running) using (DeleteTreeTarget(documentSetId))
   }
 
@@ -102,6 +103,10 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
 
   when(Running) {
     case Event(Message.DeleteComplete, DeleteTarget(documentSetId)) => {
+      context.parent ! JobDone(documentSetId)
+      stop
+    }
+    case Event(Message.DeleteReclusteringJobComplete, DeleteTreeTarget(documentSetId)) => {
       context.parent ! JobDone(documentSetId)
       stop
     }
@@ -122,6 +127,7 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
       cancelTimer(RetryTimer)
       nextStateData match {
         case DeleteTarget(documentSetId) => deleteDocumentSet(documentSetId)
+        case DeleteTreeTarget(documentSetId) => deleteReclusteringJob(documentSetId)
         case RetryAttempts(documentSetId, n) => self ! Message.DeleteFailed(documentSetId)
         case _ =>
       }
@@ -145,6 +151,10 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
       case Success(r) => self ! Message.DeleteComplete
       case Failure(t) => self ! Message.SearchIndexDeleteFailed(t)
     }
-
+  }
+  
+  private def deleteReclusteringJob(documentSetId: Long): Unit = {
+    documentSetDeleter.deleteJobInformation(documentSetId)
+    self ! Message.DeleteReclusteringJobComplete
   }
 }

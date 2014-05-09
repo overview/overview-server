@@ -6,12 +6,13 @@ import akka.actor._
 import akka.testkit.{ TestActorRef, TestProbe }
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesResponse
 import org.elasticsearch.action.deletebyquery.DeleteByQueryResponse
-import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol.DeleteDocumentSet
+import org.overviewproject.jobhandler.documentset.DeleteHandlerProtocol._
 import org.overviewproject.jobhandler.JobProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mock.Mockito
 import org.specs2.mutable.{ Before, Specification }
 import org.specs2.time.NoTimeConversions
+
 
 class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversions {
 
@@ -141,6 +142,16 @@ class DeleteHandlerSpec extends Specification with Mockito with NoTimeConversion
 
       parentProbe.expectMsg(JobDone(documentSetId))
       parentProbe.expectTerminated(deleteHandler)
+    }
+    
+    "delete reclustering job" in new DeleteContext {
+      deleteHandler ! DeleteReclusteringJob(documentSetId)
+      
+      parentProbe.expectMsg(JobDone(documentSetId))
+      // FIXME: We can't actually test this because the underlying actor is terminated
+      // when we enable cancellation of individual reclustering jobs this path can be moved
+      // out into a testable class
+      // there was one(documentSetDeleter).deleteJobInformation(documentSetId)
     }
   }
 }
