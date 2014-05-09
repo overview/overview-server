@@ -59,6 +59,20 @@ class OverviewDocumentSpec extends DbSpecification {
         fileId = Some(fileId)
       )
     }
+    
+    trait SplitUploadedDocumentScope extends Scope with OneDocument {
+      val ormDocumentId: Long = 1L
+      val fileId = 12345L
+      val pageId = 6789L
+      val pageNumber = 1
+      
+      override def ormDocument = Document(
+        id = ormDocumentId,
+        fileId = Some(fileId),
+        pageId = Some(pageId),
+        pageNumber = Some(pageNumber)
+      )
+    }
 
     "give the proper url for a Document with a url" in new CsvImportDocumentScope {
       override def suppliedUrl = Some("https://example.org/foo")
@@ -97,6 +111,11 @@ class OverviewDocumentSpec extends DbSpecification {
     "give the proper url for an uploaded document" in new UploadedDocumentScope {
       document.url must beSome(s"/documents/$ormDocumentId/contents/$fileId")
     }
+    
+    "give the proper url for a split uploaded document" in new SplitUploadedDocumentScope {
+      document.url must beSome(s"/documents/$ormDocumentId/contents/$pageId")
+    }
+    
     "give a title for a Document if there is one" in new CsvImportDocumentScope {
       document.title must be equalTo title
     }

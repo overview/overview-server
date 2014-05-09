@@ -19,20 +19,22 @@ sealed trait OverviewDocument {
   /** Optional text of the document. (We show it if we have it.) */
   val text: Option[String]
 
-  /** User-provided ID of the document.
-    *
-    * This is nothing but metadata. We do not enforce anything on it.
-    */
+  /**
+   * User-provided ID of the document.
+   *
+   * This is nothing but metadata. We do not enforce anything on it.
+   */
   val suppliedId: Option[String]
 
   /** Optional URL of the document */
   val url: Option[String]
-  
-  /** URL to view the document.
-    *
-    * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
-    */
-  def urlWithFallbackPattern(pattern: String) : String = {
+
+  /**
+   * URL to view the document.
+   *
+   * @param pattern A pattern for Overview's fallback endpoint, like "http://localhost/documents/{0}"
+   */
+  def urlWithFallbackPattern(pattern: String): String = {
     url.getOrElse(pattern.replace("{0}", "" + id))
   }
 }
@@ -51,14 +53,15 @@ object OverviewDocument {
     override val title = ormDocument.title
     override val suppliedId = ormDocument.suppliedId.orElse(ormDocument.documentcloudId)
     override val text = ormDocument.text
-    
-    override val url : Option[String] = {
+
+    override val url: Option[String] = {
       ormDocument.url.orElse(
         ormDocument.documentcloudId.map(idToDocumentCloudUrl)).orElse(
-          ormDocument.fileId.map(fileId => uploadedDocumentUrl(ormDocument.id, fileId)))
+          ormDocument.pageId.map(uploadedDocumentUrl(ormDocument.id, _)).orElse(
+            ormDocument.fileId.map(uploadedDocumentUrl(ormDocument.id, _))))
     }
   }
 
   /** Factory method */
-  def apply(ormDocument: Document) : OverviewDocument = OverviewDocumentImpl(ormDocument)
+  def apply(ormDocument: Document): OverviewDocument = OverviewDocumentImpl(ormDocument)
 }
