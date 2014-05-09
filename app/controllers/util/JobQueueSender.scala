@@ -51,14 +51,14 @@ object JobQueueSender {
    * Send a `DeleteJob` message to the message queue.
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
-  def send(deleteJob: DeleteTreeJob): Either[Unit, Unit] = {
+  def send(deleteTreeJob: DeleteTreeJob): Either[Unit, Unit] = {
     val jsonMessage = toJson(Map(
-      "cmd" -> toJson("delete_job"),
+      "cmd" -> toJson("delete_tree_job"),
       "args" -> toJson(Map(
-        "documentSetId" -> deleteJob.documentSetId          ))
+        "documentSetId" -> deleteTreeJob.documentSetId          ))
     ))
     
-    sendMessageToGroup(jsonMessage, deleteJob.documentSetId)
+    sendMessageToGroup(jsonMessage, deleteTreeJob.documentSetId)
   }
   
   /**

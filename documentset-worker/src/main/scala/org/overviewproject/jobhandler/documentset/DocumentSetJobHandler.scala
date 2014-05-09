@@ -25,6 +25,7 @@ object DocumentSetJobHandlerProtocol {
   // public for easier testing. 
   case class SearchCommand(documentSetId: Long, query: String) extends Command
   case class DeleteCommand(documentSetId: Long, waitForJobRemoval: Boolean) extends Command
+  case class DeleteTreeJobCommand(documentSetId: Long) extends Command
 }
 
 /**

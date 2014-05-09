@@ -1,8 +1,7 @@
 package org.overviewproject.jobhandler.documentset
 
 import org.specs2.mutable.Specification
-import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol.{ DeleteCommand, SearchCommand }
-
+import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 
 class ConvertMessageSpec extends Specification {
 
@@ -29,7 +28,7 @@ class ConvertMessageSpec extends Specification {
     "convert a delete command" in {
       val documentSetId = 123
       val waitFlag = true
-      
+
       val messageString = s"""{
         "cmd": "delete",
         "args": {
@@ -39,8 +38,24 @@ class ConvertMessageSpec extends Specification {
       }"""
 
       val command = ConvertDocumentSetMessage(messageString)
-      
-      command must beLike { case DeleteCommand(documentSetId, waitFlag) => ok}
+
+      command must beLike { case DeleteCommand(documentSetId, waitFlag) => ok }
+    }
+
+    "convert a deleteTreeJob commmand" in {
+      val documentSetId = 123
+
+      val messageString = s"""{
+        "cmd": "delete-tree-job",
+        "args": {
+           "documentSetId": $documentSetId
+        }
+      }"""
+
+      val command = ConvertDocumentSetMessage(messageString)
+
+      command must beLike { case DeleteTreeJobCommand(documentSetId) => ok }
+
     }
 
   }
