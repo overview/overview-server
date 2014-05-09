@@ -48,6 +48,15 @@ class DocumentSetDeleterSpec extends DbSpecification {
         documentSetCreationJobs.insert(jobs)
       }
 
+      def addCancelledJobInformation = {
+        val job = documentSetCreationJobs.insert(
+          DocumentSetCreationJob(
+            documentSetId = documentSet.id,
+            jobType = Recluster,
+            treeTitle = Some("Cancelled recluster job"),
+            state = Cancelled))
+      }
+
       def addClientGeneratedInformation = {
         logEntries.insert(
           LogEntry(documentSetId = documentSet.id,
@@ -150,6 +159,13 @@ class DocumentSetDeleterSpec extends DbSpecification {
       }
     }
 
+    trait ReclusterContext extends DocumentSetContext {
+      override def createDocumentSet = {
+        super.createDocumentSet
+        addCancelledJobInformation
+      }
+    }
+
     "delete job information" in new DocumentSetContext {
       addJobInformation
       DocumentSetDeleter().deleteJobInformation(documentSet.id)
@@ -197,6 +213,13 @@ class DocumentSetDeleterSpec extends DbSpecification {
       findPages must beEmpty
       findFile must beNone
       contentIsRemoved(file.contentsOid) must beTrue
+    }
+    
+    "delete cancelled reclustering job" in new ReclusterContext {
+      DocumentSetDeleter().deleteJobInformation(documentSet.id)
+      
+      findAll(documentSetCreationJobs) must beEmpty
+      findDocumentSet must beSome
     }
   }
 

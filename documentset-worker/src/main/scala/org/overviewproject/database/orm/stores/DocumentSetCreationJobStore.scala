@@ -13,15 +13,13 @@ object DocumentSetCreationJobStore extends BaseStore(documentSetCreationJobs) {
       where(
         dscj.documentSetId === documentSetId and
           dscj.jobType === CsvUpload and
-          dscj.state <> InProgress and
-          dscj.state <> Cancelled)
+          dscj.state <> InProgress)
         select (&(lo_unlink(dscj.contentsOid)))).toIterable
 
     val jobsToDelete = from(documentSetCreationJobs)(dscj =>
       where(
         dscj.documentSetId === documentSetId and
-          dscj.state <> InProgress and
-          dscj.state <> Cancelled)
+          dscj.state <> InProgress)
         select (dscj))
 
     documentSetCreationJobs.delete(jobsToDelete)
