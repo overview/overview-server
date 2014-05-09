@@ -216,7 +216,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
     }
     
     "delete cancelled reclustering job" in new ReclusterContext {
-      DocumentSetDeleter().deleteJobInformation(documentSet.id)
+      DocumentSetDeleter().deleteCancelledJobInformation(documentSet.id)
       
       findAll(documentSetCreationJobs) must beEmpty
       findDocumentSet must beSome

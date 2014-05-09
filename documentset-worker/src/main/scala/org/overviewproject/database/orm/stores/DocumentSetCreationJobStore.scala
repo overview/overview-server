@@ -25,4 +25,13 @@ object DocumentSetCreationJobStore extends BaseStore(documentSetCreationJobs) {
     documentSetCreationJobs.delete(jobsToDelete)
   }
 
+  // Should only be called on a reclustering job
+  def deleteByState(documentSetId: Long, jobState: DocumentSetCreationJobState): Unit = {
+    val jobsToDelete = from(documentSetCreationJobs)(dscj =>
+      where (dscj.documentSetId === documentSetId and
+          dscj.state === jobState)
+          select (dscj))
+
+    documentSetCreationJobs.delete(jobsToDelete)
+  }
 }

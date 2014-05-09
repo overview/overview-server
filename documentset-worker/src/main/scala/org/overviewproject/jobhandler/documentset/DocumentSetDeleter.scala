@@ -12,6 +12,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
  */
 trait DocumentSetDeleter {
   def deleteJobInformation(documentSetId: Long): Unit
+  def deleteCancelledJobInformation(documentSetId: Long): Unit
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
   def deleteDocumentSet(documentSetId: Long): Unit
@@ -32,8 +33,14 @@ object DocumentSetDeleter {
 
     def deleteJobInformation(documentSetId: Long): Unit = Database.inTransaction {
       implicit val id = documentSetId
-      
+
       deleteNonRunningJobs
+    }
+
+    def deleteCancelledJobInformation(documentSetId: Long): Unit = Database.inTransaction {
+      implicit val id = documentSetId
+
+      deleteCancelledJobs
     }
 
     def deleteClientGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
@@ -89,14 +96,16 @@ object DocumentSetDeleter {
   private def findFileIds(implicit documentSetId: Long): Seq[Long] =
     DocumentFinder.byDocumentSet(documentSetId).toFileIds.flatten.toSeq
 
-
-  private def deleteNonRunningJobs(implicit documentSetId: Long): Unit = 
+  private def deleteNonRunningJobs(implicit documentSetId: Long): Unit =
     DocumentSetCreationJobStore.deleteNonRunningJobs(documentSetId)
-  
+
+  private def deleteCancelledJobs(implicit documentSetId: Long): Unit =
+    DocumentSetCreationJobStore.deleteByState(documentSetId, Cancelled)
+
   private def deleteFiles(fileIds: Seq[Long]): Unit = FileStore.removeReference(fileIds)
 
   private def deletePages(fileIds: Seq[Long]): Unit = PageStore.removeReferenceByFile(fileIds)
-  
+
   private def deleteDocumentContents(implicit documentSetId: Long): Unit = {
     FileStore.deleteLargeObjectsByDocumentSet(documentSetId)
   }

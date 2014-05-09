@@ -154,7 +154,8 @@ trait DeleteHandler extends Actor with FSM[State, Data] with SearcherComponents 
   }
   
   private def deleteReclusteringJob(documentSetId: Long): Unit = {
-    documentSetDeleter.deleteJobInformation(documentSetId)
+    documentSetDeleter.deleteCancelledJobInformation(documentSetId)
+    
     self ! Message.DeleteReclusteringJobComplete
   }
 }
