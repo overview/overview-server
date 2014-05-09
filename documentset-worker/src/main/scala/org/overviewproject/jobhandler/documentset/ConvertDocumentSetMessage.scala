@@ -9,7 +9,7 @@ import org.overviewproject.messagequeue.ConvertMessage
 object ConvertDocumentSetMessage extends ConvertMessage {
   private val SearchCmdMsg = "search"
   private val DeleteCmdMsg = "delete"
-  private val DeleteTreeJobCmdMsg = "delete-tree-job"
+  private val DeleteTreeJobCmdMsg = "delete_tree_job"
 
 
   private val searchCommandReads = Json.reads[SearchCommand]

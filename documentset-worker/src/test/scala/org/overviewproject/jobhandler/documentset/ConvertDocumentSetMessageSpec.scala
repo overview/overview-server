@@ -46,7 +46,7 @@ class ConvertDocumentSetMessageSpec extends Specification {
       val documentSetId = 123
 
       val messageString = s"""{
-        "cmd": "delete-tree-job",
+        "cmd": "delete_tree_job",
         "args": {
            "documentSetId": $documentSetId
         }
