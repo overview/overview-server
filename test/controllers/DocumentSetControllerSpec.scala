@@ -292,7 +292,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
         there was one(mockStorage).cancelJob(documentSet)
         there was one(mockStorage).deleteDocumentSet(documentSet)
-        there was one(mockJobQueue).send(Delete(documentSetId))
+        there was one(mockJobQueue).send(Delete(documentSetId, waitForJobRemoval = true))
       }
 
       "mark document set and job deleted and send cancel request if files have been uploaded" in new DeleteScope {

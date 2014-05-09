@@ -145,12 +145,12 @@ trait DocumentSetController extends Controller {
       done("deleteTree.success", "tree-delete")
     } else if (runningInWorker) {
       onDocumentSet(storage.deleteDocumentSet)
-      jobQueue.send(Delete(id)) // wait for worker
+      jobQueue.send(Delete(id, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
       
       done("deleteJob.success", "document-set-delete")
     } else if (notRunning) {
       onDocumentSet(storage.deleteDocumentSet)
-      jobQueue.send(Delete(id)) // don't wait for worker
+      jobQueue.send(Delete(id, waitForJobRemoval = false)) // don't wait for worker
       
       done("deleteJob.success", "document-set-delete")
     } else if (runningInTextExtractionWorker) {
