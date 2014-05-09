@@ -3,7 +3,7 @@ package org.overviewproject.jobhandler.documentset
 import org.specs2.mutable.Specification
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandlerProtocol._
 
-class ConvertMessageSpec extends Specification {
+class ConvertDocumentSetMessageSpec extends Specification {
 
   "ConvertMessage" should {
 
