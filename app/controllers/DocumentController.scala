@@ -18,7 +18,7 @@ import java.io.ByteArrayInputStream
 trait DocumentController extends Controller {
   trait Storage {
     def find(id: Long): Option[OverviewDocument]
-    def contentStream(document: OverviewDocument, oid: Long): Option[InputStream]
+    def contentStream(document: OverviewDocument, contentId: Long): Option[InputStream]
   }
 
   def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
@@ -35,10 +35,10 @@ trait DocumentController extends Controller {
     }
   }
 
-  def contents(documentId: Long, fileId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
+  def contents(documentId: Long, contentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
     val result = for {
       document <- storage.find(documentId)
-      data <- storage.contentStream(document, fileId)
+      data <- storage.contentStream(document, contentId)
     } yield {
       val dataContent = Enumerator.fromStream(data)(play.api.libs.concurrent.Execution.Implicits.defaultContext)
       val filename = document.title.getOrElse("UploadedFile.pdf")
@@ -62,13 +62,13 @@ object DocumentController extends DocumentController {
       DocumentFinder.byId(id).headOption.map(OverviewDocument.apply)
     }
 
-    override def contentStream(document: OverviewDocument, fileId: Long): Option[InputStream] =
+    override def contentStream(document: OverviewDocument, contentId: Long): Option[InputStream] =
       if (document.pageId.isDefined) for {
-        page <- PageFinder.byId(fileId).headOption
+        page <- PageFinder.byId(contentId).headOption
         data <- page.data
       } yield { new ByteArrayInputStream(data) }
       else for {
-        file <- FileFinder.byId(fileId).headOption
+        file <- FileFinder.byId(contentId).headOption
       } yield { new PlayLargeObjectInputStream(file.contentsOid) }
   }
 
