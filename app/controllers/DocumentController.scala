@@ -12,11 +12,13 @@ import play.api.mvc.ResponseHeader
 import org.overviewproject.postgres.LargeObjectInputStream
 import controllers.util.PlayLargeObjectInputStream
 import models.orm.finders.FileFinder
+import models.orm.finders.PageFinder
+import java.io.ByteArrayInputStream
 
 trait DocumentController extends Controller {
   trait Storage {
     def find(id: Long): Option[OverviewDocument]
-    def contentStream(oid: Long): Option[InputStream]
+    def contentStream(document: OverviewDocument, oid: Long): Option[InputStream]
   }
 
   def showJson(documentId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
@@ -36,7 +38,7 @@ trait DocumentController extends Controller {
   def contents(documentId: Long, fileId: Long) = AuthorizedAction(userOwningDocument(documentId)) { implicit request =>
     val result = for {
       document <- storage.find(documentId)
-      data <- storage.contentStream(fileId)
+      data <- storage.contentStream(document, fileId)
     } yield {
       val dataContent = Enumerator.fromStream(data)(play.api.libs.concurrent.Execution.Implicits.defaultContext)
       val filename = document.title.getOrElse("UploadedFile.pdf")
@@ -60,9 +62,14 @@ object DocumentController extends DocumentController {
       DocumentFinder.byId(id).headOption.map(OverviewDocument.apply)
     }
 
-    override def contentStream(fileId: Long): Option[InputStream] = for {
-      file <- FileFinder.byId(fileId).headOption
-    } yield { new PlayLargeObjectInputStream(file.contentsOid) }
+    override def contentStream(document: OverviewDocument, fileId: Long): Option[InputStream] =
+      if (document.pageId.isDefined) for {
+        page <- PageFinder.byId(fileId).headOption
+        data <- page.data
+      } yield { new ByteArrayInputStream(data) }
+      else for {
+        file <- FileFinder.byId(fileId).headOption
+      } yield { new PlayLargeObjectInputStream(file.contentsOid) }
   }
 
   override val storage = DatabaseStorage

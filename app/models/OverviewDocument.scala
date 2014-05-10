@@ -29,6 +29,9 @@ sealed trait OverviewDocument {
   /** Optional URL of the document */
   val url: Option[String]
 
+  /** Optional pageId */
+  val pageId: Option[Long] 
+  
   /**
    * URL to view the document.
    *
@@ -53,13 +56,15 @@ object OverviewDocument {
     override val title = ormDocument.title
     override val suppliedId = ormDocument.suppliedId.orElse(ormDocument.documentcloudId)
     override val text = ormDocument.text
-
+    
     override val url: Option[String] = {
       ormDocument.url.orElse(
         ormDocument.documentcloudId.map(idToDocumentCloudUrl)).orElse(
           ormDocument.pageId.map(uploadedDocumentUrl(ormDocument.id, _)).orElse(
             ormDocument.fileId.map(uploadedDocumentUrl(ormDocument.id, _))))
     }
+    
+    override val pageId: Option[Long] = ormDocument.pageId
   }
 
   /** Factory method */

@@ -13,6 +13,7 @@ object Schema extends org.squeryl.Schema {
   val documentProcessingErrors = table[DocumentProcessingError]
   val documentSearchResults = table[DocumentSearchResult]
   val documentSetCreationJobs = table[DocumentSetCreationJob]
+  val documentSetCreationJobTrees = table[DocumentSetCreationJobTree]
   val documentSets = table[DocumentSet]
   val documentSetUsers = table[DocumentSetUser]
   val documents = table[Document]
@@ -22,6 +23,7 @@ object Schema extends org.squeryl.Schema {
   val logEntries = table[LogEntry]
   val nodeDocuments = table[NodeDocument]
   val nodes = table[Node]
+  val pages = table[Page]
   val searchResults = table[SearchResult]
   val tags = table[Tag]
   val uploadedFiles = table[UploadedFile]
@@ -30,8 +32,7 @@ object Schema extends org.squeryl.Schema {
   val sessions = table[Session]
   val files = table[File]
   val trees = table[Tree]
-  val documentSetCreationJobTrees = table[DocumentSetCreationJobTree]
-
+ 
   on(documents)(d => declare(d.id is (primaryKey)))
   on(nodes)(n => declare(n.id is (primaryKey)))
   on(sessions)(s => declare(s.id is (primaryKey)))
