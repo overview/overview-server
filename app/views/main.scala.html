@@ -50,7 +50,7 @@
     @if(flash.data.nonEmpty) {
       <div id="flash" class="container">
         @for((key, value) <- flash.data) {
-          @if(Seq("success", "error").contains(key)) {
+          @if(Seq("success", "error", "warning").contains(key)) {
             <div class="alert alert-@key fade in"><button type="button" class="close" data-dismiss="alert">×</button>@value</div>
           } else {
             <div class="event" data-key="@key" data-value="@value"></div>

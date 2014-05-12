@@ -10,6 +10,7 @@ controllers.DocumentSetController.clone.failure=We were not able to clone the do
 controllers.DocumentSetController.deleteJob.success=You have cancelled your document set import.
 controllers.DocumentSetController.deleteDocumentSet.success=You have deleted your document set.
 controllers.DocumentSetController.deleteTree.success=You have cancelled creating a new tree.
+controllers.DocumentSetController.deleteTree.failure=Nothing happened. Overview can''t cancel tree creation quite yet; please wait and your tree will be created.
 
 controllers.PasswordController.create.success=We have sent an email to {0} with instructions.
 controllers.PasswordController.update.success=You have updated your password, and you are now logged in.

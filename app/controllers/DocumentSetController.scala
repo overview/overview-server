@@ -109,6 +109,10 @@ trait DocumentSetController extends Controller {
       "success" -> m(message),
       "event" -> event)
 
+    def doneWithError(message: String, event: String) = Redirect(routes.DocumentSetController.index()).flashing(
+      "warning" -> m(message),
+      "event" -> event)
+
     // FIXME: If a reclustering job is running, but there are failed jobs, we assume
     // that the delete refers to canceling the running job.
     // It would be better for the client to explicitly tell us what job to cancel, rather
@@ -116,16 +120,16 @@ trait DocumentSetController extends Controller {
     val jobs = storage.findAllJobs(id)
     val jobsRunningInWorker = jobs.find(j =>
       j.state == DocumentSetCreationJobState.InProgress ||
-      j.state == DocumentSetCreationJobState.Preparing ||
+        j.state == DocumentSetCreationJobState.Preparing ||
         j.state == DocumentSetCreationJobState.Cancelled)
 
     jobsRunningInWorker.headOption.map { j =>
       j.jobType match {
-        case DocumentSetCreationJobType.Recluster => { 
+        case DocumentSetCreationJobType.Recluster => {
           onDocumentSet(storage.cancelReclusteringJob(_, j))
           done("deleteTree.success", "tree-delete")
         }
-        case _ => { 
+        case _ => {
           onDocumentSet(storage.cancelJob)
           onDocumentSet(storage.deleteDocumentSet)
           if (j.jobType == DocumentSetCreationJobType.FileUpload) JobQueueSender.send(CancelUploadWithDocumentSet(id))
@@ -134,9 +138,17 @@ trait DocumentSetController extends Controller {
         }
       }
     }.getOrElse {
-      onDocumentSet(storage.deleteDocumentSet)
-      JobQueueSender.send(Delete(id))
-      done("deleteDocumentSet.success", "document-set-delete")
+      val notStartedReclusteringJob = jobs.exists(j =>
+        j.state == DocumentSetCreationJobState.NotStarted &&
+          j.jobType == DocumentSetCreationJobType.Recluster)
+
+      if (notStartedReclusteringJob) {
+        doneWithError("deleteTree.failure", "tree-delete")
+      } else {
+        onDocumentSet(storage.deleteDocumentSet)
+        JobQueueSender.send(Delete(id))
+        done("deleteDocumentSet.success", "document-set-delete")
+      }
     }
   }
 
