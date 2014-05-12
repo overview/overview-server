@@ -38,14 +38,14 @@ mailers.User.createErrorUserAlreadyExists.intro=Somebody with this email address
 mailers.User.createErrorUserAlreadyExists.case1=If you did not recently try to register, please ignore this email.
 mailers.User.createErrorUserAlreadyExists.case2=If you did, please rack your brain to remember your password, and log in here:
 mailers.User.createErrorUserAlreadyExists.signoff=Happy analyzing,
-mailers.User.createErrorUserAlreadyExists.signature=The Overview Project developers
+mailers.User.createErrorUserAlreadyExists.signature=The Overview team
 
 mailers.Password.create.subject=Overview Project password reset
 mailers.Password.create.body=You (or somebody else) entered your email address in the password-reset form for the Overview Project.
 mailers.Password.create.case1=If you do not want to reset your password, please ignore this email.
 mailers.Password.create.case2=If you do, please follow this link to finish resetting your password and log in:
 mailers.Password.create.signoff=Happy analyzing,
-mailers.Password.create.signature=The Overview Project developers
+mailers.Password.create.signature=The Overview team
 
 mailers.Password.createErrorUserDoesNotExist.subject=Overview Project password reset attempted
 mailers.Password.createErrorUserDoesNotExist.intro=You (or somebody else) entered your email address in the password-reset form on the Overview Project website.
@@ -53,7 +53,7 @@ mailers.Password.createErrorUserDoesNotExist.body=However, you do not have an ac
 mailers.Password.createErrorUserDoesNotExist.case1=If you are not an Overview user, please ignore this email.
 mailers.Password.createErrorUserDoesNotExist.case2=If you are an Overview user and you were expecting this email, please enter a different email in the password-reset form to try again:
 mailers.Password.createErrorUserDoesNotExist.signoff=Happy analyzing,
-mailers.Password.createErrorUserDoesNotExist.signature=The Overview Project developers
+mailers.Password.createErrorUserDoesNotExist.signature=The Overview team
 
 
 models.DocumentSetCreationJob.state.CANCELLED=canceling
