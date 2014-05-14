@@ -46,7 +46,7 @@ fi
 # inside from a previous build and complain about "Duplicate mappings"
 rm -rf "$OVERVIEW_DIR"/dist
 
-./sbt '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; message-broker/stage; search-index/stage'
+./sbt -Dsbt.log.noformat=true '; runner/stage; db-evolution-applier/stage; overview-server/stage; worker/stage; documentset-worker/stage; message-broker/stage; search-index/stage'
 
 BASE="$OUTPUT_DIRECTORY"
 STAGE="target/universal/stage"
