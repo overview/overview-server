@@ -179,7 +179,12 @@ object ApplicationBuild extends Build with ProjectSettings {
           "bundle/SharedDocumentSet/index.js",
           "bundle/Welcome/show.js"
         ),
-        requireJsShim += "main.js",
+        // It's JSON injection! Ha!
+        // This will break when we upgrade to Play 2.3. Then again, we'll have
+        // much more flexibility once we do, so we can probably set
+        // skipDirOptimize more nicely. Or maybe we won't need to because Play
+        // might not put all those useless files in the output directory?
+        requireJsShim += """main.js", "skipDirOptimize": true, "finishJsonInjection": " """,
         aggregate in Compile := true,
         parallelExecution in IntegrationTest := false,
         javaOptions in run ++= allJavaOpts,
