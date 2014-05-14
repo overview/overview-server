@@ -1,0 +1,6 @@
+# http://www.scala-sbt.org/release/docs/Detailed-Topics/Proxy-Repositories.html#sbt-override-build-repos
+
+[repositories]
+  local
+  my-ivy-proxy-releases: http://repo-proxy.overviewproject.org/artifactory/ivy/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+  my-maven-proxy-releases: http://repo-proxy.overviewproject.org/artifactory/maven2/
