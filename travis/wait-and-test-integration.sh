@@ -9,4 +9,4 @@
 # but that would take more work.
 
 sleep 30
-"$(dirname "$0")"/test-integration.sh
+"$(dirname "$0")"/../auto/test-integration.sh

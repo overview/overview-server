@@ -9,7 +9,7 @@ branches:
   - /^deploy.*$/
 before_install:
   - sudo apt-get update -qq
-  #- ./auto/setup-coffee-tests.sh
+  - ./auto/setup-coffee-tests.sh
   - ./auto/setup-integration-tests.sh
 install:
   - sudo apt-get install -qq postgresql openjdk-7-jdk
