@@ -8,11 +8,11 @@ branches:
   - master
   - /^deploy.*$/
 before_install:
-  - sudo apt-get update -qq
-  - ./auto/setup-coffee-tests.sh
-  - ./auto/setup-integration-tests.sh
+  - time sudo apt-get update -qq
+  - time ./auto/setup-coffee-tests.sh
+  - time ./auto/setup-integration-tests.sh
 install:
-  - sudo apt-get install -qq postgresql openjdk-7-jdk
+  - time sudo apt-get install -qq postgresql openjdk-7-jdk
 before_script:
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
@@ -31,17 +31,17 @@ before_script:
   # TODO: turn off Artifactory and enable caching on Travis. First we need
   # Travis to support it for our repository. They've told us they're working
   # on it.
-  - ./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories '; set every logLevel := Level.Warn; common/update; show version; version; overview-server/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update; search-index/update; show version; message-broker/update'
+  - time ./sbt -Dsbt.log.noformat=true -Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories '; set every logLevel := Level.Warn; common/update; show version; version; overview-server/update; show version; documentset-worker/update; show version; worker/update; show version; runner/update; show version; db-evolution-applier/update; search-index/update; show version; message-broker/update'
 script:
   # CoffeeScript tests are the fastest, so we put them first
-  - ./auto/test-coffee-once.sh
+  - time ./auto/test-coffee-once.sh
   # Unit tests next.
   # We need the database to run for the duration of the test commands. So we run --only-servers search-index: we need at least one server running to make the database run.
-  - ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
+  - time ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
   # The build must succeed
-  - SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
+  - SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" time ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
-  - (cd dist && ./run --sh ../travis/wait-and-test-integration.sh)
+  - (cd dist && time ./run --sh ../travis/wait-and-test-integration.sh)
 notifications:
   irc:
     - irc.freenode.net#overviewproject
