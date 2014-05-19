@@ -141,6 +141,27 @@ class LogEntryControllerSpec extends ControllerSpecification {
 
       there was no(mockStorage).insertLogEntries(any)
     }
+
+    "truncate too-long strings" in new AuthorizedCreateManyContext {
+      val tooLongString = "123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890" // 300 chars
+      val truncatedString = tooLongString.substring(0, 255)
+      override def json = Json.arr(Json.obj(
+        "component" -> tooLongString,
+        "action" -> tooLongString,
+        "date" -> "2012-07-03T11:51:03.320-04:00",
+        "details" -> tooLongString
+      ))
+
+      response
+
+      // Rrgh. Squeryl KeyedEntity objects have broken equality logic
+      there was one(mockStorage).insertLogEntries(argThat(beLike[Iterable[LogEntry]] { case x: Iterable[LogEntry] =>
+        x.toStream(0) must beLike { case le: LogEntry =>
+          le.component must beEqualTo(truncatedString)
+          le.action must beEqualTo(truncatedString)
+          le.details must beEqualTo(truncatedString)
+      }}))
+    }
   }
 
   "index()" should {

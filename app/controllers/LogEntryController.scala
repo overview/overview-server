@@ -89,7 +89,15 @@ trait LogEntryController extends Controller {
       "action" -> nonEmptyText,
       "details" -> optional(text)
     )
-    ((date, component, action, details) => LogEntry(0L, documentSetId, user.id, date, component, action, details.getOrElse("")))
+    ((date, component, action, details) => LogEntry(
+      0L,
+      documentSetId,
+      user.id,
+      date,
+      component.take(255),
+      action.take(255),
+      details.getOrElse("").take(255)
+    ))
     ((le: LogEntry) => Some(le.date, le.component, le.action, Some(le.details)))
   )
 
