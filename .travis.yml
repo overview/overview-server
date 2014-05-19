@@ -39,9 +39,9 @@ script:
   # We need the database to run for the duration of the test commands. So we run --only-servers search-index: we need at least one server running to make the database run.
   - time ./dev --only-servers search-index --sbt '; overview-server/test; common/test; worker/test; documentset-worker/test; runner/test'
   # The build must succeed
-  - SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" time ./build overview-server.zip
+  - time SBT_OPTIONS="-Dsbt.override.build.repos=true -Dsbt.repository.config=./travis/sbt-repositories" ./build overview-server.zip
   # Now that we've built, we can run integration tests with the resulting jars
-  - (cd dist && time ./run --sh ../travis/wait-and-test-integration.sh)
+  - time (cd dist && ./run --sh ../travis/wait-and-test-integration.sh)
 notifications:
   irc:
     - irc.freenode.net#overviewproject
