@@ -14,7 +14,7 @@ class DocumentsWithColumnTags(finderResult: FinderResult[(Document,Option[String
   override def rows : Iterable[Iterable[Any]] = {
     val allTagIds = tagFinderResult.map(_.id).toArray // fastest implementation
 
-    finderResult.map { case (ormDocument, tagsString) =>
+    finderResult.view.map { case (ormDocument, tagsString) =>
       val document = OverviewDocument(ormDocument)
       // "1,2,3" -> Set[Long](1, 2, 3)
       val tagIdSet = tagsString.getOrElse("").split(',').collect { case s: String if s.length > 0 => s.toLong }.toSet
@@ -27,7 +27,7 @@ class DocumentsWithColumnTags(finderResult: FinderResult[(Document,Option[String
           document.url.getOrElse("")
         )
         ++ allTagIds.map(id => if (tagIdSet.contains(id)) "1" else "").toArray[Any]
-      ).toSeq
+      ).toIndexedSeq
     }
   }
 }

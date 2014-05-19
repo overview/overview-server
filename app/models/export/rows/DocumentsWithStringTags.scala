@@ -9,15 +9,15 @@ class DocumentsWithStringTags(finderResult: FinderResult[(Document,Option[String
   override def headers : Iterable[String] = Seq("id", "title", "text", "url", "tags")
 
   override def rows : Iterable[Iterable[Any]] = {
-    finderResult.map { case (ormDocument, tags) =>
+    finderResult.view.map { case (ormDocument, tags) =>
       val document = OverviewDocument(ormDocument)
-      Vector(
+      Array[Any](
         document.suppliedId.getOrElse(""),
         document.title.getOrElse(""),
         document.text.getOrElse(""),
         document.url.getOrElse(""),
         tags.getOrElse("")
-      )
+      ).toIndexedSeq
     }
   }
 }
