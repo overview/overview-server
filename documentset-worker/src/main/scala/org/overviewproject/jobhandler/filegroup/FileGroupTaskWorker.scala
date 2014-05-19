@@ -16,50 +16,97 @@ case class CreatePagesProcessComplete(documentSetId: Long, fileGroupId: Long, up
   override def execute: FileGroupTaskStep = return CreatePagesProcessComplete.this
 }
 
-trait FileGroupTaskWorker extends Actor {
+object FileGroupTaskWorkerFSM {
+  sealed trait State
+  case object LookingForJobQueue extends State
+  case object Ready extends State
+  case object Working extends State
+  case object Cancelled extends State
+
+  sealed trait Data
+  case object NoKnownJobQueue extends Data
+  case class JobQueue(queue: ActorRef) extends Data
+  case class TaskInfo(queue: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
+
+}
+
+import FileGroupTaskWorkerFSM._
+
+trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import context._
-  
+
   protected def jobQueuePath: String
- 
+
   private val JobQueueId: String = "Job Queue"
   private val RetryInterval: FiniteDuration = 1 second
-  
+
   private val jobQueueSelection = system.actorSelection(jobQueuePath)
   private var jobQueue: ActorRef = _
-  
-  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep 
-  
+
+  protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep
+
   lookForJobQueue
 
-  def receive = {
-    case ActorIdentity(JobQueueId, Some(jq)) => { 
+  startWith(LookingForJobQueue, NoKnownJobQueue)
+
+  when(LookingForJobQueue) {
+    case Event(ActorIdentity(JobQueueId, Some(jq)), _) => {
       Logger.info(s"[${self.path}] Found Job Queue at ${jq.path}")
-      jobQueue = jq
-      jobQueue ! RegisterWorker(self)
+      jq ! RegisterWorker(self)
+
+      goto(Ready) using JobQueue(jq)
     }
-    case ActorIdentity(JobQueueId, None) => 
+    case Event(ActorIdentity(JobQueueId, None), _) => {
       Logger.info(s"[${self.path}] Looking for Job Queue at $jobQueuePath")
       system.scheduler.scheduleOnce(RetryInterval) { lookForJobQueue }
-    case TaskAvailable =>
+
+      stay
+    }
+  }
+
+  when(Ready) {
+    case Event(TaskAvailable, JobQueue(jobQueue)) => {
       jobQueue ! ReadyForTask
-    case CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => 
-      	executeTaskStep(startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
-    case CreatePagesProcessComplete(documentSetId, fileGroupId, uploadedFileId) => {
+      stay
+    }
+    case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), JobQueue(jobQueue)) => {
+      executeTaskStep(startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+      goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
+    }
+  }
+
+  when(Working) {
+    case Event(CreatePagesProcessComplete(documentSetId, fileGroupId, uploadedFileId), TaskInfo(jobQueue, _, _, _)) => {
       jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
       jobQueue ! ReadyForTask
+
+      goto(Ready) using JobQueue(jobQueue)
     }
-    case step: FileGroupTaskStep => executeTaskStep(step) 
+    case Event(step: FileGroupTaskStep, _) => {
+      executeTaskStep(step)
+
+      stay
+    }
+    case Event(CancelTask, _) => goto(Cancelled)
   }
-  
+
+  when(Cancelled) {
+    case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
+      jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
+      jobQueue ! ReadyForTask
+
+      goto(Ready) using JobQueue(jobQueue)
+    }
+  }
+
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
-  
+
   private def executeTaskStep(step: FileGroupTaskStep) = Future { step.execute } pipeTo self
 }
 
-
 object FileGroupTaskWorker {
-  def apply(fileGroupJobQueuePath: String): Props = Props( new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
+  def apply(fileGroupJobQueuePath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
     override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
-    
+
   })
 }

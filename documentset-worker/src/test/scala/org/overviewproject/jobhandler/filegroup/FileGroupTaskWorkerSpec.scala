@@ -15,26 +15,25 @@ import scala.concurrent.Future
 import akka.testkit.TestActor
 import akka.actor.ActorSystem
 
-
 class FileGroupTaskWorkerSpec extends Specification {
 
   "FileGroupJobQueue" should {
 
-    "register with job queue" in new TaskWorkerContext {
+    "register with job queue" in new RunningTaskWorkerContext {
       createJobQueue
       createWorker
 
       jobQueueProbe.expectMsg(RegisterWorker(worker))
     }
 
-    "retry job queue registration on initial failure" in new TaskWorkerContext {
+    "retry job queue registration on initial failure" in new RunningTaskWorkerContext {
       createWorker
       createJobQueue
 
       jobQueueProbe.expectMsg(RegisterWorker(worker))
     }
 
-    "request task when available" in new TaskWorkerContext {
+    "request task when available" in new RunningTaskWorkerContext {
       createJobQueue.withTaskAvailable
 
       createWorker
@@ -42,23 +41,31 @@ class FileGroupTaskWorkerSpec extends Specification {
       jobQueueProbe.expectInitialReadyForTask
     }
 
-    "step through task until done" in new TaskWorkerContext {
+    "step through task until done" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
-      
+
       createWorker
 
       jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId)
       jobQueueProbe.expectReadyForTask
-      
+
       createPagesTaskStepsWereExecuted
     }
 
-    "reconnect to job queue on failure" in {
-      todo
-    }
+    "cancel a job in progress" in new GatedTaskWorkerContext {
+      import GatedTaskWorkerProtocol._
 
-    "cancel a job in progress" in {
-      todo
+      createWorker
+      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+
+      jobQueueProbe.expectMsgClass(classOf[RegisterWorker])
+      jobQueueProbe.expectMsg(ReadyForTask)
+
+      worker ! CancelYourself
+      worker ! CompleteTaskStep
+
+      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
+
     }
 
     abstract class TaskWorkerContext extends ActorSystemContext with Before {
@@ -66,7 +73,6 @@ class FileGroupTaskWorkerSpec extends Specification {
       protected val fileGroupId: Long = 2l
       protected val uploadedFileId: Long = 10l
 
-      var worker: TestActorRef[TestFileGroupTaskWorker] = _
       var jobQueue: ActorRef = _
       var jobQueueProbe: JobQueueTestProbe = _
 
@@ -81,6 +87,11 @@ class FileGroupTaskWorkerSpec extends Specification {
 
         jobQueueProbe
       }
+    }
+
+    abstract class RunningTaskWorkerContext extends TaskWorkerContext {
+
+      var worker: TestActorRef[TestFileGroupTaskWorker] = _
 
       protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath))
 
@@ -89,7 +100,12 @@ class FileGroupTaskWorkerSpec extends Specification {
         awaitCond(pendingCalls.isCompleted)
         worker.underlyingActor.numberOfStartCreatePagesTaskCalls must be equalTo (2)
       }
+    }
 
+    abstract class GatedTaskWorkerContext extends TaskWorkerContext {
+      var worker: ActorRef = _
+
+      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath)))
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {
@@ -98,7 +114,7 @@ class FileGroupTaskWorkerSpec extends Specification {
         expectMsgClass(classOf[org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol.RegisterWorker])
         expectMsg(ReadyForTask)
       }
-      
+
       def expectReadyForTask = expectMsg(ReadyForTask)
 
       def expectTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) = {
@@ -142,7 +158,7 @@ class FileGroupTaskWorkerSpec extends Specification {
 
     class JobQueueHandingOutTask(task: CreatePagesTask) extends TestActor.AutoPilot {
       private var numberOfTasksToHandOut = 1
-      
+
       def run(sender: ActorRef, message: Any): TestActor.AutoPilot = {
         message match {
           case RegisterWorker(worker) => worker ! TaskAvailable
