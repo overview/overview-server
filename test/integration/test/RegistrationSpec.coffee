@@ -5,7 +5,7 @@ browser = require('../lib/browser')
 
 Url =
   login: '/login'
-  confirm: (token) -> "/confirm?token=#{token}"
+  confirm: (token) -> "/confirm/#{token}"
   deleteUser: (email) -> "/admin/users/#{encodeURIComponent(email)}?X-HTTP-Method-Override=DELETE"
   adminUserIndex: '/admin/users'
 
@@ -95,24 +95,11 @@ describe 'Registration', ->
       .elementByCss('.user-form .control-group.error [name=password2]').should.eventually.exist
       .elementByCss('.user-form .control-group.error p.help-block').should.eventually.exist
 
-  it 'should show an error when entering an invalid token', ->
-    @userBrowser
-      .get(Url.confirm(''))
-      .tryConfirm('abcdef')
-      .elementByCss('.control-group.error input[name=token]').should.eventually.exist
-      .elementByCss('.control-group.error p.help-block').should.eventually.exist
-
   it 'should show an error when clicking an invalid token link', ->
     @userBrowser
       .get(Url.confirm('abcdef'))
-      .elementByCss('.control-group.error input[name=token]').should.eventually.exist
-      .elementByCss('.control-group.error p.help-block').should.eventually.exist
-
-  it 'should show an error when entering no token', ->
-    @userBrowser
-      .get(Url.confirm(''))
-      .tryConfirm('')
-      .elementByCss('input[name=token]:invalid').should.eventually.exist
+      .elementBy(tag: 'h1', contains: 'Broken confirmation link').should.eventually.exist
+      .elementByCss('a[href="/reset-password"]').should.eventually.exist
 
   describe 'when the user already exists', ->
     before -> @adminBrowser.createUser(@userEmail, @userEmail)
@@ -125,7 +112,7 @@ describe 'Registration', ->
 
     it 'should prompt the user to check his or her email', ->
       @userBrowser
-        .elementBy(class: 'alert-success', contains: 'please check your email').should.eventually.exist
+        .elementBy(tag: 'h1', contains: 'Check your email').should.eventually.exist
 
     it 'should not change the password', ->
       # This would be a huge security hole!
@@ -161,7 +148,7 @@ describe 'Registration', ->
 
     it 'should prompt the user to check his or her email', ->
       @userBrowser
-        .elementBy(class: 'alert-success', contains: 'please check your email').should.eventually.exist
+        .elementBy(tag: 'h1', contains: 'Check your email').should.eventually.exist
 
     it 'should set a confirmation token on the user', ->
       @getConfirmationToken().should.eventually.match(/\w+/)
@@ -177,19 +164,6 @@ describe 'Registration', ->
         .get('/login')
         .tryLogIn(@userEmail, @validPassword + '1')
         .elementByCss('.control-group.error .help-block').text().should.eventually.contain('Wrong email address or password')
-
-    describe 'after typing the token into the registration form', ->
-      beforeEach ->
-        @getConfirmationToken().then (token) =>
-          @userBrowser.tryConfirm(token)
-
-      it 'should log you in and tell you all is well', ->
-        @userBrowser
-          .shouldBeLoggedInAs(@userEmail)
-          .elementBy(class: 'alert-success', contains: 'Welcome').should.eventually.exist
-
-      it 'should disable the confirmation token', ->
-        @getConfirmationToken().should.eventually.not.exist
 
     describe 'after clicking the confirmation link', ->
       beforeEach ->
