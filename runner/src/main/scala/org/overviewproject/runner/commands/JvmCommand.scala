@@ -92,6 +92,6 @@ object JvmCommand {
     retval == 0
   }
 
-  private val Max32BitHeapSize : Long = 1468006400
-  private val Max32BitHeapSizeString : String = "1400m"
+  private val Max32BitHeapSize : Long = 1363148800
+  private val Max32BitHeapSizeString : String = "1300m"
 }
