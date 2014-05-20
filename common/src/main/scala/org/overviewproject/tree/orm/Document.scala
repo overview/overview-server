@@ -1,8 +1,6 @@
 package org.overviewproject.tree.orm
 
 import org.squeryl.KeyedEntity
-import org.squeryl.annotations.Column
-import org.overviewproject.postgres.PostgresqlEnum
 
 case class Document(
   val documentSetId: Long = 0L,
