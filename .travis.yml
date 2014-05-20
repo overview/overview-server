@@ -15,6 +15,7 @@ before_install:
 install:
   - time sudo apt-get install -qq postgresql openjdk-7-jdk
 before_script:
+  - ulimit -a
   # Suppress excessive output from SauceConnect. Assume it works; there are way too many messages otherwise.
   - curl -L https://gist.githubusercontent.com/santiycr/5139565/raw/sauce_connect_setup.sh | bash > /dev/null
   # Suppress excessive output from Sbt (resolving / downloading). Either it works or it doesn't; all errors are the same to us.
