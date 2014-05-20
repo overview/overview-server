@@ -24,6 +24,8 @@ object FileGroupTaskWorkerProtocol {
   case object CancelTask
   case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
   case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)
+  case class DeleteFileUploadJobDone(documentSetId: Long, fileGroupId: Long)
 }
 
 
@@ -57,7 +59,8 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   private var jobQueue: ActorRef = _
 
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep
-
+  protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit
+  
   lookForJobQueue
 
   startWith(LookingForJobQueue, NoKnownJobQueue)
@@ -85,6 +88,12 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
     case Event(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId), JobQueue(jobQueue)) => {
       executeTaskStep(startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
       goto(Working) using TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)
+    }
+    case Event(DeleteFileUploadJob(documentSetId, fileGroupId), JobQueue(jobQueue)) => {
+      deleteFileUploadJob(documentSetId, fileGroupId)
+      jobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
+      
+      stay
     }
   }
 
@@ -120,6 +129,6 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 object FileGroupTaskWorker {
   def apply(fileGroupJobQueuePath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
     override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
-
+    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = ???
   })
 }
