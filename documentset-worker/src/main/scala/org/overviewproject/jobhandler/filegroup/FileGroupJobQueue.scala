@@ -27,6 +27,8 @@ trait FileGroupJobQueue extends Actor {
   import FileGroupJobQueueProtocol._
   import FileGroupTaskWorkerProtocol._
 
+  type DocumentSetId = Long
+  
   protected val storage: Storage
 
   trait Storage {
@@ -40,7 +42,7 @@ trait FileGroupJobQueue extends Actor {
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[CreatePagesTask] = mutable.Queue.empty
   private val jobTasks: mutable.Map[Long, Set[Long]] = mutable.Map.empty
-  private val jobRequests: mutable.Map[Long, JobRequest] = mutable.Map.empty
+  private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
 
   def receive = {
     case RegisterWorker(worker) => {
@@ -51,13 +53,13 @@ trait FileGroupJobQueue extends Actor {
     }
     case CreateDocumentsFromFileGroup(documentSetId, fileGroupId) => {
       Logger.info(s"Extract text task for FileGroup [$fileGroupId]")
-      if (isNewRequest(fileGroupId)) {
+      if (isNewRequest(documentSetId)) {
         val fileIds = uploadedFilesInFileGroup(fileGroupId)
 
         progressReporter ! StartJob(documentSetId, fileIds.size)
 
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
-        jobRequests += (fileGroupId -> JobRequest(sender))
+        jobRequests += (documentSetId -> JobRequest(sender))
 
         workerPool.map(_ ! TaskAvailable)
       }
@@ -80,7 +82,7 @@ trait FileGroupJobQueue extends Actor {
 
   }
 
-  private def isNewRequest(fileGroupId: Long): Boolean = !jobRequests.contains(fileGroupId)
+  private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)
 
@@ -93,14 +95,14 @@ trait FileGroupJobQueue extends Actor {
   private def whenTaskIsComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Long, Set[Long]) => Unit) =
     for {
       tasks <- jobTasks.get(fileGroupId)
-      request <- jobRequests.get(fileGroupId)
+      request <- jobRequests.get(documentSetId)
       remainingTasks = tasks - uploadedFileId
     } f(request, documentSetId, fileGroupId, remainingTasks)
 
   private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
     if (remainingTasks.isEmpty) {
       jobTasks -= fileGroupId
-      jobRequests -= fileGroupId
+      jobRequests -= documentSetId
 
       progressReporter ! CompleteJob(documentSetId)
       request.requester ! FileGroupDocumentsCreated(documentSetId)
