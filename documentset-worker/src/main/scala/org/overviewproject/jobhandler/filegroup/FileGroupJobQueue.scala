@@ -14,14 +14,6 @@ object FileGroupJobQueueProtocol {
   case class FileGroupDocumentsCreated(documentSetId: Long)
 }
 
-object FileGroupTaskWorkerProtocol {
-  case class RegisterWorker(worker: ActorRef)
-  case object TaskAvailable
-  case object ReadyForTask
-  case object CancelTask
-  case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
-  case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
-}
 
 trait FileGroupJobQueue extends Actor {
   import FileGroupJobQueueProtocol._

@@ -16,6 +16,17 @@ case class CreatePagesProcessComplete(documentSetId: Long, fileGroupId: Long, up
   override def execute: FileGroupTaskStep = return CreatePagesProcessComplete.this
 }
 
+
+object FileGroupTaskWorkerProtocol {
+  case class RegisterWorker(worker: ActorRef)
+  case object TaskAvailable
+  case object ReadyForTask
+  case object CancelTask
+  case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+}
+
+
 object FileGroupTaskWorkerFSM {
   sealed trait State
   case object LookingForJobQueue extends State
@@ -29,6 +40,8 @@ object FileGroupTaskWorkerFSM {
   case class TaskInfo(queue: ActorRef, documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends Data
 
 }
+
+
 
 import FileGroupTaskWorkerFSM._
 
