@@ -1,27 +1,28 @@
 package views.json.DocumentList
 
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json.toJson
+import play.api.libs.json.Json
 
 import org.overviewproject.tree.orm.Document
 import org.overviewproject.tree.orm.finders.ResultPage
 
 object show {
-  private[DocumentList] def documentToJson(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {
-    toJson(Map(
-      "id" -> toJson(document.id),
-      "description" -> toJson(document.description),
-      "title" -> toJson(document.title.getOrElse("")),
-      "documentcloud_id" -> toJson(document.documentcloudId),
-      "nodeids" -> toJson(nodeIds),
-      "tagids" -> toJson(tagIds)
-    ))
+  private def documentToJson(document: Document, nodeIds: Seq[Long], tagIds: Seq[Long]) : JsValue = {
+    Json.obj(
+      "id" -> document.id,
+      "description" -> document.description,
+      "title" -> Json.toJson(document.title.getOrElse("")), // beats me
+      "documentcloud_id" -> document.documentcloudId,
+      "nodeids" -> nodeIds,
+      "page_number" -> document.pageNumber,
+      "tagids" -> tagIds
+    )
   }
 
   def apply(documents: ResultPage[(Document,Seq[Long],Seq[Long])]) = {
-    toJson(Map[String,JsValue](
-      "documents" -> toJson(documents.items.map(Function.tupled(documentToJson)).toSeq),
-      "total_items" -> toJson(documents.pageDetails.totalLength)
-    ))
+    Json.obj(
+      "documents" -> documents.items.map(Function.tupled(documentToJson)).toSeq,
+      "total_items" -> documents.pageDetails.totalLength
+    )
   }
 }
