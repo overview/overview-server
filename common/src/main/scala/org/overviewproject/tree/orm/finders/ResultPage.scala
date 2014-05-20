@@ -141,4 +141,7 @@ object ResultPage {
 
   /** ResultPage from a Seq. */
   def apply[T](seq: Seq[T], pageSize: Int, page: Int) : ResultPage[T] = ResultPageSet(seq, pageSize).page(page)
+
+  /** Really useful for testing: make the page the entire Seq */
+  def apply[T](seq: Seq[T]) : ResultPage[T] = ResultPageSet(seq, seq.length).page(1)
 }
