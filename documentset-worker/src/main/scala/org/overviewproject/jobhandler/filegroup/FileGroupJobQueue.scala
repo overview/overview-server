@@ -41,7 +41,7 @@ trait FileGroupJobQueue extends Actor {
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
   private val taskQueue: mutable.Queue[CreatePagesTask] = mutable.Queue.empty
-  private val jobTasks: mutable.Map[Long, Set[Long]] = mutable.Map.empty
+  private val jobTasks: mutable.Map[DocumentSetId, Set[Long]] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
 
   def receive = {
@@ -89,25 +89,25 @@ trait FileGroupJobQueue extends Actor {
   private def addNewTasksToQueue(documentSetId: Long, fileGroupId: Long, uploadedFileIds: Set[Long]): Unit = {
     val newTasks = uploadedFileIds.map(CreatePagesTask(documentSetId, fileGroupId, _))
     taskQueue ++= newTasks
-    jobTasks += (fileGroupId -> uploadedFileIds)
+    jobTasks += (documentSetId -> uploadedFileIds)
   }
 
   private def whenTaskIsComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)(f: (JobRequest, Long, Long, Set[Long]) => Unit) =
     for {
-      tasks <- jobTasks.get(fileGroupId)
+      tasks <- jobTasks.get(documentSetId)
       request <- jobRequests.get(documentSetId)
       remainingTasks = tasks - uploadedFileId
     } f(request, documentSetId, fileGroupId, remainingTasks)
 
   private def notifyRequesterIfJobIsDone(request: JobRequest, documentSetId: Long, fileGroupId: Long, remainingTasks: Set[Long]): Unit =
     if (remainingTasks.isEmpty) {
-      jobTasks -= fileGroupId
+      jobTasks -= documentSetId
       jobRequests -= documentSetId
 
       progressReporter ! CompleteJob(documentSetId)
       request.requester ! FileGroupDocumentsCreated(documentSetId)
     } else {
-      jobTasks += (fileGroupId -> remainingTasks)
+      jobTasks += (documentSetId -> remainingTasks)
     }
 }
 
