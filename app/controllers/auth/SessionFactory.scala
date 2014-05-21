@@ -71,7 +71,7 @@ object SingleUserSessionFactory extends SessionFactory {
 object SessionFactory extends SessionFactory {
   object DatabaseStorage extends SessionFactory.Storage {
     override def loadSessionAndUser(sessionId: UUID) = {
-      SessionFinder.byId(sessionId).withUsers.headOption
+      SessionFinder.byId(sessionId).notExpired.withUsers.headOption
     }
   }
 

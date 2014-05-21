@@ -10,7 +10,7 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.finders.{Finder, FinderResult}
 import models.orm.{Schema, Session, User}
 
-object SessionFinder extends Finder {
+trait SessionFinder extends Finder {
   class SessionFinderResult(query: Query[Session]) extends FinderResult(query) {
     def withUsers : FinderResult[(Session,User)] = {
       join(toQuery, Schema.users)((s, u) =>
@@ -18,9 +18,15 @@ object SessionFinder extends Finder {
         on(s.userId === u.id)
       )
     }
+
+    def expired = new SessionFinderResult(query.where(_.createdAt < oldestAllowedCreatedAt))
+    def notExpired = new SessionFinderResult(query.where(_.createdAt >= oldestAllowedCreatedAt))
   }
 
   implicit private def queryToSessionFinderResult(query: Query[Session]) : SessionFinderResult = new SessionFinderResult(query)
+
+  private val maxAgeInMs = 30L * 86400 * 1000 // 30 days
+  def oldestAllowedCreatedAt = new java.sql.Timestamp(new java.util.Date().getTime() - maxAgeInMs)
 
   /** @return All Sessions with the given ID (max 1 row). */
   def byId(id: UUID) : SessionFinderResult = Schema.sessions.where(_.id === id)
@@ -28,3 +34,5 @@ object SessionFinder extends Finder {
   /** @return All Sessions with the given user ID */
   def byUserId(userId: Long) : SessionFinderResult = Schema.sessions.where(_.userId === userId)
 }
+
+object SessionFinder extends SessionFinder
