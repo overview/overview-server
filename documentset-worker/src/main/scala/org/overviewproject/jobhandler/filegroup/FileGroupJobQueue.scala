@@ -12,15 +12,15 @@ import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
   case class FileGroupDocumentsCreated(documentSetId: Long)
+  case class CancelFileUpload(documentSetId: Long, fileGroupId: Long)
 }
-
 
 trait FileGroupJobQueue extends Actor {
   import FileGroupJobQueueProtocol._
   import FileGroupTaskWorkerProtocol._
 
   type DocumentSetId = Long
-  
+
   protected val storage: Storage
 
   trait Storage {
@@ -35,6 +35,7 @@ trait FileGroupJobQueue extends Actor {
   private val taskQueue: mutable.Queue[CreatePagesTask] = mutable.Queue.empty
   private val jobTasks: mutable.Map[DocumentSetId, Set[Long]] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
+  private val busyWorkers: mutable.Map[ActorRef, CreatePagesTask] = mutable.Map.empty
 
   def receive = {
     case RegisterWorker(worker) => {
@@ -62,15 +63,24 @@ trait FileGroupJobQueue extends Actor {
         Logger.info(s"Sending task ${task.uploadedFileId} to ${sender.path.toString}")
         progressReporter ! StartTask(task.documentSetId, task.uploadedFileId)
         sender ! task
+        busyWorkers += (sender -> task)
       }
     }
-    case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) =>
+    case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) => {
       Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
+      busyWorkers -= sender
 
       whenTaskIsComplete(documentSetId, fileGroupId, uploadedFileId) {
         notifyRequesterIfJobIsDone
       }
+    }
+    case CancelFileUpload(documentSetId, fileGroupId) => {
+      Logger.info(s"Cancelling Extract text task for FileGroup [$fileGroupId]")
+      busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
+      removeTasksInQueue(documentSetId)
+
+    }
 
   }
 
@@ -101,6 +111,14 @@ trait FileGroupJobQueue extends Actor {
     } else {
       jobTasks += (documentSetId -> remainingTasks)
     }
+
+  private def busyWorkersWithTask(documentSetId: Long): Iterable[ActorRef] =
+    for {
+      (worker, task) <- busyWorkers if task.documentSetId == documentSetId
+    } yield worker
+
+  private def removeTasksInQueue(documentSetId: Long): Unit =
+    taskQueue.dequeueAll(_.documentSetId == documentSetId)
 }
 
 class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {

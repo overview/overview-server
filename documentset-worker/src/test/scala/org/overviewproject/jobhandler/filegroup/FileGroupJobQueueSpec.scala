@@ -83,8 +83,18 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       progressReporter.expectMsg(CompleteJob(documentSetId))
     }
     
-    "handle cancellations" in {
-      todo
+    "cancel running tasks" in new JobQueueContext {
+      val workers = createNWorkers(numberOfUploadedFiles / 2)
+      workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
+
+      submitJob
+      val receivedTasks = expectTasks(workers)
+      
+      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+      
+      expectCancellation(workers)
+      
+      workers.head.expectNoTaskAvailable(fileGroupJobQueue)
     }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
@@ -110,6 +120,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
+      protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }
       
       protected def mustMatchUploadedFileIds(tasks: Seq[CreatePagesTask], uploadedFileIds: Seq[Long]) =
     		  tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)        
@@ -122,6 +133,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         reply(ReadyForTask)
 
         expectMsgClass(classOf[CreatePagesTask])
+      }
+      
+      def expectNoTaskAvailable(jobQueue: ActorRef) = {
+        jobQueue ! ReadyForTask
+        expectNoMsg(500 millis)
       }
     }
 
