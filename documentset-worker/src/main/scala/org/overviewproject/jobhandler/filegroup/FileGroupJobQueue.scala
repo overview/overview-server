@@ -13,6 +13,8 @@ object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
   case class FileGroupDocumentsCreated(documentSetId: Long)
   case class CancelFileUpload(documentSetId: Long, fileGroupId: Long)
+  case class DeleteFileUpload(documentSetId: Long, fileGroupId: Long)
+  case class FileUploadDeleted(documentSetId: Long, fileGroupId: Long)
 }
 
 trait FileGroupJobQueue extends Actor {
@@ -32,10 +34,10 @@ trait FileGroupJobQueue extends Actor {
   private case class JobRequest(requester: ActorRef)
 
   private val workerPool: mutable.Set[ActorRef] = mutable.Set.empty
-  private val taskQueue: mutable.Queue[CreatePagesTask] = mutable.Queue.empty
+  private val taskQueue: mutable.Queue[TaskWorkerTask] = mutable.Queue.empty
   private val jobTasks: mutable.Map[DocumentSetId, Set[Long]] = mutable.Map.empty
   private val jobRequests: mutable.Map[DocumentSetId, JobRequest] = mutable.Map.empty
-  private val busyWorkers: mutable.Map[ActorRef, CreatePagesTask] = mutable.Map.empty
+  private val busyWorkers: mutable.Map[ActorRef, TaskWorkerTask] = mutable.Map.empty
 
   def receive = {
     case RegisterWorker(worker) => {
@@ -59,11 +61,19 @@ trait FileGroupJobQueue extends Actor {
     }
     case ReadyForTask => {
       if (!taskQueue.isEmpty) {
-        val task = taskQueue.dequeue
-        Logger.info(s"Sending task ${task.uploadedFileId} to ${sender.path.toString}")
-        progressReporter ! StartTask(task.documentSetId, task.uploadedFileId)
-        sender ! task
-        busyWorkers += (sender -> task)
+        taskQueue.dequeue match {
+          case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
+            Logger.info(s"Sending task $uploadedFileId to ${sender.path.toString}")
+            progressReporter ! StartTask(documentSetId, uploadedFileId)
+            sender ! task
+            busyWorkers += (sender -> task)
+          }
+          case task @ DeleteFileUploadJob(documentSetId, fileGroupId) => {
+            Logger.info(s"Sending delete job for $fileGroupId to ${sender.path.toString}")
+            sender ! task
+            busyWorkers += (sender -> task)
+          } 
+        }
       }
     }
     case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) => {
@@ -79,7 +89,20 @@ trait FileGroupJobQueue extends Actor {
       Logger.info(s"Cancelling Extract text task for FileGroup [$fileGroupId]")
       busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
       removeTasksInQueue(documentSetId)
+    }
+    case DeleteFileUpload(documentSetId, fileGroupId) => {
+      Logger.info(s"Deleting upload job for FileGroup [$fileGroupId]")
+      taskQueue += DeleteFileUploadJob(documentSetId, fileGroupId)
+      jobRequests += (documentSetId -> JobRequest(sender))
 
+      workerPool.map(_ ! TaskAvailable)
+    }
+    case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
+      busyWorkers -= sender
+      jobRequests.get(documentSetId).map { r => 
+        r.requester ! FileUploadDeleted(documentSetId, fileGroupId)
+        jobRequests -= documentSetId
+      }
     }
 
   }

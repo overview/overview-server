@@ -22,9 +22,16 @@ object FileGroupTaskWorkerProtocol {
   case object TaskAvailable
   case object ReadyForTask
   case object CancelTask
-  case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  
+  trait TaskWorkerTask {
+    val documentSetId: Long
+    val fileGroupId: Long
+  }
+  case class CreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends TaskWorkerTask
+  
+  
   case class CreatePagesTaskDone(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
-  case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)
+  case class DeleteFileUploadJob(documentSetId: Long, fileGroupId: Long)  extends TaskWorkerTask
   case class DeleteFileUploadJobDone(documentSetId: Long, fileGroupId: Long)
 }
 

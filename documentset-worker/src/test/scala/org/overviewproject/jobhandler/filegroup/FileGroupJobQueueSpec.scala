@@ -58,43 +58,57 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
     "ignore a second job for the same fileGroup" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      
+
       submitJob
       worker.expectMsg(TaskAvailable)
-      
+
       submitJob
       worker.expectNoMsg(500 millis)
-      
+
     }
-    
+
     "report progress" in new JobQueueContext {
       ActAsImmediateJobCompleter(worker)
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       submitJob
-      
+
       progressReporter.expectMsg(StartJob(documentSetId, numberOfUploadedFiles))
       val progressMessages = progressReporter.receiveN(2 * numberOfUploadedFiles)
 
       val expectedStartTasks = uploadedFileIds.map { StartTask(documentSetId, _) }
       val expectedCompleteTask = uploadedFileIds.map { CompleteTask(documentSetId, _) }
-      
+
       progressMessages must containTheSameElementsAs(expectedStartTasks ++ expectedCompleteTask)
-      
+
       progressReporter.expectMsg(CompleteJob(documentSetId))
     }
-    
+
     "cancel running tasks" in new JobQueueContext {
       val workers = createNWorkers(numberOfUploadedFiles / 2)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
       submitJob
       val receivedTasks = expectTasks(workers)
-      
+
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-      
+
       expectCancellation(workers)
-      
+
       workers.head.expectNoTaskAvailable(fileGroupJobQueue)
+    }
+
+    "delete file upload" in new JobQueueContext {
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
+
+      worker.expectDeleteFileUploadJob
+    }
+    
+    "notify requester when file upload is deleted" in new JobQueueContext {
+      fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
+      fileGroupJobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
+      
+      expectMsg(FileUploadDeleted(documentSetId, fileGroupId))
     }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
@@ -104,41 +118,48 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected val uploadedFileIds: Seq[Long] = Seq.tabulate(numberOfUploadedFiles)(_.toLong)
 
       protected var fileGroupJobQueue: ActorRef = _
-      protected var worker: TestProbe = _
+      protected var worker: WorkerTestProbe = _
       protected var progressReporter: TestProbe = _
-      
+
       def before = {
         progressReporter = TestProbe()
         fileGroupJobQueue = system.actorOf(TestFileGroupJobQueue(uploadedFileIds, progressReporter.ref))
-        worker = TestProbe()
+        worker = createNWorkers(1).head
       }
 
       protected def createNWorkers(numberOfWorkers: Int): Seq[WorkerTestProbe] =
-        Seq.fill(numberOfWorkers)(new WorkerTestProbe(fileGroupId, system))
+        Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
 
       protected def submitJob =
         fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
       protected def expectCancellation(workers: Seq[WorkerTestProbe]) = workers.map { _.expectMsg(CancelTask) }
-      
+
       protected def mustMatchUploadedFileIds(tasks: Seq[CreatePagesTask], uploadedFileIds: Seq[Long]) =
-    		  tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)        
+        tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)
     }
 
-    class WorkerTestProbe(fileGroupId: Long, actorSystem: ActorSystem)
-        extends TestProbe(actorSystem) {
+    class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem) extends TestProbe(actorSystem) {
       def expectATask = {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
 
         expectMsgClass(classOf[CreatePagesTask])
       }
-      
+
+      def expectDeleteFileUploadJob = {
+        expectMsg(TaskAvailable)
+        reply(ReadyForTask)
+
+        expectMsg(DeleteFileUploadJob(documentSetId, fileGroupId))
+      }
+
       def expectNoTaskAvailable(jobQueue: ActorRef) = {
         jobQueue ! ReadyForTask
         expectNoMsg(500 millis)
       }
+
     }
 
     class ImmediateJobCompleter(worker: ActorRef) extends TestActor.AutoPilot {

@@ -19,53 +19,53 @@ class FileGroupTaskWorkerSpec extends Specification {
 
   "FileGroupJobQueue" should {
 
-//    "register with job queue" in new RunningTaskWorkerContext {
-//      createJobQueue
-//      createWorker
-//
-//      jobQueueProbe.expectMsg(RegisterWorker(worker))
-//    }
-//
-//    "retry job queue registration on initial failure" in new RunningTaskWorkerContext {
-//      createWorker
-//      createJobQueue
-//
-//      jobQueueProbe.expectMsg(RegisterWorker(worker))
-//    }
-//
-//    "request task when available" in new RunningTaskWorkerContext {
-//      createJobQueue.withTaskAvailable
-//
-//      createWorker
-//
-//      jobQueueProbe.expectInitialReadyForTask
-//    }
-//
-//    "step through task until done" in new RunningTaskWorkerContext {
-//      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
-//
-//      createWorker
-//
-//      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId)
-//      jobQueueProbe.expectReadyForTask
-//
-//      createPagesTaskStepsWereExecuted
-//    }
-//
-//    "cancel a job in progress" in new GatedTaskWorkerContext {
-//      import GatedTaskWorkerProtocol._
-//
-//      createWorker
-//      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
-//
-//      jobQueueProbe.expectInitialReadyForTask
-//
-//      worker ! CancelYourself
-//      worker ! CompleteTaskStep
-//
-//      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
-//
-//    }
+    "register with job queue" in new RunningTaskWorkerContext {
+      createJobQueue
+      createWorker
+
+      jobQueueProbe.expectMsg(RegisterWorker(worker))
+    }
+
+    "retry job queue registration on initial failure" in new RunningTaskWorkerContext {
+      createWorker
+      createJobQueue
+
+      jobQueueProbe.expectMsg(RegisterWorker(worker))
+    }
+
+    "request task when available" in new RunningTaskWorkerContext {
+      createJobQueue.withTaskAvailable
+
+      createWorker
+
+      jobQueueProbe.expectInitialReadyForTask
+    }
+
+    "step through task until done" in new RunningTaskWorkerContext {
+      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+
+      createWorker
+
+      jobQueueProbe.expectTaskDone(documentSetId, fileGroupId, uploadedFileId)
+      jobQueueProbe.expectReadyForTask
+
+      createPagesTaskStepsWereExecuted
+    }
+
+    "cancel a job in progress" in new GatedTaskWorkerContext {
+      import GatedTaskWorkerProtocol._
+
+      createWorker
+      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+
+      jobQueueProbe.expectInitialReadyForTask
+
+      worker ! CancelYourself
+      worker ! CompleteTaskStep
+
+      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
+
+    }
 
     "delete a file upload job" in new RunningTaskWorkerContext {
        createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
