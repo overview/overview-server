@@ -1,12 +1,14 @@
-# Tracks certain events with Google Analytics
+# Tracks certain events with Google Analytics and/or Intercom
 run = ->
-  return if !window._gaq? # This shouldn't happen.
+  trackIntercomEvent = (action, metadata) ->
+    window.Intercom?('trackEvent', action, metadata || {})
+    undefined
 
-  trackEvent = (category, action, opt_label, opt_value, opt_noninteraction) ->
+  trackGoogleAnalyticsEvent = (category, action, opt_label, opt_value, opt_noninteraction) ->
     # We need to fetch window._gaq in here, not in the outer scope: when GA
     # first loads (asynchronously) it resets window._gaq from a normal array
     # to a funky object.
-    window._gaq.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
+    window._gaq?.push([ '_trackEvent', category, action, opt_label, opt_value, opt_noninteraction])
     undefined
 
   # Events based on flash.
@@ -22,27 +24,30 @@ run = ->
     for div in flash.childNodes when div.getAttribute?('data-key') == 'event'
       event = div.getAttribute('data-value')
       switch event
-        when 'confirmation-update' then trackEvent('Login', 'Confirmed account')
-        when 'document-set-create' then trackEvent('Document sets', 'Created document set')
-        when 'document-set-create-clone' then trackEvent('Document sets', 'Cloned document set')
-        when 'document-set-delete' then trackEvent('Document sets', 'Deleted document set')
-        when 'password-create' then trackEvent('Login', 'Requested password reset')
-        when 'password-update' then trackEvent('Login', 'Reset password')
-        when 'session-create' then trackEvent('Login', 'Logged in')
-        when 'session-delete' then trackEvent('Login', 'Logged out')
-        when 'user-create' then trackEvent('Login', 'Registered')
+        when 'confirmation-update' then trackGoogleAnalyticsEvent('Login', 'Confirmed account')
+        when 'document-set-delete' then trackGoogleAnalyticsEvent('Document sets', 'Deleted document set')
+        when 'password-create' then trackGoogleAnalyticsEvent('Login', 'Requested password reset')
+        when 'password-update' then trackGoogleAnalyticsEvent('Login', 'Reset password')
+        when 'session-create' then trackGoogleAnalyticsEvent('Login', 'Logged in')
+        when 'session-delete' then trackGoogleAnalyticsEvent('Login', 'Logged out')
+        when 'user-create' then trackGoogleAnalyticsEvent('Login', 'Registered')
 
   # Events based on the URL
   #
   # If the user visits a certain URL, we track an event.
   pathname = window.location.pathname
   switch pathname
-    when '', '/' then trackEvent('Navigation', 'Viewed splash')
-    when '/documentsets' then trackEvent('Navigation', 'Viewed document set index')
-    when '/help' then trackEvent('Navigation', 'Viewed help')
+    when '', '/' then trackGoogleAnalyticsEvent('Navigation', 'Viewed splash')
+    when '/documentsets' then trackGoogleAnalyticsEvent('Navigation', 'Viewed document set index')
+    when '/help' then trackGoogleAnalyticsEvent('Navigation', 'Viewed help')
     else
       if /^\/documentsets\/\d+$/.test(pathname)
-        trackEvent('Navigation', 'Document set')
+        trackGoogleAnalyticsEvent('Navigation', 'Document set')
+
+  # Events based on the DOM
+  if document.getElementsByClassName?('document-set-creation-jobs')?.length
+    trackIntercomEvent('created-document-set')
+    trackGoogleAnalyticsEvent('Document sets', 'Created document set')
 
   # Events based on interaction
   #
@@ -56,7 +61,8 @@ run = ->
       el = el.parentNode
 
     if el? && el.getAttribute?
-      trackEvent('Document set', 'Created tag')
+      trackIntercomEvent('created-tag')
+      trackGoogleAnalyticsEvent('Document set', 'Created tag')
   , false)
 
   undefined
