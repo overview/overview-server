@@ -1,1 +1,3 @@
-start runner\runner.bat -Doverview.multi_user=false
+set "JAVA_OPTS=-Doverview.multi_user=false"
+
+start runner\runner.bat
