@@ -68,16 +68,27 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     "delete a file upload job" in new RunningTaskWorkerContext {
-       createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
-       
-       createWorker
-       
-       jobQueueProbe.expectInitialReadyForTask
-       
-       jobQueueProbe.expectMsg(DeleteFileUploadJobDone(documentSetId, fileGroupId))
-       deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
+      createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
+
+      createWorker
+
+      jobQueueProbe.expectInitialReadyForTask
+
+      jobQueueProbe.expectMsg(DeleteFileUploadJobDone(documentSetId, fileGroupId))
+      deleteFileUploadJobWasCalled(documentSetId, fileGroupId)
     }
-    
+
+    "ignore CancelTask message if not working on a task" in new RunningTaskWorkerContext {
+      createJobQueue
+      createWorker
+
+      jobQueueProbe.expectMsg(RegisterWorker(worker))
+      
+      worker ! CancelTask
+
+      jobQueueProbe.expectNoMsg
+    }
+
     abstract class TaskWorkerContext extends ActorSystemContext with Before {
       protected val documentSetId: Long = 1l
       protected val fileGroupId: Long = 2l
@@ -110,7 +121,7 @@ class FileGroupTaskWorkerSpec extends Specification {
         awaitCond(pendingCalls.isCompleted)
         worker.underlyingActor.numberOfStartCreatePagesTaskCalls must be equalTo (2)
       }
-      
+
       protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) = {
         val pendingCalls = worker.underlyingActor.deleteFileUploadJobCallsInProgress
         awaitCond(pendingCalls.isCompleted)
@@ -182,7 +193,7 @@ class FileGroupTaskWorkerSpec extends Specification {
             sender ! task
             numberOfTasksToHandOut -= 1
           }
-          case _ => 
+          case _ =>
         }
         TestActor.KeepRunning
       }

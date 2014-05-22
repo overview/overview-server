@@ -102,6 +102,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       
       stay
     }
+    case Event(CancelTask, _) => stay
   }
 
   when(Working) {
