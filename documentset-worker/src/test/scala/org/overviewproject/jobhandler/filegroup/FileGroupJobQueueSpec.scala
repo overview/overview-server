@@ -110,6 +110,13 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       
       expectMsg(FileUploadDeleted(documentSetId, fileGroupId))
     }
+    
+    "respond immediately when asked to cancel unknown job" in new JobQueueContext {
+      
+      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+      
+      expectMsg(FileGroupDocumentsCreated(documentSetId))
+    }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
