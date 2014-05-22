@@ -53,10 +53,12 @@ trait FileGroupJobManager extends Actor {
     }
 
     case FileGroupDocumentsCreated(documentSetId) =>
-      if (textExtractionJobsPendingCancellation.contains(documentSetId)) {
-        fileGroupJobQueue ! DeleteFileUpload(documentSetId, textExtractionJobsPendingCancellation.get(documentSetId).get)
+      textExtractionJobsPendingCancellation.get(documentSetId).fold {
+        clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+      } { fileGroupId =>
+        fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
         textExtractionJobsPendingCancellation -= documentSetId
-      } else clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+      }
 
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => {
       textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
