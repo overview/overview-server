@@ -21,6 +21,13 @@ object ClusteringJobQueueProtocol {
  * The `FileGroupJobManager` receives a request from the server to extract text from uploaded files
  * and cluster them. It creates the needed sub-tasks and request that each task be performed by a specific
  * job queue, in sequence.
+ * 
+ * If a cancel command is received, the cancellation is passed on to the job queue.
+ * The job queue replies with FileGroupDocumentsCreated,regardless of whether a job has been cancelled or completed.
+ * If the job has been cancelled, a delete command is sent to the job queue. Otherwise, clustering is started.
+ * 
+ * On startup, any InProgress jobs are restarted.
+ * 
  */
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._

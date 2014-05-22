@@ -17,6 +17,25 @@ object FileGroupJobQueueProtocol {
   case class FileUploadDeleted(documentSetId: Long, fileGroupId: Long)
 }
 
+
+/**
+ * FileGroupJobQueue manages FileGroup related jobs.
+ *  - CreateDocumentsFromFileGroup jobs are split into tasks for each uploaded file in the file group. Each task results
+ *  the uploaded file being converted into a file and pages, which are later used to create documents.
+ *  - DeleteFileUpload jobs are one task that delete all entries in the database related to a cancelled file upload job
+ *  - CancelFileUpload results in a CancelTask message sent to workers processing uploads in the specified file group.  
+ *  The JobQueue doesn't distinguish between cancelled and completed task (because a successful task completion message
+ *  can be received after the cancellation message has been received). The JobQueue expects only one response from any
+ *  worker working on a task. Once all tasks have been completed or cancelled, the requester is notified that the job
+ *  is complete.
+ *  
+ *  DeleteFileUpload jobs cannot be cancelled (they probably don't even belong here).
+ *  
+ *  The FileGroupJobQueue waits for workers to register. As tasks become available, workers are notified. Idle workers
+ *  respond, and are handed tasks. Workers are notified when they register, and when new tasks are added to the task queue.
+ *  Workers should signal that they are ready to accept tasks when they are idle (after completing a task).
+ *    
+ */
 trait FileGroupJobQueue extends Actor {
   import FileGroupJobQueueProtocol._
   import FileGroupTaskWorkerProtocol._
