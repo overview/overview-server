@@ -100,7 +100,11 @@ class FileGroupJobManagerImpl(
     }
 
     override def findCancelledJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
-      ???
+      val cancelledUploadJobs = DocumentSetCreationJobFinder.byStateAndType(Cancelled, FileUpload)
+      for {
+        j <- cancelledUploadJobs
+        fileGroupId <- j.fileGroupId
+      } yield (j.documentSetId, fileGroupId)
     }
 
     override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {

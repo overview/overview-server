@@ -5,6 +5,7 @@ import org.overviewproject.postgres.SquerylEntrypoint._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.DocumentSetCreationJobType._
 
 object DocumentSetCreationJobFinder extends Finder {
 
@@ -21,5 +22,8 @@ object DocumentSetCreationJobFinder extends Finder {
  
   def byState(state: DocumentSetCreationJobState): DocumentSetCreationJobFinderResult = 
     Schema.documentSetCreationJobs.where(dscj => dscj.state === state)
+    
+ def byStateAndType(state: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType): DocumentSetCreationJobFinderResult = 
+   Schema.documentSetCreationJobs.where(dscj => dscj.state === state and dscj.jobType === jobType)
     
 }
