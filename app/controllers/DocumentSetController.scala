@@ -155,7 +155,7 @@ trait DocumentSetController extends Controller {
       done("deleteJob.success", "document-set-delete")
     } else if (runningInTextExtractionWorker && validTextExtractionJob) {
       jobQueue.send(CancelFileUpload(id, cancelledJob.get.fileGroupId.get))
-      
+
       done("deleteJob.success", "document-set-delete")
     } else BadRequest // all cases should be covered..
   }
