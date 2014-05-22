@@ -12,7 +12,7 @@ import org.overviewproject.tree.orm.finders.ResultPage
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
+import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.DeleteTreeJob
 import models.orm.stores.DocumentSetCreationJobStore
 
@@ -59,7 +59,7 @@ trait DocumentSetController extends Controller {
   trait JobMessageQueue {
     def send(deleteCommand: Delete): Unit
     def send(deleteJobCommand: DeleteTreeJob): Unit
-    def send(cancelUploadCommand: CancelUploadWithDocumentSet): Unit
+    def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
   protected val indexPageSize = 10
@@ -153,8 +153,8 @@ trait DocumentSetController extends Controller {
       jobQueue.send(Delete(id, waitForJobRemoval = false)) // don't wait for worker
       
       done("deleteJob.success", "document-set-delete")
-    } else if (runningInTextExtractionWorker) {
-      jobQueue.send(CancelUploadWithDocumentSet(id))
+    } else if (runningInTextExtractionWorker && validTextExtractionJob) {
+      jobQueue.send(CancelFileUpload(id, cancelledJob.get.fileGroupId.get))
       
       done("deleteJob.success", "document-set-delete")
     } else BadRequest // all cases should be covered..
@@ -179,7 +179,9 @@ trait DocumentSetController extends Controller {
   private def notStartedTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
     jobTest { j => (j.jobType == Recluster && j.state == NotStarted) }
 
-
+  private def validTextExtractionJob(implicit job: Option[DocumentSetCreationJob]): Boolean = 
+    jobTest { j => j.fileGroupId.isDefined }
+  
   private def runningTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
     jobTest { j => j.jobType == Recluster && j.state != NotStarted }
 
@@ -254,7 +256,7 @@ object DocumentSetController extends DocumentSetController {
   object ApolloJobMessageQueue extends JobMessageQueue {
     override def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)
     override def send(deleteJobCommand: DeleteTreeJob): Unit = JobQueueSender.send(deleteJobCommand)
-    override def send(cancelUploadCommand: CancelUploadWithDocumentSet): Unit = JobQueueSender.send(cancelUploadCommand)
+    override def send(cancelFileUploadCommand: CancelFileUpload): Unit = JobQueueSender.send(cancelFileUploadCommand)
   }
 
   override val storage = DatabaseStorage

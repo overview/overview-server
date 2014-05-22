@@ -16,7 +16,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.jobs.models.DeleteTreeJob
-import org.overviewproject.jobs.models.CancelUploadWithDocumentSet
+import org.overviewproject.jobs.models.CancelFileUpload
 
 class DocumentSetControllerSpec extends ControllerSpecification {
   trait BaseScope extends Scope {
@@ -30,12 +30,13 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       override val jobQueue = mockJobQueue
     }
 
-    def fakeJob(documentSetId: Long, id: Long,
+    def fakeJob(documentSetId: Long, id: Long, fileGroupId: Long,
                 state: DocumentSetCreationJobState = InProgress,
                 jobType: DocumentSetCreationJobType = FileUpload) =
       DocumentSetCreationJob(
         id = id,
         documentSetId = documentSetId,
+        fileGroupId = Some(fileGroupId),
         jobType = jobType,
         state = state)
     def fakeTreeErrorJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
@@ -138,7 +139,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
       "return Ok if there are only jobs" in new IndexScope {
         override def fakeDocumentSets = Seq()
-        override def fakeJobs = Seq((fakeJob(2, 2), fakeDocumentSet(2), 0))
+        override def fakeJobs = Seq((fakeJob(2, 2, 2), fakeDocumentSet(2), 0))
 
         h.status(result) must beEqualTo(h.OK)
       }
@@ -205,7 +206,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       }
 
       "show jobs" in new IndexScope {
-        override def fakeJobs = Seq((fakeJob(2, 2), fakeDocumentSet(2), 0), (fakeJob(3, 3), fakeDocumentSet(3), 1))
+        override def fakeJobs = Seq((fakeJob(2, 2, 2), fakeDocumentSet(2), 0), (fakeJob(3, 3, 3), fakeDocumentSet(3), 1))
 
         j.$("[data-document-set-creation-job-id='2']").length must beEqualTo(1)
         j.$("[data-document-set-creation-job-id='3']").length must beEqualTo(1)
@@ -216,6 +217,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
       trait DeleteScope extends BaseScope {
         val documentSetId = 1l
+        val fileGroupId = 10l
         val documentSet = fakeDocumentSet(documentSetId)
 
         def request = fakeAuthorizedRequest
@@ -225,7 +227,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         mockStorage.findDocumentSet(documentSetId) returns Some(documentSet)
 
         protected def setupJob(jobState: DocumentSetCreationJobState, jobType: DocumentSetCreationJobType = FileUpload): Unit =
-          mockStorage.cancelJob(documentSetId) returns Some(fakeJob(documentSetId, 10l, jobState, jobType))
+          mockStorage.cancelJob(documentSetId) returns Some(fakeJob(documentSetId, 10l, fileGroupId, jobState, jobType))
       }
 
       "mark document set deleted and send delete request if there is no job running" in new DeleteScope {
@@ -301,7 +303,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
         there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockJobQueue).send(CancelUploadWithDocumentSet(documentSetId))
+        there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
       }
 
       "mark document set and job deleted and send cancel request if text extraction in progress" in new DeleteScope {
@@ -310,7 +312,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         h.status(result) must beEqualTo(h.SEE_OTHER)
 
         there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockJobQueue).send(CancelUploadWithDocumentSet(documentSetId))
+        there was one(mockJobQueue).send(CancelFileUpload(documentSetId, fileGroupId))
       }
     }
   }

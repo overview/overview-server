@@ -101,11 +101,11 @@ object JobQueueSender {
   /**
    * Send a `CancelUploadWithDocumentSet` message to the Clustering message queue.
    */
-  def send(cancelUpload: CancelUploadWithDocumentSet): Either[Unit, Unit] = {
+  def send(cancelFileUpload: CancelFileUpload): Either[Unit, Unit] = {
     val jsonMessage = toJson(Map(
       "cmd" -> toJson("cancel_upload_with_document_set"),
       "args" -> toJson(Map(
-        "documentSetId" -> cancelUpload.documentSetId))))
+        "documentSetId" -> cancelFileUpload.documentSetId))))
 
     sendMessageToClusteringQueue(jsonMessage)
   }
