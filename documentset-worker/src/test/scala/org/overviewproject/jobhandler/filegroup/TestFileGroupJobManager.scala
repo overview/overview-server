@@ -32,6 +32,8 @@ trait StorageMonitor extends JobParameters {
   
   class MockStorage extends Storage {
     override def findInProgressJobInformation: Iterable[(Long, Long)] = loadInterruptedJobs
+    override def findCancelledJobInformation: Iterable[(Long, Long)] = loadCancelledJobs
+    
     override def updateJobState(documentSetId: Long): Unit = updateJobStateParameters send (_.enqueue(documentSetId))
   }
 
@@ -44,8 +46,10 @@ trait StorageMonitor extends JobParameters {
 class TestFileGroupJobManager(
   override protected val fileGroupJobQueue: ActorRef,
   override protected val clusteringJobQueue: ActorRef,
-  interruptedJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
+  interruptedJobs: Seq[(Long, Long)],
+  cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
   
   protected def loadInterruptedJobs: Seq[(Long, Long)] = interruptedJobs
+  protected def loadCancelledJobs: Seq[(Long, Long)] = cancelledJobs
 }
 

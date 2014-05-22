@@ -21,13 +21,13 @@ object ClusteringJobQueueProtocol {
  * The `FileGroupJobManager` receives a request from the server to extract text from uploaded files
  * and cluster them. It creates the needed sub-tasks and request that each task be performed by a specific
  * job queue, in sequence.
- * 
+ *
  * If a cancel command is received, the cancellation is passed on to the job queue.
  * The job queue replies with FileGroupDocumentsCreated,regardless of whether a job has been cancelled or completed.
  * If the job has been cancelled, a delete command is sent to the job queue. Otherwise, clustering is started.
- * 
+ *
  * On startup, any InProgress jobs are restarted.
- * 
+ *
  */
 trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
@@ -42,12 +42,16 @@ trait FileGroupJobManager extends Actor {
 
   trait Storage {
     def findInProgressJobInformation: Iterable[(Long, Long)]
+    def findCancelledJobInformation: Iterable[(Long, Long)]
     def updateJobState(documentSetId: Long): Unit
   }
 
   override def preStart(): Unit = {
     storage.findInProgressJobInformation.foreach {
       queueJob _ tupled
+    }
+    storage.findCancelledJobInformation.foreach {
+      cancelJob _ tupled
     }
   }
 
@@ -69,13 +73,15 @@ trait FileGroupJobManager extends Actor {
 
     case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => {
       textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
-      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+      cancelJob(documentSetId, fileGroupId)
     }
   }
 
   private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
     fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
+  private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit =
+    fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
 }
 
 class FileGroupJobManagerImpl(
@@ -91,6 +97,10 @@ class FileGroupJobManagerImpl(
         j <- jobs
         fileGroupId <- j.fileGroupId
       } yield (j.documentSetId, fileGroupId)
+    }
+
+    override def findCancelledJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
+      ???
     }
 
     override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {

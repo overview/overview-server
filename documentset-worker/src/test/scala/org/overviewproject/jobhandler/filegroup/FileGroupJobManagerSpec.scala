@@ -7,7 +7,6 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.{ Before, Specification }
 
-
 class FileGroupJobManagerSpec extends Specification {
 
   "FileGroupJobManager" should {
@@ -33,12 +32,16 @@ class FileGroupJobManagerSpec extends Specification {
       updateJobStateWasCalled(documentSetId)
     }
 
-    "restart in progress jobs found during startup" in new RestartingFileGroupJobManagerContext {
+    "restart in progress jobs and cancel cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
 
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet1, fileGroup1))
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet2, fileGroup2))
+
+      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
+      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
     }
 
+    
     "cancel text extraction when requested" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
@@ -65,9 +68,9 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
       fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
       fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
-      
+
       fileGroupJobQueue.expectMsg(DeleteFileUpload(documentSetId, fileGroupId))
-      
+
     }
 
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
@@ -79,13 +82,13 @@ class FileGroupJobManagerSpec extends Specification {
       override def before = {
         fileGroupJobQueue = TestProbe()
         clusteringJobQueue = TestProbe()
-
         fileGroupJobManager = TestActorRef(
-          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs))
+          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs, cancelledJobs))
 
       }
 
       protected def interruptedJobs: Seq[(Long, Long)] = Seq.empty
+      protected def cancelledJobs: Seq[(Long, Long)] = Seq.empty
 
       protected def updateJobStateWasCalled(documentSetId: Long) = {
         val pendingCalls = fileGroupJobManager.underlyingActor.updateJobCallsInProgress
@@ -96,16 +99,23 @@ class FileGroupJobManagerSpec extends Specification {
     }
 
     abstract class RestartingFileGroupJobManagerContext extends FileGroupJobManagerContext {
-
       val interruptedDocumentSet1: Long = 10l
       val interruptedDocumentSet2: Long = 20l
+      val cancelledDocumentSet1: Long = 30l
+      val cancelledDocumentSet2: Long = 40l
+
       val fileGroup1: Long = 15l
       val fileGroup2: Long = 25l
+      val fileGroup3: Long = 35l
+      val fileGroup4: Long = 45l
 
       override protected def interruptedJobs: Seq[(Long, Long)] = Seq(
         (interruptedDocumentSet1, fileGroup1),
         (interruptedDocumentSet2, fileGroup2))
 
+      override protected def cancelledJobs: Seq[(Long, Long)] = Seq(
+        (cancelledDocumentSet1, fileGroup3),
+        (cancelledDocumentSet2, fileGroup4))
     }
   }
 }
