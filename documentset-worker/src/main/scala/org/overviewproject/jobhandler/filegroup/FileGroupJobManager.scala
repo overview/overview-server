@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup
 
+import scala.collection.mutable
 import scala.language.postfixOps
 import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
@@ -10,6 +11,7 @@ import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelClusterFileGroupCommand
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -29,6 +31,8 @@ trait FileGroupJobManager extends Actor {
 
   protected val storage: Storage
 
+  private val textExtractionJobsPendingCancellation: mutable.Map[Long, Long] = mutable.Map.empty
+
   trait Storage {
     def findInProgressJobInformation: Iterable[(Long, Long)]
     def updateJobState(documentSetId: Long): Unit
@@ -44,12 +48,20 @@ trait FileGroupJobManager extends Actor {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
       storage.updateJobState(documentSetId)
+
       queueJob(documentSetId, fileGroupId)
     }
 
     case FileGroupDocumentsCreated(documentSetId) =>
-      clusteringJobQueue ! ClusterDocumentSet(documentSetId)
+      if (textExtractionJobsPendingCancellation.contains(documentSetId)) {
+        fileGroupJobQueue ! DeleteFileUpload(documentSetId, textExtractionJobsPendingCancellation.get(documentSetId).get)
+        textExtractionJobsPendingCancellation -= documentSetId
+      } else clusteringJobQueue ! ClusterDocumentSet(documentSetId)
 
+    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => {
+      textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
+      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+    }
   }
 
   private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =

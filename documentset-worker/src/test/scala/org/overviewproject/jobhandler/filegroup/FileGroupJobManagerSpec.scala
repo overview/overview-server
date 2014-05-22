@@ -2,11 +2,11 @@ package org.overviewproject.jobhandler.filegroup
 
 import akka.actor._
 import akka.testkit._
-
 import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.{ Before, Specification }
+
 
 class FileGroupJobManagerSpec extends Specification {
 
@@ -26,10 +26,10 @@ class FileGroupJobManagerSpec extends Specification {
 
       clusteringJobQueue.expectMsg(ClusterDocumentSet(documentSetId))
     }
-    
+
     "update job state when clustering request is received" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
-      
+
       updateJobStateWasCalled(documentSetId)
     }
 
@@ -39,12 +39,35 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet2, fileGroup2))
     }
 
-    "cancel text extraction when requested" in {
-      todo
+    "cancel text extraction when requested" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+      fileGroupJobManager ! cancelCommand
+
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
+      fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
     }
 
-    "don't start clustering cancelled job" in {
-      todo
+    "don't start clustering cancelled job" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+      fileGroupJobManager ! cancelCommand
+
+      fileGroupJobQueue.expectMsgType[CreateDocumentsFromFileGroup]
+      fileGroupJobQueue.expectMsgType[CancelFileUpload]
+      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+
+      clusteringJobQueue.expectNoMsg
+    }
+
+    "delete cancelled job after cancellation is complete" in new FileGroupJobManagerContext {
+      fileGroupJobManager ! clusterCommand
+      fileGroupJobManager ! cancelCommand
+
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(documentSetId, fileGroupId))
+      fileGroupJobQueue.expectMsg(CancelFileUpload(documentSetId, fileGroupId))
+      fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
+      
+      fileGroupJobQueue.expectMsg(DeleteFileUpload(documentSetId, fileGroupId))
+      
     }
 
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
@@ -58,16 +81,16 @@ class FileGroupJobManagerSpec extends Specification {
         clusteringJobQueue = TestProbe()
 
         fileGroupJobManager = TestActorRef(
-        new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs))
+          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs))
 
       }
 
       protected def interruptedJobs: Seq[(Long, Long)] = Seq.empty
-      
+
       protected def updateJobStateWasCalled(documentSetId: Long) = {
         val pendingCalls = fileGroupJobManager.underlyingActor.updateJobCallsInProgress
         awaitCond(pendingCalls.isCompleted)
-        
+
         fileGroupJobManager.underlyingActor.updateJobCallParameters.headOption must beSome(documentSetId)
       }
     }
@@ -78,11 +101,10 @@ class FileGroupJobManagerSpec extends Specification {
       val interruptedDocumentSet2: Long = 20l
       val fileGroup1: Long = 15l
       val fileGroup2: Long = 25l
-      
+
       override protected def interruptedJobs: Seq[(Long, Long)] = Seq(
         (interruptedDocumentSet1, fileGroup1),
-        (interruptedDocumentSet2, fileGroup2)
-      )
+        (interruptedDocumentSet2, fileGroup2))
 
     }
   }
