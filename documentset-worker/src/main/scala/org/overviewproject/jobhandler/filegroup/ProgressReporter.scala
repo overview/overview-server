@@ -66,14 +66,14 @@ trait ProgressReporter extends Actor {
 class ProgressReporterImpl extends ProgressReporter {
   class DatabaseStorage extends Storage {
     override def updateProgress(jobId: Long, fraction: Double, description: String): Unit = Database.inTransaction {
-       DocumentSetCreationJobFinder.byDocumentSetAndState(jobId, TextExtractionInProgress).headOption.map { job =>
+       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(jobId, TextExtractionInProgress).headOption.map { job =>
        	 val update = job.copy(fractionComplete = fraction, statusDescription = description)
        	 DocumentSetCreationJobStore.insertOrUpdate(update)
        }
     }
     
     override def updateJobState(jobId: Long, state: DocumentSetCreationJobState): Unit = Database.inTransaction {
-      DocumentSetCreationJobFinder.byDocumentSetAndState(jobId, TextExtractionInProgress).headOption.map { job =>
+      DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(jobId, TextExtractionInProgress).headOption.map { job =>
         val update = job.copy(state = state)
         DocumentSetCreationJobStore.insertOrUpdate(update)
       }
