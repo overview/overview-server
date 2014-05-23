@@ -17,7 +17,7 @@ class CreatePagesProcessSpec extends Specification with Mockito {
 
       createPagesProcess.executeTask(documentSetId, fileGroupId, uploadedFileId) must not(throwA[Exception])
 
-      there was one(createPagesProcess.mockStorage).saveProcessingError(documentSetId, exceptionMessage) 
+      there was one(createPagesProcess.mockStorage).saveProcessingError(documentSetId, uploadedFileId, exceptionMessage) 
       
     }
 

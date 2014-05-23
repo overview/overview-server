@@ -30,14 +30,14 @@ trait CreatePagesProcess {
     
     def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
     
-    def saveProcessingError(documentSetId: Long, errorMessage: String): Unit
+    def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit
   }
 
   protected trait ErrorSavingTaskStep extends FileGroupTaskStep { 
     protected val taskInformation: TaskInformation
     
 	override def execute: FileGroupTaskStep = handling(classOf[Exception]) by { e =>
-	  storage.saveProcessingError(taskInformation.documentSetId, e.getMessage)
+	  storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, e.getMessage)
 	  CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
 	} apply executeTaskStep
 	

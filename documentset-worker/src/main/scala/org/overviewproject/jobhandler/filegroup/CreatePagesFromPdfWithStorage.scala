@@ -35,7 +35,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
       }
 
-      def saveProcessingError(documentSetId: Long, errorMessage: String): Unit = ???
+      def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = ???
     }
   }
 
