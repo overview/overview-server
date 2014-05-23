@@ -96,6 +96,18 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       workers.head.expectNoTaskAvailable(fileGroupJobQueue)
     }
+    
+    "notify requester when cancellation is complete" in new JobQueueContext {
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      
+      submitJob
+      val task = worker.expectATask
+
+      fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+
+      worker.completeTask(fileGroupJobQueue, task.uploadedFileId)
+      expectMsg(FileGroupDocumentsCreated(documentSetId))
+    }
 
     "delete file upload" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
@@ -148,6 +160,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     }
 
     class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem) extends TestProbe(actorSystem) {
+
       def expectATask = {
         expectMsg(TaskAvailable)
         reply(ReadyForTask)
@@ -167,6 +180,9 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         expectNoMsg(500 millis)
       }
 
+      def completeTask(jobQueue: ActorRef, uploadedFileId: Long) = {
+        jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
+      }
     }
 
     class ImmediateJobCompleter(worker: ActorRef) extends TestActor.AutoPilot {

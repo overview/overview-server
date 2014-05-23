@@ -108,7 +108,7 @@ trait FileGroupJobQueue extends Actor {
     case CancelFileUpload(documentSetId, fileGroupId) => {
       Logger.info(s"Cancelling Extract text task for FileGroup [$fileGroupId]")
       jobRequests.get(documentSetId).fold {
-    	  sender ! FileGroupDocumentsCreated(documentSetId)
+        sender ! FileGroupDocumentsCreated(documentSetId)
       } { r =>
         busyWorkersWithTask(documentSetId).foreach { _ ! CancelTask }
         removeTasksInQueue(documentSetId)
@@ -164,8 +164,17 @@ trait FileGroupJobQueue extends Actor {
       (worker, task) <- busyWorkers if task.documentSetId == documentSetId
     } yield worker
 
-  private def removeTasksInQueue(documentSetId: Long): Unit =
-    taskQueue.dequeueAll(_.documentSetId == documentSetId)
+  private def removeTasksInQueue(documentSetId: Long): Unit = {
+    val notStarted = taskQueue.dequeueAll(_.documentSetId == documentSetId)
+    val notStartedUploadIds = notStarted.collect {
+      case CreatePagesTask(_, _, uploadedFileId) => uploadedFileId
+    }
+
+    for (tasks <- jobTasks.get(documentSetId)) {
+      jobTasks += (documentSetId -> tasks.diff(notStartedUploadIds.toSet))
+    }
+
+  }
 }
 
 class FileGroupJobQueueImpl(progressReporterActor: ActorRef) extends FileGroupJobQueue {

@@ -137,6 +137,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 object FileGroupTaskWorker {
   def apply(fileGroupJobQueuePath: String): Props = Props(new FileGroupTaskWorker with CreatePagesFromPdfWithStorage {
     override protected def jobQueuePath: String = s"akka://$fileGroupJobQueuePath"
-    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = ???
+    override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = 
+      FileUploadDeleter().deleteFileUpload(documentSetId, fileGroupId)
   })
 }

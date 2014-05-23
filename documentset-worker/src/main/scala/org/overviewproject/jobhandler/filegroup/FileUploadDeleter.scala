@@ -6,13 +6,12 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.database.orm.Schema._
 import org.overviewproject.database.orm.finders.FileGroupFinder
 import org.overviewproject.database.orm.stores.PageStore
-import org.overviewproject.database.orm.finders.PageFinder
 import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.database.orm.finders.FileFinder
-import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 import org.overviewproject.database.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.orm.finders.DocumentSetComponentFinder
 
 trait FileUploadDeleter {
 
@@ -32,8 +31,8 @@ trait FileUploadDeleter {
     storage.deletePages(documentSetId)
     storage.deleteFiles(documentSetId)
     storage.deleteTempDocumentSetFiles(documentSetId)
-    storage.deleteDocumentSet(documentSetId)
     storage.deleteDocumentSetCreationJob(documentSetId)
+    storage.deleteDocumentSet(documentSetId)
     storage.deleteGroupedFileUploads(fileGroupId)
     storage.deleteFileGroup(fileGroupId)
 
@@ -44,6 +43,7 @@ object FileUploadDeleter {
   def apply(): FileUploadDeleter = new FileUploadDeleter {
 
     protected class DatabaseStorage extends Storage {
+
       override def deleteGroupedFileUploads(fileGroupId: Long): Unit = Database.inTransaction {
         GroupedFileUploadStore.deleteLargeObjectsInFileGroup(fileGroupId)
         GroupedFileUploadStore.deleteByFileGroup(fileGroupId)
@@ -51,33 +51,35 @@ object FileUploadDeleter {
 
       override def deleteFileGroup(fileGroupId: Long): Unit = Database.inTransaction {
         val fileGroupStore = new BaseStore(fileGroups)
-        
+
         fileGroupStore.delete(FileGroupFinder.byId(fileGroupId).toQuery)
       }
 
       override def deletePages(documentSetId: Long): Unit = Database.inTransaction {
-        PageStore.delete(PageFinder.byDocumentSet(documentSetId).toQuery)
+        PageStore.removeReferenceByTempDocumentSet(documentSetId)
       }
-      
+
       override def deleteFiles(documentSetId: Long): Unit = Database.inTransaction {
-        FileStore.deleteLargeObjectsByDocumentSet(documentSetId)
-        FileStore.delete(FileFinder.byDocumentSet(documentSetId))
+    	FileStore.removeReferenceByTempDocumentSet(documentSetId)
       }
-      
+
       override def deleteTempDocumentSetFiles(documentSetId: Long): Unit = Database.inTransaction {
         val tempDocumentSetFileFinder = DocumentSetComponentFinder(tempDocumentSetFiles)
         val tempDocumentSetFileStore = BaseStore(tempDocumentSetFiles)
-        
+
         tempDocumentSetFileStore.delete(tempDocumentSetFileFinder.byDocumentSet(documentSetId).toQuery)
       }
-      
+
       override def deleteDocumentSet(documentSetId: Long): Unit = Database.inTransaction {
         val documentSetFinder = new FinderById(documentSets)
+        val documentSetUserFinder = DocumentSetComponentFinder(documentSetUsers)
         val documentSetStore = BaseStore(documentSets)
+        val documentSetUserStore = BaseStore(documentSetUsers)
         
+        documentSetUserStore.delete(documentSetUserFinder.byDocumentSet(documentSetId).toQuery)
         documentSetStore.delete(documentSetFinder.byId(documentSetId).toQuery)
       }
-      
+
       override def deleteDocumentSetCreationJob(documentSetId: Long): Unit = Database.inTransaction {
         DocumentSetCreationJobStore.deleteByState(documentSetId, Cancelled)
       }
