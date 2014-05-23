@@ -10,6 +10,7 @@ import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.GroupedFileUpload
+import org.overviewproject.tree.orm.DocumentProcessingError
 
 trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
@@ -35,7 +36,12 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
       }
 
-      def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = ???
+      def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit = Database.inTransaction {
+        val documentProcessingErrorStore = BaseStore(Schema.documentProcessingErrors)
+        val error = DocumentProcessingError(documentSetId, s"UploadedFileId: $uploadedFileId", errorMessage)
+
+        documentProcessingErrorStore.insertOrUpdate(error)
+      }
     }
   }
 
