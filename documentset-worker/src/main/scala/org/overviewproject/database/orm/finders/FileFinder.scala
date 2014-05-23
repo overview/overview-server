@@ -8,7 +8,7 @@ import org.overviewproject.tree.orm.File
 object FileFinder extends Finder {
   type FileFinderResult = FinderResult[File]
   
-  def byDocumentSet(documentSetId: Long) = 
+  def byDocumentSet(documentSetId: Long): FileFinderResult = 
     from(tempDocumentSetFiles, files)((dsf, f) =>
       where(dsf.documentSetId === documentSetId and dsf.fileId === f.id)
       select (f))
