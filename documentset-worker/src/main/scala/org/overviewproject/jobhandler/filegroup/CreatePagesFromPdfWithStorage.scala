@@ -15,7 +15,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
   override protected val storage = DatabaseStorage()
   override protected val pdfProcessor = PdfBoxProcessor()
-  
+
   private object DatabaseStorage {
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
@@ -25,18 +25,20 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
       def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload] = Database.inTransaction {
         GroupedFileUploadFinder.byId(uploadedFileId).headOption
       }
-      
+
       def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit = Database.inTransaction {
         val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.name))
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
-        
+
         val pages = createPages(file.id)
         pageStore.insertBatch(pages)
         GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
       }
+
+      def saveProcessingError(documentSetId: Long, errorMessage: String): Unit = ???
     }
   }
-  
+
   private object PdfBoxProcessor {
     def apply(): PdfProcessor = new PdfProcessor {
       override def loadFromDatabase(oid: Long): PdfDocument = new PdfBoxDocument(oid)

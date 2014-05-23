@@ -1,7 +1,7 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.collection.JavaConverters._
-
+import scala.util.control.Exception._
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.util.PDFTextStripper
 import org.overviewproject.database.orm.Schema
@@ -19,47 +19,59 @@ import org.overviewproject.tree.orm.stores.BaseStore
  */
 trait CreatePagesProcess {
 
+  protected case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    LoadUploadedFile(documentSetId, fileGroupId, uploadedFileId)
+    LoadUploadedFile(TaskInformation(documentSetId, fileGroupId, uploadedFileId))
 
   protected val storage: Storage
   protected trait Storage {
     def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
     
     def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
+    
+    def saveProcessingError(documentSetId: Long, errorMessage: String): Unit
   }
 
+  protected trait ErrorSavingTaskStep extends FileGroupTaskStep { 
+    protected val taskInformation: TaskInformation
+    
+	override def execute: FileGroupTaskStep = handling(classOf[Exception]) by { e =>
+	  storage.saveProcessingError(taskInformation.documentSetId, e.getMessage)
+	  CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
+	} apply executeTaskStep
+	
+	protected def executeTaskStep: FileGroupTaskStep
+  }
+  
   protected val pdfProcessor: PdfProcessor
   protected trait PdfProcessor {
     def loadFromDatabase(oid: Long): PdfDocument
   }
 
-  private case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
+  private case class LoadUploadedFile(taskInformation: TaskInformation) extends ErrorSavingTaskStep {
 
-  private case class LoadUploadedFile(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
-    private val taskInformation = TaskInformation(documentSetId, fileGroupId, uploadedFileId)
-
-    override def execute: FileGroupTaskStep = {
-      val upload = storage.loadUploadedFile(uploadedFileId).get // throws if not found. exception handled by actor
+    override def executeTaskStep: FileGroupTaskStep = {
+      val upload = storage.loadUploadedFile(taskInformation.uploadedFileId).get // throws if not found. exception handled by actor
       
       LoadPdf(taskInformation, upload)
     }
   }
 
-  private case class LoadPdf(taskInformation: TaskInformation, upload: GroupedFileUpload) extends FileGroupTaskStep {
-    override def execute: FileGroupTaskStep = {
+  private case class LoadPdf(taskInformation: TaskInformation, upload: GroupedFileUpload) extends ErrorSavingTaskStep {
+    override def executeTaskStep: FileGroupTaskStep = {
       val pdfDocument = pdfProcessor.loadFromDatabase(upload.contentsOid)
       SavePages(taskInformation, upload, pdfDocument)
     }
   }
 
-  private case class SavePages(taskInformation: TaskInformation, upload: GroupedFileUpload, pdfDocument: PdfDocument) extends FileGroupTaskStep {
+  private case class SavePages(taskInformation: TaskInformation, upload: GroupedFileUpload, pdfDocument: PdfDocument) extends ErrorSavingTaskStep {
 
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
     private val textStripper = new PDFTextStripper()
 
-    override def execute: FileGroupTaskStep = {
+    override def executeTaskStep: FileGroupTaskStep = {
       val pageContents = pdfDocument.pages
         
       storage.savePagesAndCleanup(createPages(pageContents, _: Long), upload, taskInformation.documentSetId)
