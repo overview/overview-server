@@ -7,36 +7,40 @@ import akka.actor.ActorRef
 import akka.actor.Actor
 import scala.concurrent.Future
 import scala.concurrent.Await
+import akka.agent.Agent
 
 object GatedTaskWorkerProtocol {
   case object CancelYourself
   case object CompleteTaskStep
 }
 
-class GatedTaskWorker(override protected val jobQueuePath: String) extends FileGroupTaskWorker {
- import GatedTaskWorkerProtocol._
- import FileGroupTaskWorkerProtocol._
- 
- private val taskGate: Promise[Unit] = Promise()
- 
- private class GatedTask(gate: Future[Unit])  extends FileGroupTaskStep {
-   override def execute: FileGroupTaskStep = {
-     Await.result(gate, 5000 millis)
-     this
-   } 
+class GatedTaskWorker(override protected val jobQueuePath: String, timesCancelWasCalled: Agent[Int]) extends FileGroupTaskWorker {
 
- }
- 
-  override protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
-    new GatedTask(taskGate.future)
-  
-  override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = {} 
+  import GatedTaskWorkerProtocol._
+  import FileGroupTaskWorkerProtocol._
+
+  private val taskGate: Promise[Unit] = Promise()
+
+  private class GatedTask(gate: Future[Unit]) extends FileGroupTaskStep {
+    override def execute: FileGroupTaskStep = {
+      Await.result(gate, 5000 millis)
+      this
+    }
     
-  private def manageTaskGate: PartialFunction[Any, Unit] = {
-    case CancelYourself => self ! CancelTask 
-    case CompleteTaskStep => taskGate.success()
+    override def cancel: Unit = timesCancelWasCalled send (_ + 1)
   }
   
+
+  override protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
+    new GatedTask(taskGate.future)
+
+  override protected def deleteFileUploadJob(documentSetId: Long, fileGroupId: Long): Unit = {}
+
+  private def manageTaskGate: PartialFunction[Any, Unit] = {
+    case CancelYourself => self ! CancelTask
+    case CompleteTaskStep => taskGate.success()
+  }
+
   override def receive = manageTaskGate orElse super.receive
 }
 

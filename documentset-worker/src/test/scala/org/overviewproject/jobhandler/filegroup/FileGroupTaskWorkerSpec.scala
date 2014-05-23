@@ -64,7 +64,8 @@ class FileGroupTaskWorkerSpec extends Specification {
       worker ! CompleteTaskStep
 
       jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
-
+      
+      taskWasCancelled
     }
 
     "delete a file upload job" in new RunningTaskWorkerContext {
@@ -130,9 +131,19 @@ class FileGroupTaskWorkerSpec extends Specification {
     }
 
     abstract class GatedTaskWorkerContext extends TaskWorkerContext {
+      import scala.concurrent.ExecutionContext.Implicits.global  
+      
       var worker: ActorRef = _
-
-      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath)))
+      private val timesCancelWasCalled: Agent[Int] = Agent(0)
+      
+      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, timesCancelWasCalled)))
+      
+      protected def taskWasCancelled = {
+        val pendingCalls = timesCancelWasCalled.future
+        awaitCond(pendingCalls.isCompleted)
+        
+        timesCancelWasCalled.get must be equalTo(1)
+      }
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {

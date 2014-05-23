@@ -10,6 +10,7 @@ import org.overviewproject.util.Logger
 
 trait FileGroupTaskStep {
   def execute: FileGroupTaskStep
+  def cancel: Unit = {}
 }
 
 case class CreatePagesProcessComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
@@ -122,6 +123,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
   when(Cancelled) {
     case Event(step: FileGroupTaskStep, TaskInfo(jobQueue, documentSetId, fileGroupId, uploadedFileId)) => {
+      step.cancel
       jobQueue ! CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId)
       jobQueue ! ReadyForTask
 

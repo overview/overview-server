@@ -51,11 +51,6 @@ trait CreatePagesProcess {
       val pdfDocument = pdfProcessor.loadFromDatabase(upload.contentsOid)
       SavePages(taskInformation, upload, pdfDocument)
     }
-
-    private def readPdfDocument(oid: Long): PDDocument = {
-      val documentStream = new LargeObjectInputStream(oid)
-      PDDocument.load(documentStream)
-    }
   }
 
   private case class SavePages(taskInformation: TaskInformation, upload: GroupedFileUpload, pdfDocument: PdfDocument) extends FileGroupTaskStep {
@@ -73,6 +68,8 @@ trait CreatePagesProcess {
 
       CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
+    
+    override def cancel: Unit = pdfDocument.close()
 
     private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] =
       pageContents.view.zipWithIndex.map { case (p, i) =>
