@@ -12,6 +12,7 @@ define [
 
       beforeEach ->
         @sandbox = sinon.sandbox.create()
+        @sandbox.stub($.fn, 'spectrum', -> this) # speed boost
         $.fx = false
         tag = { id: 3, name: 'foo', color: '#abcdef' }
         i18n.reset_messages({

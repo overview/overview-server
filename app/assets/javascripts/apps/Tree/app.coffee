@@ -77,6 +77,9 @@ define [
         world.state.setDocumentListParams(DocumentListParams.byNodeId(world.cache.on_demand_tree.id_tree.root))
         Logger.set_server(world.cache.server)
 
+        if tourEnabled
+          TourController()
+
       refreshHeight = () ->
         # Make the main div go below the (variable-height) navbar
         h = $(options.navEl).outerHeight()
@@ -164,9 +167,6 @@ define [
       throttledRefreshHeight = _.throttle(refreshHeight, 100)
       $(window).resize(throttledRefreshHeight)
       refreshHeight()
-
-      if tourEnabled
-        TourController()
 
       refocus_body_on_leave_window()
       refocus_body_on_event()

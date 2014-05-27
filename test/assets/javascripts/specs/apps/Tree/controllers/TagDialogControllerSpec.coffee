@@ -9,10 +9,10 @@ define [
     tagStoreProxy = undefined
     cache = undefined
     oldFnModal = undefined
-    $dialog = undefined
     state = undefined
 
     beforeEach ->
+      @sandbox = sinon.sandbox.create()
       i18n.reset_messages
         'views.Tree.show.tag_list.header': 'header'
       view = new Backbone.View
@@ -30,9 +30,7 @@ define [
         delete_tag: sinon.spy()
         transaction_queue:
           queue: ->
-      $dialog = $('<div></div>')
-      oldFnModal = $.fn.modal
-      $.fn.modal = sinon.stub().returns($dialog)
+      @sandbox.stub($.fn, 'modal', -> this)
       controller = new TagDialogController
         view: view
         tagStoreProxy: tagStoreProxy
@@ -41,8 +39,9 @@ define [
 
     afterEach ->
       controller.stopListening()
-      $dialog.remove()
-      $.fn.modal = oldFnModal
+      if ($dialog = $.fn.modal.firstCall?.thisValue)?
+        $dialog.remove()
+      @sandbox.restore()
 
     describe 'on view:remove', ->
       model = undefined

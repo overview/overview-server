@@ -23,7 +23,10 @@ define [
         'views.DocumentSet._massUploadForm.drop_target': 'drop_target'
         'views.DocumentSet._massUploadForm.minimum_files': 'minimum_files'
 
-      @sandbox.spy(MockUploadView.prototype, 'render')
+      # sinon.spy() causes a big slowdown here. Emulate it.
+      @oldRender = MockUploadView.prototype.render
+      @nRenders = 0
+      MockUploadView.prototype.render = => @nRenders += 1
       collection = new Backbone.Collection
       view = new UploadCollectionView(collection: collection, uploadViewClass: MockUploadView)
       view.render()
@@ -41,7 +44,7 @@ define [
     it 'renders an uploadView when a file is added', ->
       collection.add(new MockUpload())
       collection.trigger('add-batch', collection.models)
-      expect(MockUploadView.prototype.render).to.have.been.called
+      expect(@nRenders).to.eq(1)
 
     it 'deletes the drop target when another li is added', ->
       collection.add(new MockUpload())
@@ -51,7 +54,7 @@ define [
 
     it 'should not crash when the collection emits a "change" event for an upload before an "add" event', ->
       collection.trigger('change', new MockUpload())
-      expect(MockUploadView.prototype.render).not.to.have.been.called
+      expect(@nRenders).to.eq(0)
 
     describe 'with lots of files', ->
       beforeEach ->
@@ -75,17 +78,17 @@ define [
         # The intent is that we don't initialize the view at all; testing
         # whether it's rendered is a quick hack so we don't need to mock
         # the constructor.
-        expect(MockUploadView.prototype.render).to.have.callCount(7)
+        expect(@nRenders).to.eq(7)
 
       it 'should render() more uploads as the user scrolls', ->
         view.$el.scrollTop(100)
         view.$el.scroll() # call the event
-        expect(MockUploadView.prototype.render).to.have.callCount(10)
+        expect(@nRenders).to.eq(10)
 
       it 'should scroll to the most-recently-changed element', ->
         collection.at(11).set(foo: 'bar')
         expect(view.$el.scrollTop()).to.eq(190)
-        expect(MockUploadView.prototype.render).to.have.callCount(13)
+        expect(@nRenders).to.eq(13)
 
       it 'should empty on reset', ->
         collection.reset()

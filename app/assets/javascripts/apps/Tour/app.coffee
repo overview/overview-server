@@ -3,8 +3,6 @@ define [
   'jquery'
   'rsvp'
   'i18n'
-  'bootstrap-tooltip'
-  'bootstrap-popover'
 ], (_, $, rsvp, i18n) ->
   t = i18n.namespaced('views.Tree.show.Tour')
 
@@ -33,18 +31,24 @@ define [
       @start()
 
     template: _.template("""
-      <div class="content"><%= html %></div>
-      <div class="actions">
-        <span class="tip-number"><%- t('tipNumber', step, nSteps) %></span>
-        <% if (!isFirst) { %>
-          <a class="previous" href="#"><i class="overview-icon-chevron-left"></i> <%- t('previous') %></a>
-        <% } %>
-        <% if (isLast) { %>
-          <a class="done" href="#"><%- t('done') %></a>
-        <% } else { %>
-          <a class="next" href="#"><%- t('next') %> <i class="overview-icon-chevron-right"></i></a>
-          <a class="skip" href="#"><%- t('skip') %></a>
-        <% } %>
+      <div class="popover fade in <%- placement %>">
+        <div class="arrow"></div>
+        <div class="popover-title"><%- title %></div>
+        <div class="popover-content">
+          <div class="content"><%= html %></div>
+          <div class="actions">
+            <span class="tip-number"><%- t('tipNumber', step, nSteps) %></span>
+            <% if (!isFirst) { %>
+              <a class="previous" href="#"><i class="overview-icon-chevron-left"></i> <%- t('previous') %></a>
+            <% } %>
+            <% if (isLast) { %>
+              <a class="done" href="#"><%- t('done') %></a>
+            <% } else { %>
+              <a class="next" href="#"><%- t('next') %> <i class="overview-icon-chevron-right"></i></a>
+              <a class="skip" href="#"><%- t('skip') %></a>
+            <% } %>
+          </div>
+        </div>
       </div>
     """)
 
@@ -77,10 +81,15 @@ define [
         item
 
     # Returns a jQuery object representing the thing _being_ popped over
+    #
+    # We use Twitter Bootstrap's CSS styles, but we _don't_ use their
+    # JavaScript. This is faster.
     _buildPopover: ->
       options = @tour[@step]
 
       html = @template
+        placement: options.placement
+        title: options.title
         html: options.bodyHtml
         isFirst: (@step == 0)
         isLast: (@step == @tour.length - 1)
@@ -88,22 +97,40 @@ define [
         nSteps: @tour.length
         t: t
 
+      $popover = $(html)
+        .appendTo('body')
+        .show() # so we can find its position
+
       $el = $(options.el)
-        .popover
-          html: true
-          placement: 'auto'
-          trigger: 'manual'
-          title: options.title
-          content: html
-          container: 'body'
-          placement: options.placement
-        .popover('show')
+      # We put all these together to avoid an excess repaint
+      offset = $el.offset()
+      elWidth = $el[0].offsetWidth
+      elHeight = $el[0].offsetHeight
+      tipWidth = $popover[0].offsetWidth
+      tipHeight = $popover[0].offsetHeight
+
+      positionCss = switch options.placement
+        when 'left'
+          top: offset.top + elHeight * 0.5 - tipHeight * 0.5
+          left: offset.left - tipWidth
+        when 'right'
+          top: offset.top + elHeight * 0.5 - tipHeight * 0.5
+          left: offset.left + elWidth
+        when 'top'
+          top: offset.top - tipHeight
+          left: offset.left + (elWidth * 0.5) - (tipWidth * 0.5)
+        when 'bottom'
+          top: offset.top + elHeight
+          left: offset.left + (elWidth * 0.5) - (tipWidth * 0.5)
+        else throw "Invalid placement #{options.placement}"
+
+      $popover
+        .css(positionCss)
+        # and return it
 
     # Give this the return value from _buildPopover()
     _destroyPopover: ($el) ->
-      $el
-        .off('.tour')
-        .popover('destroy')
+      $el.remove()
 
     start: ->
       @step = 0
@@ -120,8 +147,7 @@ define [
       @next()
 
     _leaveStep: ->
-      if @$popover?
-        @_destroyPopover(@$popover)
+      @_destroyPopover(@$popover) if @$popover?
       @$popover = null
 
     _enterStep: (@step) ->

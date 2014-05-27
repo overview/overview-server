@@ -7,31 +7,31 @@ define [
   tour = [
     {
       find: '#tree-app-tree'
-      placement: 'auto right'
+      placement: 'right'
       title: t('folders1.title')
       bodyHtml: t('folders1.body_html')
     }
     {
       find: '#tree-app-tree'
-      placement: 'auto right'
+      placement: 'right'
       title: t('folders2.title')
       bodyHtml: t('folders2.body_html')
     }
     {
       find: '#tree-app-document-list'
-      placement: 'auto left'
+      placement: 'left'
       title: t('documentList.title')
       bodyHtml: t('documentList.body_html')
     }
     {
       find: '#tree-app-tags'
-      placement: 'auto top'
+      placement: 'top'
       title: t('tags.title')
       bodyHtml: t('tags.body_html')
     }
     {
       find: '#Intercom'
-      placement: 'auto bottom'
+      placement: 'bottom'
       title: t('contact.title')
       bodyHtml: t('contact.body_html')
     }

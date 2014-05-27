@@ -13,7 +13,10 @@ define [
     view = undefined
 
     beforeEach ->
-      i18n.reset_messages({
+      @sandbox = sinon.sandbox.create()
+      @sandbox.stub($.fn, 'spectrum', -> this) # spectrum is slow. Be fast.
+
+      i18n.reset_messages
         'views.Tree.show.tag_list.preamble': 'preamble'
         'views.Tree.show.tag_list.export': 'export'
         'views.Tree.show.tag_list.remove': 'remove'
@@ -26,11 +29,11 @@ define [
         'views.Tree.show.tag_list.th.count': 'th.count'
         'views.Tree.show.tag_list.th.name': 'th.name'
         'views.Tree.show.tag_list.n_documents': 'n_documents,{0}'
-      })
 
     afterEach ->
       view?.remove()
       view?.off()
+      @sandbox.restore()
 
     describe 'starting with no tags', ->
       beforeEach ->
@@ -125,17 +128,15 @@ define [
         expect(view.$('tbody tr:eq(0)').html()).to.contain('tag20')
 
       it 'should remove Spectrum when deleting a tag', ->
-        # This will be 0 if we remove Spectrum; remove this test if that happens
-        expect($('.sp-container').length).to.eq(2)
         collection.remove(collection.first())
-        expect($('.sp-container').length).to.eq(1)
+        expect($.fn.spectrum).to.have.been.calledWith('destroy')
 
       it 'should remove Spectrum in remove()', ->
         view.remove()
         view.off()
         view.$el.remove()
         view = undefined
-        expect($('.sp-container').length).to.eq(0)
+        expect($.fn.spectrum).to.have.been.calledWith('destroy')
 
       it 'should change a tag', ->
         collection.first().set({

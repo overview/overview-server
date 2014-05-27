@@ -17,10 +17,6 @@ define [
       i18n.reset_messages
         x: 'y'
 
-    afterEach ->
-      @view?.remove()
-      @view?.off()
-
     describe 'starting with two vizs', ->
       beforeEach ->
         @viz1 = new Viz(id: 1, title: 'foo')
@@ -28,6 +24,10 @@ define [
         @vizList = new VizList([@viz1, @viz2])
         @view = new VizTabs(collection: @vizList, selected: @viz1)
         $('body').append(@view.el)
+
+      afterEach ->
+        @view?.remove()
+        @view?.off()
 
       it 'should be a ul', -> expect(@view.$el).to.match('ul')
       it 'should contain an li per viz', -> expect(@view.$('li.viz').length).to.eq(2)

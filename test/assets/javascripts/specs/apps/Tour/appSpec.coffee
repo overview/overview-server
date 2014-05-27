@@ -9,7 +9,7 @@ define [
       {
         find: 'p.p1'
         title: 'title1'
-        placement: 'auto bottom'
+        placement: 'bottom'
         bodyHtml: '<p>html1</p>'
       }
       {
@@ -21,6 +21,7 @@ define [
       {
         find: 'p.p3'
         title: 'title3'
+        placement: 'top'
         bodyHtml: '<p>html3</p>'
       }
     ]
@@ -40,9 +41,9 @@ define [
       @app = new TourApp(tour)
 
     afterEach (done) ->
-      @app.remove()
-      @$html.remove()
       _.defer => # make sure promises settle
+        @app.remove()
+        @$html.remove()
         @sandbox.restore()
         done()
 
@@ -135,7 +136,6 @@ define [
       it 'should switch to the third tooltip', ->
         expect($('.popover.in .popover-title')).to.contain('title3')
 
-      it 'should select a placement', -> expect($('.popover.bottom, .popover.top, .popover.left, .popover.right')).to.be.visible
       it 'should show tip number', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,3,3')
       it 'should not have a next button', -> expect($('.popover.in a.next')).not.to.be.visible
       it 'should not have a skip button', -> expect($('.popover.in a.skip')).not.to.be.visible
@@ -157,13 +157,13 @@ define [
         @app.donePromise() # mocha will pick up on this value
 
     describe 'when an element is missing', ->
-      beforeEach (done) ->
+      beforeEach ->
         @app.remove()
-        _.defer =>
-          @$html.appendTo('body')
-          @$html.find('.p2').remove()
-          @app = new TourApp(tour)
-          done()
+        @$html.find('.p2').remove()
+        @app2 = new TourApp(tour)
+
+      afterEach ->
+        @app2.remove()
 
       it 'should set the proper tip total', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,1,2')
 
