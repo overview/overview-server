@@ -3,24 +3,41 @@
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @main(optionalUser=optionalUser, title="What Overview can do for you", h1="What Overview can do for you", bodyClass="help-show") {
-  <h2>Overview reads your documents and sorts them by topic</h2>
-  Whether you are a journalist starting with thousands of pages of government documents, a reasearcher facing a huge archive, or a social media analyst starting with 100,000 posts, Overview will <a href="http://overview.ap.org/blog/2013/04/how-overview-can-organize-thousands-of-documents-for-a-reporter/">organize your documents into topics</a> and sub-topics, and then visualize them -- so you can find exactly what you're looking for, instantly count the number of documents in each topic, or tag entire topics for further work.
+  <h2>Search, visualize, and tag.</h2>
+  <p>Overview is just what you need to search and analyze huge volumes of text or documents. Built for journalists journalist going through thousands of pages of material, reasearchers facing huge archives, and social media analysts with millions of posts. With advanced search and interactive topic modeling, you can:
+  <ul>
+    <li>find what you didn't even know to look for</li>
+    <li>quickly tag or code documents</li>
+    <li>let the computer <a href="http://overview.ap.org/blog/2013/04/how-overview-can-organize-thousands-of-documents-for-a-reporter/">organize your documents</a> by topic, automatically</li>
+  </ul>
+
+
+  <br />
   <figure style="width: 600px; margin-left: auto; margin-right: auto"><iframe src="//player.vimeo.com/video/71483614?title=0&amp;byline=0&amp;portrait=0" width="600" height="337" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe></figure>
 <div style="text-align: center; height:100px"><a href="/documentsets" class="btn btn-primary" style="width: 200px; margin: auto; margin-top: 30px">Try it out on an example document set! </a></div>
   
   
   <br /><h2>Learn more!</h2>
 
-  <p>Our <a href="http://overview.ap.org/blog/2013/11/step-by-step-instructions-for-using-overview/">step-by-step instructions</a> make it easy to get started exploring your own documents. When you've got the basics down, you'll want to try Overview's many powerful features. You can:</p>
+  <p>Our <a href="http://overview.ap.org/blog/2013/11/step-by-step-instructions-for-using-overview/">step-by-step instructions</a> make it easy to get started exploring your own documents. When you've got the basics down, you'll want to try Overview's many powerful features.</p>
   <ul>
-    <li>Control how overview sorts documents into folders by <a href="http://overview.ap.org/blog/2013/08/overview-not-clustering-the-way-youd-like-try-ignoring-words/">ignoring meaningless words</a>.</li>
-    <li>Automatically <a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/">split long documents into individual pages</a>.</li>
-    <li>Compare data to text by <a href="http://overview.ap.org/blog/2013/07/comparing-text-to-data-by-importing-tags/">importing tags</a>.</li>
-    <li>Import documents in <a href="http://overview.ap.org/blog/2013/07/overview-now-supports-multiple-languages/">multiple languages</a>.</li>
+    <li>Use <a href="http://overview.ap.org/blog/2013/12/advanced-search-quoted-phrases-boolean-operators-fuzzy-matching-and-more/">advanced search</a> features like regular expressions and fuzzy search.
+    <li><a href="http://overview.ap.org/blog/2014/01/use-important-and-ignored-words-to-tell-overview-how-to-file-your-documents/">Control</a> how overview sorts documents into folders by emphasizing and ignoring words</a>.</li>
+    <li>Create <a href="http://overview.ap.org/blog/2014/02/view-the-same-documents-in-different-ways-with-multiple-trees/">multiple visualizations</a> of a document set from different perspectives.</li>
+    <li><a href="http://overview.ap.org/blog/2013/07/comparing-text-to-data-by-importing-tags/">Visualize</a> the relationships between text and data</li>
+    <li>Automatically <a href="http://overview.ap.org/blog/2013/04/dealing-with-massive-pdfs-by-splitting-them-into-pages/">split</a> long documents to analyze them at the page level.</li>
     </ul>
 
   <p>and many other things. See the <a href="http://overview.ap.org/help/">Overview blog</a> for more tips and tricks.</p>
 
-  <br /><h2>Talk to us!</h2>
-  Are you wondering if Overview will work for your docs? Having a problem on deadline? Other questions? Bugs? We're here to help. Tweet us <a href="https://twitter.com/overviewproject">&#64;overviewproject</a>, try the <a href="https://groups.google.com/forum/?fromgroups=#!forum/overview-users">Overview forum</a> or <a href="mailto:info&#64;overviewproject.org">contact us</a> directly!</p>
+  <br /><h2>Let us help you solve your problem.</h2>
+  <p>No two text analysis problems are the same, so personal help is always available from our experts. Just press this button in the app. Or <a href="http://overview.ap.org/contact">contact us</a> right now.</p>
+  <img class="center-block" src="@routes.Assets.at("images/talk-to-us.png")"/>
+  
+
+  <br /><h2>Free and open source</h2>
+  <p>This server is free for up to 200,000 documents. All documents are private and visible only to you. Or, <a href="https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview">run Overview on your own computer.</a>
+  </p>
+
+
 }
