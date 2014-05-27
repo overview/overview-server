@@ -38,7 +38,7 @@ define [
 
       @$html = $('<div><p class="p1">Paragraph one</p><p class="p2">Paragraph two</p><p class="p3">Paragraph three</p></div>')
         .appendTo('body')
-      @app = new TourApp(tour)
+      @app = new TourApp(tour, skipRepaint: true)
 
     afterEach (done) ->
       _.defer => # make sure promises settle
@@ -160,7 +160,7 @@ define [
       beforeEach ->
         @app.remove()
         @$html.find('.p2').remove()
-        @app2 = new TourApp(tour)
+        @app2 = new TourApp(tour, skipRepaint: true)
 
       afterEach ->
         @app2.remove()

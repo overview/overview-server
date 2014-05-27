@@ -19,8 +19,9 @@ define [
   #
   #   done = app.donePromise() # resolved when user is done
   class TourApp
-    constructor: (tour) ->
+    constructor: (tour, options) ->
       @tour = @_parseTour(tour)
+      @options = options
 
       @_doneDeferred = rsvp.defer()
       @_donePromise = @_doneDeferred
@@ -103,34 +104,33 @@ define [
 
       $el = $(options.el)
       # We put all these together to avoid an excess repaint
-      offset = $el.offset()
-      elWidth = $el[0].offsetWidth
-      elHeight = $el[0].offsetHeight
-      tipWidth = $popover[0].offsetWidth
-      tipHeight = $popover[0].offsetHeight
+      if @options?.skipRepaint
+        elRect = { top: 0, left: 0, right: 1, bottom: 1 }
+        tipWidth = 10
+        tipHeight = 10
+      else
+        elRect = $el[0].getBoundingClientRect()
+        tipWidth = $popover[0].offsetWidth
+        tipHeight = $popover[0].offsetHeight
 
       positionCss = switch options.placement
         when 'left'
-          top: offset.top + elHeight * 0.5 - tipHeight * 0.5
-          left: offset.left - tipWidth
+          top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
+          left: elRect.left - tipWidth
         when 'right'
-          top: offset.top + elHeight * 0.5 - tipHeight * 0.5
-          left: offset.left + elWidth
+          top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
+          left: elRect.right
         when 'top'
-          top: offset.top - tipHeight
-          left: offset.left + (elWidth * 0.5) - (tipWidth * 0.5)
+          top: elRect.top - tipHeight
+          left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
         when 'bottom'
-          top: offset.top + elHeight
-          left: offset.left + (elWidth * 0.5) - (tipWidth * 0.5)
+          top: elRect.bottom
+          left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
         else throw "Invalid placement #{options.placement}"
 
       $popover
         .css(positionCss)
         # and return it
-
-    # Give this the return value from _buildPopover()
-    _destroyPopover: ($el) ->
-      $el.remove()
 
     start: ->
       @step = 0
@@ -147,7 +147,7 @@ define [
       @next()
 
     _leaveStep: ->
-      @_destroyPopover(@$popover) if @$popover?
+      @$popover?.remove()
       @$popover = null
 
     _enterStep: (@step) ->
@@ -167,5 +167,5 @@ define [
         .on('click.tour', '.popover a.done, .popover a.skip', ((e) => e.preventDefault(); @done()))
 
     remove: ->
-      @_destroyPopover(@$popover) if @$popover?
+      @$popover?.remove()
       $('body').off('.tour')
