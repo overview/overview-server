@@ -1,7 +1,9 @@
 package org.overviewproject.tree.orm
 
-import org.squeryl.KeyedEntity
 import java.sql.Timestamp
+import org.squeryl.KeyedEntity
+
+import org.overviewproject.models.Viz
 
 case class Tree(
     id: Long,
@@ -12,7 +14,7 @@ case class Tree(
     description: String = "",
     suppliedStopWords: String = "",
     importantWords: String = "",
-    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)) extends KeyedEntity[Long] with DocumentSetComponent {
+    createdAt: Timestamp = new Timestamp(scala.compat.Platform.currentTime)) extends KeyedEntity[Long] with DocumentSetComponent with Viz {
 
   override def isPersisted(): Boolean = (id > 0)
 }

@@ -21,6 +21,9 @@ trait NodeController extends Controller {
       */
     def findRootNodes(treeId: Long, depth: Int) : Iterable[Node]
 
+    /** All Vizs for the document set. */
+    def findVizs(documentSetId: Long) : Iterable[Tree]
+
     /** The direct descendents of the given parent Node ID. */
     def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
 
@@ -42,9 +45,10 @@ trait NodeController extends Controller {
         if (nodes.isEmpty) {
           NotFound
         } else {
+          val vizs = storage.findVizs(tree.documentSetId)
           val tags = storage.findTags(tree.documentSetId)
           val searchResults = storage.findSearchResults(tree.documentSetId)
-          Ok(views.json.Node.index(nodes, tags, searchResults))
+          Ok(views.json.Node.index(vizs, nodes, tags, searchResults))
             .withHeaders(CACHE_CONTROL -> "max-age=0")
         }
       }
@@ -119,6 +123,10 @@ object NodeController extends NodeController {
 
     override def findTree(treeId: Long) = {
       TreeFinder.byId(treeId).headOption
+    }
+
+    override def findVizs(documentSetId: Long) = {
+      TreeFinder.byDocumentSet(documentSetId).toSeq
     }
 
     override def findNode(treeId: Long, nodeId: Long) = {

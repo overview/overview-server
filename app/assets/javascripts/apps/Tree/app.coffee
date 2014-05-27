@@ -7,6 +7,7 @@ define [
   './models/DocumentListParams'
   './controllers/keyboard_controller'
   './controllers/logger'
+  './controllers/VizsController'
   './controllers/tag_list_controller'
   './controllers/search_result_list_controller'
   './controllers/focus_controller'
@@ -18,7 +19,7 @@ define [
 ], ($, \
     AnimatedFocus, Animator, PropertyInterpolator, World, DocumentListParams, \
     KeyboardController, Logger, \
-    tag_list_controller, search_result_list_controller, \
+    VizsController, tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, \
     TourController, \
     ModeView) ->
@@ -35,18 +36,11 @@ define [
       els = (->
         html = """
           <div id="tree-app-left">
-            <div id="tree-app-tree-container">
-              <div id="tree-app-left-top">
-                <div id="tree-app-search"></div>
-              </div>
-              <div id="tree-app-left-middle">
-                <div id="tree-app-tree"></div>
-                <div id="tree-app-zoom-slider"></div>
-              </div>
-              <div id="tree-app-left-bottom">
-                <div id="tree-app-tags"></div>
-              </div>
-            </div>
+            <div id="tree-app-search"></div>
+            <div id="tree-app-vizs"></div>
+            <div id="tree-app-tree"></div>
+            <div id="tree-app-zoom-slider"></div>
+            <div id="tree-app-tags"></div>
           </div>
           <div id="tree-app-right">
             <div id="tree-app-document-list"></div>
@@ -65,21 +59,21 @@ define [
         {
           main: options.mainEl
           tree: el('tree-app-tree')
+          vizs: el('tree-app-vizs')
           zoomSlider: el('tree-app-zoom-slider')
           tags: el('tree-app-tags')
           search: el('tree-app-search')
           documentList: el('tree-app-document-list')
           documentCursor: el('tree-app-document-cursor')
           document: el('tree-app-document')
-          left: el('tree-app-left')
-          leftMiddle: el('tree-app-left-middle')
-          leftBottom: el('tree-app-left-bottom')
         }
       )()
 
       world = new World()
 
-      world.cache.load_root().done ->
+      world.cache.load_root().done (json) ->
+        controller = new VizsController(json.vizs)
+        els.vizs.appendChild(controller.el)
         world.state.setDocumentListParams(DocumentListParams.byNodeId(world.cache.on_demand_tree.id_tree.root))
         Logger.set_server(world.cache.server)
 
@@ -87,10 +81,6 @@ define [
         # Make the main div go below the (variable-height) navbar
         h = $(options.navEl).outerHeight()
         $(els.main).css({ top: h })
-
-        # Give room to the tags and search results at the bottom
-        h = $(els.leftBottom).outerHeight()
-        $(els.leftMiddle).css({ bottom: h })
 
         # Round the iframe's parent's width, because it needs an integer number of px
         $document = $(els.document)
@@ -144,11 +134,10 @@ define [
       controller = tree_controller(els.tree, world.cache, focus, world.state)
       keyboard_controller.add_controller('TreeController', controller)
 
-      controller = document_contents_controller({
+      controller = document_contents_controller
         cache: world.cache
         state: world.state
         el: els.document
-      })
       keyboard_controller.add_controller('DocumentContentsController', controller)
 
       controller = document_list_controller(els.documentList, els.documentCursor, world.cache, world.state)
@@ -156,11 +145,10 @@ define [
 
       new ModeView({ el: options.mainEl, state: world.state })
 
-      tag_list_controller({
+      tag_list_controller
         cache: world.cache
         state: world.state
         el: els.tags
-      })
 
       if !searchDisabled
         search_result_list_controller({

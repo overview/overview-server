@@ -22,20 +22,20 @@ define [
     className: 'viz-tabs nav nav-tabs'
 
     events:
-      'click a.viz': '_onClick'
+      'click a[data-viz-id]': '_onClick'
 
     templates:
       viz: _.template('''
-        <li class="<%- isSelected ? 'active' : '' %>">
-          <a class="viz" href="#" data-viz-id="<%- viz.id %>">
-            <%- viz.name %>
+        <li class="viz <%- isSelected ? 'active' : '' %>">
+          <a href="#" data-viz-id="<%- viz.id %>">
+            <%- viz.title %>
           </a>
         </li>
         ''')
 
       main: _.template('''
         <% vizs.forEach(function(viz) { %>
-          <%= vizTemplate({ isSelected: viz.id == selectedViz.id, viz: viz.attributes }) %>
+          <%= vizTemplate({ isSelected: viz.id == selected.id, viz: viz.attributes }) %>
         <% }); %>
         ''')
 
@@ -47,7 +47,7 @@ define [
     render: ->
       html = @templates.main
         vizs: @collection
-        selectedViz: { id: 0 }
+        selected: @options.selected || { id: 0 }
         vizTemplate: @templates.viz
         t: t
 

@@ -27,8 +27,8 @@ define [], ->
 
   class DrawOperation
     constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
-      @canvas.width = @width = Math.floor(parseFloat(@canvas.parentNode.clientWidth))
-      @canvas.height = @height = Math.floor(parseFloat(@canvas.parentNode.clientHeight))
+      @canvas.width = @width = Math.floor(@canvas.clientWidth)
+      @canvas.height = @height = Math.floor(@canvas.clientHeight)
 
       @ctx = @canvas.getContext('2d')
 

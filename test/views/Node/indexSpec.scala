@@ -27,7 +27,7 @@ class indexSpec extends Specification with JsonMatchers {
         buildNode(3, Some(1L), 1, Array(2L))
       )
 
-      val treeJson = index(nodes, Seq(), Seq()).toString
+      val treeJson = index(Seq(), nodes, Seq(), Seq()).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -43,7 +43,7 @@ class indexSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = index(nodes, tags, Seq()).toString
+      val treeJson = index(Seq(), nodes, tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")

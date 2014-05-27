@@ -12,6 +12,8 @@
   width: 50%;
   border: 5px solid transparent;
   z-index: 2; // hover descriptions go above everything
+  display: flex;
+  flex-direction: column;
 }
 
 #tree-app-right {
@@ -24,61 +26,29 @@
   margin: 5px;
 }
 
-#tree-app-left-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-}
-
-#tree-app-left-middle {
-  position: absolute;
-  top: 3em;
-  left: 0;
-  width: 100%;
-  // bottom will change
-  .overview-toplevel-box();
+#tree-app-tree {
+  flex-grow: 1;
 }
 
 .search-disabled #tree-app-left-middle {
   top: 0;
 }
 
-#tree-app-left-bottom {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  bottom: 0;
-  height: auto;
-  max-height: 50%; // for huge tag list
-  overflow: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-  // top is automatic, JS will modify #tree-app-left-top's bottom
-}
-
-#tree-app-tree {
-  position: absolute;
-  top: 0;
-  bottom: @focus_height;
-  left: 0;
-  right: 0;
-}
-
 #tree-app-zoom-slider {
-  position: absolute;
-  right: 0;
-  left: 0;
-  bottom: 0;
+  position: relative;
   height: @focus_height;
 }
 
 #tree-app-tags {
+  max-height: 50%; // for huge tag list
+  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 #tree-app-search {
   // NOT absolute
-  margin: 0 -5px -5px;
+  margin: 0 -5px 5px;
 }
 
 #tree-app-document-list {

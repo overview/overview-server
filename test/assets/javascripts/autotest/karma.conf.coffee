@@ -11,7 +11,7 @@ module.exports = (config) ->
     frameworks: [ 'mocha', 'requirejs', 'chai-jquery', 'sinon-chai', 'jquery-2.1.0' ]
     preprocessors: { '**/*.coffee': ['coffee'] }
     reporters: [ 'dots' ]
-    reportSlowerThan: 50
+    reportSlowerThan: 10
     verbose: true
 
     files: [

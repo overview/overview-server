@@ -92,7 +92,8 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
   }
 
   "index" should {
-    "encodes the nodes, tags, and search results into the json result" in new TestScope {
+    "encode the trees, nodes, tags, and search results into the json result" in new TestScope {
+      mockStorage.findVizs(sampleTree.documentSetId) returns Seq(sampleTree)
       mockStorage.findTree(1L) returns Some(sampleTree)
       mockStorage.findRootNodes(1L, 2) returns Seq(sampleNode)
       mockStorage.findSearchResults(1L) returns Seq(sampleSearchResult)
@@ -102,6 +103,7 @@ class NodeControllerSpec extends ControllerSpecification with JsonMatchers {
       h.status(result) must beEqualTo(h.OK)
 
       val resultJson = h.contentAsString(result)
+      resultJson must /("vizs") */("title" -> sampleTree.title)
       resultJson must /("nodes") */("description" -> "description")
       resultJson must /("tags") */("name" -> "a tag")
       resultJson must /("searchResults") */("query" -> "a search query")

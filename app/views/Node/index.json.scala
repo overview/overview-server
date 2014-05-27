@@ -4,6 +4,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
+import org.overviewproject.models.Viz
 
 object index {
   private[Node] def writeNode(node: Node) : JsValue = {
@@ -24,12 +25,21 @@ object index {
     )
   }
 
+  private[Node] def writeViz(viz: Viz) : JsValue = {
+    Json.obj(
+      "id" -> viz.id,
+      "title" -> viz.title
+    )
+  }
+
   def apply(
+    vizs: Iterable[Viz],
     nodes: Iterable[Node],
     tags: Iterable[Tag],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
+      "vizs" -> vizs.map(writeViz),
       "nodes" -> nodes.map(writeNode),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(writeTag)

@@ -7,7 +7,7 @@ define [
 ], ($, _, Backbone, VizTabs, i18n) ->
   class Viz extends Backbone.Model
     defaults:
-      name: 'name'
+      title: 'title'
 
   class VizList extends Backbone.Collection
     model: Viz
@@ -23,15 +23,18 @@ define [
 
     describe 'starting with two vizs', ->
       beforeEach ->
-        @viz1 = new Viz(id: 1, name: 'foo')
-        @viz2 = new Viz(id: 2, name: 'bar')
+        @viz1 = new Viz(id: 1, title: 'foo')
+        @viz2 = new Viz(id: 2, title: 'bar')
         @vizList = new VizList([@viz1, @viz2])
-        @view = new VizTabs(collection: @vizList)
+        @view = new VizTabs(collection: @vizList, selected: @viz1)
         $('body').append(@view.el)
 
       it 'should be a ul', -> expect(@view.$el).to.match('ul')
-      it 'should contain an li per viz', -> expect(@view.$('a.viz').length).to.eq(2)
+      it 'should contain an li per viz', -> expect(@view.$('li.viz').length).to.eq(2)
       it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
+      it 'should set "active" on selected vis', ->
+        expect(@view.$('li:eq(0)')).to.have.class('active')
+        expect(@view.$('li:eq(1)')).not.to.have.class('active')
       it 'should emit click', ->
         spy = sinon.spy()
         @view.on('click', spy)

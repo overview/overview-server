@@ -65,7 +65,7 @@ define [
       @state = @tree.state
 
       $div = $(@div)
-      @canvas = $("<canvas width=\"#{$div.width()}\" height=\"#{$div.height()}\"></canvas>")[0]
+      @canvas = $('<canvas width="1" height="1"></canvas>')[0]
       $div.append(@canvas)
       @$hover_node_description = $('<div class="hover-node-description" style="display:none;"></div>')
       $div.append(@$hover_node_description) # FIXME find a better place for this
