@@ -1,11 +1,11 @@
 define [
   'underscore'
   'jquery'
-  'vow'
+  'rsvp'
   'i18n'
   'bootstrap-tooltip'
   'bootstrap-popover'
-], (_, $, vow, i18n) ->
+], (_, $, rsvp, i18n) ->
   t = i18n.namespaced('views.Tree.show.Tour')
 
   DoneUrl = '/tour'
@@ -24,9 +24,9 @@ define [
     constructor: (tour) ->
       @tour = @_parseTour(tour)
 
-      @_doneDeferred = vow.defer()
+      @_doneDeferred = rsvp.defer()
       @_donePromise = @_doneDeferred
-        .promise()
+        .promise
         .then(=> @_disableTooltipsOnServer())
 
       @listen()
@@ -50,7 +50,12 @@ define [
 
     # Returns a Promise
     _disableTooltipsOnServer: ->
-      vow.when($.ajax(type: 'DELETE', url: DoneUrl))
+      new rsvp.Promise (resolve, reject) ->
+        $.ajax
+          type: 'DELETE'
+          url: DoneUrl
+          success: resolve
+          error: reject
 
     _parseTour: (input) ->
       outputPlusNull = for item in input
@@ -108,6 +113,7 @@ define [
     done: ->
       @remove()
       @_doneDeferred.resolve(@)
+      @_donePromise
 
     _onNext: (e) ->
       e.preventDefault()

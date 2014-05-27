@@ -19,20 +19,20 @@ define [
       state = new Backbone.Model
       tagStoreProxy =
         tagLikeStore: {}
-        setChangeOptions: jasmine.createSpy('setChangeOptions')
-        canMap: jasmine.createSpy('canMap')
-        map: jasmine.createSpy('map')
-        unmap: jasmine.createSpy('unmap')
+        setChangeOptions: sinon.stub()
+        canMap: sinon.stub()
+        map: sinon.stub()
+        unmap: sinon.stub()
       cache =
-        add_tag: jasmine.createSpy('add_tag')
-        create_tag: jasmine.createSpy('create_tag')
-        update_tag: jasmine.createSpy('update_tag')
-        delete_tag: jasmine.createSpy('delete_tag')
+        add_tag: sinon.spy()
+        create_tag: sinon.spy()
+        update_tag: sinon.spy()
+        delete_tag: sinon.spy()
         transaction_queue:
           queue: ->
       $dialog = $('<div></div>')
       oldFnModal = $.fn.modal
-      $.fn.modal = jasmine.createSpy('$.fn.modal').and.returnValue($dialog)
+      $.fn.modal = sinon.stub().returns($dialog)
       controller = new TagDialogController
         view: view
         tagStoreProxy: tagStoreProxy
@@ -51,31 +51,31 @@ define [
       beforeEach ->
         model = new Backbone.Model(id: 1)
         tag = { id: 1 }
-        tagStoreProxy.unmap.and.returnValue(tag)
+        tagStoreProxy.unmap.returns(tag)
 
       it 'should call cache.delete_tag', ->
         view.trigger('remove', model)
-        expect(tagStoreProxy.unmap).toHaveBeenCalledWith(model)
-        expect(cache.delete_tag).toHaveBeenCalledWith(tag)
+        expect(tagStoreProxy.unmap).to.have.been.calledWith(model)
+        expect(cache.delete_tag).to.have.been.calledWith(tag)
 
       it 'should unset the state taglike if needed', ->
         state.set('taglike', { tagId: 1 })
         view.trigger('remove', model)
-        expect(state.get('taglike')).toBe(null)
+        expect(state.get('taglike')).to.be(null)
 
       it 'should not unset the state taglike if not needed', ->
         state.set('taglike', { tagId: 2 })
         view.trigger('remove', model)
-        expect(state.get('taglike')).toEqual({ tagId: 2 })
+        expect(state.get('taglike')).to.deep.eq({ tagId: 2 })
 
       it 'should reset the documentListParams if needed', ->
         state.set(documentListParams: { type: 'tag', tagId: 1 })
-        state.setDocumentListParams = jasmine.createSpy('setDocumentListParams')
+        state.setDocumentListParams = sinon.spy()
         view.trigger('remove', model)
-        expect(state.setDocumentListParams).toHaveBeenCalled()
+        expect(state.setDocumentListParams).to.have.been.called
 
       it 'should not reset the documentListParams if not needed', ->
         state.set(documentListParams: { type: 'tag', tagId: 2 })
-        state.setDocumentListParams = jasmine.createSpy('setDocumentListParams')
+        state.setDocumentListParams = sinon.spy()
         view.trigger('remove', model)
-        expect(state.setDocumentListParams).not.toHaveBeenCalled()
+        expect(state.setDocumentListParams).not.to.have.been.called

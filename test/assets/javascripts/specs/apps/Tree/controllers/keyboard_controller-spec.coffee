@@ -60,8 +60,8 @@ define [
       press_and_expect_event = (code, controller_spec, method_spec, eventOptions=undefined) ->
         expect_event(controller_spec, method_spec)
         press(code, eventOptions)
-        expect(last_event).toBeDefined()
-        expect(last_event.type).toEqual('keydown')
+        expect(last_event).not.to.be.undefined
+        expect(last_event.type).to.eq('keydown')
 
       it 'should not crash with unregistered keypresses', ->
         # assume "\" is not used
@@ -84,14 +84,14 @@ define [
       xit 'should throw an error if a controller exists but not its method', ->
         # assumes "j" maps to "DocumentList.go_down"
         keyboard_controller.add_controller('DocumentListController', {})
-        expect(-> press('J'.charCodeAt(0))).toThrow('MethodNotFound')
+        expect(-> press('J'.charCodeAt(0))).to.throw('MethodNotFound')
 
       it 'should handle a keyboard shortcut with Control using event.metaKey', ->
         # assumes "Control+A" maps to "DocumentList.select_all"
         press_and_expect_event('A'.charCodeAt(0), 'DocumentListController', 'select_all', { metaKey: true })
-        expect(last_event.metaKey).toBe(true)
+        expect(last_event.metaKey).to.be(true)
 
       it 'should handle a keyboard shortcut with Control using event.ctrlKey', ->
         # assumes "Control+A" maps to "DocumentList.select_all"
         press_and_expect_event('A'.charCodeAt(0), 'DocumentListController', 'select_all', { ctrlKey: true })
-        expect(last_event.ctrlKey).toBe(true)
+        expect(last_event.ctrlKey).to.be(true)

@@ -31,7 +31,7 @@ define [
       abort: ->
 
     beforeEach ->
-      jasmine.Ajax.install()
+      @sandbox = sinon.sandbox.create(useFakeServer: true)
       $otherLink = $('<a href="#other-link">other link</a>').appendTo($('body'))
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.confirm_cancel.title': 'title'
@@ -41,89 +41,89 @@ define [
       modelStatus = 'waiting'
       modelUploads = []
       redirectFunctions =
-        href: jasmine.createSpy('redirectCalls.href')
-        hash: jasmine.createSpy('redirectCalls.hash')
+        href: sinon.spy()
+        hash: sinon.spy()
       model = new MockMassUpload
-      spyOn(model, 'abort')
+      @sandbox.stub(model, 'abort')
       view = new RedirectConfirmer
         model: model
         redirectFunctions: redirectFunctions
       view.$el.removeClass('fade') # make bootstrap synchronous
 
     afterEach ->
-      jasmine.Ajax.uninstall()
+      @sandbox.restore()
       $otherLink.remove()
       view.remove()
 
     it 'should redirect when the MassUpload is empty', ->
       view.tryPromptAndRedirect(href: 'http://example.org')
-      expect(redirectFunctions.href).toHaveBeenCalledWith('http://example.org')
+      expect(redirectFunctions.href).to.have.been.calledWith('http://example.org')
 
     it 'should not intercept clicks elsewhere in the DOM when the MassUpload is empty', ->
       event = simulateClickOn($otherLink.get(0))
-      expect(event.defaultPrevented).toBe(false)
-      expect(redirectFunctions.href).not.toHaveBeenCalled()
+      expect(event.defaultPrevented).to.be(false)
+      expect(redirectFunctions.href).not.to.have.been.called
 
     describe 'when MassUpload is not empty', ->
       beforeEach ->
         modelUploads = [ 'uploads.length will now be 1' ]
         view.tryPromptAndRedirect(href: 'http://example.org')
 
-      it 'should not redirect right away', -> expect(redirectFunctions.href).not.toHaveBeenCalled()
-      it 'should prompt', -> expect(view.el).toHaveClass('in')
+      it 'should not redirect right away', -> expect(redirectFunctions.href).not.to.have.been.called
+      it 'should prompt', -> expect(view.$el).to.have.class('in')
 
       describe 'after clicking the uncancel button', ->
         beforeEach ->
           view.$('.uncancel').click()
 
-        it 'should hide the dialog', -> expect(view.el).not.toHaveClass('in')
+        it 'should hide the dialog', -> expect(view.$el).not.to.have.class('in')
         it 'should not redirect', ->
           for k, __ of redirectFunctions
-            expect(redirectFunctions[k]).not.toHaveBeenCalled()
-        it 'should not abort', -> expect(model.abort).not.toHaveBeenCalled()
+            expect(redirectFunctions[k]).not.to.have.been.called
+        it 'should not abort', -> expect(model.abort).not.to.have.been.called
 
       describe 'after clicking the cancel button', ->
         beforeEach ->
           view.$('.cancel-upload').click()
 
-        it 'should abort', -> expect(model.abort).toHaveBeenCalled()
+        it 'should abort', -> expect(model.abort).to.have.been.called
         it 'should DELETE /files', ->
-          xhr = jasmine.Ajax.requests.mostRecent()
-          expect(xhr.method).toEqual('DELETE')
-          expect(xhr.url).toEqual('/files')
+          xhr = @sandbox.server.requests[0]
+          expect(xhr.method).to.eq('DELETE')
+          expect(xhr.url).to.eq('/files')
         it 'should disable the buttons', ->
-          expect(view.$('.cancel-upload')).toBeDisabled()
-          expect(view.$('.uncancel')).toBeDisabled()
+          expect(view.$('.cancel-upload')).to.be.disabled
+          expect(view.$('.uncancel')).to.be.disabled
         it 'should not redirect yet', ->
           for k, __ of redirectFunctions
-            expect(redirectFunctions[k]).not.toHaveBeenCalled()
+            expect(redirectFunctions[k]).not.to.have.been.called
 
         describe 'when DELETE succeeds', ->
           beforeEach ->
-            jasmine.Ajax.requests.mostRecent().response(status: 200, responseText: '')
+            @sandbox.server.requests[0].respond(200, {}, '')
 
-          it 'should redirect', -> expect(redirectFunctions.href).toHaveBeenCalledWith('http://example.org')
-          it 'should hide the dialog', -> expect(view.$el).not.toHaveClass('in')
+          it 'should redirect', -> expect(redirectFunctions.href).to.have.been.calledWith('http://example.org')
+          it 'should hide the dialog', -> expect(view.$el).not.to.have.class('in')
 
       describe 'when clicking a link elsewhere in the document', ->
         event = undefined
         beforeEach -> event = simulateClickOn($otherLink.get(0))
 
-        it 'should preventDefault() to avoid changing URLs', -> expect(event.defaultPrevented).toBe(true)
-        it 'should show the dialog', -> expect(view.el).toHaveClass('in')
+        it 'should preventDefault() to avoid changing URLs', -> expect(event.defaultPrevented).to.be(true)
+        it 'should show the dialog', -> expect(view.$el).to.have.class('in')
 
         describe 'on cancel with successful DELETE', ->
           beforeEach ->
             view.$('.cancel-upload').click()
-            jasmine.Ajax.requests.mostRecent().response(status: 200, responseText: '')
+            @sandbox.server.requests[0].respond(200, {}, '')
 
           it 'should redirect to the link href when cancelling', ->
-            expect(redirectFunctions.href).toHaveBeenCalledWith('#other-link')
+            expect(redirectFunctions.href).to.have.been.calledWith('#other-link')
 
-          it 'should hide the dialog', -> expect(view.$el).not.toHaveClass('in')
+          it 'should hide the dialog', -> expect(view.$el).not.to.have.class('in')
 
           describe 'next time the dialog appears', ->
             beforeEach ->
               view.tryPromptAndRedirect(href: 'http://example.org')
 
-            it 'should have buttons enabled', -> expect(view.$('button')).not.toBeDisabled()
+            it 'should have buttons enabled', -> expect(view.$('button')).not.to.be.disabled

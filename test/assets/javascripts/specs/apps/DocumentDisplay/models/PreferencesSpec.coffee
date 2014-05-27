@@ -10,20 +10,20 @@ define [
 
     it 'should set and get the sidebar pref', ->
       prefs.setPreference(PREF, true)
-      expect(prefs.getPreference(PREF)).toBe(true)
+      expect(prefs.getPreference(PREF)).to.be(true)
       prefs.setPreference(PREF, false)
-      expect(prefs.getPreference(PREF)).toBe(false)
+      expect(prefs.getPreference(PREF)).to.be(false)
 
     it 'should trigger change on change', ->
       called = false
       prefs.setPreference(PREF, true)
       prefs.on('change', -> called = true)
       prefs.setPreference(PREF, false)
-      expect(called).toBe(true)
+      expect(called).to.be(true)
 
     it 'should not trigger change on not-change', ->
       called = false
       prefs.setPreference(PREF, true)
       prefs.on('change', -> called = true)
       prefs.setPreference(PREF, true)
-      expect(called).toBe(false)
+      expect(called).to.be(false)

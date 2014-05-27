@@ -47,9 +47,9 @@ define [
           credentials: new MockCredentials
           status: 'fetched'
 
-      it 'should be a form', -> expect(view.el.tagName).toEqual('FORM')
+      it 'should be a form', -> expect(view.el.tagName).to.eq('FORM')
       it 'should put the query ID in an input', ->
-        expect(view.$('input[name=query]').val()).toEqual('projectid:1')
+        expect(view.$('input[name=query]').val()).to.eq('projectid:1')
 
     describe 'with quotes in the query', ->
       beforeEach ->
@@ -62,4 +62,4 @@ define [
           status: 'fetched'
 
       it 'should escape the query', ->
-        expect(view.$('input[name=query]').val()).toEqual("""<>"&'.""")
+        expect(view.$('input[name=query]').val()).to.eq("""<>"&'.""")

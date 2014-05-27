@@ -9,9 +9,11 @@ define [
       queue = undefined
 
       beforeEach ->
+        @sandbox = sinon.sandbox.create()
         queue = new TransactionQueue()
 
       afterEach ->
+        @sandbox.restore()
         queue = undefined
 
       it 'should run a Deferred-returning callback when empty', ->
@@ -25,7 +27,7 @@ define [
 
         queue.queue(cb)
         d.resolve()
-        expect(run).toBe(true)
+        expect(run).to.be(true)
 
       it 'should run a second callback after the first', ->
         ds = []
@@ -37,24 +39,24 @@ define [
           ds.push(d)
           d
 
-        spyOn(window, 'setTimeout')
+        @sandbox.stub(window, 'setTimeout')
         _.times(2, -> queue.queue(cb))
-        expect(ds.length).toEqual(1)
+        expect(ds.length).to.eq(1)
         ds[0].resolve()
-        expect(runs).toEqual(1)
-        expect(window.setTimeout).toHaveBeenCalled()
-        window.setTimeout.calls.mostRecent().args[0].call()
-        expect(ds.length).toEqual(2)
+        expect(runs).to.eq(1)
+        expect(window.setTimeout).to.have.been.called
+        window.setTimeout.getCall(0).args[0].call()
+        expect(ds.length).to.eq(2)
         ds[1].resolve()
-        expect(runs).toEqual(2)
-        expect(ds.length).toEqual(2)
+        expect(runs).to.eq(2)
+        expect(ds.length).to.eq(2)
 
       it 'should return a Deferred when queuing', ->
         op = Deferred()
         ret = queue.queue(-> op)
-        expect(ret.state()).toBe('pending')
+        expect(ret.state()).to.be('pending')
         op.resolve()
-        expect(ret.state()).toBe('resolved')
+        expect(ret.state()).to.be('resolved')
 
       it 'should run a second callback after the queue has completed', ->
         d = undefined
@@ -66,12 +68,12 @@ define [
         queue.queue(-> d = Deferred(); d.done(-> run = true))
         d.resolve()
 
-        expect(run).toBe(true)
+        expect(run).to.be(true)
 
       it 'should throw an exception on failure', ->
         d = undefined
         queue.queue(-> d = Deferred())
-        expect(-> d.reject()).toThrow("transactionFailed")
+        expect(-> d.reject()).to.throw("transactionFailed")
 
       it 'should halt operations after a failure', ->
         d = undefined
@@ -84,4 +86,4 @@ define [
 
         called = false
         queue.queue(-> called = true; d = Deferred())
-        expect(called).toBe(false)
+        expect(called).to.be(false)

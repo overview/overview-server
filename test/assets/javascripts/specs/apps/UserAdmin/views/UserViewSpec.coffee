@@ -23,6 +23,7 @@ define [
     view = undefined
 
     beforeEach ->
+      @sandbox = sinon.sandbox.create()
       i18n.reset_messages
         'views.admin.User.index.action.promote': 'promote'
         'views.admin.User.index.action.demote': 'demote'
@@ -43,68 +44,69 @@ define [
       view.render()
 
     afterEach ->
+      @sandbox.restore()
       view.remove()
 
     it 'should display the email', ->
-      expect(view.$('.email').text()).toEqual('user@example.org')
+      expect(view.$('.email').text()).to.eq('user@example.org')
 
     it 'should display is-admin with a promote link', ->
-      expect(view.$('.is-admin').text()).toContain('no promote')
+      expect(view.$('.is-admin').text()).to.contain('no promote')
 
     it 'should change is-admin to true on click', ->
       view.$('.is-admin a').click()
-      expect(user.get('is_admin')).toEqual(true)
+      expect(user.get('is_admin')).to.eq(true)
 
     it 'should display is-admin with a demote link', ->
       view.model.set('is_admin', true)
-      expect(view.$('.is-admin').text()).toContain('yes demote')
+      expect(view.$('.is-admin').text()).to.contain('yes demote')
 
     it 'should not display demote link for current admin', ->
       view.model.set(email: 'admin@example.org', is_admin: true)
-      expect(view.$('.is-admin a').length).toEqual(0)
+      expect(view.$('.is-admin a').length).to.eq(0)
 
     it 'should change is-admin to false on click', ->
       view.model.set('is_admin', true)
       view.$('.is-admin a').click()
-      expect(user.get('is_admin')).toEqual(false)
+      expect(user.get('is_admin')).to.eq(false)
 
     it 'should set updating class when updating', ->
       view.model.trigger('request')
-      expect(view.$el).toHaveClass('updating')
+      expect(view.$el).to.have.class('updating')
 
     it 'should remove updating class when done updating', ->
       view.$el.addClass('updating')
       view.model.trigger('sync')
-      expect(view.$el).not.toHaveClass('updating')
+      expect(view.$el).not.to.have.class('updating')
 
     it 'should add error class if updating fails', ->
       view.$el.addClass('updating')
       view.model.trigger('error')
-      expect(view.$el).toHaveClass('error')
+      expect(view.$el).to.have.class('error')
 
     it 'should render confirmed-at title', ->
-      expect(view.$('.confirmed-at').attr('title')).toEqual(new Date(1392670130000).toString())
+      expect(view.$('.confirmed-at').attr('title')).to.eq(new Date(1392670130000).toString())
 
     it 'should show a delete link', ->
-      expect(view.$('a.delete').length).toEqual(1)
+      expect(view.$('a.delete').length).to.eq(1)
 
     it 'should not show a delete link for the current user', ->
       view.model.set(email: 'admin@example.org')
-      expect(view.$('a.delete').length).toEqual(0)
+      expect(view.$('a.delete').length).to.eq(0)
 
     it 'should not delete when user does not confirm', ->
-      spyOn(window, 'confirm').and.returnValue(false)
+      @sandbox.stub(window, 'confirm', -> false)
       view.$('a.delete').click()
-      expect(window.confirm).toHaveBeenCalledWith('confirm.delete,user@example.org')
-      expect(view.model.has('deleting')).toEqual(false)
+      expect(window.confirm).to.have.been.calledWith('confirm.delete,user@example.org')
+      expect(view.model.has('deleting')).to.eq(false)
 
     it 'should delete when user confirms', ->
-      spyOn(window, 'confirm').and.returnValue(true)
+      @sandbox.stub(window, 'confirm', -> true)
       view.$('a.delete').click()
-      expect(view.model.has('deleting')).toEqual(true)
+      expect(view.model.has('deleting')).to.eq(true)
 
     it 'should have a change-password link', ->
-      expect(view.$('a.change-password').length).toEqual(1)
+      expect(view.$('a.change-password').length).to.eq(1)
 
     describe 'after clicking change-password', ->
       $form = undefined
@@ -112,9 +114,11 @@ define [
         view.$('a.change-password').click()
         $form = view.$('form.change-password')
 
-      it 'should show a change-password form', -> expect($form).toBeVisible()
-      it 'should focus the password field', -> expect($form.find('input[name=password]')).toBeFocused()
-      it 'should hide the link', -> expect(view.$('a.change-password')).not.toBeVisible()
+      it 'should show a change-password form', -> expect($form).to.be.visible
+      it 'should focus the password field', ->
+        $field = $form.find('input[name=password]')
+        expect($field[0]).to.eq($field[0].ownerDocument.activeElement)
+      it 'should hide the link', -> expect(view.$('a.change-password')).not.to.be.visible
 
       describe 'after entering a password', ->
         newPassword = 'n3Wp/\\ss!*'
@@ -123,15 +127,15 @@ define [
         describe 'and clicking submit', ->
           beforeEach -> $form.find(':submit').click()
 
-          it 'should change the model', -> expect(view.model.get('password')).toEqual(newPassword)
-          it 'should hide the form', -> expect($form).not.toBeVisible()
-          it 'should show the link', -> expect(view.$('a.change-password')).toBeVisible()
-          it 'should reset the form', -> expect($form.find('input[name=password]').val()).toEqual('')
+          it 'should change the model', -> expect(view.model.get('password')).to.eq(newPassword)
+          it 'should hide the form', -> expect($form).not.to.be.visible
+          it 'should show the link', -> expect(view.$('a.change-password')).to.be.visible
+          it 'should reset the form', -> expect($form.find('input[name=password]').val()).to.eq('')
 
         describe 'and clicking reset', ->
           beforeEach -> $form.find(':reset').click()
 
-          it 'should not change the model', -> expect(view.model.has('password')).toBe(false)
-          it 'should hide the form', -> expect($form).not.toBeVisible()
-          it 'should show the link', -> expect(view.$('a.change-password')).toBeVisible()
-          it 'should reset the form', -> expect($form.find('input[name=password]').val()).toEqual('')
+          it 'should not change the model', -> expect(view.model.has('password')).to.be(false)
+          it 'should hide the form', -> expect($form).not.to.be.visible
+          it 'should show the link', -> expect(view.$('a.change-password')).to.be.visible
+          it 'should reset the form', -> expect($form.find('input[name=password]').val()).to.eq('')

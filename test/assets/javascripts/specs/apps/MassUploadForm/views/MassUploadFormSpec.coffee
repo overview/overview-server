@@ -8,8 +8,9 @@ define [
   describe 'apps/MassUploadForm/views/MassUploadForm', ->
     model = undefined
     view = undefined
-    uploadCollectionViewRenderSpy = undefined
     isFolderUploadSupported = 'webkitdirectory' of document.createElement('input')
+
+    class UploadCollectionView extends Backbone.View
 
     addSomeFiles = ->
       model.uploads.add(new MockUpload)
@@ -35,7 +36,8 @@ define [
       $fileInput
 
     beforeEach ->
-      jasmine.Ajax.install()
+      @sandbox = sinon.sandbox.create()
+      @server = sinon.fakeServer.create()
 
       i18n.reset_messages
         'views.DocumentSet._massUploadForm.upload_prompt': 'upload_prompt'
@@ -45,52 +47,50 @@ define [
         'views.DocumentSet._massUploadForm.cancel': 'cancel'
         'views.DocumentSet._uploadProgress.uploading': 'uploading'
 
-      uploadCollectionViewClass = Backbone.View
-      uploadCollectionViewRenderSpy = spyOn(uploadCollectionViewClass.prototype, 'render').and.callThrough()
+      @sandbox.spy(UploadCollectionView.prototype, 'render')
 
       model = new Backbone.Model
       model.uploads = new Backbone.Collection
-      model.abort = jasmine.createSpy()
+      model.abort = sinon.spy()
 
       view = new MassUploadForm
         model: model
-        uploadCollectionViewClass: uploadCollectionViewClass
+        uploadCollectionViewClass: UploadCollectionView
         supportedLanguages: [ {code: "en", name: "English"} ]
         defaultLanguageCode: 'en'
       $.extend model,
-        addFiles: jasmine.createSpy()
+        addFiles: sinon.spy()
 
     afterEach ->
-      jasmine.Ajax.uninstall()
+      @server.restore()
+      @sandbox.restore()
       view.remove()
 
     describe 'init', ->
       it 'cancels previous uploads', ->
         # remove this when we add resumable uploads
-        # expect(jasmine.Ajax.requests.mostRecent().url).toEqual('/files')
-        # expect(jasmine.Ajax.requests.mostRecent().method).toEqual('DELETE')
 
     describe 'render', ->
       beforeEach ->
         view.render()
 
       it 'has a file input', ->
-        expect(view.$('.upload-prompt input[type=file]').length).toEqual(1)
+        expect(view.$('.upload-prompt input[type=file]').length).to.eq(1)
 
       it 'only shows pdf files by default', ->
-        expect(view.$('.upload-prompt input[type=file]').attr('accept')).toEqual('application/pdf')
+        expect(view.$('.upload-prompt input[type=file]').attr('accept')).to.eq('application/pdf')
 
       it 'has a folder input iff folder upload is supported', ->
-        expect(view.$('.upload-folder-prompt').length).toEqual(isFolderUploadSupported && 1 || 0)
+        expect(view.$('.upload-folder-prompt').length).to.eq(isFolderUploadSupported && 1 || 0)
 
       it 'renders uploadCollectionView', ->
-        expect(uploadCollectionViewRenderSpy).toHaveBeenCalled()
+        expect(UploadCollectionView.prototype.render).to.have.been.called
 
       it 'hides the progress bar when there are no uploads', ->
-        expect(view.$('.progress-bar').css('display')).toEqual('none')
+        expect(view.$('.progress-bar').css('display')).to.eq('none')
 
       it 'hides the minimum-files text when there are no uploads', ->
-        expect(view.$('.minimum-files').css('display')).toEqual('none')
+        expect(view.$('.minimum-files').css('display')).to.eq('none')
 
     describe 'model add event', ->
       beforeEach ->
@@ -99,13 +99,13 @@ define [
         model.uploads.trigger('add-batch', model.uploads.models)
 
       it 'does not yet enable the submit button', ->
-        expect(view.$('.choose-options')).toBeDisabled()
+        expect(view.$('.choose-options')).to.be.disabled
 
       it 'shows the progress bar', ->
-        expect(view.$('.progress-bar').css('display')).toEqual('block')
+        expect(view.$('.progress-bar').css('display')).to.eq('block')
 
       it 'shows the minimum-files text', ->
-        expect(view.$('.minimum-files').css('display')).not.toEqual('none')
+        expect(view.$('.minimum-files').css('display')).not.to.eq('none')
 
       describe 'with 3 or more uploads', ->
         beforeEach ->
@@ -114,33 +114,33 @@ define [
           model.uploads.trigger('add-batch', model.uploads.tail(1))
 
         it 'hides the minimum-files text', ->
-          expect(view.$('.minimum-files').css('display')).toEqual('none')
+          expect(view.$('.minimum-files').css('display')).to.eq('none')
 
         describe 'submit button', ->
           it 'is enabled', ->
-            expect(view.$('.choose-options')).not.toBeDisabled()
+            expect(view.$('.choose-options')).not.to.be.disabled
 
           it 'shows a modal with the import options app', ->
-            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog')
+            @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog')
             view.$('.choose-options').click()
-            expect(ImportOptionsApp.addHiddenInputsThroughDialog).toHaveBeenCalledWith(
-              jasmine.any(HTMLElement),
+            expect(ImportOptionsApp.addHiddenInputsThroughDialog).to.have.been.calledWith(
+              sinon.match.has('childNodes'),
               onlyOptions: [ 'name', 'lang', 'supplied_stop_words', 'important_words' ]
-              supportedLanguages: jasmine.any(Array)
+              supportedLanguages: sinon.match.array
               defaultLanguageCode: 'en'
-              callback: jasmine.any(Function)
+              callback: sinon.match.func
             )
 
           describe 'after selecting options', ->
             it 'disables the "set options" button', ->
-              spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
+              @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
               view.$('.choose-options').click()
-              expect(view.$('button.choose-options')).toBeDisabled()
-              expect(view.$('.upload-prompt button.select-files')).toBeDisabled()
-              expect(view.$('.upload-prompt :file')).toBeDisabled()
+              expect(view.$('button.choose-options')).to.be.disabled
+              expect(view.$('.upload-prompt button.select-files')).to.be.disabled
+              expect(view.$('.upload-prompt :file')).to.be.disabled
               if isFolderUploadSupported
-                expect(view.$('.upload-folder-prompt button.select-folders')).toBeDisabled()
-                expect(view.$('.upload-folder-prompt :file')).toBeDisabled()
+                expect(view.$('.upload-folder-prompt button.select-folders')).to.be.disabled
+                expect(view.$('.upload-folder-prompt :file')).to.be.disabled
 
     describe 'dom events', ->
       it 'changes the button hover state when the invisible input is hovered', ->
@@ -148,9 +148,9 @@ define [
         $input = view.$('.upload-prompt :file')
         $button = view.$('.upload-prompt button')
         $input.trigger('mouseenter')
-        expect($button).toHaveClass('hover')
+        expect($button).to.have.class('hover')
         $input.trigger('mouseleave')
-        expect($button).not.toHaveClass('hover')
+        expect($button).not.to.have.class('hover')
 
       if isFolderUploadSupported
         it 'changes the upload-folder button hover state when the invisible input is hovered', ->
@@ -158,9 +158,9 @@ define [
           $input = view.$('.upload-folder-prompt :file')
           $button = view.$('.upload-folder-prompt button')
           $input.trigger('mouseenter')
-          expect($button).toHaveClass('hover')
+          expect($button).to.have.class('hover')
           $input.trigger('mouseleave')
-          expect($button).not.toHaveClass('hover')
+          expect($button).not.to.have.class('hover')
 
     describe 'uploading files', ->
       fileList = undefined
@@ -175,10 +175,10 @@ define [
         $fileInput.trigger('change')
 
       it 'queues files for uploading', ->
-        expect(model.addFiles).toHaveBeenCalledWith(fileList)
+        expect(model.addFiles).to.have.been.calledWith(fileList)
 
       it 'clears the file input once files have been queued', ->
-        expect($fileInput[0].value).toEqual('')
+        expect($fileInput[0].value).to.eq('')
 
     if isFolderUploadSupported
       describe 'uploading folders', ->
@@ -199,41 +199,41 @@ define [
           $fileInput.trigger('change')
 
         it 'queues files for uploading', ->
-          expect(model.addFiles).toHaveBeenCalledWith([
+          expect(model.addFiles).to.have.been.calledWith([
             { name: 'a.pdf', type: 'application/pdf', webkitRelativePath: 'x/foo/a.pdf' }
             { name: 'c.pdf.t', type: 'application/pdf', webkitRelativePath: 'x/bar/c.pdf.t' }
           ])
 
         it 'clears the file input once files have been queued', ->
-          expect($fileInput[0].value).toEqual('')
+          expect($fileInput[0].value).to.eq('')
 
     describe 'buttons', ->
       beforeEach ->
         view.render()
 
       it 'has an add files button', ->
-        expect(view.$el.text()).toMatch(/upload_prompt/)
+        expect(view.$el.text()).to.match(/upload_prompt/)
 
       describe 'choose options button', ->
         it 'has a "finished selecting files" button', ->
-          expect(view.$('.choose-options').length).toEqual(1)
-          expect(view.$el.text()).toMatch(/choose_options/)
+          expect(view.$('.choose-options').length).to.eq(1)
+          expect(view.$el.text()).to.match(/choose_options/)
 
         it 'is disabled with no files selected', ->
-          expect(view.$('.choose-options')).toBeDisabled()
+          expect(view.$('.choose-options')).to.be.disabled
 
         it 'is disabled after reset', ->
           addSomeFiles()
           model.uploads.reset([])
 
-          expect(view.$('button.choose-options')).toBeDisabled()
+          expect(view.$('button.choose-options')).to.be.disabled
 
         it 'is enabled after reset and then selecting options', ->
           addSomeFiles()
           model.uploads.reset([])
           addSomeFiles()
 
-          expect(view.$('button.choose-options')).not.toBeDisabled()
+          expect(view.$('button.choose-options')).not.to.be.disabled
 
         describe 'after selecting options', ->
           beforeEach ->
@@ -241,38 +241,36 @@ define [
             addSomeFiles()
             model.set(status: 'waiting')
 
-            spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
+            @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
             view.$('.choose-options').click()
             $('body').append(view.el)
 
           it 'disables itself and the select files button', ->
-            expect(view.$('button.choose-options')).toBeDisabled()
-            expect(view.$('button.select-files')).toBeDisabled()
-            expect(view.$('.upload-prompt :file')).toBeDisabled()
+            expect(view.$('button.choose-options')).to.be.disabled
+            expect(view.$('button.select-files')).to.be.disabled
+            expect(view.$('.upload-prompt :file')).to.be.disabled
 
           it 'shows the finished importing text', ->
-            expect(view.$('.wait-for-import')).toBeVisible()
+            expect(view.$('.wait-for-import')).to.be.visible
 
           it 'hides the finished importing text on cancel', ->
             model.uploads.reset()
-            expect(view.$('.wait-for-import')).not.toBeVisible()
+            expect(view.$('.wait-for-import')).not.to.be.visible
 
       describe 'cancel button', ->
         it 'has a cancel button with the correct message', ->
-          expect(view.$('.cancel').length).toEqual(1)
-          expect(view.$el.text()).toMatch(/cancel/)
+          expect(view.$('.cancel').length).to.eq(1)
+          expect(view.$el.text()).to.match(/cancel/)
 
         it 'triggers "cancel"', ->
-          spy = jasmine.createSpy('cancel callback')
+          spy = sinon.spy()
           view.on('cancel', spy)
           view.$('.cancel').click()
-          expect(spy).toHaveBeenCalled()
+          expect(spy).to.have.been.called
 
     describe 'finishing upload', ->
-      submitSpy = undefined
-
       beforeEach ->
-        submitSpy = spyOn($.fn, 'submit')
+        @sandbox.stub($.fn, 'submit')
         view.render()
 
         model.uploads.add(new MockUpload)
@@ -285,35 +283,35 @@ define [
         model.set(status: 'waiting')
 
         # choose options
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
         view.$('.choose-options').click()
 
-        expect(submitSpy).toHaveBeenCalled()
+        expect($.fn.submit).to.have.been.called
 
       it 'submits the form when options are set before the upload is done', ->
         # uploads are in progress
         model.set(status: 'uploading')
 
         # choose options
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
         view.$('.choose-options').click()
 
         # finish uploading
         model.set(status: 'waiting')
 
-        expect(submitSpy).toHaveBeenCalled()
+        expect($.fn.submit).to.have.been.called
 
       it 'does not submit the form until the upload is finished', ->
-        spyOn(ImportOptionsApp, 'addHiddenInputsThroughDialog').and.callFake( (el, options) -> options.callback() )
+        @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog', (el, options) -> options.callback())
         view.$('.choose-options').click()
 
-        expect(submitSpy).not.toHaveBeenCalled()
+        expect($.fn.submit).not.to.have.been.called
 
       it 'hides the progress bar when the upload finishes', ->
         # finish uploads
         model.set(status: 'waiting')
 
-        expect(view.$el.find('.progress-bar').css('display')).toEqual('none')
+        expect(view.$el.find('.progress-bar').css('display')).to.eq('none')
 
       it 'shows the progress bar when adding another file', ->
         # finish uploads
@@ -324,4 +322,4 @@ define [
         model.uploads.trigger('add-batch', model.uploads.last(1))
         model.set(status: 'uploading')
 
-        expect(view.$el.find('.progress-bar').css('display')).toEqual('block')
+        expect(view.$el.find('.progress-bar').css('display')).to.eq('block')

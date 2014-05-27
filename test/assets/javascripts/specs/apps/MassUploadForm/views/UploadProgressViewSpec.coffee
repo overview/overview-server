@@ -18,4 +18,4 @@ define [
     describe 'getError', ->
       it 'returns the error from the model', ->
         model.set('uploadErrors', [{error: 'an error'}])
-        expect(view.getError()).toEqual('an error')
+        expect(view.getError()).to.eq('an error')

@@ -31,20 +31,20 @@ define [
 
     it 'should not render anything when status is not fetched', ->
       model.set('status', 'unknown')
-      expect(view.$el.is(':visible')).toBe(false)
+      expect(view.$el.is(':visible')).to.be(false)
       model.set('status', 'fetching')
-      expect(view.$el.is(':visible')).toBe(false)
+      expect(view.$el.is(':visible')).to.be(false)
       model.set('status', 'error')
-      expect(view.$el.is(':visible')).toBe(false)
+      expect(view.$el.is(':visible')).to.be(false)
 
     it 'should render the title by default', ->
-      expect(view.$('input[name=title]').val()).toEqual("title.value,title")
+      expect(view.$('input[name=title]').val()).to.eq("title.value,title")
 
     it 'should change the title when the status changes to fetched', ->
       model.set('status', 'fetching')
       model.get('query').set('title', 'title2')
       model.set('status', 'fetched')
-      expect(view.$('input[name=title]').val()).toEqual("title.value,title2")
+      expect(view.$('input[name=title]').val()).to.eq("title.value,title2")
 
     it 'should render the extra options', ->
-      expect(view.$('.some-extra-options').length).toEqual(1)
+      expect(view.$('.some-extra-options').length).to.eq(1)

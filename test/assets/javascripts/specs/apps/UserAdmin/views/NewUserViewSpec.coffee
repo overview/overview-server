@@ -18,10 +18,10 @@ define [ 'apps/UserAdmin/views/NewUserView', 'i18n' ], (NewUserView, i18n) ->
       view.remove()
 
     it 'should prompt for an email address', ->
-      expect(view.$('input[type=email][name=email]').length).toEqual(1)
+      expect(view.$('input[type=email][name=email]').length).to.eq(1)
 
     it 'should prompt for a password', ->
-      expect(view.$('input[type=password][name=password]').length).toEqual(1)
+      expect(view.$('input[type=password][name=password]').length).to.eq(1)
 
     describe 'on valid submit', ->
       params =
@@ -30,14 +30,16 @@ define [ 'apps/UserAdmin/views/NewUserView', 'i18n' ], (NewUserView, i18n) ->
       createSpy = undefined
 
       beforeEach ->
-        createSpy = jasmine.createSpy('create')
+        createSpy = sinon.spy()
         view.on('create', createSpy)
         view.$('input[name=email]').val(params.email)
         view.$('input[name=password]').val(params.password)
         view.$('form').submit()
 
-      it 'should trigger :create with email/password', -> expect(createSpy).toHaveBeenCalledWith(params)
-      it 'should focus the email', -> expect(view.$('input[name=email]')).toBeFocused()
+      it 'should trigger :create with email/password', -> expect(createSpy).to.have.been.calledWith(params)
+      it 'should focus the email', ->
+        $email = view.$('input[name=email]')
+        expect($email[0]).to.eq($email[0].ownerDocument.activeElement)
       it 'should reset the form', ->
-        expect(view.$('input[name=email]').val()).toEqual('')
-        expect(view.$('input[name=password]').val()).toEqual('')
+        expect(view.$('input[name=email]').val()).to.eq('')
+        expect(view.$('input[name=password]').val()).to.eq('')

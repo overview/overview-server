@@ -6,4 +6,4 @@ define [ 'apps/UserAdmin/models/Paginator' ], (Paginator) ->
       subject = new Paginator()
 
     it 'should start with page=1', ->
-      expect(subject.get('page')).toEqual(1)
+      expect(subject.get('page')).to.eq(1)

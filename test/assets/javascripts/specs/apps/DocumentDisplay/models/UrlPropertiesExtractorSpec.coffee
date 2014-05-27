@@ -13,7 +13,7 @@ define [
       it "should recognize #{name}", ->
         ret = urlToProperties(inUrl)
         for property, value of outProperties
-          expect(ret[property]).toEqual(value)
+          expect(ret[property]).to.eq(value)
 
     describe 'urlToProperties', ->
       itShouldRecognize(

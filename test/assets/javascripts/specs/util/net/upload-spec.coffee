@@ -19,59 +19,58 @@ define [
       parts.join('-')
 
     beforeEach ->
-      jasmine.Ajax.install()
-      fakeFile = jasmine.createSpyObj('file', ['lastModifiedDate'])
-      fakeFile.name = 'foo bar "baz".pdf'  # filename with spaces and quotes
-      fakeFile.size = 1000
-      fakeFile.lastModifiedDate = {
-        toString: jasmine.createSpy().and.returnValue('last-modified-date')
-      }
-      fakeFile.slice = jasmine.createSpy().and.returnValue('a file blob')
+      @sandbox = sinon.sandbox.create(useFakeServer: true)
+      fakeFile =
+        name: 'foo bar "baz".pdf' # filename with spaces and quotes
+        size: 1000
+        lastModifiedDate:
+          toString: sinon.stub().returns('last-modified-date')
+        slice: sinon.stub().returns('a file blob')
 
     afterEach ->
-      jasmine.Ajax.uninstall()
+      @sandbox.restore()
 
     # TODO: test stop, abort, etc.
 
     describe 'starting an upload with a unicode filename', ->
-      fakeStartUploadWithFilename = (filename) ->
-        # If the filename isn't an HTTP "token", we UTF-8-escape it
-        fakeFile.name = filename
-        upload = new Upload(fakeFile, '/upload/')
-        upload.start()
-        jasmine.Ajax.requests.mostRecent().response(status: 404) # not found, go ahead and upload
+      beforeEach ->
+        @fakeStartUploadWithFilename = (filename) =>
+          # If the filename isn't an HTTP "token", we UTF-8-escape it
+          fakeFile.name = filename
+          upload = new Upload(fakeFile, '/upload/')
+          upload.start()
+          @sandbox.server.requests[@sandbox.server.requests.length - 1].respond([ 404, {}, '' ]) # not found, go ahead and upload
 
-      mostRecentContentDisposition = ->
-        request = jasmine.Ajax.requests.mostRecent()
-        request.requestHeaders['Content-Disposition']
+        @mostRecentContentDisposition = =>
+          request = @sandbox.server.requests[@sandbox.server.requests.length - 1]
+          request.requestHeaders['Content-Disposition']
 
       it 'starts the upload, and properly unicode-escapes the filename', ->
-        fakeStartUploadWithFilename('元気なですか？.pdf') # filename with unicode
-        request = jasmine.Ajax.requests.mostRecent()
+        @fakeStartUploadWithFilename('元気なですか？.pdf') # filename with unicode
 
-        expect(upload.state).toEqual(3)
-        expect(request.method).toEqual('POST')
-        expect(request.requestHeaders['Content-Disposition']).toEqual("attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
+        expect(upload.state).to.eq(3)
+        expect(@sandbox.server.requests[1].method).to.eq('POST')
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''%E5%85%83%E6%B0%97%E3%81%AA%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F.pdf")
 
       it 'escapes an even slightly not-HTTP-friendly filename', ->
-        fakeStartUploadWithFilename('file,name.txt')
-        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2Cname.txt")
+        @fakeStartUploadWithFilename('file,name.txt')
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%2Cname.txt")
 
       it 'escapes letters encodeURIComponent does not', ->
-        fakeStartUploadWithFilename("file'name.txt")
-        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%27name.txt")
+        @fakeStartUploadWithFilename("file'name.txt")
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%27name.txt")
 
       it 'escapes the asterix', ->
-        fakeStartUploadWithFilename("file*name.txt")
-        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2Aname.txt")
+        @fakeStartUploadWithFilename("file*name.txt")
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%2Aname.txt")
 
       it 'does not escape the pipe, caret or backtick', ->
-        fakeStartUploadWithFilename("file*|^`name.txt") # trigger encoding
-        expect(mostRecentContentDisposition()).toEqual("attachment; filename*=UTF-8''file%2A|^`name.txt")
+        @fakeStartUploadWithFilename("file*|^`name.txt") # trigger encoding
+        expect(@mostRecentContentDisposition()).to.eq("attachment; filename*=UTF-8''file%2A|^`name.txt")
 
       it 'simply quotes complex, no-escaping-necessary characters', ->
-        fakeStartUploadWithFilename("file|^`name.txt")
-        expect(mostRecentContentDisposition()).toEqual('attachment; filename="file|^`name.txt"')
+        @fakeStartUploadWithFilename("file|^`name.txt")
+        expect(@mostRecentContentDisposition()).to.eq('attachment; filename="file|^`name.txt"')
 
     describe 'starting an upload', ->
       beforeEach ->
@@ -79,66 +78,56 @@ define [
         upload.start()
 
       it 'moves into the starting state', ->
-        expect(upload.state).toEqual(2)
+        expect(upload.state).to.eq(2)
 
       it 'sets the url from the stub that was passed in', ->
-        expect(jasmine.Ajax.requests.mostRecent().url).toMatch(/^\/upload\//)
+        expect(@sandbox.server.requests[0].url).to.contain('/upload/')
 
       it 'computes a correct guid for the file', ->
-        expect(jasmine.Ajax.requests.mostRecent().url).toMatch(makeUUID('foo bar "baz".pdf::last-modified-date::1000'))
+        expect(@sandbox.server.requests[0].url).to.contain(makeUUID('foo bar "baz".pdf::last-modified-date::1000'))
 
       it 'attempts to find the file before uploading', ->
-        expect(jasmine.Ajax.requests.mostRecent().method).toEqual('HEAD')
+        expect(@sandbox.server.requests[0].method).to.eq('HEAD')
 
       describe 'when the file is not present on the server yet', ->
         beforeEach ->
-          jasmine.Ajax.requests.mostRecent().response(status: 404)  # not found, go ahead and upload
+          @sandbox.server.requests[0].respond(404, {}, '') # not found, go ahead and upload
 
         it 'starts the upload', ->
-          request = jasmine.Ajax.requests.mostRecent()
-
-          expect(upload.state).toEqual(3)
-          expect(request.method).toEqual('POST')
+          expect(upload.state).to.eq(3)
+          expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'correctly specifies the content-range', ->
-          expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('0-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-999/1000')
 
       describe 'when the server has 0 bytes of the file uploaded', ->
         beforeEach ->
-          jasmine.Ajax.requests.mostRecent().response(
-            status: 204,
-            responseHeaders: { 'Content-Type': 'application/json' } # No content-range header
-          )
+          @sandbox.server.requests[0].respond(204, { 'Content-Type': 'application/json' }, '') # no content-range header
 
         it 'should start the upload', ->
-          request = jasmine.Ajax.requests.mostRecent()
-          expect(upload.state).toEqual(3)
-          expect(request.method).toEqual('POST')
+          expect(upload.state).to.eq(3)
+          expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'should specify the correct content-range', ->
-          expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('0-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-999/1000')
 
       describe 'when part of the file has been uploaded already', ->
         beforeEach ->
-          upload = new Upload(fakeFile, '/upload/')
-          upload.start()
-          jasmine.Ajax.requests.mostRecent().response(
-            status: 404
-            responseHeaders:
-              'Content-Type': 'application/json'
-              'Content-Range': '0-499/1000'
-          )
+          @sandbox.server.requests[0].respond(204, { 'Content-Type': 'application/json', 'Content-Range': '0-499/1000' }, '')
+
+        it 'should start the upload', ->
+          expect(upload.state).to.eq(3)
+          expect(@sandbox.server.requests[1].method).to.eq('POST')
 
         it 'correctly specifies the content-range', ->
-          expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('500-999/1000')
+          expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('500-999/1000')
 
     describe 'with a zero-length file', ->
       beforeEach ->
         fakeFile.size = 0
         upload = new Upload(fakeFile, '/upload/')
         upload.start()
-        jasmine.Ajax.requests.mostRecent().response(status: 404)  # not found, go ahead and upload
+        @sandbox.server.requests[0].respond(404, {}, '') # not found, go ahead and upload
 
       it 'correctly specifies the content-range', ->
-        expect(jasmine.Ajax.requests.mostRecent().requestHeaders['Content-Range']).toEqual('0-0/0')
-
+        expect(@sandbox.server.requests[1].requestHeaders['Content-Range']).to.eq('0-0/0')

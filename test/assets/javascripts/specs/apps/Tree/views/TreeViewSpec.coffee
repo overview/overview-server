@@ -31,7 +31,7 @@
           it 'highlights only the selection and its child nodes', ->
             expect(
               TreeView.helpers.getHighlightedNodeIds({ type: 'node', nodeId: 3 }, 12, onDemandTree, documentStore)
-            ).toEqual(
+            ).to.deep.eq(
               3: null
               5: null
             )

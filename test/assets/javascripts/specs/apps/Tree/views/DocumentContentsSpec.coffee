@@ -24,8 +24,8 @@ define [
       beforeEach ->
         state = new Backbone.Model()
         displayApp = new Backbone.View()
-        displayApp.setDocument = jasmine.createSpy('setDocument')
-        displayApp.scrollByPages = jasmine.createSpy('scrollByPages')
+        displayApp.setDocument = sinon.spy()
+        displayApp.scrollByPages = sinon.spy()
 
       afterEach ->
         view?.stopListening()
@@ -36,24 +36,24 @@ define [
           view = new DocumentContents(cache: cache, state: state, documentDisplayApp: displayApp)
 
         it 'should not set the document', ->
-          expect(displayApp.setDocument).not.toHaveBeenCalled()
+          expect(displayApp.setDocument).not.to.have.been.called
 
         it 'should not set the document when oneDocumentSelected is false', ->
           state.set(documentId: 3, oneDocumentSelected: false)
-          expect(displayApp.setDocument).not.toHaveBeenCalled()
+          expect(displayApp.setDocument).not.to.have.been.called
 
         it 'should not set the document when documentId is null', ->
           state.set(documentId: null, oneDocumentSelected: true)
-          expect(displayApp.setDocument).not.toHaveBeenCalled()
+          expect(displayApp.setDocument).not.to.have.been.called
 
         it 'should set the document when documentId is non-null and oneDocumentSelected is true', ->
           state.set(documentId: 1, oneDocumentSelected: true)
-          expect(displayApp.setDocument).toHaveBeenCalled()
+          expect(displayApp.setDocument).to.have.been.called
 
         it 'should not set the document when documentId points to a nonexistent document', ->
           state.set(documentId: 99, oneDocumentSelected: true)
-          expect(displayApp.setDocument).not.toHaveBeenCalled()
+          expect(displayApp.setDocument).not.to.have.been.called
 
         it 'should pass through scroll_by_pages', ->
           view.scroll_by_pages(1)
-          expect(displayApp.scrollByPages).toHaveBeenCalledWith(1)
+          expect(displayApp.scrollByPages).to.have.been.calledWith(1)

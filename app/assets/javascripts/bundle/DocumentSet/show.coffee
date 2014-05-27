@@ -61,10 +61,10 @@ requirejs.config({
     jquery: 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     md5: 'vendor/md5'
+    rsvp: 'vendor/rsvp'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
-    vow: 'vendor/vow'
   }
 })
 

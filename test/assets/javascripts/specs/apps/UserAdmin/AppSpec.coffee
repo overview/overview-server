@@ -15,24 +15,26 @@ define [ 'jquery', 'backbone', 'apps/UserAdmin/App', 'i18n' ], ($, Backbone, App
         'views.admin.User.index.new.password': 'new.password'
         'views.admin.User.index.new.submit': 'new.submit'
 
-      spyOn(Backbone, 'sync')
+      @sandbox = sinon.sandbox.create()
+      @sandbox.stub(Backbone, 'sync')
       $el = $('<div id="user-admin-app"></div>').appendTo($('body'))
       app = new App
         el: $el.get(0)
         adminEmail: 'admin@example.org'
 
     afterEach ->
+      @sandbox.restore()
       $el?.remove()
       app?.remove()
 
     it 'should use an existing element', ->
-      expect(app.el.getAttribute('id')).toEqual('user-admin-app')
+      expect(app.el.getAttribute('id')).to.eq('user-admin-app')
 
     it 'should have a controller', ->
-      expect(app.controller).toBeDefined()
+      expect(app.controller).not.to.be.undefined
 
     it 'should sync the users collection', ->
-      expect(Backbone.sync).toHaveBeenCalled()
+      expect(Backbone.sync).to.have.been.called
 
     it 'should create a MainView with @el', ->
-      expect($(app.el).find('table.users').length).toEqual(1)
+      expect($(app.el).find('table.users').length).to.eq(1)

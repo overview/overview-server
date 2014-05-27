@@ -39,24 +39,24 @@ define [
       view = new CredentialsView({ model: model })
 
     it 'should not render anything when status is unknown', ->
-      expect(view.$el.html()).toEqual('')
+      expect(view.$el.html()).to.eq('')
 
     it 'should show a spinner when status is fetching', ->
       model.set('status', 'fetching')
-      expect(view.$('div.loading').length).toEqual(1)
+      expect(view.$('div.loading').length).to.eq(1)
 
     it 'should prompt for username/password on error', ->
       model.set('status', 'error')
-      expect(view.$('input[type=email]').length).toEqual(1)
-      expect(view.$('input[type=password]').length).toEqual(1)
-      expect(view.$(':submit').length).toEqual(1)
+      expect(view.$('input[type=email]').length).to.eq(1)
+      expect(view.$('input[type=password]').length).to.eq(1)
+      expect(view.$(':submit').length).to.eq(1)
 
     it 'should show success', ->
       model.set({
         credentials: { isComplete: (-> true), get: -> 'user@example.org' }
         status: 'fetched'
       })
-      expect(view.$('p.fetched').text()).toEqual('fetched')
+      expect(view.$('p.fetched').text()).to.eq('fetched')
 
     it 'should show hidden fields when project is loaded', ->
       credentials = new Backbone.Model({
@@ -65,5 +65,5 @@ define [
       })
       credentials.isComplete = -> true
       model.set({ credentials: credentials, status: 'fetched' })
-      expect(view.$('input[name=documentcloud_username]').val()).toEqual('user@example.org')
-      expect(view.$('input[name=documentcloud_password]').val()).toEqual('password')
+      expect(view.$('input[name=documentcloud_username]').val()).to.eq('user@example.org')
+      expect(view.$('input[name=documentcloud_password]').val()).to.eq('password')

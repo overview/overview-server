@@ -29,11 +29,11 @@ define [
         @view = new VizTabs(collection: @vizList)
         $('body').append(@view.el)
 
-      it 'should be a ul', -> expect(@view.el).toBeMatchedBy('ul')
-      it 'should contain an li per viz', -> expect(@view.$('a.viz').length).toEqual(2)
-      it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).toContainText('foo')
+      it 'should be a ul', -> expect(@view.$el).to.match('ul')
+      it 'should contain an li per viz', -> expect(@view.$('a.viz').length).to.eq(2)
+      it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
       it 'should emit click', ->
-        spy = jasmine.createSpy()
+        spy = sinon.spy()
         @view.on('click', spy)
         @view.$('a:eq(1)').click()
-        expect(spy).toHaveBeenCalledWith(@viz2)
+        expect(spy).to.have.been.calledWith(@viz2)

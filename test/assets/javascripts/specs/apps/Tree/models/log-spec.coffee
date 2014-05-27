@@ -10,25 +10,29 @@ define [
 
   describe 'models/log', ->
     beforeEach ->
-      spyOn($, 'ajax')
+      @sandbox = sinon.sandbox.create()
+      @sandbox.stub($, 'ajax')
+
+    afterEach ->
+      @sandbox.restore()
 
     describe 'Log', ->
       describe 'entries', ->
         it 'should begin empty', ->
           log = new Log()
-          expect(log.entries).toEqual([])
+          expect(log.entries).to.deep.eq([])
 
       describe 'add_entry', ->
         it 'should add entries', ->
           log = new Log()
           log.add_entry(create_entry())
-          expect(log.entries.length).toEqual(1)
+          expect(log.entries.length).to.eq(1)
 
         it 'should add time to the entry as a string', ->
+          @sandbox.useFakeTimers() # so clock stays put
           log = new Log()
-          Timecop.freeze new Date(Date.UTC(2012, 6, 4, 15, 36, 25, 0)), ->
-            log.add_entry(create_entry())
-          expect(log.entries[0].date).toEqual("2012-07-04T15:36:25.000Z")
+          log.add_entry(create_entry())
+          expect(log.entries[0].date).to.eq(new Date().toISOString())
 
         it 'should behave as pass-by-value', ->
           # In other words, the Log will hold a "date" in its object; but the
@@ -37,22 +41,22 @@ define [
           entry = create_entry()
           same_entry = create_entry()
           log.add_entry(entry)
-          expect(entry).toEqual(same_entry)
+          expect(entry).to.deep.eq(same_entry)
 
         it 'should set empty values for component and action and details', ->
           log = new Log()
           log.add_entry({})
           entry = log.entries[0]
-          expect(entry.component).toEqual('')
-          expect(entry.action).toEqual('')
-          expect(entry.details).toEqual('')
+          expect(entry.component).to.eq('')
+          expect(entry.action).to.eq('')
+          expect(entry.details).to.eq('')
 
       describe 'clear_entries', ->
         it 'should clear entries', ->
           log = new Log()
           log.add_entry(create_entry())
           log.clear_entries()
-          expect(log.entries).toEqual([])
+          expect(log.entries).to.deep.eq([])
 
       describe 'upload_entries_to_server_and_clear', ->
         log = undefined
@@ -63,40 +67,40 @@ define [
 
         it 'should clear entries', ->
           log.upload_entries_to_server_and_clear()
-          expect(log.entries).toEqual([])
+          expect(log.entries).to.deep.eq([])
 
         it 'should send an ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax).toHaveBeenCalled()
+          expect($.ajax).to.have.been.called
 
         it 'should post to the proper path', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.calls.mostRecent().args[0].url).toMatch(/\bcreate-many\b/)
+          expect($.ajax.lastCall.args[0].url).to.match(/\bcreate-many\b/)
 
         it 'should post a JSON array', ->
           entry = log.entries[0]
           log.upload_entries_to_server_and_clear()
-          data = $.ajax.calls.mostRecent().args[0].data
-          expect(data).toMatch(/^\[\{.*\}\]$/)
-          expect(data).toMatch(new RegExp("\"component\":\s*\"#{entry.component}\""))
+          data = $.ajax.lastCall.args[0].data
+          expect(data).to.match(/^\[\{.*\}\]$/)
+          expect(data).to.match(new RegExp("\"component\":\s*\"#{entry.component}\""))
 
         it 'should not post when empty', ->
           log.clear_entries()
           log.upload_entries_to_server_and_clear()
-          expect($.ajax).not.toHaveBeenCalled()
+          expect($.ajax).not.to.have.been.called
 
         it 'should set contentType: "application/json" on the $.ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.calls.mostRecent().args[0].contentType).toEqual('application/json')
+          expect($.ajax.lastCall.args[0].contentType).to.eq('application/json')
 
         it 'should set global: false on the $.ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.calls.mostRecent().args[0].global).toBe(false)
+          expect($.ajax.lastCall.args[0].global).to.be(false)
 
       describe 'for_component()', ->
         it 'should return a function that can be used as a shortcut', ->
           log = new Log()
-          spyOn(log, 'add_entry').and.callThrough()
+          @sandbox.spy(log, 'add_entry')
           log_shortcut = log.for_component('test')
           log_shortcut('action', 'details')
-          expect(log.add_entry).toHaveBeenCalledWith({ component: 'test', action: 'action', details: 'details' })
+          expect(log.add_entry).to.have.been.calledWith({ component: 'test', action: 'action', details: 'details' })

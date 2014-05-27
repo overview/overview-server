@@ -27,17 +27,17 @@ define [ 'apps/UserAdmin/views/MainView', 'i18n' ], (MainView, i18n) ->
     afterEach -> view?.remove()
 
     it 'should render a users table with a tbody', ->
-      expect(view.$('table.users tbody').length).toEqual(1)
+      expect(view.$('table.users tbody').length).to.eq(1)
 
     it 'should render pagination', ->
-      expect(view.$('div.paginator').length).toEqual(1)
+      expect(view.$('div.paginator').length).to.eq(1)
 
     it 'should render a new-user form', ->
-      expect(view.$('table.users tfoot.new-user').length).toEqual(1)
+      expect(view.$('table.users tfoot.new-user').length).to.eq(1)
 
     it 'should bubble up new-user-create events', ->
-      spy = jasmine.createSpy()
+      spy = sinon.spy()
       view.on('create', spy)
       params = { email: 'user@example.org', password: '2093qwsDDSF3#' }
       view.newUserView.trigger('create', params)
-      expect(spy).toHaveBeenCalledWith(params)
+      expect(spy).to.have.been.calledWith(params)

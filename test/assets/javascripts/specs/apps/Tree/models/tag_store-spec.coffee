@@ -18,7 +18,7 @@ define [
         it 'should add a color to a tag', ->
           tag1 = dummy_tag(1, 'Tag')
           store.add(tag1)
-          expect(tag1.color).toBeDefined()
+          expect(tag1.color).not.to.be.undefined
 
       describe 'beginning full', ->
         tag1 = undefined
@@ -39,12 +39,12 @@ define [
           tag3 = undefined
 
         it 'should have .tags as an alias for .objects', ->
-          expect(store.tags).toBe(store.objects)
+          expect(store.tags).to.be(store.objects)
 
         it 'should find_by_name() for an existing tag', ->
           tag = store.find_by_name('AA')
-          expect(tag).toBe(tag1)
+          expect(tag).to.be(tag1)
 
         it 'should return undefined when find_by_name() does not find a tag', ->
           tag = store.find_by_name('A')
-          expect(tag).toBeUndefined()
+          expect(tag).to.be.undefined

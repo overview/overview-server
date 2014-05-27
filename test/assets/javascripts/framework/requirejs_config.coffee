@@ -8,7 +8,6 @@ requirejs.config
   baseUrl: '/base/app/assets/javascripts'
 
   shim: {
-    jquery: { exports: '$' }
     'backbone':
       deps: [ 'jquery', 'underscore' ]
       exports: 'Backbone'
@@ -45,14 +44,14 @@ requirejs.config
     'bootstrap-tab': 'vendor/bootstrap-tab'
     'bootstrap-tooltip': 'vendor/bootstrap-tooltip'
     'bootstrap-transition': 'vendor/bootstrap-transition'
-    jquery: 'vendor/jquery-2-1-0'
+    jquery: '../../../test/assets/javascripts/framework/jquery-hack'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
     'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
-    vow: 'vendor/vow'
+    rsvp: 'vendor/rsvp'
     MassUpload: 'vendor/mass-upload'
   }
 

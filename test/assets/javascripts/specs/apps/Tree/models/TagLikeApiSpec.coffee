@@ -19,11 +19,15 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
       transactionQueue = undefined
 
       beforeEach ->
+        @sandbox = sinon.sandbox.create()
         lastDeferred = undefined
         transactionQueue = new MockTransactionQueue()
-        spyOn($, 'ajax').and.callFake(-> lastDeferred = $.Deferred())
-        spyOn(store, 'change')
+        @sandbox.stub($, 'ajax', -> lastDeferred = $.Deferred()) # returns Deferred
+        @sandbox.stub(store, 'change')
         api = new TagLikeApi(store, transactionQueue, '/root')
+
+      afterEach ->
+        @sandbox.restore()
 
       describe 'create', ->
         tagLike = undefined
@@ -36,42 +40,42 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
 
         describe 'before the transaction queue reaches it', ->
           it 'should not call $.ajax', ->
-            expect($.ajax).not.toHaveBeenCalled()
+            expect($.ajax).not.to.have.been.called
 
           it 'should post something to the transaction queue', ->
-            expect(transactionQueue.callbacks.length).toEqual(1)
+            expect(transactionQueue.callbacks.length).to.eq(1)
 
         describe 'after sending to the server', ->
           lastAjaxArgs = undefined
 
           beforeEach ->
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.calls.mostRecent().args
+            lastAjaxArgs = $.ajax.lastCall.args
 
           it 'should not call beforeReceive', ->
-            expect(beforeReceiveCalled).toBe(false)
+            expect(beforeReceiveCalled).to.be(false)
 
           it 'should have sent an AJAX request', ->
-            expect($.ajax).toHaveBeenCalled()
+            expect($.ajax).to.have.been.called
             
           it 'should send POST', ->
-            expect(lastAjaxArgs[0].type).toEqual('POST')
+            expect(lastAjaxArgs[0].type).to.eq('POST')
 
           it 'should send to the root url', ->
-            expect(lastAjaxArgs[0].url).toEqual('/root')
+            expect(lastAjaxArgs[0].url).to.eq('/root')
 
           it 'should send the tagLike', ->
-            expect(lastAjaxArgs[0].data).toEqual(tagLike)
+            expect(lastAjaxArgs[0].data).to.eq(tagLike)
 
           describe 'after receiving the server response', ->
             beforeEach ->
               lastDeferred.resolve({ id: 1, name: 'name', color: '#abcdef' })
 
             it 'should call beforeReceive', ->
-              expect(beforeReceiveCalled).toBe(true)
+              expect(beforeReceiveCalled).to.be(true)
 
             it 'should call store.change', ->
-              expect(store.change).toHaveBeenCalledWith(tagLike, {
+              expect(store.change).to.have.been.calledWith(tagLike, {
                 id: 1
                 name: 'name'
                 color: '#abcdef'
@@ -90,16 +94,16 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
           beforeEach ->
             tagLike.id = 2 # we set it later, as happens in The Real World
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.calls.mostRecent().args
+            lastAjaxArgs = $.ajax.lastCall.args
 
           it 'should send PUT', ->
-            expect(lastAjaxArgs[0].type).toEqual('PUT')
+            expect(lastAjaxArgs[0].type).to.eq('PUT')
 
           it 'should send to the tag URL', ->
-            expect(lastAjaxArgs[0].url).toEqual('/root/2')
+            expect(lastAjaxArgs[0].url).to.eq('/root/2')
 
           it 'should send the tagLike', ->
-            expect(lastAjaxArgs[0].data).toEqual(tagLike)
+            expect(lastAjaxArgs[0].data).to.eq(tagLike)
 
       describe 'delete', ->
         tagLike = undefined
@@ -114,13 +118,13 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
           beforeEach ->
             tagLike.id = 2 # we set it later, as happens in The Real World
             transactionQueue.next()
-            lastAjaxArgs = $.ajax.calls.mostRecent().args
+            lastAjaxArgs = $.ajax.lastCall.args
 
           it 'should send DELETE', ->
-            expect(lastAjaxArgs[0].type).toEqual('DELETE')
+            expect(lastAjaxArgs[0].type).to.eq('DELETE')
 
           it 'should send to the tag URL', ->
-            expect(lastAjaxArgs[0].url).toEqual('/root/2')
+            expect(lastAjaxArgs[0].url).to.eq('/root/2')
 
           it 'should not send the tagLike', ->
-            expect(lastAjaxArgs[0].data).toBeUndefined()
+            expect(lastAjaxArgs[0].data).to.be.undefined

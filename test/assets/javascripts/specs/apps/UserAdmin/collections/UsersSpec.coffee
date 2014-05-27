@@ -8,18 +8,18 @@ define [ 'apps/UserAdmin/collections/Users' ], (Users) ->
           page: 1
 
     it 'should have a pagination', ->
-      expect(subject.pagination).toEqual(page: 1)
+      expect(subject.pagination).to.deep.eq(page: 1)
 
     it 'should add pagination to URL', ->
-      expect(subject.url()).toMatch(/.*\?page=1$/)
+      expect(subject.url()).to.match(/.*\?page=1$/)
 
     it 'should add search to URL', ->
       subject.pagination.search = 'a&b'
-      expect(subject.url()).toMatch(/.*&search=a%26b$/)
+      expect(subject.url()).to.match(/.*&search=a%26b$/)
 
     it 'should add sortBy to URL', ->
       subject.pagination.sortBy = 'email'
-      expect(subject.url()).toMatch(/.*&sortBy=email$/)
+      expect(subject.url()).to.match(/.*&sortBy=email$/)
 
     it 'should parse the ".users" part', ->
       subject.set({
@@ -34,13 +34,13 @@ define [ 'apps/UserAdmin/collections/Users' ], (Users) ->
           }
         ]
       }, parse: true)
-      expect(subject.length).toEqual(2)
+      expect(subject.length).to.eq(2)
 
     afterEach ->
       subject.off()
 
     it 'should trigger :parse-pagination with page, pageSize, total', ->
-      spy = jasmine.createSpy('parse-pagination')
+      spy = sinon.spy()
       subject.on('parse-pagination', spy)
       subject.set({
         page: 2
@@ -48,7 +48,7 @@ define [ 'apps/UserAdmin/collections/Users' ], (Users) ->
         total: 23
         users: []
       }, parse: true)
-      expect(spy).toHaveBeenCalledWith
+      expect(spy).to.have.been.calledWith
         page: 2
         pageSize: 10
         total: 23

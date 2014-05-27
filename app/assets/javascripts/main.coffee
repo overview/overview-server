@@ -73,9 +73,9 @@ requirejs.config({
     'jquery.validate': 'vendor/jquery.validate'
     'mass-upload': 'vendor/mass-upload'
     md5: 'vendor/md5'
+    rsvp: 'vendor/rsvp'
     spectrum: 'vendor/spectrum'
     tinycolor: 'vendor/tinycolor'
     underscore: 'vendor/underscore'
-    vow: 'vendor/vow'
   }
 })

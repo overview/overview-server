@@ -48,34 +48,34 @@ define [
           $handle1 = $(div).find('.handle.left')
           $handle2 = $(div).find('.handle.right')
           $middle = $(div).find('.middle')
-          expect($handle1.length).toEqual(1)
-          expect($handle2.length).toEqual(1)
-          expect($middle.length).toEqual(1)
-          expect(parseFloat($handle1.css('left'))).toEqual(20)
-          expect(parseFloat($handle2.css('left')) + $handle2.outerWidth()).toEqual(80)
-          expect(parseFloat($middle.css('left'))).toEqual(25)
-          expect(parseFloat($middle.css('width'))).toEqual(50)
+          expect($handle1.length).to.eq(1)
+          expect($handle2.length).to.eq(1)
+          expect($middle.length).to.eq(1)
+          expect(parseFloat($handle1.css('left'))).to.eq(20)
+          expect(parseFloat($handle2.css('left')) + $handle2.outerWidth()).to.eq(80)
+          expect(parseFloat($middle.css('left'))).to.eq(25)
+          expect(parseFloat($middle.css('width'))).to.eq(50)
 
         it 'should center handles that are not at edges', ->
           $middle = view.$handles.middle
           $handle1 = view.$handles.left
           $handle2 = view.$handles.right
-          expect($middle.width()).toEqual(50)
-          expect(parseFloat($handle1.css('left')) + $handle1.outerWidth() / 2).toEqual(parseFloat($middle.css('left')))
-          expect(parseFloat($handle2.css('left')) + $handle2.outerWidth() / 2).toEqual(parseFloat($middle.css('left')) + $middle.width())
+          expect($middle.width()).to.eq(50)
+          expect(parseFloat($handle1.css('left')) + $handle1.outerWidth() / 2).to.eq(parseFloat($middle.css('left')))
+          expect(parseFloat($handle2.css('left')) + $handle2.outerWidth() / 2).to.eq(parseFloat($middle.css('left')) + $middle.width())
 
         it 'should update when zoom changes', ->
           focus.set('zoom', 0.25)
-          expect(view.$handles.left.css('left')).toEqual('32.5px')
+          expect(view.$handles.left.css('left')).to.eq('32.5px')
 
         it 'should update when pan changes', ->
           focus.set('pan', 0.25)
-          expect(view.$handles.left.css('left')).toEqual('45px')
+          expect(view.$handles.left.css('left')).to.eq('45px')
 
         it 'should render when the window resizes', ->
-          spyOn(view, 'render')
+          view.render = sinon.spy()
           $(window).trigger('resize')
-          expect(view.render).toHaveBeenCalled()
+          expect(view.render).to.have.been.called
 
         it 'should ensure HANDLE_WIDTH px between the edges', ->
           # See https://github.com/overview/overview-server/issues/266
@@ -83,35 +83,35 @@ define [
           $handle1 = view.$handles.left
           $handle2 = view.$handles.right
           $middle = view.$handles.middle
-          expect(parseFloat($handle1.css('left')) + $handle1.outerWidth()).toBeCloseTo(50 - HANDLE_WIDTH * 0.5, 4)
-          expect($middle.width()).toEqual(HANDLE_WIDTH)
-          expect(parseFloat($handle2.css('left'))).toBeCloseTo(50 + HANDLE_WIDTH * 0.5, 4)
+          expect(parseFloat($handle1.css('left')) + $handle1.outerWidth()).to.be.closeTo(50 - HANDLE_WIDTH * 0.5, 4)
+          expect($middle.width()).to.eq(HANDLE_WIDTH)
+          expect(parseFloat($handle2.css('left'))).to.be.closeTo(50 + HANDLE_WIDTH * 0.5, 4)
 
         it 'should signal when a handle is dragged', ->
-          spy = jasmine.createSpy()
+          spy = sinon.spy()
           view.on('zoom-pan', spy)
           mouse_event('left', 'mousedown', 2, 5)
           mouse_event('body', 'mousemove', 12, 5) # 10 pixels to the right
-          expect(spy).toHaveBeenCalled()
-          zoomAndPan = spy.calls.mostRecent().args[0]
-          expect(zoomAndPan.zoom).toBeCloseTo(0.4)
-          expect(zoomAndPan.pan).toBeCloseTo(0.05)
+          expect(spy).to.have.been.called
+          zoomAndPan = spy.lastCall.args[0]
+          expect(zoomAndPan.zoom).to.be.closeTo(0.4, 0.001)
+          expect(zoomAndPan.pan).to.be.closeTo(0.05, 0.001)
 
         it 'should allow dragging past the other handle', ->
-          spy = jasmine.createSpy()
+          spy = sinon.spy()
           view.on('zoom-pan', spy)
           mouse_event('right', 'mousedown', 62, 5)
           mouse_event('body', 'mousemove', 2, 5) # 60 pixels to the left
           # x1 15, x2 25
-          zoomAndPan = spy.calls.mostRecent().args[0]
-          expect(zoomAndPan.zoom).toBeCloseTo(0.1)
-          expect(zoomAndPan.pan).toBeCloseTo(-0.3)
+          zoomAndPan = spy.lastCall.args[0]
+          expect(zoomAndPan.zoom).to.be.closeTo(0.1, 0.001)
+          expect(zoomAndPan.pan).to.be.closeTo(-0.3, 0.001)
 
         it 'should signal when the bar is dragged', ->
-          spy = jasmine.createSpy()
+          spy = sinon.spy()
           view.on('zoom-pan', spy)
           mouse_event('middle', 'mousedown', 50, 5)
           mouse_event('body', 'mousemove', 45, 5) # 5 pixels to the left -- 5% of the view
-          zoomAndPan = spy.calls.mostRecent().args[0]
-          expect(zoomAndPan.zoom).toBeCloseTo(0.5) # unchanged
-          expect(zoomAndPan.pan).toBeCloseTo(-0.05)
+          zoomAndPan = spy.lastCall.args[0]
+          expect(zoomAndPan.zoom).to.be.closeTo(0.5, 0.001) # unchanged
+          expect(zoomAndPan.pan).to.be.closeTo(-0.05, 0.001)

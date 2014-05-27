@@ -66,41 +66,41 @@ define [
         init([], 0, {})
 
       it 'should be empty', ->
-        expect(model.get('n')).toEqual(0)
-        expect(model.documents.length).toEqual(0)
+        expect(model.get('n')).to.eq(0)
+        expect(model.documents.length).to.eq(0)
 
       it 'should not observe anything after destroy', ->
         proxy.destroy()
         addDummyDocumentsAndNotify(0, 1)
-        expect(model.documents.length).toEqual(0)
+        expect(model.documents.length).to.eq(0)
 
     describe 'with an empty DocumentList that has items pending', ->
       beforeEach ->
         init([], 10, {})
 
       it 'should have a dummy item with no ID', ->
-        expect(model.documents.length).toEqual(1)
-        expect(model.documents.first().id).toBeUndefined()
+        expect(model.documents.length).to.eq(1)
+        expect(model.documents.first().id).to.be.undefined
 
       it 'should have a dummy after the list partially completes', ->
         addDummyDocumentsAndNotify(0, 5)
-        expect(model.documents.length).toEqual(6)
-        expect(model.documents.last().id).toBeUndefined()
+        expect(model.documents.length).to.eq(6)
+        expect(model.documents.last().id).to.be.undefined
 
       it 'should fill in documents on notify', ->
         addDummyDocumentsAndNotify(0, 5)
-        expect(model.documents.at(4).id).toEqual(4)
-        expect(model.documents.at(4).get('title')).toEqual('title-4')
+        expect(model.documents.at(4).id).to.eq(4)
+        expect(model.documents.at(4).get('title')).to.eq('title-4')
 
       it 'should fill in dummy documents if list is populated out of order', ->
         addDummyDocumentsAndNotify(1, 2)
-        expect(model.documents.first().id).toBeUndefined()
-        expect(model.documents.at(1).id).toEqual(1)
+        expect(model.documents.first().id).to.be.undefined
+        expect(model.documents.at(1).id).to.eq(1)
 
       it 'should not have a dummy when the list is complete', ->
         addDummyDocumentsAndNotify(0, 10)
-        expect(model.documents.length).toEqual(10)
-        expect(model.documents.last().id).toEqual(9)
+        expect(model.documents.length).to.eq(10)
+        expect(model.documents.last().id).to.eq(9)
 
     describe 'with a non-empty DocumentList', ->
       beforeEach ->
@@ -109,41 +109,41 @@ define [
 
       it 'should change a model on DocumentStore:document-changed', ->
         documentStore._notify('document-changed', { id: 3, title: 'new title' })
-        expect(model.documents.at(3).get('title')).toEqual('new title')
+        expect(model.documents.at(3).get('title')).to.eq('new title')
 
       it 'should change model tag IDs on TagStore:id-changed', ->
         tagStore._notify('id-changed', 1, { id: 10 })
-        expect(model.documents.at(1).get('tagids')).toEqual([ 10, 2000 ])
+        expect(model.documents.at(1).get('tagids')).to.deep.eq([ 10, 2000 ])
 
       it 'should not trigger document change when tags change', ->
-        spy = jasmine.createSpy()
+        spy = sinon.spy()
         model.documents.at(1).on('change', spy)
         tagStore._notify('id-changed', 1, { id: 10, title: 'new title' })
-        expect(spy).not.toHaveBeenCalled()
+        expect(spy).not.to.have.been.called
 
       it 'should not change an absent model on DocumentStore:document-changed', ->
         documentStore._notify('document-changed', { id: 7, title: 'new title' })
-        expect(model.documents.length).toEqual(6)
+        expect(model.documents.length).to.eq(6)
 
       it 'should change a model on DocumentStore:document-changed even if changes are only deep', ->
         # This tests that DocumentListProxy keeps deep copies of Arrays and
         # Objects passed to it. Otherwise, if Backbone is using the same Arrays
         # and Objects as the original objects, it won't be able to detect when
         # they change.
-        callback = jasmine.createSpy()
+        callback = sinon.spy()
         model.documents.on('change', callback)
 
         document = documentList.documents[0]
         document.tagids.pop()
         documentStore._notify('document-changed', document)
 
-        expect(callback).toHaveBeenCalled()
+        expect(callback).to.have.been.called
 
       describe 'with a tag DocumentList', ->
         beforeEach ->
           init([], 10, { tags: [ 1 ] })
-          spyOn(documentList, 'describeParameters').and.returnValue([ 'tag', 'name' ])
+          documentList.describeParameters = sinon.stub().returns([ 'tag', 'name' ])
 
         it 'should describe the tag', ->
-          expect(model.describeSelection()).toEqual([ 'tag', 'name' ])
-          expect(documentList.describeParameters).toHaveBeenCalled()
+          expect(model.describeSelection()).to.deep.eq([ 'tag', 'name' ])
+          expect(documentList.describeParameters).to.have.been.called

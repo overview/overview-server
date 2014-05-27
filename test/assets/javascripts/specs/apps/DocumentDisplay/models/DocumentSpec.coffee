@@ -10,7 +10,7 @@ define [
       })
 
       heading = document.get('heading')
-      expect(heading).toEqual('title')
+      expect(heading).to.eq('title')
 
     it 'should set heading to description if there is no title', ->
       document = new Document({
@@ -19,7 +19,7 @@ define [
       })
 
       heading = document.get('heading')
-      expect(heading).toEqual('description')
+      expect(heading).to.eq('description')
 
     it 'should set heading to description if there is an empty title', ->
       document = new Document({
@@ -29,9 +29,9 @@ define [
       })
 
       heading = document.get('heading')
-      expect(heading).toEqual('description')
+      expect(heading).to.eq('description')
 
     it 'should set heading to "" if title and description are empty', ->
       document = new Document(urlProperties: {})
       heading = document.get('heading')
-      expect(heading).toBe('')
+      expect(heading).to.be('')

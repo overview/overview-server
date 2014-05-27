@@ -43,19 +43,19 @@ define [
           create_tree(5)
 
         it 'should start with id_tree empty', ->
-          expect(tree.id_tree.root).toEqual(null)
+          expect(tree.id_tree.root).to.eq(null)
 
         it 'should demand_root() and call resolve_deferred("root")', ->
           deferred = tree.demand_root()
-          expect(cache.type).toEqual('root')
-          expect(cache.id).toBeUndefined()
-          expect(deferred.done).toBeDefined()
+          expect(cache.type).to.eq('root')
+          expect(cache.id).to.be.undefined
+          expect(deferred.done).not.to.be.undefined
 
         it 'should add results to the tree', ->
           add_node_through_deferred(null, [1])
           add_node_through_deferred(1, [2, 3])
-          expect(tree.id_tree.root).toEqual(1)
-          expect(tree.id_tree.children[1]).toEqual([2, 3])
+          expect(tree.id_tree.root).to.eq(1)
+          expect(tree.id_tree.children[1]).to.deep.eq([2, 3])
 
       describe 'with a non-empty tree', ->
         beforeEach ->
@@ -69,25 +69,25 @@ define [
           ])
 
         it 'should get node objects from ids', ->
-          expect(tree.getNode(1)).toEqual({ id: 1, parentId: null, size: 50 })
+          expect(tree.getNode(1)).to.deep.eq({ id: 1, parentId: null, size: 50 })
 
         it 'should not get unresolved node objects', ->
-          expect(tree.getNode(20)).toBeUndefined()
+          expect(tree.getNode(20)).to.be.undefined
 
         it 'should rewrite a tag id', ->
           tree.nodes[1].tagCounts = { "1": 20, "2": 10 }
           tree.rewrite_tag_id(2, 7)
-          expect(tree.nodes[1].tagCounts).toEqual({ "1": 20, "7": 10 })
+          expect(tree.nodes[1].tagCounts).to.deep.eq({ "1": 20, "7": 10 })
 
         it 'should allow demand_node() on unresolved nodes', ->
           deferred = tree.demand_node(4)
-          expect(cache.type).toEqual('node')
-          expect(cache.id).toEqual(4)
+          expect(cache.type).to.eq('node')
+          expect(cache.id).to.eq(4)
 
         it 'should allow demand_node() on resolved nodes', ->
           deferred = tree.demand_node(1)
-          expect(cache.type).toEqual('node')
-          expect(cache.id).toEqual(1)
+          expect(cache.type).to.eq('node')
+          expect(cache.id).to.eq(1)
 
         it 'should add nodes added through demand_node()', ->
           deferred = tree.demand_node(4)
@@ -95,7 +95,7 @@ define [
             id: 6, parentId: 4, size: 10
             id: 7, parentId: 4, size: 2
           ]})
-          expect(tree.getNode(7)).toBeDefined()
+          expect(tree.getNode(7)).not.to.be.undefined
 
         it 'should not add child nodes if their parent disappeared before they were resolved', ->
           # GitHub: https://github.com/overview/overview-server/issues/222
@@ -105,15 +105,15 @@ define [
             id: 6, parentId: 4, size: 10
             id: 7, parentId: 4, size: 2
           ]})
-          expect(tree.getNode(7)).toBeUndefined()
-          expect(tree.nodes).toEqual({
+          expect(tree.getNode(7)).to.be.undefined
+          expect(tree.nodes).to.deep.eq({
             1: { id: 1, parentId: null, size: 50 }
           })
 
         it 'should unload nodes through unload_node_children()', ->
           tree.unload_node_children(1)
-          expect(tree.id_tree.children[1]).toBeUndefined()
-          expect(tree.nodes[2]).toBeUndefined()
+          expect(tree.id_tree.children[1]).to.be.undefined
+          expect(tree.nodes[2]).to.be.undefined
 
       describe 'with a full tree', ->
         beforeEach ->
@@ -127,27 +127,27 @@ define [
           add_nodes_through_deferred(id_to_stub_node(id) for id in [ 1..1+3+9+27+81 ])
 
         it 'should collapse a node while adding new nodes', ->
-          spy = jasmine.createSpy()
+          spy = sinon.spy()
           tree.id_tree.observe('change', spy)
           add_node_through_deferred(120, [124, 125, 126])
-          expect(spy.calls.argsFor(0)[0]).toEqual({ added: [ 124, 125, 126 ] })
-          expect(spy.calls.argsFor(1)[0].removed.length).toBeGreaterThan(2)
+          expect(spy.firstCall.args[0]).to.deep.eq({ added: [ 124, 125, 126 ] })
+          expect(spy.secondCall.args[0].removed.length).to.be.greaterThan(2)
 
         it 'should not remove an important node when adding a new node', ->
-          spy = jasmine.createSpy()
+          spy = sinon.spy()
           tree.id_tree.observe('change', spy)
           add_node_through_deferred(120, [124, 125, 126])
-          r = spy.calls.argsFor(1)[0].removed[0]
-          expect(r).not.toEqual(14) # parent
-          expect(r).not.toEqual(15) # uncle
-          expect(r).not.toEqual(16) # uncle
-          expect(r).not.toEqual(5) # grandparent
-          expect(r).not.toEqual(6) # great-uncle
-          expect(r).not.toEqual(7) # great-uncle
-          expect(r).not.toEqual(2)
-          expect(r).not.toEqual(3)
-          expect(r).not.toEqual(4)
-          expect(r).not.toEqual(1) # root
+          r = spy.secondCall.args[0].removed[0]
+          expect(r).not.to.eq(14) # parent
+          expect(r).not.to.eq(15) # uncle
+          expect(r).not.to.eq(16) # uncle
+          expect(r).not.to.eq(5) # grandparent
+          expect(r).not.to.eq(6) # great-uncle
+          expect(r).not.to.eq(7) # great-uncle
+          expect(r).not.to.eq(2)
+          expect(r).not.to.eq(3)
+          expect(r).not.to.eq(4)
+          expect(r).not.to.eq(1) # root
 
         it 'should add as many nodes as possible without throwing AllPagesFrozen', ->
           # Tree size is 1+3+9+27+81 = 121 nodes
@@ -160,4 +160,4 @@ define [
         it 'should throw AllPagesFrozen if the addition will fail', ->
           nodes = ({ parentId: 121, id: 1000 + i } for i in [ 0 ... 109 ])
           nodes.unshift(tree.getNode(121))
-          expect(-> add_nodes_through_deferred(nodes)).toThrow('AllPagesFrozen')
+          expect(-> add_nodes_through_deferred(nodes)).to.throw('AllPagesFrozen')

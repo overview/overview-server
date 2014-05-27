@@ -48,7 +48,7 @@ define [ 'i18n' ], (i18n) ->
         i18n.reset_messages(messages)
         all_args = [ key ].concat(args)
         result = i18n.apply({}, all_args)
-        expect(result).toEqual(expected)
+        expect(result).to.eq(expected)
 
     make_test(subkey, args, expected) for [ subkey, args, expected] in tests
 
@@ -56,9 +56,9 @@ define [ 'i18n' ], (i18n) ->
       it 'should translate within a namespace', ->
         i18n.reset_messages({ 'name.space.foo': 'bar' })
         t = i18n.namespaced('name.space')
-        expect(t('foo')).toEqual('bar')
+        expect(t('foo')).to.eq('bar')
 
       it 'should pass arguments', ->
         i18n.reset_messages({ 'name.space.foo': 'bar {0} {1}' })
         t = i18n.namespaced('name.space')
-        expect(t('foo', 1, 2)).toEqual('bar 1 2')
+        expect(t('foo', 1, 2)).to.eq('bar 1 2')

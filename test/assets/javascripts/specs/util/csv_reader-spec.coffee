@@ -29,67 +29,67 @@ define [
 
       expecting_result = (s, callback) ->
         in_read_callback s, (reader) ->
-          expect(reader.error).toBeNull()
+          expect(reader.error).to.be.null
           callback(reader.result, reader)
 
       expecting_syntax_error = (s, callback) ->
         in_read_callback s, (reader) ->
-          expect(reader.error.name).toEqual('SyntaxError')
+          expect(reader.error.name).to.eq('SyntaxError')
           callback(reader.error, reader)
 
       test_records = (s, records) ->
         expecting_result s, (result) ->
-          expect(result.records).toEqual(records)
+          expect(result.records).to.deep.eq(records)
 
       it 'should set "text" when CSV is invalid', ->
         expecting_syntax_error "a\"b", (error, reader) ->
-          expect(reader.text).toEqual("a\"b")
+          expect(reader.text).to.eq("a\"b")
 
       it 'should set line and column of SyntaxError', ->
         expecting_syntax_error "a\"b", (error) ->
-          expect(error.line).toEqual(1)
-          expect(error.column).toEqual(2)
+          expect(error.line).to.eq(1)
+          expect(error.column).to.eq(2)
 
       it 'should throw an error when a single quote is in the middle of a string', ->
         expecting_syntax_error "a\"b", (error) ->
-          expect(error.line).toEqual(1)
-          expect(error.column).toEqual(2)
+          expect(error.line).to.eq(1)
+          expect(error.column).to.eq(2)
 
       it 'should throw an error when a quoted string is in the middle of a string', ->
         expecting_syntax_error "foo,bar\r\nfoo2\"blah\",bar2", (error) ->
-          expect(error.line).toEqual(2)
-          expect(error.column).toEqual(5)
+          expect(error.line).to.eq(2)
+          expect(error.column).to.eq(5)
 
       it 'should parse into the "result" object', ->
         expecting_result "foo,bar\r\nbaz1,baz2\r\nbaz3,baz4", (result) ->
-          expect(result).toEqual({
+          expect(result).to.deep.eq({
             header: [ 'foo', 'bar' ],
             records: [ [ 'baz1', 'baz2' ], [ 'baz3', 'baz4' ] ]
           })
 
       it 'should parse an empty-string value', ->
         expecting_result "foo,,bar", (result) ->
-          expect(result.header).toEqual([ 'foo', '', 'bar' ])
+          expect(result.header).to.deep.eq([ 'foo', '', 'bar' ])
 
       it 'should parse a quoted empty-string value', ->
         expecting_result "foo,\"\",bar", (result) ->
-          expect(result.header).toEqual([ 'foo', '', 'bar' ])
+          expect(result.header).to.deep.eq([ 'foo', '', 'bar' ])
 
       it 'should parse a quotation mark', ->
         expecting_result "foo,\"a\"\"b\",bar", (result) ->
-          expect(result.header).toEqual([ 'foo', 'a"b', 'bar' ])
+          expect(result.header).to.deep.eq([ 'foo', 'a"b', 'bar' ])
 
       it 'should allow a truncated string at the end', ->
         expecting_result 'foo,bar\r\na,\"b', (result) ->
-          expect(result.records).toEqual([[ 'a', 'b' ]])
+          expect(result.records).to.deep.eq([[ 'a', 'b' ]])
 
       it 'should ignore a middle newline', ->
         expecting_result 'text\n\nfoo\n\nbar', (result) ->
-          expect(result.records).toEqual([[ 'foo' ], [ 'bar' ]])
+          expect(result.records).to.deep.eq([[ 'foo' ], [ 'bar' ]])
 
       it 'should ignore the final newline', ->
         expecting_result 'text\nfoo\n', (result) ->
-          expect(result.records).toEqual([[ 'foo' ]])
+          expect(result.records).to.deep.eq([[ 'foo' ]])
 
       it 'should parse newlines', ->
         test_records('text\n1\r2\r\n3\u00854', [['1'], ['2'], ['3'], ['4']])
