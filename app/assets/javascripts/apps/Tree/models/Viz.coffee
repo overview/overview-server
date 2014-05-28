@@ -6,3 +6,13 @@ define [ 'backbone' ], (Backbone) ->
   class Viz extends Backbone.Model
     defaults:
       title: '' # What the user calls this Viz
+      creationData: [] # Viz-dependent [key,value] strings
+
+    constructor: (attrs) ->
+      attrs ?= {}
+      if 'createdAt' of attrs
+        attrs = _.defaults({
+          createdAt: new Date(attrs.createdAt)
+        }, attrs)
+
+      super(attrs)

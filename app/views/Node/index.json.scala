@@ -3,7 +3,7 @@ package views.json.Node
 import java.util.Date
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
-import play.api.libs.json.{Json, JsObject, JsString, JsValue}
+import play.api.libs.json.{Json, JsValue}
 
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 import org.overviewproject.models.Viz
@@ -34,13 +34,13 @@ object index {
   }
 
   private[Node] def writeViz(viz: Viz) : JsValue = {
-    val creationData = viz.creationData.map((x: (String,String)) => x._1 -> JsString(x._2))
+    val creationData = viz.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
 
     Json.obj(
       "id" -> viz.id,
       "title" -> viz.title,
       "createdAt" -> dateToISO8601(viz.createdAt),
-      "creationData" -> JsObject(creationData.toSeq)
+      "creationData" -> creationData.toSeq
     )
   }
 

@@ -69,7 +69,8 @@ class indexSpec extends Specification with JsonMatchers {
       json must /("vizs") */("id" -> 2L)
       json must /("vizs") */("title" -> "title")
       json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
-      json must /("vizs") */("creationData") /("foo" -> "bar")
+      json must /("vizs") */("creationData") /#(0) /#(0) / "foo"
+      json must /("vizs") */("creationData") /#(0) /#(1) / "bar"
     }
   }
 }
