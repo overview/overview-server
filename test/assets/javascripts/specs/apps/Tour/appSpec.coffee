@@ -89,22 +89,22 @@ define [
       it 'should display the first tooltip', ->
         expect($('.popover.in .popover-title')).to.contain('title1')
         expect($('.popover.in .popover-content')).to.contain('html1')
+        expect($('.popover.in.bottom')).to.be.visible
 
-      it 'should use the provided placement', -> expect($('.popover.in.bottom')).to.be.visible
-      it 'should show tip number', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,1,3')
-      it 'should have a next button', -> expect($('.popover.in a.next')).to.be.visible
-      it 'should have a skip button', -> expect($('.popover.in a.skip')).to.be.visible
-      it 'should not have a previous button', -> expect($('.popover.in a.previous')).not.to.be.visible
-      it 'should not have a done button', -> expect($('.popover.in a.done')).not.to.be.visible
+      it 'should have next and skip buttons', ->
+        expect($('.popover.in .tip-number')).to.contain('tipNumber,1,3')
+        expect($('.popover.in a.next')).to.be.visible
+        expect($('.popover.in a.skip')).to.be.visible
+        expect($('.popover.in a.previous')).not.to.be.visible
+        expect($('.popover.in a.done')).not.to.be.visible
+
       it 'should not call done()', -> expect(@sandbox.server.requests.length).to.eq(0)
 
     describe 'when clicking skip link', ->
       beforeEach -> $('.popover.in a.skip').click()
 
-      it 'should exit tour', ->
+      it 'should exit tour and resolve promise', ->
         expect($('.popover').length).to.eq(0)
-
-      it 'should resolve promise', ->
         _.defer =>
           @sandbox.server.requests[0].respond(204, {}, '')
         @app.donePromise() # mocha-as-promised will fail if this fails
@@ -116,12 +116,12 @@ define [
         expect($('.popover.in .popover-title')).to.contain('title2')
         expect($('.popover.in .popover-content')).to.contain('html2')
 
-      it 'should use the provided placement', -> expect($('.popover.in.right')).to.be.visible
-      it 'should show tip number', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,2,3')
-      it 'should have a next button', -> expect($('.popover.in a.next')).to.be.visible
-      it 'should have a skip button', -> expect($('.popover.in a.skip')).to.be.visible
-      it 'should have a previous button', -> expect($('.popover.in a.previous')).to.be.visible
-      it 'should not have a done button', -> expect($('.popover.in a.done')).not.to.be.visible
+      it 'should have next and skip buttons', ->
+        expect($('.popover.in .tip-number')).to.contain('tipNumber,2,3')
+        expect($('.popover.in a.next')).to.be.visible
+        expect($('.popover.in a.skip')).to.be.visible
+        expect($('.popover.in a.previous')).to.be.visible
+        expect($('.popover.in a.done')).not.to.be.visible
 
       it 'should go to previous on previous click', ->
         $('.popover.in a.previous').click()
@@ -136,11 +136,12 @@ define [
       it 'should switch to the third tooltip', ->
         expect($('.popover.in .popover-title')).to.contain('title3')
 
-      it 'should show tip number', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,3,3')
-      it 'should not have a next button', -> expect($('.popover.in a.next')).not.to.be.visible
-      it 'should not have a skip button', -> expect($('.popover.in a.skip')).not.to.be.visible
-      it 'should have a previous button', -> expect($('.popover.in a.previous')).to.be.visible
-      it 'should have a done button', -> expect($('.popover.in a.done')).to.be.visible
+      it 'should hage previous and done buttons', ->
+        expect($('.popover.in .tip-number')).to.contain('tipNumber,3,3')
+        expect($('.popover.in a.next')).not.to.be.visible
+        expect($('.popover.in a.skip')).not.to.be.visible
+        expect($('.popover.in a.previous')).to.be.visible
+        expect($('.popover.in a.done')).to.be.visible
 
     describe 'when clicking done link', ->
       beforeEach ->
@@ -148,10 +149,8 @@ define [
         $('.popover.in a.next').click()
         $('.popover.in a.done').click()
 
-      it 'should exit tour', ->
+      it 'should exit tour and resolve promise', ->
         expect($('.popover').length).to.eq(0)
-
-      it 'should resolve promise', ->
         _.defer =>
           @sandbox.server.requests[0].respond(204, {}, '')
         @app.donePromise() # mocha will pick up on this value
@@ -171,8 +170,9 @@ define [
         beforeEach ->
           $('.popover.in a.next').click()
 
-        it 'should set the proper tip number', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,2,2')
         it 'should show the done button', -> expect($('.popover.in a.done')).to.be.visible
+
         it 'should show the proper tip', ->
+          expect($('.popover.in .tip-number')).to.contain('tipNumber,2,2')
           expect($('.popover.in .popover-title')).to.contain('title3')
           expect($('.popover.in .popover-content')).to.contain('html3')
