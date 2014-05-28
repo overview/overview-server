@@ -1,12 +1,20 @@
 package views.json.Node
 
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import java.util.Date
+import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.DateTimeZone
+import play.api.libs.json.{Json, JsObject, JsString, JsValue}
 
 import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
 import org.overviewproject.models.Viz
 
 object index {
+  private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
+
+  private def dateToISO8601(time: Date) : String = {
+    iso8601Format.print(time.getTime())
+  }
+
   private[Node] def writeNode(node: Node) : JsValue = {
     Json.obj(
       "id" -> node.id,
@@ -26,9 +34,13 @@ object index {
   }
 
   private[Node] def writeViz(viz: Viz) : JsValue = {
+    val creationData = viz.creationData.map((x: (String,String)) => x._1 -> JsString(x._2))
+
     Json.obj(
       "id" -> viz.id,
-      "title" -> viz.title
+      "title" -> viz.title,
+      "createdAt" -> dateToISO8601(viz.createdAt),
+      "creationData" -> JsObject(creationData.toSeq)
     )
   }
 

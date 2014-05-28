@@ -1,12 +1,14 @@
 package views.json.Node
 
+import java.util.Date
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
+import org.overviewproject.models.Viz
 import org.overviewproject.tree.orm.{ Node, Document, Tag }
 
 class indexSpec extends Specification with JsonMatchers {
-  def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
+  private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
     Node(
       id=id,
       treeId = 1L,
@@ -17,7 +19,16 @@ class indexSpec extends Specification with JsonMatchers {
       isLeaf=false
     )
   }
-  
+
+  private def buildViz(aId: Long, aTitle: String, aCreatedAt: Date, aCreationData: Seq[(String,String)]) : Viz = {
+    new Viz {
+      override val id = aId
+      override val title = aTitle
+      override val createdAt = aCreatedAt
+      override def creationData = aCreationData
+    }
+  }
+
   "Tree view generated Json" should {
     
     "contain all nodes" in {
@@ -48,6 +59,17 @@ class indexSpec extends Specification with JsonMatchers {
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")
       treeJson must /("tags") */("id" -> 15L)
+    }
+
+    "contain vizs" in {
+      val viz = buildViz(2L, "title", new Date(1000), Seq("foo" -> "bar"))
+
+      val json = index(Seq(viz), Seq(), Seq(), Seq()).toString
+
+      json must /("vizs") */("id" -> 2L)
+      json must /("vizs") */("title" -> "title")
+      json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
+      json must /("vizs") */("creationData") /("foo" -> "bar")
     }
   }
 }
