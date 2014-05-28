@@ -59,5 +59,36 @@ class JvmCommandSpec extends Specification {
       val cmd = new JvmCommand(Seq(), Seq("-Xms1024m", "-Xmx1250m", "-Xmn200k", "-Xint"), Seq())
       cmd.with32BitSafe(false).jvmArgs.take(4) must beEqualTo(cmd.jvmArgs)
     }
+
+    "withPropsByNamespace" should {
+      "add a single JVM arg" in {
+        val cmd = new JvmCommand(Seq(), Seq(), Seq()).withPropsByNamespace(Map("frontend.jvm.Xmx1400M" -> ""), "frontend")
+        cmd.jvmArgs must beEqualTo(Seq("-Xmx1400M"))
+      }
+
+      "add two JVM args" in {
+        val cmd = new JvmCommand(Seq(), Seq(), Seq()).withPropsByNamespace(Map("frontend.jvm.cp" -> "foo.jar"), "frontend")
+        cmd.jvmArgs must beEqualTo(Seq("-cp", "foo.jar"))
+      }
+
+      "define a JVM property" in {
+        val cmd = new JvmCommand(Seq(), Seq(), Seq()).withPropsByNamespace(Map("frontend.props.overview.multi_user" -> "false"), "frontend")
+        cmd.jvmArgs must beEqualTo(Seq("-Doverview.multi_user=false"))
+      }
+
+      "add all three" in {
+        val cmd = new JvmCommand(Seq(), Seq(), Seq()).withPropsByNamespace(Map(
+          "frontend.jvm.Xmx1400M" -> "",
+          "frontend.jvm.cp" -> "foo.jar",
+          "frontend.props.overview.multi_user" -> "false"
+        ), "frontend")
+        cmd.jvmArgs must beEqualTo(Seq("-Xmx1400M", "-cp", "foo.jar", "-Doverview.multi_user=false"))
+      }
+
+      "not add a property with the wrong namespace" in {
+        val cmd = new JvmCommand(Seq(), Seq(), Seq()).withPropsByNamespace(Map("foo.jvm.Xmx1400M" -> ""), "bar")
+        cmd.jvmArgs must beEqualTo(Seq())
+      }
+    }
   }
 }

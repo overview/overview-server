@@ -49,6 +49,8 @@ class Conf(daemonInfoRepository: DaemonInfoRepository, arguments: Seq[String]) e
   val withDatabase = toggle("database", descrYes="Run Postgres (and evolutions) too", default=Some(true), prefix="no-", noshort=true)
   val sbtTask = opt[String]("sbt", descr="Also run this sbt task", noshort=true, default=None)
   val shTask = opt[String]("sh", descr="Also run this command on the shell", noshort=true, default=None)
+  /** "System properties" a la JVM. We do _not_ add these to the running JVM. */
+  val properties = props[String]()
 
   mutuallyExclusive(onlyServers, exceptServers)
 

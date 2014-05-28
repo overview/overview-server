@@ -49,6 +49,11 @@ class ConfSpec extends Specification with Mockito {
       conf.daemonInfos must beEqualTo(expect)
     }
 
+    "allow -D properties" in new ThreeDaemons {
+      override val arguments = Seq("-Dfoo=bar", "-Dbar=baz")
+      conf.properties must beEqualTo(Map("foo" -> "bar", "bar" -> "baz"))
+    }
+
     "ignore a daemon" in new ThreeDaemons {
       override val arguments = Seq("--except-servers", "id2")
       repository.daemonInfosExcept(Set("id2")) returns Seq(allDaemonInfos(0), allDaemonInfos(2))
