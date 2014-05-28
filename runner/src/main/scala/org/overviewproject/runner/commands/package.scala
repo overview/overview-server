@@ -159,15 +159,10 @@ package object commands {
     )
 
     override def webServer = {
-      val cmdLineFlags: Seq[String] = sys.props
-        .filterKeys(_.startsWith("overview."))
-        .toSeq
-        .map(Function.tupled((k: String, v: String) => s"-D${k}=${v}"))
-
       cmd(
         // In distribution mode, the web server is in the "frontend/" folder
         "frontend",
-        cmdLineFlags ++ Seq(
+        Seq(
           Flags.DatabaseUrl,
           "-Duser.timezone=UTC",
           "-Dpidfile.enabled=false"

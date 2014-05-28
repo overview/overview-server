@@ -178,8 +178,8 @@ class Main(conf: Conf) {
 
     def makeDaemon(spec: DaemonInfo, classpath: Seq[String]) : Daemon = {
       val command = spec.command match {
-        case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath).with32BitSafe.withPropsByNamespace(conf.properties, spec.id)
-        case c: JvmCommand => c.with32BitSafe.withPropsByNamespace(conf.properties, spec.id)
+        case c: JvmCommandWithAppendableClasspath => c.withClasspath(classpath).with32BitSafe.withPropsByNamespace(scala.sys.props.toMap ++ conf.properties, spec.id)
+        case c: JvmCommand => c.with32BitSafe.withPropsByNamespace(scala.sys.props.toMap ++ conf.properties, spec.id)
         case c: Command => c
       }
       val sublogger = logger.sublogger(spec.id, Some(spec.colorCode.getBytes()))

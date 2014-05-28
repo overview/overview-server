@@ -1,3 +1,1 @@
-set "JAVA_OPTS=-Doverview.multi_user=false"
-
-start runner\runner.bat
+start runner\runner.bat -Doverview-server.props.overview.multi_user=false
