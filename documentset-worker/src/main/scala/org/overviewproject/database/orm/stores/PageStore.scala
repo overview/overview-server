@@ -9,15 +9,17 @@ import org.overviewproject.tree.orm.Page
 object PageStore extends BaseStore(pages) {
 
   def removeReferenceByFile(fileIds: Seq[Long]): Unit = {
-    val pagesToUpdate = from(pages)(p =>
+    val pageIdsToUpdate = from(pages)(p =>
       where(p.fileId in fileIds)
-        select (p)
-        orderBy (p.id)).forUpdate
+        select (p.id)
+        orderBy (p.id)).forUpdate.toSeq
 
-    pages.update(pagesToUpdate.map(p => p.copy(referenceCount = p.referenceCount - 1)))
+    update(pages)(p =>
+      where(p.id in pageIdsToUpdate)
+        set (p.referenceCount := p.referenceCount.~ - 1))
 
     val pagesToDelete = from(pages)(p =>
-      where(p.fileId in fileIds and p.referenceCount === 0)
+      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
         select (p))
 
     pages.delete(pagesToDelete)
@@ -30,15 +32,17 @@ object PageStore extends BaseStore(pages) {
       where(dsf.documentSetId === documentSetId)
         select (dsf.fileId))
 
-    val pagesToUpdateQuery = from(pages)(p =>
+    val pageIdsToUpdate = from(pages)(p =>
       where(p.fileId in fileIdQuery)
         select (p)
-        orderBy (p.id)).forUpdate
+        orderBy (p.id)).forUpdate.toSeq
 
-    pages.update(pagesToUpdateQuery.map(p => p.copy(referenceCount = p.referenceCount - 1)))
+    update(pages)(p =>
+      where(p.id in pageIdsToUpdate)
+        set (p.referenceCount := p.referenceCount.~ - 1))
 
     val pagesToDelete = from(pages)(p =>
-      where(p.fileId in fileIdQuery and p.referenceCount === 0)
+      where(p.id in pageIdsToUpdate and p.referenceCount === 0)
         select (p))
 
     pages.delete(pagesToDelete)

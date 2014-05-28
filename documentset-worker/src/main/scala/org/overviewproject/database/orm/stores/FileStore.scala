@@ -14,19 +14,21 @@ object FileStore extends BaseStore(files) {
         select (&(lo_unlink(Some(f.contentsOid))))).toIterable
 
   def removeReference(fileIds: Seq[Long]): Unit = {
-    val filesToUpdate = from(files)(f =>
+    val fileIdsToUpdate = from(files)(f =>
       where(f.id in fileIds)
-        select (f)
-        orderBy (f.id)).forUpdate
+        select (f.id)
+        orderBy (f.id)).forUpdate.toSeq
 
-    files.update(filesToUpdate.map(f => f.copy(referenceCount = f.referenceCount - 1)))
+    update(files)(f => 
+      where (f.id in fileIdsToUpdate)
+      set (f.referenceCount := f.referenceCount.~ - 1))
 
     val deleteContents = from(files)(f =>
-      where(f.id in fileIds and f.referenceCount === 0)
+      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
         select (&(lo_unlink(Some(f.contentsOid))))).toIterable
 
     val filesToDelete = from(files)(f =>
-      where(f.id in fileIds and f.referenceCount === 0)
+      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
         select (f))
 
     files.delete(filesToDelete)
@@ -37,19 +39,21 @@ object FileStore extends BaseStore(files) {
       where(dsf.documentSetId === documentSetId)
         select (dsf.fileId))
         
-    val filesToUpdateQuery = from(files)(f =>
+    val fileIdsToUpdate = from(files)(f =>
       where (f.id in fileIdQuery)
       select (f)
-      orderBy (f.id)).forUpdate
+      orderBy (f.id)).forUpdate.toSeq
 
-    files.update(filesToUpdateQuery.map(f => f.copy(referenceCount = f.referenceCount - 1)))
+    update(files)(f => 
+      where (f.id in fileIdsToUpdate)
+      set (f.referenceCount := f.referenceCount.~ - 1))
     
     val deleteContents = from(files)(f =>
       where(f.id in fileIdQuery and f.referenceCount === 0)
         select (&(lo_unlink(Some(f.contentsOid))))).toIterable
 
     val filesToDelete = from(files)(f =>
-      where(f.id in fileIdQuery and f.referenceCount === 0)
+      where(f.id in fileIdsToUpdate and f.referenceCount === 0)
         select (f))
 
     files.delete(filesToDelete)
