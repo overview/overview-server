@@ -1,6 +1,7 @@
 package org.overviewproject.runner.commands
 
 import java.io.File
+import scala.sys.SystemProperties
 
 /** A command that uses Java.
   *
@@ -14,8 +15,15 @@ import java.io.File
 class JvmCommand(
     override val env: Seq[(String,String)],
     val jvmArgs: Seq[String],
-    val args: Seq[String]
-  ) extends Command(env, Seq(JvmCommand.javaPath) ++ jvmArgs ++ args) {
+    val appArgs: Seq[String],
+    val props: SystemProperties
+  ) extends Command {
+
+  def this(env: Seq[(String,String)], jvmArgs: Seq[String], appArgs: Seq[String]) = {
+    this(env, jvmArgs, appArgs, scala.sys.props)
+  }
+
+  override def argv = Seq(JvmCommand.javaPath) ++ jvmArgs ++ appArgs
 
   /** If the argument matches -Xm[nsx]NUM, and NUM is too high, returns the
     * same string with NUM reduced. Otherwise, returns the passed argument.
@@ -61,7 +69,7 @@ class JvmCommand(
       new JvmCommand(
         env,
         jvmArgs.map(reduceArgumentHeapSizeTo32BitSafe(_)) ++ is32BitMarker(!is64Bit),
-        args
+        appArgs
       )
     }
   }

@@ -2,7 +2,9 @@ package org.overviewproject.runner.commands
 
 import java.io.File
 
-class PostgresCommand(override val argv: Seq[String]) extends Command(Seq(), argv) {
+class PostgresCommand(override val argv: Seq[String]) extends Command {
+  override val env = Seq()
+
   def withSubArgs(subArgs: Seq[String]) : PostgresCommand = new PostgresCommand(argv ++ subArgs)
 }
 

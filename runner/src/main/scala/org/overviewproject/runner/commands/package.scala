@@ -15,7 +15,7 @@ package object commands {
     /** Runs sbt. If not present, throws a run-time exception. */
     def sbt(task: String): Command = ???
 
-    def sh(task: String): Command = new Command(Seq(), task.split(' '))
+    def sh(task: String): Command = new ShCommand(Seq(), task.split(' '))
   }
 
   object development extends UsefulCommands {
