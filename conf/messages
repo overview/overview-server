@@ -399,6 +399,7 @@ views.ImportJob._documentSetCreationJob.job_state_description.saving_document_tr
 views.ImportJob._documentSetCreationJob.job_state_description.worker_error=Import failed (system error)
 views.ImportJob._documentSetCreationJob.job_state_description.not_enough_documents_error=Need at least {1} documents to create a document set, but only {0} imported.
 views.ImportJob._documentSetCreationJob.job_state_description.not_implemented_error=Cloning document sets with uploaded files is not yet implemented
+views.ImportJob._documentSetCreationJob.job_state_description.source_documentset_deleted=Copying failed because the original document set was deleted
 views.ImportJob._documentSetCreationJob.jobs_to_process=Waiting for {0,choice,0#no jobs|1#one job|2#{0,number,integer} jobs} to complete before processing can begin
 views.ImportJob._documentSetCreationJob.action_cancel=Cancel Import
 views.ImportJob._documentSetCreationJob.confirm_cancel=Are you sure you want to permanently delete the document set “{0}”? You cannot undo this.

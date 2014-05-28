@@ -25,6 +25,7 @@ import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.persistence.orm.finders.DocumentSetCreationJobTreeFinder
 import org.overviewproject.persistence.orm.finders.TreeFinder
 import org.overviewproject.persistence.orm.finders.TempDocumentSetFileFinder
+import org.overviewproject.persistence.orm.finders.DocumentSetFinder
 
 object JobHandler {
 
@@ -167,9 +168,22 @@ object JobHandler {
     job.sourceDocumentSetId.map { sourceDocumentSetId =>
       Logger.info(s"Creating DocumentSet: ${job.documentSetId} Cloning Source document set id: $sourceDocumentSetId")
       CloneDocumentSet(sourceDocumentSetId, job.documentSetId, job, progressObservers)
+      verifySourceStillExists(sourceDocumentSetId)
     }
   }
 
+  // If source document set has been deleted during the cloning process
+  // we can't guarantee that all data was cloned.
+  // If the source has been deleted, we throw an exception, which ends up as an error
+  // that the user can see, explaining why the cloning failed.
+  private def verifySourceStillExists(sourceDocumentSetId: Long): DocumentSet = Database.inTransaction {
+    val validSourceDocumentSet = for {
+      ds <- DocumentSetFinder.byId(sourceDocumentSetId).headOption if !ds.deleted
+    } yield ds
+      
+    validSourceDocumentSet.getOrElse { throw new DisplayedError("source_documentset_deleted") }
+  }
+  
   private def restartInterruptedJobs: Unit = Database.inTransaction {
     val interruptedJobs = PersistentDocumentSetCreationJob.findJobsWithState(InProgress)
     val restarter = new JobRestarter(new DocumentSetCleaner, SearchIndex)
@@ -216,7 +230,11 @@ object JobHandler {
   }
 
   private def reportError(job: PersistentDocumentSetCreationJob, t: Throwable): Unit = {
-    Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")
+    t match {
+      case e: DisplayedError => Logger.info(s"Job for DocumentSetId ${job.documentSetId} failed: $e")
+      case _ => Logger.error(s"Job for DocumentSet id ${job.documentSetId} failed: $t\n${t.getStackTrace.mkString("\n")}")  
+    }
+    
     job.state = Error
     job.statusDescription = Some(ExceptionStatusMessage(t))
     Database.inTransaction {
