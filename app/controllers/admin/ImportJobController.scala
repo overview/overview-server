@@ -1,21 +1,20 @@
 package controllers.admin
 
 import play.api.mvc.Controller
-import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.adminUser
-import models.orm.finders.DocumentSetCreationJobFinder
-import models.orm.stores.DocumentSetStore
-import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.tree.orm.DocumentSet
-import models.orm.User
-import models.orm.stores.DocumentSetCreationJobStore
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import models.orm.finders.DocumentSetFinder
+
 import org.overviewproject.jobs.models.{ CancelFileUpload, Delete, DeleteTreeJob }
-import controllers.util.JobQueueSender
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSet
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+
+import controllers.auth.Authorities.adminUser
+import controllers.auth.AuthorizedAction
 import controllers.util.DocumentSetDeletionComponents
 import controllers.util.JobContextChecker
+import models.orm.User
+import models.orm.finders.DocumentSetCreationJobFinder
+import models.orm.finders.DocumentSetFinder
 
 trait ImportJobController extends Controller with JobContextChecker {
 

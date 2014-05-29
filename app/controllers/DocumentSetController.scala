@@ -1,21 +1,21 @@
 package controllers
 
 import play.api.mvc.Controller
-import controllers.auth.{ AuthorizedAction, Authorities }
-import controllers.forms.DocumentSetUpdateForm
-import controllers.util.JobQueueSender
-import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder }
-import models.orm.stores.DocumentSetStore
-import org.overviewproject.jobs.models.{ CancelUploadWithDocumentSet, Delete }
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
-import org.overviewproject.tree.orm.finders.ResultPage
+
+import org.overviewproject.jobs.models.CancelFileUpload
+import org.overviewproject.jobs.models.Delete
+import org.overviewproject.jobs.models.DeleteTreeJob
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import org.overviewproject.jobs.models.CancelFileUpload
-import org.overviewproject.jobs.models.DeleteTreeJob
-import models.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.tree.orm.finders.ResultPage
+
+import controllers.auth.{ AuthorizedAction, Authorities }
+import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
+import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder }
+import models.orm.stores.DocumentSetStore
 
 trait DocumentSetController extends Controller {
   import Authorities._
