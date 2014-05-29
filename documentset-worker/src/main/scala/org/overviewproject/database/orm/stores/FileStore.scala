@@ -41,7 +41,7 @@ object FileStore extends BaseStore(files) {
         
     val fileIdsToUpdate = from(files)(f =>
       where (f.id in fileIdQuery)
-      select (f)
+      select (f.id)
       orderBy (f.id)).forUpdate.toSeq
 
     update(files)(f => 

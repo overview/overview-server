@@ -34,7 +34,7 @@ object PageStore extends BaseStore(pages) {
 
     val pageIdsToUpdate = from(pages)(p =>
       where(p.fileId in fileIdQuery)
-        select (p)
+        select (p.id)
         orderBy (p.id)).forUpdate.toSeq
 
     update(pages)(p =>
