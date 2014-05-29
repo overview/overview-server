@@ -37,6 +37,13 @@ object DocumentSetCreationJobFinder extends Finder {
         select(dscj)
       )
     }
+    
+    def excludeCancelledJobs: DocumentSetCreationJobFinderResult = {
+      from(toQuery)(dscj =>
+        where (dscj.state <> DocumentSetCreationJobState.Cancelled)
+        select(dscj)
+      )
+    }
 
     def withDocumentSets: FinderResult[(DocumentSetCreationJob, DocumentSet)] = {
       join(toQuery, Schema.documentSets)((dscj, ds) =>

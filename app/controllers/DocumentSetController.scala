@@ -228,6 +228,7 @@ object DocumentSetController extends DocumentSetController {
       DocumentSetCreationJobFinder
         .byUser(userEmail)
         .excludeFailedTreeCreationJobs
+        .excludeCancelledJobs
         .withDocumentSetsAndQueuePositions
         .toSeq
     }

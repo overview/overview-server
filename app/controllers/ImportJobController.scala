@@ -24,6 +24,7 @@ object ImportJobController extends ImportJobController {
     DocumentSetCreationJobFinder
       .byUser(userEmail)
       .excludeFailedTreeCreationJobs
+      .excludeCancelledJobs
       .withDocumentSetsAndQueuePositions
       .toSeq
   }
