@@ -15,6 +15,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.DeleteTreeJob
 import models.orm.stores.DocumentSetCreationJobStore
+import controllers.util.DocumentSetDeletionComponents
 
 trait DocumentSetController extends Controller {
   import Authorities._
@@ -199,8 +200,8 @@ trait DocumentSetController extends Controller {
   val jobQueue: DocumentSetController.JobMessageQueue
 }
 
-object DocumentSetController extends DocumentSetController {
-  object DatabaseStorage extends Storage {
+object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
+  object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
     override def findTreesByDocumentSets(documentSetIds: Iterable[Long]) = TreeFinder.byDocumentSets(documentSetIds)
     override def findTreesByDocumentSet(documentSetId: Long) = TreeFinder.byDocumentSet(documentSetId)
@@ -240,12 +241,6 @@ object DocumentSetController extends DocumentSetController {
       DocumentSetStore.insertOrUpdate(documentSet)
     }
 
-    override def deleteDocumentSet(documentSet: DocumentSet): Unit =
-      DocumentSetStore.markDeleted(documentSet)
-
-    override def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob] =
-      DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
-
     override def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit =
       DocumentSetStore.cancelReclusteringJob(documentSet, job)
 
@@ -254,11 +249,7 @@ object DocumentSetController extends DocumentSetController {
 
   }
 
-  object ApolloJobMessageQueue extends JobMessageQueue {
-    override def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)
-    override def send(deleteJobCommand: DeleteTreeJob): Unit = JobQueueSender.send(deleteJobCommand)
-    override def send(cancelFileUploadCommand: CancelFileUpload): Unit = JobQueueSender.send(cancelFileUploadCommand)
-  }
+  object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue
 
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue

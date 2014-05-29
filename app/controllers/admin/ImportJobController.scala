@@ -14,8 +14,10 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import models.orm.finders.DocumentSetFinder
 import org.overviewproject.jobs.models.{ CancelFileUpload, Delete, DeleteTreeJob }
 import controllers.util.JobQueueSender
+import controllers.util.DocumentSetDeletionComponents
+import controllers.util.JobContextChecker
 
-trait ImportJobController extends Controller {
+trait ImportJobController extends Controller with JobContextChecker {
 
   trait Storage {
     def findAllDocumentSetCreationJobs: Iterable[(DocumentSetCreationJob, DocumentSet, User)]
@@ -74,35 +76,11 @@ trait ImportJobController extends Controller {
   private def flashFailure = Redirect(routes.ImportJobController.index())
     .flashing("warning" -> "Could not delete job: it does not exist. Has it completed?")
 
-  private def jobTest(test: DocumentSetCreationJob => Boolean)(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    job.map(test)
-      .getOrElse(false)
-
-  private def noJobCancelled(implicit job: Option[DocumentSetCreationJob]): Boolean = job.isEmpty
-
-  private def notStartedTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => (j.jobType == Recluster && j.state == NotStarted) }
-
-  private def validTextExtractionJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.fileGroupId.isDefined }
-
-  private def runningTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.jobType == Recluster && j.state != NotStarted }
-
-  private def runningInWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.jobType != Recluster && j.state == InProgress }
-
-  private def notRunning(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.state == NotStarted || j.state == Error || j.state == Cancelled }
-
-  private def runningInTextExtractionWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.state == FilesUploaded || j.state == TextExtractionInProgress }
-
 }
 
-object ImportJobController extends ImportJobController {
+object ImportJobController extends ImportJobController with DocumentSetDeletionComponents {
 
-  object DatabaseStorage extends Storage {
+  object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
     override def findDocumentSetByJob(importJobId: Long) =
       for {
         j <- DocumentSetCreationJobFinder.byDocumentSetCreationJob(importJobId).headOption
@@ -112,19 +90,9 @@ object ImportJobController extends ImportJobController {
     override def findAllDocumentSetCreationJobs: Iterable[(DocumentSetCreationJob, DocumentSet, User)] =
       DocumentSetCreationJobFinder.all.withDocumentSetsAndOwners.toSeq
 
-    override def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob] =
-      DocumentSetCreationJobStore.findCancellableJobByDocumentSetAndCancel(documentSetId)
-
-    override def deleteDocumentSet(documentSet: DocumentSet): Unit =
-      DocumentSetStore.markDeleted(documentSet)
-
   }
 
-  object ApolloJobMessageQueue extends JobMessageQueue {
-    override def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)
-    override def send(deleteJobCommand: DeleteTreeJob): Unit = JobQueueSender.send(deleteJobCommand)
-    override def send(cancelFileUploadCommand: CancelFileUpload): Unit = JobQueueSender.send(cancelFileUploadCommand)
-  }
+  object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue 
 
   override val storage = DatabaseStorage
   override val jobQueue = ApolloJobMessageQueue
