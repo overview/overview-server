@@ -85,7 +85,7 @@ trait CreatePagesProcess {
 
     private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] =
       pageContents.view.zipWithIndex.map { case (p, i) =>
-        createPageFromContent(fileId, p, i)
+        createPageFromContent(fileId, p, i + 1)
       }
 
     private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
