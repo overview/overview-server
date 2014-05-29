@@ -42,6 +42,17 @@ class FileGroupJobManagerSpec extends Specification {
     }
 
     
+    "delete cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet1, fileGroup1))
+      fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet2, fileGroup2))
+
+      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet1, fileGroup3))
+      fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
+
+      fileGroupJobManager ! FileGroupDocumentsCreated(cancelledDocumentSet1)
+      fileGroupJobQueue.expectMsg(DeleteFileUpload(cancelledDocumentSet1, fileGroup3))
+    }
+    
     "cancel text extraction when requested" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
@@ -70,8 +81,8 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.reply(FileGroupDocumentsCreated(documentSetId))
 
       fileGroupJobQueue.expectMsg(DeleteFileUpload(documentSetId, fileGroupId))
-
     }
+    
 
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 

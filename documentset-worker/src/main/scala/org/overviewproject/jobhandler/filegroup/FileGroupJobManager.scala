@@ -71,17 +71,19 @@ trait FileGroupJobManager extends Actor {
         textExtractionJobsPendingCancellation -= documentSetId
       }
 
-    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => {
-      textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
+    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => 
       cancelJob(documentSetId, fileGroupId)
-    }
+    
   }
 
   private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
     fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
-  private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit =
+  private def cancelJob(documentSetId: Long, fileGroupId: Long): Unit = {
+    textExtractionJobsPendingCancellation += (documentSetId -> fileGroupId)
     fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
+  }
+
 }
 
 class FileGroupJobManagerImpl(
