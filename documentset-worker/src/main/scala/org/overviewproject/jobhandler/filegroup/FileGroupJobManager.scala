@@ -110,7 +110,7 @@ class FileGroupJobManagerImpl(
     }
 
     override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {
-      DocumentSetCreationJobFinder.byDocumentSetAndState(documentSetId, FilesUploaded).map { job =>
+      DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).map { job =>
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
       }
     }
