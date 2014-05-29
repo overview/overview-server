@@ -141,7 +141,7 @@ trait DocumentSetController extends Controller {
       
       done("deleteTree.success", "tree-delete")
     } else if (runningTreeJob) {
-      
+      // marking job as cancelled is sufficient
       done("deleteTree.success", "tree-delete")
     } else if (runningInWorker) {
       onDocumentSet(storage.deleteDocumentSet)
