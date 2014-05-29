@@ -1,15 +1,25 @@
 package controllers.admin
 
 import play.api.mvc.Controller
-
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.adminUser
 import models.orm.finders.DocumentSetCreationJobFinder
 import models.orm.stores.DocumentSetStore
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSet
+import models.orm.User
 
-object ImportJobController extends Controller {
+trait ImportJobController extends Controller {
+
+  trait Storage {
+    def findAllDocumentSetCreationJobs: Iterable[(DocumentSetCreationJob, DocumentSet, User)]
+  }
+
+  val storage: Storage
+
   def index() = AuthorizedAction(adminUser) { implicit request =>
-    val jobs = DocumentSetCreationJobFinder.all.withDocumentSetsAndOwners
+    val jobs = storage.findAllDocumentSetCreationJobs
+    
     Ok(views.html.admin.ImportJob.index(request.user, jobs))
   }
 
@@ -24,4 +34,14 @@ object ImportJobController extends Controller {
           .flashing("warning" -> "Could not delete job: it does not exist. Has it completed?")
     }
   }
+}
+
+object ImportJobController extends ImportJobController {
+
+  object DatabaseStorage extends Storage {
+    override def findAllDocumentSetCreationJobs: Iterable[(DocumentSetCreationJob, DocumentSet, User)] =
+      DocumentSetCreationJobFinder.all.withDocumentSetsAndOwners.toSeq
+  }
+  
+  override val storage = DatabaseStorage
 }
