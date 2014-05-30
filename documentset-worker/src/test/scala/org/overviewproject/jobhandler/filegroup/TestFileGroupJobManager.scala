@@ -6,6 +6,7 @@ import akka.actor._
 import akka.agent._
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelClusterFileGroupCommand
 import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
+import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 
 trait JobParameters {
@@ -34,7 +35,10 @@ trait StorageMonitor extends JobParameters {
     override def findInProgressJobInformation: Iterable[(Long, Long)] = loadInterruptedJobs
     override def findCancelledJobInformation: Iterable[(Long, Long)] = loadCancelledJobs
     
-    override def updateJobState(documentSetId: Long): Unit = updateJobStateParameters send (_.enqueue(documentSetId))
+    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
+      updateJobStateParameters send (_.enqueue(documentSetId))
+      uploadJob
+    }
   }
 
   override protected val storage = new MockStorage
@@ -46,6 +50,7 @@ trait StorageMonitor extends JobParameters {
 class TestFileGroupJobManager(
   override protected val fileGroupJobQueue: ActorRef,
   override protected val clusteringJobQueue: ActorRef,
+  val uploadJob: Option[DocumentSetCreationJob],
   interruptedJobs: Seq[(Long, Long)],
   cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
   

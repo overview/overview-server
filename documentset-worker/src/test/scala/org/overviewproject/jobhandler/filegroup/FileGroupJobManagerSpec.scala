@@ -6,6 +6,9 @@ import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.{ Before, Specification }
+import org.overviewproject.tree.orm.DocumentSetCreationJob
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.tree.DocumentSetCreationJobType._
 
 class FileGroupJobManagerSpec extends Specification {
 
@@ -41,7 +44,6 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobQueue.expectMsg(CancelFileUpload(cancelledDocumentSet2, fileGroup4))
     }
 
-    
     "delete cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet1, fileGroup1))
       fileGroupJobQueue.expectMsg(CreateDocumentsFromFileGroup(interruptedDocumentSet2, fileGroup2))
@@ -52,7 +54,7 @@ class FileGroupJobManagerSpec extends Specification {
       fileGroupJobManager ! FileGroupDocumentsCreated(cancelledDocumentSet1)
       fileGroupJobQueue.expectMsg(DeleteFileUpload(cancelledDocumentSet1, fileGroup3))
     }
-    
+
     "cancel text extraction when requested" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
@@ -72,6 +74,12 @@ class FileGroupJobManagerSpec extends Specification {
       clusteringJobQueue.expectNoMsg
     }
 
+    "don't start text extraction if no job is found" in new NoJobContext {
+      fileGroupJobManager ! clusterCommand
+
+      fileGroupJobQueue.expectNoMsg
+    }
+
     "delete cancelled job after cancellation is complete" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
@@ -82,7 +90,6 @@ class FileGroupJobManagerSpec extends Specification {
 
       fileGroupJobQueue.expectMsg(DeleteFileUpload(documentSetId, fileGroupId))
     }
-    
 
     abstract class FileGroupJobManagerContext extends ActorSystemContext with Before with JobParameters {
 
@@ -94,9 +101,13 @@ class FileGroupJobManagerSpec extends Specification {
         fileGroupJobQueue = TestProbe()
         clusteringJobQueue = TestProbe()
         fileGroupJobManager = TestActorRef(
-          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, interruptedJobs, cancelledJobs))
+          new TestFileGroupJobManager(fileGroupJobQueue.ref, clusteringJobQueue.ref, uploadJob, interruptedJobs, cancelledJobs))
 
       }
+
+      protected def uploadJob: Option[DocumentSetCreationJob] = Some(
+        DocumentSetCreationJob(documentSetId = documentSetId, jobType = FileUpload, fileGroupId = Some(fileGroupId),
+          state = FilesUploaded))
 
       protected def interruptedJobs: Seq[(Long, Long)] = Seq.empty
       protected def cancelledJobs: Seq[(Long, Long)] = Seq.empty
@@ -127,6 +138,10 @@ class FileGroupJobManagerSpec extends Specification {
       override protected def cancelledJobs: Seq[(Long, Long)] = Seq(
         (cancelledDocumentSet1, fileGroup3),
         (cancelledDocumentSet2, fileGroup4))
+    }
+
+    abstract class NoJobContext extends FileGroupJobManagerContext {
+      override protected def uploadJob: Option[DocumentSetCreationJob] = None
     }
   }
 }

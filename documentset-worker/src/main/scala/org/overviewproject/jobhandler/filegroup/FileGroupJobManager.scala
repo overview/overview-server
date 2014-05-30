@@ -43,7 +43,7 @@ trait FileGroupJobManager extends Actor {
   trait Storage {
     def findInProgressJobInformation: Iterable[(Long, Long)]
     def findCancelledJobInformation: Iterable[(Long, Long)]
-    def updateJobState(documentSetId: Long): Unit
+    def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
   }
 
   override def preStart(): Unit = {
@@ -58,9 +58,8 @@ trait FileGroupJobManager extends Actor {
   def receive = {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
-      storage.updateJobState(documentSetId)
-
-      queueJob(documentSetId, fileGroupId)
+      for (job <- storage.updateJobState(documentSetId)) 
+        queueJob(documentSetId, fileGroupId)
     }
 
     case FileGroupDocumentsCreated(documentSetId) =>
@@ -109,8 +108,8 @@ class FileGroupJobManagerImpl(
       } yield (j.documentSetId, fileGroupId)
     }
 
-    override def updateJobState(documentSetId: Long): Unit = Database.inTransaction {
-      DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).map { job =>
+    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
+      DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).headOption.map { job =>
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
       }
     }
