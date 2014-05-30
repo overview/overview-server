@@ -4,22 +4,13 @@ import scala.language.postfixOps
 import scala.concurrent.duration._
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.database.{ DataSource, DB }
-import org.overviewproject.database.SystemPropertiesDatabaseConfiguration
+import org.overviewproject.database.{ DataSource, DB, SystemPropertiesDatabaseConfiguration }
 import org.overviewproject.jobhandler.documentset.DocumentSetJobHandler
-import org.overviewproject.jobhandler.filegroup.ClusteringJobHandler
-import org.overviewproject.util.Logger
-import org.overviewproject.messagequeue.MessageQueueConnection
-import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
+import org.overviewproject.jobhandler.filegroup._
 import org.overviewproject.messagequeue.AcknowledgingMessageReceiverProtocol._
+import org.overviewproject.messagequeue.MessageQueueConnectionProtocol._
 import org.overviewproject.messagequeue.apollo.ApolloMessageQueueConnection
-import ActorCareTakerProtocol._
-import org.overviewproject.jobhandler.filegroup.ClusteringCommandsMessageQueueBridge
-import org.overviewproject.jobhandler.filegroup.FileGroupJobManager
-import org.overviewproject.jobhandler.filegroup.FileGroupJobQueue
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueue
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorker
-import org.overviewproject.jobhandler.filegroup.ProgressReporter
+import org.overviewproject.util.Logger
 
 object ActorCareTakerProtocol {
   case object StartListening
@@ -38,15 +29,17 @@ object ActorCareTakerProtocol {
  * process starts.
  */
 object DocumentSetWorker extends App {
+  import ActorCareTakerProtocol._
+
   private val WorkerActorSystemName = "WorkerActorSystem"
   private val FileGroupJobQueueSupervisorName = "FileGroupJobQueueSupervisor"
   private val FileGroupJobQueueName = "FileGroupJobQueue"
-    
+
   private val NumberOfJobHandlers = 8
 
-  private def fileGroupJobQueuePath = 
+  private def fileGroupJobQueuePath =
     s"$WorkerActorSystemName/user/$FileGroupJobQueueSupervisorName/$FileGroupJobQueueName"
-    
+
   val config = new SystemPropertiesDatabaseConfiguration()
   val dataSource = new DataSource(config)
 
@@ -62,8 +55,6 @@ object DocumentSetWorker extends App {
   FileGroupTaskWorkerStartup(fileGroupJobQueuePath)
 }
 
-
-
 /**
  * Supervisor for the actors.
  * Creates the connection hosting the message queues, and tells
@@ -72,7 +63,8 @@ object DocumentSetWorker extends App {
  * All actors get killed, and we die.
  */
 class ActorCareTaker(numberOfJobHandlers: Int, fileGroupJobQueueName: String) extends Actor {
-
+  import ActorCareTakerProtocol._
+  
   val connectionMonitor = context.actorOf(ApolloMessageQueueConnection())
   // Start as many job handlers as you need
   val jobHandlers = Seq.fill(numberOfJobHandlers)(context.actorOf(DocumentSetJobHandler()))
