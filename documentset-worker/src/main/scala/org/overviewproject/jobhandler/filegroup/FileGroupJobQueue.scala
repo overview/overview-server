@@ -83,13 +83,13 @@ trait FileGroupJobQueue extends Actor {
       if (!taskQueue.isEmpty) {
         taskQueue.dequeue match {
           case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
-            Logger.info(s"Sending task $uploadedFileId to ${sender.path.toString}")
+            Logger.info(s"($documentSetId:$fileGroupId) Sending task $uploadedFileId to ${sender.path.toString}")
             progressReporter ! StartTask(documentSetId, uploadedFileId)
             sender ! task
             busyWorkers += (sender -> task)
           }
           case task @ DeleteFileUploadJob(documentSetId, fileGroupId) => {
-            Logger.info(s"Sending delete job for $fileGroupId to ${sender.path.toString}")
+            Logger.info(s"($documentSetId:$fileGroupId) Sending delete job to ${sender.path.toString}")
             sender ! task
             busyWorkers += (sender -> task)
           }
@@ -97,7 +97,7 @@ trait FileGroupJobQueue extends Actor {
       }
     }
     case CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId) => {
-      Logger.info(s"Task ${uploadedFileId} Done [$fileGroupId]")
+      Logger.info(s"($documentSetId:$fileGroupId) Task ${uploadedFileId} Done")
       progressReporter ! CompleteTask(documentSetId, uploadedFileId)
       busyWorkers -= sender
 
@@ -106,7 +106,7 @@ trait FileGroupJobQueue extends Actor {
       }
     }
     case CancelFileUpload(documentSetId, fileGroupId) => {
-      Logger.info(s"Cancelling Extract text task for FileGroup [$fileGroupId]")
+      Logger.info(s"($documentSetId:$fileGroupId) Cancelling Extract text tasks")
       jobRequests.get(documentSetId).fold {
         sender ! FileGroupDocumentsCreated(documentSetId)
       } { r =>
@@ -115,13 +115,14 @@ trait FileGroupJobQueue extends Actor {
       }
     }
     case DeleteFileUpload(documentSetId, fileGroupId) => {
-      Logger.info(s"Deleting upload job for FileGroup [$fileGroupId]")
+      Logger.info(s"($documentSetId:$fileGroupId) Deleting upload job")
       taskQueue += DeleteFileUploadJob(documentSetId, fileGroupId)
       jobRequests += (documentSetId -> JobRequest(sender))
 
       workerPool.map(_ ! TaskAvailable)
     }
     case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
+      Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
       busyWorkers -= sender
       jobRequests.get(documentSetId).map { r =>
         r.requester ! FileUploadDeleted(documentSetId, fileGroupId)
