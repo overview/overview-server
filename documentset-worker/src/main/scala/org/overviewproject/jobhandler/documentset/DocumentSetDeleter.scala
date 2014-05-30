@@ -76,6 +76,8 @@ object DocumentSetDeleter {
       delete(documents)
       delete(documentSetUsers)
 
+      delete(tempDocumentSetFiles)
+      
       deletePages(fileIds)
       deleteFiles(fileIds)
 

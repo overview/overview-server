@@ -128,6 +128,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
         val pageData: Array[Byte] = Array.fill(128)(0xfe.toByte)
         page = pages.insertOrUpdate(Page(file.id, 1, 1, Some(pageData), Some("Text")))
 
+        
         document = Document(documentSet.id, fileId = Some(file.id), pageId = Some(page.id))
         documents.insert(document)
       }
@@ -159,6 +160,19 @@ class DocumentSetDeleterSpec extends DbSpecification {
       }
     }
 
+    trait FailedPdfUploadContext extends PdfUploadContext {
+      override protected def createDocumentSet = {
+        super.createDocumentSet
+        tempDocumentSetFiles.insertOrUpdate(TempDocumentSetFile(documentSet.id, file.id))
+      }
+      
+      def findTempDocumentSetFiles: Iterable[TempDocumentSetFile] = 
+        from(tempDocumentSetFiles)(dsf =>
+          where (dsf.documentSetId === documentSet.id)  
+          select (dsf)
+        )
+    }
+    
     trait ReclusterContext extends DocumentSetContext {
       override def createDocumentSet = {
         super.createDocumentSet
@@ -215,6 +229,11 @@ class DocumentSetDeleterSpec extends DbSpecification {
       contentIsRemoved(file.contentsOid) must beTrue
     }
     
+    "delete failed upload job" in new FailedPdfUploadContext {
+      DocumentSetDeleter().deleteDocumentSet(documentSet.id)
+      
+      findTempDocumentSetFiles must beEmpty
+    }
     "delete cancelled reclustering job" in new ReclusterContext {
       DocumentSetDeleter().deleteCancelledJobInformation(documentSet.id)
       
