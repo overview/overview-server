@@ -49,19 +49,6 @@ class DocumentSetStoreSpec extends Specification {
       DocumentSet().deleted must beFalse
     }
     
-    "delete document_set_creation_job entries" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-        jobType=DocumentSetCreationJobType.DocumentCloud,
-        documentSetId=documentSet.id,
-        state=DocumentSetCreationJobState.NotStarted
-      ))
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      DocumentSetCreationJobFinder.byDocumentSet(documentSet).count must beEqualTo(0)
-    }
-
 
     "set document set deleted flag to true on delete" in new DocumentSetContext {
       val documentSet = insertDocumentSet
@@ -71,56 +58,6 @@ class DocumentSetStoreSpec extends Specification {
       val deletedDocumentSet = DocumentSetFinder.byDocumentSet(documentSet.id).headOption
       
       deletedDocumentSet must beSome.like { case ds => ds.deleted must beTrue }
-    }
-    
-    "delete an uploaded LargeObject when there is a NotStarted job" in new DocumentSetContext {
-      val (uploadedFile, documentSet) = insertUploadedFileAndDocumentSet
-
-      val oid = LO.withLargeObject { largeObject =>
-        DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-          documentSetId=documentSet.id,
-          jobType=DocumentSetCreationJobType.CsvUpload,
-          state=DocumentSetCreationJobState.NotStarted,
-          contentsOid=Some(largeObject.oid)
-        ))
-        largeObject.oid
-      }
-
-      DocumentSetStore.deleteOrCancelJob(documentSet.id)
-
-      LO.withLargeObject(oid) { lo => } must throwA[java.sql.SQLException]
-    }
-    
-    
-    "cancel in-progress clone jobs when deleting a document set" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      val cloneDocumentSet = CloneImportJobStore.insertCloneOf(documentSet)
-      val cloneJob = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-        documentSetId=cloneDocumentSet.id,
-        jobType=DocumentSetCreationJobType.Clone,
-        state=DocumentSetCreationJobState.InProgress,
-        sourceDocumentSetId=Some(documentSet.id)
-      ))
-
-      DocumentSetStore.deleteOrCancelJob(documentSet.id)
-
-      val cancelledJob = DocumentSetCreationJobFinder.byDocumentSet(cloneDocumentSet).headOption
-      cancelledJob must beSome like { case Some(job) => job.state must beEqualTo(DocumentSetCreationJobState.Cancelled) }
-    }
-
-    "cancel job if in progress" in new DocumentSetContext {
-      val documentSet = insertDocumentSet
-      val job = DocumentSetCreationJobStore.insertOrUpdate(DocumentSetCreationJob(
-        documentSetId=documentSet.id,
-        jobType=DocumentSetCreationJobType.DocumentCloud,
-        state=DocumentSetCreationJobState.InProgress
-      ))
-
-      DocumentSetStore.deleteOrCancelJob(documentSet)
-
-      // The job must exist, cancelled
-      val cancelledJob = DocumentSetCreationJobFinder.byDocumentSet(documentSet).headOption
-      cancelledJob must beSome like { case Some(job) => job.state must beEqualTo(DocumentSetCreationJobState.Cancelled) }
     }
   }
 
