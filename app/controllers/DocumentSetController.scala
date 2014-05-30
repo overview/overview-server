@@ -42,19 +42,12 @@ trait DocumentSetController extends Controller {
     /** Returns all active DocumentSetCreationJobs (job, documentSet, queuePosition) */
     def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)]
 
-    /** Returns type of the job running for the document set, if any exist */
-    def findRunningJobType(documentSetId: Long): Option[DocumentSetCreationJobType.Value]
-
-    /** find all jobs for the document set */
-    def findAllJobs(documentSetId: Long): Seq[DocumentSetCreationJob]
-
     def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet
 
     def deleteDocumentSet(documentSet: DocumentSet): Unit
 
     def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
-    def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit
   }
 
   trait JobMessageQueue {
@@ -234,18 +227,9 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
         .toSeq
     }
 
-    override def findAllJobs(documentSetId: Long): Seq[DocumentSetCreationJob] =
-      DocumentSetCreationJobFinder.byDocumentSet(documentSetId).toSeq
-
     override def insertOrUpdateDocumentSet(documentSet: DocumentSet): DocumentSet = {
       DocumentSetStore.insertOrUpdate(documentSet)
     }
-
-    override def cancelReclusteringJob(documentSet: DocumentSet, job: DocumentSetCreationJob): Unit =
-      DocumentSetStore.cancelReclusteringJob(documentSet, job)
-
-    override def findRunningJobType(documentSetId: Long) =
-      DocumentSetCreationJobFinder.byDocumentSet(documentSetId).headOption.map(_.jobType)
 
   }
 
