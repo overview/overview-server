@@ -6,12 +6,11 @@ import akka.actor.{ Actor, ActorRef }
 import akka.actor.Props
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.finders.DocumentSetCreationJobFinder
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
-import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
+import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
+import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelClusterFileGroupCommand
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)

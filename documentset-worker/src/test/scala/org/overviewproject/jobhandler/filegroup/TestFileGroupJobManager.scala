@@ -4,8 +4,7 @@ import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import akka.actor._
 import akka.agent._
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.CancelClusterFileGroupCommand
-import org.overviewproject.jobhandler.filegroup.MotherWorkerProtocol.ClusterFileGroupCommand
+import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 
 
