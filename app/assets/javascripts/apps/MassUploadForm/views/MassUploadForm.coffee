@@ -44,9 +44,6 @@ define [
 
         <div class='progress-bar'></div>
 
-        <p class="minimum-files" style="display:none;">
-          You must import at least three documents to create a document set. There's no point asking Overview to sort only one or two documents.
-        </p>
       </div>
 
       <div class="wait-for-import">
@@ -72,7 +69,6 @@ define [
       @finishEnabled = false
       @listenTo(@model, 'change', @_maybeSubmit)
       @listenTo(@model, 'change', @_refreshProgressVisibility)
-      @listenTo(@model, 'change', @_refreshMinimumFilesVisibility)
       @optionsSet = false
 
       # remove this when we add resumable uploads
@@ -86,9 +82,7 @@ define [
       @_$els =
         uploads: @$('.uploads')
         progressBar: @$('.progress-bar')
-        minimumFiles: @$('.minimum-files')
 
-      @_minimumFilesVisible = false
 
       @_refreshProgressVisibility()
       @_progressView = new UploadProgressView(model: @model, el: @_$els.progressBar)
@@ -101,13 +95,6 @@ define [
       )
       @_uploadCollectionView.render()
 
-    _refreshMinimumFilesVisibility: ->
-      minimumFilesVisible = 1 <= @collection.length <= 2
-      if minimumFilesVisible != @_minimumFilesVisible
-        @_minimumFilesVisible = minimumFilesVisible
-        display = @_minimumFilesVisible && 'block' || 'none'
-        @_$els.minimumFiles.css(display: display)
-      this
 
     remove: ->
       @_progressView?.remove()
@@ -128,11 +115,10 @@ define [
       @$('button.choose-options').prop('disabled', true)
 
     _onCollectionAddBatch: ->
-      if !@finishEnabled && @collection.length > 2
+      if !@finishEnabled && @collection.length > 0
         @finishEnabled = true
         @$('button.choose-options').prop('disabled', false)
 
-      @_refreshMinimumFilesVisibility()
       @_refreshProgressVisibility()
 
     _setButtonHover: (event, isHovering) ->
@@ -147,11 +133,13 @@ define [
     _requestOptions: (e) ->
       e.stopPropagation()
       e.preventDefault()
+      tooFewDocuments = @collection.length <= 2
       ImportOptionsApp.addHiddenInputsThroughDialog(
         @el,
         onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
         supportedLanguages: @options.supportedLanguages
         defaultLanguageCode: @options.defaultLanguageCode
+        tooFewDocuments: tooFewDocuments
         callback: => @_optionsSetDone(true)
       )
 

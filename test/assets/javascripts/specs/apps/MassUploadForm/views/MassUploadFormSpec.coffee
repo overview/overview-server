@@ -89,8 +89,6 @@ define [
       it 'hides the progress bar when there are no uploads', ->
         expect(view.$('.progress-bar').css('display')).to.eq('none')
 
-      it 'hides the minimum-files text when there are no uploads', ->
-        expect(view.$('.minimum-files').css('display')).to.eq('none')
 
     describe 'model add event', ->
       beforeEach ->
@@ -98,8 +96,8 @@ define [
         model.uploads.add(new MockUpload)
         model.uploads.trigger('add-batch', model.uploads.models)
 
-      it 'does not yet enable the submit button', ->
-        expect(view.$('.choose-options')).to.be.disabled
+      it 'enables the submit button', ->
+        expect(view.$('.choose-options')).not.to.be.disabled
 
       it 'shows the progress bar', ->
         expect(view.$('.progress-bar').css('display')).to.eq('block')
@@ -107,14 +105,25 @@ define [
       it 'shows the minimum-files text', ->
         expect(view.$('.minimum-files').css('display')).not.to.eq('none')
 
+      describe 'with 1 or 2 uploads', ->
+
+        it 'shows a modal with the import options with tooFewDocuments set app', ->
+          @sandbox.stub(ImportOptionsApp, 'addHiddenInputsThroughDialog')
+          view.$('.choose-options').click()
+          expect(ImportOptionsApp.addHiddenInputsThroughDialog).to.have.been.calledWith(
+            sinon.match.has('childNodes'),
+            onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
+            supportedLanguages: sinon.match.array
+            defaultLanguageCode: 'en'
+            tooFewDocuments: true
+            callback: sinon.match.func
+          )
+        
       describe 'with 3 or more uploads', ->
         beforeEach ->
           model.uploads.add(new MockUpload)
           model.uploads.add(new MockUpload)
           model.uploads.trigger('add-batch', model.uploads.tail(1))
-
-        it 'hides the minimum-files text', ->
-          expect(view.$('.minimum-files').css('display')).to.eq('none')
 
         describe 'submit button', ->
           it 'is enabled', ->
@@ -128,6 +137,7 @@ define [
               onlyOptions: [ 'name', 'lang', 'split_documents', 'supplied_stop_words', 'important_words' ]
               supportedLanguages: sinon.match.array
               defaultLanguageCode: 'en'
+              tooFewDocuments: false
               callback: sinon.match.func
             )
 
