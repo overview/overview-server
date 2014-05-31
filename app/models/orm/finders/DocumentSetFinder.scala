@@ -48,10 +48,13 @@ object DocumentSetFinder extends Finder {
     byDocumentSet(documentSet).where(_.isPublic === isPublic)
   }
 
-  /** @return All `DocumentSet`s with the given isPublic valid. */
+  /** 
+   *  @return All `DocumentSet`s that are not deleted, with the given isPublic valid. 
+   *  
+   */
   def byIsPublic(isPublic: Boolean) : DocumentSetResult = {
     from(Schema.documentSets)(ds =>
-      where(ds.isPublic === isPublic)
+      where(ds.isPublic === isPublic and ds.deleted === false)
       select(ds)
       orderBy(ds.createdAt desc)
     )
