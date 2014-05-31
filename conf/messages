@@ -387,6 +387,7 @@ views.Tree.show.tag_list.submit=Create new tag
 views.Tree.show.tag_list.remove=Delete
 views.Tree.show.tag_list.remove.confirm=The tag “{0}” has been applied to {1,choice,0#no documents|1#one document|1<{1,number,integer} documents}. Are you sure you want to delete it?
 
+views.ImportJob._documentSetCreationJob.job_state_description.bad_important_words_pattern=Invalid pattern in Important Words
 views.ImportJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.job_complete=Import complete

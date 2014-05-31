@@ -14,7 +14,9 @@
  */
 package org.overviewproject.nlp
 
+import scala.util.control.Exception._
 import org.overviewproject.nlp.DocumentVectorTypes.TermWeight
+import org.overviewproject.util.DisplayedError
 
 case class WeightedTermString(term:String,weight:TermWeight)
 
@@ -54,7 +56,7 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     val strippedTerm = rawTerm.dropWhile(isPunct(_)).reverse.dropWhile(isPunct(_)).reverse
 
     weightedTerms foreach { case (pattern,patternWeight) => 
-      if (strippedTerm.matches(pattern)) {
+      if (validPatternMatch(strippedTerm, pattern)) {
         weight *= patternWeight
         matched = true 
       }
@@ -88,5 +90,15 @@ class WeightedLexer(val stopWords:Set[String], val weightedTerms:Map[String,Term
     // split on (condensed) spaces and weight each term
     text.split(' ').flatMap(ProcessTerm).map(limitTermLength)
   }
+  
+  private def validPatternMatch(term: String, pattern: String): Boolean = 
+    catching(classOf[java.util.regex.PatternSyntaxException])
+      .withApply(e => throw new DisplayedError("bad_important_words_pattern")) {
+    term.matches(pattern)
+  } 
+    
+    
+    
+  
 }
 
