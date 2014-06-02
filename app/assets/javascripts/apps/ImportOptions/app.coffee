@@ -111,7 +111,7 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
       undefined
 
-    @_addHiddenInputsThroughDialog: (form, options) ->
+    @addHiddenInputsThroughDialog: (form, options) ->
       app = new App(options)
 
       submit = ->
@@ -147,6 +147,6 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
             .attr('import-options-submitting', true)
             .submit()
 
-        @_addHiddenInputsThroughDialog(form, options)
+        @addHiddenInputsThroughDialog(form, options)
 
       undefined
