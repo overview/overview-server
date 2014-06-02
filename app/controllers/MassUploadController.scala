@@ -1,5 +1,7 @@
 package controllers
 
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import java.util.UUID
 import play.api.libs.iteratee.Iteratee
 import play.api.Logger
@@ -16,6 +18,7 @@ import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
 import org.overviewproject.jobs.models.ClusterFileGroup
+import play.api.libs.concurrent.Akka
 
 trait MassUploadController extends Controller {
 
@@ -103,8 +106,8 @@ trait MassUploadController extends Controller {
     def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
-    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String, 
-        splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit
+    def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
+                        splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit
 
     /** Tell worker to delete all processing for the FileGroup and delete all associated files */
     def cancelUpload(fileGroupId: Long): Unit
@@ -151,7 +154,8 @@ trait MassUploadController extends Controller {
         val documentSet = storage.createDocumentSet(userEmail, name, lang)
         storage.createMassUploadDocumentSetCreationJob(
           documentSet.id, fileGroup.id, lang, splitDocuments, suppliedStopWords, importantWords)
-        messageQueue.startClustering(documentSet.id, fileGroup.id, name, lang, splitDocuments, suppliedStopWords, importantWords)
+
+        sendAsynchronousStartClusteringMessage(documentSet.id, fileGroup.id, name, lang, splitDocuments, suppliedStopWords, importantWords)
 
         Redirect(routes.DocumentSetController.index())
       }
@@ -164,6 +168,20 @@ trait MassUploadController extends Controller {
     Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
 
     BadRequest
+  }
+
+  private def sendAsynchronousStartClusteringMessage(documentSetId: Long, fileGroupId: Long, name: String, lang: String,
+                                                     splitDocuments: Boolean, suppliedStopWords: String, 
+                                                     importantWords: String) = {
+    import play.api.Play.current
+    import play.api.libs.concurrent.Execution.Implicits._
+    
+    Akka.system.scheduler.scheduleOnce(0 seconds, new Runnable {
+      override def run(): Unit = 
+        messageQueue.startClustering(documentSetId, fileGroupId, name, lang, splitDocuments, suppliedStopWords, importantWords) 
+    })
+    
+
   }
 }
 
