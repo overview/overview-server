@@ -11,6 +11,7 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import org.overviewproject.util.Logger
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -57,8 +58,10 @@ trait FileGroupJobManager extends Actor {
   def receive = {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
-      for (job <- storage.updateJobState(documentSetId)) 
-        queueJob(documentSetId, fileGroupId)
+      storage.updateJobState(documentSetId).fold(
+         Logger.error(s"Trying to cluster non-existent job for document set $documentSetId"))
+        { _ => queueJob(documentSetId, fileGroupId) }
+              
     }
 
     case FileGroupDocumentsCreated(documentSetId) =>
