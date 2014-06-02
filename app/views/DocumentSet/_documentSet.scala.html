@@ -27,14 +27,6 @@
         <i class="overview-icon-download"></i> @m("export")
       </a>
 
-      <form class="create-tree form-inline" method="post" action="@routes.TreeController.create(documentSet.id)">
-        @helper.Form.csrfToken
-        <button type="submit" class="btn">
-          <i class="icon-repeat"></i>
-          @m("recluster")
-        </button>
-      </form>
-
       <form method="post" class="delete form-inline" data-confirm="@m("confirm_delete", documentSet.title)" action="@routes.DocumentSetController.delete(documentSet.id)?X-HTTP-Method-Override=DELETE"
         >@helper.Form.csrfToken<input type="submit" class="btn btn-danger" value="@m("action_delete")"
       /></form>

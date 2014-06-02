@@ -216,7 +216,6 @@ views.DocumentSet._documentSet.nTrees={0,choice,0#no trees|1#One tree|1<{0,numbe
 views.DocumentSet._documentSet.description.documentcloud=DocumentCloud documents matching query “{0}”
 views.DocumentSet._documentSet.description.other=Uploaded documents
 views.DocumentSet._documentSet.export=Export
-views.DocumentSet._documentSet.recluster=New tree…
 views.DocumentSet._documentSet.help_delete=Permanently delete this document set. (You cannot undo this.)
 views.DocumentSet._documentSet.share=Share
 views.DocumentSet._documentSet.subtitle.other=From uploaded file
