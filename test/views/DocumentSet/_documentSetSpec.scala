@@ -85,10 +85,6 @@ class _documentSetSpec extends views.html.ViewSpecification {
       $("div.trees li.error[data-job-id='12']").text() must contain("tree title")
     }
 
-    "should have a create-tree button" in new BaseScope {
-      $("form.create-tree").length must beEqualTo(1)
-    }
-
     "should include a delete button" in new BaseScope {
       $("form.delete").length must be_>=(1)
     }
