@@ -126,6 +126,10 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
 
       $dialog.validate
         submitHandler: (form) ->
+          # Fix integration tests: Firefox in background does not emit onChange
+          # https://code.google.com/p/selenium/issues/detail?id=157#c44
+          $(':input', form).change()
+
           submit()
           $dialog.modal('hide')
 
