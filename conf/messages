@@ -298,6 +298,7 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
+views.DocumentSet.show.VizTabs.new_viz=New tree…
 views.DocumentSet.show.VizTabs.viz.title.dt=Title
 views.DocumentSet.show.VizTabs.viz.title.dd={0}
 views.DocumentSet.show.VizTabs.viz.createdAt.dt=Created

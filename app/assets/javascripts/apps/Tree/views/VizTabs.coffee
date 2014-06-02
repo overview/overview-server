@@ -25,6 +25,7 @@ define [
     events:
       'click [data-toggle=popover]': '_onClickPopover'
       'click a[data-viz-id]': '_onClick'
+      'click a.new-viz': '_onClickNew'
 
     templates:
       viz: _.template('''
@@ -63,6 +64,12 @@ define [
         <% vizs.forEach(function(viz) { %>
           <%= templates.viz({ t: t, templates: templates, isSelected: viz.id == selected.id, viz: viz.attributes }) %>
         <% }); %>
+        <li class="new-viz">
+          <a href="#" class="new-viz">
+            <i class="icon-overview-plus"></i>
+            <%- t('new_viz') %>
+          </a>
+        </li>
         ''')
 
     initialize: ->
@@ -93,3 +100,7 @@ define [
         .popover('hide')
       $el.popover('toggle')
       e.stopPropagation()
+
+    _onClickNew: (e) ->
+      e.preventDefault()
+      @trigger('click-new')

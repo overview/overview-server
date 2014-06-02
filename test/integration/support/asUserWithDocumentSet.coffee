@@ -14,6 +14,10 @@ module.exports = (title, csvPath) ->
         .waitForElementByCss('.document-sets h3 a, .document-sets h6 a').click()
         .waitForElementByCss('canvas')
 
+    waitForJobsToComplete: ->
+      @
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
+
     wds_openCsvUploadPage: ->
       @
         .get(Url.csvUpload)

@@ -60,6 +60,7 @@ requirejs.config({
     'bootstrap-transition': 'vendor/bootstrap-transition'
     jquery: 'vendor/jquery-2-1-0'
     'jquery.mousewheel': 'vendor/jquery.mousewheel'
+    'jquery.validate': 'vendor/jquery.validate'
     md5: 'vendor/md5'
     rsvp: 'vendor/rsvp'
     spectrum: 'vendor/spectrum'

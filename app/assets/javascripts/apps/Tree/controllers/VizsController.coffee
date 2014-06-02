@@ -2,7 +2,8 @@ define [
   'jquery'
   '../collections/Vizs'
   '../views/VizTabs'
-], ($, Vizs, VizTabs) ->
+  'apps/ImportOptions/app'
+], ($, Vizs, VizTabs, OptionsApp) ->
   class VizsController
     constructor: (vizsJson) ->
       @vizs = new Vizs(vizsJson)
@@ -19,5 +20,18 @@ define [
         if vizId != selectedVizId
           newPath = document.location.pathname.replace(/[^/]*$/, vizId)
           document.location = newPath
+
+      @view.on 'click-new', ->
+        m = /\/documentsets\/([^\/]+)\//.exec(document.location.pathname)
+        tagListUrl = "/documentsets/#{m[1]}/tags.json"
+        submitUrl = "/documentsets/#{m[1]}/trees"
+
+        OptionsApp.createNewTreeDialog
+          supportedLanguages: window.supportedLanguages
+          defaultLanguageCode: window.defaultLanguageCode
+          onlyOptions: [ 'tree_title', 'tag_id', 'lang', 'supplied_stop_words', 'important_words' ]
+          tagListUrl: tagListUrl
+          url: submitUrl
+          csrfToken: window.csrfToken
 
       @el = @view.el

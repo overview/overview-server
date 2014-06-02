@@ -10,8 +10,35 @@
 )
 @javascripts = {
   @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/DocumentSet/show").url)
+
+  @* Let's hope there is no end-script tag in _supportedLanguages.... *@
+  <script>
+    window.supportedLanguages = @Html(views.DocumentSet._supportedLanguages().toString());
+    window.defaultLanguageCode = "@org.overviewproject.util.SupportedLanguages.defaultLanguage.languageCode";
+  </script>
 }
 @jsMessageKeys = @{Seq(
+  "views.DocumentSet.index.ImportOptions.title",
+  "views.DocumentSet.index.ImportOptions.lang.label",
+  "views.DocumentSet.index.ImportOptions.name.label",
+  "views.DocumentSet.index.ImportOptions.tree_title.label",
+  "views.DocumentSet.index.ImportOptions.tag_id.label",
+  "views.DocumentSet.index.ImportOptions.tag.loading",
+  "views.DocumentSet.index.ImportOptions.tag.error",
+  "views.DocumentSet.index.ImportOptions.tag.allDocuments",
+  "views.DocumentSet.index.ImportOptions.tag.name",
+  "views.DocumentSet.index.ImportOptions.split_documents.label_html",
+  "views.DocumentSet.index.ImportOptions.split_documents.true",
+  "views.DocumentSet.index.ImportOptions.split_documents.false",
+  "views.DocumentSet.index.ImportOptions.split_documents.too_few_documents",
+  "views.DocumentSet.index.ImportOptions.supplied_stop_words.label_html",
+  "views.DocumentSet.index.ImportOptions.supplied_stop_words.help",
+  "views.DocumentSet.index.ImportOptions.important_words.label_html",
+  "views.DocumentSet.index.ImportOptions.important_words.help",
+  "views.DocumentSet.index.ImportOptions.dialog.title",
+  "views.DocumentSet.index.ImportOptions.dialog.cancel",
+  "views.DocumentSet.index.ImportOptions.dialog.submit",
+  "views.DocumentSet.show.VizTabs.new_viz",
   "views.DocumentSet.show.VizTabs.viz.title.dt",
   "views.DocumentSet.show.VizTabs.viz.title.dd",
   "views.DocumentSet.show.VizTabs.viz.createdAt.dt",

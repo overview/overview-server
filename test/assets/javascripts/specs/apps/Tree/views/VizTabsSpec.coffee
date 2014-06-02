@@ -15,6 +15,7 @@ define [
   describe 'apps/Tree/views/VizTabs', ->
     beforeEach ->
       i18n.reset_messages
+        'views.DocumentSet.show.VizTabs.new_viz': 'new_viz'
         'views.DocumentSet.show.VizTabs.viz.title.dt': 'viz.title.dt'
         'views.DocumentSet.show.VizTabs.viz.title.dd': 'viz.title.dd,{0}'
         'views.DocumentSet.show.VizTabs.viz.createdAt.dt': 'viz.createdAt.dt'
@@ -64,3 +65,9 @@ define [
         expect($popover).to.contain('foo')
         expect($popover.find('dt')).to.contain('viz.thing1.dt')
         expect($popover.find('dd')).to.contain('viz.thing1.dd,value1')
+
+      it 'should emit click-new', ->
+        spy = sinon.spy()
+        @view.on('click-new', spy)
+        @view.$('a.new-viz').click()
+        expect(spy).to.have.been.called
