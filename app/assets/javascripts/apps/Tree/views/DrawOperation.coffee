@@ -27,8 +27,10 @@ define [], ->
 
   class DrawOperation
     constructor: (@canvas, @tree, @colorLogic, @highlightedNodeIds, @hoverNodeId, @focus, @options) ->
-      @canvas.width = @width = Math.floor(@canvas.clientWidth)
-      @canvas.height = @height = Math.floor(@canvas.clientHeight)
+      parent = @canvas.parentNode
+      style = parent.ownerDocument.defaultView.getComputedStyle(parent, null)
+      @canvas.width = @width = parseInt(style.width)
+      @canvas.height = @height = parseInt(style.height)
 
       @ctx = @canvas.getContext('2d')
 
@@ -48,8 +50,8 @@ define [], ->
         old_width = @canvas.width
         old_height = @canvas.height
 
-        @canvas.width = old_width * ratio
-        @canvas.height = old_height * ratio
+        @canvas.width = Math.floor(old_width * ratio)
+        @canvas.height = Math.floor(old_height * ratio)
 
         @canvas.style.width = "#{old_width}px"
         @canvas.style.height = "#{old_height}px"
