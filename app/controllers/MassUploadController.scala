@@ -1,8 +1,8 @@
 package controllers
 
-import scala.concurrent.duration._
-import scala.language.postfixOps
 import java.util.UUID
+import scala.concurrent.duration.{ Duration, MILLISECONDS }
+import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Iteratee
 import play.api.Logger
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
@@ -18,7 +18,8 @@ import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
 import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
 import models.orm.stores.FileGroupStore
 import org.overviewproject.jobs.models.ClusterFileGroup
-import play.api.libs.concurrent.Akka
+
+
 
 trait MassUploadController extends Controller {
 
@@ -171,16 +172,14 @@ trait MassUploadController extends Controller {
   }
 
   private def sendAsynchronousStartClusteringMessage(documentSetId: Long, fileGroupId: Long, name: String, lang: String,
-                                                     splitDocuments: Boolean, suppliedStopWords: String, 
+                                                     splitDocuments: Boolean, suppliedStopWords: String,
                                                      importantWords: String) = {
     import play.api.Play.current
     import play.api.libs.concurrent.Execution.Implicits._
-    
-    Akka.system.scheduler.scheduleOnce(0 seconds, new Runnable {
-      override def run(): Unit = 
-        messageQueue.startClustering(documentSetId, fileGroupId, name, lang, splitDocuments, suppliedStopWords, importantWords) 
-    })
-    
+    val MessageSendDelay = Duration(10, MILLISECONDS)
+    Akka.system.scheduler.scheduleOnce(MessageSendDelay) {
+      messageQueue.startClustering(documentSetId, fileGroupId, name, lang, splitDocuments, suppliedStopWords, importantWords)
+    }
 
   }
 }

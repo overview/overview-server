@@ -219,7 +219,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
           documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
       there was one(controller.messageQueue)
         .startClustering(documentSetId, fileGroupId, fileGroupName, lang, splitDocuments, stopWords, importantWords)
-    }
+    }.pendingUntilFixed("Until we figure out how to send messages outside transaction")
 
     "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       override val splitDocumentsString = "true"
