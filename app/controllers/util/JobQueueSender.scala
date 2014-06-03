@@ -48,7 +48,7 @@ object JobQueueSender {
   }
 
   /**
-   * Send a `DeleteJob` message to the message queue.
+   * Send a `DeleteTreeJob` message to the message queue.
    * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
    */
   def send(deleteTreeJob: DeleteTreeJob): Either[Unit, Unit] = {
@@ -59,22 +59,6 @@ object JobQueueSender {
     ))
     
     sendMessageToGroup(jsonMessage, deleteTreeJob.documentSetId)
-  }
-  
-  /**
-   * Send a `ProcessGroupedFileUpload` message to the FileGroup message queue.
-   * @return a `Left[Unit]` if the connection queue is down. `Right[Unit]` otherwise.
-   */
-  def send(processUpload: ProcessGroupedFileUpload): Either[Unit, Unit] = {
-    implicit val processUploadArgWrites: Writes[ProcessGroupedFileUpload] = (
-      (__ \ "fileGroupId").write[Long] and
-      (__ \ "uploadedFileId").write[Long])(unlift(ProcessGroupedFileUpload.unapply))
-
-    val jsonMessage = toJson(Map(
-      "cmd" -> toJson("process_file"),
-      "args" -> toJson(processUpload)))
-
-    sendMessageToFileGroupJobQueue(jsonMessage)
   }
 
   /**
@@ -99,7 +83,7 @@ object JobQueueSender {
   }
 
   /**
-   * Send a `CancelUploadWithDocumentSet` message to the Clustering message queue.
+   * Send a `CancelFileUpload` message to the Clustering message queue.
    */
   def send(cancelFileUpload: CancelFileUpload): Either[Unit, Unit] = {
     implicit val cancelFileUploadWrites: Writes[CancelFileUpload] = (
@@ -113,18 +97,7 @@ object JobQueueSender {
     sendMessageToClusteringQueue(jsonMessage)
   }
 
-  /**
-   * Send `CancelUpload` to Clustering message queue
-   */
-  def send(cancelUpload: CancelUpload): Either[Unit, Unit] = {
-    val jsonMessage = toJson(Map(
-      "cmd" -> toJson("cancel_upload"),
-      "args" -> toJson(Map(
-        "fileGroupId" -> cancelUpload.fileGroupId))))
-
-    sendMessageToClusteringQueue(jsonMessage)
-  }
-
+  
   private def sendMessageToGroup(jsonMessage: JsValue, documentSetId: Long): Either[Unit, Unit] = {
     val connection = use[StompPlugin].documentSetCommandQueue
 
