@@ -5,8 +5,8 @@ import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
 import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree, userOwningTree }
-import org.overviewproject.tree.orm.{Node,SearchResult,Tag,Tree}
-import models.orm.finders.{NodeFinder,SearchResultFinder,TagFinder,TreeFinder}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,Node,SearchResult,Tag,Tree}
+import models.orm.finders.{DocumentSetCreationJobFinder,NodeFinder,SearchResultFinder,TagFinder,TreeFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
@@ -23,6 +23,9 @@ trait NodeController extends Controller {
 
     /** All Vizs for the document set. */
     def findVizs(documentSetId: Long) : Iterable[Tree]
+
+    /** All Viz-creation jobs for the document set. */
+    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
 
     /** The direct descendents of the given parent Node ID. */
     def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
@@ -46,9 +49,10 @@ trait NodeController extends Controller {
           NotFound
         } else {
           val vizs = storage.findVizs(tree.documentSetId)
+          val vizJobs = storage.findVizJobs(tree.documentSetId)
           val tags = storage.findTags(tree.documentSetId)
           val searchResults = storage.findSearchResults(tree.documentSetId)
-          Ok(views.json.Node.index(vizs, nodes, tags, searchResults))
+          Ok(views.json.Node.index(vizs, vizJobs, nodes, tags, searchResults))
             .withHeaders(CACHE_CONTROL -> "max-age=0")
         }
       }
@@ -127,6 +131,12 @@ object NodeController extends NodeController {
 
     override def findVizs(documentSetId: Long) = {
       TreeFinder.byDocumentSet(documentSetId).toSeq
+    }
+
+    override def findVizJobs(documentSetId: Long) = {
+      DocumentSetCreationJobFinder
+        .byDocumentSet(documentSetId)
+        .excludeCancelledJobs
     }
 
     override def findNode(treeId: Long, nodeId: Long) = {

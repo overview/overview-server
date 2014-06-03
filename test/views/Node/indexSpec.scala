@@ -5,7 +5,8 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 
 import org.overviewproject.models.Viz
-import org.overviewproject.tree.orm.{ Node, Document, Tag }
+import org.overviewproject.tree.orm.{DocumentSetCreationJob, DocumentSetCreationJobState, Node, Document, Tag}
+import org.overviewproject.tree.DocumentSetCreationJobType
 
 class indexSpec extends Specification with JsonMatchers {
   private def buildNode(id: Long, parentId: Option[Long], cachedSize: Int, cachedDocumentIds: Array[Long]) : Node = {
@@ -38,7 +39,7 @@ class indexSpec extends Specification with JsonMatchers {
         buildNode(3, Some(1L), 1, Array(2L))
       )
 
-      val treeJson = index(Seq(), nodes, Seq(), Seq()).toString
+      val treeJson = index(Seq(), Seq(), nodes, Seq(), Seq()).toString
       
       treeJson must /("nodes") */("id" -> 1)
       treeJson must /("nodes") */("id" -> 2)
@@ -54,7 +55,7 @@ class indexSpec extends Specification with JsonMatchers {
         baseTag.copy(id=5L, name="tag1"),
         baseTag.copy(id=15L, name="tag2")
       )
-      val treeJson = index(Seq(), nodes, tags, Seq()).toString
+      val treeJson = index(Seq(), Seq(), nodes, tags, Seq()).toString
       
       treeJson must /("tags") */("id" -> 5L)
       treeJson must /("tags") */("name" -> "tag1")
@@ -64,13 +65,30 @@ class indexSpec extends Specification with JsonMatchers {
     "contain vizs" in {
       val viz = buildViz(2L, "title", new Date(1000), Seq("foo" -> "bar"))
 
-      val json = index(Seq(viz), Seq(), Seq(), Seq()).toString
+      val json = index(Seq(viz), Seq(), Seq(), Seq(), Seq()).toString
 
+      json must /("vizs") */("type" -> "viz")
       json must /("vizs") */("id" -> 2L)
       json must /("vizs") */("title" -> "title")
       json must /("vizs") */("createdAt" -> "1970-01-01T00:00:01Z")
       json must /("vizs") */("creationData") /#(0) /#(0) / "foo"
       json must /("vizs") */("creationData") /#(0) /#(1) / "bar"
+    }
+
+    "contain viz jobs" in {
+      val vizJob = DocumentSetCreationJob(
+        id=2L,
+        documentSetId=1L,
+        treeTitle=Some("tree job"),
+        jobType=DocumentSetCreationJobType.Recluster,
+        state=DocumentSetCreationJobState.InProgress
+      )
+
+      val json = index(Seq(), Seq(vizJob), Seq(), Seq(), Seq()).toString
+
+      json must /("vizs") /#(0) /("id" -> 2.0)
+      json must /("vizs") /#(0) /("type" -> "job")
+      // For the rest, we assume the call to views.json.Vizs.index() is successful.
     }
   }
 }

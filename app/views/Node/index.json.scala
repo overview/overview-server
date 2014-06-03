@@ -5,7 +5,7 @@ import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.DateTimeZone
 import play.api.libs.json.{Json, JsValue}
 
-import org.overviewproject.tree.orm.{Node,SearchResult,Tag}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,Node,SearchResult,Tag}
 import org.overviewproject.models.Viz
 
 object index {
@@ -33,25 +33,15 @@ object index {
     )
   }
 
-  private[Node] def writeViz(viz: Viz) : JsValue = {
-    val creationData = viz.creationData.map((x: (String,String)) => Json.arr(x._1, x._2))
-
-    Json.obj(
-      "id" -> viz.id,
-      "title" -> viz.title,
-      "createdAt" -> dateToISO8601(viz.createdAt),
-      "creationData" -> creationData.toSeq
-    )
-  }
-
   def apply(
     vizs: Iterable[Viz],
+    vizJobs: Iterable[DocumentSetCreationJob],
     nodes: Iterable[Node],
     tags: Iterable[Tag],
     searchResults: Iterable[SearchResult]) : JsValue = {
 
     Json.obj(
-      "vizs" -> vizs.map(writeViz),
+      "vizs" -> views.json.Viz.index(vizs, vizJobs),
       "nodes" -> nodes.map(writeNode),
       "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
       "tags" -> tags.map(writeTag)
