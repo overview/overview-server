@@ -61,6 +61,8 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
+GET    /documentsets/:documentSetId/vizs.json controllers.VizController.indexJson(documentSetId: Long)
+
 GET    /documentsets/:id/trees/:treeId controllers.TreeController.show(id: Long, treeId: Long)
 POST   /documentsets/:id/trees         controllers.TreeController.create(id: Long)
 GET    /trees/:treeId/nodes            controllers.NodeController.index(treeId: Long)

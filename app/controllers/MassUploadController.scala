@@ -168,6 +168,12 @@ trait MassUploadController extends Controller {
                                                      importantWords: String) = {
     import play.api.Play.current
     import play.api.libs.concurrent.Execution.Implicits._
+    /*
+     * We want to send the message _after_ we've committed the job to the
+     * database. This is the easiest way.
+     *
+     * FIXME make the _correct_ way easier than this stupid way.
+     */
     val MessageSendDelay = Duration(10, MILLISECONDS)
     Akka.system.scheduler.scheduleOnce(MessageSendDelay) {
       messageQueue.startClustering(documentSetId, fileGroupId, name, lang, splitDocuments, suppliedStopWords, importantWords)

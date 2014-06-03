@@ -15,9 +15,8 @@ describe 'Recluster', ->
         .waitForElementBy(tag: 'a', contains: 'New tree').click()
         .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('New viz')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForUrl(Url.index, 10000)
-        .sleep(5000) # async requests can time out; this won't
-        .waitForJobsToComplete()
+        .waitForElementBy(tag: 'a', contains: 'New viz').click()
+        .waitForElementByCss('canvas')
 
     describe 'in the new tree', ->
       before ->
@@ -41,9 +40,8 @@ describe 'Recluster', ->
         .waitForElementBy(tag: 'option', contains: 'foo').click()
         .elementBy(tag: 'input', name: 'tree_title', visible: true).type('New tree')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForUrl(Url.index, 10000)
-        .sleep(5000) # async requests can time out; this won't
-        .waitForJobsToComplete()
+        .waitForElementBy(tag: 'a', contains: 'New tree').click()
+        .waitForElementByCss('canvas')
 
     describe 'in the new tree', ->
       before ->
