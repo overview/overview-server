@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 import controllers.auth.AuthorizedRequest
 import models.OverviewUser
-import models.orm.{Session, User}
+import models.orm.{ Session, User }
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.FileGroup
 import org.overviewproject.tree.orm.GroupedFileUpload
@@ -110,18 +110,18 @@ class MassUploadControllerSpec extends Specification with Mockito {
       Some(upload)
     }
   }
-  
+
   trait EmptyUpload extends UploadProvider with UploadInfo {
     val uploadSize = 0
-    
+
     override def createUpload = {
       val upload = smartMock[GroupedFileUpload]
-      
+
       upload.size returns 0
       upload.uploadedSize returns uploadSize
       upload.name returns filename
       upload.contentDisposition returns contentDisposition
-      
+
       Some(upload)
     }
   }
@@ -140,9 +140,9 @@ class MassUploadControllerSpec extends Specification with Mockito {
     "return Ok when upload is complete" in new CreateRequest with CompleteUpload with InProgressFileGroup {
       status(result) must be equalTo (OK)
     }
-    
+
     "return BadRequest if upload is not complete" in new CreateRequest with IncompleteUpload with InProgressFileGroup {
-      status(result) must be equalTo(BAD_REQUEST)
+      status(result) must be equalTo (BAD_REQUEST)
     }
   }
 
@@ -173,7 +173,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       status(result) must be equalTo (PARTIAL_CONTENT)
       header(CONTENT_RANGE, result) must beSome(s"0-${uploadSize - 1}/$size")
     }
-    
+
     "return NoContent uploaded file is empty" in new ShowRequest with EmptyUpload with InProgressFileGroup {
       status(result) must be equalTo (NO_CONTENT)
       header(CONTENT_DISPOSITION, result) must beSome(contentDisposition)
@@ -196,40 +196,59 @@ class MassUploadControllerSpec extends Specification with Mockito {
         ("split_documents" -> splitDocumentsString),
         ("supplied_stop_words" -> stopWords),
         ("important_words") -> importantWords)
-     val documentSetId = 11l
+      val documentSetId = 11l
 
       override def executeRequest = {
         val request = new AuthorizedRequest(FakeRequest().withFormUrlEncodedBody(formData: _*), Session(user.id, "127.0.0.1"), user.toUser)
         controller.startClustering(request)
       }
-      
+
       override def before: Unit = {
         super.before
         val documentSet = mock[DocumentSet]
         documentSet.id returns documentSetId
-        
+
         controller.storage.createDocumentSet(user.email, fileGroupName, lang) returns documentSet
       }
     }
-    
+
     "create job and send ClusterFileGroup command if user has a FileGroup InProgress" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
-      status(result) must be equalTo(SEE_OTHER)
+      status(result) must be equalTo (SEE_OTHER)
       there was one(controller.storage).createDocumentSet(user.email, fileGroupName, lang)
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
-          documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
+        documentSetId, fileGroupId, lang, splitDocumentsString != "false", stopWords, importantWords)
       there was one(controller.messageQueue)
         .startClustering(documentSetId, fileGroupId, fileGroupName, lang, splitDocuments, stopWords, importantWords)
+      failure
     }.pendingUntilFixed("Until we figure out how to send messages outside transaction")
 
     "set splitDocuments=true when asked" in new StartClusteringRequest with NoUpload with InProgressFileGroup {
       override val splitDocumentsString = "true"
       result
       there was one(controller.storage).createMassUploadDocumentSetCreationJob(
-          documentSetId, fileGroupId, lang, true, stopWords, importantWords)
+        documentSetId, fileGroupId, lang, true, stopWords, importantWords)
     }
-    
+
     "return NotFound if user has no FileGroup InProgress" in new StartClusteringRequest with NoUpload with NoFileGroup {
-      status(result) must be equalTo(NOT_FOUND)
+      status(result) must be equalTo (NOT_FOUND)
+    }
+  }
+
+  "MassUploadController.cancelUpload" should {
+
+    trait CancelClusteringRequest extends UploadContext {
+
+      override def executeRequest = {
+        val request = new AuthorizedRequest(FakeRequest(), Session(user.id, "127.0.0.1"), user.toUser)
+
+        controller.cancelUpload(request)
+      }
+    }
+
+    "send cancel message" in new CancelClusteringRequest with IncompleteUpload with InProgressFileGroup {
+      result
+
+      there was one(controller.storage).deleteFileGroupByUser(user.toUser.email)
     }
   }
   step(stop)

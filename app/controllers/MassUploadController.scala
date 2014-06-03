@@ -1,25 +1,22 @@
 package controllers
 
 import java.util.UUID
-import scala.concurrent.duration.{ Duration, MILLISECONDS }
+import scala.concurrent.duration.{Duration, MILLISECONDS}
+import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Iteratee
-import play.api.Logger
 import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
-import org.overviewproject.jobs.models.{ CancelUpload, ProcessGroupedFileUpload }
+import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
 import org.overviewproject.tree.orm.FileJobState._
-import controllers.auth.Authorities.anyUser
 import controllers.auth.{ AuthorizedAction, AuthorizedBodyParser }
+import controllers.auth.Authorities.anyUser
 import controllers.forms.MassUploadControllerForm
 import controllers.util.{ JobQueueSender, MassUploadFileIteratee, TransactionAction }
 import models.orm.finders.{ FileGroupFinder, GroupedFileUploadFinder }
-import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore }
-import models.orm.stores.FileGroupStore
-import org.overviewproject.jobs.models.ClusterFileGroup
-
-
+import models.orm.stores.{ DocumentSetCreationJobStore, DocumentSetStore, DocumentSetUserStore, FileGroupStore }
+import models.orm.stores.GroupedFileUploadStore
 
 trait MassUploadController extends Controller {
 
@@ -68,11 +65,8 @@ trait MassUploadController extends Controller {
    * Cancel the upload and notify the worker to delete all uploaded files
    */
   def cancelUpload = AuthorizedAction(anyUser) { implicit request =>
-    storage.findCurrentFileGroup(request.user.email).map { fileGroup =>
-      messageQueue.cancelUpload(fileGroup.id)
-
-      Ok
-    }.getOrElse(NotFound)
+    storage.deleteFileGroupByUser(request.user.email)
+    Ok
   }
 
   // method to create the MassUploadFileIteratee
@@ -100,18 +94,16 @@ trait MassUploadController extends Controller {
 
     /** @returns a FileGroup with state set to Complete */
     def completeFileGroup(fileGroup: FileGroup): FileGroup
+
+    /** deletes the `FileGroup` owned by the user and associated data */
+    def deleteFileGroupByUser(userEmail: String): Unit
   }
 
   trait MessageQueue {
-    /** Notify worker that an uploaded file needs to be processed */
-    def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit
 
     /** Notify the worker that clustering can start */
     def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
                         splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit
-
-    /** Tell worker to delete all processing for the FileGroup and delete all associated files */
-    def cancelUpload(fileGroupId: Long): Unit
   }
 
   private def authorizedUploadBodyParser(guid: UUID) =
@@ -229,15 +221,19 @@ object MassUploadController extends MassUploadController {
 
     override def completeFileGroup(fileGroup: FileGroup): FileGroup =
       FileGroupStore.insertOrUpdate(fileGroup.copy(state = Complete))
+
+    override def deleteFileGroupByUser(userEmail: String): Unit = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+      
+      findCurrentFileGroup(userEmail).map { fileGroup =>
+        GroupedFileUploadStore.deleteLargeObjectsInFileGroup(fileGroup.id)
+        GroupedFileUploadStore.deleteByFileGroup(fileGroup.id)
+        FileGroupStore.delete(fileGroup.id)
+      }
+    }
   }
 
   class ApolloQueue extends MessageQueue {
-
-    override def sendProcessFile(fileGroupId: Long, groupedFileUploadId: Long): Unit = {
-      val command = ProcessGroupedFileUpload(fileGroupId, groupedFileUploadId)
-      if (JobQueueSender.send(command).isLeft)
-        throw new Exception(s"Could not send ProcessFile($fileGroupId, $groupedFileUploadId)")
-    }
 
     override def startClustering(documentSetId: Long, fileGroupId: Long, title: String, lang: String,
                                  splitDocuments: Boolean, suppliedStopWords: String, importantWords: String): Unit = {
@@ -245,13 +241,6 @@ object MassUploadController extends MassUploadController {
 
       if (JobQueueSender.send(command).isLeft)
         throw new Exception(s"Could not send StartClustering($fileGroupId, $title, $lang, $splitDocuments, $suppliedStopWords, $importantWords)")
-    }
-
-    override def cancelUpload(fileGroupId: Long): Unit = {
-      val command = CancelUpload(fileGroupId)
-
-      if (JobQueueSender.send(command).isLeft)
-        throw new Exception(s"Cound not send CancelUpload($fileGroupId)")
     }
   }
 }

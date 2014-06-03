@@ -1,7 +1,7 @@
 package models.orm.stores
 
-import org.overviewproject.tree.orm.stores.BaseStore
+import org.overviewproject.tree.orm.stores.BaseGroupedFileUploadStore
 import models.orm.Schema
 
 
-object GroupedFileUploadStore extends BaseStore(Schema.groupedFileUploads)
+object GroupedFileUploadStore extends BaseGroupedFileUploadStore(Schema.groupedFileUploads)
