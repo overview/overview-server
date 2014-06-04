@@ -83,6 +83,34 @@ describe 'PdfUpload', ->
         ignoredWords: [ 'moose', 'frog' ]
         importantWords: [ 'couch', 'face' ]
 
+  describe 'after uploading a pdf with page splitting', ->
+    before ->
+      @userBrowser
+        .openPdfUploadPage()
+        .chooseFile('PdfUpload/Cat1.pdf')
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
+        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
+        .doImport()
+        .sleep(5000) # async requests can time out; this won't
+        .waitForJobsToComplete()
+        .get(Url.index)
+        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+
+
+    after ->
+      @userBrowser
+        .deleteTopUpload()
+
+    shouldBehaveLikeATree
+      documents: [
+          { type: 'pdf', title: 'Cat1.pdf – page 1' },
+          { type: 'pdf', title: 'Cat1.pdf – page 2' },
+          { type: 'pdf', title: 'Cat1.pdf – page 3' }
+      ]
+      searches: [
+        { query: 'face', nResults: 3 }
+      ]
+
                                                       
 
 
