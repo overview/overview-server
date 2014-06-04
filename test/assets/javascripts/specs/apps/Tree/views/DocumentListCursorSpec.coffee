@@ -95,19 +95,19 @@ define [
 
     it 'should disable "previous" at 0/10', ->
       initAt(0, 10)
-      expect(view.$('a.previous').hasClass('disabled')).to.be(true)
+      expect(view.$('a.previous').hasClass('disabled')).to.be.true
 
     it 'should enable "previous" at 1/10', ->
       initAt(1, 10)
-      expect(view.$('a.previous').hasClass('disabled')).to.be(false)
+      expect(view.$('a.previous').hasClass('disabled')).to.be.false
 
     it 'should disable "next" at 9/10', ->
       initAt(9, 10)
-      expect(view.$('a.next').hasClass('disabled')).to.be(true)
+      expect(view.$('a.next').hasClass('disabled')).to.be.true
 
     it 'should enable "next" at 8/10', ->
       initAt(8, 10)
-      expect(view.$('a.next').hasClass('disabled')).to.be(false)
+      expect(view.$('a.next').hasClass('disabled')).to.be.false
 
     it 'should not render at 10/10', ->
       initAt(10, 10)

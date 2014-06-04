@@ -39,11 +39,11 @@ define [
           tag3 = undefined
 
         it 'should have .tags as an alias for .objects', ->
-          expect(store.tags).to.be(store.objects)
+          expect(store.tags).to.eq(store.objects)
 
         it 'should find_by_name() for an existing tag', ->
           tag = store.find_by_name('AA')
-          expect(tag).to.be(tag1)
+          expect(tag).to.eq(tag1)
 
         it 'should return undefined when find_by_name() does not find a tag', ->
           tag = store.find_by_name('A')

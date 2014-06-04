@@ -40,7 +40,7 @@ define [ 'backbone', 'apps/UserAdmin/controllers/Controller' ], (Backbone, Contr
       user.set(password: 'as;dj#$xfF')
       expect(user.save).to.have.been.called
       expect(user.save.callCount).to.eq(1)
-      expect(user.has('password')).to.be(false)
+      expect(user.has('password')).to.be.false
 
     it 'should destroy a user when it is deleting, but not remove it from the collection', ->
       @sandbox.stub(Backbone, 'sync')
@@ -49,7 +49,7 @@ define [ 'backbone', 'apps/UserAdmin/controllers/Controller' ], (Backbone, Contr
       user.set(deleting: true)
       expect(Backbone.sync).to.have.been.called
       expect(Backbone.sync.lastCall.args[0]).to.eq('delete')
-      expect(Backbone.sync.lastCall.args[1]).to.be(user)
+      expect(Backbone.sync.lastCall.args[1]).to.eq(user)
       expect(users.length).to.eq(1)
 
     it 'should remove a user from the collection when delete is done', ->

@@ -135,25 +135,25 @@ define [
       it 'should render selection', ->
         selection.set('selectedIndices', [0, 2])
         $lis = view.$('ul.documents>li')
-        expect($lis.eq(0).hasClass('selected')).to.be(true)
-        expect($lis.eq(1).hasClass('selected')).to.be(false)
-        expect($lis.eq(2).hasClass('selected')).to.be(true)
+        expect($lis.eq(0).hasClass('selected')).to.be.true
+        expect($lis.eq(1).hasClass('selected')).to.be.false
+        expect($lis.eq(2).hasClass('selected')).to.be.true
 
       it 'should render document-selected class if one document is selected', ->
         selection.set('selectedIndices', [0])
-        expect(view.$el.hasClass('document-selected')).to.be(true)
+        expect(view.$el.hasClass('document-selected')).to.be.true
 
       it 'should not render document-selected class if no document is selected', ->
         selection.set('selectedIndices', [])
-        expect(view.$el.hasClass('document-selected')).to.be(false)
+        expect(view.$el.hasClass('document-selected')).to.be.false
 
       it 'should not render document-selected class if multiple documents are selected', ->
         selection.set('selectedIndices', [0, 2])
-        expect(view.$el.hasClass('document-selected')).to.be(false)
+        expect(view.$el.hasClass('document-selected')).to.be.false
 
       it 'should render the cursor', ->
         selection.set('cursorIndex', 1)
-        expect(view.$('ul.documents>li:eq(1)').hasClass('cursor')).to.be(true)
+        expect(view.$('ul.documents>li:eq(1)').hasClass('cursor')).to.be.true
 
       it 'should render a document title', ->
         expect(view.$('li.document:eq(0) h3').text()).to.eq('title,Title 0')
@@ -203,12 +203,12 @@ define [
       it 'should keep the cursor class on a document as it changes', ->
         selection.set('cursorIndex', 0)
         documents.get(0).set({ title: 'new title' })
-        expect(view.$('ul.documents>li:eq(0)').hasClass('cursor')).to.be(true)
+        expect(view.$('ul.documents>li:eq(0)').hasClass('cursor')).to.be.true
 
       it 'should keep the selected class on a document as it changes', ->
         selection.set('selectedIndices', [0])
         documents.get(0).set({ title: 'new title' })
-        expect(view.$('ul.documents>li:eq(0)').hasClass('selected')).to.be(true)
+        expect(view.$('ul.documents>li:eq(0)').hasClass('selected')).to.be.true
 
       it 'should fire remove-tag', ->
         args = undefined
@@ -221,8 +221,8 @@ define [
         view.on('click-document', callback)
         view.$('ul.documents>li:eq(1)').click()
         expect(callback).to.have.been.called
-        expect(callback.lastCall.args[0]).to.be(documents.at(1))
-        expect(callback.lastCall.args[1]).to.be(1)
+        expect(callback.lastCall.args[0]).to.eq(documents.at(1))
+        expect(callback.lastCall.args[1]).to.eq(1)
         expect(callback.lastCall.args[2]).to.deep.eq({ meta: false, shift: false })
 
       it 'should render a new collection on setCollection()', ->

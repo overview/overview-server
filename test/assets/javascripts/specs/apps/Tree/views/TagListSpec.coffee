@@ -88,7 +88,7 @@ define [
           $input.val('')
           $('body').append(view.el) # make focusing work
           view.$('tfoot form').submit()
-          expect($input[0]).to.be($input[0].ownerDocument.activeElement)
+          expect($input[0]).to.eq($input[0].ownerDocument.activeElement)
 
       it 'should not show an export link', ->
         view?.remove()

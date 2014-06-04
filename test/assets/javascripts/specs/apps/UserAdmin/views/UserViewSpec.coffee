@@ -135,7 +135,7 @@ define [
         describe 'and clicking reset', ->
           beforeEach -> $form.find(':reset').click()
 
-          it 'should not change the model', -> expect(view.model.has('password')).to.be(false)
+          it 'should not change the model', -> expect(view.model.has('password')).to.be.false
           it 'should hide the form', -> expect($form).not.to.be.visible
           it 'should show the link', -> expect(view.$('a.change-password')).to.be.visible
           it 'should reset the form', -> expect($form.find('input[name=password]').val()).to.eq('')

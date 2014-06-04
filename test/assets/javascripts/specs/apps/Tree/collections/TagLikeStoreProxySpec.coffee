@@ -40,24 +40,24 @@ define [
 
       it 'should find a tag', ->
         tag = proxy.map({ id: 20, name: 'tag20', color: '#202020', position: 0 })
-        expect(tag).to.be(collection.last())
+        expect(tag).to.eq(collection.last())
 
       it 'should find a tag by ID', ->
         tag = proxy.map(20)
-        expect(tag).to.be(collection.last())
+        expect(tag).to.eq(collection.last())
 
       it 'should say when it can map an ID', ->
-        expect(proxy.canMap(20)).to.be(true)
+        expect(proxy.canMap(20)).to.be.true
 
       it 'should say when it cannot map an ID', ->
-        expect(proxy.canMap(21)).to.be(false)
+        expect(proxy.canMap(21)).to.be.false
 
       it 'should throw exception on not-found tag', ->
         expect(-> tag = proxy.map(19)).to.throw()
 
       it 'should find a plain-old-data object', ->
         obj = proxy.unmap(collection.last())
-        expect(obj).to.be(store.objects[1])
+        expect(obj).to.eq(store.objects[1])
 
       it 'should include the existing objects', ->
         expect(collection.length).to.eq(2)
@@ -129,7 +129,7 @@ define [
         store.objects[0].id = 99
         store._notify('id-changed', -1, store.objects[0])
         expect(found.byOldId).not.to.be.undefined
-        expect(found.byOldId).to.be(found.byNewId)
+        expect(found.byOldId).to.eq(found.byNewId)
 
       it 'should not find the tagLike by the old ID after callbacks have fired', ->
         store.objects[0].id = 99

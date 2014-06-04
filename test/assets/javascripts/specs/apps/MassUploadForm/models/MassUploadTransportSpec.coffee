@@ -79,7 +79,7 @@ define [
         expect(uploadSpy).to.have.been.called
         upload = uploadSpy.lastCall.thisValue
         expect(upload.url).to.match(/\/files\/\w+/)
-        expect(upload.file).to.be(file)
+        expect(upload.file).to.eq(file)
 
       it 'calls the progress callback while uploading', ->
         upload.deferred.notify({ state: 'uploading', total: 10, loaded: 5})

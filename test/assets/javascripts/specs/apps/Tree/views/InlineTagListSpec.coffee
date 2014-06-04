@@ -147,12 +147,12 @@ define [
         it 'should set "selected" on selected tags', ->
           view.tagIdToModel = -> tag1
           state.set('documentListParams', { type: 'tag', tagId: 1 })
-          expect(view.$('li:eq(0)').hasClass('selected')).to.be(true)
-          expect(view.$('li:eq(1)').hasClass('selected')).to.be(false)
+          expect(view.$('li:eq(0)').hasClass('selected')).to.be.true
+          expect(view.$('li:eq(1)').hasClass('selected')).to.be.false
 
         it 'should set "selected" on untagged', ->
           state.set('documentListParams', { type: 'untagged' })
-          expect(view.$('li.untagged').hasClass('selected')).to.be(true)
+          expect(view.$('li.untagged').hasClass('selected')).to.be.true
 
         it 'should use the tag color when given', ->
           expect(view.$('li:eq(0)').css('background-color')).to.eq('rgb(18, 52, 86)')

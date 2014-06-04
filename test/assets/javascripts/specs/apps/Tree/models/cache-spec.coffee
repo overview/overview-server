@@ -187,7 +187,7 @@ define [
             expect(node.description).to.eq('description 2')
 
           it 'should mark the tree as edited', ->
-            expect(tree.id_tree.edited).to.be(true)
+            expect(tree.id_tree.edited).to.be.true
 
         describe 'update_node', ->
           beforeEach ->
@@ -263,7 +263,7 @@ define [
 
           it 'should call id_tree.batchAdd()', ->
             @cache.remove_tag(tag)
-            expect(@cache.on_demand_tree.id_tree.edited).to.be(true)
+            expect(@cache.on_demand_tree.id_tree.edited).to.be.true
 
           it 'should remove tagCounts for the deleted tag', ->
             @cache.remove_tag(tag)

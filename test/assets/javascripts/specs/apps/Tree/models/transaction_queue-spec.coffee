@@ -27,7 +27,7 @@ define [
 
         queue.queue(cb)
         d.resolve()
-        expect(run).to.be(true)
+        expect(run).to.be.true
 
       it 'should run a second callback after the first', ->
         ds = []
@@ -54,9 +54,9 @@ define [
       it 'should return a Deferred when queuing', ->
         op = Deferred()
         ret = queue.queue(-> op)
-        expect(ret.state()).to.be('pending')
+        expect(ret.state()).to.eq('pending')
         op.resolve()
-        expect(ret.state()).to.be('resolved')
+        expect(ret.state()).to.eq('resolved')
 
       it 'should run a second callback after the queue has completed', ->
         d = undefined
@@ -68,7 +68,7 @@ define [
         queue.queue(-> d = Deferred(); d.done(-> run = true))
         d.resolve()
 
-        expect(run).to.be(true)
+        expect(run).to.be.true
 
       it 'should throw an exception on failure', ->
         d = undefined
@@ -86,4 +86,4 @@ define [
 
         called = false
         queue.queue(-> called = true; d = Deferred())
-        expect(called).to.be(false)
+        expect(called).to.be.false

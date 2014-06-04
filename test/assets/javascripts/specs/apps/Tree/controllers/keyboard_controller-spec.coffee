@@ -89,9 +89,9 @@ define [
       it 'should handle a keyboard shortcut with Control using event.metaKey', ->
         # assumes "Control+A" maps to "DocumentList.select_all"
         press_and_expect_event('A'.charCodeAt(0), 'DocumentListController', 'select_all', { metaKey: true })
-        expect(last_event.metaKey).to.be(true)
+        expect(last_event.metaKey).to.be.true
 
       it 'should handle a keyboard shortcut with Control using event.ctrlKey', ->
         # assumes "Control+A" maps to "DocumentList.select_all"
         press_and_expect_event('A'.charCodeAt(0), 'DocumentListController', 'select_all', { ctrlKey: true })
-        expect(last_event.ctrlKey).to.be(true)
+        expect(last_event.ctrlKey).to.be.true

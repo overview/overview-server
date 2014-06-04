@@ -53,8 +53,8 @@ define [
       it 'should have no params', -> expect(params.params).to.deep.eq([])
       it 'should have toString', -> expect(params.toString()).to.eq('DocumentListParams(all)')
       it 'should set JSON empty', -> expect(params.toJSON()).to.deep.eq({})
-      it 'should equals() another', -> expect(params.equals(DocumentListParams.all())).to.be(true)
-      it 'should not equals() something else', -> expect(params.equals(DocumentListParams.untagged())).to.be(false)
+      it 'should equals() another', -> expect(params.equals(DocumentListParams.all())).to.be.true
+      it 'should not equals() something else', -> expect(params.equals(DocumentListParams.untagged())).to.be.false
 
       it 'should find all documents from cache, sorted', ->
         result = params.findDocumentsFromCache(cache)
@@ -68,8 +68,8 @@ define [
       it 'should have toString', -> expect(params.toString()).to.eq('DocumentListParams(node:2)')
       it 'should have a JSON param', -> expect(params.toJSON()).to.deep.eq({ nodes: [2] })
       it 'should have an API param', -> expect(params.toApiParams(nodes: 1)).to.deep.eq({ nodes: '2' })
-      it 'should equals() another', -> expect(params.equals(DocumentListParams.byNodeId(2))).to.be(true)
-      it 'should not equals() something else', -> expect(params.equals(DocumentListParams.byNodeId(3))).to.be(false)
+      it 'should equals() another', -> expect(params.equals(DocumentListParams.byNodeId(2))).to.be.true
+      it 'should not equals() something else', -> expect(params.equals(DocumentListParams.byNodeId(3))).to.be.false
 
       it 'should find all documents from cache, sorted', ->
         result = params.findDocumentsFromCache(cache)

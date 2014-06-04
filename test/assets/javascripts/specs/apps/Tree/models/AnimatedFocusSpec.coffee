@@ -139,20 +139,20 @@ define [
         expect(spy).to.have.been.called
 
       it 'should set needs_update=false', ->
-        expect(focus.needsUpdate()).to.be(false)
+        expect(focus.needsUpdate()).to.be.false
 
       it 'should set needs_update=true when changing something', ->
         focus.animateZoom(0.1)
         sandbox.clock.tick(1)
-        expect(focus.needsUpdate()).to.be(true)
+        expect(focus.needsUpdate()).to.be.true
 
       it 'should keep needs_update=false when setting something', ->
         focus.setZoom(0.1)
-        expect(focus.needsUpdate()).to.be(false)
+        expect(focus.needsUpdate()).to.be.false
 
       it 'should set needs_update=false when animation has finished', ->
         focus.animateZoom(0.1)
         sandbox.clock.tick(1000)
         focus.update()
         sandbox.clock.tick(10)
-        expect(focus.needsUpdate()).to.be(false)
+        expect(focus.needsUpdate()).to.be.false

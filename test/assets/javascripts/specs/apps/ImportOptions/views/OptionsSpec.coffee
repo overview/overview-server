@@ -75,13 +75,13 @@ define [
         $input = view.$('[name=split_documents]')
         $input.val('true')
         $input.change()
-        expect(model.get('split_documents')).to.be(true)
+        expect(model.get('split_documents')).to.be.true
 
       it 'should set split_documents to false on the model', ->
         $input = view.$('[name=split_documents]')
         $input.prop('checked', false)
         $input.change()
-        expect(model.get('split_documents')).to.be(false)
+        expect(model.get('split_documents')).to.be.false
 
       it 'should start with lang matching lang', ->
         expect(view.$('[name=lang]').val()).to.eq(model.get('lang'))

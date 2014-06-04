@@ -46,7 +46,7 @@ define [
       it 'should deselect state.taglike if necessary on delete', ->
         @state.set('taglike', { tagId: 1 })
         view.delete()
-        expect(@state.get('taglike')).to.be(null)
+        expect(@state.get('taglike')).to.be.null
 
       it 'should change documentListParams if necessary on delete', ->
         @state.set(documentListParams: { type: 'tag', tagId: 1 })

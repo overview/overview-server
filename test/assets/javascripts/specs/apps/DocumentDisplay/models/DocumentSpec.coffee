@@ -34,4 +34,4 @@ define [
     it 'should set heading to "" if title and description are empty', ->
       document = new Document(urlProperties: {})
       heading = document.get('heading')
-      expect(heading).to.be('')
+      expect(heading).to.eq('')

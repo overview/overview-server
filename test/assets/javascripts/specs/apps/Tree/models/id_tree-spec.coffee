@@ -36,16 +36,16 @@ define [
       it 'should add to @parent', ->
         do_add(null, 1)
         do_add(1, [2, 3])
-        expect(id_tree.parent[1]).to.be(null)
+        expect(id_tree.parent[1]).to.be.null
         expect(id_tree.parent[2]).to.eq(1)
         expect(id_tree.parent[3]).to.eq(1)
 
       it 'should make has() work', ->
-        expect(id_tree.has(1)).to.be(false)
+        expect(id_tree.has(1)).to.be.false
         do_add(null, 1)
         do_add(1, [2, 3])
-        expect(id_tree.has(1)).to.be(true)
-        expect(id_tree.has(2)).to.be(false)
+        expect(id_tree.has(1)).to.be.true
+        expect(id_tree.has(2)).to.be.false
 
       it 'should make all() work', ->
         do_add(null, 1)
@@ -110,27 +110,27 @@ define [
 
           it 'should return false if id2 is the root', ->
             ret = id_tree.is_id_ancestor_of_id(2, 1)
-            expect(ret).to.be(false)
+            expect(ret).to.be.false
 
           it 'should return false if id1 is a leaf', ->
             ret = id_tree.is_id_ancestor_of_id(9, 3)
-            expect(ret).to.be(false)
+            expect(ret).to.be.false
 
           it 'should return false if id1 == i2', ->
             ret = id_tree.is_id_ancestor_of_id(2, 2)
-            expect(ret).to.be(false)
+            expect(ret).to.be.false
 
           it 'should return true if id1 is parent of id2', ->
             ret = id_tree.is_id_ancestor_of_id(1, 2)
-            expect(ret).to.be(true)
+            expect(ret).to.be.true
 
           it 'should return true if id1 is a grandparent of id2', ->
             ret = id_tree.is_id_ancestor_of_id(2, 9)
-            expect(ret).to.be(true)
+            expect(ret).to.be.true
 
           it 'should return false if id1 is not an ancestor of id2', ->
             ret = id_tree.is_id_ancestor_of_id(3, 9)
-            expect(ret).to.be(false)
+            expect(ret).to.be.false
 
       describe 'after removing a node', ->
         beforeEach ->
@@ -141,7 +141,7 @@ define [
           do_remove([5, 4])
 
         it 'should not has() the node', ->
-          expect(id_tree.has(4)).to.be(false)
+          expect(id_tree.has(4)).to.be.false
 
         it 'should delete the parent entry for the node', ->
           expect(id_tree.parent[4]).to.be.undefined
@@ -151,7 +151,7 @@ define [
 
         it 'should set @root to null when removing the root node', ->
           do_remove([3, 2, 1])
-          expect(id_tree.root).to.be(null)
+          expect(id_tree.root).to.be.null
 
         it 'should trigger change with root when removing the root node', ->
           spy = sinon.spy()

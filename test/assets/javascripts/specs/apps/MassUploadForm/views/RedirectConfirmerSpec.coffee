@@ -61,7 +61,7 @@ define [
 
     it 'should not intercept clicks elsewhere in the DOM when the MassUpload is empty', ->
       event = simulateClickOn($otherLink.get(0))
-      expect(event.defaultPrevented).to.be(false)
+      expect(event.defaultPrevented).to.be.false
       expect(redirectFunctions.href).not.to.have.been.called
 
     describe 'when MassUpload is not empty', ->
@@ -109,7 +109,7 @@ define [
         event = undefined
         beforeEach -> event = simulateClickOn($otherLink.get(0))
 
-        it 'should preventDefault() to avoid changing URLs', -> expect(event.defaultPrevented).to.be(true)
+        it 'should preventDefault() to avoid changing URLs', -> expect(event.defaultPrevented).to.be.true
         it 'should show the dialog', -> expect(view.$el).to.have.class('in')
 
         describe 'on cancel with successful DELETE', ->

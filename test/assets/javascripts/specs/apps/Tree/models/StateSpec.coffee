@@ -17,7 +17,7 @@ define [
         params2 = { foo: '2', equals: (rhs) -> rhs == params2 }
         state = new State(documentListParams: params1, documentId: 5)
         state.setDocumentListParams(params2)
-        expect(state.get('documentId')).to.be(null)
+        expect(state.get('documentId')).to.be.null
 
       it 'should change taglike to the new value when changing documentListParams', ->
         state = new State()

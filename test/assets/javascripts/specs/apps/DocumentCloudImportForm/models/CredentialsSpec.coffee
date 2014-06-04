@@ -32,9 +32,9 @@ define [
 
     describe 'isComplete', ->
       it 'should return true when email and password are set', ->
-        expect(validCredentials.isComplete()).to.be(true)
+        expect(validCredentials.isComplete()).to.be.true
 
       it 'should return false when email or password is not set', ->
-        expect(onlyEmailCredentials.isComplete()).to.be(false)
-        expect(onlyPasswordCredentials.isComplete()).to.be(false)
-        expect(emptyCredentials.isComplete()).to.be(false)
+        expect(onlyEmailCredentials.isComplete()).to.be.false
+        expect(onlyPasswordCredentials.isComplete()).to.be.false
+        expect(emptyCredentials.isComplete()).to.be.false

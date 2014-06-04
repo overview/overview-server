@@ -106,7 +106,7 @@ define [
         deleted = false
         view.observe('delete', -> deleted = true)
         actions.delete()
-        expect(deleted).to.be(true)
+        expect(deleted).to.be.true
 
       it 'should hide after "delete" and automatically trigger "closed"', ->
         i = 1
@@ -124,7 +124,7 @@ define [
         @sandbox.stub(window, 'confirm').returns(true)
         actions.delete_with_prompt()
         expect(window.confirm).to.have.been.calledWith('Confirm delete')
-        expect(deleted).to.be(true)
+        expect(deleted).to.be.true
 
       it 'should confirm when deleting and not delete or hide if OK is not pressed', ->
         failed = false
@@ -133,4 +133,4 @@ define [
         @sandbox.stub(window, 'confirm').returns(false)
         actions.delete_with_prompt()
         expect(window.confirm).to.have.been.calledWith('Confirm delete')
-        expect(failed).to.be(false)
+        expect(failed).to.be.false

@@ -18,7 +18,7 @@ define [
         document = { id: 1, description: 'foo' }
         store.reset([document])
         document2 = store.documents[document.id]
-        expect(document2).to.be(document)
+        expect(document2).to.eq(document)
 
       it 'should notify :document-changed', ->
         document1 = { id: 1, title: 'foo' }
@@ -26,7 +26,7 @@ define [
         v = undefined
         store.observe('document-changed', (o) -> v = o)
         store.change(document1)
-        expect(v).to.be(document1)
+        expect(v).to.eq(document1)
 
       it 'should rewrite_tag_id()', ->
         document = { id: 1, title: 'foo', tagids: [ -1 ] }

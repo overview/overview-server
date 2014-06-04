@@ -63,7 +63,7 @@ define [
         o = new O()
         o.observe('event', -> _this = this)
         o._notify('event')
-        expect(_this).to.be(o)
+        expect(_this).to.eq(o)
 
       it 'should work simplified (with no events)', ->
         class O

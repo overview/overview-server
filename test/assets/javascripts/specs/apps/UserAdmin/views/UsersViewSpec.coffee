@@ -37,7 +37,7 @@ define [ 'backbone', 'apps/UserAdmin/views/UsersView' ], (Backbone, UsersView) -
     it 'should render each view on reset', ->
       collection.reset([{ foo: 'bar' }, { foo: 'baz' } ])
       for v in modelViews
-        expect(v.rendered).to.be(true)
+        expect(v.rendered).to.be.true
       expect(view.$el.children().length).to.eq(2)
 
     it 'should remove a model when removed', ->

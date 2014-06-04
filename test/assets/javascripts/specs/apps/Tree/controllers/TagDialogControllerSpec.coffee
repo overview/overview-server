@@ -60,7 +60,7 @@ define [
       it 'should unset the state taglike if needed', ->
         state.set('taglike', { tagId: 1 })
         view.trigger('remove', model)
-        expect(state.get('taglike')).to.be(null)
+        expect(state.get('taglike')).to.be.null
 
       it 'should not unset the state taglike if not needed', ->
         state.set('taglike', { tagId: 2 })

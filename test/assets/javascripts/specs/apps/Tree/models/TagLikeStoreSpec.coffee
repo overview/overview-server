@@ -140,18 +140,18 @@ define [
           val = undefined
           store.observe('changed', (v) -> val = v)
           store.change(tag2, { doclist: { n: 1, docids: [ 1 ] } })
-          expect(val).to.be(tag2)
+          expect(val).to.eq(tag2)
 
         it 'should throw an exception when removing if the tag is not present', ->
           expect(-> store.remove(dummy_tag(4, 'other'))).to.throw('tagLikeNotFound')
 
         it 'should find_by_key() for an existing tag', ->
           tag = store.find_by_key('AA')
-          expect(tag).to.be(tag1)
+          expect(tag).to.eq(tag1)
 
         it 'should find_by_id() for an existing tag', ->
           tag = store.find_by_id(1)
-          expect(tag).to.be(tag1)
+          expect(tag).to.eq(tag1)
 
         it 'should return undefined when find_by_key() does not find a tag', ->
           tag = store.find_by_key('A')

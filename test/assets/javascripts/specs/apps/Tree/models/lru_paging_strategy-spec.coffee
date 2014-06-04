@@ -110,8 +110,8 @@ define [
 
       it 'should implement is_frozen()', ->
         strategy.add(7)
-        expect(strategy.is_frozen(7)).to.be(false)
+        expect(strategy.is_frozen(7)).to.be.false
         strategy.freeze(7)
-        expect(strategy.is_frozen(7)).to.be(true)
+        expect(strategy.is_frozen(7)).to.be.true
         strategy.thaw(7)
-        expect(strategy.is_frozen(7)).to.be(false)
+        expect(strategy.is_frozen(7)).to.be.false

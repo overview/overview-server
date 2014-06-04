@@ -39,7 +39,7 @@ define [
           expect(controller.get('selectedIndices')).to.deep.eq([0])
 
         it 'should set cursorIndex when clicking', ->
-          expect(controller.get('cursorIndex')).to.be(0)
+          expect(controller.get('cursorIndex')).to.eq(0)
 
       describe 'on down', ->
         beforeEach ->

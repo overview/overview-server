@@ -75,14 +75,14 @@ define [
           dl = new DocumentList(cache, new MockParams({}))
           d1 = dl.slice(0, 2)
           d2 = dl.slice(0, 2)
-          expect(d2).to.be(d1)
+          expect(d2).to.eq(d1)
 
         it 'should cache resolved values', ->
           dl = new DocumentList(cache, new MockParams({}))
           d1 = dl.slice(0, 2)
           cache.deferreds[0].resolve(doclist(1, 3))
           d2 = dl.slice(0, 2)
-          expect(d2).to.be(d1)
+          expect(d2).to.eq(d1)
 
         it 'should populate @documents', ->
           dl = new DocumentList(cache, new MockParams({}))

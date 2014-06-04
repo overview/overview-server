@@ -53,7 +53,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
             lastAjaxArgs = $.ajax.lastCall.args
 
           it 'should not call beforeReceive', ->
-            expect(beforeReceiveCalled).to.be(false)
+            expect(beforeReceiveCalled).to.be.false
 
           it 'should have sent an AJAX request', ->
             expect($.ajax).to.have.been.called
@@ -72,7 +72,7 @@ define [ 'jquery', 'apps/Tree/models/TagLikeApi' ], ($, TagLikeApi) ->
               lastDeferred.resolve({ id: 1, name: 'name', color: '#abcdef' })
 
             it 'should call beforeReceive', ->
-              expect(beforeReceiveCalled).to.be(true)
+              expect(beforeReceiveCalled).to.be.true
 
             it 'should call store.change', ->
               expect(store.change).to.have.been.calledWith(tagLike, {

@@ -38,8 +38,8 @@ define [
       beforeEach ->
         subject = new Options({}, ctorOptions)
 
-      it 'should define an included option', -> expect(subject.has('lang')).to.be(true)
-      it 'should not define an excluded option', -> expect(subject.has('split_documents')).to.be(false)
+      it 'should define an included option', -> expect(subject.has('lang')).to.be.true
+      it 'should not define an excluded option', -> expect(subject.has('split_documents')).to.be.false
 
     describe 'with onlyOptions', ->
       ctorOptions =
@@ -48,8 +48,8 @@ define [
         onlyOptions: [ 'split_documents' ]
 
       beforeEach -> subject = new Options({}, ctorOptions)
-      it 'should define an included option', -> expect(subject.has('split_documents')).to.be(true)
-      it 'should not define an excluded option', -> expect(subject.has('lang')).to.be(false)
+      it 'should define an included option', -> expect(subject.has('split_documents')).to.be.true
+      it 'should not define an excluded option', -> expect(subject.has('lang')).to.be.false
 
     describe 'with all options', ->
       ctorOptions =
@@ -63,16 +63,16 @@ define [
         it 'should be the list of supported languages', -> expect(subject.supportedLanguages).to.eq(ctorOptions.supportedLanguages)
 
       describe 'name', ->
-        it 'should begin empty', -> expect(subject.get('name')).to.be('')
+        it 'should begin empty', -> expect(subject.get('name')).to.eq('')
 
       describe 'tree_title', ->
-        it 'should begin empty', -> expect(subject.get('tree_title')).to.be('')
+        it 'should begin empty', -> expect(subject.get('tree_title')).to.eq('')
 
       describe 'tag_id', ->
-        it 'should begin as the empty string', -> expect(subject.get('tag_id')).to.be('')
+        it 'should begin as the empty string', -> expect(subject.get('tag_id')).to.eq('')
 
       describe 'split_documents', ->
-        it 'should begin false', -> expect(subject.get('split_documents')).to.be(false)
+        it 'should begin false', -> expect(subject.get('split_documents')).to.be.false
 
       describe 'lang', ->
         it 'should begin as defaultLanguageCode', -> expect(subject.get('lang')).to.eq('en')

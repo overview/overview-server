@@ -31,11 +31,11 @@ define [
 
     it 'should not render anything when status is not fetched', ->
       model.set('status', 'unknown')
-      expect(view.$el.is(':visible')).to.be(false)
+      expect(view.$el.is(':visible')).to.be.false
       model.set('status', 'fetching')
-      expect(view.$el.is(':visible')).to.be(false)
+      expect(view.$el.is(':visible')).to.be.false
       model.set('status', 'error')
-      expect(view.$el.is(':visible')).to.be(false)
+      expect(view.$el.is(':visible')).to.be.false
 
     it 'should render the title by default', ->
       expect(view.$('input[name=title]').val()).to.eq("title.value,title")

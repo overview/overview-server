@@ -42,12 +42,12 @@ define [
           called = false
           obj = { x: { current: 1 } }
           animator.animate_object_properties(obj, { x: 2 }, (() -> called = true), undefined)
-          expect(called).to.be(true)
+          expect(called).to.be.true
 
         it 'should return false for needs_update()', ->
           obj = { x: { current: 1 } }
           animator.animate_object_properties(obj, { x: 2 }, (() -> called = true), undefined)
-          expect(animator.needs_update()).to.be(false)
+          expect(animator.needs_update()).to.be.false
 
       describe 'with duration=1000 and linear interpolation', ->
         beforeEach ->
@@ -58,7 +58,7 @@ define [
           animator.update()
 
         it 'should return false on needs_update()', ->
-          expect(animator.needs_update()).to.be(false)
+          expect(animator.needs_update()).to.be.false
 
         it 'should set new values on a property', ->
           obj = { x: { current: 1 } }
@@ -101,32 +101,32 @@ define [
 
           it 'should invoke a callback when the animation is complete', ->
             animator.update(1099)
-            expect(called).to.be(false)
+            expect(called).to.be.false
             animator.update(1100)
-            expect(called).to.be(true)
+            expect(called).to.be.true
 
           it 'should return true from needs_update()', ->
-            expect(animator.needs_update()).to.be(true)
+            expect(animator.needs_update()).to.be.true
 
           it 'should keep needs_update() true after an update that does not finish animation', ->
             animator.update(1099)
-            expect(animator.needs_update()).to.be(true)
+            expect(animator.needs_update()).to.be.true
 
           it 'should have needs_update() false after the final update', ->
             animator.update(1100)
-            expect(animator.needs_update()).to.be(false)
+            expect(animator.needs_update()).to.be.false
 
           it 'should not invoke the callback when changing one of the same properties', ->
             animator.animate_object_properties(obj, { y: 3 }, undefined, 600)
             animator.update(1599)
-            expect(called).to.be(false)
+            expect(called).to.be.false
             animator.update(1600)
-            expect(called).to.be(true)
+            expect(called).to.be.true
 
           it 'should invoke the callback when changing some other properties', ->
             animator.animate_object_properties(obj, { z: 3 }, undefined, 600)
             animator.update(1100)
-            expect(called).to.be(true)
+            expect(called).to.be.true
             expect(obj.z.current).to.eq(2)
 
           it 'switch to a second animation when needed', ->
@@ -148,16 +148,16 @@ define [
 
           it 'should invoke the callback immediately if setting all its values directly', ->
             animator.set_object_properties(obj, { x: 3, y: 3 })
-            expect(called).to.be(true)
+            expect(called).to.be.true
 
           it 'should set needs_update to false when setting new values directly', ->
             animator.set_object_properties(obj, { x: 3, y: 3 })
-            expect(animator.needs_update()).to.be(false)
+            expect(animator.needs_update()).to.be.false
 
           it 'should not invoke the callback when setting only some animated values directly', ->
             animator.set_object_properties(obj, { x: 1 })
-            expect(called).to.be(false)
+            expect(called).to.be.false
 
           it 'should keep needs_update true when setting only some animated values', ->
             animator.set_object_properties(obj, { x: 1 })
-            expect(animator.needs_update()).to.be(true)
+            expect(animator.needs_update()).to.be.true

@@ -95,7 +95,7 @@ define [
 
         it 'should set global: false on the $.ajax request', ->
           log.upload_entries_to_server_and_clear()
-          expect($.ajax.lastCall.args[0].global).to.be(false)
+          expect($.ajax.lastCall.args[0].global).to.be.false
 
       describe 'for_component()', ->
         it 'should return a function that can be used as a shortcut', ->
