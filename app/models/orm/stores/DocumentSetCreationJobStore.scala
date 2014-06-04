@@ -14,12 +14,9 @@ import models.orm.Schema
 object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentSetCreationJobs) {
 
   /**
-   * Finds a cancellable job for the given document set, and sets its state to CANCELLED.
+   * Finds a cancellable, non-Recluster job for the given document set, and sets its state to CANCELLED.
    *
    * There can be at most one import job (DocumentCloud, CsvUpload, Clone, FileUpload) for a given document set.
-   * There can be multiple Recluster jobs, where at most 1 is running (NOT_STARTED, IN_PROGRESS) and the rest
-   * are stopped (ERROR, CANCELLED). Stopped Recluster jobs are not cancellable - this constraint is enforced by the UI.
-   *
    *
    * Only the cancellable job is returned. If there is no cancellable job, None is returned
    *
@@ -27,16 +24,15 @@ object DocumentSetCreationJobStore extends BaseStore(models.orm.Schema.documentS
    *
    * The job is locked, so try to finish the transaction quickly.
    *
-   * This method is actually a lot simpler than what we had before.
-   *
+   * This method is actually a lot simpler than what we had before. [adam edit - even simpler now!]
    */
   def findCancellableJobByDocumentSetAndCancel(documentSetId: Long): Option[DocumentSetCreationJob] = {
     import org.overviewproject.postgres.SquerylEntrypoint._
 
     val runningJobs = from(Schema.documentSetCreationJobs)(dscj =>
-      where(dscj.documentSetId === documentSetId and
-        ((dscj.jobType <> Recluster) or (dscj.state notIn List(Error, Cancelled))))
-        select (dscj)).forUpdate
+      where(dscj.documentSetId === documentSetId and dscj.jobType <> Recluster)
+      select(dscj)
+    ).forUpdate
 
     val firstJob = runningJobs.headOption // There should be at most one running job
 

@@ -125,10 +125,7 @@ object DocumentSetFinder extends Finder {
     */
   protected[finders] def documentSetIdsWithCreationJobs = {
     from(Schema.documentSetCreationJobs)(dscj =>
-      where(not(
-        (dscj.jobType === DocumentSetCreationJobType.Recluster) and
-        (dscj.state in Seq(DocumentSetCreationJobState.Error, DocumentSetCreationJobState.Cancelled))
-      ))
+      where(dscj.jobType <> DocumentSetCreationJobType.Recluster)
       select(dscj.documentSetId)
     )
   }

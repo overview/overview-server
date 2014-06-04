@@ -41,6 +41,7 @@ class DocumentSetMessageHandlerSpec extends Specification {
 
     trait DocumentSetInfo {
       val documentSetId = 1l
+      val jobId = 2L
     }
 
     abstract class SearchContext extends ActorSystemContext with DocumentSetInfo with Before {
@@ -109,9 +110,9 @@ class DocumentSetMessageHandlerSpec extends Specification {
     }
     
     "start delete handler and send delete tree job command" in new DeleteContext {
-      messageHandler ! DeleteTreeJobCommand(documentSetId)
+      messageHandler ! DeleteTreeJobCommand(jobId)
       
-      deleteHandler.expectMsg(DeleteReclusteringJob(documentSetId))
+      deleteHandler.expectMsg(DeleteReclusteringJob(jobId))
     }
 
     "tell parent MessageHandled when JobDone is received" in new DeleteWithParentContext {

@@ -39,20 +39,7 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         fileGroupId = Some(fileGroupId),
         jobType = jobType,
         state = state)
-    def fakeTreeErrorJob(documentSetId: Long, id: Long) = DocumentSetCreationJob(
-      id = id,
-      documentSetId = documentSetId,
-      treeTitle = Some(s"Failed job ${id}"),
-      jobType = DocumentSetCreationJobType.Recluster,
-      state = DocumentSetCreationJobState.Error)
-    def fakeDocumentSet(id: Long) = DocumentSet(
-      id = id)
-    def fakeTree(documentSetId: Long, id: Long) = Tree(
-      id = id,
-      documentSetId = documentSetId,
-      title = "title",
-      documentCount = 10,
-      lang = "en")
+    def fakeDocumentSet(id: Long) = DocumentSet(id = id)
   }
 
   "DocumentSetController" should {
@@ -100,17 +87,28 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
       "return Ok if the document set exists but no trees do" in new ShowJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        mockStorage.findTreesByDocumentSet(documentSetId) returns Seq()
-        mockStorage.findTreeErrorJobsByDocumentSet(documentSetId) returns Seq()
+        mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(0)
         h.status(result) must beEqualTo(h.OK)
       }
 
       "return Ok if the document set exists with trees" in new ShowJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
-        val fakeTrees: Seq[Tree] = Seq(fakeTree(1L, 2L), fakeTree(1L, 3L))
-        mockStorage.findTreesByDocumentSet(documentSetId) returns fakeTrees
-        mockStorage.findTreeErrorJobsByDocumentSet(documentSetId) returns Seq()
+        mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(2)
         h.status(result) must beEqualTo(h.OK)
+      }
+    }
+
+    "show" should {
+      trait ShowScope extends BaseScope {
+        val documentSetId = 2L
+        def request = fakeAuthorizedRequest
+        lazy val result = controller.show(documentSetId)(request)
+      }
+
+      "redirect to the newest tree" in new ShowScope {
+        mockStorage.findNewestTreeId(documentSetId) returns 5L
+        h.status(result) must beEqualTo(h.SEE_OTHER)
+        h.header("Location", result) must beSome("/documentsets/2/trees/5")
       }
     }
 
@@ -120,10 +118,8 @@ class DocumentSetControllerSpec extends ControllerSpecification {
 
         def fakeDocumentSets: Seq[DocumentSet] = Seq(fakeDocumentSet(1L))
         mockStorage.findDocumentSets(anyString, anyInt, anyInt) answers { (_) => ResultPage(fakeDocumentSets, IndexPageSize, pageNumber) }
-        def fakeTrees: Seq[Tree] = Seq(fakeTree(1L, 2L), fakeTree(1L, 3L))
-        mockStorage.findTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeTrees }
-        def fakeTreeErrorJobs: Seq[DocumentSetCreationJob] = Seq()
-        mockStorage.findTreeErrorJobsByDocumentSets(any[Seq[Long]]) answers { (_) => fakeTreeErrorJobs }
+        def fakeNTrees: Seq[Int] = Seq(2)
+        mockStorage.findNTreesByDocumentSets(any[Seq[Long]]) answers { (_) => fakeNTrees }
         def fakeJobs: Seq[(DocumentSetCreationJob, DocumentSet, Long)] = Seq()
         mockStorage.findDocumentSetCreationJobs(anyString) answers { (_) => fakeJobs }
 
@@ -181,28 +177,15 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         h.contentAsString(result) must not contain ("/documentsets?page=2")
       }
 
-      "bind trees to their document sets" in new IndexScope {
+      "bind nTrees to their document sets" in new IndexScope {
         override def fakeDocumentSets = Seq(fakeDocumentSet(1L), fakeDocumentSet(2L))
-        override def fakeTrees = Seq(fakeTree(1L, 10L), fakeTree(2L, 20L), fakeTree(1L, 30L))
+        override def fakeNTrees = Seq(4, 5)
 
         val ds1 = j.$("[data-document-set-id='1']")
         val ds2 = j.$("[data-document-set-id='2']")
 
-        ds1.find("[data-tree-id='10']").length must beEqualTo(1)
-        ds2.find("[data-tree-id='20']").length must beEqualTo(1)
-        ds1.find("[data-tree-id='30']").length must beEqualTo(1)
-      }
-
-      "bind errored tree jobs to their document sets" in new IndexScope {
-        override def fakeDocumentSets = Seq(fakeDocumentSet(1L), fakeDocumentSet(2L))
-        override def fakeTrees = Seq(fakeTree(1L, 10L), fakeTree(2L, 20L))
-        override def fakeTreeErrorJobs = Seq(fakeTreeErrorJob(1L, 11L), fakeTreeErrorJob(2L, 21L))
-
-        val ds1 = j.$("[data-document-set-id='1']")
-        val ds2 = j.$("[data-document-set-id='2']")
-
-        ds1.find("[data-job-id='11']").length must beEqualTo(1)
-        ds2.find("[data-job-id='21']").length must beEqualTo(1)
+        ds1.find("div.trees").text() must contain("4 trees")
+        ds2.find("div.trees").text() must contain("5 trees")
       }
 
       "show jobs" in new IndexScope {
@@ -258,23 +241,6 @@ class DocumentSetControllerSpec extends ControllerSpecification {
         there was one(mockStorage).deleteDocumentSet(documentSet)
         there was one(mockJobQueue).send(Delete(documentSetId))
 
-      }
-
-      "mark job deleted and send delete job request if reclustering job has not started clustering" in new DeleteScope {
-        setupJob(NotStarted, Recluster)
-
-        h.status(result) must beEqualTo(h.SEE_OTHER)
-
-        there was one(mockStorage).cancelJob(documentSet)
-        there was one(mockJobQueue).send(DeleteTreeJob(documentSetId))
-      }
-
-      "mark job deleted if reclustering job has started clustering" in new DeleteScope {
-        setupJob(InProgress, Recluster)
-
-        h.status(result) must beEqualTo(h.SEE_OTHER)
-
-        there was one(mockStorage).cancelJob(documentSet)
       }
 
       "mark document set and job deleted and send delete request if import job has not started clustering" in new DeleteScope {

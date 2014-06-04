@@ -28,12 +28,9 @@ object DocumentSetCreationJobFinder extends Finder {
       )
     }
 
-    def excludeFailedTreeCreationJobs: DocumentSetCreationJobFinderResult = {
+    def excludeTreeCreationJobs: DocumentSetCreationJobFinderResult = {
       from(toQuery)(dscj =>
-        where(not(
-          (dscj.jobType === DocumentSetCreationJobType.Recluster) and
-          (dscj.state in Seq(DocumentSetCreationJobState.Cancelled, DocumentSetCreationJobState.Error))
-        ))
+        where(dscj.jobType <> DocumentSetCreationJobType.Recluster)
         select(dscj)
       )
     }

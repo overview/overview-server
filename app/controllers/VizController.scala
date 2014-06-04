@@ -19,6 +19,7 @@ trait VizController extends Controller {
     val jobs = storage.findVizJobs(documentSetId)
 
     Ok(views.json.Viz.index(vizs, jobs))
+      .withHeaders(CACHE_CONTROL -> "max-age=0")
   }
 
   protected val storage: VizController.Storage

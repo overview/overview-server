@@ -2,7 +2,7 @@ package controllers.admin
 
 import play.api.mvc.Controller
 
-import org.overviewproject.jobs.models.{ CancelFileUpload, Delete, DeleteTreeJob }
+import org.overviewproject.jobs.models.{ CancelFileUpload, Delete }
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.tree.orm.DocumentSetCreationJob
@@ -27,7 +27,6 @@ trait ImportJobController extends Controller with JobContextChecker {
 
   trait JobMessageQueue {
     def send(deleteCommand: Delete): Unit
-    def send(deleteJobCommand: DeleteTreeJob): Unit
     def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
@@ -49,12 +48,7 @@ trait ImportJobController extends Controller with JobContextChecker {
     implicit val cancelledJob = onDocumentSet(ds => storage.cancelJob(ds.id)).flatten
     def id = documentSet.get.id
 
-    if (notStartedTreeJob) {
-      jobQueue.send(DeleteTreeJob(id))
-      flashSuccess
-    } else if (runningTreeJob) {
-      flashSuccess
-    } else if (runningInWorker) {
+    if (runningInWorker) {
       onDocumentSet(storage.deleteDocumentSet)
       jobQueue.send(Delete(id, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
       flashSuccess

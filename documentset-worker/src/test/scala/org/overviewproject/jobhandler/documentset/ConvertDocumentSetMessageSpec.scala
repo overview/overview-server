@@ -43,18 +43,18 @@ class ConvertDocumentSetMessageSpec extends Specification {
     }
 
     "convert a deleteTreeJob commmand" in {
-      val documentSetId = 123
+      val jobId = 123
 
       val messageString = s"""{
         "cmd": "delete_tree_job",
         "args": {
-           "documentSetId": $documentSetId
+           "jobId": $jobId
         }
       }"""
 
       val command = ConvertDocumentSetMessage(messageString)
 
-      command must beLike { case DeleteTreeJobCommand(documentSetId) => ok }
+      command must beLike { case DeleteTreeJobCommand(jobId) => ok }
 
     }
 

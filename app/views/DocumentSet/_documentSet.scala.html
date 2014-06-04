@@ -1,7 +1,6 @@
 @(
   documentSet: org.overviewproject.tree.orm.DocumentSet,
-  trees: Seq[org.overviewproject.tree.orm.Tree],
-  treeErrorJobs: Seq[org.overviewproject.tree.orm.DocumentSetCreationJob],
+  nTrees: Int,
   viewer: OverviewUser
 )(implicit lang: play.api.i18n.Lang, request: RequestHeader)
 
@@ -32,11 +31,7 @@
       /></form>
     </div>
     <h3>
-      @if(trees.length + treeErrorJobs.length == 1) {
-        <a href="@routes.TreeController.show(documentSet.id, trees.head.id)">@documentSet.title</a>
-      } else {
-        @documentSet.title
-      }
+      <a href="@routes.DocumentSetController.show(documentSet.id)">@documentSet.title</a>
     </h3>
     <h4>
       <span class="description">
@@ -57,12 +52,8 @@
         <span class="overflow-count" title="@m("nOverflow.title")">@m("nOverflow", documentSet.importOverflowCount)</span>
       }
     </h4>
-    <div class="trees@{ if (trees.length + treeErrorJobs.length == 1) " single" else "" }">
-      <h5>@m("nTrees", trees.length + treeErrorJobs.length)</h5>
-      <ul>
-        @trees.map(_tree.apply(_))
-        @treeErrorJobs.map(_treeErrorJob.apply(_))
-      </ul>
+    <div class="trees">
+      <a href="@routes.DocumentSetController.show(documentSet.id)">@m("nTrees", nTrees)</a>
     </div>
   </li>
 }

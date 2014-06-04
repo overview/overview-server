@@ -13,6 +13,7 @@ import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 trait DocumentSetDeleter {
   def deleteJobInformation(documentSetId: Long): Unit
   def deleteCancelledJobInformation(documentSetId: Long): Unit
+  def deleteOneCancelledJobInformation(jobId: Long): Unit
   def deleteClientGeneratedInformation(documentSetId: Long): Unit
   def deleteClusteringGeneratedInformation(documentSetId: Long): Unit
   def deleteDocumentSet(documentSetId: Long): Unit
@@ -38,9 +39,11 @@ object DocumentSetDeleter {
     }
 
     def deleteCancelledJobInformation(documentSetId: Long): Unit = Database.inTransaction {
-      implicit val id = documentSetId
+      deleteCancelledJobsInDocumentSet(documentSetId)
+    }
 
-      deleteCancelledJobs
+    def deleteOneCancelledJobInformation(jobId: Long): Unit = Database.inTransaction {
+      DocumentSetCreationJobStore.delete(jobId)
     }
 
     def deleteClientGeneratedInformation(documentSetId: Long): Unit = Database.inTransaction {
@@ -101,7 +104,13 @@ object DocumentSetDeleter {
   private def deleteNonRunningJobs(implicit documentSetId: Long): Unit =
     DocumentSetCreationJobStore.deleteNonRunningJobs(documentSetId)
 
-  private def deleteCancelledJobs(implicit documentSetId: Long): Unit =
+  private def deleteCancelledJob(jobId: Long): Unit = {
+    // We don't care what state the job is in. If we got this message, it was
+    // Cancelled at some point.
+    DocumentSetCreationJobStore.delete(jobId)
+  }
+
+  private def deleteCancelledJobsInDocumentSet(documentSetId: Long): Unit =
     DocumentSetCreationJobStore.deleteByState(documentSetId, Cancelled)
 
   private def deleteFiles(fileIds: Seq[Long]): Unit = FileStore.removeReference(fileIds)

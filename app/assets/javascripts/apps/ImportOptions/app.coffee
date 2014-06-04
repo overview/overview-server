@@ -109,8 +109,6 @@ define [ 'jquery', 'underscore', './models/Options', './views/Options', 'i18n', 
         .attr(method: 'post', action: options.url)
         .append($('<input type="hidden" name="csrfToken"/>').val(options.csrfToken))
 
-      undefined
-
     @addHiddenInputsThroughDialog: (form, options) ->
       app = new App(options)
 

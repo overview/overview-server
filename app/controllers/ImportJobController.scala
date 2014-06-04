@@ -23,7 +23,7 @@ object ImportJobController extends ImportJobController {
   override protected def loadDocumentSetCreationJobs(userEmail: String) = {
     DocumentSetCreationJobFinder
       .byUser(userEmail)
-      .excludeFailedTreeCreationJobs
+      .excludeTreeCreationJobs
       .excludeCancelledJobs
       .withDocumentSetsAndQueuePositions
       .toSeq

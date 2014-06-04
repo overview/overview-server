@@ -10,7 +10,7 @@ import models.OverviewUser
 class indexSpec extends views.html.ViewSpecification {
   trait BaseScope extends HtmlViewSpecificationScope {
     def jobs : Seq[(DocumentSetCreationJob,DocumentSet,Long)] = Seq()
-    def documentSets: Seq[(DocumentSet, Seq[Tree], Seq[DocumentSetCreationJob])] = Seq()
+    def documentSets: Seq[(DocumentSet, Int)] = Seq()
     def documentSetsPage = ResultPage(documentSets, 10, 1)
 
     def result = index(fakeUser, documentSetsPage, jobs)
@@ -34,7 +34,7 @@ class indexSpec extends views.html.ViewSpecification {
     }
 
     "Show DocumentSets if there are some" in new BaseScope {
-      override def documentSets = Seq((DocumentSet(), Seq(), Seq()))
+      override def documentSets = Seq((DocumentSet(), 1))
       $(".document-sets").length must beEqualTo(1)
     }
 
@@ -52,8 +52,8 @@ class indexSpec extends views.html.ViewSpecification {
 
     "render DocumentSets if there are some" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq(), Seq()),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq(), Seq())
+        (DocumentSet(id=1, title="title1", query=Some("query1")), 1),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), 1)
       )
       $(".document-sets").length must equalTo(1)
       $(".document-sets li[data-document-set-id='1']").length must beEqualTo(1)
@@ -62,8 +62,8 @@ class indexSpec extends views.html.ViewSpecification {
     
     "Define error-list popup if there are DocumentSets" in new BaseScope {
       override def documentSets = Seq(
-        (DocumentSet(id=1, title="title1", query=Some("query1")), Seq(), Seq()),
-        (DocumentSet(id=2, title="title2", query=Some("query2")), Seq(), Seq())
+        (DocumentSet(id=1, title="title1", query=Some("query1")), 1),
+        (DocumentSet(id=2, title="title2", query=Some("query2")), 1)
       )
       $("#error-list-modal").length must beEqualTo(1)
     }

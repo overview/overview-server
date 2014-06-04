@@ -2,8 +2,7 @@
   user: OverviewUser,
   documentSets: org.overviewproject.tree.orm.finders.ResultPage[(
     org.overviewproject.tree.orm.DocumentSet,
-    Seq[org.overviewproject.tree.orm.Tree],
-    Seq[org.overviewproject.tree.orm.DocumentSetCreationJob]
+    Int
   )],
   jobs: Iterable[(org.overviewproject.tree.orm.DocumentSetCreationJob,org.overviewproject.tree.orm.DocumentSet,Long)]
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
@@ -35,15 +34,13 @@
 )}
 
 @**** Stupid function needed only because I can't figure out how to pass 2 params in the map call ****@
-@displayDocumentSet(documentSetWithTrees: (
+@displayDocumentSet(documentSetWithNTrees: (
     org.overviewproject.tree.orm.DocumentSet,
-    Seq[org.overviewproject.tree.orm.Tree],
-    Seq[org.overviewproject.tree.orm.DocumentSetCreationJob]
+    Int
   )) = {
   @views.html.DocumentSet._documentSet(
-    documentSetWithTrees._1,
-    documentSetWithTrees._2,
-    documentSetWithTrees._3,
+    documentSetWithNTrees._1,
+    documentSetWithNTrees._2,
     user
   )
 }

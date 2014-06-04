@@ -4,7 +4,6 @@ import play.api.mvc.Controller
 
 import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
-import org.overviewproject.jobs.models.DeleteTreeJob
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
@@ -24,17 +23,18 @@ trait DocumentSetController extends Controller {
     /** Returns a DocumentSet from an ID */
     def findDocumentSet(id: Long): Option[DocumentSet]
 
-    /** Returns all Trees in the given DocumentSets */
-    def findTreesByDocumentSets(documentSetIds: Iterable[Long]): Iterable[Tree]
+    /** Returns the ID of the newest Tree in the DocumentSet.
+      *
+      * Throws a RuntimeError if there is no Tree in the DocumentSet. (How's
+      * that for undefined behavior?)
+      */
+    def findNewestTreeId(id: Long): Long
 
-    /** Returns all Trees in the given DocumentSet */
-    def findTreesByDocumentSet(documentSetId: Long): Iterable[Tree]
-
-    /** Returns all DocumentSetCreationJobs of failed tree-clustering jobs */
-    def findTreeErrorJobsByDocumentSets(documentSetIds: Iterable[Long]): Iterable[DocumentSetCreationJob]
-
-    /** Returns all DocumentSetCreationJobs of failed tree-clustering jobs */
-    def findTreeErrorJobsByDocumentSet(documentSetId: Long): Iterable[DocumentSetCreationJob]
+    /** Returns an Iterable: for each DocumentSet, the number of Trees.
+      *
+      * The return value comes in the same order as the input parameter.
+      */
+    def findNTreesByDocumentSets(documentSetIds: Seq[Long]) : Seq[Int]
 
     /** Returns a page of DocumentSets */
     def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet]
@@ -52,7 +52,6 @@ trait DocumentSetController extends Controller {
 
   trait JobMessageQueue {
     def send(deleteCommand: Delete): Unit
-    def send(deleteJobCommand: DeleteTreeJob): Unit
     def send(cancelFileUploadCommand: CancelFileUpload): Unit
   }
 
@@ -63,21 +62,11 @@ trait DocumentSetController extends Controller {
     val documentSetsPage = storage.findDocumentSets(request.user.email, indexPageSize, realPage)
     val documentSets = documentSetsPage.items.toSeq // Squeryl only lets you iterate once
 
-    val trees = storage
-      .findTreesByDocumentSets(documentSets.map(_.id))
-      .toSeq
-      .groupBy(_.documentSetId)
+    val nTrees = storage.findNTreesByDocumentSets(documentSets.map(_.id))
 
-    val treeErrorJobs = storage
-      .findTreeErrorJobsByDocumentSets(documentSets.map(_.id))
-      .toSeq
-      .groupBy(_.documentSetId)
+    val documentSetsWithNTrees = documentSets.zip(nTrees)
 
-    val documentSetsWithTrees = documentSets.map { ds: DocumentSet =>
-      (ds, trees.getOrElse(ds.id, Seq()), treeErrorJobs.getOrElse(ds.id, Seq()))
-    }
-
-    val resultPage = ResultPage(documentSetsWithTrees, documentSetsPage.pageDetails)
+    val resultPage = ResultPage(documentSetsWithNTrees, documentSetsPage.pageDetails)
 
     val jobs = storage.findDocumentSetCreationJobs(request.user.email).toSeq
 
@@ -88,13 +77,17 @@ trait DocumentSetController extends Controller {
     }
   }
 
+  def show(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+    val treeId = storage.findNewestTreeId(id)
+    Redirect(routes.TreeController.show(id, treeId))
+  }
+
   def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
-        val trees = storage.findTreesByDocumentSet(id).toSeq
-        val treeErrorJobs = storage.findTreeErrorJobsByDocumentSet(id).toSeq
-        Ok(views.json.DocumentSet.show(request.user, documentSet, trees, treeErrorJobs))
+        val nTrees = storage.findNTreesByDocumentSets(Seq(id)).headOption.getOrElse(0)
+        Ok(views.json.DocumentSet.show(request.user, documentSet, nTrees))
       }
     }
   }
@@ -130,13 +123,6 @@ trait DocumentSetController extends Controller {
       jobQueue.send(Delete(id))
       
       done("deleteDocumentSet.success", "document-set-delete")
-    } else if (notStartedTreeJob) {
-      jobQueue.send(DeleteTreeJob(id))
-      
-      done("deleteTree.success", "tree-delete")
-    } else if (runningTreeJob) {
-      // marking job as cancelled is sufficient
-      done("deleteTree.success", "tree-delete")
     } else if (runningInWorker) {
       onDocumentSet(storage.deleteDocumentSet)
       jobQueue.send(Delete(id, waitForJobRemoval = true)) // wait for worker to stop clustering and remove job
@@ -170,18 +156,11 @@ trait DocumentSetController extends Controller {
 
   private def noJobCancelled(implicit job: Option[DocumentSetCreationJob]): Boolean = job.isEmpty
       
-  private def notStartedTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => (j.jobType == Recluster && j.state == NotStarted) }
-
   private def validTextExtractionJob(implicit job: Option[DocumentSetCreationJob]): Boolean = 
     jobTest { j => j.fileGroupId.isDefined }
   
-  private def runningTreeJob(implicit job: Option[DocumentSetCreationJob]): Boolean =
-    jobTest { j => j.jobType == Recluster && j.state != NotStarted }
-
   private def runningInWorker(implicit job: Option[DocumentSetCreationJob]): Boolean =
     jobTest { j => j.jobType != Recluster && j.state == InProgress }
-      
 
   private def notRunning(implicit job: Option[DocumentSetCreationJob]): Boolean =
     jobTest { j => j.state == NotStarted || j.state == Error || j.state == Cancelled }
@@ -196,21 +175,26 @@ trait DocumentSetController extends Controller {
 object DocumentSetController extends DocumentSetController with DocumentSetDeletionComponents {
   object DatabaseStorage extends Storage with DocumentSetDeletionStorage {
     override def findDocumentSet(id: Long) = DocumentSetFinder.byDocumentSet(id).headOption
-    override def findTreesByDocumentSets(documentSetIds: Iterable[Long]) = TreeFinder.byDocumentSets(documentSetIds)
-    override def findTreesByDocumentSet(documentSetId: Long) = TreeFinder.byDocumentSet(documentSetId)
 
-    override def findTreeErrorJobsByDocumentSet(documentSetId: Long) = {
-      DocumentSetCreationJobFinder
+    override def findNewestTreeId(documentSetId: Long) = {
+      TreeFinder
         .byDocumentSet(documentSetId)
-        .byState(DocumentSetCreationJobState.Error)
-        .byJobType(DocumentSetCreationJobType.Recluster)
+        .headOption.map(_.id)
+        .getOrElse(throw new Exception("There must be a tree"))
     }
 
-    override def findTreeErrorJobsByDocumentSets(documentSetIds: Iterable[Long]) = {
-      DocumentSetCreationJobFinder
-        .byDocumentSets(documentSetIds)
-        .byState(DocumentSetCreationJobState.Error)
-        .byJobType(DocumentSetCreationJobType.Recluster)
+    override def findNTreesByDocumentSets(documentSetIds: Seq[Long]) = {
+      import org.overviewproject.postgres.SquerylEntrypoint._
+
+      val idToNTrees = from(models.orm.Schema.trees)(t =>
+        groupBy(t.documentSetId)
+        compute(count(t.id))
+      )
+        .toSeq
+        .map((g) => (g.key -> g.measures.toInt))
+        .toMap
+
+      documentSetIds.map((id) => idToNTrees.getOrElse(id, 0))
     }
 
     override def findDocumentSets(userEmail: String, pageSize: Int, page: Int): ResultPage[DocumentSet] = {
@@ -221,7 +205,7 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
     override def findDocumentSetCreationJobs(userEmail: String): Iterable[(DocumentSetCreationJob, DocumentSet, Long)] = {
       DocumentSetCreationJobFinder
         .byUser(userEmail)
-        .excludeFailedTreeCreationJobs
+        .excludeTreeCreationJobs
         .excludeCancelledJobs
         .withDocumentSetsAndQueuePositions
         .toSeq

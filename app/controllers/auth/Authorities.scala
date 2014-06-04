@@ -37,4 +37,8 @@ object Authorities {
   def userOwningDocument(id: Long) = new Authority {
     def apply(user: OverviewUser) = user.isAllowedDocument(id)
   }
+
+  def userOwningJob(id: Long) = new Authority {
+    def apply(user: OverviewUser) = user.isAllowedJob(id)
+  }
 }

@@ -27,7 +27,7 @@ object DocumentSetJobHandlerProtocol {
   // public for easier testing. 
   case class SearchCommand(documentSetId: Long, query: String) extends Command
   case class DeleteCommand(documentSetId: Long, waitForJobRemoval: Boolean) extends Command
-  case class DeleteTreeJobCommand(documentSetId: Long) extends Command
+  case class DeleteTreeJobCommand(jobId: Long) extends Command
 }
 
 /**
@@ -94,12 +94,12 @@ class DocumentSetMessageHandler extends Actor with FSM[State, Data] {
       deleteHandler ! DeleteDocumentSet(documentSetId, waitForJobRemoval)
       goto(WaitingForCompletion)
     }
-    case Event(DeleteTreeJobCommand(documentSetId), _) => {
-      Logger.info(s"Received DeleteTreeJob($documentSetId)")
+    case Event(DeleteTreeJobCommand(jobId), _) => {
+      Logger.info(s"Received DeleteTreeJob($jobId)")
       val deleteHandler = context.actorOf(Props(actorCreator.produceDeleteHandler))
       context.watch(deleteHandler)
       
-      deleteHandler ! DeleteReclusteringJob(documentSetId)
+      deleteHandler ! DeleteReclusteringJob(jobId)
       goto(WaitingForCompletion)
     }
   }

@@ -18,8 +18,6 @@ trait DocumentSetDeletionComponents {
 
   trait DocumentSetDeletionJobMessageQueue {
     def send(deleteCommand: Delete): Unit = JobQueueSender.send(deleteCommand)
-    def send(deleteJobCommand: DeleteTreeJob): Unit = JobQueueSender.send(deleteJobCommand)
     def send(cancelFileUploadCommand: CancelFileUpload): Unit = JobQueueSender.send(cancelFileUploadCommand)
-
   }
 }

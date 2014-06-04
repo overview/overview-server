@@ -11,7 +11,7 @@ import java.sql.Timestamp
 import java.util.Date
 import com.github.t3hnar.bcrypt._
 import models.orm.User
-import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder }
+import models.orm.finders.{ DocumentSetFinder, DocumentSetUserFinder, DocumentSetCreationJobFinder }
 import models.orm.UserRole
 import models.orm.UserRole._
 import org.overviewproject.postgres.SquerylEntrypoint._
@@ -60,6 +60,9 @@ trait OverviewUser {
 
   /** @return True if the user owns the DocumentSet that owns the Tree */
   def isAllowedTree(treeId: Long): Boolean
+
+  /** @return True iff the user owns the DocumentSetCreationJob */
+  def isAllowedJob(jobId: Long) : Boolean
   
   /** @return True if the user has permission to administer the website */
   def isAdministrator: Boolean
@@ -272,7 +275,13 @@ object OverviewUser {
       
       tree.map {t => ownsDocumentSet(t.documentSetId) } getOrElse(false)
     }
-    
+
+    def isAllowedJob(jobId: Long): Boolean = {
+      DocumentSetCreationJobFinder.byDocumentSetCreationJob(jobId).headOption
+        .flatMap((job) => DocumentSetUserFinder.byDocumentSetAndUserAndRole(job.documentSetId, email, Ownership.Owner).headOption)
+        .isDefined
+    }
+
     def isAllowedDocument(id: Long) = {
       import models.orm.Schema
       val documentQuery = Schema.documents.where(d => d.id === id)
