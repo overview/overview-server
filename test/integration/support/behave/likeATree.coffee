@@ -56,3 +56,18 @@ module.exports = (opts) ->
           .elementByCss('#tree-app-search input[type=submit]').click()
           .waitForJqueryAjaxComplete() # wait for UI to clear previous search results
           .waitForElementBy({ tag: 'h4', contains: "#{search.nResults} document" }, 20000).should.eventually.exist
+
+  if 'ignoredWords' of opts
+    for word in opts.ignoredWords
+      it "should show ignored word #{word}", ->
+        @userBrowser
+          .elementByCss("li.viz.active a .toggle-popover").click()
+          .elementBy(tag: 'dd', contains: word).should.eventually.exist
+
+  if 'importantWords' of opts
+    for word in opts.importantWords
+      it "should show important word #{word}", ->
+        @userBrowser
+          .elementByCss("li.viz.active a .toggle-popover").click()
+          .elementBy(tag: 'dd', contains: word).should.eventually.exist
+          

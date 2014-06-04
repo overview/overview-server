@@ -3,7 +3,7 @@ shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
 
-#  @userBrowser.waitForWhatever().executeCallback(-> $('.invisible-file-input').css(opacity: 1)).elementByCss('.invisible-file-input').click()
+
 Url =
   index: '/documentsets'
   pdfUpload: '/imports/pdf'
@@ -51,6 +51,8 @@ describe 'PdfUpload', ->
         .chooseFile('PdfUpload/Jules3.pdf')
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
+        .elementBy(tag: 'textarea', name: 'supplied_stop_words', visible: true).type('moose frog')
+        .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('couch face')
         .doImport()
         .sleep(5000) # async requests can time out; this won't
         .waitForJobsToComplete()
@@ -78,6 +80,8 @@ describe 'PdfUpload', ->
         searches: [
           { query: 'chase', nResults: 4 }
         ]
+        ignoredWords: [ 'moose', 'frog' ]
+        importantWords: [ 'couch', 'face' ]
 
                                                       
 
