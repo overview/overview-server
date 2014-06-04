@@ -12,49 +12,38 @@ describe 'Recluster', ->
     before ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy(tag: 'a', contains: 'New tree').click()
-        .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('New viz')
+        .waitForElementBy(tag: 'a', contains: 'New tree…').click()
+        .waitForElementBy(tag: 'input', name: 'tree_title', visible: true).type('viz1')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForElementBy(tag: 'a', contains: 'New viz').click()
-        .waitForElementByCss('canvas')
+        .waitForElementBy(tag: 'li', class: 'viz', contains: 'viz1', visible: true)
+        .elementBy(tag: 'a', contains: 'viz1').click()
 
-    describe 'in the new tree', ->
-      before ->
-        @userBrowser
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'New viz', visible: true).click()
-
-      shouldBehaveLikeATree
-        documents: [
-          { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
-        ]
-        searches: [
-          { query: 'document', nResults: 4 }
-        ]
+    shouldBehaveLikeATree
+      documents: [
+        { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
+      ]
+      searches: [
+        { query: 'document', nResults: 4 }
+      ]
 
   describe 'when reclustering just a tag', ->
     before ->
       @userBrowser
         .goToFirstDocumentSet()
-        .waitForElementBy(tag: 'a', contains: 'New tree').click()
+        .waitForElementBy(tag: 'a', contains: 'New tree…').click()
         .waitForElementBy(tag: 'option', contains: 'foo').click()
-        .elementBy(tag: 'input', name: 'tree_title', visible: true).type('New tree')
+        .elementBy(tag: 'input', name: 'tree_title', visible: true).type('viz2')
         .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForElementBy(tag: 'a', contains: 'New tree').click()
+        .waitForElementBy(tag: 'li', class: 'viz', contains: 'viz2', visible: true)
+        .elementBy(tag: 'a', contains: 'viz2').click()
         .waitForElementByCss('canvas')
 
-    describe 'in the new tree', ->
-      before ->
-        @userBrowser
-          .get(Url.index)
-          .waitForElementBy(tag: 'a', contains: 'New tree', visible: true).click()
-
-      shouldBehaveLikeATree
-        documents: [
-          { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
-        ]
-        searches: [
-          { query: 'document', nResults: 3 }
-        ]
+    shouldBehaveLikeATree
+      documents: [
+        { type: 'text', title: 'Fourth', contains: 'This is the fourth document.' }
+      ]
+      searches: [
+        { query: 'document', nResults: 3 }
+      ]
 
   it 'should let us delete a new tree, especially in these tests'
