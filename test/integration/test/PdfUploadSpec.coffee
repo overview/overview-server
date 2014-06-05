@@ -1,4 +1,4 @@
-asUser = require('../support/asUser')
+asUserUploadingPdfDocuments = require('../support/asUserUploadingPdfDocuments')
 shouldBehaveLikeATree = require('../support/behave/likeATree')
 testMethods = require('../support/testMethods')
 wd = require('wd')
@@ -9,23 +9,10 @@ Url =
   pdfUpload: '/imports/pdf'
 
 describe 'PdfUpload', ->
+
+  asUserUploadingPdfDocuments('PdfUpload')
+
   testMethods.usingPromiseChainMethods
-    openPdfUploadPage: ->
-      @
-        .get(Url.pdfUpload)
-        .waitForJqueryReady()
-
-    chooseFile: (path) ->
-      fullPath = "#{__dirname}/../files/#{path}"
-      @
-        .executeFunction(-> $('.invisible-file-input').css(opacity: 1))
-        .elementByCss('.invisible-file-input').sendKeys(fullPath)
-
-    doImport: ->
-      @
-        .elementBy(tag: 'button', contains: 'Import documents').click()
-        .waitForUrl(Url.index, 10000)
-
     waitForJobsToComplete: ->
       @
         .sleep(5000) # async requests can time out; this won't
@@ -43,7 +30,6 @@ describe 'PdfUpload', ->
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: name, visible: true).click()
       
-  asUser.usingTemporaryUser(title: 'PdfUpload')
 
   describe 'after uploading pdfs', ->
     before ->
@@ -75,6 +61,7 @@ describe 'PdfUpload', ->
     describe 'in the default tree', ->
       before ->
         @userBrowser
+          .openPdfUploadPage()
           .get(Url.index)
           .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
 
@@ -150,6 +137,5 @@ describe 'PdfUpload', ->
       @userBrowser
         .deleteTopUpload()
                                                       
-
 
   
