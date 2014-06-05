@@ -75,10 +75,11 @@ object DocumentSetCreationJobFinder extends Finder {
     def withDocumentSetsAndOwners: FinderResult[(DocumentSetCreationJob, DocumentSet, User)] = {
       join(toQuery, Schema.documentSets, Schema.documentSetUsers, Schema.users)((dscj, ds, dsu, u) =>
         select(dscj, ds, u)
-          on (
-            dscj.documentSetId === ds.id,
-            ds.id === dsu.documentSetId and dsu.role === Ownership.Owner,
-            dsu.userEmail === u.email))
+        orderBy (dscj.id desc)
+        on (
+          dscj.documentSetId === ds.id,
+          ds.id === dsu.documentSetId and dsu.role === Ownership.Owner,
+          dsu.userEmail === u.email))
     }
   }
 
@@ -135,7 +136,7 @@ object DocumentSetCreationJobFinder extends Finder {
    */
   def all: DocumentSetCreationJobFinderResult = {
     from(Schema.documentSetCreationJobs)(dscj =>
-      select(dscj)
-        orderBy (dscj.id desc))
+      select(dscj))
+
   }
 }
