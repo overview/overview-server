@@ -49,7 +49,7 @@ describe 'PdfUpload', ->
         .chooseFile('PdfUpload/Jules1.pdf')
         .chooseFile('PdfUpload/Jules2.pdf')
         .chooseFile('PdfUpload/Jules3.pdf')
-        .elementBy(tag: 'button', contains: 'Done adding files').click()
+        .elementBy(tag: 'button', contains: 'Done adding files', visible: true).click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .elementBy(tag: 'textarea', name: 'supplied_stop_words', visible: true).type('moose frog')
         .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('couch face')
@@ -83,7 +83,7 @@ describe 'PdfUpload', ->
         ignoredWords: [ 'moose', 'frog' ]
         importantWords: [ 'couch', 'face' ]
 
-  describe 'after uploading a pdf with page splitting', ->
+  describe 'after uploading one pdf', ->
     before ->
       @userBrowser
         .openPdfUploadPage()
@@ -95,12 +95,7 @@ describe 'PdfUpload', ->
         .waitForJobsToComplete()
         .get(Url.index)
         .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
-
-
-    after ->
-      @userBrowser
-        .deleteTopUpload()
-
+  
     shouldBehaveLikeATree
       documents: [
           { type: 'pdf', title: 'Cat1.pdf – page 1' },
@@ -111,6 +106,50 @@ describe 'PdfUpload', ->
         { query: 'face', nResults: 3 }
       ]
 
+    after ->
+      @userBrowser
+        .deleteTopUpload()
+
+  describe 'after uploading three pdfs', ->
+    before ->
+      @userBrowser
+        .openPdfUploadPage()
+        .chooseFile('PdfUpload/Cat1.pdf')
+        .chooseFile('PdfUpload/Cat2.pdf')        
+        .chooseFile('PdfUpload/Cat3.pdf')        
+        .elementBy(tag: 'button', contains: 'Done adding files').click()
+        .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
+        .elementBy(tag: 'input', name: 'split_documents', value: true).click()
+        .sleep(5000)
+        .doImport()
+        .sleep(5000) # async requests can time out; this won't
+        .waitForJobsToComplete()
+        .get(Url.index)
+        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+        
+  
+    shouldBehaveLikeATree
+      documents: [
+          { type: 'pdf', title: 'Cat1.pdf – page 1' },
+          { type: 'pdf', title: 'Cat1.pdf – page 2' },
+          { type: 'pdf', title: 'Cat1.pdf – page 3' }
+          { type: 'pdf', title: 'Cat2.pdf – page 1' },
+          { type: 'pdf', title: 'Cat2.pdf – page 2' },
+          { type: 'pdf', title: 'Cat2.pdf – page 3' },
+          { type: 'pdf', title: 'Cat2.pdf – page 4' },
+          { type: 'pdf', title: 'Cat3.pdf – page 1' },
+          { type: 'pdf', title: 'Cat3.pdf – page 2' },
+          { type: 'pdf', title: 'Cat3.pdf – page 3' },
+          { type: 'pdf', title: 'Cat3.pdf – page 4' }
+      ]
+      searches: [
+        { query: 'burrow', nResults: 9 }
+      ]
+      
+
+    after ->
+      @userBrowser
+        .deleteTopUpload()
                                                       
 
 
