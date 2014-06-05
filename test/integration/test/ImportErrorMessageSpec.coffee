@@ -37,8 +37,8 @@ describe 'ImportError', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy({tag: 'h2', contains: 'Pdf Upload'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Need at least 2 documents'}).should.eventually.exist
+        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}, 10000).should.eventually.exist
+        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Need at least 2 documents'}, 10000).should.eventually.exist
         
 
   describe 'after entering a bad regex in Important Words', ->
@@ -59,8 +59,8 @@ describe 'ImportError', ->
       @userBrowser
         .get(Url.index)
         .waitForElementBy({tag: 'h2', contains: 'Pdf Upload'}, 10000).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}).should.eventually.exist
-        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Invalid pattern in Important Words'}).should.eventually.exist
+        .waitForElementBy({tag: 'span', class: 'state', contains: 'stalled'}, 10000).should.eventually.exist
+        .waitForElementBy({tag: 'span', class: 'state-description', contains: 'Invalid pattern in Important Words'}, 10000).should.eventually.exist
         
 
 
