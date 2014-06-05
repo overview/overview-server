@@ -28,6 +28,7 @@ describe 'PdfUpload', ->
 
     waitForJobsToComplete: ->
       @
+        .sleep(5000) # async requests can time out; this won't
         .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
 
     deleteTopUpload: ->
@@ -36,6 +37,12 @@ describe 'PdfUpload', ->
         .acceptingNextAlert()
         .elementBy(tag: 'input', class: 'btn-danger', value: 'Delete').click()
 
+    loadImportedTree: (name) ->
+      @
+        .waitForJobsToComplete()
+        .get(Url.index)
+        .waitForElementBy(tag: 'a', contains: name, visible: true).click()
+      
   asUser.usingTemporaryUser(title: 'PdfUpload')
 
   describe 'after uploading pdfs', ->
@@ -54,7 +61,6 @@ describe 'PdfUpload', ->
         .elementBy(tag: 'textarea', name: 'supplied_stop_words', visible: true).type('moose frog')
         .elementBy(tag: 'textarea', name: 'important_words', visible: true).type('couch face')
         .doImport()
-        .sleep(5000) # async requests can time out; this won't
         .waitForJobsToComplete()
 
     after ->
@@ -91,11 +97,8 @@ describe 'PdfUpload', ->
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .doImport()
-        .sleep(5000) # async requests can time out; this won't
-        .waitForJobsToComplete()
-        .get(Url.index)
-        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
-  
+        .loadImportedTree('Pdf Upload')
+        
     shouldBehaveLikeATree
       documents: [
           { type: 'pdf', title: 'Cat1.pdf – page 1' },
@@ -120,12 +123,8 @@ describe 'PdfUpload', ->
         .elementBy(tag: 'button', contains: 'Done adding files').click()
         .waitForElementBy(tag: 'input', name: 'name', visible: true).type('Pdf Upload')
         .elementBy(tag: 'input', name: 'split_documents', value: true).click()
-        .sleep(5000)
         .doImport()
-        .sleep(5000) # async requests can time out; this won't
-        .waitForJobsToComplete()
-        .get(Url.index)
-        .waitForElementBy(tag: 'a', contains: 'Pdf Upload', visible: true).click()
+        .loadImportedTree('Pdf Upload')
         
   
     shouldBehaveLikeATree
