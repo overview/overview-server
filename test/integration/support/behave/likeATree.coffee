@@ -30,7 +30,7 @@ module.exports = (opts) ->
 
   if 'documents' of opts
     for document in opts.documents
-      it "should show a #{document.type} document", ->
+      it "should show a #{document.type} document with title #{document.title}", ->
         extra = =>
           switch document.type
             when 'text'
