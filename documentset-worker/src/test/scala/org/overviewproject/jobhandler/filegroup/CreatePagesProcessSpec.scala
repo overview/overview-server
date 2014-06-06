@@ -17,8 +17,22 @@ class CreatePagesProcessSpec extends Specification with Mockito {
 
       createPagesProcess.executeTask(documentSetId, fileGroupId, uploadedFileId) must not(throwA[Exception])
 
-      there was one(createPagesProcess.mockStorage).saveProcessingError(documentSetId, uploadedFileId, exceptionMessage) 
-      
+      there was one(createPagesProcess.mockStorage).saveProcessingError(documentSetId, uploadedFileId, exceptionMessage)
+
+    }
+
+    "insert generic error message if exception provides none" in {
+      val documentSetId = 1l
+      val fileGroupId = 10l
+      val uploadedFileId = 15l
+
+      val exceptionMessage = null
+      val createPagesProcess = new TestCreatePagesProcess(exceptionMessage)
+
+      createPagesProcess.executeTask(documentSetId, fileGroupId, uploadedFileId) must not(throwA[Exception])
+
+      there was one(createPagesProcess.mockStorage).saveProcessingError(documentSetId, uploadedFileId, "Unknown error")
+
     }
 
     class TestCreatePagesProcess(exceptionMessage: String) extends CreatePagesProcess {
@@ -29,11 +43,12 @@ class CreatePagesProcessSpec extends Specification with Mockito {
       storage.loadUploadedFile(any) throws new RuntimeException(exceptionMessage)
 
       def mockStorage = storage
-      
+
       def executeTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): Unit = {
         startCreatePagesTask(documentSetId, fileGroupId, uploadedFileId).execute
       }
     }
+
   }
 
 }

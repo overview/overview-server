@@ -34,10 +34,14 @@ trait CreatePagesProcess {
   }
 
   protected trait ErrorSavingTaskStep extends FileGroupTaskStep { 
+    private val UnknownError = "Unknown error"
+      
     protected val taskInformation: TaskInformation
     
 	override def execute: FileGroupTaskStep = handling(classOf[Exception]) by { e =>
-	  storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, e.getMessage)
+	  val errorMessage = Option(e.getMessage).getOrElse(UnknownError) 
+
+	  storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
 	  CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
 	} apply executeTaskStep
 	
