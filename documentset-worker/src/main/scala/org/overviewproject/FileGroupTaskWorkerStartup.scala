@@ -23,8 +23,11 @@ class TaskWorkerSupervisor(jobQueuePath: String) extends Actor {
 
   private def workerName(n: Int): String = s"TaskWorker-$n"
 
+  override def preStart = taskWorkers.foreach(context.watch) 
+    
   override def supervisorStrategy = OneForOneStrategy(0, Duration.Inf) {
-    case _ => Restart
+    case _: Exception => Restart
+    case _ => Escalate
   }
 
   def receive = {
