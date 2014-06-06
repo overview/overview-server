@@ -68,6 +68,23 @@ class FileGroupTaskWorkerSpec extends Specification {
       taskWasCancelled
     }
 
+    "ignore TaskAvailable message when not Ready" in new GatedTaskWorkerContext {
+      import GatedTaskWorkerProtocol._
+
+      createWorker
+      createJobQueue.handingOutTask(CreatePagesTask(documentSetId, fileGroupId, uploadedFileId))
+
+      jobQueueProbe.expectInitialReadyForTask
+
+      worker ! TaskAvailable
+      worker ! CancelYourself
+      
+      worker ! CompleteTaskStep
+
+      jobQueueProbe.expectMsg(CreatePagesTaskDone(documentSetId, fileGroupId, uploadedFileId))
+      
+    }
+    
     "delete a file upload job" in new RunningTaskWorkerContext {
       createJobQueue.handingOutTask(DeleteFileUploadJob(documentSetId, fileGroupId))
 

@@ -119,6 +119,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
       stay
     }
     case Event(CancelTask, _) => goto(Cancelled)
+    case Event(TaskAvailable, _) => stay    
   }
 
   when(Cancelled) {
@@ -129,6 +130,7 @@ trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
 
       goto(Ready) using JobQueue(jobQueue)
     }
+    case Event(TaskAvailable, _) => stay        
   }
 
   private def lookForJobQueue = jobQueueSelection ! Identify(JobQueueId)
