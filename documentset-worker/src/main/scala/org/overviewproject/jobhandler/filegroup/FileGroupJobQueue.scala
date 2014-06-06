@@ -80,7 +80,7 @@ trait FileGroupJobQueue extends Actor {
       }
     }
     case ReadyForTask => {
-      if (!taskQueue.isEmpty) {
+      if (workerIsFree(sender) && !taskQueue.isEmpty) {
         taskQueue.dequeue match {
           case task @ CreatePagesTask(documentSetId, fileGroupId, uploadedFileId) => {
             Logger.info(s"($documentSetId:$fileGroupId) Sending task $uploadedFileId to ${sender.path.toString}")
@@ -132,6 +132,8 @@ trait FileGroupJobQueue extends Actor {
 
   }
 
+  private def workerIsFree(worker: ActorRef): Boolean = busyWorkers.get(worker).isEmpty
+  
   private def isNewRequest(documentSetId: Long): Boolean = !jobRequests.contains(documentSetId)
 
   private def uploadedFilesInFileGroup(fileGroupId: Long): Set[Long] = storage.uploadedFileIds(fileGroupId)

@@ -129,6 +129,18 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       
       expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
+    
+    "don't send tasks to busy workers even if they ask for them" in new JobQueueContext {
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      
+      submitJob
+      worker.expectATask
+      
+      submitJob
+      fileGroupJobQueue.tell(ReadyForTask, worker.ref)
+
+      worker.expectNoMsg(200 millis)
+    }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
       protected val documentSetId = 1l
