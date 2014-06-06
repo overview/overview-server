@@ -8,6 +8,7 @@ import org.overviewproject.database.orm.finders.GroupedFileUploadFinder
 import akka.actor.Props
 import org.overviewproject.util.Logger
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import akka.actor.Terminated
 
 object FileGroupJobQueueProtocol {
   case class CreateDocumentsFromFileGroup(documentSetId: Long, fileGroupId: Long)
@@ -62,6 +63,7 @@ trait FileGroupJobQueue extends Actor {
   def receive = {
     case RegisterWorker(worker) => {
       Logger.info(s"Registering worker ${worker.path.toString}")
+      context.watch(worker)
       workerPool += worker
       if (!taskQueue.isEmpty) worker ! TaskAvailable
 
@@ -76,7 +78,7 @@ trait FileGroupJobQueue extends Actor {
         addNewTasksToQueue(documentSetId, fileGroupId, fileIds)
         jobRequests += (documentSetId -> JobRequest(sender))
 
-        workerPool.map(_ ! TaskAvailable)
+        notifyWorkers
       }
     }
     case ReadyForTask => {
@@ -119,7 +121,7 @@ trait FileGroupJobQueue extends Actor {
       taskQueue += DeleteFileUploadJob(documentSetId, fileGroupId)
       jobRequests += (documentSetId -> JobRequest(sender))
 
-      workerPool.map(_ ! TaskAvailable)
+      notifyWorkers
     }
     case DeleteFileUploadJobDone(documentSetId, fileGroupId) => {
       Logger.info(s"($documentSetId:$fileGroupId) Deleted upload job")
@@ -129,8 +131,20 @@ trait FileGroupJobQueue extends Actor {
         jobRequests -= documentSetId
       }
     }
+    case Terminated(worker) => {
+      Logger.info("Removing ${worker.path.toString} from worker pool")
+      workerPool -= worker
+      busyWorkers.get(worker).map { task => 
+        busyWorkers -= worker
+        taskQueue += task
+      }
+      
+      notifyWorkers
+    }
 
   }
+  
+  private def notifyWorkers: Unit = workerPool.filter(workerIsFree).map { _ ! TaskAvailable }
 
   private def workerIsFree(worker: ActorRef): Boolean = busyWorkers.get(worker).isEmpty
   

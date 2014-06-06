@@ -11,6 +11,10 @@ import org.specs2.time.NoTimeConversions
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
+import akka.actor.Terminated
+import akka.actor.PoisonPill
+import akka.actor.Actor
+import akka.actor.Props
 
 class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
@@ -19,7 +23,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     "notify registered workers when tasks becomes available" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
-      submitJob
+      submitJob(documentSetId)
 
       worker.expectMsg(TaskAvailable)
     }
@@ -28,13 +32,13 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       val workers = createNWorkers(numberOfUploadedFiles)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
-      submitJob
+      submitJob(documentSetId)
       val receivedTasks = expectTasks(workers)
       mustMatchUploadedFileIds(receivedTasks, uploadedFileIds)
     }
 
     "notify worker if tasks are available when it registers" in new JobQueueContext {
-      submitJob
+      submitJob(documentSetId)
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
       worker.expectMsg(TaskAvailable)
@@ -49,7 +53,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
     "notify requester when all tasks for a fileGroupId are complete" in new JobQueueContext {
       ActAsImmediateJobCompleter(worker)
-      submitJob
+      submitJob(documentSetId)
 
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
@@ -59,10 +63,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     "ignore a second job for the same fileGroup" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
 
-      submitJob
+      submitJob(documentSetId)
       worker.expectMsg(TaskAvailable)
 
-      submitJob
+      submitJob(documentSetId)
       worker.expectNoMsg(500 millis)
 
     }
@@ -70,7 +74,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
     "report progress" in new JobQueueContext {
       ActAsImmediateJobCompleter(worker)
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      submitJob
+      submitJob(documentSetId)
 
       progressReporter.expectMsg(StartJob(documentSetId, numberOfUploadedFiles))
       val progressMessages = progressReporter.receiveN(2 * numberOfUploadedFiles)
@@ -87,7 +91,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       val workers = createNWorkers(numberOfUploadedFiles / 2)
       workers.foreach(w => fileGroupJobQueue ! RegisterWorker(w.ref))
 
-      submitJob
+      submitJob(documentSetId)
       val receivedTasks = expectTasks(workers)
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
@@ -96,11 +100,11 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       workers.head.expectNoTaskAvailable(fileGroupJobQueue)
     }
-    
+
     "notify requester when cancellation is complete" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
-      
-      submitJob
+
+      submitJob(documentSetId)
       val task = worker.expectATask
 
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
@@ -115,31 +119,54 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
 
       worker.expectDeleteFileUploadJob
     }
-    
+
     "notify requester when file upload is deleted" in new JobQueueContext {
       fileGroupJobQueue ! DeleteFileUpload(documentSetId, fileGroupId)
       fileGroupJobQueue ! DeleteFileUploadJobDone(documentSetId, fileGroupId)
-      
+
       expectMsg(FileUploadDeleted(documentSetId, fileGroupId))
     }
-    
+
     "respond immediately when asked to cancel unknown job" in new JobQueueContext {
-      
+
       fileGroupJobQueue ! CancelFileUpload(documentSetId, fileGroupId)
-      
+
       expectMsg(FileGroupDocumentsCreated(documentSetId))
     }
     
-    "don't send tasks to busy workers even if they ask for them" in new JobQueueContext {
+    
+    "don't notify busy workers" in new JobQueueContext {
       fileGroupJobQueue ! RegisterWorker(worker.ref)
       
-      submitJob
+      submitJob(documentSetId)
       worker.expectATask
       
-      submitJob
+      submitJob(documentSetId + 1)
+      worker.expectNoMsg(200 millis)
+    }
+
+    "don't send tasks to busy workers even if they ask for them" in new JobQueueContext {
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+
+      submitJob(documentSetId)
+      worker.expectATask
+
+      submitJob(documentSetId + 1)
       fileGroupJobQueue.tell(ReadyForTask, worker.ref)
 
       worker.expectNoMsg(200 millis)
+    }
+
+    "reschedule an in progress task if worker terminates" in new SingleTaskContext {
+      val failingWorker = system.actorOf(Props[DummyTaskWorker])
+      fileGroupJobQueue ! RegisterWorker(failingWorker)
+
+      submitJob(documentSetId)
+      
+      fileGroupJobQueue ! RegisterWorker(worker.ref)
+      
+      system.stop(failingWorker)
+      worker.expectMsg(TaskAvailable)
     }
 
     abstract class JobQueueContext extends ActorSystemContext with Before {
@@ -161,7 +188,7 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       protected def createNWorkers(numberOfWorkers: Int): Seq[WorkerTestProbe] =
         Seq.fill(numberOfWorkers)(new WorkerTestProbe(documentSetId, fileGroupId, system))
 
-      protected def submitJob =
+      protected def submitJob(documentSetId: Long = documentSetId) =
         fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
 
       protected def expectTasks(workers: Seq[WorkerTestProbe]) = workers.map { _.expectATask }
@@ -171,6 +198,10 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
         tasks.map(_.uploadedFileId) must containTheSameElementsAs(uploadedFileIds)
     }
 
+    abstract class SingleTaskContext extends JobQueueContext {
+      override protected val uploadedFileIds: Seq[Long] = Seq(1)  
+    }
+    
     class WorkerTestProbe(documentSetId: Long, fileGroupId: Long, actorSystem: ActorSystem) extends TestProbe(actorSystem) {
 
       def expectATask = {
@@ -217,4 +248,12 @@ class FileGroupJobQueueSpec extends Specification with NoTimeConversions {
       }
     }
   }
+}
+
+class DummyTaskWorker extends Actor {
+
+  def receive = {
+    case TaskAvailable => sender ! ReadyForTask
+  }
+
 }
