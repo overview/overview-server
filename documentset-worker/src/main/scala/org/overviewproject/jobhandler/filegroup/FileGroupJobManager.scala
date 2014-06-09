@@ -44,17 +44,14 @@ trait FileGroupJobManager extends Actor {
   trait Storage {
     def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
     def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
-    def updateJobState(documentSetId: Long,  jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob]
+    def updateJobState(documentSetId: Long, jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob]
     def increaseRetryAttempts(job: DocumentSetCreationJob): Unit
   }
 
   override def preStart(): Unit = {
     storage.findValidInProgressUploadJobs.foreach { j =>
-      if (j.retryAttempts < MaxRetryAttempts) {
-        storage.increaseRetryAttempts(j)
-        queueJob(j.documentSetId, j.fileGroupId.get)
-      }
-      else storage.updateJobState(j.documentSetId, Error)
+      if (j.retryAttempts < MaxRetryAttempts) retryJob(j)
+      else failJob(j)
     }
     storage.findValidCancelledUploadJobs.foreach { j =>
       cancelJob(j.documentSetId, j.fileGroupId.get)
@@ -83,6 +80,13 @@ trait FileGroupJobManager extends Actor {
       cancelJob(documentSetId, fileGroupId)
 
   }
+
+  private def retryJob(job: DocumentSetCreationJob): Unit = {
+    storage.increaseRetryAttempts(job)
+    queueJob(job.documentSetId, job.fileGroupId.get)
+  }
+  
+  private def failJob(job: DocumentSetCreationJob): Unit = storage.updateJobState(job.documentSetId, Error)
 
   private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
     fileGroupJobQueue ! CreateDocumentsFromFileGroup(documentSetId, fileGroupId)
@@ -117,7 +121,7 @@ class FileGroupJobManagerImpl(
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = jobState))
       }
     }
-    
+
     override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = Database.inTransaction {
       DocumentSetCreationJobStore.insertOrUpdate(job.copy(retryAttempts = job.retryAttempts + 1))
     }
