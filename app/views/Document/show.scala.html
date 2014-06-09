@@ -141,7 +141,7 @@
         window.messages = @Html(views.JsMessages(jsMessageKeys));
         window.documentViewerStartDocument = @Html(views.json.Document.show(document).toString);
       </script>
-      @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/Document/show").url)
+      @requireJsBundle("Document/show")
     </body>
   </html>
 }

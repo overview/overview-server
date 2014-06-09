@@ -1,6 +1,6 @@
 package views.html.helper
 
-import play.api.templates.Html
+import play.twirl.api.Html
 
 import org.overviewproject.tree.orm.finders.ResultPageDetails
 

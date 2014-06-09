@@ -11,7 +11,6 @@ before_install:
   - time sudo apt-get update -qq
   - time ./auto/setup-coffee-tests.sh
   - time ./auto/setup-integration-tests.sh
-  - time npm install
 install:
   - time sudo apt-get install -qq postgresql openjdk-7-jdk
 before_script:

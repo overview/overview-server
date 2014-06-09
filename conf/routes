@@ -100,10 +100,6 @@ GET    /public-document-sets                     controllers.PublicDocumentSetCo
 # Routes for shared document sets
 GET    /shared-document-sets                     controllers.SharedDocumentSetController.index()
 
-# Routes for browsers that dont' support CORS
-# really GET, but with hidden password
-POST   /documentcloud-proxy/projects.json controllers.DocumentCloudProxyController.projects()
-
 # Admin section
 GET    /admin/users        controllers.admin.UserController.index()
 POST   /admin/users        controllers.admin.UserController.create()

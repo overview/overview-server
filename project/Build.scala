@@ -1,14 +1,25 @@
 import sbt._
-import Keys._
-import play.Project._
+import sbt.Keys._
+import play.Play.autoImport._
+import com.typesafe.sbt.rjs.SbtRjs.autoImport._
+import com.typesafe.sbt.digest.SbtDigest.autoImport._
+import com.typesafe.sbt.gzip.SbtGzip.autoImport._
+import com.typesafe.sbt.coffeescript.SbtCoffeeScript.autoImport._
+import com.typesafe.sbt.jse.SbtJsEngine.autoImport._
+import com.typesafe.sbt.less.SbtLess.autoImport._
+import com.typesafe.sbt.web.SbtWeb.autoImport._
+import com.typesafe.sbt.web.SbtWeb
+import PlayKeys._
 import com.typesafe.sbt.SbtNativePackager.packageArchetype
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
+import play.twirl.sbt.Import._
 
 object ApplicationBuild extends Build with ProjectSettings {
   override def settings = super.settings ++ Seq(
     EclipseKeys.skipParents in ThisBuild := false,
     scalaVersion := ourScalaVersion,
-    resolvers ++= ourResolvers)
+    resolvers ++= ourResolvers
+  )
 
   val allJavaOpts = Seq("-Duser.timezone=UTC")
 
@@ -32,16 +43,16 @@ object ApplicationBuild extends Build with ProjectSettings {
     Tests.Setup { () =>
       System.setProperty("datasource.default.url", testDatabaseUrl)
       System.setProperty("logback.configurationFile", "logback-test.xml")
-    }/*,
-    Tests.Setup(loader => ClearTestDatabase(loader))*/)
+    }
+  )
 
   val printClasspathTask = TaskKey[Unit]("print-classpath")
   val printClasspath = printClasspathTask <<= (fullClasspath in Runtime) map { classpath =>
     println(classpath.map(_.data).mkString(":"))
   }
 
-  val messageBroker = Project("message-broker", file("message-broker"),
-                              settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+  val messageBroker = Project("message-broker", file("message-broker"))
+    .settings(Defaults.coreDefaultSettings: _*)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
@@ -49,8 +60,8 @@ object ApplicationBuild extends Build with ProjectSettings {
       printClasspath
     )
 
-  val searchIndex = Project("search-index", file("search-index"),
-                            settings = Defaults.defaultSettings ++ OverviewCommands.defaultSettings)
+  val searchIndex = Project("search-index", file("search-index"))
+    .settings(Defaults.coreDefaultSettings: _*)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
@@ -69,19 +80,16 @@ object ApplicationBuild extends Build with ProjectSettings {
       printClasspath
     )
 
-  val runner = Project(
-      "runner",
-      file("runner"),
-      settings = Defaults.defaultSettings)
+  val runner = Project("runner", file("runner"))
+    .settings(Defaults.coreDefaultSettings: _*)
+    .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(libraryDependencies ++= runnerDependencies)
     .settings(scalacOptions ++= ourScalacOptions)
     .settings(parallelExecution in Test := false) // Scallop has icky races. There may be occasional errors with this option, but far fewer than without
 
-  val dbEvolutionApplier = (Project(
-      "db-evolution-applier",
-      file("db-evolution-applier"),
-      settings = Defaults.defaultSettings)
+  val dbEvolutionApplier = Project("db-evolution-applier", file("db-evolution-applier"))
+    .settings(Defaults.coreDefaultSettings: _*)
     .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
     .settings(packageArchetype.java_application: _*)
     .settings(
@@ -92,26 +100,24 @@ object ApplicationBuild extends Build with ProjectSettings {
         evolutions pair relativeTo(base / ".." / "conf")
       }
     )
-  )
 
   // Create a subProject with our common settings
-  object OverviewProject extends OverviewCommands with OverviewKeys {
+  object OverviewProject {
     def apply(name: String, dependencies: Seq[ModuleID],
               useSharedConfig: Boolean = true,
               theTestOptions: Seq[TestOption] = ourTestOptions) = {
-      Project(name, file(name), settings =
-        Defaults.defaultSettings ++
-          defaultSettings ++
-          Seq(printClasspath) ++
-          addUnmanagedResourceDirectory(useSharedConfig) ++
-          Seq(
-            libraryDependencies ++= dependencies,
-            testOptions in Test ++= theTestOptions,
-            scalacOptions ++= ourScalacOptions,
-            logBuffered := false,
-            parallelExecution in Test := false,
-            sources in doc in Compile := List(),
-            printClasspath))
+      Project(name, file(name))
+        .settings(Defaults.coreDefaultSettings: _*)
+        .settings(addUnmanagedResourceDirectory(useSharedConfig): _*)
+        .settings(
+          libraryDependencies ++= dependencies,
+          testOptions in Test ++= theTestOptions,
+          scalacOptions ++= ourScalacOptions,
+          logBuffered := false,
+          parallelExecution in Test := false,
+          sources in doc in Compile := List(),
+          printClasspath
+        )
     }
 
     // don't clean the database if it isn't being used in tests
@@ -158,33 +164,31 @@ object ApplicationBuild extends Build with ProjectSettings {
     .dependsOn(commonTest % "test")
 
   val main = (
-    play.Project(appName, appVersion, serverProjectDependencies)
+    Project(appName, file("."))
+      .enablePlugins(play.PlayScala)
+      .enablePlugins(SbtWeb)
       .settings(resolvers += "t2v.jp repo" at "http://www.t2v.jp/maven-repo/")
       .settings(net.virtualvoid.sbt.graph.Plugin.graphSettings: _*)
       .settings(
+        version := appVersion,
+        libraryDependencies ++= serverProjectDependencies,
         scalacOptions ++= ourScalacOptions,
-        templatesImport += "views.Magic._",
+        TwirlKeys.templateImports += "views.Magic._",
         routesImport += "extensions.Binders._",
-        requireJs ++= Seq(
-          "bundle/admin/ImportJob/index.js",
-          "bundle/admin/User/index.js",
-          "bundle/CsvUpload/new.js",
-          "bundle/DocumentCloudImportJob/new.js",
-          "bundle/DocumentCloudProject/index.js",
-          "bundle/DocumentSet/index.js",
-          "bundle/DocumentSet/show.js",
-          "bundle/Document/show.js",
-          "bundle/PdfUpload/new.js",
-          "bundle/PublicDocumentSet/index.js",
-          "bundle/SharedDocumentSet/index.js",
-          "bundle/Welcome/show.js"
+        RjsKeys.modules := Seq(
+          WebJs.JS.Object("name" -> "bundle/admin/ImportJob/index"),
+          WebJs.JS.Object("name" -> "bundle/admin/User/index"),
+          WebJs.JS.Object("name" -> "bundle/CsvUpload/new"),
+          WebJs.JS.Object("name" -> "bundle/DocumentCloudImportJob/new"),
+          WebJs.JS.Object("name" -> "bundle/DocumentCloudProject/index"),
+          WebJs.JS.Object("name" -> "bundle/DocumentSet/index"),
+          WebJs.JS.Object("name" -> "bundle/DocumentSet/show"),
+          WebJs.JS.Object("name" -> "bundle/Document/show"),
+          WebJs.JS.Object("name" -> "bundle/PdfUpload/new"),
+          WebJs.JS.Object("name" -> "bundle/PublicDocumentSet/index"),
+          WebJs.JS.Object("name" -> "bundle/SharedDocumentSet/index"),
+          WebJs.JS.Object("name" -> "bundle/Welcome/show")
         ),
-        // It's JSON injection! Ha!
-        // This will break when we upgrade to Play 2.3. Then again, we'll have
-        // much more flexibility once we do, so we can probably set
-        // skipDirOptimize more nicely. Or maybe we won't need to because Play
-        // might not put all those useless files in the output directory?
-        requireJsShim += """main.js", "skipDirOptimize": true, "finishJsonInjection": " """,
         aggregate in Compile := true,
         parallelExecution in IntegrationTest := false,
         javaOptions in run ++= allJavaOpts,
@@ -192,7 +196,8 @@ object ApplicationBuild extends Build with ProjectSettings {
           "-Dconfig.file=conf/application-test.conf",
           "-Dlogger.resource=logback-test.xml",
           "-Ddb.default.url=" + testDatabaseUrl,
-          "-XX:MaxPermSize=256m"),
+          "-XX:MaxPermSize=256m"
+        ),
         Keys.fork in Test := true,
         aggregate in Test := false,
         testOptions in Test ++= ourTestOptions,
@@ -200,23 +205,9 @@ object ApplicationBuild extends Build with ProjectSettings {
         sources in doc in Compile := List(),
         printClasspath,
         aggregate in printClasspathTask := false,
-        // Use native RequireJS (at Play's version -- see package.json) if it exists
-        // Enable this huge speedup by running "npm install" in the base directory
-        requireNativePath <<= baseDirectory(_ / "node_modules" / "requirejs" / "bin" / "r.js")
-          .apply( (tryPath) =>
-            if (FileInfo.exists(tryPath).exists) {
-              Some(tryPath.toString)
-            } else {
-              None
-            }
-          )
-      )
-      .settings(
-        if (scala.util.Properties.envOrElse("COMPILE_LESS", "true") == "false") {
-          play.Keys.lessEntryPoints := Nil
-        } else {
-          play.Keys.lessEntryPoints <<= baseDirectory(_ / "app" / "assets" / "stylesheets" / "main.less")
-        }
+        includeFilter in (Assets, LessKeys.less) := "main.less",
+        includeFilter in (TestAssets, CoffeeScriptKeys.coffeescript) := "",
+        pipelineStages := Seq(rjs, digest, gzip)
       )
       .dependsOn(common)
       .dependsOn(commonTest % "test")

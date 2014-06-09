@@ -1,7 +1,7 @@
 package controllers.auth
 
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{BodyParser,SimpleResult}
+import play.api.mvc.{BodyParser,Result}
 import play.api.mvc.BodyParsers.parse
 import play.api.Play
 import scala.concurrent.Future

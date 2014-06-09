@@ -6,7 +6,7 @@ import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ RequestHeader, SimpleResult }
+import play.api.mvc.{ RequestHeader, Result }
 import play.api.Play.{ start, stop }
 import play.api.test.{ FakeApplication, FakeHeaders, FakeRequest }
 import play.api.test.Helpers._
@@ -25,7 +25,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
 
   class TestMassUploadController extends MassUploadController {
     // We can leave this undefined, since it will not be called.
-    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] =
+    override def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
       ???
 
     override val storage = smartMock[Storage]
@@ -59,7 +59,7 @@ class MassUploadControllerSpec extends Specification with Mockito {
       foundUpload map { u => u.fileGroupId returns fileGroupId }
     }
 
-    def executeRequest: Future[SimpleResult]
+    def executeRequest: Future[Result]
 
     lazy val result = executeRequest
   }

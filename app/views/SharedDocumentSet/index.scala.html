@@ -5,7 +5,7 @@
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/SharedDocumentSet/index").url)
+  @requireJsBundle("SharedDocumentSet/index")
 }
 
 @defining(scopedMessages("views.SharedDocumentSet.index")) { m =>

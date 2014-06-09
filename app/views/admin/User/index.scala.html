@@ -5,7 +5,7 @@
 @import models.orm.UserRole
 
 @javascripts = {
-  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/User/index").url)
+  @requireJsBundle("admin/User/index")
 }
 @jsMessageKeys = @{Seq(
   "views.admin.User.index.h1",

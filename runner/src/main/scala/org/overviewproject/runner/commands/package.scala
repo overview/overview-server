@@ -57,7 +57,8 @@ package object commands {
       Seq(
         "-XX:MaxPermSize=512M",
         "-Duser.timezone=UTC",
-        "-Dpidfile.enabled=false"
+        "-Dpidfile.enabled=false",
+        "-Dsbt.jse.engineType=" + scala.sys.props.getOrElse("sbt.jse.engineType", "Trireme")
       ),
       Seq(
         "-jar", sbtLaunchPath,

@@ -4,7 +4,7 @@ import java.util.UUID
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
 import scala.concurrent.Future
 
 import org.overviewproject.tree.{ DocumentSetCreationJobType, Ownership }
@@ -92,7 +92,7 @@ trait UploadController extends Controller {
     fileUploadIteratee(user.id, guid, request)
   }
 
-  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]]
+  protected def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]]
   protected def findUpload(userId: Long, guid: UUID): Option[OverviewUpload]
   protected def deleteUpload(upload: OverviewUpload): Unit
   protected def createDocumentSetCreationJob(upload: OverviewUpload, documentSetLanguage: String, suppliedStopWords: String, importantWords: String): Unit
@@ -103,7 +103,7 @@ trait UploadController extends Controller {
  */
 object UploadController extends UploadController with PgConnection {
 
-  def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] =
+  def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
     FileUploadIteratee.store(userId, guid, requestHeader)
 
   def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = OverviewUpload.find(userId, guid)

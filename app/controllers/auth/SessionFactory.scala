@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.{Date,UUID}
 import play.api.Play
 import play.api.Play.current
-import play.api.mvc.{RequestHeader, SimpleResult}
+import play.api.mvc.{RequestHeader, Result}
 import scala.util.control.Exception.catching
 
 import models.OverviewUser
@@ -36,15 +36,15 @@ trait SessionFactory {
   }
   protected val storage : SessionFactory.Storage
 
-  /** Returns either a SimpleResult (no access) or a (Session,User) (access).
+  /** Returns either a Result (no access) or a (Session,User) (access).
     *
     * See the class documentation for details.
     */
-  def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Either[SimpleResult,(Session,User)] = {
+  def loadAuthorizedSession(request: RequestHeader, authority: Authority) : Either[Result,(Session,User)] = {
     loadMultiUserAuthorizedSession(request, authority)
   }
 
-  private def loadMultiUserAuthorizedSession(request: RequestHeader, authority: Authority) : Either[SimpleResult,(Session,User)] = {
+  private def loadMultiUserAuthorizedSession(request: RequestHeader, authority: Authority) : Either[Result,(Session,User)] = {
     def unauthenticated = AuthResults.authenticationFailed(request)
     def unauthorized = AuthResults.authorizationFailed(request)
 

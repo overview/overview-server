@@ -4,7 +4,7 @@
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/CsvUpload/new").url)
+  @requireJsBundle("CsvUpload/new")
 
   @* Let's hope there is no end-script tag in _supportedLanguages.... *@
   <script>

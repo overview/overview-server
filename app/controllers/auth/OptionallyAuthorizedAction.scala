@@ -1,6 +1,6 @@
 package controllers.auth
 
-import play.api.mvc.{ ActionBuilder, Request, SimpleResult }
+import play.api.mvc.{ ActionBuilder, Request, Result }
 import play.api.Play
 import scala.concurrent.Future
 
@@ -11,7 +11,7 @@ trait OptionallyAuthorizedAction {
 
   def apply(authority: Authority) : ActionBuilder[OptionallyAuthorizedRequest] = {
     new ActionBuilder[OptionallyAuthorizedRequest] {
-      override protected def invokeBlock[A](request: Request[A], block: (OptionallyAuthorizedRequest[A]) => Future[SimpleResult]) : Future[SimpleResult] = {
+      override def invokeBlock[A](request: Request[A], block: (OptionallyAuthorizedRequest[A]) => Future[Result]) : Future[Result] = {
         OverviewDatabase.inTransaction {
           /*
            * We special-case OptionallyAuthorizedRequest[A] to short-circuit

@@ -8,7 +8,7 @@ import org.specs2.specification.{Fragments, Scope, Step}
 import play.api.Play.{start,stop}
 import play.api.i18n.Lang
 import play.api.mvc.Flash
-import play.api.templates.Html
+import play.twirl.api.Html
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 
 import models.OverviewUser

@@ -5,7 +5,7 @@ import scala.concurrent.duration.{Duration, MILLISECONDS}
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.libs.iteratee.Iteratee
-import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, SimpleResult }
+import play.api.mvc.{ BodyParser, Controller, Request, RequestHeader, Result }
 import org.overviewproject.jobs.models.ClusterFileGroup
 import org.overviewproject.tree.Ownership
 import org.overviewproject.tree.orm._
@@ -37,10 +37,10 @@ trait MassUploadController extends Controller {
    * content_range and content_length are provided.
    */
   def show(guid: UUID) = AuthorizedAction(anyUser) { implicit request =>
-    def resultWithHeaders(status: Status, upload: GroupedFileUpload): SimpleResult =
+    def resultWithHeaders(status: Status, upload: GroupedFileUpload): Result =
       status.withHeaders(showRequestHeaders(upload): _*)
 
-    def resultWithContentDisposition(status: SimpleResult, upload: GroupedFileUpload): SimpleResult =
+    def resultWithContentDisposition(status: Result, upload: GroupedFileUpload): Result =
       status.withHeaders((CONTENT_DISPOSITION, upload.contentDisposition))
 
     findUploadInCurrentFileGroup(request.user.email, guid) match {
@@ -70,7 +70,7 @@ trait MassUploadController extends Controller {
   }
 
   // method to create the MassUploadFileIteratee
-  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]]
+  protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]]
 
   /** interface to database related methods */
   val storage: Storage
@@ -138,7 +138,7 @@ trait MassUploadController extends Controller {
   }
 
   private def startClusteringFileGroupWithOptions(userEmail: String,
-                                                  options: (String, String, Boolean, String, String)): SimpleResult = {
+                                                  options: (String, String, Boolean, String, String)): Result = {
     storage.findCurrentFileGroup(userEmail) match {
       case Some(fileGroup) => {
         storage.completeFileGroup(fileGroup)
@@ -156,7 +156,7 @@ trait MassUploadController extends Controller {
     }
   }
 
-  private def uploadRequestFailed(request: Request[GroupedFileUpload]): SimpleResult = {
+  private def uploadRequestFailed(request: Request[GroupedFileUpload]): Result = {
     val upload = request.body
     Logger.info(s"File Upload Bad Request ${upload.id}: ${upload.guid}\n${request.headers}")
 
@@ -185,7 +185,7 @@ trait MassUploadController extends Controller {
 /** Controller implementation */
 object MassUploadController extends MassUploadController {
 
-  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[SimpleResult, GroupedFileUpload]] =
+  override protected def massUploadFileIteratee(userEmail: String, request: RequestHeader, guid: UUID): Iteratee[Array[Byte], Either[Result, GroupedFileUpload]] =
     MassUploadFileIteratee(userEmail, request, guid)
 
   override val storage = new DatabaseStorage

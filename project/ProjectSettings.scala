@@ -1,11 +1,12 @@
 import sbt._
-import play.Keys._
+import play.Play.autoImport._
+import PlayKeys._
 
 trait ProjectSettings {
   val appName     = "overview-server"
   val appVersion    = "1.0-SNAPSHOT"
 
-  val ourScalaVersion = "2.10.3"
+  val ourScalaVersion = "2.10.4"
   val ourScalacOptions = Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.7", "-encoding", "UTF8")
 
   val appDatabaseUrl = "postgres://overview:overview@localhost:9010/overview-dev"
@@ -54,6 +55,7 @@ trait ProjectSettings {
   // Project dependencies
   val serverProjectDependencies = Seq(guavaDep) ++ (Seq(
     jdbc,
+    ws,
     filters,
     openCsvDep,
     "com.typesafe" %% "play-plugins-util" % "2.2.0",

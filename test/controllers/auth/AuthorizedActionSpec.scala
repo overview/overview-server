@@ -2,7 +2,7 @@ package controllers.auth
 
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.mvc.{AnyContent, Request, RequestHeader, Results, SimpleResult}
+import play.api.mvc.{AnyContent, Request, RequestHeader, Results, Result}
 import play.api.test.FakeRequest
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
@@ -17,9 +17,9 @@ class AuthorizedActionSpec extends test.InAppSpecification with Mockito {
     val request: RequestHeader = FakeRequest()
 
     var calledRequest: Option[RequestHeader] = None
-    def block[A](r: AuthorizedRequest[A]) : SimpleResult = {
+    def block[A](r: AuthorizedRequest[A]) : Result = {
       calledRequest = Some(r)
-      mock[SimpleResult]
+      mock[Result]
     }
 
     var loggedActivity: Option[(RequestHeader, Session, User)] = None

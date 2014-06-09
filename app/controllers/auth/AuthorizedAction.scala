@@ -2,7 +2,7 @@ package controllers.auth
 
 import java.util.Date
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{ActionBuilder, RequestHeader, Request, SimpleResult}
+import play.api.mvc.{ActionBuilder, RequestHeader, Request, Result}
 import play.api.Play
 import scala.concurrent.Future
 
@@ -17,7 +17,7 @@ trait AuthorizedAction {
 
   def apply(authority: Authority) : ActionBuilder[AuthorizedRequest] = {
     new ActionBuilder[AuthorizedRequest] {
-      override protected def invokeBlock[A](request: Request[A], block: (AuthorizedRequest[A]) => Future[SimpleResult]) : Future[SimpleResult] = {
+      override def invokeBlock[A](request: Request[A], block: (AuthorizedRequest[A]) => Future[Result]) : Future[Result] = {
         OverviewDatabase.inTransaction {
           /*
            * We special-case AuthorizedRequest[A] to short-circuit auth, so we can

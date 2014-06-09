@@ -4,7 +4,7 @@
 )(implicit lang: Lang, flash: Flash, request: RequestHeader)
 
 @javascripts = {
-  @helper.requireJs(core=routes.Assets.at("javascripts/require.js").url, module=routes.Assets.at("javascripts/bundle/admin/ImportJob/index").url)
+  @requireJsBundle("ImportJob/index")
 }
 
 @defining(scopedMessages("views.admin.ImportJob.index")) { m =>

@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import models.OverviewDatabase
 
 object TransactionAction extends ActionBuilder[Request] {
-  override protected def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[SimpleResult]) : Future[SimpleResult] = {
+  override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) : Future[Result] = {
     OverviewDatabase.inTransaction(block(request))
   }
 }

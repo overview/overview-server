@@ -1,7 +1,7 @@
 package controllers.auth
 
 import java.util.UUID
-import play.api.mvc.{SimpleResult, RequestHeader}
+import play.api.mvc.{Result, RequestHeader}
 import play.api.test.{FakeApplication, FakeRequest}
 import play.api.Play.{start,stop}
 
@@ -43,28 +43,28 @@ class SessionFactorySpec extends Specification with Mockito {
     def sessionIdString = sessionId.toString
     def sessionData : Seq[(String,String)] = Seq(SessionFactory.SessionIdKey -> sessionIdString)
     def request : RequestHeader = FakeRequest().withSession(sessionData: _*)
-    def result : Either[SimpleResult, (Session,User)] = factory.loadAuthorizedSession(request, authority)
+    def result : Either[Result, (Session,User)] = factory.loadAuthorizedSession(request, authority)
   }
 
   "SessionFactory" should {
     "redirect when session is empty" in new BaseScope {
       override def sessionData = Seq()
-      result must beLeft.like({ case r: SimpleResult => r.header.status must beEqualTo(h.SEE_OTHER) })
+      result must beLeft.like({ case r: Result => r.header.status must beEqualTo(h.SEE_OTHER) })
     }
 
     "redirect when session ID is not a UUID" in new BaseScope {
       override def sessionIdString = "32414-adsf"
-      result must beLeft.like({ case r: SimpleResult => r.header.status must beEqualTo(h.SEE_OTHER) })
+      result must beLeft.like({ case r: Result => r.header.status must beEqualTo(h.SEE_OTHER) })
     }
 
     "redirect when the session ID is a UUID that is not found" in new BaseScope {
       override def sessionId = unauthenticatedSession.id
-      result must beLeft.like({ case r: SimpleResult => r.header.status must beEqualTo(h.SEE_OTHER) })
+      result must beLeft.like({ case r: Result => r.header.status must beEqualTo(h.SEE_OTHER) })
     }
 
     "return Forbidden when the user is not authorized" in new BaseScope {
       override def sessionId = authenticatedSession.id
-      result must beLeft.like({ case r: SimpleResult => r.header.status must beEqualTo(h.FORBIDDEN) })
+      result must beLeft.like({ case r: Result => r.header.status must beEqualTo(h.FORBIDDEN) })
       there was one(authority).apply(authenticatedSession.user.get)
     }
 

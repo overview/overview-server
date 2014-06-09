@@ -21,7 +21,7 @@ describe 'ExampleDocumentSets', ->
     openCsvUploadPage: ->
       @
         .get(Url.csvUpload)
-        .waitForElementByCss('input[type=file]')
+        .waitForJqueryReady()
 
     chooseFile: (path) ->
       fullPath = "#{__dirname}/../files/#{path}"
@@ -42,6 +42,7 @@ describe 'ExampleDocumentSets', ->
         .waitForElementBy(checkbox, 10000)
         .listenForJqueryAjaxComplete()
         .elementBy(checkbox).click()
+        .waitForJqueryAjaxComplete()
         .waitForElementBy(tag: 'a', contains: 'Close', visible: true).click()
 
     waitForRequirements: ->
@@ -68,8 +69,7 @@ describe 'ExampleDocumentSets', ->
         
     waitForJobsToComplete: ->
       @
-        .waitForJqueryReady()
-        .waitForFunctionToReturnTrueInBrowser((-> $('.document-set-creation-jobs').length == 0), 10000)
+        .waitForFunctionToReturnTrueInBrowser((-> $?.isReady && $('.document-set-creation-jobs').length == 0), 15000)
 
   asUser.usingTemporaryUser(title: 'ExampleDocumentSets')
   
@@ -85,7 +85,6 @@ describe 'ExampleDocumentSets', ->
             .get(Url.publicDocumentSets)
             .cloneExample()
 
-             
     after ->
       Q.all([
         @userBrowser
@@ -93,7 +92,6 @@ describe 'ExampleDocumentSets', ->
         @adminBrowser
           .deleteTopUpload()
       ])
-
 
     it 'should be cloneable',  ->
       @userBrowser

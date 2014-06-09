@@ -10,8 +10,8 @@ import play.api.libs.iteratee.Done
 import play.api.libs.iteratee.Input
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.AnyContent
-import play.api.mvc.{ Request, RequestHeader, SimpleResult }
-import play.api.mvc.SimpleResult
+import play.api.mvc.{ Request, RequestHeader, Result }
+import play.api.mvc.Result
 import play.api.Play.{start, stop}
 import play.api.test.{FakeHeaders, FakeRequest, FakeApplication}
 import play.api.test.Helpers._
@@ -34,7 +34,7 @@ class UploadControllerSpec extends Specification with Mockito {
     var stopWords: Option[String] = _
     var importantWords: Option[String] = _
 
-    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[SimpleResult, OverviewUpload]] =
+    def fileUploadIteratee(userId: Long, guid: UUID, requestHeader: RequestHeader): Iteratee[Array[Byte], Either[Result, OverviewUpload]] =
       Done(Right(mock[OverviewUpload]), Input.EOF)
 
     def findUpload(userId: Long, guid: UUID): Option[OverviewUpload] = upload
@@ -53,7 +53,7 @@ class UploadControllerSpec extends Specification with Mockito {
     def upload: OverviewUpload
     val controller: TestUploadController
     val request: Request[A]
-    val result: Future[SimpleResult]
+    val result: Future[Result]
   }
 
   trait CreateRequest extends UploadContext[OverviewUpload] {

@@ -10,7 +10,7 @@ import org.specs2.runner.JUnitRunner
 import org.specs2.specification.Scope
 import play.api.libs.concurrent.Execution
 import play.api.libs.iteratee.Enumerator
-import play.api.mvc.{RequestHeader, SimpleResult}
+import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeApplication, FakeHeaders, FakeRequest}
 import play.api.test.Helpers._
 import play.api.Play.{ start, stop }
@@ -108,12 +108,12 @@ class FileUploadIterateeSpec extends Specification with Mockito {
 
       def request: RequestHeader
       // Drive the iteratee with the enumerator to generate a result
-      def result: Either[SimpleResult, OverviewUpload] = {
+      def result: Either[Result, OverviewUpload] = {
         implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
 
         val resultFuture = for {
           doneIt <- enumerator(uploadIteratee.store(userId, guid, request, 15))
-          result: Either[SimpleResult, OverviewUpload] <- doneIt.run
+          result: Either[Result, OverviewUpload] <- doneIt.run
         } yield result
 
         Await.result(resultFuture, scala.concurrent.duration.Duration.Inf)

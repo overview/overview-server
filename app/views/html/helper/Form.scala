@@ -1,7 +1,7 @@
 package views.html.helper
 
 import play.api.data.{ Field, FormError }
-import play.api.templates.Html
+import play.twirl.api.Html
 import play.api.i18n.{ Lang, Messages }
 import play.api.mvc.RequestHeader
 import scala.xml.{ UnprefixedAttribute, MetaData }

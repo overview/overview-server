@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{Controller,SimpleResult}
+import play.api.mvc.{Controller,Result}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.iteratee.Enumerator
 import scala.concurrent.Future
@@ -53,7 +53,7 @@ trait DocumentSetExportController extends Controller {
     }
   }
 
-  private def serveExport(export: Export, encodedFilename: String) : SimpleResult = {
+  private def serveExport(export: Export, encodedFilename: String) : Result = {
     val inputStream = OverviewDatabase.inTransaction {
       export.asFileInputStream
     }

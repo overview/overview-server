@@ -7,7 +7,7 @@ import controllers.auth.Authorities.userOwningDocument
 import models.orm.finders.DocumentFinder
 import models.OverviewDocument
 import play.api.libs.iteratee.Enumerator
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import play.api.mvc.ResponseHeader
 import org.overviewproject.postgres.LargeObjectInputStream
 import controllers.util.PlayLargeObjectInputStream
@@ -42,7 +42,7 @@ trait DocumentController extends Controller {
     } yield {
       val dataContent = Enumerator.fromStream(data)(play.api.libs.concurrent.Execution.Implicits.defaultContext)
       val filename = document.title.getOrElse("UploadedFile.pdf")
-      SimpleResult(
+      Result(
         header = ResponseHeader(OK, Map(
           CONTENT_TYPE -> "application/pdf",
           CONTENT_DISPOSITION -> s"""inline ; filename="$filename"""")),
