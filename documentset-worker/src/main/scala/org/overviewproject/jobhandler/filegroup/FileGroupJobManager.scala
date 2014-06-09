@@ -33,6 +33,7 @@ trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
   import ClusteringJobQueueProtocol._
 
+  private val MaxRetryAttempts = 3
   protected val fileGroupJobQueue: ActorRef
   protected val clusteringJobQueue: ActorRef
 
@@ -43,12 +44,17 @@ trait FileGroupJobManager extends Actor {
   trait Storage {
     def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
     def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
-    def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
+    def updateJobState(documentSetId: Long,  jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob]
+    def increaseRetryAttempts(job: DocumentSetCreationJob): Unit
   }
 
   override def preStart(): Unit = {
     storage.findValidInProgressUploadJobs.foreach { j =>
-      queueJob(j.documentSetId, j.fileGroupId.get)
+      if (j.retryAttempts < MaxRetryAttempts) {
+        storage.increaseRetryAttempts(j)
+        queueJob(j.documentSetId, j.fileGroupId.get)
+      }
+      else storage.updateJobState(j.documentSetId, Error)
     }
     storage.findValidCancelledUploadJobs.foreach { j =>
       cancelJob(j.documentSetId, j.fileGroupId.get)
@@ -58,8 +64,10 @@ trait FileGroupJobManager extends Actor {
   def receive = {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
-      storage.updateJobState(documentSetId).fold(
-        Logger.error(s"Trying to cluster non-existent job for document set $documentSetId")) { _ => queueJob(documentSetId, fileGroupId) }
+      storage.updateJobState(documentSetId, TextExtractionInProgress).fold(
+        Logger.error(s"Trying to cluster non-existent job for document set $documentSetId")) { _ =>
+          queueJob(documentSetId, fileGroupId)
+        }
 
     }
 
@@ -103,11 +111,15 @@ class FileGroupJobManagerImpl(
 
       cancelledUploadJobs.filter(_.fileGroupId.isDefined)
     }
-    
-    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
+
+    override def updateJobState(documentSetId: Long, jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob] = Database.inTransaction {
       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).headOption.map { job =>
-        DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
+        DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = jobState))
       }
+    }
+    
+    override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = Database.inTransaction {
+      DocumentSetCreationJobStore.insertOrUpdate(job.copy(retryAttempts = job.retryAttempts + 1))
     }
   }
 

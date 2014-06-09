@@ -29,34 +29,42 @@ trait StorageMonitor extends JobParameters {
 
   import ExecutionContext.Implicits.global
 
-  private val updateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
-
+  private val updateJobStateParameters: Agent[Queue[(Long, DocumentSetCreationJobState)]] = Agent(Queue.empty)
+  private val increaseRetryAttemptParameters: Agent[Queue[DocumentSetCreationJob]] = Agent(Queue.empty)
+  
   class MockStorage extends Storage {
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
     override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
 
-    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
-      updateJobStateParameters send (_.enqueue(documentSetId))
+    override def updateJobState(documentSetId: Long, jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob] = {
+      updateJobStateParameters send (_.enqueue((documentSetId, jobState)))
       uploadJob
     }
+    
+    override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = 
+      increaseRetryAttemptParameters send (_.enqueue(job))
   }
 
   override protected val storage = new MockStorage
 
   def updateJobCallsInProgress = updateJobStateParameters.future
   def updateJobCallParameters = updateJobStateParameters.get
+  
+  def increaseRetryAttemptsCallsInProgress = increaseRetryAttemptParameters.future
+  def increaseRetryAttemptCallParameters = increaseRetryAttemptParameters.get
 }
 
 class TestFileGroupJobManager(
     override protected val fileGroupJobQueue: ActorRef,
     override protected val clusteringJobQueue: ActorRef,
     val uploadJob: Option[DocumentSetCreationJob],
-    interruptedJobs: Seq[(Long, Long)],
+    interruptedJobs: Seq[(Long, Long, Int)],
     cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
 
   protected def loadInterruptedJobs: Seq[DocumentSetCreationJob] =
-    for ((ds, fg) <- interruptedJobs)
-      yield DocumentSetCreationJob(jobType = FileUpload, state = InProgress, documentSetId = ds, fileGroupId = Some(fg))
+    for ((ds, fg, n) <- interruptedJobs)
+      yield DocumentSetCreationJob(jobType = FileUpload, state = InProgress, 
+          documentSetId = ds, fileGroupId = Some(fg), retryAttempts = n)
 
   protected def loadCancelledJobs: Seq[DocumentSetCreationJob] =
     for ((ds, fg) <- cancelledJobs)
