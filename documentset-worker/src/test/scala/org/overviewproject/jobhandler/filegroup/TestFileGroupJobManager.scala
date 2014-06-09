@@ -6,7 +6,8 @@ import akka.actor._
 import akka.agent._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
-
+import org.overviewproject.tree.DocumentSetCreationJobType._
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 trait JobParameters {
   protected val documentSetId = 1l
@@ -19,21 +20,21 @@ trait JobParameters {
 
   protected val clusterCommand =
     ClusterFileGroupCommand(documentSetId, fileGroupId, title, lang, suppliedStopWords, importantWords)
-  protected val cancelCommand = CancelClusterFileGroupCommand(documentSetId, fileGroupId) 
-    
+  protected val cancelCommand = CancelClusterFileGroupCommand(documentSetId, fileGroupId)
+
 }
 
 trait StorageMonitor extends JobParameters {
   self: TestFileGroupJobManager =>
 
   import ExecutionContext.Implicits.global
-    
+
   private val updateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
-  
+
   class MockStorage extends Storage {
-    override def findInProgressJobInformation: Iterable[(Long, Long)] = loadInterruptedJobs
-    override def findCancelledJobInformation: Iterable[(Long, Long)] = loadCancelledJobs
-    
+    override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
+    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
+
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
       updateJobStateParameters send (_.enqueue(documentSetId))
       uploadJob
@@ -41,19 +42,25 @@ trait StorageMonitor extends JobParameters {
   }
 
   override protected val storage = new MockStorage
-  
+
   def updateJobCallsInProgress = updateJobStateParameters.future
   def updateJobCallParameters = updateJobStateParameters.get
 }
 
 class TestFileGroupJobManager(
-  override protected val fileGroupJobQueue: ActorRef,
-  override protected val clusteringJobQueue: ActorRef,
-  val uploadJob: Option[DocumentSetCreationJob],
-  interruptedJobs: Seq[(Long, Long)],
-  cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
-  
-  protected def loadInterruptedJobs: Seq[(Long, Long)] = interruptedJobs
-  protected def loadCancelledJobs: Seq[(Long, Long)] = cancelledJobs
+    override protected val fileGroupJobQueue: ActorRef,
+    override protected val clusteringJobQueue: ActorRef,
+    val uploadJob: Option[DocumentSetCreationJob],
+    interruptedJobs: Seq[(Long, Long)],
+    cancelledJobs: Seq[(Long, Long)]) extends FileGroupJobManager with StorageMonitor {
+
+  protected def loadInterruptedJobs: Seq[DocumentSetCreationJob] =
+    for ((ds, fg) <- interruptedJobs)
+      yield DocumentSetCreationJob(jobType = FileUpload, state = InProgress, documentSetId = ds, fileGroupId = Some(fg))
+
+  protected def loadCancelledJobs: Seq[DocumentSetCreationJob] =
+    for ((ds, fg) <- cancelledJobs)
+      yield DocumentSetCreationJob(jobType = FileUpload, state = Cancelled, documentSetId = ds, fileGroupId = Some(fg))
+
 }
 

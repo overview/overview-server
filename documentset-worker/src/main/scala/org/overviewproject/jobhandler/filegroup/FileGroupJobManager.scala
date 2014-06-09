@@ -41,17 +41,17 @@ trait FileGroupJobManager extends Actor {
   private val textExtractionJobsPendingCancellation: mutable.Map[Long, Long] = mutable.Map.empty
 
   trait Storage {
-    def findInProgressJobInformation: Iterable[(Long, Long)]
-    def findCancelledJobInformation: Iterable[(Long, Long)]
+    def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob]
+    def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob]
     def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob]
   }
 
   override def preStart(): Unit = {
-    storage.findInProgressJobInformation.foreach {
-      queueJob _ tupled
+    storage.findValidInProgressUploadJobs.foreach { j =>
+      queueJob(j.documentSetId, j.fileGroupId.get)
     }
-    storage.findCancelledJobInformation.foreach {
-      cancelJob _ tupled
+    storage.findValidCancelledUploadJobs.foreach { j =>
+      cancelJob(j.documentSetId, j.fileGroupId.get)
     }
   }
 
@@ -59,9 +59,8 @@ trait FileGroupJobManager extends Actor {
 
     case ClusterFileGroupCommand(documentSetId, fileGroupId, name, lang, stopWords, importantWords) => {
       storage.updateJobState(documentSetId).fold(
-         Logger.error(s"Trying to cluster non-existent job for document set $documentSetId"))
-        { _ => queueJob(documentSetId, fileGroupId) }
-              
+        Logger.error(s"Trying to cluster non-existent job for document set $documentSetId")) { _ => queueJob(documentSetId, fileGroupId) }
+
     }
 
     case FileGroupDocumentsCreated(documentSetId) =>
@@ -72,9 +71,9 @@ trait FileGroupJobManager extends Actor {
         textExtractionJobsPendingCancellation -= documentSetId
       }
 
-    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) => 
+    case CancelClusterFileGroupCommand(documentSetId, fileGroupId) =>
       cancelJob(documentSetId, fileGroupId)
-    
+
   }
 
   private def queueJob(documentSetId: Long, fileGroupId: Long): Unit =
@@ -93,23 +92,18 @@ class FileGroupJobManagerImpl(
 
   class DatabaseStorage extends Storage {
 
-    override def findInProgressJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
+    override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = Database.inTransaction {
       val jobs = DocumentSetCreationJobFinder.byState(TextExtractionInProgress)
 
-      for {
-        j <- jobs
-        fileGroupId <- j.fileGroupId
-      } yield (j.documentSetId, fileGroupId)
+      jobs.filter(_.fileGroupId.isDefined)
     }
 
-    override def findCancelledJobInformation: Iterable[(Long, Long)] = Database.inTransaction {
+    override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = Database.inTransaction {
       val cancelledUploadJobs = DocumentSetCreationJobFinder.byStateAndType(Cancelled, FileUpload)
-      for {
-        j <- cancelledUploadJobs
-        fileGroupId <- j.fileGroupId
-      } yield (j.documentSetId, fileGroupId)
-    }
 
+      cancelledUploadJobs.filter(_.fileGroupId.isDefined)
+    }
+    
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = Database.inTransaction {
       DocumentSetCreationJobFinder.byDocumentSetAndStateForUpdate(documentSetId, FilesUploaded).headOption.map { job =>
         DocumentSetCreationJobStore.insertOrUpdate(job.copy(state = TextExtractionInProgress))
