@@ -12,6 +12,7 @@ import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.util.Logger
+import org.overviewproject.util.Configuration
 
 object ClusteringJobQueueProtocol {
   case class ClusterDocumentSet(documentSetId: Long)
@@ -33,7 +34,7 @@ trait FileGroupJobManager extends Actor {
   import FileGroupJobQueueProtocol._
   import ClusteringJobQueueProtocol._
 
-  private val MaxRetryAttempts = 3
+  private val MaxRetryAttempts = Configuration.getInt("max_job_retry_attempts")
   protected val fileGroupJobQueue: ActorRef
   protected val clusteringJobQueue: ActorRef
 

@@ -98,7 +98,8 @@ object Configuration extends ConfigurationKeys(ConfigFactory.load()) {
     ("clustering_alg" -> "KMeansComponents"),
     ("min_connected_component_size" -> 10),
     ("documentcloud_url" -> "https://www.documentcloud.org"),
-    ("sampled_edges_per_document" -> 200))
+    ("sampled_edges_per_document" -> 200),
+    ("max_job_retry_attempts" -> 3))
 
   val messageQueue = new MessageQueueConfig(myConfig)
   val searchIndex = new SearchIndexConfig(myConfig)
