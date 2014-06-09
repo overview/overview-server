@@ -48,6 +48,8 @@ trait PersistentDocumentSetCreationJob {
   val treeDescription: Option[String]
   val tagId: Option[Long]
   
+  var retryAttempts: Int 
+  
   var state: DocumentSetCreationJobState
   var fractionComplete: Double
   var statusDescription: Option[String]
@@ -103,7 +105,8 @@ object PersistentDocumentSetCreationJob {
     val treeTitle: Option[String] = documentSetCreationJob.treeTitle
     val treeDescription: Option[String] = documentSetCreationJob.treeDescription
     val tagId: Option[Long] = documentSetCreationJob.tagId
-    
+
+    var retryAttempts: Int = documentSetCreationJob.retryAttempts
     var state: DocumentSetCreationJobState = documentSetCreationJob.state
     var fractionComplete: Double = documentSetCreationJob.fractionComplete
     var statusDescription: Option[String] = Some(documentSetCreationJob.statusDescription)
@@ -123,6 +126,7 @@ object PersistentDocumentSetCreationJob {
       val updatedJob = org.overviewproject.postgres.SquerylEntrypoint.update(documentSetCreationJobs)(d =>
         where(d.id === documentSetCreationJob.id)
           set (d.documentSetId := documentSetId,
+            d.retryAttempts := retryAttempts,
             d.state := state.inhibitWhen(d.state == Cancelled),
             d.fractionComplete := fractionComplete,
             d.statusDescription := statusDescription.getOrElse("")))

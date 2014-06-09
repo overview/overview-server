@@ -392,6 +392,7 @@ views.ImportJob._documentSetCreationJob.job_state_description.bad_important_word
 views.ImportJob._documentSetCreationJob.job_state_description.clustering=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.clustering_level=Clustering
 views.ImportJob._documentSetCreationJob.job_state_description.job_complete=Import complete
+views.ImportJob._documentSetCreationJob.job_state_description.max_retry_attempts=Import Failed (maximum retries reached)
 views.ImportJob._documentSetCreationJob.job_state_description.no_description= 
 views.ImportJob._documentSetCreationJob.job_state_description.out_of_memory=Import failed (document set too large)
 views.ImportJob._documentSetCreationJob.job_state_description.parsing_data=Reading documents from uploaded file…
