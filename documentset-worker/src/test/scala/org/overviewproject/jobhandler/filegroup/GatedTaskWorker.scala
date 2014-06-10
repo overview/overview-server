@@ -1,13 +1,11 @@
 package org.overviewproject.jobhandler.filegroup
 
 import scala.language.postfixOps
-import scala.concurrent.duration._
-import scala.concurrent.Promise
-import akka.actor.ActorRef
-import akka.actor.Actor
-import scala.concurrent.Future
 import scala.concurrent.Await
-import akka.agent.Agent
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration._
+
 import org.overviewproject.test.ParameterStore
 
 object GatedTaskWorkerProtocol {
