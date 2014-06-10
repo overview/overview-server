@@ -128,17 +128,13 @@ class FileGroupTaskWorkerSpec extends Specification {
 
       protected def createWorker: Unit = worker = TestActorRef(new TestFileGroupTaskWorker(JobQueuePath))
 
-      protected def createPagesTaskStepsWereExecuted = {
-        val pendingCalls = worker.underlyingActor.startCreatePagesTaskCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-        worker.underlyingActor.numberOfStartCreatePagesTaskCalls must be equalTo (2)
-      }
+      protected def createPagesTaskStepsWereExecuted = 
+        worker.underlyingActor.executeFn.wasCalledNTimes(2)
+      
 
-      protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) = {
-        val pendingCalls = worker.underlyingActor.deleteFileUploadJobCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-        worker.underlyingActor.deleteFileUploadJobCallParameters must beSome((documentSetId, fileGroupId))
-      }
+      protected def deleteFileUploadJobWasCalled(documentSetId: Long, fileGroupId: Long) = 
+        worker.underlyingActor.deleteFileUploadJobFn.wasCalledWith((documentSetId, fileGroupId))
+      
     }
 
     abstract class GatedTaskWorkerContext extends TaskWorkerContext {
