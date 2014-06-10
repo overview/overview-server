@@ -8,6 +8,22 @@ import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
+import scala.concurrent.Future
+
+
+class ParameterStore[A] {
+  import ExecutionContext.Implicits.global
+  
+  private val storedParameters: Agent[Queue[A]] = Agent(Queue.empty)
+  
+  def store(parameters: A): Unit = storedParameters send (_.enqueue(parameters))
+  
+  def history: Future[Queue[A]] = storedParameters.future
+}
+
+object ParameterStore {
+  def apply[A] = new ParameterStore[A]
+}
 
 trait JobParameters {
   protected val documentSetId = 1l
@@ -29,17 +45,21 @@ trait StorageMonitor extends JobParameters {
 
   import ExecutionContext.Implicits.global
 
-  private val updateJobStateParameters: Agent[Queue[(Long, DocumentSetCreationJobState)]] = Agent(Queue.empty)
+  private val updateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
   private val increaseRetryAttemptParameters: Agent[Queue[DocumentSetCreationJob]] = Agent(Queue.empty)
+  
+  val failJobParameters = ParameterStore[DocumentSetCreationJob]
   
   class MockStorage extends Storage {
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
     override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
 
-    override def updateJobState(documentSetId: Long, jobState: DocumentSetCreationJobState): Option[DocumentSetCreationJob] = {
-      updateJobStateParameters send (_.enqueue((documentSetId, jobState)))
+    override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
+      updateJobStateParameters send (_.enqueue(documentSetId))
       uploadJob
     }
+    
+    override def failJob(job: DocumentSetCreationJob): Unit = failJobParameters.store(job)
     
     override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = 
       increaseRetryAttemptParameters send (_.enqueue(job))

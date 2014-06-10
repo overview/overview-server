@@ -32,7 +32,7 @@ class FileGroupJobManagerSpec extends Specification {
     "update job state when clustering request is received" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
 
-      updateJobStateWasCalled(documentSetId, TextExtractionInProgress)
+      updateJobStateWasCalled(documentSetId)
     }
 
     "restart in progress jobs and cancel cancelled jobs found during startup" in new RestartingFileGroupJobManagerContext {
@@ -56,14 +56,14 @@ class FileGroupJobManagerSpec extends Specification {
     }
 
     "fail job if restart limit is reached" in new RestartLimitContext {
-      updateJobStateWasCalled(interruptedDocumentSet, Error)
+      failJobWasCalled(interruptedDocumentSet)
     }
-    
+
     "increase retryAttempts when restarting jobs" in new RestartingFileGroupJobManagerContext {
       increaseRetryAttemptsWasCalled(interruptedDocumentSet1, fileGroup1)
       increaseRetryAttemptsWasCalled(interruptedDocumentSet2, fileGroup2)
     }
-    
+
     "cancel text extraction when requested" in new FileGroupJobManagerContext {
       fileGroupJobManager ! clusterCommand
       fileGroupJobManager ! cancelCommand
@@ -121,24 +121,33 @@ class FileGroupJobManagerSpec extends Specification {
       protected def interruptedJobs: Seq[(Long, Long, Int)] = Seq.empty
       protected def cancelledJobs: Seq[(Long, Long)] = Seq.empty
 
-      protected def updateJobStateWasCalled(documentSetId: Long, jobState: DocumentSetCreationJobState) = {
+      protected def updateJobStateWasCalled(documentSetId: Long) = {
         val pendingCalls = fileGroupJobManager.underlyingActor.updateJobCallsInProgress
         awaitCond(pendingCalls.isCompleted)
 
-        fileGroupJobManager.underlyingActor.updateJobCallParameters.headOption must beSome((documentSetId, jobState))
+        fileGroupJobManager.underlyingActor.updateJobCallParameters.headOption must beSome(documentSetId)
+      }
+
+      protected def failJobWasCalled(documentSetId: Long) = {
+        def failedWithDocumentSetId(job: DocumentSetCreationJob) = {
+          job.documentSetId must be equalTo(documentSetId)
+        }
+        val parameters = fileGroupJobManager.underlyingActor.failJobParameters.history
+        
+        parameters must contain(failedWithDocumentSetId _).await
       }
       
-        protected def increaseRetryAttemptsWasCalled(documentSetId: Long, fileGroupId: Long) = {
-          def matchingJob(job: DocumentSetCreationJob) = {
-            job.documentSetId must be equalTo(documentSetId)
-            job.fileGroupId must beSome(fileGroupId)
-          }
-          
-          val pendingCalls = fileGroupJobManager.underlyingActor.increaseRetryAttemptsCallsInProgress
-          awaitCond(pendingCalls.isCompleted)
-          
-          fileGroupJobManager.underlyingActor.increaseRetryAttemptCallParameters must contain(matchingJob _)
+      protected def increaseRetryAttemptsWasCalled(documentSetId: Long, fileGroupId: Long) = {
+        def matchingJob(job: DocumentSetCreationJob) = {
+          job.documentSetId must be equalTo (documentSetId)
+          job.fileGroupId must beSome(fileGroupId)
         }
+
+        val pendingCalls = fileGroupJobManager.underlyingActor.increaseRetryAttemptsCallsInProgress
+        awaitCond(pendingCalls.isCompleted)
+
+        fileGroupJobManager.underlyingActor.increaseRetryAttemptCallParameters must contain(matchingJob _)
+      }
     }
 
     abstract class RestartingFileGroupJobManagerContext extends FileGroupJobManagerContext {
@@ -164,14 +173,13 @@ class FileGroupJobManagerSpec extends Specification {
     abstract class NoJobContext extends FileGroupJobManagerContext {
       override protected def uploadJob: Option[DocumentSetCreationJob] = None
     }
-    
+
     abstract class RestartLimitContext extends FileGroupJobManagerContext {
       val interruptedDocumentSet: Long = 10l
       val fileGroup: Long = 15l
-      
+
       override protected def interruptedJobs: Seq[(Long, Long, Int)] = Seq(
-        (interruptedDocumentSet, fileGroup, 3)    
-      )
+        (interruptedDocumentSet, fileGroup, 3))
     }
   }
 
