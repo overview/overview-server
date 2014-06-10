@@ -22,7 +22,7 @@ class ParameterStore[A] extends Specification {
     
   def wasCalledNTimes(n: Int) = storedParameters.future.map(_.length) must be_==(n).await
   
-
+  def wasLastCalledWithMatch[B](f: A => MatchResult[B]) = storedParameters.future.map(_.lastOption) must beSome(f).await
 }
 
 object ParameterStore {

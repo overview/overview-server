@@ -1,16 +1,12 @@
 package org.overviewproject.jobhandler.filegroup
 
-import scala.collection.immutable.Queue
-import scala.concurrent.ExecutionContext
-import akka.agent.Agent
 import akka.testkit.TestActorRef
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol._
 import org.overviewproject.test.ActorSystemContext
+import org.overviewproject.test.ParameterStore
+import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
-import scala.concurrent.Future
-import org.overviewproject.tree.orm.DocumentSetCreationJobState
-import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 
 class ProgressReporterSpec extends Specification {
 
@@ -63,22 +59,17 @@ class ProgressReporterSpec extends Specification {
       protected var progressReporter: TestActorRef[TestProgressReporter] = _
 
       protected def lastProgressStatusMustBe(documentSetId: Long, fraction: Double, description: String) = {
-        val pendingCalls = progressReporter.underlyingActor.updateProgressCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-        progressReporter.underlyingActor.updateProgressParemeters.lastOption must
-          beSome.like {
-            case p =>
+        def matchParameters(p: (Long, Double, String)) = {
               p._1 must be equalTo (documentSetId)
               p._2 must beCloseTo(fraction, 0.01)
               p._3 must be equalTo (description)
-          }
+        }
+        
+        progressReporter.underlyingActor.updateProgressFn.wasLastCalledWithMatch(matchParameters)
       }
 
-      protected def updateJobStateWasCalled(documentSetId: Long, state: DocumentSetCreationJobState) = {
-        val pendingCalls = progressReporter.underlyingActor.updateJobStateCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-        progressReporter.underlyingActor.updateJobStateCallParameters.headOption must beSome((documentSetId, state))
-      }
+      protected def updateJobStateWasCalled(documentSetId: Long, state: DocumentSetCreationJobState) = 
+        progressReporter.underlyingActor.updateJobStateFn.wasCalledWith((documentSetId, state))
       
       override def before = {
         progressReporter = TestActorRef(new TestProgressReporter)
@@ -89,25 +80,17 @@ class ProgressReporterSpec extends Specification {
 }
 
 class TestProgressReporter extends ProgressReporter {
-  import ExecutionContext.Implicits.global
-
-  private val updateProgressParameters: Agent[Queue[(Long, Double, String)]] = Agent(Queue.empty)
-
-  def updateProgressCallsInProgress: Future[Queue[(Long, Double, String)]] = updateProgressParameters.future
-  def updateProgressParemeters: Queue[(Long, Double, String)] = updateProgressParameters.get
-
-  private val updateJobStateParameters: Agent[Queue[(Long, DocumentSetCreationJobState)]] = Agent(Queue.empty)
   
-  def updateJobStateCallsInProgress: Future[Queue[(Long, DocumentSetCreationJobState)]] = updateJobStateParameters.future
-  def updateJobStateCallParameters: Queue[(Long, DocumentSetCreationJobState)] = updateJobStateParameters.get
+  val updateProgressFn = ParameterStore[(Long, Double, String)]
+  val updateJobStateFn = ParameterStore[(Long, DocumentSetCreationJobState)]
   
   override protected val storage = new MockStorage
 
   class MockStorage extends Storage {
     def updateProgress(documentSetId: Long, fraction: Double, description: String): Unit =
-      updateProgressParameters send (_.enqueue(documentSetId, fraction, description))
+      updateProgressFn.store((documentSetId, fraction, description))
     
     def updateJobState(documentSetId: Long, state: DocumentSetCreationJobState): Unit = 
-      updateJobStateParameters send (_.enqueue((documentSetId, state)))
+      updateJobStateFn.store((documentSetId, state))
   }
 }
