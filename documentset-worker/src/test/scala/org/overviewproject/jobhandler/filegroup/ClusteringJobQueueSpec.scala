@@ -1,17 +1,12 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import akka.actor.ActorRef
-import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
-import akka.actor.Props
-import akka.agent.Agent
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
 import akka.testkit.TestActorRef
 import akka.testkit.TestProbe
+import org.overviewproject.jobhandler.filegroup.ClusteringJobQueueProtocol.ClusterDocumentSet
 import org.overviewproject.jobhandler.filegroup.ProgressReporterProtocol.StartClustering
+import org.overviewproject.test.ActorSystemContext
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
 
 class ClusteringJobQueueSpec extends Specification {
 

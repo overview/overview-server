@@ -1,19 +1,13 @@
 package org.overviewproject.jobhandler.filegroup
 
-import org.specs2.mutable.Specification
-import org.overviewproject.test.ActorSystemContext
-import org.specs2.mutable.Before
-import akka.testkit.TestProbe
+import akka.actor._
+import akka.testkit._
 import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
-import akka.actor.ActorRef
-import akka.actor.Props
+import org.overviewproject.test.ActorSystemContext
 import org.overviewproject.test.ForwardingActor
-import akka.testkit.TestActorRef
-import akka.agent.Agent
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import akka.testkit.TestActor
-import akka.actor.ActorSystem
+import org.overviewproject.test.ParameterStore
+import org.specs2.mutable.Before
+import org.specs2.mutable.Specification
 
 class FileGroupTaskWorkerSpec extends Specification {
 
@@ -151,16 +145,11 @@ class FileGroupTaskWorkerSpec extends Specification {
       import scala.concurrent.ExecutionContext.Implicits.global  
       
       var worker: ActorRef = _
-      private val timesCancelWasCalled: Agent[Int] = Agent(0)
+      private val cancelFn = ParameterStore[Unit]
       
-      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, timesCancelWasCalled)))
+      protected def createWorker: Unit = worker = system.actorOf(Props(new GatedTaskWorker(JobQueuePath, cancelFn)))
       
-      protected def taskWasCancelled = {
-        val pendingCalls = timesCancelWasCalled.future
-        awaitCond(pendingCalls.isCompleted)
-        
-        timesCancelWasCalled.get must be equalTo(1)
-      }
+      protected def taskWasCancelled = cancelFn.wasCalledNTimes(1)
     }
 
     class JobQueueTestProbe(actorSystem: ActorSystem) extends TestProbe(actorSystem) {

@@ -1,6 +1,7 @@
 package org.overviewproject.test
 
 import akka.agent._
+import akka.testkit._
 import scala.collection.immutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -19,6 +20,9 @@ class ParameterStore[A] extends Specification {
   def wasCalledWith(parameters: A) = storedParameters.future must contain(parameters).await
   def wasCalledWithMatch[B](f: A => MatchResult[B]) = storedParameters.future must contain(f).await
     
+  def wasCalledNTimes(n: Int) = storedParameters.future.map(_.length) must be_==(n).await
+  
+
 }
 
 object ParameterStore {

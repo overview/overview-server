@@ -8,13 +8,14 @@ import akka.actor.Actor
 import scala.concurrent.Future
 import scala.concurrent.Await
 import akka.agent.Agent
+import org.overviewproject.test.ParameterStore
 
 object GatedTaskWorkerProtocol {
   case object CancelYourself
   case object CompleteTaskStep
 }
 
-class GatedTaskWorker(override protected val jobQueuePath: String, timesCancelWasCalled: Agent[Int]) extends FileGroupTaskWorker {
+class GatedTaskWorker(override protected val jobQueuePath: String, cancelFn: ParameterStore[Unit]) extends FileGroupTaskWorker {
 
   import GatedTaskWorkerProtocol._
   import FileGroupTaskWorkerProtocol._
@@ -27,7 +28,7 @@ class GatedTaskWorker(override protected val jobQueuePath: String, timesCancelWa
       this
     }
     
-    override def cancel: Unit = timesCancelWasCalled send (_ + 1)
+    override def cancel: Unit = cancelFn.store()
   }
   
 
