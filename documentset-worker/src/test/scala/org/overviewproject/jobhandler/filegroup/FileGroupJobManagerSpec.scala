@@ -114,6 +114,8 @@ class FileGroupJobManagerSpec extends Specification {
 
       }
 
+      private def jm = fileGroupJobManager.underlyingActor
+      
       protected def uploadJob: Option[DocumentSetCreationJob] = Some(
         DocumentSetCreationJob(documentSetId = documentSetId, jobType = FileUpload, fileGroupId = Some(fileGroupId),
           state = FilesUploaded))
@@ -121,32 +123,24 @@ class FileGroupJobManagerSpec extends Specification {
       protected def interruptedJobs: Seq[(Long, Long, Int)] = Seq.empty
       protected def cancelledJobs: Seq[(Long, Long)] = Seq.empty
 
-      protected def updateJobStateWasCalled(documentSetId: Long) = {
-        val pendingCalls = fileGroupJobManager.underlyingActor.updateJobCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-
-        fileGroupJobManager.underlyingActor.updateJobCallParameters.headOption must beSome(documentSetId)
-      }
+      protected def updateJobStateWasCalled(documentSetId: Long) = jm.updateJobStateFn.wasCalledWith(documentSetId)
+      
 
       protected def failJobWasCalled(documentSetId: Long) = {
-        def failedWithDocumentSetId(job: DocumentSetCreationJob) = {
-          job.documentSetId must be equalTo(documentSetId)
+        def matchDocumentSetId(job: DocumentSetCreationJob) = {
+          job.documentSetId must be equalTo (documentSetId)
         }
-        val parameters = fileGroupJobManager.underlyingActor.failJobParameters.history
-        
-        parameters must contain(failedWithDocumentSetId _).await
+
+        jm.failJobFn.wasCalledWithMatch(matchDocumentSetId _)
       }
-      
+
       protected def increaseRetryAttemptsWasCalled(documentSetId: Long, fileGroupId: Long) = {
-        def matchingJob(job: DocumentSetCreationJob) = {
+        def matchDsAndFg(job: DocumentSetCreationJob) = {
           job.documentSetId must be equalTo (documentSetId)
           job.fileGroupId must beSome(fileGroupId)
         }
-
-        val pendingCalls = fileGroupJobManager.underlyingActor.increaseRetryAttemptsCallsInProgress
-        awaitCond(pendingCalls.isCompleted)
-
-        fileGroupJobManager.underlyingActor.increaseRetryAttemptCallParameters must contain(matchingJob _)
+        
+        jm.increaseRetryAttemptFn.wasCalledWithMatch(matchDsAndFg)
       }
     }
 

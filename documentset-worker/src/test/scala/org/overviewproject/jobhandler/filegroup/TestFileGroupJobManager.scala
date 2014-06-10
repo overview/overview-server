@@ -1,29 +1,11 @@
 package org.overviewproject.jobhandler.filegroup
 
-import scala.collection.immutable.Queue
-import scala.concurrent.ExecutionContext
 import akka.actor._
-import akka.agent._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobMessages._
 import org.overviewproject.tree.orm.DocumentSetCreationJob
 import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
-import scala.concurrent.Future
-
-
-class ParameterStore[A] {
-  import ExecutionContext.Implicits.global
-  
-  private val storedParameters: Agent[Queue[A]] = Agent(Queue.empty)
-  
-  def store(parameters: A): Unit = storedParameters send (_.enqueue(parameters))
-  
-  def history: Future[Queue[A]] = storedParameters.future
-}
-
-object ParameterStore {
-  def apply[A] = new ParameterStore[A]
-}
+import org.overviewproject.test.ParameterStore
 
 trait JobParameters {
   protected val documentSetId = 1l
@@ -43,35 +25,27 @@ trait JobParameters {
 trait StorageMonitor extends JobParameters {
   self: TestFileGroupJobManager =>
 
-  import ExecutionContext.Implicits.global
-
-  private val updateJobStateParameters: Agent[Queue[Long]] = Agent(Queue.empty)
-  private val increaseRetryAttemptParameters: Agent[Queue[DocumentSetCreationJob]] = Agent(Queue.empty)
   
-  val failJobParameters = ParameterStore[DocumentSetCreationJob]
+  val updateJobStateFn = ParameterStore[Long]
+  val increaseRetryAttemptFn = ParameterStore[DocumentSetCreationJob]
+  val failJobFn = ParameterStore[DocumentSetCreationJob]
   
   class MockStorage extends Storage {
     override def findValidInProgressUploadJobs: Iterable[DocumentSetCreationJob] = loadInterruptedJobs
     override def findValidCancelledUploadJobs: Iterable[DocumentSetCreationJob] = loadCancelledJobs
 
     override def updateJobState(documentSetId: Long): Option[DocumentSetCreationJob] = {
-      updateJobStateParameters send (_.enqueue(documentSetId))
+      updateJobStateFn.store(documentSetId)
       uploadJob
     }
     
-    override def failJob(job: DocumentSetCreationJob): Unit = failJobParameters.store(job)
+    override def failJob(job: DocumentSetCreationJob): Unit = failJobFn.store(job)
     
     override def increaseRetryAttempts(job: DocumentSetCreationJob): Unit = 
-      increaseRetryAttemptParameters send (_.enqueue(job))
+      increaseRetryAttemptFn.store(job)
   }
 
   override protected val storage = new MockStorage
-
-  def updateJobCallsInProgress = updateJobStateParameters.future
-  def updateJobCallParameters = updateJobStateParameters.get
-  
-  def increaseRetryAttemptsCallsInProgress = increaseRetryAttemptParameters.future
-  def increaseRetryAttemptCallParameters = increaseRetryAttemptParameters.get
 }
 
 class TestFileGroupJobManager(
