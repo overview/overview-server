@@ -52,7 +52,7 @@ define [ 'backbone', './DocumentListParams' ], (Backbone, DocumentListParams) ->
     # by tagging.
     #
     # Returns { documents: [ -1 ] } if documentId is null and
-    # oneDocumentSelected is true>
+    # oneDocumentSelected is true.
     getSelection: ->
       if @get('oneDocumentSelected')
         documentId = @get('documentId') || -1
