@@ -7,18 +7,43 @@ import org.apache.pdfbox.util.Splitter
 import org.apache.pdfbox.util.PDFTextStripper
 import java.io.ByteArrayOutputStream
 import org.overviewproject.util.Textify
+import org.apache.pdfbox.pdmodel.PDPage
 
 class PdfBoxDocument(oid: Long) extends PdfDocument {
 
   private val document: PDDocument = loadFromOid(oid)
-  private val documentPages: Seq[PDDocument] = splitPages
+  private val documentPages: Iterable[PDDocument] = splitPages
   private val textStripper: PDFTextStripper = new PDFTextStripper
 
   def pages: Iterable[PdfPage] = documentPages.map { p =>
     val data = getData(p)
     val text = getText(p)
-
+     
+    p.close
+    
     PdfPage(data, text)
+  }
+
+  private def splitPages: Iterable[PDDocument] = document.getDocumentCatalog.getAllPages().asScala.view.map { p =>
+    createDocument(p.asInstanceOf[PDPage])
+  }
+
+
+  private def createDocument(page: PDPage): PDDocument = {
+    
+    val pageDocument = new PDDocument()
+    pageDocument.setDocumentInformation(document.getDocumentInformation())
+    pageDocument.getDocumentCatalog().setViewerPreferences(
+      document.getDocumentCatalog().getViewerPreferences())
+
+    val pageInDocument = pageDocument.importPage(page)
+    pageInDocument.setCropBox(page.findCropBox());
+    pageInDocument.setMediaBox(page.findMediaBox());
+
+    pageInDocument.setResources(page.getResources());
+    pageInDocument.setRotation(page.findRotation());
+
+    pageDocument
   }
 
   def close(): Unit = {
@@ -31,12 +56,6 @@ class PdfBoxDocument(oid: Long) extends PdfDocument {
     PDDocument.load(documentStream)
   }
 
-  private def splitPages: Seq[PDDocument] = {
-    val splitter = new Splitter()
-    splitter.setSplitAtPage(1)
-
-    splitter.split(document).asScala
-  }
 
   private def getData(page: PDDocument): Array[Byte] = {
     val outputStream = new ByteArrayOutputStream()

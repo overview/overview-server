@@ -32,7 +32,9 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
 
         val pages = createPages(file.id)
-        pageStore.insertBatch(pages)
+
+        pages.foreach(pageStore.insertOrUpdate) // Batch insert would read all pages into memory, possibly leading to OutOfMemoryException
+        
         GroupedFileUploadStore.delete(GroupedFileUploadFinder.byId(upload.id).toQuery)
       }
 

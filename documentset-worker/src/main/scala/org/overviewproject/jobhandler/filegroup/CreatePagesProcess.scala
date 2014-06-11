@@ -20,34 +20,34 @@ import org.overviewproject.tree.orm.stores.BaseStore
 trait CreatePagesProcess {
 
   protected case class TaskInformation(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long)
-  
+
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     LoadUploadedFile(TaskInformation(documentSetId, fileGroupId, uploadedFileId))
 
   protected val storage: Storage
   protected trait Storage {
     def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
-    
+
     def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
-    
+
     def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit
   }
 
-  protected trait ErrorSavingTaskStep extends FileGroupTaskStep { 
+  protected trait ErrorSavingTaskStep extends FileGroupTaskStep {
     private val UnknownError = "Unknown error"
-      
-    protected val taskInformation: TaskInformation
-    
-	override def execute: FileGroupTaskStep = handling(classOf[Exception]) by { e =>
-	  val errorMessage = Option(e.getMessage).getOrElse(UnknownError) 
 
-	  storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
-	  CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
-	} apply executeTaskStep
-	
-	protected def executeTaskStep: FileGroupTaskStep
+    protected val taskInformation: TaskInformation
+
+    override def execute: FileGroupTaskStep = handling(classOf[Exception]) by { e =>
+      val errorMessage = Option(e.getMessage).getOrElse(UnknownError)
+
+      storage.saveProcessingError(taskInformation.documentSetId, taskInformation.uploadedFileId, errorMessage)
+      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
+    } apply executeTaskStep
+
+    protected def executeTaskStep: FileGroupTaskStep
   }
-  
+
   protected val pdfProcessor: PdfProcessor
   protected trait PdfProcessor {
     def loadFromDatabase(oid: Long): PdfDocument
@@ -57,7 +57,7 @@ trait CreatePagesProcess {
 
     override def executeTaskStep: FileGroupTaskStep = {
       val upload = storage.loadUploadedFile(taskInformation.uploadedFileId).get // throws if not found. exception handled by actor
-      
+
       LoadPdf(taskInformation, upload)
     }
   }
@@ -77,20 +77,24 @@ trait CreatePagesProcess {
 
     override def executeTaskStep: FileGroupTaskStep = {
       val pageContents = pdfDocument.pages
-        
+
       storage.savePagesAndCleanup(createPages(pageContents, _: Long), upload, taskInformation.documentSetId)
 
       pdfDocument.close()
 
       CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
     }
-    
+
     override def cancel: Unit = pdfDocument.close()
 
-    private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] =
-      pageContents.view.zipWithIndex.map { case (p, i) =>
-        createPageFromContent(fileId, p, i + 1)
+    private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] = {
+      var pageNumber = 0
+
+      for (page <- pageContents) yield {
+        pageNumber += 1
+        createPageFromContent(fileId, page, pageNumber)
       }
+    }
 
     private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
       Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
