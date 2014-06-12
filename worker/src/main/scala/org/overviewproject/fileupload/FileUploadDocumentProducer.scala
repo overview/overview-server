@@ -24,6 +24,8 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
                                  override protected val progAbort: ProgressAbortFn)
     extends PagedDocumentSourceDocumentProducer[TempDocumentSetFile] with PersistentDocumentSet {
 
+  private case class SimplePage(id: Long, pageNumber: Int, text: Option[String], textErrorMessage: Option[String])
+  
   override protected lazy val totalNumberOfDocuments =
     if (splitDocuments) countPages
     else countFiles
@@ -78,17 +80,18 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     }
   }
 
-  private def findFileWithPages(fileId: Long): (File, Seq[Page]) = Database.inTransaction {
+  private def findFileWithPages(fileId: Long): (File, Iterable[SimplePage]) = Database.inTransaction {
     val file = FileFinder.byId(fileId).headOption.get
-    val pages = PageFinder.byFileId(fileId).toSeq
-    (file, pages)
+    val pageInfo = PageFinder.byFileId(fileId).withoutData
+    val simplePages = pageInfo.map(SimplePage tupled)
+    (file, simplePages.view)
   }
 
   private def recordError(fileName: String, error: String): Unit = {
     fileErrors = DocumentRetrievalError(fileName, error) +: fileErrors
   }
 
-  private def createDocumentFromPages(file: File, pages: Seq[Page]): Either[String, Document] = {
+  private def createDocumentFromPages(file: File, pages: Iterable[SimplePage]): Either[String, Document] = {
     
     val documentText = pages.foldLeft[Either[Seq[String], String]](Right(""))((text, page) => {
       val pageText: Either[String, String] = page.text.toRight(pageError(page))
@@ -109,7 +112,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
 
   }
 
-  private def createDocumentsFromPages(file: File, pages: Seq[Page]): Seq[Either[String, Document]] = {
+  private def createDocumentsFromPages(file: File, pages: Iterable[SimplePage]): Iterable[Either[String, Document]] = {
 
     pages.map { p =>
       p.text.toRight(pageError(p)).right.map { text =>
@@ -119,7 +122,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     }
   }
 
-  private def pageError(page: Page): String =
+  private def pageError(page: SimplePage): String =
       page.textErrorMessage.getOrElse(s"text extraction failed for page ${page.pageNumber}")
 
   private def produceDocument(document: Document): Unit = {
