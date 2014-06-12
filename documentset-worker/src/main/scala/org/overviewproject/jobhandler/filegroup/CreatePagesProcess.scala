@@ -16,6 +16,9 @@ import org.overviewproject.tree.orm.stores.BaseStore
  * 2. Split the PDF into pages
  * 3. Save the pages
  * 4. Extract the text from each page
+ * 
+ * If an Exception is thrown, processing completes, but the error is saved as a `DocumentProcessingError`
+ * @todo store the error in `Page`
  */
 trait CreatePagesProcess {
 

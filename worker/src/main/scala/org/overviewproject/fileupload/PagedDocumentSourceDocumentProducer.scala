@@ -7,7 +7,13 @@ import org.overviewproject.tree.orm.Document
 import scala.annotation.tailrec
 import org.overviewproject.util.DocumentSetCreationJobStateDescription.Retrieving
 
-
+/**
+ * `PagedDocumentProducer` enables document production by reading input data from the database without reading
+ * all query results into memory at once. Override `runQueryForPage` to query one ResultPage and process 
+ * the results.
+ * The type T of the trait should be the type of the query result.
+ * 
+ */
 trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
   protected val PreparingFraction: Double
   protected val FetchingFraction: Double
@@ -15,7 +21,19 @@ trait PagedDocumentSourceDocumentProducer[T] extends DocumentProducer {
   protected val progAbort: ProgressAbortFn
   protected val totalNumberOfDocuments: Long
 
+  /**
+   * Converts one result from the query into one or more document, calling `consumer.processDocument` for each one.
+   * 
+   * @return the number of documents produced.
+   */
   protected def processDocumentSource(documentSource: T): Int
+  
+  
+  /**
+   * Execute a query, returning a `ResultPage` for the specified `pageNumber`. Call the given `processDocumentSources`
+   * function on the results.
+   * @return the return value of `processDocumentSources`
+   */
   protected def runQueryForPage(pageNumber: Int)(processDocumentSources: Iterable[T] => Int): Int
 
   override def produce(): Int = {

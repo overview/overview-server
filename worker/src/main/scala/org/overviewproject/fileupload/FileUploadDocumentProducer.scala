@@ -19,6 +19,12 @@ import org.overviewproject.util.{ DocumentConsumer, DocumentSetIndexingSession }
 import org.overviewproject.util.Progress.ProgressAbortFn
 import org.overviewproject.util.SearchIndex
 
+
+/**
+ * Produce documents based on uploaded files stored in `Pages`.
+ * @param splitDocuments if `true`, create one document for each `Page`. Otherwise 
+ *   combine the page text of one file into one document.
+ */
 class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDocuments: Boolean,
                                  override protected val consumer: DocumentConsumer,
                                  override protected val progAbort: ProgressAbortFn)
@@ -64,22 +70,31 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     processDocuments(result)
   }
 
+  /**
+   * Generates `Documents` from the `File` specified by the input `documentSetFile`.
+   * `Documents` are created by using the text extracted and stored in the `Pages` associated with the `File`.
+   * If the text extraction failed, the `Page` object will have an error message instead of document text.
+   * `Document`s are created only for successful text extractions. For failed extractions, `DocumentRetrievalError`s
+   * are generated.
+   */
   override protected def processDocumentSource(documentSetFile: TempDocumentSetFile): Int = {
     val (file, filePages) = findFileWithPages(documentSetFile.fileId)
 
     if (!splitDocuments) {
-      val document = createDocumentFromPages(file, filePages)
+      val document: Either[String, Document] = createDocumentFromPages(file, filePages)
 
       document.fold(recordError(file.name, _), produceDocument)
       1
     } else {
-      val documents = createDocumentsFromPages(file, filePages)
+      val documents: Iterable[Either[String, Document]] = createDocumentsFromPages(file, filePages)
 
       documents.foreach { _.fold(recordError(file.name, _), produceDocument) }
       documents.count(_.isRight)
     }
   }
 
+  // Don't read the Page binary data, or we may run out of memory
+  // It would be more efficient to not read all pages at once, if possible.
   private def findFileWithPages(fileId: Long): (File, Iterable[SimplePage]) = Database.inTransaction {
     val file = FileFinder.byId(fileId).headOption.get
     val pageInfo = PageFinder.byFileId(fileId).withoutData
@@ -91,8 +106,11 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
     fileErrors = DocumentRetrievalError(fileName, error) +: fileErrors
   }
 
+  
+  // Create one document from the pages. If one of the pages has an error, the entire document 
+  // is assumed to have failed. The result is either a Document with the combined text of all the documents
+  // or a string combining the error messages of all pages.
   private def createDocumentFromPages(file: File, pages: Iterable[SimplePage]): Either[String, Document] = {
-    
     val documentText = pages.foldLeft[Either[Seq[String], String]](Right(""))((text, page) => {
       val pageText: Either[String, String] = page.text.toRight(pageError(page))
 
@@ -112,6 +130,7 @@ class FileUploadDocumentProducer(documentSetId: Long, fileGroupId: Long, splitDo
 
   }
 
+  // For each page, return a Document containing the page text, or a string with the Page error message
   private def createDocumentsFromPages(file: File, pages: Iterable[SimplePage]): Iterable[Either[String, Document]] = {
 
     pages.map { p =>
