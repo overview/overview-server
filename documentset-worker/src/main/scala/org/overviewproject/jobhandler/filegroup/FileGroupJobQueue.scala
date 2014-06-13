@@ -40,7 +40,7 @@ object FileGroupJobQueueProtocol {
  */
 trait FileGroupJobQueue extends Actor {
   import FileGroupJobQueueProtocol._
-  import FileGroupTaskWorkerProtocol._
+  import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 
   type DocumentSetId = Long
 

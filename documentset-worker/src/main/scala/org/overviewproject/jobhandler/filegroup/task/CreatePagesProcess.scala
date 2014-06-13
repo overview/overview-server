@@ -1,14 +1,13 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import scala.collection.JavaConverters._
 import scala.util.control.Exception._
-import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.util.PDFTextStripper
 import org.overviewproject.database.orm.Schema
-import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
+
 
 /*
  * Generates the steps needed to process uploaded files:

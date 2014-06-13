@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.stores.GroupedFileUploadStore
@@ -7,7 +7,6 @@ import org.overviewproject.database.orm.Schema._
 import org.overviewproject.database.orm.finders.FileGroupFinder
 import org.overviewproject.database.orm.stores.PageStore
 import org.overviewproject.database.orm.stores.FileStore
-import org.overviewproject.database.orm.finders.FileFinder
 import org.overviewproject.database.orm.finders.FinderById
 import org.overviewproject.database.orm.stores.DocumentSetCreationJobStore
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._

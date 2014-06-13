@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import org.overviewproject.database.Database
 import org.overviewproject.database.orm.Schema
@@ -11,6 +11,7 @@ import org.overviewproject.tree.orm.TempDocumentSetFile
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.DocumentProcessingError
+
 
 trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 

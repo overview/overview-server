@@ -1,13 +1,13 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import scala.collection.JavaConverters._
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.overviewproject.postgres.LargeObjectInputStream
-import org.apache.pdfbox.util.Splitter
 import org.apache.pdfbox.util.PDFTextStripper
 import java.io.ByteArrayOutputStream
 import org.overviewproject.util.Textify
 import org.apache.pdfbox.pdmodel.PDPage
+
 
 class PdfBoxDocument(oid: Long) extends PdfDocument {
 

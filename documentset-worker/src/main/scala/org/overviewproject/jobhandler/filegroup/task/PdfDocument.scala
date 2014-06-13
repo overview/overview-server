@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 trait PdfDocument {
   def pages: Iterable[PdfPage]

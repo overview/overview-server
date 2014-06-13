@@ -1,4 +1,4 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import akka.actor.Props
 import org.overviewproject.test.ParameterStore

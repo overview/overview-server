@@ -1,11 +1,8 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import scala.language.postfixOps
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent.{ Await, Future, Promise }
 import scala.concurrent.duration._
-
 import org.overviewproject.test.ParameterStore
 
 object GatedTaskWorkerProtocol {

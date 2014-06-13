@@ -1,12 +1,12 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import akka.actor._
 import akka.pattern.pipe
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent.Future
 import org.overviewproject.util.Logger
+import FileGroupTaskWorkerFSM._
 
 trait FileGroupTaskStep {
   def execute: FileGroupTaskStep
@@ -51,24 +51,10 @@ object FileGroupTaskWorkerFSM {
 
 }
 
-
-
-/**
- * A worker that requests and processes tasks in the `FileGroupJobQueue`. A `FileGroupTaskWorker` can be on a different
- * machine than the queue, and is created and supervised by a separate actor. If the worker terminates, it is the
- * job queue's responsibility to requeue any task that the worker may be working on.
- * On startup, the worker looks for the job queue at `jobQueuePath`. When the queue identifies itself, the worker 
- * sends a `ReadyForTask` message to the queue. `ReadyForTask` messages are sent whenever the worker completes a task.
- * The worker can process a `CreatePagesTask`, extracting the text of an uploaded file and storing it in `Page`s.
- * The text extraction proceeds in steps, allowing the processing to be cancelled after each step is complete, if a 
- * `CancelTask` message has been received.
- * The worker can process a `DeleteFileUpload` task, deleting all data associated with a `FileGroup`.
- */
-import FileGroupTaskWorkerFSM._
-
 trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import context._
-
+  import FileGroupTaskWorkerProtocol._
+  
   protected def jobQueuePath: String
 
   private val JobQueueId: String = "Job Queue"

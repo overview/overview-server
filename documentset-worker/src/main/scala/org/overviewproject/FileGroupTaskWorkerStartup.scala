@@ -2,7 +2,7 @@ package org.overviewproject
 
 import akka.actor._
 import akka.actor.SupervisorStrategy._
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorker
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
 import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
 

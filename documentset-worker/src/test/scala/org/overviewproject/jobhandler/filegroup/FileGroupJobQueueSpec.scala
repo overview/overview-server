@@ -4,8 +4,8 @@ import scala.concurrent.duration._
 import org.specs2.mutable.Specification
 import org.overviewproject.test.ActorSystemContext
 import org.specs2.mutable.Before
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
 import org.overviewproject.jobhandler.filegroup.FileGroupJobQueueProtocol._
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import akka.testkit._
 import org.specs2.time.NoTimeConversions
 import akka.actor.ActorRef

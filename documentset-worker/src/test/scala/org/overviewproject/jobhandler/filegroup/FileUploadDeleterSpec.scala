@@ -2,6 +2,7 @@ package org.overviewproject.jobhandler.filegroup
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
+import org.overviewproject.jobhandler.filegroup.task.FileUploadDeleter
 
 class FileUploadDeleterSpec extends Specification with Mockito {
 

@@ -1,11 +1,11 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import akka.actor._
 import akka.testkit._
-import org.overviewproject.jobhandler.filegroup.FileGroupTaskWorkerProtocol._
+import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorkerProtocol._
 import org.overviewproject.test.ActorSystemContext
-import org.overviewproject.test.ForwardingActor
 import org.overviewproject.test.ParameterStore
+import org.overviewproject.test.ForwardingActor
 import org.specs2.mutable.Before
 import org.specs2.mutable.Specification
 
