@@ -1,8 +1,8 @@
-package org.overviewproject.jobhandler.filegroup
+package org.overviewproject.jobhandler.filegroup.task
 
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
-import org.overviewproject.jobhandler.filegroup.task.CreatePagesProcess
+
 
 class CreatePagesProcessSpec extends Specification with Mockito {
 

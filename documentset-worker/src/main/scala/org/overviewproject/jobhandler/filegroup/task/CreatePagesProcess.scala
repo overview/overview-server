@@ -8,7 +8,6 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.Page
 import org.overviewproject.tree.orm.stores.BaseStore
 
-
 /*
  * Generates the steps needed to process uploaded files:
  * 1. Save file
@@ -26,15 +25,7 @@ trait CreatePagesProcess {
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     LoadUploadedFile(TaskInformation(documentSetId, fileGroupId, uploadedFileId))
 
-  protected val storage: Storage
-  protected trait Storage {
-    def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
-
-    def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
-
-    def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit
-  }
-
+  /** [[FileGroupTaskStep]] that catches exceptions, stores them as errors, and completes the [[CreatePagesProcess]] */
   protected trait ErrorSavingTaskStep extends FileGroupTaskStep {
     private val UnknownError = "Unknown error"
 
@@ -48,11 +39,6 @@ trait CreatePagesProcess {
     } apply executeTaskStep
 
     protected def executeTaskStep: FileGroupTaskStep
-  }
-
-  protected val pdfProcessor: PdfProcessor
-  protected trait PdfProcessor {
-    def loadFromDatabase(oid: Long): PdfDocument
   }
 
   private case class LoadUploadedFile(taskInformation: TaskInformation) extends ErrorSavingTaskStep {
@@ -101,6 +87,20 @@ trait CreatePagesProcess {
     private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
       Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
 
+  }
+
+  protected val pdfProcessor: PdfProcessor
+  protected trait PdfProcessor {
+    def loadFromDatabase(oid: Long): PdfDocument
+  }
+
+  protected val storage: Storage
+  protected trait Storage {
+    def loadUploadedFile(uploadedFileId: Long): Option[GroupedFileUpload]
+
+    def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit
+
+    def saveProcessingError(documentSetId: Long, uploadedFileId: Long, errorMessage: String): Unit
   }
 
 }

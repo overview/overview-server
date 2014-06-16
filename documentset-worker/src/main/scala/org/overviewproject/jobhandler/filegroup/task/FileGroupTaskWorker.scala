@@ -8,15 +8,6 @@ import scala.concurrent.Future
 import org.overviewproject.util.Logger
 import FileGroupTaskWorkerFSM._
 
-trait FileGroupTaskStep {
-  def execute: FileGroupTaskStep
-  def cancel: Unit = {}
-}
-
-case class CreatePagesProcessComplete(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long) extends FileGroupTaskStep {
-  override def execute: FileGroupTaskStep = return CreatePagesProcessComplete.this
-}
-
 
 object FileGroupTaskWorkerProtocol {
   case class RegisterWorker(worker: ActorRef)
@@ -51,6 +42,13 @@ object FileGroupTaskWorkerFSM {
 
 }
 
+/**
+ * A worker that registers with the [[FileGroupJobQueue]] and can handle [[CreatePagesTask]]s 
+ * and [[DeleteFileUploadTask]]s.
+ * @todo Move to separate JVM and instance
+ * @todo Add Death Watch on [[FileGroupJobQueue]]. If the queue dies, the task should be abandoned, and 
+ *   the worker should wait for its rebirth.
+ */
 trait FileGroupTaskWorker extends Actor with FSM[State, Data] {
   import context._
   import FileGroupTaskWorkerProtocol._
