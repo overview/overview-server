@@ -7,6 +7,7 @@ import org.overviewproject.tree.orm.File
 import java.io.InputStream
 import org.specs2.specification.Scope
 import org.overviewproject.tree.orm.GroupedFileUpload
+import java.util.UUID
 
 class CreateFileSpec extends Specification with Mockito {
 
@@ -21,7 +22,7 @@ class CreateFileSpec extends Specification with Mockito {
     "convert rewound stream to pdf if original is not pdf" in new NoPdfFileContext {
       val file = createFile(upload)
 
-      there was one(createFile.converter).createFileWithPdfView(upload, inputStream)
+      there was one(createFile.storage).createFileWithPdfView(any, any)
       inputStream.available must be equalTo(fileText.length)
     }
 
@@ -32,6 +33,7 @@ class CreateFileSpec extends Specification with Mockito {
       val name = "filename"
       val oid = 1l
       val upload = smartMock[GroupedFileUpload]
+      val guid: UUID = UUID.randomUUID() 
       upload.name returns name
       upload.contentsOid returns oid
 
@@ -55,12 +57,18 @@ class CreateFileSpec extends Specification with Mockito {
   class TestCreateFile(inputStream: InputStream, createdFile: File) extends CreateFile {
 
     override val storage = mock[Storage]
-
+    private val convertedStream = mock[InputStream]
+    
     storage.getLargeObjectInputStream(any) returns inputStream
     storage.createFile(any, any) returns createdFile
     
-    override val converter = mock[DocumentConverter]
-    converter.createFileWithPdfView(any, any) returns createdFile
+    override val converter = new TestConverter 
+     
+    class TestConverter extends DocumentConverter {
+      def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T = 
+        f(convertedStream)
+    }
+    
   }
 
 }

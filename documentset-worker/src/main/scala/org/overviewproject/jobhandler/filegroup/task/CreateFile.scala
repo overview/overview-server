@@ -5,6 +5,7 @@ import org.overviewproject.postgres.LargeObjectInputStream
 import org.overviewproject.tree.orm.File
 import java.io.InputStream
 import org.overviewproject.tree.orm.GroupedFileUpload
+import java.util.UUID
 
 trait CreateFile {
   val PdfMagicNumber: Array[Byte] = "%PDF".getBytes
@@ -15,7 +16,9 @@ trait CreateFile {
     val magicNumber = peekAtMagicNumber(stream)
 
     if (magicNumber.sameElements(PdfMagicNumber)) storage.createFile(upload.name, upload.contentsOid)
-    else converter.createFileWithPdfView(upload, stream)
+    else converter.convertStreamToPdf(upload.guid, stream) { pdfStream => 
+      storage.createFileWithPdfView(upload, pdfStream)
+    }
 
   }
 
@@ -45,9 +48,11 @@ trait CreateFile {
   protected trait Storage {
     def getLargeObjectInputStream(oid: Long): InputStream
     def createFile(name: String, oid: Long): File
+    def createFileWithPdfView(upload: GroupedFileUpload, viewStream: InputStream): File    
   }
 
   protected trait DocumentConverter {
-    def createFileWithPdfView(upload: GroupedFileUpload, inputStream: InputStream): File
+    def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T
+
   }
 }
