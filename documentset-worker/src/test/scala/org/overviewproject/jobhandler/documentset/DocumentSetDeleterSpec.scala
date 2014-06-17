@@ -124,7 +124,7 @@ class DocumentSetDeleterSpec extends DbSpecification {
       override protected def createDocumentSet = {
         documentSet = documentSets.insertOrUpdate(DocumentSet(title = "document set"))
         val contentsOid = createContents
-        file = files.insertOrUpdate(File(1, contentsOid, "name"))
+        file = files.insertOrUpdate(File(1, contentsOid, contentsOid, "name"))
         val pageData: Array[Byte] = Array.fill(128)(0xfe.toByte)
         page = pages.insertOrUpdate(Page(file.id, 1, 1, Some(pageData), Some("Text")))
 

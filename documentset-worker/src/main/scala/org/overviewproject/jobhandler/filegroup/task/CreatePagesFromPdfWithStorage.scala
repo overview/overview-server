@@ -13,6 +13,7 @@ import org.overviewproject.tree.orm.GroupedFileUpload
 import org.overviewproject.tree.orm.DocumentProcessingError
 
 
+/** Provides database storage and pdfbox pdfProcessor implementations for [[CreatePagesProcess]] */
 trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
   override protected val storage = DatabaseStorage()
@@ -29,7 +30,7 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
       }
 
       def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit = Database.inTransaction {
-        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.name))
+        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.contentsOid, upload.name))
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
 
         val pages = createPages(file.id)

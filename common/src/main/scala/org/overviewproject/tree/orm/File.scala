@@ -11,6 +11,7 @@ import org.squeryl.KeyedEntity
 case class File(
     referenceCount: Int, 
     contentsOid: Long, 
+    viewOid: Long,
     name: String,
     id: Long = 0l) extends KeyedEntity[Long] {
   override def isPersisted(): Boolean = (id > 0)

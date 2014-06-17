@@ -17,7 +17,7 @@ class PageStoreSpec extends DbSpecification {
 	protected var fileIds: Seq[Long] = _
 	
     override def setupWithDb = {
-      val filesWithPages = Seq.tabulate(numberOfFiles)(n => File(1, n, s"name-$n"))
+      val filesWithPages = Seq.tabulate(numberOfFiles)(n => File(1, n, n, s"name-$n"))
       files.insert(filesWithPages)
       
       fileIds = findFileIds
