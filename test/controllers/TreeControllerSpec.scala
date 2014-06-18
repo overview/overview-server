@@ -31,14 +31,6 @@ class TreeControllerSpec extends ControllerSpecification {
       there was one(mockStorage).insertJob(argThat(beJobWithDocumentSetId(documentSetId)))
     }
 
-    "redirect to /documentsets" in new CreateScope {
-      h.redirectLocation(result) must beSome("/documentsets")
-    }
-
-    "flash event -> tree-create" in new CreateScope {
-      h.flash(result) must beLike { case f: Flash => f.get("event") must beSome("tree-create") }
-    }
-
     "return a BAD_REQUEST if the form is filled in badly" in new CreateScope {
       override def formBody = Seq()
       h.status(result) must beEqualTo(h.BAD_REQUEST)
