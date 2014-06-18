@@ -18,7 +18,8 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
 
   override protected val storage = DatabaseStorage()
   override protected val pdfProcessor = PdfBoxProcessor()
-
+  override protected val createFile = CreateFile
+  
   private object DatabaseStorage {
     private val pageStore = new BaseStore(Schema.pages)
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
@@ -29,6 +30,16 @@ trait CreatePagesFromPdfWithStorage extends CreatePagesProcess {
         GroupedFileUploadFinder.byId(uploadedFileId).headOption
       }
 
+      def deleteUploadedFile(upload: GroupedFileUpload): Unit = Database.inTransaction {
+    	import org.overviewproject.postgres.SquerylEntrypoint._
+        
+    	GroupedFileUploadStore.delete(upload.id)
+      } 
+      
+      def savePages(pages: Iterable[Page]): Unit = Database.inTransaction {
+        pages.foreach(pageStore.insertOrUpdate) // Batch insert would read all pages into memory, possibly leading to OutOfMemoryException
+      }
+      
       def savePagesAndCleanup(createPages: Long => Iterable[Page], upload: GroupedFileUpload, documentSetId: Long): Unit = Database.inTransaction {
         val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, upload.contentsOid, upload.name))
         tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))

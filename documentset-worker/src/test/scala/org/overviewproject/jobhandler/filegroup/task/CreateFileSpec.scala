@@ -14,13 +14,13 @@ class CreateFileSpec extends Specification with Mockito {
   "CreatePdfView" should {
 
     "return original oid if original is a pdf" in new PdfFileContext {
-      val file = createFile(upload)
+      val file = createFile(documentSetId, upload)
 
-      there was one(createFile.storage).createFile(name, oid)
+      there was one(createFile.storage).createFile(documentSetId, name, oid)
     }
 
     "convert rewound stream to pdf if original is not pdf" in new NoPdfFileContext {
-      val file = createFile(upload)
+      val file = createFile(documentSetId, upload)
 
       there was one(createFile.storage).createFileWithPdfView(any, any)
       inputStream.available must be equalTo(fileText.length)
@@ -30,6 +30,7 @@ class CreateFileSpec extends Specification with Mockito {
       val fileText: String
       val createdFile: File 
       
+      val documentSetId = 1l
       val name = "filename"
       val oid = 1l
       val upload = smartMock[GroupedFileUpload]
@@ -60,7 +61,7 @@ class CreateFileSpec extends Specification with Mockito {
     private val convertedStream = mock[InputStream]
     
     storage.getLargeObjectInputStream(any) returns inputStream
-    storage.createFile(any, any) returns createdFile
+    storage.createFile(any, any, any) returns createdFile
     
     override val converter = new TestConverter 
      
