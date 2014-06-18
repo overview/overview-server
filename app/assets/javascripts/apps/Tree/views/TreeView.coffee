@@ -333,11 +333,11 @@ define [
 
     _onTag: (tag, documentListParams) ->
       if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @_refreshTagCounts(tag)
+        @tree.on_demand_tree._refreshTagCounts(tag)
 
     _onUntag: (tag, documentListParams) ->
       if @_isCurrent(tag.cid) || @_isCurrent('untagged')
-        @_refreshTagCounts(tag)
+        @tree.on_demand_tree._refreshTagCounts(tag)
 
     _isCurrent: (taglikeCid) -> @state.get('taglikeCid') == taglikeCid
 
