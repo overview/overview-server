@@ -1,6 +1,7 @@
 define [
+  'backbone'
   'apps/Tree/models/State'
-], (State) ->
+], (Backbone, State) ->
   describe 'apps/Tree/models/State', ->
     describe 'resetDocumentListParams', ->
       beforeEach ->
@@ -72,3 +73,38 @@ define [
       it 'should give doclist selection when document is set and oneDocumentSelected is false', ->
         state.set(document: 'foo', oneDocumentSelected: false)
         expect(state.getSelection().toJSON()).to.deep.eq({ nodes: [ 1 ] })
+
+    describe 'setViz', ->
+      class DocumentSet
+
+      class Viz extends Backbone.Model
+
+      beforeEach ->
+        @documentSet = new DocumentSet()
+        @viz1 = new Viz(id: 'foo', rootNodeId: 1) # see State.coffee for why we need rootNodeId
+        @viz2 = new Viz(id: 'bar', rootNodeId: 2)
+
+        @params =
+          documentSet: @documentSet
+          viz: @viz1
+          reset:
+            withViz: (viz) =>
+              all: =>
+                documentSet: @documentSet
+                viz: viz
+
+        @state = new State
+          viz: @viz1
+          documentListParams: @params
+          document: 'document'
+          oneDocumentSelected: true
+        @state.setViz(@viz2)
+
+      it 'should alter viz', -> expect(@state.get('viz')).to.eq(@viz2)
+      it 'should unset document', -> expect(@state.get('document')).to.be.null
+      it 'should unset oneDocumentSelected', -> expect(@state.get('oneDocumentSelected')).to.be.false
+
+      it 'should alter documentListParams', ->
+        params = @state.get('documentListParams')
+        expect(params.documentSet).to.eq(@documentSet)
+        expect(params.viz).to.eq(@viz2)

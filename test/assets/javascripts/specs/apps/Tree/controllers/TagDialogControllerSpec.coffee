@@ -9,10 +9,12 @@ define [
 
     class Tags extends Backbone.Collection
       model: Tag
+      url: '/path/to/tags'
 
     class State extends Backbone.Model
       defaults:
         taglikeCid: null
+        viz: null
 
       initialize: ->
         @_reset =
@@ -23,14 +25,15 @@ define [
     beforeEach ->
       @sandbox = sinon.sandbox.create()
       @sandbox.stub($.fn, 'modal', -> this)
-      @sandbox.stub(Backbone, 'sync')
+      @sandbox.stub(Backbone, 'sync') # just in case
 
       i18n.reset_messages
         'views.Tree.show.tag_list.header': 'header'
 
       @state = new State()
       @state._reset.all = sinon.spy()
-      @tags = new Tags()
+      @tags = new Tags(url: '/path/to/tags')
+      @tags.fetch = sinon.stub()
       @view = new Backbone.View
 
       @controller = new TagDialogController
@@ -45,7 +48,12 @@ define [
       @sandbox.restore()
 
     it 'should sync from the server', ->
-      expect(Backbone.sync).to.have.been.calledWith('read', @tags)
+      expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/tags')
+
+    it 'should sync a viz-specific URL if there is a viz', ->
+      @state.set(viz: new Backbone.Model(id: 1234))
+      new TagDialogController(view: @view, tags: @tags, state: @state)
+      expect(@tags.fetch).to.have.been.calledWithMatch(url: '/path/to/trees/1234/tags')
 
     describe 'on view:remove', ->
       beforeEach ->

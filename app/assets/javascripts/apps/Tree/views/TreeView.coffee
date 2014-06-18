@@ -68,6 +68,9 @@ define [
 
       @_taglikeAndType = { type: 'null', taglike: null }
       @listenTo(@state, 'change:taglikeCid', (state, taglikeCid) => @_onStateTaglikeCidChanged(taglikeCid))
+      # Right now, it's hard to track tag counts across viz changes. Avoid the
+      # problem by pretending it's intentional.
+      @listenTo(@state, 'change:viz', (state) -> state.set('taglikeCid', null))
       @listenTo(@documentSet, 'tag', @_onTag)
       @listenTo(@documentSet, 'untag', @_onUntag)
 

@@ -88,8 +88,13 @@ define [
           @stopListening()
 
       # Refresh tag counts
+      url = if (viz = @state.get('viz'))?
+        @tags.url.replace(/\/tags$/, "/trees/#{@state.get('viz').get('id')}/tags")
+      else
+        @tags.url
+
       @tags.fetch
-        url: @tags.url.replace(/\/tags$/, "/trees/#{@state.get('documentListParams').viz.get('id')}/tags")
+        url: url
         success: ->
           view?.render() # tag counts have changed; render that
 

@@ -5,11 +5,13 @@ define [
   'apps/ImportOptions/app'
 ], ($, Vizs, VizTabs, OptionsApp) ->
   class VizsController
-    constructor: (@vizs, @selectedViz) ->
+    constructor: (@vizs, @state) ->
       @view = new VizTabs
         collection: @vizs
-        selected: @selectedViz
+        state: @state
       @view.render()
+
+      @view.on('click', (viz) => @state.setViz(viz))
 
       onSubmit = (data) =>
         # Add a placeholder job so pollUntilStable will actually send an
@@ -17,12 +19,6 @@ define [
         # disappear and the real job will appear instead.
         @vizs.unshift(id: 0, type: 'job', title: data?[0]?.value, progress: {})
         @vizs.pollUntilStable()
-
-      @view.on 'click', (viz) =>
-        return if viz == @selectedViz
-
-        newPath = document.location.pathname.replace(/[^/]*$/, viz.get('id'))
-        document.location = newPath
 
       @view.on 'cancel', (job) ->
         jobId = job.get('id')

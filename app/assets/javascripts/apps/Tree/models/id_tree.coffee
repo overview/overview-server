@@ -58,10 +58,14 @@ define [ './observable' ], (observable) ->
   class IdTree
     observable(this)
 
-    constructor: () ->
+    constructor: ->
+      @reset()
+
+    reset: ->
       @root = null
       @children = {}
       @parent = {}
+      @_notify('reset')
 
     # Returns true iff the node's list of children is loaded.
     #

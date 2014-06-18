@@ -87,11 +87,20 @@ define [
         @viz.scopeApiParams = (apiParams) -> _.extend({ foo: 'bar' }, apiParams)
         expect(@params.toApiParams()).to.deep.eq(tags: '1', foo: 'bar')
 
+      it 'should not use viz.scopeApiParams() in toApiParams() if viz is null', ->
+        params = @builder.withViz(null).byTag(@tag)
+        expect(params.toApiParams()).to.deep.eq(tags: '1')
+
       it 'should reset', ->
         params2 = @params.reset.byNode(id: 3)
         expect(params2.params).to.deep.eq([ id: 3 ])
         expect(params2.documentSet).to.eq(@documentSet)
         expect(params2.viz).to.eq(@viz)
+
+      it 'should reset to a different viz', ->
+        viz2 = 'viz2'
+        params2 = @params.reset.withViz(viz2).all()
+        expect(params2.viz).to.eq(viz2)
 
       it 'should find relevant documents from a list', ->
         list = [

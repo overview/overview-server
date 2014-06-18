@@ -69,7 +69,7 @@ define [
 
       main: _.template('''
         <% vizs.forEach(function(viz) { %>
-          <%= templates.viz({ t: t, templates: templates, isSelected: viz.id == selected.id, viz: viz.attributes }) %>
+          <%= templates.viz({ t: t, templates: templates, isSelected: viz == selectedViz, viz: viz.attributes }) %>
         <% }); %>
         <li class="new-viz">
           <a href="#" class="new-viz">
@@ -81,22 +81,33 @@ define [
 
     initialize: ->
       throw 'must set options.collection' if !@options.collection
+      throw 'must set options.state, a State' if !@options.state
+
+      @state = @options.state
 
       @listenTo(@collection, 'remove', @_onRemove)
       @listenTo(@collection, 'add', @_onAdd)
       @listenTo(@collection, 'change', @_onChange)
+      @listenTo(@state, 'change:viz', @_onSelectedChanged)
 
       @render()
 
     render: ->
       html = @templates.main
         vizs: @collection
-        selected: @options.selected || { id: 0 }
+        selectedViz: @state.get('viz')
         templates: @templates
         t: t
 
       @$el.html(html)
       this
+
+    _onSelectedChanged: ->
+      @$('.active').removeClass('active')
+      viz = @state.get('viz')
+      id = viz?.id
+      if id
+        @$("li[data-id=#{id}]").addClass('active')
 
     _onAdd: (model, __, options) ->
       html = @templates.viz

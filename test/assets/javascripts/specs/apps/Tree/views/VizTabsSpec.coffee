@@ -5,6 +5,10 @@ define [
   'apps/Tree/views/VizTabs'
   'i18n'
 ], ($, _, Backbone, VizTabs, i18n) ->
+  class State extends Backbone.Model
+    defaults:
+      viz: null
+
   class Viz extends Backbone.Model
     defaults:
       title: 'title'
@@ -32,7 +36,8 @@ define [
         @viz1 = new Viz(type: 'viz', id: 1, longId: 'viz-1', title: 'foo', createdAt: new Date(), creationData: [[ 'thing1', 'value1' ], [ 'thing2', 'value2' ]])
         @viz2 = new Viz(type: 'viz', id: 2, longId: 'viz-2', title: 'bar', createdAt: new Date(), creationData: [])
         @vizList = new VizList([@viz1, @viz2])
-        @view = new VizTabs(collection: @vizList, selected: @viz1)
+        @state = new State(viz: @viz1)
+        @view = new VizTabs(collection: @vizList, state: @state)
         $('body').append(@view.el)
 
       afterEach ->
@@ -44,9 +49,14 @@ define [
       it 'should contain the vizualization', -> expect(@view.$('a:eq(0)')).to.contain('foo')
       it 'should have an info bubble per visualization', -> expect(@view.$('li.viz span.viz-info-icon').length).to.eq(2)
 
-      it 'should set "active" on selected vis', ->
+      it 'should set "active" on selected viz', ->
         expect(@view.$('li:eq(0)')).to.have.class('active')
         expect(@view.$('li:eq(1)')).not.to.have.class('active')
+
+      it 'should switch the "active" viz when the state changes', ->
+        @state.set(viz: @viz2)
+        expect(@view.$('li:eq(0)')).not.to.have.class('active')
+        expect(@view.$('li:eq(1)')).to.have.class('active')
 
       it 'should emit click', ->
         spy = sinon.spy()
@@ -106,8 +116,10 @@ define [
           createdAt: new Date()
           creationData: [[ 'thing1', 'value2' ], [ 'thing2', 'value3' ]]
 
+        @state = new State(viz: @viz)
+
         @vizList = new VizList([@job, @viz])
-        @view = new VizTabs(collection: @vizList, selected: @viz)
+        @view = new VizTabs(collection: @vizList, state: @state)
         $('body').append(@view.el)
 
       afterEach ->

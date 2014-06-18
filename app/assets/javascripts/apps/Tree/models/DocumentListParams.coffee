@@ -87,7 +87,10 @@ define [ 'underscore' ], (_) ->
       for k, v of @toJSON()
         apiParams[k] = v.map(String).join(',')
 
-      @viz.scopeApiParams(apiParams)
+      if @viz?
+        @viz.scopeApiParams(apiParams)
+      else
+        apiParams
 
   MagicUntaggedTagId = 0
 
@@ -156,6 +159,8 @@ define [ 'underscore' ], (_) ->
 
   class DocumentListParamsBuilder
     constructor: (@documentSet, @viz) ->
+    withViz: (viz) -> new DocumentListParamsBuilder(@documentSet, viz)
+
     all: -> new AllDocumentListParams(@documentSet, @viz)
     byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @viz, document)
     byNode: (node) -> new NodeDocumentListParams(@documentSet, @viz, node)

@@ -5,7 +5,7 @@ define [ 'backbone' ], (Backbone) ->
       documentListParams: null
 
       # Which document is selected/viewed. `null` means all documents in the doclist
-      documentId: null
+      document: null
 
       # Whether we want to show a single document, vs all documents
       #
@@ -84,3 +84,35 @@ define [ 'backbone' ], (Backbone) ->
         ret[k] = scopedBuilder(k)
       ret
 
+    setViz: (viz) ->
+      newParams = @get('documentListParams')?.reset.withViz(viz).all()
+
+      # FIXME terrible hack!
+      #
+      # With a Tree viz, DocumentListParams.toApiParams() will need a node ID.
+      # But the viz doesn't come with rootNodeId preloaded. So if we try to
+      # show the DocumentList (which happens whenever documentListParams
+      # changes), it won't be filtered by Viz. The solution is to _wait_ for
+      # the rootNodeId attribute and _then_ set the documentListParams.
+      #
+      # State has no idea when rootNodeId will appear. (It gets set in
+      # OnDemandTree.) So this whole thing is pretty ugly.
+      if !viz? || viz.get('rootNodeId')?
+        # Switching to an already-loaded viz. This is the code we want
+        @set
+          documentListParams: newParams
+          document: null
+          oneDocumentSelected: false
+          viz: viz
+      else
+        # The viz isn't loaded. This is the ugly thing.
+        @stopListening(@_listeningToViz) if @_listeningToViz?
+        @_listeningToViz = viz
+        @listenTo viz, 'change:rootNodeId', (viz, rootNodeId) =>
+          return if !rootNodeId?
+          @set
+            documentListParams: newParams
+            document: null
+            oneDocumentSelected: false
+            viz: viz
+        @set(viz: viz) # kick everything off. Leave documentListParams alone.

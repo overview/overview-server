@@ -100,6 +100,10 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
 
         @_updateLayout()
 
+      @id_tree.observe 'reset', =>
+        @_maybe_notifying_needs_update =>
+          @_startSetRoot(null)
+
       @id_tree.observe 'change', (changes) =>
         @_maybe_notifying_needs_update =>
           if 'root' of changes
@@ -184,14 +188,19 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       undefined
 
     _startSetRoot: (rootId, ms=undefined) ->
-      ms ?= Date.now()
+      if rootId?
+        ms ?= Date.now()
 
-      if (params = @state.get('documentListParams'))? && params.type == 'node'
-        selectedNodeId = params.node.id
+        if (params = @state.get('documentListParams'))? && params.type == 'node'
+          selectedNodeId = params.node.id
 
-      json = @_getNode(rootId)
-      @root = new AnimatedNode(json, null, rootId == selectedNodeId, ms)
-      @nodes[rootId] = @root
+        json = @_getNode(rootId)
+        @root = new AnimatedNode(json, null, rootId == selectedNodeId, ms)
+        @nodes[rootId] = @root
+      else
+        @root = null
+        @nodes = {}
+        @_lastSelection = undefined
 
       undefined
 

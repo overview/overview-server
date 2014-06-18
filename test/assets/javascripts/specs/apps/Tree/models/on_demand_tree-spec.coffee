@@ -10,6 +10,10 @@ define [
   class TransactionQueue
     queue: (callback) -> $.when(callback())
 
+  class State extends Backbone.Model
+    defaults:
+      viz: null
+
   describe 'models/on_demand_tree', ->
     sandbox = null
     tree = null
@@ -19,6 +23,7 @@ define [
       @documentSet = new DocumentSet(id: 1)
       @viz = new Viz(id: 2)
       @documentSet.transactionQueue = new TransactionQueue()
+      @state = new State(viz: @viz)
 
     afterEach ->
       tree = null
@@ -45,7 +50,7 @@ define [
 
     describe 'starting with an empty tree', ->
       beforeEach ->
-        tree = new OnDemandTree(@documentSet, @viz, cache_size: 5)
+        tree = new OnDemandTree(@documentSet, @state, cache_size: 5)
 
       it 'should start with id_tree empty', ->
         expect(tree.id_tree.root).to.eq(null)
@@ -63,7 +68,7 @@ define [
 
     describe 'with a non-empty tree', ->
       beforeEach ->
-        tree = new OnDemandTree(@documentSet, @viz, cache_size: 10)
+        tree = new OnDemandTree(@documentSet, @state, cache_size: 10)
         add_nodes_through_deferred([
           { id: 1, parentId: null, size: 50 }
           { id: 2, parentId: 1, size: 30 }
@@ -115,7 +120,7 @@ define [
     describe 'with a full tree', ->
       beforeEach ->
         cacheSize = 1 + 3 + 9 + 27 + 81
-        tree = new OnDemandTree(@documentSet, @viz, cache_size: cacheSize)
+        tree = new OnDemandTree(@documentSet, @state, cache_size: cacheSize)
         # A full tree, three children per parent, with sequential IDs
         id_to_stub_node = (id) ->
           parentId = Math.floor((id + 1) / 3)

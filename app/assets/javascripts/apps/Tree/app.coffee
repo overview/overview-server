@@ -149,52 +149,66 @@ define [
 
     _initializeUi: (documentSet) ->
       els = @_buildHtml()
+      keyboardController = new KeyboardController(document)
+
+      # Start with a null viz. That's because we need State itself to change
+      # documentListParams, as explained in the terrible hack section of
+      # State.coffee.
+      #
+      # The bad: we make an extra request to /documents. The good: we can let
+      # somebody else fix this bug later. (The proper solution is to make
+      # rootNodeId a property of every Tree object on the server, which means
+      # a database change and a bit of redundancy.)
+      state = new State(documentListParams: documentSet.documentListParams(null).all(), viz: null)
 
       treeId = +window.location.pathname.split('/')[4]
       viz = documentSet.vizs.get("viz-#{treeId}") || documentSet.vizs.at(0)
 
-      onDemandTree = new OnDemandTree(documentSet, viz)
-      onDemandTree.demand_root()
-        .then =>
-          viz.set(rootNodeId: onDemandTree.id_tree.root)
-          state = new State(documentListParams: documentSet.documentListParams(viz).all())
+      state.on 'change:viz', (__, viz) ->
+        if (id = viz?.get('id'))?
+          # Change URL so a page refresh brings us to this viz
+          url = window.location.pathname.replace(/\/\d+$/, "/#{id}")
+          window.history?.replaceState(url, '', url)
 
-          keyboardController = new KeyboardController(document)
+      state.setViz(viz)
 
-          controller = new VizsController(documentSet.vizs, viz) # TODO use State to track viz
-          els.vizs.appendChild(controller.el)
+      controller = new VizsController(documentSet.vizs, state)
+      els.vizs.appendChild(controller.el)
 
-          interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
-          animator = new Animator(interpolator)
-          focus = new AnimatedFocus({}, { animator: animator })
-          focus_controller(els.zoomSlider, focus)
+      controller = document_contents_controller
+        state: state
+        el: els.document
+      keyboardController.add_controller('DocumentContentsController', controller)
 
-          controller = tree_controller(els.tree, documentSet, onDemandTree, focus, state, animator)
-          keyboardController.add_controller('TreeController', controller)
+      new ModeView(el: @el, state: state)
 
-          controller = document_contents_controller
-            state: state
-            el: els.document
-          keyboardController.add_controller('DocumentContentsController', controller)
+      interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
+      animator = new Animator(interpolator)
+      focus = new AnimatedFocus({}, { animator: animator })
+      focus_controller(els.zoomSlider, focus)
 
-          controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state, onDemandTree)
-          keyboardController.add_controller('DocumentListController', controller)
+      tag_list_controller
+        documentSet: documentSet
+        state: state
+        el: els.tags
 
-          new ModeView(el: @el, state: state)
+      if !@searchDisabled
+        search_result_list_controller
+          documentSet: documentSet
+          state: state
+          el: els.search
 
-          tag_list_controller
-            documentSet: documentSet
-            state: state
-            el: els.tags
+      @_listenForRefocus()
+      @_listenForResize(els.document)
 
-          if !@searchDisabled
-            search_result_list_controller
-              documentSet: documentSet
-              state: state
-              el: els.search
+      onDemandTree = new OnDemandTree(documentSet, state)
+      onDemandTree.id_tree.observe('reset', -> focus.setPanAndZoom(0, 1))
 
-          @_listenForRefocus()
-          @_listenForResize(els.document)
+      controller = tree_controller(els.tree, documentSet, onDemandTree, focus, state, animator)
+      keyboardController.add_controller('TreeController', controller)
 
-          if @tourEnabled
-            TourController()
+      controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state, onDemandTree)
+      keyboardController.add_controller('DocumentListController', controller)
+
+      if @tourEnabled
+        TourController()
