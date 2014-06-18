@@ -16,7 +16,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
   #   the given query. query is guaranteed not to match any search results in
   #   the collection, and the query will always be trimmed of whitespace.
   # * create-tag-clicked(searchResult): A "create tag" button was clicked
-  Backbone.View.extend
+  class InlineSearchResultList extends Backbone.View
     id: 'search-result-list'
 
     events:
