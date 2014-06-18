@@ -3,19 +3,17 @@ define [ 'underscore' ], (_) ->
   #
   # For instance:
   #
-  #     params = DocumentListParams.all()
+  #     params = DocumentListParams(documentSet).all()
   #     params.type       # "all" -- useful for crafting user-visible messages
   #     params.params     # [] -- useful for creafting user-visible messages
   #     params.toString() # "DocumentListParams(root)"
-  #     params.findDocumentsFromCache(cache) # Array: all documents in cache
-  #     params.findTagCountsFromCache(cache) # Object: all tag id -> count for the entire docset, according to TagStore
+  #     params.findDocumentsInList(documentList) # Array: all documents
   #
-  #     params2 = DocumentListParams.byNodeId(2)
+  #     params2 = params.reset.byNode(node)
   #     params2.type       # "node"
-  #     params2.params     # [ 2 ]
+  #     params2.params     # [ 2 ] -- the node ID
   #     params2.toString() # "DocumentListParams(node=2)"
-  #     params2.findDocumentsFromCache(cache) # Array: all docs in cache in node 2
-  #     params2.findTagCountsFromCache(cache) # null: we cannot know how many of each tag are finded in the entire docset
+  #     params2.findDocumentsInList(documentList) # Array: all docs in cache with node 2
   #
   #     params.equals(params2) # false -- unless node 2 is the root node
   #
@@ -23,19 +21,21 @@ define [ 'underscore' ], (_) ->
   #
   # Here are all the possibilities:
   #
-  #     DocumentListParams.all() # all
-  #     DocumentListParams.untagged() # all with zero tags
-  #     DocumentListParams.byNodeId(Number) # by Node
-  #     DocumentListParams.byTagId(Number) # by Tag
-  #     DocumentListParams.bySearchResult(Number) # by Search Result
+  #     DocumentListParams(documentSet).all()
+  #     DocumentListParams(documentSet).untagged()
+  #     DocumentListParams(documentSet).byNode(node)
+  #     DocumentListParams(documentSet).byTag(tag)
+  #     DocumentListParams(documentSet).bySearchResult(searchResult)
   #
   # Each object is immutable.
   class AbstractDocumentListParams
-    constructor: (@type, @params...) ->
+    constructor: (@documentSet, @viz, @type, @params...) ->
+      @reset = new DocumentListParamsBuilder(@documentSet, @viz)
 
     toString: ->
       if @params.length
-        "DocumentListParams(#{@type}:#{@params.join(',')})"
+        ids = (x.id for x in @params)
+        "DocumentListParams(#{@type}:#{ids.join(',')})"
       else
         "DocumentListParams(#{@type})"
 
@@ -51,15 +51,7 @@ define [ 'underscore' ], (_) ->
     # locally-shown documents will change and update them ahead of time.
     #
     # The default result, `[]`, must work in all cases.
-    findDocumentsFromCache: (cache) -> []
-
-    # Returns an Object of tagId -> count, or `null` if we cannot be sure
-    #
-    # We use this to optimize some obvious cases: for instance, if we tag the
-    # root node, we can update counts in the TagStore.
-    #
-    # The default result, `null`, must work in all cases.
-    findTagCountsFromCache: (cache) -> null
+    findDocumentsInList: (documentList) -> []
 
     # Returns the parameters in pure JSON format.
     #
@@ -67,6 +59,17 @@ define [ 'underscore' ], (_) ->
     # ".../tag?nodes[]=2". This method would return `{ nodes: 2 }` to help
     # generate that URL.
     toJSON: -> throw new Error('not implemented')
+
+    # Returns all you need for i18n-ized names.
+    #
+    # For instance:
+    #
+    # * [ 'all' ]
+    # * [ 'node', 'node description' ]
+    # * [ 'tag', 'tag name' ]
+    # * [ 'untagged' ]
+    # * [ 'searchResult', 'query' ]
+    toI18n: -> throw new Error('not implemented')
 
     # Returns the parameters such that Overview servers can understand them.
     #
@@ -76,20 +79,15 @@ define [ 'underscore' ], (_) ->
     # Overview's servers expect each ID array to be a single String, with
     # commas delimiting each ID.
     #
-    # You must pass baseParams, a filter that describes the app the user is
-    # looking at. For instance, the Tree app is always rooted at a node; set a
-    # filter of `{ nodes: rootNodeId }` and that will be added to the API iff
-    # there is no node in the selection already. (If there _is_ a node in the
-    # selection, then presumably it is a child of the one you're passing in the
-    # filter, meaning it's okay to omit it.)
-    toApiParams: (filter) ->
-      ret = {}
+    # If there is a Viz, this selection's return value will be passed through
+    # Viz.scopeApiParams(). For instance, a Tree viz can add a `node` property
+    # to selections that don't already have one.
+    toApiParams: ->
+      apiParams = {}
       for k, v of @toJSON()
-        ret[k] = v.map(String).join(',')
-      for k, v of (filter ? {})
-        if k not of ret
-          ret[k] = v
-      ret
+        apiParams[k] = v.map(String).join(',')
+
+      @viz.scopeApiParams(apiParams)
 
   MagicUntaggedTagId = 0
 
@@ -101,78 +99,66 @@ define [ 'underscore' ], (_) ->
     documentsArray
 
   class AllDocumentListParams extends AbstractDocumentListParams
-    constructor: -> super('all')
+    constructor: (documentSet, viz) -> super(documentSet, viz, 'all')
 
-    findDocumentsFromCache: (cache) ->
-      ret = (document for __, document of cache.document_store.documents)
-      sortDocumentsArray(ret)
+    findDocumentsInList: (list) -> list
 
     toJSON: -> {}
 
+    toI18n: -> [ 'all' ]
+
   class DocumentDocumentListParams extends AbstractDocumentListParams
-    constructor: (@documentId) -> super('document', @documentId)
+    constructor: (documentSet, viz, @document) -> super(documentSet, viz, 'document', @document)
 
-    findDocumentsFromCache: (cache) ->
-      d = cache.document_store.documents[@documentId]
-      d? && [d] || []
+    findDocumentsInList: (list) ->
+      documentId = @document.id
+      list.filter((x) -> documentId == x.id)
 
-    toJSON: -> { documents: [ @documentId ] }
+    toJSON: -> { documents: [ @document.id ] }
 
   class NodeDocumentListParams extends AbstractDocumentListParams
-    constructor: (@nodeId) -> super('node', @nodeId)
+    constructor: (documentSet, viz, @node) -> super(documentSet, viz, 'node', @node)
 
-    findDocumentsFromCache: (cache) ->
-      ret = (d for __, d of cache.document_store.documents when @nodeId in d.nodeids)
-      sortDocumentsArray(ret)
+    findDocumentsInList: (list) ->
+      nodeId = @node.id
+      list.filter((d) -> nodeId in d.attributes.nodeids)
 
-    toJSON: -> { nodes: [ @nodeId ] }
+    toJSON: -> { nodes: [ @node.id ] }
+
+    toI18n: -> [ 'node', @node.description || '' ]
 
   class TagDocumentListParams extends AbstractDocumentListParams
-    constructor: (@tagId) -> super('tag', @tagId)
+    constructor: (documentSet, viz, @tag) -> super(documentSet, viz, 'tag', @tag)
 
-    findDocumentsFromCache: (cache) ->
-      ret = (d for __, d of cache.document_store.documents when @tagId in d.tagids)
-      sortDocumentsArray(ret)
+    findDocumentsInList: (list) ->
+      tagId = @tag.id
+      list.filter((d) -> tagId in d.attributes.tagids)
 
-    toJSON: -> { tags: [ @tagId ] }
+    toJSON: -> { tags: [ @tag.id ] }
+
+    toI18n: -> [ 'tag', @tag.attributes?.name || '' ]
 
   class UntaggedDocumentListParams extends AbstractDocumentListParams
-    constructor: -> super('untagged')
+    constructor: (documentSet, viz) -> super(documentSet, viz, 'untagged')
 
-    findDocumentsFromCache: (cache) ->
-      ret = (d for __, d of cache.document_store.documents when d.tagids.length == 0)
-      sortDocumentsArray(ret)
+    findDocumentsInList: (list) -> list.filter((x) -> x.attributes.tagids.length == 0)
 
     toJSON: -> { tags: [ MagicUntaggedTagId ] }
 
-  class IntersectionDocumentListParams extends AbstractDocumentListParams
-    constructor: (@list1, @list2) ->
-      throw 'Intersection only works when components are of different types' if @list1.type == @list2.type
-
-      super('intersection', [@list1.type, @list1.params], [@list2.type, @list2.params])
-
-    toString: -> "#{@list1.toString()} ∩ #{@list2.toString()}"
-
-    toJSON: -> _.extend({}, @list1.toJSON(), @list2.toJSON())
-
-    findDocumentsFromCache: (cache) ->
-      # Not terribly efficient...
-      ret1 = @list1.findDocumentsFromCache(cache)
-      ret2 = @list2.findDocumentsFromCache(cache)
-      ret = _.intersection(ret1, ret2)
-      sortDocumentsArray(ret)
+    toI18n: -> [ 'untagged' ]
 
   class SearchResultDocumentListParams extends AbstractDocumentListParams
-    constructor: (@searchResultId) -> super('searchResult', @searchResultId)
+    constructor: (documentSet, viz, @searchResult) -> super(documentSet, viz, 'searchResult', @searchResult)
 
-    toJSON: -> { searchResults: [ @searchResultId ] }
+    toJSON: -> { searchResults: [ @searchResult.get('id') || 0 ] }
 
-  {
-    all: -> new AllDocumentListParams()
-    intersect: (a, b) -> new IntersectionDocumentListParams(a, b)
-    byDocumentId: (documentId) -> new DocumentDocumentListParams(documentId)
-    byNodeId: (nodeId) -> new NodeDocumentListParams(nodeId)
-    byTagId: (tagId) -> new TagDocumentListParams(tagId)
-    untagged: (tagId) -> new UntaggedDocumentListParams()
-    bySearchResultId: (searchResultId) -> new SearchResultDocumentListParams(searchResultId)
-  }
+    toI18n: -> [ 'searchResult', @searchResult.attributes.query || '' ]
+
+  class DocumentListParamsBuilder
+    constructor: (@documentSet, @viz) ->
+    all: -> new AllDocumentListParams(@documentSet, @viz)
+    byDocument: (document) -> new DocumentDocumentListParams(@documentSet, @viz, document)
+    byNode: (node) -> new NodeDocumentListParams(@documentSet, @viz, node)
+    byTag: (tag) -> new TagDocumentListParams(@documentSet, @viz, tag)
+    untagged: -> new UntaggedDocumentListParams(@documentSet, @viz)
+    bySearchResult: (searchResult) -> new SearchResultDocumentListParams(@documentSet, @viz, searchResult)

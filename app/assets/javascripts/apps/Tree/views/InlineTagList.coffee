@@ -58,21 +58,14 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
 
     initialize: ->
       throw 'Must set collection, a Backbone.Collection of tag models' if !@collection
-      throw 'Must pass options.tagIdToModel, a function mapping id to Backbone.Model' if !@options.tagIdToModel
       throw 'Must set options.state, a State' if !@options.state
 
-      @tagIdToModel = @options.tagIdToModel
       @state = @options.state
 
       @listenTo(@state, 'change:documentListParams', @_onChangeDocumentListParams)
-      for k, v of { change: @_onChange, add: @_onAdd, remove: @_onRemove, reset: @_onReset }
+      for k, v of { change: @_onChange, add: @_onAdd, remove: @_onRemove, reset: @_onReset, sort: @_onReset }
         @listenTo(@collection, k, v)
       @render()
-
-    remove: ->
-      for key, callback of @stateCallbacks
-        @state.unobserve(key, callback)
-      Backbone.View.prototype.remove.apply(this)
 
     _onChangeDocumentListParams: ->
       @_renderSelected()
@@ -80,11 +73,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
     _documentListParamsToTagCid: (params) ->
       return null if !params? || params.type != 'tag'
 
-      tag = null
-      try
-        tag = @tagIdToModel(params.tagId)
-      catch e
-        console.log(e) # FIXME Remove the proxy nonsense and use pure Backbone
+      tag = @collection.get(params.tagId)
 
       return null if !tag?
 

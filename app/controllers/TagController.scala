@@ -155,7 +155,7 @@ trait TagController extends Controller {
       case Some(tag) => {
         storage.removeTagFromSelection(tagId, Selection(documentSetId))
         storage.delete(tag)
-        Ok
+        NoContent
       }
     }
   }

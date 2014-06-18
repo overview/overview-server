@@ -26,14 +26,6 @@ define [
       </li
     >""")
 
-    placeholderModel: _.template("""<li <%= liAttributes %>
-      class="document placeholder" data-cid="<%- model.cid %>">
-        <h3><%- t('placeholder') %></h3>
-        <p class="description"><%- t('placeholder') %></p>
-        <ul class="tags"></ul>
-      </li
-    >""")
-
     loadingModel: _.template("""<li <%= liAttributes %>
       class="document loading" data-cid="<%- model.cid %>">
         <h3><%- t('loading') %></h3>
@@ -59,7 +51,6 @@ define [
   #
   # * collection
   # * tags
-  # * tagIdToModel (see TagStoreProxy for a good implementation)
   # * selection (a Backbone.Model with 'cursorIndex' and 'selectedIndices')
   #
   # The following options are, well, optional:
@@ -78,14 +69,11 @@ define [
       'click .document': '_onClickDocument'
 
     initialize: ->
-      throw 'Must pass options.collection, a Collection of Backbone.Models' if !@options.collection
+      throw 'Must pass options.collection, a Collection of Backbone.Models' if 'collection' not of @options
       throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
-      throw 'Must pass options.tagIdToModel, a function mapping id to Backbone.Model' if !@options.tagIdToModel
       throw 'Must pass options.selection, a Backbone.Model with cursorIndex and selectedIndices' if !@options.selection
 
-      @tagIdToModel = @options.tagIdToModel
-
-      @_listenToCollection(@collection)
+      @_listenToCollection(@collection) if @collection?
 
       @listenTo(@options.tags, 'change', @_renderTag)
       @listenTo(@options.selection, 'change:selectedIndices', (model, value) => @_renderSelectedIndices(value))
@@ -98,25 +86,24 @@ define [
     _listenToCollection: (collection) ->
       @listenTo(collection, 'reset', @render)
       @listenTo(collection, 'change', @_changeModel)
-      @listenTo(collection, 'add', (model, collection, options) => @_addModel(model, options))
+      @listenTo(collection, 'remove', @_removeModel)
+      @listenTo(collection, 'add', @_addModel)
+      @listenTo(collection, 'tag', @_renderAllTags)
+      @listenTo(collection, 'untag', @_renderAllTags)
 
     setCollection: (collection) ->
-      @stopListening(@collection)
+      @stopListening(@collection) if @collection?
       @collection = collection
-      @_listenToCollection(@collection)
+      @_listenToCollection(@collection) if @collection?
       @render()
 
-    _renderModelHtml: (model, index) ->
+    _renderModelHtml: (model) ->
       template = if !model.id?
-        if index == @options.collection.length - 1
-          templates.loadingModel
-        else
-          templates.placeholderModel
+        templates.loadingModel
       else
         templates.model
 
-      tags = (@tagIdToModel(tagid) for tagid in model.get('tagids') || [])
-      tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
+      tags = @options.tags.filter((x) -> model.hasTag(x))
 
       template
         title: DocumentHelper.title(model.attributes)
@@ -127,11 +114,11 @@ define [
         liAttributes: @options.liAttributes || ''
 
     render: ->
-      html = if @collection.length
+      html = if @collection?.length
         html = templates.collection({
           collection: @collection
           t: t
-          renderModel: (model, index) => @_renderModelHtml(model, index)
+          renderModel: (model) => @_renderModelHtml(model)
           ulAttributes: @options.ulAttributes || ''
         })
       else
@@ -144,6 +131,14 @@ define [
 
       delete @maxViewedIndex
       @_updateMaxViewedIndex()
+
+    _renderAllTags: (tag) ->
+      # The tag has been added to or removed from lots of documents -- probably
+      # all of them have changed. But we don't want to reset the list, because
+      # that would break scrolling, cursor and selection. So we replace one at
+      # a time.
+      @_changeModel(model) for model in @collection.models
+      undefined
 
     # Returns the maximum index of a ul.documents>li that is presently visible.
     #
@@ -182,22 +177,16 @@ define [
         @maxViewedIndex = maxViewedIndex
         @trigger('change:maxViewedIndex', this, maxViewedIndex)
 
-    _addModel: (model, options) ->
-      $ul = @_$els.ul
-
-      if !$ul.length
+    _addModel: (model) ->
+      if @_$els.ul.length == 0
         @render()
       else
-        $lis = $ul.children()
-
-        index = options?.at || $lis.length
-
         html = @_renderModelHtml(model)
+        @_$els.ul.append(html)
 
-        if index >= $lis.length
-          $ul.append(html)
-        else
-          $lis.eq(index).before(html)
+    _removeModel: (model) ->
+      $li = @$("li.document[data-cid=#{model.cid}]")
+      $li.remove()
 
     _changeModel: (model) ->
       $li = @$("li.document[data-cid=#{model.cid}]")

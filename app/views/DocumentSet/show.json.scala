@@ -1,21 +1,38 @@
 package views.json.DocumentSet
 
-import play.api.i18n.Lang
-import play.api.libs.json.{Json,JsValue}
-import play.api.mvc.RequestHeader
+import java.util.Date
+import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.DateTimeZone
+import play.api.libs.json.{Json, JsValue}
 
-import models.OverviewUser
-import org.overviewproject.tree.orm.{DocumentSet, DocumentSetCreationJob, Tree}
+import org.overviewproject.tree.orm.{DocumentSetCreationJob,SearchResult,Tag}
+import org.overviewproject.models.Viz
 
 object show {
-  def apply(
-      user: OverviewUser,
-      documentSet: DocumentSet,
-      nTrees: Int
-      )(implicit lang: Lang, request: RequestHeader): JsValue = {
+  private val iso8601Format = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.UTC)
+
+  private def dateToISO8601(time: Date) : String = {
+    iso8601Format.print(time.getTime())
+  }
+
+  private def writeTag(tag: Tag) : JsValue = {
     Json.obj(
-      "id" -> documentSet.id,
-      "html" -> views.html.DocumentSet._documentSet(documentSet, nTrees, user).toString
+      "id" -> tag.id,
+      "name" -> tag.name,
+      "color" -> ("#" + tag.color)
+    )
+  }
+
+  def apply(
+    vizs: Iterable[Viz],
+    vizJobs: Iterable[DocumentSetCreationJob],
+    tags: Iterable[Tag],
+    searchResults: Iterable[SearchResult]) : JsValue = {
+
+    Json.obj(
+      "vizs" -> views.json.Viz.index(vizs, vizJobs),
+      "searchResults" -> searchResults.map(views.json.SearchResult.show(_)),
+      "tags" -> tags.map(writeTag)
     )
   }
 }

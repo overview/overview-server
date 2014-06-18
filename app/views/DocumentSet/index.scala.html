@@ -54,7 +54,7 @@
       }
 
       @if(jobs) {
-        <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showJson(0).url">
+        <div class="document-set-creation-jobs" data-refresh-url="@routes.ImportJobController.index().url" data-document-set-url-pattern="@routes.DocumentSetController.showHtmlInJson(0).url">
           <h2>@m("subtitle_jobs")</h2>
           <p class="description">@m("description_jobs")</p>
           <ul class="list-unstyled">

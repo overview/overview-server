@@ -46,8 +46,8 @@ define [
         tag2 = undefined
 
         beforeEach ->
-          tag1 = new MockTag(position: 0, id: 1, name: 'AA', color: '#123456')
-          tag2 = new MockTag(position: 1, id: 2, name: 'BB')
+          tag1 = new MockTag(id: 1, name: 'AA', color: '#123456')
+          tag2 = new MockTag(id: 2, name: 'BB')
           collection.reset([ tag1, tag2 ])
 
         it 'should show tags', ->
@@ -59,8 +59,13 @@ define [
           expect(view.$('li:eq(0) .tag-name').text()).to.eq('BB')
 
         it 'should add tags in the expected position', ->
-          collection.add(new MockTag(position: 1, id: 3, name: 'CC', color: '#cccccc'), at: 1)
+          collection.add(new MockTag(id: 3, name: 'CC', color: '#cccccc'), at: 1)
           expect(view.$('li:eq(1) .tag-name').text()).to.eq('CC')
+
+        it 'should handle sort', ->
+          collection.comparator = (a, b) -> b.attributes.id - a.attributes.id
+          collection.sort()
+          expect(view.$('li:eq(0) .tag-name').text()).to.eq('BB')
 
         it 'should not re-render the whole thing when a tag is added', ->
           # If the whole thing did re-render, then the form.submit event would
@@ -70,7 +75,7 @@ define [
           #
           # See https://www.pivotaltracker.com/story/show/67400952
           el = view.$('form')[0]
-          collection.add(new MockTag(position: 1, id: 3, name: 'CC', color: '#cccccc'), at: 1)
+          collection.add(new MockTag(id: 3, name: 'CC', color: '#cccccc'), at: 1)
           while el? && el != view.el
             el = el.parentNode
 

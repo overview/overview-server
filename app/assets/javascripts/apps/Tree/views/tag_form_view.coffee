@@ -34,9 +34,6 @@ define [
         move: (color) -> $color.spectrum('set', color.toHexString()).change() # Issue #168
       })
 
-      $form.modal()
-      $form.find('input[type=text]').focus()
-
       $form.on 'hidden.bs.modal', () =>
         $color.spectrum('destroy')
         $form.remove()
@@ -57,6 +54,11 @@ define [
         if !message || window.confirm(message)
           this._notify('delete')
           $form.modal('hide')
+
+      $form.modal('show')
+      $form.find('input:eq(0)').focus().select()
+      $form.on 'shown.bs.modal', ->
+        $form.find('input:eq(0)').focus().select()
 
       @form = $form[0] # for unit testing
 
@@ -88,7 +90,7 @@ define [
                     name="name"
                     class="form-control"
                     required="required"
-                    value="<%- tag.name %>"
+                    value="<%- tag.attributes.name %>"
                     />
                 </div>
                 <div class="form-group">
@@ -99,13 +101,13 @@ define [
                       id="tag-form-color"
                       name="color"
                       required="required"
-                      value="<%- tag.color || color_table.get(tag.name) %>"
+                      value="<%- tag.attributes.color %>"
                       />
                   </div>
                 </div>
               </div>
               <div class="modal-footer">
-                <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete', tag.name) %>" value="<%- i18n('views.Tag._form.delete') %>" />
+                <input type="reset" class="btn pull-left btn-danger delete" data-dismiss="modal" data-confirm="<%- i18n('views.Tag._form.confirm_delete', tag.attributes.name) %>" value="<%- i18n('views.Tag._form.delete') %>" />
                 <input type="reset" class="btn" data-dismiss="modal" value="<%- i18n('views.Tag._form.close') %>" />
                 <input type="submit" class="btn btn-primary" value="<%- i18n('views.Tag._form.submit') %>" />
               </div>

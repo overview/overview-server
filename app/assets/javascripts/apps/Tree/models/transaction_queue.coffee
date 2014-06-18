@@ -32,7 +32,8 @@ define [ 'jquery' ], ($) ->
           .done (args...) ->
             publicDeferred.resolve(args...)
           .fail (args...) ->
-            #console.log(obj)
+            console.log('Transaction failed', obj)
+            alert('An unexpected error happened. Please refresh the page.')
             throw "transactionFailed" # The queue will be stalled forever!
             publicDeferred.reject(args...)
           .always =>

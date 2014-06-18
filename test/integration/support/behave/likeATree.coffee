@@ -4,9 +4,9 @@ wd = require('wd')
 module.exports = (opts) ->
   testMethods.usingPromiseChainMethods
     waitForDocumentListToLoad: ->
-      # It's loaded when "#document-list-title .loading" changes to
-      # "#document-list-title .node"
-      @waitForElementByCss('#document-list-title .node')
+      # It's loaded when "#document-list-title.loading" changes to
+      # "#document-list-title.loaded"
+      @waitForElementByCss('#document-list-title.loaded')
 
   before ->
     @likeATree = {}
@@ -26,7 +26,7 @@ module.exports = (opts) ->
   it 'should show a document list title', ->
     @userBrowser
       .waitForDocumentListToLoad()
-      .elementById('document-list-title').text().should.eventually.match(/\d+ documents in folder “.*”/)
+      .elementById('document-list-title').text().should.eventually.match(/\d+ document/)
 
   if 'documents' of opts
     for document in opts.documents

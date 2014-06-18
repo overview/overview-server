@@ -22,18 +22,18 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'spectrum' ], ($, _, Backbo
   # Represents a list of tags
   #
   # Usage:
-  #   tags = new Tags([], { tagStore: tagStore })
+  #   tags = new Tags([])
   #   view = new TagList({ collection: tags })
   #   $('body').append(view.el)
   #
   # The view will emit the following events:
   #
   # * add: user requested to add a new Tag (plain-old-data object with name/color)
-  # * remove: user requested to remove a Tag
-  # * update(tag, attrs): user requested to update a Tag (Backbone object) with
+  # * remove: user requested to remove a Tag (Backbone.Model)
+  # * update(tag, attrs): user requested to update a Tag (Backbone.Model) with
   #   new attributes.
   # * export: user requested to export the list of tags to CSV
-  Backbone.View.extend
+  class TagList extends Backbone.View
     className: 'vertical-tag-list'
 
     events:

@@ -34,145 +34,149 @@ define [
         'views.Tree.show.Tour.skip': 'skip'
         'views.Tree.show.Tour.tipNumber': 'tipNumber,{0},{1}'
 
-      @sandbox = sinon.sandbox.create(useFakeServer: true)
+      # We tick manually. Otherwise there's a big delay in resolving promises
+      @sandbox = sinon.sandbox.create(useFakeServer: true, useFakeTimers: true)
 
-      @$html = $('<div><p class="p1">Paragraph one</p><p class="p2">Paragraph two</p><p class="p3">Paragraph three</p></div>')
-        .appendTo('body')
-      @app = new TourApp(tour, skipRepaint: true)
+    afterEach ->
+      @sandbox.clock.tick(1)
+      for req in @sandbox.server.requests when !req.status?
+        req.respond(500, {}, '')
+      @sandbox.clock.tick(1)
+      @sandbox.restore()
 
-    afterEach (done) ->
-      _.defer => # make sure promises settle
-        @app.remove()
-        @$html.remove()
-        @sandbox.restore()
-        done()
-
-    describe 'donePromise()', ->
+    describe 'when all elements are present', ->
       beforeEach ->
-        @thenSpy = sinon.spy()
-        @promise = @app.donePromise().then(@thenSpy)
-        undefined # avoid mocha-as-promised
+        @$html = $('<div><p class="p1">Paragraph one</p><p class="p2">Paragraph two</p><p class="p3">Paragraph three</p></div>')
+        @app = new TourApp(tour, skipRepaint: true, container: @$html)
 
-      it 'should be a promise', ->
-        expect(typeof(@promise.then)).to.eq('function')
+      afterEach ->
+        @app.remove()
 
-      it 'should not be resolved', (done) ->
-        _.defer =>
-          expect(@thenSpy).not.to.have.been.called
-          done()
-
-      describe 'when done() is called', ->
+      describe 'donePromise()', ->
         beforeEach ->
-          @app.done()
+          @thenSpy = sinon.spy()
+          @promise = @app.donePromise().then(@thenSpy)
           undefined # avoid mocha-as-promised
 
-        it 'should DELETE /tour', (done) ->
-          _.defer =>
+        it 'should be a promise', ->
+          expect(typeof(@promise.then)).to.eq('function')
+
+        it 'should not be resolved', ->
+          @sandbox.clock.tick(1)
+          expect(@thenSpy).not.to.have.been.called
+
+        describe 'when done() is called', ->
+          beforeEach ->
+            @app.done()
+            @sandbox.clock.tick(1)
+
+          it 'should DELETE /tour', ->
             request = @sandbox.server.requests[0]
             expect(request.url).to.eq('/tour')
             expect(request.method).to.eq('DELETE')
-            done()
 
-        it 'should not resolve donePromise before the DELETE returns', (done) ->
-          _.defer =>
+          it 'should not resolve donePromise before the DELETE returns', ->
             expect(@thenSpy).not.to.have.been.called
-            done()
 
-        it 'should resolve donePromise when DELETE returns', (done) ->
-          _.defer =>
+          it 'should resolve donePromise when DELETE returns', ->
             @sandbox.server.requests[0].respond([ 204, {}, '' ])
-            _.defer =>
-              expect(@thenSpy).to.have.been.called
-              done()
+            @sandbox.clock.tick(1)
+            expect(@thenSpy).to.have.been.called
 
-    describe 'on load', ->
-      it 'should display the first tooltip', ->
-        expect($('.popover.in .popover-title')).to.contain('title1')
-        expect($('.popover.in .popover-content')).to.contain('html1')
-        expect($('.popover.in.bottom')).to.be.visible
+      describe 'on load', ->
+        it 'should display the first tooltip', ->
+          expect(@$html.find('.popover.in .popover-title')).to.contain('title1')
+          expect(@$html.find('.popover.in .popover-content')).to.contain('html1')
+          expect(@$html.find('.popover.in.bottom')).to.exist
 
-      it 'should have next and skip buttons', ->
-        expect($('.popover.in .tip-number')).to.contain('tipNumber,1,3')
-        expect($('.popover.in a.next')).to.be.visible
-        expect($('.popover.in a.skip')).to.be.visible
-        expect($('.popover.in a.previous')).not.to.be.visible
-        expect($('.popover.in a.done')).not.to.be.visible
+        it 'should have next and skip buttons', ->
+          expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,1,3')
+          expect(@$html.find('.popover.in a.next')).to.exist
+          expect(@$html.find('.popover.in a.skip')).to.exist
+          expect(@$html.find('.popover.in a.previous')).not.to.exist
+          expect(@$html.find('.popover.in a.done')).not.to.exist
 
-      it 'should not call done()', -> expect(@sandbox.server.requests.length).to.eq(0)
+        it 'should not call done()', -> expect(@sandbox.server.requests.length).to.eq(0)
 
-    describe 'when clicking skip link', ->
-      beforeEach -> $('.popover.in a.skip').click()
+      it 'should exit tour and resolve promise when clicking skip', ->
+        spy = sinon.spy()
+        @app.donePromise().then(spy)
 
-      it 'should exit tour and resolve promise', ->
-        expect($('.popover').length).to.eq(0)
-        _.defer =>
-          @sandbox.server.requests[0].respond(204, {}, '')
-        @app.donePromise() # mocha-as-promised will fail if this fails
+        @$html.find('.popover.in a.skip').click()
+        expect(@$html.find('.popover').length).to.eq(0)
 
-    describe 'after clicking next', ->
-      beforeEach -> $('.popover.in a.next').click()
+        @sandbox.clock.tick(1)
+        @sandbox.server.requests[0].respond(204, {}, '')
+        @sandbox.clock.tick(1)
+        expect(spy).to.have.been.called
 
-      it 'should switch to second tooltip', ->
-        expect($('.popover.in .popover-title')).to.contain('title2')
-        expect($('.popover.in .popover-content')).to.contain('html2')
+      describe 'after clicking next', ->
+        beforeEach -> @$html.find('.popover.in a.next').click()
 
-      it 'should have next and skip buttons', ->
-        expect($('.popover.in .tip-number')).to.contain('tipNumber,2,3')
-        expect($('.popover.in a.next')).to.be.visible
-        expect($('.popover.in a.skip')).to.be.visible
-        expect($('.popover.in a.previous')).to.be.visible
-        expect($('.popover.in a.done')).not.to.be.visible
+        it 'should switch to second tooltip', ->
+          expect(@$html.find('.popover.in .popover-title')).to.contain('title2')
+          expect(@$html.find('.popover.in .popover-content')).to.contain('html2')
 
-      it 'should go to previous on previous click', ->
-        $('.popover.in a.previous').click()
-        expect($('.popover.in .popover-title')).to.contain('title1')
-        expect($('.popover.in .popover-content')).to.contain('html1')
+        it 'should have next and skip buttons', ->
+          expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,2,3')
+          expect(@$html.find('.popover.in a.next')).to.exist
+          expect(@$html.find('.popover.in a.skip')).to.exist
+          expect(@$html.find('.popover.in a.previous')).to.exist
+          expect(@$html.find('.popover.in a.done')).not.to.exist
 
-    describe 'at last tooltip', ->
-      beforeEach ->
-        $('.popover.in a.next').click()
-        $('.popover.in a.next').click()
+        it 'should go to previous on previous click', ->
+          @$html.find('.popover.in a.previous').click()
+          expect(@$html.find('.popover.in .popover-title')).to.contain('title1')
+          expect(@$html.find('.popover.in .popover-content')).to.contain('html1')
 
-      it 'should switch to the third tooltip', ->
-        expect($('.popover.in .popover-title')).to.contain('title3')
+      describe 'at last tooltip', ->
+        beforeEach ->
+          @$html.find('.popover.in a.next').click()
+          @$html.find('.popover.in a.next').click()
 
-      it 'should hage previous and done buttons', ->
-        expect($('.popover.in .tip-number')).to.contain('tipNumber,3,3')
-        expect($('.popover.in a.next')).not.to.be.visible
-        expect($('.popover.in a.skip')).not.to.be.visible
-        expect($('.popover.in a.previous')).to.be.visible
-        expect($('.popover.in a.done')).to.be.visible
+        it 'should switch to the third tooltip', ->
+          expect(@$html.find('.popover.in .popover-title')).to.contain('title3')
 
-    describe 'when clicking done link', ->
-      beforeEach ->
-        $('.popover.in a.next').click()
-        $('.popover.in a.next').click()
-        $('.popover.in a.done').click()
+        it 'should hage previous and done buttons', ->
+          expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,3,3')
+          expect(@$html.find('.popover.in a.next')).not.to.exist
+          expect(@$html.find('.popover.in a.skip')).not.to.exist
+          expect(@$html.find('.popover.in a.previous')).to.exist
+          expect(@$html.find('.popover.in a.done')).to.exist
 
-      it 'should exit tour and resolve promise', ->
-        expect($('.popover').length).to.eq(0)
-        _.defer =>
-          @sandbox.server.requests[0].respond(204, {}, '')
-        @app.donePromise() # mocha will pick up on this value
+      it 'should exit tour and resolve promise when clicking done link', ->
+        spy = sinon.spy()
+        @app.donePromise().then(spy)
+
+        @$html.find('.popover.in a.next').click()
+        @$html.find('.popover.in a.next').click()
+        @$html.find('.popover.in a.done').click()
+        @sandbox.clock.tick(1)
+
+        expect(@$html.find('.popover')).not.to.exist
+
+        @sandbox.server.requests[0].respond(204, {}, '')
+        @sandbox.clock.tick(1)
+        expect(spy).to.have.been.called
 
     describe 'when an element is missing', ->
       beforeEach ->
-        @app.remove()
-        @$html.find('.p2').remove()
-        @app2 = new TourApp(tour, skipRepaint: true)
+        @$html = $('<div><p class="p1">Paragraph one</p><p class="p3">Paragraph three</p></div>')
+        @app = new TourApp(tour, skipRepaint: true, container: @$html)
 
       afterEach ->
-        @app2.remove()
+        @app.remove()
 
-      it 'should set the proper tip total', -> expect($('.popover.in .tip-number')).to.contain('tipNumber,1,2')
+      it 'should set the proper tip total', ->
+        expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,1,2')
 
       describe 'after clicking next', ->
         beforeEach ->
-          $('.popover.in a.next').click()
+          @$html.find('.popover.in a.next').click()
 
-        it 'should show the done button', -> expect($('.popover.in a.done')).to.be.visible
+        it 'should show the done button', -> expect(@$html.find('.popover.in a.done')).to.exist
 
         it 'should show the proper tip', ->
-          expect($('.popover.in .tip-number')).to.contain('tipNumber,2,2')
-          expect($('.popover.in .popover-title')).to.contain('title3')
-          expect($('.popover.in .popover-content')).to.contain('html3')
+          expect(@$html.find('.popover.in .tip-number')).to.contain('tipNumber,2,2')
+          expect(@$html.find('.popover.in .popover-title')).to.contain('title3')
+          expect(@$html.find('.popover.in .popover-content')).to.contain('html3')

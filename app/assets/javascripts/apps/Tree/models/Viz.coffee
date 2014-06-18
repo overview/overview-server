@@ -1,4 +1,7 @@
-define [ 'backbone' ], (Backbone) ->
+define [
+  'underscore'
+  'backbone'
+], (_, Backbone) ->
   # A Viz is a visualization the server can serve up.
   #
   # The id is an ID on the server; everything else is for displaying
@@ -21,6 +24,13 @@ define [ 'backbone' ], (Backbone) ->
 
       attrs.typeAndId = "#{attrs.type}-#{attrs.id}"
 
+      for [ k, v ] in (attrs.creationData || [])
+        if k == 'rootNodeId'
+          attrs.rootNodeId = +v
+
       super(attrs)
 
     idAttribute: 'typeAndId'
+
+    scopeApiParams: (params) ->
+      _.extend({ nodes: String(@get('rootNodeId')) }, params)

@@ -42,7 +42,7 @@ define [
       it 'should show error', -> expect(view.$('option:disabled').text()).to.eq('tag.error')
 
     describe 'after loading succeeds', ->
-      beforeEach -> deferred.resolve(tags: [
+      beforeEach -> deferred.resolve([
         { id: 1, name: 'Tag 1', color: '#000001', size: 1 }
         { id: 2, name: 'Tag 2', color: '#000002', size: 2 }
         { id: 3, name: 'Tag 3', color: '#000003', size: 3 }

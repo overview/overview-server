@@ -67,9 +67,7 @@ trait TreeController extends Controller {
         augmentJobWithDescription(j) match {
           case Right(goodJob) =>
             storage.insertJob(goodJob)
-            Redirect(routes.DocumentSetController.index()).flashing(
-              "event" -> "tree-create"
-            )
+            NoContent
           case Left(_) =>
             NotFound
         }

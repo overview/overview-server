@@ -1,15 +1,14 @@
-define [ '../views/tag_form_view', '../models/DocumentListParams', './logger' ], (TagFormView, DocumentListParams, Logger) ->
-  tag_to_short_string = (tag) ->
-    "#{tag.id} (#{tag.name})"
+define [ '../views/tag_form_view', './logger' ], (TagFormView, Logger) ->
+  tag_to_short_string = (tag) -> "#{tag.id} (#{tag.attributes.name})"
 
-  tag_diff_to_string = (tag1, tag2) ->
+  tag_diff_to_string = (tag, attrs) ->
     changed = false
     s = ''
-    if tag1.name != tag2.name
-      s += " name: <<#{tag1.name}>> to <<#{tag2.name}>>"
+    if tag.attributes.name != attrs.name
+      s += " name: <<#{tag.attributes.name}>> to <<#{attrs.name}>>"
       changed = true
-    if tag1.color != tag2.color
-      s += " color: <<#{tag1.color}>> to <<#{tag2.color}>>"
+    if tag.attributes.color != attrs.color
+      s += " color: <<#{tag.attributes.color}>> to <<#{attrs.color}>>"
       changed = true
     if !changed
       s += " (no change)"
@@ -29,16 +28,17 @@ define [ '../views/tag_form_view', '../models/DocumentListParams', './logger' ],
       log('stopped editing tag', tag_to_short_string(tag))
       form = undefined
 
-    form.observe 'change', (new_tag) ->
-      log('edited tag', "#{tag.id}:#{tag_diff_to_string(tag, new_tag)}")
-      cache.update_tag(tag, new_tag)
+    form.observe 'change', (new_attrs) ->
+      log('edited tag', "#{tag.id}:#{tag_diff_to_string(tag, new_attrs)}")
+      tag.save(new_attrs)
+      tag.collection?.sort()
 
     form.observe 'delete', ->
       log('deleted tag', tag_to_short_string(tag))
-      if state.get('taglike')?.tagId == tag.id
-        state.set('taglike', null)
-      if (params = state.get('documentListParams'))? && params.type == 'tag' && params.tagId == tag.id
-        state.setDocumentListParams(DocumentListParams.all())
-      cache.delete_tag(tag)
+      if state.get('taglikeCid') == tag.cid
+        state.set('taglikeCid', null)
+      if (params = state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
+        state.resetDocumentListParams.all()
+      tag.destroy()
 
     undefined

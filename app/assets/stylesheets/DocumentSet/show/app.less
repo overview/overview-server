@@ -12,13 +12,8 @@
   width: 50%;
   border: 5px solid transparent;
   z-index: 2; // hover descriptions go above everything
-  display: -ms-flexbox;
-  display: -webkit-flex;
-  display: flex;
-  -webkit-box-direction: normal;
-  -ms-flex-direction: column;
-  -webkit-flex-direction: column;
-  flex-direction: column;
+  .display-flex();
+  .flex-direction-column();
 }
 
 #tree-app-right {
@@ -32,9 +27,7 @@
 }
 
 #tree-app-tree {
-  -ms-flex-grow: 1;
-  -webkit-flex-grow: 1;
-  flex-grow: 1;
+  .flex(1 0 auto);
 }
 
 .search-disabled #tree-app-left-middle {

@@ -12,11 +12,12 @@ define [
     change: (new_tag) -> @_notify('change', new_tag)
     delete: () -> @_notify('delete')
 
+  class Tag extends Backbone.Model
+
   describe 'controllers/tag_form_controller', ->
     describe 'tag_form_controller', ->
-      log_values = undefined
-      view = undefined
-      tag = { id: 1, name: 'tag', color: '#abcdef' }
+      log_values = null
+      view = null
 
       options = {
         log: (s1, s2) -> log_values.push([s1, s2])
@@ -25,34 +26,49 @@ define [
 
       beforeEach ->
         log_values = []
-        @cache =
-          update_tag: sinon.spy()
-          delete_tag: sinon.spy()
+        @tag = new Tag(id: 1, name: 'tag', color: '#abcdef')
+        @tag.save = sinon.spy()
+        @tag.destroy = sinon.spy()
+        @tag.collection = { sort: sinon.spy() }
         @state = new Backbone.Model
-        @controller = tag_form_controller(tag, @cache, @state, options)
+        @state.resetDocumentListParams =
+          all: sinon.spy()
+        @controller = tag_form_controller(@tag, @cache, @state, options)
 
       it 'should create a view when called', ->
         expect(view).to.exist
 
-      it 'should call cache.update_tag on change', ->
-        new_tag = { name: 'tag2', color: '#fedcba' }
-        view.change(new_tag)
-        expect(@cache.update_tag).to.have.been.calledWith(tag, new_tag)
+      it 'should call tag.save on change', ->
+        view.change(name: 'tag2', color: '#fedcba')
+        expect(@tag.save).to.have.been.calledWith(name: 'tag2', color: '#fedcba')
 
-      it 'should call cache.delete_tag on delete', ->
-        view.delete()
-        expect(@cache.delete_tag).to.have.been.calledWith(tag)
+      it 'should sort tag.collection on change', ->
+        view.change(name: 'tag2')
+        expect(@tag.collection.sort).to.have.been.called
 
-      it 'should deselect state.taglike if necessary on delete', ->
-        @state.set('taglike', { tagId: 1 })
+      it 'should call tag.destroy on delete', ->
         view.delete()
-        expect(@state.get('taglike')).to.be.null
+        expect(@tag.destroy).to.have.been.called
+
+      it 'should deselect state.taglikeCid if necessary on delete', ->
+        @state.set('taglikeCid', @tag.cid)
+        view.delete()
+        expect(@state.get('taglikeCid')).to.be.null
+
+      it 'should not deselect state.taglikeCid if unnecessary on delete', ->
+        @state.set('taglikeCid', 'untagged')
+        view.delete()
+        expect(@state.get('taglikeCid')).to.eq('untagged')
 
       it 'should change documentListParams if necessary on delete', ->
-        @state.set(documentListParams: { type: 'tag', tagId: 1 })
-        @state.setDocumentListParams = sinon.spy()
+        @state.set(documentListParams: { type: 'tag', tag: @tag })
         view.delete()
-        expect(@state.setDocumentListParams).to.have.been.called
+        expect(@state.resetDocumentListParams.all).to.have.been.called
+
+      it 'should not change documentListParams if unnecessary on delete', ->
+        @state.set(documentListParams: { type: 'foo' })
+        view.delete()
+        expect(@state.resetDocumentListParams.all).not.to.have.been.called
 
       it 'should log on start', ->
         expect(log_values[0]).to.deep.eq(['began editing tag', '1 (tag)'])

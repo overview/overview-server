@@ -1,4 +1,10 @@
-define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPagingStrategy) ->
+define [
+  'underscore'
+  'jquery'
+  'backbone'
+  './id_tree'
+  './lru_paging_strategy'
+], (_, $, Backbone, IdTree, LruPagingStrategy) ->
   DEFAULT_OPTIONS = {
     cache_size: 5000,
   }
@@ -45,7 +51,11 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
   #
   # * cache_size (default 5000): number of nodes to *not* remove
   class OnDemandTree
-    constructor: (@cache, options={}) ->
+    constructor: (@documentSet, @viz, options={}) ->
+      _.extend(@, Backbone.Events)
+
+      @transaction_queue = @documentSet.transactionQueue
+
       @id_tree = new IdTree()
       @nodes = {}
       @_paging_strategy = new LruPagingStrategy(options.cache_size || DEFAULT_OPTIONS.cache_size)
@@ -201,14 +211,17 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
 
         undefined
 
-    demand_root: () ->
-      @cache.resolve_deferred('root')
-        .done(this._add_json.bind(this))
+    demand_root: -> @_demand("nodes")
+    demand_node: (id) -> @_demand("nodes/#{id}")
 
-    demand_node: (id) ->
-      return if @id_tree.children[id]? # TODO make this async
-      @cache.resolve_deferred('node', id)
-        .done(this._add_json.bind(this))
+    _demand: (arg) ->
+      @transaction_queue.queue(=>
+        $.ajax
+          type: 'get'
+          url: "/trees/#{@viz.get('id')}/#{arg}.json"
+          success: (json) => @_add_json(json)
+          error: (err) => console.log('ERROR fetching tree contents', err)
+      , 'OnDemandTree._demand')
 
     _collapse_node: (idTreeRemove, id) ->
       idsToRemove = []
@@ -229,23 +242,95 @@ define [ 'underscore', './id_tree', './lru_paging_strategy' ], (_, IdTree, LruPa
     get_loaded_node_children: (node) ->
       _.compact(@nodes[child_id] for child_id in @id_tree.children[node.id])
 
-    get_node: (id) ->
+    getNode: (id) ->
       @nodes[String(id)]
 
-    get_root: ->
+    getRoot: ->
       id = @id_tree.root
       id? && @get_node(id) || undefined
 
-    get_node_parent: (node) ->
+    getNodeParent: (node) ->
       parent_id = @id_tree.parent[node.id]
       if parent_id? then @nodes[parent_id] else undefined
 
-    rewrite_tag_id: (old_tagid, tagid) ->
-      for __, node of @nodes
-        tagCounts = (node.tagCounts ||= {})
-        tagcount = tagCounts[old_tagid]
-        if tagcount?
-          delete tagCounts[old_tagid]
-          tagCounts[tagid] = tagcount
+    get_node: (id) -> @getNode(id)
+    get_root: -> @getRoot()
+    get_node_parent: (node) -> @getNodeParent(node)
 
-      undefined
+    saveNode: (node, newAttributes) ->
+      for k, v of newAttributes
+        node[k] = v
+      @transaction_queue.queue(=>
+        $.ajax
+          type: 'POST'
+          url: "/trees/#{@viz.get('id')}/nodes/#{node.id}"
+          data: node
+          success: => @id_tree.batchAdd(->) # refresh
+      , 'OnDemandTree.saveNode')
+
+    # Requests new node counts from the server, and updates the cache
+    #
+    # Params:
+    #
+    # * tag: tag (or tag ID) to refresh.
+    # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
+    #   every loaded node ID.
+    _refreshTagCounts: (tag, onlyNodeIds=undefined) ->
+      @transaction_queue.queue(=>
+        @_refreshPost('tagCounts', 'tag', tag.id, onlyNodeIds)
+      , 'OnDemandTree._refreshTagCounts')
+
+    _refreshUntaggedCounts: (onlyNodeIds=undefined) ->
+      @transaction_queue.queue(=>
+        @_refreshPost('tagCounts', 'untagged', 0, onlyNodeIds)
+      , 'OnDemandTree._refreshUntagged')
+
+    _refreshSearchResultCounts: (searchResult, onlyNodeIds=undefined) ->
+      @transaction_queue.queue(=>
+        @_refreshPost('searchResultCounts', 'search', searchResult.get('id'), onlyNodeIds)
+      , 'OnDemandTree._refreshSearchResultCounts')
+
+    _refreshPost: (countsKey, endpoint, objectId, onlyNodeIds) ->
+      onlyNodeIds ||= (k for k, __ of @nodes) # all loaded nodes by default
+
+      url = {
+        'tag': "/documentsets/#{@documentSet.id}/tags/#{objectId}/node-counts"
+        'untagged': "/trees/#{@viz.id}/tags/untagged-node-counts"
+        'search': "/documentsets/#{@documentSet.id}/searches/#{objectId}/node-counts"
+      }[endpoint]
+
+      $.ajax
+        type: 'post'
+        url: url
+        data: { nodes: onlyNodeIds.join(',') }
+        success: (data) =>
+          i = 0
+          while i < data.length
+            nodeid = data[i++]
+            count = data[i++]
+
+            node = @nodes[nodeid]
+
+            if node?
+              counts = (node[countsKey] ||= {})
+
+              if count
+                counts[objectId] = count
+              else
+                delete counts[objectId]
+
+          @id_tree.batchAdd(->) # trigger update
+
+          undefined
+
+    refreshTaglikeCounts: (taglikeCid, onlyNodeIds=undefined) ->
+      if taglikeCid
+        if taglikeCid == 'untagged'
+          @_refreshUntaggedCounts(onlyNodeIds)
+        else if (searchResult = @documentSet.searchResults.get(taglikeCid))?
+          if searchResult.get('id')
+            @_refreshSearchResultCounts(searchResult, onlyNodeIds)
+        else if (tag = @documentSet.tags.get(taglikeCid))?
+          @_refreshTagCounts(tag, onlyNodeIds)
+        else
+          throw new Error('Unknown taglikeCid', taglikeCid)

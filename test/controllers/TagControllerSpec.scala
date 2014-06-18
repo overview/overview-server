@@ -23,7 +23,7 @@ class TagControllerSpec extends ControllerSpecification {
 
     "show an empty list" in new IndexJsonScope {
       h.status(result) must beEqualTo(h.OK)
-      h.contentAsString(result) must beEqualTo("""{"tags":[]}""")
+      h.contentAsString(result) must beEqualTo("[]")
     }
 
     "prevent caching of result" in new IndexJsonScope {
@@ -36,11 +36,9 @@ class TagControllerSpec extends ControllerSpecification {
         (Tag(documentSetId=documentSetId, id=2, name="tag2", color="222222") -> 10L)
       )
       h.status(result) must beEqualTo(h.OK)
-      h.contentAsJson(result) must beEqualTo(Json.obj(
-        "tags" -> Json.arr(
-          Json.obj("id" -> 1, "name" -> "tag1", "color" -> "#111111", "size" -> 5),
-          Json.obj("id" -> 2, "name" -> "tag2", "color" -> "#222222", "size" -> 10)
-        )
+      h.contentAsJson(result) must beEqualTo(Json.arr(
+        Json.obj("id" -> 1, "name" -> "tag1", "color" -> "#111111", "size" -> 5),
+        Json.obj("id" -> 2, "name" -> "tag2", "color" -> "#222222", "size" -> 10)
       ))
     }
   }
@@ -56,7 +54,7 @@ class TagControllerSpec extends ControllerSpecification {
 
     "show an empty list" in new IndexJsonWithTreeScope {
       h.status(result) must beEqualTo(h.OK)
-      h.contentAsString(result) must beEqualTo("""{"tags":[]}""")
+      h.contentAsString(result) must beEqualTo("[]")
     }
 
     "prevent caching of result" in new IndexJsonWithTreeScope {
@@ -69,11 +67,9 @@ class TagControllerSpec extends ControllerSpecification {
         (Tag(documentSetId=documentSetId, id=2, name="tag2", color="222222"), 10L, 8L)
       )
       h.status(result) must beEqualTo(h.OK)
-      h.contentAsJson(result) must beEqualTo(Json.obj(
-        "tags" -> Json.arr(
-          Json.obj("id" -> 1, "name" -> "tag1", "color" -> "#111111", "size" -> 5, "sizeInTree" -> 5),
-          Json.obj("id" -> 2, "name" -> "tag2", "color" -> "#222222", "size" -> 10, "sizeInTree" -> 8)
-        )
+      h.contentAsJson(result) must beEqualTo(Json.arr(
+        Json.obj("id" -> 1, "name" -> "tag1", "color" -> "#111111", "size" -> 5, "sizeInTree" -> 5),
+        Json.obj("id" -> 2, "name" -> "tag2", "color" -> "#222222", "size" -> 10, "sizeInTree" -> 8)
       ))
     }
   }

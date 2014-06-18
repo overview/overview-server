@@ -40,7 +40,7 @@ define [
     _loadTags: ->
       @$el.attr('class', 'loading')
       $.get(@tagListUrl)
-        .done((json) => @_renderTags(json.tags))
+        .done((json) => @_renderTags(json))
         .fail(=> @_renderTagLoadFailure())
 
     _renderTagLoadFailure: ->

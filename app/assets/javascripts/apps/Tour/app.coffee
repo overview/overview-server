@@ -20,8 +20,13 @@ define [
   #   done = app.donePromise() # resolved when user is done
   class TourApp
     constructor: (tour, options) ->
-      @tour = @_parseTour(tour)
       @options = options
+      @$container = if options?.container
+        $(options.container)
+      else
+        $('body')
+
+      @tour = @_parseTour(tour)
 
       @_doneDeferred = rsvp.defer()
       @_donePromise = @_doneDeferred
@@ -55,7 +60,7 @@ define [
 
     # Returns a Promise
     _disableTooltipsOnServer: ->
-      new rsvp.Promise (resolve, reject) ->
+      new rsvp.Promise (resolve, reject) =>
         $.ajax
           type: 'DELETE'
           url: DoneUrl
@@ -68,7 +73,7 @@ define [
         throw 'Must supply `title`, a String' if !item.title?
         throw 'Must supply `bodyHtml`, an HTML String' if !item.bodyHtml?
 
-        el = $(item.find).get(0)
+        el = @$container.find(item.find).get(0)
 
         if el
           el: el
@@ -99,38 +104,36 @@ define [
         t: t
 
       $popover = $(html)
-        .appendTo('body')
-        .show() # so we can find its position
+        .appendTo(@$container)
 
       $el = $(options.el)
-      # We put all these together to avoid an excess repaint
-      if @options?.skipRepaint
-        elRect = { top: 0, left: 0, right: 1, bottom: 1 }
-        tipWidth = 10
-        tipHeight = 10
-      else
+      if !@options?.skipRepaint
+        $popover.show() # so we can find its position
+
+        # We put all these together to avoid an excess repaint
         elRect = $el[0].getBoundingClientRect()
         tipWidth = $popover[0].offsetWidth
         tipHeight = $popover[0].offsetHeight
 
-      positionCss = switch options.placement
-        when 'left'
-          top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
-          left: elRect.left - tipWidth
-        when 'right'
-          top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
-          left: elRect.right
-        when 'top'
-          top: elRect.top - tipHeight
-          left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
-        when 'bottom'
-          top: elRect.bottom
-          left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
-        else throw "Invalid placement #{options.placement}"
+        positionCss = switch options.placement
+          when 'left'
+            top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
+            left: elRect.left - tipWidth
+          when 'right'
+            top: (elRect.top + elRect.bottom) * 0.5 - tipHeight * 0.5
+            left: elRect.right
+          when 'top'
+            top: elRect.top - tipHeight
+            left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
+          when 'bottom'
+            top: elRect.bottom
+            left: (elRect.left + elRect.right) * 0.5 - (tipWidth * 0.5)
+          else throw "Invalid placement #{options.placement}"
+
+        $popover
+          .css(positionCss)
 
       $popover
-        .css(positionCss)
-        # and return it
 
     start: ->
       @step = 0
@@ -138,8 +141,8 @@ define [
 
     donePromise: -> @_donePromise
     done: ->
-      @remove()
       @_doneDeferred.resolve(@)
+      @remove()
       @_donePromise
 
     _onNext: (e) ->
@@ -161,11 +164,13 @@ define [
     previous: -> @_goToStep(@step - 1)
 
     listen: ->
-      $('body')
+      @$container
         .on('click.tour', '.popover a.next', ((e) => e.preventDefault(); @next()))
         .on('click.tour', '.popover a.previous', ((e) => e.preventDefault(); @previous()))
         .on('click.tour', '.popover a.done, .popover a.skip', ((e) => e.preventDefault(); @done()))
 
     remove: ->
       @$popover?.remove()
-      $('body').off('.tour')
+      @$container.off('.tour')
+      @_doneDeferred.reject(null) # presumably, it already resolved, so this is a no-op except in tests
+      undefined

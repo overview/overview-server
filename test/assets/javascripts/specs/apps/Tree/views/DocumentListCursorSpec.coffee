@@ -2,9 +2,26 @@ define [
   'apps/Tree/views/DocumentListCursor',
   'i18n'
 ], (View, i18n) ->
+  class Params
+    toI18n: (cache) -> [ 'all' ]
 
-  DocumentList = Backbone.Model.extend
-    describeSelection: -> [ 'all' ]
+  class Document extends Backbone.Model
+    defaults:
+      title: 'title'
+      description: 'description'
+
+  class Documents extends Backbone.Collection
+    model: Document
+
+  class DocumentList extends Backbone.Model
+    defaults:
+      length: null
+
+    initialize: ->
+      @params = new Params
+      @documents = new Documents
+
+  class Selection extends Backbone.Model
 
   describe 'apps/Tree/views/DocumentListCursor', ->
     view = undefined
@@ -13,20 +30,18 @@ define [
     displayApp = undefined
 
     initAt = (cursorIndex, nDocuments) ->
-      selection = new Backbone.Model({ cursorIndex: cursorIndex })
-      documentList = nDocuments? && new DocumentList({ n: nDocuments }) || undefined
+      selection = new Selection(cursorIndex: cursorIndex)
+      documentList = nDocuments? && new DocumentList(length: nDocuments) || undefined
       documentList?.documents = new Backbone.Collection([])
 
-      view = new View({
+      view = new View
         selection: selection
         documentList: documentList
         tags: new Backbone.Collection([])
-        tagIdToModel: -> undefined
         documentDisplayApp: (options) ->
           @options = options
           @setDocument = sinon.spy()
           displayApp = this
-      })
 
     testClickTriggersEvent = (selector, trigger, shouldBeCalled) ->
       spy = sinon.spy()
@@ -54,11 +69,11 @@ define [
       beforeEach ->
         initAt(undefined, 10)
         documentList.documents.reset([
-          new Backbone.Model({ id: 1 })
-          new Backbone.Model({ id: 2 })
-          new Backbone.Model({ id: 3 })
-          new Backbone.Model({ id: 4 })
-          new Backbone.Model({ id: 5 })
+          new Document({ id: 1 })
+          new Document({ id: 2 })
+          new Document({ id: 3 })
+          new Document({ id: 4 })
+          new Document({ id: 5 })
         ])
 
       it 'should have className not-showing-document when there is no index', ->
@@ -69,7 +84,7 @@ define [
         expect(view.el.className).to.eq('showing-document')
 
       it 'should render the selection', ->
-        documentList.describeSelection = -> [ 'node', 'foo' ]
+        documentList.params.toI18n = -> [ 'node', 'foo' ]
         selection.set({ cursorIndex: 1 })
         expect(view.$('.selection').html()).to.eq('selection.node_html,foo')
 

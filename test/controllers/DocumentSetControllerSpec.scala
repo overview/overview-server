@@ -6,6 +6,8 @@
  */
 package controllers
 
+import org.specs2.matcher.JsonMatchers
+
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.orm._
@@ -18,7 +20,7 @@ import org.overviewproject.tree.DocumentSetCreationJobType._
 import org.overviewproject.jobs.models.DeleteTreeJob
 import org.overviewproject.jobs.models.CancelFileUpload
 
-class DocumentSetControllerSpec extends ControllerSpecification {
+class DocumentSetControllerSpec extends ControllerSpecification with JsonMatchers {
   trait BaseScope extends Scope {
     val IndexPageSize = 10
     val mockStorage = mock[DocumentSetController.Storage]
@@ -74,27 +76,98 @@ class DocumentSetControllerSpec extends ControllerSpecification {
       }
     }
 
-    "showJson" should {
-      trait ShowJsonScope extends BaseScope {
+    "showHtmlInJson" should {
+      trait ShowHtmlInJsonScope extends BaseScope {
         val documentSetId = 1
-        def result = controller.showJson(documentSetId)(fakeAuthorizedRequest)
+        def result = controller.showHtmlInJson(documentSetId)(fakeAuthorizedRequest)
       }
 
-      "return NotFound if document set is not present" in new ShowJsonScope {
+      "return NotFound if document set is not present" in new ShowHtmlInJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns None
         h.status(result) must beEqualTo(h.NOT_FOUND)
       }
 
-      "return Ok if the document set exists but no trees do" in new ShowJsonScope {
+      "return Ok if the document set exists but no trees do" in new ShowHtmlInJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
         mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(0)
         h.status(result) must beEqualTo(h.OK)
       }
 
-      "return Ok if the document set exists with trees" in new ShowJsonScope {
+      "return Ok if the document set exists with trees" in new ShowHtmlInJsonScope {
         mockStorage.findDocumentSet(documentSetId) returns Some(fakeDocumentSet(documentSetId))
         mockStorage.findNTreesByDocumentSets(Seq(documentSetId)) returns Seq(2)
         h.status(result) must beEqualTo(h.OK)
+      }
+    }
+
+    "showJson" should {
+      trait ShowJsonScope extends BaseScope {
+        val documentSetId = 1
+        def result = controller.showJson(documentSetId)(fakeAuthorizedRequest)
+
+        val sampleTree = Tree(
+          id = 1L,
+          documentSetId = 1L,
+          title = "Tree title",
+          documentCount = 10,
+          lang = "en",
+          suppliedStopWords = "",
+          importantWords = ""
+        )
+
+        val sampleTag = Tag(
+          id=1L,
+          documentSetId=1L,
+          name="a tag",
+          color="FFFFFF"
+        )
+
+        val sampleSearchResult = SearchResult(
+          id=1L,
+          documentSetId=1L,
+          query="a search query",
+          state=SearchResultState.Complete
+        )
+
+        mockStorage.findVizs(documentSetId) returns Seq(sampleTree)
+        mockStorage.findVizJobs(documentSetId) returns Seq()
+        mockStorage.findSearchResults(documentSetId) returns Seq(sampleSearchResult)
+        mockStorage.findTags(documentSetId) returns Seq(sampleTag)
+      }
+
+      "encode the vizs, tags, and search results into the json result" in new ShowJsonScope {
+        h.status(result) must beEqualTo(h.OK)
+
+        val resultJson = h.contentAsString(result)
+        resultJson must /("vizs") */("type" -> "viz")
+        resultJson must /("vizs") */("title" -> sampleTree.title)
+        resultJson must /("tags") */("name" -> "a tag")
+        resultJson must /("searchResults") */("query" -> "a search query")
+      }
+
+      "include viz creation jobs" in new ShowJsonScope {
+        mockStorage.findVizs(sampleTree.documentSetId) returns Seq()
+        mockStorage.findVizJobs(sampleTree.documentSetId) returns Seq(DocumentSetCreationJob(
+          id=2L,
+          documentSetId=sampleTree.documentSetId,
+          treeTitle=Some("tree job"),
+          jobType=DocumentSetCreationJobType.Recluster,
+          state=DocumentSetCreationJobState.InProgress
+        ), DocumentSetCreationJob(
+          id=3L,
+          documentSetId=sampleTree.documentSetId,
+          treeTitle=Some("tree job"),
+          jobType=DocumentSetCreationJobType.Recluster,
+          state=DocumentSetCreationJobState.Error
+        ))
+
+        val json = h.contentAsString(result)
+
+        json must /("vizs") /#(0) /("type" -> "job")
+        json must /("vizs") /#(0) /("id" -> 2.0)
+        json must /("vizs") /#(0) /("creationData") /#(0) /("lang")
+        json must /("vizs") /#(0) /("creationData") /#(0) /("en")
+        json must /("vizs") /#(1) /("type" -> "error")
       }
     }
 

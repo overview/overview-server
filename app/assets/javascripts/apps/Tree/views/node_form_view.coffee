@@ -22,8 +22,8 @@ define [
       $form = $(this._create_form_string())
       $('body').append($form)
 
-      $form.modal('show')
-      $form.find('input[type=text]:eq(0)').focus()
+      $form.on 'shown.bs.modal', ->
+        $form.find('input[type=text]').focus().select()
 
       $form.on 'submit', (e) =>
         e.preventDefault()
@@ -31,9 +31,12 @@ define [
         this._notify('change', new_node)
         $form.modal('hide')
 
-      $form.on 'hidden.bs.modal', () =>
+      $form.on 'hidden.bs.modal', =>
         $form.remove()
         this._notify('closed')
+
+      $form.modal('show')
+      $form.find('input:eq(0)').focus().select()
 
       @form = $form[0] # for unit testing
 

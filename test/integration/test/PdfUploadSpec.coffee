@@ -116,16 +116,8 @@ describe 'PdfUpload', ->
   
     shouldBehaveLikeATree
       documents: [
-          { type: 'pdf', title: 'Cat1.pdf – page 1' },
-          { type: 'pdf', title: 'Cat1.pdf – page 2' },
           { type: 'pdf', title: 'Cat1.pdf – page 3' }
-          { type: 'pdf', title: 'Cat2.pdf – page 1' },
-          { type: 'pdf', title: 'Cat2.pdf – page 2' },
-          { type: 'pdf', title: 'Cat2.pdf – page 3' },
           { type: 'pdf', title: 'Cat2.pdf – page 4' },
-          { type: 'pdf', title: 'Cat3.pdf – page 1' },
-          { type: 'pdf', title: 'Cat3.pdf – page 2' },
-          { type: 'pdf', title: 'Cat3.pdf – page 3' },
           { type: 'pdf', title: 'Cat3.pdf – page 4' }
       ]
       searches: [

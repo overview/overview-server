@@ -12,6 +12,7 @@ define [
   class Tag extends Backbone.Model
 
   class Document extends Backbone.Model
+    hasTag: (tag) -> tag.id of (@attributes.tagIds || {})
 
   class TagCollection extends Backbone.Collection
     model: Tag
@@ -21,18 +22,19 @@ define [
 
   makeDummyDocument = -> new Document
   makeDocument = (id) ->
+    ids = {}
+    ids[id] = null
     new Document
       id: id
       title: "Title #{id}"
       description: "Description #{id}"
-      tagids: [ id ]
+      tagIds: ids
 
   makeTag = (id) ->
-    new Tag({
+    new Tag
       id: id,
       name: "Tag #{id}"
       color: "#abcdef"
-    })
 
   describe 'apps/Tree/views/DocumentList', ->
     selection = undefined
@@ -40,7 +42,6 @@ define [
     tags = undefined
     view = undefined
     el = undefined
-    tagIdToModel = (id) -> tags.get(id)
 
     makeDocumentsAndTags = (ids, addDummy) ->
       d = []
@@ -71,17 +72,15 @@ define [
       })
       documents = new DocumentCollection(d)
       tags = new TagCollection(t)
-      view = new DocumentList({
+      view = new DocumentList
         el: document.getElementById('views-DocumentListSpec')
         attributes:
-          'style': 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
+          style: 'position:absolute;overflow:auto;' # position for $.fn.position(); overflow for $.fn.scrollTop()
         liAttributes: """style="height:#{LI_HEIGHT}px;display:block;margin:0;padding:0;overflow:hidden;" """
         ulAttributes: """style="height:100%;display:block;margin:0;padding:0;list-style:none;" """
         selection: selection
         collection: documents
         tags: tags
-        tagIdToModel: tagIdToModel
-      })
 
     beforeEach ->
       $div = $("<div id=\"views-DocumentListSpec\" style=\"overflow:hidden;height:#{HEIGHT}px\"></div>")
@@ -89,7 +88,6 @@ define [
       i18n.reset_messages
         'views.Tree.show.DocumentList.description': 'description,{0}'
         'views.Tree.show.DocumentList.description.empty': 'description.empty'
-        'views.Tree.show.DocumentList.placeholder': 'placeholder'
         'views.Tree.show.DocumentList.loading': 'loading'
         'views.Tree.show.DocumentList.terms.label': 'terms.label'
         'views.Tree.show.DocumentList.tag.remove': 'tag.remove'
@@ -125,12 +123,9 @@ define [
         expect(view.$('ul.documents>li').length).to.eq(4)
         expect(view.$('ul.documents>li:last').attr('data-cid')).to.eq(documents.last().cid)
 
-      it 'should insert an item', ->
-        documents.add(makeDummyDocument(), { at: 1 })
-        expect(view.$('ul.documents>li').length).to.eq(4)
-        expect(view.$('ul.documents>li:eq(1)').attr('data-cid')).to.eq(documents.at(1).cid)
-
-      # We never remove items ... yet ...
+      it 'should remove an item', ->
+        documents.pop()
+        expect(view.$('ul.documents>li').length).to.eq(2)
 
       it 'should render selection', ->
         selection.set('selectedIndices', [0, 2])
@@ -180,25 +175,25 @@ define [
         expect($tagEl.find('.name').text()).to.eq('Tag 111111')
         expect(tinycolor($tagEl.css('background-color')).toHex()).to.eq('111111')
 
+      it 'should re-render tags when the collection is tagged', ->
+        # Hacky here. How do we detect that tags have been re-rendered?
+        tags.get(0).attributes.name = 'Tag 111111' # make a change that isn't rendered
+        documents.trigger('tag', tags.get(0)) # we're testing that this triggers a render of tags
+        $tagEl = view.$('ul.documents>li:eq(0) div.tag:eq(0)')
+        expect($tagEl.find('.name').text()).to.eq('Tag 111111')
+
       it 'should sort tags in documents', ->
-        documents.at(0).set({ tagids: [ 2, 1, 0 ] })
+        documents.at(0).set(tagIds: { 2: null, 1: null, 0: null })
         $tags = view.$('ul.documents>li:eq(0) li.tag')
         expect($tags.eq(0).attr('data-cid')).to.eq(tags.get(0).cid)
         expect($tags.eq(1).attr('data-cid')).to.eq(tags.get(1).cid)
         expect($tags.eq(2).attr('data-cid')).to.eq(tags.get(2).cid)
 
       it 'should update documents as they change', ->
-        documents.get(0).set({ title: 'new title', tagids: [1] })
+        documents.get(0).set(title: 'new title', tagIds: { 1: null })
         $documentEl = view.$('ul.documents>li:eq(0)')
         expect($documentEl.find('h3').text()).to.eq('title,new title')
         expect($documentEl.find('.tag .name').text()).to.eq('Tag 1')
-
-      it 'should reorder a renamed tag', ->
-        documents.at(0).set({ tagids: [ 0, 1 ] })
-        tags.get(0).set({ name: 'Tag 3' })
-        $tags = view.$('ul.documents>li:eq(0) li.tag')
-        expect($tags.eq(0).attr('data-cid')).to.eq(tags.get(1).cid)
-        expect($tags.eq(1).attr('data-cid')).to.eq(tags.get(0).cid)
 
       it 'should keep the cursor class on a document as it changes', ->
         selection.set('cursorIndex', 0)
@@ -240,7 +235,7 @@ define [
         documents.add(makeDummyDocument())
         expect(view.$el.html()).to.eq('')
 
-    describe 'with a DocumentCollection that has a final dummy', ->
+    describe 'with a DocumentCollection that has a loading dummy', ->
       beforeEach ->
         makeCollections([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], true)
 
@@ -248,19 +243,6 @@ define [
         $loadingLi = view.$('ul.documents>li:eq(10)')
         expect($loadingLi.find('h3').text()).to.eq('loading')
         expect($loadingLi).to.have.class('loading')
-
-    describe 'with a DocumentCollection that has a middle dummy', ->
-      beforeEach ->
-        makeCollections([0, 1, 2, 3, 5, 6, 7])
-
-      it 'should show a placeholder', ->
-        $placeholderLi = view.$('ul.documents>li:eq(4)')
-        expect($placeholderLi.find('h3').text()).to.eq('placeholder')
-        expect($placeholderLi).to.have.class('placeholder')
-
-      it 'should remove the placeholder document when the document shows up', ->
-        documents.at(4).set(makeDocument(4).attributes)
-        expect(view.$('ul.documents li.placeholder').length).to.eq(0)
 
     describe 'with a long DocumentCollection', ->
       beforeEach ->

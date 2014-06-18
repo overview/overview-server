@@ -17,16 +17,16 @@ define [
   #
   # The following options must be passed:
   #
-  # * documentList: a Backbone.Model with an "n" attribute and
-  #   describeSelection() method. `documentList.documents` must be
-  #   a Backbone.Collection of Backbone.Model instances, with attributes
-  #   such as would be passed to DocumentDisplay/App.setDocument()
-  # * selection: A Backbone.Model with "cursorIndex" (maybe undefined integer)
-  #   and "selectedIndices" (maybe-empty Array of integers). 0 is the first
+  # * documentList: a DocumentList. It has a `documents` Backbone.Collection
+  #   property, a `param` `DocumentListParams` property and a `length`
+  #   attribute which may begin `null`.
+  # * selection: A Backbone.Model with `cursorIndex` (maybe undefined integer)
+  #   and `selectedIndices` (maybe-empty Array of integers). 0 is the first
   #   index.
+  # * tags: a Backbone.Collection of Tag objects.
   # * documentDisplayApp: a DocumentDisplay/App constructor, such that
-  #   "new options.documentDisplayApp({ el: HTMLElement }) will create an
-  #   object with a setDocument() method.
+  #   `new options.documentDisplayApp({ el: HTMLElement })` will create an
+  #   object with a `setDocument()` method.
   Backbone.View.extend
     events:
       'click a.next': '_onClickNext'
@@ -61,12 +61,10 @@ define [
 
     initialize: ->
       throw 'Must pass options.selection, a Backbone.Model with a "cursorIndex" property' if !@options.selection
-      throw 'Must pass options.documentList, undefined or a Backbone.Model with a "n" property and "selection" property' if 'documentList' not of @options
-      throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if 'documentDisplayApp' not of @options
+      throw 'Must pass options.documentList, a DocumentList' if 'documentList' not of @options
+      throw 'Must pass options.documentDisplayApp, a DocumentDisplay App constructor' if !@options.documentDisplayApp
       throw 'Must pass options.tags, a Collection of Backbone.Tags' if !@options.tags
-      throw 'Must pass options.tagIdToModel, a function mapping id to Backbone.Model' if !@options.tagIdToModel
 
-      @tagIdToModel = @options.tagIdToModel
       @selection = @options.selection
       @documentList = @options.documentList
 
@@ -74,7 +72,7 @@ define [
 
       @documentDisplayApp = new @options.documentDisplayApp({ el: @documentEl })
 
-      @listenTo(@options.tags, 'change', => @renderHeader()) # even an ID change
+      @listenTo(@options.tags, 'change', => @renderHeader())
       @listenTo(@selection, 'change:cursorIndex', => @render())
       @setDocumentList(@options.documentList)
 
@@ -90,12 +88,11 @@ define [
 
     _renderHeader: (maybeDocument) ->
       cursorIndex = @selection.get('cursorIndex')
-      nDocuments = @documentList?.get('n') || 0
+      nDocuments = @documentList?.get('length') || 0
 
-      tags = (@tagIdToModel(tagid) for tagid in maybeDocument?.get('tagids') || [])
-      tags.sort((a, b) -> (a.attributes.name || '').toLowerCase().localeCompare((b.attributes.name || '').toLowerCase()))
+      tags = @options.tags.filter((x) -> maybeDocument?.hasTag(x))
 
-      selectionI18n = @documentList?.describeSelection() || [ 'all' ]
+      selectionI18n = @documentList?.params?.toI18n?() || [ 'all' ]
       selectionI18n[0] = "selection.#{selectionI18n[0]}_html"
       if selectionI18n[1]
         selectionI18n[1] = _.escape(selectionI18n[1])
@@ -168,7 +165,7 @@ define [
       @documentList = documentList
 
       if @documentList?
-        @listenTo(@documentList, 'change:n', => @render())
+        @listenTo(@documentList, 'change:length', => @render())
         if @documentList.documents
           @listenTo(@documentList.documents, 'change', => @render())
           @listenTo(@documentList.documents, 'add', => @render())

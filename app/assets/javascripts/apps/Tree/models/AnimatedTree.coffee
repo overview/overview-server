@@ -92,6 +92,14 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
     getAnimatedNode: (id) -> @nodes[id]
 
     _attachIdTree: ->
+      if @id_tree.root
+        ids = [] # ordered list of nodes
+        @id_tree.walkPreorder((id) -> ids.push(id))
+        @_startSetRoot(ids[0], 0)
+        @_startAdd(ids.slice(1), 0)
+
+        @_updateLayout()
+
       @id_tree.observe 'change', (changes) =>
         @_maybe_notifying_needs_update =>
           if 'root' of changes
@@ -117,7 +125,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
             @nodes[lastSelectedId]?.setSelected(false, @animator, time)
 
           if params.type == 'node'
-            lastSelectedId = params.nodeId
+            lastSelectedId = params.node.id
             @nodes[lastSelectedId]?.setSelected(true, @animator, time)
           else
             lastSelectedId = null
@@ -135,7 +143,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       animatedNodes = @nodes
       selectedNodeId = null
       if (params = @state.get('documentListParams'))? && params.type == 'node'
-        selectedNodeId = params.nodeId
+        selectedNodeId = params.node.id
 
       # When ids are added to the tree, their parents become open. Assume their
       # parents were unopened before (because siblings are always added all at
@@ -179,7 +187,7 @@ define [ 'underscore', './observable', './AnimatedNode' ], (_, observable, Anima
       ms ?= Date.now()
 
       if (params = @state.get('documentListParams'))? && params.type == 'node'
-        selectedNodeId = params.nodeId
+        selectedNodeId = params.node.id
 
       json = @_getNode(rootId)
       @root = new AnimatedNode(json, null, rootId == selectedNodeId, ms)

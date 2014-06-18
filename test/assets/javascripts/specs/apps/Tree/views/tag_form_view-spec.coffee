@@ -1,8 +1,11 @@
 define [
   'jquery'
+  'backbone'
   'i18n'
   'apps/Tree/views/tag_form_view'
-], ($, i18n, TagFormView) ->
+], ($, Backbone, i18n, TagFormView) ->
+  class Tag extends Backbone.Model
+
   describe 'views/tag_form_view', ->
     describe 'TagFormView', ->
       tag = undefined
@@ -14,7 +17,7 @@ define [
         @sandbox = sinon.sandbox.create()
         @sandbox.stub($.fn, 'spectrum', -> this) # speed boost
         $.fx = false
-        tag = { id: 3, name: 'foo', color: '#abcdef' }
+        tag = new Tag(id: 3, name: 'foo', color: '#abcdef')
         i18n.reset_messages({
           'views.Tag._form.h3': 'h3'
           'views.Tag._form.labels.name': 'Name'
@@ -61,13 +64,6 @@ define [
         $input = $('input[name=color]', view.div)
         expect($input.val()).to.eq('#abcdef')
 
-      it 'should assign "color" based on tag name when the tag has no color', ->
-        remove_view()
-        delete tag.color
-        view = new TagFormView(tag)
-        $input = $('input[name=color]', view.div)
-        expect($input.val()).to.eq('#0089ff')
-
       it 'should trigger "change" on change', ->
         spy = sinon.spy()
         view.observe('change', spy)
@@ -78,7 +74,7 @@ define [
       it 'should not change the existing tag on change', ->
         actions.set_name('bar')
         actions.submit()
-        expect(tag.name).to.eq('foo')
+        expect(tag.attributes.name).to.eq('foo')
 
       it 'should hide after "change" and automatically trigger "closed"', ->
         spy1 = sinon.spy()

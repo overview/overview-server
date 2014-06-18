@@ -5,38 +5,24 @@ define [
   'apps/ImportOptions/app'
 ], ($, Vizs, VizTabs, OptionsApp) ->
   class VizsController
-    constructor: (vizsJson) ->
-      vizs = @vizs = new Vizs()
-
-      refreshTimeout = null
-
-      refresh = ->
-        refreshTimeout = null
-        $.ajax
-          type: 'get'
-          url: "#{urlParts[0...-2].join('/')}/vizs.json"
-          success: handleJson
-
-      handleJson = (json) ->
-        vizs.set(json)
-        if 'job' in vizs.pluck('type')
-          refreshTimeout ||= setTimeout(refresh, 1000)
-
-      handleJson(vizsJson)
-
-      urlParts = document.location.pathname.split('/')
-      selectedVizId = parseInt(urlParts[urlParts.length - 1], 10)
-      selectedViz = @vizs.get("viz-#{selectedVizId}")
+    constructor: (@vizs, @selectedViz) ->
       @view = new VizTabs
         collection: @vizs
-        selected: selectedViz
+        selected: @selectedViz
       @view.render()
 
-      @view.on 'click', (viz) ->
-        vizId = viz.get('id')
-        if vizId != selectedVizId
-          newPath = document.location.pathname.replace(/[^/]*$/, vizId)
-          document.location = newPath
+      onSubmit = (data) =>
+        # Add a placeholder job so pollUntilStable will actually send an
+        # initial poll. When the server responds to the poll, this will
+        # disappear and the real job will appear instead.
+        @vizs.unshift(id: 0, type: 'job', title: data?[0]?.value, progress: {})
+        @vizs.pollUntilStable()
+
+      @view.on 'click', (viz) =>
+        return if viz == @selectedViz
+
+        newPath = document.location.pathname.replace(/[^/]*$/, viz.get('id'))
+        document.location = newPath
 
       @view.on 'cancel', (job) ->
         jobId = job.get('id')
@@ -47,7 +33,7 @@ define [
 
       @view.on 'click-new', ->
         m = /\/documentsets\/([^\/]+)\//.exec(document.location.pathname)
-        tagListUrl = "/documentsets/#{m[1]}/tags.json"
+        tagListUrl = "/documentsets/#{m[1]}/tags"
         submitUrl = "/documentsets/#{m[1]}/trees"
 
         $dialog = OptionsApp.createNewTreeDialog
@@ -66,6 +52,6 @@ define [
             type: 'post'
             url: submitUrl
             data: data
-            complete: refresh
+            complete: -> onSubmit(data)
 
       @el = @view.el

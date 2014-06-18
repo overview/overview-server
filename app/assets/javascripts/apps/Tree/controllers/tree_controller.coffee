@@ -1,24 +1,21 @@
 define [
   'underscore'
   'jquery'
-  '../models/DocumentListParams'
   '../models/AnimatedTree'
-  '../models/animator'
-  '../models/property_interpolator'
   '../models/TreeLayout'
   '../views/TreeView'
   './logger'
-], (_, $, DocumentListParams, AnimatedTree, Animator, PropertyInterpolator, TreeLayout, TreeView, Logger) ->
+], (_, $, AnimatedTree, TreeLayout, TreeView, Logger) ->
   log = Logger.for_component('tree')
 
   log_pan_zoom = _.throttle(((args...) -> log('zoomed/panned', args...)), 500)
 
-  # If doclist is showing a descendent of nodeId, change doclist to the
-  # parent of nodeId
-  moveDocumentListParamsUpToNodeIdIfNecessary = (state, nodeId, onDemandTree) ->
+  # If doclist is showing a descendent of node, change doclist to the
+  # parent of node
+  moveDocumentListParamsUpToNodeIfNecessary = (state, node, onDemandTree) ->
     params = state.get('documentListParams')
-    if params.type == 'node' && onDemandTree.id_tree.is_id_ancestor_of_id(nodeId, params.nodeId)
-      state.setDocumentListParams(DocumentListParams.byNodeId(nodeId))
+    if params.type == 'node' && onDemandTree.id_tree.is_id_ancestor_of_id(node.id, params.node.id)
+      state.resetDocumentListParams().byNode(node)
 
   animateFocusToNode = (animated_tree, focus, node) ->
     if node.parent?
@@ -30,51 +27,32 @@ define [
     else
       focus.animateNode(node) # root node.
 
-  # Shim window.requestAnimationFrame(), as per
-  # http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
-  (->
-    last_time = 0
-    vendors = [ 'ms', 'moz', 'webkit', 'o' ]
-    for vendor in vendors
-      break if window.requestAnimationFrame
-      window.requestAnimationFrame = window["#{vendor}RequestAnimationFrame"]
-
-    if !window.requestAnimationFrame
-      window.requestAnimationFrame = (callback) ->
-        cur_time = new Date().getTime()
-        time_to_call = Math.max(0, 16 - (cur_time - last_time))
-        id = window.setTimeout((-> callback(cur_time + time_to_call)), time_to_call)
-        last_time = cur_time + time_to_call
-        id
-  )()
-
-  tree_controller = (div, cache, focus, state) ->
-    interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
-    animator = new Animator(interpolator)
+  tree_controller = (div, documentSet, onDemandTree, focus, state, animator) ->
     layout = new TreeLayout(animator)
-    animated_tree = new AnimatedTree(cache.on_demand_tree, state, animator, layout)
-    view = new TreeView(div, cache, animated_tree, focus)
+    animated_tree = new AnimatedTree(onDemandTree, state, animator, layout)
+    view = new TreeView(div, documentSet, animated_tree, focus)
 
     animating = false
-    animate_frame = () ->
+    animate_frame = ->
       if view.needs_update()
         view.update()
         requestAnimationFrame(animate_frame)
       else
         animating = false
-    animate = () ->
+    animate = ->
       if !animating
         animating = true
         requestAnimationFrame(animate_frame)
 
     view.observe('needs-update', animate)
+    animate()
 
-    view.observe 'click', (nodeid) ->
-      return if !nodeid?
-      log('clicked node', "#{nodeid}")
-      expand_deferred(nodeid)
+    view.observe 'click', (node) ->
+      return if !node?
+      log('clicked node', "#{node.id}")
+      expand_deferred(node)
 
-      params = DocumentListParams.byNodeId(nodeid)
+      params = state.get('documentListParams').reset.byNode(node)
       if params.equals(state.get('documentListParams'))
         # Click on already-selected node -> deselect document
         state.set(oneDocumentSelected: false)
@@ -82,16 +60,16 @@ define [
         # Click on node -> select node
         state.setDocumentListParams(params)
 
-    view.observe 'expand', (nodeid) ->
-      return if !nodeid?
-      log('expanded node', "#{nodeid}")
-      expand_deferred(nodeid)
+    view.observe 'expand', (node) ->
+      return if !node?
+      log('expanded node', "#{node.id}")
+      expand_deferred(node)
 
-    view.observe 'collapse', (nodeId) ->
-      return if !nodeId?
-      log('collapsed node', "#{nodeId}")
-      moveDocumentListParamsUpToNodeIdIfNecessary(state, nodeId, cache.on_demand_tree)
-      cache.on_demand_tree.unload_node_children(nodeId)
+    view.observe 'collapse', (node) ->
+      return if !node?
+      log('collapsed node', "#{node.id}")
+      moveDocumentListParamsUpToNodeIfNecessary(state, node, onDemandTree)
+      onDemandTree.unload_node_children(node.id)
 
     view.observe 'zoom-pan', (obj, options) ->
       log_pan_zoom("zoom #{obj.zoom}, pan #{obj.pan}")
@@ -108,58 +86,46 @@ define [
 
     state.on 'change:documentListParams', (__, params) ->
       if params.type == 'node'
-        node = animated_tree.getAnimatedNode(params.nodeId)
+        node = animated_tree.getAnimatedNode(params.node.id)
         animateFocusToNode(animated_tree, focus, node)
 
-      # Refresh counts when needed
-      switch params.type
-        when 'untagged' then cache.refresh_untagged()
-        when 'tag' then cache.refresh_tagcounts(params.tagId)
-        when 'searchResult' then cache.refreshSearchResultCounts(params.searchResultId)
+    select_node = (node) ->
+      state.resetDocumentListParams().byNode(node)
 
-    select_nodeid = (nodeid) ->
-      state.setDocumentListParams(DocumentListParams.byNodeId(nodeid))
-
-    selected_nodeid = ->
-      params = state.get('documentListParams')
-      if params.type == 'node'
-        params.nodeId
-      else
-        cache.on_demand_tree.id_tree.root
+    selected_node = ->
+      state.get('documentListParams')?.node || onDemandTree.getRoot()
 
     # Moves selection in the given direction.
     #
     # Returns the new nodeid, which may be undefined
     go = (finder, e) ->
       view.set_hover_node(undefined)
-      nodeid = selected_nodeid()
-      new_nodeid = view[finder](nodeid)
-      if new_nodeid?
-        log("moved to #{finder}", "nodeid_before:#{nodeid} nodeid_after:#{new_nodeid}")
-        select_nodeid(new_nodeid)
-        expand_deferred(new_nodeid)
+      nodeId = selected_node()?.id
+      return if !nodeId
+      newNodeId = view[finder](nodeId)
+      if newNodeId?
+        newNode = onDemandTree.getNode(newNodeId)
+        log("moved to #{finder}", "nodeid_before:#{nodeId} nodeid_after:#{newNodeId}")
+        select_node(newNode)
+        expand_deferred(newNode)
       else
-        log("failed to move to #{finder}", "nodeid_before:#{nodeid}")
-      new_nodeid
+        log("failed to move to #{finder}", "nodeid_before:#{nodeId}")
+      newNode
 
     # Returns a jQuery Deferred which will resolve when the node is expanded.
     #
     # The Deferred will be returned resolved if the node is already expanded
     # or is a leaf.
-    expand_deferred = (nodeid) ->
-      children = cache.on_demand_tree.id_tree.children[nodeid]
+    expand_deferred = (node) ->
+      throw new Error("Must pass a valid Node") if !node.id?
+      children = onDemandTree.id_tree.children[node.id]
       if !children?
-        cache.on_demand_tree.demand_node(nodeid)
+        onDemandTree.demand_node(node.id)
           .done (json) ->
             nodeIds = _.pluck(json?.nodes || [], 'id')
-            taglike = state.get('taglike')
-            if taglike? && nodeIds.length
-              if taglike.searchResultId?
-                cache.refreshSearchResultCounts(taglike.searchResultId, nodeIds)
-              else if taglike.tagId?
-                cache.refresh_tagcounts(taglike.tagId, nodeIds)
-              else if taglike.untagged?
-                cache.refresh_untagged(nodeIds)
+            if nodeIds.length
+              taglikeCid = state.get('taglikeCid')
+              onDemandTree.refreshTaglikeCounts(taglikeCid, nodeIds)
       else
         $.Deferred().resolve()
 
@@ -169,30 +135,30 @@ define [
     #
     # The Deferred will be returned resolved if the node is already expanded
     # or is a leaf.
-    expand_deferred_with_log = (nodeid) ->
-      deferred = expand_deferred(nodeid)
+    expand_deferred_with_log = (node) ->
+      deferred = expand_deferred(node)
       if deferred.state() == 'resolved'
-        log('attempt to expand already-expanded or leaf node', "#{nodeid}")
+        log('attempt to expand already-expanded or leaf node', "#{node.id}")
       else
-        log('expand node', "#{nodeid}")
+        log('expand node', "#{node.id}")
       deferred
 
     expand = (e) ->
-      nodeid = selected_nodeid()
-      expand_deferred_with_log(nodeid)
+      node = selected_node()
+      expand_deferred_with_log(node)
 
     collapse = (e) ->
-      nodeid = selected_nodeid()
-      log('attempt to collapse', "#{nodeid}")
+      node = selected_node()
+      log('attempt to collapse', "#{node.id}")
 
     toggle_expand = (e) ->
-      nodeid = selected_nodeid()
-      child_nodeid = view.nodeid_below(nodeid)
-      if !child_nodeid && cache.on_demand_tree.id_tree.children[nodeid]?.length
-        log('toggling node to expanded', "#{nodeid}")
-        expand_deferred(nodeid)
+      node = selected_node()
+      child_nodeid = view.nodeid_below(node.id)
+      if !child_nodeid && onDemandTree.id_tree.children[node.id]?.length
+        log('toggling node to expanded', "#{node.id}")
+        expand_deferred(node)
       else
-        log('toggling node to collapsed', "#{nodeid}")
+        log('toggling node to collapsed', "#{node.id}")
         # FIXME actually collapse
 
     go_up = (e) -> go('nodeid_above', e)
@@ -200,8 +166,8 @@ define [
     go_right = (e) -> go('nodeid_right', e)
 
     go_down = (e) ->
-      nodeid = selected_nodeid()
-      deferred = expand_deferred(nodeid)
+      node = selected_node()
+      deferred = expand_deferred(node)
       if deferred.state() == 'resolved'
         go('nodeid_below', e)
       else
@@ -209,10 +175,11 @@ define [
           # We can't query the view for a DrawableNode, because the view hasn't
           # drawn yet. However, we know the view *will* draw the added children,
           # so we can select one anyway.
-          child_nodeid = cache.on_demand_tree.id_tree.children[nodeid]?[0]
+          child_nodeid = onDemandTree.id_tree.children[node.id]?[0]
           if child_nodeid
-            log('expanded and moved to nodeid_below', "nodeid_before:#{nodeid} nodeid_after:#{child_nodeid}")
-            select_nodeid(child_nodeid)
+            log('expanded and moved to nodeid_below', "nodeid_before:#{node.id} nodeid_after:#{child_nodeid}")
+            child_node = onDemandTree.getNode(child_nodeid)
+            select_node(child_node)
 
     {
       go_up: go_up

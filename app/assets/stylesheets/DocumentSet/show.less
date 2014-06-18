@@ -1,6 +1,9 @@
+@import '../mixins.less';
 @import "show/_variables.less";
 
 body.document-set-show {
+  .display-flex();
+  .flex-direction-column();
   margin: 0;
   padding: 0;
   width: 100%;
@@ -8,12 +11,17 @@ body.document-set-show {
   overflow: hidden;
   //background: @body-bg-dark;
 
-  #main {
-    position: absolute;
-    left: 0;
+  nav {
+    .flex(0 0 auto);
+  }
+
+  &>.container {
+    .flex(1 0 auto);
     width: 100%;
-    top: 42px; // navbar -- will be altered in JS
-    bottom: 0;
+    position: relative;
+  }
+
+  #main {
     overflow: visible; // never show scrollbar
   }
 

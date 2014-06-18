@@ -11,7 +11,7 @@ import org.overviewproject.tree.orm.DocumentSet
 import org.overviewproject.test.Specification
 import models.OverviewUser
 
-class showSpec extends Specification with JsonMatchers {
+class showHtmlSpec extends Specification with JsonMatchers {
   step(start(FakeApplication()))
 
   "DocumentSet view generated Json" should {
@@ -21,7 +21,7 @@ class showSpec extends Specification with JsonMatchers {
       val user = mock[OverviewUser].smart
       user.isAdministrator returns false
       
-      lazy val documentSetJson = show(user, documentSet, 1).toString
+      lazy val documentSetJson = showHtml(user, documentSet, 1).toString
     }
 
     "contain id and html" in new DocumentSetContext {

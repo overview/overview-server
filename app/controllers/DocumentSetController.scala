@@ -6,14 +6,14 @@ import org.overviewproject.jobs.models.CancelFileUpload
 import org.overviewproject.jobs.models.Delete
 import org.overviewproject.tree.DocumentSetCreationJobType
 import org.overviewproject.tree.DocumentSetCreationJobType._
-import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tree }
+import org.overviewproject.tree.orm.{ DocumentSet, DocumentSetCreationJob, DocumentSetCreationJobState, Tag, Tree, SearchResult }
 import org.overviewproject.tree.orm.DocumentSetCreationJobState._
 import org.overviewproject.tree.orm.finders.ResultPage
 
 import controllers.auth.{ AuthorizedAction, Authorities }
 import controllers.forms.DocumentSetUpdateForm
 import controllers.util.DocumentSetDeletionComponents
-import models.orm.finders.{ DocumentSetCreationJobFinder, DocumentSetFinder, TreeFinder }
+import models.orm.finders.{DocumentSetFinder,DocumentSetCreationJobFinder,SearchResultFinder,TagFinder,TreeFinder}
 import models.orm.stores.DocumentSetStore
 
 trait DocumentSetController extends Controller {
@@ -48,6 +48,17 @@ trait DocumentSetController extends Controller {
 
     def cancelJob(documentSetId: Long): Option[DocumentSetCreationJob]
 
+    /** All Vizs for the document set. */
+    def findVizs(documentSetId: Long) : Iterable[Tree]
+
+    /** All Viz-creation jobs for the document set. */
+    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
+
+    /** All Tags for the document set. */
+    def findTags(documentSetId: Long) : Iterable[Tag]
+
+    /** All SearchResults for the document set. */
+    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
   }
 
   trait JobMessageQueue {
@@ -82,14 +93,23 @@ trait DocumentSetController extends Controller {
     Redirect(routes.TreeController.show(id, treeId))
   }
 
-  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+  def showHtmlInJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
     storage.findDocumentSet(id) match {
       case None => NotFound
       case Some(documentSet) => {
         val nTrees = storage.findNTreesByDocumentSets(Seq(id)).headOption.getOrElse(0)
-        Ok(views.json.DocumentSet.show(request.user, documentSet, nTrees))
+        Ok(views.json.DocumentSet.showHtml(request.user, documentSet, nTrees))
       }
     }
+  }
+
+  def showJson(id: Long) = AuthorizedAction(userViewingDocumentSet(id)) { implicit request =>
+    val vizs = storage.findVizs(id)
+    val vizJobs = storage.findVizJobs(id)
+    val tags = storage.findTags(id)
+    val searchResults = storage.findSearchResults(id)
+
+    Ok(views.json.DocumentSet.show(vizs, vizJobs, tags, searchResults))
   }
 
   def delete(id: Long) = AuthorizedAction(userOwningDocumentSet(id)) { implicit request =>
@@ -215,6 +235,27 @@ object DocumentSetController extends DocumentSetController with DocumentSetDelet
       DocumentSetStore.insertOrUpdate(documentSet)
     }
 
+    override def findVizs(documentSetId: Long) = {
+      TreeFinder.byDocumentSet(documentSetId).toSeq
+    }
+
+    override def findVizJobs(documentSetId: Long) = {
+      DocumentSetCreationJobFinder
+        .byDocumentSet(documentSetId)
+        .excludeCancelledJobs
+        .toSeq
+    }
+
+    override def findTags(documentSetId: Long) = {
+      TagFinder.byDocumentSet(documentSetId).toSeq
+    }
+
+    override def findSearchResults(documentSetId: Long) = {
+      SearchResultFinder
+        .byDocumentSet(documentSetId)
+        .onlyNewest
+        .toSeq
+    }
   }
 
   object ApolloJobMessageQueue extends JobMessageQueue with DocumentSetDeletionJobMessageQueue

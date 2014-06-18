@@ -4,9 +4,9 @@ import play.api.mvc.Controller
 import scala.annotation.tailrec
 
 import controllers.auth.AuthorizedAction
-import controllers.auth.Authorities.{ userOwningDocumentSet, userOwningDocumentSetAndTree, userOwningTree }
-import org.overviewproject.tree.orm.{DocumentSetCreationJob,Node,SearchResult,Tag,Tree}
-import models.orm.finders.{DocumentSetCreationJobFinder,NodeFinder,SearchResultFinder,TagFinder,TreeFinder}
+import controllers.auth.Authorities.userOwningTree
+import org.overviewproject.tree.orm.{Node,Tree}
+import models.orm.finders.{NodeFinder,TreeFinder}
 import models.orm.stores.NodeStore
 
 trait NodeController extends Controller {
@@ -21,19 +21,11 @@ trait NodeController extends Controller {
       */
     def findRootNodes(treeId: Long, depth: Int) : Iterable[Node]
 
-    /** All Vizs for the document set. */
-    def findVizs(documentSetId: Long) : Iterable[Tree]
-
-    /** All Viz-creation jobs for the document set. */
-    def findVizJobs(documentSetId: Long) : Iterable[DocumentSetCreationJob]
-
     /** The direct descendents of the given parent Node ID. */
     def findChildNodes(documentSetId: Long, parentNodeId: Long) : Iterable[Node]
 
     def findTree(treeId: Long) : Option[Tree]
     def findNode(treeId: Long, nodeId: Long) : Iterable[Node]
-    def findTags(documentSetId: Long) : Iterable[Tag]
-    def findSearchResults(documentSetId: Long) : Iterable[SearchResult]
 
     def updateNode(node: Node) : Node
   }
@@ -48,11 +40,7 @@ trait NodeController extends Controller {
         if (nodes.isEmpty) {
           NotFound
         } else {
-          val vizs = storage.findVizs(tree.documentSetId)
-          val vizJobs = storage.findVizJobs(tree.documentSetId)
-          val tags = storage.findTags(tree.documentSetId)
-          val searchResults = storage.findSearchResults(tree.documentSetId)
-          Ok(views.json.Node.index(vizs, vizJobs, nodes, tags, searchResults))
+          Ok(views.json.Node.index(nodes))
             .withHeaders(CACHE_CONTROL -> "max-age=0")
         }
       }
@@ -117,26 +105,8 @@ object NodeController extends NodeController {
         .map(_.copy()) // Squeryl bug
     }
 
-    override def findTags(documentSetId: Long) = {
-      TagFinder.byDocumentSet(documentSetId)
-    }
-
-    override def findSearchResults(documentSetId: Long) = {
-      SearchResultFinder.byDocumentSet(documentSetId)
-    }
-
     override def findTree(treeId: Long) = {
       TreeFinder.byId(treeId).headOption
-    }
-
-    override def findVizs(documentSetId: Long) = {
-      TreeFinder.byDocumentSet(documentSetId).toSeq
-    }
-
-    override def findVizJobs(documentSetId: Long) = {
-      DocumentSetCreationJobFinder
-        .byDocumentSet(documentSetId)
-        .excludeCancelledJobs
     }
 
     override def findNode(treeId: Long, nodeId: Long) = {

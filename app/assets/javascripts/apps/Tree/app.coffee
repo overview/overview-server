@@ -1,10 +1,14 @@
 define [
+  'underscore'
   'jquery'
+  'backbone'
+  './models/transaction_queue'
+  './models/DocumentSet'
+  './models/State'
+  './models/on_demand_tree'
   './models/AnimatedFocus'
   './models/animator'
   './models/property_interpolator'
-  './models/world'
-  './models/DocumentListParams'
   './controllers/keyboard_controller'
   './controllers/logger'
   './controllers/VizsController'
@@ -16,8 +20,9 @@ define [
   './controllers/document_contents_controller'
   './controllers/TourController'
   './views/Mode'
-], ($, \
-    AnimatedFocus, Animator, PropertyInterpolator, World, DocumentListParams, \
+], (_, $, Backbone, \
+    TransactionQueue, DocumentSet, State, OnDemandTree, \
+    AnimatedFocus, Animator, PropertyInterpolator, \
     KeyboardController, Logger, \
     VizsController, tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, \
@@ -27,70 +32,18 @@ define [
   class App
     constructor: (options) ->
       throw 'need options.mainEl' if !options.mainEl
-      throw 'need options.navEl' if !options.navEl
+
+      @el = options.mainEl
 
       # TODO remove searchDisabled entirely
-      searchDisabled = $(options.mainEl).attr('data-is-searchable') == 'false'
-      tourEnabled = $(options.mainEl).attr('data-tooltips-enabled') == 'true'
+      @searchDisabled = @el.getAttribute('data-is-searchable') == 'false'
+      @tourEnabled = @el.getAttribute('data-tooltips-enabled') == 'true'
 
-      els = (->
-        html = """
-          <div id="tree-app-left">
-            <div id="tree-app-search"></div>
-            <div id="tree-app-vizs"></div>
-            <div id="tree-app-tree"></div>
-            <div id="tree-app-zoom-slider"></div>
-            <div id="tree-app-tags"></div>
-          </div>
-          <div id="tree-app-right">
-            <div id="tree-app-document-list"></div>
-            <div id="tree-app-document-cursor"></div>
-          </div>
-        """
+      transactionQueue = @_initializeTransactionQueue()
+      documentSet = @_initializeDocumentSet(transactionQueue)
+      documentSet.vizs.on('reset', => _.defer(=> @_initializeUi(documentSet)))
 
-        $(options.mainEl).html(html)
-
-        if searchDisabled
-          $('#tree-app-search').remove()
-          $('#tree-app-left').addClass('search-disabled')
-
-        el = (id) -> document.getElementById(id)
-
-        {
-          main: options.mainEl
-          tree: el('tree-app-tree')
-          vizs: el('tree-app-vizs')
-          zoomSlider: el('tree-app-zoom-slider')
-          tags: el('tree-app-tags')
-          search: el('tree-app-search')
-          documentList: el('tree-app-document-list')
-          documentCursor: el('tree-app-document-cursor')
-          document: el('tree-app-document')
-        }
-      )()
-
-      world = new World()
-
-      world.cache.load_root().done (json) ->
-        controller = new VizsController(json.vizs)
-        els.vizs.appendChild(controller.el)
-        world.state.setDocumentListParams(DocumentListParams.byNodeId(world.cache.on_demand_tree.id_tree.root))
-        Logger.set_server(world.cache.server)
-
-        if tourEnabled
-          TourController()
-
-      refreshHeight = () ->
-        # Make the main div go below the (variable-height) navbar
-        h = $(options.navEl).outerHeight()
-        $(els.main).css({ top: h })
-
-        # Round the iframe's parent's width, because it needs an integer number of px
-        $document = $(els.document)
-        $document.find('iframe')
-          .width(1)
-          .width($document.width())
-
+    _listenForRefocus: ->
       refocus = ->
         # Pull focus out of the iframe.
         #
@@ -127,46 +80,121 @@ define [
         $('body').on 'click', (e) ->
           refocus()
 
-      keyboard_controller = new KeyboardController(document)
-
-      interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
-      animator = new Animator(interpolator)
-      focus = new AnimatedFocus({}, { animator: animator })
-      focus_controller(els.zoomSlider, focus)
-
-      controller = tree_controller(els.tree, world.cache, focus, world.state)
-      keyboard_controller.add_controller('TreeController', controller)
-
-      controller = document_contents_controller
-        cache: world.cache
-        state: world.state
-        el: els.document
-      keyboard_controller.add_controller('DocumentContentsController', controller)
-
-      controller = document_list_controller(els.documentList, els.documentCursor, world.cache, world.state)
-      keyboard_controller.add_controller('DocumentListController', controller)
-
-      new ModeView({ el: options.mainEl, state: world.state })
-
-      tag_list_controller
-        cache: world.cache
-        state: world.state
-        el: els.tags
-
-      if !searchDisabled
-        search_result_list_controller({
-          cache: world.cache
-          state: world.state
-          el: els.search
-        })
-
-      for store in [ world.cache.tag_store, world.cache.search_result_store ]
-        for event in [ 'added', 'removed', 'changed' ]
-          store.observe(event, refreshHeight)
-
-      throttledRefreshHeight = _.throttle(refreshHeight, 100)
-      $(window).resize(throttledRefreshHeight)
-      refreshHeight()
-
       refocus_body_on_leave_window()
       refocus_body_on_event()
+      undefined
+
+    _listenForResize: (documentEl) ->
+      $documentEl = $(documentEl)
+
+      refreshWidth = ->
+        # Round the iframe's parent's width, because it needs an integer number of px
+        $documentEl.find('iframe')
+          .width(1)
+          .width($documentEl.width())
+
+      throttledRefreshWidth = _.throttle(refreshWidth, 100)
+
+      $(window).resize(throttledRefreshWidth)
+
+      refreshWidth()
+
+    _buildHtml: ->
+      html = """
+        <div id="tree-app-left">
+          <div id="tree-app-search"></div>
+          <div id="tree-app-vizs"></div>
+          <div id="tree-app-tree"></div>
+          <div id="tree-app-zoom-slider"></div>
+          <div id="tree-app-tags"></div>
+        </div>
+        <div id="tree-app-right">
+          <div id="tree-app-document-list"></div>
+          <div id="tree-app-document-cursor"></div>
+        </div>
+      """
+
+      $(@el).html(html)
+
+      if @searchDisabled
+        $('#tree-app-search').remove()
+        $('#tree-app-left').addClass('search-disabled')
+
+      el = (id) -> document.getElementById(id)
+
+      main: @el
+      tree: el('tree-app-tree')
+      vizs: el('tree-app-vizs')
+      zoomSlider: el('tree-app-zoom-slider')
+      tags: el('tree-app-tags')
+      search: el('tree-app-search')
+      documentList: el('tree-app-document-list')
+      documentCursor: el('tree-app-document-cursor')
+      document: el('tree-app-document')
+
+    _initializeTransactionQueue: ->
+      transactionQueue = new TransactionQueue()
+
+      # Override Backbone.ajax so all Backbone operations use transactionQueue
+      originalAjax = Backbone.ajax
+      Backbone.ajax = (args...) ->
+        transactionQueue.queue((-> originalAjax(args...)), 'Backbone.ajax')
+
+      transactionQueue
+
+    _initializeDocumentSet: (transactionQueue) ->
+      documentSetId = +window.location.pathname.split('/')[2]
+      documentSet = new DocumentSet(documentSetId, transactionQueue)
+      # We just kicked off the initial server request
+
+    _initializeUi: (documentSet) ->
+      els = @_buildHtml()
+
+      treeId = +window.location.pathname.split('/')[4]
+      viz = documentSet.vizs.get("viz-#{treeId}") || documentSet.vizs.at(0)
+
+      onDemandTree = new OnDemandTree(documentSet, viz)
+      onDemandTree.demand_root()
+        .then =>
+          viz.set(rootNodeId: onDemandTree.id_tree.root)
+          state = new State(documentListParams: documentSet.documentListParams(viz).all())
+
+          keyboardController = new KeyboardController(document)
+
+          controller = new VizsController(documentSet.vizs, viz) # TODO use State to track viz
+          els.vizs.appendChild(controller.el)
+
+          interpolator = new PropertyInterpolator(500, (x) -> -Math.cos(x * Math.PI) / 2 + 0.5)
+          animator = new Animator(interpolator)
+          focus = new AnimatedFocus({}, { animator: animator })
+          focus_controller(els.zoomSlider, focus)
+
+          controller = tree_controller(els.tree, documentSet, onDemandTree, focus, state, animator)
+          keyboardController.add_controller('TreeController', controller)
+
+          controller = document_contents_controller
+            state: state
+            el: els.document
+          keyboardController.add_controller('DocumentContentsController', controller)
+
+          controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state, onDemandTree)
+          keyboardController.add_controller('DocumentListController', controller)
+
+          new ModeView(el: @el, state: state)
+
+          tag_list_controller
+            documentSet: documentSet
+            state: state
+            el: els.tags
+
+          if !@searchDisabled
+            search_result_list_controller
+              documentSet: documentSet
+              state: state
+              el: els.search
+
+          @_listenForRefocus()
+          @_listenForResize(els.document)
+
+          if @tourEnabled
+            TourController()

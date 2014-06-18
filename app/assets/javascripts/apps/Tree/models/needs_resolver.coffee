@@ -1,9 +1,8 @@
 define [ './server' ], (Server) ->
   resolve_root = (needs_resolver) ->
     needs_resolver.server.get('root').done (obj) ->
-      tag_store = needs_resolver.tag_store
-      for tag in obj.tags
-        tag_store.add(tag)
+      tags = needs_resolver.tags
+      tags.add(obj.tags)
 
       search_result_store = needs_resolver.search_result_store
       for search_result in obj.searchResults
@@ -25,7 +24,7 @@ define [ './server' ], (Server) ->
   }
 
   class NeedsResolver
-    constructor: (@tag_store, @search_result_store, server=undefined) ->
+    constructor: (@tags, @search_result_store, server=undefined) ->
       @server = server || new Server()
 
       @needs = {}

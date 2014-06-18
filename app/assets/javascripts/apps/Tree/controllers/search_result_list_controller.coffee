@@ -1,15 +1,14 @@
 define [
   '../models/DocumentListParams'
-  '../collections/SearchResultStoreProxy'
   '../views/InlineSearchResultList'
   './logger'
   'i18n'
-], (DocumentListParams, SearchResultStoreProxy, InlineSearchResultListView, Logger, i18n) ->
+], (DocumentListParams, InlineSearchResultListView, Logger, i18n) ->
   t = i18n.namespaced('views.Tree.show.SearchResultList')
   log = Logger.for_component('search_result_list')
 
   search_result_to_short_string = (search_result) ->
-    "#{search_result.id} (#{search_result.query})"
+    "#{search_result.id} (#{search_result.attributes.query})"
 
   searchResultToTagName = (searchResultModel) ->
     t('tag_name', searchResultModel.get('query'))
@@ -18,7 +17,7 @@ define [
   #
   # Arguments:
   #
-  # * cache: a Cache (for creating search results, and for its search_result_store)
+  # * documentSet: a DocumentSet (for tagging, SearchResults, Tags)
   # * state: a State (for reading and manipulating the doclist)
   # * el: an HTMLElement (optional)
   #
@@ -26,52 +25,34 @@ define [
   #
   # * view: a Backbone.View
   (options) ->
-    cache = options.cache
+    documentSet = options.documentSet
+    searchResults = documentSet.searchResults
+    tags = documentSet.tags
     state = options.state
     el = options.el
 
-    proxy = new SearchResultStoreProxy(cache.search_result_store)
-    collection = proxy.collection
-    view = new InlineSearchResultListView({
-      collection: proxy.collection
-      searchResultIdToModel: (id) -> if proxy.canMap(id) then proxy.map(id) else undefined
-      canCreateTagFromSearchResult: (searchResultModel) ->
-        searchResultModel &&
-          !cache.tag_store.find_by_name(searchResultToTagName(searchResultModel))?
+    view = new InlineSearchResultListView
+      collection: searchResults
+      canCreateTagFromSearchResult: (searchResult) ->
+        searchResult && !tags.findWhere(name: searchResultToTagName(searchResult))?
       state: state
       el: el
-    })
-
-    collection.on 'change:state', (searchResult) =>
-      if searchResult.get('state') == 'Complete'
-        searchResult = proxy.unmap(searchResult)
-        cache.refreshSearchResultCounts(searchResult)
 
     view.on 'search-result-clicked', (searchResult) ->
-      searchResult = proxy.unmap(searchResult)
       log('clicked search result', "#{search_result_to_short_string(searchResult)}")
-      state.setDocumentListParams(DocumentListParams.bySearchResultId(searchResult.id))
+      state.resetDocumentListParams().bySearchResult(searchResult)
 
-    view.on 'create-tag-clicked', (searchResultModel) ->
-      tag = { name: searchResultToTagName(searchResultModel) }
-      log('created tag', tag.name)
-      tag = cache.add_tag(tag)
-      cache.create_tag(tag)
-      cache.addTagToDocumentList(tag, DocumentListParams.bySearchResultId(searchResultModel.id))
-        .done ->
-          cache.refresh_tagcounts(tag)
-          # This shouldn't be done on "done": it should be done right away.
-          # But that leads to a crash, as our Backbone proxies execute out
-          # of order. Make TagStore and SearchResultStore plain
-          # Backbone.Collections, then un-indent this.
-          state.setDocumentListParams(DocumentListParams.byTagId(tag.id))
+    view.on 'create-tag-clicked', (searchResult) ->
+      tag = tags.create(name: searchResultToTagName(searchResult))
+      log('created tag', tag.attributes.name)
+      params = state.get('documentListParams').reset.bySearchResult(searchResult)
+      documentSet.tag(tag, params)
 
     view.on 'create-submitted', (query) ->
-      searchResult = { query: query }
+      searchResult = searchResults.create(query: query)
       log('created search', "#{search_result_to_short_string(searchResult)}")
-      searchResult = cache.search_result_store.addAndPoll(searchResult)
-      cache.search_result_api.create(searchResult)
+      searchResults.pollUntilStable()
       state.set(oneDocumentSelected: false) # https://www.pivotaltracker.com/story/show/65130854
-      state.setDocumentListParams(DocumentListParams.bySearchResultId(searchResult.id))
+      state.resetDocumentListParams().bySearchResult(searchResult)
 
     { view: view }

@@ -7,6 +7,7 @@ import controllers.forms.SearchForm
 import org.overviewproject.jobs.models.Search
 import controllers.util.JobQueueSender
 import play.api.Logger
+import play.api.libs.json.Json
 
 trait SearchController extends Controller {
   trait JobQueue {
@@ -25,7 +26,8 @@ trait SearchController extends Controller {
             Logger.error("Not connected to Message Broker")
             InternalServerError
           },
-          _ => Accepted)
+          _ => Accepted(Json.obj())
+        )
       })
   }
 }

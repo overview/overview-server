@@ -123,7 +123,7 @@ define [], ->
 
     pixel_to_action: (x, y) ->
       event = (key, node) ->
-        { event: key, id: node.json.id }
+        { event: key, node: node.json }
 
       if node = @pixel_to_expand_node(x, y)
         event('expand', node)

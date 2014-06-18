@@ -3,7 +3,7 @@ define [ 'i18n' ], (i18n) ->
 
   title: (document) ->
     baseTitle = document?.title && t('title', document.title) || t('title.empty')
-    if document?.page_number?
-      t('title.page', baseTitle, document.page_number)
+    if document?.pageNumber?
+      t('title.page', baseTitle, document.pageNumber)
     else
       baseTitle

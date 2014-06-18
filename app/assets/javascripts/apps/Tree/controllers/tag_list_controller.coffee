@@ -1,65 +1,52 @@
 define [
   '../models/DocumentListParams'
-  '../collections/TagStoreProxy'
   '../views/InlineTagList'
   './tag_form_controller'
   './TagDialogController'
   './logger'
-], (DocumentListParams, TagStoreProxy, InlineTagListView, tag_form_controller, TagDialogController, Logger) ->
+], (DocumentListParams, InlineTagListView, tag_form_controller, TagDialogController, Logger) ->
   log = Logger.for_component('tag_list')
 
   tag_to_short_string = (tag) ->
-    "#{tag.id} (#{tag.name})"
+    "#{tag.id} (#{tag.attributes.name})"
 
   tag_list_controller = (options) ->
-    cache = options.cache
-    tag_store = cache.tag_store
+    documentSet = options.documentSet
+    tags = documentSet.tags
     state = options.state
     el = options.el
 
-    proxy = new TagStoreProxy(tag_store)
-    collection = proxy.collection
-    view = new InlineTagListView({
-      collection: proxy.collection
-      tagIdToModel: (id) -> proxy.map(id)
+    view = new InlineTagListView
+      collection: tags
       state: state
       el: el
-    })
 
     view.on 'add-clicked', (tag) ->
-      tag = proxy.unmap(tag)
       log('added tag', "#{tag_to_short_string(tag)} to #{JSON.stringify(state.getSelection())}")
-      cache.addTagToDocumentList(tag, state.getSelection())
-        .done(-> cache.refresh_tagcounts(tag))
-      state.set(taglike: { tagId: tag.id })
+      documentSet.tag(tag, state.getSelection())
+      state.set(taglikeCid: tag.cid)
 
     view.on 'remove-clicked', (tag) ->
-      tag = proxy.unmap(tag)
       log('removed tag', "#{tag_to_short_string(tag)} from #{JSON.stringify(state.getSelection())}")
-      cache.removeTagFromDocumentList(tag, state.getSelection())
-        .done(-> cache.refresh_tagcounts(tag))
-      state.set(taglike: { tagId: tag.id })
+      documentSet.untag(tag, state.getSelection())
+      state.set(taglikeCid: tag.cid)
 
     view.on 'name-clicked', (tag) ->
-      tag = proxy.unmap(tag)
       log('selected tag', "#{tag_to_short_string(tag)}")
-      state.setDocumentListParams(DocumentListParams.byTagId(tag.id))
-      state.set(taglike: { tagId: tag.id })
+      state.resetDocumentListParams().byTag(tag)
+      state.set(taglikeCid: tag.cid)
 
     view.on 'create-submitted', (name) ->
-      tag = { name: name }
+      tag = tags.create(name: name)
       log('created tag', "#{tag_to_short_string(tag)} on #{JSON.stringify(state.getSelection())}")
-      tag = cache.add_tag(tag)
-      cache.create_tag(tag)
-      cache.addTagToDocumentList(tag, state.getSelection())
-        .done(-> cache.refresh_tagcounts(tag))
-      state.set(taglike: { tagId: tag.id })
+      documentSet.tag(tag, state.getSelection())
+      state.set(taglikeCid: tag.cid)
 
     view.on 'organize-clicked', ->
-      new TagDialogController(cache: cache, tagStoreProxy: proxy, state: state)
+      new TagDialogController(tags: tags, state: state)
 
     view.on 'untagged-clicked', ->
-      state.setDocumentListParams(DocumentListParams.untagged())
-      state.set(taglike: { untagged: true })
+      state.resetDocumentListParams().untagged()
+      state.set(taglikeCid: 'untagged')
 
     { view: view }

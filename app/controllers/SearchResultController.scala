@@ -60,7 +60,10 @@ trait SearchResultController extends Controller {
 object SearchResultController extends SearchResultController {
   override val storage = new Storage {
     override def findSearchResults(documentSetId: Long) = {
-      SearchResultFinder.byDocumentSet(documentSetId).map(_.copy()) // copy() to avoid "This ResultSet is closed" error
+      SearchResultFinder
+        .byDocumentSet(documentSetId)
+        .onlyNewest
+        .toSeq // toSeq to work around Squeryl error
     }
 
     override def findSearchResult(documentSetId: Long, searchResultId: Long) = {

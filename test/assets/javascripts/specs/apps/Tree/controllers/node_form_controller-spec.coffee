@@ -7,21 +7,14 @@ define [
     observable(this)
 
     constructor: (@node) ->
-
     close: () -> @_notify('closed')
     change: (new_node) -> @_notify('change', new_node)
-
-  class MockState extends Backbone.Model
 
   # Mostly copy/pasted from tag_form_controller-spec
   describe 'controllers/node_form_controller', ->
     describe 'node_form_controller', ->
-      controller = undefined
       log_values = undefined
-      cache = undefined
-      state = undefined
       view = undefined
-      node = { id: 1, description: 'node', color: '#abcdef' }
 
       options = {
         log: (s1, s2) -> log_values.push([s1, s2])
@@ -30,20 +23,22 @@ define [
 
       beforeEach ->
         log_values = []
-        cache =
-          update_node: sinon.spy()
-        selection =
-          minus: sinon.stub()
-        state = new MockState(selection: selection)
-        controller = node_form_controller(node, cache, state, options)
+        @sandbox = sinon.sandbox.create(useFakeServer: true)
+        @node = { id: 1, description: 'node', color: '#abcdef' }
+        @onDemandTree =
+          saveNode: sinon.spy()
+        @controller = node_form_controller(@node, @onDemandTree, options)
+
+      afterEach ->
+        @sandbox.restore()
 
       it 'should create a view when called', ->
         expect(view).not.to.be.undefined
 
-      it 'should call cache.update_node on change', ->
-        new_node = { description: 'node2' }
-        view.change(new_node)
-        expect(cache.update_node).to.have.been.calledWith(node, new_node)
+      it 'should call onDemandTree.saveNode on change', ->
+        attrs = { description: 'node2' }
+        view.change(attrs)
+        expect(@onDemandTree.saveNode).to.have.been.calledWith(@node, attrs)
 
       it 'should log on start', ->
         expect(log_values[0]).to.deep.eq(['began editing node', '1 (node)'])

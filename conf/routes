@@ -49,6 +49,7 @@ DELETE /trees/jobs/:jobId controllers.ReclusterJobController.delete(jobId: Long)
 
 # Routes that relate to a DocumentSet
 GET    /documentsets                      controllers.DocumentSetController.index(page: Int ?= 1)
+GET    /documentsets/:id.html.json        controllers.DocumentSetController.showHtmlInJson(id: Long)
 GET    /documentsets/:id.json             controllers.DocumentSetController.showJson(id: Long)
 GET    /documentsets/:id                  controllers.DocumentSetController.show(id: Long)
 DELETE /documentsets/:id                  controllers.DocumentSetController.delete(id: Long)
@@ -64,13 +65,13 @@ GET    /documentsets/:id/export                                              con
 GET    /documentsets/:id/export/documents-with-string-tags/:format/*filename controllers.DocumentSetExportController.documentsWithStringTags(format: models.export.format.Format, filename: String, id: Long)
 GET    /documentsets/:id/export/documents-with-column-tags/:format/*filename controllers.DocumentSetExportController.documentsWithColumnTags(format: models.export.format.Format, filename: String, id: Long)
 
-GET    /documentsets/:documentSetId/vizs.json controllers.VizController.indexJson(documentSetId: Long)
+GET    /documentsets/:documentSetId/vizs controllers.VizController.indexJson(documentSetId: Long)
 
-GET    /documentsets/:id/trees/:treeId controllers.TreeController.show(id: Long, treeId: Long)
-POST   /documentsets/:id/trees         controllers.TreeController.create(id: Long)
-GET    /trees/:treeId/nodes            controllers.NodeController.index(treeId: Long)
-GET    /trees/:treeId/nodes/:nodeId    controllers.NodeController.show(treeId: Long, nodeId: Long)
-POST   /trees/:treeId/nodes/:nodeId    controllers.NodeController.update(treeId: Long, nodeId: Long)
+GET    /documentsets/:id/trees/:treeId   controllers.TreeController.show(id: Long, treeId: Long)
+POST   /documentsets/:id/trees           controllers.TreeController.create(id: Long)
+GET    /trees/:treeId/nodes.json         controllers.NodeController.index(treeId: Long)
+GET    /trees/:treeId/nodes/:nodeId.json controllers.NodeController.show(treeId: Long, nodeId: Long)
+POST   /trees/:treeId/nodes/:nodeId      controllers.NodeController.update(treeId: Long, nodeId: Long)
 
 POST   /documentsets/:id/log-entries/create-many              controllers.LogEntryController.createMany(id: Long)
 GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEntryController.index(id: Long, extension: String)
@@ -78,8 +79,8 @@ GET    /documentsets/:id/log-entries$extension<\.csv|\.html|> controllers.LogEnt
 PUT    /documentsets/:id/tags/:tagId             controllers.TagController.update(id: Long, tagId: Long)
 DELETE /documentsets/:id/tags/:tagId             controllers.TagController.delete(id: Long, tagId: Long)
 GET    /documentsets/:id/tags.csv                controllers.TagController.indexCsv(id: Long)
-GET    /documentsets/:id/tags.json               controllers.TagController.indexJson(id: Long)
-GET    /documentsets/:id/trees/:treeId/tags.json controllers.TagController.indexJsonWithTree(id: Long, treeId: Long)
+GET    /documentsets/:id/tags                    controllers.TagController.indexJson(id: Long)
+GET    /documentsets/:id/trees/:treeId/tags      controllers.TagController.indexJsonWithTree(id: Long, treeId: Long)
 POST   /documentsets/:id/tags                    controllers.TagController.create(id: Long)
 POST   /documentsets/:id/tags/:tagId/add         controllers.TagController.add(id: Long, tagId: Long)
 POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remove(id: Long, tagId: Long)
@@ -87,10 +88,10 @@ POST   /documentsets/:id/tags/:tagId/remove      controllers.TagController.remov
 POST   /documentsets/:id/tags/:tagId/node-counts controllers.TagController.nodeCounts(id: Long, tagId: Long)
 POST   /trees/:id/tags/untagged-node-counts      controllers.UntaggedDocumentsController.nodeCounts(id: Long)
 
-POST   /documentsets/:id/searches controllers.SearchController.create(id: Long)
-
-GET    /documentsets/:id/search-results                             controllers.SearchResultController.index(id: Long)
-POST   /documentsets/:id/search-results/:searchResultId/node-counts controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
+POST   /documentsets/:id/searches                             controllers.SearchController.create(id: Long)
+GET    /documentsets/:id/searches                             controllers.SearchResultController.index(id: Long)
+# We POST the "nodes" parameter here because it can be large; but conceptually this is GET.
+POST   /documentsets/:id/searches/:searchResultId/node-counts controllers.SearchResultController.nodeCounts(id: Long, searchResultId: Long)
 
 GET    /documentsets/:id/error-list              controllers.DocumentProcessingErrorController.index(id: Long)
 

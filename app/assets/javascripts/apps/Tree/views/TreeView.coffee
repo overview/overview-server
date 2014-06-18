@@ -1,11 +1,11 @@
 define [
   'jquery'
   'underscore'
+  'backbone'
   '../models/observable'
-  '../models/color_table'
   './DrawOperation'
   'jquery.mousewheel' # to catch the 'mousewheel' event properly
-], ($, _, observable, ColorTable, DrawOperation) ->
+], ($, _, Backbone, observable, DrawOperation) ->
   DEFAULT_OPTIONS = {
     lineStyles:
       # Just a hash
@@ -60,9 +60,16 @@ define [
   class TreeView
     observable(this)
 
-    constructor: (@div, @cache, @tree, @focus, options={}) ->
+    constructor: (@div, @documentSet, @tree, @focus, options={}) ->
+      _.extend(@, Backbone.Events)
+
       @options = _.extend({}, DEFAULT_OPTIONS, options)
       @state = @tree.state
+
+      @_taglikeAndType = { type: 'null', taglike: null }
+      @listenTo(@state, 'change:taglikeCid', (state, taglikeCid) => @_onStateTaglikeCidChanged(taglikeCid))
+      @listenTo(@documentSet, 'tag', @_onTag)
+      @listenTo(@documentSet, 'untag', @_onUntag)
 
       $div = $(@div)
       @canvas = $('<canvas width="1" height="1"></canvas>')[0]
@@ -79,7 +86,7 @@ define [
       @zoomOutButton = $zoom_buttons.find('.zoom-out')[0]
 
       this._attach()
-      this.update()
+      this._set_needs_update()
 
     nodeid_above: (nodeid) ->
       @tree.id_tree.parent[nodeid]
@@ -115,10 +122,10 @@ define [
 
     _attach: () ->
       update = this._set_needs_update.bind(this)
-      @tree.state.on('change:documentListParams change:documentId change:taglike', update)
+      @tree.state.on('change:documentListParams change:document change:taglikeCid', update)
       @tree.observe('needs-update', update)
       @focus.on('change', update)
-      @cache.tag_store.observe('changed', update)
+      @documentSet.tags.on('change:color', update)
       $(window).on('resize.tree-view', update)
 
       @focus.on('change:zoom', this._refresh_zoom_button_status.bind(this))
@@ -135,7 +142,7 @@ define [
       $(@canvas).on 'mousedown', (e) =>
         action = this._event_to_action(e)
         @set_hover_node(undefined) # on click, un-hover
-        this._notify(action.event, action.id) if action
+        this._notify(action.event, action.node) if action
 
       this._handle_hover()
       this._handle_drag()
@@ -234,25 +241,26 @@ define [
       @last_draw?.pixel_to_action(x, y)
 
     _getColorLogic: ->
-      if (taglike = @tree.state.get('taglike'))?
-        if taglike.tagId?
-          tag = @cache.tag_store.find_by_id(taglike.tagId)
-          { tagIds: [ tag.id ], color: tag.color || (new ColorTable()).get(tag.name) }
-        else if taglike.searchResultId?
-          { searchResultIds: [ taglike.searchResultId ], color: '#50ade5' }
-        else if taglike.untagged?
+      if (taglikeCid = @tree.state.get('taglikeCid'))?
+        if (tag = @documentSet.tags.get(taglikeCid))?
+          { tagIds: [ tag.id ], color: tag.get('color') }
+        else if (searchResult = @documentSet.searchResults.get(taglikeCid))?
+          { searchResultIds: [ searchResult.id ], color: '#50ade5' }
+        else if taglikeCid == 'untagged'
           { tagIds: [ 0 ], color: '#dddddd' }
+        else
+          throw new Error('unreachable code')
       else
         null
 
-    _redraw: () ->
+    _redraw: ->
       colorLogic = @_getColorLogic()
-      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('documentId'), @cache.on_demand_tree, @cache.document_store)
+      highlightedNodeIds = TreeView.helpers.getHighlightedNodeIds(@state.get('documentListParams'), @state.get('document'), @tree.on_demand_tree)
 
       @last_draw = new DrawOperation(@canvas, @tree, colorLogic, highlightedNodeIds, @hoverNodeId, @focus, @options)
       @last_draw.draw()
 
-    update: () ->
+    update: ->
       @tree.update()
       @focus.update(@tree)
       this._redraw()
@@ -320,28 +328,61 @@ define [
 
       @_set_needs_update()
 
+    _onTag: (tag, documentListParams) ->
+      if @_isCurrent(tag.cid) || @_isCurrent('untagged')
+        @_refreshTagCounts(tag)
+
+    _onUntag: (tag, documentListParams) ->
+      if @_isCurrent(tag.cid) || @_isCurrent('untagged')
+        @_refreshTagCounts(tag)
+
+    _isCurrent: (taglikeCid) -> @state.get('taglikeCid') == taglikeCid
+
+    _findTaglikeAndType: (cid) ->
+      if cid == 'untagged'
+        { type: 'untagged', taglike: null }
+      else if (searchResult = @documentSet.searchResults.get(cid))?
+        { type: 'searchResult', taglike: searchResult }
+      else if (tag = @documentSet.tags.get(cid))?
+        { type: 'tag', taglike: tag }
+      else
+        { type: 'null', taglike: null }
+
+    _onStateTaglikeCidChanged: (taglikeCid) ->
+      if @_taglikeAndType.taglike?
+        @stopListening(@_taglikeAndType.taglike)
+
+      @_taglikeAndType = @_findTaglikeAndType(taglikeCid)
+
+      if @_taglikeAndType.type == 'searchResult'
+        searchResult = @_taglikeAndType.taglike
+        if !searchResult.get('id')
+          @listenTo searchResult, 'change:id change:state', =>
+            @tree.on_demand_tree.refreshTaglikeCounts(searchResult.cid)
+
+      @tree.on_demand_tree.refreshTaglikeCounts(taglikeCid)
+
   TreeView.helpers =
     # Returns a set of { nodeid: null }.
     #
     # A node is highlighted if we are viewing a document that is contained
     # in the node.
-    getHighlightedNodeIds: (documentListParams, documentId, onDemandTree, documentStore) ->
-      return {} if !documentId?
+    getHighlightedNodeIds: (documentListParams, document, onDemandTree) ->
+      return {} if !document?
 
       # parentNodes: if our doclist is showing a node's contents, no need to
       # highlight its parents.
       parentNodes = {}
       if documentListParams.type == 'node'
-        nodeId = documentListParams.nodeId
+        nodeId = documentListParams.node.id
         while (nodeId = onDemandTree.nodes[nodeId]?.parentId)?
           parentNodes[nodeId] = null
 
       # Selected documents
       documentNodes = {}
-      if (document = documentStore.documents[documentId])?
-        for nodeId in document.nodeids
-          if nodeId not of parentNodes
-            documentNodes[nodeId] = null
+      for nodeId in document.attributes.nodeids
+        if nodeId not of parentNodes
+          documentNodes[nodeId] = null
 
       documentNodes
 

@@ -2,10 +2,9 @@ define [
   'jquery'
   'underscore'
   'backbone'
-  '../models/DocumentListParams'
   '../views/TagList'
   'i18n'
-], ($, _, Backbone, DocumentListParams, TagListView, i18n) ->
+], ($, _, Backbone, TagListView, i18n) ->
   t = i18n.namespaced('views.Tree.show.tag_list')
 
   template = _.template("""
@@ -25,45 +24,30 @@ define [
     </div>
   """)
 
-  base_url = () ->
-    if match = /documentsets\/(\d+)\/.*$/.exec(window.location.pathname)
-      document_set_id = +match[1]
-      "/documentsets/#{document_set_id}"
-
-  tags_url = () ->
-    if match = /documentsets\/(\d+)\/trees\/(\d+).*$/.exec(window.location.pathname)
-      document_set_id = +match[1]
-      tree_id = +match[2]
-      "/documentsets/#{document_set_id}/trees/#{tree_id}/tags.json"
-
-        
-
   # Opens a dialog showing the tags in the tag store.
   #
   # This dialog allows edits. It will be closed when the user clicks "close".
   #
   # Usage:
   #
-  #   new TagDialogController(cache: cache, tagStoreProxy: tagStoreProxy, state: state)
+  #   new TagDialogController(tags: tags, state: state)
   #
   # Test usage:
   #
   #   controller = new TagDialogController
-  #     cache: mockCache
-  #     tagStore: mockTagStore
+  #     tags: mockTags
   #     view: new Backbone.View
   #     state: new Backbone.Model
   class TagDialogController
     constructor: (@options) ->
-      throw 'Must set options.cache, a Cache' if !@options.cache?
-      throw 'Must set options.tagStoreProxy, a TagStoreProxy' if !@options.tagStoreProxy?
+      throw 'Must set options.tags, a Tags' if !@options.tags?
       throw 'Must set options.state, a State' if !@options.state?
 
+      @tags = @options.tags
       @state = @options.state
 
       @_createView()
       @_attachView()
-
 
     _createView: ->
       # Create a view, unless one was supplied in the constructor (for testing)
@@ -71,36 +55,24 @@ define [
         @options.view
       else
         new TagListView
-          collection: @options.tagStoreProxy.collection,
-          exportUrl: base_url() + "/tags.csv" # TODO routing in JS
+          collection: @tags
+          exportUrl: "#{@tags.url}.csv" # TODO routing in JS
 
     _attachView: ->
-      cache = @options.cache
-      tagStoreProxy = @options.tagStoreProxy
-
       view = @view
 
-      @listenTo view, 'add', (attrs) ->
-        tag = cache.add_tag(attrs)
+      @listenTo view, 'add', (attrs) =>
+        tag = @tags.create(attrs)
 
-        cache.create_tag(tag, {
-          beforeReceive: tagStoreProxy.setChangeOptions({ interacting: true })
-        }).done ->
-          tagStoreProxy.setChangeOptions({})
+      @listenTo view, 'update', (tag, attrs) ->
+        tag.save(attrs)
 
-      @listenTo view, 'update', (model, attrs) ->
-        tag = tagStoreProxy.unmap(model)
-        tagStoreProxy.setChangeOptions({ interacting: true })
-        cache.update_tag(tag, attrs)
-        tagStoreProxy.setChangeOptions({})
-
-      @listenTo view, 'remove', (model) ->
-        tag = tagStoreProxy.unmap(model)
-        if @state.get('taglike')?.tagId == tag.id
-          @state.set(taglike: null)
-        if (params = @state.get('documentListParams'))? && params.type == 'tag' && params.tagId == tag.id
-          @state.setDocumentListParams(DocumentListParams.all())
-        cache.delete_tag(tag)
+      @listenTo view, 'remove', (tag) ->
+        if @state.get('taglikeCid') == tag.cid
+          @state.set(taglikeCid: null)
+        if (params = @state.get('documentListParams'))? && params.type == 'tag' && params.tag == tag
+          @state.resetDocumentListParams().all()
+        tag.destroy()
 
       @$dialog = $dialog = $(template({ t: t }))
       $dialog.find('.modal-body').append(view.el)
@@ -116,14 +88,9 @@ define [
           @stopListening()
 
       # Refresh tag counts
-      cache.transaction_queue.queue ->
-        $.getJSON(tags_url()) # TODO routing in JS
-          .done (json) ->
-            # The fresh data from the server will only be set in the proxy. It
-            # won't be set in the underlying tag store.
-            #
-            # TODO remove proxying altogether and just use a Backbone.Collection.
-            tagStoreProxy.collection.set(json?.tags || [])
-            view?.render() # tag counts have changed; render that
+      @tags.fetch
+        url: @tags.url.replace(/\/tags$/, "/trees/#{@state.get('documentListParams').viz.get('id')}/tags")
+        success: ->
+          view?.render() # tag counts have changed; render that
 
     _.extend(@::, Backbone.Events)

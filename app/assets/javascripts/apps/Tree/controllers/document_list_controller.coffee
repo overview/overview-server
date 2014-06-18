@@ -1,12 +1,9 @@
 define [
+  'underscore',
   'jquery',
   'backbone',
-  '../models/document_list'
+  '../models/DocumentList'
   '../models/list_selection'
-  '../collections/DocumentListProxy'
-  '../collections/TagStoreProxy'
-  '../collections/SearchResultStoreProxy'
-  '../views/node_form_view'
   '../views/DocumentList'
   '../views/DocumentListTitle'
   '../views/DocumentListCursor'
@@ -15,9 +12,11 @@ define [
   './tag_form_controller'
   './logger'
   'apps/DocumentDisplay/app'
-], ($, Backbone, DocumentList, ListSelection, DocumentListProxy, TagStoreProxy, SearchResultStoreProxy, NodeFormView, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger, DocumentDisplayApp) ->
+], (_, $, Backbone, DocumentList, ListSelection, DocumentListView, DocumentListTitleView, DocumentListCursorView, ListSelectionController, node_form_controller, tag_form_controller, Logger, DocumentDisplayApp) ->
   log = Logger.for_component('document_list')
   DOCUMENT_LIST_REQUEST_SIZE = 20
+
+  DocumentsUrl = window.location.pathname.split('/').slice(0, 3).join('/') + '/documents'
 
   doUntilWithSetInterval = (func, test, period) ->
     interval = undefined
@@ -39,7 +38,7 @@ define [
   }
 
   tag_to_short_string = (tag) ->
-    "#{tag.id} (#{tag.name})"
+    "#{tag.id} (#{tag.attributes.name})"
 
   node_to_short_string = (node) ->
     "#{node.id} (#{node.description})"
@@ -54,124 +53,81 @@ define [
     s
 
   class Controller extends Backbone.Model
-    # Only set on initialize (properties may change):
-    # * tagStore (a TagStore)
-    # * documentStore (a DocumentStore)
-    # * cache (a Cache)
+    # Properties set on initialize:
+    # * tags (a Tags)
     # * state (a State)
     # * listEl (an HTMLElement)
     # * cursorEl (an HTMLElement)
     #
-    # Read-only, may change or be set to something new:
-    # * documentList (a DocumentList, may be undefined)
-    # * documentListProxy (a DocumentListProxy, may be undefined)
-    # * documentCollection (a Backbone.Collection, always defined)
-    #
-    # Read-only, only properties may change:
+    # Properties created here, whose attributes may change:
     # * listSelection (a ListSelectionController)
-    # * tagCollection (a Backbone.Collection)
     # * listView
     # * cursorView
+    #
+    # Read-only Backbone attributes, which can be replaced entirely:
+    # * documentList (a DocumentList, always non-null)
     defaults:
-      documentStore: undefined
-      tagStore: undefined
-      state: undefined
-      cache: undefined
-
-      documentList: undefined
-
-      listSelection: undefined
-      tagCollection: undefined
-      documentCollection: undefined
+      documentList: null
 
     initialize: (attrs, options) ->
-      throw 'Must specify tagStore, a TagStore' if !attrs.tagStore
-      throw 'Must specify searchResultStore, a SearchResultStore' if !attrs.searchResultStore
-      throw 'Must specify documentStore, a DocumentStore' if !attrs.documentStore
-      throw 'Must specify state, a State' if !attrs.state
-      throw 'Must specify cache, a Cache' if !attrs.cache
+      throw 'Must specify options.tags, a Tags' if !options.tags
+      throw 'Must specify options.state, a State' if !options.state
+      throw 'Must specify options.listEl, an HTMLElement' if !options.listEl
+      throw 'Must specify options.cursorEl, an HTMLElement' if !options.cursorEl
+      throw 'FIXME must specify options.onDemandtree for now, an OnDemandTree' if !options.onDemandTree
 
-      @state = @get('state')
-      @cache = @get('cache')
+      @tags = options.tags
+      @state = options.state
+      @onDemandTree = options.onDemandTree
+      @listEl = options.listEl
+      @cursorEl = options.cursorEl
 
       @_addDocumentList()
       @_addListSelection()
-      @_addTagCollection()
-      @_addSearchResultCollection()
-      @_addDocumentCollection()
       @_addTitleView()
       @_addListView()
       @_addCursorView()
 
-    _refreshDocumentList: ->
-      params = @state.get('documentListParams')
-      documentList = new DocumentList(@cache, params)
-      @set(documentList: documentList)
-
     _addDocumentList: ->
-      @listenTo(@state, 'change:documentListParams', @_refreshDocumentList)
-      @_refreshDocumentList()
-
-    _addTagCollection: ->
-      @tagStoreProxy = new TagStoreProxy(@get('tagStore'))
-      @set('tagCollection', @tagStoreProxy.collection)
-
-    _addSearchResultCollection: ->
-      @searchResultStoreProxy = new SearchResultStoreProxy(@get('searchResultStore'))
-      @set('searchResultCollection', @searchResultStoreProxy.collection)
-
-      @listenTo @get('searchResultCollection'), 'change', (model) =>
-        if (params = @state.get('documentListParams'))? && params.type == 'searchResult' && params.searchResultId == model.id
-          # Create the same list again: its contents have changed
-          @_refreshDocumentList()
-
-    _addDocumentCollection: ->
-      documentStore = @get('documentStore')
-      tagStore = @get('tagStore')
-
       refresh = =>
-        @get('documentListProxy')?.destroy()
-        documentList = @get('documentList')
-        if documentList
-          documentListProxy = new DocumentListProxy(documentList)
-          @set
-            documentListProxy: documentListProxy
-            documentCollection: documentListProxy.model.documents
-        else
-          @set
-            documentListProxy: undefined
-            documentCollection: new Backbone.Collection([])
+        old = @get('documentList')
+        if old?
+          old.stopListening()
+          @stopListening(old)
 
-      @on('change:documentList', refresh)
+        params = @state.get('documentListParams')
+        documentList = new DocumentList({}, params: params, url: DocumentsUrl)
+        @set(documentList: documentList)
+
+      @listenTo(@state, 'change:documentListParams', refresh)
       refresh()
 
     _addListSelection: ->
-      isValidIndex = (i) => @get('documentCollection')?.at(i)?.id?
-      @set('listSelection', listSelection = new ListSelectionController({
+      isValidIndex = (i) => @get('documentList')?.documents?.at(i)?.id?
+
+      @listSelection = new ListSelectionController
         selection: new ListSelection()
         cursorIndex: undefined
         isValidIndex: isValidIndex
         platform: /Mac/.test(navigator.platform) && 'mac' || 'anything-but-mac'
-      }))
 
       # Update the state's selection when the user clicks around or docs load.
       #
       # When the user clicks, here's what happens:
       #
       # * on click, listSelection changes selectedIndices.
-      # * here, we set the state's documentId to the first selected index.
+      # * here, we set the state's document to the first selected one.
       #   (Because we assume there is only one -- if we want to change this,
-      #   we need to make the state have multiple documentIds.)
-      # * TODO on state documentId change, we modify listSelection. (We only do
+      #   we need to make the state have multiple documents.)
+      # * TODO on state document change, we modify listSelection. (We only do
       #   this when changing oneDocumentSelected. Will the rest be needed?)
-
       setStateSelectionFromListSelection = =>
-        collection = @get('documentCollection')
-        cursorIndex = listSelection.get('cursorIndex')
-        docId = cursorIndex? && collection.at(cursorIndex)?.id || null
+        cursorIndex = @listSelection.get('cursorIndex')
+        collection = @get('documentList')?.documents
+        document = cursorIndex? && collection?.at(cursorIndex) || null
 
-        @get('state').set({
-          documentId: docId
+        @state.set({
+          document: document
           oneDocumentSelected: cursorIndex?
         }, { fromDocumentListController: true })
 
@@ -184,101 +140,116 @@ define [
         # The new doclist won't have loaded, so documentId will be null. We
         # catch that by watching for add() on documentCollection.
         if @state.get('oneDocumentSelected')
-          listSelection.set
+          @listSelection.set
             cursorIndex: 0
             selectedIndices: [0]
         else
-          listSelection.onSelectAll()
+          @listSelection.onSelectAll()
 
-      @listenTo(listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
+      @listenTo(@listSelection, 'change:cursorIndex', setStateSelectionFromListSelection)
       @listenTo(@state, 'change:oneDocumentSelected', setListSelectionFromStateSelection)
-      @on 'change:documentCollection', =>
+      @on 'change:documentList', =>
         setListSelectionFromStateSelection() # may call setStateSelectionFromListSelection
-        oldDocCollection = @previous('documentCollection')
-        newDocCollection = @get('documentCollection')
+        oldDocCollection = @previous('documentList')?.documents
+        newDocCollection = @get('documentList')?.documents
         @stopListening(oldDocCollection) if oldDocCollection?
-        @listenToOnce(newDocCollection, 'add', setStateSelectionFromListSelection)
+        @listenToOnce(newDocCollection, 'add', setStateSelectionFromListSelection) if newDocCollection?
 
     _addTitleView: ->
       view = new DocumentListTitleView
         documentList: @get('documentList')
-        cache: @cache
 
-      @on 'change:documentList', =>
-        view.setDocumentList(@get('documentList'))
+      @on 'change:documentList', (__, documentList) ->
+        view.setDocumentList(documentList)
 
-      @listenTo view, 'edit-node', (nodeid) ->
-        node = @cache.on_demand_tree.nodes[nodeid]
+      @listenTo view, 'edit-node', (node) =>
         log('began editing node', node_to_short_string(node))
-        node_form_controller(node, @cache, @state)
+        node_form_controller(node, @onDemandTree)
 
-      @listenTo view, 'edit-tag', (tagid) ->
-        tag = @cache.tag_store.find_by_id(tagid)
+      @listenTo view, 'edit-tag', (tag) ->
         log('clicked edit tag', tag_to_short_string(tag))
-        tag_form_controller(tag, @cache, @state)
+        tag_form_controller(tag)
 
-      @set('titleView', view)
-      view.$el.appendTo(@get('listEl'))
+      @titleView = view
+      view.$el.appendTo(@listEl)
 
     _addListView: ->
       view = new DocumentListView
-        collection: @get('documentCollection')
-        selection: @get('listSelection')
-        tags: @get('tagCollection')
-        tagIdToModel: (id) => @tagStoreProxy.map(id)
-
-      @on 'change:documentCollection', (__, documentCollection) =>
-        view.setCollection(documentCollection)
+        collection: @get('documentList').documents
+        selection: @listSelection
+        tags: @tags
 
       @listenTo view, 'click-document', (model, index, options) =>
         log('clicked document', "#{model.id} index:#{index} meta:#{options.meta} shift: #{options.shift}")
-        @get('listSelection').onClick(index, options)
+        @listSelection.onClick(index, options)
 
-      # Handle loading by calling @get('documentList').slice()
-      firstMissingIndex = 0 # one more than the last index we've requested
-      pageSize = 20 # number of documents we request at once
       pageSizeBuffer = 5 # how far from the end we begin a request for more
+      neededIndex = 0 # index we want visible
+      fetching = false
 
-      fetchMissingDocuments = (needed) =>
-        while firstMissingIndex < needed + pageSizeBuffer
-          @get('documentList')?.slice(firstMissingIndex, firstMissingIndex + pageSize)
-          firstMissingIndex += pageSize
+      fetchAnotherPageIfNeeded = =>
+        documentList = @get('documentList')
 
-      @on 'change:documentList', =>
-        firstMissingIndex = 0
-        fetchMissingDocuments(1)
-      @listenTo(view, 'change:maxViewedIndex', (model, value) => fetchMissingDocuments(value))
+        return if fetching
+        return if !documentList?
+        return if documentList.isComplete()
+        return if documentList.documents.length >= neededIndex + pageSizeBuffer
 
-      @set('listView', view)
-      view.$el.appendTo(@get('listEl'))
+        fetching = true
+        documentList.fetchNextPage()
+          .then(-> fetching = false)
+
+      startFetching = () =>
+        fetching = false
+        neededIndex = 0
+        documentList = @get('documentList')
+        return if !documentList?
+
+        fetchAnotherPageIfNeeded()
+        @listenTo documentList, 'change:nPagesFetched', ->
+          # When we receive this event, a promise is still being resolved
+          # within DocumentList. So we wait for the promise to complete, then
+          # fetch the new page.
+          _.defer(fetchAnotherPageIfNeeded)
+
+      @listenTo view, 'change:maxViewedIndex', (__, viewedIndex) ->
+        neededIndex = viewedIndex
+        fetchAnotherPageIfNeeded()
+
+      @on 'change:documentList', (__, documentList) ->
+        view.setCollection(documentList.documents)
+        startFetching()
+
+      startFetching()
+
+      @listView = view
+      view.$el.appendTo(@listEl)
 
     _addCursorView: ->
       view = new DocumentListCursorView
-        selection: @get('listSelection')
-        documentList: @get('documentListProxy')?.model
+        selection: @listSelection
+        documentList: @get('documentList')
         documentDisplayApp: DocumentDisplayApp
-        tags: @get('tagCollection')
-        tagIdToModel: (id) => @tagStoreProxy.map(id)
-        el: @get('cursorEl')
+        tags: @tags
+        el: @cursorEl
 
-      @on 'change:documentListProxy', (model, documentListProxy) ->
-        view.setDocumentList(documentListProxy?.model)
+      @on 'change:documentList', (__, documentList) ->
+        view.setDocumentList(documentList)
 
-      @set('cursorView', view)
+      @cursorView = view
 
-  document_list_controller = (listDiv, cursorDiv, cache, state) ->
-    controller = new Controller({
-      tagStore: cache.tag_store
-      searchResultStore: cache.search_result_store
-      documentStore: cache.document_store
+  document_list_controller = (listDiv, cursorDiv, documentSet, state, onDemandTree) ->
+    # FIXME remove onDemandTree requirement by making Node a Backbone.Model
+    controller = new Controller({},
+      tags: documentSet.tags
       state: state
-      cache: cache
+      onDemandTree: onDemandTree
       listEl: listDiv
       cursorEl: cursorDiv
-    })
+    )
 
     go_up_or_down = (up_or_down, event) ->
-      listSelection = controller.get('listSelection')
+      listSelection = controller.listSelection
       options = {
         meta: event.ctrlKey || event.metaKey || false
         shift: event.shiftKey || false
@@ -287,24 +258,24 @@ define [
       new_index = (listSelection.cursorIndex || -1) + diff
       func = up_or_down == 'down' && 'onDown' || 'onUp'
 
-      docid = controller.get('documentCollection').at(new_index)?.id
-
+      docid = controller.get('documentList')?.documents?.at?(new_index)?.id
       log("went #{up_or_down}", "docid:#{docid} index:#{new_index} meta:#{options.meta} shift: #{options.shift}")
+
       listSelection[func](options)
 
     go_down = (event) -> go_up_or_down('down', event)
     go_up = (event) -> go_up_or_down('up', event)
-    select_all = (event) -> controller.get('listSelection').onSelectAll()
+    select_all = (event) -> controller.listSelection.onSelectAll()
 
     (->
-      view = controller.get('cursorView')
+      view = controller.cursorView
       view.on('next-clicked', -> go_down({}))
       view.on('previous-clicked', -> go_up({}))
       view.on('list-clicked', -> select_all({}))
 
       # With content <a></a><b></b>, CSS can match "a:hover ~ b", but
       # there's no way to do the reverse "b:hover ~ a".
-      $listView = controller.get('listView').$el
+      $listView = controller.listView.$el
       view.$el.on('mouseenter', -> $listView.addClass('hover'))
       view.$el.on('mouseleave', -> $listView.removeClass('hover'))
     )()

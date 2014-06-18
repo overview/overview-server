@@ -5,8 +5,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
   #
   # Parameters:
   #
-  # * collection, a Backbone.Collection of search-result models
-  # * searchResultIdToModel, a function mapping search-result ID to search-result model
+  # * collection, a Backbone.Collection of SearchResults
   # * state, a State
   # * (optional) canCreateTagFromSearchResult, a function mapping search-result model to boolean.
   #
@@ -63,11 +62,9 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
         """)
 
     initialize: ->
-      throw 'Must set collection, a Backbone.Collection of search-result models' if !@collection
-      throw 'Must pass options.searchResultIdToModel, a function mapping id to Backbone.Model' if !@options.searchResultIdToModel
+      throw 'Must set collection, a SearchResults' if !@collection
       throw 'Must set options.state, a State' if !@options.state
 
-      @searchResultIdToModel = @options.searchResultIdToModel
       @state = @options.state
 
       @listenTo(@state, 'change:documentListParams', @render)
@@ -75,20 +72,11 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
       @initialRender()
 
-    remove: ->
-      for key, callback of @stateCallbacks
-        @state.unobserve(key, callback)
-      Backbone.View.prototype.remove.apply(this)
-
-    _getSelectedSearchResultId: ->
+    _getSelectedSearchResult: ->
       if (params = @state.get('documentListParams'))? && params.type == 'searchResult'
-        params.searchResultId
+        params.searchResult
       else
         null
-
-    _getSelectedSearchResult: ->
-      id = @_getSelectedSearchResultId()
-      id && @searchResultIdToModel(id)
 
     _renderCreateTag: ->
       model = @_getSelectedSearchResult()
@@ -101,7 +89,7 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
 
     _renderDropdown: ->
       html = @templates.dropdownContents
-        searchResults: @collection.models.slice(-15)
+        searchResults: @collection.models.slice(0, 15)
 
       @_$els.dropdown.html(html)
       @_$els.dropdownButton.toggle(@collection.length > 0)
@@ -146,14 +134,6 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n', 'bootstrap-dropdown' ], ($,
       this
 
     render: ->
-      selectedSearchResultId = @_getSelectedSearchResultId()
-      selectedSearchResult = @_getSelectedSearchResult()
-
-      # If the currently-selected search result ID is changing, the selection
-      # might have an ID that isn't in the collection. In that case, don't
-      # render: another event is about to come and cause a render anyway
-      return if selectedSearchResultId? && !selectedSearchResult
-
       @_renderCreateTag()
       @_renderDropdown()
       @_renderInput()

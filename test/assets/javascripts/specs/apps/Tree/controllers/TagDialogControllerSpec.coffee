@@ -1,80 +1,81 @@
 define [
+  'backbone'
   'apps/Tree/controllers/TagDialogController'
   'i18n'
   'bootstrap-modal'
-], (TagDialogController, i18n) ->
+], (Backbone, TagDialogController, i18n) ->
   describe 'apps/Tree/controllers/TagDialogController', ->
-    view = undefined
-    controller = undefined
-    tagStoreProxy = undefined
-    cache = undefined
-    oldFnModal = undefined
-    state = undefined
+    class Tag extends Backbone.Model
+
+    class Tags extends Backbone.Collection
+      model: Tag
+
+    class State extends Backbone.Model
+      defaults:
+        taglikeCid: null
+
+      initialize: ->
+        @_reset =
+          all: (->)
+
+      resetDocumentListParams: -> @_reset
 
     beforeEach ->
       @sandbox = sinon.sandbox.create()
+      @sandbox.stub($.fn, 'modal', -> this)
+      @sandbox.stub(Backbone, 'sync')
+
       i18n.reset_messages
         'views.Tree.show.tag_list.header': 'header'
-      view = new Backbone.View
-      state = new Backbone.Model
-      tagStoreProxy =
-        tagLikeStore: {}
-        setChangeOptions: sinon.stub()
-        canMap: sinon.stub()
-        map: sinon.stub()
-        unmap: sinon.stub()
-      cache =
-        add_tag: sinon.spy()
-        create_tag: sinon.spy()
-        update_tag: sinon.spy()
-        delete_tag: sinon.spy()
-        transaction_queue:
-          queue: ->
-      @sandbox.stub($.fn, 'modal', -> this)
-      controller = new TagDialogController
-        view: view
-        tagStoreProxy: tagStoreProxy
-        cache: cache
-        state: state
+
+      @state = new State()
+      @state._reset.all = sinon.spy()
+      @tags = new Tags()
+      @view = new Backbone.View
+
+      @controller = new TagDialogController
+        view: @view
+        tags: @tags
+        state: @state
 
     afterEach ->
-      controller.stopListening()
+      @controller.stopListening()
       if ($dialog = $.fn.modal.firstCall?.thisValue)?
         $dialog.remove()
       @sandbox.restore()
 
+    it 'should sync from the server', ->
+      expect(Backbone.sync).to.have.been.calledWith('read', @tags)
+
     describe 'on view:remove', ->
-      model = undefined
-      tag = undefined
-
       beforeEach ->
-        model = new Backbone.Model(id: 1)
-        tag = { id: 1 }
-        tagStoreProxy.unmap.returns(tag)
+        @tag = new Tag(id: 1)
+        @tags.add(@tag)
 
-      it 'should call cache.delete_tag', ->
-        view.trigger('remove', model)
-        expect(tagStoreProxy.unmap).to.have.been.calledWith(model)
-        expect(cache.delete_tag).to.have.been.calledWith(tag)
+      it 'should remove the tag from the collection', ->
+        @view.trigger('remove', @tag)
+        expect(@tags.get(1)).to.be.undefined
 
-      it 'should unset the state taglike if needed', ->
-        state.set('taglike', { tagId: 1 })
-        view.trigger('remove', model)
-        expect(state.get('taglike')).to.be.null
+      it 'should call Backbone.sync', ->
+        @view.trigger('remove', @tag)
+        expect(Backbone.sync).to.have.been.calledWith('delete', @tag)
 
-      it 'should not unset the state taglike if not needed', ->
-        state.set('taglike', { tagId: 2 })
-        view.trigger('remove', model)
-        expect(state.get('taglike')).to.deep.eq({ tagId: 2 })
+      it 'should unset the state taglikeCid if needed', ->
+        @state.set(taglikeCid: @tag.cid)
+        @view.trigger('remove', @tag)
+        expect(@state.get('taglikeCid')).to.be.null
+
+      it 'should not unset the state taglikeCid if not needed', ->
+        @state.set(taglikeCid: 'foo')
+        @view.trigger('remove', @tag)
+        expect(@state.get('taglikeCid')).to.eq('foo')
 
       it 'should reset the documentListParams if needed', ->
-        state.set(documentListParams: { type: 'tag', tagId: 1 })
-        state.setDocumentListParams = sinon.spy()
-        view.trigger('remove', model)
-        expect(state.setDocumentListParams).to.have.been.called
+        @state.set(documentListParams: { type: 'tag', tag: @tag })
+        @view.trigger('remove', @tag)
+        expect(@state._reset.all).to.have.been.called
 
       it 'should not reset the documentListParams if not needed', ->
-        state.set(documentListParams: { type: 'tag', tagId: 2 })
-        state.setDocumentListParams = sinon.spy()
-        view.trigger('remove', model)
-        expect(state.setDocumentListParams).not.to.have.been.called
+        @state.set(documentListParams: { type: 'tag', tag: new Tag() })
+        @view.trigger('remove', @tag)
+        expect(@state._reset.all).not.to.have.been.called

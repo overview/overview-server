@@ -1,12 +1,16 @@
-define [ '../views/node_form_view', './logger' ], (NodeFormView, Logger) ->
+define [
+  'backbone'
+  '../views/node_form_view'
+  './logger'
+], (Backbone, NodeFormView, Logger) ->
   node_to_short_string = (node) ->
     "#{node.id} (#{node.description})"
 
-  node_diff_to_string = (node1, node2) ->
+  node_diff_to_string = (node, attrs) ->
     changed = false
     s = ''
-    if node1.description != node2.description
-      s += " description: <<#{node1.description}>> to <<#{node2.description}>>"
+    if node.description != attrs.description
+      s += " description: <<#{node.description}>> to <<#{attrs.description}>>"
       changed = true
     if !changed
       s += " (no change)"
@@ -17,7 +21,7 @@ define [ '../views/node_form_view', './logger' ], (NodeFormView, Logger) ->
   # Handles logging and hiding the dialog. Just call and forget.
   #
   # TODO: merge code (and tests) with tag_form_controller
-  node_form_controller = (node, cache, state, options=undefined) ->
+  node_form_controller = (node, onDemandTree, options=undefined) ->
     log = options?.log || Logger.for_component('node_form')
 
     log('began editing node', node_to_short_string(node))
@@ -28,8 +32,8 @@ define [ '../views/node_form_view', './logger' ], (NodeFormView, Logger) ->
       log('stopped editing node', node_to_short_string(node))
       form = undefined
 
-    form.observe 'change', (new_node) ->
-      log('edited node', "#{node.id}:#{node_diff_to_string(node, new_node)}")
-      cache.update_node(node, new_node)
+    form.observe 'change', (attrs) ->
+      log('edited node', "#{node.id}:#{node_diff_to_string(node, attrs)}")
+      onDemandTree.saveNode(node, attrs)
 
     undefined
