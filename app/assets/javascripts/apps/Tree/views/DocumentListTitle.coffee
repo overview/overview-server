@@ -24,7 +24,10 @@ define [ 'jquery', 'underscore', 'backbone', 'i18n' ], ($, _, Backbone, i18n) ->
         ret.className += ' loaded'
       else
         ret.titleHtml = t("searchResult.#{state}.title_html", i18nParams.slice(1)...)
-        ret.className += ' loading'
+        if state == 'Error'
+          ret.className += ' loaded'
+        else
+          ret.className += ' loading'
     else if !nDocuments?
       ret.titleHtml = t('loading')
       ret.className = 'loading'

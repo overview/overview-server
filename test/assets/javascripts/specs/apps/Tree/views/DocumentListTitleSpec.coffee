@@ -129,7 +129,7 @@ define [
         expect(@view.$el.text()).to.match(/searchResult.InProgress/)
 
       it 'should have class=search-inprogress', ->
-        expect(@view.$el.attr('class')).to.eq('search-inprogress')
+        expect(@view.$el.attr('class')).to.eq('search-inprogress loading')
 
       describe 'when complete', ->
         beforeEach ->
@@ -140,7 +140,7 @@ define [
           expect(@view.$('h4').text()).to.eq('searchResult.Complete.title_html,num_documents,4,query')
 
         it 'should have class=search-complete', ->
-          expect(@view.$el.attr('class')).to.eq('search-complete')
+          expect(@view.$el.attr('class')).to.eq('search-complete loaded')
 
         it 'should show in-progress if the length is null', ->
           @view.documentList.set(length: null)
@@ -154,4 +154,4 @@ define [
           expect(@view.$('h4').text()).to.eq('searchResult.Error.title_html,query')
 
         it 'should have class=search-error', ->
-          expect(@view.$el.attr('class')).to.eq('search-error')
+          expect(@view.$el.attr('class')).to.eq('search-error loaded')
