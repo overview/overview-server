@@ -16,10 +16,10 @@ define [
       expect(subject.title(title: '')).to.eq('title.empty')
 
     it 'should give a page title for a page document', ->
-      expect(subject.title(title: 'foo', page_number: 51)).to.eq('title.page,title,foo,51')
+      expect(subject.title(title: 'foo', pageNumber: 51)).to.eq('title.page,title,foo,51')
 
     it 'should give a page title for a no-title page document', ->
-      expect(subject.title(title: '', page_number: 51)).to.eq('title.page,title.empty,51')
+      expect(subject.title(title: '', pageNumber: 51)).to.eq('title.page,title.empty,51')
 
     it 'should give a placeholder title for a nonexistent document', ->
       expect(subject.title(null)).to.eq('title.empty')
