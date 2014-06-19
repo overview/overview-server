@@ -11,10 +11,9 @@ import org.overviewproject.tree.orm.File
 
 /**
  * Generates the steps needed to process uploaded files:
- *   1. Save file
+ *   1. Create a [[File]] with a view, based on the uploaded file
  *   1. Split the PDF into pages
  *   1. Save the pages
- *   1. Extract the text from each page
  *
  * If an Exception is thrown, processing completes, but the error is saved as a `DocumentProcessingError`
  * @todo store the error in `Page`
@@ -26,6 +25,7 @@ trait CreatePagesProcess {
   protected def startCreatePagesTask(documentSetId: Long, fileGroupId: Long, uploadedFileId: Long): FileGroupTaskStep =
     CreateViewableFile(TaskInformation(documentSetId, fileGroupId, uploadedFileId))
 
+  // Create the file with a view
   private case class CreateViewableFile(taskInformation: TaskInformation) extends ErrorSavingTaskStep {
 
     override def executeTaskStep: FileGroupTaskStep = {
@@ -34,6 +34,15 @@ trait CreatePagesProcess {
       storage.deleteUploadedFile(upload)
 
       LoadPdf(taskInformation, file)
+    }
+  }
+
+  // Read the pdf document 
+  private case class LoadPdf(taskInformation: TaskInformation, file: File) extends ErrorSavingTaskStep {
+    override def executeTaskStep: FileGroupTaskStep = {
+      val pdfDocument = pdfProcessor.loadFromDatabase(file.viewOid)
+
+      WritePdfPages(taskInformation, file, pdfDocument)
     }
   }
 
@@ -59,44 +68,6 @@ trait CreatePagesProcess {
     private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
       Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
 
-
-  }
-
-  // Read the pdf document 
-  private case class LoadPdf(taskInformation: TaskInformation, file: File) extends ErrorSavingTaskStep {
-    override def executeTaskStep: FileGroupTaskStep = {
-      val pdfDocument = pdfProcessor.loadFromDatabase(file.viewOid)
-
-      WritePdfPages(taskInformation, file, pdfDocument)
-    }
-  }
-
-  // Save the pages as pdf documents
-  private case class SavePages(taskInformation: TaskInformation, upload: GroupedFileUpload, pdfDocument: PdfDocument) extends ErrorSavingTaskStep {
-
-    override def executeTaskStep: FileGroupTaskStep = {
-      val pageContents = pdfDocument.pages
-
-      storage.savePagesAndCleanup(createPages(pageContents, _: Long), upload, taskInformation.documentSetId)
-
-      pdfDocument.close()
-
-      CreatePagesProcessComplete(taskInformation.documentSetId, taskInformation.fileGroupId, taskInformation.uploadedFileId)
-    }
-
-    override def cancel: Unit = pdfDocument.close()
-
-    private def createPages(pageContents: Iterable[PdfPage], fileId: Long): Iterable[Page] = {
-      var pageNumber = 0
-
-      for (page <- pageContents) yield {
-        pageNumber += 1
-        createPageFromContent(fileId, page, pageNumber)
-      }
-    }
-
-    private def createPageFromContent(fileId: Long, content: PdfPage, pageNumber: Int): Page =
-      Page(fileId, pageNumber, 1, Some(content.data), Some(content.text))
 
   }
 
