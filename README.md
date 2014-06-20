@@ -5,10 +5,10 @@ overview-server
 
 The Overview Project is an open source visual document mining system. It was originally designed for investigative journalists, but is now also used for qualitative research, e-discovery, digital humanities, etc.
 
-## Using Overview:
+## Using Overview
 
 - Try Overview at https://overviewproject.org.
-- Learn more on the project blog at http://overview.ap.org
+- Learn more on the project blog http://overview.ap.org
 - Install Overview on your own computer https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview
 
 ## Developing Overview
