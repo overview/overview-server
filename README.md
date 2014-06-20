@@ -3,14 +3,31 @@ overview-server
 
 [![Build Status](https://travis-ci.org/overview/overview-server.png?branch=master)](https://travis-ci.org/overview/overview-server)
 
-The Overview Project is a visual document mining system designed for journalists.
-Important links:
+The Overview Project is an open source visual document mining system. It was originally designed for investigative journalists, but is now also used for qualitative research, e-discovery, digital humanities, etc.
 
-  - production server at https://overviewproject.org
-  - project blog at http://overview.ap.org
-  - installation instructions: https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment
-  - developer forum at https://groups.google.com/forum/?fromgroups#!forum/overview-dev
-  - user forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
+## Using Overview:
 
-This software is Copyright 2011-2013 The Associated Press, and distributed under the
+- Try Overview at https://overviewproject.org.
+
+- Learn more on the project blog at http://overview.ap.org
+
+- Install Overview on your own computer https://github.com/overview/overview-server/wiki/Installing-and-Running-Overview
+
+## Developing Overview
+
+- The Visualization Plugin API https://github.com/overview/overview-server/wiki/Visualization-Plugin-API   
+- Setting up a development environment https://github.com/overview/overview-server/wiki/Setting-up-a-development-Environment
+
+- Project wiki https://github.com/overview/overview-server/wiki
+  
+- Developer forum at https://groups.google.com/forum/?fromgroups#!forum/overview-dev
+
+
+## Contact us!
+- Twitter [@overviewproject](https://twitter.com/overviewproject)
+- email info@overviewproject.org
+- Or post in theuser forum at https://groups.google.com/forum/?fromgroups=#!forum/overview-users
+ 
+
+This software is Copyright 2011-2014 The Associated Press, and distributed under the
 terms of the GNU Affero General Public License. See the LICENSE file for details. 
