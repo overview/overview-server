@@ -141,7 +141,7 @@ views.CsvUpload.new.charset.utf8=Unicode (UTF-8)
 views.CsvUpload.new.charset.windows1252=Western (Windows-1252, ISO-8859-1)
 views.CsvUpload.new.help1=Many programs can write CSV files; Overview can read those files.
 views.CsvUpload.new.help2=Each row in the CSV file becomes one document in Overview.
-views.CsvUpload.new.help.requirements_html=Overview looks for a column named <strong>text<\strong> in your CSV file. It can also read <em>title<\em>, <em>url<\em>, and <em>id<\em> and <em>tags<\em> columns (<a href="http://overview.ap.org/blog/2014/05/importing-documents-from-a-csv-file/" target="_blank" title="(opens in new window)">help and example files</a>)
+views.CsvUpload.new.help.requirements_html=Overview looks for a column named <strong>text</strong> in your CSV file. It can also read <strong>title</strong>, <strong>url</strong>, <strong>id</strong> and <strong>tags</strong> columns (<a href="http://overview.ap.org/blog/2014/05/importing-documents-from-a-csv-file/" target="_blank" title="(opens in new window)">help and example files</a>)
 views.CsvUpload.new.requirements.text=The file must use the UTF-8, ISO-8859-1 or Windows-1252 character set.
 views.CsvUpload.new.requirements.csv=All documents must be in a single CSV file, with columns separated by commas.
 views.CsvUpload.new.requirements.header=The first line of the file must list the column names. The text must be in a column named “text”, “snippet”, or “contents”.
