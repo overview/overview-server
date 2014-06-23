@@ -82,6 +82,7 @@ object CreateFile extends CreateFile {
   }
 
   class LibreOfficeDocumentConverter extends DocumentConverter {
-    override def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T = ???
+    override def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T =  
+      DocumentConverter.convertToPdfStream(guid, documentStream)(f)
   }
 }
