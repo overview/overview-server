@@ -22,7 +22,7 @@ class CreateFileSpec extends Specification with Mockito {
     "convert rewound stream to pdf if original is not pdf" in new NoPdfFileContext {
       val file = createFile(documentSetId, upload)
 
-      there was one(createFile.storage).createFileWithPdfView(any, any)
+      there was one(createFile.storage).createFileWithPdfView(any, any, any)
       inputStream.available must be equalTo(fileText.length)
     }
 

@@ -11,6 +11,8 @@ import org.overviewproject.database.orm.stores.FileStore
 import org.overviewproject.tree.orm.stores.BaseStore
 import org.overviewproject.database.orm.Schema
 import org.overviewproject.tree.orm.TempDocumentSetFile
+import org.overviewproject.postgres.LO
+import org.overviewproject.database.DB
 
 trait CreateFile {
   val PdfMagicNumber: Array[Byte] = "%PDF".getBytes
@@ -21,9 +23,7 @@ trait CreateFile {
     val magicNumber = peekAtMagicNumber(stream)
 
     if (magicNumber.sameElements(PdfMagicNumber)) storage.createFile(documentSetId, upload.name, upload.contentsOid)
-    else converter.convertStreamToPdf(upload.guid, stream) { pdfStream =>
-      storage.createFileWithPdfView(upload, pdfStream)
-    }
+    else converter.convertStreamToPdf(upload.guid, stream)(storage.createFileWithPdfView(documentSetId, upload, _))
 
   }
 
@@ -53,7 +53,7 @@ trait CreateFile {
   protected trait Storage {
     def getLargeObjectInputStream(oid: Long): InputStream
     def createFile(documentSetId: Long, name: String, oid: Long): File
-    def createFileWithPdfView(upload: GroupedFileUpload, viewStream: InputStream): File
+    def createFileWithPdfView(documentSetId: Long, upload: GroupedFileUpload, viewStream: InputStream): File
   }
 
   protected trait DocumentConverter {
@@ -68,21 +68,35 @@ object CreateFile extends CreateFile {
 
   class DatabaseStorage extends Storage {
     private val tempDocumentSetFileStore = new BaseStore(Schema.tempDocumentSetFiles)
-    
+
     override def getLargeObjectInputStream(oid: Long): InputStream = new LargeObjectInputStream(oid)
-    
+
     override def createFile(documentSetId: Long, name: String, oid: Long): File = Database.inTransaction {
       val file = FileStore.insertOrUpdate(File(1, oid, oid, name))
       tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
-      
+
       file
     }
 
-    override def createFileWithPdfView(upload: GroupedFileUpload, viewStream: InputStream): File = ???
+    override def createFileWithPdfView(documentSetId: Long, upload: GroupedFileUpload, viewStream: InputStream): File = Database.inTransaction {
+      implicit val pgc = DB.pgConnection(Database.currentConnection)
+
+      val buffer = new Array[Byte](8192)
+      var offset = 0
+      LO.withLargeObject { lo =>
+        while (viewStream.read(buffer, 0, 8192) != -1) {
+          lo.add(buffer)
+        }
+
+        val file = FileStore.insertOrUpdate(File(1, upload.contentsOid, lo.oid, upload.name))
+        tempDocumentSetFileStore.insertOrUpdate(TempDocumentSetFile(documentSetId, file.id))
+        file
+      }
+    }
   }
 
   class LibreOfficeDocumentConverter extends DocumentConverter {
-    override def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T =  
+    override def convertStreamToPdf[T](guid: UUID, documentStream: InputStream)(f: InputStream => T): T =
       DocumentConverter.convertToPdfStream(guid, documentStream)(f)
   }
 }
