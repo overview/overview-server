@@ -8,7 +8,7 @@ define [
   class Viz extends Backbone.Model
 
   class TransactionQueue
-    queue: (callback) -> $.when(callback())
+    ajax: $.ajax
 
   class State extends Backbone.Model
     defaults:

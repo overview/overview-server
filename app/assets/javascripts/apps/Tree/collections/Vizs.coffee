@@ -28,10 +28,11 @@ define [
 
     _doPoll: ->
       if @findWhere(type: 'job')
+        onComplete = =>
+          @_pollTimeout = null
+          @pollUntilStable()
+
         @fetch() # FIXME should have remove: false, but need stable IDs
-          .fail((xhr) -> console.log('Viz jobs refresh failed. Will retry soon.', xhr))
-          .always =>
-            @_pollTimeout = null
-            @pollUntilStable()
+          .then(onComplete, onComplete)
       else
         @_pollTimeout = null

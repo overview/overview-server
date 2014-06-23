@@ -33,7 +33,7 @@ define [
   #     deferred = tree.demand_node(id) # will demand node and fire :add if it's new
   #     node = tree.nodes[id] # will return node, only if present
   #     nodeids = tree.id_tree.children[node.id] # valid for all nodes
-  #     tree.demand(id).done(-> tree.id_tree.children[node.id]) # guaranteed
+  #     tree.demand(id).then(-> tree.id_tree.children[node.id]) # guaranteed
   #     id_tree = tree.id_tree # for optimized algorithms (see `IdTree`)
   #
   # The tree will automatically remove unused nodes, as specified by
@@ -54,7 +54,7 @@ define [
     constructor: (@documentSet, @state, options={}) ->
       _.extend(@, Backbone.Events)
 
-      @transaction_queue = @documentSet.transactionQueue
+      @transactionQueue = @documentSet.transactionQueue
       @viz = null
       @options = options
 
@@ -226,13 +226,11 @@ define [
     demand_node: (id) -> @_demand("nodes/#{id}")
 
     _demand: (arg) ->
-      @transaction_queue.queue(=>
-        $.ajax
-          type: 'get'
-          url: "/trees/#{@viz.get('id')}/#{arg}.json"
-          success: (json) => @_add_json(json)
-          error: (err) => console.log('ERROR fetching tree contents', err)
-      , 'OnDemandTree._demand')
+      @transactionQueue.ajax
+        type: 'get'
+        url: "/trees/#{@viz.get('id')}/#{arg}.json"
+        success: (json) => @_add_json(json)
+        debugInfo: 'OnDemandTree._demand'
 
     _collapse_node: (idTreeRemove, id) ->
       idsToRemove = []
@@ -271,13 +269,13 @@ define [
     saveNode: (node, newAttributes) ->
       for k, v of newAttributes
         node[k] = v
-      @transaction_queue.queue(=>
-        $.ajax
-          type: 'POST'
-          url: "/trees/#{@viz.get('id')}/nodes/#{node.id}"
-          data: node
-          success: => @id_tree.batchAdd(->) # refresh
-      , 'OnDemandTree.saveNode')
+
+      @transactionQueue.ajax
+        type: 'POST'
+        url: "/trees/#{@viz.get('id')}/nodes/#{node.id}"
+        data: node
+        success: => @id_tree.batchAdd(->) # refresh
+        debugInfo: 'OnDemandTree.saveNode'
 
     # Requests new node counts from the server, and updates the cache
     #
@@ -287,21 +285,16 @@ define [
     # * onlyNodeIds: if set, only refresh a few node IDs. Otherwise, refresh
     #   every loaded node ID.
     _refreshTagCounts: (tag, onlyNodeIds=undefined) ->
-      @transaction_queue.queue(=>
-        @_refreshPost('tagCounts', 'tag', tag.id, onlyNodeIds)
-      , 'OnDemandTree._refreshTagCounts')
+      @transactionQueue.ajax(=> @_refreshPost('tagCounts', 'tag', (-> tag.id), onlyNodeIds))
 
     _refreshUntaggedCounts: (onlyNodeIds=undefined) ->
-      @transaction_queue.queue(=>
-        @_refreshPost('tagCounts', 'untagged', 0, onlyNodeIds)
-      , 'OnDemandTree._refreshUntagged')
+      @transactionQueue.ajax(=> @_refreshPost('tagCounts', 'untagged', (-> 0), onlyNodeIds))
 
     _refreshSearchResultCounts: (searchResult, onlyNodeIds=undefined) ->
-      @transaction_queue.queue(=>
-        @_refreshPost('searchResultCounts', 'search', searchResult.get('id'), onlyNodeIds)
-      , 'OnDemandTree._refreshSearchResultCounts')
+      @transactionQueue.ajax(@_refreshPost('searchResultCounts', 'search', (-> searchResult.get('id')), onlyNodeIds))
 
-    _refreshPost: (countsKey, endpoint, objectId, onlyNodeIds) ->
+    _refreshPost: (countsKey, endpoint, objectIdCallback, onlyNodeIds) ->
+      objectId = objectIdCallback()
       onlyNodeIds ||= (k for k, __ of @nodes) # all loaded nodes by default
 
       url = {
@@ -310,29 +303,29 @@ define [
         'search': "/documentsets/#{@documentSet.id}/searches/#{objectId}/node-counts"
       }[endpoint]
 
-      $.ajax
-        type: 'post'
-        url: url
-        data: { nodes: onlyNodeIds.join(',') }
-        success: (data) =>
-          i = 0
-          while i < data.length
-            nodeid = data[i++]
-            count = data[i++]
+      type: 'post'
+      url: url
+      data: { nodes: onlyNodeIds.join(',') }
+      debugInfo: 'OnDemandTree._refreshPost'
+      success: (data) =>
+        i = 0
+        while i < data.length
+          nodeid = data[i++]
+          count = data[i++]
 
-            node = @nodes[nodeid]
+          node = @nodes[nodeid]
 
-            if node?
-              counts = (node[countsKey] ||= {})
+          if node?
+            counts = (node[countsKey] ||= {})
 
-              if count
-                counts[objectId] = count
-              else
-                delete counts[objectId]
+            if count
+              counts[objectId] = count
+            else
+              delete counts[objectId]
 
-          @id_tree.batchAdd(->) # trigger update
+        @id_tree.batchAdd(->) # trigger update
 
-          undefined
+        undefined
 
     refreshTaglikeCounts: (taglikeCid, onlyNodeIds=undefined) ->
       if taglikeCid

@@ -2,7 +2,7 @@ define [
   'underscore'
   'jquery'
   'backbone'
-  './models/transaction_queue'
+  './models/TransactionQueue'
   './models/DocumentSet'
   './models/State'
   './models/on_demand_tree'
@@ -136,9 +136,11 @@ define [
       transactionQueue = new TransactionQueue()
 
       # Override Backbone.ajax so all Backbone operations use transactionQueue
-      originalAjax = Backbone.ajax
-      Backbone.ajax = (args...) ->
-        transactionQueue.queue((-> originalAjax(args...)), 'Backbone.ajax')
+      #
+      # XXX This means collection.fetch()`.done()` and `.fail()` will not work:
+      # we use real Promise objects, not jQuery ones. You can use `success:`
+      # and `error:` callbacks, or use the two-argument `.then()`.
+      Backbone.ajax = (args...) -> transactionQueue.ajax(args...)
 
       transactionQueue
 

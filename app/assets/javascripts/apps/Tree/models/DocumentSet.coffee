@@ -68,21 +68,19 @@ define [
       console.log('ERROR loading document set', xhr)
 
     tag: (tag, documentListParams) ->
-      @transactionQueue.queue(=>
-        $.ajax
-          type: 'POST'
-          url: "/documentsets/#{@id}/tags/#{tag.id}/add"
-          data: documentListParams.toApiParams()
-      , 'DocumentSet.tag')
+      @transactionQueue.ajax =>
+        type: 'POST'
+        url: "/documentsets/#{@id}/tags/#{tag.id}/add"
+        data: documentListParams.toApiParams()
+        debugInfo: 'DocumentSet.tag'
 
       @trigger('tag', tag, documentListParams)
 
     untag: (tag, documentListParams) ->
-      @transactionQueue.queue(=>
-        $.ajax
-          type: 'POST'
-          url: "/documentsets/#{@id}/tags/#{tag.id}/remove"
-          data: documentListParams.toApiParams()
-      , 'DocumentSet.untag')
+      @transactionQueue.ajax =>
+        type: 'POST'
+        url: "/documentsets/#{@id}/tags/#{tag.id}/remove"
+        data: documentListParams.toApiParams()
+        debugInfo: 'DocumentSet.untag'
 
       @trigger('untag', tag, documentListParams)

@@ -21,10 +21,10 @@ define [
 
     _doPoll: ->
       if @findWhere(state: 'InProgress')
-        @fetch(remove: false)
-          .fail((xhr) -> console.log('Search refresh failed. Will retry soon.', xhr))
-          .always =>
-            @_pollTimeout = null
-            @pollUntilStable()
+        onComplete = =>
+          @_pollTimeout = null
+          @pollUntilStable()
+
+        @fetch(remove: false).then(onComplete, onComplete)
       else
         @_pollTimeout = null

@@ -50,7 +50,7 @@ define [
     view.observe 'click', (node) ->
       return if !node?
       log('clicked node', "#{node.id}")
-      expand_deferred(node)
+      expand_promise(node)
 
       params = state.get('documentListParams').reset.byNode(node)
       if params.equals(state.get('documentListParams'))
@@ -63,7 +63,7 @@ define [
     view.observe 'expand', (node) ->
       return if !node?
       log('expanded node', "#{node.id}")
-      expand_deferred(node)
+      expand_promise(node)
 
     view.observe 'collapse', (node) ->
       return if !node?
@@ -107,21 +107,21 @@ define [
         newNode = onDemandTree.getNode(newNodeId)
         log("moved to #{finder}", "nodeid_before:#{nodeId} nodeid_after:#{newNodeId}")
         select_node(newNode)
-        expand_deferred(newNode)
+        expand_promise(newNode)
       else
         log("failed to move to #{finder}", "nodeid_before:#{nodeId}")
       newNode
 
-    # Returns a jQuery Deferred which will resolve when the node is expanded.
+    # Returns a Promise which will resolve when the node is expanded.
     #
-    # The Deferred will be returned resolved if the node is already expanded
+    # The Promise will be returned resolved if the node is already expanded
     # or is a leaf.
-    expand_deferred = (node) ->
+    expand_promise = (node) ->
       throw new Error("Must pass a valid Node") if !node.id?
       children = onDemandTree.id_tree.children[node.id]
       if !children?
         onDemandTree.demand_node(node.id)
-          .done (json) ->
+          .then (json) ->
             nodeIds = _.pluck(json?.nodes || [], 'id')
             if nodeIds.length
               taglikeCid = state.get('taglikeCid')
@@ -129,23 +129,23 @@ define [
       else
         $.Deferred().resolve()
 
-    # Returns a jQuery Deferred which will resolve when the node is expanded.
+    # Returns a Promise which will resolve when the node is expanded.
     #
     # Side-effects: logs the action.
     #
-    # The Deferred will be returned resolved if the node is already expanded
+    # The Promise will be returned resolved if the node is already expanded
     # or is a leaf.
-    expand_deferred_with_log = (node) ->
-      deferred = expand_deferred(node)
-      if deferred.state() == 'resolved'
+    expand_promise_with_log = (node) ->
+      promise = expand_promise(node)
+      if promise.state?() == 'resolved'
         log('attempt to expand already-expanded or leaf node', "#{node.id}")
       else
         log('expand node', "#{node.id}")
-      deferred
+      promise
 
     expand = (e) ->
       node = selected_node()
-      expand_deferred_with_log(node)
+      expand_promise_with_log(node)
 
     collapse = (e) ->
       node = selected_node()
@@ -156,7 +156,7 @@ define [
       child_nodeid = view.nodeid_below(node.id)
       if !child_nodeid && onDemandTree.id_tree.children[node.id]?.length
         log('toggling node to expanded', "#{node.id}")
-        expand_deferred(node)
+        expand_promise(node)
       else
         log('toggling node to collapsed', "#{node.id}")
         # FIXME actually collapse
@@ -167,11 +167,12 @@ define [
 
     go_down = (e) ->
       node = selected_node()
-      deferred = expand_deferred(node)
-      if deferred.state() == 'resolved'
+      promise = expand_promise(node)
+      if promise.state?() == 'resolved'
         go('nodeid_below', e)
       else
-        deferred.done ->
+        promise.then ->
+          console.log('THEN')
           # We can't query the view for a DrawableNode, because the view hasn't
           # drawn yet. However, we know the view *will* draw the added children,
           # so we can select one anyway.

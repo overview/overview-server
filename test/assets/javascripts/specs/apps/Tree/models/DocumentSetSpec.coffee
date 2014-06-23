@@ -10,7 +10,7 @@ define [
     toApiParams: -> @props
 
   class TransactionQueue
-    queue: (callback) -> $.when(callback())
+    ajax: (optionsCallback) -> $.ajax(optionsCallback())
 
   describe 'apps/Tree/models/DocumentSet', ->
     beforeEach ->
