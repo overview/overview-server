@@ -297,6 +297,13 @@ views.DocumentSet.index.ImportOptions.tag.name=“{0}” ({1,choice,0#0 document
 views.DocumentSet.index.ImportOptions.title=Import options
 views.DocumentSet.index.ImportOptions.tree_title.label=New tree name
 
+views.DocumentSet.show.TransactionQueueErrorMonitor.error.title=Please refresh the page
+views.DocumentSet.show.TransactionQueueErrorMonitor.error.description=Overview has encountered an unusual error. Some of your work from the last few seconds may have been lost.
+views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.title=Network problems
+views.DocumentSet.show.TransactionQueueErrorMonitor.networkError.description=Overview failed to communicate with the server. Some of your work from the last few seconds may be lost unless you reconnect.
+views.DocumentSet.show.TransactionQueueErrorMonitor.reload=Reload this page
+views.DocumentSet.show.TransactionQueueErrorMonitor.retry=Reconnect
+
 views.DocumentSet.show.VizTabs.cancelJob=Cancel this reclustering…
 views.DocumentSet.show.VizTabs.new_viz=New tree…
 views.DocumentSet.show.VizTabs.viz.title.dt=Title

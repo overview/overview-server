@@ -19,6 +19,7 @@ define [
   './controllers/document_list_controller'
   './controllers/document_contents_controller'
   './controllers/TourController'
+  './views/TransactionQueueErrorMonitor'
   './views/Mode'
 ], (_, $, Backbone, \
     TransactionQueue, DocumentSet, State, OnDemandTree, \
@@ -27,6 +28,7 @@ define [
     VizsController, tag_list_controller, search_result_list_controller, \
     focus_controller, tree_controller, document_list_controller, document_contents_controller, \
     TourController, \
+    TransactionQueueErrorMonitor, \
     ModeView) ->
 
   class App
@@ -112,6 +114,8 @@ define [
           <div id="tree-app-document-list"></div>
           <div id="tree-app-document-cursor"></div>
         </div>
+        <div id="transaction-queue-error-monitor">
+        </div>
       """
 
       $(@el).html(html)
@@ -131,6 +135,7 @@ define [
       documentList: el('tree-app-document-list')
       documentCursor: el('tree-app-document-cursor')
       document: el('tree-app-document')
+      transactionQueueErrorMonitor: el('transaction-queue-error-monitor')
 
     _initializeTransactionQueue: ->
       transactionQueue = new TransactionQueue()
@@ -211,6 +216,10 @@ define [
 
       controller = document_list_controller(els.documentList, els.documentCursor, documentSet, state, onDemandTree)
       keyboardController.add_controller('DocumentListController', controller)
+
+      new TransactionQueueErrorMonitor
+        model: documentSet.transactionQueue
+        el: els.transactionQueueErrorMonitor
 
       if @tourEnabled
         TourController()
