@@ -28,7 +28,27 @@ define [
                 <p><%- t('error.description') %></p>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-primary reload"><%- t('reload') %>
+                <button type="button" class="btn btn-primary reload"><%- t('reload') %></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      """)
+
+      networkError: _.template("""
+        <div class="modal-backdrop fade in"></div>
+        <div class="modal fade in" style="display:block;">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title"><%- t('networkError.title') %></h4>
+              </div>
+              <div class="modal-body">
+                <p><%- t('networkError.description') %></p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-warning reload"><%- t('reload') %></button>
+                <button type="button" class="btn btn-primary retry"><%- t('retry') %></button>
               </div>
             </div>
           </div>
@@ -37,16 +57,27 @@ define [
 
     events:
       'click .reload': '_onReload'
+      'click .retry': '_onRetry'
 
     initialize: (options) ->
       throw 'Must pass options.model, a TransactionQueue' if !options.model
 
       @listenTo(@model, 'error', @_onError)
+      @listenTo(@model, 'network-error', @_onNetworkError)
 
     _onError: ->
       html = @templates.error(t: t)
       @$el.html(html)
 
+    _onNetworkError: (xhr, @retry) ->
+      html = @templates.networkError(t: t)
+      @$el.html(html)
+
     _onReload: (e) ->
       e.preventDefault()
       window.location.reload(true)
+
+    _onRetry: (e) ->
+      e.preventDefault()
+      @$el.empty()
+      @retry()

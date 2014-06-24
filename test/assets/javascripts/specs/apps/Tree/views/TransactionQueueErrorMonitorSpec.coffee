@@ -37,3 +37,23 @@ define [
         @sandbox.stub(window.location, 'reload')
         @$el.find('.reload').click()
         expect(window.location.reload).to.have.been.calledWith(true)
+
+    describe 'with a network error', ->
+      beforeEach ->
+        @retry = sinon.spy()
+        @queue.trigger('network-error', {}, @retry)
+
+      it 'should display the error title', -> expect(@$el).to.contain('networkError.title')
+      it 'should display the error description', -> expect(@$el).to.contain('networkError.description')
+      it 'should not offer to retry', -> expect(@$el.find('button.retry')).to.exist
+      it 'should offer to reload', -> expect(@$el.find('button.reload')).to.exist
+
+      it 'should retry the request', ->
+        @$el.find('.retry').click()
+        expect(@retry).to.have.been.called
+        expect(@$el.html()).to.eq('')
+
+      it 'should reload the page', ->
+        @sandbox.stub(window.location, 'reload')
+        @$el.find('.reload').click()
+        expect(window.location.reload).to.have.been.calledWith(true)
