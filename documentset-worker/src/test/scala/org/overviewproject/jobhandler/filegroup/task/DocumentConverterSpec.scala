@@ -10,6 +10,7 @@ import java.nio.file.Paths
 import org.specs2.specification.Scope
 import org.overviewproject.jobhandler.filegroup.task.DocumentConverter._
 import java.io.FileNotFoundException
+import org.overviewproject.util.Configuration
 
 class DocumentConverterSpec extends Specification with Mockito {
 
@@ -77,9 +78,9 @@ class DocumentConverterSpec extends Specification with Mockito {
     val inputFilePath = tempDir.resolve(Paths.get(fileGuid))
     val inputFile = inputFilePath.toFile
     val outputFile = tempDir.resolve(Paths.get(outputFileName)).toFile
-
+    
     val officeCommandPieces = Seq(
-      "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+      Configuration.getString("libre_office_path"),
       "--headless --invisible --norestore --nolockcheck --convert-to pdf",
       s"--outdir $tempDir $inputFilePath")
     val libreOfficeCommand = officeCommandPieces.mkString(" ")
