@@ -8,7 +8,7 @@ define [
   class Viz extends Backbone.Model
 
   class TransactionQueue
-    ajax: $.ajax
+    ajax: (options) -> $.ajax(options?() || options)
 
   class State extends Backbone.Model
     defaults:
