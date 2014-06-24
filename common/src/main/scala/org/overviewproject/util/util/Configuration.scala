@@ -7,7 +7,7 @@
  *   - add a key with a default in one line of code
  *   - access is type-checked versus type of default value
  *   - supports paths, e.g. foo.bar.key = blah
- * 
+ *
  * Overview Project, created October 2013
  *
  * @author Jonathan Stray
@@ -19,13 +19,13 @@ import scala.collection.JavaConverters._
 import com.typesafe.config.{ Config, ConfigFactory }
 
 trait Configuration {
-  def getString(key: String) : String
-  def getInt(key: String) : Int
+  def getString(key: String): String
+  def getInt(key: String): Int
 }
 
 // Base class. Subclass and define "keys" to create a configuration object
 // Optionally define "path" to root the keys in a sub-path
-abstract class ConfigurationKeys(configuration : Config) extends Configuration {
+abstract class ConfigurationKeys(configuration: Config) extends Configuration {
   def path: Option[String] = None
   def keys: Map[String, Any]
 
@@ -35,29 +35,29 @@ abstract class ConfigurationKeys(configuration : Config) extends Configuration {
   protected val myConfig =
     if (path.isEmpty) {
       configuration.withFallback(defaults)
-    } else { 
+    } else {
       configuration.withFallback(defaults.atPath(path.get)).getConfig(path.get)
     }
-          
-  def getString(key:String) : String = {
-      keys.get(key) match {
-      case Some(value:String) => 
+
+  def getString(key: String): String = {
+    keys.get(key) match {
+      case Some(value: String) =>
         myConfig.getString(key) // default value supplied above
-      case None => 
+      case None =>
         throw new IllegalArgumentException(s"unknown configuration key $key")
-      case Some(s) => 
+      case Some(s) =>
         val keyType = s.getClass.getName
         throw new IllegalArgumentException(s"caller asked for String but key $key has type $keyType")
     }
   }
 
-  def getInt(key:String) : Int = {
-      keys.get(key) match {
-      case Some(value:Int) => 
+  def getInt(key: String): Int = {
+    keys.get(key) match {
+      case Some(value: Int) =>
         myConfig.getInt(key)
-      case None => 
+      case None =>
         throw new IllegalArgumentException(s"unknown configuration key $key")
-      case Some(s) => 
+      case Some(s) =>
         val keyType = s.getClass.getName
         throw new IllegalArgumentException(s"caller asked for Int but key $key has type $keyType")
     }
@@ -65,8 +65,7 @@ abstract class ConfigurationKeys(configuration : Config) extends Configuration {
 
 }
 
-
-class MessageQueueConfig(configuration:Config) extends ConfigurationKeys(configuration) {
+class MessageQueueConfig(configuration: Config) extends ConfigurationKeys(configuration) {
   override def path = Some("message_queue")
 
   override def keys: Map[String, Any] = Map(
@@ -75,13 +74,12 @@ class MessageQueueConfig(configuration:Config) extends ConfigurationKeys(configu
     ("password" -> "password"),
     ("queue_name" -> "/queue/document-set-commands"),
     ("file_group_queue_name" -> "/queue/file-group-commands"),
-    ("clustering_commands_queue_name" -> "/queue/clustering-commands")
-  )
+    ("clustering_commands_queue_name" -> "/queue/clustering-commands"))
 }
 
-class SearchIndexConfig(configuration:Config) extends ConfigurationKeys(configuration) {
+class SearchIndexConfig(configuration: Config) extends ConfigurationKeys(configuration) {
   override def path = Some("search_index")
-    
+
   override def keys: Map[String, Any] = Map(
     ("config_file" -> "elasticsearch.yml"),
     ("index_name" -> "documents_v1"),
@@ -99,7 +97,8 @@ object Configuration extends ConfigurationKeys(ConfigFactory.load()) {
     ("min_connected_component_size" -> 10),
     ("documentcloud_url" -> "https://www.documentcloud.org"),
     ("sampled_edges_per_document" -> 200),
-    ("max_job_retry_attempts" -> 3))
+    ("max_job_retry_attempts" -> 3),
+    ("libre_office_path" -> "/usr/bin/soffice"))
 
   val messageQueue = new MessageQueueConfig(myConfig)
   val searchIndex = new SearchIndexConfig(myConfig)

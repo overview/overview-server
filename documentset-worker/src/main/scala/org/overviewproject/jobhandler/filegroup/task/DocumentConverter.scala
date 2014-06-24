@@ -10,13 +10,14 @@ import java.io.File
 import scala.util.control.Exception._
 import java.nio.file.Paths
 import java.io.FileNotFoundException
+import org.overviewproject.util.Configuration
 
 trait DocumentConverter {
   
   case class ConverterFailedException(reason: String) extends Exception(reason)
   case class NoConverterOutputException(reason: String) extends Exception(reason)
   
-  private val LibreOfficeLocation = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+  private val LibreOfficeLocation = Configuration.getString("libre_office_path")
   private val TempDirectory = "overview-documentset-worker"
   private val OutputFileExtension = "pdf"
 
@@ -87,6 +88,7 @@ trait DocumentConverter {
     val tmpDir = System.getProperty("java.io.tmpdir")
     Paths.get(tmpDir, TempDirectory, fileName)
 
+    tempDirectory.resolve(fileName)
   }
 
   private def outputFile(inputFile: File): File = {
