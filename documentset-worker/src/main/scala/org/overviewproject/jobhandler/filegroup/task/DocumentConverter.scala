@@ -9,8 +9,13 @@ import java.nio.file.Path
 import java.io.File
 import scala.util.control.Exception._
 import java.nio.file.Paths
+import java.io.FileNotFoundException
 
 trait DocumentConverter {
+  
+  case class ConverterFailedException(reason: String) extends Exception(reason)
+  case class NoConverterOutputException(reason: String) extends Exception(reason)
+  
   private val LibreOfficeLocation = "/Applications/LibreOffice.app/Contents/MacOS/soffice"
   private val TempDirectory = "overview-documentset-worker"
   private val OutputFileExtension = "pdf"
@@ -47,7 +52,7 @@ trait DocumentConverter {
     val officeCommand = conversionCommand(inputFile.getAbsolutePath)
 
     val result: Either[String, String] = runner.run(officeCommand)
-    result.fold(e => throw new Exception(e), { s =>
+    result.fold(e => throw new ConverterFailedException(e), { s =>
       val output = outputFile(inputFile)
 
       ultimately(fileSystem.deleteFile(output)) {
@@ -60,8 +65,9 @@ trait DocumentConverter {
   // Closes the stream after call to f
   // If output file does not exist, a NoConverterOutput exception is thrown
   private def readOutputFile[T](outputFile: File)(f: InputStream => T): T = {
-    val fileStream = fileSystem.readFile(outputFile)
-
+    val detectingNoFile = handling(classOf[FileNotFoundException]) by { e => throw NoConverterOutputException(e.getMessage) } 
+    def fileStream = detectingNoFile { fileSystem.readFile(outputFile) }
+    
     ultimately(fileStream.close) {
       f(fileStream)
     }

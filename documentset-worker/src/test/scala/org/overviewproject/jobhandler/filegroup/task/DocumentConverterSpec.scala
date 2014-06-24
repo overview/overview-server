@@ -1,5 +1,6 @@
 package org.overviewproject.jobhandler.filegroup.task
 
+import scala.util.control.Exception._
 import org.specs2.mutable.Specification
 import org.specs2.mock.Mockito
 import java.io.InputStream
@@ -7,6 +8,8 @@ import java.util.UUID
 import java.io.File
 import java.nio.file.Paths
 import org.specs2.specification.Scope
+import org.overviewproject.jobhandler.filegroup.task.DocumentConverter._
+import java.io.FileNotFoundException
 
 class DocumentConverterSpec extends Specification with Mockito {
 
@@ -28,30 +31,38 @@ class DocumentConverterSpec extends Specification with Mockito {
 
     "delete output file after conversion is complete" in new DocumentConverterContext {
       documentConverter.convertToPdfStream(guid, inputStream)(identity)
-      
+
       there was one(documentConverter.fileSystem).deleteFile(outputFile)
     }
 
     "call processing function with converted output stream" in new DocumentConverterContext {
-      val result =  documentConverter.convertToPdfStream(guid, inputStream)(identity)
-      
-      result must be equalTo(documentConverter.convertedStream)
+      val result = documentConverter.convertToPdfStream(guid, inputStream)(identity)
+
+      result must be equalTo (documentConverter.convertedStream)
     }
 
-    "delete input file if exception is thrown during processing" in {
-      todo
+    "delete input file if exception is thrown during processing" in new DocumentConverterContext {
+      ignoring(classOf[Exception]) { documentConverter.convertToPdfStream(guid, inputStream)(failingProcessing) }
+
+      there was one(documentConverter.fileSystem).deleteFile(inputFile)
     }
 
-    "throw a ConverterFailedException if office command returns an error" in {
-      todo
+    "throw a ConverterFailedException if office command returns an error" in new DocumentConverterContext {
+      val failingConverter = new FailingConverter(inputFile)
+      failingConverter.convertToPdfStream(guid, inputStream)(identity) must throwA[ConverterFailedException]
     }
 
-    "delete output file if exception is thrown during processing" in {
-      todo
+    "delete output file if exception is thrown during processing" in new DocumentConverterContext {
+      ignoring(classOf[Exception]) { documentConverter.convertToPdfStream(guid, inputStream)(failingProcessing) }
+
+      there was one(documentConverter.fileSystem).deleteFile(outputFile)
     }
 
-    "throw a NoConverterOutput if no output file is found" in {
-      todo
+    "throw a NoConverterOutput if no output file is found" in new DocumentConverterContext {
+      val noOutputConverter = new ConverterWithNoOutput(inputFile)
+
+      noOutputConverter.convertToPdfStream(guid, inputStream)(identity) must throwA[NoConverterOutputException]
+
     }
 
   }
@@ -77,6 +88,8 @@ class DocumentConverterSpec extends Specification with Mockito {
     val inputStream = mock[InputStream]
     val documentConverter = new TestDocumentConverter(inputFile)
 
+    def failingProcessing(inputStream: InputStream): Int = throw new Exception("something went wrong")
+
   }
 
   class TestDocumentConverter(inputFile: File) extends DocumentConverter {
@@ -85,8 +98,24 @@ class DocumentConverterSpec extends Specification with Mockito {
 
     val convertedStream = mock[InputStream]
 
-    runner.run(any) returns Right("Success")
+    runner.run(any) returns runResult
     fileSystem.saveToFile(any, any) returns inputFile
-    fileSystem.readFile(any) returns convertedStream
+
+    setupReadFile
+
+    def setupReadFile: Unit = fileSystem.readFile(any) returns convertedStream
+
+    def runResult: Either[String, String] = Right("Success")
+    def readFileResult: InputStream = convertedStream
+  }
+
+  class FailingConverter(inputFile: File) extends TestDocumentConverter(inputFile) {
+
+    override def runResult: Either[String, String] = Left("Failure")
+
+  }
+
+  class ConverterWithNoOutput(inputFile: File) extends TestDocumentConverter(inputFile) {
+     override def setupReadFile: Unit = fileSystem.readFile(any) answers { _ => throw new FileNotFoundException } 
   }
 }
