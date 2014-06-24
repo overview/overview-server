@@ -26,6 +26,10 @@ class DirectoryCleanerSpec extends Specification with Mockito {
         one(directoryCleaner.fileSystem).deleteIfExists(subdir) andThen
         one(directoryCleaner.fileSystem).deleteIfExists(directory)
     }
+    
+    "doesn't delete non-existing directory" in new NoDirectoryContext {
+      directoryCleaner.createCleanDirectory(directory) must not(throwA[Exception])
+    }
 
   }
 
@@ -49,6 +53,10 @@ class DirectoryCleanerSpec extends Specification with Mockito {
       (directory -> Seq(file, subdir)),
       (subdir -> Seq(subdirFile)))
 
+  }
+  
+  trait NoDirectoryContext extends DirectoryCleanerContext {
+    override protected def dirContents = Map.empty
   }
 
   class TestDirectoryCleaner extends DirectoryCleaner {

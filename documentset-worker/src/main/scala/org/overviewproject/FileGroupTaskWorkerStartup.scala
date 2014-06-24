@@ -5,11 +5,12 @@ import akka.actor.SupervisorStrategy._
 import org.overviewproject.jobhandler.filegroup.task.FileGroupTaskWorker
 import org.overviewproject.util.Logger
 import scala.concurrent.duration.Duration
+import org.overviewproject.jobhandler.filegroup.task.TempDirectory
 
 object FileGroupTaskWorkerStartup {
 
   def apply(fileGroupJobQueuePath: String)(implicit system: ActorSystem): Unit = {
-    
+    TempDirectory.create
     system.actorOf(TaskWorkerSupervisor(fileGroupJobQueuePath), "TaskWorkerSupervisor")
   }
 
